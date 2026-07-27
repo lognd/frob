@@ -1372,6 +1372,14 @@
     "src/frob/strata/_ssot.py::SsotReport": "d81140130200593cccc7448db207140c93059894c506fbcc3234c23c766d6de3",
     "src/frob/strata/_ssot.py::SsotViolation": "5c9ea72ce0f89d7a260037e9686183b59a72111860e31d7b2c52b4ee9a987616",
     "src/frob/strata/_ssot.py::check_ssot_obligations": "307bd6f8e52b3d84254006f411ba1677e07ffa52521de3fc97da1faf76c431af",
+    "src/frob/strata/_starvation.py::REL_SERIALIZATION_DEMAND_UNDECLARED": "bba6a2c20274e7468d53c1aa37643fc1372b0520dfb4868b1044806dff27e3d1",
+    "src/frob/strata/_starvation.py::REL_SERIALIZATION_UTILIZATION": "718c47838e8813b83d03e56032dc8765f824f99eb13b07bd17164d30a6100b33",
+    "src/frob/strata/_starvation.py::REL_UNBOUNDED_WAIT": "115560c3bfed6ed5b9d518fa06ce3bc9343ca3740d0aae59212317780ad11cbb",
+    "src/frob/strata/_starvation.py::REL_WRITER_STARVATION": "95c2ca04986833219a917887c2c1b9cdfb256c6f9779a421a1a94565eca499f4",
+    "src/frob/strata/_starvation.py::STARVATION_RULES": "50daf53c40506e7e92770dfd9b76aac8663295b393e5f6c50d9efedf171269db",
+    "src/frob/strata/_starvation.py::StarvationReport": "32ac286469d08ccd44d616ca935d03ce3885bdcaabb7efe6b0b7612e9f9c91fe",
+    "src/frob/strata/_starvation.py::StarvationViolation": "27eedde27d6019369cccea3c604ffb3dff4c99ed35a6a54343ff479842dd19cd",
+    "src/frob/strata/_starvation.py::check_starvation_obligations": "fb6a8ace6ca9440b6d45750fd6a26aa31b133a2093fd3736ba8992e1b3daa840",
     "src/frob/strata/_sync_depth.py::REL_SYNC_CHAIN_TOO_DEEP": "5853081491a07444bf78482c5db5b3ceaf1d435ddf9fbf8d7d966230e34b5974",
     "src/frob/strata/_sync_depth.py::SYNC_CHAIN_MAX_DEPTH": "092a8d9c60f420d00a499c88b5a92fba481e7f5087c7a10197cd5b36116d4703",
     "src/frob/strata/_sync_depth.py::SYNC_DEPTH_RULES": "b7cafddf9b2062a5f8a2bdc5bccd29b9f295c0923aea4bcc5022bac9325bbc3d",
@@ -1410,7 +1418,7 @@
     "src/frob/strata/_txn.py::TxnBoundaryReport": "2474069f4fc19e92cc432c4984eb23ee726fd5a4d07739216a1f4dc09d377493",
     "src/frob/strata/_txn.py::TxnBoundaryViolation": "800958df576872b395a2a164ea01853fbdca3bbd872d04cf9bbf7ac3b25959d8",
     "src/frob/strata/_txn.py::check_txn_boundary_obligations": "521716c3949717b6651f660c80f0cc9b96ae7f8d23961504e242ffd14d2e9c78",
-    "src/frob/strata/_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES": "b6ddbaa90bab96729e7893a821545ad9971ee7802e76310f46ab150b4138b458",
+    "src/frob/strata/_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES": "5e2d6e36d1bff8de31fda98aafb7538247d23c168f654aed810f7e780345cf50",
     "src/frob/strata/_waive.py::STALE_WAIVER_RULE": "8eb5c11b20d9bd7912b8cddab61e5dff7c5dfd9cbae725dbae6c8bac1c2178bf",
     "src/frob/strata/_waive.py::WaivedFinding": "777a9214370415e42e0d0174af52291dd0606d11d46313472536f74f57326ac6",
     "src/frob/strata/_waive.py::WaiverApplication": "cdc1de9113927de38909521b910b9793d0666b463a5bf8496ef8bcd598bd0c2e",
@@ -1681,5 +1689,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.176.0"
+  "version": "0.177.0"
 }

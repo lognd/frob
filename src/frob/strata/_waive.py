@@ -133,6 +133,10 @@ MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
         "REL370",
         "REL371",
         "REL372",
+        "REL380",
+        "REL381",
+        "REL382",
+        "REL383",
     }
 )
 

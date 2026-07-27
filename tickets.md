@@ -3347,7 +3347,7 @@ Gates: `frob check --ticket T-0702 --only <lint|static|gates-fast|gates-native|g
 id: T-0703
 title: 'strata starvation/throughput obligations: serialization-point utilization,
   writer starvation, unbounded waits'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-22'
@@ -3361,17 +3361,90 @@ sprint: null
 scope:
 - src/frob/strata/**
 - tests/unit/strata/
+- docs/strata/**
+scope_changes:
+- op: add
+  glob: docs/strata/**
+  reason: 'REL38x obligation family docs (docs/strata/reliability.md section, docs/strata/waive.md
+    MULTI_INSTANCE_WAIVER_FAMILIES table update) are required by the obligation-family
+    pattern this ticket follows -- every sibling family (T-0645/T-0646/T-0700/T-0702)
+    documents its rules in these same two files.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/unit/strata/test_starvation.py::TestUtilization::test_over_capacity_demand_fires_with_arithmetic
+- tests/unit/strata/test_starvation.py::TestUtilization::test_declared_capacity_within_bounds_is_clean
+- tests/unit/strata/test_starvation.py::TestUtilization::test_undeclared_demand_fails_closed
+- tests/unit/strata/test_starvation.py::TestUtilization::test_arbitrated_by_node_is_the_serialization_point
+- tests/unit/strata/test_starvation.py::TestUtilization::test_read_only_accessor_is_not_a_serialization_point
+- tests/unit/strata/test_starvation.py::TestWriterStarvation::test_read_heavy_writer_with_no_alpha_fires_advisory
+- tests/unit/strata/test_starvation.py::TestWriterStarvation::test_alpha_accessor_discharges
+- tests/unit/strata/test_starvation.py::TestUnboundedWait::test_contended_write_access_with_no_timeout_fires
+- tests/unit/strata/test_starvation.py::TestUnboundedWait::test_declared_timeout_discharges
+- tests/unit/strata/test_starvation.py::TestUnboundedWait::test_lone_accessor_is_not_contended
 acceptance:
 - text: GIVEN 500k declared users flowing to a db with mode=exclusive and default
     holding time WHEN sys checks run THEN a utilization error fires showing the arithmetic;
     GIVEN the same db with demand undeclared THEN a fail-closed demand-undeclared
     finding; GIVEN a read-preferring lock with no alpha/fairness on a read-heavy resource
     THEN a writer-starvation advisory
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_starvation.py::TestUtilization::test_over_capacity_demand_fires_with_arithmetic
 threat: null
 component: null
 ```
 User mandate 2026-07-22: the 500k-users-vs-exclusive-write-lock case. Three obligation families over the T-0700 modes + demand grammar: (1) SERIALIZATION-POINT UTILIZATION: every effective-concurrency-1 point (exclusive mode, single arbiter, alpha-gated writer path) compares aggregate inbound demand x holding-time hint against capacity; over threshold = SYS error SHOWING THE ARITHMETIC in the finding (demand, holding time, resulting utilization/wait), not a vibe; an exclusive/arbitered resource with UNDECLARED upstream demand fails closed with demand-undeclared (the check cannot be silently skipped). Coordinate with T-0645 (SPOF -- a saturated single arbiter is quantitative SPOF) and T-0646 (backpressure -- what bounds the queue at the serialization point). (2) WRITER STARVATION policy: read-heavy resource whose declared lock discipline lets readers perpetually preempt the writer (plain RW preference, no alpha or fair-queuing declaration) = advisory recommending alpha (T-0700) or fair queuing, even at low utilization. (3) UNBOUNDED WAIT: lock/arbiter acquisition on a contended resource with no declared timeout joins the T-0640 timeout obligation family. Litmus fixtures per family, firing and clean.
+
+## Done report
+
+Added a new REL38x reliability family (`src/frob/strata/_starvation.py`) building on T-0700's access-mode/resource grammar (`_access.py`, SYS204) and T-0702's demand-propagation fact (`_facts.py::FactBase.aggregate_demand`), both already landed (`[done]`) on local main.
+
+Four new rule ids, one module, mirroring the existing REL2xx/REL3xx obligation-family pattern (`_spof.py`/`_reliability.py` precedent):
+
+- REL380 serialization-point utilization over threshold -- every node that is an effective-concurrency-1 point for a resource (write/append/exclusive/alpha access mode, or a resource's own `arbitrated_by` node) whose `FactBase.aggregate_demand` exceeds its `Capacity.service_rate` (one replica's worth, deliberately not multiplied by `replicas_max`). A node with no declared `Capacity` falls back to a conservative default holding time (10ms / 100 per-second). The finding shows the arithmetic (demand, capacity, utilization multiple).
+- REL381 serialization-point demand undeclared -- the same population, firing instead of REL380 whenever `FactBase.aggregate_demand(...).declared` is False: fail-closed, never silently skipped.
+- REL382 writer starvation (advisory) -- a resource with a `read` accessor and a write-like accessor but no `alpha` accessor declared; fires regardless of utilization or arbiter presence.
+- REL383 unbounded wait -- a node acquiring a contended resource (2+ accessors) in a write-like/alpha mode with no `timeout` attr declared on itself; reuses the T-0640 TIMEOUT vocabulary at a new population (resource acquisition, not `Flow`), per the ticket's "joins the T-0640 timeout obligation family" instruction, without touching `_reliability.py` itself.
+
+REL380/381/382/383 join `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES` (a node can access more than one resource, so a waive clause must carry a `RULE:RESOURCE_ID` sub-target). Documented in `docs/strata/reliability.md` (new `## REL38x` section) and `docs/strata/waive.md` (MULTI_INSTANCE_WAIVER_FAMILIES table entry) -- this required widening the ticket's declared scope to include `docs/strata/**` (recorded via `frob ticket scope --add`, reason on file in the ticket's `scope_changes`).
+
+Ten new unit tests in `tests/unit/strata/test_starvation.py` cover all three acceptance-criterion scenarios verbatim: the 500k-users-vs-exclusive-db utilization error with arithmetic shown in the detail string (bound to the ticket's acceptance criterion via `--accepts 0`); the same db with demand undeclared firing the fail-closed REL381; and a read-heavy resource with a write accessor and no alpha accessor firing the REL382 advisory (plus REL382's alpha-discharge case, REL383's contended/lone-accessor/declared-timeout cases, and REL380's arbitrated_by-node-is-the-point and declared-capacity-clean cases).
+
+Verification: `uv run pytest tests/unit/strata/test_starvation.py -q` -- 10 passed. `uv run frob check --only lint/static/gates-fast/gates-native/gates-security --ticket T-0703` -- every gate-summary line 0 errors (only pre-existing, unrelated ty diagnostics in `tests/test_gates.py` and ruff-format drift in two unrelated files this ticket never touches). `git diff main --diff-filter=D --stat` empty.
+
+Filed then dropped: T-0957 was filed mid-ticket after comparing T-0700/T-0702's state against the stale `origin/main` remote (168 commits behind this drive's local main) -- a false alarm. Confirmed on local main both T-0700 and T-0702 are `[done]`; dropped the draft ticket with reason "false alarm: compared against stale origin/main; local main ledger is correct".
+Gates: frob check --only lint/static/gates-fast/gates-native/gates-security --ticket T-0703 clean (0 errors each; only pre-existing unrelated ty/ruff-format items noted above).
+
+### Changed
+```
+ docs/strata/reliability.md           |   128 +
+ docs/strata/waive.md                 |     7 +-
+ src/frob/strata/__init__.py          |    18 +
+ src/frob/strata/_starvation.py       |   541 ++
+ src/frob/strata/_waive.py            |     4 +
+ tests/unit/strata/test_starvation.py |   227 +
+ tickets-archive.md                   | 16733 +--------------------------------
+ tickets.md                           | 12529 ++++++++++++++++++------
+ 8 files changed, 10882 insertions(+), 19305 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_starvation.py::TestUtilization::test_over_capacity_demand_fires_with_arithmetic` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_starvation.py::TestUtilization::test_declared_capacity_within_bounds_is_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_starvation.py::TestUtilization::test_undeclared_demand_fails_closed` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_starvation.py::TestUtilization::test_arbitrated_by_node_is_the_serialization_point` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_starvation.py::TestUtilization::test_read_only_accessor_is_not_a_serialization_point` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_starvation.py::TestWriterStarvation::test_read_heavy_writer_with_no_alpha_fires_advisory` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_starvation.py::TestWriterStarvation::test_alpha_accessor_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_starvation.py::TestUnboundedWait::test_contended_write_access_with_no_timeout_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_starvation.py::TestUnboundedWait::test_declared_timeout_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_starvation.py::TestUnboundedWait::test_lone_accessor_is_not_contended` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0709 -->
 ```yaml
@@ -9303,3 +9376,30 @@ threat: null
 component: null
 ```
 T-0700 shipped access modes + resource/arbitrated_by grammar. design/frob.strata has 5 SYS203 "tickets_ledger" waivers explicitly written "re-evaluate at T-0700" (lines ~116/181/311/388/508) since the ledger genuinely has an arbiter (every writer serializes through .frob/tickets.lock, T-0458/T-0633) that SYS203 could not express until now. Re-express this properly: declare a `resource tickets_ledger { lock "tickets.lock" }` (or `arbitrated_by` the CLI-writer node, whichever models T-0458/T-0633's actual single-writer-lock discipline more accurately) plus `access "tickets_ledger" mode write` on each node/store that writes it, then drop the now-superseded SYS203 waivers once the model-level arbiter discharges the contention cleanly (verify via frob.strata._access.resource_contention_violations against frob's own elaborated design). Also re-point tests/test_tickets_live_tracker.py:220's `ticket=T-0700` placeholder to this ticket's id once assigned. Blocked by nothing; T-0700 is done and closed.
+
+<!-- ticket:T-0957 -->
+```yaml
+id: T-0957
+title: 'ledger regression: T-0700/T-0702 show state:queued despite landed, tested
+  code'
+state: dropped
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tickets.md
+threat: null
+component: null
+```
+Found while working T-0703: on origin/main HEAD (b3589c3e), `tickets.md` shows T-0700 ("strata grammar: access modes + shared-resource/lease declarations for contention proofs") and T-0702 ("strata grammar: demand declarations (users/rate) with flow propagation and fan-in summation") both as `state: queued`, `blocked_by=[]`, with no done-report or evidence -- yet their grammar is fully implemented, documented, and consumed: `src/frob/strata/_access.py` (SYS204, AccessMode, node_access_declarations, resource_contention_violations) and `src/frob/strata/_facts.py::FactBase.aggregate_demand`/`AggregateDemand` both exist, have full module docstrings referencing "T-0700"/"T-0702" in the past tense, and are covered by passing tests (`tests/unit/strata/test_access.py`, `tests/unit/strata/test_demand.py`). `git log --oneline` on origin/main shows commits "feat(tickets): land T-0700 ..." and a T-0702 close/land commit chain as ancestors of the current tip.
+
+This blocked a dependent ticket (T-0703, whose declared `blocked_by=['T-0700','T-0702']`) from running `frob ticket start`/`frob ticket sweep` at all, even though the actual prerequisite code was already present and usable -- had to build and verify T-0703 against the real code while leaving its own ledger `start`/`sweep`/`close` CLI calls unresolved pending this investigation.
+
+Likely root cause: the same land-splice/stale-ledger regression class already tracked (see MEMORY "Land splice regression" -- frob ticket land dropping/regressing sibling in-progress or closed ledger blocks; T-0577 was a partial fix). Someone with land-tooling context should: (1) confirm via git history whether T-0700/T-0702's close/done-report content was reverted by a later land/merge, (2) restore their `state: closed` + evidence + done-report blocks (or re-run their own close flow) so the ledger matches the code that is actually in the tree, and (3) check whether other REL2xx/SYS2xx tickets in the T-0331 epic have the same regression.
+
+## Drop reason
+- 2026-07-27: false alarm: compared against stale origin/main; local main ledger is correct

@@ -87,8 +87,11 @@ node payments : trusted {
 REQUIRE a sub-target: `SYS100`, `SYS101`, `THREAT002`, `THREAT003`, and
 (the same per-flow reasoning, one node can originate several flows)
 `REL200`/`REL201`, `REL220`/`REL221`/`REL222`, `REL270`/`REL271`/
-`REL272`, and `REL370`/`REL371`/`REL372` (T-0657's CLOCK/ORDERING-
-ASSUMPTIONS family, `_clock_ordering.py`). A `waive` clause on one of
+`REL272`, `REL370`/`REL371`/`REL372` (T-0657's CLOCK/ORDERING-
+ASSUMPTIONS family, `_clock_ordering.py`), and `REL380`/`REL381`/
+`REL382`/`REL383` (T-0703's STARVATION/THROUGHPUT family,
+`_starvation.py` -- a node can access more than one resource). A `waive`
+clause on one of
 these with no `:SUBTARGET` is an ELABORATE-TIME error
 (`StrataError.MalformedWaiver`) -- the grammar accepts the bare string
 (it does not know which rules are multi-instance; that is a Python-side

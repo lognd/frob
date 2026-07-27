@@ -1274,6 +1274,134 @@ node replica_a : trusted {
 }
 ```
 
+## REL38x: STARVATION/THROUGHPUT obligation (T-0703)
+
+`_starvation.py::check_starvation_obligations` reads the T-0700 `access
+"R" mode M`/`resource ID { arbitrated_by | lock }` grammar
+(`docs/strata/host.md#resource-access-modes-t-0700`) together with the
+T-0702 demand-propagation fact `FactBase.aggregate_demand`
+(`docs/strata/kernel.md#demand-declarations-t-0702`) to find every
+serialization point whose aggregate inbound demand already outruns its
+capacity, every read-heavy resource whose write-like accessor can be
+perpetually starved, and every contended-resource acquisition with no
+declared timeout. The user mandate motivating this family: 500k declared
+users flowing into a database node accessed in `mode exclusive` -- a
+single-writer serialization point overwhelmed by orders of magnitude,
+which no purely structural check (SPOF, contention) can see without the
+demand arithmetic this family adds.
+
+THREE obligations, each its own rule id (not a missing/unproven pair --
+module docstring: REL380/REL381 read real typed model data, `Capacity.
+service_rate` and `FactBase.aggregate_demand`, the same `_spof.py`/
+`_shared_state.py` "structural fact, no proof-against-code needed" shape):
+
+- **REL380 serialization-point utilization over threshold** -- a node
+  that is an effective-concurrency-1 point for some resource (it
+  declares `access "R" mode M` with M one of `write`/`append`/
+  `exclusive`/`alpha`, OR it is the resource's own declared
+  `arbitrated_by` node) whose aggregate inbound demand
+  (`FactBase.aggregate_demand`) exceeds its capacity
+  (`Capacity.service_rate`, ONE replica's worth -- deliberately NOT
+  multiplied by `replicas_max`, since exclusivity collapses effective
+  concurrency to 1 regardless of replica count). A node with no declared
+  `Capacity` falls back to a conservative default holding time (10ms,
+  i.e. a default capacity of 100/s) rather than being treated as
+  infinite capacity. The finding SHOWS THE ARITHMETIC: demand, capacity,
+  and the resulting utilization multiple, never a bare "too much load"
+  claim.
+- **REL381 serialization-point demand undeclared** -- the SAME
+  population as REL380, but firing instead of REL380 whenever no
+  `users`/`rate` declaration's demand reaches the node at all
+  (`AggregateDemand.declared is False`) -- fail-closed: an exclusive/
+  arbitrated serialization point with unknown upstream demand is never
+  silently skipped just because the arithmetic cannot be filled in.
+- **REL382 writer starvation (advisory)** -- a resource with at least
+  one `read` accessor and at least one write-like accessor
+  (`write`/`append`/`exclusive`), but NO `alpha` accessor declared for
+  it. T-0700's own `alpha` semantics ("sits between read and write ...
+  alpha never conflicts with readers") exist precisely so a writer can
+  register upgrade-intent without blocking readers outright; a resource
+  with readers and a writer but no alpha discipline lets readers
+  perpetually preempt the writer. Fires regardless of utilization (even
+  a lightly-loaded resource can starve a writer under a read-preferring
+  lock) and regardless of whether an arbiter is declared (an arbiter
+  changes who waits, not whether the discipline can starve a writer).
+- **REL383 unbounded wait** -- a node acquiring a CONTENDED resource
+  (2+ total accessors declared for the same resource id) in a
+  write-like/alpha mode, with no `timeout` attr declared on the
+  acquiring node itself. Reuses the T-0640 TIMEOUT family's own
+  vocabulary (`_reliability.py`'s `timeout` attr string) at this
+  module's own population (a contended-resource accessor, not a `Flow`)
+  -- "joins the T-0640 timeout obligation family" in spirit, without
+  touching `_reliability.py` itself (one rule module per obligation,
+  same discipline T-0700 established adding SYS204 alongside SYS200-203
+  rather than editing `_contention.py`).
+
+COORDINATION WITH T-0645/T-0646, DISCLOSED: REL380 (a saturated single
+arbiter) is the QUANTITATIVE version of T-0645's REL250 SPOF (a
+structural singleton receiving a critical inbound flow) -- deliberately
+NOT merged, since they read different declarations (`critical` Flow attr
+vs `access`/`resource`) and can fire independently of each other. T-0646
+REL260/REL261 ask "is intake at this queue/consumer bounded at all";
+REL380 asks "does the number already exceed capacity" -- a node can be
+REL260-clean and REL380-dirty at the same time (a declared bound too
+small for the demand reaching it), so both obligations coexist without
+collapsing into one.
+
+### Surface vocabulary
+
+```
+node entry : trusted { users 500000; }
+node db : trusted {
+    access "ledger" mode exclusive;
+    // no capacity declared -> default 10ms holding time -> REL380 fires,
+    // demand=500000/s vastly exceeds the 100/s default capacity
+}
+
+flow f1 : entry -> db { }
+
+resource cache_res {
+    arbitrated_by cache_arbiter;
+}
+node cache_arbiter : trusted {
+    capacity { service_rate 10000 per_second; }
+}
+node reader_a : trusted { access "cache_res" mode read; }
+node reader_b : trusted { access "cache_res" mode read; }
+node writer : trusted {
+    access "cache_res" mode write;
+    // >=1 reader, a writer, no alpha accessor anywhere -> REL382 advisory
+    // 2+ total accessors of cache_res, writer mode, no timeout -> REL383
+}
+```
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+No new `strata-core` grammar is added or needed: `_starvation.py` reads
+only T-0700's `access`/`resource` grammar and T-0702's `users`/`rate`
+grammar, both already surfaced. There is deliberately no "holding time"
+clause in the grammar -- `Capacity.service_rate` (already a rate, i.e.
+1/time) stands in as the holding-time hint for a DECLARED capacity; an
+UNDECLARED capacity falls back to a fixed, conservative default (10ms
+holding time / 100 per-second capacity, module docstring), never to an
+unbounded one. `timeout` (REL383) is the same presence-only bare Node
+attr string as `_reliability.py`'s Flow-scoped `timeout` -- independent
+grammar site, deliberately not imported (module docstring).
+
+### Waiver channel
+
+REL380/REL381/REL382/REL383 DO join `_waive.py::
+MULTI_INSTANCE_WAIVER_FAMILIES` (a node can access more than one
+resource, so a waive clause must name the specific resource via the
+`RULE:RESOURCE_ID` sub-target convention):
+
+```
+node db : trusted {
+    access "ledger" mode exclusive;
+    waive "REL380:ledger" reason "sharding migration tracked in T-9910-followup" ticket "T-9910";
+}
+```
+
 ## See also
 
 - `docs/strata/host.md#resource-contention-sys2xx-t-0699` -- the SYS2xx

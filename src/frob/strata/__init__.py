@@ -419,6 +419,16 @@ from frob.strata._ssot import (
     SsotViolation,
     check_ssot_obligations,
 )
+from frob.strata._starvation import (
+    REL_SERIALIZATION_DEMAND_UNDECLARED,
+    REL_SERIALIZATION_UTILIZATION,
+    REL_UNBOUNDED_WAIT,
+    REL_WRITER_STARVATION,
+    STARVATION_RULES,
+    StarvationReport,
+    StarvationViolation,
+    check_starvation_obligations,
+)
 from frob.strata._sync_depth import (
     REL_SYNC_CHAIN_TOO_DEEP,
     SYNC_CHAIN_MAX_DEPTH,
@@ -691,6 +701,13 @@ __all__ = [
     "SSOT_RULES",
     "SsotReport",
     "SsotViolation",
+    "REL_SERIALIZATION_DEMAND_UNDECLARED",
+    "REL_SERIALIZATION_UTILIZATION",
+    "REL_UNBOUNDED_WAIT",
+    "REL_WRITER_STARVATION",
+    "STARVATION_RULES",
+    "StarvationReport",
+    "StarvationViolation",
     "REL_MISSING_TXN_BOUNDARY",
     "REL_UNPROVEN_TXN_BOUNDARY",
     "TXN_RULES",
@@ -763,6 +780,7 @@ __all__ = [
     "check_sync_chain_depth",
     "check_slo_obligations",
     "check_ssot_obligations",
+    "check_starvation_obligations",
     "check_txn_boundary_obligations",
     "check_distributed_txn_obligations",
     "is_critical_dependency",
