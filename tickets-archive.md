@@ -22606,7 +22606,7 @@ evidence:
 - tests/unit/deploy/test_generate_windows.py::TestInstall::test_acl_grant_and_deny_flags
 - tests/unit/deploy/test_generate_windows.py::TestInstall::test_firewall_rule_opened
 - tests/unit/deploy/test_generate_windows.py::TestInstall::test_gmsa_account_uses_ad_service_account_cmdlets
-- tests/unit/deploy/test_generate_windows.py::TestInstall::test_service_not_present_notes_missing_binpath_vocabulary
+- tests/unit/deploy/test_generate_windows.py::TestInstall::test_service_not_present_notes_missing_bin_path
 - tests/unit/deploy/test_generate_windows.py::TestInstall::test_deny_logon_scope_cut_is_documented
 - tests/unit/deploy/test_generate_windows.py::TestStatus::test_one_line
 - tests/unit/deploy/test_generate_windows.py::TestUninstall::test_removes
