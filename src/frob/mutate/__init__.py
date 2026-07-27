@@ -306,6 +306,7 @@ def generate_mutants(
 # frob:doc docs/modules/mutate.md#public-api
 # frob:waive TEST005 reason="run_mutations 85.2% branch cover, debt T-0160"
 # frob:invariant INV-017
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def run_mutations(
     root: Path,
     file: Path,
@@ -356,25 +357,12 @@ def run_mutations(
     if not target.exists():
         return Err(MutateError.NoSource)
     with derived_state_lock(root, exclusive=True):
-        restored = restore_stale_journals(root)
-        if restored:
-            _log.warning(
-                "mutate: restored %d stale journal(s) left by a prior crashed run "
-                "before starting: %s",
-                len(restored),
-                restored,
-            )
+        _restore_any_stale_journals(root)
         original_bytes = target.read_bytes()
-        try:
-            original = original_bytes.decode("utf-8")
-        except UnicodeDecodeError:
-            return Err(MutateError.ParseFailed)
-        generated = generate_mutants(original, str(file), line_ranges)
-        if generated.is_err:
-            return Err(generated.danger_err)
-        mutants = generated.danger_ok
-        if max_mutants is not None:
-            mutants = mutants[:max_mutants]
+        prepared = _prepare_mutants(original_bytes, file, line_ranges, max_mutants)
+        if prepared.is_err:
+            return Err(prepared.danger_err)
+        mutants = prepared.danger_ok
         journaled = write_journal(root, target, original_bytes)
         if journaled.is_err:
             _log.error(
@@ -408,6 +396,46 @@ def run_mutations(
     return Ok(
         MutationResult(total=len(mutants), killed=killed, survivors=tuple(survivors))
     )
+
+
+# frob:ticket T-0976
+def _restore_any_stale_journals(root: Path) -> None:
+    """Restore (and loudly warn about) any `.frob/mutate-backup/` journal
+    left by a prior crashed `run_mutations` call before this one starts --
+    the T-0857 recovery half of `run_mutations`, split from its own main
+    body."""
+    restored = restore_stale_journals(root)
+    if restored:
+        _log.warning(
+            "mutate: restored %d stale journal(s) left by a prior crashed run "
+            "before starting: %s",
+            len(restored),
+            restored,
+        )
+
+
+# frob:ticket T-0976
+def _prepare_mutants(
+    original_bytes: bytes,
+    file: Path,
+    line_ranges: tuple[tuple[int, int], ...] | None,
+    max_mutants: int | None,
+) -> Result[tuple["_Mutation", ...], MutateError]:
+    """Decode `original_bytes` and run `generate_mutants` over it, capped
+    to `max_mutants` (T-0755, first-`max_mutants`-in-source-order,
+    deterministic) -- the mutant-generation half of `run_mutations`, split
+    from its journal/subprocess-running half."""
+    try:
+        original = original_bytes.decode("utf-8")
+    except UnicodeDecodeError:
+        return Err(MutateError.ParseFailed)
+    generated = generate_mutants(original, str(file), line_ranges)
+    if generated.is_err:
+        return Err(generated.danger_err)
+    mutants = generated.danger_ok
+    if max_mutants is not None:
+        mutants = mutants[:max_mutants]
+    return Ok(mutants)
 
 
 def _run_mutants(

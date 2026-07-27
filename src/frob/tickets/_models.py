@@ -750,6 +750,7 @@ def render_claims_block(claims: DoneReportClaims) -> str:
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_error_findings_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_measured_empty_error_findings_differs_from_none kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of _extract_claims_section_lines/_parse_claims_lines from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def parse_claims_from_done_report(body: str) -> DoneReportClaims | None:
     """Recover a `### Captured claims` section from `body`'s `## Done
     report`, the inverse of `render_claims_block` (T-0754). Returns `None`
@@ -769,9 +770,21 @@ def parse_claims_from_done_report(body: str) -> DoneReportClaims | None:
     section = _done_report_section_lines(body)
     if section is None:
         return None
+    claims_lines = _extract_claims_section_lines(section)
+    if claims_lines is None:
+        return None
+    return _parse_claims_lines(claims_lines)
+
+
+# frob:ticket T-0976
+def _extract_claims_section_lines(section: list[str]) -> list[str] | None:
+    """The lines strictly between the `### Captured claims` heading and
+    the next `#`-prefixed heading (or the section's end) within `section`
+    -- `parse_claims_from_done_report`'s heading-anchoring half (T-0754
+    review round 2's security fix), split from its line-parsing half.
+    `None` if the heading is not present at all."""
     claims_idx = next(
-        (i for i, line in enumerate(section) if line.strip() == _CLAIMS_HEADING),
-        None,
+        (i for i, line in enumerate(section) if line.strip() == _CLAIMS_HEADING), None
     )
     if claims_idx is None:
         return None
@@ -780,7 +793,16 @@ def parse_claims_from_done_report(body: str) -> DoneReportClaims | None:
         if line.strip().startswith("#"):
             break
         claims_lines.append(line)
+    return claims_lines
 
+
+# frob:ticket T-0976
+def _parse_claims_lines(claims_lines: list[str]) -> DoneReportClaims | None:
+    """Parse the anchored `claims_lines` (already isolated from the rest
+    of the Done report by `_extract_claims_section_lines`) into a
+    `DoneReportClaims`, or `None` if the test-count fields (the only ones
+    required, T-0832) never matched -- `parse_claims_from_done_report`'s
+    line-parsing half."""
     test_count = evidence_count = None
     gate_errors = gate_warnings = gate_waived = None
     error_findings: frozenset[tuple[str, str]] | None = None

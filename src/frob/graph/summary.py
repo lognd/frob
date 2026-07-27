@@ -361,6 +361,160 @@ def _join_from_callees(
     )
 
 
+# frob:ticket T-0976
+def _singleton_summary(
+    member: str,
+    own_by_symref: dict[str, tuple],
+    callgraph: CallGraph,
+    summaries: dict[str, FunctionSummary],
+) -> FunctionSummary:
+    """A single-member, non-self-recursive SCC's `FunctionSummary`: one
+    `_join_from_callees` call against the ALREADY-COMPUTED `summaries` (its
+    callees, in bottom-up SCC order, are guaranteed done already) --
+    `compute_protocol_summaries`'s non-recursive-case half."""
+    own_req, own_trans, own_acq, own_rel, own_esc = own_by_symref[member]
+    req, trans, acq, rel, esc, poisoned, reason = _join_from_callees(
+        member,
+        own_req,
+        own_trans,
+        own_acq,
+        own_rel,
+        own_esc,
+        False,
+        callgraph,
+        summaries,
+    )
+    return FunctionSummary(
+        symref=member,
+        requires=req,
+        transitions=trans,
+        acquired=acq,
+        released=rel,
+        escaped=esc,
+        poisoned=poisoned,
+        poison_reason=reason,
+    )
+
+
+# frob:ticket T-0976
+def _fixpoint_scc_summaries(
+    members: list[str],
+    own_by_symref: dict[str, tuple],
+    callgraph: CallGraph,
+    summaries: dict[str, FunctionSummary],
+    max_iterations: int,
+) -> tuple[dict[str, FunctionSummary], "SCCTimeout | None"]:
+    """A recursive SCC's (mutual or self-recursion) `FunctionSummary`s,
+    iterating the join across all `members` to a fixpoint bounded by
+    `max_iterations` -- `compute_protocol_summaries`'s recursive-case
+    half. Returns `(member -> summary, timeout)`, `timeout` non-`None`
+    only if the join failed to converge (every member's summary is then
+    poisoned)."""
+    current: dict[str, FunctionSummary] = {
+        m: FunctionSummary(
+            symref=m,
+            requires=own_by_symref[m][0],
+            transitions=own_by_symref[m][1],
+            acquired=own_by_symref[m][2],
+            released=own_by_symref[m][3],
+            escaped=own_by_symref[m][4],
+        )
+        for m in members
+    }
+    converged = False
+    for _iteration in range(1, max_iterations + 1):
+        next_round, changed = _one_scc_join_round(
+            members, own_by_symref, callgraph, summaries, current
+        )
+        current = next_round
+        if not changed:
+            converged = True
+            break
+
+    if converged:
+        return current, None
+    return _poison_scc_on_timeout(current, members, max_iterations)
+
+
+# frob:ticket T-0976
+def _one_scc_join_round(
+    members: list[str],
+    own_by_symref: dict[str, tuple],
+    callgraph: CallGraph,
+    summaries: dict[str, FunctionSummary],
+    current: dict[str, FunctionSummary],
+) -> tuple[dict[str, FunctionSummary], bool]:
+    """One fixpoint-iteration round over `members`: `_join_from_callees`
+    against `{**summaries, **current}`, returning `(next_round, changed)`
+    -- `_fixpoint_scc_summaries`'s single-round half, split from its own
+    iterate-to-convergence loop."""
+    combined = {**summaries, **current}
+    changed = False
+    next_round: dict[str, FunctionSummary] = {}
+    for member in members:
+        own_req, own_trans, own_acq, own_rel, own_esc = own_by_symref[member]
+        req, trans, acq, rel, esc, poisoned, reason = _join_from_callees(
+            member,
+            own_req,
+            own_trans,
+            own_acq,
+            own_rel,
+            own_esc,
+            False,
+            callgraph,
+            combined,
+        )
+        prior = current[member]
+        if (
+            req != prior.requires
+            or trans != prior.transitions
+            or acq != prior.acquired
+            or rel != prior.released
+            or esc != prior.escaped
+            or poisoned != prior.poisoned
+        ):
+            changed = True
+        next_round[member] = FunctionSummary(
+            symref=member,
+            requires=req,
+            transitions=trans,
+            acquired=acq,
+            released=rel,
+            escaped=esc,
+            poisoned=poisoned,
+            poison_reason=reason or prior.poison_reason,
+        )
+    return next_round, changed
+
+
+# frob:ticket T-0976
+def _poison_scc_on_timeout(
+    current: dict[str, FunctionSummary], members: list[str], max_iterations: int
+) -> tuple[dict[str, FunctionSummary], "SCCTimeout"]:
+    """Poison every member's summary in `current` after the fixpoint
+    failed to converge within `max_iterations` -- `_fixpoint_scc_
+    summaries`'s non-convergence half, split from its own iterate-to-
+    convergence loop."""
+    _log.error(
+        "T-0745: SCC %s failed to converge within %d iteration(s)",
+        members,
+        max_iterations,
+    )
+    timeout = SCCTimeout(members=tuple(members), iterations=max_iterations)
+    for member in members:
+        prior = current[member]
+        current[member] = FunctionSummary(
+            symref=member,
+            requires=prior.requires,
+            transitions=prior.transitions,
+            poisoned=True,
+            poison_reason=(
+                f"SCC {members} did not converge within {max_iterations} iteration(s)"
+            ),
+        )
+    return current, timeout
+
+
 # frob:doc docs/modules/graph.md#protocol-summary-engine
 # frob:ticket T-0745
 # frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_leaf_function_summary_is_its_own_declarations  # noqa: E501
@@ -376,6 +530,7 @@ def _join_from_callees(
 # frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_leaf_resource_declarations_populate_acquired_released_escaped  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_resource_sets_join_transitively_through_a_caller  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_resource_sets_join_across_a_recursive_cluster  # noqa: E501
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def compute_protocol_summaries(
     callgraph: CallGraph,
     edges: Sequence[Edge],
@@ -409,107 +564,19 @@ def compute_protocol_summaries(
         )
         if len(members) == 1 and not is_self_recursive:
             member = members[0]
-            own_req, own_trans, own_acq, own_rel, own_esc = own_by_symref[member]
-            req, trans, acq, rel, esc, poisoned, reason = _join_from_callees(
-                member,
-                own_req,
-                own_trans,
-                own_acq,
-                own_rel,
-                own_esc,
-                False,
-                callgraph,
-                summaries,
-            )
-            summaries[member] = FunctionSummary(
-                symref=member,
-                requires=req,
-                transitions=trans,
-                acquired=acq,
-                released=rel,
-                escaped=esc,
-                poisoned=poisoned,
-                poison_reason=reason,
+            summaries[member] = _singleton_summary(
+                member, own_by_symref, callgraph, summaries
             )
             continue
 
         # Recursive cluster (mutual recursion, or a single self-recursive
         # function): iterate the join across all members until no member's
         # value changes, bounded by max_iterations.
-        current: dict[str, FunctionSummary] = {
-            m: FunctionSummary(
-                symref=m,
-                requires=own_by_symref[m][0],
-                transitions=own_by_symref[m][1],
-                acquired=own_by_symref[m][2],
-                released=own_by_symref[m][3],
-                escaped=own_by_symref[m][4],
-            )
-            for m in members
-        }
-        converged = False
-        for iteration in range(1, max_iterations + 1):
-            combined = {**summaries, **current}
-            changed = False
-            next_round: dict[str, FunctionSummary] = {}
-            for member in members:
-                own_req, own_trans, own_acq, own_rel, own_esc = own_by_symref[member]
-                req, trans, acq, rel, esc, poisoned, reason = _join_from_callees(
-                    member,
-                    own_req,
-                    own_trans,
-                    own_acq,
-                    own_rel,
-                    own_esc,
-                    False,
-                    callgraph,
-                    combined,
-                )
-                prior = current[member]
-                if (
-                    req != prior.requires
-                    or trans != prior.transitions
-                    or acq != prior.acquired
-                    or rel != prior.released
-                    or esc != prior.escaped
-                    or poisoned != prior.poisoned
-                ):
-                    changed = True
-                next_round[member] = FunctionSummary(
-                    symref=member,
-                    requires=req,
-                    transitions=trans,
-                    acquired=acq,
-                    released=rel,
-                    escaped=esc,
-                    poisoned=poisoned,
-                    poison_reason=reason or prior.poison_reason,
-                )
-            current = next_round
-            if not changed:
-                converged = True
-                break
-        if not converged:
-            _log.error(
-                "T-0745: SCC %s failed to converge within %d iteration(s)",
-                members,
-                max_iterations,
-            )
-            timeouts.append(
-                SCCTimeout(members=tuple(members), iterations=max_iterations)
-            )
-            for member in members:
-                prior = current[member]
-                current[member] = FunctionSummary(
-                    symref=member,
-                    requires=prior.requires,
-                    transitions=prior.transitions,
-                    poisoned=True,
-                    poison_reason=(
-                        f"SCC {members} did not converge within "
-                        f"{max_iterations} iteration(s)"
-                    ),
-                )
+        current, timeout = _fixpoint_scc_summaries(
+            members, own_by_symref, callgraph, summaries, max_iterations
+        )
+        if timeout is not None:
+            timeouts.append(timeout)
         summaries.update(current)
 
     if not_analyzed:

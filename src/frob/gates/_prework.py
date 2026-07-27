@@ -178,6 +178,62 @@ def _xref_hit_for_scope_pattern(
     return xref_result.danger_ok.symbol if xref_result.is_ok else None
 
 
+# frob:ticket T-0976
+def _resume_or_start_sweep(
+    root: Path, ticket: Ticket, all_patterns: list[str], digest: str
+) -> tuple[list[str], list[str]]:
+    """`(xref_hits, patterns_to_scan)` for `sweep_ticket`: resumes from a
+    prior partial sweep's leftovers (T-0584) when one exists and its
+    digest still matches `digest`, else starts fresh over every pattern in
+    `all_patterns` with no prior hits."""
+    previous = load_prework(root, ticket.id)
+    if previous is not None and previous.partial and previous.digest == digest:
+        patterns_to_scan = [p for p in previous.pending_patterns if p in all_patterns]
+        _log.info(
+            "sweep_ticket: %s resuming partial sweep (%d pattern(s) pending)",
+            ticket.id,
+            len(patterns_to_scan),
+        )
+        return list(previous.xref_hits), patterns_to_scan
+    return [], all_patterns
+
+
+# frob:ticket T-0976
+def _bounded_xref_scan(
+    root: Path,
+    ticket_id: str,
+    patterns_to_scan: list[str],
+    exclude_globs,
+    snapshot,
+    xref_hits: list[str],
+    started: float,
+    budget_seconds: float | None,
+) -> list[str]:
+    """Run `_xref_hit_for_scope_pattern` over `patterns_to_scan`, appending
+    hits onto `xref_hits` IN PLACE, until either every pattern is scanned
+    or `budget_seconds` elapses since `started` (T-0584) -- returns the
+    patterns left unscanned (empty if the budget was never hit)."""
+    for i, pattern in enumerate(patterns_to_scan):
+        if budget_seconds is not None and time.monotonic() - started > budget_seconds:
+            pending_patterns = list(patterns_to_scan[i:])
+            _log.warning(
+                "sweep_ticket: %s exceeded %.1fs budget with %d pattern(s) "
+                "remaining -- recording a partial sweep, resume with "
+                "`frob ticket sweep %s`",
+                ticket_id,
+                budget_seconds,
+                len(pending_patterns),
+                ticket_id,
+            )
+            return pending_patterns
+        hit = _xref_hit_for_scope_pattern(
+            root, ticket_id, pattern, exclude_globs, snapshot
+        )
+        if hit is not None:
+            xref_hits.append(hit)
+    return []
+
+
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0236
 # frob:ticket T-0240
@@ -187,6 +243,7 @@ def _xref_hit_for_scope_pattern(
 # frob:tests tests/test_gates.py::TestPreworkSweepBounds.test_sweep_ticket_xref_hits_are_real_symbols  # noqa: E501
 # frob:tests tests/test_gates.py::TestPreworkSweepBounds.test_sweep_ticket_partial_on_budget_exceeded  # noqa: E501
 # frob:tests tests/test_gates.py::TestPreworkSweepBounds.test_sweep_ticket_resumes_pending_patterns  # noqa: E501
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def sweep_ticket(
     root: Path,
     ticket: Ticket,
@@ -251,44 +308,20 @@ def sweep_ticket(
     all_patterns = list(ticket.scope or (".",))
     digest = scope_digest(ticket.scope, snapshot) if snapshot is not None else ""
 
-    # T-0584: resume from a prior partial sweep's leftovers when the scope
-    # digest has not moved since it was recorded -- otherwise the digest
-    # mismatch already makes the old sweep stale and a full rescan from
-    # scratch is correct (the resumption shortcut only ever saves work it is
-    # actually safe to reuse).
-    xref_hits: list[str] = []
-    patterns_to_scan = all_patterns
-    previous = load_prework(root, ticket.id)
-    if previous is not None and previous.partial and previous.digest == digest:
-        xref_hits = list(previous.xref_hits)
-        patterns_to_scan = [p for p in previous.pending_patterns if p in all_patterns]
-        _log.info(
-            "sweep_ticket: %s resuming partial sweep (%d pattern(s) pending)",
-            ticket.id,
-            len(patterns_to_scan),
-        )
-
+    xref_hits, patterns_to_scan = _resume_or_start_sweep(
+        root, ticket, all_patterns, digest
+    )
     exclude_globs = load_exclude_globs(root)
-    pending_patterns: list[str] = []
-    for i, pattern in enumerate(patterns_to_scan):
-        if budget_seconds is not None and time.monotonic() - started > budget_seconds:
-            pending_patterns = list(patterns_to_scan[i:])
-            _log.warning(
-                "sweep_ticket: %s exceeded %.1fs budget with %d pattern(s) "
-                "remaining -- recording a partial sweep, resume with "
-                "`frob ticket sweep %s`",
-                ticket.id,
-                budget_seconds,
-                len(pending_patterns),
-                ticket.id,
-            )
-            break
-        hit = _xref_hit_for_scope_pattern(
-            root, ticket.id, pattern, exclude_globs, snapshot
-        )
-        if hit is not None:
-            xref_hits.append(hit)
-
+    pending_patterns = _bounded_xref_scan(
+        root,
+        ticket.id,
+        patterns_to_scan,
+        exclude_globs,
+        snapshot,
+        xref_hits,
+        started,
+        budget_seconds,
+    )
     partial = bool(pending_patterns)
 
     sweep = PreworkSweep(

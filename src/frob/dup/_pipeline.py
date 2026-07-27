@@ -406,6 +406,7 @@ def _matching_close_paren(tokens: tuple[str, ...], open_idx: int) -> int:
     return len(tokens)
 
 
+# frob:waive ARCH001 reason="one cursor-driven token-stream scan (i/out/tokens all mutated together per iteration): each of the four exit shapes (Err/Ok/None/raise) advances i by a different amount and appends to the same out list before falling through to the next iteration; splitting a branch into a helper would require returning (new_i, appended_tokens) back to the loop for every branch, adding indirection without separating an independent sub-concern from the shared cursor"  # noqa: E501
 def _normalize_error_channel(tokens: tuple[str, ...]) -> tuple[str, ...]:
     """Canonicalize `Result`/`Optional`/`raise` error-exit shapes in `tokens`
     to one shared form before similarity comparison (T-0785, audit M3):

@@ -340,10 +340,18 @@ def _own_base_raises(
     consumed by the caller's fixpoint loop rather than recursed into here
     directly, so cycles are handled by the iterative fixpoint, not
     unbounded recursion."""
-    direct: set[str] = set()
-    catchable: set[str] = set()
-    resolved_callees: set[str] = set()
+    direct = _resolve_direct_raises(func)
+    catchable, resolved_callees = _resolve_call_contributions(func, name_to_func)
+    return direct, catchable, resolved_callees
 
+
+# frob:ticket T-0976
+def _resolve_direct_raises(func: NormalizedFunction) -> set[str]:
+    """`func`'s own `raise` statements (T-0686): a resolved-directly type
+    as-is, or a bare re-raise resolved against the nearest preceding
+    `except` via `_nearest_preceding_catch` -- these always escape `func`
+    unconditionally regardless of any later catch in the same body."""
+    direct: set[str] = set()
     for r in func.raises:
         if r.exception_type is not None:
             direct.add(r.exception_type)
@@ -353,6 +361,22 @@ def _own_base_raises(
             direct.add(UNKNOWN)
         else:
             direct.add(catch.exception_type)
+    return direct
+
+
+# frob:ticket T-0976
+def _resolve_call_contributions(
+    func: NormalizedFunction, name_to_func: dict[str, NormalizedFunction]
+) -> tuple[set[str], set[str]]:
+    """`func`'s subscript and call-site contributions to `catchable`
+    (T-0689's priority order: declared_raises, then the qualified-stdlib
+    table, then the bare-builtin table, then same-module deferral, else
+    fail-closed UNKNOWN) -- these ARE subject to `func`'s own catches,
+    unlike `_resolve_direct_raises`'s set. Returns `(catchable,
+    resolved_callee_bare_names)`, the latter deferred to the caller's
+    fixpoint rather than recursed into here."""
+    catchable: set[str] = set()
+    resolved_callees: set[str] = set()
 
     for _ in func.subscripts:
         catchable.add(_SUBSCRIPT_RAISE)
@@ -371,7 +395,7 @@ def _own_base_raises(
         else:
             catchable.add(UNKNOWN)
 
-    return direct, catchable, resolved_callees
+    return catchable, resolved_callees
 
 
 # frob:ticket T-0686
@@ -403,6 +427,7 @@ def _build_name_to_func(module: NormalizedModule) -> dict[str, NormalizedFunctio
 # frob:ticket T-0686
 # frob:tests tests/unit/test_arch.py::TestMayRaiseResolver.test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestMayRaiseResolver.test_unresolvable_call_yields_unknown  # noqa: E501
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def compute_may_raise(module: NormalizedModule) -> dict[str, FunctionMayRaise]:
     """Per-function may-raise sets for every top-level function and method
     in `module` (T-0686): each function's EXPOSED set (what escapes it,
@@ -419,7 +444,36 @@ def compute_may_raise(module: NormalizedModule) -> dict[str, FunctionMayRaise]:
     unresolved bare raises fail-closed to `UNKNOWN`, per this module's
     docstring."""
     name_to_func = _build_name_to_func(module)
+    id_to_func, qualname_by_id, direct_by_id, catchable_by_id, resolved_calls = (
+        _register_module_functions(module, name_to_func)
+    )
+    exposed = _fixpoint_exposed(
+        id_to_func, direct_by_id, catchable_by_id, resolved_calls, name_to_func
+    )
 
+    return {
+        qualname_by_id[fid]: FunctionMayRaise(
+            qualname=qualname_by_id[fid], raises=frozenset(exposed[fid])
+        )
+        for fid in id_to_func
+    }
+
+
+# frob:ticket T-0976
+def _register_module_functions(
+    module: NormalizedModule, name_to_func: dict[str, NormalizedFunction]
+) -> tuple[
+    dict[int, NormalizedFunction],
+    dict[int, str],
+    dict[int, set[str]],
+    dict[int, set[str]],
+    dict[int, set[str]],
+]:
+    """Walk every top-level function and method in `module`, computing
+    each one's `_own_base_raises` contribution once and indexing all of it
+    by `id(func)` -- the per-function tables `compute_may_raise`'s
+    fixpoint loop iterates over, built once up front so the fixpoint below
+    never re-derives them."""
     id_to_func: dict[int, NormalizedFunction] = {}
     qualname_by_id: dict[int, str] = {}
     direct_by_id: dict[int, set[str]] = {}
@@ -427,6 +481,8 @@ def compute_may_raise(module: NormalizedModule) -> dict[str, FunctionMayRaise]:
     resolved_calls: dict[int, set[str]] = {}
 
     def _register(func: NormalizedFunction, qualname: str) -> None:
+        """Index one function/method's `_own_base_raises` split by its
+        `id()` into the enclosing tables."""
         fid = id(func)
         id_to_func[fid] = func
         qualname_by_id[fid] = qualname
@@ -441,8 +497,23 @@ def compute_may_raise(module: NormalizedModule) -> dict[str, FunctionMayRaise]:
         for m in c.methods:
             _register(m, _qualname(module, c.name, m))
 
-    name_to_fid = {name: id(fn) for name, fn in name_to_func.items()}
+    return id_to_func, qualname_by_id, direct_by_id, catchable_by_id, resolved_calls
 
+
+# frob:ticket T-0976
+def _fixpoint_exposed(
+    id_to_func: dict[int, NormalizedFunction],
+    direct_by_id: dict[int, set[str]],
+    catchable_by_id: dict[int, set[str]],
+    resolved_calls: dict[int, set[str]],
+    name_to_func: dict[str, NormalizedFunction],
+) -> dict[int, set[str]]:
+    """Chaotic-iteration fixpoint over `id_to_func`: each function's
+    exposed set only ever grows (own `direct_by_id` union its
+    catchable-after-filtering pool, including resolved callees' own
+    exposed sets), so cycles converge rather than recursing unboundedly.
+    Returns the converged `id(func) -> exposed exception types` map."""
+    name_to_fid = {name: id(fn) for name, fn in name_to_func.items()}
     exposed: dict[int, set[str]] = {
         fid: set(direct) for fid, direct in direct_by_id.items()
     }
@@ -465,9 +536,4 @@ def compute_may_raise(module: NormalizedModule) -> dict[str, FunctionMayRaise]:
                 exposed[fid] = new_exposed
                 changed = True
 
-    return {
-        qualname_by_id[fid]: FunctionMayRaise(
-            qualname=qualname_by_id[fid], raises=frozenset(exposed[fid])
-        )
-        for fid in id_to_func
-    }
+    return exposed

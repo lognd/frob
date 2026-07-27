@@ -48,6 +48,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from frob.arch._models import ArchSuggestion
 from frob.arch._normalized import (
@@ -56,6 +57,9 @@ from frob.arch._normalized import (
     NormalizedFunction,
     NormalizedModule,
 )
+
+if TYPE_CHECKING:
+    from frob.cycle.graph import DependencyGraph
 
 
 def _qualname(
@@ -558,6 +562,7 @@ def check_temporal_coupling(module: NormalizedModule) -> list[ArchSuggestion]:
 # frob:doc docs/modules/arch.md#module-dependency-cycles
 # frob:tests tests/unit/test_arch.py::TestModuleDependencyCycles.test_two_file_import_cycle_flagged  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestModuleDependencyCycles.test_acyclic_imports_not_flagged  # noqa: E501
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def check_module_dependency_cycles(root: Path) -> list[ArchSuggestion]:
     """Module dependency cycle detection (T-0625): builds one project-wide
     import graph under `root` using the SAME primitives `frob.app.
@@ -573,7 +578,20 @@ def check_module_dependency_cycles(root: Path) -> list[ArchSuggestion]:
     `NormalizedModule` -- a cycle is inherently a project-wide property,
     the same reason `check_layering_violations` also takes `root` instead
     of a `NormalizedModule`."""
-    from frob.cycle.graph import DependencyGraph, find_cycles
+    from frob.cycle.graph import find_cycles
+
+    graph = _build_project_import_graph(root)
+    return [_module_dependency_cycle_finding(cycle) for cycle in find_cycles(graph)]
+
+
+# frob:ticket T-0976
+def _build_project_import_graph(root: Path) -> "DependencyGraph":
+    """One project-wide `DependencyGraph` under `root`, using the same
+    `frob.lang.extract_imports`/`resolve_local_import` primitives `frob.
+    app.cycle_runner._build_graph` and `frob.arch._layering.check_
+    layering_violations` already use -- `check_module_dependency_cycles`'s
+    graph-building half, split from its cycle-reporting half."""
+    from frob.cycle.graph import DependencyGraph
     from frob.excludes import (
         is_excluded,
         is_skipped_dir,
@@ -604,28 +622,29 @@ def check_module_dependency_cycles(root: Path) -> list[ArchSuggestion]:
             )
             if resolved is not None:
                 graph.add_edge(rel, resolved)
+    return graph
 
-    out: list[ArchSuggestion] = []
-    for cycle in find_cycles(graph):
-        path_text = " -> ".join([*cycle, cycle[0]])
-        out.append(
-            ArchSuggestion(
-                file=cycle[0],
-                line=None,
-                category="module-dependency-cycle",
-                severity="warning",
-                message=f"import cycle: {path_text}",
-                detail=(
-                    "a module import cycle couples every file in the cycle"
-                    " to every other -- break it by extracting the shared"
-                    " symbols both sides need into a new module neither"
-                    " side of the cycle needs to import from the other"
-                ),
-                symref=cycle[0],
-                metric=len(cycle),
-            )
-        )
-    return out
+
+# frob:ticket T-0976
+def _module_dependency_cycle_finding(cycle: list[str]) -> ArchSuggestion:
+    """The `module-dependency-cycle` `ArchSuggestion` for one `find_cycles`
+    result `cycle` (a list of file paths forming the cycle)."""
+    path_text = " -> ".join([*cycle, cycle[0]])
+    return ArchSuggestion(
+        file=cycle[0],
+        line=None,
+        category="module-dependency-cycle",
+        severity="warning",
+        message=f"import cycle: {path_text}",
+        detail=(
+            "a module import cycle couples every file in the cycle"
+            " to every other -- break it by extracting the shared"
+            " symbols both sides need into a new module neither"
+            " side of the cycle needs to import from the other"
+        ),
+        symref=cycle[0],
+        metric=len(cycle),
+    )
 
 
 # frob:doc docs/modules/arch.md#misc-design-smells

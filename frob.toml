@@ -244,6 +244,14 @@ SEC110 = "error"
 # immediately red the build.
 PII010 = "error"
 PII012 = "error"
+# T-0976: ARCH001 (long-function) burn-down -- T-0970 landed 5 of 52 live
+# unwaived findings (3 real extractions, 2 honest waivers); this ticket
+# carries the remaining 47 to zero unwaived (real hierarchical
+# extractions for the large majority, honest `frob:waive ARCH001`
+# additions -- matching the existing per-language body-event-walker
+# precedent -- for the handful of genuinely-cohesive functions). Promoted
+# from WARN to a real gate now that 0 unwaived findings remain.
+ARCH001 = "error"
 # T-0977: ARCH101 (low-cohesion-class / LCOM4) -- the 2 live findings in
 # `src/frob/mutate/__init__.py` were both false positives from a
 # `frob.arch._python` field-access extraction bug (any `X.attr` expression,

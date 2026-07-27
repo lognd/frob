@@ -296,77 +296,91 @@ def _repair_stale_land_marker(root: Path) -> Result[None, LandError]:
         return Ok(None)
 
     for marker_path in sorted(marker_dir.glob("*.json")):
-        marker_ticket_id = marker_path.stem
-        try:
-            raw = json.loads(marker_path.read_text(encoding="utf-8"))
-            recorded_tip = str(raw["pre_land_tip"])
-        except (OSError, ValueError, KeyError) as exc:
-            _log.error(
-                "land: found an unreadable T-0907 land-repair marker at %s "
-                "(%s) -- a prior `frob ticket land %s` crashed mid-staging "
-                "but its recorded pre-land tip could not be read; inspect "
-                "%s and `git -C %s reflog`/`git -C %s log --oneline -5` by "
-                "hand, confirm %s's tip is sound, then remove %s and retry",
-                marker_path,
-                exc,
-                marker_ticket_id,
-                marker_path,
-                root,
-                root,
-                root,
-                marker_path,
-            )
-            return Err(LandError.GitFailed)
+        reconciled = _reconcile_one_land_repair_marker(root, marker_path)
+        if reconciled.is_err:
+            return reconciled
+    return Ok(None)
 
-        current = _rev_parse(root, "HEAD")
-        if current.is_err:
-            return Err(current.danger_err)
 
-        if current.danger_ok != recorded_tip:
-            _log.error(
-                "land: refused -- a prior `frob ticket land %s` crashed "
-                "mid-staging (T-0907) with a land-repair marker recording "
-                "%s's pre-land tip as %s, but %s's CURRENT tip is %s -- "
-                "these differ, so the exact damage cannot be safely "
-                "auto-repaired; inspect `git -C %s reflog` and `git -C %s "
-                "log --oneline -5` by hand, confirm %s's tip is sound "
-                "(recover with `git -C %s reset --hard <known-good-sha>` "
-                "if not), then remove %s and retry",
-                marker_ticket_id,
-                root,
-                recorded_tip,
-                root,
-                current.danger_ok,
-                root,
-                root,
-                root,
-                root,
-                marker_path,
-            )
-            return Err(LandError.GitFailed)
+# frob:ticket T-0976
+def _reconcile_one_land_repair_marker(
+    root: Path, marker_path: Path
+) -> Result[None, LandError]:
+    """One T-0907 land-repair marker's reconciliation:
+    `_repair_stale_land_marker`'s per-marker half, split from its
+    directory-scan loop. See that function's docstring for the reset-if-
+    tip-matches / refuse-if-drifted contract this implements."""
+    marker_ticket_id = marker_path.stem
+    try:
+        raw = json.loads(marker_path.read_text(encoding="utf-8"))
+        recorded_tip = str(raw["pre_land_tip"])
+    except (OSError, ValueError, KeyError) as exc:
+        _log.error(
+            "land: found an unreadable T-0907 land-repair marker at %s "
+            "(%s) -- a prior `frob ticket land %s` crashed mid-staging "
+            "but its recorded pre-land tip could not be read; inspect "
+            "%s and `git -C %s reflog`/`git -C %s log --oneline -5` by "
+            "hand, confirm %s's tip is sound, then remove %s and retry",
+            marker_path,
+            exc,
+            marker_ticket_id,
+            marker_path,
+            root,
+            root,
+            root,
+            marker_path,
+        )
+        return Err(LandError.GitFailed)
 
-        _log.warning(
-            "land: repairing a prior crashed `frob ticket land %s` -- %s's "
-            "current tip (%s) matches the recorded pre-land tip, resetting "
-            "any leftover staged/conflicted state from the crashed run "
-            "(T-0907)",
+    current = _rev_parse(root, "HEAD")
+    if current.is_err:
+        return Err(current.danger_err)
+
+    if current.danger_ok != recorded_tip:
+        _log.error(
+            "land: refused -- a prior `frob ticket land %s` crashed "
+            "mid-staging (T-0907) with a land-repair marker recording "
+            "%s's pre-land tip as %s, but %s's CURRENT tip is %s -- "
+            "these differ, so the exact damage cannot be safely "
+            "auto-repaired; inspect `git -C %s reflog` and `git -C %s "
+            "log --oneline -5` by hand, confirm %s's tip is sound "
+            "(recover with `git -C %s reset --hard <known-good-sha>` "
+            "if not), then remove %s and retry",
             marker_ticket_id,
             root,
             recorded_tip,
-        )
-        reset = run_argv(["git", "-C", str(root), "reset", "--hard", recorded_tip])
-        if reset.is_err or reset.danger_ok.returncode != 0:
-            return Err(LandError.GitFailed)
-        clean = run_argv(["git", "-C", str(root), "clean", "-fd"])
-        if clean.is_err or clean.danger_ok.returncode != 0:
-            return Err(LandError.GitFailed)
-        marker_path.unlink(missing_ok=True)
-        _log.info(
-            "land: %s T-0907 land-repair marker cleared, %s cleaned to %s",
-            marker_ticket_id,
             root,
-            recorded_tip,
+            current.danger_ok,
+            root,
+            root,
+            root,
+            root,
+            marker_path,
         )
+        return Err(LandError.GitFailed)
+
+    _log.warning(
+        "land: repairing a prior crashed `frob ticket land %s` -- %s's "
+        "current tip (%s) matches the recorded pre-land tip, resetting "
+        "any leftover staged/conflicted state from the crashed run "
+        "(T-0907)",
+        marker_ticket_id,
+        root,
+        recorded_tip,
+    )
+    reset = run_argv(["git", "-C", str(root), "reset", "--hard", recorded_tip])
+    if reset.is_err or reset.danger_ok.returncode != 0:
+        return Err(LandError.GitFailed)
+    clean = run_argv(["git", "-C", str(root), "clean", "-fd"])
+    if clean.is_err or clean.danger_ok.returncode != 0:
+        return Err(LandError.GitFailed)
+    marker_path.unlink(missing_ok=True)
+    _log.info(
+        "land: %s T-0907 land-repair marker cleared, %s cleaned to %s",
+        marker_ticket_id,
+        root,
+        recorded_tip,
+    )
     return Ok(None)
 
 
@@ -501,22 +515,24 @@ def _newer(a: Ticket, b: Ticket) -> Ticket:
     every existing Done-report-differs case decided exactly as before,
     since Done-report presence is still the tuple's first (highest-
     priority) component."""
+    winner = _newer_winner(a, b)
+    return _union_acceptance(_union_evidence(winner, a, b), a, b)
+
+
+# frob:ticket T-0976
+def _newer_winner(a: Ticket, b: Ticket) -> Ticket:
+    """`_newer`'s own three-tier winner selection (its docstring's tiers
+    1-3), before the evidence/acceptance union that always follows --
+    split out so `_newer` itself only owns that final union."""
     rank_a, rank_b = _STATE_RANK[a.state], _STATE_RANK[b.state]
     if _TERMINAL_RANK in (rank_a, rank_b) and rank_a != rank_b:
-        winner = a if rank_a > rank_b else b
-    else:
-        richness_a, richness_b = _richness(a), _richness(b)
-        if richness_a != richness_b:
-            richer, richer_rank = (
-                (a, rank_a) if richness_a > richness_b else (b, rank_b)
-            )
-            poorer, poorer_rank = (
-                (b, rank_b) if richness_a > richness_b else (a, rank_a)
-            )
-            winner = poorer if poorer_rank > richer_rank else richer
-        else:
-            winner = b if rank_a == rank_b else (a if rank_a > rank_b else b)
-    return _union_acceptance(_union_evidence(winner, a, b), a, b)
+        return a if rank_a > rank_b else b
+    richness_a, richness_b = _richness(a), _richness(b)
+    if richness_a == richness_b:
+        return b if rank_a == rank_b else (a if rank_a > rank_b else b)
+    richer, richer_rank = (a, rank_a) if richness_a > richness_b else (b, rank_b)
+    poorer, poorer_rank = (b, rank_b) if richness_a > richness_b else (a, rank_a)
+    return poorer if poorer_rank > richer_rank else richer
 
 
 def _richness(t: Ticket) -> tuple[int, int, int]:
@@ -1937,7 +1953,7 @@ def _reverify_done_report_claims_post_merge(
     if passing_ids is None or check_gates is None:
         return Ok(None)
     from frob.tickets import _load_one
-    from frob.tickets._models import is_cmd_evidence, parse_claims_from_done_report
+    from frob.tickets._models import parse_claims_from_done_report
 
     loaded = _load_one(worktree, ticket_id)
     if loaded.is_err:
@@ -1953,24 +1969,63 @@ def _reverify_done_report_claims_post_merge(
     if claims is None:
         return Ok(None)
 
+    test_count_check = _reverify_test_count_claim(
+        ticket, claims, passing_ids, ticket_id
+    )
+    if test_count_check.is_err:
+        return test_count_check
+    return _reverify_gate_state_claim(
+        ticket, claims, ticket_id, check_gates, check_gate_findings
+    )
+
+
+# frob:ticket T-0976
+def _reverify_test_count_claim(
+    ticket: Ticket,
+    claims,
+    passing_ids: frozenset[str],
+    ticket_id: str,  # noqa: ANN001
+) -> Result[None, LandError]:
+    """`_reverify_done_report_claims_post_merge`'s test-count-half check:
+    `Err(ClaimDivergence)` if the fresh non-cmd-evidence passing/total
+    counts no longer match the captured claim, else `Ok(None)`."""
+    from frob.tickets._models import is_cmd_evidence
+
     non_cmd = [e for e in ticket.evidence if not is_cmd_evidence(e)]
     real_test_count = len(passing_ids)
-    if real_test_count != claims.test_count or len(non_cmd) != claims.evidence_count:
-        _log.error(
-            "land: %s captured test-count claim no longer holds post-merge "
-            "-- recorded %d/%d passing, re-run shows %d/%d passing; the "
-            "merged tree may have changed the evidence set or a test's "
-            "outcome since the Done report was written; refresh with "
-            "`frob ticket done-report %s` and retry",
-            ticket_id,
-            claims.test_count,
-            claims.evidence_count,
-            real_test_count,
-            len(non_cmd),
-            ticket_id,
-        )
-        return Err(LandError.ClaimDivergence)
+    if real_test_count == claims.test_count and len(non_cmd) == claims.evidence_count:
+        return Ok(None)
+    _log.error(
+        "land: %s captured test-count claim no longer holds post-merge "
+        "-- recorded %d/%d passing, re-run shows %d/%d passing; the "
+        "merged tree may have changed the evidence set or a test's "
+        "outcome since the Done report was written; refresh with "
+        "`frob ticket done-report %s` and retry",
+        ticket_id,
+        claims.test_count,
+        claims.evidence_count,
+        real_test_count,
+        len(non_cmd),
+        ticket_id,
+    )
+    return Err(LandError.ClaimDivergence)
 
+
+# frob:ticket T-0976
+def _reverify_gate_state_claim(
+    ticket: Ticket,
+    claims,  # noqa: ANN001
+    ticket_id: str,
+    check_gates: Callable[[], tuple[int, int, int] | None],
+    check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None,
+) -> Result[None, LandError]:
+    """`_reverify_done_report_claims_post_merge`'s gate-state-half check
+    (T-0832/T-0846): skips explicitly (never comparing a `-1` sentinel)
+    when either side is unmeasured, tries the identity-based scope-
+    filtered comparison first (T-0846 review), and falls back to the
+    count-only "refuse only on an increase" comparison otherwise. See
+    `_reverify_done_report_claims_post_merge`'s own docstring for the
+    full incident history behind each branch here."""
     # T-0832: the gate-state claim can only be re-verified when BOTH sides
     # are actually measured. Never compare sentinels -- skip explicitly.
     if claims.gate_errors is None:
@@ -2010,55 +2065,11 @@ def _reverify_done_report_claims_post_merge(
     # claim, or `check_gate_findings` not wired) falls through to the
     # count-only comparison unchanged.
     if claims.error_findings is not None and check_gate_findings is not None:
-        fresh_findings = check_gate_findings()
-        if fresh_findings is None:
-            _log.warning(
-                "land: %s fresh `frob check --ticket %s` produced no "
-                "parsable per-finding identities post-merge -- falling "
-                "back to the count-only gate-state comparison",
-                ticket_id,
-                ticket_id,
-            )
-        else:
-            new_findings = fresh_findings - claims.error_findings
-            # T-0846: `ticket.scope` is the diff-touched-files PROXY this
-            # module has on hand -- `frob.tickets` deliberately has no
-            # `frob.gitio`/`frob.gates` diff-computation access
-            # (docs/rework.md cycle-avoidance), so "a file this land's own
-            # diff touched" is approximated by "a file this ticket's own
-            # declared scope covers." A new error outside the ticket's own
-            # scope is attributable to something else on the branch (an
-            # unrelated sibling ticket's own work, still that ticket's own
-            # responsibility to catch at ITS land) and does not refuse
-            # here -- only a new error inside this ticket's own scope does.
-            scoped_new = [
-                (rule, file)
-                for rule, file in new_findings
-                if scope_matches(file, ticket.scope)
-            ]
-            if scoped_new:
-                _log.error(
-                    "land: %s captured gate-state claim no longer holds "
-                    "post-merge -- %d NEW error finding(s) inside this "
-                    "ticket's own scope that were not in the captured "
-                    "claim: %s; refresh with `frob ticket done-report %s` "
-                    "and retry",
-                    ticket_id,
-                    len(scoped_new),
-                    sorted(scoped_new),
-                    ticket_id,
-                )
-                return Err(LandError.ClaimDivergence)
-            _log.info(
-                "land: %s identity-based gate-state re-verification found "
-                "no new in-scope error finding (claim=%d, fresh=%d, "
-                "new-out-of-scope=%d) -- proceeding without refresh",
-                ticket_id,
-                len(claims.error_findings),
-                len(fresh_findings),
-                len(new_findings) - len(scoped_new),
-            )
-            return Ok(None)
+        identity_result = _reverify_gate_findings_by_identity(
+            ticket, claims, ticket_id, check_gate_findings
+        )
+        if identity_result is not None:
+            return identity_result
 
     # T-0846: count-only fallback, refusing only on an INCREASE over the
     # captured claim, never on exact-count equality. The prior strict `!=`
@@ -2110,6 +2121,67 @@ def _reverify_done_report_claims_post_merge(
             real_errors,
             claims.gate_errors,
         )
+    return Ok(None)
+
+
+# frob:ticket T-0976
+def _reverify_gate_findings_by_identity(
+    ticket: Ticket,
+    claims,  # noqa: ANN001
+    ticket_id: str,
+    check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None],
+) -> Result[None, LandError] | None:
+    """The identity-based, scope-filtered half of `_reverify_gate_state_
+    claim` (T-0846 review #1): `None` (not a `Result`) means "fall back to
+    the count-only comparison" -- either `check_gate_findings()` itself
+    produced nothing parsable, in which case the caller falls back, or a
+    real `Result` deciding the comparison outright."""
+    fresh_findings = check_gate_findings()
+    if fresh_findings is None:
+        _log.warning(
+            "land: %s fresh `frob check --ticket %s` produced no "
+            "parsable per-finding identities post-merge -- falling "
+            "back to the count-only gate-state comparison",
+            ticket_id,
+            ticket_id,
+        )
+        return None
+    new_findings = fresh_findings - claims.error_findings
+    # T-0846: `ticket.scope` is the diff-touched-files PROXY this module
+    # has on hand -- `frob.tickets` deliberately has no `frob.gitio`/
+    # `frob.gates` diff-computation access (docs/rework.md cycle-
+    # avoidance), so "a file this land's own diff touched" is
+    # approximated by "a file this ticket's own declared scope covers." A
+    # new error outside the ticket's own scope is attributable to
+    # something else on the branch (an unrelated sibling ticket's own
+    # work, still that ticket's own responsibility to catch at ITS land)
+    # and does not refuse here -- only a new error inside this ticket's
+    # own scope does.
+    scoped_new = [
+        (rule, file) for rule, file in new_findings if scope_matches(file, ticket.scope)
+    ]
+    if scoped_new:
+        _log.error(
+            "land: %s captured gate-state claim no longer holds "
+            "post-merge -- %d NEW error finding(s) inside this "
+            "ticket's own scope that were not in the captured "
+            "claim: %s; refresh with `frob ticket done-report %s` "
+            "and retry",
+            ticket_id,
+            len(scoped_new),
+            sorted(scoped_new),
+            ticket_id,
+        )
+        return Err(LandError.ClaimDivergence)
+    _log.info(
+        "land: %s identity-based gate-state re-verification found "
+        "no new in-scope error finding (claim=%d, fresh=%d, "
+        "new-out-of-scope=%d) -- proceeding without refresh",
+        ticket_id,
+        len(claims.error_findings),
+        len(fresh_findings),
+        len(new_findings) - len(scoped_new),
+    )
     return Ok(None)
 
 
@@ -2726,6 +2798,64 @@ def _finalize_sibling_drafts(
 
 # frob:ticket T-0811
 # frob:tests tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand.test_land_rewrites_own_draft_id_reference_in_done_report  # noqa: E501
+# frob:ticket T-0976
+def _rewrite_draft_references_in_one_ledger(
+    worktree: Path,
+    loader,  # noqa: ANN001
+    writer,  # noqa: ANN001
+    path_fn,  # noqa: ANN001
+    label: str,
+    mapping: dict[str, str],
+    pattern: re.Pattern,
+) -> Result[None, LandError]:
+    """One ledger (active or archive)'s draft-id-reference rewrite:
+    `_rewrite_draft_references_in_bodies`'s per-ledger half, split from
+    its loop over the two ledgers. T-0889: this load and its own
+    write are NOT held under one lock span -- the load's `ledger_digest`
+    is passed as `expected_digest` so the write refuses instead of
+    clobbering if the ledger changed in between."""
+    digest = ledger_digest(path_fn(worktree))
+    loaded = loader(worktree)
+    if loaded.is_err:
+        _log.error(
+            "land: could not load %s ledger to rewrite stale draft-id "
+            "reference(s) %s (%s)",
+            label,
+            mapping,
+            loaded.danger_err,
+        )
+        return Err(LandError.GitFailed)
+    tickets = loaded.danger_ok
+    rewritten: dict[str, Ticket] = {}
+    changed_ids: list[str] = []
+    for tid, ticket in tickets.items():
+        new_body = pattern.sub(lambda m: mapping[m.group(0)], ticket.body)
+        if new_body == ticket.body:
+            rewritten[tid] = ticket
+            continue
+        rewritten[tid] = ticket.model_copy(update={"body": new_body})
+        changed_ids.append(tid)
+    if not changed_ids:
+        return Ok(None)
+    written = writer(worktree, rewritten, expected_digest=digest)
+    if written.is_err:
+        _log.error(
+            "land: failed writing %s ledger after rewriting stale "
+            "draft-id reference(s) in %s (%s)",
+            label,
+            changed_ids,
+            written.danger_err,
+        )
+        return Err(LandError.GitFailed)
+    _log.info(
+        "land: rewrote stale draft-id reference(s) %s in %s ledger body text for %s",
+        mapping,
+        label,
+        changed_ids,
+    )
+    return Ok(None)
+
+
 def _rewrite_draft_references_in_bodies(
     worktree: Path, mapping: dict[str, str]
 ) -> Result[None, LandError]:
@@ -2769,53 +2899,15 @@ def _rewrite_draft_references_in_bodies(
         + r")(?![0-9a-fA-F])"
     )
 
-    def _substitute(text: str) -> str:
-        return pattern.sub(lambda m: mapping[m.group(0)], text)
-
     for loader, writer, path_fn, label in (
         (load_all, write_all, ledger_path, "active"),
         (load_archive, write_archive, archive_path, "archive"),
     ):
-        digest = ledger_digest(path_fn(worktree))
-        loaded = loader(worktree)
-        if loaded.is_err:
-            _log.error(
-                "land: could not load %s ledger to rewrite stale draft-id "
-                "reference(s) %s (%s)",
-                label,
-                mapping,
-                loaded.danger_err,
-            )
-            return Err(LandError.GitFailed)
-        tickets = loaded.danger_ok
-        rewritten: dict[str, Ticket] = {}
-        changed_ids: list[str] = []
-        for tid, ticket in tickets.items():
-            new_body = _substitute(ticket.body)
-            if new_body == ticket.body:
-                rewritten[tid] = ticket
-                continue
-            rewritten[tid] = ticket.model_copy(update={"body": new_body})
-            changed_ids.append(tid)
-        if not changed_ids:
-            continue
-        written = writer(worktree, rewritten, expected_digest=digest)
-        if written.is_err:
-            _log.error(
-                "land: failed writing %s ledger after rewriting stale "
-                "draft-id reference(s) in %s (%s)",
-                label,
-                changed_ids,
-                written.danger_err,
-            )
-            return Err(LandError.GitFailed)
-        _log.info(
-            "land: rewrote stale draft-id reference(s) %s in %s ledger "
-            "body text for %s",
-            mapping,
-            label,
-            changed_ids,
+        rewritten = _rewrite_draft_references_in_one_ledger(
+            worktree, loader, writer, path_fn, label, mapping, pattern
         )
+        if rewritten.is_err:
+            return rewritten
     return Ok(None)
 
 
@@ -2867,6 +2959,40 @@ def _rewrite_draft_references_in_waive_sites(
         + r")(?![0-9a-fA-F])"
     )
 
+    candidates = _grep_waive_site_candidate_files(worktree, mapping)
+    if candidates.is_err:
+        return Err(candidates.danger_err)
+    if candidates.danger_ok is None:
+        return Ok(None)
+
+    changed_files: list[str] = []
+    for rel in candidates.danger_ok:
+        rewritten = _rewrite_one_waive_site_file(worktree, rel, mapping, pattern)
+        if rewritten.is_err:
+            return Err(rewritten.danger_err)
+        if rewritten.danger_ok:
+            changed_files.append(rel)
+
+    if changed_files:
+        _log.info(
+            "land: rewrote stale draft-id waive-site reference(s) %s in %s",
+            mapping,
+            changed_files,
+        )
+    return Ok(None)
+
+
+# frob:ticket T-0976
+def _grep_waive_site_candidate_files(
+    worktree: Path, mapping: dict[str, str]
+) -> Result[list[str] | None, LandError]:
+    """`git grep -l --fixed-strings` for every file under `worktree`
+    containing a literal old draft id from `mapping`, excluding the ledger
+    files (`_rewrite_draft_references_in_bodies` already rewrote those
+    through the ticket model) -- `_rewrite_draft_references_in_waive_
+    sites`'s candidate-gathering half. `Ok(None)` means "nothing matched,
+    caller is done"; a real list means "these files need the per-file
+    rewrite pass"."""
     grep_argv = ["git", "-C", str(worktree), "grep", "-l", "--fixed-strings", "-I"]
     for old_id in mapping:
         grep_argv += ["-e", old_id]
@@ -2894,47 +3020,52 @@ def _rewrite_draft_references_in_waive_sites(
         return Err(LandError.GitFailed)
     if proc.returncode == 1:
         return Ok(None)
+    return Ok(
+        [
+            rel.strip()
+            for rel in proc.stdout.splitlines()
+            if rel.strip()
+            and Path(rel.strip()).name not in _WAIVE_REWRITE_EXCLUDED_LEDGERS
+        ]
+    )
 
-    changed_files: list[str] = []
-    for rel in proc.stdout.splitlines():
-        rel = rel.strip()
-        if not rel or Path(rel).name in _WAIVE_REWRITE_EXCLUDED_LEDGERS:
-            continue
-        target = worktree / rel
-        try:
-            text = target.read_text(encoding="utf-8")
-        except OSError as exc:
-            _log.error(
-                "land: could not read %s while rewriting stale draft-id "
-                "waive-site reference(s) %s (%s)",
-                target,
-                mapping,
-                exc,
-            )
-            return Err(LandError.GitFailed)
-        new_text = pattern.sub(lambda m: mapping[m.group(0)], text)
-        if new_text == text:
-            continue
-        try:
-            target.write_text(new_text, encoding="utf-8")
-        except OSError as exc:
-            _log.error(
-                "land: could not write %s while rewriting stale draft-id "
-                "waive-site reference(s) %s (%s)",
-                target,
-                mapping,
-                exc,
-            )
-            return Err(LandError.GitFailed)
-        changed_files.append(rel)
 
-    if changed_files:
-        _log.info(
-            "land: rewrote stale draft-id waive-site reference(s) %s in %s",
+# frob:ticket T-0976
+def _rewrite_one_waive_site_file(
+    worktree: Path, rel: str, mapping: dict[str, str], pattern: re.Pattern
+) -> Result[bool, LandError]:
+    """One candidate file's draft-id waive-site rewrite:
+    `_rewrite_draft_references_in_waive_sites`'s per-file half. Returns
+    `Ok(True)` if the file actually changed, `Ok(False)` if the pattern
+    matched nothing (a `git grep -l` false-positive on a substring outside
+    any live reference), `Err` on a read/write failure."""
+    target = worktree / rel
+    try:
+        text = target.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.error(
+            "land: could not read %s while rewriting stale draft-id "
+            "waive-site reference(s) %s (%s)",
+            target,
             mapping,
-            changed_files,
+            exc,
         )
-    return Ok(None)
+        return Err(LandError.GitFailed)
+    new_text = pattern.sub(lambda m: mapping[m.group(0)], text)
+    if new_text == text:
+        return Ok(False)
+    try:
+        target.write_text(new_text, encoding="utf-8")
+    except OSError as exc:
+        _log.error(
+            "land: could not write %s while rewriting stale draft-id "
+            "waive-site reference(s) %s (%s)",
+            target,
+            mapping,
+            exc,
+        )
+        return Err(LandError.GitFailed)
+    return Ok(True)
 
 
 def _close_finalized_ticket(
@@ -3176,8 +3307,7 @@ def _squash_and_splice_ledger(
         ticket_id=final_id,
     )
     if spliced.is_err:
-        unwound = _verified_reset_root(root, pre_land_tip, final_id)
-        return Err(unwound.danger_err if unwound.is_err else spliced.danger_err)
+        return _unwind_squash_apply(root, pre_land_tip, final_id, spliced.danger_err)
 
     # frob:ticket T-0959
     # T-0959: tickets-archive.md's final splice, mirroring the tickets.md
@@ -3192,31 +3322,59 @@ def _squash_and_splice_ledger(
         root, root_pre_archive_text, worktree_final_archive_text
     )
     if archive_spliced.is_err:
-        unwound = _verified_reset_root(root, pre_land_tip, final_id)
-        return Err(unwound.danger_err if unwound.is_err else archive_spliced.danger_err)
-
-    # T-0631: TICK005-backed regression sweep -- block THIS land if its own
-    # splice would regress any terminal (DONE/DROPPED) ticket back to a
-    # non-terminal state, before the squash-apply is ever committed.
-    regressions = _tick005_land_regressions(
-        root_pre_text, spliced.danger_ok, archived_ids
-    )
-    if regressions:
-        _log.error(
-            "land: %s refused -- ticket(s) %s would regress from a "
-            "terminal state to non-terminal via this land's ledger splice "
-            "(TICK005 regression sweep, T-0631); resolve the splice by "
-            "hand (`git -C %s show HEAD:tickets.md` for the pre-land "
-            "state) before retrying",
-            final_id,
-            ", ".join(regressions),
-            root,
+        return _unwind_squash_apply(
+            root, pre_land_tip, final_id, archive_spliced.danger_err
         )
-        unwound = _verified_reset_root(root, pre_land_tip, final_id)
-        if unwound.is_err:
-            return Err(unwound.danger_err)
-        return Err(LandError.TerminalStateRegression)
-    return Ok(None)
+
+    return _refuse_if_land_regresses_terminal_state(
+        root, pre_land_tip, final_id, root_pre_text, spliced.danger_ok, archived_ids
+    )
+
+
+# frob:ticket T-0976
+def _unwind_squash_apply(
+    root: Path, pre_land_tip: str, final_id: str, err: LandError
+) -> Result[None, LandError]:
+    """Reset `root`'s squash-apply back to `pre_land_tip` and propagate
+    `err` -- `_squash_and_splice_ledger`'s shared unwind-on-failure step,
+    used by every one of its own failure paths. `_verified_reset_root`'s
+    own error (if the reset itself fails) takes priority over `err` since
+    a failed unwind leaves `root` in a worse, unresolved state that must
+    be surfaced first."""
+    unwound = _verified_reset_root(root, pre_land_tip, final_id)
+    return Err(unwound.danger_err if unwound.is_err else err)
+
+
+# frob:ticket T-0976
+def _refuse_if_land_regresses_terminal_state(
+    root: Path,
+    pre_land_tip: str,
+    final_id: str,
+    root_pre_text: str,
+    spliced_text: str,
+    archived_ids,  # noqa: ANN001
+) -> Result[None, LandError]:
+    """T-0631's TICK005-backed regression sweep: refuse (and unwind) THIS
+    land if its own ledger splice would regress any terminal (DONE/
+    DROPPED) ticket back to a non-terminal state, before the squash-apply
+    is ever committed -- `_squash_and_splice_ledger`'s final check."""
+    regressions = _tick005_land_regressions(root_pre_text, spliced_text, archived_ids)
+    if not regressions:
+        return Ok(None)
+    _log.error(
+        "land: %s refused -- ticket(s) %s would regress from a "
+        "terminal state to non-terminal via this land's ledger splice "
+        "(TICK005 regression sweep, T-0631); resolve the splice by "
+        "hand (`git -C %s show HEAD:tickets.md` for the pre-land "
+        "state) before retrying",
+        final_id,
+        ", ".join(regressions),
+        root,
+    )
+    unwound = _verified_reset_root(root, pre_land_tip, final_id)
+    if unwound.is_err:
+        return Err(unwound.danger_err)
+    return Err(LandError.TerminalStateRegression)
 
 
 # frob:ticket T-0631

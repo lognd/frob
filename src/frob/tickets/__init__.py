@@ -223,50 +223,52 @@ def migrate(root: Path) -> Result[int, TicketError]:
 # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_ignores_a_stale_lease_from_a_removed_worktree  # noqa: E501
 # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_ignores_a_live_lease_for_a_ticket_it_would_not_touch  # noqa: E501
 # frob:waive TEST005 reason="archive 75.0% branch cover, debt T-0160"
+# T-0633: the whole load-filter-write sequence below is held under ONE
+# `ledger_lock` span, not just the final `write_all`/`write_archive` calls
+# individually -- `load_all` used to run UNLOCKED, so a concurrent
+# single-ticket write (`new_ticket`, `transition`, ...) landing in the
+# window between this function's unlocked read and its later locked
+# `write_all(keep)` was silently reverted: `keep` was computed from the
+# stale pre-lock snapshot and `write_all` replaces the ENTIRE active
+# ledger with it, bytes and all, clobbering whatever the concurrent writer
+# had just spliced in. Holding the lock across the full sequence
+# (reentrant per thread, see `ledger_lock`'s docstring) makes the read and
+# the write one atomic unit, so no writer's splice can ever land in the
+# gap and then get overwritten.
+#
+# T-0764: `ledger_lock` only ever serializes writers against THIS repo's
+# lock file -- it says nothing about a worktree that is mid-`start`
+# (evidence/acceptance already recorded locally, not yet landed) whose
+# OWN change never runs through this process at all. Archiving in that
+# window is exactly the T-0753 field incident: the archiving worktree's
+# rewritten `tickets.md` becomes the new `main`, and the in-flight
+# worktree's later section 10b restore (`git checkout main --
+# tickets.md`) silently reverts its own start/evidence/acceptance back to
+# `queued`. `archive` refuses (`Err(ArchiveLiveLeaseExists)`) unless
+# `force=True` -- archiving is meant to run in a quiet window (the TICK003
+# remediation text already says so; this makes it enforced, not just
+# advised). A lease for a worktree that no longer exists on disk is
+# stale, not live (`read_all_leases` already filters those out), so a
+# crashed/abandoned worktree can never wedge archive forever.
+#
+# T-0843: the guard used to refuse whenever ANY live lease existed
+# anywhere in the repo, even one for a ticket archive would never touch --
+# in-progress tickets are never archived (only DONE/DROPPED tickets are),
+# so a lease for an in-progress ticket poses no T-0753 risk to that
+# ticket's own block. Narrowed (`_refuse_archive_if_leased`) to refuse
+# only when a live lease's ticket_id is actually among the tickets this
+# call would move into `tickets-archive.md` (e.g. a DONE/DROPPED ticket
+# whose lease was never released) -- a red TICK003 caused by unrelated
+# in-flight work no longer has to wait for that work to finish.
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of _refuse_archive_if_leased from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def archive(root: Path, *, force: bool = False) -> Result[int, TicketError]:
     """Move every done/dropped ticket from the active store into
     tickets-archive.md, verbatim (same section format, still tracked and
     greppable); the active ledger keeps only open work. Idempotent -- a
     second call with nothing newly done/dropped moves nothing and returns
-    Ok(0). Returns the number of tickets moved.
-
-    T-0633: the whole load-filter-write sequence is held under ONE
-    `ledger_lock` span, not just the final `write_all`/`write_archive`
-    calls individually -- `load_all` used to run UNLOCKED, so a concurrent
-    single-ticket write (`new_ticket`, `transition`, ...) landing in the
-    window between this function's unlocked read and its later locked
-    `write_all(keep)` was silently reverted: `keep` was computed from the
-    stale pre-lock snapshot and `write_all` replaces the ENTIRE active
-    ledger with it, bytes and all, clobbering whatever the concurrent
-    writer had just spliced in. Holding the lock across the full sequence
-    (reentrant per thread, see `ledger_lock`'s docstring) makes the read
-    and the write one atomic unit, so no writer's splice can ever land in
-    the gap and then get overwritten.
-
-    T-0764: `ledger_lock` only ever serializes writers against THIS repo's
-    lock file -- it says nothing about a worktree that is mid-`start`
-    (evidence/acceptance already recorded locally, not yet landed) whose
-    OWN change never runs through this process at all. Archiving in that
-    window is exactly the T-0753 field incident: the archiving worktree's
-    rewritten `tickets.md` becomes the new `main`, and the in-flight
-    worktree's later section 10b restore (`git checkout main --
-    tickets.md`) silently reverts its own start/evidence/acceptance back
-    to `queued`. `archive` refuses (`Err(ArchiveLiveLeaseExists)`) unless
-    `force=True` -- archiving is meant to run in a quiet window (the
-    TICK003 remediation text already says so; this makes it enforced, not
-    just advised). A lease for a worktree that no longer exists on disk
-    is stale, not live (`read_all_leases` already filters those out), so
-    a crashed/abandoned worktree can never wedge archive forever.
-
-    T-0843: the guard used to refuse whenever ANY live lease existed
-    anywhere in the repo, even one for a ticket archive would never touch
-    -- in-progress tickets are never archived (only DONE/DROPPED tickets
-    are), so a lease for an in-progress ticket poses no T-0753 risk to
-    that ticket's own block. Narrowed to refuse only when a live lease's
-    ticket_id is actually among the tickets this call would move into
-    `tickets-archive.md` (e.g. a DONE/DROPPED ticket whose lease was never
-    released) -- a red TICK003 caused by unrelated in-flight work no
-    longer has to wait for that work to finish."""
+    Ok(0). Returns the number of tickets moved. See the comment block
+    directly above this function for the full T-0633/T-0764/T-0843
+    locking and live-lease-refusal rationale."""
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
@@ -287,26 +289,38 @@ def archive(root: Path, *, force: bool = False) -> Result[int, TicketError]:
             return Ok(0)
 
         if not force:
-            live_leases = read_all_leases(root)
-            leased_to_archive = sorted(
-                lease.ticket_id
-                for lease in live_leases
-                if lease.ticket_id in to_archive
-            )
-            if leased_to_archive:
-                _log.error(
-                    "tickets: archive refused -- %d ticket(s) this call "
-                    "would move into tickets-archive.md still hold a live "
-                    "cross-worktree lease (%s); archiving now would risk "
-                    "reverting their start/evidence/acceptance on next "
-                    "restore (T-0753) -- run in a quiet window or pass "
-                    "--force",
-                    len(leased_to_archive),
-                    ", ".join(leased_to_archive),
-                )
-                return Err(TicketError.ArchiveLiveLeaseExists)
+            guard = _refuse_archive_if_leased(root, to_archive)
+            if guard.is_err:
+                return Err(guard.danger_err)
 
         return _write_archived_and_active(root, active, to_archive, active_digest)
+
+
+# frob:ticket T-0976
+def _refuse_archive_if_leased(
+    root: Path, to_archive: dict
+) -> Result[None, TicketError]:
+    """`archive`'s T-0843 live-lease guard: `Err(ArchiveLiveLeaseExists)` if
+    any ticket in `to_archive` still holds a live cross-worktree lease
+    (T-0753's field-incident risk), else `Ok(None)` -- split from
+    `archive`'s own lock-held body."""
+    live_leases = read_all_leases(root)
+    leased_to_archive = sorted(
+        lease.ticket_id for lease in live_leases if lease.ticket_id in to_archive
+    )
+    if not leased_to_archive:
+        return Ok(None)
+    _log.error(
+        "tickets: archive refused -- %d ticket(s) this call "
+        "would move into tickets-archive.md still hold a live "
+        "cross-worktree lease (%s); archiving now would risk "
+        "reverting their start/evidence/acceptance on next "
+        "restore (T-0753) -- run in a quiet window or pass "
+        "--force",
+        len(leased_to_archive),
+        ", ".join(leased_to_archive),
+    )
+    return Err(TicketError.ArchiveLiveLeaseExists)
 
 
 # frob:ticket T-0889
@@ -2395,6 +2409,58 @@ def _open_descendant_ids(ticket: Ticket, queue: dict[str, Ticket]) -> tuple[str,
 # hand-pasted directly into the ledger, either of which would otherwise
 # slip a code-kind ticket through close on unverifiable evidence.
 # frob:ticket T-0417
+# frob:ticket T-0976
+def _done_transition_structural_guard(
+    ticket: Ticket, queue: dict[str, Ticket], *, covers_scope: bool | None
+) -> Result[None, TicketError]:
+    """`_done_transition_guard`'s structural (non-diff-derived) checks:
+    evidence + Done report present, open descendants, disallowed cmd:
+    evidence, injected `covers_scope`, and unbound acceptance criteria --
+    split from its review/mutation/reverify/diff-derived checks."""
+    if not ticket.evidence or not _has_done_report(ticket.body):
+        _log.warning(
+            "tickets: %s cannot close, missing evidence or a substantive Done report",
+            ticket.id,
+        )
+        return Err(TicketError.MissingEvidence)
+    if ticket.tier is not TicketTier.TICKET:
+        open_descendants = _open_descendant_ids(ticket, queue)
+        if open_descendants:
+            _log.warning(
+                "tickets: %s (tier=%s) cannot close, open descendant(s): %s",
+                ticket.id,
+                ticket.tier,
+                open_descendants,
+            )
+            return Err(TicketError.OpenDescendant)
+    if ticket.kind not in CMD_EVIDENCE_ALLOWED_KINDS and any(
+        is_cmd_evidence(e) for e in ticket.evidence
+    ):
+        _log.warning(
+            "tickets: %s is kind=%s but carries cmd: evidence, only "
+            "allowed for kind in %s",
+            ticket.id,
+            ticket.kind,
+            sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),
+        )
+        return Err(TicketError.EvidenceKindNotAllowed)
+    if covers_scope is False:
+        _log.warning(
+            "tickets: %s cannot close, no evidence id covers a touched/scope symbol",
+            ticket.id,
+        )
+        return Err(TicketError.EvidenceScopeUnbound)
+    unbound = unbound_acceptance(ticket)
+    if unbound:
+        _log.warning(
+            "tickets: %s cannot close, unbound acceptance criterion/criteria: %s",
+            ticket.id,
+            [c.text for c in unbound],
+        )
+        return Err(TicketError.AcceptanceUnbound)
+    return Ok(None)
+
+
 def _done_transition_guard(
     root: Path,
     ticket: Ticket,
@@ -2458,47 +2524,11 @@ def _done_transition_guard(
     git work tree) degrades to skipping the check, matching T-0844's own
     `_close_mutation_evidence_for_ticket` posture for the identical
     failure mode."""
-    if not ticket.evidence or not _has_done_report(ticket.body):
-        _log.warning(
-            "tickets: %s cannot close, missing evidence or a substantive Done report",
-            ticket.id,
-        )
-        return Err(TicketError.MissingEvidence)
-    if ticket.tier is not TicketTier.TICKET:
-        open_descendants = _open_descendant_ids(ticket, queue)
-        if open_descendants:
-            _log.warning(
-                "tickets: %s (tier=%s) cannot close, open descendant(s): %s",
-                ticket.id,
-                ticket.tier,
-                open_descendants,
-            )
-            return Err(TicketError.OpenDescendant)
-    if ticket.kind not in CMD_EVIDENCE_ALLOWED_KINDS and any(
-        is_cmd_evidence(e) for e in ticket.evidence
-    ):
-        _log.warning(
-            "tickets: %s is kind=%s but carries cmd: evidence, only "
-            "allowed for kind in %s",
-            ticket.id,
-            ticket.kind,
-            sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),
-        )
-        return Err(TicketError.EvidenceKindNotAllowed)
-    if covers_scope is False:
-        _log.warning(
-            "tickets: %s cannot close, no evidence id covers a touched/scope symbol",
-            ticket.id,
-        )
-        return Err(TicketError.EvidenceScopeUnbound)
-    unbound = unbound_acceptance(ticket)
-    if unbound:
-        _log.warning(
-            "tickets: %s cannot close, unbound acceptance criterion/criteria: %s",
-            ticket.id,
-            [c.text for c in unbound],
-        )
-        return Err(TicketError.AcceptanceUnbound)
+    structural = _done_transition_structural_guard(
+        ticket, queue, covers_scope=covers_scope
+    )
+    if structural.is_err:
+        return structural
     if reviewed is False:
         _log.warning(
             "tickets: %s cannot close --strict, no approve-verdict review "
@@ -2526,6 +2556,19 @@ def _done_transition_guard(
             ticket.id,
         )
         return Err(TicketError.EvidenceNotPassing)
+    return _done_transition_diff_derived_guard(root, ticket)
+
+
+# frob:ticket T-0976
+def _done_transition_diff_derived_guard(
+    root: Path, ticket: Ticket
+) -> Result[None, TicketError]:
+    """`_done_transition_guard`'s two diff-derived, ALWAYS-run (not
+    injected) DONE-transition checks: T-0854's live-tracker-citation
+    refusal, and T-0756's new-gate-rule-needs-acceptance refusal. Both
+    resolve `current_branch(root)` once and degrade to skipping the check
+    when it is unresolvable (not a git work tree), matching this module's
+    other diff-derived checks' failure posture."""
     from frob.gitio import current_branch
 
     branch = current_branch(root)
@@ -2582,6 +2625,33 @@ def _load_ticket_and_queue(
     return Ok((ticket, queue))
 
 
+# frob:ticket T-0976
+def _recover_missing_evidence_for_done(
+    root: Path,
+    ticket_id: str,
+    ticket: Ticket,
+    queue: dict[str, Ticket],
+    to: "TicketState",
+) -> tuple[Ticket, dict[str, Ticket]]:
+    """T-0357 best-effort evidence recovery for `transition`: a ticket
+    closed straight from a hand-merged worktree (bypassing `frob ticket
+    land`'s ledger splice) can arrive with an empty structured `evidence:`
+    field even though its Done report prose already carries the rendered
+    ids -- replay it before the DONE guard would otherwise reject as
+    MissingEvidence. A no-op (returns `(ticket, queue)` unchanged) unless
+    `to` is DONE, evidence is already empty is false, or the replay
+    itself fails."""
+    if to != TicketState.DONE or ticket.evidence:
+        return ticket, queue
+    replayed = replay_evidence_from_done_report(root, ticket_id)
+    if replayed.is_err:
+        return ticket, queue
+    recovered = replayed.danger_ok
+    updated_queue = dict(queue)
+    updated_queue[ticket_id] = recovered
+    return recovered, updated_queue
+
+
 # frob:invariant INV-002
 # invariant spec: [INV-002](invariants/INV-002.md)
 # frob:doc docs/modules/tickets.md#public-api
@@ -2595,6 +2665,7 @@ def _load_ticket_and_queue(
 # frob:tests tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_permissive_when_evidence_reverified_none  # noqa: E501
 # frob:ticket T-0715
 # frob:ticket T-0417
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of _recover_missing_evidence_for_done from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def transition(
     root: Path,
     ticket_id: str,
@@ -2623,21 +2694,9 @@ def transition(
     if loaded.is_err:
         return Err(loaded.danger_err)
     ticket, queue = loaded.danger_ok
-
-    # T-0357: a ticket closed straight from a hand-merged worktree (a
-    # `git merge --no-ff` that bypassed the `frob ticket land`/T-0479
-    # ledger splice) can arrive here with an empty structured `evidence:`
-    # field even though its Done report prose already carries the
-    # rendered ids -- attempt best-effort recovery before the DONE guard
-    # would otherwise reject it as MissingEvidence. A no-op (`Ok`, no
-    # write) when evidence is already present; a failed recovery falls
-    # through to the ordinary MissingEvidence rejection below, unchanged.
-    if to == TicketState.DONE and not ticket.evidence:
-        replayed = replay_evidence_from_done_report(root, ticket_id)
-        if replayed.is_ok:
-            ticket = replayed.danger_ok
-            queue = dict(queue)
-            queue[ticket_id] = ticket
+    ticket, queue = _recover_missing_evidence_for_done(
+        root, ticket_id, ticket, queue, to
+    )
 
     allowed = _TRANSITIONS.get(ticket.state, frozenset())
     if to not in allowed:
@@ -3360,6 +3419,48 @@ def compose_done_report(
     )
 
 
+# frob:ticket T-0976
+def _capture_done_report_claims(
+    ticket_id: str,
+    ticket: Ticket,
+    run_tests: Callable[[Sequence[str]], int] | None,
+    check_gates: Callable[[], tuple[int, int, int] | None] | None,
+    check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None,
+) -> "DoneReportClaims | None":
+    """`set_done_report`'s T-0754/T-0832/T-0846 Captured-claims computation,
+    split from its load-compose-write body: `None` unless BOTH `run_tests`
+    and `check_gates` were supplied, else a `DoneReportClaims` with gate
+    counts recorded as unmeasured (`None`, never a `-1` sentinel, T-0832)
+    when `check_gates()` itself returns `None`."""
+    if run_tests is None or check_gates is None:
+        return None
+    non_cmd = [e for e in ticket.evidence if not is_cmd_evidence(e)]
+    gate_result = check_gates()
+    if gate_result is None:
+        # T-0832: never embed a -1 sentinel -- record the gate half of the
+        # claim as explicitly unmeasured instead.
+        _log.warning(
+            "ticket %s: fresh `frob check --ticket %s` produced no "
+            "parsable gate-summary -- recording the Captured "
+            "claims gate-state as unmeasured (the test-count claim "
+            "is unaffected)",
+            ticket_id,
+            ticket_id,
+        )
+        gate_errors = gate_warnings = gate_waived = None
+    else:
+        gate_errors, gate_warnings, gate_waived = gate_result
+    error_findings = check_gate_findings() if check_gate_findings is not None else None
+    return DoneReportClaims(
+        test_count=run_tests(non_cmd),
+        evidence_count=len(non_cmd),
+        gate_errors=gate_errors,
+        gate_warnings=gate_warnings,
+        gate_waived=gate_waived,
+        error_findings=error_findings,
+    )
+
+
 # frob:ticket T-0458
 # frob:ticket T-0754
 # frob:ticket T-0832
@@ -3370,6 +3471,7 @@ def compose_done_report(
 # frob:tests tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims.test_claims_captured_from_real_callables  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity kind="integration"  # noqa: E501
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of _capture_done_report_claims from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def set_done_report(
     root: Path,
     ticket_id: str,
@@ -3477,35 +3579,9 @@ def set_done_report(
     if preloaded.is_err:
         return Err(preloaded.danger_err)
     changed_lines = compute_changed_lines(root, base_ref)
-    claims = None
-    if run_tests is not None and check_gates is not None:
-        non_cmd = [e for e in preloaded.danger_ok.evidence if not is_cmd_evidence(e)]
-        gate_result = check_gates()
-        if gate_result is None:
-            # T-0832: never embed a -1 sentinel -- record the gate
-            # half of the claim as explicitly unmeasured instead.
-            _log.warning(
-                "ticket %s: fresh `frob check --ticket %s` produced no "
-                "parsable gate-summary -- recording the Captured "
-                "claims gate-state as unmeasured (the test-count claim "
-                "is unaffected)",
-                ticket_id,
-                ticket_id,
-            )
-            gate_errors = gate_warnings = gate_waived = None
-        else:
-            gate_errors, gate_warnings, gate_waived = gate_result
-        error_findings = (
-            check_gate_findings() if check_gate_findings is not None else None
-        )
-        claims = DoneReportClaims(
-            test_count=run_tests(non_cmd),
-            evidence_count=len(non_cmd),
-            gate_errors=gate_errors,
-            gate_warnings=gate_warnings,
-            gate_waived=gate_waived,
-            error_findings=error_findings,
-        )
+    claims = _capture_done_report_claims(
+        ticket_id, preloaded.danger_ok, run_tests, check_gates, check_gate_findings
+    )
 
     with ledger_lock(root):
         loaded = _load_one(root, ticket_id)

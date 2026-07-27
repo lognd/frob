@@ -232,6 +232,7 @@ def _callee_short_name(node: Node) -> str | None:
 # frob:doc docs/modules/perf.md#shared-interprocedural-effect-summary-substrate-effectgraph-t-0922  # noqa: E501
 # frob:tests tests/unit/perf/test_effect_summaries.py::TestEffectGraphSummaryUnknownDegradation.test_fully_resolvable_call_path_has_no_unknown_member  # noqa: E501
 # frob:ticket T-0922
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helper methods from this already-documented class, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 class EffectGraph:
     """The SHARED interprocedural EFFECT-SUMMARY substrate (T-0922,
     promoted from `_loop_effects._EffectGraph`, T-0775/T-0919): a local,
@@ -430,19 +431,27 @@ class EffectGraph:
             )
         self._budget -= 1
         next_stack = stack | {symref}
+        acc, direct_names = self._direct_occurrence_effects(symref)
+        acc |= self._called_callee_effects(symref, direct_names, next_stack)
+        result = frozenset(acc)
+        # Only cache once fully resolved outside any in-progress cycle --
+        # caching a partial (cycle-truncated) result under `stack` non-
+        # empty would wrongly freeze a short-circuited answer as final.
+        if not stack:
+            self._summary_memo[symref] = result
+        return result
+
+    # frob:ticket T-0976
+    def _direct_occurrence_effects(
+        self, symref: str
+    ) -> tuple[set[EffectOccurrence], set[str]]:
+        """`symref`'s own DIRECT effect occurrences (`_direct_occurrences`)
+        as an accumulator set, plus the set of callee names already fully
+        accounted for that way (T-0922) -- `_summary`'s direct-occurrence
+        half, split from its callee-resolution half. See `_summary`'s own
+        docstring comment for why `direct_names` must be threaded through
+        to the callee-resolution half."""
         acc: set[EffectOccurrence] = set()
-        #: names already fully accounted for as a DIRECT occurrence of
-        #: `symref` itself (T-0922) -- `_called_names_from_tokens` extracts
-        #: a call's bare/attribute name regardless of whether the call is
-        #: itself a KNOWN effect (`subprocess.run(...)`) or a genuine local
-        #: callee, so the SAME name (e.g. `run`) shows up both as a direct
-        #: occurrence here AND as a `_called` edge below. Without this set,
-        #: every already-resolved direct effect call would ALSO look like
-        #: a second, separately-unresolvable "callee" in the loop below,
-        #: manufacturing a spurious `Unknown` for every ordinary resolved
-        #: call. Suppressing Unknown-emission for these specific names
-        #: (not the edges themselves, which still let a same-named LOCAL
-        #: function resolve normally) keeps Unknown additive-only.
         direct_names: set[str] = set()
         for kind, arg, _line, callee_name in self._direct_occurrences(symref):
             direct_names.add(callee_name)
@@ -453,11 +462,24 @@ class EffectGraph:
                     (
                         UNKNOWN_KIND,
                         Unknown(
-                            f"unresolvable argument text for a {kind} call in "
-                            f"{symref!r}"
+                            f"unresolvable argument text for a {kind} call "
+                            f"in {symref!r}"
                         ),
                     )
                 )
+        return acc, direct_names
+
+    # frob:ticket T-0976
+    def _called_callee_effects(
+        self, symref: str, direct_names: set[str], next_stack: frozenset[str]
+    ) -> set[EffectOccurrence]:
+        """`symref`'s transitive callee effects: resolve every name in
+        `self._called[symref]` (`resolve_scoped`) and recurse `_summary`
+        into each candidate, or emit one `Unknown` for a name that
+        resolves to nothing AND was not already accounted for as a direct
+        occurrence (`direct_names`) -- `_summary`'s callee-resolution
+        half, split from its direct-occurrence half."""
+        acc: set[EffectOccurrence] = set()
         current_path = self._path_of.get(symref)
         for name in self._called.get(symref, ()):
             candidates = self.resolve_scoped(name, current_path)
@@ -467,21 +489,15 @@ class EffectGraph:
                         (
                             UNKNOWN_KIND,
                             Unknown(
-                                f"unresolvable/ambiguous callee {name!r} called "
-                                f"from {symref!r}"
+                                f"unresolvable/ambiguous callee {name!r} "
+                                f"called from {symref!r}"
                             ),
                         )
                     )
                 continue
             for callee in candidates:
                 acc |= self._summary(callee, next_stack)
-        result = frozenset(acc)
-        # Only cache once fully resolved outside any in-progress cycle --
-        # caching a partial (cycle-truncated) result under `stack` non-
-        # empty would wrongly freeze a short-circuited answer as final.
-        if not stack:
-            self._summary_memo[symref] = result
-        return result
+        return acc
 
 
 _WS_RE = re.compile(r"\s+")

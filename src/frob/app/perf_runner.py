@@ -218,62 +218,63 @@ def _heat_body(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0765
-# frob:waive ARCH103 reason="T-0977: one dispatch point choosing between \
-# the in-process pytest sampler and the --file parsed-collector path, \
-# logging progress either way -- both branches converge on the same \
-# `SampledStack` return, so splitting the branch out would just relocate \
-# the same single decision, not remove a real second concern"
-def _collect_stacks(cfg: AppConfig):  # noqa: ANN201
-    """Get this invocation's `SampledStack`s: either the T-0710 python
-    sampler running `pytest.main` in-process under `-- <argv>` (`--sampler`,
-    argv defaulting to `-q`, the whole suite -- pass a narrow argv, e.g. `--
-    tests/unit/perf/`, for anything short of a full-suite run), or
-    `--file`'s recorded profile parsed via `parse_collector_format`
-    (autodetecting the format when `--format` was not given). `sys.exit`s
-    on any failure, matching every other `perf_runner` command's error
-    style."""
-    from frob.perf import SamplerConfig, detect_collector_format, run_sampled
-    from frob.perf._collectors import parse_collector_format
+# frob:ticket T-0976
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCollectStacksViaSamplerArgvStripping::test_non_marker_first_arg_is_not_stripped  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCollectStacksViaSamplerArgvStripping::test_marker_first_arg_is_stripped  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCollectStacksViaSamplerArgvStripping::test_empty_argv_falls_back_to_dash_q  # noqa: E501
+def _collect_stacks_via_sampler(cfg: AppConfig):  # noqa: ANN201
+    """Run the T-0710 in-process python sampler over `pytest.main` under
+    `-- <argv>` (argv defaulting to `-q`, the whole suite) and return the
+    `SampledStack`s it recorded."""
+    from frob.perf import SamplerConfig, run_sampled
 
-    if cfg.perf_sampler:
+    default_cfg = SamplerConfig()
+    sampler_cfg = SamplerConfig(
+        interval_s=(
+            cfg.perf_interval_s
+            if cfg.perf_interval_s is not None
+            else default_cfg.interval_s
+        ),
+        max_depth=(
+            cfg.perf_max_depth
+            if cfg.perf_max_depth is not None
+            else default_cfg.max_depth
+        ),
+    )
+
+    argv = list(cfg.perf_argv)
+    if argv and argv[0] == "--":
+        argv = argv[1:]
+    if not argv:
+        argv = ["-q"]
+
+    def _run_pytest() -> None:
+        """Run pytest's own `main` for its stack-sampling side effect
+        only -- `run_sampled` wants a no-return workload, `pytest.
+        main`'s exit code is deliberately discarded here since
+        `frob perf collect --sampler` reports SAMPLES, not a test
+        verdict (a failed/errored test run still yields a real,
+        usable stack sample)."""
         import pytest
 
-        default_cfg = SamplerConfig()
-        sampler_cfg = SamplerConfig(
-            interval_s=(
-                cfg.perf_interval_s
-                if cfg.perf_interval_s is not None
-                else default_cfg.interval_s
-            ),
-            max_depth=(
-                cfg.perf_max_depth
-                if cfg.perf_max_depth is not None
-                else default_cfg.max_depth
-            ),
-        )
+        pytest.main(argv)
 
-        argv = list(cfg.perf_argv)
-        if argv and argv[0] == "--":
-            argv = argv[1:]
-        if not argv:
-            argv = ["-q"]
+    stacks, elapsed = run_sampled(_run_pytest, sampler_cfg)
+    _log.info(
+        "collect: sampler ran the test suite in %.3fs, %d sample(s)",
+        elapsed,
+        len(stacks),
+    )
+    return stacks
 
-        def _run_pytest() -> None:
-            """Run pytest's own `main` for its stack-sampling side effect
-            only -- `run_sampled` wants a no-return workload, `pytest.
-            main`'s exit code is deliberately discarded here since
-            `frob perf collect --sampler` reports SAMPLES, not a test
-            verdict (a failed/errored test run still yields a real,
-            usable stack sample)."""
-            pytest.main(argv)
 
-        stacks, elapsed = run_sampled(_run_pytest, sampler_cfg)
-        _log.info(
-            "collect: sampler ran the test suite in %.3fs, %d sample(s)",
-            elapsed,
-            len(stacks),
-        )
-        return stacks
+# frob:ticket T-0976
+def _collect_stacks_from_file(cfg: AppConfig):  # noqa: ANN201
+    """Read `--file`'s recorded profile and parse it via
+    `parse_collector_format`, autodetecting the format when `--format` was
+    not given. `sys.exit`s on any read/parse failure."""
+    from frob.perf import detect_collector_format
+    from frob.perf._collectors import parse_collector_format
 
     if cfg.perf_file is None:
         _log.error("frob perf collect requires --file PATH or --sampler")
@@ -292,6 +293,18 @@ def _collect_stacks(cfg: AppConfig):  # noqa: ANN201
         sys.exit(1)
     _log.info("collect: %s parsed as %s", file, fmt)
     return result.danger_ok
+
+
+# frob:ticket T-0765
+# frob:ticket T-0976
+def _collect_stacks(cfg: AppConfig):  # noqa: ANN201
+    """Get this invocation's `SampledStack`s: either the T-0710 python
+    sampler (`--sampler`) or `--file`'s recorded profile
+    (`_collect_stacks_from_file`). `sys.exit`s on any failure, matching
+    every other `perf_runner` command's error style."""
+    if cfg.perf_sampler:
+        return _collect_stacks_via_sampler(cfg)
+    return _collect_stacks_from_file(cfg)
 
 
 # frob:ticket T-0765

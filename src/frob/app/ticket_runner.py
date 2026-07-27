@@ -415,7 +415,6 @@ def _doable(root: Path, cfg: AppConfig) -> None:
         has_live_lease,
         load_queue,
         scope_breadth_context,
-        undispatched_stale,
     )
 
     result = load_queue(root)
@@ -475,71 +474,103 @@ def _doable(root: Path, cfg: AppConfig) -> None:
     in_flight_ids = {t.id for t in in_flight}
     dispatchable = [t for t in tickets if t.id not in in_flight_ids]
 
+    ordered, alarm_by_id = _order_dispatchable_with_alarms(dispatchable, root)
+    _render_doable_dispatchable(ordered, alarm_by_id, queue, cfg)
+    _render_doable_in_flight(in_flight)
+
+
+# frob:ticket T-0976
+def _order_dispatchable_with_alarms(
+    dispatchable: list, root: Path
+) -> tuple[list, dict]:
+    """Sort `dispatchable` so any CRITICAL/HIGH row that has sat past its
+    `undispatched_stale` threshold sorts first, and return that ordering
+    alongside a `ticket-id -> (elapsed, threshold)` map for the alarms
+    found -- shared state the flat and `--by-parent` renders both need."""
+    from frob.tickets import undispatched_stale
+
     alarms = undispatched_stale(dispatchable, root)
     alarmed_ids = {t.id for t, _elapsed, _threshold in alarms}
     ordered = [t for t in dispatchable if t.id in alarmed_ids] + [
         t for t in dispatchable if t.id not in alarmed_ids
     ]
     alarm_by_id = {t.id: (elapsed, threshold) for t, elapsed, threshold in alarms}
+    return ordered, alarm_by_id
 
+
+# frob:ticket T-0976
+def _doable_row(t: "Ticket", alarm_by_id: dict, color: bool) -> str:
+    """One doable-list line for `t`, including its UNDISPATCHED alarm (if
+    any) -- shared by the flat and `--by-parent` grouped renders (T-0715)
+    so the two stay in sync instead of duplicating the format."""
+    row = "%s  %s  (%s)  priority=%s" % (
+        style_ticket_id(t.id, color),
+        t.title,
+        t.kind.value,
+        t.priority.value,
+    )
+    if t.id in alarm_by_id:
+        elapsed, threshold = alarm_by_id[t.id]
+        row += "  [UNDISPATCHED %.0fh > %.0fh threshold]" % (elapsed, threshold)
+    return row
+
+
+# frob:ticket T-0976
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestRenderDoableDispatchableByParentGrouping::test_parent_id_not_in_queue_falls_back_to_no_parent_bucket  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestRenderDoableDispatchableByParentGrouping::test_parent_id_present_in_queue_uses_its_title  # noqa: E501
+def _render_doable_dispatchable(
+    ordered: list, alarm_by_id: dict, queue: "TicketQueue", cfg: AppConfig
+) -> None:
+    """Print the dispatchable section of `frob ticket doable`: a flat
+    priority/age/alarm-ordered list, or (`--by-parent`, T-0715) the same
+    rows grouped by `parent` so a story's remaining leaves display
+    together instead of scattered across one flat list."""
     color = _stdout_color()
 
-    def _row(t: "Ticket") -> str:
-        """One doable-list line for `t`, including its UNDISPATCHED alarm
-        (if any) -- shared by the flat and `--by-parent` grouped renders
-        (T-0715) so the two stay in sync instead of duplicating the format."""
-        row = "%s  %s  (%s)  priority=%s" % (
+    if not cfg.ticket_doable_by_parent:
+        for t in ordered:
+            _log.info(_doable_row(t, alarm_by_id, color))
+        return
+
+    # A row with no `parent` (or a parent id `queue` cannot resolve) falls
+    # into its own "no parent" bucket rather than being dropped. Group
+    # order follows first appearance in the already priority/age/alarm-
+    # ordered `ordered` list, so the highest-priority group still leads.
+    groups: dict[str | None, list["Ticket"]] = {}
+    for t in ordered:
+        groups.setdefault(t.parent, []).append(t)
+    for parent_id, rows in groups.items():
+        header = (
+            queue.tickets[parent_id].title
+            if parent_id is not None and parent_id in queue.tickets
+            else "(no parent)"
+        )
+        _log.info(
+            "%s:",
+            f"{style_ticket_id(parent_id, color)} {header}"
+            if parent_id is not None
+            else header,
+        )
+        for t in rows:
+            _log.info("  %s", _doable_row(t, alarm_by_id, color))
+
+
+# frob:ticket T-0976
+def _render_doable_in_flight(in_flight: list) -> None:
+    """Print the "In-flight (leased, already being worked)" section of
+    `frob ticket doable`, if any dispatchable-but-leased rows exist."""
+    if not in_flight:
+        return
+    color = _stdout_color()
+    _log.info("In-flight (leased, already being worked):")
+    for t in in_flight:
+        _log.info(
+            "  %s  %s  (%s)  priority=%s",
             style_ticket_id(t.id, color),
             t.title,
             t.kind.value,
             t.priority.value,
         )
-        if t.id in alarm_by_id:
-            elapsed, threshold = alarm_by_id[t.id]
-            row += "  [UNDISPATCHED %.0fh > %.0fh threshold]" % (elapsed, threshold)
-        return row
-
-    if cfg.ticket_doable_by_parent:
-        # frob:ticket T-0715
-        # `frob ticket doable --by-parent`: group the dispatchable list by
-        # `parent` (a story's remaining leaves display together, the
-        # user's pop-the-whole-stack-not-just-the-top concern) instead of
-        # one flat priority/age-ordered list. A row with no `parent` (or a
-        # parent id `queue` cannot resolve) falls into its own "no parent"
-        # bucket rather than being dropped. Group order follows first
-        # appearance in the already priority/age/alarm-ordered `ordered`
-        # list, so the highest-priority group still leads.
-        groups: dict[str | None, list["Ticket"]] = {}
-        for t in ordered:
-            groups.setdefault(t.parent, []).append(t)
-        for parent_id, rows in groups.items():
-            header = (
-                queue.tickets[parent_id].title
-                if parent_id is not None and parent_id in queue.tickets
-                else "(no parent)"
-            )
-            _log.info(
-                "%s:",
-                f"{style_ticket_id(parent_id, color)} {header}"
-                if parent_id is not None
-                else header,
-            )
-            for t in rows:
-                _log.info("  %s", _row(t))
-    else:
-        for t in ordered:
-            _log.info(_row(t))
-
-    if in_flight:
-        _log.info("In-flight (leased, already being worked):")
-        for t in in_flight:
-            _log.info(
-                "  %s  %s  (%s)  priority=%s",
-                style_ticket_id(t.id, color),
-                t.title,
-                t.kind.value,
-                t.priority.value,
-            )
 
 
 # frob:ticket T-0453
@@ -2037,6 +2068,61 @@ def _covers_review_for_ticket(root: Path, cfg: AppConfig, ticket) -> bool | None
     return has_approved_review_for_commit(ticket, commit)
 
 
+# frob:ticket T-0976
+def _apply_close_time_evidence(root: Path, cfg: AppConfig) -> None:
+    """Apply `frob ticket close`'s optional `--evidence`/`--evidence-cmd`/
+    `--skip-mutation-evidence` flags before the close transition itself
+    runs: validates and appends any evidence given (exiting on failure so
+    a bad flag can never close on unvalidated evidence) and logs the
+    justification-required warning for the mutation-evidence escape
+    hatch. Caller (`_close`) has already verified `cfg.ticket_id is not
+    None` before calling this."""
+    assert cfg.ticket_id is not None
+    if cfg.ticket_evidence_ids:
+        added = _apply_evidence(
+            root, cfg.ticket_id, cfg.ticket_evidence_ids, cfg.ticket_accepts
+        )
+        if added.is_err:
+            sys.exit(1)
+
+    if cfg.ticket_evidence_cmd:
+        cmd_added = _apply_cmd_evidence(
+            root, cfg.ticket_id, cfg.ticket_evidence_cmd, cfg.ticket_accepts
+        )
+        if cmd_added.is_err:
+            sys.exit(1)
+
+    if cfg.ticket_close_skip_mutation_evidence:
+        _log.warning(
+            "ticket close: %s --skip-mutation-evidence set -- a TEST016 "
+            "confirmatory-only-evidence finding will be logged but will NOT "
+            "refuse this close (justification required: use only for a "
+            "genuine false positive)",
+            cfg.ticket_id,
+        )
+
+
+# frob:ticket T-0976
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade::test_true_mutation_evidence_with_skip_flag_is_never_downgraded  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade::test_false_mutation_evidence_with_skip_flag_is_downgraded_to_none  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade::test_false_mutation_evidence_without_skip_flag_stays_false  # noqa: E501
+def _close_guards_for_ticket(root: Path, cfg: AppConfig, fresh_ticket) -> tuple:  # noqa: ANN001
+    """Compute the four independent close-time guard values `transition`
+    needs for `frob ticket close`'s strict default (T-0398 covers_scope,
+    T-0571 config-gated review, T-0844 mutation evidence, T-0417 N-02
+    post-merge re-verify) -- each guard is its own existing helper; this
+    just threads `cfg.ticket_close_skip_mutation_evidence` through to
+    downgrade a `False` mutation-evidence verdict to `None` (skip) when
+    the escape hatch was passed."""
+    covers_scope = _covers_scope_for_ticket(root, fresh_ticket)
+    reviewed = _covers_review_for_ticket(root, cfg, fresh_ticket)
+    mutation_evidence = _close_mutation_evidence_for_ticket(root, fresh_ticket)
+    if mutation_evidence is False and cfg.ticket_close_skip_mutation_evidence:
+        mutation_evidence = None
+    evidence_reverified = _reverify_evidence_for_close(root, fresh_ticket)
+    return covers_scope, reviewed, mutation_evidence, evidence_reverified
+
+
 # frob:ticket T-0106
 # frob:ticket T-0215
 # frob:ticket T-0398
@@ -2081,40 +2167,15 @@ def _close(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
 
     ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="close")
-
-    if cfg.ticket_evidence_ids:
-        added = _apply_evidence(
-            root, cfg.ticket_id, cfg.ticket_evidence_ids, cfg.ticket_accepts
-        )
-        if added.is_err:
-            sys.exit(1)
-
-    if cfg.ticket_evidence_cmd:
-        cmd_added = _apply_cmd_evidence(
-            root, cfg.ticket_id, cfg.ticket_evidence_cmd, cfg.ticket_accepts
-        )
-        if cmd_added.is_err:
-            sys.exit(1)
-
-    if cfg.ticket_close_skip_mutation_evidence:
-        _log.warning(
-            "ticket close: %s --skip-mutation-evidence set -- a TEST016 "
-            "confirmatory-only-evidence finding will be logged but will NOT "
-            "refuse this close (justification required: use only for a "
-            "genuine false positive)",
-            cfg.ticket_id,
-        )
+    _apply_close_time_evidence(root, cfg)
 
     # Re-load: evidence may have just changed above, and covers_scope must
     # be computed against the ticket's CURRENT evidence, not the state
     # loaded before this call's own --evidence/--evidence-cmd applied.
     fresh_ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="close")
-    covers_scope = _covers_scope_for_ticket(root, fresh_ticket)
-    reviewed = _covers_review_for_ticket(root, cfg, fresh_ticket)
-    mutation_evidence = _close_mutation_evidence_for_ticket(root, fresh_ticket)
-    if mutation_evidence is False and cfg.ticket_close_skip_mutation_evidence:
-        mutation_evidence = None
-    evidence_reverified = _reverify_evidence_for_close(root, fresh_ticket)
+    covers_scope, reviewed, mutation_evidence, evidence_reverified = (
+        _close_guards_for_ticket(root, cfg, fresh_ticket)
+    )
 
     result = transition(
         root,

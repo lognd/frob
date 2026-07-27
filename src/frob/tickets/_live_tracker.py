@@ -123,13 +123,29 @@ def _git_grep(
     silently permissive in any repo whose default branch is not literally
     named `"main"` (a real gap caught testing this rework: this sandbox's
     own `git init` default is `master`)."""
-    from frob.gitio import run_argv
 
     argv = ["git", "-C", str(root), "grep", "-n", "-I", "-E", pattern]
     if revision is not None:
         argv.append(revision)
     if pathspec is not None:
         argv += ["--", pathspec]
+    lines = _spawn_git_grep(argv, root=root, pattern=pattern, revision=revision)
+    if lines is None or revision is None:
+        return lines
+    return _strip_revision_prefix(lines, revision)
+
+
+# frob:ticket T-0976
+def _spawn_git_grep(
+    argv: list[str], *, root: Path, pattern: str, revision: str | None
+) -> tuple[str, ...] | None:
+    """Spawn one `git grep` `argv` and classify its exit: `None` (see
+    `_git_grep`'s own docstring for the `revision`-dependent meaning) on a
+    spawn failure or a genuine error exit (>=2); the raw non-empty
+    `file:line:text` lines otherwise -- `_git_grep`'s spawn-and-classify
+    half, split from its revision-prefix-stripping half."""
+    from frob.gitio import run_argv
+
     spawned = run_argv(argv, timeout_s=15)
     if spawned.is_err:
         _log.warning(
@@ -155,17 +171,16 @@ def _git_grep(
             revision,
         )
         return None if revision is not None else ()
-    lines = tuple(line for line in result.stdout.splitlines() if line)
-    if revision is None:
-        return lines
-    # `git grep <revision> -- pathspec` prefixes every line with
-    # `<revision>:` (e.g. `main:docs/design/registry/x.yaml:3:...`) ON TOP
-    # of the usual `file:line:text` shape -- strip it so a base-ref scan's
-    # output has the exact same `file:line:text` shape a working-tree scan
-    # does; leaving it in silently broke `_content_key`'s comparison
-    # (`"main:file:1:hi"` never equals `"file:1:hi"`), making the base
-    # scan never match anything and the diff-aware exemption vacuously
-    # exempt every citation regardless of whether it was actually new.
+    return tuple(line for line in result.stdout.splitlines() if line)
+
+
+# frob:ticket T-0976
+def _strip_revision_prefix(lines: tuple[str, ...], revision: str) -> tuple[str, ...]:
+    """Strip `git grep <revision> -- pathspec`'s `<revision>:` line prefix
+    off every line in `lines`, so a base-ref scan's output has the exact
+    same `file:line:text` shape a working-tree scan does -- `_git_grep`'s
+    revision-prefix-stripping half. See `_git_grep`'s own docstring for
+    why leaving the prefix in silently broke `_content_key`'s comparison."""
     prefix = f"{revision}:"
     return tuple(
         line[len(prefix) :] if line.startswith(prefix) else line for line in lines

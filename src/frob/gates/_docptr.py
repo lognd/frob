@@ -469,46 +469,63 @@ def _symbol_violations(
             continue
         if _nearby_waived(doc_lines, line_no):
             continue
-        module, _, name = token.rpartition(".")
-        if token in module_map:
-            continue  # the whole dotted token is itself a real module
-        file_path = module_map.get(module)
-        if file_path is None:
-            # the immediate module prefix does not resolve -- before
-            # claiming STALE, check whether a SHORTER prefix resolves and
-            # the next segment is a real top-level symbol there (a
-            # `module.Class.attr`-shaped chain one level deeper than this
-            # resolver can prove/refute): if so, silently skip rather than
-            # false-flag a legitimate class-attribute reference.
-            outer_module, _, maybe_class = module.rpartition(".")
-            outer_file = module_map.get(outer_module)
-            if outer_file is not None and maybe_class in symbol_names_by_path.get(
-                outer_file, set()
-            ):
-                continue
-            violations.append(
-                _doc006_violation(
-                    doc_path, line_no, "code symbol", f"{module!r} does not resolve"
-                )
-            )
-            continue
-        top_names = symbol_names_by_path.get(file_path, set())
-        if (
-            name in top_names
-            or name in ("__init__", "__all__")
-            or f"{module}.{name}" in module_map
-            or _module_reexports(root, file_path, name)
-        ):
-            continue
-        violations.append(
-            _doc006_violation(
-                doc_path,
-                line_no,
-                "code symbol",
-                f"{token} does not resolve to a real symbol",
-            )
+        violation = _symbol_violation_for_token(
+            doc_path, line_no, token, module_map, symbol_names_by_path, root
         )
+        if violation is not None:
+            violations.append(violation)
     return violations
+
+
+# frob:ticket T-0976
+# frob:waive PII012 reason="'token' here means a parsed dotted-symbol lexical token from this DOC006 doc-pointer scan, not a credential/auth token -- a name-signature false positive"  # noqa: E501
+def _symbol_violation_for_token(
+    doc_path: str,
+    line_no: int,
+    token: str,
+    module_map: dict[str, str],
+    symbol_names_by_path: dict[str, set[str]],
+    root: Path,
+) -> Violation | None:
+    """One dotted CODE SYMBOL `token`'s DOC006 verdict, or `None` if it
+    resolves (or is one level deeper than this resolver can prove/refute
+    -- `_symbol_violations`'s docstring's conservatism note) -- the per-
+    token half of `_symbol_violations`, split from its waiver-check/scan
+    loop."""
+    module, _, name = token.rpartition(".")
+    if token in module_map:
+        return None  # the whole dotted token is itself a real module
+    file_path = module_map.get(module)
+    if file_path is None:
+        # the immediate module prefix does not resolve -- before claiming
+        # STALE, check whether a SHORTER prefix resolves and the next
+        # segment is a real top-level symbol there (a `module.Class.attr`-
+        # shaped chain one level deeper than this resolver can prove/
+        # refute): if so, silently skip rather than false-flag a
+        # legitimate class-attribute reference.
+        outer_module, _, maybe_class = module.rpartition(".")
+        outer_file = module_map.get(outer_module)
+        if outer_file is not None and maybe_class in symbol_names_by_path.get(
+            outer_file, set()
+        ):
+            return None
+        return _doc006_violation(
+            doc_path, line_no, "code symbol", f"{module!r} does not resolve"
+        )
+    top_names = symbol_names_by_path.get(file_path, set())
+    if (
+        name in top_names
+        or name in ("__init__", "__all__")
+        or f"{module}.{name}" in module_map
+        or _module_reexports(root, file_path, name)
+    ):
+        return None
+    return _doc006_violation(
+        doc_path,
+        line_no,
+        "code symbol",
+        f"{token} does not resolve to a real symbol",
+    )
 
 
 # ---------------------------------------------------------------------------

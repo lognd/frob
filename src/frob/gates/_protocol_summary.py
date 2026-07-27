@@ -637,6 +637,32 @@ def _acquiring_function_violations(
     )
     policy = _cleanup_policy(edges, symref, path)
 
+    violations = _normal_exit_release_violations(
+        func, symref, resource, path, release_lines, terminator_lines, policy
+    )
+    if not release_lines and PurePosixPath(path).suffix.lower() == ".py":
+        exceptional = _exceptional_exit_release_violation(
+            module, func, symref, resource, path, policy
+        )
+        if exceptional is not None:
+            violations.append(exceptional)
+    return violations
+
+
+# frob:ticket T-0976
+def _normal_exit_release_violations(
+    func,  # noqa: ANN001
+    symref: str,
+    resource: str,
+    path: str,
+    release_lines: list[int],
+    terminator_lines: list[int],
+    policy: str,
+) -> list[Violation]:
+    """PROTO005's NORMAL-EXIT half (`_acquiring_function_violations`'s
+    docstring): one finding per `return` (or, with none, one implicit
+    fallthrough exit) not postdominated by an earlier release call, unless
+    a `process-exit-ok` policy's terminator call already discharges it."""
     exits: list[tuple[int, str]] = [(r.line, "return") for r in func.returns]
     if not exits:
         exits = [(func.line + max(func.body_line_count - 1, 0), "fallthrough")]
@@ -665,30 +691,44 @@ def _acquiring_function_violations(
                 ),
             )
         )
-
-    if not release_lines and PurePosixPath(path).suffix.lower() == ".py":
-        mayraise = compute_may_raise(module)
-        summary = mayraise.get(symref)
-        if summary is not None and summary.raises:
-            if not (policy == "process-exit-ok" and summary.raises <= {"SystemExit"}):
-                violations.append(
-                    Violation(
-                        rule="PROTO005",
-                        severity=Severity.ERROR,
-                        file=path,
-                        line=func.line,
-                        message=(
-                            f"PROTO005: {symref} acquires {resource!r} and "
-                            f"may raise {sorted(summary.raises)}, but no "
-                            "release call appears anywhere in its body -- "
-                            "an exceptional exit skips cleanup; "
-                            'frob:waive PROTO005 reason="..." if a '
-                            "discharge this check cannot see makes this "
-                            "safe"
-                        ),
-                    )
-                )
     return violations
+
+
+# frob:ticket T-0976
+def _exceptional_exit_release_violation(
+    module,
+    func,
+    symref: str,
+    resource: str,
+    path: str,
+    policy: str,  # noqa: ANN001
+) -> Violation | None:
+    """PROTO005's EXCEPTIONAL-EXIT half (`_acquiring_function_violations`'s
+    docstring, existential/false-negative-biased): fires only when
+    `symref`'s own may-raise set is non-empty and no release call appears
+    anywhere in its body at all, unless a `process-exit-ok` policy's
+    raises are entirely `SystemExit`."""
+    mayraise = compute_may_raise(module)
+    summary = mayraise.get(symref)
+    if summary is None or not summary.raises:
+        return None
+    if policy == "process-exit-ok" and summary.raises <= {"SystemExit"}:
+        return None
+    return Violation(
+        rule="PROTO005",
+        severity=Severity.ERROR,
+        file=path,
+        line=func.line,
+        message=(
+            f"PROTO005: {symref} acquires {resource!r} and "
+            f"may raise {sorted(summary.raises)}, but no "
+            "release call appears anywhere in its body -- "
+            "an exceptional exit skips cleanup; "
+            'frob:waive PROTO005 reason="..." if a '
+            "discharge this check cannot see makes this "
+            "safe"
+        ),
+    )
 
 
 # frob:ticket T-0747
@@ -742,6 +782,28 @@ def _cleanup_obligation_violations(
     return violations
 
 
+# frob:ticket T-0976
+def _collect_protocol_metadata(
+    edges: tuple[Edge, ...],
+) -> tuple[dict[str, str], dict[str, str | None], dict[str, str]]:
+    """`(cleanup, terminal, origin)` per declared protocol from `edges`'
+    own `PROTOCOL` edges -- `_cleanup_always_violations`'s metadata-
+    collection half, split from its per-protocol violation check."""
+    protocol_cleanup: dict[str, str] = {}
+    protocol_terminal: dict[str, str | None] = {}
+    protocol_origin: dict[str, str] = {}
+    for e in edges:
+        if e.kind is EdgeKind.PROTOCOL:
+            proto = e.target
+            protocol_cleanup[proto] = e.attrs.get("cleanup", "on-error")
+            states = [
+                s.strip() for s in e.attrs.get("states", "").split(",") if s.strip()
+            ]
+            protocol_terminal[proto] = states[-1] if states else None
+            protocol_origin[proto] = e.src.split("::", 1)[0]
+    return protocol_cleanup, protocol_terminal, protocol_origin
+
+
 # frob:ticket T-0747
 def _cleanup_always_violations(
     edges: tuple[Edge, ...],
@@ -773,18 +835,9 @@ def _cleanup_always_violations(
     no further transition out of it happens to be declared yet, and so
     would trivially satisfy this check the instant `active` itself is
     established, defeating its entire purpose."""
-    protocol_cleanup: dict[str, str] = {}
-    protocol_terminal: dict[str, str | None] = {}
-    protocol_origin: dict[str, str] = {}
-    for e in edges:
-        if e.kind is EdgeKind.PROTOCOL:
-            proto = e.target
-            protocol_cleanup[proto] = e.attrs.get("cleanup", "on-error")
-            states = [
-                s.strip() for s in e.attrs.get("states", "").split(",") if s.strip()
-            ]
-            protocol_terminal[proto] = states[-1] if states else None
-            protocol_origin[proto] = e.src.split("::", 1)[0]
+    protocol_cleanup, protocol_terminal, protocol_origin = _collect_protocol_metadata(
+        edges
+    )
 
     violations: list[Violation] = []
     for proto, cleanup in protocol_cleanup.items():
@@ -887,6 +940,7 @@ def _discharge(root: Path, symref: str, resource: str) -> Violation | None:
 # frob:tests tests/test_gates.py::TestCleanupObligationGate.test_deinit_never_called_for_cleanup_always_protocol_is_an_error  # noqa: E501
 # frob:tests tests/test_gates.py::TestCleanupObligationGate.test_deinit_reachable_for_cleanup_always_protocol_is_not_flagged  # noqa: E501
 # frob:ticket T-0972
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def protocol_summary_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """PROTO001: the real `mark_unresolved=True` production entrypoint into
     `frob.graph.summary.compute_protocol_summaries` (T-0813) -- every
@@ -922,6 +976,30 @@ def protocol_summary_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violatio
     from frob.lang import supported_extensions
 
     exts = supported_extensions()
+    tagged_by_package = _tagged_symbols_by_package(snapshot, exts)
+
+    violations: list[Violation] = []
+    for package, symrefs in tagged_by_package.items():
+        violations.extend(
+            _package_protocol_violations(root, snapshot, package, symrefs)
+        )
+    _log.info(
+        "protocol_summary_gate: %d package(s) scanned, %d protocol-tagged "
+        "symbol(s), %d violation(s)",
+        len(tagged_by_package),
+        sum(len(v) for v in tagged_by_package.values()),
+        len(violations),
+    )
+    return tuple(violations)
+
+
+# frob:ticket T-0976
+def _tagged_symbols_by_package(
+    snapshot: GraphSnapshot, exts: frozenset
+) -> dict[str, list[str]]:
+    """Every protocol-tagged symbol in `snapshot`, grouped by package
+    (same directory) -- `protocol_summary_gate`'s package-grouping half,
+    split from its per-package violation computation."""
     tagged_by_package: dict[str, list[str]] = {}
     for edge in snapshot.edges:
         if edge.kind not in _PROTOCOL_TAG_KINDS:
@@ -932,168 +1010,230 @@ def protocol_summary_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violatio
             continue
         package = str(PurePosixPath(path).parent)
         tagged_by_package.setdefault(package, []).append(symref)
+    return tagged_by_package
+
+
+# frob:ticket T-0976
+def _package_protocol_violations(
+    root: Path, snapshot: GraphSnapshot, package: str, symrefs: list[str]
+) -> list[Violation]:
+    """One package's full PROTO001-005 contribution: builds its call
+    graph/summaries/established-states once, then delegates PROTO004/5
+    to their own dedicated checks and PROTO001-003 to
+    `_entrypoint_protocol_violations` per tagged entrypoint --
+    `protocol_summary_gate`'s per-package half, split from its top-level
+    package-iteration loop."""
+    # frob:waive PERF004 reason="symrefs is this call's own per-package distinct list, not a shared re-sort"  # noqa: E501
+    entrypoints = sorted(set(symrefs))
+    sample_symref = entrypoints[0]
+    sample_path = sample_symref.split("::", 1)[0]
+    files = _package_files(root, sample_path)
+    callgraph = build_call_graph(root, files, mark_unresolved=True)
+    edges = _package_edges(root, files)
+    # T-0840: PROTO004's ordering check needs a summary for every CALLEE
+    # any plain (untagged) function in the package calls, not just what is
+    # transitively reachable from the tagged entrypoints -- an ordinary
+    # caller sitting between two tagged functions is itself untagged and
+    # would otherwise never become a root. Every caller
+    # `build_ordered_call_graph` found is added as its own summary root
+    # alongside the tagged entrypoints; this only WIDENS
+    # `result.summaries`' coverage (more roots feeding the same bottom-up
+    # fixpoint), it does not change any existing entry's computed value.
+    ordered_graph = build_ordered_call_graph(root, files)
+    summary_roots = sorted(set(entrypoints) | set(ordered_graph.calls))
+    result = compute_protocol_summaries(callgraph, edges, summary_roots)
+    established = _established_states(edges, result)
+    protocol_initials = _protocol_initial_states(edges)
 
     violations: list[Violation] = []
-    packages_scanned = 0
-    for package, symrefs in tagged_by_package.items():
-        # frob:waive PERF004 reason="symrefs is this loop's own per-package distinct list, not a shared re-sort"  # noqa: E501
-        entrypoints = sorted(set(symrefs))
-        sample_symref = entrypoints[0]
-        sample_path = sample_symref.split("::", 1)[0]
-        files = _package_files(root, sample_path)
-        callgraph = build_call_graph(root, files, mark_unresolved=True)
-        edges = _package_edges(root, files)
-        # T-0840: PROTO004's ordering check needs a summary for every
-        # CALLEE any plain (untagged) function in the package calls, not
-        # just what is transitively reachable from the tagged entrypoints
-        # -- an ordinary caller sitting between two tagged functions is
-        # itself untagged and would otherwise never become a root. Every
-        # caller `build_ordered_call_graph` found is added as its own
-        # summary root alongside the tagged entrypoints; this only WIDENS
-        # `result.summaries`' coverage (more roots feeding the same
-        # bottom-up fixpoint), it does not change any existing entry's
-        # computed value.
-        ordered_graph = build_ordered_call_graph(root, files)
-        summary_roots = sorted(set(entrypoints) | set(ordered_graph.calls))
-        result = compute_protocol_summaries(callgraph, edges, summary_roots)
-        established = _established_states(edges, result)
-        packages_scanned += 1
-        protocol_initials = _protocol_initial_states(edges)
+    violations.extend(
+        _ordered_call_site_violations(
+            root, edges, ordered_graph.calls, result.summaries, protocol_initials
+        )
+    )
+    # T-0747: PROTO005, cleanup obligations -- needs neither the callgraph
+    # nor compute_protocol_summaries above (a pure intraprocedural +
+    # declaration-level scan over this SAME package's edges), reusing this
+    # loop's package selection rather than walking the repo a second time
+    # for acquire-tagged packages.
+    violations.extend(_cleanup_obligation_violations(root, edges))
+    violations.extend(_cleanup_always_violations(edges, established, protocol_initials))
+    for symref in entrypoints:
         violations.extend(
-            _ordered_call_site_violations(
-                root, edges, ordered_graph.calls, result.summaries, protocol_initials
+            _entrypoint_protocol_violations(
+                root, snapshot, edges, result, established, package, symref
             )
         )
-        # T-0747: PROTO005, cleanup obligations -- needs neither the
-        # callgraph nor compute_protocol_summaries above (a pure
-        # intraprocedural + declaration-level scan over this SAME
-        # package's edges), reusing this loop's package selection rather
-        # than walking the repo a second time for acquire-tagged packages.
-        violations.extend(_cleanup_obligation_violations(root, edges))
-        violations.extend(
-            _cleanup_always_violations(edges, established, protocol_initials)
+    return violations
+
+
+# frob:ticket T-0976
+def _entrypoint_protocol_violations(
+    root: Path,
+    snapshot: GraphSnapshot,
+    edges: tuple[Edge, ...],
+    result,  # noqa: ANN001
+    established: dict[str, set[str]],
+    package: str,
+    symref: str,
+) -> list[Violation]:
+    """One tagged `symref`'s PROTO001 (poisoned summary), PROTO002
+    (`frob:requires` state-requirement), and PROTO003 (`frob:transition`
+    precondition) findings -- `_package_protocol_violations`'s per-
+    entrypoint half."""
+    summary = result.summaries.get(symref)
+    if summary is None:
+        return []
+    record = snapshot.symbols.get(symref)
+    file = symref.split("::", 1)[0]
+    line = record.span[0] if record is not None else 0
+    violations: list[Violation] = []
+    if summary.poisoned:
+        violations.append(
+            Violation(
+                rule="PROTO001",
+                severity=Severity.WARN,
+                file=file,
+                line=line,
+                message=(
+                    f"PROTO001: {symref}'s protocol summary is poisoned "
+                    f"({summary.poison_reason}) -- an unresolved callee "
+                    "somewhere in its transitive call closure makes its "
+                    "requires/transitions untrustworthy; fix the call, "
+                    'or frob:waive PROTO001 reason="..." if the callee '
+                    "resolves dynamically"
+                ),
+            )
         )
-        for symref in entrypoints:
-            summary = result.summaries.get(symref)
-            if summary is None:
-                continue
-            record = snapshot.symbols.get(symref)
-            file = symref.split("::", 1)[0]
-            line = record.span[0] if record is not None else 0
-            if summary.poisoned:
-                violations.append(
-                    Violation(
-                        rule="PROTO001",
-                        severity=Severity.WARN,
-                        file=file,
-                        line=line,
-                        message=(
-                            f"PROTO001: {symref}'s protocol summary is poisoned "
-                            f"({summary.poison_reason}) -- an unresolved callee "
-                            "somewhere in its transitive call closure makes its "
-                            "requires/transitions untrustworthy; fix the call, "
-                            'or frob:waive PROTO001 reason="..." if the callee '
-                            "resolves dynamically"
-                        ),
-                    )
-                )
-            # T-0746: PROTO002, state-requirement verification. A poisoned
-            # summary cannot be trusted to have gathered every reachable
-            # transition, so it is ALSO an ERROR here (stricter than
-            # PROTO001's WARN for the identical signal -- T-0746's own
-            # "unknown/poisoned summaries at a checked call site = ERROR"
-            # mandate) rather than silently skipping the requires check.
-            for proto, state in _own_requires(edges, symref):
-                if summary.poisoned:
-                    violations.append(
-                        Violation(
-                            rule="PROTO002",
-                            severity=Severity.ERROR,
-                            file=file,
-                            line=line,
-                            message=(
-                                f"PROTO002: {symref} requires {proto}:{state} but "
-                                "its protocol summary is poisoned "
-                                f"({summary.poison_reason}) -- cannot verify; "
-                                'fix the call or frob:waive PROTO002 reason="..."'
-                            ),
-                        )
-                    )
-                    continue
-                if state in established.get(proto, set()):
-                    continue
-                discharge = _discharge(root, symref, proto)
-                if discharge is not None:
-                    violations.append(discharge)
-                    continue
-                violations.append(
-                    Violation(
-                        rule="PROTO002",
-                        severity=Severity.ERROR,
-                        file=file,
-                        line=line,
-                        message=(
-                            f"PROTO002: {symref} requires {proto}:{state}, but no "
-                            "reachable frob:transition establishes it (and it is "
-                            "not the protocol's declared initial state) -- state-"
-                            "requirement violation, call path rooted at "
-                            f"{symref} in package {package}; "
-                            'frob:waive PROTO002 reason="..." if this is a false '
-                            "positive of the engine's existential approximation"
-                        ),
-                    )
-                )
-            # T-0746: PROTO003, invalid-transition verification -- same
-            # established-state test applied to a transition's OWN
-            # precondition (`from=`) rather than a requires directive's
-            # declared state.
-            for proto, frm, to in _own_transitions(edges, symref):
-                if summary.poisoned:
-                    violations.append(
-                        Violation(
-                            rule="PROTO003",
-                            severity=Severity.ERROR,
-                            file=file,
-                            line=line,
-                            message=(
-                                f"PROTO003: {symref} transitions {proto}:"
-                                f"{frm}->{to} but its protocol summary is "
-                                f"poisoned ({summary.poison_reason}) -- cannot "
-                                "verify; fix the call or frob:waive PROTO003 "
-                                'reason="..."'
-                            ),
-                        )
-                    )
-                    continue
-                if frm in established.get(proto, set()):
-                    continue
-                discharge = _discharge(root, symref, proto)
-                if discharge is not None:
-                    violations.append(discharge.model_copy(update={"rule": "PROTO003"}))
-                    continue
-                violations.append(
-                    Violation(
-                        rule="PROTO003",
-                        severity=Severity.ERROR,
-                        file=file,
-                        line=line,
-                        message=(
-                            f"PROTO003: {symref} transitions {proto}:{frm}->{to}, "
-                            f"but precondition state {frm!r} is never established "
-                            "(not the protocol's declared initial state, and no "
-                            "reachable frob:transition reaches it) -- invalid "
-                            "transition, call path rooted at "
-                            f"{symref} in package {package}; "
-                            'frob:waive PROTO003 reason="..." if this is a false '
-                            "positive of the engine's existential approximation"
-                        ),
-                    )
-                )
-    _log.info(
-        "protocol_summary_gate: %d package(s) scanned, %d protocol-tagged "
-        "symbol(s), %d violation(s)",
-        packages_scanned,
-        sum(len(v) for v in tagged_by_package.values()),
-        len(violations),
+    violations.extend(
+        _proto002_requires_violations(
+            root, edges, symref, summary, established, file, line, package
+        )
     )
-    return tuple(violations)
+    violations.extend(
+        _proto003_transition_violations(
+            root, edges, symref, summary, established, file, line, package
+        )
+    )
+    return violations
+
+
+# frob:ticket T-0976
+def _proto002_requires_violations(
+    root: Path,
+    edges: tuple[Edge, ...],
+    symref: str,
+    summary,  # noqa: ANN001
+    established: dict[str, set[str]],
+    file: str,
+    line: int,
+    package: str,
+) -> list[Violation]:
+    """PROTO002, state-requirement verification (T-0746) --
+    `_entrypoint_protocol_violations`'s own half, split out. A poisoned
+    summary cannot be trusted to have gathered every reachable transition,
+    so it is ALSO an ERROR here (stricter than PROTO001's WARN for the
+    identical signal) rather than silently skipping the requires check."""
+    violations: list[Violation] = []
+    for proto, state in _own_requires(edges, symref):
+        if summary.poisoned:
+            violations.append(
+                Violation(
+                    rule="PROTO002",
+                    severity=Severity.ERROR,
+                    file=file,
+                    line=line,
+                    message=(
+                        f"PROTO002: {symref} requires {proto}:{state} but "
+                        "its protocol summary is poisoned "
+                        f"({summary.poison_reason}) -- cannot verify; "
+                        'fix the call or frob:waive PROTO002 reason="..."'
+                    ),
+                )
+            )
+            continue
+        if state in established.get(proto, set()):
+            continue
+        discharge = _discharge(root, symref, proto)
+        if discharge is not None:
+            violations.append(discharge)
+            continue
+        violations.append(
+            Violation(
+                rule="PROTO002",
+                severity=Severity.ERROR,
+                file=file,
+                line=line,
+                message=(
+                    f"PROTO002: {symref} requires {proto}:{state}, but no "
+                    "reachable frob:transition establishes it (and it is "
+                    "not the protocol's declared initial state) -- state-"
+                    "requirement violation, call path rooted at "
+                    f"{symref} in package {package}; "
+                    'frob:waive PROTO002 reason="..." if this is a false '
+                    "positive of the engine's existential approximation"
+                ),
+            )
+        )
+    return violations
+
+
+# frob:ticket T-0976
+def _proto003_transition_violations(
+    root: Path,
+    edges: tuple[Edge, ...],
+    symref: str,
+    summary,  # noqa: ANN001
+    established: dict[str, set[str]],
+    file: str,
+    line: int,
+    package: str,
+) -> list[Violation]:
+    """PROTO003, invalid-transition verification (T-0746) -- same
+    established-state test as PROTO002 applied to a transition's OWN
+    precondition (`from=`) rather than a requires directive's declared
+    state; `_entrypoint_protocol_violations`'s own half, split out."""
+    violations: list[Violation] = []
+    for proto, frm, to in _own_transitions(edges, symref):
+        if summary.poisoned:
+            violations.append(
+                Violation(
+                    rule="PROTO003",
+                    severity=Severity.ERROR,
+                    file=file,
+                    line=line,
+                    message=(
+                        f"PROTO003: {symref} transitions {proto}:"
+                        f"{frm}->{to} but its protocol summary is "
+                        f"poisoned ({summary.poison_reason}) -- cannot "
+                        "verify; fix the call or frob:waive PROTO003 "
+                        'reason="..."'
+                    ),
+                )
+            )
+            continue
+        if frm in established.get(proto, set()):
+            continue
+        discharge = _discharge(root, symref, proto)
+        if discharge is not None:
+            violations.append(discharge.model_copy(update={"rule": "PROTO003"}))
+            continue
+        violations.append(
+            Violation(
+                rule="PROTO003",
+                severity=Severity.ERROR,
+                file=file,
+                line=line,
+                message=(
+                    f"PROTO003: {symref} transitions {proto}:{frm}->{to}, "
+                    f"but precondition state {frm!r} is never established "
+                    "(not the protocol's declared initial state, and no "
+                    "reachable frob:transition reaches it) -- invalid "
+                    "transition, call path rooted at "
+                    f"{symref} in package {package}; "
+                    'frob:waive PROTO003 reason="..." if this is a false '
+                    "positive of the engine's existential approximation"
+                ),
+            )
+        )
+    return violations

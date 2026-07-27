@@ -211,6 +211,50 @@ def check_layering_violations(
     return out
 
 
+# frob:ticket T-0976
+def _dynamic_import_finding(rel: str, source_layer: str) -> "ArchSuggestion":
+    """The dynamic-import fail-closed `ArchSuggestion` for layered file
+    `rel` -- this scan cannot statically resolve `importlib.import_module`
+    /`__import__` indirection, so it flags the file on its own rather than
+    silently passing it."""
+    return ArchSuggestion(
+        file=rel,
+        line=None,
+        category="dip-layering-violation",
+        severity="warning",
+        message=(
+            f"`{rel}` (layer `{source_layer}`) uses dynamic import"
+            " indirection this scan cannot statically resolve"
+        ),
+        detail=(
+            "importlib.import_module()/__import__() can reach any"
+            " module at runtime, defeating a static layering"
+            " check -- replace with a static import, or move the"
+            " dynamic dispatch behind a declared registration"
+            " point this check can see"
+        ),
+        symref=rel,
+    )
+
+
+# frob:ticket T-0976
+def _resolve_import_targets(specs, path: Path, root: Path) -> set[str]:  # noqa: ANN001
+    """Every local import target `path`'s import `specs` resolve to
+    (`resolve_local_import`), plus each one's own re-export closure
+    (`_resolve_reexports`) -- the full set of files `_layering_violations_
+    for_file` checks against `config.allow`."""
+    from frob.lang import resolve_local_import
+
+    targets: set[str] = set()
+    for spec in specs:
+        resolved = resolve_local_import(spec, "python", file_dir=path.parent, root=root)
+        if resolved is None:
+            continue
+        targets.add(resolved)
+        targets.update(_resolve_reexports(resolved, "python", root=root))
+    return targets
+
+
 # frob:ticket T-0970
 def _layering_violations_for_file(
     path: Path,
@@ -224,40 +268,15 @@ def _layering_violations_for_file(
     the dynamic-import fail-closed flag, then every resolved cross-layer
     import edge not present in `config.allow[source_layer]`; appends
     findings onto `out` in place."""
-    from frob.lang import extract_imports, resolve_local_import
+    from frob.lang import extract_imports
 
     if _has_dynamic_import(path):
-        out.append(
-            ArchSuggestion(
-                file=rel,
-                line=None,
-                category="dip-layering-violation",
-                severity="warning",
-                message=(
-                    f"`{rel}` (layer `{source_layer}`) uses dynamic import"
-                    " indirection this scan cannot statically resolve"
-                ),
-                detail=(
-                    "importlib.import_module()/__import__() can reach any"
-                    " module at runtime, defeating a static layering"
-                    " check -- replace with a static import, or move the"
-                    " dynamic dispatch behind a declared registration"
-                    " point this check can see"
-                ),
-                symref=rel,
-            )
-        )
+        out.append(_dynamic_import_finding(rel, source_layer))
 
     result = extract_imports(path)
     if result.is_err:
         return
-    targets: set[str] = set()
-    for spec in result.danger_ok:
-        resolved = resolve_local_import(spec, "python", file_dir=path.parent, root=root)
-        if resolved is None:
-            continue
-        targets.add(resolved)
-        targets.update(_resolve_reexports(resolved, "python", root=root))
+    targets = _resolve_import_targets(result.danger_ok, path, root)
 
     for target in sorted(targets):
         target_layer = config.layer_for(target)

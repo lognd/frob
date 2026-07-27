@@ -237,6 +237,7 @@ def _is_test_file(path: str) -> bool:
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_adversarial_test_not_flagged  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_no_test_evidence_is_ok_empty  # noqa: E501
 # frob:ticket T-0601
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of _mutation_evidence_for_file from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def check_ticket_mutation_evidence(
     root: Path,
     ticket: Ticket,
@@ -290,69 +291,98 @@ def check_ticket_mutation_evidence(
     findings: list[ConfirmatoryFinding] = []
     for file in files[:max_files]:
         ranges = ranges_by_file.get(str(file))
-        if not ranges:
-            # No changed-line spans recorded for this file (diff vanished
-            # between the two working_diff calls, or a rename/mode-only
-            # change) -- nothing to mutate, not a finding.
-            _log.debug(
-                "mutation-evidence: %s no changed-line spans for %s, skipping",
-                ticket.id,
-                file,
-            )
-            continue
-        result = run_mutations(
-            root,
-            file,
-            argv,
-            timeout_s=timeout_s,
-            max_mutants=max_mutants_per_file,
-            line_ranges=ranges,
+        checked = _mutation_evidence_for_file(
+            root, ticket, file, ranges, argv, test_ids, max_mutants_per_file, timeout_s
         )
-        if result.is_err:
-            err = result.danger_err
-            if err is MutateError.ExecDisabled:
-                return Err(MutationEvidenceError.ExecDisabled)
-            _log.debug("mutation-evidence: %s skipping %s (%s)", ticket.id, file, err)
-            continue
-        report = result.danger_ok
-        if report.total == 0:
-            _log.debug(
-                "mutation-evidence: %s %s -- 0 mutable point(s) in changed lines %s, "
-                "skipping (not a finding)",
-                ticket.id,
-                file,
-                ranges,
-            )
-            continue
-        if report.killed == 0:
-            _log.warning(
-                "mutation-evidence: %s %s -- %d mutant(s) in changed lines %s, "
-                "0 killed by %s, confirmatory-only: %s",
-                ticket.id,
-                file,
-                report.total,
-                ranges,
-                test_ids,
-                [(m.file, m.line, m.description) for m in report.survivors],
-            )
-            findings.append(
-                ConfirmatoryFinding(
-                    ticket_id=ticket.id,
-                    file=str(file),
-                    tests=test_ids,
-                    mutants_total=report.total,
-                    survivors=report.survivors,
-                )
-            )
-        else:
-            _log.info(
-                "mutation-evidence: %s %s -- %d/%d mutant(s) killed, evidence proven adversarial",  # noqa: E501
-                ticket.id,
-                file,
-                report.killed,
-                report.total,
-            )
+        if checked.is_err:
+            return Err(checked.danger_err)
+        if checked.danger_ok is not None:
+            findings.append(checked.danger_ok)
     return Ok(tuple(findings))
+
+
+# frob:ticket T-0976
+def _mutation_evidence_for_file(
+    root: Path,
+    ticket: Ticket,
+    file: Path,
+    ranges,  # noqa: ANN001
+    argv: tuple[str, ...],
+    test_ids: tuple[str, ...],
+    max_mutants_per_file: int,
+    timeout_s: float,
+) -> Result[ConfirmatoryFinding | None, MutationEvidenceError]:
+    """One touched file's mutation-evidence check:
+    `check_ticket_mutation_evidence`'s per-file half, split from its
+    file-iteration loop. `Ok(None)` covers every "nothing to check/
+    report" case for this one file (no changed-line spans, a run_
+    mutations skip, zero mutable points, or every mutant killed);
+    `Ok(ConfirmatoryFinding)` when every mutant in this file's changed
+    lines survived; `Err(ExecDisabled)` propagates the kill-switch
+    refusal unchanged."""
+    if not ranges:
+        # No changed-line spans recorded for this file (diff vanished
+        # between the two working_diff calls, or a rename/mode-only
+        # change) -- nothing to mutate, not a finding.
+        _log.debug(
+            "mutation-evidence: %s no changed-line spans for %s, skipping",
+            ticket.id,
+            file,
+        )
+        return Ok(None)
+    result = run_mutations(
+        root,
+        file,
+        argv,
+        timeout_s=timeout_s,
+        max_mutants=max_mutants_per_file,
+        line_ranges=ranges,
+    )
+    if result.is_err:
+        err = result.danger_err
+        if err is MutateError.ExecDisabled:
+            return Err(MutationEvidenceError.ExecDisabled)
+        _log.debug("mutation-evidence: %s skipping %s (%s)", ticket.id, file, err)
+        return Ok(None)
+    report = result.danger_ok
+    if report.total == 0:
+        _log.debug(
+            "mutation-evidence: %s %s -- 0 mutable point(s) in changed lines %s, "
+            "skipping (not a finding)",
+            ticket.id,
+            file,
+            ranges,
+        )
+        return Ok(None)
+    if report.killed == 0:
+        _log.warning(
+            "mutation-evidence: %s %s -- %d mutant(s) in changed lines %s, "
+            "0 killed by %s, confirmatory-only: %s",
+            ticket.id,
+            file,
+            report.total,
+            ranges,
+            test_ids,
+            [(m.file, m.line, m.description) for m in report.survivors],
+        )
+        return Ok(
+            ConfirmatoryFinding(
+                ticket_id=ticket.id,
+                file=str(file),
+                tests=test_ids,
+                mutants_total=report.total,
+                survivors=report.survivors,
+            )
+        )
+    _log.info(
+        "mutation-evidence: %s %s -- %d/%d mutant(s) killed, evidence "
+        "proven adversarial",
+        ticket.id,
+        file,
+        report.killed,
+        report.total,
+    )
+    return Ok(None)
 
 
 __all__ = [

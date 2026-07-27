@@ -200,6 +200,75 @@ def _canonical_lines(text: str, *, marker: str, indent: str, limit: int) -> list
         remaining = tail
 
 
+# frob:ticket T-0976
+def _fmt_marker_entries_with_indents(
+    lines: list[str], marker: str
+) -> tuple[dict[int, str], list[tuple[int, str, str, int]]]:
+    """Every `marker`-prefixed line in `lines` as both its own leading
+    indent (`index -> indent string`) and `fold_comment_runs`' expected
+    entry tuple -- the marker-scan half of `canonicalize_text`, split from
+    the run-rewrite half since `_canonical_lines` needs each run's
+    original indent to reproduce it."""
+    indents: dict[int, str] = {}
+    entries: list[tuple[int, str, str, int]] = []
+    for i, raw in enumerate(lines):
+        stripped = raw.lstrip(" \t")
+        if not stripped.startswith(marker):
+            continue
+        content = stripped[len(marker) :]
+        if content.startswith(" "):
+            content = content[1:]
+        indents[i] = raw[: len(raw) - len(stripped)]
+        entries.append((i, content, "", 0))
+    return indents, entries
+
+
+# frob:ticket T-0976
+def _rewrite_lines_via_runs(
+    lines: list[str],
+    runs: list,
+    indents: dict[int, str],
+    *,
+    marker: str,
+    limit: int,
+) -> list[str]:
+    """Rebuild `lines` with each `frob:`-prefixed folded `run` replaced by
+    its T-0441 canonical form (`_canonical_lines`, preserving the run's
+    own CR convention), and every other run/line passed through verbatim
+    -- the run-rewrite half of `canonicalize_text`, split from the
+    marker-scan half that built `runs`/`indents`."""
+    out: list[str] = []
+    run_idx = 0
+    i = 0
+    n = len(lines)
+    # frob:waive PERF003 reason="two-pointer merge scan over lines/runs advancing \
+    # together, O(n) total, not a cross join"  # noqa: E501
+    while i < n:
+        if run_idx < len(runs) and runs[run_idx][1] == i:
+            logical_text, _lineno, _src, count = runs[run_idx]
+            run_idx += 1
+            if logical_text.strip().startswith("frob:"):
+                # `fold_comment_runs` already rstrips "\r" off every
+                # constituent line while folding (T-0286's own fold rule),
+                # so `logical_text` is always "\r"-free regardless of the
+                # run's original convention -- reapply it here, once per
+                # run, from the run's FIRST physical line.
+                run_had_cr = lines[i].endswith("\r")
+                canonical = _canonical_lines(
+                    logical_text, marker=marker, indent=indents[i], limit=limit
+                )
+                if run_had_cr:
+                    canonical = [line + "\r" for line in canonical]
+                out.extend(canonical)
+            else:
+                out.extend(lines[i : i + count])
+            i += count
+        else:
+            out.append(lines[i])
+            i += 1
+    return out
+
+
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
 # frob:tests \
 # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_wraps_over_long_single_\
@@ -211,6 +280,7 @@ def _canonical_lines(text: str, *, marker: str, indent: str, limit: int) -> list
 # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_idempotent_on_already_c\
 # anonical_text
 # frob:ticket T-0972
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def canonicalize_text(text: str, *, path: str, limit: int) -> str:
     """Rewrite every `frob:` directive comment run in `text` (source for
     `path`, consulted only to pick the line-comment marker via
@@ -243,54 +313,46 @@ def canonicalize_text(text: str, *, path: str, limit: int) -> str:
     if had_trailing_newline:
         lines = lines[:-1]
 
-    indents: dict[int, str] = {}
-    entries: list[tuple[int, str, str, int]] = []
-    for i, raw in enumerate(lines):
-        stripped = raw.lstrip(" \t")
-        if not stripped.startswith(marker):
-            continue
-        content = stripped[len(marker) :]
-        if content.startswith(" "):
-            content = content[1:]
-        indents[i] = raw[: len(raw) - len(stripped)]
-        entries.append((i, content, "", 0))
-
+    indents, entries = _fmt_marker_entries_with_indents(lines, marker)
     runs = fold_comment_runs(entries)
-
-    out: list[str] = []
-    run_idx = 0
-    i = 0
-    n = len(lines)
-    # frob:waive PERF003 reason="two-pointer merge scan over lines/runs advancing \
-    # together, O(n) total, not a cross join"  # noqa: E501
-    while i < n:
-        if run_idx < len(runs) and runs[run_idx][1] == i:
-            logical_text, _lineno, _src, count = runs[run_idx]
-            run_idx += 1
-            if logical_text.strip().startswith("frob:"):
-                # `fold_comment_runs` already rstrips "\r" off every
-                # constituent line while folding (T-0286's own fold rule),
-                # so `logical_text` is always "\r"-free regardless of the
-                # run's original convention -- reapply it here, once per
-                # run, from the run's FIRST physical line.
-                run_had_cr = lines[i].endswith("\r")
-                canonical = _canonical_lines(
-                    logical_text, marker=marker, indent=indents[i], limit=limit
-                )
-                if run_had_cr:
-                    canonical = [line + "\r" for line in canonical]
-                out.extend(canonical)
-            else:
-                out.extend(lines[i : i + count])
-            i += count
-        else:
-            out.append(lines[i])
-            i += 1
+    out = _rewrite_lines_via_runs(lines, runs, indents, marker=marker, limit=limit)
 
     result = "\n".join(out)
     if had_trailing_newline:
         result += "\n"
     return result
+
+
+# frob:ticket T-0976
+def _format_one_path(
+    path: Path, root: Path, *, limit: int, check_only: bool
+) -> "FmtChange | None":
+    """`format_paths`'s per-file half: canonicalize `path` (skipping an
+    unsupported language or an unreadable file), returning its
+    `FmtChange` if it is not already canonical, and -- unless `check_only`
+    -- rewriting it in place. See `format_paths`'s own docstring for the
+    CRLF-preserving `newline=""` rationale this shares."""
+    if marker_for(str(path)) is None:
+        return None
+    try:
+        # `pathlib.Path.read_text`/`write_text` gained a `newline=`
+        # parameter only in Python 3.13; this repo targets 3.11, so the
+        # `newline=""` universal-newline opt-out has to go through the
+        # plain `open()` builtin instead (same effect: "\r\n"/"\r"
+        # survive verbatim rather than being translated to "\n").
+        with open(path, encoding="utf-8", newline="") as fh:
+            original = fh.read()
+    except (OSError, UnicodeDecodeError) as exc:
+        _log.debug("format_paths: skipping unreadable %s (%s)", path, exc)
+        return None
+    rewritten = canonicalize_text(original, path=str(path), limit=limit)
+    if rewritten == original:
+        return None
+    rel = str(path.relative_to(root)) if path.is_relative_to(root) else str(path)
+    if not check_only:
+        with open(path, "w", encoding="utf-8", newline="") as fh:
+            fh.write(rewritten)
+    return FmtChange(path=rel)
 
 
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
@@ -299,6 +361,7 @@ def canonicalize_text(text: str, *, path: str, limit: int) -> str:
 # riting
 # frob:tests \
 # tests/test_gates_fmt_directives.py::TestFormatPaths.test_write_mode_rewrites_file
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def format_paths(
     root: Path, *, check_only: bool, limit: int | None = None
 ) -> FmtReport:
@@ -335,27 +398,11 @@ def format_paths(
     paths = (root,) if root.is_file() else iter_files(root)
     changes: list[FmtChange] = []
     for path in paths:
-        if marker_for(str(path)) is None:
-            continue
-        try:
-            # `pathlib.Path.read_text`/`write_text` gained a `newline=`
-            # parameter only in Python 3.13; this repo targets 3.11, so the
-            # `newline=""` universal-newline opt-out has to go through the
-            # plain `open()` builtin instead (same effect: "\r\n"/"\r"
-            # survive verbatim rather than being translated to "\n").
-            with open(path, encoding="utf-8", newline="") as fh:
-                original = fh.read()
-        except (OSError, UnicodeDecodeError) as exc:
-            _log.debug("format_paths: skipping unreadable %s (%s)", path, exc)
-            continue
-        rewritten = canonicalize_text(original, path=str(path), limit=resolved_limit)
-        if rewritten == original:
-            continue
-        rel = str(path.relative_to(root)) if path.is_relative_to(root) else str(path)
-        changes.append(FmtChange(path=rel))
-        if not check_only:
-            with open(path, "w", encoding="utf-8", newline="") as fh:
-                fh.write(rewritten)
+        change = _format_one_path(
+            path, root, limit=resolved_limit, check_only=check_only
+        )
+        if change is not None:
+            changes.append(change)
     _log.info(
         "format_paths: %d file(s) %s under %s",
         len(changes),

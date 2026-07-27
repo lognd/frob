@@ -226,135 +226,197 @@ def _parse_attrs(
 
 
 # frob:ticket T-0598
+def _attrs_verb_error_waive(
+    attrs: dict[str, str], *, path: str, lineno: int
+) -> MalformedDirective | None:
+    """`frob:waive`'s own attribute requirements: `reason=` mandatory, an
+    optional `until=` must be a `YYYY-MM-DD` date (T-0753, the same
+    grammar `frob:deprecated`'s `sunset=` uses)."""
+    if "reason" not in attrs:
+        return MalformedDirective(
+            file=path, line=lineno, reason='frob:waive requires reason="..."'
+        )
+    until = attrs.get("until")
+    if until is not None and not _DATE_RE.match(until.strip()):
+        return MalformedDirective(
+            file=path,
+            line=lineno,
+            reason=(f"frob:waive until={until!r} is not a YYYY-MM-DD date"),
+        )
+    return None
+
+
+def _attrs_verb_error_debt(
+    attrs: dict[str, str], *, path: str, lineno: int
+) -> MalformedDirective | None:
+    """`frob:debt`'s own attribute requirements: `reason=` and `ticket=`
+    both mandatory."""
+    missing = [key for key in ("reason", "ticket") if key not in attrs]
+    if not missing:
+        return None
+    return MalformedDirective(
+        file=path,
+        line=lineno,
+        reason=(
+            'frob:debt requires reason="..." and ticket="T-####" '
+            f"(missing: {', '.join(missing)})"
+        ),
+    )
+
+
+def _attrs_verb_error_deprecated(
+    attrs: dict[str, str], *, path: str, lineno: int
+) -> MalformedDirective | None:
+    """`frob:deprecated`'s own attribute requirements: `sunset=` and
+    `ticket=` both mandatory, `sunset=` must be a `YYYY-MM-DD` date."""
+    missing = [key for key in ("sunset", "ticket") if key not in attrs]
+    if missing:
+        return MalformedDirective(
+            file=path,
+            line=lineno,
+            reason=(
+                'frob:deprecated requires sunset="YYYY-MM-DD" and '
+                f'ticket="T-####" (missing: {", ".join(missing)})'
+            ),
+        )
+    if not _DATE_RE.match(attrs["sunset"].strip()):
+        return MalformedDirective(
+            file=path,
+            line=lineno,
+            reason=(
+                f"frob:deprecated sunset={attrs['sunset']!r} is not a YYYY-MM-DD date"
+            ),
+        )
+    return None
+
+
+def _attrs_verb_error_protocol(
+    attrs: dict[str, str], *, path: str, lineno: int
+) -> MalformedDirective | None:
+    """`frob:protocol`'s own attribute requirements: `states=`/`initial=`
+    mandatory, `initial=` must be one of the declared `states=`, and an
+    optional `cleanup=` must be a known kind (defaulted to `on-error`)."""
+    missing = [key for key in ("states", "initial") if key not in attrs]
+    if missing:
+        return MalformedDirective(
+            file=path,
+            line=lineno,
+            reason=(
+                'frob:protocol requires states="S1,S2,..." and '
+                f'initial="..." (missing: {", ".join(missing)})'
+            ),
+        )
+    states = [s.strip() for s in attrs["states"].split(",") if s.strip()]
+    if not states:
+        return MalformedDirective(
+            file=path,
+            line=lineno,
+            reason='frob:protocol states="..." must list at least one state',
+        )
+    if attrs["initial"] not in states:
+        return MalformedDirective(
+            file=path,
+            line=lineno,
+            reason=(
+                f"frob:protocol initial={attrs['initial']!r} is not one "
+                f"of its own states={states!r}"
+            ),
+        )
+    cleanup = attrs.get("cleanup", "on-error")
+    if cleanup not in _CLEANUP_KINDS:
+        return MalformedDirective(
+            file=path,
+            line=lineno,
+            reason=(
+                f"frob:protocol cleanup={cleanup!r} must be one of "
+                f"{sorted(_CLEANUP_KINDS)}"
+            ),
+        )
+    attrs.setdefault("cleanup", "on-error")
+    return None
+
+
+def _attrs_verb_error_transition(
+    attrs: dict[str, str], *, path: str, lineno: int
+) -> MalformedDirective | None:
+    """`frob:transition`'s own attribute requirements: `proto=`/`from=`/
+    `to=` all mandatory."""
+    missing = [key for key in ("proto", "from", "to") if key not in attrs]
+    if not missing:
+        return None
+    return MalformedDirective(
+        file=path,
+        line=lineno,
+        reason=(
+            'frob:transition requires proto="NAME" from="S" to="T" '
+            f"(missing: {', '.join(missing)})"
+        ),
+    )
+
+
+def _attrs_verb_error_requires(
+    attrs: dict[str, str], *, path: str, lineno: int
+) -> MalformedDirective | None:
+    """`frob:requires`'s own attribute requirements: `proto=`/`state=`
+    both mandatory."""
+    missing = [key for key in ("proto", "state") if key not in attrs]
+    if not missing:
+        return None
+    return MalformedDirective(
+        file=path,
+        line=lineno,
+        reason=(
+            'frob:requires requires proto="NAME" state="S" '
+            f"(missing: {', '.join(missing)})"
+        ),
+    )
+
+
+def _attrs_verb_error_tests(
+    attrs: dict[str, str], *, path: str, lineno: int
+) -> MalformedDirective | None:
+    """`frob:tests`'s own attribute requirements: an optional `kind=`
+    (defaulted to `unit`) must be a known kind."""
+    attrs.setdefault("kind", "unit")
+    if attrs["kind"] in _TESTS_KINDS:
+        return None
+    # T-0237: the literal 'frob:tests' substring lets
+    # frob.gates._test010_violations pick this MalformedDirective out of
+    # the mixed pile in GraphSnapshot.malformed, mirroring how WAIVE001
+    # filters frob:waive's own malformed directives.
+    return MalformedDirective(
+        file=path,
+        line=lineno,
+        reason=(
+            f"frob:tests invalid kind={attrs['kind']!r}; "
+            f"must be one of {sorted(_TESTS_KINDS)}"
+        ),
+    )
+
+
+_VERB_ATTRS_VALIDATORS = {
+    "waive": _attrs_verb_error_waive,
+    "debt": _attrs_verb_error_debt,
+    "deprecated": _attrs_verb_error_deprecated,
+    "protocol": _attrs_verb_error_protocol,
+    "transition": _attrs_verb_error_transition,
+    "requires": _attrs_verb_error_requires,
+    "tests": _attrs_verb_error_tests,
+}
+
+
 def _parse_attrs_verb_error(
     verb: str, attrs: dict[str, str], *, path: str, lineno: int
 ) -> MalformedDirective | None:
     """The per-verb attribute requirement `verb` fails to meet, or `None` if
     it meets every requirement its verb declares (`_parse_attrs`'s per-verb
-    dispatch, split out for ARCH001 -- T-0598)."""
-    if verb == "waive":
-        if "reason" not in attrs:
-            return MalformedDirective(
-                file=path, line=lineno, reason='frob:waive requires reason="..."'
-            )
-        # T-0753: optional `until="YYYY-MM-DD"` expiry, reusing the same
-        # date-only grammar `frob:deprecated`'s `sunset=` established
-        # (T-0576) rather than a third bespoke date format -- coordinate
-        # with T-0671 (strata's SYSWAIVE002) on this one convention.
-        until = attrs.get("until")
-        if until is not None and not _DATE_RE.match(until.strip()):
-            return MalformedDirective(
-                file=path,
-                line=lineno,
-                reason=(f"frob:waive until={until!r} is not a YYYY-MM-DD date"),
-            )
-    if verb == "debt":
-        missing = [key for key in ("reason", "ticket") if key not in attrs]
-        if missing:
-            return MalformedDirective(
-                file=path,
-                line=lineno,
-                reason=(
-                    'frob:debt requires reason="..." and ticket="T-####" '
-                    f"(missing: {', '.join(missing)})"
-                ),
-            )
-    if verb == "deprecated":
-        missing = [key for key in ("sunset", "ticket") if key not in attrs]
-        if missing:
-            return MalformedDirective(
-                file=path,
-                line=lineno,
-                reason=(
-                    'frob:deprecated requires sunset="YYYY-MM-DD" and '
-                    f'ticket="T-####" (missing: {", ".join(missing)})'
-                ),
-            )
-        if not _DATE_RE.match(attrs["sunset"].strip()):
-            return MalformedDirective(
-                file=path,
-                line=lineno,
-                reason=(
-                    f"frob:deprecated sunset={attrs['sunset']!r} is not a "
-                    "YYYY-MM-DD date"
-                ),
-            )
-    if verb == "protocol":
-        missing = [key for key in ("states", "initial") if key not in attrs]
-        if missing:
-            return MalformedDirective(
-                file=path,
-                line=lineno,
-                reason=(
-                    'frob:protocol requires states="S1,S2,..." and '
-                    f'initial="..." (missing: {", ".join(missing)})'
-                ),
-            )
-        states = [s.strip() for s in attrs["states"].split(",") if s.strip()]
-        if not states:
-            return MalformedDirective(
-                file=path,
-                line=lineno,
-                reason='frob:protocol states="..." must list at least one state',
-            )
-        if attrs["initial"] not in states:
-            return MalformedDirective(
-                file=path,
-                line=lineno,
-                reason=(
-                    f"frob:protocol initial={attrs['initial']!r} is not one "
-                    f"of its own states={states!r}"
-                ),
-            )
-        cleanup = attrs.get("cleanup", "on-error")
-        if cleanup not in _CLEANUP_KINDS:
-            return MalformedDirective(
-                file=path,
-                line=lineno,
-                reason=(
-                    f"frob:protocol cleanup={cleanup!r} must be one of "
-                    f"{sorted(_CLEANUP_KINDS)}"
-                ),
-            )
-        attrs.setdefault("cleanup", "on-error")
-    if verb == "transition":
-        missing = [key for key in ("proto", "from", "to") if key not in attrs]
-        if missing:
-            return MalformedDirective(
-                file=path,
-                line=lineno,
-                reason=(
-                    'frob:transition requires proto="NAME" from="S" to="T" '
-                    f"(missing: {', '.join(missing)})"
-                ),
-            )
-    if verb == "requires":
-        missing = [key for key in ("proto", "state") if key not in attrs]
-        if missing:
-            return MalformedDirective(
-                file=path,
-                line=lineno,
-                reason=(
-                    'frob:requires requires proto="NAME" state="S" '
-                    f"(missing: {', '.join(missing)})"
-                ),
-            )
-    if verb == "tests":
-        attrs.setdefault("kind", "unit")
-        if attrs["kind"] not in _TESTS_KINDS:
-            # T-0237: the literal 'frob:tests' substring lets
-            # frob.gates._test010_violations pick this MalformedDirective out
-            # of the mixed pile in GraphSnapshot.malformed, mirroring how
-            # WAIVE001 filters frob:waive's own malformed directives.
-            return MalformedDirective(
-                file=path,
-                line=lineno,
-                reason=(
-                    f"frob:tests invalid kind={attrs['kind']!r}; "
-                    f"must be one of {sorted(_TESTS_KINDS)}"
-                ),
-            )
-    return None
+    dispatch, split out for ARCH001 -- T-0598). Each verb's own requirement
+    lives in its own `_attrs_verb_error_*` validator; a verb with no
+    validator here has no attribute requirements at all."""
+    validator = _VERB_ATTRS_VALIDATORS.get(verb)
+    if validator is None:
+        return None
+    return validator(attrs, path=path, lineno=lineno)
 
 
 def _parse_line(
@@ -739,70 +801,87 @@ def _infer_init_deinit_protocols(parsed: ParsedFile) -> tuple[Edge, ...]:
         if sym.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD):
             continue
         for init_word, deinit_word in _INFER_PAIRS:
-            suffix = f"_{init_word}"
-            if not sym.qualname.endswith(suffix):
-                continue
-            prefix = sym.qualname[: -len(suffix)]
-            deinit_qualname = f"{prefix}_{deinit_word}"
-            if deinit_qualname not in callables:
-                continue
-            proto = f"{prefix}#{init_word}/{deinit_word}"
-            if proto in seen_protocols:
-                continue
-            seen_protocols.add(proto)
-            origin = f"{parsed.path}:{sym.span[0]}"
-            init_src = f"{parsed.path}::{sym.qualname}"
-            deinit_src = f"{parsed.path}::{deinit_qualname}"
-            _log.debug(
-                "T-0744: inferred protocol %r from %s/%s in %s",
-                proto,
-                sym.qualname,
-                deinit_qualname,
-                parsed.path,
+            pair_edges = _inferred_protocol_edges_for_pair(
+                parsed, sym, init_word, deinit_word, callables, seen_protocols
             )
-            edges.append(
-                Edge(
-                    src=parsed.path,
-                    kind=EdgeKind.PROTOCOL,
-                    target=proto,
-                    origin=origin,
-                    attrs={
-                        "states": "uninitialized,active,closed",
-                        "initial": "uninitialized",
-                        "cleanup": "on-error",
-                        "inferred": "true",
-                    },
-                )
-            )
-            edges.append(
-                Edge(
-                    src=init_src,
-                    kind=EdgeKind.TRANSITION,
-                    target=proto,
-                    origin=origin,
-                    attrs={
-                        "proto": proto,
-                        "from": "uninitialized",
-                        "to": "active",
-                        "inferred": "true",
-                    },
-                )
-            )
-            edges.append(
-                Edge(
-                    src=deinit_src,
-                    kind=EdgeKind.TRANSITION,
-                    target=proto,
-                    origin=origin,
-                    attrs={
-                        "proto": proto,
-                        "from": "active",
-                        "to": "closed",
-                        "inferred": "true",
-                    },
-                )
-            )
+            edges.extend(pair_edges)
     return tuple(edges)
+
+
+# frob:ticket T-0976
+def _inferred_protocol_edges_for_pair(
+    parsed: ParsedFile,
+    sym,  # noqa: ANN001
+    init_word: str,
+    deinit_word: str,
+    callables: set[str],
+    seen_protocols: set[str],
+) -> list[Edge]:
+    """One `(init_word, deinit_word)` candidate pair's inferred-protocol
+    edges for `sym` (T-0744), or `[]` if `sym`'s name does not match the
+    pair, its deinit counterpart is not a real callable, or this protocol
+    was already synthesized by an earlier symbol -- `seen_protocols` is
+    mutated IN PLACE to record a new match so the caller never double-
+    counts the same protocol from a later symbol."""
+    suffix = f"_{init_word}"
+    if not sym.qualname.endswith(suffix):
+        return []
+    prefix = sym.qualname[: -len(suffix)]
+    deinit_qualname = f"{prefix}_{deinit_word}"
+    if deinit_qualname not in callables:
+        return []
+    proto = f"{prefix}#{init_word}/{deinit_word}"
+    if proto in seen_protocols:
+        return []
+    seen_protocols.add(proto)
+    origin = f"{parsed.path}:{sym.span[0]}"
+    init_src = f"{parsed.path}::{sym.qualname}"
+    deinit_src = f"{parsed.path}::{deinit_qualname}"
+    _log.debug(
+        "T-0744: inferred protocol %r from %s/%s in %s",
+        proto,
+        sym.qualname,
+        deinit_qualname,
+        parsed.path,
+    )
+    return [
+        Edge(
+            src=parsed.path,
+            kind=EdgeKind.PROTOCOL,
+            target=proto,
+            origin=origin,
+            attrs={
+                "states": "uninitialized,active,closed",
+                "initial": "uninitialized",
+                "cleanup": "on-error",
+                "inferred": "true",
+            },
+        ),
+        Edge(
+            src=init_src,
+            kind=EdgeKind.TRANSITION,
+            target=proto,
+            origin=origin,
+            attrs={
+                "proto": proto,
+                "from": "uninitialized",
+                "to": "active",
+                "inferred": "true",
+            },
+        ),
+        Edge(
+            src=deinit_src,
+            kind=EdgeKind.TRANSITION,
+            target=proto,
+            origin=origin,
+            attrs={
+                "proto": proto,
+                "from": "active",
+                "to": "closed",
+                "inferred": "true",
+            },
+        ),
+    ]
 
 
 # frob:doc docs/modules/graph.md#comment-dsl

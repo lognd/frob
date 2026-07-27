@@ -119,6 +119,7 @@ def _crate_dir_for(root: Path, spec: NativeSpec) -> Path | None:
 # frob:doc docs/modules/cli.md#frob-natives-build-t-0864
 # frob:tests \
 # tests/unit/test_natives_build.py::TestBuildNatives.test_builds_declared_rust_natives
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def build_natives(root: Path) -> Result[BuildReport, NativesError]:
     """Build every declared rust `[[native]]` crate via `maturin develop
     --uv --release`, all sharing one `CARGO_TARGET_DIR` keyed off `root`'s
@@ -151,79 +152,96 @@ def build_natives(root: Path) -> Result[BuildReport, NativesError]:
 
     results: list[CrateBuildResult] = []
     for spec in specs:
-        if spec.language != "rust":
-            _log.debug(
-                "build_natives: skipping non-rust native %s (language=%r)",
-                spec.name,
-                spec.language,
-            )
-            continue
-        crate_dir = _crate_dir_for(root, spec)
-        if crate_dir is None:
-            continue
-
-        _log.info(
-            "build_natives: building %s via maturin develop "
-            "(crate=%s, cargo_target_dir=%s)",
-            spec.name,
-            crate_dir,
-            cargo_target_dir,
-        )
-        env = os.environ.copy()
-        env["VIRTUAL_ENV"] = sys.prefix
-        env["CARGO_TARGET_DIR"] = str(cargo_target_dir)
-        try:
-            run_result = guarded_subprocess_run(
-                [
-                    "uvx",
-                    "maturin",
-                    "develop",
-                    "--uv",
-                    "--release",
-                    "-m",
-                    str(crate_dir / "Cargo.toml"),
-                ],
-                cwd=str(root),
-                env=env,
-                capture_output=True,
-                text=True,
-            )
-        except FileNotFoundError:
-            # Matches the old `make core` recipe's own posture (T-0732):
-            # a missing toolchain (no `uvx`/`cargo` on PATH) is a
-            # best-effort skip, not a hard failure -- Smart-dup R3+ and
-            # strata design-model parsing degrade gracefully without the
-            # native extension (T-0133), everything else keeps working.
-            _log.warning(
-                "build_natives: uvx/cargo not found, skipping %s "
-                "(native extension disabled)",
-                spec.name,
-            )
-            continue
-        if run_result.is_err:
-            _log.error("build_natives: exec disabled, refusing to build %s", spec.name)
-            return Err(NativesError.ExecDisabled)
-        proc: subprocess.CompletedProcess[str] = run_result.danger_ok
-        try:
-            crate_dir_display = str(crate_dir.relative_to(root))
-        except ValueError:
-            crate_dir_display = str(crate_dir)
-        results.append(
-            CrateBuildResult(
-                name=spec.name,
-                crate_dir=crate_dir_display,
-                returncode=proc.returncode,
-                stdout=proc.stdout,
-                stderr=proc.stderr,
-            )
-        )
-        if proc.returncode != 0:
-            _log.error(
-                "build_natives: %s failed to build (exit %d)",
-                spec.name,
-                proc.returncode,
-            )
-        else:
-            _log.info("build_natives: %s built cleanly", spec.name)
+        built = _build_one_crate(root, spec, cargo_target_dir)
+        if built.is_err:
+            return Err(built.danger_err)
+        if built.danger_ok is not None:
+            results.append(built.danger_ok)
 
     return Ok(BuildReport(cargo_target_dir=cargo_target_dir, results=results))
+
+
+# frob:ticket T-0976
+def _build_one_crate(
+    root: Path,
+    spec,
+    cargo_target_dir: Path,  # noqa: ANN001
+) -> Result[CrateBuildResult | None, NativesError]:
+    """One declared native `spec`'s build attempt: `Ok(None)` for a
+    silently-skipped entry (non-rust, no matching crate dir, or no
+    `uvx`/`cargo` toolchain -- `build_natives`'s docstring), `Err(
+    ExecDisabled)` if the exec kill switch refused to spawn, else
+    `Ok(CrateBuildResult)` for an attempted build regardless of its own
+    pass/fail exit code (that per-crate failure is NOT an `Err`, per
+    `build_natives`'s own disclosed contract)."""
+    if spec.language != "rust":
+        _log.debug(
+            "build_natives: skipping non-rust native %s (language=%r)",
+            spec.name,
+            spec.language,
+        )
+        return Ok(None)
+    crate_dir = _crate_dir_for(root, spec)
+    if crate_dir is None:
+        return Ok(None)
+
+    _log.info(
+        "build_natives: building %s via maturin develop "
+        "(crate=%s, cargo_target_dir=%s)",
+        spec.name,
+        crate_dir,
+        cargo_target_dir,
+    )
+    env = os.environ.copy()
+    env["VIRTUAL_ENV"] = sys.prefix
+    env["CARGO_TARGET_DIR"] = str(cargo_target_dir)
+    try:
+        run_result = guarded_subprocess_run(
+            [
+                "uvx",
+                "maturin",
+                "develop",
+                "--uv",
+                "--release",
+                "-m",
+                str(crate_dir / "Cargo.toml"),
+            ],
+            cwd=str(root),
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        # Matches the old `make core` recipe's own posture (T-0732): a
+        # missing toolchain (no `uvx`/`cargo` on PATH) is a best-effort
+        # skip, not a hard failure -- Smart-dup R3+ and strata design-model
+        # parsing degrade gracefully without the native extension (T-0133),
+        # everything else keeps working.
+        _log.warning(
+            "build_natives: uvx/cargo not found, skipping %s "
+            "(native extension disabled)",
+            spec.name,
+        )
+        return Ok(None)
+    if run_result.is_err:
+        _log.error("build_natives: exec disabled, refusing to build %s", spec.name)
+        return Err(NativesError.ExecDisabled)
+    proc: subprocess.CompletedProcess[str] = run_result.danger_ok
+    try:
+        crate_dir_display = str(crate_dir.relative_to(root))
+    except ValueError:
+        crate_dir_display = str(crate_dir)
+    result = CrateBuildResult(
+        name=spec.name,
+        crate_dir=crate_dir_display,
+        returncode=proc.returncode,
+        stdout=proc.stdout,
+        stderr=proc.stderr,
+    )
+    if proc.returncode != 0:
+        _log.error(
+            "build_natives: %s failed to build (exit %d)", spec.name, proc.returncode
+        )
+    else:
+        _log.info("build_natives: %s built cleanly", spec.name)
+    return Ok(result)

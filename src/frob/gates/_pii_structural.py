@@ -2042,6 +2042,41 @@ def _scan_cross_language_files(
     return tuple(violations), scanned
 
 
+# frob:ticket T-0976
+def _scan_one_python_file(
+    root: Path, rel_path: str, declared, exclude_globs
+) -> list[Violation] | None:  # noqa: ANN001
+    """One tracked python file's PII010/SEC110 contribution: parse it and
+    run every `_scan_python_*` sub-scan, or -- an unparseable file not
+    covered by `[graph].exclude` (T-0897) -- return a single PARSE001
+    finding instead. `None` (not an empty list) signals "excluded, do not
+    count as scanned", distinct from "scanned, zero findings"."""
+    try:
+        text = (root / rel_path).read_text(encoding="utf-8", errors="strict")
+        tree = ast.parse(text, filename=rel_path)
+    except (OSError, UnicodeDecodeError, SyntaxError) as exc:
+        if is_excluded(rel_path, exclude_globs):
+            # T-0897: `[graph].exclude` (frob.toml) already carves this
+            # path out of frob's own obligation surface (e.g.
+            # tests/fixtures/**'s deliberately-broken parser fixtures,
+            # docs/modules/gates.md's `[graph].exclude` rationale) --
+            # PARSE001 stays silent here, same as the graph-ingested
+            # path already treats it, instead of forcing every such
+            # fixture to carry its own waiver.
+            _log.debug(
+                "pii_structural_gate: skipping excluded unparseable %s", rel_path
+            )
+            return None
+        return [_parse001_violation(rel_path, str(exc))]
+    violations: list[Violation] = []
+    violations.extend(_scan_python_fields(tree, rel_path, declared))
+    violations.extend(_scan_python_env_access(tree, rel_path, declared))
+    violations.extend(_scan_python_ddl(tree, rel_path, declared))
+    violations.extend(_scan_python_email_values(tree, rel_path, text))
+    violations.extend(_scan_python_keyword_sweep(tree, rel_path, text))
+    return violations
+
+
 # frob:doc docs/modules/gates.md#structural-pii-secrets-detection-t-0207
 # frob:tests tests/test_pii_structural_gate.py::TestFieldNames.test_password_field_fires
 # frob:tests tests/test_pii_structural_gate.py::TestEnvAccess.test_os_getenv_fires
@@ -2063,6 +2098,7 @@ def _scan_cross_language_files(
 # frob:enforces SEC-PII-PII-STD_PII_CATEGORY_RECONCILIATION
 # frob:enforces CHK-GATE-PII010
 # frob:enforces CHK-GATE-SEC110
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
     """PII010/SEC110 (docs/modules/gates.md#structural-pii-secrets-
     detection-t-0207): every git-tracked `.py`/`.ts`/`.tsx`/`.rs` file
@@ -2089,30 +2125,11 @@ def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
         ):
             _log.debug("pii_structural_gate: skipping self-excluded %s", rel_path)
             continue
-        try:
-            text = (root / rel_path).read_text(encoding="utf-8", errors="strict")
-            tree = ast.parse(text, filename=rel_path)
-        except (OSError, UnicodeDecodeError, SyntaxError) as exc:
-            if is_excluded(rel_path, exclude_globs):
-                # T-0897: `[graph].exclude` (frob.toml) already carves this
-                # path out of frob's own obligation surface (e.g.
-                # tests/fixtures/**'s deliberately-broken parser fixtures,
-                # docs/modules/gates.md's `[graph].exclude` rationale) --
-                # PARSE001 stays silent here, same as the graph-ingested
-                # path already treats it, instead of forcing every such
-                # fixture to carry its own waiver.
-                _log.debug(
-                    "pii_structural_gate: skipping excluded unparseable %s", rel_path
-                )
-                continue
-            violations.append(_parse001_violation(rel_path, str(exc)))
+        file_violations = _scan_one_python_file(root, rel_path, declared, exclude_globs)
+        if file_violations is None:
             continue
         scanned += 1
-        violations.extend(_scan_python_fields(tree, rel_path, declared))
-        violations.extend(_scan_python_env_access(tree, rel_path, declared))
-        violations.extend(_scan_python_ddl(tree, rel_path, declared))
-        violations.extend(_scan_python_email_values(tree, rel_path, text))
-        violations.extend(_scan_python_keyword_sweep(tree, rel_path, text))
+        violations.extend(file_violations)
 
     cross_language_violations, cross_language_scanned = _scan_cross_language_files(
         root, declared

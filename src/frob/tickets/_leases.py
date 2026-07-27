@@ -471,6 +471,7 @@ def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
 # frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_ambiguous_failure_is_logged_once_per_process kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_genuine_enoent_still_unlinks kind="unit"  # noqa: E501
 # frob:ticket T-0601
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of _parse_lease_files_cached/_live_leases_pruning_stale/etc from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def read_all_leases(root: Path) -> tuple[_LeaseRecord, ...]:
     """Every currently-recorded cross-worktree lease visible from `root`'s
     repository (T-0473), id-ordered. Degrades to `()` if there is no shared
@@ -543,7 +544,33 @@ def read_all_leases(root: Path) -> tuple[_LeaseRecord, ...]:
         return ()
 
     current_paths = sorted(leases_root.glob("*.json"))
-    current_set = frozenset(current_paths)
+    parsed = _parse_lease_files_cached(leases_root, current_paths)
+    return _live_leases_pruning_stale(leases_root, parsed)
+
+
+# frob:ticket T-0976
+def _parse_lease_files_cached(
+    leases_root: Path, current_paths: list[Path]
+) -> list["_LeaseRecord"]:
+    """`read_all_leases`'s STAT-VALIDATED parse-cache half (T-0773): every
+    currently-existing lease file, parsed (via `_lease_file_cache` when its
+    stat is unchanged since the last call, freshly otherwise), in the
+    original sorted (id-ordered) `current_paths` order -- split from
+    `read_all_leases`'s own liveness-check half, which stays uncached.
+    See `read_all_leases`'s docstring for the full lock-discipline
+    rationale (short locks around cache reads/writes only, never around
+    file IO/JSON parsing)."""
+    stats = _stat_lease_files(current_paths)
+    to_parse, hits = _decide_lease_cache_hits_misses(leases_root, current_paths, stats)
+    freshly_parsed = _parse_missed_lease_files(leases_root, to_parse)
+    return _recombine_lease_parse_results(current_paths, hits, freshly_parsed)
+
+
+# frob:ticket T-0976
+def _stat_lease_files(current_paths: list[Path]) -> dict[Path, tuple[int, int] | None]:
+    """`path -> (mtime_ns, size)` for every lease file in `current_paths`,
+    `None` for one that fails to stat (logged, not raised) --
+    `_parse_lease_files_cached`'s stat half."""
     stats: dict[Path, tuple[int, int] | None] = {}
     for path in current_paths:
         try:
@@ -553,10 +580,20 @@ def read_all_leases(root: Path) -> tuple[_LeaseRecord, ...]:
             stats[path] = None
             continue
         stats[path] = (st.st_mtime_ns, st.st_size)
+    return stats
 
-    # Short lock #1: prune stale entries and read cached stat keys --
-    # decides which files are cache HITS (reuse) vs. MISSES (need a
-    # fresh parse below, outside the lock).
+
+# frob:ticket T-0976
+def _decide_lease_cache_hits_misses(
+    leases_root: Path,
+    current_paths: list[Path],
+    stats: dict[Path, tuple[int, int] | None],
+) -> tuple[list[tuple[Path, tuple[int, int]]], dict[Path, "_LeaseRecord | None"]]:
+    """Short lock #1: prune stale cache entries and read cached stat keys,
+    deciding which files are cache HITS (reuse) vs. MISSES (`to_parse`,
+    needs a fresh parse outside the lock) -- `_parse_lease_files_cached`'s
+    hit/miss-decision half."""
+    current_set = frozenset(current_paths)
     to_parse: list[tuple[Path, tuple[int, int]]] = []
     hits: dict[Path, _LeaseRecord | None] = {}
     with _cache_lock:
@@ -573,9 +610,17 @@ def read_all_leases(root: Path) -> tuple[_LeaseRecord, ...]:
                 hits[path] = cached_entry[1]
             else:
                 to_parse.append((path, stat_key))
+    return to_parse, hits
 
-    # Parse every miss OUTSIDE the lock -- file IO/JSON parsing never
-    # holds `_cache_lock`, so it never stalls a concurrent caller.
+
+# frob:ticket T-0976
+def _parse_missed_lease_files(
+    leases_root: Path, to_parse: list[tuple[Path, tuple[int, int]]]
+) -> dict[Path, tuple[tuple[int, int], "_LeaseRecord | None"]]:
+    """Parse every cache-miss file in `to_parse` OUTSIDE `_cache_lock` (file
+    IO/JSON parsing never holds it, so it never stalls a concurrent
+    caller), then write the results back under short lock #2 --
+    `_parse_lease_files_cached`'s parse-and-cache-write half."""
     freshly_parsed: dict[Path, tuple[tuple[int, int], _LeaseRecord | None]] = {}
     for path, stat_key in to_parse:
         try:
@@ -590,15 +635,23 @@ def read_all_leases(root: Path) -> tuple[_LeaseRecord, ...]:
             record = None
         freshly_parsed[path] = (stat_key, record)
 
-    # Short lock #2: write the freshly-parsed results back.
     if freshly_parsed:
         with _cache_lock:
             file_cache = _lease_file_cache.setdefault(leases_root, {})
             file_cache.update(freshly_parsed)
+    return freshly_parsed
 
-    # Recombine in the original sorted (id-ordered) `current_paths` order
-    # -- `hits`/`freshly_parsed` are separate dicts, so concatenating them
-    # naively would reorder a file-set with a mix of hits and misses.
+
+# frob:ticket T-0976
+def _recombine_lease_parse_results(
+    current_paths: list[Path],
+    hits: dict[Path, "_LeaseRecord | None"],
+    freshly_parsed: dict[Path, tuple[tuple[int, int], "_LeaseRecord | None"]],
+) -> list["_LeaseRecord"]:
+    """Recombine `hits`/`freshly_parsed` (separate dicts) in the original
+    sorted (id-ordered) `current_paths` order -- naively concatenating
+    them would reorder a file-set with a mix of hits and misses --
+    `_parse_lease_files_cached`'s final recombination half."""
     parsed: list[_LeaseRecord] = []
     for path in current_paths:
         if path in hits:
@@ -609,75 +662,95 @@ def read_all_leases(root: Path) -> tuple[_LeaseRecord, ...]:
             continue  # unstattable file, already dropped above
         if record is not None:
             parsed.append(record)
+    return parsed
 
+
+# frob:ticket T-0976
+def _live_leases_pruning_stale(
+    leases_root: Path, parsed: list["_LeaseRecord"]
+) -> tuple["_LeaseRecord", ...]:
+    """`read_all_leases`'s liveness-check half, re-run on EVERY call and
+    never cached (see its docstring for why): filters `parsed` down to
+    leases whose worktree is confirmed present, opportunistically
+    unlinking (and dropping from `parsed`'s own file cache) any whose
+    worktree is confirmed gone, and skipping (never unlinking) any whose
+    liveness is ambiguous."""
     live: list[_LeaseRecord] = []
     for record in parsed:
         liveness = _probe_worktree_liveness(record.worktree)
         if liveness == "present":
             live.append(record)
-            continue
-        if liveness == "ambiguous":
-            # T-0782 reviewer fix (T-0584's slow-mount concern, audit L2's
-            # TOCTOU note): `_probe_worktree_liveness` could not confirm
-            # either way (a `PermissionError`, a transient stat failure, a
-            # stale NFS handle, or a mid-`git worktree move` race) -- the
-            # ONLY safe move is to skip this lease FOR THIS PASS exactly
-            # as pre-T-0782 code did (never treat it as live, so a truly
-            # dead lease still stops wedging `doable` eventually once the
-            # probe resolves), but NEVER unlink it: an ambiguous read is
-            # not evidence of absence, and deleting on it would destroy a
-            # live peer's lease over a transient stat hiccup.
-            log_key = (leases_root, record.ticket_id)
-            with _cache_lock:
-                already_logged = log_key in _ambiguous_liveness_logged
-                if not already_logged:
-                    _ambiguous_liveness_logged.add(log_key)
-            if not already_logged:
-                _log.warning(
-                    "tickets: %s lease's worktree liveness could not be "
-                    "confirmed (%s) -- treating as unresolved this pass, "
-                    "NOT unlinking",
-                    record.ticket_id,
-                    record.worktree,
-                )
-            continue
-        # liveness == "confirmed_absent": T-0473/T-0476, the full T-0476
-        # reconcile -- `_probe_worktree_liveness` has confirmed via
-        # `FileNotFoundError` (the only trustworthy absence signal) plus a
-        # successful parent-directory stat (ruling out a wholesale mount
-        # failure) that the worktree is genuinely gone, so it is safe to
-        # opportunistically unlink the lease file itself, not just skip it
-        # in-memory -- otherwise `.git/frob-leases/` grows monotonically
-        # forever (audit M2), since the only prior removal path was a
-        # clean `IN_PROGRESS` exit (`release_lease`), which a
-        # crashed/removed worktree never gets to run.
-        record_path = _lease_path(leases_root, record.ticket_id)
-        try:
-            record_path.unlink(missing_ok=True)
-        except OSError as exc:
-            _log.warning(
-                "tickets: could not opportunistically unlink stale lease %s: %s",
-                record_path,
-                exc,
-            )
+        elif liveness == "ambiguous":
+            _log_ambiguous_lease_liveness_once(leases_root, record)
         else:
-            with _cache_lock:
-                file_cache = _lease_file_cache.get(leases_root)
-                if file_cache is not None:
-                    file_cache.pop(record_path, None)
-        log_key = (leases_root, record.ticket_id)
-        with _cache_lock:
-            already_logged = log_key in _stale_lease_logged
-            if not already_logged:
-                _stale_lease_logged.add(log_key)
-        if not already_logged:
-            _log.info(
-                "tickets: %s lease references a worktree that no "
-                "longer exists (%s) -- treating as stale, unlinked",
-                record.ticket_id,
-                record.worktree,
-            )
+            _unlink_confirmed_stale_lease(leases_root, record)
     return tuple(live)
+
+
+# frob:ticket T-0976
+def _log_ambiguous_lease_liveness_once(
+    leases_root: Path, record: "_LeaseRecord"
+) -> None:
+    """T-0782 reviewer fix (T-0584's slow-mount concern, audit L2's TOCTOU
+    note): `_probe_worktree_liveness` could not confirm either way for
+    `record` (a `PermissionError`, a transient stat failure, a stale NFS
+    handle, or a mid-`git worktree move` race) -- the ONLY safe move is to
+    skip this lease FOR THIS PASS (never treat it as live), but NEVER
+    unlink it: an ambiguous read is not evidence of absence. Logs the
+    warning at most once per (leases_root, ticket_id) per process."""
+    log_key = (leases_root, record.ticket_id)
+    with _cache_lock:
+        already_logged = log_key in _ambiguous_liveness_logged
+        if not already_logged:
+            _ambiguous_liveness_logged.add(log_key)
+    if not already_logged:
+        _log.warning(
+            "tickets: %s lease's worktree liveness could not be "
+            "confirmed (%s) -- treating as unresolved this pass, "
+            "NOT unlinking",
+            record.ticket_id,
+            record.worktree,
+        )
+
+
+# frob:ticket T-0976
+def _unlink_confirmed_stale_lease(leases_root: Path, record: "_LeaseRecord") -> None:
+    """T-0473/T-0476's full reconcile for a `record` whose liveness probe
+    returned `"confirmed_absent"` -- `_probe_worktree_liveness` has
+    confirmed via `FileNotFoundError` (the only trustworthy absence
+    signal) plus a successful parent-directory stat that the worktree is
+    genuinely gone, so it is safe to opportunistically unlink the lease
+    file itself (and drop it from the file cache) -- otherwise `.git/
+    frob-leases/` grows monotonically forever (audit M2), since the only
+    prior removal path was a clean `IN_PROGRESS` exit (`release_lease`),
+    which a crashed/removed worktree never gets to run. Logs the INFO
+    diagnostic at most once per (leases_root, ticket_id) per process."""
+    record_path = _lease_path(leases_root, record.ticket_id)
+    try:
+        record_path.unlink(missing_ok=True)
+    except OSError as exc:
+        _log.warning(
+            "tickets: could not opportunistically unlink stale lease %s: %s",
+            record_path,
+            exc,
+        )
+    else:
+        with _cache_lock:
+            file_cache = _lease_file_cache.get(leases_root)
+            if file_cache is not None:
+                file_cache.pop(record_path, None)
+    log_key = (leases_root, record.ticket_id)
+    with _cache_lock:
+        already_logged = log_key in _stale_lease_logged
+        if not already_logged:
+            _stale_lease_logged.add(log_key)
+    if not already_logged:
+        _log.info(
+            "tickets: %s lease references a worktree that no "
+            "longer exists (%s) -- treating as stale, unlinked",
+            record.ticket_id,
+            record.worktree,
+        )
 
 
 # frob:ticket T-0836
@@ -797,6 +870,7 @@ def _worktree_head_age_seconds(
 # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_branches_survive_removal kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_min_age_keeps_recent_worktree kind="unit"  # noqa: E501
 # frob:ticket T-0601
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of _sweep_verdict_for_worktree from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def sweep_worktrees(
     root: Path,
     *,
@@ -840,69 +914,74 @@ def sweep_worktrees(
     if candidates.is_err:
         return Err(candidates.danger_err)
     leases = read_all_leases(root)
-    verdicts: list[_WorktreeVerdict] = []
-    for candidate in candidates.danger_ok:
-        clean = _worktree_is_clean(candidate)
-        if clean is not True:
-            verdicts.append(_WorktreeVerdict(path=str(candidate), verdict="kept:dirty"))
-            continue
-
-        live_lease: _LeaseRecord | None = None
-        for record in leases:
-            try:
-                record_path = Path(record.worktree).resolve()
-            except OSError:
-                continue
-            if record_path != candidate:
-                continue
-            if not is_lease_ttl_expired(record, now=now):
-                live_lease = record
-                break
-        if live_lease is not None:
-            age = lease_age_seconds(live_lease, now=now)
-            age_str = f"{int(age)}s" if age is not None else "unknown-age"
-            verdicts.append(
-                _WorktreeVerdict(
-                    path=str(candidate),
-                    verdict="kept:lease",
-                    detail=f"{live_lease.ticket_id} {age_str}",
-                )
-            )
-            continue
-
-        if min_age_hours is not None:
-            head_age = _worktree_head_age_seconds(candidate, now=now)
-            if head_age is None or head_age < min_age_hours * 3600:
-                verdicts.append(
-                    _WorktreeVerdict(path=str(candidate), verdict="kept:age")
-                )
-                continue
-
-        if dry_run:
-            verdicts.append(
-                _WorktreeVerdict(
-                    path=str(candidate), verdict="removed", detail="dry-run"
-                )
-            )
-            continue
-
-        removed = gitio.run_argv(
-            ("git", "-C", str(root), "worktree", "remove", str(candidate))
+    verdicts = [
+        _sweep_verdict_for_worktree(
+            root, candidate, leases, min_age_hours, dry_run, now
         )
-        if removed.is_err or removed.danger_ok.returncode != 0:
-            _log.warning(
-                "tickets: worktree sweep: git worktree remove failed for %s",
-                candidate,
-            )
-            verdicts.append(
-                _WorktreeVerdict(
-                    path=str(candidate), verdict="kept:dirty", detail="remove-failed"
-                )
-            )
-            continue
-        _log.info("tickets: worktree sweep removed %s", candidate)
-        verdicts.append(_WorktreeVerdict(path=str(candidate), verdict="removed"))
+        for candidate in candidates.danger_ok
+    ]
     return Ok(tuple(verdicts))
+
+
+# frob:ticket T-0976
+def _sweep_verdict_for_worktree(
+    root: Path,
+    candidate: Path,
+    leases: tuple["_LeaseRecord", ...],
+    min_age_hours: float | None,
+    dry_run: bool,
+    now: datetime | None,
+) -> "_WorktreeVerdict":
+    """One candidate worktree's removal verdict: `sweep_worktrees`'s per-
+    candidate half, split from its own candidate-listing loop. See
+    `sweep_worktrees`'s own docstring for the dirty/lease/age gates this
+    implements, in the same order."""
+    clean = _worktree_is_clean(candidate)
+    if clean is not True:
+        return _WorktreeVerdict(path=str(candidate), verdict="kept:dirty")
+
+    live_lease: _LeaseRecord | None = None
+    for record in leases:
+        try:
+            record_path = Path(record.worktree).resolve()
+        except OSError:
+            continue
+        if record_path != candidate:
+            continue
+        if not is_lease_ttl_expired(record, now=now):
+            live_lease = record
+            break
+    if live_lease is not None:
+        age = lease_age_seconds(live_lease, now=now)
+        age_str = f"{int(age)}s" if age is not None else "unknown-age"
+        return _WorktreeVerdict(
+            path=str(candidate),
+            verdict="kept:lease",
+            detail=f"{live_lease.ticket_id} {age_str}",
+        )
+
+    if min_age_hours is not None:
+        head_age = _worktree_head_age_seconds(candidate, now=now)
+        if head_age is None or head_age < min_age_hours * 3600:
+            return _WorktreeVerdict(path=str(candidate), verdict="kept:age")
+
+    if dry_run:
+        return _WorktreeVerdict(
+            path=str(candidate), verdict="removed", detail="dry-run"
+        )
+
+    removed = gitio.run_argv(
+        ("git", "-C", str(root), "worktree", "remove", str(candidate))
+    )
+    if removed.is_err or removed.danger_ok.returncode != 0:
+        _log.warning(
+            "tickets: worktree sweep: git worktree remove failed for %s", candidate
+        )
+        return _WorktreeVerdict(
+            path=str(candidate), verdict="kept:dirty", detail="remove-failed"
+        )
+    _log.info("tickets: worktree sweep removed %s", candidate)
+    return _WorktreeVerdict(path=str(candidate), verdict="removed")
 
 
 # frob:ticket T-0601

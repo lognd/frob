@@ -4131,36 +4131,12 @@ def _cov006_third_file_reachable(root: Path, edge: Edge) -> bool:
 
     Python test files only (import resolution is python-specific).
     """
-    from frob.graph.callgraph import _called_names, build_call_graph, closure
-    from frob.lang import parse_file
-
     test_file = edge.src.split("::", 1)[0]
     target_file = edge.target.split("::", 1)[0]
     if not test_file.endswith(".py"):
         return False
-    test_parsed = parse_file(root / test_file)
-    if test_parsed.is_err:
-        return False
-    test_qualname = edge.src.split("::", 1)[1]
-    test_symbols = test_parsed.danger_ok.symbols
-    test_sym = next(
-        (sym for sym in test_symbols if sym.qualname == test_qualname), None
-    )
-    if test_sym is None:
-        return False
-    called = set(_called_names(test_sym.body_tokens))
-    test_only_graph = build_call_graph(root, (test_file,))
-    reached_helpers = closure(test_only_graph, edge.src, max_depth=6, max_nodes=100)
-    symbols_by_qualname = {sym.qualname: sym for sym in test_symbols}
-    for helper_symref in reached_helpers:
-        if not _is_symref(helper_symref):
-            # T-0814: a non-symref sentinel (e.g. UNRESOLVED_CALLEE) has no
-            # `::` to split on -- skip it, it names no real helper symbol.
-            continue
-        helper_qualname = helper_symref.split("::", 1)[1]
-        helper_sym = symbols_by_qualname.get(helper_qualname)
-        if helper_sym is not None:
-            called |= _called_names(helper_sym.body_tokens)
+
+    called = _cov006_test_and_helper_called_names(root, edge, test_file)
     if not called:
         return False
 
@@ -4179,6 +4155,67 @@ def _cov006_third_file_reachable(root: Path, edge: Edge) -> bool:
     ordered_files = tuple(sorted(candidate_files))
     graph = _cov006_full_call_graph(root, ordered_files)
 
+    entrypoints = _cov006_third_file_entrypoints(root, import_files, resolved_called)
+    if not entrypoints:
+        return False
+    from frob.graph.callgraph import closure
+
+    return any(
+        edge.target in closure(graph, entrypoint, max_depth=8, max_nodes=200)
+        for entrypoint in entrypoints
+    )
+
+
+# frob:ticket T-0976
+def _cov006_test_and_helper_called_names(
+    root: Path, edge: Edge, test_file: str
+) -> set[str]:
+    """The bound test's own called-name set, transitively expanded through
+    every SAME-FILE PRIVATE helper it calls (`build_call_graph` over the
+    test file alone already records that private-callee edge) -- the
+    called-names-gathering half of `_cov006_third_file_reachable`, split
+    from the import-resolution/entrypoint-search half. Empty set if the
+    test symbol cannot be located."""
+    from frob.graph.callgraph import _called_names, build_call_graph, closure
+    from frob.lang import parse_file
+
+    test_parsed = parse_file(root / test_file)
+    if test_parsed.is_err:
+        return set()
+    test_qualname = edge.src.split("::", 1)[1]
+    test_symbols = test_parsed.danger_ok.symbols
+    test_sym = next(
+        (sym for sym in test_symbols if sym.qualname == test_qualname), None
+    )
+    if test_sym is None:
+        return set()
+    called = set(_called_names(test_sym.body_tokens))
+    test_only_graph = build_call_graph(root, (test_file,))
+    reached_helpers = closure(test_only_graph, edge.src, max_depth=6, max_nodes=100)
+    symbols_by_qualname = {sym.qualname: sym for sym in test_symbols}
+    for helper_symref in reached_helpers:
+        if not _is_symref(helper_symref):
+            # T-0814: a non-symref sentinel (e.g. UNRESOLVED_CALLEE) has no
+            # `::` to split on -- skip it, it names no real helper symbol.
+            continue
+        helper_qualname = helper_symref.split("::", 1)[1]
+        helper_sym = symbols_by_qualname.get(helper_qualname)
+        if helper_sym is not None:
+            called |= _called_names(helper_sym.body_tokens)
+    return called
+
+
+# frob:ticket T-0976
+def _cov006_third_file_entrypoints(
+    root: Path, import_files: set[str], resolved_called: frozenset[str]
+) -> set[str]:
+    """Every public symbol, in one of `import_files`, whose short name is
+    in `resolved_called` -- the candidate entrypoints
+    `_cov006_third_file_reachable` seeds its closure search at, since
+    `build_call_graph` never records an edge INTO a public callee
+    (T-0483)."""
+    from frob.lang import parse_file
+
     entrypoints: set[str] = set()
     for third_file in import_files:
         parsed = parse_file(root / third_file)
@@ -4188,12 +4225,7 @@ def _cov006_third_file_reachable(root: Path, edge: Edge) -> bool:
             short = sym.qualname.rsplit(".", 1)[-1]
             if sym.public and short in resolved_called:
                 entrypoints.add(f"{third_file}::{sym.qualname}")
-    if not entrypoints:
-        return False
-    return any(
-        edge.target in closure(graph, entrypoint, max_depth=8, max_nodes=200)
-        for entrypoint in entrypoints
-    )
+    return entrypoints
 
 
 # frob:ticket T-0506
@@ -4604,54 +4636,67 @@ def _todo003_long_deferred(
     for free-text deferral prose the way a dedicated edge kind already
     exists for the structured directive form); left as a follow-on gap.
     """
-    violations: list[Violation] = []
     current_version = _current_version(root)
     if current_version is None:
         _log.debug("TODO003: no readable pyproject.toml version, skipping")
-        return violations
+        return []
+    violations: list[Violation] = []
     for edge in snapshot.edges:
         if edge.kind != EdgeKind.TODO:
             continue
         target = queue.tickets.get(edge.target)
         if target is None or target.state not in _OPEN_STATES:
             continue
-        file, line = _site_from_edge_origin(edge.origin)
-        shas = _blame_shas(root, file, line, line)
-        if shas.is_nothing:
-            continue
-        real_shas = shas.danger_some - {_UNCOMMITTED_SHA}
-        if not real_shas:
-            continue
-        landed_version: str | None = None
-        for sha in real_shas:
-            landed_version = _pyproject_version_at(root, sha)
-            if landed_version is not None:
-                break
-        if landed_version is None or landed_version == current_version:
-            continue
-        _log.debug(
-            "TODO003: %s -> %s deferred since v%s, now v%s",
-            edge.src,
-            edge.target,
-            landed_version,
-            current_version,
-        )
-        violations.append(
-            Violation(
-                rule="TODO003",
-                severity=Severity.WARN,
-                file=file,
-                line=line,
-                message=(
-                    f"TODO003: frob:todo {edge.target} at {edge.src} was deferred "
-                    f"under v{landed_version} and {edge.target} is still open at "
-                    f"v{current_version} -- at least one release has shipped since; "
-                    f"re-litigate the deferral (close {edge.target}, or confirm it "
-                    "is still the right call) rather than letting it fossilize"
-                ),
-            )
-        )
+        violation = _todo003_violation_for_edge(root, edge, current_version)
+        if violation is not None:
+            violations.append(violation)
     return violations
+
+
+# frob:ticket T-0976
+def _todo003_violation_for_edge(
+    root: Path, edge: Edge, current_version: str
+) -> Violation | None:
+    """One `frob:todo` `edge`'s TODO003 contribution, or `None` if it does
+    not fire: fails closed (no finding) whenever the directive's line
+    cannot be blamed to a real commit or that commit's `pyproject.toml`
+    version cannot be read, and is otherwise silent when the landing
+    version already matches `current_version` -- the per-edge half of
+    `_todo003_long_deferred`, split from its queue-filtering loop."""
+    file, line = _site_from_edge_origin(edge.origin)
+    shas = _blame_shas(root, file, line, line)
+    if shas.is_nothing:
+        return None
+    real_shas = shas.danger_some - {_UNCOMMITTED_SHA}
+    if not real_shas:
+        return None
+    landed_version: str | None = None
+    for sha in real_shas:
+        landed_version = _pyproject_version_at(root, sha)
+        if landed_version is not None:
+            break
+    if landed_version is None or landed_version == current_version:
+        return None
+    _log.debug(
+        "TODO003: %s -> %s deferred since v%s, now v%s",
+        edge.src,
+        edge.target,
+        landed_version,
+        current_version,
+    )
+    return Violation(
+        rule="TODO003",
+        severity=Severity.WARN,
+        file=file,
+        line=line,
+        message=(
+            f"TODO003: frob:todo {edge.target} at {edge.src} was deferred "
+            f"under v{landed_version} and {edge.target} is still open at "
+            f"v{current_version} -- at least one release has shipped since; "
+            f"re-litigate the deferral (close {edge.target}, or confirm it "
+            "is still the right call) rather than letting it fossilize"
+        ),
+    )
 
 
 def _todo001_bare(snapshot: GraphSnapshot, diff: Diff) -> list[Violation]:
@@ -4739,6 +4784,7 @@ def _fmt001_touched_lines(diff: Diff, file: str) -> set[int]:
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_long_code_line_not_flagged
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_untouched_line_not_flagged
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_short_directive_not_flagged
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def _fmt001_file(
     root: Path, file: str, limit: int, touched: set[int]
 ) -> list[Violation]:
@@ -4771,6 +4817,18 @@ def _fmt001_file(
         return []
 
     lines = text.split("\n")
+    runs = fold_comment_runs(_fmt001_marker_entries(lines, marker))
+    return _fmt001_violations_for_runs(file, lines, runs, limit, touched)
+
+
+# frob:ticket T-0976
+def _fmt001_marker_entries(
+    lines: list[str], marker: str
+) -> list[tuple[int, str, str, int]]:
+    """Every line in `lines` that starts (after leading whitespace) with
+    comment `marker`, as `fold_comment_runs`' expected `(index, content,
+    "", 0)` entry tuple -- the marker-line-collection half of
+    `_fmt001_file`."""
     entries: list[tuple[int, str, str, int]] = []
     for i, raw in enumerate(lines):
         stripped = raw.lstrip(" \t")
@@ -4780,8 +4838,20 @@ def _fmt001_file(
         if content.startswith(" "):
             content = content[1:]
         entries.append((i, content, "", 0))
-    runs = fold_comment_runs(entries)
+    return entries
 
+
+# frob:ticket T-0976
+def _fmt001_violations_for_runs(
+    file: str,
+    lines: list[str],
+    runs: list,
+    limit: int,
+    touched: set[int],
+) -> list[Violation]:
+    """FMT001 findings for every `frob:`-prefixed folded comment `run`
+    whose diff-touched physical line exceeds `limit` columns -- the run-
+    scan half of `_fmt001_file`, split from the marker-collection half."""
     violations: list[Violation] = []
     for logical_text, start_idx, _src, count in runs:
         if not logical_text.strip().startswith("frob:"):
@@ -8099,6 +8169,7 @@ def _tick007_undispatched_stale(
 # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_silent_on_clean_ledger  # noqa: E501
 # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_real_repo_ledger_is_tick008_clean  # noqa: E501
 # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_waivable  # noqa: E501
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def _tick008_unknown_ledger_fields(queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK008 (T-0842): WARN on every ticket in the CHECKED ledger that
     carries unknown/extra frontmatter field(s) -- the mechanical follow-up
@@ -8153,30 +8224,44 @@ def _tick008_unknown_ledger_fields(queue: TicketQueue) -> tuple[Violation, ...]:
     known_fields = sorted(Ticket.model_fields)
     violations: list[Violation] = []
     for ticket in queue.tickets.values():
-        extras = ticket.__pydantic_extra__
-        if not extras:
-            continue
-        # frob:waive PERF004 reason="own distinct extras set per ticket, not a shared re-sort"  # noqa: E501
-        for extra_field in sorted(extras):
-            hint = ""
-            close = difflib.get_close_matches(extra_field, known_fields, n=1)
-            if close:
-                hint = f" -- did you mean '{close[0]}'?"
-            violations.append(
-                Violation(
-                    rule="TICK008",
-                    severity=Severity.WARN,
-                    file="tickets.md",
-                    line=0,
-                    message=(
-                        f"TICK008: {ticket.id} carries unknown ledger "
-                        f"field '{extra_field}'{hint} (value lost to the "
-                        f"schema default until the field name is fixed or "
-                        f"the schema-owning feature lands)"
-                    ),
-                )
-            )
+        violations.extend(_tick008_violations_for_ticket(ticket, known_fields))
     return tuple(violations)
+
+
+# frob:ticket T-0976
+def _tick008_violations_for_ticket(
+    ticket: Ticket, known_fields: list[str]
+) -> list[Violation]:
+    """One ticket's TICK008 findings: one WARN per unknown pydantic-extra
+    ledger field it carries, fuzzy-matched (`difflib.get_close_matches`)
+    against `known_fields` so a typo like `priorty` names its likely
+    intended field directly -- the per-ticket half of `_tick008_unknown_
+    ledger_fields`."""
+    extras = ticket.__pydantic_extra__
+    if not extras:
+        return []
+    violations: list[Violation] = []
+    # frob:waive PERF004 reason="own distinct extras set per ticket, not a shared re-sort"  # noqa: E501
+    for extra_field in sorted(extras):
+        hint = ""
+        close = difflib.get_close_matches(extra_field, known_fields, n=1)
+        if close:
+            hint = f" -- did you mean '{close[0]}'?"
+        violations.append(
+            Violation(
+                rule="TICK008",
+                severity=Severity.WARN,
+                file="tickets.md",
+                line=0,
+                message=(
+                    f"TICK008: {ticket.id} carries unknown ledger "
+                    f"field '{extra_field}'{hint} (value lost to the "
+                    f"schema default until the field name is fixed or "
+                    f"the schema-owning feature lands)"
+                ),
+            )
+        )
+    return violations
 
 
 # frob:doc docs/modules/tickets.md#decision-record-t-0162

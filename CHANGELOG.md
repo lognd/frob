@@ -17,13 +17,9 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
-## [0.182.0] - unreleased
-
-- T-0978: Wire frob:secret-fake into WAIVE004 zero-findings staleness detection
-
 ## [0.181.0] - unreleased
 
-- T-0982: derived_state_write_lock reentrancy registry is process-local: ProcessPoolExecutor worker deadlocks against main's SHARED holder
+- T-0976: ARCH001 burn-down: remaining 47 long-function findings
 
 ## [0.180.0] - unreleased
 

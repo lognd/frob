@@ -447,7 +447,35 @@ def _check_lock_ordering_hazards(
     t = cast("Tree", tree)
     root = t.root_node
     module_locks = _collect_module_locks(root)
+    infos, name_to_fid = _collect_function_lock_infos(root, rel, module_locks)
 
+    reachable: dict[int, set[str]] = {fid: set() for fid in infos}
+    _reachable_locks(infos, name_to_fid, reachable)
+
+    all_edges: list[_OrderEdge] = []
+    for fid, info in infos.items():
+        all_edges.extend(_edges_for_function(info, name_to_fid, reachable))
+
+    cycle = _find_cycle(all_edges)
+    if cycle is not None:
+        out.append(_lock_order_cycle_finding(rel, cycle))
+
+    for info in infos.values():
+        finding = _lock_identity_unresolved_finding(rel, info)
+        if finding is not None:
+            out.append(finding)
+
+
+# frob:ticket T-0976
+def _collect_function_lock_infos(
+    root, rel: str, module_locks
+) -> tuple[dict[int, "_FunctionLockInfo"], dict[str, int]]:  # noqa: ANN001
+    """Build `_check_lock_ordering_hazards`'s two shared per-function
+    tables in one pass: `id(func_node) -> _FunctionLockInfo` for every
+    function/method in the parsed tree, and the same-module bare-name ->
+    fid lookup (ambiguous names bound to more than one function excluded
+    entirely, fail-closed, same convention as `frob.arch._mayraise.
+    _build_name_to_func`)."""
     infos: dict[int, _FunctionLockInfo] = {}
     fids_by_bare: dict[str, list[int]] = {}
 
@@ -464,85 +492,79 @@ def _check_lock_ordering_hazards(
         infos[fid] = _FunctionLockInfo(symref, events, unresolved)
         fids_by_bare.setdefault(fname, []).append(fid)
 
-    # Same-module bare-name -> fid, AMBIGUOUS names (bound to more than one
-    # function/method) excluded entirely -- fail-closed, same convention as
-    # `frob.arch._mayraise._build_name_to_func` (this module's docstring
-    # step 3).
     name_to_fid = {name: fs[0] for name, fs in fids_by_bare.items() if len(fs) == 1}
+    return infos, name_to_fid
 
-    reachable: dict[int, set[str]] = {fid: set() for fid in infos}
-    _reachable_locks(infos, name_to_fid, reachable)
 
-    all_edges: list[_OrderEdge] = []
-    for fid, info in infos.items():
-        all_edges.extend(_edges_for_function(info, name_to_fid, reachable))
+# frob:ticket T-0976
+def _lock_order_cycle_finding(rel: str, cycle) -> "ArchSuggestion":  # noqa: ANN001
+    """The `lock-order-cycle` `ArchSuggestion` (and matching log line) for
+    one `_find_cycle` result `(lock_a, lock_b, edge_ab, edge_ba)`."""
+    lock_a, lock_b, edge_ab, edge_ba = cycle
+    _log.warning(
+        "lock-order-cycle: %s acquires %s before %s (line %d); %s "
+        "acquires %s before %s (line %d)",
+        edge_ab.symref,
+        lock_a,
+        lock_b,
+        edge_ab.line,
+        edge_ba.symref,
+        lock_b,
+        lock_a,
+        edge_ba.line,
+    )
+    return ArchSuggestion(
+        file=rel,
+        line=edge_ab.line,
+        category="lock-order-cycle",
+        severity="warning",
+        message=(
+            f"cyclic lock-acquisition order between `{lock_a}` and "
+            f"`{lock_b}`: {edge_ab.symref} acquires {lock_a} before "
+            f"{lock_b} (line {edge_ab.line}); {edge_ba.symref} "
+            f"acquires {lock_b} before {lock_a} (line {edge_ba.line})"
+        ),
+        detail=(
+            "if these two call paths can ever run concurrently, "
+            "acquiring the two locks in opposite orders can "
+            "deadlock -- establish one consistent global "
+            "acquisition order for every path that needs both locks"
+        ),
+        symref=edge_ab.symref,
+    )
 
-    cycle = _find_cycle(all_edges)
-    if cycle is not None:
-        lock_a, lock_b, edge_ab, edge_ba = cycle
-        _log.warning(
-            "lock-order-cycle: %s acquires %s before %s (line %d); %s "
-            "acquires %s before %s (line %d)",
-            edge_ab.symref,
-            lock_a,
-            lock_b,
-            edge_ab.line,
-            edge_ba.symref,
-            lock_b,
-            lock_a,
-            edge_ba.line,
-        )
-        out.append(
-            ArchSuggestion(
-                file=rel,
-                line=edge_ab.line,
-                category="lock-order-cycle",
-                severity="warning",
-                message=(
-                    f"cyclic lock-acquisition order between `{lock_a}` and "
-                    f"`{lock_b}`: {edge_ab.symref} acquires {lock_a} before "
-                    f"{lock_b} (line {edge_ab.line}); {edge_ba.symref} "
-                    f"acquires {lock_b} before {lock_a} (line {edge_ba.line})"
-                ),
-                detail=(
-                    "if these two call paths can ever run concurrently, "
-                    "acquiring the two locks in opposite orders can "
-                    "deadlock -- establish one consistent global "
-                    "acquisition order for every path that needs both locks"
-                ),
-                symref=edge_ab.symref,
-            )
-        )
 
-    for info in infos.values():
-        if not info.unresolved:
-            continue
-        # frob:waive PERF004 reason="info.unresolved is this loop's own per-info distinct set, not a shared re-sort"  # noqa: E501
-        sample = sorted(info.unresolved)[0]
-        _log.info(
-            "lock-identity-unresolved: %s has lock-shaped usage `%s` this "
-            "resolver could not statically identify",
-            info.symref,
-            sample,
-        )
-        out.append(
-            ArchSuggestion(
-                file=rel,
-                line=None,
-                category="lock-identity-unresolved",
-                severity="suggestion",
-                message=(
-                    f"{info.symref}: lock-shaped usage (`{sample}`, and "
-                    f"possibly others) could not be resolved to a known "
-                    f"module/class-level lock construction -- lock-order-"
-                    f"cycle detection cannot account for it"
-                ),
-                detail=(
-                    "declare the lock as a module-level or self.<attr> "
-                    "assignment of threading/multiprocessing/anyio/asyncio's "
-                    "Lock/RLock/Semaphore/BoundedSemaphore so this check "
-                    "can track its acquisition order"
-                ),
-                symref=info.symref,
-            )
-        )
+# frob:ticket T-0976
+def _lock_identity_unresolved_finding(rel: str, info: "_FunctionLockInfo"):  # noqa: ANN001, ANN201
+    """The `lock-identity-unresolved` advisory `ArchSuggestion` (and
+    matching log line) for `info`, or `None` if it has no unresolved
+    lock-shaped usage."""
+    if not info.unresolved:
+        return None
+    # frob:waive PERF004 reason="info.unresolved is this call's own per-info distinct set, not a shared re-sort"  # noqa: E501
+    sample = sorted(info.unresolved)[0]
+    _log.info(
+        "lock-identity-unresolved: %s has lock-shaped usage `%s` this "
+        "resolver could not statically identify",
+        info.symref,
+        sample,
+    )
+    return ArchSuggestion(
+        file=rel,
+        line=None,
+        category="lock-identity-unresolved",
+        severity="suggestion",
+        message=(
+            f"{info.symref}: lock-shaped usage (`{sample}`, and "
+            f"possibly others) could not be resolved to a known "
+            f"module/class-level lock construction -- lock-order-"
+            f"cycle detection cannot account for it"
+        ),
+        detail=(
+            "declare the lock as a module-level or self.<attr> "
+            "assignment of threading/multiprocessing/anyio/asyncio's "
+            "Lock/RLock/Semaphore/BoundedSemaphore so this check "
+            "can track its acquisition order"
+        ),
+        symref=info.symref,
+    )

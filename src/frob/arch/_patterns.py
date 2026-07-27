@@ -1278,78 +1278,8 @@ def _check_dataclass_boilerplate(
     for c in t.root_node.children:
         if c.type != "class_definition":
             continue
-        body = _child(c, "body")
-        if body is None:
-            continue
-        members = [
-            m
-            for m in body.named_children
-            if m.type in ("function_definition", "decorated_definition")
-        ]
-        if len(members) != 1:
-            continue
-        init = members[0]
-        if init.type != "function_definition":
-            continue
-        name_node = _child(init, "name")
-        if name_node is None or _node_text(name_node) != "__init__":
-            continue
-        params = _init_params(init)
-        if len(params) < _MIN_DATACLASS_FIELDS:
-            continue
-        param_names: list[str] = []
-        for p in params:
-            if p.type in ("list_splat_pattern", "dictionary_splat_pattern"):
-                param_names = []
-                break
-            param_names.append(_node_text(p).split("=")[0].split(":")[0].strip())
-        if not param_names:
-            continue
-        stmts = _method_body_stmts(init)
-        if len(stmts) != len(param_names):
-            continue
-        # frob:ticket T-0972
-        # PERF001: build the membership set once, outside the per-statement
-        # loop below, instead of testing `in` against the `param_names` list
-        # on every iteration.
-        param_name_set = set(param_names)
-        assigned: set[str] = set()
-        ok = True
-        for stmt in stmts:
-            if stmt.type == "assignment":
-                assign: Node | None = stmt
-            elif stmt.type == "expression_statement":
-                assign = stmt.named_children[0] if stmt.named_children else None
-            else:
-                ok = False
-                break
-            if assign is None or assign.type != "assignment":
-                ok = False
-                break
-            target = _child(assign, "left")
-            value = _child(assign, "right")
-            if target is None or value is None:
-                ok = False
-                break
-            if target.type != "attribute" or value.type != "identifier":
-                ok = False
-                break
-            obj = _child(target, "object")
-            if obj is None or _node_text(obj) != "self":
-                ok = False
-                break
-            attr_node = _child(target, "attribute")
-            attr_name = _node_text(attr_node) if attr_node is not None else None
-            value_name = _node_text(value)
-            if (
-                attr_name is None
-                or attr_name != value_name
-                or value_name not in param_name_set
-            ):
-                ok = False
-                break
-            assigned.add(attr_name)
-        if not ok or len(assigned) != len(param_names):
+        param_names = _dataclass_boilerplate_init_params(c)
+        if param_names is None:
             continue
         name_node = _child(c, "name")
         cname = _node_text(name_node) if name_node else "?"
@@ -1362,6 +1292,140 @@ def _check_dataclass_boilerplate(
             subject,
             out,
         )
+
+
+# frob:ticket T-0976
+def _dataclass_boilerplate_init_params(c: Node) -> list[str] | None:
+    """`class_definition` node `c`'s field names if it matches the
+    dataclass-boilerplate hallmark (an `__init__`-only body doing nothing
+    but 1:1 `self.<attr> = <param>` assignments for >=3 params), else
+    `None` -- any disqualifying shape (extra members, non-bare-assignment
+    statements, a splat param, an attr/param name mismatch) fails closed
+    to `None` rather than a guessed match, per `_check_dataclass_
+    boilerplate`'s docstring."""
+    init, param_names = _sole_init_with_min_params(c)
+    if init is None or param_names is None:
+        return None
+    stmts = _method_body_stmts(init)
+    if len(stmts) != len(param_names):
+        return None
+    if not _stmts_are_1to1_self_assignments(stmts, param_names):
+        return None
+    return param_names
+
+
+# frob:ticket T-0976
+def _sole_init_with_min_params(c: Node) -> tuple[Node | None, list[str] | None]:
+    """`(init_node, param_names)` if `class_definition` `c`'s ONLY member
+    is a bare (undecorated) `__init__` with `>= _MIN_DATACLASS_FIELDS`
+    plain (non-splat) parameters, else `(None, None)` -- the shape-check
+    half of `_dataclass_boilerplate_init_params`, split out from the
+    body-statement validation half."""
+    body = _child(c, "body")
+    if body is None:
+        return None, None
+    members = [
+        m
+        for m in body.named_children
+        if m.type in ("function_definition", "decorated_definition")
+    ]
+    if len(members) != 1:
+        return None, None
+    init = members[0]
+    if init.type != "function_definition":
+        return None, None
+    name_node = _child(init, "name")
+    if name_node is None or _node_text(name_node) != "__init__":
+        return None, None
+    params = _init_params(init)
+    if len(params) < _MIN_DATACLASS_FIELDS:
+        return None, None
+    param_names: list[str] = []
+    for p in params:
+        if p.type in ("list_splat_pattern", "dictionary_splat_pattern"):
+            return None, None
+        param_names.append(_node_text(p).split("=")[0].split(":")[0].strip())
+    if not param_names:
+        return None, None
+    return init, param_names
+
+
+# frob:ticket T-0976
+def _stmts_are_1to1_self_assignments(stmts: list[Node], param_names: list[str]) -> bool:
+    """`True` if every statement in `stmts` is a bare `self.<attr> =
+    <param>` assignment (attr name identical to a name in `param_names`)
+    and every name in `param_names` is assigned exactly once -- the body-
+    statement validation half of `_dataclass_boilerplate_init_params`."""
+    # frob:ticket T-0972
+    # PERF001: build the membership set once, outside the per-statement
+    # loop below, instead of testing `in` against the `param_names` list
+    # on every iteration.
+    param_name_set = set(param_names)
+    assigned: set[str] = set()
+    for stmt in stmts:
+        if stmt.type == "assignment":
+            assign: Node | None = stmt
+        elif stmt.type == "expression_statement":
+            assign = stmt.named_children[0] if stmt.named_children else None
+        else:
+            return False
+        if assign is None or assign.type != "assignment":
+            return False
+        target = _child(assign, "left")
+        value = _child(assign, "right")
+        if target is None or value is None:
+            return False
+        if target.type != "attribute" or value.type != "identifier":
+            return False
+        obj = _child(target, "object")
+        if obj is None or _node_text(obj) != "self":
+            return False
+        attr_node = _child(target, "attribute")
+        attr_name = _node_text(attr_node) if attr_node is not None else None
+        value_name = _node_text(value)
+        if (
+            attr_name is None
+            or attr_name != value_name
+            or value_name not in param_name_set
+        ):
+            return False
+        assigned.add(attr_name)
+    return len(assigned) == len(param_names)
+
+
+# frob:ticket T-0976
+def _is_manual_decorator_wrap(c: Node, nxt: Node | None) -> bool:
+    """`True` if module-level `function_definition` `c` is immediately
+    followed by `nxt`, a bare `f = wrapper(f)` reassignment whose wrapper
+    call's argument list contains a bare identifier matching `c`'s own
+    name -- the manual-decorator-wrap hallmark `_check_manual_decorator_
+    wrap` counts occurrences of."""
+    name_node = _child(c, "name")
+    fname = _node_text(name_node) if name_node else ""
+    if not fname or nxt is None:
+        return False
+    if nxt.type == "assignment":
+        assign: Node | None = nxt
+    elif nxt.type == "expression_statement":
+        assign = nxt.named_children[0] if nxt.named_children else None
+    else:
+        return False
+    if assign is None or assign.type != "assignment":
+        return False
+    target = _child(assign, "left")
+    value = _child(assign, "right")
+    if target is None or value is None:
+        return False
+    if target.type != "identifier" or _node_text(target) != fname:
+        return False
+    if value.type != "call":
+        return False
+    args = _child(value, "arguments")
+    if args is None:
+        return False
+    return any(
+        a.type == "identifier" and _node_text(a) == fname for a in args.named_children
+    )
 
 
 # frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_manual_decorator_wrap_recommends_decorator_syntax  # noqa: E501
@@ -1383,42 +1447,14 @@ def _check_manual_decorator_wrap(
     mutually exclusive here, never double-counted."""
     t: Tree = cast("Tree", tree)
     children = list(t.root_node.children)
-    hits: list[Node] = []
-    for i, c in enumerate(children):
-        if c.type != "function_definition":
-            continue
-        name_node = _child(c, "name")
-        fname = _node_text(name_node) if name_node else ""
-        if not fname:
-            continue
-        nxt = children[i + 1] if i + 1 < len(children) else None
-        if nxt is None:
-            continue
-        if nxt.type == "assignment":
-            assign: Node | None = nxt
-        elif nxt.type == "expression_statement":
-            assign = nxt.named_children[0] if nxt.named_children else None
-        else:
-            continue
-        if assign is None or assign.type != "assignment":
-            continue
-        target = _child(assign, "left")
-        value = _child(assign, "right")
-        if target is None or value is None:
-            continue
-        if target.type != "identifier" or _node_text(target) != fname:
-            continue
-        if value.type != "call":
-            continue
-        args = _child(value, "arguments")
-        if args is None:
-            continue
-        if not any(
-            a.type == "identifier" and _node_text(a) == fname
-            for a in args.named_children
-        ):
-            continue
-        hits.append(c)
+    hits: list[Node] = [
+        c
+        for i, c in enumerate(children)
+        if c.type == "function_definition"
+        and _is_manual_decorator_wrap(
+            c, children[i + 1] if i + 1 < len(children) else None
+        )
+    ]
     if len(hits) < _MIN_MANUAL_DECORATOR_WRAPS:
         return
     subject = f"{len(hits)} functions manually re-wrapped via reassignment"

@@ -447,6 +447,7 @@ def _py_except_exception_type(node: Node) -> str | None:
 # frob:ticket T-0632
 # frob:ticket T-0686
 # frob:ticket T-0689
+# frob:waive ARCH001 reason="a single flat per-node-type dispatch table over python's grammar, the same walk shape _kt_collect_body_events/_rust_collect_body_events/_ts_collect_body_events already carry this exact waiver for (T-0609) so the four language adapters stay structurally comparable; splitting by node-type would fragment one coherent walk into disconnected pieces without reducing the branching itself"  # noqa: E501
 def _py_collect_body_events(
     node: Node,
     branches: list[NormalizedBranch],

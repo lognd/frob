@@ -116,19 +116,13 @@ def external_call_advisories(stream: HitStream, index: SectionIndex) -> list[Vio
     return violations
 
 
-# frob:doc docs/modules/perf.md#slow-operation-advisories-t-0712
-# frob:tests tests/unit/perf/test_advisories.py::TestNestedLoopFaninAdvisories.test_hot_loop_with_multiple_callers_fires  # noqa: E501
-# frob:tests tests/unit/perf/test_advisories.py::TestNestedLoopFaninAdvisories.test_single_caller_loop_does_not_fire  # noqa: E501
-def nested_loop_fanin_advisories(
-    stream: HitStream, index: SectionIndex
-) -> list[Violation]:
-    """One `PERF-ADV-FANIN` advisory per hot loop section reached from 2+
-    DISTINCT caller sections (a fan-in: this loop's own body runs on
-    behalf of multiple call sites, so its cost multiplies with every new
-    caller) whose own weight share of its file's total resolved weight
-    crosses `_DOMINANCE_THRESHOLD` -- "hot AND a shared dependency" is the
-    complexity-suspect shape this names."""
-    sections = _all_sections(index)
+# frob:ticket T-0976
+def _section_and_file_weight_totals(
+    stream: HitStream, sections: dict
+) -> tuple[dict[str, float], dict[str, float]]:
+    """`(section_id -> total weight, file -> total weight)` from `stream`'s
+    `section_hits` -- `nested_loop_fanin_advisories`'s weight-aggregation
+    half, split from its fan-in/dominance check."""
     section_total: dict[str, float] = {}
     for hit in stream.section_hits:
         section_total[hit.section_id] = (
@@ -140,7 +134,14 @@ def nested_loop_fanin_advisories(
         if section is None:
             continue
         file_total[section.file] = file_total.get(section.file, 0.0) + weight
+    return section_total, file_total
 
+
+# frob:ticket T-0976
+def _loop_callers_by_callee(stream: HitStream, sections: dict) -> dict[str, set[str]]:
+    """`loop-section-id -> {distinct caller section ids}` from `stream`'s
+    non-external `edge_hits` -- `nested_loop_fanin_advisories`'s fan-in
+    computation half, split from its weight-aggregation half."""
     callers_by_callee: dict[str, set[str]] = {}
     for edge in stream.edge_hits:
         if edge.is_external:
@@ -158,6 +159,25 @@ def nested_loop_fanin_advisories(
         callers_by_callee.setdefault(callee_section.id, set()).add(
             edge.caller_section_id
         )
+    return callers_by_callee
+
+
+# frob:doc docs/modules/perf.md#slow-operation-advisories-t-0712
+# frob:tests tests/unit/perf/test_advisories.py::TestNestedLoopFaninAdvisories.test_hot_loop_with_multiple_callers_fires  # noqa: E501
+# frob:tests tests/unit/perf/test_advisories.py::TestNestedLoopFaninAdvisories.test_single_caller_loop_does_not_fire  # noqa: E501
+# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
+def nested_loop_fanin_advisories(
+    stream: HitStream, index: SectionIndex
+) -> list[Violation]:
+    """One `PERF-ADV-FANIN` advisory per hot loop section reached from 2+
+    DISTINCT caller sections (a fan-in: this loop's own body runs on
+    behalf of multiple call sites, so its cost multiplies with every new
+    caller) whose own weight share of its file's total resolved weight
+    crosses `_DOMINANCE_THRESHOLD` -- "hot AND a shared dependency" is the
+    complexity-suspect shape this names."""
+    sections = _all_sections(index)
+    section_total, file_total = _section_and_file_weight_totals(stream, sections)
+    callers_by_callee = _loop_callers_by_callee(stream, sections)
 
     violations: list[Violation] = []
     for section_id, callers in callers_by_callee.items():

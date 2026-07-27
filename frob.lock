@@ -1,6 +1,36 @@
 {
   "entries": [
     {
+      "digest": "aa9b26c1c76d9b2ca95b0357908f32434c59d71b07f26412c39b08511c58af04",
+      "facet": "body",
+      "ref": "src/frob/arch/_mayraise.py::compute_may_raise"
+    },
+    {
+      "digest": "1f278e21843f62455f569b82cbe764acf79b53bc2d70d199b6664a4b65f8cf50",
+      "facet": "sig",
+      "ref": "src/frob/arch/_mayraise.py::compute_may_raise"
+    },
+    {
+      "digest": "6b3d8c91114fe4f038d288093cd47d2707b3d4b61058022bb7cc740d8a30f778",
+      "facet": "body",
+      "ref": "src/frob/arch/_smells.py::check_module_dependency_cycles"
+    },
+    {
+      "digest": "11f55dac7882aa0c84effcd6d05bce86370c81450bfa136255196682986d8c78",
+      "facet": "sig",
+      "ref": "src/frob/arch/_smells.py::check_module_dependency_cycles"
+    },
+    {
+      "digest": "e7eba171efe15fc3946ef97a416c39b55af2def1f8df9eaf709ff50dce13a609",
+      "facet": "body",
+      "ref": "src/frob/gates/__init__.py::_fmt001_file"
+    },
+    {
+      "digest": "583aefdbb3864364ea0b8f3ffcb991cb77af419e59fb868963f6f993c60117f0",
+      "facet": "sig",
+      "ref": "src/frob/gates/__init__.py::_fmt001_file"
+    },
+    {
       "digest": "9c8f41451d02128728d2ade8438340e19af482f78fc645476f5d1045332302be",
       "facet": "body",
       "ref": "src/frob/gates/__init__.py::_tick001_duplicate_ids"
@@ -9,6 +39,16 @@
       "digest": "8da8d77d7f5b4bcc97e0cc6286617e72d794248483ce5e9dff67f7a4b090932e",
       "facet": "sig",
       "ref": "src/frob/gates/__init__.py::_tick001_duplicate_ids"
+    },
+    {
+      "digest": "a87489725392c542dd63ae339c4fb91a8d8e1a98d9bbc3e0b68df8121a9dcc06",
+      "facet": "body",
+      "ref": "src/frob/gates/__init__.py::_tick008_unknown_ledger_fields"
+    },
+    {
+      "digest": "601f4f81815f71cea7749598d72239f615ec3673d53e1efe22421ce8345d1f77",
+      "facet": "sig",
+      "ref": "src/frob/gates/__init__.py::_tick008_unknown_ledger_fields"
     },
     {
       "digest": "a3ec91100e15e9216e6c754b0ba623ee6e8c45468ee86805045ad43623853c7b",
@@ -66,9 +106,79 @@
       "ref": "src/frob/gates/_coverage.py::stamp_coverage"
     },
     {
+      "digest": "7124b4ef291f363d5dbdcae0d841309eb950feb3f09508c333f9c2921fb2d9fe",
+      "facet": "body",
+      "ref": "src/frob/gates/_fmt_directives.py::_format_one_path"
+    },
+    {
+      "digest": "8154563280adec6decbd53f05cf78ccf6244e5da39f5622de524139cb25b905e",
+      "facet": "sig",
+      "ref": "src/frob/gates/_fmt_directives.py::_format_one_path"
+    },
+    {
+      "digest": "e9c6d77e51b27f1e04bf858bf4e4f39fb1b72fae71de3ad485419ff38bceb375",
+      "facet": "body",
+      "ref": "src/frob/gates/_fmt_directives.py::canonicalize_text"
+    },
+    {
+      "digest": "0c5ce61829cec8198bf968017b0e94cc2891613708c533f93413b0ed6ef9c127",
+      "facet": "sig",
+      "ref": "src/frob/gates/_fmt_directives.py::canonicalize_text"
+    },
+    {
+      "digest": "3ab9cac153b46148f43458ef9a208c3011c3759d18896bb70ba1f0ffb0fdd8e1",
+      "facet": "body",
+      "ref": "src/frob/gates/_pii_structural.py::_scan_one_python_file"
+    },
+    {
+      "digest": "c731c0081534582b7c894870d7f0417418aac7be1c1ba0e4fc3c4c498a045404",
+      "facet": "sig",
+      "ref": "src/frob/gates/_pii_structural.py::_scan_one_python_file"
+    },
+    {
+      "digest": "cb1c445d2314ce76affb8fc4526bd143319305e7a5bdb64f188866e98c682c9e",
+      "facet": "body",
+      "ref": "src/frob/gates/_pii_structural.py::pii_structural_gate"
+    },
+    {
+      "digest": "00dac38fde5c562de22c323632abe8b52c4a16463a6afdcb3b2fa0e80b4f76d1",
+      "facet": "sig",
+      "ref": "src/frob/gates/_pii_structural.py::pii_structural_gate"
+    },
+    {
+      "digest": "aecd0b8f4ca24952ac9afc205e14777358726d313e7b8aa4c838ed0bebffcadd",
+      "facet": "body",
+      "ref": "src/frob/gates/_prework.py::_resume_or_start_sweep"
+    },
+    {
+      "digest": "8d6caba259c1a42fe8baa501b3f24d68bd1940abcf7b5bff19e94648e992080a",
+      "facet": "sig",
+      "ref": "src/frob/gates/_prework.py::_resume_or_start_sweep"
+    },
+    {
       "digest": "6b6341690e88e4139864b006a4fb5eda77f3b0f31b69d0a64a43200049c2f372",
       "facet": "sig",
       "ref": "src/frob/gates/_prework.py::record_prework"
+    },
+    {
+      "digest": "db442e886b429d7d3270beb4b265eb8dec5f7c579319c193777cd1cd26568c88",
+      "facet": "body",
+      "ref": "src/frob/gates/_prework.py::sweep_ticket"
+    },
+    {
+      "digest": "12bc698c3213be547431e72db5bb7a9aea09d3ae4de55241b839a53bb6a4eb10",
+      "facet": "sig",
+      "ref": "src/frob/gates/_prework.py::sweep_ticket"
+    },
+    {
+      "digest": "cf6e695c21996bb3b54cd0eb5eb0a1b0b4c0914e762c36c2a595f3c82ab99546",
+      "facet": "body",
+      "ref": "src/frob/gates/_protocol_summary.py::protocol_summary_gate"
+    },
+    {
+      "digest": "e95d9ae016e0c80327a72fd91fad9b392a388766fb6fcd5e2d075e26ae3c63f3",
+      "facet": "sig",
+      "ref": "src/frob/gates/_protocol_summary.py::protocol_summary_gate"
     },
     {
       "digest": "665ae6d12c7b7b89371895196db67b373e31ff71306f5af194f4bc8d7e80bc6f",
@@ -111,6 +221,11 @@
       "ref": "src/frob/graph/__init__.py::edges_to"
     },
     {
+      "digest": "1c1d978a724be157556bce3d2db34e82d109ae5e1d6423d9f98871a5d9cb9e8c",
+      "facet": "body",
+      "ref": "src/frob/graph/__init__.py::load_graph"
+    },
+    {
       "digest": "76c2972f9d1e84401b66517de875357b1f7b0200c1130cf17ec2df06ddfd10bd",
       "facet": "sig",
       "ref": "src/frob/graph/__init__.py::load_graph"
@@ -141,6 +256,26 @@
       "ref": "src/frob/graph/lock.py::write_lock"
     },
     {
+      "digest": "7522211db762c4dffd8a08b09c252398ca600a1945d6a8b0eee76f1adf8038fa",
+      "facet": "body",
+      "ref": "src/frob/graph/summary.py::_singleton_summary"
+    },
+    {
+      "digest": "e880f3d6d892d48c5b5160152dac6b33362de783359bbe0e5934d6724d7ff77f",
+      "facet": "sig",
+      "ref": "src/frob/graph/summary.py::_singleton_summary"
+    },
+    {
+      "digest": "3c3a64560fe50ea4c774f67b9e41769f2ca40e699e319017317e7ee0f1acf517",
+      "facet": "body",
+      "ref": "src/frob/graph/summary.py::compute_protocol_summaries"
+    },
+    {
+      "digest": "7fc0990476fbed473150809319d75281a3d2be610a842012ff3c1101549faa8d",
+      "facet": "sig",
+      "ref": "src/frob/graph/summary.py::compute_protocol_summaries"
+    },
+    {
       "digest": "22a8b73d0a1aba089b664caa7675ed7ee9e0097df331516e24247e04ea0e6099",
       "facet": "sig",
       "ref": "src/frob/lang/__init__.py::parse_file"
@@ -149,6 +284,41 @@
       "digest": "35747d2ab1aa11f396d1bc875f6eb25fe8460872a77fcc1733c9def5d414bf9a",
       "facet": "sig",
       "ref": "src/frob/lang/__init__.py::supported_languages"
+    },
+    {
+      "digest": "7e3b0f8b40eeef7d827dec7813e9ae6589728a619e99dcbc65fc27c351c0c488",
+      "facet": "body",
+      "ref": "src/frob/mutate/__init__.py::run_mutations"
+    },
+    {
+      "digest": "1028e3affa1c53b846f49445463d02d2fcab87756ae79eae9344b12b7098a2f6",
+      "facet": "sig",
+      "ref": "src/frob/mutate/__init__.py::run_mutations"
+    },
+    {
+      "digest": "14a05b5f6ce8715b97e9c45ed01040cef8caa51443975bc576c59ded475f7748",
+      "facet": "body",
+      "ref": "src/frob/natives/_build.py::build_natives"
+    },
+    {
+      "digest": "6173f6401a8ba8dc3239b679974d02248543205c1a6bbcc0a3581cfe77454001",
+      "facet": "sig",
+      "ref": "src/frob/natives/_build.py::build_natives"
+    },
+    {
+      "digest": "b855fb65d39ad3ac68947f5b2f38319b3e7a2b804e8b488a759c30fbd9df4206",
+      "facet": "body",
+      "ref": "src/frob/perf/_advisories.py::_section_and_file_weight_totals"
+    },
+    {
+      "digest": "a4450fa4135acce02dfa73ee5f11d43dea2e53711926ef44323198310efd48ee",
+      "facet": "sig",
+      "ref": "src/frob/perf/_advisories.py::_section_and_file_weight_totals"
+    },
+    {
+      "digest": "41d96c81b35d32673ba46bcede4c0a3293fbd5327644edd551c2cfb2845ab4e6",
+      "facet": "sig",
+      "ref": "src/frob/perf/_effect_summaries.py::EffectGraph"
     },
     {
       "digest": "40dfe05a156e5ad5a98e060ec876fc66f66980582f5402ee423a65359cd41cb3",
@@ -206,9 +376,39 @@
       "ref": "src/frob/testing/_select.py::select_tests"
     },
     {
+      "digest": "b0a1b11e2a8a01bae9ec505f096108982513a38f9aa50cd02cc1a6303c275fb2",
+      "facet": "body",
+      "ref": "src/frob/tickets/__init__.py::_capture_done_report_claims"
+    },
+    {
+      "digest": "82d5efc33ab5bbfec2030d1393947934de08de3090bb53ce7f050380586a810c",
+      "facet": "sig",
+      "ref": "src/frob/tickets/__init__.py::_capture_done_report_claims"
+    },
+    {
       "digest": "3eb8e14206d9bda5ef6424e9637ee4986eda1de476d24b3cabc9d618dd172297",
       "facet": "sig",
       "ref": "src/frob/tickets/__init__.py::_doable_sort_key"
+    },
+    {
+      "digest": "18761dee6f74f0d4de3ce6202ce8598c2cfca39834f43cf32a838bcb9c7cd208",
+      "facet": "body",
+      "ref": "src/frob/tickets/__init__.py::_recover_missing_evidence_for_done"
+    },
+    {
+      "digest": "4dae59acb88a88350b285680b99c7c88fe755175ff18aba4fe164a02c7299b94",
+      "facet": "sig",
+      "ref": "src/frob/tickets/__init__.py::_recover_missing_evidence_for_done"
+    },
+    {
+      "digest": "a2b87171a96e73694e9b55a70f498f438b5c6231e8258b3e1deb353b18bac95a",
+      "facet": "body",
+      "ref": "src/frob/tickets/__init__.py::archive"
+    },
+    {
+      "digest": "fe43699b8433c8a20f71fff2d34f83fb120efd373db287111fc6c351c4fb823b",
+      "facet": "sig",
+      "ref": "src/frob/tickets/__init__.py::archive"
     },
     {
       "digest": "5df30457c0549f6170224e79cdb437421a48d725f985f150f2bbd2e073947b2c",
@@ -236,9 +436,64 @@
       "ref": "src/frob/tickets/__init__.py::record_failure"
     },
     {
-      "digest": "29733ec2d6214f39cd26c3eb43be4f75fc365a13eec06b694caebedb4609ca71",
+      "digest": "6ed228b2b8564837edece7537e677868b6b1a0c50e45870393f9a3c749d81cad",
+      "facet": "body",
+      "ref": "src/frob/tickets/__init__.py::set_done_report"
+    },
+    {
+      "digest": "e986c914e7ed5d017e1d766983f12cc042544a6b90712b6e34d93ce1a13cd086",
+      "facet": "sig",
+      "ref": "src/frob/tickets/__init__.py::set_done_report"
+    },
+    {
+      "digest": "508087dbf0822e16d8433cbfeb365eecc9dc12ec78c9eca3207db6066dab9d6f",
+      "facet": "body",
+      "ref": "src/frob/tickets/__init__.py::transition"
+    },
+    {
+      "digest": "293a635f950f8eeee5e6ffd7deb087add2f53d732fc93164d424a78829bb2a45",
       "facet": "sig",
       "ref": "src/frob/tickets/__init__.py::transition"
+    },
+    {
+      "digest": "dc5a12ff3533ee754ecb0098cae066327233c6ec92d49ed73d8619394d585819",
+      "facet": "body",
+      "ref": "src/frob/tickets/_leases.py::read_all_leases"
+    },
+    {
+      "digest": "7d42f71cb790f455badef955102ba29e05e1fdac78ee9cb29dd988d6fc11c313",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_leases.py::read_all_leases"
+    },
+    {
+      "digest": "2f1075bc6a9c9244196f5b31d22b4788222237abbd1266286bcd4874dc48e210",
+      "facet": "body",
+      "ref": "src/frob/tickets/_leases.py::sweep_worktrees"
+    },
+    {
+      "digest": "8f9b41bb54868ac9770a38919580f3fe2e01b7f22ba31977faabf2282298430f",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_leases.py::sweep_worktrees"
+    },
+    {
+      "digest": "d6e95f22a998f43e662fa5179cc06ffab6e6d8e82cb905927d279fe3a0a1dc8b",
+      "facet": "body",
+      "ref": "src/frob/tickets/_models.py::parse_claims_from_done_report"
+    },
+    {
+      "digest": "ef50a5dc033e56abd39915e033f5702bf2045064e1742467a77c81702b71e165",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_models.py::parse_claims_from_done_report"
+    },
+    {
+      "digest": "4cdf8a446a4592c3fd89bbf898ceacf1153b3d4b51a41dc395213492884ac010",
+      "facet": "body",
+      "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
+    },
+    {
+      "digest": "4eb7d825600c3b257f34abf39502e99f15049e9190adb04f9b9fa2c08bad0304",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
     },
     {
       "digest": "16dd69d6531a3f4a287d539fc5112ea94ee69be195a8f410bae001955953fd6a",
