@@ -1069,6 +1069,29 @@ _BODY_SIMILARITY_THRESHOLD = 0.9
 _BODY_MIN_TOKENS = 8
 
 
+# frob:doc docs/modules/dup.md#rust-core
+def _near_duplicate_cluster_native(
+    bodies: list[str],
+) -> list[int] | None:
+    """`frob_core.near_duplicate_indices` over `bodies`, or `None` when the
+    native extension is not importable (T-0953). ONE marshal per
+    same-signature group -- the whole eligible-body list crosses the FFI
+    boundary once, not once per pairwise comparison (the batching shape
+    T-0930's reverted `resolve_call_edges` prototype lacked, and the reason
+    that prototype measured net slower where this kernel measures net
+    faster: this repo's real same-signature groups run up to several dozen
+    members, large enough for the O(n^2) comparison work to amortize the
+    fixed PyO3 marshaling tax, unlike T-0930's per-symbol/per-package call
+    sites)."""
+    from frob.dup._core import core_available
+
+    if not core_available():
+        return None
+    import frob_core
+
+    return list(frob_core.near_duplicate_indices(bodies, _BODY_SIMILARITY_THRESHOLD))
+
+
 def _near_duplicate_cluster(
     members: list[tuple[str, str, str]],
 ) -> list[tuple[str, str, str]]:
@@ -1081,8 +1104,19 @@ def _near_duplicate_cluster(
     similarity to mean anything. Returns the near-duplicate members only,
     NOT the whole input group: a group of 30 unrelated functions with one
     genuinely duplicated pair should be reported as that pair, not
-    misrepresented as 30 functions all sharing logic."""
+    misrepresented as 30 functions all sharing logic.
+
+    T-0953: dispatches to the `frob_core` kernel
+    (`_near_duplicate_cluster_native`) when available -- measured ~2.6x
+    faster than the pure-Python loop below at this repo's real
+    same-signature-group sizes (median 2.49s -> 0.97s thread_time across
+    this repo's own 67 real groups, 0 parity mismatches against
+    `difflib.SequenceMatcher.ratio()`) -- and falls back to the original
+    pairwise `difflib` loop, BYTE-IDENTICAL in result, when it is not."""
     eligible = [m for m in members if len(m[2].split()) >= _BODY_MIN_TOKENS]
+    native_idx = _near_duplicate_cluster_native([m[2] for m in eligible])
+    if native_idx is not None:
+        return [eligible[i] for i in native_idx]
     cluster_idx: set[int] = set()
     for i in range(len(eligible)):
         for j in range(i + 1, len(eligible)):

@@ -1208,6 +1208,215 @@ fn resolve_call_edges(
     out
 }
 
+// T-0953: archgate's `_near_duplicate_cluster` (src/frob/arch/_python.py)
+// body-similarity clustering, ported from a statement-for-statement read of
+// CPython's `difflib.py` (`SequenceMatcher`, autojunk enabled, no explicit
+// `isjunk` -- exactly the call shape `_near_duplicate_cluster` uses:
+// `difflib.SequenceMatcher(None, a, b).ratio()`). Parity here means
+// byte-identical cluster membership, not merely close scores -- a
+// near-duplicate detector that quietly drifts from its Python twin would
+// silently change which functions get flagged as extractable abstractions.
+
+/// `b2j`: char -> ascending list of indices in `b` where it occurs, and
+/// `bjunk`: the "popular" chars CPython's autojunk heuristic excludes from
+/// `b2j` when `b` is long enough (`len(b) >= 200`) for a char occurring in
+/// more than 1% of it to be noise rather than signal. Mirrors
+/// `difflib.SequenceMatcher.__chain_b` exactly (no explicit `isjunk`, so
+/// `bjunk` here is purely the autojunk set).
+fn arch_sim_build_b2j(
+    b: &[char],
+) -> (HashMap<char, Vec<usize>>, std::collections::HashSet<char>) {
+    let mut b2j: HashMap<char, Vec<usize>> = HashMap::new();
+    for (i, &c) in b.iter().enumerate() {
+        b2j.entry(c).or_default().push(i);
+    }
+    let mut bjunk = std::collections::HashSet::new();
+    let n = b.len();
+    if n >= 200 {
+        let ntest = n / 100 + 1;
+        let popular: Vec<char> = b2j
+            .iter()
+            .filter(|(_, idxs)| idxs.len() > ntest)
+            .map(|(&c, _)| c)
+            .collect();
+        for c in popular {
+            bjunk.insert(c);
+            b2j.remove(&c);
+        }
+    }
+    (b2j, bjunk)
+}
+
+/// Port of `difflib.SequenceMatcher.find_longest_match`: the longest
+/// matching block of `a[alo:ahi]` against `b[blo:bhi]`, extended first over
+/// non-junk boundary chars, then over junk ones -- same two-phase extension
+/// CPython's own implementation does, in the same order (order matters:
+/// swapping phases can pick a different, still-maximal, block).
+fn arch_sim_find_longest_match(
+    a: &[char],
+    b: &[char],
+    b2j: &HashMap<char, Vec<usize>>,
+    bjunk: &std::collections::HashSet<char>,
+    alo: usize,
+    ahi: usize,
+    blo: usize,
+    bhi: usize,
+) -> (usize, usize, usize) {
+    let mut besti = alo;
+    let mut bestj = blo;
+    let mut bestsize = 0usize;
+    let mut j2len: HashMap<usize, usize> = HashMap::new();
+    for i in alo..ahi {
+        let mut newj2len: HashMap<usize, usize> = HashMap::new();
+        if let Some(js) = b2j.get(&a[i]) {
+            for &j in js {
+                if j < blo {
+                    continue;
+                }
+                if j >= bhi {
+                    break;
+                }
+                let k = if j == 0 {
+                    1
+                } else {
+                    j2len.get(&(j - 1)).copied().unwrap_or(0) + 1
+                };
+                newj2len.insert(j, k);
+                if k > bestsize {
+                    besti = i + 1 - k;
+                    bestj = j + 1 - k;
+                    bestsize = k;
+                }
+            }
+        }
+        j2len = newj2len;
+    }
+    while besti > alo
+        && bestj > blo
+        && !bjunk.contains(&b[bestj - 1])
+        && a[besti - 1] == b[bestj - 1]
+    {
+        besti -= 1;
+        bestj -= 1;
+        bestsize += 1;
+    }
+    while besti + bestsize < ahi
+        && bestj + bestsize < bhi
+        && !bjunk.contains(&b[bestj + bestsize])
+        && a[besti + bestsize] == b[bestj + bestsize]
+    {
+        bestsize += 1;
+    }
+    while besti > alo
+        && bestj > blo
+        && bjunk.contains(&b[bestj - 1])
+        && a[besti - 1] == b[bestj - 1]
+    {
+        besti -= 1;
+        bestj -= 1;
+        bestsize += 1;
+    }
+    while besti + bestsize < ahi
+        && bestj + bestsize < bhi
+        && bjunk.contains(&b[bestj + bestsize])
+        && a[besti + bestsize] == b[bestj + bestsize]
+    {
+        bestsize += 1;
+    }
+    (besti, bestj, bestsize)
+}
+
+/// Port of `difflib.SequenceMatcher.get_matching_blocks`: the maximal set of
+/// non-adjacent matching `(a_start, b_start, size)` triples covering `a`/`b`,
+/// via the same iterative divide-and-conquer queue (not recursion, to avoid
+/// a Rust stack-depth concern the Python original's recursion doesn't have
+/// to worry about at CPython's default recursion limit) followed by the
+/// same adjacent-block merge pass.
+fn arch_sim_matching_blocks(
+    a: &[char],
+    b: &[char],
+    b2j: &HashMap<char, Vec<usize>>,
+    bjunk: &std::collections::HashSet<char>,
+) -> Vec<(usize, usize, usize)> {
+    let la = a.len();
+    let lb = b.len();
+    let mut queue = vec![(0usize, la, 0usize, lb)];
+    let mut raw: Vec<(usize, usize, usize)> = Vec::new();
+    while let Some((alo, ahi, blo, bhi)) = queue.pop() {
+        let (i, j, k) = arch_sim_find_longest_match(a, b, b2j, bjunk, alo, ahi, blo, bhi);
+        if k > 0 {
+            raw.push((i, j, k));
+            if alo < i && blo < j {
+                queue.push((alo, i, blo, j));
+            }
+            if i + k < ahi && j + k < bhi {
+                queue.push((i + k, ahi, j + k, bhi));
+            }
+        }
+    }
+    raw.sort();
+    let mut non_adjacent: Vec<(usize, usize, usize)> = Vec::new();
+    let (mut i1, mut j1, mut k1) = (0usize, 0usize, 0usize);
+    for (i2, j2, k2) in raw {
+        if i1 + k1 == i2 && j1 + k1 == j2 {
+            k1 += k2;
+        } else {
+            if k1 > 0 {
+                non_adjacent.push((i1, j1, k1));
+            }
+            i1 = i2;
+            j1 = j2;
+            k1 = k2;
+        }
+    }
+    if k1 > 0 {
+        non_adjacent.push((i1, j1, k1));
+    }
+    non_adjacent
+}
+
+/// Port of `difflib.SequenceMatcher(None, a, b).ratio()`: `2*M / T` where
+/// `M` is the total matched length from `get_matching_blocks` and `T` is
+/// `len(a) + len(b)` (1.0 when both are empty, matching CPython's
+/// `_calculate_ratio`'s zero-length special case).
+fn arch_sim_ratio(a: &[char], b: &[char]) -> f64 {
+    let (b2j, bjunk) = arch_sim_build_b2j(b);
+    let blocks = arch_sim_matching_blocks(a, b, &b2j, &bjunk);
+    let matches: usize = blocks.iter().map(|&(_, _, k)| k).sum();
+    let length = a.len() + b.len();
+    if length == 0 {
+        1.0
+    } else {
+        2.0 * matches as f64 / length as f64
+    }
+}
+
+/// `_near_duplicate_cluster`'s pairwise body-similarity clustering
+/// (docs/modules/arch.md, T-0370/T-0953), moved to Rust as ONE marshal per
+/// same-signature group (not per pairwise comparison -- the batching shape
+/// T-0930's reverted `resolve_call_edges` prototype lacked). `bodies` are
+/// already-eligible (`>= _BODY_MIN_TOKENS`), already-normalized
+/// body-fingerprint strings; returns the sorted indices of members that
+/// have at least one same-group partner scoring `>= threshold` under
+/// `arch_sim_ratio` (difflib-`SequenceMatcher.ratio()`-equivalent).
+// frob:doc docs/modules/dup.md#rust-core
+#[pyfunction]
+fn near_duplicate_indices(bodies: Vec<String>, threshold: f64) -> Vec<usize> {
+    let chars: Vec<Vec<char>> = bodies.iter().map(|s| s.chars().collect()).collect();
+    let mut cluster: std::collections::HashSet<usize> = std::collections::HashSet::new();
+    for i in 0..chars.len() {
+        for j in (i + 1)..chars.len() {
+            if arch_sim_ratio(&chars[i], &chars[j]) >= threshold {
+                cluster.insert(i);
+                cluster.insert(j);
+            }
+        }
+    }
+    let mut out: Vec<usize> = cluster.into_iter().collect();
+    out.sort_unstable();
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1978,6 +2187,69 @@ mod tests {
         exempt.sort();
         assert_eq!(exempt, vec!["_bar".to_string()]);
     }
+
+    // frob:tests frob-core/src/lib.rs::arch_sim_ratio kind="unit"
+    #[test]
+    fn arch_sim_ratio_matches_difflib_golden_values() {
+        // Expected values captured directly from
+        // `difflib.SequenceMatcher(None, a, b).ratio()` (T-0953 parity bar
+        // -- byte-identical, not approximate).
+        let cases: [(&str, &str, f64); 4] = [
+            ("abcde", "abcde", 1.0),
+            ("abcde", "fghij", 0.0),
+            (
+                "the quick brown fox",
+                "the quick brown dog",
+                0.8947368421052632,
+            ),
+            ("aaaaaaaaaa", "aaaaaaaaab", 0.9),
+        ];
+        for (a, b, expected) in cases {
+            let av: Vec<char> = a.chars().collect();
+            let bv: Vec<char> = b.chars().collect();
+            let ratio = arch_sim_ratio(&av, &bv);
+            assert!(
+                (ratio - expected).abs() < 1e-12,
+                "a={a:?} b={b:?} got={ratio} want={expected}"
+            );
+        }
+    }
+
+    // frob:tests frob-core/src/lib.rs::arch_sim_ratio kind="unit"
+    #[test]
+    fn arch_sim_ratio_autojunk_matches_difflib() {
+        // len(b) >= 200 triggers difflib's autojunk heuristic (chars
+        // occurring in >1% of b are treated as junk and excluded from the
+        // primary match search) -- this repo's real function bodies can
+        // exceed 200 normalized-token characters, so this path is reachable
+        // in practice, not just a synthetic corner case.
+        let a: String = "x".repeat(250);
+        let b: String = "x".repeat(200) + &"y".repeat(50);
+        let av: Vec<char> = a.chars().collect();
+        let bv: Vec<char> = b.chars().collect();
+        let ratio = arch_sim_ratio(&av, &bv);
+        assert!(
+            (ratio - 0.8).abs() < 1e-12,
+            "got={ratio} want=0.8 (difflib golden)"
+        );
+    }
+
+    // frob:tests frob-core/src/lib.rs::near_duplicate_indices kind="unit"
+    #[test]
+    fn near_duplicate_indices_matches_python_reference_cluster() {
+        // Same fixture, threshold, and expected cluster as
+        // `_near_duplicate_cluster`'s Python reference computation (T-0953
+        // parity harness) -- bodies 0/1 are near-duplicates of each other,
+        // 2/3 are not near-duplicates of anything in the group.
+        let bodies: Vec<String> = vec![
+            "_S_ return _v0 . x".to_string(),
+            "_S_ return _v0 . y".to_string(),
+            "_S_ return _v1 + _v2".to_string(),
+            "totally different body here with more tokens padding".to_string(),
+        ];
+        let idx = near_duplicate_indices(bodies, 0.9);
+        assert_eq!(idx, vec![0usize, 1usize]);
+    }
 }
 
 #[pymodule]
@@ -1996,5 +2268,6 @@ fn frob_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(ordered_called_names, m)?)?;
     m.add_function(wrap_pyfunction!(referenced_names, m)?)?;
     m.add_function(wrap_pyfunction!(unresolved_exempt_names, m)?)?;
+    m.add_function(wrap_pyfunction!(near_duplicate_indices, m)?)?;
     Ok(())
 }

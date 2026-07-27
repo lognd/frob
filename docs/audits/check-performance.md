@@ -737,3 +737,67 @@ existing `_BODY_SIMILARITY_THRESHOLD = 0.9` cutoff; measure real
 marshal-vs-compute cost with the kernel actually built before wiring it
 as the default path, per T-0930's precedent -- do not ship if measured
 net slower).
+
+## Remediation log (T-0953, `_near_duplicate_cluster` ported to `frob_core`)
+
+Built the kernel T-0951 sized: `frob_core.near_duplicate_indices(bodies:
+list[str], threshold: float) -> list[int]`, a statement-for-statement port
+of CPython's `difflib.SequenceMatcher.ratio()` (Ratcliff/Obershelp,
+autojunk included -- both matching-block extension phases, in the same
+order, over the same b2j/bjunk structures), batched ONE marshal per
+same-signature group per T-0951's own batching-shape note.
+
+**Parity, measured, not assumed**: a golden-value Rust unit-test suite
+(`frob-core/src/lib.rs`, `arch_sim_ratio_matches_difflib_golden_values`,
+`arch_sim_ratio_autojunk_matches_difflib` -- including the `len(b) >= 200`
+autojunk path, reachable in practice since real function bodies can exceed
+200 normalized-token characters -- and
+`near_duplicate_indices_matches_python_reference_cluster`) plus a Python
+parity harness (`tests/test_arch_near_duplicate_native.py`) comparing the
+native kernel against the exact pre-port `difflib` loop over (a) a
+synthetic archgate-triggering fixture and (b) every real same-signature
+group this repo's OWN `analyze_project(src/frob/arch)` run produces (67
+groups, sizes 2-57 members): 0 mismatches in every case.
+
+**Marshal-vs-compute, measured with the kernel actually built** (median of
+5 runs, `time.thread_time()`, this repo's own 67 real same-signature
+groups captured via `analyze_project(".")`):
+
+```
+pure-Python difflib loop (all 67 groups):  2.4863s thread_time
+frob_core.near_duplicate_indices (same):   0.9686s thread_time
+```
+
+~2.6x faster (net win), unlike T-0930's per-symbol/per-package kernels --
+the batching boundary is the difference: T-0930's reverted kernels
+marshaled once per tiny per-symbol/per-package call, T-0953's kernel
+marshals once per same-signature GROUP (up to 57 members here, O(n^2)
+pairwise comparisons per group), large enough for the compute savings to
+clear the fixed PyO3 marshaling tax T-0930 measured.
+
+**Verdict: WIRED as the default path.** `_near_duplicate_cluster` in
+`src/frob/arch/_python.py` now dispatches to
+`_near_duplicate_cluster_native` (via `frob.dup._core.core_available()`)
+and falls back to the original, byte-identical pure-Python `difflib` loop
+when `frob_core` is not importable -- no silent behavior change either
+way, matching T-0930's own disclosed-fallback precedent for the case
+where a kernel wins.
+
+**Before/after archgate wall time** (this checkout, natives built, warm
+cache, `analyze_project(".")`, median of 5 runs):
+
+```
+before (T-0951 baseline, pure-Python difflib path): 11.57s
+after  (T-0953, native near_duplicate_indices wired): 9.04s
+```
+
+~2.5s faster end-to-end (~22% of the gate's own wall time), consistent
+with `_near_duplicate_cluster`'s isolated share (measured by the same
+monkeypatch-to-no-op subtraction method T-0951 used) dropping from ~3.1s
+(pure-Python) to ~1.4s (native) at this repo's real data scale.
+
+Files: `frob-core/src/lib.rs` (kernel + 3 unit tests),
+`frob-core/frob_core.pyi` (signature), `src/frob/arch/_python.py`
+(`_near_duplicate_cluster_native` + dispatch, fallback unchanged),
+`tests/test_arch_near_duplicate_native.py` (golden parity),
+`docs/modules/dup.md` (`#rust-core` kernel-list entry).

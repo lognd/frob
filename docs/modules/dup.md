@@ -292,6 +292,7 @@ rules:
 <!-- frob:describes frob-core/src/lib.rs::ordered_called_names -->
 <!-- frob:describes frob-core/src/lib.rs::referenced_names -->
 <!-- frob:describes frob-core/src/lib.rs::unresolved_exempt_names -->
+<!-- frob:describes frob-core/src/lib.rs::near_duplicate_indices -->
 <!-- frob:describes frob-core/src/lib.rs::frob_core -->
 
 Every `#[pyfunction]`/`#[pymodule]` item is the crate's Python-facing public
@@ -309,6 +310,21 @@ that only `resolve_call_edges` is actually dispatched to by default --
 the other four are parked (correct, parity-tested, exported) but
 measured net-slower than pure-Python at this repo's real per-symbol call
 granularity, so no Python shim calls them.
+
+T-0953 added one more kernel to this SAME crate/pymodule for
+`frob.arch._python` (not `frob.dup` or `frob.graph`) --
+`near_duplicate_indices`, archgate's `_near_duplicate_cluster`
+body-similarity clustering (docs/audits/check-performance.md's T-0951/
+T-0953 remediation logs). Unlike T-0930's five kernels, this one IS wired
+as the default path (`_near_duplicate_cluster_native` in
+`src/frob/arch/_python.py`, falling back to the original pure-Python
+`difflib` loop when `frob_core` is unavailable): batching ONE marshal per
+same-signature group (not per pairwise comparison) let this repo's real
+group sizes (up to several dozen members, O(n^2) pairwise comparisons per
+group) amortize the fixed PyO3 marshaling tax that sank T-0930's
+per-symbol dispatch, measuring ~2.6x faster (median 2.49s -> 0.97s
+thread_time across this repo's own 67 real same-signature groups) with 0
+parity mismatches against `difflib.SequenceMatcher.ratio()`.
 
 - `r3_canonical_hash` -- R3 canonical fold of an alpha-renamed token stream
   into one stable hex digest (equal-shape bodies collide).
@@ -329,6 +345,12 @@ granularity, so no Python shim calls them.
 - `exact_regions` -- R1.5 generalized-suffix-array + LCP pass over the
   corpus's concatenated normalized token stream, returning every maximal
   exact-match region of length `>= min_len` across (or within) documents.
+- `near_duplicate_indices` -- archgate's body-similarity clustering
+  (T-0953): pairwise Ratcliff/Obershelp similarity (a statement-for-
+  statement port of `difflib.SequenceMatcher.ratio()`, autojunk included)
+  over one same-signature group's normalized body-fingerprint strings,
+  returning the sorted indices with at least one same-group partner
+  scoring `>= threshold`.
 - `frob_core` -- the `#[pymodule]` registration entry that exports the above
   to Python.
 
