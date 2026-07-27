@@ -4350,3 +4350,53 @@ one known call site; the underlying gap (module-level `Name = <value>`
 assignments, e.g. Literal/TypeAlias/NewType, not walked into the graph as
 symbols) likely affects other doc pointers too and is worth fixing at the
 python graph-walker layer rather than waiver-by-waiver.
+
+<!-- ticket:T-1029 -->
+```yaml
+id: T-1029
+title: 'ticket CLI: add acceptance criteria to an existing ticket (only ticket new
+  supports --acceptance)'
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/ticket_runner.py
+- src/frob/tickets/
+- tests/unit/test_ticket_runner_gate_findings.py
+acceptance:
+- text: GIVEN an existing queued ticket WHEN the new subcommand adds a criterion THEN
+    ticket show displays it and the ledger write went through the CLI
+  evidence: []
+threat: null
+component: null
+```
+T-0894's agent had to hand-edit tickets.md to add a before-fails/after-passes acceptance criterion required by the T-0756 new-gate-rule close gate, because no subcommand exists to append acceptance criteria to an existing ticket. Add e.g. 'frob ticket accept <id> --criterion ...' (or extend ticket scope-style editing) with the same validation as ticket new --acceptance, so the ledger is never hand-edited for this.
+
+<!-- ticket:T-1030 -->
+```yaml
+id: T-1030
+title: agent worktree creation cuts from stale base (fa606fe8/b3589c3e) instead of
+  main tip -- recurred 3+ times
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-27'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/guides/agent-playbook.md
+acceptance:
+- text: GIVEN a fresh dispatch worktree THEN its base contains local main's tip or
+    the playbook's warm-up section documents the mandatory fix prominently
+  evidence: []
+threat: null
+component: null
+```
+Three separate dispatch batches now had implementer worktrees cut from a stale base (origin tip b3589c3e era, or fa606fe8 -- 20+ files behind main): T-0958-era batch (2 agents), wave-9 gates-tests agent, wave-9 T-1018 agent (pre-filing tip). Playbook workaround (verify merge-base, git merge main) works but every agent pays it. Root-cause where the harness worktree-creation picks its base (likely origin/main or a cached default-branch ref while local main is 240+ commits ahead and never pushed) and document the definitive mitigation in the playbook; if the base choice is outside frob's control, make the playbook warm-up step a hard MUST with the exact two commands.
