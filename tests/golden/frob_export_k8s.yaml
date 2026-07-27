@@ -65,6 +65,10 @@ spec:
   - to:
     - podSelector:
         matchLabels:
+          app: natives
+  - to:
+    - podSelector:
+        matchLabels:
           app: registry_model
   - to:
     - podSelector:
@@ -133,6 +137,10 @@ spec:
     - podSelector:
         matchLabels:
           app: mutate
+  - from:
+    - podSelector:
+        matchLabels:
+          app: natives
   - from:
     - podSelector:
         matchLabels:
@@ -348,6 +356,28 @@ spec:
   podSelector:
     matchLabels:
       app: mutate
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frob-strata-natives
+spec:
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: core
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cli
+  podSelector:
+    matchLabels:
+      app: natives
   policyTypes:
   - Ingress
   - Egress

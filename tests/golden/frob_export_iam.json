@@ -130,6 +130,20 @@
       "action": "read",
       "effect": "Allow",
       "principal": "cli",
+      "resource": "natives",
+      "sid": "f_cli_natives-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "natives",
+      "sid": "f_cli_natives-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
       "resource": "registry_model",
       "sid": "f_cli_registry_model-read"
     },
@@ -377,6 +391,20 @@
       "principal": "mutate",
       "resource": "core",
       "sid": "f_mutate_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "natives",
+      "resource": "core",
+      "sid": "f_natives_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "natives",
+      "resource": "core",
+      "sid": "f_natives_core-write"
     },
     {
       "action": "read",

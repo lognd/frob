@@ -3601,7 +3601,7 @@ T-0964 extended tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rul
 id: T-0967
 title: test_frob_self_model.py::test_every_claim_proves fails (pre-existing, unrelated
   to T-0961/T-0963)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -3612,7 +3612,109 @@ sprint: null
 scope:
 - tests/system/test_frob_self_model.py
 - src/frob/strata/**
+- tests/unit/strata/test_export_golden.py
+- tests/golden/**
+scope_changes:
+- op: add
+  glob: tests/unit/strata/test_export_golden.py
+  reason: 'same T-0864 natives-node drift class: k8s/seccomp/iam golden exports (src/frob/strata/_export.py,
+    in-scope) never regenerated after natives node landed, all 3 goldens stale identically
+    to the self-model test''s counts'
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/golden/**
+  reason: 'same T-0864 natives-node drift class: k8s/seccomp/iam golden exports (src/frob/strata/_export.py,
+    in-scope) never regenerated after natives node landed, all 3 goldens stale identically
+    to the self-model test''s counts'
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_iam
 threat: null
 component: null
 ```
 Found while working T-0961/T-0963 (gates/__init__.py and docs/design/registry/check-coverage.yaml drift fixes). tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves fails independently of both those changes -- confirmed failing identically before and after T-0961's diff, and still failing after T-0963's check-coverage.yaml reconciliation (which touched only the registry file, not strata/claims code). Current failure mode: evaluated 27 claim(s): {'proved': 3, 'evidenced': 0, 'assumed': 24, 'refuted': 0} -- most claims sit at 'assumed' rather than 'proved'/'evidenced'. Needs its own triage of why frob's self-model claims aren't proving; out of scope for both T-0961 (src/frob/gates/__init__.py only) and T-0963 (docs/design/registry/check-coverage.yaml only).
+
+## Done report
+
+Root cause: `design/frob.strata` itself was never wrong -- T-0864 (`frob
+natives build`) added the `natives` node (`may "exec"`, its own
+`assume "weakness:CWE-78:natives"` discharge directive, and its
+`f_cli_natives`/`f_natives_core` flows) correctly and completely, but
+three test files that hardcode a running count/set of the model's
+node/flow/claim surface were never re-measured against it -- the same
+"docstring narrates a delta, nobody re-derives the running total"
+drift class the T-0707/T-0440 comments already call out by name in this
+same test file. `tests/system/test_frob_self_model.py` asserted
+15 nodes/42 flows/26 claims and an `assumed_ids` set missing
+`weakness:CWE-78:natives`; the real elaborated model has 16/44/27. Same
+root cause, same T-0864 blind spot, hit `tests/unit/strata/
+test_export_golden.py`'s three committed golden exports
+(`tests/golden/frob_export_{k8s.yaml,seccomp.json,iam.json}`), which
+were byte-for-byte generated against the pre-`natives` model and never
+regenerated. No claim REFUTEs and no `frob check --only sys` violation
+exists against the live model -- this was purely test/golden drift, not
+a prover weakening or a real regression, so no waiver was needed and
+none was added.
+
+Changed:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel.test_parses_and_elaborates
+  (node/flow/claim counts 15/42/26 -> 16/44/27, docstring updated)
+- tests/system/test_frob_self_model.py::TestFrobSelfModel.test_every_claim_proves
+  (claim_results count 26 -> 27, `assumed_ids` gains
+  `weakness:CWE-78:natives`, docstring updated)
+- tests/system/test_frob_self_model.py (added missing TEST001
+  `frob:tests design/frob.strata::frob.f_cli_natives` /
+  `frob.f_natives_core` directives -- these two T-0864 flows had no
+  bound unit test either, same drift)
+- tests/golden/frob_export_k8s.yaml (regenerated via
+  `frob.strata._export.export_k8s_netpol` against current
+  `design/frob.strata`)
+- tests/golden/frob_export_seccomp.json (regenerated via
+  `frob.strata._export.export_seccomp`)
+- tests/golden/frob_export_iam.json (regenerated via
+  `frob.strata._export.export_iam`)
+
+Evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves -- PASS
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates -- PASS
+- tests/system/test_frob_self_model.py (full module, 4 tests) -- PASS
+- tests/unit/strata/test_export_golden.py::TestExportGolden::{test_k8s,test_seccomp,test_iam} -- PASS (were FAILED before this ticket)
+- tests/unit/strata/ (full dir) + tests/system/test_frob_self_model.py -- all PASS
+
+Filed: none -- the two drift sites (self-model test, golden exports)
+are the complete blast radius; scope-added `tests/unit/strata/
+test_export_golden.py` + `tests/golden/**` to this ticket rather than
+filing separately since it is the identical T-0864 drift, not a
+distinct problem.
+
+Gates: `frob check --ticket T-0967 --only gates-fast` clean,
+`--only gates-native` clean, `--only gates-security` clean,
+`--only static` clean. `--only lint` shows 3 pre-existing ruff-format
+warnings in unrelated files (src/frob/arch/_lock_ordering.py,
+tests/test_ticket_land.py, tests/unit/test_arch.py) -- outside this
+ticket's scope, not touched, not introduced by this change.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves` (pytest node id, verified passing when recorded)
+- `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates` (pytest node id, verified passing when recorded)
+- `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists` (pytest node id, verified passing when recorded)
+- `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_export_golden.py::TestExportGolden::test_iam` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 0 error(s), 5105 warning(s), 220 waived
+- error-findings: none (measured, zero errors)

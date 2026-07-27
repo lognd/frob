@@ -200,6 +200,30 @@
       }
     ]
   },
+  "natives": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "clone",
+          "close",
+          "execve",
+          "execveat",
+          "exit",
+          "exit_group",
+          "fork",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "vfork",
+          "write"
+        ]
+      }
+    ]
+  },
   "registry": {
     "defaultAction": "SCMP_ACT_ERRNO",
     "syscalls": [

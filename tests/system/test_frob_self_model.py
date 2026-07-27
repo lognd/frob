@@ -100,6 +100,8 @@ class TestFrobSelfModel:
     # frob:tests design/frob.strata::frob.f_serve_gates kind="unit"
     # frob:tests design/frob.strata::frob.f_serve_graphlang kind="unit"
     # frob:tests design/frob.strata::frob.f_serve_tickets kind="unit"
+    # frob:tests design/frob.strata::frob.f_cli_natives kind="unit"
+    # frob:tests design/frob.strata::frob.f_natives_core kind="unit"
     # frob:tests design/frob.strata::frob.b_vet_endorse kind="unit"
     # frob:tests strata-core/src/lib.rs kind="integration"
     # frob:tests strata-core/src/parse.rs kind="integration"
@@ -123,9 +125,17 @@ class TestFrobSelfModel:
         `weakness:CWE-78:deploy`/`weakness:CWE-78:mutate` -- both newly
         declare `may "exec"`; `serve` declares no `may` atom at all, so it
         drags in zero).
+
+        T-0967: same drift again, this time from T-0864's `natives` node
+        (`frob natives build`, design/frob.strata `node natives`) -- it
+        was never folded into this docstring's running count either: +1
+        node (15 -> 16), +2 hand-declared flows (42 -> 44:
+        `f_cli_natives`/`f_natives_core`), and +1 THREAT003 discharge
+        claim (26 -> 27: `weakness:CWE-78:natives`, `natives` declares
+        `may "exec"` with no `may "eval"`, so it drags in no CWE-94 pair).
         """
-        assert len(_model.nodes) == 15
-        assert len(_model.flows) == 42
+        assert len(_model.nodes) == 16
+        assert len(_model.flows) == 44
         assert len(_model.boundaries) == 1
         # T-0150: 3 original PROVED architecture claims + 3 `assume
         # weakness:CWE-78:<node>` discharge claims that declaring `may
@@ -155,8 +165,13 @@ class TestFrobSelfModel:
         # count). T-0440: `deploy` and `mutate` both newly declare
         # `may "exec"` (see module docstring above), each dragging its own
         # `weakness:CWE-78:<node>` discharge = 26. `serve` declares no
-        # `may` atom, so it drags in zero.
-        assert len(_model.claims) == 26
+        # `may` atom, so it drags in zero. T-0864 (pre-existing debt this
+        # docstring never re-measured until T-0967's own pass surfaced it,
+        # same shape as T-0707's `fleet` gap above): `natives` newly
+        # declares `may "exec"` (`build_natives`'s maturin/cargo subprocess
+        # calls, docs/modules/cli.md#frob-natives-build-t-0864), dragging
+        # in its own `weakness:CWE-78:natives` discharge = 27.
+        assert len(_model.claims) == 27
 
     # frob:tests tests/system/test_frob_self_model.py::TestFrobSelfModel.test_every_claim_proves kind="e2e"
     def test_every_claim_proves(self, _model) -> None:
@@ -184,11 +199,20 @@ class TestFrobSelfModel:
         `weakness:CWE-78:mutate` (see `deploy`/`mutate`'s own `assume`
         directives in design/frob.strata for the per-node reasoning);
         `serve` declares no `may` atom, so it drags in no discharge claim.
+
+        T-0967: same drift shape again -- `weakness:CWE-78:natives` was
+        missing here (T-0864's `natives` node has declared `may "exec"`
+        with its own `assume "weakness:CWE-78:natives"` directive in
+        design/frob.strata since before this ticket, but this test's
+        hardcoded counts/sets were never re-measured against it) --
+        pre-existing model-vs-test drift this ticket root-caused and
+        fixed, not a real prover regression (no claim REFUTEs; the model
+        itself already carried the correct assume).
         """
         outcome = evaluate_claims(_model)
         assert outcome.is_ok, f"evaluate_claims failed: {outcome.err}"
         claim_results = outcome.danger_ok
-        assert len(claim_results) == 26
+        assert len(claim_results) == 27
         proved_ids = {
             "c_no_registry_ledger",
             "c_cache_derivable",
@@ -232,6 +256,10 @@ class TestFrobSelfModel:
             # utility-hub node, both newly declaring `may "exec"`.
             "weakness:CWE-78:deploy",
             "weakness:CWE-78:mutate",
+            # T-0864 (pre-existing debt this set never re-measured until
+            # T-0967's own pass surfaced it, same shape as T-0707's
+            # `fleet` gap above): `natives` declares `may "exec"`.
+            "weakness:CWE-78:natives",
         }
         seen_ids: set[str] = set()
         for claim_result in claim_results:
