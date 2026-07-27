@@ -203,10 +203,12 @@ class TestWaitCoverage:
         assert exc_info.value.code == 1
 
 
+# frob:ticket T-0983
 class TestStabilityGate:
     """Flake-quarantine tracking wired into `frob test`'s own run path
     (`_track_python_stability_and_gate`, T-0635 -- T-0575's disclosed
-    cut)."""
+    cut; T-0983 added the dotted-symref-to-pytest-node-id conversion
+    regression test)."""
 
     def test_all_sentinel_selection_is_noop(self, tmp_path: Path) -> None:
         # frob:tests \
@@ -325,6 +327,43 @@ class TestStabilityGate:
         # the python failure alone is fully excused, but the rust outcome
         # is untouched by this gate -- the overall run must stay failed.
         assert _track_python_stability_and_gate(tmp_path, report, test_run) is False
+
+    # frob:ticket T-0983
+    def test_dotted_symref_converted_to_pytest_node_id(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_app.py::TestStabilityGate.test_dotted_symref_converted_to_pytest_node_id  # noqa: E501
+        """T-0983: `report.selected["python"]` holds the graph's dotted
+        symref form (`path::Class.method`), never a real pytest node id --
+        `capture_python_outcomes` must receive the `::`-joined form
+        (`path::Class::method`), the same conversion `run_selected` applies
+        for the primary run via `_to_node_id`. Before the fix this pass
+        handed pytest the dotted form directly, which pytest cannot collect
+        (exit 5, 0 outcomes) -- silently no-oping stability recording."""
+        symref = "tests/t.py::A.b"
+        seen: list[tuple] = []
+
+        def _fake_capture(root: Path, node_ids: tuple):  # noqa: ANN001, ANN202
+            seen.append(node_ids)
+            return Ok({node_ids[0]: True})
+
+        monkeypatch.setattr(
+            "frob.testing.capture_python_outcomes",
+            _fake_capture,
+        )
+        report = SelectionReport(
+            touched=(),
+            selected={"python": (symref,)},
+            ripple=(),
+            unbound=(),
+            fallback="package",
+        )
+        test_run = TestRunReport(
+            selection=report, outcomes=(_outcome("python", 0),), ok=True
+        )
+        _track_python_stability_and_gate(tmp_path, report, test_run)
+        assert seen == [("tests/t.py::A::b",)]
 
     def test_capture_error_skips_gate(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

@@ -181,6 +181,7 @@ def _loaded_runners(cfg: AppConfig, root: Path) -> tuple:
 
 
 # frob:ticket T-0635
+# frob:ticket T-0983
 def _track_python_stability_and_gate(root: Path, report, test_run) -> bool:
     """Wire flake-quarantine stability tracking into `frob test`'s own run
     path (T-0575's disclosed cut, closed by T-0635): capture+record per-test
@@ -201,12 +202,21 @@ def _track_python_stability_and_gate(root: Path, report, test_run) -> bool:
         quarantine_alarms,
         record_outcomes,
     )
-    from frob.testing._runners import _is_neutral_outcome
+    from frob.testing._runners import _is_neutral_outcome, _to_node_id
     from frob.testing._select import ALL_SENTINEL
 
-    node_ids = report.selected.get("python", ())
-    if not node_ids or ALL_SENTINEL in node_ids:
+    symrefs = report.selected.get("python", ())
+    if not symrefs or ALL_SENTINEL in symrefs:
         return test_run.ok
+
+    # T-0983: `report.selected["python"]` holds the graph's dotted symref
+    # form (`path::A.b`, the `frob:tests` directive convention), same as
+    # what `run_selected` converts for the primary pytest invocation via
+    # `_to_node_id`. This second, stability-capture pass must apply the
+    # identical conversion -- passing the dotted form straight to pytest
+    # collects 0 tests (exit 5) and silently no-ops
+    # `.frob/test-stability.json` every run.
+    node_ids = tuple(_to_node_id(symref) for symref in symrefs)
 
     captured = capture_python_outcomes(root, node_ids)
     if captured.is_err:
