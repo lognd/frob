@@ -5725,7 +5725,7 @@ T-1028 fixed the python symbol walker (src/frob/lang/_walk_python.py) to index t
 ```yaml
 id: T-1034
 title: Wire cpp-noexcept-throws (T-0687) into an enforced gates/** finding
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -5735,10 +5735,95 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/**
+- tests/test_arch_gate.py
+- docs/modules/gates.md
+- src/frob/arch/_cpp_mayraise.py
+scope_changes:
+- op: add
+  glob: tests/test_arch_gate.py
+  reason: add CPPTHROW001 gate-wiring evidence tests
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: docs/modules/gates.md
+  reason: add CPPTHROW001 rule-catalog row
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: src/frob/arch/_cpp_mayraise.py
+  reason: fix ARCH001 (69 lines, threshold 60) introduced by T-0687's own scan_cpp_functions,
+    surfaced now that this ticket's archgate wiring runs the ARCH family against this
+    file
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/test_arch_gate.py::TestArchGateCppThrow::test_noexcept_with_catch_all_does_not_fire_cppthrow001
+- tests/test_arch_gate.py::TestArchGateCppThrow::test_cppthrow001_is_waivable_with_reason
+- tests/test_arch_gate.py::TestArchGateCppThrow::test_noexcept_may_throw_fires_cppthrow001_error
 threat: null
 component: null
 ```
 T-0687 landed frob.arch._cpp_mayraise.check_cpp_noexcept_violations, wired into analyze_project's live cpp dispatch branch, producing ArchSuggestion(category=cpp-noexcept-throws, severity=error). Promoting this into an enforced, unwaivable src/frob/gates/** gate finding (the way frob.gates._unwaivable_channel_rules already does for every other ArchCategory) was out of T-0687's declared scope (arch/**, lang/**, tests/unit/test_arch.py only). Wire it the same way EXHAUST001/002 (T-0688) and errors-as-values-recommended eventually will be.
+
+## Done report
+
+T-0687 landed frob.arch._cpp_mayraise.check_cpp_noexcept_violations,
+wired into analyze_project's live cpp dispatch branch, producing
+ArchSuggestion(category=cpp-noexcept-throws, severity=error). This ticket
+promotes that into an enforced, unwaivable-by-omission (still waivable
+with a reasoned frob:waive, per the ordinary path -- see below) gate
+finding via frob.gates._arch.arch_gate, the SAME channel ARCH001/ARCH1xx
+already use: added "cpp-noexcept-throws" -> "CPPTHROW001" to
+_ARCH_CATEGORY_TO_RULE, plus a new _ERROR_SEVERITY_CATEGORIES allowlist
+(this is the first category in this module to channel at Severity.ERROR
+instead of the WARN every prior category here hardcodes -- a noexcept
+hard-boundary violation is std::terminate at runtime, not deferrable
+style debt).
+
+Registered CPPTHROW001 in gates/__init__.py's _KNOWN_GATE_RULES (so
+frob:waive CPPTHROW001 reason="..." is a real, effective directive, not
+an ineffective-channel WAIVE002 finding) and added a rule-catalog row to
+docs/modules/gates.md. check-coverage.yaml's gate_rule_entries syncs
+automatically at land time (T-1011's sync_gate_rule_entries, already
+wired into frob ticket land) -- no manual registry edit needed.
+
+While wiring this in, running archgate against this repo's own source for
+the first time surfaced a genuine ARCH001 finding in T-0687's own
+scan_cpp_functions (69 lines, threshold 60) -- pre-existing debt from the
+prior ticket that was never caught since neither T-0687's own check run
+nor T-0690's happened to include --only archgate. Fixed in the same
+change (split into _find_signature_lines/_scan_each_function/
+_propagate_callee_raises, each independently testable) since it sits
+directly in this ticket's own blast radius (the file this ticket is
+wiring), scope-added rather than silently left for a later ticket.
+
+Evidence: three new tests in tests/test_arch_gate.py::TestArchGateCppThrow
+(fires at Severity.ERROR naming the call site; a try/catch (...) discharges
+it; a reasoned frob:waive CPPTHROW001 suppresses it through the ordinary
+waiver path, confirming ERROR severity is not the same thing as
+_UNWAIVABLE_RULES membership). A real run against this repo's own source
+(0 C++ production files) confirms zero pre-existing CPPTHROW001 debt.
+
+### Changed
+```
+ docs/modules/gates.md          |   1 +
+ src/frob/arch/_cpp_mayraise.py | 104 +++++++++++++++++++++++++++-----------
+ src/frob/gates/__init__.py     |   6 +++
+ src/frob/gates/_arch.py        |  49 ++++++++++++++++--
+ tests/test_arch_gate.py        |  95 ++++++++++++++++++++++++++++++++++
+ tickets.md                     | 112 ++++++++++++++++++++++++++++++++++++++++-
+ 6 files changed, 332 insertions(+), 35 deletions(-)
+```
+
+### Evidence
+- `tests/test_arch_gate.py::TestArchGateCppThrow::test_noexcept_with_catch_all_does_not_fire_cppthrow001` (pytest node id, verified passing when recorded)
+- `tests/test_arch_gate.py::TestArchGateCppThrow::test_cppthrow001_is_waivable_with_reason` (pytest node id, verified passing when recorded)
+- `tests/test_arch_gate.py::TestArchGateCppThrow::test_noexcept_may_throw_fires_cppthrow001_error` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 9 error(s), 2727 warning(s), 342 waived
+- error-findings: AFFECT001@src/frob/arch/_cpp_mayraise.py, COV001@src/frob/arch/_models.py, COV001@src/frob/gitlog/__init__.py, COV001@src/frob/process/parsers/common.py, COV001@src/frob/render/_color.py, COV001@src/frob/render/_elements.py, PERF003@src/frob/arch/_cpp_mayraise.py, PERF004@src/frob/arch/_cpp_mayraise.py, PRE001@tickets/T-1034
 
 <!-- ticket:T-1035 -->
 ```yaml
@@ -5982,3 +6067,36 @@ mock/monkeypatch dynamic attribute access is often intentional test
 infrastructure, not an evasion risk). Once the WARN count reaches zero
 real (unwaived) findings, promote opaque_gate's Severity from WARN to
 ERROR in src/frob/gates/_opaque.py.
+
+<!-- ticket:T-1040 -->
+```yaml
+id: T-1040
+title: Wire ffi_boundary gate into a check --only stage-group alias
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/check/__init__.py
+threat: null
+component: null
+```
+T-0690 landed frob.gates._ffi_boundary.ffi_boundary_gate (FFI001/FFI002)
+registered in frob.gates's _ALL_GATES/_CANONICAL_GATE_ORDER/process_jobs,
+runnable today via its own bare name (--only ffi_boundary), but
+src/frob/check/__init__.py's _STAGE_GROUPS was out of T-0690's declared
+scope (src/frob/gates/** does not cover src/frob/check/__init__.py) so no
+existing --only alias (gates-native/gates-fast/...) bundles it yet. Add
+ffi_boundary to the appropriate _STAGE_GROUPS entry (it is a fast process
+job, ~0.4s measured) so a normal --budget/--only gates-native run picks
+it up without the caller needing to name it explicitly.
+
+This is a REFILE: the original draft (T-draft-93f13251) was filed during
+the T-0690 dispatch but did not survive land -- the same draft-loss class
+T-0637 tracks and T-1036 (this dispatch's CLI-churn-under-fast-land
+ticket) also documents. Re-filing here so the work item is not lost a
+second time.

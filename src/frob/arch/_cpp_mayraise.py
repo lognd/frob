@@ -303,58 +303,102 @@ def scan_cpp_functions(source: str) -> tuple[CppFunctionRaises, ...]:
     the same one T-0686's Python resolver already discloses for its
     same-module lookup)."""
     lines = source.splitlines()
-    sig_lines: list[tuple[int, str, str]] = []  # (line_idx, name, qualifiers)
+    sig_lines = _find_signature_lines(lines)
+    name_to_line = {name: idx for idx, name, _q in sig_lines}
+    per_func = _scan_each_function(lines, sig_lines, name_to_line)
+    resolved = _propagate_callee_raises(per_func)
+
+    return tuple(
+        CppFunctionRaises(
+            name=name,
+            line=info.line,
+            is_noexcept=info.is_noexcept,
+            has_catch_all=info.has_catch_all,
+            raises=frozenset(resolved[name]),
+        )
+        for name, info in per_func.items()
+    )
+
+
+class _PerFunctionScan(BaseModel):
+    """One function's own scan result BEFORE callee-graph fixpoint
+    propagation (T-1034, split out of `scan_cpp_functions` to clear
+    ARCH001's 60-line threshold) -- `_scan_each_function`'s per-name
+    output, consumed by `_propagate_callee_raises`."""
+
+    model_config = {}
+
+    line: int
+    is_noexcept: bool
+    has_catch_all: bool
+    own_raises: frozenset[str]
+    calls: frozenset[str]
+
+
+def _find_signature_lines(lines: list[str]) -> list[tuple[int, str, str]]:
+    """Every `_FN_SIG_RE`-matching signature line in `lines` (T-1034,
+    split out of `scan_cpp_functions`), as `(line_idx, name, qualifiers)`
+    triples in source order."""
+    sig_lines: list[tuple[int, str, str]] = []
     for idx, line in enumerate(lines):
         m = _FN_SIG_RE.match(line)
         if m is None:
             continue
         sig_lines.append((idx, m.group(1), m.group(2)))
+    return sig_lines
 
-    name_to_line = {name: idx for idx, name, _q in sig_lines}
 
-    own_raises: dict[str, frozenset[str]] = {}
-    catch_all: dict[str, bool] = {}
-    calls_of: dict[str, set[str]] = {}
-    is_noexcept: dict[str, bool] = {}
-    line_of: dict[str, int] = {}
-
+def _scan_each_function(
+    lines: list[str],
+    sig_lines: list[tuple[int, str, str]],
+    name_to_line: dict[str, int],
+) -> dict[str, _PerFunctionScan]:
+    """Every function's own `_PerFunctionScan` (T-1034, split out of
+    `scan_cpp_functions`): body span, own raise set, catch-all presence,
+    `noexcept`-ness, and the same-file callee names its body references
+    (deferred to `_propagate_callee_raises`'s fixpoint, not recursed into
+    here)."""
+    out: dict[str, _PerFunctionScan] = {}
     for idx, name, qualifiers in sig_lines:
         start, end = _function_body_span(lines, idx)
         body = lines[start:end]
         raises, has_catch = _scan_body_raises(body, name_to_line)
-        own_raises[name] = raises
-        catch_all[name] = has_catch
-        is_noexcept[name] = _is_noexcept(qualifiers)
-        line_of[name] = idx + 1
         called: set[str] = set()
         for line in body:
             for cm in _CALL_RE.finditer(line):
                 callee = cm.group(1)
                 if callee in name_to_line and callee != name:
                     called.add(callee)
-        calls_of[name] = called
+        out[name] = _PerFunctionScan(
+            line=idx + 1,
+            is_noexcept=_is_noexcept(qualifiers),
+            has_catch_all=has_catch,
+            own_raises=raises,
+            calls=frozenset(called),
+        )
+    return out
 
-    resolved: dict[str, set[str]] = {name: set(r) for name, r in own_raises.items()}
+
+def _propagate_callee_raises(
+    per_func: dict[str, _PerFunctionScan],
+) -> dict[str, set[str]]:
+    """The same-file callee-graph fixpoint (T-1034, split out of
+    `scan_cpp_functions`): each function starts at its own raise set and
+    inherits every callee's raise set, repeating until nothing grows --
+    mirrors `frob.arch._mayraise.compute_may_raise`'s own fixpoint shape."""
+    resolved: dict[str, set[str]] = {
+        name: set(info.own_raises) for name, info in per_func.items()
+    }
     changed = True
     while changed:
         changed = False
-        for name, callees in calls_of.items():
-            for callee in callees:
+        for name, info in per_func.items():
+            for callee in info.calls:
                 new_types = resolved.get(callee, set()) - resolved[name]
                 if new_types:
                     resolved[name] |= new_types
                     changed = True
-
-    return tuple(
-        CppFunctionRaises(
-            name=name,
-            line=line_of[name],
-            is_noexcept=is_noexcept[name],
-            has_catch_all=catch_all[name],
-            raises=frozenset(resolved[name]),
-        )
-        for name in name_to_line
-    )
+    return resolved
 
 
 # frob:doc docs/modules/arch.md#cpp-may-throw-analysis-t-0687

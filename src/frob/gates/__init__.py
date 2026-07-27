@@ -1228,6 +1228,12 @@ _KNOWN_GATE_RULES = frozenset(
         "ARCH101",
         "ARCH102",
         "ARCH103",
+        # T-1034: CPPTHROW001 (frob.arch._cpp_mayraise's cpp-noexcept-
+        # throws category, T-0687), channeled into a real gate Violation
+        # by the same frob.gates._arch.arch_gate as ARCH001/ARCH1xx --
+        # the one category that channels at Severity.ERROR, see that
+        # module's own docstring.
+        "CPPTHROW001",
         # T-0396: anti-orphan file-reference gate (frob.gates._refs).
         "REF001",
         "REF002",
