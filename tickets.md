@@ -572,7 +572,7 @@ T-0576's ticket body wanted a deprecated symbol gaining new callers to fire a fi
 id: T-0658
 title: 'strata systems-checks: N:M coverage meta-test vs system-design-corpus.md denominator
   (epic T-0331 close condition)'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -603,18 +603,108 @@ scope:
 - src/frob/strata/**
 - docs/design/registry/system-design.yaml
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_system_design_coverage.py::TestSystemDesignCorpusCoverage::test_every_corpus_entry_is_dispositioned_and_total_matches
+- tests/unit/strata/test_system_design_coverage.py::TestSystemDesignGateLiveZero::test_no_system_design_violations
+- tests/unit/strata/test_system_design_coverage.py::TestSystemDesignCorpusCoverage::test_at_least_one_systems_checks_family_rule_is_bound
 acceptance:
 - text: Given the full system-design-corpus.md denominator, when the meta-test runs,
     then every entry has a disposition (addressed-by-check | reasoned-deferral) and
     the coverage total matches TOTAL
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_system_design_coverage.py::TestSystemDesignCorpusCoverage::test_every_corpus_entry_is_dispositioned_and_total_matches
 - text: Given a future new system-design-corpus.md entry with no disposition, when
     the meta-test runs, then it fails the build
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_system_design_coverage.py::TestSystemDesignGateLiveZero::test_no_system_design_violations
 threat: null
 component: null
 ```
 Epic close condition. Bind every genuine system-design-corpus.md manifest entry (105 genuine, per RECONCILIATION.md finding (d), plus 14 manifest-extraction artifacts explicitly excluded) to >=1 registered SYS2xx/REL2xx check or a reasoned deferral, following the T-0343 drift-lock framework. (addressed union deferred) == TOTAL. Cannot close while any relevant entry is unaddressed and un-deferred. Depends on all 16 obligation children plus T-0392 (system-design registry-domain reconciliation) landing so 'registered check' is a real, checkable claim.
+
+## Done report
+
+Added `tests/unit/strata/test_system_design_coverage.py`, the epic T-0331
+close condition's own N:M coverage meta-test, binding
+`docs/design/registry/system-design.yaml` (the system-design-corpus.md
+denominator, 119 catalogued entries: 105 genuine + 14 manifest-extraction
+artifacts) to a live disposition verdict, owned under this ticket's own
+scope/test tree (distinct from T-0392's earlier `tests/
+test_registry_reconciliation_system_design.py`, the one-time
+reconciliation pass -- see the module docstring for why these are
+separately owned, not merged).
+
+Investigation first: `frob.registry.audit_registry_file` against the REAL
+live file already reports `exhausted=True`, `unaccounted=0` (handled=21,
+deferred=0, duplicate=1, out_of_scope=97, summing to 119) -- every one of
+the 18 blocking obligation-family tickets (T-0640..T-0656) plus T-0392 and
+T-0958 (a later dispositioning pass discovered while investigating, not
+one of the 18 listed blockers) already drove this file to fully
+dispositioned. T-0658's own job, given that, was to make this a STANDING,
+epic-owned checkable claim rather than trust T-0392's now-somewhat-stale
+reconciliation test (see the filed successor ticket below) -- and to
+positively verify the epic's own obligation families (REL2xx/SYS2xx,
+"systems-checks") are actually represented among the `handled_by`
+dispositions, not just that SOME disposition exists.
+
+Two test classes:
+- TestSystemDesignCorpusCoverage: acceptance [0] ("every entry has a
+  disposition... coverage total matches TOTAL") -- pins
+  audit.exhausted/unaccounted/total against the live file, PLUS a new
+  assertion T-0392's test never made: at least one `handled_by` target is
+  itself a REL2xx/SYS2xx-family rule id (not just "some disposition
+  exists" but "the epic's own obligation families are represented").
+- TestSystemDesignGateLiveZero: acceptance [1] ("a future new entry with
+  no disposition fails the build") -- verified by confirming the REAL
+  `registry_gate` (wired into `frob check`'s default gate run) reports
+  zero violations for `system-design.yaml` today, over the live ticket
+  queue. The generic drift-lock MECHANISM itself (a fixture with an
+  undispositioned/mismatched-total entry actually failing `registry_gate`)
+  is already proven, over synthetic fixtures, by
+  `tests/test_registry_exhaustiveness.py::TestDisposition::
+  test_undispositioned_entry_fails` / `TestTotalDrift::
+  test_total_mismatch_fails` -- not re-proven here, cited in the module
+  docstring instead.
+
+Out-of-scope finding, filed not fixed: `tests/
+test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::
+test_every_deferred_entry_targets_an_open_ticket` fails on a clean current
+main, unrelated to this ticket's own scope (that test file is not in
+T-0658's declared scope) -- it asserts `deferred` is non-empty, but the
+live file now has ZERO deferred entries (T-0958 resolved them all into
+handled_by/out_of_scope/duplicate, a strictly BETTER outcome than when
+T-0392 wrote the test). Filed T-1032 for the reviewer to fix the
+stale assertion.
+
+Evidence: tests/unit/strata/test_system_design_coverage.py's 3 tests, all
+independently re-run passing against the real file/gate/queue.
+
+Gates: `frob check --ticket T-0658 --only gates-fast --only gates-native`
+clean (0 errors both groups) after adding two `frob:waive DUP001`
+waivers (this module's assertion shape is structurally similar to ~10
+sibling per-domain reconciliation tests -- system-design.yaml/supply-
+chain.yaml/evasion.yaml/weaknesses.yaml/... -- each independently owned
+and pinning a DIFFERENT registry file's own live state; extracting a
+shared helper across that many separately-scoped reconciliation tickets
+is a real but distinct refactor, not this ticket's job, honestly
+disclosed in both waiver reasons).
+
+Filed: T-1032 -- fix stale
+test_every_deferred_entry_targets_an_open_ticket in tests/
+test_registry_reconciliation_system_design.py (a pre-existing, out-of-
+scope failure found while investigating T-0658, unrelated to any change
+made here).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 2 error(s), 3118 warning(s), 347 waived
+- error-findings: E501@/home/logan/projects/frob/.claude/worktrees/agent-a81994cfb14c4292b/src/frob/strata/_host_isolation.py:290, E501@/home/logan/projects/frob/.claude/worktrees/agent-a81994cfb14c4292b/src/frob/strata/_host_isolation.py:331
 
 <!-- ticket:T-0662 -->
 ```yaml
@@ -4422,3 +4512,27 @@ actually walks the sibling-repo list and runs `frob scaffold apply` +
 `frob doctor` per repo, plus a short docs note pointing at T-0864/T-0865/
 T-0735 as the design precedent for anyone doing that rollout by hand in the
 meantime.
+
+<!-- ticket:T-1032 -->
+```yaml
+id: T-1032
+title: 'fix stale test_every_deferred_entry_targets_an_open_ticket: system-design.yaml
+  has 0 deferred entries now (T-0958 resolved them)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/test_registry_reconciliation_system_design.py
+threat: null
+component: null
+```
+Found while working T-0658: `tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket` fails on a fresh worktree built from current main, unrelated to T-0658's own scope (docs/design/registry/system-design.yaml is a different scope than this test file, and neither was touched to cause this).
+
+Root cause: the test asserts `deferred` (entries with `disposition.kind is DispositionKind.DEFERRED`) is non-empty in the live `docs/design/registry/system-design.yaml`. At the time T-0392 wrote this test, ~105 genuine entries were deferred to T-0331/a re-pointed successor. Since then, T-0958 (per system-design.yaml's own header comment) re-dispositioned all of them into `handled_by:RULE` (21 entries) or `out_of_scope:...` (97 entries) or `duplicate-of-artifact` (1 entry) -- the live file now has ZERO `deferred:` dispositions (verified directly: `frob.registry.audit_registry_file` reports `deferred=0`, `handled=21`, `out_of_scope=97`, `duplicate=1`, `unaccounted=0`, `exhausted=True`). The test's "expected at least one deferred entry to check against" assumption no longer holds -- not a regression in the registry file (it is MORE fully dispositioned now, a good outcome), but a stale assumption baked into the test itself.
+
+Fix: either loosen the assertion to `if deferred:` (skip cleanly when zero, matching the file's now-fully-resolved state) or remove/replace the test with one that positively asserts the CURRENT resolved state, whichever the reviewer judges is the more honest signal for future drift. Scope: tests/test_registry_reconciliation_system_design.py only -- the registry file itself needs no change (it is honestly, fully dispositioned already).
