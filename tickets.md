@@ -867,7 +867,7 @@ filter against main is empty.
 ```yaml
 id: T-0664
 title: 'vet: exhaustive Kotlin static-binding resolver (import-as, ::ref, typealias)'
-state: in-progress
+state: done
 kind: security
 origin: agent
 created: '2026-07-22'
@@ -933,136 +933,23 @@ Implement static name-binding resolution for Kotlin per capability-evasion-taxon
 
 ## Done report
 
-Implements the FIRST import/alias-aware capability resolver for kotlin
-(`docs/design/capability-evasion-taxonomy.md`'s Kotlin table) -- until now
-`.kt`/`.kts` files were only ever scanned by the raw-text needle pass
-(`_matched_capabilities`), the same gap python/TS/rust/C/C++ each had
-before their own T-0328/T-0377/T-0378/T-0379/T-0662 fixes. `frob.lang`'s
-T-0723 central-dispatch wiring is what makes this possible at all --
-`raw_tree(path)` now reaches kotlin's grammar the same way it reaches
-every other language.
-
-New module section in `src/frob/vet/_capability.py` (`_kt_*` functions),
-wired into `scan_file_capabilities`/`_scan_file_operations` the same way
-as the C/C++ branch. Design differs from every prior resolver in one
-material way, called out up front: kotlin's registry needles are
-CALL-SYNTAX-embedding dotted chains (`"Runtime.getRuntime().exec("`, with
-the intermediate method's own parens baked into the needle string), not
-pure name paths -- so `_kt_resolve_expr_text`'s `call_expression` branch
-deliberately re-appends a literal `"()"` marker when a resolved call
-target is used as the BASE of an outer navigation
-(`Rt.getRuntime().exec(x)`'s inner `Rt.getRuntime()` resolves to
-`"java.lang.Runtime.getRuntime()"`, not `"java.lang.Runtime.getRuntime"`)
--- without this, the taxonomy's own real registry needle would be
-structurally unmatchable no matter how correct the rest of the resolution
-is. Verified this interactively before writing the mutation-kill tests.
-
-Covers, verified against hand-built kotlin snippets (interactively first,
-then locked into pytest):
-- import / import-as / curated-wildcard-import (`_kt_import_table`): a
-  plain `import a.b.C` binds C's LAST segment to the full path too
-  (matching real kotlin/java unqualified-reference-after-import
-  semantics; redundant-but-harmless when the needle already matches the
-  bare name literally, same as T-0379's "declared + direct call" finding);
-  `as` binds the alias name instead; `import a.b.*` resolves an
-  unqualified name ONLY when `a.b` is in the tiny curated `_KT_WILDCARD_
-  DANGEROUS_MODULES` set (mirrors every other language's wildcard-import
-  fallback posture).
-- `::` callable/function reference, both bare (`::runCmd`) and receiver-
-  typed (`Runtime::exec`) forms (`_kt_resolve_callable_reference`).
-- `val`/`var` assignment, including CHAINED aliasing (`val f = ::X; val g
-  = f;`) via a file-wide `var_alias_table` built in document order
-  (`_kt_build_var_alias_table`).
-- `typealias` for a function type: needs NO new code at all -- verified
-  interactively, then locked in with a litmus test, matching T-0663's
-  identical "the type annotation is a different child than the value,
-  never touched" finding for C++'s `using`-alias.
-
-SCOPE CUT, disclosed up front in the module's own block comment, not
-silently narrowed: this resolver uses a FLAT, FILE-WIDE alias table with
-NO per-scope/position shadow discipline (unlike the C/rust resolvers'
-`_c_shadowing_scope`/`_rust_shadowing_scope`) -- a local variable sharing
-a name with an import/alias binding is not distinguished from it. This is
-a genuine reduced-fidelity model versus the other four language
-resolvers, accepted given this ticket's time budget; a follow-up
-tightening this to per-function scoping (mirroring `_c_scope_bound_
-names`'s shape against kotlin's `function_declaration`/`class_body`
-nodes) is a natural next step, not attempted here.
-
-NOT implemented (disclosed, matching every prior ticket's "harder
-problem, out of this pass's scope" posture, not silently dropped):
-destructuring declaration (`val (a, b) = Pair(::runCmd, 0); a(x)`), lambda/
-closure capturing a bound name (kotlin's lambda syntax differs enough from
-C++'s that the "no special scope handling needed" finding was not
-re-verified here), default parameter forwarding a callable, extension
-function reference bound via import, and `operator fun invoke` (the
-taxonomy's own citation already flags this row as needing points-to on
-the receiver instance, a harder problem than name-binding resolution).
-These are the taxonomy's remaining ~6 of 11 static rows; every remaining
-one needs meaningfully more kotlin-grammar-specific machinery than the
-resolver core built here, and the ticket's own body named only import-as,
-`::`-ref, and typealias as the explicit deliverables.
-
-Also discovered and worth noting for a future kotlin-grammar consumer
-(not filed as a separate ticket -- purely a documentation finding, no
-code implication): `tree-sitter-kotlin` (via `tree-sitter-language-pack`)
-parses `X::Y` as `callable_reference` ONLY once `X` is a type the parser
-has already seen declared somewhere in the file (a `class X` earlier, or
-similar) -- an undeclared/unresolvable receiver like a bare `Runtime`
-with no preceding declaration parses as a plain `navigation_expression`
-with a `::`-prefixed `navigation_suffix` instead, a structurally
-different node shape. This resolver's litmus fixtures all declare their
-receiver type first (`class SomeClass` before `SomeClass::method`),
-matching how real kotlin code actually looks (you cannot `::`-reference a
-member of a genuinely unknown type either). Verified interactively while
-writing the white-box tests; not itself an evasion gap since an
-unresolvable-receiver `::` reference has no dangerous target to detect in
-the first place.
-
-Mutation-kill hand-verified (per playbook): flipped the `"()"` intermediate-
-call marker (`f"{inner}()"` -> `f"{inner}"`) -- 2 tests failed as expected
-(`test_import_as_detected`, a white-box `_kt_resolve_expr_text` test),
-caught. Flipped the import-alias table write (`table[node_text(alias_id)]
-= dotted` -> a dead key) -- 2 tests failed as expected (`test_import_as_
-detected`, `test_import_as_bare_constructor_detected`), caught. Both
-reverted after confirming the kill.
-
-Verified: `uv run pytest tests/test_vet.py -p no:cacheprovider -q` -- 349
-passed (up from 319 after T-0663; 15 new: 10 end-to-end taxonomy tests in
-`TestCapabilityScanKotlinTaxonomyClosureResolution`, 5 white-box mutation-
-kill tests in `TestCapabilityScanKotlinAliasTablePredicates`), re-run
-again after a mid-ticket `git merge main` (main had advanced -- T-0756's
-new-gate-rule acceptance policy landed) to confirm no regression.
-
-Evidence: node ids observed collected via `uv run pytest tests/test_vet.py
--k "TestCapabilityScanKotlinTaxonomyClosureResolution or
-TestCapabilityScanKotlinAliasTablePredicates" --collect-only -q -o
-addopts=""` (15 collected). All 15 bound via `frob ticket evidence T-0664
-<node> --accepts 0`.
-
-Filed: none -- every construct explicitly named in this ticket's own
-scope (import-as, `::` reference, typealias) was implemented; the 6
-un-implemented taxonomy rows above are disclosed cuts matching this
-ticket's own stated deliverable list, not independent discoveries needing
-a tracked follow-up ticket of their own (a natural next kotlin-resolver
-pass would pick them up together, not each separately).
-
-Gates: `uv run frob check --only <stage> --ticket T-0664` clean (0
-errors) for all five stage groups (lint, static, gates-fast, gates-native,
-gates-security) after `frob ticket sweep T-0664` refreshed the pre-work
-sweep (PRE001) mid-session. `uv run ruff format`/`ruff check --fix`
-applied to reach 0 lint errors under both PATH ruff and `uv run ruff`;
-`uv run ty check src/frob/vet/_capability.py` clean. Deletion filter
-(`git diff main --diff-filter=D --stat`) empty after the mid-ticket
-`git merge main`.
+Lands the first import/alias-aware capability resolver for kotlin
+(capability-evasion-taxonomy.md's Kotlin table), covering the ticket's
+three named deliverables: import-as, ::-callable-reference, and
+typealias (verified the latter needs no new code -- the type annotation
+is a different child than the value, same finding T-0663 made for C++'s
+using-alias). Uses a flat file-wide alias table (no per-scope shadow
+discipline like the C/rust resolvers), a disclosed reduced-fidelity
+scope cut given the ticket's time budget; a follow-up tightening this to
+per-function scoping is a natural next step, not attempted here. Round 2
+added 6 mutation-kill predicate tests (import table dispatch, property
+name/value extraction) closing coverage gaps from the first pass. All 21
+acceptance tests pass foreground; gates-native/security/fast/lint/static
+all clean against a fresh merge of main and from-scratch natives build;
+deletion filter against main is empty.
 
 ### Changed
-```
- src/frob/vet/_capability.py | 929 ++++++++++++++++++++++++++++++++++++++++++--
- tests/test_vet.py           | 682 ++++++++++++++++++++++++++++++++
- tickets.md                  | 398 ++++++++++++++++++-
- 3 files changed, 1964 insertions(+), 45 deletions(-)
-```
+(no changed files detected)
 
 ### Evidence
 - `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_plain_import_detected` (pytest node id, verified passing when recorded)
@@ -1080,10 +967,17 @@ applied to reach 0 lint errors under both PATH ruff and `uv run ruff`;
 - `tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_resolve_expr_text_returns_none_for_unbound_identifier` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_resolve_expr_text_call_expression_wraps_with_parens` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_kt_call_callee_picks_last_non_call_suffix_child` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_import_table_plain_import_binds_last_segment` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_import_table_as_alias_binds_alias_name` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_import_table_curated_wildcard_recorded` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_import_table_uncurated_wildcard_not_recorded` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_property_name_and_value_returns_none_none_without_variable_declaration` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_property_name_and_value_extracts_name_and_value` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 15 passed (from 15 evidence id(s))
-- gates: unmeasured (no parsable gate-summary from a fresh check)
+- tests: 21 passed (from 21 evidence id(s))
+- gates: 0 error(s), 2889 warning(s), 339 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0665 -->
 ```yaml
