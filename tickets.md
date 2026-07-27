@@ -1933,7 +1933,7 @@ mechanism exists.
 ```yaml
 id: T-0895
 title: Add regression test for dup_gate native-unavailable loud-violation behavior
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -1944,6 +1944,8 @@ sprint: null
 scope:
 - src/frob/gates/__init__.py
 - tests/test_gates.py
+evidence:
+- tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
 threat: null
 component: null
 ```
@@ -1955,12 +1957,45 @@ and a mocked/forced `core_available() == False` produces a real Violation
 (not just a log line), closing the "opted-in enforcement silently no-ops
 when the native toolchain is missing" gap the paired fix ticket addresses.
 
+## Done report
+
+This ticket asked for a regression test proving dup_gate emits a real
+Violation (not just a log line) when [dup].enforce=true and
+core_available() is mocked False. That exact test already exists and was
+landed together with the T-0399 fix that gives dup_gate its fail-closed
+behavior (see T-0896's Done report for the paired investigation):
+tests/test_gates.py::TestOptInGates::
+test_dup_gate_fails_closed_when_enforced_but_core_missing (frob:ticket
+T-0399, tests/test_gates.py:8588-8608). It monkeypatches
+frob.dup.core_available to return False, sets [dup].enforce=true with no
+diff hunks, calls dup_gate directly, and asserts exactly one DUP003 ERROR
+violation is returned -- precisely the "opted-in enforcement silently
+no-ops when the native toolchain is missing" gap this ticket describes.
+
+Ran it foreground: 1 passed.
+
+No new test added under this ticket; closing citing the pre-existing
+T-0399 test as evidence rather than duplicating coverage, per this
+ticket's own note that it may be absorbed into the paired fix ticket's
+evidence.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 19389 warning(s), 333 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-0896 -->
 ```yaml
 id: T-0896
 title: dup_gate silently no-ops (log-only) when frob-core native is unavailable despite
   [dup].enforce=true
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -1970,6 +2005,8 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/__init__.py
+evidence:
+- tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
 threat: null
 component: null
 ```
@@ -2005,6 +2042,43 @@ Fix direction: when `[dup].enforce=true` and `core_available()` is False,
 emit a loud WARN (or ERROR)-tier Violation naming the missing native and
 the remediation (`make core`), instead of a log-only degrade -- mirroring
 TEST013's shape for the coverage gate.
+
+## Done report
+
+Verified this ticket's exact fix is already implemented and landed under
+T-0399 (commit 12874170, "AUDIT: green must claim quality -- promote
+quality gates from WARN to blocking"), before this ticket was filed
+(T-0896 was found during T-0786's later sweep, apparently without
+cross-checking against T-0399's already-shipped fix).
+
+dup_gate (src/frob/gates/__init__.py:9087) already fails closed exactly
+as this ticket's plan proposes: when [dup].enforce=true and
+core_available() is False, it emits a blocking DUP003 ERROR Violation
+naming the missing native and the remediation (`make core`), not a
+log-only no-op -- see the docstring at line 9088 and the emission block
+at lines 9107-9127. The old silent log.warning()-then-return-() shape
+this ticket describes no longer exists in the current tree.
+
+Evidence: tests/test_gates.py::TestOptInGates::
+test_dup_gate_fails_closed_when_enforced_but_core_missing (frob:ticket
+T-0399, line 8588) already covers this exact scenario -- monkeypatches
+core_available to False, sets [dup].enforce=true, and asserts a single
+DUP003 ERROR violation is returned. Ran it foreground: 1 passed.
+
+No code changes made under this ticket; closing as fixed-by-T-0399 with
+the pre-existing test as evidence rather than re-implementing or
+duplicating coverage.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 4655 warning(s), 333 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0898 -->
 ```yaml
@@ -2375,7 +2449,7 @@ safely promoted to ERROR without redding main.
 id: T-0981
 title: 'dup_gate deadlocks under frob check: derived_state_write_lock reentrancy blind
   to ProcessPoolExecutor workers'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -2388,6 +2462,9 @@ scope:
 - src/frob/gates/__init__.py
 - docs/modules/process.md
 - docs/modules/gates.md
+evidence:
+- tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance::test_real_pool_worker_under_parent_shared_holder_completes
+- tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance::test_independent_process_without_marker_still_blocks
 threat: null
 component: null
 ```
@@ -2468,6 +2545,50 @@ Scope for the ticket that picks this up: `src/frob/process/_lock.py`,
 `src/frob/gates/__init__.py` (`_PROCESS_POOL_GATES`, `dup_gate`
 dispatch), plus `docs/modules/process.md`/`docs/modules/gates.md` for the
 corrected reentrancy-contract writeup once fixed.
+
+## Done report
+
+Verified the deadlock this ticket describes no longer reproduces: T-0982
+(landed as b9f86f74, commit 43ed42a6) already fixed the exact mechanism
+described here -- derived_state_write_lock's reentrancy registry was
+process-local and blind to ProcessPoolExecutor workers, causing a real
+flock(LOCK_EX) deadlock against the parent's SHARED hold. T-0982's fix
+stamps an env marker with the owner's held registry keys before
+constructing the process pool (_open_process_pool in
+src/frob/gates/__init__.py), and a worker consults that marker in
+_process_already_holds (src/frob/process/_lock.py) to bypass its own lock
+acquisition exactly like the same-process nested case, while an
+independent process's worker still takes a real exclusive lock.
+
+Confirmed no re-implementation is needed:
+- tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance already
+  covers this exact scenario end to end with a REAL ProcessPoolExecutor
+  worker under a parent SHARED holder
+  (test_real_pool_worker_under_parent_shared_holder_completes), plus the
+  negative case that an independent process without the marker still
+  blocks (test_independent_process_without_marker_still_blocks). Ran the
+  full file foreground: 12 passed, 0 failed.
+- [dup].enforce=true is now live in this repo's own frob.toml (flipped by
+  T-0974, commit 15e0e91c, specifically because T-0982 made it safe to do
+  so) -- frob check's own clones stage runs under exactly the topology
+  this ticket describes (dup_gate dispatched into _PROCESS_POOL_GATES)
+  with no hang, which would be impossible if the deadlock still existed.
+
+No code changes made under this ticket; closing as fixed-by-T-0982 with
+the above evidence rather than re-implementing (b) from the plan, which
+T-0982 already built.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance::test_real_pool_worker_under_parent_shared_holder_completes` (pytest node id, verified passing when recorded)
+- `tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance::test_independent_process_without_marker_still_blocks` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 4719 warning(s), 333 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0995 -->
 ```yaml
