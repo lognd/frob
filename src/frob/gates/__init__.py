@@ -5681,67 +5681,72 @@ def _scope002_violations(
     `root` is `None`."""
     if not ticket.scope:
         return ()
+    violations = list(_scope002_edge_gap_violations(ticket, snapshot))
+    violations.extend(_scope002_helper_gap_violations(ticket, snapshot, root))
+    return tuple(violations)
+
+
+def _scope002_add_hint(ticket_id: str, missing_file: str) -> str:
+    """Shared remediation tail for every SCOPE002 finding (T-0998)."""
+    return (
+        f"{missing_file!r}, not in scope -- add it: "
+        f"frob ticket scope {ticket_id} --add {missing_file!r}"
+    )
+
+
+def _scope002_edge_gap_violations(
+    ticket: Ticket, snapshot: GraphSnapshot
+) -> list[Violation]:
+    """Doc-edge + test-edge halves of the SCOPE002 closure triple (T-0998)."""
     from frob.graph.affects import scope_doc_code_gaps, scope_test_gaps
+
+    prefixes = {
+        "code_missing_doc": "whose frob:doc target",
+        "doc_missing_code": "describing",
+        "code_missing_test": "whose frob:tests target",
+        "test_missing_code": "covering",
+    }
+    site_kind = {"doc_missing_code": "doc anchor ", "test_missing_code": "test "}
+    violations: list[Violation] = []
+    gaps = list(scope_doc_code_gaps(snapshot, ticket.scope))
+    gaps.extend(scope_test_gaps(snapshot, ticket.scope))
+    for gap in gaps:
+        violations.append(
+            _scope002_violation(
+                f"SCOPE002: {ticket.id} scope includes "
+                f"{site_kind.get(gap.direction, '')}{gap.scoped_site} "
+                f"{prefixes[gap.direction]} {gap.target} lives in "
+                + _scope002_add_hint(ticket.id, gap.missing_file)
+            )
+        )
+    return violations
+
+
+def _scope002_helper_gap_violations(
+    ticket: Ticket, snapshot: GraphSnapshot, root: Path | None
+) -> list[Violation]:
+    """Private-helper half of the SCOPE002 closure triple (T-0998)."""
     from frob.graph.callgraph import scope_private_helper_gaps
 
+    if root is None:
+        return []
     violations: list[Violation] = []
-    for gap in scope_doc_code_gaps(snapshot, ticket.scope):
-        if gap.direction == "code_missing_doc":
-            violations.append(
-                _scope002_violation(
-                    f"SCOPE002: {ticket.id} scope includes {gap.scoped_site} "
-                    f"whose frob:doc target {gap.target} lives in "
-                    f"{gap.missing_file!r}, not in scope -- add it: "
-                    f"frob ticket scope {ticket.id} --add {gap.missing_file!r}"
-                )
+    for helper_gap in scope_private_helper_gaps(
+        root, ticket.scope, tuple(snapshot.file_hashes)
+    ):
+        suggestion = (
+            "add it" if helper_gap.only_used_by_scope else "review the dependency"
+        )
+        violations.append(
+            _scope002_violation(
+                f"SCOPE002: {ticket.id} scope includes {helper_gap.caller} "
+                f"which calls private helper {helper_gap.callee} defined "
+                f"in {helper_gap.definition_file!r}, not in scope "
+                f"(probable under-capture) -- {suggestion}: frob ticket "
+                f"scope {ticket.id} --add {helper_gap.definition_file!r}"
             )
-        else:
-            violations.append(
-                _scope002_violation(
-                    f"SCOPE002: {ticket.id} scope includes doc anchor "
-                    f"{gap.scoped_site} describing {gap.target} in "
-                    f"{gap.missing_file!r}, not in scope -- add it: "
-                    f"frob ticket scope {ticket.id} --add {gap.missing_file!r}"
-                )
-            )
-    for gap in scope_test_gaps(snapshot, ticket.scope):
-        if gap.direction == "code_missing_test":
-            violations.append(
-                _scope002_violation(
-                    f"SCOPE002: {ticket.id} scope includes {gap.scoped_site} "
-                    f"whose frob:tests target {gap.target} lives in "
-                    f"{gap.missing_file!r}, not in scope -- add it: "
-                    f"frob ticket scope {ticket.id} --add {gap.missing_file!r}"
-                )
-            )
-        else:
-            violations.append(
-                _scope002_violation(
-                    f"SCOPE002: {ticket.id} scope includes test "
-                    f"{gap.scoped_site} covering {gap.target} in "
-                    f"{gap.missing_file!r}, not in scope -- add it: "
-                    f"frob ticket scope {ticket.id} --add {gap.missing_file!r}"
-                )
-            )
-    if root is not None:
-        for helper_gap in scope_private_helper_gaps(
-            root, ticket.scope, tuple(snapshot.file_hashes)
-        ):
-            suggestion = (
-                "add it"
-                if helper_gap.only_used_by_scope
-                else "review the dependency"
-            )
-            violations.append(
-                _scope002_violation(
-                    f"SCOPE002: {ticket.id} scope includes {helper_gap.caller} "
-                    f"which calls private helper {helper_gap.callee} defined "
-                    f"in {helper_gap.definition_file!r}, not in scope "
-                    f"(probable under-capture) -- {suggestion}: frob ticket "
-                    f"scope {ticket.id} --add {helper_gap.definition_file!r}"
-                )
-            )
-    return tuple(violations)
+        )
+    return violations
 
 
 # frob:enforces CHK-GATE-SCOPE001

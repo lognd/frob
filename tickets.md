@@ -8708,3 +8708,40 @@ docs/modules/vet.md (16), docs/modules/gates.md (12), docs/modules/perf.md
 
 Scope: docs/**, src/frob/gates/_docptr.py, tests/test_docptr_gate.py.
 Origin: agent (T-1015 round-1 remainder).
+
+<!-- ticket:T-1017 -->
+```yaml
+id: T-1017
+title: 'hotfix: SCOPE002 gate function over ARCH001 threshold + callgraph E501 (own-gate
+  fallout from T-0998 land)'
+state: in-progress
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/__init__.py
+- src/frob/graph/callgraph.py
+- tests/test_gates.py
+threat: null
+component: null
+```
+T-0998 landed _scope002_violations at 84 lines and one 89-char line in callgraph.py; both now error-tier under our own promotions. Extracted _scope002_edge_gap_violations/_scope002_helper_gap_violations/_scope002_add_hint (also killing the 4x-duplicated message body) and wrapped the long line. All 19 scope-closure tests green post-refactor.
+
+## Done report
+
+Own-gate fallout from T-0998's land: the new SCOPE002 gate function was 84 lines (ARCH001, now error-tier) and callgraph.py carried an 89-char line (E501). Extracted the edge-gap and helper-gap loops into their own functions with a shared remediation-hint builder, which also removed the four-times-duplicated message body; wrapped the long line. All 19 scope-closure tests green post-refactor. Filing this ticket itself triggered the new closure warning surface -- working as designed.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 1 error(s), 19277 warning(s), 458 waived
+- error-findings: AFFECT001@src/frob/graph/callgraph.py

@@ -692,11 +692,11 @@ def scope_private_helper_gaps(
     scope_files = {f for f in all_files if scope_matches(f, scope)}
     if not scope_files:
         return ()
-    scope_dirs = {_file_of(f).rsplit("/", 1)[0] if "/" in f else "" for f in scope_files}
+    scope_dirs = {
+        _file_of(f).rsplit("/", 1)[0] if "/" in f else "" for f in scope_files
+    }
     candidate_paths = tuple(
-        f
-        for f in all_files
-        if (f.rsplit("/", 1)[0] if "/" in f else "") in scope_dirs
+        f for f in all_files if (f.rsplit("/", 1)[0] if "/" in f else "") in scope_dirs
     )
     graph = build_call_graph(root, candidate_paths)
 
@@ -718,9 +718,7 @@ def scope_private_helper_gaps(
             if callee_file in scope_files:
                 continue
             other_callers = callers_of.get(callee, set())
-            only_scope = all(
-                _file_of(c) in scope_files for c in other_callers
-            )
+            only_scope = all(_file_of(c) in scope_files for c in other_callers)
             gaps.append(
                 PrivateHelperGap(
                     caller=caller,
