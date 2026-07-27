@@ -1938,7 +1938,7 @@ T-0204 child (exports family residue, continuing T-0600/T-0601). frob-exports st
 id: T-0872
 title: 'arch warning burn-down: gate:ARCH to zero unwaived (72 warns baseline) + suggestion
   sweep'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -1959,12 +1959,14 @@ component: arch
 ```
 T-0204 child (arch family). gate:ARCH reports 72 warnings (13 waived) + frob-arch 55 warnings/183 suggestions at 2026-07-23 baseline (recount at start). Triage every warning: fix the code (long-function/god-class residue, calibrated-threshold stragglers) or waive with a specific reason per T-0289 doctrine. Suggestions: sweep for real fixes; remainder must be explainable. Deliverable: gate:ARCH 0 unwaived warnings and the summary line honest.
 
+## Drop reason
+- 2026-07-27: superseded by the T-0399 promotion audit's counted ARCH burn-down (T-0970, 101 findings measured 2026-07-27) (absorbed by T-0970)
 <!-- ticket:T-0873 -->
 ```yaml
 id: T-0873
 title: 'perf warning burn-down + waiver re-audit: gate:PERF to zero unwaived (24 warns,
   29 waivers baseline)'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -1985,6 +1987,8 @@ component: perf
 ```
 T-0204 child (perf family). gate:PERF reports 24 warnings + 29 waived at 2026-07-23 baseline (recount at start). Fix the unwaived findings; re-audit every standing waiver still holds after the T-0161-era heuristic fixes (drop stale waivers, re-reason keepers). Deliverable: gate:PERF 0 unwaived warnings, all waivers re-verified with current reasons.
 
+## Drop reason
+- 2026-07-27: superseded by the T-0399 promotion audit's counted PERF burn-down (T-0972, 1730 findings measured 2026-07-27) (absorbed by T-0972)
 <!-- ticket:T-0874 -->
 ```yaml
 id: T-0874
