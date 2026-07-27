@@ -120,7 +120,9 @@ def _run_sync_gate_rules(registry_dir: Path) -> None:
 # frob:ticket T-0563
 # frob:ticket T-0429
 # frob:ticket T-0560
+# frob:ticket T-0875
 # frob:doc docs/modules/app.md#runners
+# frob:tests tests/unit/test_app_runners_t0875_leaf_collision.py::TestRegistryRunnerRun.test_missing_registry_dir_logs_and_returns kind="unit"  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """`frob registry audit`: per-registry-file disposition counts under
     `cfg.registry_path` (defaults to `docs/design/registry` under cwd).

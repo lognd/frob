@@ -14,7 +14,9 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-0441
+# frob:ticket T-0875
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
+# frob:tests tests/unit/test_app_runners_t0875_leaf_collision.py::TestFmtRunnerRun.test_check_mode_reports_all_canonical_on_empty_tree kind="unit"  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """`frob fmt`: canonicalize every `frob:` directive comment under
     `cfg.fmt_path` to the fewest physical lines that stay within the

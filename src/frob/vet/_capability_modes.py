@@ -204,7 +204,7 @@ def _today() -> date:
 
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
-# frob:tests tests/unit/vet/test_capability_modes.py::TestResolveCapabilityKind kind="unit"  # noqa: E501
+# frob:tests tests/unit/vet/test_capability_modes.py::TestResolveCapabilityKind.test_precise_kind_passes_through kind="unit"  # noqa: E501
 def resolve_capability_kind(
     raw: str, *, today: date | None = None
 ) -> Result[str, CapabilityModeError]:

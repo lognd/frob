@@ -149,7 +149,7 @@ def _perf_weight(header: str) -> float:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-# frob:tests tests/unit/perf/test_collectors.py::TestParsePerfScript kind="unit"
+# frob:tests tests/unit/perf/test_collectors.py::TestParsePerfScript.test_parses_committed_fixture_into_leaf_first_stacks kind="unit"  # noqa: E501
 def parse_perf_script(
     text: str, source: str
 ) -> Result[list[SampledStack], CollectorError]:
@@ -236,7 +236,7 @@ def _v8_stack(
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-# frob:tests tests/unit/perf/test_collectors.py::TestParseV8CpuProfile kind="unit"
+# frob:tests tests/unit/perf/test_collectors.py::TestParseV8CpuProfile.test_parses_committed_fixture_walking_parent_chain kind="unit"  # noqa: E501
 def parse_v8_cpuprofile(
     text: str, source: str
 ) -> Result[list[SampledStack], CollectorError]:
@@ -296,7 +296,7 @@ _JFR_FRAME_RE = re.compile(
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-# frob:tests tests/unit/perf/test_collectors.py::TestBuildClassToFile kind="unit"
+# frob:tests tests/unit/perf/test_collectors.py::TestBuildClassToFile.test_maps_unambiguous_class_to_its_file kind="unit"  # noqa: E501
 def build_class_to_file(modules: list[NormalizedModule]) -> dict[str, str]:
     """Map a JVM-style dotted class name to its source file, derived from
     the same `NormalizedModule`s `build_section_index` indexes -- the
@@ -367,7 +367,7 @@ def _parse_jfr_frames(
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-# frob:tests tests/unit/perf/test_collectors.py::TestParseJfrPrint kind="unit"
+# frob:tests tests/unit/perf/test_collectors.py::TestParseJfrPrint.test_parses_committed_fixture_into_leaf_first_stacks kind="unit"  # noqa: E501
 def parse_jfr_print(
     text: str, source: str, class_to_file: Mapping[str, str] | None = None
 ) -> Result[list[SampledStack], CollectorError]:
@@ -419,7 +419,7 @@ _LANGUAGE_ADAPTER_EXTENSIONS: dict[str, str] = {
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-# frob:tests tests/unit/perf/test_collectors.py::TestDetectCollectorFormat kind="unit"
+# frob:tests tests/unit/perf/test_collectors.py::TestDetectCollectorFormat.test_cpuprofile_extension_is_v8 kind="unit"  # noqa: E501
 def detect_collector_format(path: Path, text: str) -> str:
     """Best-effort collector format name (`"perf-script"` |
     `"v8-cpuprofile"` | `"jfr-print"`) for a profile artifact, so `frob
@@ -438,7 +438,7 @@ def detect_collector_format(path: Path, text: str) -> str:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-# frob:tests tests/unit/perf/test_collectors.py::TestParseCollectorFormat kind="unit"
+# frob:tests tests/unit/perf/test_collectors.py::TestParseCollectorFormat.test_dispatches_to_the_matching_adapter kind="unit"  # noqa: E501
 def parse_collector_format(
     fmt: str,
     text: str,
@@ -485,7 +485,7 @@ def _adapt_module(
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-# frob:tests tests/unit/perf/test_collectors.py::TestBuildIndexForFiles kind="unit"
+# frob:tests tests/unit/perf/test_collectors.py::TestBuildIndexForFiles.test_resolves_a_real_python_file_in_the_repo kind="unit"  # noqa: E501
 def build_index_for_files(files: Iterable[str]) -> SectionIndex:
     """Best-effort `SectionIndex` covering only the distinct files named
     (any collector's stacks' frame files, not a whole-repo walk -- parsing

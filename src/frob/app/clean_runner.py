@@ -51,7 +51,9 @@ def _print_report(r: Renderer, report, executed: bool) -> None:  # noqa: ANN001
 
 # frob:ticket T-0457
 # frob:ticket T-0563
+# frob:ticket T-0875
 # frob:doc docs/modules/clean.md#public-api
+# frob:tests tests/unit/test_app_runners_t0875_leaf_collision.py::TestCleanRunnerRun.test_dry_run_reports_nothing_to_clean kind="unit"  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """`frob clean`: tiered, artifact-only workspace cleanup. Defaults to a
     dry-run preview (`--dry-run` is implicit); pass `-y`/`--yes` to execute."""
