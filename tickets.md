@@ -860,7 +860,7 @@ Deferred remainder of T-0177 deliverable 2. The warm daemon caches graph snapsho
 id: T-0629
 title: 'std.host windows: binPath/ImagePath vocabulary so install.ps1 can create the
   SCM service, not just harden it'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -876,15 +876,54 @@ scope:
 - src/frob/deploy/_generate_windows.py
 - tests/unit/strata/
 - tests/unit/deploy/
+evidence:
+- strata-core/src/parse.rs::tests::parses_node_bin_path_clause
+- strata-core/src/parse.rs::tests::parses_node_bin_path_clause_without_args
+- strata-core/src/parse.rs::tests::parses_store_bin_path_clause
+- tests/unit/strata/test_host.py::TestHostAttrs::test_desugars_bin_path
+- tests/unit/strata/test_host.py::TestHostManifestWindows::test_reads_bin_path
+- tests/unit/strata/test_host.py::TestHostManifestWindows::test_bin_path_defaults_none
+- tests/unit/deploy/test_generate_windows.py::TestInstall::test_service_not_present_notes_missing_bin_path
+- tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_when_bin_path_declared
+- tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_without_args
 acceptance:
 - text: GIVEN a windows node declaring service with a binPath WHEN install.ps1 is
     generated THEN it idempotently creates the SCM service with that image path before
     hardening AND uninstall.ps1 deletes it
-  evidence: []
+  evidence:
+  - strata-core/src/parse.rs::tests::parses_node_bin_path_clause
+  - strata-core/src/parse.rs::tests::parses_node_bin_path_clause_without_args
+  - strata-core/src/parse.rs::tests::parses_store_bin_path_clause
+  - tests/unit/strata/test_host.py::TestHostAttrs::test_desugars_bin_path
+  - tests/unit/strata/test_host.py::TestHostManifestWindows::test_reads_bin_path
+  - tests/unit/strata/test_host.py::TestHostManifestWindows::test_bin_path_defaults_none
+  - tests/unit/deploy/test_generate_windows.py::TestInstall::test_service_not_present_notes_missing_bin_path
+  - tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_when_bin_path_declared
+  - tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_without_args
 threat: null
 component: null
 ```
 T-0264's windows generator hardens an existing SCM service (SID type, privileges via sc.exe config) but cannot CREATE one -- std.host has no binPath/ImagePath (executable path + arguments) vocabulary, so sc.exe create is impossible from the model. T-0254's epic text says the install sequence registers the Windows Service; full-install-from-zero needs the vocabulary. Add the grammar clause (parse.rs node/store symmetry per T-0261 precedent), HostManifest read-back, and wire generate_windows_install_script to sc.exe create idempotently when binPath is declared. Flagged by T-0264's reviewer so the epic's full-install intent is not silently lost.
+
+## Done report
+
+Changed:
+strata-core/src/parse.rs::Parser::parse_node (bin_path clause)
+strata-core/src/parse.rs::Parser::parse_store (bin_path clause)
+src/frob/strata/_host.py::HostManifest.bin_path
+src/frob/strata/_host.py::HostManifest.bin_path_args
+src/frob/strata/_host.py::_host_attrs
+src/frob/strata/_host.py::_ParsedHostAttrs
+src/frob/strata/_host.py::_parse_host_attrs
+src/frob/strata/_host.py::host_manifest_for
+src/frob/deploy/_generate_windows.py::_service_image_path
+src/frob/deploy/_generate_windows.py::_install_service_hardening_block
+
+Evidence: strata-core/src/parse.rs::tests::parses_node_bin_path_clause, strata-core/src/parse.rs::tests::parses_node_bin_path_clause_without_args, strata-core/src/parse.rs::tests::parses_store_bin_path_clause, tests/unit/strata/test_host.py::TestHostAttrs::test_desugars_bin_path, tests/unit/strata/test_host.py::TestHostManifestWindows::test_reads_bin_path, tests/unit/strata/test_host.py::TestHostManifestWindows::test_bin_path_defaults_none, tests/unit/deploy/test_generate_windows.py::TestInstall::test_service_not_present_notes_missing_bin_path, tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_when_bin_path_declared, tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_without_args (all bound to acceptance[0] via `frob ticket evidence --accepts 0`). Full `cargo test --release` (123 passed) and full targeted pytest run (49 passed) both observed green after merging main (T-0933 check-lock fix) and a fresh `frob natives build`.
+
+Filed: T-0941 (docs/modules/deploy.md's windows scope-cut prose is now stale re: binPath vocabulary; out of this ticket's declared scope to fix)
+
+Gates: `frob check --ticket T-0629 --only cycle` clean; `--only exports` clean (pre-existing warnings elsewhere, none in scope); `--only dup` PASS (169 groups, 110 waived; 3 unwaived renamed-dup findings appear in src/frob/deploy/_generate_windows.py but sit entirely inside pre-existing functions this ticket did not touch -- `_install_service_account_block`/`_uninstall_service_account_block`, `_install_acl_block`, `_install_firewall_block` -- confirmed against the diff, not introduced here); `--only arch` PASS (76 warnings/233 suggestions, none referencing parse.rs/_host.py/_generate_windows.py); `--only lint` shows 3 pre-existing ruff-format warnings in unrelated files (_lock_ordering.py, test_gates.py, test_arch.py), not mine.
 
 <!-- ticket:T-0639 -->
 ```yaml
@@ -6101,3 +6140,43 @@ threat: null
 component: null
 ```
 Main sits at 13-15 gate errors after the T-0715 and T-0902/T-0905 lands. (1) 12x DRIFT002: every T-0715 frob:tests edge (5 in the new tests/unit/test_app_runners_t0715_sprint_tier.py, 7 in src/frob/tickets/{_models,__init__}.py) reports 'no longer resolves; candidates: no candidates found' -- persists after deleting .frob/pytest-collect.json and re-running check, so likely the DRIFT gate resolves against the obligation graph rather than the pytest collect cache and the graph needs a rebuild, OR the new-file edges were recorded in a form the resolver cannot match (compare against directives that DO resolve, e.g. the dotted Class.method edges elsewhere in _models.py). Diagnose properly, fix the edges or the cache, do NOT bulk-rewrite directives (a coordinator sed attempt over-matched -- reverted). (2) 1x PARSE002 on tests/fixtures/lang/broken.py, the intentionally-malformed parser fixture -- the gate's own message endorses an in-file frob:waive PARSE002 with a reason; verify the waive parses in a file with a syntax error and does not perturb fixture-position-sensitive tests (tests/test_lang.py, test_gates.py::TestParseFailureGate, test_graph.py), else exclude fixtures from PARSE002 the same way T-0897 excluded graph-excluded paths from PII010/RENDER001/SEC scans. Zero gate errors on main is the acceptance bar.
+
+<!-- ticket:T-0941 -->
+```yaml
+id: T-0941
+title: 'docs/modules/deploy.md: update windows binPath/ImagePath scope-cut prose now
+  that T-0629 shipped the vocabulary'
+state: queued
+kind: docs
+origin: human
+created: '2026-07-26'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/modules/deploy.md
+threat: null
+component: null
+```
+T-0629 added `std.host`'s `bin_path`/`bin_path_args` (SCM binPath/ImagePath)
+vocabulary and wired `generate_windows_install_script` to `sc.exe create`
+idempotently when `bin_path` is declared, closing the honest gap
+`docs/modules/deploy.md#scope-and-honesty-notes-generate-windows` documents.
+That doc file is NOT in T-0629's scope (scope=['strata-core/src/parse.rs',
+'src/frob/strata/_host.py', 'src/frob/deploy/_generate_windows.py',
+'tests/unit/strata/', 'tests/unit/deploy/']), so its prose is now stale:
+
+- "`std.host` has no windows binPath/ImagePath vocabulary yet ... `install.ps1`
+  cannot itself `sc.exe create` a working service" is no longer true when
+  `bin_path` is declared.
+- The windows-generation bullet list ("`service`-marked nodes get their SCM
+  service hardened ... IF the service already exists") needs the same
+  IDEMPOTENTLY-CREATED-WHEN-`bin_path`-DECLARED update
+  `src/frob/deploy/_generate_windows.py`'s own module docstring now carries.
+
+Update docs/modules/deploy.md's windows-generation bullet list and its
+"Scope and honesty notes" section to describe the new `bin_path` clause and
+drop it from the "not yet built" scope-cut list (the three remaining v0 scope
+cuts -- required privileges, deny-logon rights, RBCD delegation -- are
+unaffected and should stay).

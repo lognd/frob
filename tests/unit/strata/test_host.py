@@ -72,6 +72,24 @@ class TestHostAttrs:
         )
 
     # frob:tests src/frob/strata/_host.py::_host_attrs kind="unit"
+    def test_desugars_bin_path(self):
+        """T-0629: `bin_path`/`bin_path_args` desugar to `bin_path=`/
+        `bin_path_args=` attrs, appended after `pipes` (same declaration-
+        order convention `_host_attrs` uses throughout)."""
+        attrs = _host_attrs(
+            runs_as=None,
+            is_unit=False,
+            owns=(),
+            listens=(),
+            bin_path="C:\\Program Files\\api\\api.exe",
+            bin_path_args="--config C:\\ProgramData\\api\\config.yaml",
+        )
+        assert attrs == (
+            "bin_path=C:\\Program Files\\api\\api.exe",
+            "bin_path_args=--config C:\\ProgramData\\api\\config.yaml",
+        )
+
+    # frob:tests src/frob/strata/_host.py::_host_attrs kind="unit"
     def test_desugars_group_and_sudoers(self):
         """T-0272: `group`/`sudoers` desugar to `group=`/`sudoers=` attrs,
         one per entry, appended after owns/listens (same declaration-order
@@ -182,6 +200,36 @@ class TestHostManifestWindows:
         )
         assert manifest.pipes == ("\\\\.\\pipe\\api-control",)
         assert manifest.listens == (8443,)
+
+    # frob:tests src/frob/strata/_host.py::host_manifest_for kind="unit"
+    def test_reads_bin_path(self):
+        """T-0629: `bin_path=`/`bin_path_args=` attrs read back into
+        `HostManifest.bin_path`/`.bin_path_args`."""
+        node = Node(
+            id="api",
+            trust="trusted",
+            attrs=(
+                "platform=windows",
+                "service",
+                "bin_path=C:\\Program Files\\api\\api.exe",
+                "bin_path_args=--config C:\\ProgramData\\api\\config.yaml",
+            ),
+        )
+        manifest = host_manifest_for(node)
+        assert manifest is not None
+        assert manifest.bin_path == "C:\\Program Files\\api\\api.exe"
+        assert manifest.bin_path_args == "--config C:\\ProgramData\\api\\config.yaml"
+
+    # frob:tests src/frob/strata/_host.py::host_manifest_for kind="unit"
+    def test_bin_path_defaults_none(self):
+        """A `service`-marked node with no `bin_path` declared keeps
+        `HostManifest.bin_path`/`.bin_path_args` at their `None` default
+        (backward compatible with every pre-T-0629 manifest)."""
+        node = Node(id="api", trust="trusted", attrs=("platform=windows", "service"))
+        manifest = host_manifest_for(node)
+        assert manifest is not None
+        assert manifest.bin_path is None
+        assert manifest.bin_path_args is None
 
     # frob:tests src/frob/strata/_host.py::host_manifest_for kind="unit"
     def test_no_platform_attr_defaults_to_linux_systemd(self):

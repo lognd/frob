@@ -95,17 +95,69 @@ class TestInstall:
         assert "Install-ADServiceAccount" in script
         assert "New-LocalUser" not in script
 
-    def test_service_not_present_notes_missing_binpath_vocabulary(self):
-        """`std.host` has no windows binPath vocabulary yet (module
-        docstring's honest gap) -- when the SCM service does not already
-        exist, install.ps1 says so rather than fabricating a creation
-        command."""
+    def test_service_not_present_notes_missing_bin_path(self):
+        """A `service`-marked node with no `bin_path` declared (T-0629)
+        -- when the SCM service does not already exist, install.ps1 says
+        so rather than fabricating a creation command."""
         script = generate_windows_install_script(_windows_model())
-        assert "std.host has no binPath vocabulary yet" in script
+        assert "no bin_path declared, skipping creation" in script
 
     def test_deny_logon_scope_cut_is_documented(self):
         script = generate_windows_install_script(_windows_model())
         assert "deny-logon rights" in script
+
+    # frob:tests tests/unit/deploy/test_generate_windows.py::TestInstall.test_creates_service_when_bin_path_declared  # noqa: E501
+    def test_creates_service_when_bin_path_declared(self):
+        """T-0629: a `service`-marked node declaring `bin_path` gets an
+        `sc.exe create` with that ImagePath, inside the same `sc.exe
+        query` failure branch the pre-T-0629 skip message used -- the
+        creation only fires when the service does not already exist, then
+        hardening runs against the now-created service."""
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="winapi",
+                    trust="trusted",
+                    attrs=(
+                        "platform=windows",
+                        "service",
+                        "bin_path=C:\\Program Files\\api\\api.exe",
+                        "bin_path_args=--config C:\\ProgramData\\api\\config.yaml",
+                    ),
+                ),
+            )
+        )
+        script = generate_windows_install_script(model)
+        assert (
+            'sc.exe create "FrobDeploy-winapi" binPath= '
+            '"C:\\Program Files\\api\\api.exe --config '
+            'C:\\ProgramData\\api\\config.yaml" start= auto' in script
+        )
+        assert 'sc.exe sidtype "FrobDeploy-winapi" unrestricted' in script
+        assert "no bin_path declared" not in script
+
+    # frob:tests tests/unit/deploy/test_generate_windows.py::TestInstall.test_creates_service_without_args  # noqa: E501
+    def test_creates_service_without_args(self):
+        """T-0629: `bin_path_args` is optional -- the ImagePath is just
+        the bare executable path when omitted."""
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="winapi",
+                    trust="trusted",
+                    attrs=(
+                        "platform=windows",
+                        "service",
+                        "bin_path=C:\\Program Files\\api\\api.exe",
+                    ),
+                ),
+            )
+        )
+        script = generate_windows_install_script(model)
+        assert (
+            'sc.exe create "FrobDeploy-winapi" binPath= '
+            '"C:\\Program Files\\api\\api.exe" start= auto' in script
+        )
 
 
 class TestStatus:

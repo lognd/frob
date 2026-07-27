@@ -20,13 +20,13 @@ entry exists), mirroring how a windows-only model produces no bash.
   (`frob.strata.krb_manifest_for`, NOT redefined here) is present on the
   same node -- registers its `spns` (`setspn`) and applies its
   `delegation` setting. `service`-marked nodes get their SCM service
-  hardened (SID type, required-privilege set) via `sc.exe config` IF the
-  service already exists; `std.host` has no windows binPath/ImagePath
-  vocabulary yet (same class of honest gap `_generate.py`'s module
-  docstring documents for OS-user trust-lattice plumbing), so this script
-  cannot itself `sc.exe create` a working service -- it configures
-  hardening on an existing one and says so plainly when the service is
-  absent, rather than fabricating a placeholder binary path.
+  IDEMPOTENTLY CREATED (T-0629: `sc.exe create` with the declared
+  `bin_path`/`bin_path_args` ImagePath) when absent and `bin_path` is
+  declared, then hardened (SID type, required-privilege set) via
+  `sc.exe config` -- a `service`-marked node with no `bin_path` declared
+  falls back to the pre-T-0629 posture: hardening-only IF the service
+  already exists, and a plain skip message (not a fabricated placeholder
+  binary path) when it is absent.
 - **status.ps1**: per `service`-marked node, `sc.exe query` state plus a
   firewall-rule-present probe per declared `listens` port and a named-pipe
   existence probe per declared `pipe` -- one line per unit, machine-
@@ -317,26 +317,59 @@ def _uninstall_firewall_block(entry: ManifestEntry) -> str:
     return "".join(lines)
 
 
+def _service_image_path(entry: ManifestEntry) -> str | None:
+    """The `sc.exe create binPath=` ImagePath string for one declared
+    `service`-marked entry -- `bin_path`, plus `bin_path_args` joined with
+    a space when present (the ONE image path `sc.exe` itself expects:
+    `"<exe> <args>"`), or `None` when no `bin_path` is declared (T-0629)."""
+    bin_path = entry.manifest.bin_path
+    if bin_path is None:
+        return None
+    if entry.manifest.bin_path_args:
+        return f"{bin_path} {entry.manifest.bin_path_args}"
+    return bin_path
+
+
 def _install_service_hardening_block(entry: ManifestEntry) -> str:
-    """Check-then-apply SCM service hardening for a `service`-marked
-    node: SID type (unrestricted) and required-privilege set
-    (`_REQUIRED_PRIVS`, module docstring's coarse default) via
-    `sc.exe config`, applied ONLY if the service already exists --
-    `std.host` has no windows binPath vocabulary yet (module docstring),
-    so this script cannot itself create a working service."""
+    """Check-then-apply SCM service creation + hardening for a
+    `service`-marked node (T-0629): when the service is absent AND a
+    `bin_path` is declared, `sc.exe create` stands it up with that
+    ImagePath before hardening runs -- idempotent, since creation only
+    fires inside the `sc.exe query` failure branch. SID type
+    (unrestricted) and required-privilege set (`_REQUIRED_PRIVS`, module
+    docstring's coarse default) are applied via `sc.exe config` whenever
+    the service is (or was just made) present; a `service`-marked node
+    with no `bin_path` declared and no pre-existing service falls back to
+    the pre-T-0629 skip message rather than fabricating a placeholder
+    binary path."""
     if not entry.manifest.is_service:
         return ""
     name = _service_name(entry.node_id)
-    return (
-        f'$svc = sc.exe query "{name}" 2>&1\n'
-        "if ($LASTEXITCODE -eq 0) {\n"
+    image_path = _service_image_path(entry)
+    harden = (
         f'    sc.exe sidtype "{name}" unrestricted | Out-Null\n'
         f'    sc.exe privs "{name}" "{_REQUIRED_PRIVS}" | Out-Null\n'
         f'    Write-Output "hardened service {name}"\n'
+    )
+    if image_path is not None:
+        absent_branch = (
+            f'    sc.exe create "{name}" binPath= "{image_path}" '
+            "start= auto | Out-Null\n"
+            f'    Write-Output "created service {name}"\n'
+            f"{harden}"
+        )
+    else:
+        absent_branch = (
+            f'    Write-Output "service {name} not present -- no bin_path '
+            "declared, skipping creation (see docs/modules/deploy.md"
+            '#scope-and-honesty-notes-generate-windows)"\n'
+        )
+    return (
+        f'$svc = sc.exe query "{name}" 2>&1\n'
+        "if ($LASTEXITCODE -eq 0) {\n"
+        f"{harden}"
         "} else {\n"
-        f'    Write-Output "service {name} not present -- std.host has no '
-        "binPath vocabulary yet, skipping creation (see docs/modules/"
-        'deploy.md#scope-and-honesty-notes-generate-windows)"\n'
+        f"{absent_branch}"
         "}\n"
     )
 

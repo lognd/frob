@@ -696,6 +696,37 @@ impl Parser {
                     while matches!(self.cur().kind, TokKind::Str(_)) {
                         pipes.push(self.expect_string("pipe name")?);
                     }
+                } else if self.at_keyword("bin_path") {
+                    // T-0629: `bin_path "PATH" ["ARGS"]` -- the Windows SCM
+                    // `binPath`/ImagePath (executable path, plus an optional
+                    // trailing arguments string) `sc.exe create` needs to
+                    // actually stand up a `service`-marked node's SCM
+                    // service, not just harden an already-existing one
+                    // (docs/strata/host.md#windows-surface-grammar). Both
+                    // STRING, same "opaque atom" reasoning `acl`'s PATH/RULE
+                    // use -- a Windows executable path commonly carries `:`
+                    // for a drive letter and `\` separators, and the
+                    // trailing ARGS string is free-form. Desugars STRAIGHT
+                    // to `bin_path=<path>` (+ `bin_path_args=<args>` when
+                    // ARGS given) node attrs here, the same direct-attr-push
+                    // shape `skew` uses below, rather than threading a new
+                    // NodeDecl field through `_ast.py`/`_elaborate.py` (out
+                    // of this ticket's scope) -- `_host.py::
+                    // _parse_host_attrs` reads the two attrs back
+                    // regardless of which caller (node or store) produced
+                    // them, same shared-encoding discipline every other
+                    // std.host clause uses. At most one per node; a
+                    // repeated clause overwrites (mirrors `platform`).
+                    self.advance();
+                    let path = self.expect_string("bin_path path")?;
+                    attrs.retain(|a| {
+                        !a.starts_with("bin_path=") && !a.starts_with("bin_path_args=")
+                    });
+                    attrs.push(format!("bin_path={}", path));
+                    if matches!(self.cur().kind, TokKind::Str(_)) {
+                        let args = self.expect_string("bin_path args")?;
+                        attrs.push(format!("bin_path_args={}", args));
+                    }
                 } else if self.at_keyword("residence") {
                     self.advance();
                     residence = Some(self.expect_ident("residence atom")?);
@@ -1685,6 +1716,20 @@ impl Parser {
                     pipes.push(self.expect_string("pipe name")?);
                     while matches!(self.cur().kind, TokKind::Str(_)) {
                         pipes.push(self.expect_string("pipe name")?);
+                    }
+                } else if self.at_keyword("bin_path") {
+                    // T-0629: same `bin_path "PATH" ["ARGS"]` shape as
+                    // `node`'s clause -- a store is a node too
+                    // (docs/strata/surface.md#key-construct-semantics).
+                    self.advance();
+                    let path = self.expect_string("bin_path path")?;
+                    attrs.retain(|a| {
+                        !a.starts_with("bin_path=") && !a.starts_with("bin_path_args=")
+                    });
+                    attrs.push(format!("bin_path={}", path));
+                    if matches!(self.cur().kind, TokKind::Str(_)) {
+                        let args = self.expect_string("bin_path args")?;
+                        attrs.push(format!("bin_path_args={}", args));
                     }
                 } else if self.at_keyword("code") {
                     // T-0166: `code GLOB+` -- same STRING+ shape T-0132 gave
@@ -3031,6 +3076,71 @@ mod tests {
         assert_eq!(n["acl"][0]["rule"], "BUILTIN\\Administrators:FullControl");
         assert_eq!(n["pipes"][0], "\\\\.\\pipe\\api-control");
         assert_eq!(n["listens"][0], 8443);
+    }
+
+    #[test]
+    fn parses_node_bin_path_clause() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0629: `bin_path "PATH" ["ARGS"]` desugars straight to
+        // `bin_path=<path>` (+ `bin_path_args=<args>`) node attrs.
+        let v = ok(r#"module m
+            node api : trusted {
+                platform "windows";
+                service;
+                bin_path "C:\Program Files\api\api.exe" "--config C:\ProgramData\api\config.yaml";
+            }"#);
+        let n = &v["nodes"][0];
+        let attrs: Vec<&str> = n["attrs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|a| a.as_str().unwrap())
+            .collect();
+        assert!(attrs.contains(&"bin_path=C:\\Program Files\\api\\api.exe"));
+        assert!(attrs.contains(&"bin_path_args=--config C:\\ProgramData\\api\\config.yaml"));
+    }
+
+    #[test]
+    fn parses_node_bin_path_clause_without_args() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0629: ARGS is optional -- `bin_path_args` is absent when omitted.
+        let v = ok(r#"module m
+            node api : trusted {
+                platform "windows";
+                service;
+                bin_path "C:\Program Files\api\api.exe";
+            }"#);
+        let n = &v["nodes"][0];
+        let attrs: Vec<&str> = n["attrs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|a| a.as_str().unwrap())
+            .collect();
+        assert!(attrs.contains(&"bin_path=C:\\Program Files\\api\\api.exe"));
+        assert!(!attrs.iter().any(|a| a.starts_with("bin_path_args=")));
+    }
+
+    #[test]
+    fn parses_store_bin_path_clause() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0629: `store` accepts the identical `bin_path` clause -- a
+        // store is a node too.
+        let v = ok(r#"module m
+            store api_svc : trusted {
+                platform "windows";
+                service;
+                bin_path "C:\Program Files\api\api.exe" "--serve";
+            }"#);
+        let n = &v["stores"][0];
+        let attrs: Vec<&str> = n["attrs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|a| a.as_str().unwrap())
+            .collect();
+        assert!(attrs.contains(&"bin_path=C:\\Program Files\\api\\api.exe"));
+        assert!(attrs.contains(&"bin_path_args=--serve"));
     }
 
     #[test]

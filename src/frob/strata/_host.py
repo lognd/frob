@@ -26,6 +26,14 @@ pre-T-0261 manifest); an explicit `platform "..."` value other than
 `"windows"` fails closed with a `ValueError` at `host_manifest_for` time,
 the same defer-to-elaborator discipline `owns` MODE/`listens` PORT use.
 
+T-0629 closes the one honest gap T-0261 left open: `bin_path "PATH"
+["ARGS"]` names the SCM `binPath`/ImagePath (executable path, plus an
+optional trailing arguments string) `sc.exe create` needs to actually
+stand up a `service`-marked node's Windows Service, not merely harden an
+already-existing one (`src/frob/deploy/_generate_windows.py`'s prior
+honest-gap note). `HostManifest.bin_path`/`bin_path_args` default `None`
+so every pre-T-0629 manifest keeps working unchanged.
+
 Foundation of the deploy epic (T-0254). A node/store may declare `runs_as
 "svc-name"` (a dedicated OS service user), `unit` (bare marker: this
 node's process is modeled as a systemd unit), `owns "PATH" "MODE"`
@@ -135,6 +143,21 @@ _ACL_SEP = "|"
 
 #: `pipe=<name>` attr prefix (T-0261) -- one per declared `pipe` entry.
 _PIPE_PREFIX = "pipe="
+
+#: `bin_path=<path>` attr prefix (T-0629) -- the Windows SCM `binPath`/
+#: ImagePath executable path a `service`-marked node's `sc.exe create`
+#: needs to actually stand up the service, not just harden an
+#: already-existing one. Desugared directly in `strata-core/src/parse.rs`
+#: (the same direct-attr-push shape `skew` uses) rather than threaded
+#: through a `NodeDecl`/`StoreDecl` field, so both callers land on the
+#: identical attr with no separate encoding to desync.
+_BIN_PATH_PREFIX = "bin_path="
+
+#: `bin_path_args=<args>` attr prefix (T-0629) -- the optional trailing
+#: arguments string appended to `bin_path`'s executable path (the ONE
+#: image path `sc.exe create binPath=` takes is `"<exe> <args>"`, so the
+#: two are joined at generator time, not the grammar's).
+_BIN_PATH_ARGS_PREFIX = "bin_path_args="
 
 #: Well-formed windows `acl` RULE: `PRINCIPAL:RIGHTS` with optional
 #: trailing `:deny` and/or `:no_inherit` markers (any order) -- e.g.
@@ -301,6 +324,16 @@ class HostManifest(BaseModel):
     is_service: bool = False
     acl: tuple[HostAcl, ...] = ()
     pipes: tuple[str, ...] = ()
+    # T-0629: the Windows SCM `binPath`/ImagePath vocabulary --
+    # `bin_path` is the executable path, `bin_path_args` the optional
+    # trailing arguments string; both default `None` so every pre-T-0629
+    # `HostManifest(...)` call site keeps working unchanged. Populated
+    # only when a `service`-marked node/store also declares `bin_path`
+    # (docs/strata/host.md#windows-surface-grammar) -- lets
+    # `generate_windows_install_script` (T-0264/T-0629) `sc.exe create`
+    # a working service instead of only hardening an existing one.
+    bin_path: str | None = None
+    bin_path_args: str | None = None
 
     # frob:ticket T-0565
     # frob:tests tests/unit/strata/test_host.py::TestHostManifestListensValidation.test_valid_port_accepted  # noqa: E501
@@ -334,6 +367,8 @@ def _host_attrs(
     is_service: bool = False,
     acl: tuple[tuple[str, str], ...] = (),
     pipes: tuple[str, ...] = (),
+    bin_path: str | None = None,
+    bin_path_args: str | None = None,
 ) -> tuple[str, ...]:
     """Desugar parsed std.host clauses into `Node.attrs` strings.
 
@@ -344,6 +379,11 @@ def _host_attrs(
     against the pre-T-0272 four-argument shape keep working unchanged;
     `platform`/`service_account`/`service_account_gmsa`/`is_service`/
     `acl`/`pipes` (T-0261) default the same way for the pre-T-0261 shape.
+    `bin_path`/`bin_path_args` (T-0629) default `None` for the same
+    reason -- note `strata-core/src/parse.rs`'s `bin_path` grammar clause
+    pushes these two attrs directly (the `skew` direct-attr-push shape),
+    not through this function; it is kept here purely so `_host_attrs`
+    remains the single documented encoding reference callers can consult.
     """
     attrs: list[str] = []
     if runs_as is not None:
@@ -364,6 +404,10 @@ def _host_attrs(
         attrs.append(_SERVICE_ATTR)
     attrs.extend(f"{_ACL_PREFIX}{path}{_ACL_SEP}{rule}" for path, rule in acl)
     attrs.extend(f"{_PIPE_PREFIX}{name}" for name in pipes)
+    if bin_path is not None:
+        attrs.append(f"{_BIN_PATH_PREFIX}{bin_path}")
+    if bin_path_args is not None:
+        attrs.append(f"{_BIN_PATH_ARGS_PREFIX}{bin_path_args}")
     return tuple(attrs)
 
 
@@ -384,6 +428,8 @@ class _ParsedHostAttrs:
         self.is_service = False
         self.acl: list[HostAcl] = []
         self.pipes: list[str] = []
+        self.bin_path: str | None = None
+        self.bin_path_args: str | None = None
         self.declared = False
 
 
@@ -440,6 +486,12 @@ def _parse_host_attrs(node: Node) -> _ParsedHostAttrs:
         elif attr.startswith(_PIPE_PREFIX):
             parsed.pipes.append(attr[len(_PIPE_PREFIX) :])
             parsed.declared = True
+        elif attr.startswith(_BIN_PATH_PREFIX):
+            parsed.bin_path = attr[len(_BIN_PATH_PREFIX) :]
+            parsed.declared = True
+        elif attr.startswith(_BIN_PATH_ARGS_PREFIX):
+            parsed.bin_path_args = attr[len(_BIN_PATH_ARGS_PREFIX) :]
+            parsed.declared = True
     return parsed
 
 
@@ -484,7 +536,7 @@ def host_manifest_for(node: Node) -> HostManifest | None:
     _log.debug(
         "node %s: host manifest platform=%s runs_as=%r unit=%s owns=%d "
         "listens=%d group=%d sudoers=%d service_account=%r gmsa=%s "
-        "service=%s acl=%d pipes=%d",
+        "service=%s acl=%d pipes=%d bin_path=%r bin_path_args=%r",
         node.id,
         platform,
         parsed.runs_as,
@@ -498,6 +550,8 @@ def host_manifest_for(node: Node) -> HostManifest | None:
         parsed.is_service,
         len(parsed.acl),
         len(parsed.pipes),
+        parsed.bin_path,
+        parsed.bin_path_args,
     )
     return HostManifest(
         platform=platform,
@@ -512,4 +566,6 @@ def host_manifest_for(node: Node) -> HostManifest | None:
         is_service=parsed.is_service,
         acl=tuple(parsed.acl),
         pipes=tuple(parsed.pipes),
+        bin_path=parsed.bin_path,
+        bin_path_args=parsed.bin_path_args,
     )
