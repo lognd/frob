@@ -7684,3 +7684,27 @@ threat: null
 component: null
 ```
 T-0988's repo-wide frob fmt recompaction touched these test files' surrounding frob: directive comments (no test-body changes), which surfaced 2 pre-existing DUP001 findings: tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_requires_reason (100% similar to tests/unit/test_ticket_file_flags.py::TestScopeReasonFile.test_neither_reason_nor_reason_file_errors_cleanly), and tests/test_evidence_integrity.py::TestD02ScopeBinding.test_transition_allows_when_covers_scope_true (95% similar to tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_allows_when_evidence_reverified_true). Confirmed pre-existing and unrelated to the fmt diff itself (the flagged test bodies are unchanged; DUP001 compares a touched file's symbols against the whole corpus regardless of what changed about them). Extract a shared helper or otherwise dedup, per the gate's own suggestion, in a follow-up -- out of scope for a purely mechanical fmt ticket to fix opportunistically.
+
+<!-- ticket:T-0996 -->
+```yaml
+id: T-0996
+title: 'two system tests red on main: gitless render-lint severity + scaffold-dx immediate-check'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/system/test_cli_check.py
+- tests/system/test_scaffold_dx.py
+- src/frob/**
+acceptance:
+- text: given current main, when both named tests run in isolation, then both pass
+  evidence: []
+threat: null
+component: null
+```
+Surfaced by the coordinator coverage run and confirmed failing IN ISOLATION on current main (no longer the documented order-dependent flake): (1) tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root -- previously passed in isolation per multiple agent reports, so something recent regressed the gitless severity downgrade path or the test env; bisect against the last week of gate severity promotions (SEC110/PII/PERF/ARCH families, DUP003, DOC007) which are the likeliest suspects for a severity-behavior change. (2) tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately -- a freshly scaffolded python tool no longer passes check immediately; likely a newly promoted gate now fires on the scaffold template (the templates must be updated to satisfy whatever new error-tier rule hits them, or the gate must reasonably exempt fresh scaffolds). Fix both properly -- these two tests are the canary for downstream repo scaffolding UX.
