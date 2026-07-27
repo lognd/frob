@@ -99,7 +99,14 @@ class TestTicketRootFromLinkedWorktree:
         assert r.returncode == 0, r.stdout + r.stderr
         new_id = _new_ticket_id(r.stdout + r.stderr)
 
-        r = run("ticket", "show", new_id, cwd=wt)
+        # T-0768 clamped the ticket CLI's default output to the runner's own
+        # formatted line (deliberate noise reduction) -- the resolved root
+        # path no longer rides along in `frob ticket show`'s output unless
+        # `-v` restores the diagnostic firehose (gitio spawn lines, which do
+        # carry the resolved path). Pass `-v` here so the path-based
+        # assertions below keep verifying what they always verified, instead
+        # of silently degrading to only the `"wt-only" in out` check.
+        r = run("ticket", "-v", "show", new_id, cwd=wt)
         out = r.stdout + r.stderr
         assert r.returncode == 0, out
         assert "wt-only" in out
