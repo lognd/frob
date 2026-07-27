@@ -106,15 +106,26 @@ node cli : trusted {
     may "exec";
     attr flag=frob_check_exec_kill_switch;
     // T-0724: SYS203 (shared store write) fires because cli/core/fleet/
-    // gates all have a Flow into tickets_ledger -- correctly, per the
-    // grammar's mode-blind "any inbound flow counts as a write" framing
-    // (docs/strata/host.md#resource-contention-sys2xx-t-0699). The ledger
-    // genuinely HAS an arbiter: every writer serializes through the
-    // `.frob/tickets.lock` flock (T-0458 single-writer CLI, hardened by
-    // T-0633's locked wholesale ops) -- SYS203 just cannot express that
-    // arbitration until T-0700's access-modes+arbitrated_by grammar
-    // lands. Re-evaluate at T-0700.
-    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); T-0700 shipped access-modes+arbitrated_by grammar -- re-express with resource/access and drop this waiver, tracked by T-0956" ticket "T-0956";
+    // gates/serve all have a Flow into tickets_ledger -- correctly, per
+    // the grammar's mode-blind "any inbound flow counts as a write"
+    // framing (docs/strata/host.md#resource-contention-sys2xx-t-0699).
+    // T-0956: the ledger's real arbiter -- every writer serializes
+    // through the `.frob/tickets.lock` flock (T-0458 single-writer CLI,
+    // hardened by T-0633's locked wholesale ops) -- is now a model-level
+    // fact too (`resource tickets_ledger { lock "tickets.lock"; }` below,
+    // plus this node's own `access "tickets_ledger" mode write;`),
+    // and SYS204's mode-aware `resource_contention_violations` proof
+    // confirms it discharges cleanly. This waiver stays, though: SYS203
+    // itself (`_contention.py::check_resource_contention`) is a SEPARATE,
+    // strictly mode-blind check that has no code path reading `resources`/
+    // `access` at all (module docstring, "no grammar change") -- it counts
+    // any inbound Flow as a conflicting write regardless of what the newer
+    // SYS204 proof establishes, so it keeps firing here by design, not by
+    // omission. Wiring SYS203 itself to consult the arbiter is a separate,
+    // undischarged follow-up (src/frob/strata/_contention.py is out of
+    // this docs-only ticket's scope).
+    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1025";
+    access "tickets_ledger" mode write;
 }
 
 // graph+lang: src/frob/graph/**, src/frob/lang/**, src/frob/arch/**. Owns
@@ -177,10 +188,15 @@ node gates : trusted {
     // target comes from tracked frob.toml, not user input, and failures
     // fail open to the unbound warning path.
     may "eval";
-    // T-0724: same SYS203/tickets_ledger disposition as `cli` above --
-    // the `.frob/tickets.lock` flock (T-0458/T-0633) is the real,
-    // untracked-by-the-grammar arbiter; re-evaluate at T-0700.
-    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); T-0700 shipped access-modes+arbitrated_by grammar -- re-express with resource/access and drop this waiver, tracked by T-0956" ticket "T-0956";
+    // T-0956: same SYS203/tickets_ledger disposition as `cli` above --
+    // the `.frob/tickets.lock` flock is now modeled via `resource
+    // tickets_ledger { lock ... }` + this node's own `access` clause below,
+    // SYS204 confirms the arbiter discharges the write/write pair cleanly,
+    // and SYS203 stays waived only because it is a separate, mode-blind
+    // check with no path to consult that model at all (see `cli`'s full
+    // comment above for the reasoning).
+    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1025";
+    access "tickets_ledger" mode write;
 }
 
 // check orchestration: src/frob/check/**. Runs the gate suite plus the
@@ -308,10 +324,15 @@ node fleet : trusted {
     // `subprocess.run` call sites (src/frob/fleet/__init__.py, not the
     // git seam T-0778 wired) are not yet routed through it -- an honest
     // remaining gap, not a pending mechanism. Follow-on: T-0803.
-    // T-0724: same SYS203/tickets_ledger disposition as `cli` above --
-    // the `.frob/tickets.lock` flock (T-0458/T-0633) is the real,
-    // untracked-by-the-grammar arbiter; re-evaluate at T-0700.
-    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); T-0700 shipped access-modes+arbitrated_by grammar -- re-express with resource/access and drop this waiver, tracked by T-0956" ticket "T-0956";
+    // T-0956: same SYS203/tickets_ledger disposition as `cli` above --
+    // the `.frob/tickets.lock` flock is now modeled via `resource
+    // tickets_ledger { lock ... }` + this node's own `access` clause below,
+    // SYS204 confirms the arbiter discharges the write/write pair cleanly,
+    // and SYS203 stays waived only because it is a separate, mode-blind
+    // check with no path to consult that model at all (see `cli`'s full
+    // comment above for the reasoning).
+    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1025";
+    access "tickets_ledger" mode write;
 }
 
 // dup+frob-core: everything that is real infrastructure but not one of
@@ -386,10 +407,15 @@ node core : trusted {
     // both DO route their subprocess spawns through the real,
     // guarded_subprocess_run kill switch already, unlike the packages
     // still listed here.)
-    // T-0724: same SYS203/tickets_ledger disposition as `cli` above --
-    // the `.frob/tickets.lock` flock (T-0458/T-0633) is the real,
-    // untracked-by-the-grammar arbiter; re-evaluate at T-0700.
-    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); T-0700 shipped access-modes+arbitrated_by grammar -- re-express with resource/access and drop this waiver, tracked by T-0956" ticket "T-0956";
+    // T-0956: same SYS203/tickets_ledger disposition as `cli` above --
+    // the `.frob/tickets.lock` flock is now modeled via `resource
+    // tickets_ledger { lock ... }` + this node's own `access` clause below,
+    // SYS204 confirms the arbiter discharges the write/write pair cleanly,
+    // and SYS203 stays waived only because it is a separate, mode-blind
+    // check with no path to consult that model at all (see `cli`'s full
+    // comment above for the reasoning).
+    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1025";
+    access "tickets_ledger" mode write;
 }
 
 // T-0440: `frob mutate` -- mutation testing, the honest test-quality
@@ -504,13 +530,15 @@ node serve : trusted {
     // `fleet`/`core` above (T-0724) -- `serve` also has a Flow into
     // `tickets_ledger` (`f_serve_tickets` below) via `frob.tickets`'s own
     // locked writer path, so SYS203's mode-blind "any inbound flow counted
-    // as a write" join fires here too. This waiver was missing purely
-    // because `serve` was added after T-0724's original sweep across its
-    // four sibling nodes, not because the underlying contention model
-    // differs -- discovered when T-0756 folded SYS203 into `frob check`'s
-    // own gate pipeline (SELFAUDIT001) for the first time and this exact
-    // gap surfaced as a real, previously-undisclosed red `frob sys audit`.
-    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); T-0700 shipped access-modes+arbitrated_by grammar -- re-express with resource/access and drop this waiver, tracked by T-0956" ticket "T-0956";
+    // as a write" join fires here too.
+    // T-0956: the `.frob/tickets.lock` flock is now modeled via `resource
+    // tickets_ledger { lock ... }` + this node's own `access` clause below,
+    // SYS204 confirms the arbiter discharges the write/write pair cleanly,
+    // and SYS203 stays waived only because it is a separate, mode-blind
+    // check with no path to consult that model at all (see `cli`'s full
+    // comment above for the reasoning).
+    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1025";
+    access "tickets_ledger" mode write;
 }
 
 // T-0440: `frob deploy` -- compiles `std.host` manifests into idempotent
@@ -661,6 +689,28 @@ store tickets_ledger : trusted {
     // shell=True evidence-command spawn, `clipboard.py`'s subprocess.run
     // calls) were wired through the guard by T-0803/T-0805, so the
     // declared flag below is a true statement of switchable capability.
+}
+
+// T-0956: names the SAME single-writer arbiter the five SYS203/
+// tickets_ledger waivers above have described in prose since T-0724 --
+// the `.frob/tickets.lock` flock every ledger writer serializes through
+// (T-0458/T-0633) -- as an actual model-level `resource`/`access` fact
+// now that T-0700 shipped the grammar. `lock "tickets.lock"` (not
+// `arbitrated_by`) because the real arbiter is a flock file, not a node
+// that itself performs the arbitration; SYS204's `resource_contention_
+// violations` (`src/frob/strata/_access.py`) treats a declared `lock` the
+// same as `arbitrated_by` -- either discharges every conflicting access
+// pair for the resource. Verified directly against frob's own elaborated
+// design (T-0956 Done report): with this resource plus the five `access
+// "tickets_ledger" mode write;` clauses below, `resource_contention_
+// violations(elaborated_frob_module)` returns empty for `tickets_ledger`
+// -- the model-level contention SYS204 would otherwise flag among
+// cli/gates/core/serve/fleet's five write-mode accessors is cleanly
+// discharged by the declared lock, matching the flock's real behavior.
+// frob:doc docs/strata/host.md#resource-access-modes-t-0700
+// frob:ticket T-0956
+resource tickets_ledger {
+    lock "tickets.lock";
 }
 
 // The `.frob/` symbol-graph cache (`frob.graph`'s snapshot cache): derived

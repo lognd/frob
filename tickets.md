@@ -2994,7 +2994,7 @@ already-passing golden/self-model suite.
 id: T-0956
 title: 'strata design: re-point T-0700 live-tracker waivers, arbitrate tickets_ledger
   with new grammar'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-07-27'
@@ -3005,10 +3005,108 @@ sprint: null
 scope:
 - design/**
 - tests/test_tickets_live_tracker.py
+- docs/strata/roadmap.md
+scope_changes:
+- op: add
+  glob: docs/strata/roadmap.md
+  reason: AFFECT001 requires updating the roadmap.md self-hosting-commitments-decision-d7
+    doc anchor when design/frob.strata's cli/gates/fleet/core/serve nodes change
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+- tests/unit/strata/test_access.py::TestResourceContentionViolations::test_arbitrated_by_discharges
+- tests/unit/strata/test_access.py::TestResourceContentionViolations::test_lock_discharges
+- tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_two_writers_fires_mode_blind
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
 threat: null
 component: null
 ```
 T-0700 shipped access modes + resource/arbitrated_by grammar. design/frob.strata has 5 SYS203 "tickets_ledger" waivers explicitly written "re-evaluate at T-0700" (lines ~116/181/311/388/508) since the ledger genuinely has an arbiter (every writer serializes through .frob/tickets.lock, T-0458/T-0633) that SYS203 could not express until now. Re-express this properly: declare a `resource tickets_ledger { lock "tickets.lock" }` (or `arbitrated_by` the CLI-writer node, whichever models T-0458/T-0633's actual single-writer-lock discipline more accurately) plus `access "tickets_ledger" mode write` on each node/store that writes it, then drop the now-superseded SYS203 waivers once the model-level arbiter discharges the contention cleanly (verify via frob.strata._access.resource_contention_violations against frob's own elaborated design). Also re-point tests/test_tickets_live_tracker.py:220's `ticket=T-0700` placeholder to this ticket's id once assigned. Blocked by nothing; T-0700 is done and closed.
+
+## Done report
+
+Re-expressed the five SYS203/tickets_ledger waivers' underlying arbitration
+claim (cli/gates/fleet/core/serve) using T-0700's grammar: a new top-level
+`resource tickets_ledger { lock "tickets.lock"; }` declaration plus an
+`access "tickets_ledger" mode write;` clause on each of the five writer
+nodes. Verified directly against frob's own elaborated design (parse ->
+elaborate -> frob.strata._access.resource_contention_violations(model,
+module)): zero SYS204 violations for tickets_ledger -- the declared lock
+discharges every conflicting write/write pair among the five accessors.
+
+The SYS203 waivers themselves were NOT dropped, contrary to the ticket's
+literal "drop the now-superseded SYS203 waivers" framing: SYS203
+(src/frob/strata/_contention.py::check_resource_contention) is a
+completely separate, permanently mode-blind check with no code path that
+reads Module.resources/access attrs at all (confirmed by reading the
+module: "no grammar change", counts ANY inbound Flow to a store as a
+write). Adding resource/access data cannot make SYS203 stop firing --
+only a src/frob/strata/_contention.py code change could, and that file is
+out of this docs-only ticket's declared scope (design/**, tests/
+test_tickets_live_tracker.py). Removing the waivers without a code change
+would just turn 5 clean gates red for no reason. Instead, each waiver's
+reason text was rewritten to state this precisely (SYS203 is structurally
+blind to the now-modeled arbiter, not that arbitration is unproven), and
+the forward-looking "re-evaluate at T-0700"/"drop this waiver, tracked by
+T-0956" language was retired since T-0956 is itself the re-evaluation.
+docs/strata/roadmap.md's self-hosting-commitments-decision-d7 section
+(AFFECT001's closure doc for the five changed nodes) was updated to match,
+and scope-added since it was outside the ticket's original declared
+scope.
+
+tests/test_tickets_live_tracker.py:220's "T-0700 placeholder" the ticket
+plan referenced no longer exists in the current test file (grepped for
+both "T-0700" and "placeholder" -- zero matches) -- already resolved by
+an earlier, unrelated change to that test file before this ticket was
+actioned; no edit was needed there.
+
+Evidence: tests/unit/strata/test_selfconform.py (self-conformance stays
+green with the new resource/access clauses), tests/unit/strata/
+test_access.py (SYS204 machinery itself, TestResourceContentionViolations
+covers arbitrated_by/lock discharge), tests/unit/strata/test_contention.py
+(confirms SYS203 still fires independent of the new grammar, proving the
+"separate mode-blind check" claim), tests/system/test_frob_self_model.py
+(frob's own design stays self-conformant + zero SYS violations post-edit).
+All re-run clean after the design/frob.strata + roadmap.md changes.
+
+Gates: `frob check --ticket T-0956 --only gates-fast --only gates-native`
+clean (0 errors both groups) after: (1) fixing AFFECT001 by updating and
+scope-adding docs/strata/roadmap.md, (2) refreshing the pre-work sweep
+(frob ticket sweep T-0956) to clear stale PRE001.
+
+Filed: T-1025 -- "strata SYS203: make shared-store-write
+contention consult a resource's declared arbiter, drop tickets_ledger
+waivers" (feature; scope src/frob/strata/_contention.py, tests/unit/
+strata/test_contention.py, docs/strata/host.md, design/frob.strata,
+tickets.md). The five SYS203:tickets_ledger waivers' `ticket=` citation
+was re-pointed from T-0956 to this successor draft id so T-0956 can close
+cleanly (frob's live-tracker check refuses to close a ticket still cited
+by a live waiver) -- the successor is the actual code-level follow-up
+that would let SYS203 itself, not just SYS204, discharge the arbiter and
+let the waivers finally be dropped.
+
+### Changed
+```
+ design/frob.strata     | 106 ++++++++++++++++++++++++++++++++++++-------------
+ docs/strata/roadmap.md |  26 ++++++++----
+ tickets.md             |  80 ++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 175 insertions(+), 37 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestResourceContentionViolations::test_arbitrated_by_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestResourceContentionViolations::test_lock_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_two_writers_fires_mode_blind` (pytest node id, verified passing when recorded)
+- `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates` (pytest node id, verified passing when recorded)
+- `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 0 error(s), 4929 warning(s), 333 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0969 -->
 ```yaml
@@ -3541,3 +3639,47 @@ threat: null
 component: null
 ```
 Sweep the small warning buckets: REF001 orphan invariants/*.md need real inbound references (frob:used-by or doc links from the module docs that rely on them); REF002 single-anchor docs need a second consumer; COV007 move frob:doc anchors from private symbols to the public surface they document; COV006 fix the flagged frob:tests edges; DEAD001 delete or bind the 13 uncalled private test helpers; PLACE001 move the 2 misplaced directives onto their intended symbols.
+
+<!-- ticket:T-1025 -->
+```yaml
+id: T-1025
+title: 'strata SYS203: make shared-store-write contention consult a resource''s declared
+  arbiter, drop tickets_ledger waivers'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/_contention.py
+- tests/unit/strata/test_contention.py
+- docs/strata/host.md
+- design/frob.strata
+- tickets.md
+threat: null
+component: null
+```
+T-0956 modeled the tickets_ledger's real single-writer-lock arbitration
+using T-0700's grammar (resource tickets_ledger { lock "tickets.lock"; }
+plus access "tickets_ledger" mode write; on cli/gates/fleet/core/serve),
+verified clean via frob.strata._access.resource_contention_violations
+(SYS204). SYS203 itself (src/frob/strata/_contention.py::
+check_resource_contention) remains permanently mode-blind by design: it
+has no code path that reads Module.resources or a node's access= attrs at
+all, so it keeps firing on tickets_ledger's five writers regardless of the
+now-modeled arbiter, and the five SYS203:tickets_ledger waivers (cli/
+gates/fleet/core/serve in design/frob.strata) stay in place, permanently
+justified rather than pending re-evaluation.
+
+This ticket is the actual code-level follow-up: teach SYS203 (or a new,
+narrower successor rule) to consult a resource's declared arbiter
+(arbitrated_by/lock) the same way SYS204 already does, so a store with a
+provably-safe declared arbiter stops being flagged by SYS203 at all,
+letting the five tickets_ledger waivers above finally be dropped. Scope:
+src/frob/strata/_contention.py, tests/unit/strata/test_contention.py,
+docs/strata/host.md#resource-contention-sys2xx-t-0699, design/frob.strata
+(dropping the five waivers once SYS203 itself discharges them),
+tickets.md.

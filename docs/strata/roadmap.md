@@ -115,14 +115,24 @@ search-shaped model (batch index pipelines with freshness lag).
 - Phase 5: `frob sys plan` files strata's own remaining work as tickets --
   the language plans its own completion.
 - T-0700 shipped access-modes + `resource`/`arbitrated_by` grammar
-  (docs/strata/host.md#resource-access-modes-t-0700); `cli`/`gates`/
-  `fleet`/`core`/`serve`'s five `SYS203:tickets_ledger` waivers (written
-  "re-evaluate at T-0700") were re-pointed to the tracked follow-up
-  (`frob:ticket T-0956` on each node) that will re-express the
-  ledger's real single-writer-lock arbitration with the new grammar and
-  drop the waivers once discharged -- not done in the same pass as the
-  grammar ticket itself (design/frob.strata was out of that ticket's
-  declared scope beyond the close-time live-tracker re-point).
+  (docs/strata/host.md#resource-access-modes-t-0700). T-0956
+  re-expressed the ledger's real single-writer-lock arbitration with it:
+  a top-level `resource tickets_ledger { lock "tickets.lock"; }` plus
+  `access "tickets_ledger" mode write;` on each of `cli`/`gates`/`fleet`/
+  `core`/`serve`, verified clean against frob's own elaborated design
+  (`frob.strata._access.resource_contention_violations` returns zero
+  violations for `tickets_ledger`, its declared `lock` discharging every
+  conflicting write/write pair among the five accessors). The five
+  `SYS203:tickets_ledger` waivers on those same nodes stay, though: SYS203
+  (`_contention.py::check_resource_contention`) is a SEPARATE, strictly
+  mode-blind check with no code path reading `Module.resources`/`access`
+  attrs at all (its own module docstring says so plainly) -- it fires on
+  any inbound Flow to a store regardless of what the newer SYS204 proof
+  establishes, so the waiver reasoning was rewritten to explain that
+  structural gap rather than promise a re-evaluation that the grammar
+  alone cannot deliver. Wiring SYS203 to consult the arbiter (a
+  `src/frob/strata/_contention.py` code change) remains a separate,
+  undischarged follow-up, out of this docs-only ticket's scope.
 
 ## Ticket map
 
