@@ -8714,7 +8714,7 @@ Origin: agent (T-1015 round-1 remainder).
 id: T-1017
 title: 'hotfix: SCOPE002 gate function over ARCH001 threshold + callgraph E501 (own-gate
   fallout from T-0998 land)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -8726,6 +8726,9 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/graph/callgraph.py
 - tests/test_gates.py
+evidence:
+- tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_doc_target
+- tests/test_graph.py::TestScopePrivateHelperGaps::test_flags_scoped_caller_of_unscoped_private_helper
 threat: null
 component: null
 ```
