@@ -535,6 +535,11 @@ def test_perf005_fires_on_unproven_self_recursion(tmp_path):
     assert hit.severity.value == "warn"
 
 
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across test_perf.py, \
+# test_perf_rules_internals.py (9 sites) -- each file exercises a \
+# structurally similar check for a distinct domain/module with the \
+# same arrange-act shape; extracting would blur which domain owns \
+# which check"
 def test_perf005_does_not_fire_on_structural_descent_with_guard(tmp_path):
     """PERF005 is silent when the recursive call narrows on a decreasing
     integer measure AND the function has a base-case guard -- the proven,
@@ -554,6 +559,9 @@ def test_perf005_does_not_fire_on_structural_descent_with_guard(tmp_path):
     assert not any(v.rule == "PERF005" for v in violations)
 
 
+# frob:waive DUP001 reason="parallel test methods within test_perf.py (2 sites) sharing an \
+# arrange-act scaffold typical of exhaustive per-case coverage; \
+# extracting would obscure per-case intent"
 def test_perf005_silenced_by_reasoned_termination_directive(tmp_path, monkeypatch):
     """The `frob:invariant terminates reason="..." measure="..."` escape
     hatch (T-0290) suppresses PERF005 even with no provable descent shape."""
@@ -576,6 +584,9 @@ def test_perf005_silenced_by_reasoned_termination_directive(tmp_path, monkeypatc
     assert not any(v.rule == "PERF005" for v in violations)
 
 
+# frob:waive DUP001 reason="parallel test methods within test_perf.py (2 sites) sharing an \
+# arrange-act scaffold typical of exhaustive per-case coverage; \
+# extracting would obscure per-case intent"
 def test_perf006_fires_on_unbounded_tail_recursion(tmp_path):
     """PERF006: tail recursion (`return f(...)` as the whole return) with
     no proven depth bound -- Python has no TCO, so this is a stack-overflow
@@ -590,6 +601,9 @@ def test_perf006_fires_on_unbounded_tail_recursion(tmp_path):
     assert any(v.rule == "PERF006" for v in violations)
 
 
+# frob:waive DUP001 reason="parallel test methods within test_perf.py (2 sites) sharing an \
+# arrange-act scaffold typical of exhaustive per-case coverage; \
+# extracting would obscure per-case intent"
 def test_perf006_silenced_by_reasoned_termination_directive(tmp_path, monkeypatch):
     """The same reasoned directive that proves PERF005 also silences
     PERF006 -- a proven depth bound is also a proven termination measure."""
@@ -630,6 +644,11 @@ def test_perf005_fires_on_mutual_recursion(tmp_path):
     assert "is_odd" in refs
 
 
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across test_perf.py, \
+# test_perf_rules_internals.py (2 sites) -- each file exercises a \
+# structurally similar check for a distinct domain/module with the \
+# same arrange-act shape; extracting would blur which domain owns \
+# which check"
 def test_perf005_does_not_fire_on_non_recursive_function(tmp_path):
     """A plain, non-recursive function never trips PERF005/PERF006."""
     # frob:ticket T-0290
@@ -642,6 +661,9 @@ def test_perf005_does_not_fire_on_non_recursive_function(tmp_path):
     assert not any(v.rule in ("PERF005", "PERF006") for v in violations)
 
 
+# frob:waive DUP001 reason="parallel test methods within test_perf.py (2 sites) sharing an \
+# arrange-act scaffold typical of exhaustive per-case coverage; \
+# extracting would obscure per-case intent"
 def test_perf005_fires_when_descent_is_outside_the_call_args(tmp_path):
     """Reviewer-caught bug (T-0290 round 2): `loop_forever(n) - 1 if n > 0
     else 0` puts the `- 1` OUTSIDE the recursive call's own argument list --
@@ -956,6 +978,9 @@ class TestPerf007RedundantComputation:
         # And wired all the way through perf_rules, per T-0413's plan.
         assert any(v.rule == "PERF007" for v in perf_rules(snapshot, [parsed]))
 
+    # frob:waive DUP001 reason="parallel test methods within test_perf.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_single_shared_call_site_is_not_flagged(self, tmp_path: Path) -> None:
         _git_init(tmp_path)
         _write(
@@ -978,6 +1003,9 @@ class TestPerf007RedundantComputation:
         violations = redundant_computation_violations(tmp_path, [parsed])
         assert not any(v.rule == "PERF007" for v in violations)
 
+    # frob:waive DUP001 reason="parallel test methods within test_perf.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_cached_definition_suppresses_the_warning(self, tmp_path: Path) -> None:
         _git_init(tmp_path)
         _write(

@@ -265,6 +265,9 @@ class TestCanonicalizeText:
         folded = fold_comment_runs(entries)
         assert folded[0][0] == f'frob:waive R reason="{long_reason} short tail"'
 
+    # frob:waive DUP001 reason="parallel test methods within test_gates_fmt_directives.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_idempotent_on_already_canonical_text(self) -> None:
         # frob:tests \
         # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_idempotent_on_a\
@@ -359,6 +362,9 @@ class TestCrlfPreservation:
             'so it overflows the line-length limit and must be wrapped"'
         )
 
+    # frob:waive DUP001 reason="parallel test methods within test_gates_fmt_directives.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_canonicalize_text_is_a_no_op_on_second_pass(self) -> None:
         # frob:tests \
         # tests/test_gates_fmt_directives.py::TestCrlfPreservation.test_canonicalize_te\

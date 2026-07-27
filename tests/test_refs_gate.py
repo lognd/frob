@@ -14,6 +14,10 @@ from frob.gates._models import Severity
 from frob.gates._refs import ref_gate
 
 
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across 9 sibling test modules \
+# (9 sites) -- each file exercises a structurally similar check for \
+# a distinct domain/module with the same arrange-act shape; \
+# extracting would blur which domain owns which check"
 def _git(root: Path, *args: str) -> None:
     subprocess.run(
         ["git", "-C", str(root), *args],
@@ -47,6 +51,9 @@ class TestTiers:
     """REF001 (0 refs), REF002 (1 ref), pass (2+ refs) -- docs/modules/gates.md's
     tier table, T-0396 acceptance criterion (4)."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_refs_gate.py (3 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_zero_refs_warns_ref001(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "orphan.yaml", "key: value\n")
@@ -57,6 +64,9 @@ class TestTiers:
 
         assert _rule_ids(violations, "orphan.yaml") == ["REF001"]
 
+    # frob:waive DUP001 reason="parallel test methods within test_refs_gate.py (3 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_one_ref_weak_warns_ref002(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "single.yaml", "key: value\n")
@@ -67,6 +77,9 @@ class TestTiers:
 
         assert _rule_ids(violations, "single.yaml") == ["REF002"]
 
+    # frob:waive DUP001 reason="parallel test methods within test_refs_gate.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_two_refs_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "double.yaml", "key: value\n")
@@ -295,6 +308,9 @@ class TestReferenceDetection:
 
         assert "REF001" in _rule_ids(violations, "manifest.yaml")
 
+    # frob:waive DUP001 reason="parallel test methods within test_refs_gate.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_markdown_link_counts_as_a_reference(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "linked.yaml", "key: value\n")
@@ -480,6 +496,9 @@ class TestMarkdownWaive:
 
         assert _rule_ids(violations, "docs/single.md") == []
 
+    # frob:waive DUP001 reason="parallel test methods within test_refs_gate.py (3 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_ref002_on_md_doc_without_waive_still_fires(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "docs/single.md", "# Single\n\nno waiver here\n")

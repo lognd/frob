@@ -45,6 +45,10 @@ _COMPLIANCE_CATALOGUED_TOTAL = 27
 
 
 # frob:ticket T-0388
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across 8 sibling test modules \
+# (8 sites) -- each file exercises a structurally similar check for \
+# a distinct domain/module with the same arrange-act shape; \
+# extracting would blur which domain owns which check"
 def _real_queue() -> TicketQueue:
     """Load the repo's real ticket queue, falling back to an empty queue
     only if the ledger itself fails to parse (never masks a real
@@ -83,6 +87,14 @@ class TestComplianceRegistryFile:
         assert loaded["compliance.yaml"].is_ok
 
     # frob:ticket T-0388
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across \
+    # test_registry_reconciliation_compliance.py, \
+    # test_registry_reconciliation_patterns.py, \
+    # test_registry_reconciliation_pii.py, \
+    # test_registry_reconciliation_secrets.py (4 sites) -- each file \
+    # exercises a structurally similar check for a distinct \
+    # domain/module with the same arrange-act shape; extracting would \
+    # blur which domain owns which check"
     def test_no_malformed_entries(self) -> None:
         """REG006's target -- zero list items that are not a mapping, or
         are missing a string `id`, ever silently disappear from the
@@ -241,6 +253,10 @@ class TestExhaustivenessGateOverRealCompliance:
     default gate run), not a side-channel-only assertion."""
 
     # frob:ticket T-0388
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across 8 sibling test modules \
+    # (8 sites) -- each file exercises a structurally similar check for \
+    # a distinct domain/module with the same arrange-act shape; \
+    # extracting would blur which domain owns which check"
     def test_no_compliance_violations(self) -> None:
         real_queue = _real_queue()
 

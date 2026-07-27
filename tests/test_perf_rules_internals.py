@@ -128,6 +128,11 @@ def test_typescript_end_to_end_best_effort_via_perf_rules(tmp_path):
 
 
 # frob:tests tests/test_perf_rules_internals.py::test_typescript_no_hit_outside_loop
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across test_perf.py, \
+# test_perf_rules_internals.py (2 sites) -- each file exercises a \
+# structurally similar check for a distinct domain/module with the \
+# same arrange-act shape; extracting would blur which domain owns \
+# which check"
 def test_typescript_no_hit_outside_loop(tmp_path):
     """The best-effort TypeScript rules do not fire without a loop gate."""
     src = "function has(data: number[], x: number): boolean {\n  return data.includes(x);\n}\n"

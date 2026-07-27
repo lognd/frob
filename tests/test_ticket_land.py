@@ -137,6 +137,11 @@ def _make_closeable(root: Path, ticket_id: str) -> None:
     assert write_ticket(root, ticket).is_ok
 
 
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across test_ticket_land.py, \
+# test_ticket_leases_cross_worktree.py (2 sites) -- each file \
+# exercises a structurally similar check for a distinct \
+# domain/module with the same arrange-act shape; extracting would \
+# blur which domain owns which check"
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
     """A main checkout with an initialized ledger and one committed file."""
@@ -206,6 +211,9 @@ class TestSpliceLedger:
         assert spliced.is_err
 
     # frob:tests src/frob/tickets/_land.py::splice_ledger kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_ticket_land.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_malformed_theirs_propagates_as_err(self, tmp_path: Path) -> None:
         """A malformed `theirs_text` must ALSO surface as `Err` -- the
         second `_parse_ledger` call's error path is exercised
@@ -740,6 +748,9 @@ class TestSpliceLedgerIdDropGuard:
 
     # frob:ticket T-0764
     # frob:tests tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard.test_malformed_side_is_refused_not_silently_treated_as_empty  # noqa: E501
+    # frob:waive DUP001 reason="parallel test methods within test_ticket_land.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_malformed_side_is_refused_not_silently_treated_as_empty(
         self, tmp_path: Path
     ) -> None:

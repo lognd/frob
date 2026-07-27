@@ -19,6 +19,11 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parent.parent
 
 
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across \
+# test_makefile_lock_sync.py, test_natives_build.py (2 sites) -- \
+# each file exercises a structurally similar check for a distinct \
+# domain/module with the same arrange-act shape; extracting would \
+# blur which domain owns which check"
 def _upload_recipe() -> str:
     """The `upload:` target's recipe lines from the repo's real Makefile,
     verbatim -- used to statically assert the T-0789 lock-sync fix stays

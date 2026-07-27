@@ -429,6 +429,9 @@ class TestRegulationCaughtByIntegrity:
 
     # frob:tests src/frob/strata/_compliance.py::_check_regulation_caught_by_integrity \
     # kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_compliance.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_honest_none_caught_by_never_fails(self):
         entry = OutOfScopeRegulation(
             id="COPPA",
@@ -483,6 +486,9 @@ class TestRegulationCaughtByIntegrity:
 
     # frob:tests src/frob/strata/_compliance.py::_check_regulation_caught_by_integrity \
     # kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_compliance.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_free_text_with_no_rule_id_token_is_not_checked_further(self):
         entry = OutOfScopeRegulation(
             id="COPPA",

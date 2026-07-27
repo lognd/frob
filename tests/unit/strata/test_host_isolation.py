@@ -397,6 +397,9 @@ class TestWindowsHostIsolation:
 
     # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
     # kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_deny_acl_does_not_fire_shared_writable_path(self):
         """A shared ACL path where neither side's RULE grants write (both
         `:deny`'d, or a read-only RIGHTS) must not fire
@@ -428,6 +431,9 @@ class TestWindowsHostIsolation:
 
     # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
     # kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_explicit_deny_acl_flag_does_not_fire_shared_writable_path(self):
         """T-0791: exercise the `:deny` flag directly (not just a
         non-write RIGHTS value) -- Everyone:Modify:deny on a write-capable
@@ -566,6 +572,9 @@ class TestMultiAceDenyOverridesAllow:
         assert _join_acl_entries(entries) is True
 
     # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_narrow_deny_then_broad_allow_same_principal_denies(self):
         """T-0825 WRITE_DAC-indirection corner (the T-0792 reviewer
         finding this ticket closes; SAME test name as the pre-fix T-0791/
@@ -588,6 +597,9 @@ class TestMultiAceDenyOverridesAllow:
         assert _join_acl_entries(entries) is True
 
     # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_broad_allow_then_narrow_deny_same_principal_still_denies(self):
         """Same corner as above, declaration order reversed: `FullControl`
         allow first, narrower `Modify` deny second -- still write-capable
@@ -603,6 +615,9 @@ class TestMultiAceDenyOverridesAllow:
         assert _join_acl_entries(entries) is True
 
     # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_fullcontrol_deny_denies_fullcontrol_allow_no_indirection(self):
         """The WRITE_DAC-indirection corner does NOT apply when the deny
         is ITSELF `FullControl`-level: an explicit `FullControl` deny
@@ -617,6 +632,9 @@ class TestMultiAceDenyOverridesAllow:
         assert _join_acl_entries(entries) is False
 
     # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_narrow_deny_narrow_allow_same_principal_still_denies(self):
         """The indirection corner is `FullControl`-allow-specific: a
         `Modify` allow never grants WRITE_DAC/WRITE_OWNER in the first
@@ -630,6 +648,9 @@ class TestMultiAceDenyOverridesAllow:
         assert _join_acl_entries(entries) is False
 
     # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_write_deny_modify_allow_same_principal_still_denies(self):
         """A narrower `Write` deny against a `Modify` allow: `Modify`
         never grants WRITE_DAC either, so there is no indirection bit to

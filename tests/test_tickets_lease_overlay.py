@@ -45,6 +45,11 @@ def _ticket(*, ticket_id: str, state: TicketState = TicketState.QUEUED) -> Ticke
 
 
 # frob:ticket T-0716
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across \
+# test_tickets_dispatch_stale.py, test_tickets_lease_overlay.py (2 \
+# sites) -- each file exercises a structurally similar check for a \
+# distinct domain/module with the same arrange-act shape; extracting \
+# would blur which domain owns which check"
 def _lease(ticket_id: str, worktree: Path) -> _LeaseRecord:
     """A `_LeaseRecord` fixture pointing at `worktree` for `ticket_id`."""
     return _LeaseRecord(

@@ -62,6 +62,12 @@ def _symbol(path: str, qualname: str, span: tuple[int, int]) -> SymbolRecord:
     )
 
 
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across \
+# test_evidence_integrity.py, \
+# test_tickets_new_gate_rule_acceptance.py (2 sites) -- each file \
+# exercises a structurally similar check for a distinct \
+# domain/module with the same arrange-act shape; extracting would \
+# blur which domain owns which check"
 def _ticket(
     *,
     ticket_id: str = "T-0001",
@@ -834,6 +840,10 @@ class TestD05LandReverification:
         # _evidence_that_no_longer_resolves_post_merge
         import subprocess
 
+        # frob:waive DUP001 reason="parallel per-domain test scaffolding across 9 sibling test modules \
+        # (9 sites) -- each file exercises a structurally similar check for \
+        # a distinct domain/module with the same arrange-act shape; \
+        # extracting would blur which domain owns which check"
         def git(root: Path, *args: str) -> None:
             subprocess.run(
                 ["git", "-C", str(root), *args],

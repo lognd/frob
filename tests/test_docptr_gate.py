@@ -74,6 +74,9 @@ class TestDoc006FilePath:
         assert any("gone.py" in v.message for v in found)
         assert all(v.severity == Severity.WARN for v in found)
 
+    # frob:waive DUP001 reason="parallel test methods within test_docptr_gate.py (3 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_real_path_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "src/pkg/real.py", "x = 1\n")
@@ -82,6 +85,9 @@ class TestDoc006FilePath:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:waive DUP001 reason="parallel test methods within test_docptr_gate.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_unrecognized_prose_not_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(
@@ -110,6 +116,9 @@ class TestDoc006DocAnchor:
     """Kind 5: DOC-ANCHOR LINK -- `docs/x.md#anchor` must resolve both the
     file and a real heading/`<a id>` slug in it."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_docptr_gate.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_missing_anchor_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "docs/target.md", "# Real Heading\n")
@@ -122,6 +131,9 @@ class TestDoc006DocAnchor:
         assert found
         assert any("nonexistent-anchor" in v.message for v in found)
 
+    # frob:waive DUP001 reason="parallel test methods within test_docptr_gate.py (3 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_real_anchor_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "docs/target.md", "# Real Heading\n")
@@ -136,6 +148,9 @@ class TestDoc006Cli:
     against the live argparse registry (same [[docblocks.commands]] config
     DOC004's console tier uses)."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_docptr_gate.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_nonexistent_subcommand_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _CLI_CONFIG)
@@ -146,6 +161,9 @@ class TestDoc006Cli:
         assert found
         assert any("nonexistent-subcommand" in v.message for v in found)
 
+    # frob:waive DUP001 reason="parallel test methods within test_docptr_gate.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_nonexistent_flag_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _CLI_CONFIG)
@@ -171,6 +189,9 @@ class TestDoc006Config:
     """Kind 3: CONFIG REFERENCE -- `[section]`/`[section.key]` checked
     against this project's own loaded frob.toml."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_docptr_gate.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_bogus_section_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
@@ -181,6 +202,9 @@ class TestDoc006Config:
         assert found
         assert any("bogus.section" in v.message for v in found)
 
+    # frob:waive DUP001 reason="parallel test methods within test_docptr_gate.py (3 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_real_section_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", '[gates.severity]\nDOC001 = "warn"\n')
@@ -189,6 +213,9 @@ class TestDoc006Config:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:waive DUP001 reason="parallel test methods within test_docptr_gate.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_all_caps_citation_tag_not_flagged(self, tmp_path: Path) -> None:
         """T-1016: `[IN-REPO]`-shaped tokens are prose citation TAGS, not
         `[section]` TOML pointers -- every real config table this repo's
@@ -201,6 +228,9 @@ class TestDoc006Config:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:waive DUP001 reason="parallel test methods within test_docptr_gate.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_declared_but_unset_section_not_flagged(self, tmp_path: Path) -> None:
         """T-1016: `[vet.allow]` is a real section `frob.vet._allow` reads
         from `frob.toml` -- but this SYNTHETIC test repo's own `frob.toml`
@@ -260,6 +290,9 @@ class TestDoc006Symbol:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:waive DUP001 reason="parallel test methods within test_docptr_gate.py (3 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_class_attribute_chain_not_flagged(self, tmp_path: Path) -> None:
         """`pkg.mod.Real.SOME_ATTR` -- `Real` is a real top-level symbol in
         `pkg.mod`, but a class ATTRIBUTE one level deeper is outside what
@@ -277,6 +310,9 @@ class TestDoc006Symbol:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:waive DUP001 reason="parallel test methods within test_docptr_gate.py (3 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_reexported_class_attribute_chain_not_flagged(self, tmp_path: Path) -> None:
         """T-1016: `pkg.Real.SOME_ATTR` where `Real` is defined in `pkg.mod`
         and RE-EXPORTED (not locally defined) through `pkg/__init__.py`'s
@@ -293,6 +329,9 @@ class TestDoc006Symbol:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:waive DUP001 reason="parallel test methods within test_docptr_gate.py (3 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_dunder_init_mid_chain_resolves_to_module(self, tmp_path: Path) -> None:
         """T-1016: `pkg.mod.__init__.real` -- a doc author spelling out a
         package's own `__init__.py` explicitly inside a longer chain
@@ -313,6 +352,9 @@ class TestDoc006Waive:
     """`frob:waive DOC006 reason="..."` suppresses any of the above tiers,
     same nearby-line convention as DOC004."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_docptr_gate.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_waive_suppresses(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(

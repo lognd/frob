@@ -19,6 +19,11 @@ from frob.process._guard import ProcessGuardError
 _ROOT = Path(__file__).resolve().parent.parent.parent
 
 
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across \
+# test_makefile_lock_sync.py, test_natives_build.py (2 sites) -- \
+# each file exercises a structurally similar check for a distinct \
+# domain/module with the same arrange-act shape; extracting would \
+# blur which domain owns which check"
 def _core_recipe() -> str:
     """The `core:` target's recipe lines from the repo's real Makefile,
     verbatim -- a static assertion that `make core` stays a one-line

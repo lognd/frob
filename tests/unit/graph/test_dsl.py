@@ -33,6 +33,9 @@ def _write(root: Path, rel: str, text: str) -> Path:
 class TestContinuation:
     """`frob:<verb> ... \\` folds onto the following comment line (T-0286)."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_dsl.py (3 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_long_reason_continues_across_lines(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::parse_directives
         src = (
@@ -165,6 +168,9 @@ class TestContinuation:
         assert edges[0].target == "tests/a.py::test_foo"
         assert edges[0].attrs["kind"] == "integration"
 
+    # frob:waive DUP001 reason="parallel test methods within test_dsl.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_unrelated_directives_on_consecutive_lines_do_not_fold(
         self, tmp_path: Path
     ) -> None:
@@ -209,6 +215,9 @@ class TestReservedMarkerVerbs:
         assert not edges
         assert not malformed
 
+    # frob:waive DUP001 reason="parallel test methods within test_dsl.py (4 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_unreserved_unknown_verb_still_reports_malformed(
         self, tmp_path: Path
     ) -> None:
@@ -452,6 +461,11 @@ class TestDeprecatedDirective:
         assert edge.attrs["ticket"] == "T-0001"
         assert edge.attrs["reason"] == "use bar instead"
 
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across test_dsl.py, \
+    # test_graph.py (7 sites) -- each file exercises a structurally \
+    # similar check for a distinct domain/module with the same \
+    # arrange-act shape; extracting would blur which domain owns which \
+    # check"
     def test_missing_sunset_is_malformed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_attrs
         src = (
@@ -465,6 +479,11 @@ class TestDeprecatedDirective:
         assert len(malformed) == 1
         assert "sunset" in malformed[0].reason
 
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across test_dsl.py, \
+    # test_graph.py (7 sites) -- each file exercises a structurally \
+    # similar check for a distinct domain/module with the same \
+    # arrange-act shape; extracting would blur which domain owns which \
+    # check"
     def test_missing_ticket_is_malformed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_attrs
         src = (
@@ -478,6 +497,11 @@ class TestDeprecatedDirective:
         assert len(malformed) == 1
         assert "ticket" in malformed[0].reason
 
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across test_dsl.py, \
+    # test_graph.py (7 sites) -- each file exercises a structurally \
+    # similar check for a distinct domain/module with the same \
+    # arrange-act shape; extracting would blur which domain owns which \
+    # check"
     def test_non_date_sunset_is_malformed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_attrs
         src = (
@@ -524,6 +548,9 @@ class TestProtocolDeclarations:
         assert by_kind[EdgeKind.REQUIRES].target == "conn"
         assert by_kind[EdgeKind.REQUIRES].attrs["state"] == "open"
 
+    # frob:waive DUP001 reason="parallel test methods within test_dsl.py (4 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_protocol_missing_states_is_malformed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_attrs_verb_error
         src = '# frob:protocol conn initial="idle"\ndef use_conn() -> None:\n    pass\n'
@@ -533,6 +560,11 @@ class TestProtocolDeclarations:
         assert len(malformed) == 1
         assert "states" in malformed[0].reason
 
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across test_dsl.py, \
+    # test_graph.py (7 sites) -- each file exercises a structurally \
+    # similar check for a distinct domain/module with the same \
+    # arrange-act shape; extracting would blur which domain owns which \
+    # check"
     def test_protocol_initial_not_in_states_is_malformed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_attrs_verb_error
         src = (
@@ -546,6 +578,11 @@ class TestProtocolDeclarations:
         assert len(malformed) == 1
         assert "initial" in malformed[0].reason
 
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across test_dsl.py, \
+    # test_graph.py (7 sites) -- each file exercises a structurally \
+    # similar check for a distinct domain/module with the same \
+    # arrange-act shape; extracting would blur which domain owns which \
+    # check"
     def test_protocol_bad_cleanup_is_malformed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_attrs_verb_error
         src = (
@@ -560,6 +597,11 @@ class TestProtocolDeclarations:
         assert len(malformed) == 1
         assert "cleanup" in malformed[0].reason
 
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across test_dsl.py, \
+    # test_graph.py (7 sites) -- each file exercises a structurally \
+    # similar check for a distinct domain/module with the same \
+    # arrange-act shape; extracting would blur which domain owns which \
+    # check"
     def test_transition_missing_attrs_is_malformed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_attrs_verb_error
         src = (
@@ -573,6 +615,9 @@ class TestProtocolDeclarations:
         assert len(malformed) == 1
         assert "to" in malformed[0].reason
 
+    # frob:waive DUP001 reason="parallel test methods within test_dsl.py (4 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_requires_missing_state_is_malformed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_attrs_verb_error
         src = '# frob:requires proto="conn"\ndef send() -> None:\n    pass\n'
@@ -639,6 +684,9 @@ class TestResourceDirectives:
         assert by_kind[EdgeKind.ESCAPES].target == "conn"
         assert all(e.src.endswith("::open_fd") for e in edges)
 
+    # frob:waive DUP001 reason="parallel test methods within test_dsl.py (4 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_acquire_missing_target_is_malformed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_line
         src = "# frob:acquire\ndef open_fd() -> None:\n    pass\n"
@@ -739,6 +787,9 @@ class TestVerbShapedContinuationProse:
     substring `frob:describes` inside a `reason="..."`) must fold as
     continuation content, never misparse as a bogus new directive."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_dsl.py (3 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_frob_describes_prose_at_continuation_line_start_folds(
         self, tmp_path: Path
     ) -> None:
@@ -762,6 +813,9 @@ class TestVerbShapedContinuationProse:
             "by name (T-0529) -- a deliberate architecture doc"
         )
 
+    # frob:waive DUP001 reason="parallel test methods within test_dsl.py (3 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_frob_describes_prose_repro_shape_from_dup_core(
         self, tmp_path: Path
     ) -> None:
@@ -809,6 +863,9 @@ class TestVerbShapedContinuationProse:
             "test_long_reason_continues_across_lines"
         )
 
+    # frob:waive DUP001 reason="parallel test methods within test_dsl.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_unrelated_directives_corruption_repro_still_rejects_fold(
         self, tmp_path: Path
     ) -> None:

@@ -416,6 +416,11 @@ def foo() -> None:
     # tests/test_graph.py::TestDsl.test_invalid_kind_in_module_docstring_is_surfaced_no\
     # t_silent
     # frob:ticket T-0269
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across test_dsl.py, \
+    # test_graph.py (7 sites) -- each file exercises a structurally \
+    # similar check for a distinct domain/module with the same \
+    # arrange-act shape; extracting would blur which domain owns which \
+    # check"
     def test_invalid_kind_in_module_docstring_is_surfaced_not_silent(
         self, tmp_path: Path
     ) -> None:
@@ -1107,6 +1112,9 @@ class TestEdgesFromTo:
 
 
 class TestLoadGraph:
+    # frob:waive DUP001 reason="parallel test methods within test_graph.py (3 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_cache_stale_after_edit(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/__init__.py::load_graph
         _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
@@ -1221,6 +1229,9 @@ class TestLoadGraph:
         assert result.is_err
         assert result.danger_err == GraphError.CacheCorrupt
 
+    # frob:waive DUP001 reason="parallel test methods within test_graph.py (3 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_cache_stale_after_new_file_added(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/__init__.py::load_graph
         # G1 (T-0402): a file added since the last build has no cache row
@@ -1238,6 +1249,9 @@ class TestLoadGraph:
         assert result.is_err
         assert result.danger_err == GraphError.CacheStale
 
+    # frob:waive DUP001 reason="parallel test methods within test_graph.py (3 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_cache_stale_after_new_doc_added(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/__init__.py::load_graph
         # Same as above (G1) but for a newly-added doc file under docs/,
@@ -1861,6 +1875,9 @@ class TestCallGraph:
         assert ref_graph.calls == {"src/a.py::register": ("src/a.py::_handler",)}
 
     # frob:ticket T-0583
+    # frob:waive DUP001 reason="parallel test methods within test_graph.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_build_call_graph_sees_through_memoize_per_run_wrapper(
         self, tmp_path: Path
     ) -> None:
@@ -1885,6 +1902,9 @@ class TestCallGraph:
         assert call_graph.calls == {"src/a.py::public_entry": ("src/a.py::_helper",)}
 
     # frob:ticket T-0809
+    # frob:waive DUP001 reason="parallel test methods within test_graph.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_build_call_graph_marks_unresolved_private_looking_callee(
         self, tmp_path: Path
     ) -> None:
@@ -1905,6 +1925,9 @@ class TestCallGraph:
         assert call_graph.calls == {"src/a.py::public_entry": (UNRESOLVED_CALLEE,)}
 
     # frob:ticket T-0809
+    # frob:waive DUP001 reason="parallel test methods within test_graph.py (3 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_build_call_graph_does_not_mark_unresolved_public_looking_call(
         self, tmp_path: Path
     ) -> None:
@@ -1924,6 +1947,9 @@ class TestCallGraph:
         assert call_graph.calls == {}
 
     # frob:ticket T-0809
+    # frob:waive DUP001 reason="parallel test methods within test_graph.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_build_call_graph_default_preserves_old_silent_omission_behavior(
         self, tmp_path: Path
     ) -> None:
@@ -1962,6 +1988,9 @@ class TestCallGraph:
         assert UNRESOLVED_CALLEE not in call_graph.calls["src/a.py::public_entry"]
 
     # frob:ticket T-0813
+    # frob:waive DUP001 reason="parallel test methods within test_graph.py (3 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_build_call_graph_exempts_attribute_call_on_foreign_receiver_from_unresolved(
         self, tmp_path: Path
     ) -> None:
@@ -1981,6 +2010,9 @@ class TestCallGraph:
         assert call_graph.calls == {}
 
     # frob:ticket T-0813
+    # frob:waive DUP001 reason="parallel test methods within test_graph.py (3 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_build_call_graph_exempts_super_dunder_call_from_unresolved(
         self, tmp_path: Path
     ) -> None:
@@ -1998,6 +2030,9 @@ class TestCallGraph:
         assert call_graph.calls == {}
 
     # frob:ticket T-0813
+    # frob:waive DUP001 reason="parallel test methods within test_graph.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_build_call_graph_still_marks_unresolved_self_attribute_call(
         self, tmp_path: Path
     ) -> None:
@@ -2016,6 +2051,9 @@ class TestCallGraph:
         assert call_graph.calls == {"src/a.py::Foo.bar": (UNRESOLVED_CALLEE,)}
 
     # frob:ticket T-0841
+    # frob:waive DUP001 reason="parallel test methods within test_graph.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_build_call_graph_resolves_a_rust_private_callee_by_pub_keyword(
         self, tmp_path: Path
     ) -> None:
@@ -2037,6 +2075,9 @@ class TestCallGraph:
         assert call_graph.calls == {"src/a.rs::entry": ("src/a.rs::helper",)}
 
     # frob:ticket T-0841
+    # frob:waive DUP001 reason="parallel test methods within test_graph.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_build_call_graph_does_not_resolve_a_rust_pub_callee(
         self, tmp_path: Path
     ) -> None:

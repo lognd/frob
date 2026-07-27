@@ -28,6 +28,11 @@ def _git(*args: str, cwd: Path) -> None:
     subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
 
 
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across \
+# test_cli_evidence_enforcement.py, test_worktree_guard.py (2 sites) \
+# -- each file exercises a structurally similar check for a distinct \
+# domain/module with the same arrange-act shape; extracting would \
+# blur which domain owns which check"
 def _init_repo(root: Path) -> None:
     root.mkdir(parents=True, exist_ok=True)
     _git("init", "-q", "-b", "main", cwd=root)
@@ -71,6 +76,9 @@ class TestCliEvidenceEnforcementEndToEnd:
     # frob:tests \
     # tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd\
     # .test_close_fails_on_red_evidence
+    # frob:waive DUP001 reason="parallel test methods within test_cli_evidence_enforcement.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_close_fails_on_red_evidence(self, tmp_path: Path) -> None:
         """D-01: a RED (failing) evidence test must FAIL `frob ticket
         close`, not silently satisfy it."""
@@ -153,6 +161,9 @@ class TestCliEvidenceEnforcementEndToEnd:
     # frob:tests \
     # tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd\
     # .test_close_fails_on_empty_done_report
+    # frob:waive DUP001 reason="parallel test methods within test_cli_evidence_enforcement.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_close_fails_on_empty_done_report(self, tmp_path: Path) -> None:
         """D-03: a bare '## Done report' heading with nothing under it
         must FAIL `frob ticket close`, not silently satisfy it."""

@@ -241,6 +241,9 @@ class TestScopeTestGaps:
     """`frob.graph.affects.scope_test_gaps` (T-0998 test-edge closure
     direction, symmetric with `scope_doc_code_gaps`'s doc-edge closure)."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_graph_affects.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_code_in_scope_test_target_unscoped(self) -> None:
         # frob:tests src/frob/graph/affects.py::scope_test_gaps
         from frob.graph.affects import scope_test_gaps
@@ -260,6 +263,9 @@ class TestScopeTestGaps:
         assert gaps[0].scoped_site == "a.py::foo"
         assert gaps[0].missing_file == "tests/test_a.py"
 
+    # frob:waive DUP001 reason="parallel test methods within test_graph_affects.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_test_in_scope_code_target_unscoped(self) -> None:
         # frob:tests src/frob/graph/affects.py::scope_test_gaps
         from frob.graph.affects import scope_test_gaps

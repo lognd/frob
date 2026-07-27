@@ -533,6 +533,9 @@ class TestStaleDesign:
 
 class TestUnmodeledCode:
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_selfconform.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_unmodeled_code_fires(self, tmp_path: Path):
         """A `src/frob/` directory claimed by no node's `code=` glob at
         all is SYS102, even with zero observable capabilities."""
@@ -599,6 +602,9 @@ class TestUnmodeledCodeForeignFileGranularity:
         assert not any(v.node == "widget" for v in hit)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_selfconform.py (2 sites) sharing \
+    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_loose_top_level_file_fires(self, tmp_path: Path):
         """A `.py` file placed directly under `src/frob/` (no
         subdirectory at all) with no node's `code=` glob binding it must

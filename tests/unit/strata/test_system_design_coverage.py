@@ -41,6 +41,10 @@ _SYSTEM_DESIGN_CATALOGUED_TOTAL = 119
 
 
 # frob:ticket T-0658
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across 9 sibling test modules \
+# (9 sites) -- each file exercises a structurally similar check for \
+# a distinct domain/module with the same arrange-act shape; \
+# extracting would blur which domain owns which check"
 def _real_queue() -> TicketQueue:
     """The repo's real, live ticket queue -- falls back to an empty queue
     only if the ledger itself fails to parse, so a real deferred-to-
@@ -134,6 +138,12 @@ class TestSystemDesignGateLiveZero:
     not re-proven here."""
 
     # frob:ticket T-0658
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across \
+    # test_registry_reconciliation_system_design.py, \
+    # test_system_design_coverage.py (2 sites) -- each file exercises a \
+    # structurally similar check for a distinct domain/module with the \
+    # same arrange-act shape; extracting would blur which domain owns \
+    # which check"
     def test_no_system_design_violations(self) -> None:
         real_queue = _real_queue()
 

@@ -30,6 +30,10 @@ _SECRETS_CATALOGUED_TOTAL = 3
 
 
 # frob:ticket T-0386
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across 8 sibling test modules \
+# (8 sites) -- each file exercises a structurally similar check for \
+# a distinct domain/module with the same arrange-act shape; \
+# extracting would blur which domain owns which check"
 def _real_queue() -> TicketQueue:
     """Load the repo's real ticket queue, falling back to an empty queue
     only if the ledger itself fails to parse (never masks a real
@@ -68,6 +72,14 @@ class TestSecretsRegistryFile:
         assert loaded["secrets.yaml"].is_ok
 
     # frob:ticket T-0386
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across \
+    # test_registry_reconciliation_compliance.py, \
+    # test_registry_reconciliation_patterns.py, \
+    # test_registry_reconciliation_pii.py, \
+    # test_registry_reconciliation_secrets.py (4 sites) -- each file \
+    # exercises a structurally similar check for a distinct \
+    # domain/module with the same arrange-act shape; extracting would \
+    # blur which domain owns which check"
     def test_no_malformed_entries(self) -> None:
         """REG006's target -- zero list items that are not a mapping, or
         are missing a string `id`, ever silently disappear from the
@@ -122,6 +134,13 @@ class TestSecretsExhaustiveness:
         )
 
     # frob:ticket T-0386
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across \
+    # test_registry_reconciliation_patterns.py, \
+    # test_registry_reconciliation_pii.py, \
+    # test_registry_reconciliation_secrets.py (3 sites) -- each file \
+    # exercises a structurally similar check for a distinct \
+    # domain/module with the same arrange-act shape; extracting would \
+    # blur which domain owns which check"
     def test_every_deferred_entry_targets_an_open_ticket(self) -> None:
         """REG003's positive case, pinned to real data: every
         `deferred:T-XXXX` disposition in secrets.yaml names a ticket that
@@ -159,6 +178,10 @@ class TestExhaustivenessGateOverRealSecrets:
     default gate run), not a side-channel-only assertion."""
 
     # frob:ticket T-0386
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across 8 sibling test modules \
+    # (8 sites) -- each file exercises a structurally similar check for \
+    # a distinct domain/module with the same arrange-act shape; \
+    # extracting would blur which domain owns which check"
     def test_no_secrets_violations(self) -> None:
         real_queue = _real_queue()
 

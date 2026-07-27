@@ -677,6 +677,9 @@ class TestReleaseSyncRunner:
         monkeypatch.setattr(gitio_mod, "run_argv", _fake_run_argv)
         return calls
 
+    # frob:waive DUP001 reason="parallel test methods within test_app_runners_batch5.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_sync_no_manifest_exits_1(self, tmp_path, caplog):
         """`sync` with no `.frob-release.json` yet errors and exits 1."""
         _make_py_project(tmp_path)

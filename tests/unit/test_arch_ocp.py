@@ -29,6 +29,9 @@ class TestTypeDispatchSmell:
     (`frob.arch._patterns.iter_type_switch_chains`) and is ALSO reported as
     an OCP violation, not just a pattern recommendation."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_arch_ocp.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_isinstance_chain_flags_ocp_violation(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -68,6 +71,9 @@ class TestTypeDispatchSmell:
         assert "pattern-recommendation" in categories
         assert "type-dispatch-smell" in categories
 
+    # frob:waive DUP001 reason="parallel test methods within test_arch_ocp.py (7 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_two_arm_isinstance_chain_not_flagged(self, tmp_path: Path) -> None:
         # STRONG-HALLMARK-ONLY (inherited from the reused T-0332 detector):
         # two arms is routine control flow, not a growing type-switch.
@@ -89,6 +95,9 @@ class TestNonExhaustiveEnumMatch:
     """OCP: a `match`/`case` over a locally-known enum missing a member and
     carrying no wildcard/default arm."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_arch_ocp.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_missing_member_flagged(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -114,6 +123,9 @@ class TestNonExhaustiveEnumMatch:
         assert hits[0].symref == "colors.py::name_of"
         assert hits[0].metric == 1
 
+    # frob:waive DUP001 reason="parallel test methods within test_arch_ocp.py (7 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_exhaustive_match_not_flagged(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -135,6 +147,9 @@ class TestNonExhaustiveEnumMatch:
         ]
         assert hits == []
 
+    # frob:waive DUP001 reason="parallel test methods within test_arch_ocp.py (7 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_wildcard_default_suppresses_finding(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -157,6 +172,9 @@ class TestNonExhaustiveEnumMatch:
         ]
         assert hits == []
 
+    # frob:waive DUP001 reason="parallel test methods within test_arch_ocp.py (7 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_capture_default_suppresses_finding(self, tmp_path: Path) -> None:
         # A bare-name capture pattern (`case other:`) is also a default arm.
         src_dir = tmp_path / "src"
@@ -180,6 +198,9 @@ class TestNonExhaustiveEnumMatch:
         ]
         assert hits == []
 
+    # frob:waive DUP001 reason="parallel test methods within test_arch_ocp.py (7 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_non_enum_class_match_not_flagged(self, tmp_path: Path) -> None:
         # No local Enum-family class at all -- fail toward silence, not a
         # false-positive on a non-enum tagged-union-shaped match.
@@ -197,6 +218,9 @@ class TestNonExhaustiveEnumMatch:
         ]
         assert hits == []
 
+    # frob:waive DUP001 reason="parallel test methods within test_arch_ocp.py (7 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_union_pattern_covers_multiple_members(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -217,6 +241,9 @@ class TestNonExhaustiveEnumMatch:
         ]
         assert hits == []
 
+    # frob:waive DUP001 reason="parallel test methods within test_arch_ocp.py (7 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_unresolvable_pattern_shape_not_flagged(self, tmp_path: Path) -> None:
         # A qualifier naming a DIFFERENT class than any known local enum
         # makes the match unresolvable from this file alone -- silence.

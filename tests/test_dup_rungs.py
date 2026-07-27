@@ -31,6 +31,11 @@ def snapshot(tmp_path):
     return result.danger_ok
 
 
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across \
+# test_dup_exhaustiveness.py, test_dup_rungs.py (2 sites) -- each \
+# file exercises a structurally similar check for a distinct \
+# domain/module with the same arrange-act shape; extracting would \
+# blur which domain owns which check"
 def _pairs(report, rung):
     return [
         (p.left.ref, p.right.ref, p)

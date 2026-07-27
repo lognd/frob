@@ -18,6 +18,10 @@ from frob.gates._models import Severity
 from frob.graph import build_graph
 
 
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across 9 sibling test modules \
+# (9 sites) -- each file exercises a structurally similar check for \
+# a distinct domain/module with the same arrange-act shape; \
+# extracting would blur which domain owns which check"
 def _git(root: Path, *args: str) -> None:
     subprocess.run(
         ["git", "-C", str(root), *args],
@@ -133,6 +137,9 @@ class TestPythonNamespace:
         assert matches[0].severity == Severity.WARN
         assert matches[0].rule == "DOC004"
 
+    # frob:waive DUP001 reason="parallel test methods within test_docblocks_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_waive_doc004_suppresses(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "pyproject.toml", '[project]\nname = "widget"\n')
@@ -150,6 +157,9 @@ class TestPythonNamespace:
 
         assert _rule_ids(violations, "docs/guide.md") == []
 
+    # frob:waive DUP001 reason="parallel test methods within test_docblocks_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_generic_external_shell_block_not_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "pyproject.toml", '[project]\nname = "widget"\n')
@@ -196,6 +206,11 @@ class TestRustNamespace:
     """Rust: [workspace].members subcrates are each their own namespace; a
     `use <subcrate>::missing` is stale, `use <external-crate>::x` is skipped."""
 
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across \
+    # test_docblocks_gate.py, test_testing.py (2 sites) -- each file \
+    # exercises a structurally similar check for a distinct \
+    # domain/module with the same arrange-act shape; extracting would \
+    # blur which domain owns which check"
     def _write_workspace(self, tmp_path: Path) -> None:
         _write(
             tmp_path,
@@ -229,6 +244,9 @@ class TestRustNamespace:
         stale = [v for v in violations if v.severity == Severity.ERROR]
         assert any("missing_thing" in v.message for v in stale)
 
+    # frob:waive DUP001 reason="parallel test methods within test_docblocks_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_rust_use_of_real_item_passes_or_warns_never_stale(
         self, tmp_path: Path
     ) -> None:
@@ -247,6 +265,9 @@ class TestRustNamespace:
 
         assert _rule_ids(violations, "docs/guide.md") == []
 
+    # frob:waive DUP001 reason="parallel test methods within test_docblocks_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_external_crate_use_not_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         self._write_workspace(tmp_path)
@@ -286,6 +307,9 @@ class TestCCppNamespace:
         warns = [v for v in violations if v.severity == Severity.WARN]
         assert any("not anchored" in v.message for v in warns)
 
+    # frob:waive DUP001 reason="parallel test methods within test_docblocks_gate.py (4 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_include_of_tracked_header_anchored_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "include/acme/core.h", "#pragma once\nint acme_init(void);\n")
@@ -302,6 +326,9 @@ class TestCCppNamespace:
 
         assert _rule_ids(violations, "docs/guide.md") == []
 
+    # frob:waive DUP001 reason="parallel test methods within test_docblocks_gate.py (4 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_include_resolving_to_no_tracked_file_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -319,6 +346,9 @@ class TestCCppNamespace:
 
         assert _rule_ids(violations, "docs/guide.md") == []
 
+    # frob:waive DUP001 reason="parallel test methods within test_docblocks_gate.py (4 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_angle_bracket_system_include_never_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "README.md", "placeholder\n")
@@ -334,6 +364,9 @@ class TestCCppNamespace:
 
         assert _rule_ids(violations, "docs/guide.md") == []
 
+    # frob:waive DUP001 reason="parallel test methods within test_docblocks_gate.py (4 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_waive_suppresses_unbound_c_include(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "include/acme/core.h", "#pragma once\n")
@@ -382,6 +415,9 @@ class TestDoc005ReadmeTableDrift:
     walked via a synthetic two-command CLI so these tests never depend on
     frob's own live command count."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_docblocks_gate.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_missing_row_for_real_command_fails(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _FAKE_CONFIG)
@@ -402,6 +438,9 @@ class TestDoc005ReadmeTableDrift:
             for v in violations
         )
 
+    # frob:waive DUP001 reason="parallel test methods within test_docblocks_gate.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_stale_row_for_removed_command_fails(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _FAKE_CONFIG)
@@ -425,6 +464,9 @@ class TestDoc005ReadmeTableDrift:
             for v in violations
         )
 
+    # frob:waive DUP001 reason="parallel test methods within test_docblocks_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_fully_covered_table_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _FAKE_CONFIG)
@@ -442,6 +484,9 @@ class TestDoc005ReadmeTableDrift:
 
         assert violations == ()
 
+    # frob:waive DUP001 reason="parallel test methods within test_docblocks_gate.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_count_claim_mismatch_fails(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _FAKE_CONFIG)
@@ -465,6 +510,9 @@ class TestDoc005ReadmeTableDrift:
             for v in violations
         )
 
+    # frob:waive DUP001 reason="parallel test methods within test_docblocks_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_count_claim_matching_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _FAKE_CONFIG)

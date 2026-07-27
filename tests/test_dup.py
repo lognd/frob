@@ -72,6 +72,9 @@ class TestR3LiteralAbstraction:
     differs. R3's literal abstraction collapses both literals to the same
     placeholder, so R3 independently groups the pair."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (5 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     @pytest.fixture()
     def snapshot(self, tmp_path):
         _write(
@@ -95,6 +98,9 @@ class TestR3LiteralAbstraction:
 
     # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
     # frob:ticket T-0447
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_r3_fires_where_r2_does_not(self, snapshot):
         report = find_clones(
             snapshot, DupConfig(min_tokens=3, threshold=0.99)
@@ -111,6 +117,9 @@ class TestR3LiteralAbstraction:
 
     # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
     # frob:ticket T-0447
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_r3_does_not_collapse_a_different_operator(self, snapshot):
         # Negative pair: `x - 1` differs from `x + 1` by operator, not
         # literal -- literal abstraction must not paper over that.
@@ -130,6 +139,9 @@ class TestR3ElifDesugar:
     for `else: if` -- R3's desugar expands it before folding so the two
     spellings hash identically; R2 (no desugar) sees different tokens."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (5 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     @pytest.fixture()
     def snapshot(self, tmp_path):
         _write(
@@ -169,6 +181,9 @@ class TestR3ElifDesugar:
 
     # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
     # frob:ticket T-0447
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_r3_fires_where_r2_does_not(self, snapshot):
         report = find_clones(
             snapshot, DupConfig(min_tokens=3, threshold=0.99)
@@ -185,6 +200,9 @@ class TestR3ElifDesugar:
 
     # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
     # frob:ticket T-0447
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_r3_does_not_collapse_a_different_condition(self, snapshot):
         # Negative pair: the elif branch tests a different condition
         # (`<=` vs `<`) -- desugar must not paper over that.
@@ -215,6 +233,9 @@ class TestCrossLanguageR5Litmus:
     (T-0487) now covers directly with a fixture that DOES declare a local
     binding."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     @pytest.fixture()
     def snapshot(self, tmp_path):
         _write(
@@ -241,6 +262,9 @@ class TestCrossLanguageR5Litmus:
 
     # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
     # frob:ticket T-0447
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_r5_fires_across_languages(self, snapshot):
         report = find_clones(
             snapshot, DupConfig(min_tokens=1, threshold=0.99)
@@ -280,6 +304,9 @@ class TestCrossLanguageR5WithLet:
     one on both sides, so it fails if the `let`-as-identifier bug is
     reintroduced."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     @pytest.fixture()
     def snapshot(self, tmp_path):
         _write(
@@ -302,6 +329,9 @@ class TestCrossLanguageR5WithLet:
 
     # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
     # frob:ticket T-0487
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_r5_fires_across_languages_with_a_let_binding(self, snapshot):
         report = find_clones(
             snapshot, DupConfig(min_tokens=1, threshold=0.99)
@@ -439,6 +469,9 @@ class TestErrorChannelDupPairing:
     and left uncollapsed it sinks R4's near-miss floor on its own,
     independent of the error-channel question this ticket is about."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (5 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     @pytest.fixture()
     def snapshot(self, tmp_path):
         _write(
@@ -490,6 +523,9 @@ class TestErrorChannelDupPairing:
 
     # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
     # frob:ticket T-0785
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (3 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_result_and_optional_git_common_dir_register_as_a_duplicate_group(
         self, snapshot
     ):
@@ -641,6 +677,9 @@ class TestConditionalShapeDupPairing:
     -- below `_R4_SIMILARITY_FLOOR`) must register as a duplicate group
     once this axis is also normalized away."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (5 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     @pytest.fixture()
     def snapshot(self, tmp_path):
         _write(
@@ -695,6 +734,9 @@ class TestConditionalShapeDupPairing:
 
     # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
     # frob:ticket T-0801
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (3 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_combined_vs_split_guard_git_common_dir_registers_as_a_duplicate_group(
         self, snapshot
     ):
@@ -733,6 +775,9 @@ class TestRealGitCommonDirPairRegisters:
 
     # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
     # frob:ticket T-0801
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (3 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_real_git_common_dir_pair_registers_as_a_duplicate_group(self, snapshot):
         report = find_clones(
             snapshot, DupConfig(min_tokens=5, threshold=0.01)
@@ -752,6 +797,9 @@ class TestErrorChannelNormalizationDoesNotOverFire:
     error-channel exit somewhere in their body -- normalizing the exit
     SHAPE must not blur everything else two functions do."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_dup.py (5 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     @pytest.fixture()
     def snapshot(self, tmp_path):
         _write(

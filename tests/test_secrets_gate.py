@@ -224,6 +224,9 @@ class TestProviderParityT0427:
         # pattern (table ordering discipline).
         assert not any("basic-auth-url" in v.message for v in violations)
 
+    # frob:waive DUP001 reason="parallel test methods within test_secrets_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_hashicorp_vault_service_token_flagged_sec001(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
         repo = tmp_path / "repo"
@@ -236,6 +239,9 @@ class TestProviderParityT0427:
         matches = [v for v in violations if "hashicorp-vault-service" in v.message]
         assert len(matches) == 1
 
+    # frob:waive DUP001 reason="parallel test methods within test_secrets_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_hashicorp_vault_batch_token_flagged_sec001(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
         repo = tmp_path / "repo"
@@ -593,6 +599,9 @@ class TestFakeMarkerStaleness:
         violations = fake_marker_staleness_gate(repo)
         assert violations == ()
 
+    # frob:waive DUP001 reason="parallel test methods within test_secrets_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_marker_discharging_email_shaped_pii_does_not_fire(
         self, tmp_path: Path
     ) -> None:
@@ -631,6 +640,9 @@ class TestFakeMarkerStaleness:
         violations = fake_marker_staleness_gate(repo)
         assert violations == ()
 
+    # frob:waive DUP001 reason="parallel test methods within test_secrets_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_docstring_style_mention_is_not_a_staleness_site(
         self, tmp_path: Path
     ) -> None:

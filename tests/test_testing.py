@@ -1048,6 +1048,11 @@ class TestMultipleRunnersPerLanguage:
 
 
 class TestCollectRustTests:
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across \
+    # test_docblocks_gate.py, test_testing.py (2 sites) -- each file \
+    # exercises a structurally similar check for a distinct \
+    # domain/module with the same arrange-act shape; extracting would \
+    # blur which domain owns which check"
     def _write_crate(self, root: Path) -> None:
         _write(
             root,
@@ -1278,6 +1283,9 @@ class TestFindCrates:
             """,
         )
 
+    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def _member_crate(self, root: Path, rel: str, name: str) -> None:
         _write(
             root,
@@ -2191,6 +2199,9 @@ class TestCollectCppTests:
     CMake build directories, mirroring `TestCollectRustTests`'s structure."""
 
     # frob:ticket T-0587
+    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def _write_project(self, root: Path) -> None:
         _write(
             root,
@@ -2289,6 +2300,9 @@ class TestCollectCppTests:
         assert any("ctest not found" in msg for msg in caplog.messages)
 
     # frob:ticket T-0587
+    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_collect_cpp_tests_genuine_failure_is_err(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -2312,6 +2326,9 @@ class TestCollectCppTests:
         assert result.danger_err == TestingError.CollectFailed
 
     # frob:ticket T-0587
+    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_collect_cpp_tests_unparseable_json_is_err(
         self, tmp_path: Path, monkeypatch
     ) -> None:

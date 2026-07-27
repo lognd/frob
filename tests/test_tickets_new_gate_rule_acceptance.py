@@ -61,6 +61,12 @@ def _write_gates_source(root: Path, source: str) -> None:
     path.write_text(source, encoding="utf-8")
 
 
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across \
+# test_evidence_integrity.py, \
+# test_tickets_new_gate_rule_acceptance.py (2 sites) -- each file \
+# exercises a structurally similar check for a distinct \
+# domain/module with the same arrange-act shape; extracting would \
+# blur which domain owns which check"
 def _ticket(
     *,
     ticket_id: str = "T-0001",

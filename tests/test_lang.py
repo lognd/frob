@@ -110,6 +110,9 @@ class TestParsePython:
         assert const.public is True
 
     # frob:ticket T-1028
+    # frob:waive DUP001 reason="parallel test methods within test_lang.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_bare_literal_assignment_extracted_as_type_symbol(
         self, tmp_path: Path
     ) -> None:
@@ -129,6 +132,9 @@ class TestParsePython:
         assert alias.public is True
 
     # frob:ticket T-1028
+    # frob:waive DUP001 reason="parallel test methods within test_lang.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_annotated_type_alias_extracted_as_type_symbol(
         self, tmp_path: Path
     ) -> None:

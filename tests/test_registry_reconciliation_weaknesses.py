@@ -51,6 +51,10 @@ _WEAKNESSES_CWE_TOTAL = 944
 
 
 # frob:ticket T-0384
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across 8 sibling test modules \
+# (8 sites) -- each file exercises a structurally similar check for \
+# a distinct domain/module with the same arrange-act shape; \
+# extracting would blur which domain owns which check"
 def _real_queue() -> TicketQueue:
     """Load the repo's real ticket queue, falling back to an empty queue
     only if the ledger itself fails to parse (never masks a real
@@ -189,6 +193,10 @@ class TestExhaustivenessGateOverRealWeaknesses:
     default gate run), not a side-channel-only assertion."""
 
     # frob:ticket T-0384
+    # frob:waive DUP001 reason="parallel per-domain test scaffolding across 8 sibling test modules \
+    # (8 sites) -- each file exercises a structurally similar check for \
+    # a distinct domain/module with the same arrange-act shape; \
+    # extracting would blur which domain owns which check"
     def test_no_weaknesses_violations(self) -> None:
         real_queue = _real_queue()
 

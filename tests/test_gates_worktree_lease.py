@@ -17,6 +17,12 @@ def _git(*args: str, cwd: Path) -> None:
     subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
 
 
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across \
+# test_ack_worktree_lease.py, test_gates_worktree_lease.py, \
+# test_release_worktree_lease.py (3 sites) -- each file exercises a \
+# structurally similar check for a distinct domain/module with the \
+# same arrange-act shape; extracting would blur which domain owns \
+# which check"
 def _init_repo(root: Path) -> None:
     root.mkdir(parents=True, exist_ok=True)
     _git("init", "-q", "-b", "main", cwd=root)

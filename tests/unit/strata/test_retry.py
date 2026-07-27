@@ -132,6 +132,9 @@ class TestNonIdempotentRetry:
     # frob:tests \
     # tests/unit/strata/test_retry.py::TestNonIdempotentRetry.test_idempotent_dst_disch\
     # arges
+    # frob:waive DUP001 reason="parallel test methods within test_retry.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_idempotent_dst_discharges(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -156,6 +159,9 @@ class TestNonIdempotentRetry:
     # frob:tests \
     # tests/unit/strata/test_retry.py::TestNonIdempotentRetry.test_idempotency_key_dst_\
     # discharges
+    # frob:waive DUP001 reason="parallel test methods within test_retry.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_idempotency_key_dst_discharges(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

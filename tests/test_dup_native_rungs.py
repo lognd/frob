@@ -79,6 +79,9 @@ class TestNativeRungsEnabled:
     """Enabling `native_rungs_enabled` restores the full R3-R5 ladder,
     matching the always-on behavior test_dup_rungs.py exercises."""
 
+    # frob:waive DUP001 reason="parallel test methods within test_dup_native_rungs.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_enabled_finds_the_r4_gapped_clone(self, snapshot):
         # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
         report = find_clones(
@@ -100,6 +103,9 @@ class TestNativeRungsEnabled:
         ]
         assert matched, f"expected an r4 hit for process_gapped_a/b, got: {r4}"
 
+    # frob:waive DUP001 reason="parallel test methods within test_dup_native_rungs.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_enabled_finds_the_r5_dataflow_clone(self, snapshot):
         # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
         report = find_clones(

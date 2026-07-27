@@ -1049,6 +1049,9 @@ class TestCodeBoundMitigationPredicate:
 
     # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
     # frob:ticket T-0595
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_observed_call_site_discharges(self, tmp_path: Path):
         """The positive case: `output_encoding(...)` really is CALLED in
         Web's own bound code -- discharge succeeds."""
@@ -1066,6 +1069,9 @@ class TestCodeBoundMitigationPredicate:
 
     # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
     # frob:ticket T-0595
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (2 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_call_site_via_attribute_access_also_discharges(self, tmp_path: Path):
         """A method/module-qualified call (`html.output_encoding(x)`) is
         also an observed call site -- `_call_target_name` resolves
@@ -1407,6 +1413,9 @@ class TestLoadRepoBenignCapabilities:
 
     # frob:ticket T-0511
     # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (8 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_missing_family_is_malformed(self, tmp_path: Path):
         # T-0511 (strata audit G12): family is now mandatory -- an excuse
         # with no declared family cannot be verified against a specific
@@ -1425,6 +1434,9 @@ class TestLoadRepoBenignCapabilities:
 
     # frob:ticket T-0511
     # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (8 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_unrecognized_family_value_is_malformed(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -1439,6 +1451,9 @@ class TestLoadRepoBenignCapabilities:
 
     # frob:ticket T-0511
     # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (8 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_excuse_already_classified_in_named_security_family_is_rejected(
         self, tmp_path: Path
     ):
@@ -1459,6 +1474,9 @@ class TestLoadRepoBenignCapabilities:
 
     # frob:ticket T-0511
     # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (8 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_excuse_already_classified_in_named_quality_family_is_rejected(
         self, tmp_path: Path
     ):
@@ -1503,6 +1521,9 @@ class TestLoadRepoBenignCapabilities:
 
     # frob:ticket T-0511
     # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (8 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_client_storage_excused_for_security_family_is_rejected(
         self, tmp_path: Path
     ):

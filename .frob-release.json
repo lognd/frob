@@ -183,9 +183,11 @@
     "src/frob/arch/_mayraise.py::UBIQUITOUS_TIER": "c4514f553a7a56aca97ffbf2b10356bb400cd2214e27d6bffcbd3539189f4bd7",
     "src/frob/arch/_mayraise.py::UNKNOWN": "5e1419b54787c00464c3c5dd248237e15b650db564f916179f49efa9aa02d78a",
     "src/frob/arch/_mayraise.py::compute_may_raise": "1f278e21843f62455f569b82cbe764acf79b53bc2d70d199b6664a4b65f8cf50",
+    "src/frob/arch/_models.py::ArchCategory": "552574f95fb98b7e2ec70d9345c9dbcde254f57276ab0f267e82a60f89de947a",
     "src/frob/arch/_models.py::ArchResult": "bb142d78c52b04dc8ce918d87d3be9ff04153b944668c3836d9f0c241930a74d",
     "src/frob/arch/_models.py::ArchResult.as_json": "48b9248523b087dc9e7b32cb2edf9190690bf1624ca640ac8c00b6a7182c4266",
     "src/frob/arch/_models.py::ArchResult.as_text": "172dd4d365ee80aaeb22db8a426cfe5fe2ad5b39de7e8b75834a087a19975f51",
+    "src/frob/arch/_models.py::ArchSeverity": "693dcddbc88372758307775514d805d4be40f1404a6e2d8fc8392f97e3725de9",
     "src/frob/arch/_models.py::ArchSuggestion": "ed51f32ff65980a28b969f4187c266ee5af7cd754e17ac53614c10065c8c5f5c",
     "src/frob/arch/_normalized.py::LanguageAdapter": "eb047060bec26ef166e76f43ce880633849b4813f5526bc4be4cf2c722e245d4",
     "src/frob/arch/_normalized.py::LanguageAdapter.adapt": "0c57832dc79ce96209c1a1ae671bbb1808b6b61baffc12c19d893376a6afe64e",
@@ -619,6 +621,7 @@
     "src/frob/gitlog/__init__.py::GitLogResult.as_json": "48b9248523b087dc9e7b32cb2edf9190690bf1624ca640ac8c00b6a7182c4266",
     "src/frob/gitlog/__init__.py::GitLogResult.as_text": "172dd4d365ee80aaeb22db8a426cfe5fe2ad5b39de7e8b75834a087a19975f51",
     "src/frob/gitlog/__init__.py::GitLogResult.groups": "492659e9173822832d7b7076a2035d8fb2b3e159effb0648a20747c77d7f8e98",
+    "src/frob/gitlog/__init__.py::GranularityLevel": "9fe10e310ec81de17d492f7605678d0d39c0f632ba00ce769577262b3689f7b2",
     "src/frob/gitlog/__init__.py::git_log": "237dd98269aed7c42bd437fafbcb31433e8c72fb0077417c72cf928ecc5c07c3",
     "src/frob/graph/__init__.py::GraphError": "f7585d69a783d9d7a28209ed8ea427b37eb3a03df9b99b39bd00c987d905df41",
     "src/frob/graph/__init__.py::build_graph": "b4eb47a618c77ecebf4289339ff76a6343bd9ca19c4800c295797b1477fad00a",
@@ -882,6 +885,7 @@
     "src/frob/process/parsers/clang_tidy.py::parse_clang_tidy": "f108390d5bf1d8a69a0e56dfd659acfbff563e40cc8350357fe729698cb71d76",
     "src/frob/process/parsers/common.py::Diagnostic": "24effcffc9f0b718b8fb10a41351bc4e7b5f6789affc0edb7ef5b1bbd23e3be8",
     "src/frob/process/parsers/common.py::Diagnostic.as_text": "172dd4d365ee80aaeb22db8a426cfe5fe2ad5b39de7e8b75834a087a19975f51",
+    "src/frob/process/parsers/common.py::Severity": "180072267f55dc20b069d0c6a49ac3fde1a1b6c227edfa3308901c647ca60ea0",
     "src/frob/process/parsers/common.py::TestCase": "d31024445c16ba0a47c276a68de97f53e1f24d843da219ebada999e5e6681012",
     "src/frob/process/parsers/common.py::ToolResult": "470219886273dac205d6fd3fddd091c3b06e2c9cde183268b83e99141e2ddd6b",
     "src/frob/process/parsers/common.py::ToolResult.as_json": "48b9248523b087dc9e7b32cb2edf9190690bf1624ca640ac8c00b6a7182c4266",
@@ -929,7 +933,9 @@
     "src/frob/release/__init__.py::rewrite_pyproject_version": "2f8b4af9f2a28277e5e4c37e4220b9ccba50906a50596bb3edd027eec81f182b",
     "src/frob/release/__init__.py::satisfies": "96bf71bc7e49cfd989d1314b27c47da286e525fe21f38f4829104d0dff750bf7",
     "src/frob/release/__init__.py::stamp": "671e6969a9ed515abd27810eec2f1dc9b90b0cd304d14561ff949bde9c2bbf36",
+    "src/frob/render/_color.py::ColorFlag": "44a7f61bf7f217bfd87267daf039daa7646a19ede5c09cf21d910051d71cac3c",
     "src/frob/render/_color.py::resolve_color": "4ae7ef6dcf0c712e6d9f9c82802c94217331326dd162788aa64126a97014f9be",
+    "src/frob/render/_elements.py::Status": "f652823de2640bd2750b8134158b37329808ffd82820bcc2916efba2c5e7c529",
     "src/frob/render/_elements.py::count_deltas": "46d478b2a764ae707a1ae561bb6452dd598be2cd6481ca08ede004b5aab98231",
     "src/frob/render/_elements.py::count_summary": "2e6081f6adf63dd917d9f621780c298c5a4266a9d5f0d539dd56f650da1fc203",
     "src/frob/render/_elements.py::heading": "0f3f3ef31e912780fc6ac0beb794912bc1aa4b7258a3930b791a98dc0cc65f56",
@@ -1739,5 +1745,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.192.0"
+  "version": "0.193.0"
 }

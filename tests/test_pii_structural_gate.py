@@ -111,6 +111,9 @@ class TestFieldNames:
         assert any(v.rule == "PII010" for v in violations)
 
     # frob:ticket T-0971
+    # frob:waive DUP001 reason="parallel test methods within test_pii_structural_gate.py (4 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_camelcase_date_of_birth_field_fires(self) -> None:
         """T-0971 finding 5: a multi-word camelCase field name must still
         match its underscored multi-word keyword."""
@@ -125,6 +128,9 @@ class TestFieldNames:
         assert any(v.rule == "PII010" for v in violations)
 
     # frob:ticket T-0971
+    # frob:waive DUP001 reason="parallel test methods within test_pii_structural_gate.py (4 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_orm_declarative_base_field_fires(self) -> None:
         """T-0971 (gates-quality audit finding 14): a SQLAlchemy 2.0
         `DeclarativeBase` subclass is a data structure PII010 must scan --
@@ -139,6 +145,9 @@ class TestFieldNames:
         assert any(v.rule == "PII010" for v in violations)
 
     # frob:ticket T-0971
+    # frob:waive DUP001 reason="parallel test methods within test_pii_structural_gate.py (4 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_django_model_field_fires(self) -> None:
         """T-0971 finding 14: a Django `models.Model` subclass is a data
         structure PII010 must scan."""
@@ -240,6 +249,9 @@ class TestDdlSchema:
         violations = _scan_python_ddl(tree, "example.py")
         assert any(v.rule == "PII010" for v in violations)
 
+    # frob:waive DUP001 reason="parallel test methods within test_pii_structural_gate.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_alembic_positional_column_ssn_fires(self) -> None:
         src = (
             "import sqlalchemy as sa\n"
@@ -253,6 +265,9 @@ class TestDdlSchema:
         violations = _scan_python_ddl(tree, "example.py")
         assert any(v.rule == "PII010" for v in violations)
 
+    # frob:waive DUP001 reason="parallel test methods within test_pii_structural_gate.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_raw_sql_create_table_email_fires(self) -> None:
         src = (
             "from alembic import op\n\n"
@@ -265,6 +280,9 @@ class TestDdlSchema:
         violations = _scan_python_ddl(tree, "example.py")
         assert any(v.rule == "PII010" for v in violations)
 
+    # frob:waive DUP001 reason="parallel test methods within test_pii_structural_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_raw_sql_create_table_unrelated_columns_do_not_fire(self) -> None:
         src = (
             "from alembic import op\n\n"
@@ -277,6 +295,9 @@ class TestDdlSchema:
         violations = _scan_python_ddl(tree, "example.py")
         assert violations == ()
 
+    # frob:waive DUP001 reason="parallel test methods within test_pii_structural_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_orm_column_unrelated_field_does_not_fire(self) -> None:
         src = (
             "from sqlalchemy import Column, Integer\n\n"
@@ -330,6 +351,9 @@ class TestEmailShapeValues:
         violations = _scan_python_email_values(tree, "example.py", src)
         assert any(v.rule == "PII011" for v in violations)
 
+    # frob:waive DUP001 reason="parallel test methods within test_pii_structural_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_fake_marker_on_same_line_discharges(self) -> None:
         # T-0968: bare marker no longer discharges -- reason="..." required.
         src = (
@@ -341,6 +365,9 @@ class TestEmailShapeValues:
         violations = _scan_python_email_values(tree, "example.py", src)
         assert violations == ()
 
+    # frob:waive DUP001 reason="parallel test methods within test_pii_structural_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_fake_marker_on_line_above_discharges(self) -> None:
         # T-0968: bare marker no longer discharges -- reason="..." required.
         src = (
@@ -448,6 +475,9 @@ class TestKeywordSweep:
         violations = _scan_python_keyword_sweep(tree, "example.py", src)
         assert violations == ()
 
+    # frob:waive DUP001 reason="parallel test methods within test_pii_structural_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_tokenizer_identifier_does_not_falsely_match_token(self) -> None:
         """Whole-token match, not substring, same T-0219 discipline PII010
         already applies -- `tokenizer` must not match the `token` keyword."""
@@ -472,6 +502,9 @@ class TestKeywordSweep:
         assert any(v.rule == "PII010" for v in field_violations)
         assert not any(v.rule == "PII012" for v in sweep_violations)
 
+    # frob:waive DUP001 reason="parallel test methods within test_pii_structural_gate.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_frob_directive_comment_does_not_fire(self) -> None:
         """T-0539: a `# frob:secret-fake` marker comment literally contains
         the word "secret" -- the exact PII011 escape hatch would otherwise

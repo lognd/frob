@@ -147,6 +147,9 @@ class TestLiveTrackerCitations:
         citations = live_tracker_citations(tmp_path, "T-0605")
         assert len(citations) == 1
 
+    # frob:waive DUP001 reason="parallel test methods within test_tickets_live_tracker.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_unrelated_ticket_id_not_matched(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_unrelated_ticket_id_not_matched  # noqa: E501
         _init_repo(tmp_path)
@@ -157,6 +160,9 @@ class TestLiveTrackerCitations:
         _commit_all(tmp_path, "add waiver")
         assert live_tracker_citations(tmp_path, "T-0605") == ()
 
+    # frob:waive DUP001 reason="parallel test methods within test_tickets_live_tracker.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_own_scope_citation_excluded(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_own_scope_citation_excluded  # noqa: E501
         # T-0854 rework (reviewer MAJOR finding, kept under its original
@@ -223,6 +229,9 @@ class TestLiveTrackerCitations:
         citations = live_tracker_citations(tmp_path, "T-0605", base_ref="main")
         assert citations == ()
 
+    # frob:waive DUP001 reason="parallel test methods within test_tickets_live_tracker.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_unresolvable_base_ref_fails_closed(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_unresolvable_base_ref_fails_closed  # noqa: E501
         # An unresolvable base_ref (a typo, or a repo whose default branch
@@ -241,6 +250,9 @@ class TestLiveTrackerCitations:
         )
         assert len(citations) == 1
 
+    # frob:waive DUP001 reason="parallel test methods within test_tickets_live_tracker.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_draft_id_always_clear(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_draft_id_always_clear  # noqa: E501
         _init_repo(tmp_path)
