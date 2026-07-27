@@ -296,6 +296,58 @@ class TestT0844MutationEvidenceOnClose:
         assert result.is_ok
 
 
+# ---------------------------------------------------------------------------
+# T-0417 N-02: `frob ticket close` must re-verify evidence against the
+# CURRENT tree, not trust the pass status recorded at evidence-record time
+# (docs/audits/tickets-testing-round2.md).
+# ---------------------------------------------------------------------------
+# frob:ticket T-0417
+class TestT0417ReverifyEvidenceOnClose:
+    def test_transition_rejects_when_evidence_reverified_false(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_rejects_when_evidence_reverified_false  # noqa: E501
+        ticket = _ticket(
+            state=TicketState.IN_PROGRESS,
+            evidence=("tests/test_thing.py::test_x",),
+            body="## Description\nx\n\n## Done report\nDone.\n",
+        )
+        _write(tmp_path, ticket)
+        result = transition(
+            tmp_path, "T-0001", TicketState.DONE, evidence_reverified=False
+        )
+        assert result.is_err
+        assert result.danger_err == TicketError.EvidenceNotPassing
+
+    def test_transition_allows_when_evidence_reverified_true(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_allows_when_evidence_reverified_true  # noqa: E501
+        ticket = _ticket(
+            state=TicketState.IN_PROGRESS,
+            evidence=("tests/test_thing.py::test_x",),
+            body="## Description\nx\n\n## Done report\nDone.\n",
+        )
+        _write(tmp_path, ticket)
+        result = transition(
+            tmp_path, "T-0001", TicketState.DONE, evidence_reverified=True
+        )
+        assert result.is_ok
+
+    def test_transition_permissive_when_evidence_reverified_none(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_permissive_when_evidence_reverified_none  # noqa: E501
+        ticket = _ticket(
+            state=TicketState.IN_PROGRESS,
+            evidence=("tests/test_thing.py::test_x",),
+            body="## Description\nx\n\n## Done report\nDone.\n",
+        )
+        _write(tmp_path, ticket)
+        result = transition(tmp_path, "T-0001", TicketState.DONE)
+        assert result.is_ok
+
+
 class TestD03SubstantiveDoneReport:
     def test_empty_section_rejected(self) -> None:
         # frob:tests tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_empty_section_rejected

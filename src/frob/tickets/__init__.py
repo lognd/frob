@@ -2328,6 +2328,7 @@ def _start_blockers(ticket: Ticket, queue: dict[str, Ticket]) -> list[str]:
     ]
 
 
+# frob:ticket T-0417
 def _transition_guard(
     root: Path,
     ticket: Ticket,
@@ -2337,6 +2338,7 @@ def _transition_guard(
     covers_scope: bool | None = None,
     reviewed: bool | None = None,
     mutation_evidence: bool | None = None,
+    evidence_reverified: bool | None = None,
 ) -> Result[None, TicketError]:
     """Enforce start-blocker and done-evidence preconditions for `to`."""
     if to == TicketState.IN_PROGRESS:
@@ -2354,6 +2356,7 @@ def _transition_guard(
             covers_scope=covers_scope,
             reviewed=reviewed,
             mutation_evidence=mutation_evidence,
+            evidence_reverified=evidence_reverified,
         )
     return Ok(None)
 
@@ -2391,6 +2394,7 @@ def _open_descendant_ids(ticket: Ticket, queue: dict[str, Ticket]) -> tuple[str,
 # hand-edited after evidence was recorded, or a cmd: entry can be
 # hand-pasted directly into the ledger, either of which would otherwise
 # slip a code-kind ticket through close on unverifiable evidence.
+# frob:ticket T-0417
 def _done_transition_guard(
     root: Path,
     ticket: Ticket,
@@ -2399,6 +2403,7 @@ def _done_transition_guard(
     covers_scope: bool | None = None,
     reviewed: bool | None = None,
     mutation_evidence: bool | None = None,
+    evidence_reverified: bool | None = None,
 ) -> Result[None, TicketError]:
     """Enforce DONE-transition preconditions: evidence + substantive Done
     report present, no cmd: evidence on a kind that disallows it, (T-0715)
@@ -2414,26 +2419,35 @@ def _done_transition_guard(
     does not carry an unwaived ERROR-severity TEST016 confirmatory-only-
     evidence finding, mirroring `frob.tickets._land._check_mutation_
     evidence`'s land-time refusal so a security/bug ticket closed directly
-    (never landed) is not exempt from the same obligation, and (T-0854,
+    (never landed) is not exempt from the same obligation, (T-0417 N-02,
+    when the caller supplies `evidence_reverified=False`) that a fresh
+    re-run of the ticket's own non-cmd evidence ids against the CURRENT
+    tree still passes -- closing must never trust a stale record-time
+    "passed" observation the way `land`'s own `_reverify_evidence_post_
+    merge` already refuses to for the merge path (D-05); this is the
+    direct-close twin of that same obligation, and (T-0854,
     ALWAYS, not injected) that no registry disposition or waiver still
     cites `ticket.id` as its live tracker (`frob.tickets._live_tracker.
     live_tracker_citations`) -- the T-0605-orphaned-41-rows incident class.
 
-    `covers_scope`/`reviewed`/`mutation_evidence` are injected, never
-    computed here: answering "does an evidence id cover a touched/scope
-    symbol" needs the obligation graph (`frob.graph`) and the `TESTS`-edge
-    index `frob.testing`/`frob.gates` already build, answering "is there an
-    approve review naming HEAD" needs `git rev-parse` under the caller's
-    root, and answering "did the bound evidence kill a mutant" needs
-    `frob.gates.mutation_evidence_violations` -- `frob.tickets` deliberately
-    stays free of all three dependencies (docs/rework.md cycle-avoidance --
-    `frob.gates` is the one module allowed to join graph + tickets). `None`
-    (the default, matching every caller before D-02/T-0571/T-0844) skips
-    each check entirely, so existing callers/tests are unaffected; a caller
+    `covers_scope`/`reviewed`/`mutation_evidence`/`evidence_reverified` are
+    injected, never computed here: answering "does an evidence id cover a
+    touched/scope symbol" needs the obligation graph (`frob.graph`) and the
+    `TESTS`-edge index `frob.testing`/`frob.gates` already build, answering
+    "is there an approve review naming HEAD" needs `git rev-parse` under
+    the caller's root, answering "did the bound evidence kill a mutant"
+    needs `frob.gates.mutation_evidence_violations`, and answering "does
+    the evidence still pass right now" needs a real test-runner spawn --
+    `frob.tickets` deliberately stays free of all four dependencies
+    (docs/rework.md cycle-avoidance -- `frob.gates`/`frob.app` are the
+    layers allowed to join graph/runner + tickets). `None` (the default,
+    matching every caller before D-02/T-0571/T-0844/T-0417) skips each
+    check entirely, so existing callers/tests are unaffected; a caller
     with the needed context (`frob.gates.evidence_covers_scope`,
     `has_approved_review_for_commit`, `frob.gates.mutation_evidence_
-    violations`, or its own equivalent) opts in by passing an explicit
-    `True`/`False`. `live_tracker_citations`, by contrast, is a plain `git
+    violations`, `frob.app.ticket_runner._reverify_evidence_for_close`, or
+    its own equivalent) opts in by passing an explicit `True`/`False`.
+    `live_tracker_citations`, by contrast, is a plain `git
     grep` under `root` (against `current_branch(root)` as the diff base,
     T-0854 rework's diff-aware exemption -- see the module docstring in
     `frob.tickets._live_tracker`) -- cheap enough (T-0854's own PERF
@@ -2501,6 +2515,17 @@ def _done_transition_guard(
             ticket.kind,
         )
         return Err(TicketError.EvidenceConfirmatoryOnly)
+    if evidence_reverified is False:
+        _log.warning(
+            "tickets: %s cannot close, a fresh re-run of its own recorded "
+            "evidence against the current tree did not pass -- the "
+            "work was tested once but has since regressed; fix the break "
+            "or re-record evidence (`frob ticket evidence %s <node-id>...`) "
+            "and retry",
+            ticket.id,
+            ticket.id,
+        )
+        return Err(TicketError.EvidenceNotPassing)
     from frob.gitio import current_branch
 
     branch = current_branch(root)
@@ -2565,7 +2590,11 @@ def _load_ticket_and_queue(
 # frob:tests tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_permissive_when_mutation_evidence_none  # noqa: E501
 # frob:tests tests/test_tickets_tiers.py::TestCloseOpenDescendantGuard.test_epic_close_refused_with_open_descendant  # noqa: E501
 # frob:tests tests/test_tickets_tiers.py::TestCloseOpenDescendantGuard.test_epic_close_allowed_once_descendant_done  # noqa: E501
+# frob:tests tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_rejects_when_evidence_reverified_false  # noqa: E501
+# frob:tests tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_allows_when_evidence_reverified_true  # noqa: E501
+# frob:tests tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_permissive_when_evidence_reverified_none  # noqa: E501
 # frob:ticket T-0715
+# frob:ticket T-0417
 def transition(
     root: Path,
     ticket_id: str,
@@ -2574,16 +2603,19 @@ def transition(
     covers_scope: bool | None = None,
     reviewed: bool | None = None,
     mutation_evidence: bool | None = None,
+    evidence_reverified: bool | None = None,
 ) -> Result[Ticket, TicketError]:
     """Enforce the state machine; `done` also requires evidence and a
     substantive Done report, (D-02) an evidence id covering a touched/
     scope symbol whenever the caller supplies `covers_scope=False`,
     (T-0571) an approve-verdict review record naming the current commit
-    whenever the caller supplies `reviewed=False`, and (T-0844) refuses on
+    whenever the caller supplies `reviewed=False`, (T-0844) refuses on
     an unwaived ERROR-severity TEST016 confirmatory-only-evidence finding
-    whenever the caller supplies `mutation_evidence=False` (see
-    `_done_transition_guard`'s docstring for why these are injected rather
-    than computed here)."""
+    whenever the caller supplies `mutation_evidence=False`, and (T-0417
+    N-02) refuses when a fresh re-run of the ticket's recorded evidence
+    against the CURRENT tree no longer passes, whenever the caller
+    supplies `evidence_reverified=False` (see `_done_transition_guard`'s
+    docstring for why these are injected rather than computed here)."""
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
@@ -2622,6 +2654,7 @@ def transition(
         covers_scope=covers_scope,
         reviewed=reviewed,
         mutation_evidence=mutation_evidence,
+        evidence_reverified=evidence_reverified,
     )
     if guard.is_err:
         return Err(guard.danger_err)

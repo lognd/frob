@@ -4118,6 +4118,103 @@ class TestCloseMutationEvidenceForTicket:
         assert result is None
 
 
+# frob:ticket T-0417
+class TestReverifyEvidenceForClose:
+    """N-02 (docs/audits/tickets-testing-round2.md): unit tests over
+    `frob.app.ticket_runner._reverify_evidence_for_close` -- proving the
+    still-passes/no-longer-passes/no-evidence/collection-failed branches
+    are each real, adversarially-covered behavior."""
+
+    def _ticket(self) -> Any:
+        from datetime import date as _date
+
+        from frob.tickets._models import Ticket
+
+        return Ticket(
+            id="T-0900",
+            title="sample",
+            state=TicketState.IN_PROGRESS,
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            created=_date(2026, 1, 1),
+            scope=("m.py",),
+            evidence=("test_m.py::test_add",),
+            body="## Description\nx\n",
+        )
+
+    def test_no_non_cmd_evidence_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestReverifyEvidenceForClose.test_no_non_cmd_evidence_returns_none  # noqa: E501
+        from datetime import date as _date
+
+        from frob.app import ticket_runner
+        from frob.tickets._models import Ticket
+
+        ticket = Ticket(
+            id="T-0900",
+            title="sample",
+            state=TicketState.IN_PROGRESS,
+            kind=TicketKind.DOCS,
+            origin=Origin.HUMAN,
+            created=_date(2026, 1, 1),
+            evidence=("cmd:true exit=0 sha256=abcdef012345",),
+            body="## Description\nx\n",
+        )
+        result = ticket_runner._reverify_evidence_for_close(tmp_path, ticket)
+        assert result is None
+
+    def test_collection_failure_returns_false(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestReverifyEvidenceForClose.test_collection_failure_returns_false  # noqa: E501
+        from frob.app import ticket_runner
+
+        monkeypatch.setattr(
+            ticket_runner,
+            "_collect_python_and_rust_ids",
+            lambda root: Err("boom"),
+        )
+        result = ticket_runner._reverify_evidence_for_close(tmp_path, self._ticket())
+        assert result is False
+
+    def test_still_passing_returns_true(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestReverifyEvidenceForClose.test_still_passing_returns_true  # noqa: E501
+        from frob.app import ticket_runner
+
+        monkeypatch.setattr(
+            ticket_runner,
+            "_collect_python_and_rust_ids",
+            lambda root: Ok((frozenset({"test_m.py::test_add"}), frozenset(), {})),
+        )
+        monkeypatch.setattr(
+            ticket_runner,
+            "_verify_ids_passing",
+            lambda root, ids, py, rs, runners: frozenset(ids),
+        )
+        result = ticket_runner._reverify_evidence_for_close(tmp_path, self._ticket())
+        assert result is True
+
+    def test_no_longer_passing_returns_false(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestReverifyEvidenceForClose.test_no_longer_passing_returns_false  # noqa: E501
+        from frob.app import ticket_runner
+
+        monkeypatch.setattr(
+            ticket_runner,
+            "_collect_python_and_rust_ids",
+            lambda root: Ok((frozenset({"test_m.py::test_add"}), frozenset(), {})),
+        )
+        monkeypatch.setattr(
+            ticket_runner,
+            "_verify_ids_passing",
+            lambda root, ids, py, rs, runners: frozenset(),
+        )
+        result = ticket_runner._reverify_evidence_for_close(tmp_path, self._ticket())
+        assert result is False
+
+
 # frob:ticket T-0844
 class TestCloseFailureHintMutationEvidence:
     """T-0844 rework (reviewer REJECT): `_close_failure_hint`'s
@@ -4197,6 +4294,9 @@ class TestCloseSkipMutationEvidenceBypass:
         monkeypatch.setattr(
             ticket_runner, "_covers_scope_for_ticket", lambda root, ticket: None
         )
+        monkeypatch.setattr(
+            ticket_runner, "_reverify_evidence_for_close", lambda root, ticket: None
+        )
         cfg = AppConfig(ticket_id="T-0900", ticket_close_skip_mutation_evidence=True)
         ticket_runner._close(tmp_path, cfg)
         loaded = load_all(tmp_path)
@@ -4219,6 +4319,9 @@ class TestCloseSkipMutationEvidenceBypass:
         )
         monkeypatch.setattr(
             ticket_runner, "_covers_scope_for_ticket", lambda root, ticket: None
+        )
+        monkeypatch.setattr(
+            ticket_runner, "_reverify_evidence_for_close", lambda root, ticket: None
         )
         cfg = AppConfig(ticket_id="T-0900", ticket_close_skip_mutation_evidence=False)
         with pytest.raises(SystemExit):

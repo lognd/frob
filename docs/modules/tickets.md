@@ -141,7 +141,8 @@ def set_priority(root: Path, ticket_id: str, priority: Priority) -> Result[Ticke
 def transition(root: Path, ticket_id: str, to: TicketState, *,
                 covers_scope: bool | None = None,
                 reviewed: bool | None = None,
-                mutation_evidence: bool | None = None) -> Result[Ticket, TicketError]
+                mutation_evidence: bool | None = None,
+                evidence_reverified: bool | None = None) -> Result[Ticket, TicketError]
     # Enforces the state machine; done additionally requires evidence
     # non-empty and a substantive Done report section (a bare heading with
     # nothing under it no longer counts, T-0398 D-03). `covers_scope`
@@ -163,7 +164,15 @@ def transition(root: Path, ticket_id: str, to: TicketState, *,
     # cycle-avoidance reason as `covers_scope`; `mutation_evidence=None`
     # (default) skips the check. `frob ticket close` wires this the same
     # way `frob ticket land` already did (see "Mutation-evidence
-    # obligation" below).
+    # obligation" below). T-0417 (round-2 audit N-02): `evidence_
+    # reverified`, when the caller supplies `False`, additionally refuses
+    # (Err(EvidenceNotPassing)) when a FRESH re-run of the ticket's own
+    # non-cmd evidence against the CURRENT tree no longer passes --
+    # closing must never trust the pass observation made once, back when
+    # `frob ticket evidence` first recorded it. Computed via `frob.app.
+    # ticket_runner._reverify_evidence_for_close`, the direct-close twin of
+    # `land`'s own post-merge re-verify (`_reverify_evidence_post_merge`,
+    # D-05); `evidence_reverified=None` (default) skips the check.
 def unbound_acceptance(ticket: Ticket) -> tuple[AcceptanceCriterion, ...]
     # T-0572: acceptance criteria with no evidence id that both the
     # criterion itself lists AND still resolves against ticket.evidence --

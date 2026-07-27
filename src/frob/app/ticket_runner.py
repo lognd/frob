@@ -1866,6 +1866,56 @@ def _close_mutation_evidence_for_ticket(root: Path, ticket) -> bool | None:  # n
     return not errors if violations else None
 
 
+# frob:ticket T-0417
+def _reverify_evidence_for_close(root: Path, ticket) -> bool | None:  # noqa: ANN001
+    """N-02 CLI wiring: whether `ticket`'s own non-cmd evidence ids STILL
+    pass when actually re-run against the CURRENT tree at `frob ticket
+    close` time -- closing a ticket must never trust the pass observation
+    made once, back when `frob ticket evidence` first recorded it (round-2
+    audit finding N-02, docs/audits/tickets-testing-round2.md): the tree
+    can change arbitrarily between `evidence` and `close`, and until this
+    fix `close` (unlike `land`, which already re-verifies post-merge via
+    `_reverify_evidence_post_merge`, D-05) never re-ran anything -- a test
+    recorded green then later broken by an edit to the source or the test
+    itself still closed the ticket.
+
+    Returns `None` (skip the check) when the ticket carries no non-cmd
+    evidence at all -- a docs-kind ticket closed purely via
+    `--evidence-cmd` has its own separate exit-code/digest channel
+    (`add_cmd_evidence`) and nothing here to re-run. Returns `False`
+    (fail-closed, blocking the close) if collection itself fails --
+    "cannot verify" must never silently become "verified", the same
+    posture `_covers_scope_for_ticket` already takes for an unloadable
+    graph."""
+    from frob.tickets._models import is_cmd_evidence
+
+    non_cmd = [e for e in ticket.evidence if not is_cmd_evidence(e)]
+    if not non_cmd:
+        return None
+
+    collected = _collect_python_and_rust_ids(root)
+    if collected.is_err:
+        _log.warning(
+            "ticket close: %s evidence collection failed (%s), cannot "
+            "re-verify N-02 pass state -- refusing to close on "
+            "unverifiable evidence",
+            ticket.id,
+            collected.danger_err,
+        )
+        return False
+    python_ids, rust_ids, runners = collected.danger_ok
+    passing = _verify_ids_passing(root, non_cmd, python_ids, rust_ids, runners)
+    failing = [e for e in non_cmd if e not in passing]
+    if failing:
+        _log.warning(
+            "ticket close: %s evidence no longer passes when re-run: %s",
+            ticket.id,
+            failing,
+        )
+        return False
+    return True
+
+
 # frob:ticket T-0571
 def _current_commit(root: Path) -> str | None:
     """Best-effort `git rev-parse HEAD` under `root` (`None` on any git
@@ -2004,7 +2054,14 @@ def _close(root: Path, cfg: AppConfig) -> None:
     a security/bug-kind ticket with an ERROR-severity TEST016
     confirmatory-only-evidence finding refuses the direct close the same
     way it already refuses `frob ticket land` -- unless `--skip-mutation-
-    evidence` was passed, the close-path twin of land's own escape hatch."""
+    evidence` was passed, the close-path twin of land's own escape hatch.
+
+    T-0417 N-02: `evidence_reverified` is ALWAYS computed
+    (`_reverify_evidence_for_close`) and passed to `transition`, so a
+    ticket whose recorded evidence passed once but no longer passes
+    against the CURRENT tree refuses to close -- the direct-close twin of
+    `land`'s own post-merge re-verify (D-05), closing the TOCTOU gap where
+    `close` (unlike `land`) never re-ran anything."""
     from frob.tickets import TicketState, transition
 
     if cfg.ticket_id is None:
@@ -2045,6 +2102,7 @@ def _close(root: Path, cfg: AppConfig) -> None:
     mutation_evidence = _close_mutation_evidence_for_ticket(root, fresh_ticket)
     if mutation_evidence is False and cfg.ticket_close_skip_mutation_evidence:
         mutation_evidence = None
+    evidence_reverified = _reverify_evidence_for_close(root, fresh_ticket)
 
     result = transition(
         root,
@@ -2053,6 +2111,7 @@ def _close(root: Path, cfg: AppConfig) -> None:
         covers_scope=covers_scope,
         reviewed=reviewed,
         mutation_evidence=mutation_evidence,
+        evidence_reverified=evidence_reverified,
     )
     if result.is_err:
         _log.error(_close_failure_hint(cfg.ticket_id, ticket.state, result.danger_err))

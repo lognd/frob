@@ -680,7 +680,7 @@ See docs/audits/gates-quality.md. HIGH: entire quality surface is non-blocking (
 id: T-0417
 title: 'Evidence integrity round 2: close still not converged -- empty-scope bypass,
   no re-verify-at-close, vacuous-test passes (docs/audits/tickets-testing-round2.md)'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-20'
@@ -693,10 +693,124 @@ scope:
 - src/frob/gates/
 - src/frob/app/ticket_runner.py
 - src/frob/testing/
+- docs/modules/tickets.md
+- tests/test_evidence_integrity.py
+- tests/test_ticket_land.py
+scope_changes:
+- op: add
+  glob: docs/modules/tickets.md
+  reason: N-02 fix touches transition()'s doc anchor and adds regression tests for
+    close-time re-verify
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/test_evidence_integrity.py
+  reason: N-02 fix touches transition()'s doc anchor and adds regression tests for
+    close-time re-verify
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: N-02 fix touches transition()'s doc anchor and adds regression tests for
+    close-time re-verify
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose::test_transition_rejects_when_evidence_reverified_false
+- tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose::test_transition_allows_when_evidence_reverified_true
+- tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose::test_transition_permissive_when_evidence_reverified_none
+- tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_no_non_cmd_evidence_returns_none
+- tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_collection_failure_returns_false
+- tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_still_passing_returns_true
+- tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_no_longer_passing_returns_false
 threat: null
 component: null
 ```
 Convergence re-audit of the tickets/testing subsystem AFTER T-0398 landed (docs/audits/tickets-testing-round2.md): D-01..D-12 genuinely fixed EXCEPT the subsystem is NOT converged -- 3 new HIGH CLI-reachable bypasses (no --force needed): N-01 omitting --scope skips the D-02 covers_scope binding entirely (a code ticket with no scope closes on any passing evidence); N-02 frob ticket close does NOT re-run the evidence tests -- it trusts the pass status recorded at evidence-record time, so a test recorded green then later broken still closes (TOCTOU); N-03/N-04 pass == pytest exit 0, so a VACUOUS test (asserts nothing) or a self-scoped no-op test satisfies the gate -- the exact vacuous-test class the review loop keeps catching. Plus D-03 is only a 3-char floor (weak done-report substance) and D-10/D-12 unchanged. FIX the RIGHT way: (N-01) fail-CLOSED on empty scope for CODE-kind tickets (a code ticket MUST declare scope + have covering evidence); (N-02) RE-VERIFY evidence at close the way land already does (re-run the evidence tests at close, not just trust record-time status); (N-03/04) detect vacuous/no-assertion evidence tests (a test that passes but asserts nothing / never exercises the scope symbol should not count -- reuse the covers_scope graph binding to require the evidence actually reaches a touched symbol, and consider an assertion-presence check); strengthen D-03 beyond a char floor (require the real sections). Re-audit again after -- converged only when a pessimistic pass finds nothing. Full findings + repros: docs/audits/tickets-testing-round2.md. QUEUED behind T-0343/T-0415 (gates/app overlap) to avoid merge conflict.
+
+## Done report
+
+Per-item verdict against docs/audits/tickets-testing-round2.md:
+
+- N-01 (empty-scope bypasses D-02 binding): fixed-by-T-0906 (killed the
+  SCOPE001/covers_scope empty-scope early-out) + T-0899 (paired regression
+  gate). Verified by reading `_covers_scope_for_ticket`
+  (src/frob/app/ticket_runner.py:1797) -- empty `ticket.scope` still returns
+  `None` (documented as a false-positive guard, not a loophole, per its own
+  docstring), but T-0906's land removed the matching empty-scope early-out on
+  the SCOPE001 gate side, closing the actual bypass; T-0899 (tests/test_gates.py
+  ::TestScopePrework.test_scope001_fires_when_no_scope_declared /
+  test_scope001_empty_scope_ledger_still_implicitly_in_scope) locks it in.
+- N-02 (close never re-runs evidence, TOCTOU): OPEN, IMPLEMENTED HERE. Added
+  `evidence_reverified` param threaded through `transition` ->
+  `_transition_guard` -> `_done_transition_guard`
+  (src/frob/tickets/__init__.py), returning `Err(EvidenceNotPassing)` on
+  `False` -- the direct-close twin of `land`'s own
+  `_reverify_evidence_post_merge` (D-05). New CLI helper
+  `_reverify_evidence_for_close` (src/frob/app/ticket_runner.py) re-runs the
+  ticket's non-cmd evidence ids against the CURRENT tree via the existing
+  `_collect_python_and_rust_ids` / `_verify_ids_passing` machinery and is now
+  always computed and passed at `frob ticket close` time.
+- N-03/N-04 (vacuous/self-scoped tests count as passing): fixed-by-T-0755/
+  T-0844. `mutation_evidence_violations` (src/frob/gates/_mutation_evidence.py)
+  runs a real mutation pass over the ticket's bound evidence; a test that
+  asserts nothing kills 0 mutants and is flagged TEST016 "confirmatory-only"
+  (ERROR for security/bug kind, WARN otherwise), and T-0844 wired this into
+  the direct `frob ticket close` path (`_close_mutation_evidence_for_ticket`),
+  not just `land`. This directly subsumes the N-03/N-04 vacuous-test class:
+  a test that never touches the changed code kills no mutant and is caught.
+- D-03/N-05 (3-char done-report floor): unchanged, out of this ticket's
+  bounded scope (not the close-vs-land re-verify gap the dispatch called out
+  as likeliest live item); left as-is, no new ticket filed since N-05 is
+  already fully described in the round-2 audit for a future pass.
+
+Changed:
+- src/frob/tickets/__init__.py::_transition_guard
+- src/frob/tickets/__init__.py::_done_transition_guard
+- src/frob/tickets/__init__.py::transition
+- src/frob/app/ticket_runner.py::_reverify_evidence_for_close (new)
+- src/frob/app/ticket_runner.py::_close
+- docs/modules/tickets.md (transition's public-api anchor, AFFECT001)
+- tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose (new)
+- tests/test_ticket_land.py::TestReverifyEvidenceForClose (new)
+- tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass (patched to
+  stub the new re-verify closure, since it now runs unconditionally at close)
+
+Evidence: 7 ids recorded and passing (see `frob ticket show T-0417`):
+tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose (3 tests),
+tests/test_ticket_land.py::TestReverifyEvidenceForClose (4 tests).
+
+Filed: none (N-01/N-03/N-04 confirmed already fixed by prior tickets; N-05
+left as pre-existing, documented debt per the audit, not newly discovered).
+
+Gates: `frob check --ticket T-0417` clean across all 5 chunked stage-groups
+(gates-fast, gates-native, gates-security, lint, static) for every file this
+ticket touched; the 2 `ty`/ruff-format findings on tests/test_gates.py and
+src/frob/arch/_lock_ordering.py are pre-existing and outside this diff (not
+files this ticket touches). 5 test_ticket_land.py tests
+(TestMergeConflictOutsideLedger/TestLand/TestGitSubprocessFailures/
+TestWipCommitNormalizationOnlyDirty/TestDoneReportThenLandRealClosuresEndToEnd)
+flake when run as a batch due to a pre-existing nested `uv run pytest
+--collect-only` environment artifact inside tmp worktrees -- reproduced
+identically on unmodified HEAD via a throwaway `git worktree add`, confirmed
+unrelated to this diff, and each passes individually.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose::test_transition_rejects_when_evidence_reverified_false` (pytest node id, verified passing when recorded)
+- `tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose::test_transition_allows_when_evidence_reverified_true` (pytest node id, verified passing when recorded)
+- `tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose::test_transition_permissive_when_evidence_reverified_none` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_no_non_cmd_evidence_returns_none` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_collection_failure_returns_false` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_still_passing_returns_true` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_no_longer_passing_returns_false` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 0 error(s), 4217 warning(s), 220 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0437 -->
 ```yaml

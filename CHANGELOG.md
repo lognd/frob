@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.176.0] - unreleased
+
+- T-0417: Evidence integrity round 2: close still not converged -- empty-scope bypass, no re-verify-at-close, vacuous-test passes (docs/audits/tickets-testing-round2.md)
+
 ## [0.175.0] - unreleased
 
 - T-0700: strata grammar: access modes + shared-resource/lease declarations for contention proofs
