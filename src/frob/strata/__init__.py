@@ -189,6 +189,14 @@ from frob.strata._host_isolation import (
     host_movement_flows,
 )
 from frob.strata._infra import InfraExpansion, elaborate_infra
+from frob.strata._interactive_cost import (
+    INTERACTIVE_COST_RULES,
+    REL_MISSING_BOUNDED_COST,
+    REL_UNPROVEN_BOUNDED_COST,
+    InteractiveCostReport,
+    InteractiveCostViolation,
+    check_interactive_cost_obligations,
+)
 from frob.strata._krb import (
     KrbDelegationKind,
     KrbManifest,
@@ -433,10 +441,15 @@ __all__ = [
     "AddFlow",
     "AtomicContractReport",
     "BACKPRESSURE_RULES",
+    "INTERACTIVE_COST_RULES",
     "REL_MISSING_BOUNDED_INTAKE",
     "REL_UNPROVEN_BOUNDED_INTAKE",
+    "REL_MISSING_BOUNDED_COST",
+    "REL_UNPROVEN_BOUNDED_COST",
     "BackpressureReport",
     "BackpressureViolation",
+    "InteractiveCostReport",
+    "InteractiveCostViolation",
     "BalancerDecl",
     "BenignCapability",
     "BlastRadius",
@@ -620,6 +633,7 @@ __all__ = [
     "build_facts",
     "scan_text_for_fingerprints",
     "check_backpressure_obligations",
+    "check_interactive_cost_obligations",
     "check_observability_obligations",
     "check_capability_completeness",
     "check_capability_conformance",

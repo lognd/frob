@@ -3570,7 +3570,7 @@ See T-0879's Done report for the full deadlock trace and citations.
 id: T-0919
 title: done-report's internal check_gates/check_gate_findings spawns are too slow
   for CLI foreground use (T-0887 follow-up)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-26'
@@ -3578,6 +3578,162 @@ priority: medium
 parent: null
 scope:
 - src/frob/app/ticket_runner.py
+- src/frob/perf/**
+- src/frob/strata/**
+- tests/unit/perf/**
+- tests/unit/strata/**
+- docs/modules/perf.md
+- tests/unit/test_ticket_runner_gate_findings.py
+- docs/strata/reliability.md
+scope_changes:
+- op: add
+  glob: src/frob/perf/**
+  reason: 'Repo owner directive (recorded on T-0919): anything found while root-causing
+
+    the done-report spawn slowness must also be encoded as a lint in BOTH the
+
+    structural (.strata) and code (perf) layers, and a follow-up user directive
+
+    required the perf detector to be genuinely interprocedural (extending
+
+    frob.perf._loop_effects''s shared EffectGraph substrate). Widening scope to
+
+    cover src/frob/perf/**, src/frob/strata/**, tests/unit/perf/**,
+
+    tests/unit/strata/**, docs/modules/perf.md, and the ticket_runner test file
+
+    touched by the shared-spawn fix and its coverage annotations.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: src/frob/strata/**
+  reason: 'Repo owner directive (recorded on T-0919): anything found while root-causing
+
+    the done-report spawn slowness must also be encoded as a lint in BOTH the
+
+    structural (.strata) and code (perf) layers, and a follow-up user directive
+
+    required the perf detector to be genuinely interprocedural (extending
+
+    frob.perf._loop_effects''s shared EffectGraph substrate). Widening scope to
+
+    cover src/frob/perf/**, src/frob/strata/**, tests/unit/perf/**,
+
+    tests/unit/strata/**, docs/modules/perf.md, and the ticket_runner test file
+
+    touched by the shared-spawn fix and its coverage annotations.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: tests/unit/perf/**
+  reason: 'Repo owner directive (recorded on T-0919): anything found while root-causing
+
+    the done-report spawn slowness must also be encoded as a lint in BOTH the
+
+    structural (.strata) and code (perf) layers, and a follow-up user directive
+
+    required the perf detector to be genuinely interprocedural (extending
+
+    frob.perf._loop_effects''s shared EffectGraph substrate). Widening scope to
+
+    cover src/frob/perf/**, src/frob/strata/**, tests/unit/perf/**,
+
+    tests/unit/strata/**, docs/modules/perf.md, and the ticket_runner test file
+
+    touched by the shared-spawn fix and its coverage annotations.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: tests/unit/strata/**
+  reason: 'Repo owner directive (recorded on T-0919): anything found while root-causing
+
+    the done-report spawn slowness must also be encoded as a lint in BOTH the
+
+    structural (.strata) and code (perf) layers, and a follow-up user directive
+
+    required the perf detector to be genuinely interprocedural (extending
+
+    frob.perf._loop_effects''s shared EffectGraph substrate). Widening scope to
+
+    cover src/frob/perf/**, src/frob/strata/**, tests/unit/perf/**,
+
+    tests/unit/strata/**, docs/modules/perf.md, and the ticket_runner test file
+
+    touched by the shared-spawn fix and its coverage annotations.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: docs/modules/perf.md
+  reason: 'Repo owner directive (recorded on T-0919): anything found while root-causing
+
+    the done-report spawn slowness must also be encoded as a lint in BOTH the
+
+    structural (.strata) and code (perf) layers, and a follow-up user directive
+
+    required the perf detector to be genuinely interprocedural (extending
+
+    frob.perf._loop_effects''s shared EffectGraph substrate). Widening scope to
+
+    cover src/frob/perf/**, src/frob/strata/**, tests/unit/perf/**,
+
+    tests/unit/strata/**, docs/modules/perf.md, and the ticket_runner test file
+
+    touched by the shared-spawn fix and its coverage annotations.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: tests/unit/test_ticket_runner_gate_findings.py
+  reason: 'Repo owner directive (recorded on T-0919): anything found while root-causing
+
+    the done-report spawn slowness must also be encoded as a lint in BOTH the
+
+    structural (.strata) and code (perf) layers, and a follow-up user directive
+
+    required the perf detector to be genuinely interprocedural (extending
+
+    frob.perf._loop_effects''s shared EffectGraph substrate). Widening scope to
+
+    cover src/frob/perf/**, src/frob/strata/**, tests/unit/perf/**,
+
+    tests/unit/strata/**, docs/modules/perf.md, and the ticket_runner test file
+
+    touched by the shared-spawn fix and its coverage annotations.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: docs/strata/reliability.md
+  reason: REL31x obligation doc section lives here, same directive-authorized widening
+    as the rest of this ticket's structural-layer scope
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_second_call_does_not_spawn_again
+- tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_check_gates_summary_fn_and_check_gate_findings_fn_share_one_spawn
+- tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_default_spawn_none_keeps_each_closure_independent
+- tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_two_helpers_spawning_identical_subprocess_is_flagged
+- tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_two_helpers_spawning_different_subprocess_args_is_not_flagged
+- tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_single_helper_call_is_not_flagged
+- tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_multi_hop_duplicate_via_different_intermediate_callees_is_flagged
+- tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_call_site_varying_argument_is_not_flagged
+- tests/unit/strata/test_interactive_cost.py::TestMissingBoundedCost::test_interactive_node_without_bounded_cost_fires
+- tests/unit/strata/test_interactive_cost.py::TestMissingBoundedCost::test_discharged_and_non_interactive_nodes_clean
+- tests/unit/strata/test_interactive_cost.py::TestMissingBoundedCost::test_waiver_discharges_finding
+- tests/unit/strata/test_interactive_cost.py::TestUnprovenBoundedCost::test_declared_with_no_code_evidence_fires
+- tests/unit/strata/test_interactive_cost.py::TestUnprovenBoundedCost::test_declared_with_real_code_evidence_discharges
+- tests/unit/strata/test_interactive_cost.py::TestUnprovenBoundedCost::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+- tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_spawn_kwargs_capture_output_text_and_no_check
 threat: null
 component: null
 ```
@@ -3613,6 +3769,58 @@ timeout with a clear "gate state unmeasured" fallback (the existing
 `None` path `_check_gates_summary_fn` already has for a refused/
 unparsable spawn) is preferable to unconditionally waiting up to
 1200s combined.
+
+## Done report
+
+Deduped the two serial full `frob check --ticket <id>` spawns inside
+done-report/land (_shared_check_spawn_fn caches one guarded_subprocess_run
+result, shared between _check_gates_summary_fn and _check_gate_findings_fn),
+cutting frob ticket done-report's own foreground cost roughly in half.
+Per the repo owner's explicit directive, also encoded the anti-pattern in
+both layers: REL31x INTERACTIVE-COST-BOUND obligation (_interactive_cost.py,
+docs/strata/reliability.md) at the structural/.strata layer, and PERF012
+duplicate-identical-subprocess-spawn detector (_dup_spawn.py, extending the
+shared _EffectGraph substrate in _loop_effects.py for full interprocedural
+propagation, docs/modules/perf.md) at the code/perf layer, both with
+true-positive/false-positive test coverage.
+
+### Changed
+```
+ docs/modules/perf.md                           |  66 +++++-
+ docs/strata/reliability.md                     |  63 ++++++
+ src/frob/app/ticket_runner.py                  | 157 ++++++++-----
+ src/frob/perf/_dup_spawn.py                    | 287 ++++++++++++++++++++++++
+ src/frob/perf/_loop_effects.py                 | 241 ++++++++++++++++++--
+ src/frob/perf/_rules.py                        |  49 +++--
+ src/frob/strata/__init__.py                    |  14 ++
+ src/frob/strata/_interactive_cost.py           | 294 +++++++++++++++++++++++++
+ tests/unit/perf/test_dup_spawn.py              | 182 +++++++++++++++
+ tests/unit/strata/test_interactive_cost.py     | 155 +++++++++++++
+ tests/unit/test_ticket_runner_gate_findings.py |  88 ++++++++
+ tickets.md                                     | 209 +++++++++++++++++-
+ 12 files changed, 1717 insertions(+), 88 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_second_call_does_not_spawn_again` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_check_gates_summary_fn_and_check_gate_findings_fn_share_one_spawn` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_default_spawn_none_keeps_each_closure_independent` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_two_helpers_spawning_identical_subprocess_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_two_helpers_spawning_different_subprocess_args_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_single_helper_call_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_multi_hop_duplicate_via_different_intermediate_callees_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_call_site_varying_argument_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_interactive_cost.py::TestMissingBoundedCost::test_interactive_node_without_bounded_cost_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_interactive_cost.py::TestMissingBoundedCost::test_discharged_and_non_interactive_nodes_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_interactive_cost.py::TestMissingBoundedCost::test_waiver_discharges_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_interactive_cost.py::TestUnprovenBoundedCost::test_declared_with_no_code_evidence_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_interactive_cost.py::TestUnprovenBoundedCost::test_declared_with_real_code_evidence_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_interactive_cost.py::TestUnprovenBoundedCost::test_declared_with_no_bound_code_is_uncheckable_not_a_violation` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_spawn_kwargs_capture_output_text_and_no_check` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 15 passed (from 15 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0922 -->
 ```yaml

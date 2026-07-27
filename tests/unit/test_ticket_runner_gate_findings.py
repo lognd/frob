@@ -360,3 +360,122 @@ class TestPythonForTree:
         fn()
         assert captured_argv[0] == str(venv_python)
         assert captured_argv[0] != sys.executable
+
+
+class TestSharedCheckSpawnFn:
+    """T-0919: `_shared_check_spawn_fn` spawns `frob check --ticket <id>`
+    AT MOST ONCE, caching the result for every later call -- the fix for
+    `done-report`/`land` each wiring up BOTH `_check_gates_summary_fn` and
+    `_check_gate_findings_fn`, which before this ticket meant two full,
+    serial `frob check --ticket` subprocess runs per command."""
+
+    # frob:ticket T-0919
+    def test_second_call_does_not_spawn_again(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn.test_second_call_does_not_spawn_again  # noqa: E501
+        """Calling the returned closure twice spawns `subprocess.run`
+        exactly ONCE -- the second call returns the cached result."""
+        spawn_count = 0
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            nonlocal spawn_count
+            spawn_count += 1
+            return _FakeProc(1, stdout=_TWO_FINDINGS_STDOUT)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        spawn = ticket_runner._shared_check_spawn_fn(tmp_path, "T-0001")
+        first = spawn()
+        second = spawn()
+        assert spawn_count == 1
+        assert first is second
+
+    # frob:ticket T-0919
+    def test_spawn_kwargs_capture_output_text_and_no_check(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn.test_spawn_kwargs_capture_output_text_and_no_check  # noqa: E501
+        """Pins the exact `subprocess.run` kwarg SHAPE `_shared_check_spawn_
+        fn`'s own `guarded_subprocess_run` call forwards -- `capture_output
+        =True` and `text=True` (so `result.stdout` is a decoded str this
+        closure's callers can regex-match, not raw bytes or nothing at all)
+        and `check=False` (a non-zero `frob check` exit -- the COMMON case,
+        since `frob check --ticket` exits 1 whenever it finds any error --
+        must not raise; callers parse `result.stdout` regardless of exit
+        code). Each of the three flipped to its opposite (`capture_output=
+        False` drops `result.stdout` to `None`, `text=False` returns raw
+        bytes a `str`-based regex can never match, `check=True` raises
+        instead of returning a non-zero-exit result) is independently
+        caught here, even where a same-shaped fake `subprocess.run` would
+        otherwise look unchanged to a call-count-only assertion."""
+        captured: dict[str, object] = {}
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            captured.update(kwargs)
+            return _FakeProc(1, stdout=_TWO_FINDINGS_STDOUT)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        spawn = ticket_runner._shared_check_spawn_fn(tmp_path, "T-0001")
+        spawn()
+        assert captured["capture_output"] is True
+        assert captured["text"] is True
+        assert captured["check"] is False
+
+    # frob:ticket T-0919
+    def test_check_gates_summary_fn_and_check_gate_findings_fn_share_one_spawn(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn.test_check_gates_summary_fn_and_check_gate_findings_fn_share_one_spawn  # noqa: E501
+        """The T-0919 fix itself, proven at the consumer level: passing the
+        SAME `_shared_check_spawn_fn(...)` closure into both
+        `_check_gates_summary_fn`'s and `_check_gate_findings_fn`'s
+        `spawn` parameter (exactly what `_done_report`/`_land` now do)
+        means calling BOTH resulting closures spawns `subprocess.run`
+        exactly ONCE total, not twice -- the root cause this ticket
+        fixes."""
+        spawn_count = 0
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            nonlocal spawn_count
+            spawn_count += 1
+            return _FakeProc(1, stdout=_TWO_FINDINGS_STDOUT)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        shared_spawn = ticket_runner._shared_check_spawn_fn(tmp_path, "T-0001")
+        gates_fn = ticket_runner._check_gates_summary_fn(
+            tmp_path, "T-0001", spawn=shared_spawn
+        )
+        findings_fn = ticket_runner._check_gate_findings_fn(
+            tmp_path, "T-0001", spawn=shared_spawn
+        )
+        errors, warnings, waived = gates_fn()
+        findings = findings_fn()
+        assert spawn_count == 1
+        assert (errors, warnings, waived) == (2, 1, 0)
+        assert findings == frozenset(
+            {("SEC110", "src/frob/x.py"), ("PII010", "tests/other.py")}
+        )
+
+    # frob:ticket T-0919
+    def test_default_spawn_none_keeps_each_closure_independent(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn.test_default_spawn_none_keeps_each_closure_independent  # noqa: E501
+        """Backward-compat pin: NOT passing `spawn` (the pre-T-0919 call
+        shape every existing test in this file still uses) still spawns
+        once per closure -- two closures built with `spawn=None` (the
+        default) spawn `subprocess.run` TWICE total, proving the sharing
+        is opt-in via an explicit shared `spawn`, never implicit/global."""
+        spawn_count = 0
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            nonlocal spawn_count
+            spawn_count += 1
+            return _FakeProc(1, stdout=_TWO_FINDINGS_STDOUT)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        gates_fn = ticket_runner._check_gates_summary_fn(tmp_path, "T-0001")
+        findings_fn = ticket_runner._check_gate_findings_fn(tmp_path, "T-0001")
+        gates_fn()
+        findings_fn()
+        assert spawn_count == 2

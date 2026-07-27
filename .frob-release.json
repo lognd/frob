@@ -763,6 +763,7 @@
     "src/frob/perf/_collectors.py::parse_jfr_print": "61f1cac72ae7a4d492eee797a29fab53b16db8fa976eb7a26e2375bad12a82ec",
     "src/frob/perf/_collectors.py::parse_perf_script": "df6a95e83e2a7014d4918cc2e6ec296d54c1705ce8f3f8cb2b859388b073d246",
     "src/frob/perf/_collectors.py::parse_v8_cpuprofile": "649455a2f0d9b6ee1aa045170c369579f5e37503722b81ddc648ced337947899",
+    "src/frob/perf/_dup_spawn.py::duplicate_spawn_violations": "51353672ef6286328f93af7bdf787bf7e5bb4894db4c15e1319a5bfa9ecc51c3",
     "src/frob/perf/_harness.py::main": "945bb53a03a3ea009d89db43a17643dd0ce349e0469531105b307e5242b12654",
     "src/frob/perf/_heat.py::heat": "064f939761e4bcd9cb77ba82ff95770db491dd50cf707ec85ffad35a8d36519d",
     "src/frob/perf/_heat.py::join_smells": "635a8e9430675162520429e3bd0c6ca70498e080db545ebd84c8e7dc52b4b02b",
@@ -779,7 +780,8 @@
     "src/frob/perf/_hotgraph.py::build_section_index": "3ea14833f21638d944a5ba3261fcf9d07c9f169e05193b21d1f5f7ef4ca3d93c",
     "src/frob/perf/_hotgraph.py::language_deciles": "4bee78e1be2b434d6137435c30c05ba4271b8827f8ed84ac81377cd50191d0b2",
     "src/frob/perf/_hotgraph.py::resolve_stream": "ed689c5806bd9b2c2b46cd4d269e54a3cabf1c2eddfd2eb807261cef01d7a90c",
-    "src/frob/perf/_loop_effects.py::loop_invariant_effect_violations": "9bb710cb512f18f52ccee59b05e9c356c4b9f0dbda013bf0d54f9bb901d6ea75",
+    "src/frob/perf/_loop_effects.py::_EffectGraph.summary": "77caa80b592951b38f13260acc4e8ee3d1792255a0cf32916a595dc197ac7e4d",
+    "src/frob/perf/_loop_effects.py::loop_invariant_effect_violations": "1a6c28d329c3795a9457d7204f77c5896573263656cce426b02a2815bf535d9f",
     "src/frob/perf/_models.py::HeatEntry": "ccd9d4320749cb10f5b9fa7f271f1117c2a88e9ba19ca2a5a1f9b1d9d2ebcc79",
     "src/frob/perf/_models.py::HeatReport": "60d746977c9eb6cfb26262d9e50bdd4ee310298f8c11ef5c42e329318df00176",
     "src/frob/perf/_models.py::PerfError": "3e936a942247741ad3547f21cbe47da915f897fc4a229745187da326aabd39fa",
@@ -1146,6 +1148,12 @@
     "src/frob/strata/_host_isolation.py::host_movement_flows": "4974b141d0ffd5c8f56c2aafe3f49c8e0cad1493e83d354fef771f6fea8664c4",
     "src/frob/strata/_infra.py::InfraExpansion": "e34d676c1abd870a25d500b86c42384eb317860e0ba9de1f3a3f8c0e5691e061",
     "src/frob/strata/_infra.py::elaborate_infra": "273b7d74e6a8e17a9e608b8758a417d88d1bc9938e42c7233a6da5050c46f4fa",
+    "src/frob/strata/_interactive_cost.py::INTERACTIVE_COST_RULES": "b3519e8be924b66027483ad6e78793eaa467a576f82da0378a78b29305be51ce",
+    "src/frob/strata/_interactive_cost.py::InteractiveCostReport": "2bb6fe0477b7313b855c70551be7e81ecef093cced700f09292c19de5185467d",
+    "src/frob/strata/_interactive_cost.py::InteractiveCostViolation": "f36cbceeb1db206eb05e13e0886d8fa062a337a391dad3e3efc31a6f0c369502",
+    "src/frob/strata/_interactive_cost.py::REL_MISSING_BOUNDED_COST": "0042de431e0dc4e4b75472103351589a84d8d754356f2c882932ebaa8a12d696",
+    "src/frob/strata/_interactive_cost.py::REL_UNPROVEN_BOUNDED_COST": "c74ed23678a22edd2c22b737bfee8b3904b5f9d9a4205d7d9142148b2f1611a6",
+    "src/frob/strata/_interactive_cost.py::check_interactive_cost_obligations": "04d69350af98afa9354607e85195f174c5f1474014cb0150de55c61f53b9580c",
     "src/frob/strata/_krb.py::KrbDelegationKind": "63e137f7aca7006864e0a233130159cca250da83d5b903e3008c27b083674ac1",
     "src/frob/strata/_krb.py::KrbManifest": "c31500a835db3f0814acd4ea86786fad55db65e3cc34323fd10fa9e1161d9a2f",
     "src/frob/strata/_krb.py::KrbTrust": "4fa442c9ae2a87d46a1c03911fddd6a5642c036274ac0249598f0bf67df50e9b",
@@ -1598,5 +1606,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.163.0"
+  "version": "0.164.0"
 }

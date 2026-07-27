@@ -36,6 +36,7 @@ across 28k files whose fix was literally a hashset.)
 | PERF007 | a `frob.toml`-configured expensive call (`[[perf.heavy]]`) invoked from 2+ distinct top-level symbols with no shared-cache decorator on its own definition (T-0413, the PERF META-GAP) | wrap the call target in `memoize_per_run`/`lru_cache`/`cache`, or route every call site through one shared call |
 | PERF008 | a loop body's call site is directly, or transitively (via a local call-graph BFS), a process-spawn/directory-walk effect, and every argument at the call site is loop-invariant (T-0775) | hoist the call out of the loop, memoize its result, or add a reasoned `frob:waive PERF008 reason="..."` (e.g. freshness under concurrency) |
 | PERF009 | a hot-graph section's current-run sketch (`frob perf collect`) shifts beyond `[perf.sketch].ratchet_tolerance` (default 50% relative) at p50 or p90 versus its stored prior (T-0712) | investigate the regression named in the finding (both decile sets are printed); the ratchet is WARN-tier, waivable per the persisted finding's `.frob/perf/ratchet_findings.json` entry |
+| PERF012 | a function's body calls two or more DISTINCT locally-known callees that each (directly, or transitively via a local call-graph BFS) spawn a subprocess with the textually-identical (whitespace-normalized) argument shape -- a duplicated, not-shared expensive spawn on one call path (T-0919, the `frob ticket done-report` two-full-check-spawns incident) | share one spawn's result between the callees instead of paying for it twice, or add a reasoned `frob:waive PERF012 reason="..."` (e.g. a genuinely deliberate independent re-run) |
 
 Severity: PERF001-004 are `warn` by default (static size-blindness is real
 -- a 3-element list is fine as a list); promotable per-repo via
@@ -44,12 +45,14 @@ default -- unlike the lexical smells, unreasoned unbounded recursion is a
 control-flow hazard (T-0290), not a size-blind heuristic. PERF007 is
 `error` by default and opt-in via config (see below) -- an unconfigured
 project gets zero PERF007 checking, never a false positive from a guess
-at what "expensive" means for it. PERF008/PERF009 are `warn` by default
-(undecidable loop-invariance and a regression ratchet both lean toward
-firing over missing a real issue -- recall over precision, same posture
-as PERF007's own opt-in-only calibration but without an opt-in gate,
-since both structurally cannot false-positive on a project with no
-`.frob/perf/` artifacts yet: zero findings, not zero checking). Broader
+at what "expensive" means for it. PERF008/PERF009/PERF012 are `warn` by
+default (undecidable loop-invariance, a regression ratchet, and
+undecidable cross-callee duplication all lean toward firing over missing
+a real issue -- recall over precision, same posture as PERF007's own
+opt-in-only calibration but without an opt-in gate, since all three
+structurally cannot false-positive on a project with no `.frob/perf/`
+artifacts yet / no duplicated spawn shape: zero findings, not zero
+checking). Broader
 conceptual and mechanical-sympathy background these lexical rules draw
 from -- including which smells are `STATIC` (linter-shaped like the table
 above), `PROFILE`-only, or `ADVISORY` -- lives in
@@ -191,6 +194,57 @@ real, legitimate reason to re-run an effect every iteration).
 See `tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect`
 for the true-positive (transitive spawn, direct fs-walk, the real T-0773
 ticket-row shape) and false-positive (loop-varying argument) cases.
+
+## Duplicate-identical-subprocess-spawn detector (PERF012, T-0919)
+
+Motivated by the `frob ticket done-report` two-full-check-spawns incident
+(T-0919): `_check_gates_summary_fn`/`_check_gate_findings_fn` (`frob.app.
+ticket_runner`) each independently spawned their OWN full `python -m frob
+check --ticket <id>` subprocess -- textually IDENTICAL argv and kwargs --
+from the SAME calling function, serially, doubling an already-slow
+(600s-timeout) foreground cost for output fully re-derivable from a
+single run. PERF008 does not catch this shape: it only fires on a
+loop-invariant effectful call INSIDE a loop; this is a duplicated effect
+reachable from two call sites in ONE function body, no loop involved.
+
+**Interprocedural by construction**: PERF012 does not hand-roll its own
+call graph. It reuses/extends `frob.perf._loop_effects._EffectGraph` --
+the SAME shared substrate PERF008 builds -- via its `summary(symref)`
+method (T-0919's addition to that class): the FULL transitively-reachable
+`(effect_kind, normalized_arg_text)` multiset for any function, however
+many calls deep, propagated through sibling callees, cousins, and diamonds
+alike (cycle-safe, budget-bounded, fails OPEN on any unresolvable edge --
+never a guessed occurrence). `f()` calling `g()` calling `h()` which
+spawns, where `f()` ALSO calls `i()` calling `j()` which spawns the SAME
+argv, is caught exactly like two direct sibling calls in `f()` would be.
+
+Detection (Python only, same python-first tiering as PERF001-004/PERF008):
+for each function/method `F`, every call site UNCONDITIONALLY inside `F`'s
+own body (excluding anything nested inside an `if`/`try`/`with`/loop/
+`match` -- a call gated behind a conditional is not comparable the same
+way; a `try`/`except` fallback is by definition mutually exclusive with
+the path it falls back FROM, never a genuine duplicate) is resolved to its
+occurrence set (itself directly, if it IS a spawn/fs-walk call, else the
+`summary(...)` of its resolved callee). Callee name resolution is SCOPED
+to same-file candidates first (`_EffectGraph._resolve_scoped`), falling
+back to a project-wide match only when unambiguous -- an early version of
+this rule unioned every same-named candidate project-wide unconditionally,
+which cross-contaminated unrelated call paths through common short names
+(`run`, `check`) and produced thousands of false positives; scoping this
+resolution was the fix. If two or more of `F`'s own call sites end up with
+the SAME occurrence, PERF012 fires once per `F`, naming the duplicate
+lines and the shared argument shape. WARN-tier, waivable (`frob:waive
+PERF012 reason="..."`) for a genuinely deliberate independent re-run.
+
+PERF012 inherits BOTH the spawn AND directory-walk needle tables PERF008
+already defines in `_loop_effects.py` -- widening those tables (network
+calls, heavy parses) is a shared follow-up both rules gain simultaneously
+(`frob:todo T-0919` in `frob.perf._dup_spawn`'s module docstring).
+
+See `tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn` for the
+true-positive (two sibling helpers, and the multi-hop/different-callees
+case) and false-positive (call-site-varying arguments, single call site)
+cases.
 
 ## The killer join: hot AND quadratic
 

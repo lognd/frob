@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.164.0] - unreleased
+
+- T-0919: done-report's internal check_gates/check_gate_findings spawns are too slow for CLI foreground use (T-0887 follow-up)
+
 ## [0.163.0] - unreleased
 
 - T-0917: MCP tool mirror for frob perf hot (T-0712 follow-up)

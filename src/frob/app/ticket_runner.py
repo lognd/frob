@@ -1003,6 +1003,9 @@ def _land(root: Path, cfg: AppConfig) -> None:
             cfg.ticket_id,
         )
 
+    # T-0919: one shared spawn feeds BOTH check_gates/check_gate_findings
+    # below instead of each running its own full `frob check --ticket`.
+    _shared_spawn = _shared_check_spawn_fn(worktree, cfg.ticket_id)
     result = land(
         root,
         cfg.ticket_id,
@@ -1013,8 +1016,12 @@ def _land(root: Path, cfg: AppConfig) -> None:
         covers_scope=_land_covers_scope_fn(worktree),
         bump_version=_land_bump_version_fn(),
         rebuild_natives=_land_rebuild_natives_fn(),
-        check_gates=_check_gates_summary_fn(worktree, cfg.ticket_id),
-        check_gate_findings=_check_gate_findings_fn(worktree, cfg.ticket_id),
+        check_gates=_check_gates_summary_fn(
+            worktree, cfg.ticket_id, spawn=_shared_spawn
+        ),
+        check_gate_findings=_check_gate_findings_fn(
+            worktree, cfg.ticket_id, spawn=_shared_spawn
+        ),
         skip_mutation_evidence=cfg.ticket_skip_mutation_evidence,
     )
     if result.is_err:
@@ -2161,17 +2168,84 @@ def _python_for_tree(root: Path) -> str:
     return sys.executable
 
 
+# frob:ticket T-0919
+# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn kind="unit"  # noqa: E501
+def _shared_check_spawn_fn(root: Path, ticket_id: str):  # noqa: ANN201
+    """T-0919: build a zero-arg closure that spawns `frob check --ticket
+    <id>` in `root` AT MOST ONCE, caching the resulting
+    `subprocess.CompletedProcess`-shaped object (or `None` on a refused/
+    unmeasurable spawn) so every later call returns the SAME cached
+    result instead of spawning again.
+
+    Root cause this closes: `_check_gates_summary_fn` and
+    `_check_gate_findings_fn` each independently spawned their OWN full
+    `python -m frob check --ticket <id>` (600s timeout apiece) -- and
+    every real caller (`_done_report`, `_land`) always wires up BOTH
+    closures together, so that duplication cost TWO full, serial
+    gate-check subprocess runs on every single done-report/land for
+    output that is byte-for-byte re-derivable from ONE run. Passing this
+    SAME closure into both `_check_gates_summary_fn`'s and
+    `_check_gate_findings_fn`'s `spawn` parameter collapses that back
+    down to one spawn total, shared by construction rather than by
+    convention -- there is no way for the two consumers to drift back
+    into two independent spawns as long as they are handed the same
+    `spawn` closure.
+
+    Deliberately module-level, not folded into either consumer: a caller
+    that wants only ONE of the two claims still gets the old
+    one-spawn-per-consumer behavior for free by passing `spawn=None` (the
+    default on both consumers), which makes each build its own private,
+    unshared spawn closure exactly as before this ticket."""
+    cache: dict[str, subprocess.CompletedProcess | None] = {}
+
+    def spawn() -> subprocess.CompletedProcess | None:
+        if "result" in cache:
+            return cache["result"]
+        guarded = guarded_subprocess_run(
+            [_python_for_tree(root), "-m", "frob", "check", "--ticket", ticket_id],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
+        )
+        if guarded.is_err:
+            _log.warning(
+                "ticket %s: `frob check --ticket %s` refused to spawn (%s)",
+                ticket_id,
+                ticket_id,
+                ProcessGuardError.ExecDisabled,
+            )
+            cache["result"] = None
+        else:
+            cache["result"] = guarded.danger_ok
+        return cache["result"]
+
+    return spawn
+
+
 # frob:ticket T-0754
 # frob:ticket T-0832
 # frob:ticket T-0846
 # frob:ticket T-0850
+# frob:ticket T-0919
 # frob:tests tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds kind="integration"  # noqa: E501
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree kind="unit"  # noqa: E501
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGatesSummaryFn.test_scoped_run_flaky_rule_excluded_from_error_count kind="unit"  # noqa: E501
-def _check_gates_summary_fn(root: Path, ticket_id: str):  # noqa: ANN201
+# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn.test_check_gates_summary_fn_and_check_gate_findings_fn_share_one_spawn kind="unit"  # noqa: E501
+def _check_gates_summary_fn(  # noqa: ANN201
+    root: Path,
+    ticket_id: str,
+    spawn=None,  # noqa: ANN001
+):
     """CLI closure shared by `done-report` capture and `land` re-
     verification (T-0754): calling it spawns a fresh `python -m frob check
     --ticket <id>` in `root` and returns `(errors, warnings, waived)`.
+    T-0919: an optional `spawn` (a `_shared_check_spawn_fn(...)` closure)
+    lets the caller SHARE that spawn with `_check_gate_findings_fn`
+    instead of each parsing its own independent run; defaults to `None`,
+    which builds and uses a private one-off spawn (the pre-T-0919
+    behavior) so existing standalone callers/tests are unaffected.
     `warnings`/`waived` are the `gate-summary` line's own COUNTS, parsed via
     `_GATE_SUMMARY_COUNTS_RE` (never that line's raw text, whose timing blob
     is nondeterministic -- see the regex's own doc) and never composed or
@@ -2209,24 +2283,12 @@ def _check_gates_summary_fn(root: Path, ticket_id: str):  # noqa: ANN201
     triple, so every caller is forced to branch on "unmeasured"
     explicitly instead."""
 
+    _spawn = spawn if spawn is not None else _shared_check_spawn_fn(root, ticket_id)
+
     def fn() -> tuple[int, int, int] | None:
-        guarded = guarded_subprocess_run(
-            [_python_for_tree(root), "-m", "frob", "check", "--ticket", ticket_id],
-            cwd=root,
-            capture_output=True,
-            text=True,
-            timeout=600,
-            check=False,
-        )
-        if guarded.is_err:
-            _log.warning(
-                "ticket %s: `frob check --ticket %s` refused to spawn (%s)",
-                ticket_id,
-                ticket_id,
-                ProcessGuardError.ExecDisabled,
-            )
+        result = _spawn()
+        if result is None:
             return None
-        result = guarded.danger_ok
         match = _GATE_SUMMARY_COUNTS_RE.search(result.stdout)
         if match is None:
             _log.warning(
@@ -2332,14 +2394,17 @@ def _exclude_scoped_run_flaky(
 
 
 # frob:ticket T-0846
+# frob:ticket T-0919
 # frob:tests tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds kind="integration"  # noqa: E501
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn.test_scoped_run_flaky_rule_excluded_from_findings kind="unit"  # noqa: E501
-def _check_gate_findings_fn(root: Path, ticket_id: str):  # noqa: ANN201
+# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn.test_default_spawn_none_keeps_each_closure_independent kind="unit"  # noqa: E501
+def _check_gate_findings_fn(  # noqa: ANN201
+    root: Path,
+    ticket_id: str,
+    spawn=None,  # noqa: ANN001
+):
     """CLI closure (T-0846, sibling to `_check_gates_summary_fn`): calling it
-    spawns a fresh `python -m frob check --ticket <id>` in `root` (its own
-    subprocess, NOT shared with `_check_gates_summary_fn`'s -- a documented
-    doubled-cost tradeoff, see the module-level note this function's own
-    docstring references, kept for correctness-first simplicity) and
+    spawns a fresh `python -m frob check --ticket <id>` in `root` and
     returns a `frozenset[(rule_id, file)]` recovered from every `## Errors`
     diagnostic line the run printed, MINUS any finding under a
     `SCOPED_RUN_FLAKY_RULE_IDS` rule (T-0850: `_exclude_scoped_run_flaky`)
@@ -2353,32 +2418,21 @@ def _check_gate_findings_fn(root: Path, ticket_id: str):  # noqa: ANN201
     "definitely zero") -- `_reverify_done_report_claims_post_merge` falls
     back to the count-only comparison in that case.
 
-    Cost note: today this is a SECOND full `frob check --ticket` spawn
-    whenever both this and `_check_gates_summary_fn` are wired to the same
-    land/done-report call -- deduplicating the two into one shared
-    subprocess run is a real, known follow-up (not silently dropped; see
-    the Done report and the extended T-0850 scope), left for a
-    later pass so this fix lands correctness-first."""
+    T-0919: an optional `spawn` (a `_shared_check_spawn_fn(...)` closure)
+    lets the caller SHARE that one spawn with `_check_gates_summary_fn`
+    instead of each running its own independent `frob check --ticket`
+    (the doubled-cost tradeoff this docstring used to document as a known
+    follow-up -- now closed: `_done_report`/`_land` both pass the SAME
+    shared spawn to both closures). Defaults to `None`, which builds a
+    private one-off spawn (the pre-T-0919 behavior) so existing standalone
+    callers/tests are unaffected."""
+
+    _spawn = spawn if spawn is not None else _shared_check_spawn_fn(root, ticket_id)
 
     def fn() -> frozenset[tuple[str, str]] | None:
-        guarded = guarded_subprocess_run(
-            [_python_for_tree(root), "-m", "frob", "check", "--ticket", ticket_id],
-            cwd=root,
-            capture_output=True,
-            text=True,
-            timeout=600,
-            check=False,
-        )
-        if guarded.is_err:
-            _log.warning(
-                "ticket %s: `frob check --ticket %s` refused to spawn for "
-                "error-finding identities (%s)",
-                ticket_id,
-                ticket_id,
-                ProcessGuardError.ExecDisabled,
-            )
+        result = _spawn()
+        if result is None:
             return None
-        result = guarded.danger_ok
         findings = _parse_error_findings_from_stdout(
             ticket_id, result.stdout, result.returncode
         )
@@ -2449,14 +2503,19 @@ def _done_report(root: Path, cfg: AppConfig) -> None:
         )
         sys.exit(1)
 
+    # T-0919: one shared spawn feeds BOTH check_gates/check_gate_findings
+    # below instead of each running its own full `frob check --ticket`.
+    _shared_spawn = _shared_check_spawn_fn(root, cfg.ticket_id)
     result = set_done_report(
         root,
         cfg.ticket_id,
         why=why,
         base_ref=cfg.ticket_base_ref,
         run_tests=_run_tests_count_fn(root),
-        check_gates=_check_gates_summary_fn(root, cfg.ticket_id),
-        check_gate_findings=_check_gate_findings_fn(root, cfg.ticket_id),
+        check_gates=_check_gates_summary_fn(root, cfg.ticket_id, spawn=_shared_spawn),
+        check_gate_findings=_check_gate_findings_fn(
+            root, cfg.ticket_id, spawn=_shared_spawn
+        ),
     )
     if result.is_err:
         _log.error("done-report failed: %s", result.danger_err)

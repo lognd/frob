@@ -192,26 +192,55 @@ def _callee_short_name(node: Node) -> str | None:
 
 class _EffectGraph:
     """A local, whole-project, best-effort NAME-based call graph over every
-    FUNCTION/METHOD symbol in the files this run was given, built solely to
-    answer "does calling `qualname` transitively reach a directly-
-    effectful call" (see module docstring for why this is a second graph,
-    not `frob.graph.callgraph.build_call_graph`).
+    FUNCTION/METHOD symbol in the files this run was given -- the SHARED
+    interprocedural EFFECT-SUMMARY substrate PERF008
+    (`loop_invariant_effect_violations`) and PERF012
+    (`frob.perf._dup_spawn.duplicate_spawn_violations`, T-0919) both
+    consume, rather than each rule hand-rolling its own one-off call-graph
+    walk (see module docstring for why this is a second graph, not
+    `frob.graph.callgraph.build_call_graph`).
 
-    Built once per `loop_invariant_effect_violations` call and reused
-    across every loop/call site in the run -- reachability answers are
-    memoized per starting symref (`_reachable`), since the same widely-
-    called helper (e.g. `run_argv`) is typically the reachability target
-    for many distinct callers."""
+    Two questions, both memoized and reused across every caller in one
+    run:
+
+    1. `_effect_reachable_from_name`/`_reachable` (PERF008's original
+       question, T-0775): does calling `qualname` transitively reach ANY
+       directly-effectful call, and which one -- a cheap yes/no/first-hit
+       BFS over `body_tokens`-derived call edges, never re-parsing AST.
+    2. `summary`/`_direct_occurrences_for` (T-0919's addition): the FULL
+       per-function EFFECT-SUMMARY multiset -- every `(kind, normalized_
+       arg_text)` pair transitively reachable from `symref`, computed
+       bottom-up over the SAME call edges with a recursion-depth guard
+       (cycle-safe: a symref already on the current recursion stack
+       contributes nothing further, breaking the cycle) and the same
+       `_MAX_NODES` global visit budget PERF008's BFS already enforces.
+       This is what lets PERF012 answer "does this call path spawn the
+       SAME subprocess twice", however many hops deep, or however split
+       across sibling callees, the duplicate is -- `Unknown` (an
+       unresolvable call, or a call whose own arguments cannot be
+       recovered) fails OPEN: it contributes no occurrence rather than a
+       guessed one, so an unresolvable edge can only cause a missed
+       finding, never a false one."""
 
     def __init__(self, files: Sequence[ParsedFile]) -> None:
         """Index every function/method symbol's own direct effect (from its
-        `body_tokens`, a cheap pre-check before the expensive AST walk) and
-        its called-name set, keyed by short name for best-effort
-        resolution."""
+        `body_tokens`, a cheap pre-check before the expensive AST walk),
+        its source file path (for `_direct_occurrences_for`'s lazy AST
+        re-parse), and its called-name set, keyed by short name for
+        best-effort resolution."""
         self._by_name: dict[str, list[str]] = {}
         self._direct: dict[str, str] = {}
+        self._path_of: dict[str, str] = {}
         self._called: dict[str, frozenset[str]] = {}
         self._memo: dict[str, str | None] = {}
+        #: file path -> {short_name -> (kind, arg_text_or_None, line), ...}
+        #: -- one AST re-parse per FILE (`_index_file_occurrences`), not
+        #: per symbol (T-0919).
+        self._occurrence_cache: dict[
+            str, dict[str, tuple[tuple[str, str | None, int], ...]]
+        ] = {}
+        self._summary_memo: dict[str, frozenset[tuple[str, str]]] = {}
+        self._budget = _MAX_NODES
         for file in files:
             for sym in file.symbols:
                 if sym.kind not in _FUNCTION_KINDS:
@@ -220,6 +249,7 @@ class _EffectGraph:
                 self._by_name.setdefault(sym.qualname.rsplit(".", 1)[-1], []).append(
                     symref
                 )
+                self._path_of[symref] = file.path
                 effect = _direct_effect_from_tokens(sym.body_tokens)
                 if effect is not None:
                     self._direct[symref] = effect
@@ -271,6 +301,180 @@ class _EffectGraph:
         if found is None:
             return None
         return self._direct[found], found
+
+    def _resolve_scoped(self, short_name: str, from_path: str | None) -> list[str]:
+        """T-0919: by-name resolution SCOPED to same-file candidates first
+        -- the safe default for MULTISET/duplicate-detection propagation
+        (`summary`, `_entry_occurrences`), unlike the unfiltered by-name
+        union `_effect_reachable_from_name` uses for its cheap yes/no BFS
+        (safe there since it only ever returns the FIRST hit, never a
+        union of many).
+
+        A common short name (`run`, `check`, `fn`...) can resolve to
+        DOZENS of unrelated top-level symbols across a whole project;
+        unioning every one of their summaries (as an early version of this
+        module did) cross-contaminates completely unrelated call paths --
+        any two call sites anywhere in the project that both happen to
+        call something named `run` would spuriously share the SAME
+        occurrence multiset and false-positive PERF012 as "duplicated".
+        Restricting to same-file candidates matches the actual T-0919
+        shape (a helper and its caller are overwhelmingly typically
+        defined in the same module) and is symmetric with `_index_file_
+        occurrences`' own by-short-name-per-file indexing. Falls back to
+        the full cross-file candidate set ONLY when it is unambiguous (a
+        single candidate total) -- an unambiguous name is safe to follow
+        cross-file regardless of scope; a genuinely ambiguous cross-file
+        name resolves to `[]` (fails OPEN: this call edge contributes
+        nothing, a missed finding is accepted, a false one is not)."""
+        candidates = self._by_name.get(short_name, ())
+        if from_path is not None:
+            same_file = [c for c in candidates if self._path_of.get(c) == from_path]
+            if same_file:
+                return same_file
+        if len(candidates) == 1:
+            return list(candidates)
+        return []
+
+    def _direct_occurrences(
+        self, symref: str
+    ) -> tuple[tuple[str, str | None, int], ...]:
+        """T-0919: every direct (non-transitive) process-spawn/directory-
+        walk call inside `symref`'s OWN body, as `(kind, normalized_arg_
+        text_or_None, line)` -- `None` arg text means the call's own
+        argument list could not be resolved (fails OPEN: excluded from
+        `summary`'s duplicate-detection multiset, never guessed). Lazily
+        re-parses `symref`'s source file via AST (unlike this class's
+        cheap token-level `_direct`/`_called` indexes, which cannot carry
+        argument text) and caches per FILE path, not per symbol, so a
+        file with several effectful symbols is re-parsed once."""
+        path = self._path_of.get(symref)
+        if path is None:
+            return ()
+        by_short = self._occurrence_cache.get(path)
+        if by_short is None:
+            by_short = _index_file_occurrences(path)
+            self._occurrence_cache[path] = by_short
+        short = symref.split("::", 1)[1].rsplit(".", 1)[-1]
+        return by_short.get(short, ())
+
+    # frob:doc docs/modules/perf.md#duplicate-identical-subprocess-spawn-detector-perf012-t-0919  # noqa: E501
+    def summary(self, symref: str) -> frozenset[tuple[str, str]]:
+        """T-0919: the full interprocedural EFFECT-SUMMARY for `symref` --
+        every `(kind, normalized_arg_text)` pair reachable by calling
+        `symref` directly or transitively, bottom-up over `_called`.
+        Memoized per symref; a symref already on the CURRENT recursion
+        stack (a call cycle) contributes nothing further rather than
+        recursing forever -- the same "bounded, best-effort, lean toward
+        firing but never hang" posture `_reachable`'s BFS already
+        establishes for PERF008, extended here to carry argument text
+        instead of just a yes/no. `_budget` is reset PER external call
+        (matching `_reachable`'s own per-call `seen` set semantics) so an
+        earlier large query can never starve a later, unrelated one."""
+        self._budget = _MAX_NODES
+        return self._summary(symref, frozenset())
+
+    def _summary(
+        self, symref: str, stack: frozenset[str]
+    ) -> frozenset[tuple[str, str]]:
+        if symref in self._summary_memo:
+            return self._summary_memo[symref]
+        if symref in stack or self._budget <= 0:
+            return frozenset()
+        self._budget -= 1
+        next_stack = stack | {symref}
+        acc: set[tuple[str, str]] = {
+            (kind, arg)
+            for kind, arg, _line in self._direct_occurrences(symref)
+            if arg is not None
+        }
+        current_path = self._path_of.get(symref)
+        for name in self._called.get(symref, ()):
+            for callee in self._resolve_scoped(name, current_path):
+                acc |= self._summary(callee, next_stack)
+        result = frozenset(acc)
+        # Only cache once fully resolved outside any in-progress cycle --
+        # caching a partial (cycle-truncated) result under `stack` non-
+        # empty would wrongly freeze a short-circuited answer as final.
+        if not stack:
+            self._summary_memo[symref] = result
+        return result
+
+
+_WS_RE = re.compile(r"\s+")
+
+
+def _normalize_arg_text(text: str) -> str:
+    """Collapse all whitespace runs to a single space and strip the ends --
+    T-0919's comparison key for "identical argument shape": two spawn
+    calls whose argument source text differs only in incidental
+    formatting (line-wrapping, trailing comma) still count as the SAME
+    duplicated call, matching what a copy-pasted or independently
+    re-typed identical call looks like."""
+    return _WS_RE.sub(" ", text).strip()
+
+
+def _iter_calls(root: Node) -> list[Node]:
+    """Every `call` node anywhere under `root`, in document order (T-0919:
+    used by `_index_file_occurrences` to find every direct effect call
+    inside one `def`'s body, INCLUDING calls nested inside a closure
+    defined in that body -- an accepted over-attribution cost, same
+    "lean toward firing" posture the rest of this module already takes,
+    rather than the false-negative risk of excluding nested defs)."""
+    hits: list[Node] = []
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        if node.type == "call":
+            hits.append(node)
+        stack.extend(node.children)
+    return hits
+
+
+def _index_file_occurrences(
+    path: str,
+) -> dict[str, tuple[tuple[str, str | None, int], ...]]:
+    """T-0919: re-parse `path` via AST and return, for every `def`
+    (function/method) in it, the tuple of `(kind, normalized_arg_text_or_
+    None, line)` for each DIRECT process-spawn/directory-walk call inside
+    that def's own body -- keyed by the def's own short name (matching
+    `_EffectGraph`'s by-short-name resolution elsewhere). `arg_text` is
+    `None` (fails OPEN, excluded from `_EffectGraph.summary`'s duplicate
+    multiset) only for the pathological case of a call node with no
+    resolvable `arguments` field; the overwhelmingly common case always
+    recovers real source text. `{}` if the file cannot be re-parsed (moved/
+    deleted since the original parse) or is not python."""
+    result = _raw_tree(Path(path))
+    if result.is_err:
+        return {}
+    tree, _source, language = result.danger_ok
+    if language != "python":
+        return {}
+    by_short: dict[str, list[tuple[str, str | None, int]]] = {}
+    stack = [tree.root_node]
+    while stack:
+        node = stack.pop()
+        if node.type == "function_definition":
+            name_node = _child_by_field(node, "name")
+            short = _node_text(name_node) if name_node is not None else None
+            body = _child_by_field(node, "body")
+            if short is not None and body is not None:
+                occurrences: list[tuple[str, str | None, int]] = []
+                for call in _iter_calls(body):
+                    effect = _direct_effect(call)
+                    if effect is None:
+                        continue
+                    args = _child_by_field(call, "arguments")
+                    arg_text = (
+                        _normalize_arg_text(_node_text(args))
+                        if args is not None
+                        else None
+                    )
+                    line = call.start_point[0] + 1
+                    occurrences.append((effect, arg_text, line))
+                if occurrences:
+                    by_short.setdefault(short, []).extend(occurrences)
+        stack.extend(node.children)
+    return {short: tuple(occ) for short, occ in by_short.items()}
 
 
 def _direct_effect_from_tokens(tokens: tuple[str, ...]) -> str | None:
@@ -443,14 +647,21 @@ def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
 # frob:ticket T-0775
 def loop_invariant_effect_violations(
     files: Sequence[ParsedFile],
+    graph: _EffectGraph | None = None,
 ) -> tuple[Violation, ...]:
     """PERF008: a loop body's call site that is directly, or transitively
     (via `_EffectGraph`), a process-spawn/directory-walk effect, called
     with arguments that never reference the loop's own bound variable(s)
     or anything derived from them inside the loop body -- see this
     module's docstring for the full detector. WARN-tier (waivable with a
-    reasoned `frob:waive PERF008 reason="..."`), never a silent error."""
-    graph = _EffectGraph(files)
+    reasoned `frob:waive PERF008 reason="..."`), never a silent error.
+
+    `graph`: an optional pre-built `_EffectGraph` to SHARE with a sibling
+    PERF012 run in the same `perf_rules` pass (T-0919: avoids re-indexing
+    the same project's call graph twice in one `frob check`); builds its
+    own if not given."""
+    if graph is None:
+        graph = _EffectGraph(files)
     violations: list[Violation] = []
     seen_paths: set[str] = set()
     for file in files:

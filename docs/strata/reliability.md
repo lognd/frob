@@ -784,6 +784,69 @@ node legacy_multi_write_op : trusted {
 }
 ```
 
+## REL31x: INTERACTIVE-COST-BOUND obligation (T-0919)
+
+`_interactive_cost.py::check_interactive_cost_obligations` reads
+`KernelModel.nodes` (no new kernel field, charter law 1) to find every
+node marked `interactive` (a human-facing CLI/foreground command or flow)
+with an undischarged or unproven bounded-cost obligation. Generalizes the
+`frob ticket done-report` two-full-check-spawns incident (T-0919, fixed
+directly in `frob.app.ticket_runner` and flagged mechanically at the code
+layer by PERF012 -- `docs/modules/perf.md#duplicate-identical-subprocess-spawn-detector-perf012-t-0919`):
+a foreground/interactive flow with no declared cost bound can silently
+grow (a new internal spawn added later, a doubled call site) past any
+reasonable wait, with nothing statically flagging the drift.
+
+- **REL310 missing bounded cost** -- an `interactive` node with no
+  `bounded_cost` attr. Deny-by-default: an interactive flow with no
+  declared cost bound is a foreground-hang risk exactly like an unbounded
+  queue (REL26x) is an OOM risk.
+- **REL311 unproven bounded cost** -- a node DOES declare `bounded_cost`,
+  but the T-0331 PROVABILITY CONSTRAINT forbids discharging it by bare
+  declaration alone: the node must have at least one file bound to it
+  (`_code_binding.py::bind_code`) containing a real cost-bounding-shaped
+  token (a shared/deduplicated spawn, a cache/memo, an explicit timeout,
+  or a stage-scoped/`--only`-style narrowing). A node with no bound code
+  at all is UNCHECKABLE, not unproven -- the same ceiling REL201/REL222/
+  REL231/REL261/REL301 draw.
+
+### Surface vocabulary
+
+```
+node ticket_done_report : trusted {
+    interactive;       // this node is a human-facing CLI/foreground flow
+    bounded_cost;       // discharges REL310; REL311 then checks bound code
+}
+```
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+`interactive`/`bounded_cost` are both presence-only bare Node attrs (no
+numeric magnitude -- the same digit-led-literal ceiling every other
+REL2xx/REL3xx marker in this family discloses), so REL310/REL311 prove
+PRESENCE of a declared cost-bound obligation and its code-level evidence,
+not a specific wall-clock budget. REL311's proof-against-code is a
+syntactic token scan (`lru_cache`/`memo`/`cache`, `shared_spawn`/`dedup`/
+`bounded_cost`, `timeout=`/`--only`/`once`) over the node's bound source,
+not a semantic call-argument binding -- the same "ship what current
+tooling supports" honesty line REL201/REL222/REL231/REL261/REL301 already
+establish.
+
+### Waiver channel
+
+REL310/REL311 do NOT join `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`,
+same as REL210/REL211/REL230/REL231/REL240/REL241/REL250/REL260/REL261/
+REL280/REL281/REL290/REL291/REL300/REL301: a node carries at most one
+`interactive` marker and fires at most one REL310 and one REL311 finding,
+so a bare-rule `waive` clause names exactly one thing:
+
+```
+node legacy_interactive_flow : trusted {
+    interactive;
+    waive "REL310" reason "legacy flow, cost bound tracked in T-9910-followup" ticket "T-9910";
+}
+```
+
 ## See also
 
 - `docs/strata/host.md#resource-contention-sys2xx-t-0699` -- the SYS2xx

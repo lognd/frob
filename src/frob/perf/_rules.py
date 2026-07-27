@@ -44,7 +44,8 @@ from frob.lang import node_text as _node_text
 from frob.lang import raw_tree as _raw_tree
 from frob.lang._models import ParsedFile, RawSymbol, SymbolKind
 from frob.logging import get_logger
-from frob.perf._loop_effects import loop_invariant_effect_violations
+from frob.perf._dup_spawn import duplicate_spawn_violations
+from frob.perf._loop_effects import _EffectGraph, loop_invariant_effect_violations
 from frob.perf._recursion import recursion_rules
 from frob.perf._redundancy import redundant_computation_violations
 
@@ -755,31 +756,45 @@ def _symbol_violations(file: ParsedFile, symbol: RawSymbol) -> tuple[Violation, 
 # frob:enforces CHK-GATE-PERF006
 # frob:enforces CHK-GATE-PERF007
 # frob:ticket T-0775
+# frob:ticket T-0919
 def perf_rules(
     snapshot: GraphSnapshot, files: Sequence[ParsedFile]
 ) -> tuple[Violation, ...]:
-    """PERF001..PERF007 over every function/method symbol in `files`; pure,
-    consumed by the policy/gates stage per docs/modules/perf.md's Integration
-    points. PERF001-004 are self-contained per `ParsedFile` and never
-    consult `snapshot`; PERF005/PERF006 (T-0290, recursion
-    termination/depth) do -- `snapshot.edges` is where a reasoned
-    `frob:invariant terminates reason="..." measure="..."` escape hatch
-    lives (`frob.perf._recursion._termination_reasoned`). PERF007 (T-0413,
-    the PERF META-GAP) is the one cross-FILE check here: a
-    `frob.toml`-configured expensive call target invoked from 2+ distinct
-    top-level symbols with no shared cache -- see
-    `frob.perf._redundancy.redundant_computation_violations`. PERF008
-    (T-0775) is the cross-FUNCTION/cross-MODULE counterpart: a loop whose
-    body calls (directly, or transitively via a local call-graph BFS) a
-    process-spawn/directory-walk effect with loop-invariant arguments --
-    see `frob.perf._loop_effects.loop_invariant_effect_violations`."""
+    """PERF001..PERF008,PERF012 over every function/method symbol in
+    `files`; pure, consumed by the policy/gates stage per
+    docs/modules/perf.md's Integration points. PERF001-004 are
+    self-contained per `ParsedFile` and never consult `snapshot`;
+    PERF005/PERF006 (T-0290, recursion termination/depth) do --
+    `snapshot.edges` is where a reasoned `frob:invariant terminates
+    reason="..." measure="..."` escape hatch lives (`frob.perf._recursion.
+    _termination_reasoned`). PERF007 (T-0413, the PERF META-GAP) is the
+    one cross-FILE check here: a `frob.toml`-configured expensive call
+    target invoked from 2+ distinct top-level symbols with no shared
+    cache -- see `frob.perf._redundancy.redundant_computation_violations`.
+    PERF008 (T-0775) is the cross-FUNCTION/cross-MODULE counterpart: a
+    loop whose body calls (directly, or transitively via a local
+    call-graph BFS) a process-spawn/directory-walk effect with
+    loop-invariant arguments -- see `frob.perf._loop_effects.
+    loop_invariant_effect_violations`. PERF012 (T-0919) is the NON-loop
+    sibling of PERF008: a function whose body calls two or more distinct
+    callees that each independently reach a spawn call with the SAME
+    argument shape -- a duplicated, not-shared expensive spawn on one call
+    path -- see `frob.perf._dup_spawn.duplicate_spawn_violations`."""
     violations: list[Violation] = []
     for file in files:
         for symbol in file.symbols:
             violations.extend(_symbol_violations(file, symbol))
     violations.extend(recursion_rules(snapshot, files))
     violations.extend(redundant_computation_violations(Path(snapshot.root), files))
-    violations.extend(loop_invariant_effect_violations(files))
+    # T-0919: ONE shared `_EffectGraph` feeds both PERF008 and PERF012 --
+    # they answer different questions over the SAME interprocedural
+    # call-graph substrate, so building it twice would double an already
+    # whole-project AST/token index for no benefit.
+    shared_effect_graph = _EffectGraph(files)
+    violations.extend(
+        loop_invariant_effect_violations(files, graph=shared_effect_graph)
+    )
+    violations.extend(duplicate_spawn_violations(files, graph=shared_effect_graph))
     _log.info(
         "perf_rules: scanned %d file(s), %d violation(s)", len(files), len(violations)
     )
