@@ -287,6 +287,11 @@ rules:
 <!-- frob:describes frob-core/src/lib.rs::anti_unify -->
 <!-- frob:describes frob-core/src/lib.rs::wl_hash -->
 <!-- frob:describes frob-core/src/lib.rs::exact_regions -->
+<!-- frob:describes frob-core/src/lib.rs::resolve_call_edges -->
+<!-- frob:describes frob-core/src/lib.rs::called_names -->
+<!-- frob:describes frob-core/src/lib.rs::ordered_called_names -->
+<!-- frob:describes frob-core/src/lib.rs::referenced_names -->
+<!-- frob:describes frob-core/src/lib.rs::unresolved_exempt_names -->
 <!-- frob:describes frob-core/src/lib.rs::frob_core -->
 
 Every `#[pyfunction]`/`#[pymodule]` item is the crate's Python-facing public
@@ -294,6 +299,16 @@ API (a PyO3 export is public even without a Rust `pub` keyword -- frob's
 Rust extractor treats the export attribute as public for this reason). The
 thin `frob.dup._core` Python shim wraps each of these; see the Python-side
 descriptions above.
+
+T-0930 added five more kernels to this SAME crate/pymodule for
+`frob.graph.callgraph` (not `frob.dup`) -- `resolve_call_edges`,
+`called_names`, `ordered_called_names`, `referenced_names`, and
+`unresolved_exempt_names`. See docs/modules/graph.md#rust-core for their
+Python-side wiring (`frob.graph._core`), including the disclosed finding
+that only `resolve_call_edges` is actually dispatched to by default --
+the other four are parked (correct, parity-tested, exported) but
+measured net-slower than pure-Python at this repo's real per-symbol call
+granularity, so no Python shim calls them.
 
 - `r3_canonical_hash` -- R3 canonical fold of an alpha-renamed token stream
   into one stable hex digest (equal-shape bodies collide).

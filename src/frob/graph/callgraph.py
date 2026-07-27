@@ -131,7 +131,16 @@ def _ordered_called_names(body_tokens: tuple[str, ...]) -> tuple[str, ...]:
     `frob.gates._protocol_summary`'s PROTO001/002/003) for no benefit to
     them; only a caller that actually wants per-call-site ordering
     (T-0840's `frob.gates._protocol_summary` ordering check) builds the
-    ordered graph instead."""
+    ordered graph instead.
+
+    T-0930 DISCLOSURE: a `frob_core`-backed native version of this scan
+    was prototyped and measured SLOWER than this pure-Python loop (0.242s
+    vs 0.135s median, dead_symbols in-scope thread_time over this repo's
+    own `src/frob/gates` package, docs/audits/check-performance.md's
+    remediation log) -- per-symbol PyO3 marshaling overhead dominates at
+    this call granularity (thousands of small per-symbol calls), unlike
+    `_resolve_edges`'s native path (46 large, batched calls, a genuine
+    win). Not wired; kept pure-Python deliberately, not by omission."""
     names: list[str] = []
     for i in range(len(body_tokens) - 1):
         tok = body_tokens[i]
@@ -155,7 +164,11 @@ def _called_names(body_tokens: tuple[str, ...]) -> frozenset[str]:
     itself followed by `(` (it is passed BY REFERENCE to the wrapper, not
     called) but is functionally reached the same way a direct call would be:
     `memoize_per_run(_target)` makes every subsequent invocation of the
-    wrapper's result behave exactly like calling `_target`."""
+    wrapper's result behave exactly like calling `_target`.
+
+    T-0930 DISCLOSURE: same "prototyped a native version, measured it
+    SLOWER, kept pure-Python" disposition as `_ordered_called_names`
+    above -- see that docstring."""
     names: set[str] = set()
     for i in range(len(body_tokens) - 1):
         tok = body_tokens[i]
@@ -208,7 +221,11 @@ def _unresolved_exempt_names(body_tokens: tuple[str, ...]) -> frozenset[str]:
     accusation, just a narrower catch than `self.` gets). A name that
     ALSO appears as a bare call or a `self.`-call somewhere else in the
     same body is not exempt -- one confident occurrence is enough to
-    keep it eligible for unresolved marking."""
+    keep it eligible for unresolved marking.
+
+    T-0930 DISCLOSURE: same "prototyped a native version, measured it
+    SLOWER, kept pure-Python" disposition as `_ordered_called_names`
+    above -- see that docstring."""
     confident: set[str] = set()
     all_calls: set[str] = set()
     for i in range(len(body_tokens) - 1):
@@ -248,7 +265,18 @@ def _referenced_names(sym) -> frozenset[str]:  # noqa: ANN001
     shared body+sig extractor) because `build_call_graph`'s callers
     (`frob.dup`'s helper-inline triage) reason about "called", not
     "mentioned anywhere", and widening its recall would change unrelated
-    behavior no ticket asked for."""
+    behavior no ticket asked for.
+
+    T-0930 DISCLOSURE: this was profiled as `dead_symbols`'s new dominant
+    cost once `_resolve_edges`'s own matching loop was moved onto
+    `frob_core` (docs/audits/check-performance.md's remediation log) --
+    a native version was prototyped, but measured SLOWER end-to-end
+    (0.242s vs 0.135s median dead_symbols in-scope thread_time) because
+    this function is called once PER SYMBOL (thousands of small calls
+    over a real package), unlike `_resolve_edges`'s 46 large batched
+    calls -- per-call PyO3 marshaling overhead dominates any win from the
+    Rust loop itself at this granularity. Kept pure-Python deliberately;
+    see `_ordered_called_names`'s docstring for the same disposition."""
     return frozenset(
         tok for tok in (*sym.sig_tokens, *sym.body_tokens) if tok.isidentifier()
     )
@@ -451,6 +479,7 @@ def _short_name_index(
 # frob:ticket T-0361
 # frob:ticket T-0422
 # frob:ticket T-0809
+# frob:ticket T-0930
 def _resolve_edges(
     parsed_by_path: dict[str, list],
     by_name: dict[str, list[tuple[str, str, bool]]],
@@ -488,38 +517,89 @@ def _resolve_edges(
     (...)` false-positive disposition (`_unresolved_exempt_names`).
     `None` (the default, and `build_reference_graph`'s always-`False`
     posture) exempts nothing, unchanged prior behavior.
-    """
-    calls: dict[str, tuple[str, ...]] = {}
+
+    T-0930 DISCLOSURE: a `frob_core.resolve_call_edges` native port of
+    this matching loop was built, parity-tested, and BENCHMARKED
+    end-to-end on `dead_symbols` (docs/audits/check-performance.md
+    rust-candidate row 8) -- measured NET SLOWER than staying pure-Python
+    (0.164s vs 0.127s median in-scope thread_time over this repo's own
+    `src/frob/gates` package, `dead_symbols` calls this once per package,
+    46 packages here). At this repo's real per-package data scale (tens
+    of symbols, hundreds of `by_name` candidates), the PyO3 marshaling
+    cost of crossing the whole `by_name` index and per-caller name lists
+    into Rust and reconstructing the result dict outweighs the matching
+    loop's own (already small) pure-Python cost -- this loop was never
+    dead_symbols' actual dominant cost once `_referenced_names`'s own
+    token-scan overhead (the real dominant cost, see that function's
+    docstring) is accounted for separately. NOT dispatched to native by
+    default for this reason -- `frob.graph._core.resolve_call_edges_native`
+    stays available (parity-tested against `_resolve_edges_python`,
+    tests/test_graph.py::TestResolveCallEdgesNative) for a future caller
+    with a genuinely large single-batch input (e.g. a whole-repo call
+    graph in one call, not once per small package) where the fixed
+    marshaling cost amortizes over enough matching work to win."""
+    callers: list[str] = []
+    names_per_caller: list[list[str]] = []
+    exempt_per_caller: list[list[str]] = []
     for path, symbols in parsed_by_path.items():
         for sym in symbols:
-            caller_symref = f"{path}::{sym.qualname}"
-            names = name_extractor(sym)
-            exempt = (
-                exempt_extractor(sym) if exempt_extractor is not None else frozenset()
+            callers.append(f"{path}::{sym.qualname}")
+            names_per_caller.append(list(name_extractor(sym)))
+            exempt_per_caller.append(
+                list(exempt_extractor(sym)) if exempt_extractor is not None else []
             )
-            callees: list[str] = []
-            saw_unresolved = False
-            for name in names:
-                candidates = by_name.get(name, ())
-                matched_private = False
-                for symref, _cand_path, is_private in candidates:
-                    if symref == caller_symref:
-                        continue
-                    if is_private:
-                        callees.append(symref)
-                        matched_private = True
-                if (
-                    mark_unresolved
-                    and not matched_private
-                    and not candidates
-                    and name.startswith("_")
-                    and name not in exempt
-                ):
-                    saw_unresolved = True
-            if saw_unresolved:
-                callees.append(UNRESOLVED_CALLEE)
-            if callees:
-                calls[caller_symref] = tuple(callees)
+
+    return _resolve_edges_python(
+        callers,
+        names_per_caller,
+        exempt_per_caller,
+        by_name,
+        mark_unresolved=mark_unresolved,
+    )
+
+
+# frob:ticket T-0930
+def _resolve_edges_python(
+    callers: list[str],
+    names_per_caller: list[list[str]],
+    exempt_per_caller: list[list[str]],
+    by_name: dict[str, list[tuple[str, str, bool]]],
+    *,
+    mark_unresolved: bool = False,
+) -> dict[str, tuple[str, ...]]:
+    """Pure-Python fallback for `_resolve_edges`'s matching loop -- kept
+    byte-identical to the pre-T-0930 implementation (same double loop over
+    parallel per-caller name/exempt lists against the shared `by_name`
+    index), used whenever `frob_core` is unavailable
+    (`frob.graph._core.core_available` is `False`). Never called directly
+    outside `_resolve_edges` and its own golden-parity test."""
+    calls: dict[str, tuple[str, ...]] = {}
+    for caller_symref, names, exempt in zip(
+        callers, names_per_caller, exempt_per_caller
+    ):
+        callees: list[str] = []
+        saw_unresolved = False
+        for name in names:
+            candidates = by_name.get(name, ())
+            matched_private = False
+            for symref, _cand_path, is_private in candidates:
+                if symref == caller_symref:
+                    continue
+                if is_private:
+                    callees.append(symref)
+                    matched_private = True
+            if (
+                mark_unresolved
+                and not matched_private
+                and not candidates
+                and name.startswith("_")
+                and name not in exempt
+            ):
+                saw_unresolved = True
+        if saw_unresolved:
+            callees.append(UNRESOLVED_CALLEE)
+        if callees:
+            calls[caller_symref] = tuple(callees)
     return calls
 
 

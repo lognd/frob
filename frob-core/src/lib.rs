@@ -1023,6 +1023,191 @@ fn emit_run_pairs(
     truncated
 }
 
+/// Approximates Python's `str.isidentifier()` over the token alphabet
+/// `frob.lang`'s tokenizers actually emit (identifiers vs punctuation/
+/// operator/literal tokens) -- first char a letter or underscore, every
+/// other char alphanumeric or underscore, Unicode-aware via Rust's own
+/// `char::is_alphabetic`/`is_alphanumeric` (T-0930, same "close enough
+/// for real source token text, documented rather than silently assumed"
+/// posture as this crate's `is_numeric_literal`/`is_string_literal`).
+fn is_identifier_token(tok: &str) -> bool {
+    let mut chars = tok.chars();
+    match chars.next() {
+        Some(c) if c == '_' || c.is_alphabetic() => {}
+        _ => return false,
+    }
+    chars.all(|c| c == '_' || c.is_alphanumeric())
+}
+
+/// T-0930: the `frob.graph.callgraph._called_names`/`_ordered_called_names`
+/// shared token scan -- an identifier token immediately followed by `(`
+/// is a call name; a bare-identifier argument to a known wrapper marker
+/// (`memoize_per_run(_target)`) is rescued too (T-0583). `ordered`
+/// selects which of the two Python functions' contracts to match:
+/// `false` collapses into a de-duplicated, UNORDERED name list
+/// (`_called_names`'s frozenset contract); `true` preserves source-text
+/// order with duplicates kept (`_ordered_called_names`'s contract) --
+/// same scan, two output shapes, avoiding two near-identical loops.
+fn scan_call_tokens(body_tokens: &[String], wrapper_markers: &[String], ordered: bool) -> Vec<String> {
+    let markers: std::collections::HashSet<&str> =
+        wrapper_markers.iter().map(|s| s.as_str()).collect();
+    let n = body_tokens.len();
+    let mut ordered_out: Vec<String> = Vec::new();
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for i in 0..n.saturating_sub(1) {
+        let tok = &body_tokens[i];
+        if body_tokens[i + 1] != "(" || !is_identifier_token(tok) {
+            continue;
+        }
+        if ordered || seen.insert(tok.clone()) {
+            ordered_out.push(tok.clone());
+        }
+        if markers.contains(tok.as_str())
+            && i + 2 < n
+            && is_identifier_token(&body_tokens[i + 2])
+            && (i + 3 >= n || body_tokens[i + 3] == ")" || body_tokens[i + 3] == ",")
+        {
+            let wrapped = &body_tokens[i + 2];
+            if ordered || seen.insert(wrapped.clone()) {
+                ordered_out.push(wrapped.clone());
+            }
+        }
+    }
+    ordered_out
+}
+
+/// T-0930: `frob.graph.callgraph._called_names` -- de-duplicated call-name
+/// scan (see `scan_call_tokens`).
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+#[pyfunction]
+fn called_names(body_tokens: Vec<String>, wrapper_markers: Vec<String>) -> Vec<String> {
+    scan_call_tokens(&body_tokens, &wrapper_markers, false)
+}
+
+/// T-0930: `frob.graph.callgraph._ordered_called_names` -- source-order,
+/// duplicates-kept call-name scan (see `scan_call_tokens`).
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+#[pyfunction]
+fn ordered_called_names(body_tokens: Vec<String>, wrapper_markers: Vec<String>) -> Vec<String> {
+    scan_call_tokens(&body_tokens, &wrapper_markers, true)
+}
+
+/// T-0930: `frob.graph.callgraph._referenced_names` -- every identifier
+/// token across `sig_tokens` then `body_tokens`, de-duplicated (broader
+/// recall than `called_names`: catches dispatch-table/decorator/default-
+/// value mentions that never appear as a `name(` call token at all).
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+#[pyfunction]
+fn referenced_names(sig_tokens: Vec<String>, body_tokens: Vec<String>) -> Vec<String> {
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut out: Vec<String> = Vec::new();
+    for tok in sig_tokens.iter().chain(body_tokens.iter()) {
+        if is_identifier_token(tok) && seen.insert(tok.clone()) {
+            out.push(tok.clone());
+        }
+    }
+    out
+}
+
+/// T-0930: `frob.graph.callgraph._unresolved_exempt_names` -- every call
+/// name whose EVERY occurrence is an attribute call on a receiver other
+/// than `self` (T-0813's `obj._method(...)`/`super().__init__(...)`
+/// false-positive disposition).
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+#[pyfunction]
+fn unresolved_exempt_names(body_tokens: Vec<String>) -> Vec<String> {
+    let mut confident: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut all_calls: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let n = body_tokens.len();
+    for i in 0..n.saturating_sub(1) {
+        let tok = &body_tokens[i];
+        if body_tokens[i + 1] != "(" || !is_identifier_token(tok) {
+            continue;
+        }
+        all_calls.insert(tok.clone());
+        let is_attr_call = i > 0 && body_tokens[i - 1] == ".";
+        let receiver_is_self = is_attr_call && i > 1 && body_tokens[i - 2] == "self";
+        if !is_attr_call || receiver_is_self {
+            confident.insert(tok.clone());
+        }
+    }
+    all_calls.difference(&confident).cloned().collect()
+}
+
+/// T-0930: resolve caller->callee edges over a PRE-EXTRACTED per-caller
+/// name list against a shared by-short-name candidate index -- the hot
+/// `O(names * candidates)` matching + `UNRESOLVED_CALLEE` bookkeeping loop
+/// inside `frob.graph.callgraph._resolve_edges` (dead_symbols's DEAD001
+/// gate, `build_call_graph`, `build_reference_graph` all share this
+/// substrate, docs/audits/check-performance.md rust-candidate row 8).
+///
+/// Data-in/data-out, matching this crate's whole-file convention: token
+/// extraction (`_called_names`/`_referenced_names`) and privacy
+/// classification (`RawSymbol.public`) both stay in Python -- this is
+/// only the matching loop, byte-identical in behavior to
+/// `frob.graph.callgraph._resolve_edges_python` (the pure-Python fallback
+/// kept alongside this for when `frob_core` is unavailable).
+///
+/// `callers`/`names_per_caller`/`exempt_per_caller` are parallel, same
+/// length, one entry per symbol. Returns `(caller, callees)` pairs in
+/// CALLER-ITERATION ORDER (not a `HashMap`, deliberately -- Python's own
+/// dict-insertion-order contract must survive the FFI boundary) with
+/// callers that resolved to zero callees omitted, exactly like the
+/// Python original.
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+#[pyfunction]
+fn resolve_call_edges(
+    callers: Vec<String>,
+    names_per_caller: Vec<Vec<String>>,
+    exempt_per_caller: Vec<Vec<String>>,
+    by_name: HashMap<String, Vec<(String, String, bool)>>,
+    mark_unresolved: bool,
+    unresolved_sentinel: String,
+) -> Vec<(String, Vec<String>)> {
+    let mut out: Vec<(String, Vec<String>)> = Vec::with_capacity(callers.len());
+    for ((caller, names), exempt) in callers
+        .into_iter()
+        .zip(names_per_caller.into_iter())
+        .zip(exempt_per_caller.into_iter())
+    {
+        let exempt_set: std::collections::HashSet<&str> =
+            exempt.iter().map(|s| s.as_str()).collect();
+        let mut callees: Vec<String> = Vec::new();
+        let mut saw_unresolved = false;
+        for name in &names {
+            let candidates = by_name.get(name);
+            let mut matched_private = false;
+            if let Some(cands) = candidates {
+                for (symref, _cand_path, is_private) in cands {
+                    if symref == &caller {
+                        continue;
+                    }
+                    if *is_private {
+                        callees.push(symref.clone());
+                        matched_private = true;
+                    }
+                }
+            }
+            let has_candidates = candidates.is_some_and(|c| !c.is_empty());
+            if mark_unresolved
+                && !matched_private
+                && !has_candidates
+                && name.starts_with('_')
+                && !exempt_set.contains(name.as_str())
+            {
+                saw_unresolved = true;
+            }
+        }
+        if saw_unresolved {
+            callees.push(unresolved_sentinel.clone());
+        }
+        if !callees.is_empty() {
+            out.push((caller, callees));
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1657,6 +1842,142 @@ mod tests {
         let lcp = kasai_lcp(&s, &sa);
         assert_eq!(lcp, vec![0, 1, 3, 0, 0, 2]);
     }
+
+    // frob:tests frob-core/src/lib.rs::resolve_call_edges kind="unit"
+    #[test]
+    fn resolve_call_edges_matches_private_callee_and_skips_self_and_public() {
+        let by_name: HashMap<String, Vec<(String, String, bool)>> = HashMap::from([
+            (
+                "helper".to_string(),
+                vec![("a.py::helper".to_string(), "a.py".to_string(), true)],
+            ),
+            (
+                "public_fn".to_string(),
+                vec![("a.py::public_fn".to_string(), "a.py".to_string(), false)],
+            ),
+        ]);
+        let out = resolve_call_edges(
+            vec!["a.py::caller".to_string()],
+            vec![vec![
+                "helper".to_string(),
+                "public_fn".to_string(),
+                "helper".to_string(), // self-call to a name equal to caller's own symref is a separate case below
+            ]],
+            vec![vec![]],
+            by_name,
+            false,
+            "?unresolved".to_string(),
+        );
+        assert_eq!(
+            out,
+            vec![(
+                "a.py::caller".to_string(),
+                vec!["a.py::helper".to_string(), "a.py::helper".to_string()]
+            )]
+        );
+    }
+
+    #[test]
+    fn resolve_call_edges_excludes_self_reference() {
+        let by_name: HashMap<String, Vec<(String, String, bool)>> = HashMap::from([(
+            "caller".to_string(),
+            vec![("a.py::caller".to_string(), "a.py".to_string(), true)],
+        )]);
+        let out = resolve_call_edges(
+            vec!["a.py::caller".to_string()],
+            vec![vec!["caller".to_string()]],
+            vec![vec![]],
+            by_name,
+            false,
+            "?unresolved".to_string(),
+        );
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn resolve_call_edges_marks_unresolved_private_looking_miss_unless_exempt() {
+        let by_name: HashMap<String, Vec<(String, String, bool)>> = HashMap::new();
+        let unresolved = resolve_call_edges(
+            vec!["a.py::caller".to_string()],
+            vec![vec!["_missing".to_string()]],
+            vec![vec![]],
+            by_name.clone(),
+            true,
+            "?unresolved".to_string(),
+        );
+        assert_eq!(
+            unresolved,
+            vec![(
+                "a.py::caller".to_string(),
+                vec!["?unresolved".to_string()]
+            )]
+        );
+
+        let exempted = resolve_call_edges(
+            vec!["a.py::caller".to_string()],
+            vec![vec!["_missing".to_string()]],
+            vec![vec!["_missing".to_string()]],
+            by_name,
+            true,
+            "?unresolved".to_string(),
+        );
+        assert!(exempted.is_empty());
+    }
+
+    // frob:tests frob-core/src/lib.rs::called_names kind="unit"
+    #[test]
+    fn called_names_rescues_wrapper_marker_argument() {
+        let tokens: Vec<String> = ["memoize_per_run", "(", "_target", ")"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let mut names = called_names(tokens, vec!["memoize_per_run".to_string()]);
+        names.sort();
+        assert_eq!(
+            names,
+            vec!["_target".to_string(), "memoize_per_run".to_string()]
+        );
+    }
+
+    #[test]
+    fn ordered_called_names_preserves_order_and_duplicates() {
+        let tokens: Vec<String> = ["_a", "(", ")", "_b", "(", ")", "_a", "(", ")"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let names = ordered_called_names(tokens, vec![]);
+        assert_eq!(
+            names,
+            vec!["_a".to_string(), "_b".to_string(), "_a".to_string()]
+        );
+    }
+
+    #[test]
+    fn referenced_names_covers_signature_and_body_deduped() {
+        let sig: Vec<String> = ["self", "arg"].iter().map(|s| s.to_string()).collect();
+        let body: Vec<String> = ["arg", "+", "1"].iter().map(|s| s.to_string()).collect();
+        let mut names = referenced_names(sig, body);
+        names.sort();
+        assert_eq!(
+            names,
+            vec!["arg".to_string(), "self".to_string()]
+        );
+    }
+
+    #[test]
+    fn unresolved_exempt_names_exempts_only_pure_foreign_attribute_calls() {
+        // `self._foo()` (confident, never exempt) and `obj._bar()` (always
+        // an attribute call on a non-self receiver, always exempt).
+        let tokens: Vec<String> = [
+            "self", ".", "_foo", "(", ")", "obj", ".", "_bar", "(", ")",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+        let mut exempt = unresolved_exempt_names(tokens);
+        exempt.sort();
+        assert_eq!(exempt, vec!["_bar".to_string()]);
+    }
 }
 
 #[pymodule]
@@ -1670,5 +1991,10 @@ fn frob_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(anti_unify, m)?)?;
     m.add_function(wrap_pyfunction!(wl_hash, m)?)?;
     m.add_function(wrap_pyfunction!(exact_regions, m)?)?;
+    m.add_function(wrap_pyfunction!(resolve_call_edges, m)?)?;
+    m.add_function(wrap_pyfunction!(called_names, m)?)?;
+    m.add_function(wrap_pyfunction!(ordered_called_names, m)?)?;
+    m.add_function(wrap_pyfunction!(referenced_names, m)?)?;
+    m.add_function(wrap_pyfunction!(unresolved_exempt_names, m)?)?;
     Ok(())
 }

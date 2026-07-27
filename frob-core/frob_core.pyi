@@ -34,3 +34,19 @@ def exact_regions(
     min_len: int,
     max_run_size: int = 200,
 ) -> tuple[list[tuple[int, int, int, int, int]], bool]: ...
+
+# T-0930: frob.graph.callgraph kernels -- see docs/modules/graph.md#rust-core.
+def resolve_call_edges(
+    callers: list[str],
+    names_per_caller: list[list[str]],
+    exempt_per_caller: list[list[str]],
+    by_name: dict[str, list[tuple[str, str, bool]]],
+    mark_unresolved: bool,
+    unresolved_sentinel: str,
+) -> list[tuple[str, list[str]]]: ...
+def called_names(body_tokens: list[str], wrapper_markers: list[str]) -> list[str]: ...
+def ordered_called_names(
+    body_tokens: list[str], wrapper_markers: list[str]
+) -> list[str]: ...
+def referenced_names(sig_tokens: list[str], body_tokens: list[str]) -> list[str]: ...
+def unresolved_exempt_names(body_tokens: list[str]) -> list[str]: ...

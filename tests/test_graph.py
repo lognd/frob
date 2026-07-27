@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import sqlite3
+import sys
 from pathlib import Path
 
 import pytest
@@ -2097,6 +2098,172 @@ class TestCallGraph:
         )
         graph = build_ordered_call_graph(tmp_path, ("src/a.rs",))
         assert graph.calls == {"src/a.rs::entry": ("src/a.rs::helper",)}
+
+
+class TestResolveCallEdgesNative:
+    """T-0930: golden parity between `frob.graph._core.resolve_call_edges_native`
+    (frob_core, Rust) and `frob.graph.callgraph._resolve_edges_python`
+    (the pure-Python fallback) -- `_resolve_edges` itself always calls
+    whichever is available, so these tests call BOTH explicitly, over
+    real repo package inputs, to prove they return identical results
+    rather than trusting the dispatch to only ever exercise one path in
+    CI."""
+
+    # frob:tests src/frob/graph/_core.py::resolve_call_edges_native
+    def test_native_matches_python_fallback_on_a_real_package(self) -> None:
+        # frob:tests src/frob/graph/callgraph.py::_resolve_edges_python
+        from frob.graph._core import core_available, resolve_call_edges_native
+        from frob.graph.callgraph import (
+            UNRESOLVED_CALLEE,
+            _called_names_from_sym,
+            _parse_package,
+            _resolve_edges_python,
+            _short_name_index,
+            _unresolved_exempt_names,
+        )
+
+        if not core_available():
+            pytest.skip("frob_core not built in this environment")
+
+        root = Path(__file__).resolve().parents[1]
+        # A real, non-trivial package with plenty of private-symbol call
+        # traffic -- this module's own gate package.
+        paths = tuple(
+            sorted(
+                p.relative_to(root).as_posix()
+                for p in (root / "src/frob/gates").glob("*.py")
+            )
+        )
+        parsed_by_path = _parse_package(root, paths)
+        by_name = _short_name_index(parsed_by_path)
+
+        callers: list[str] = []
+        names_per_caller: list[list[str]] = []
+        exempt_per_caller: list[list[str]] = []
+        for path, symbols in parsed_by_path.items():
+            for sym in symbols:
+                callers.append(f"{path}::{sym.qualname}")
+                names_per_caller.append(list(_called_names_from_sym(sym)))
+                exempt_per_caller.append(
+                    list(_unresolved_exempt_names(sym.body_tokens))
+                )
+
+        for mark_unresolved in (False, True):
+            native = resolve_call_edges_native(
+                callers,
+                names_per_caller,
+                exempt_per_caller,
+                by_name,
+                mark_unresolved,
+                UNRESOLVED_CALLEE,
+            )
+            python = _resolve_edges_python(
+                callers,
+                names_per_caller,
+                exempt_per_caller,
+                by_name,
+                mark_unresolved=mark_unresolved,
+            )
+            assert native is not None
+            assert native == python
+            assert len(native) > 0, (
+                "sanity: this package must have SOME resolved edges, or "
+                "this test would trivially pass on two empty dicts"
+            )
+
+    def test_native_matches_python_fallback_on_a_synthetic_edge_case(self) -> None:
+        # frob:tests src/frob/graph/_core.py::resolve_call_edges_native
+        from frob.graph._core import core_available, resolve_call_edges_native
+        from frob.graph.callgraph import _resolve_edges_python
+
+        if not core_available():
+            pytest.skip("frob_core not built in this environment")
+
+        by_name = {
+            "helper": [("a.py::helper", "a.py", True)],
+            "public_fn": [("a.py::public_fn", "a.py", False)],
+        }
+        callers = ["a.py::caller", "a.py::caller2"]
+        names_per_caller = [["helper", "public_fn"], ["_missing"]]
+        exempt_per_caller: list[list[str]] = [[], []]
+
+        native = resolve_call_edges_native(
+            callers,
+            names_per_caller,
+            exempt_per_caller,
+            by_name,
+            True,
+            "?unresolved",
+        )
+        python = _resolve_edges_python(
+            callers,
+            names_per_caller,
+            exempt_per_caller,
+            by_name,
+            mark_unresolved=True,
+        )
+        assert native == python
+        assert native == {
+            "a.py::caller": ("a.py::helper",),
+            "a.py::caller2": ("?unresolved",),
+        }
+
+    # frob:tests src/frob/graph/_core.py::core_available
+    def test_core_available_true_dispatches_to_native_spy_and_false_does_not(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Pins `core_available()`'s True/False return OBSERVABLY, both
+        ways, via a spy substituted into `sys.modules["frob_core"]` --
+        kills the two mutants at `core_available`'s `return False`/
+        `return True` lines (flipping either boolean must fail this test).
+        Deliberately does NOT depend on the real compiled `frob_core`
+        extension being built in this environment (unlike the golden-
+        parity tests above, which `pytest.skip()` when it is missing): a
+        skip-gated assertion never fails on a mutant, it just stops
+        running, which is exactly why those tests could not kill this
+        function's mutants even though they exercise it indirectly."""
+        import types
+
+        import frob.graph._core as core_mod
+
+        by_name = {"helper": [("a.py::helper", "a.py", True)]}
+        args = (["a.py::caller"], [["helper"]], [[]], by_name, False, "?unresolved")
+
+        calls: list[tuple] = []
+        fake_module = types.ModuleType("frob_core")
+
+        def _spy(*a, **k):  # noqa: ANN002, ANN003, ANN202
+            calls.append((a, k))
+            return [("a.py::caller", ["a.py::helper"])]
+
+        fake_module.resolve_call_edges = _spy  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]  # noqa: E501
+
+        # -- available: a fake-but-importable module in sys.modules, so
+        # `import frob_core` inside core_available succeeds deterministically
+        # regardless of whether the real extension is built here.
+        # core_available() must return True, and resolve_call_edges_native
+        # must actually call it (spy observes the call).
+        monkeypatch.setitem(sys.modules, "frob_core", fake_module)
+        core_mod.core_available.cache_clear()
+        assert core_mod.core_available() is True
+        result = core_mod.resolve_call_edges_native(*args)
+        assert result == {"a.py::caller": ("a.py::helper",)}
+        assert len(calls) == 1, "native path must call frob_core exactly once"
+
+        # -- unavailable: sys.modules["frob_core"] = None forces `import
+        # frob_core` to raise ImportError (the exact branch core_available's
+        # `except ImportError` guards). core_available() must return False,
+        # and resolve_call_edges_native must return None WITHOUT calling
+        # frob_core at all (spy untouched).
+        monkeypatch.setitem(sys.modules, "frob_core", None)
+        core_mod.core_available.cache_clear()
+        assert core_mod.core_available() is False
+        calls.clear()
+        result = core_mod.resolve_call_edges_native(*args)
+        assert result is None
+        assert calls == [], "fallback path must never call frob_core"
+
+        core_mod.core_available.cache_clear()
 
 
 class TestLedgerNotDoc:

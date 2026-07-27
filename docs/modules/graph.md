@@ -190,6 +190,43 @@ Resolution is best-effort (flat token stream, no scope/overload
 disambiguation) -- a triage aid, matching the rest of `frob.dup`'s posture,
 not a soundness guarantee.
 
+## Rust core
+
+<!-- frob:describes src/frob/graph/_core.py::resolve_call_edges_native -->
+
+T-0930: `frob.graph._core` mirrors `frob.dup._core`'s `core_available()`-
+gated shim pattern (docs/modules/dup.md#rust-core) over one `frob_core`
+native kernel: `resolve_call_edges` (frob-core/src/lib.rs), the batched
+caller->callee matching loop `_resolve_edges` splits its per-caller
+name/exempt-list extraction from (docs/audits/check-performance.md
+rust-candidate row 8, `dead_symbols`' hot path).
+
+`_resolve_edges` does NOT call this native path by default -- a real
+before/after benchmark on this repo's own `src/frob/gates` package (46
+packages, `dead_symbols`' actual production call site) measured it net
+SLOWER end-to-end (0.164s vs 0.127s median in-scope `thread_time`) than
+staying pure-Python: at this repo's real per-package data scale, PyO3's
+marshaling cost for the whole `by_name` index and per-caller name lists
+crossing into Rust and the result dict crossing back outweighs the
+matching loop's own (already small) pure-Python cost. `resolve_call_
+edges_native` stays available and parity-tested
+(`tests/test_graph.py::TestResolveCallEdgesNative`) against
+`_resolve_edges_python` for a future caller batching a genuinely large
+single input (e.g. a whole-repo call graph in one call) where the fixed
+marshaling cost would amortize over enough matching work to win.
+
+`frob_core` additionally exports `called_names`, `ordered_called_names`,
+`referenced_names`, and `unresolved_exempt_names` -- native ports of
+`frob.graph.callgraph`'s per-symbol token-scan helpers, also prototyped
+and benchmarked this same pass. NOT wired at all (no Python shim calls
+them): each is invoked once PER SYMBOL in real use (thousands of calls
+over a real package), a granularity where PyO3 per-call overhead
+dominated any loop-speed win even more decisively than the batched
+`resolve_call_edges` case above. Kept in `frob_core` (tested,
+documented) as parked kernels, not wired -- see
+`frob.graph.callgraph._ordered_called_names`'s docstring for the full
+disposition.
+
 ## Protocol summary engine
 
 <!-- frob:describes src/frob/graph/summary.py::compute_protocol_summaries -->

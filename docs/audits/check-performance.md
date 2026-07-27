@@ -347,3 +347,122 @@ chased further as it is far below row 2's original 13.68s/15% share and no
 longer this audit's largest unresolved row. Full `tests/test_gates.py`
 (463 collected, all passing before and after) verifies the three memo
 functions preserve every existing gate's output.
+
+## Remediation log (T-0930, rust-candidate rows -- dead_symbols investigated)
+
+T-0930's own instruction was to prioritize the 1-2 rust-candidate rows
+with the clearest CPU-bound inner loop rather than shallow-port all four
+(row 1 `static`/dup+cycle+arch+bind+exports, row 3 `archgate`, row 7
+`pii_structural`, row 8 `dead_symbols`). Investigated `dead_symbols`
+(row 8, 3.53s) first: `dup` (part of row 1's `static` bucket) already
+has a full `frob_core` port (`frob.dup._core`, docs/modules/dup.md#rust-
+core, pre-existing); `pii_structural` (row 7, 1954 lines) and `archgate`
+(row 3) are dominated by tree-sitter `Node`/semantic AST-shaped analysis
+(SOLID/LSP/type-design checks, field-name/type classification), not a
+generic data-in/data-out kernel the existing `frob_core` compute-only
+convention (docs/modules/dup.md's "no IO, no caching policy... crate is
+compute-only" design rule) fits without re-implementing a parser
+equivalence layer in Rust -- both dispositioned as NOT attempted this
+pass (see "Rows deferred" below), in favor of finishing a real,
+measured migration on one row rather than a shallow port of several.
+
+**`dead_symbols` (row 8) -- INVESTIGATED, ONE genuine native win found,
+FOUR prototyped-and-reverted after honest benchmarking.**
+`dead_symbol_gate` -> `build_reference_graph` -> `frob.graph.callgraph`'s
+`_resolve_edges` (the caller/callee matching loop) and its
+`_called_names`/`_ordered_called_names`/`_referenced_names`/
+`_unresolved_exempt_names` token-scan helpers all operate on plain
+`tuple[str, ...]` token data (`RawSymbol.body_tokens`/`sig_tokens`) --
+the same "serialized token lists in, data out" shape `frob.dup._core`'s
+existing kernels already use, making this the cleanest rust-candidate
+substrate found this pass (no tree-sitter `Node` objects cross the FFI
+boundary, unlike `pii_structural`/`archgate`).
+
+Ported ALL FIVE as `frob_core` kernels (`resolve_call_edges`,
+`called_names`, `ordered_called_names`, `referenced_names`,
+`unresolved_exempt_names`, frob-core/src/lib.rs) with byte-identical
+Python fallbacks (`frob.graph.callgraph._resolve_edges_python` and the
+four token-scan functions' own pre-T-0930 bodies), golden parity tests
+against real repo inputs (`tests/test_graph.py::
+TestResolveCallEdgesNative`, run over `src/frob/gates`'s own 46-file
+package), and Rust-side unit tests (`frob-core/src/lib.rs`'s `mod
+tests`, 8 new cases, all passing).
+
+**Benchmark methodology**: `dead_symbol_gate` called directly (bypassing
+the process-pool dispatch Finding 0 already showed blinds every one of
+frob's own profiling collectors), inside a `run_memo_scope()` with
+`build_graph` pre-warmed first so `frob.lang.parse_file`'s per-run memo
+(T-0414) is hot for both arms -- otherwise cold tree-sitter parsing (21s+
+uncached) swamps any difference in the matching-loop cost being measured.
+`time.thread_time()` bracketing the gate call itself, median of 7 runs
+(first run dropped as a one-off warmup outlier), over this repo's own
+`src/frob/gates` package (46 packages' worth of symbols via
+`dead_symbol_gate(root, snapshot)`).
+
+**Result: measured net SLOWER with native dispatch, for every one of the
+five kernels, at this repo's real per-package/per-symbol data scale.**
+
+```
+_resolve_edges alone (batched, 46 calls total, one per package):
+  native:  0.164s median in-scope thread_time
+  python:  0.127s median in-scope thread_time   (~29% SLOWER natively)
+
+_called_names/_ordered_called_names/_referenced_names/
+_unresolved_exempt_names (per-symbol, ~13,600 calls total):
+  native:  0.242s median in-scope thread_time
+  python:  0.135s median in-scope thread_time   (~79% SLOWER natively)
+```
+
+**Why**: PyO3's marshaling cost for crossing Python containers into Rust
+and reconstructing the result on the way back is a FIXED per-call tax
+that does not shrink with the loop's own algorithmic simplicity. This
+repo's real packages are small (tens of symbols, hundreds of `by_name`
+candidates) and the pure-Python matching/token-scan loops were already
+fast in absolute terms (cProfile isolated `_referenced_names` at ~3.14s
+cumulative across the WHOLE 46-package run before its parse cost was
+separated out, then ~0.1-0.2s once parsing was properly warmed) --
+small enough that the fixed FFI tax exceeds any win the Rust loop's raw
+speed would otherwise deliver. `resolve_call_edges` is called only 46
+times (once per package) with a LARGER payload (the whole `by_name`
+index) each time, which should amortize FFI cost better than the
+per-symbol functions -- and still measured net negative, meaning even
+the "batched" case is not batched enough here to win.
+
+**Disposition: NOT wired into the default runtime path.** `_resolve_
+edges` in `frob.graph.callgraph` calls its pure-Python implementation
+unconditionally; none of the four token-scan functions call their
+`frob_core` counterparts either. All five kernels remain in `frob_core`
+(compiled, tested, golden-parity-proven correct) as parked kernels for a
+future caller that batches a genuinely large single input (e.g. a
+whole-repo call graph resolved in ONE native call rather than once per
+small package) where the fixed marshaling cost would amortize over
+enough matching work to actually win -- see docs/modules/graph.md#rust-
+core and each reverted function's docstring in `frob.graph.callgraph`
+for the full disposition, kept visible so a future pass does not
+re-attempt the same shallow per-symbol/per-package dispatch and
+re-discover the same regression.
+
+**Net effect on `dead_symbols`' measured wall time**: none by design --
+this investigation intentionally did NOT ship a regression. `gate-
+summary`'s `dead_symbols` bracket measured 3.53-4.39s across several
+`--only gates-security` runs during this ticket, consistent with the
+audit's original 3.53s baseline (run-to-run variance, not a change).
+
+**Rows deferred, children filed**: `static` bucket (row 1, `dup`'s own
+sub-share already native; `cycle`/`arch`/`bind`/`exports` not
+investigated this pass -- `cycle`'s Tarjan SCC over
+`DependencyGraph`/string node names, `src/frob/cycle/graph.py`, is a
+plausible future rust-candidate with the same clean data-in/data-out
+shape this row's investigation looked for, but was not sized against
+real graph volumes this pass), `archgate` (row 3, tree-sitter
+`Node`-shaped SOLID/LSP/type-design analysis, not a compute-only-kernel
+shape without a much larger Rust-side parser-equivalence investment),
+`pii_structural` (row 7, same tree-sitter/`ast`-shaped analysis,
+1954-line module). Filed as T-0950 (investigate `frob.cycle`'s
+Tarjan SCC as a rust-candidate, sized against real repo-scale import
+graphs before porting; gets a permanent T-#### id at land) and
+T-0951 (archgate/pii_structural rust-candidate feasibility:
+determine whether a compute-only kernel boundary can be cut out of
+their tree-sitter-shaped analysis, or whether they are fundamentally
+not shaped for `frob_core`'s data-in/data-out convention without a
+parser-equivalence investment this audit did not size).

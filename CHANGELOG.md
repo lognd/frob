@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.172.0] - unreleased
+
+- T-0930: move audit-proven frob check hot paths to Rust in frob_core (maturin natives)
+
 ## [0.171.0] - unreleased
 
 - T-0948: frob.perf collectors cannot see thread-pool/process-pool gate dispatch
