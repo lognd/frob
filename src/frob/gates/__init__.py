@@ -1001,6 +1001,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
 # frob:ticket T-0101
 # frob:ticket T-0399
+# frob:ticket T-1010
 # Every rule id any Violation-producing gate can emit. `frob:waive` only
 # ever suppresses entries in the GateReport's `violations` tuple (see
 # `_apply_waivers` below) -- a waiver targeting anything outside this set
@@ -1008,6 +1009,21 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # "unwaivable channel" rather than hardcoding a channel allowlist.
 # T-0399 added DUP003 (dup_gate fail-closed when [dup].enforce=true but
 # frob-core is unavailable).
+#
+# T-1010: this literal is the GENERATED-AND-VERIFIED artifact for the
+# T-0964 constant/literal rule-id class -- `frob.gates._rule_id_scan.
+# generated_gate_rule_ids(repo_root)` is the authority for which
+# `rule="..."`/`rule=CONST_NAME` ids are live; when it reports one not
+# listed here, paste it in (that is the "hand edit", not a re-derivation
+# by inspection). Ids retired on purpose go in `_rule_id_scan.
+# RETIRED_RULE_IDS`, never silently deleted here. Ids constructed via a
+# bare positional arg or dict-literal value (`_secrets.py`'s `_pat(...)`
+# tuples, `_arch.py`'s category dict, `_registry_exhaustiveness.py`'s bare
+# returns) or defined outside `_rule_id_scan.SCANNED_BASES` entirely
+# (`DUP001`/`DUP002` in `src/frob/dup`, `PERF001`-`PERF009` in `src/frob/
+# perf`) are NOT covered by that scan (disclosed residual, see
+# `_rule_id_scan`'s module docstring) and stay purely hand-maintained here
+# as before this ticket.
 # frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known  # noqa: E501
 _KNOWN_GATE_RULES = frozenset(
     {

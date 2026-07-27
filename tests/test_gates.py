@@ -60,6 +60,10 @@ from frob.gates._ratchet import (
     resolve_ratchet_severity,
     snapshot_ratchet,
 )
+from frob.gates._rule_id_scan import (
+    generated_gate_rule_ids,
+    scan_emitted_rule_ids,
+)
 from frob.gates.invariants import InvariantError, _Criticality, load_invariants
 from frob.gitio import Diff, Hunk, working_diff
 from frob.graph import build_graph
@@ -9491,12 +9495,10 @@ class TestKnownGateRuleIds:
     # here (COMPLIANCE001-004/HOST001/HOST002/HOST-BLAST/KRB001-004/
     # LINT001-005/PII001-004/RELWAIVE002/THREAT001-005) is now registered
     # in `_KNOWN_GATE_RULES` instead, so the drift-lock below actually
-    # guards this batch rather than exempting it. Kept as an empty
-    # frozenset (not deleted) so a future gap has an obvious place to
-    # land pending its own fix, exactly as this one did. PARSE002
-    # (landed on main concurrently with this pass) was folded straight
-    # into `_KNOWN_GATE_RULES` instead of parked here, since it is
-    # exactly this ticket's own defect class.
+    # guards this batch rather than exempting it. PARSE002 (landed on main
+    # concurrently with this pass) was folded straight into
+    # `_KNOWN_GATE_RULES` instead of parked here, since it is exactly this
+    # ticket's own defect class.
     #
     # frob:ticket T-0964
     # frob:ticket T-0966
@@ -9505,94 +9507,111 @@ class TestKnownGateRuleIds:
     # which surfaced a real, pre-existing gap: SYS100-102/SYS200-203 were
     # genuinely emitted via module-level constants in _selfconform.py/
     # _contention.py but were not yet added to `_KNOWN_GATE_RULES`. T-0966
-    # added all seven entries there, so nothing needs parking here anymore.
-    # Kept as an empty frozenset (not deleted) so a future gap has an
-    # obvious place to land pending its own fix, exactly as the T-0901/
-    # T-0924 batch precedent above.
-    _KNOWN_ISSUE_ALLOWLIST: frozenset[str] = frozenset()
+    # added all seven entries there.
+    #
+    # frob:ticket T-1010
+    # T-1010 inverted this registry: the scan itself (previously
+    # duplicated inline here) is now importable production code
+    # (`frob.gates._rule_id_scan`), and `_KNOWN_GATE_RULES` is the
+    # generated-and-verified artifact it derives from. The former
+    # `_KNOWN_ISSUE_ALLOWLIST` (an ad hoc "not yet registered" parking
+    # lot, always empty in practice once the two historical batches above
+    # were paid down) is retired in favor of `_rule_id_scan.
+    # RETIRED_RULE_IDS`, which excludes ids at the SOURCE of generation
+    # instead of at the point of comparison -- one manual knob, not two.
+    # This test is now a generator-freshness check, not a hand-rolled scan.
 
     # frob:ticket T-0901
     # frob:ticket T-0924
     # frob:ticket T-0964
     # frob:ticket T-0972
+    # frob:ticket T-1010
     # frob:tests \
     # tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known
     def test_every_emitted_rule_literal_is_known(self) -> None:
-        """Drift-lock: statically enumerate every `rule="..."`/`"rule":
-        "..."` string literal AND every `rule=CONST_NAME` reference (where
-        `CONST_NAME` resolves to a module-level `CONST_NAME = "RULE123"`
-        assignment -- the `REL_*`/`SYS_*` convention `src/frob/strata/**`
-        uses instead of inline literals) constructed inside
-        `src/frob/gates/**` and `src/frob/strata/**` (mirroring how
-        `_KNOWN_GATE_RULES` itself is a static frozenset) and assert each
-        one is either a member of `known_gate_rule_ids()` or on the
-        explicit, ticket-cited `_KNOWN_ISSUE_ALLOWLIST` above -- so a new
-        gate/rule added without a matching `_KNOWN_GATE_RULES` entry fails
-        loud immediately instead of silently reproducing the PARSE001/
-        TICK005/REG011/PII011/PII012/SYSWAIVE002/THREAT006/PROTO004/DEC000
-        omission class (T-0903/T-0923/T-0901), including the T-0964
-        variant of that same class where the id is invisible to this test
-        because it is only ever referenced via a module-level constant
-        rather than an inline literal."""
-        import re as _re
-
+        """Generator-freshness drift-lock (T-1010, inverting the T-0964
+        scan): every rule id `frob.gates._rule_id_scan.
+        generated_gate_rule_ids()` reports live -- every `rule="..."`/
+        `rule=CONST_NAME` construction under `_rule_id_scan.SCANNED_BASES`,
+        minus `_rule_id_scan.RETIRED_RULE_IDS` -- must be a member of
+        `known_gate_rule_ids()`. A gate/rule added without a matching
+        `_KNOWN_GATE_RULES` entry fails loud immediately instead of
+        silently reproducing the PARSE001/TICK005/REG011/PII011/PII012/
+        SYSWAIVE002/THREAT006/PROTO004/DEC000 omission class (T-0903/
+        T-0923/T-0901), including the T-0964 variant where the id is only
+        ever referenced via a module-level constant rather than an inline
+        literal."""
         repo_root = Path(__file__).resolve().parents[1]
-        literal_pattern = _re.compile(r'rule\s*[:=]\s*"([A-Z][A-Z0-9_-]*)"')
-        # frob:ticket T-0964
-        # A module-level constant assignment shaped like
-        # `NAME = "RULE123"` -- resolved below so `rule=NAME` kwargs are
-        # checked identically to inline `rule="..."` literals.
-        const_assign_pattern = _re.compile(
-            r'^([A-Z][A-Z0-9_]*)\s*=\s*"([A-Z][A-Z0-9_-]*)"\s*$'
-        )
-        # A `rule=NAME` kwarg where NAME is a bare identifier (not a
-        # string literal) -- resolved against `const_assign_pattern`
-        # matches collected across the same file set.
-        const_ref_pattern = _re.compile(r"rule\s*=\s*([A-Z][A-Z0-9_]*)\b")
-
-        found: dict[str, str] = {}
-        const_values: dict[str, str] = {}
-        const_refs: dict[str, str] = {}
-        # frob:waive PERF004 reason="test-file fixture scan; rglob result is this loop's own per-base distinct list, not hot-path re-sort"  # noqa: E501
-        for base in ("src/frob/gates", "src/frob/strata"):
-            for path in sorted((repo_root / base).rglob("*.py")):
-                for lineno, line in enumerate(path.read_text().splitlines(), start=1):
-                    stripped = line.strip()
-                    if stripped.startswith("#"):
-                        continue
-                    for m in literal_pattern.finditer(line):
-                        found.setdefault(
-                            m.group(1), f"{path.relative_to(repo_root)}:{lineno}"
-                        )
-                    assign_m = const_assign_pattern.match(stripped)
-                    if assign_m:
-                        const_values.setdefault(assign_m.group(1), assign_m.group(2))
-                    ref_m = const_ref_pattern.search(line)
-                    if ref_m:
-                        const_refs.setdefault(
-                            ref_m.group(1), f"{path.relative_to(repo_root)}:{lineno}"
-                        )
-
-        # Resolve every `rule=CONST_NAME` reference to the constant's
-        # assigned string value and fold it into `found` -- a constant
-        # referenced but never assigned in the scanned tree is left
-        # unresolved (nothing statically checkable) rather than raising.
-        for name, loc in const_refs.items():
-            value = const_values.get(name)
-            if value is not None:
-                found.setdefault(value, loc)
-
+        generated = generated_gate_rule_ids(repo_root)
         known = known_gate_rule_ids()
+        found = scan_emitted_rule_ids(repo_root)
         unknown = {
-            rule_id: loc
-            for rule_id, loc in found.items()
-            if rule_id not in known and rule_id not in self._KNOWN_ISSUE_ALLOWLIST
+            rule_id: found[rule_id] for rule_id in generated if rule_id not in known
         }
         assert not unknown, (
             "rule id(s) constructed in src/frob/gates or src/frob/strata "
-            "but missing from _KNOWN_GATE_RULES (add an entry, or add to "
-            f"_KNOWN_ISSUE_ALLOWLIST with a citing ticket): {unknown}"
+            "but missing from _KNOWN_GATE_RULES (paste in the entry "
+            "frob.gates._rule_id_scan.generated_gate_rule_ids() now "
+            f"reports): {unknown}"
         )
+
+    # frob:ticket T-1010
+    # frob:tests \
+    # tests/test_gates.py::TestKnownGateRuleIds.test_scan_finds_a_synthetic_rule_id
+    def test_scan_finds_a_synthetic_rule_id(self, tmp_path: Path) -> None:
+        """A fresh gate emitting a rule id via an inline `rule="..."`
+        literal is picked up by `scan_emitted_rule_ids` with no hand edit
+        to any registry -- the acceptance shape T-1010 exists to
+        guarantee."""
+        gates_dir = tmp_path / "src" / "frob" / "gates"
+        gates_dir.mkdir(parents=True)
+        (gates_dir / "_synthetic.py").write_text(
+            'def synthetic_gate():\n    return Violation(rule="ZZZTEST001")\n'
+        )
+
+        found = scan_emitted_rule_ids(tmp_path)
+
+        assert "ZZZTEST001" in found
+        assert found["ZZZTEST001"] == "src/frob/gates/_synthetic.py:2"
+
+    # frob:ticket T-1010
+    # frob:tests \
+    # tests/test_gates.py::TestKnownGateRuleIds.test_scan_resolves_const_name_reference
+    def test_scan_resolves_const_name_reference(self, tmp_path: Path) -> None:
+        """A `rule=CONST_NAME` reference resolved against a module-level
+        `CONST_NAME = "RULE123"` assignment -- the T-0964 class this
+        scanner must keep covering, not just inline literals."""
+        strata_dir = tmp_path / "src" / "frob" / "strata"
+        strata_dir.mkdir(parents=True)
+        (strata_dir / "_synthetic.py").write_text(
+            'ZZZ_CONST = "ZZZTEST002"\n\n\ndef synthetic_gate():\n'
+            "    return Violation(rule=ZZZ_CONST)\n"
+        )
+
+        found = scan_emitted_rule_ids(tmp_path)
+
+        assert found.get("ZZZTEST002") == "src/frob/strata/_synthetic.py:5"
+
+    # frob:ticket T-1010
+    # frob:tests \
+    # tests/test_gates.py::TestKnownGateRuleIds.test_retired_id_stays_excluded
+    def test_retired_id_stays_excluded(self, tmp_path: Path) -> None:
+        """An id on the retired list stays out of
+        `generated_gate_rule_ids()`'s output even though the scan itself
+        would otherwise find it -- the one manual exclusion knob T-1010
+        leaves in place."""
+        gates_dir = tmp_path / "src" / "frob" / "gates"
+        gates_dir.mkdir(parents=True)
+        (gates_dir / "_synthetic.py").write_text(
+            'def synthetic_gate():\n    return Violation(rule="ZZZTEST003")\n'
+        )
+
+        found = scan_emitted_rule_ids(tmp_path)
+        assert "ZZZTEST003" in found
+
+        generated = generated_gate_rule_ids(tmp_path, retired=frozenset({"ZZZTEST003"}))
+
+        assert "ZZZTEST003" not in generated
 
 
 # frob:ticket T-0459

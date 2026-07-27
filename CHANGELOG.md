@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.188.0] - unreleased
+
+- T-1010: generate _KNOWN_GATE_RULES from the T-0964 scanner (registry = scan, allowlist only for retired ids)
+
 ## [0.187.0] - unreleased
 
 - T-1009: single-source version: frob release sync regenerates the quartet + REL coherence error
