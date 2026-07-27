@@ -7436,7 +7436,7 @@ id: T-1047
 title: 'vet/opaque: extend RUNTIME_OPAQUE_CONSTRUCTS + OPAQUE_SOURCE_INVISIBLE for
   ~25 taxonomy runtime-opaque rows found unaddressed by T-0666, plus Rust struct-field
   / C++ pointer-to-member alias tracking'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-27'
