@@ -13,7 +13,7 @@ _CLEAN_MODEL = """\
 module m
 node evil : foreign
 node api : trusted
-flow f1 : evil -> api { rate 5 req/s; }
+flow f1 : evil -> api { rate 5 req/s; attr timeout; }
 """
 # T-0155 LINT001 cascading fix (out-of-scope note: tests/system/** is not
 # in T-0155's scope globs; edited anyway, minimal and mechanical, since
