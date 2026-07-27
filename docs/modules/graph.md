@@ -255,14 +255,16 @@ T-0744 protocol verbs, and folded into `FunctionSummary.acquired`/
 set union -- the same lattice-join treatment `requires`/`transitions`
 already get, not a net-held/leaked computation.
 
-This is the DSL SURFACE only. Real cleanup-obligation VERIFICATION
-(does every acquire actually get released -- or legitimately escape -- on
-every exit path, including exceptional ones) is T-0747 (child 4 of the
-T-0739 umbrella), blocked on this ticket plus T-0686 (may-raise, for the
-exceptional-edge postdominance analysis); `compute_protocol_summaries`
-only exposes the raw transitive sets T-0747's verifier will consume, the
-same posture `requires`/`transitions` already have toward T-0746's
-verification gate.
+This is the DSL SURFACE only. Real cleanup-obligation VERIFICATION (does
+every acquire actually get released -- or legitimately escape -- on every
+exit path, including exceptional ones) is PROTO005
+(docs/modules/gates.md#proto005-t-0747, child 4 of the T-0739 umbrella) --
+`compute_protocol_summaries` itself still only exposes the raw transitive
+sets; PROTO005 does not consume them at all (it needs per-exit ordering
+this fixpoint's transitive-union shape cannot give), instead running its
+own intraprocedural walk directly over the DSL's `ACQUIRE`/`RELEASE`/
+`ESCAPES` edges and each acquiring function's own `NormalizedFunction`
+body, per that gate's own docstring.
 
 Deferred out of this ticket's scope (see T-0809's Done report): the
 T-0686 may-raise engine this substrate is meant to eventually share with

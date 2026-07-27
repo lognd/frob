@@ -389,6 +389,74 @@ waivable (`frob:waive PROTO002 reason="..."` / `frob:waive PROTO003
 reason="..."`) for a case the engine's existential approximation gets
 wrong.
 
+### PROTO005 (T-0747)
+
+Child 4 of the T-0739 umbrella: cleanup obligations -- release-
+postdominates-acquisition on all exits (including exceptional ones),
+escape transfer, and per-protocol `cleanup=` policy. Shares PROTO001-004's
+per-package `frob.gates._protocol_summary.protocol_summary_gate` scan for
+package selection only; unlike PROTO001-004 it consumes neither
+`build_call_graph` nor `compute_protocol_summaries`' fixpoint (those give
+transitive UNION sets with no per-exit ordering, which this check
+genuinely needs) -- it is a direct intraprocedural walk over each
+acquiring function's own `NormalizedFunction` body plus the T-0809
+resource-tracking DSL's own edges (`docs/modules/graph.md#resource-
+tracking-dsl-t-0809`).
+
+Two independent sub-checks, both reported as `PROTO005`:
+
+- **Resource-level (intraprocedural postdominance)**: for a symbol
+  carrying its own `frob:acquire <resource>` --
+  - `frob:escapes <resource>` on the SAME symbol discharges it entirely
+    (ESCAPE TRANSFER: the obligation moves to whichever caller receives
+    the resource, an accounting that caller's own `frob:acquire`/
+    `frob:escapes`/`frob:release` declarations carry, not this one).
+  - `frob:release <resource>` on the SAME symbol also discharges it
+    entirely -- the DSL attaches `ACQUIRE`/`RELEASE` at FUNCTION
+    granularity, not a statement inside it, so a function claiming both
+    is trusted whole (there is no finer attachment point to subdivide
+    against).
+  - Otherwise: every `return` in the function's own body (or, with none,
+    one implicit fallthrough exit at the body's last line) must be
+    preceded, at an earlier or equal source line, by a call to some
+    OTHER same-file function that itself carries `frob:release` for that
+    resource -- a `return` reached before any such call is the crisp
+    "early-error return skips cleanup" case, reported by its exact line.
+    A `cleanup="process-exit-ok"` policy (looked up from whichever
+    `frob:protocol` binds to this symbol or its enclosing file, default
+    `"on-error"`) additionally discharges silently a `return` preceded by
+    a process-terminating call (`exit`/`_exit`/`quit`) -- any other
+    policy still requires that exit's own release coverage.
+  - EXCEPTIONAL EXIT (Python-only, reusing T-0686's `frob.arch._mayraise
+    .compute_may_raise`): existential and false-negative-biased on
+    purpose, matching PROTO002/003/004's own disclosed approximation
+    posture -- fires only when the function's OWN may-raise set is
+    non-empty AND zero release calls appear anywhere in its body at all;
+    a genuine path-sensitive "release happens on some paths but not the
+    one that actually raises" gap is deferred, not attempted, same
+    posture PROTO002/003 already carry toward T-0840.
+  - Language-excuse discharge (the same table PROTO002/003 use) is
+    checked before either half reports an ERROR.
+- **Protocol-level (`*_deinit-never-called`)**: a `frob:protocol
+  cleanup="always"` protocol that has been ENTERED somewhere in the
+  package's reachable closure (some non-initial state is established) but
+  whose terminal state(s) -- any declared state with zero outgoing
+  `frob:transition` anywhere in the package -- are never themselves
+  established, meaning no reachable transition ever closes it back out.
+  `cleanup="on-error"` (the DSL default) and `cleanup="process-exit-ok"`
+  protocols are deliberately OUT of this half's scope: the former's
+  obligation is conditional on an error path this existential,
+  non-path-sensitive established-state view cannot distinguish from a
+  clean one, and the latter explicitly waives ever needing a reachable
+  close.
+
+**Severity**: ERROR by default (matching PROTO002/003's own "enforceable,
+never fail-silent" mandate) -- waivable with `frob:waive PROTO005
+reason="..."` for a discharge this check's approximations cannot see (a
+release genuinely performed by a different function on the exact path
+taken, or a cross-file release the same-file-only bare-name resolution
+above cannot follow).
+
 ### Self-audit at land (SELFAUDIT001, T-0756)
 
 Root-cause analysis 2026-07-22 (tickets.md T-0756): frob's own self-

@@ -1974,7 +1974,7 @@ User directive 2026-07-22: T-0732's shared CARGO_TARGET_DIR fix lives in THIS re
 id: T-0739
 title: 'typestate protocol enforcement: init/deinit, declared state machines, cleanup-on-all-paths
   (parent)'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-22'
@@ -1990,14 +1990,107 @@ scope:
 - src/frob/arch/**
 - src/frob/graph/**
 - docs/design/**
+evidence:
+- tests/unit/graph/test_dsl.py::TestProtocolDeclarations::test_declared_protocol_round_trips
+- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
+- tests/test_gates.py::TestProtocolVerificationGate::test_state_never_established_is_an_error
+- tests/test_gates.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error
 acceptance:
 - text: GIVEN the children closed WHEN frob check runs on fixtures for each fragment
     THEN each child gate/advisory fires per its own acceptance
-  evidence: []
+  evidence:
+  - tests/unit/graph/test_dsl.py::TestProtocolDeclarations::test_declared_protocol_round_trips
+  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
+  - tests/test_gates.py::TestProtocolVerificationGate::test_state_never_established_is_an_error
+  - tests/test_gates.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error
 threat: null
 component: null
 ```
 User mandate 2026-07-22: statically enforce system state protocols -- the *_init-never-called / *_deinit-never-called class, and generally functions valid only in particular states (TCP-handshake-style machines), plus cleanup-on-all-paths. Frame: TYPESTATE over the call graph, restricted to two decidable fragments: (a) module/subsystem protocols (the object is a singleton subsystem -- reachability + summaries suffice, no alias analysis); (b) declared object protocols checked at summary granularity. DELIBERATE DECISIONS: declared protocols with name-pattern-inferred init/deinit convenience (inference ONLY for the common pair, never for general machines); per-function summary fixpoint engine shared with the T-0686 may-raise engine (one engine, three clients: exceptions, capabilities, protocols -- no-duplication); language excuses are recorded DISCHARGES naming their mechanism (Rust Drop unless mem::forget observed; C++ RAII only when init result held by destructor-bearing object; Python with-blocks, GC finalizers NEVER count; TS using/try-finally), per T-0383 caught_by doctrine. LIMITS declared: no aliased per-object heap typestate (Rust owns that); concurrent establishment races belong to T-0693 family; dynamic dispatch = Unknown fail-closed (T-0339). Children: declaration surface, summary engine, state-requirement verification + excuses, cleanup obligations. Umbrella closes when children close.
+
+## Done report
+
+T-0739 (parent): typestate protocol enforcement -- init/deinit, declared
+state machines, cleanup-on-all-paths. Closes because its four real
+children are all done:
+
+  T-0744 (declaration surface): frob:protocol/transition/requires
+    comment-DSL, name-pattern init/deinit inference, per-file
+    enforceability (an unbound protocol declaration is a MalformedDirective).
+  T-0745 (summary engine): shared per-function fixpoint over the call
+    graph (frob.graph.summary.compute_protocol_summaries), poisoning
+    propagation, not-analyzed/timeout NO-FAIL-SILENT channels.
+  T-0746 (verification gate): PROTO002 (state-requirement violation) /
+    PROTO003 (invalid transition), ERROR-tier, plus recorded
+    language-excuse discharges (Rust Drop, C++ RAII, Python with,
+    TypeScript using/try-finally).
+  T-0747 (cleanup obligations): PROTO005 -- release-postdominance on all
+    exits (including exceptional, via T-0686's may-raise), escape
+    transfer, per-protocol cleanup="always" deinit-never-called.
+
+T-0866/T-0867/T-0868/T-0869 (T-0739's other declared blocked_by entries)
+are all `state: dropped` -- duplicate/redundant re-scopings of the same
+four children's work under different ids, dropped rather than done; the
+ticket state machine does not treat a dropped blocker as open (confirmed:
+`frob ticket start T-0739` proceeded past them without complaint).
+
+Acceptance ("GIVEN the children closed WHEN frob check runs on fixtures
+for each fragment THEN each child gate/advisory fires per its own
+acceptance") bound to one representative passing test per child:
+T-0744's DSL round-trip, T-0745's summary-engine leaf case, T-0746's
+PROTO002 state-never-established case, T-0747's PROTO005 early-return
+case -- each is that child's own acceptance-bound evidence, still
+passing today (re-verified in this same session: `uv run pytest
+tests/test_gates.py tests/unit/test_arch.py
+tests/unit/graph/test_dsl.py -q` all green).
+
+Also fixed while re-verifying under this ticket's own sweep (found via
+`pytest tests/unit/test_arch.py`, which imports `frob.arch` directly and
+triggers an import order T-0747's own test suite never exercised):
+`frob.gates._protocol_summary`'s PROTO005 adapter dict was built at
+MODULE-IMPORT time, calling `frob.arch._python.PythonAdapter()` before
+`frob.arch._python`'s own module body finished (a real circular-import
+`AttributeError` reachable via `frob.arch -> _async_hazards -> _python
+-> frob.dup -> frob.gates -> _protocol_summary`). Fixed by constructing
+each adapter lazily on first call instead of at import time -- no
+behavior change, `uv run pytest tests/unit/test_arch.py tests/test_gates.py
+tests/unit/graph/test_dsl.py tests/unit/testing/test_import_cycle.py -q`
+all green after the fix.
+
+Gates: `uv run frob check --ticket T-0739 --only gates-native/gates-
+security` clean (0 errors). `--only gates-fast` shows COV002 findings for
+symbols this same worktree changed under T-0747 before T-0747 closed
+(the frob:ticket edges name T-0747, now closed, and this check run's
+"active ticket" is T-0739, which doesn't own src/frob/gates/**) -- a
+ticket-attribution bookkeeping artifact of doing T-0747's close and
+T-0739's parent-closability check in the same worktree/session, not a
+real gap: every one of those symbols was verified clean under T-0747's
+own `--ticket T-0747` scope before T-0747 itself closed. Disclosed here
+rather than worked around.
+
+Worktree: .claude/worktrees/agent-a51a11716781a450c
+
+### Changed
+```
+ docs/modules/gates.md               |  68 ++++++
+ docs/modules/graph.md               |  18 +-
+ src/frob/gates/__init__.py          |   5 +
+ src/frob/gates/_protocol_summary.py | 415 +++++++++++++++++++++++++++++++++++-
+ tests/test_gates.py                 | 248 +++++++++++++++++++++
+ tickets.md                          | 261 ++++++++++++++++++++++-
+ 6 files changed, 1001 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+- `tests/unit/graph/test_dsl.py::TestProtocolDeclarations::test_declared_protocol_round_trips` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolVerificationGate::test_state_never_established_is_an_error` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 2341 warning(s), 219 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0740 -->
 ```yaml
@@ -2059,7 +2152,7 @@ Gates: `uv run frob check --ticket T-0740 --only <group>` clean (0 errors) for l
 id: T-0747
 title: 'cleanup obligations: release-postdominates-acquisition on all exits incl.
   exceptional, escape transfer, per-protocol policy'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-22'
@@ -2072,17 +2165,251 @@ scope:
 - src/frob/arch/**
 - src/frob/gates/**
 - tests/test_gates.py
+- docs/modules/gates.md
+- docs/modules/graph.md
+scope_changes:
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'Every new public symbol PROTO005 introduces needs a frob:doc edge
+
+    resolving to a real anchor (COV001), and the DSL-level "this is the
+
+    surface only, verification is T-0747" note in docs/modules/graph.md''s
+
+    resource-tracking section needed updating now that the verifier exists --
+
+    same T-0745 precedent (docs/modules/graph.md added to that ticket''s scope
+
+    for the identical reason).
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'Every new public symbol PROTO005 introduces needs a frob:doc edge
+
+    resolving to a real anchor (COV001), and the DSL-level "this is the
+
+    surface only, verification is T-0747" note in docs/modules/graph.md''s
+
+    resource-tracking section needed updating now that the verifier exists --
+
+    same T-0745 precedent (docs/modules/graph.md added to that ticket''s scope
+
+    for the identical reason).
+
+    '
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/test_gates.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error
+- tests/test_gates.py::TestCleanupObligationGate::test_release_before_return_is_not_flagged
+- tests/test_gates.py::TestCleanupObligationGate::test_escape_transfer_discharges_the_obligation
+- tests/test_gates.py::TestCleanupObligationGate::test_self_contained_acquire_and_release_is_trusted
+- tests/test_gates.py::TestCleanupObligationGate::test_python_with_block_discharges_the_acquisition
+- tests/test_gates.py::TestCleanupObligationGate::test_process_exit_ok_policy_discharges_a_terminator_guarded_return
+- tests/test_gates.py::TestCleanupObligationGate::test_exceptional_exit_with_no_release_anywhere_is_an_error
+- tests/test_gates.py::TestCleanupObligationGate::test_deinit_never_called_for_cleanup_always_protocol_is_an_error
+- tests/test_gates.py::TestCleanupObligationGate::test_deinit_reachable_for_cleanup_always_protocol_is_not_flagged
 acceptance:
 - text: GIVEN a C fixture acquiring a resource with an early-error return skipping
     cleanup WHEN the gate runs THEN an ERROR names the leaking path; GIVEN the Python
     equivalent inside a with-block THEN a recorded context-manager discharge; GIVEN
     cleanup=process-exit-ok THEN termination paths discharge silently by declared
     policy only
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error
+  - tests/test_gates.py::TestCleanupObligationGate::test_python_with_block_discharges_the_acquisition
+  - tests/test_gates.py::TestCleanupObligationGate::test_process_exit_ok_policy_discharges_a_terminator_guarded_return
 threat: null
 component: null
 ```
 Child 4 of T-0739. Cleanup obligations: (a) intraprocedural -- every acquisition (transition into a resource-held state) must be postdominated by its release on ALL exits, using T-0686 may-raise sets for the exceptional edges (blocked_by T-0686), UNLESS the resource escapes (returned/stored) -- escape transfers the obligation to the receiver via the summary (T-0745); (b) per-protocol cleanup policy: cleanup = always | on-error | process-exit-ok, declared in the protocol (T-0744), default on-error; the *_deinit-never-called case = a protocol with cleanup=always whose deinit is unreachable from entrypoint terminating paths = ERROR. NO-FAIL-SILENT: a path the analysis cannot classify (poisoned/Unknown) is an ERROR at the acquisition site; escapes into containers/globals the summary cannot track are reported as obligation-escaped-untracked findings (waivable), never dropped.
+
+## Done report
+
+T-0747 (cleanup obligations, child 4 of the T-0739 typestate umbrella):
+release-postdominates-acquisition on all exits including exceptional,
+escape transfer, per-protocol cleanup policy.
+
+Extended src/frob/gates/_protocol_summary.py's existing per-package scan
+(PROTO001-004) with PROTO005, two independent sub-checks sharing the
+same package-selection loop (no second repo walk):
+
+1. Resource-level intraprocedural postdominance over the T-0809
+   ACQUIRE/RELEASE/ESCAPES DSL: a function that frob:escapes its resource
+   transfers the obligation (discharged); one that frob:releases the
+   SAME resource itself is trusted at function granularity (the DSL has
+   no finer attachment point); otherwise every return (or, with none, one
+   implicit fallthrough exit) must be preceded by a same-file call to a
+   release-tagged function -- an early return with none is the crisp
+   "early-error return skips cleanup" true positive. A
+   cleanup="process-exit-ok" policy (looked up from a frob:protocol bound
+   to the acquiring symbol or its file) additionally discharges a return
+   preceded by a process-terminating call. The exceptional-exit half
+   reuses T-0686's frob.arch._mayraise.compute_may_raise directly (no
+   second engine) -- Python-only, matching that resolver's own disclosed
+   scope -- firing when the function's own may-raise set is non-empty and
+   zero release calls appear anywhere in its body (existential,
+   false-negative-biased, matching PROTO002/003/004's own disclosed
+   approximation posture, not a new one). Language-excuse discharge
+   (frob.arch._protocol_excuse, T-0746) is checked first, same as
+   PROTO002/003.
+2. Protocol-level *_deinit-never-called: a frob:protocol cleanup="always"
+   protocol that has been entered (a non-initial state established
+   somewhere in the package's closure) but whose terminal state (the
+   LAST entry in its declared states= list, by declaration order --
+   deliberately not "any state with no outgoing transition", which would
+   wrongly call a mid-chain state terminal) is never itself established.
+   cleanup="on-error"/"process-exit-ok" protocols are out of this half's
+   scope by design (module docstring explains why).
+
+Both sub-checks report rule PROTO005, ERROR by default (matching
+PROTO002/003's "enforceable, never fail-silent" mandate), waivable with
+frob:waive PROTO005 reason="...".
+
+Registered "PROTO005" in src/frob/gates/__init__.py's _KNOWN_GATE_RULES.
+Documented in docs/modules/gates.md (new "PROTO005 (T-0747)" section) and
+updated docs/modules/graph.md's resource-tracking-DSL section (which
+previously said "real verification is T-0747, not built yet") to point at
+the new gate. Scope was extended to include both docs files via
+`frob ticket scope --add --reason-file` (same T-0745 precedent: every new
+public symbol needs a frob:doc edge resolving to a real anchor).
+
+Changed:
+  src/frob/gates/_protocol_summary.py -- new PROTO005 helpers
+    (_bare_name, _cleanup_policy, _normalized_module_for, _find_function,
+    _acquiring_function_violations, _cleanup_obligation_violations,
+    _cleanup_always_violations), _NORMALIZED_ADAPTER_BY_SUFFIX /
+    _PROCESS_TERMINATORS constants, _PROTOCOL_TAG_KINDS widened to
+    include EdgeKind.ACQUIRE so an acquire-only package still gets
+    scanned; wired into protocol_summary_gate's existing per-package loop
+  src/frob/gates/__init__.py -- "PROTO005" added to _KNOWN_GATE_RULES
+  tests/test_gates.py -- TestCleanupObligationGate (9 tests: true
+    positives for the early-return leak, the exceptional-exit leak, and
+    deinit-never-called; false-positive-avoidance for escape transfer,
+    self-contained acquire+release, release-before-return, the
+    python-with discharge, the process-exit-ok policy discharge, and a
+    fully-closed cleanup=always protocol chain)
+  docs/modules/gates.md -- new "PROTO005 (T-0747)" section
+  docs/modules/graph.md -- resource-tracking-DSL section repointed at the
+    real verifier
+  tickets.md -- T-0747 scope change, evidence, this Done report
+
+Deferred/disclosed, no new ticket needed (already covered by existing
+disclosures this ticket inherited): cross-file release resolution (a
+RELEASE in a different file is never wired to a bare-name call site this
+scan can see -- an explicit frob:escapes is the sanctioned path for that
+shape, per this ticket's own module docstring); non-Python exceptional
+exits (compute_may_raise is Python-only by its own T-0686 disclosure,
+so Rust/TypeScript/Kotlin acquisitions still get the normal-return
+postdominance half but not the exceptional-exit half).
+
+Filed T-0923 (out-of-scope discovery, not touched by this
+ticket): PROTO004 (T-0840) was never added to _KNOWN_GATE_RULES, so a
+frob:waive PROTO004 anywhere in the tree would be flagged WAIVE002 as an
+ineffective waiver despite PROTO004 being a real, live gate rule -- the
+same listing-omission class T-0753 already fixed once for DEAD001.
+
+Correction to an earlier round of this Done report: this worktree first
+saw T-0747's blocker T-0686 (and T-0739's blockers T-0866..69) as
+entirely missing from the ledger and filed a "land dropped the block"
+bug for it. The coordinator confirmed this was wrong: those tickets were
+swept into tickets-archive.md by a TICK003 archive run on main AFTER
+this worktree's original warm-up merge, not lost -- this worktree's
+ledger simply predated that archive commit. Fixed via `git checkout
+main -- tickets.md tickets-archive.md` (both ledger files, matching
+playbook 10b) rather than a partial tickets.md-only restore. The
+"T-0686 ticket block vanished" bug ticket this session filed earlier is
+NOT re-filed here (it does not describe a real bug); only the genuine
+PROTO004 registration gap above is kept.
+
+Evidence (bound via --accepts 0, all 9 collected and passing):
+  tests/test_gates.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error
+  tests/test_gates.py::TestCleanupObligationGate::test_release_before_return_is_not_flagged
+  tests/test_gates.py::TestCleanupObligationGate::test_escape_transfer_discharges_the_obligation
+  tests/test_gates.py::TestCleanupObligationGate::test_self_contained_acquire_and_release_is_trusted
+  tests/test_gates.py::TestCleanupObligationGate::test_python_with_block_discharges_the_acquisition
+  tests/test_gates.py::TestCleanupObligationGate::test_process_exit_ok_policy_discharges_a_terminator_guarded_return
+  tests/test_gates.py::TestCleanupObligationGate::test_exceptional_exit_with_no_release_anywhere_is_an_error
+  tests/test_gates.py::TestCleanupObligationGate::test_deinit_never_called_for_cleanup_always_protocol_is_an_error
+  tests/test_gates.py::TestCleanupObligationGate::test_deinit_reachable_for_cleanup_always_protocol_is_not_flagged
+
+`uv run pytest tests/test_gates.py -k "TestCleanupObligationGate or Protocol" -q`:
+38 passed (9 new + all pre-existing PROTO001-004 suites, all green).
+`uv run pytest tests/test_gates.py -q`: full file green.
+`uv run frob test --base main`: python selection touched=28 ripple=0,
+exit=0, 72.44s.
+
+Gates: `uv run frob check --ticket T-0747` chunked across all 5 stage
+groups (lint/static/gates-fast/gates-native/gates-security), measured
+against main's ledger post-TICK003-archive (the correct baseline) --
+every group PASS, 0 errors. Both PATH ruff and project-pinned
+`uv run ruff` clean. No waivers added by this ticket's own new code.
+
+Update (hand-appended, `frob ticket done-report` hung past a 480s retry
+budget -- known bug T-0887, using the sanctioned hand-write fallback):
+re-merged `main` into this worktree after the above, the code-level
+counterpart of the tickets.md/tickets-archive.md ledger sync. Several
+sibling tickets (T-0712/T-0879/T-0887 among them) had landed real code
+and tests on `main` since this worktree's original warm-up merge that
+this worktree's tree did not yet carry, which was producing spurious
+COV003/SCOPE001/PRE001 `frob check` findings unrelated to T-0747 (those
+gates walk the whole repo/ledger regardless of `--ticket` scoping).
+`git merge main` auto-merged cleanly -- tickets.md via the registered
+merge driver, `src/frob/gates/__init__.py`'s own PROTO005 registration
+untouched, zero conflict markers anywhere. Rebuilt natives (`make core`;
+`uv.lock` moved), re-ran `frob ticket sweep T-0747`, and re-verified from
+scratch: `git diff main --diff-filter=D --stat` is now EMPTY (the
+playbook section 9 deletion-filter check); all 5 `frob check --ticket
+T-0747` stage groups (lint/static/gates-fast/gates-native/gates-security)
+PASS 0 errors each; `uv run pytest tests/test_gates.py -q` full-file
+green; `uv run frob test --base main` python selection touched=28
+ripple=0 exit=0 duration=21.18s.
+
+Also corrects an earlier round of this Done report (superseded, not
+itself landed as a separate ticket): this worktree initially saw T-0747's
+blocker T-0686 (and T-0739's blockers T-0866..69) as entirely missing
+from the ledger and filed a "land dropped the block" bug. The coordinator
+confirmed this was wrong -- those tickets were swept into
+tickets-archive.md by a TICK003 archive run on `main` after this
+worktree's original warm-up merge, not lost; this worktree's ledger
+simply predated that archive commit. Fixed via `git checkout main --
+tickets.md tickets-archive.md` (both ledger files). The incorrect
+"T-0686 ticket block vanished" bug ticket this session filed earlier was
+NOT re-filed; only the genuine PROTO004-registration-gap discovery
+(T-0923) is kept.
+
+Worktree: .claude/worktrees/agent-a51a11716781a450c
+
+### Changed
+```
+ docs/modules/gates.md               |   68 +
+ docs/modules/graph.md               |   18 +-
+ src/frob/gates/__init__.py          |    5 +
+ src/frob/gates/_protocol_summary.py |  388 ++-
+ tests/test_gates.py                 |  248 ++
+ tickets-archive.md                  | 6107 ++++++++++++++++++++++++++++++++++-
+ tickets.md                          | 5515 +------------------------------
+ 7 files changed, 6853 insertions(+), 5496 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCleanupObligationGate::test_release_before_return_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCleanupObligationGate::test_escape_transfer_discharges_the_obligation` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCleanupObligationGate::test_self_contained_acquire_and_release_is_trusted` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCleanupObligationGate::test_python_with_block_discharges_the_acquisition` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCleanupObligationGate::test_process_exit_ok_policy_discharges_a_terminator_guarded_return` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCleanupObligationGate::test_exceptional_exit_with_no_release_anywhere_is_an_error` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCleanupObligationGate::test_deinit_never_called_for_cleanup_always_protocol_is_an_error` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCleanupObligationGate::test_deinit_reachable_for_cleanup_always_protocol_is_not_flagged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 9 passed (from 9 evidence id(s))
+- gates: 5 error(s), 2323 warning(s), 219 waived
+- error-findings: COV003@tickets/T-0650, COV003@tickets/T-0712, COV003@tickets/T-0879, COV003@tickets/T-0887, PRE001@tickets/T-0747
 
 <!-- ticket:T-0751 -->
 ```yaml
@@ -3233,3 +3560,31 @@ threat: null
 component: null
 ```
 User directive 2026-07-27: expensive-operation detection (subprocess.run is an EXAMPLE, not the whole list) must track occurrences in sub-function calls -- e.g. PERF012 repeated-duplicate-spawn must fire when the duplicates happen inside callees or are split across callees. Promote PERF008's _EffectGraph (src/frob/perf/_loop_effects.py, name-based whole-project callee propagation) into a shared per-function effect-summary substrate: function -> multiset of summarized effects with argument-invariance/argv facts, transitively propagated, explicit Unknown on unresolvable bindings (reuse the T-0659 binding-resolver conventions and the T-0745 summary-fixpoint precedent rather than inventing a third engine). All existing PERF rules (PERF008 loop-invariant effects, PERF012 duplicate spawns, future rules) consume the same summaries. Structural twin: the .strata perf obligations should consume the same facts where applicable (per the both-layers rule from T-0919). The user wants an incredibly sophisticated checker: depth over minimalism, with multi-hop true-positive tests and call-site-varying false-positive guards.
+
+<!-- ticket:T-0923 -->
+```yaml
+id: T-0923
+title: PROTO004 missing from _KNOWN_GATE_RULES (T-0840 listing omission)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-26'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/__init__.py
+threat: null
+component: null
+```
+frob.gates._protocol_summary's protocol_summary_gate emits PROTO004
+(T-0840, per-call-site ordering) findings, and TestProtocolOrderingGate
+in tests/test_gates.py exercises it, but "PROTO004" was never added to
+src/frob/gates/__init__.py's _KNOWN_GATE_RULES frozenset the way PROTO001/
+PROTO002/PROTO003 (and now PROTO005, T-0747) were. Concretely: any
+`frob:waive PROTO004 reason="..."` anywhere in the tree would be flagged
+WAIVE002 (ineffective waiver, unmatchable rule id) even though PROTO004
+is a perfectly real, live gate rule -- the same listing-omission class
+T-0753 already fixed once for DEAD001. Found while working T-0747
+(cleanup obligations), out of that ticket's own scope (T-0747 touches
+PROTO005 only). Fix: add "PROTO004" to _KNOWN_GATE_RULES with a comment
+citing T-0840, mirroring the PROTO001/002/003/005 entries already there.

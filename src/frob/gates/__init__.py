@@ -1158,6 +1158,11 @@ _KNOWN_GATE_RULES = frozenset(
         # per-package `compute_protocol_summaries` pass.
         "PROTO002",
         "PROTO003",
+        # T-0747: PROTO005, cleanup obligations (release-postdominates-
+        # acquisition on all exits, escape transfer, per-protocol
+        # cleanup="always" deinit-never-called) -- same per-package
+        # `frob.gates._protocol_summary` scan.
+        "PROTO005",
         # T-0756: self-audit-at-land -- frob's own SYS100-102/SYS2xx/REL2xx
         # audit surface, folded into the ordinary gate pipeline so a land
         # that reddens it is blocked structurally (frob.gates.sys_gate's

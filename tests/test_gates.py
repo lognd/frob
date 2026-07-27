@@ -2590,6 +2590,254 @@ class TestProtocolLanguageExcuseDischarge:
         assert result.mechanism == "gc-finalizer"
 
 
+# frob:ticket T-0747
+class TestCleanupObligationGate:
+    """T-0747: PROTO005, cleanup obligations -- release-postdominates-
+    acquisition on all exits (including exceptional, via T-0686's
+    may-raise sets), escape transfer, and per-protocol cleanup="always"
+    deinit-never-called."""
+
+    def test_early_return_before_release_call_is_an_error(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def open_conn() -> int:\n"
+            "    # frob:acquire conn\n"
+            "    fd = 1\n"
+            "    if fd < 0:\n"
+            "        return -1\n"
+            "    _close(fd)\n"
+            "    return 0\n"
+            "\n\n"
+            "def _close(fd: int) -> None:\n"
+            "    # frob:release conn\n"
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        v = next((v for v in violations if v.rule == "PROTO005"), None)
+        assert v is not None
+        assert v.severity == Severity.ERROR
+        assert "src/a.py::open_conn" in v.message
+        assert "conn" in v.message
+
+    def test_release_before_return_is_not_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def open_conn() -> int:\n"
+            "    # frob:acquire conn\n"
+            "    fd = 1\n"
+            "    _close(fd)\n"
+            "    return 0\n"
+            "\n\n"
+            "def _close(fd: int) -> None:\n"
+            "    # frob:release conn\n"
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        assert not any(v.rule == "PROTO005" for v in violations)
+
+    def test_escape_transfer_discharges_the_obligation(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def open_conn() -> int:\n"
+            "    # frob:acquire conn\n"
+            "    # frob:escapes conn\n"
+            "    if True:\n"
+            "        return -1\n"
+            "    return 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        assert not any(v.rule == "PROTO005" for v in violations)
+
+    def test_self_contained_acquire_and_release_is_trusted(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def open_and_close() -> int:\n"
+            "    # frob:acquire conn\n"
+            "    # frob:release conn\n"
+            "    if True:\n"
+            "        return -1\n"
+            "    return 0\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        assert not any(v.rule == "PROTO005" for v in violations)
+
+    def test_python_with_block_discharges_the_acquisition(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def enter() -> int:\n"
+            "    # frob:acquire conn\n"
+            "    with conn() as _c:\n"
+            "        if bad():\n"
+            "            return -1\n"
+            "    return 0\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        error = next(
+            (
+                v
+                for v in violations
+                if v.rule == "PROTO005" and v.severity == Severity.ERROR
+            ),
+            None,
+        )
+        assert error is None
+        discharge = next((v for v in violations if v.rule == "PROTO005"), None)
+        assert discharge is not None
+        assert discharge.severity == Severity.WARN
+        assert "python-with" in discharge.message
+
+    def test_process_exit_ok_policy_discharges_a_terminator_guarded_return(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # Same "early return before release" shape as the crisp true-
+        # positive test above, but this acquisition's own frob:protocol
+        # declares cleanup="process-exit-ok" and the early return is
+        # itself preceded by a process-terminating call -- discharged
+        # silently by the declared policy, per the module docstring's
+        # per-protocol-policy clause.
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            '# frob:protocol Res states="idle,active" initial="idle" '
+            'cleanup="process-exit-ok"\n'
+            "def open_conn() -> int:\n"
+            "    # frob:acquire conn\n"
+            "    fd = 1\n"
+            "    if fd < 0:\n"
+            "        exit(1)\n"
+            "        return -1\n"
+            "    _close(fd)\n"
+            "    return 0\n"
+            "\n\n"
+            "def _close(fd: int) -> None:\n"
+            "    # frob:release conn\n"
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        assert not any(v.rule == "PROTO005" for v in violations)
+
+    def test_exceptional_exit_with_no_release_anywhere_is_an_error(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # Reuses T-0686's compute_may_raise: open_conn calls a same-module
+        # function that unconditionally raises, and NOTHING in open_conn's
+        # own body ever releases "conn" -- an exceptional exit skips
+        # cleanup.
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def open_conn() -> None:\n"
+            "    # frob:acquire conn\n"
+            "    _maybe_raise()\n"
+            "    return\n"
+            "\n\n"
+            "def _maybe_raise() -> None:\n"
+            '    raise ValueError("bad")\n',
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        v = next(
+            (
+                v
+                for v in violations
+                if v.rule == "PROTO005" and "may raise" in v.message
+            ),
+            None,
+        )
+        assert v is not None
+        assert v.severity == Severity.ERROR
+        assert "src/a.py::open_conn" in v.message
+
+    def test_deinit_never_called_for_cleanup_always_protocol_is_an_error(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            '# frob:protocol Net states="idle,active,closed" initial="idle" '
+            'cleanup="always"\n'
+            "def net_init() -> None:\n"
+            '    # frob:transition proto="Net" from="idle" to="active"\n'
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        v = next(
+            (
+                v
+                for v in violations
+                if v.rule == "PROTO005" and "deinit-never-called" in v.message
+            ),
+            None,
+        )
+        assert v is not None
+        assert v.severity == Severity.ERROR
+        assert "Net" in v.message and "closed" in v.message
+
+    def test_deinit_reachable_for_cleanup_always_protocol_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            '# frob:protocol Net states="idle,active,closed" initial="idle" '
+            'cleanup="always"\n'
+            "def net_init() -> None:\n"
+            '    # frob:transition proto="Net" from="idle" to="active"\n'
+            "    pass\n"
+            "\n\n"
+            "def net_close() -> None:\n"
+            '    # frob:transition proto="Net" from="active" to="closed"\n'
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        assert not any(
+            v.rule == "PROTO005" and "deinit-never-called" in v.message
+            for v in violations
+        )
+
+
 # frob:ticket T-0731
 # frob:ticket T-0601
 class TestDebtGate:
