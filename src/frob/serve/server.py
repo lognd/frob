@@ -87,6 +87,17 @@ def _register_scope_tool(server, root: Path) -> None:  # noqa: ANN001
         return _unwrap(_tools.frob_check_scope(root, ticket_id))
 
 
+def _register_perf_tool(server, root: Path) -> None:  # noqa: ANN001
+    """Register the T-0917 `frob_perf_hot` tool, the MCP mirror of `frob
+    perf hot` T-0712's acceptance text called for."""
+
+    @server.tool()
+    def frob_perf_hot(top: int | None = None, by: str = "p50xcount") -> list[dict]:
+        """T-0712's persisted hot-graph sketch store, ranked by `by`
+        (`p50xcount` default, or `p90`) and truncated to `top` rows."""
+        return _unwrap(_tools.frob_perf_hot(root, top, by))
+
+
 def _register_incremental_tools(server, root: Path) -> None:  # noqa: ANN001
     """Register the T-0177 `frob_check_delta`/`frob_run_touched_tests`
     tools, both backed by `frob.serve._warm`'s warm graph/baseline/test
@@ -130,10 +141,11 @@ def build_server(root: Path):  # noqa: ANN201
 
     _register_query_tools(server, root)
     _register_scope_tool(server, root)
+    _register_perf_tool(server, root)
     _register_incremental_tools(server, root)
     _register_daemon_tool(server, root)
 
-    _log.info("serve: built FastMCP server bound to %s with 9 tools", root)
+    _log.info("serve: built FastMCP server bound to %s with 10 tools", root)
     return server
 
 

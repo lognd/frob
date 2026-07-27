@@ -25,6 +25,8 @@ import frob.serve._warm as _warm
 from frob.graph import affects, build_graph, edges_from, edges_to, load_graph, resolve
 from frob.graph.lock import drift, load_lock
 from frob.logging import get_logger
+from frob.perf import list_sketches
+from frob.stats._sketch import quantile, total_weight
 from frob.tickets import doable, load_queue
 
 _log = get_logger(__name__)
@@ -457,6 +459,50 @@ def frob_run_touched_tests(root: Path, base: str = "main") -> Result[dict, Serve
     )
 
 
+# frob:ticket T-0917
+def _perf_hot_sort_key(row, by: str) -> float:  # noqa: ANN001
+    """Sort key mirroring `frob perf hot --by p90|p50xcount` (T-0712's
+    `frob.app.perf_runner._hot_sort_key`): `p90` ranks by the stored
+    sketch's p90 read; `p50xcount` (the default) ranks by p50 times total
+    observation weight."""
+    p50 = quantile(row.sketch, 0.5)
+    p90 = quantile(row.sketch, 0.9)
+    if by == "p90":
+        return p90
+    return p50 * total_weight(row.sketch)
+
+
+# frob:doc docs/modules/serve.md#tools
+# frob:ticket T-0917
+def frob_perf_hot(
+    root: Path, top: int | None = None, by: str = "p50xcount"
+) -> Result[list[dict], ServeError]:
+    """T-0712's `frob perf hot` query surface (`frob.perf.list_sketches`,
+    the persisted hot-graph sketch store), ranked by `by` (`p50xcount`
+    default, or `p90`) and truncated to `top` rows -- the MCP mirror T-0712's
+    acceptance text called for but that fell outside its own declared scope
+    (T-0917)."""
+    rows = list_sketches(root)
+    rows.sort(key=lambda row: _perf_hot_sort_key(row, by), reverse=True)
+    if top is not None:
+        rows = rows[:top]
+
+    _log.info("serve: frob_perf_hot: root=%s by=%s %d row(s)", root, by, len(rows))
+    return Ok(
+        [
+            {
+                "section_key": row.section_key,
+                "kind": row.kind,
+                "label": row.label,
+                "p50": quantile(row.sketch, 0.5),
+                "p90": quantile(row.sketch, 0.9),
+                "sample_count": total_weight(row.sketch),
+            }
+            for row in rows
+        ]
+    )
+
+
 # frob:doc docs/modules/serve.md#daemon-jobs
 # frob:tests tests/test_serve_daemon.py::TestFrobDaemonStatus.test_reads_current_status kind="unit"  # noqa: E501
 def frob_daemon_status(root: Path) -> Result[dict, ServeError]:
@@ -494,6 +540,7 @@ __all__ = [
     "frob_doable_tickets",
     "frob_doc_for",
     "frob_graph_query",
+    "frob_perf_hot",
     "frob_run_touched_tests",
     "frob_stale_docs",
 ]

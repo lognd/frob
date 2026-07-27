@@ -30,6 +30,7 @@ from frob.serve import (
     frob_doable_tickets,
     frob_doc_for,
     frob_graph_query,
+    frob_perf_hot,
     frob_run_touched_tests,
     frob_stale_docs,
 )
@@ -101,11 +102,12 @@ class TestServeGetattr:
 
 class TestBuildServer:
     def test_registers_all_five_tools(self, tmp_path: Path) -> None:
-        # Name kept as-is despite now covering 9 tools (T-0177 added 2 more,
-        # T-0325 added frob_affects, T-0733 added frob_daemon_status):
-        # T-0010/T-0046/T-0520 already cite this node id as `frob:tests`
-        # evidence, and COV003 resolves evidence by exact node id -- a
-        # rename here would silently break their recorded evidence.
+        # Name kept as-is despite now covering 10 tools (T-0177 added 2 more,
+        # T-0325 added frob_affects, T-0733 added frob_daemon_status,
+        # T-0917 added frob_perf_hot): T-0010/T-0046/T-0520 already cite
+        # this node id as `frob:tests` evidence, and COV003 resolves
+        # evidence by exact node id -- a rename here would silently break
+        # their recorded evidence.
         # frob:tests src/frob/serve/server.py::build_server kind="unit"
         from frob.serve.server import build_server
 
@@ -121,6 +123,7 @@ class TestBuildServer:
             "frob_affects",
             "frob_check_delta",
             "frob_run_touched_tests",
+            "frob_perf_hot",
         }
 
     def test_require_mcp_raises_when_unavailable(self, monkeypatch) -> None:
@@ -242,6 +245,87 @@ class TestCheckScope:
         assert result.is_ok
         assert result.danger_ok["in_scope"] is False
         assert result.danger_ok["violations"][0]["rule"] == "SCOPE001"
+
+
+class TestPerfHot:
+    def test_empty_store_is_empty_list(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_tools.py::frob_perf_hot kind="unit"
+        result = frob_perf_hot(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok == []
+
+    def test_ranks_by_default_p50xcount(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_tools.py::frob_perf_hot kind="unit"
+        from frob.perf._sketch_store import SketchStoreConfig, _close_all, put_sketch
+        from frob.stats._sketch import DEFAULT_ALPHA, add_value, new_sketch
+
+        config = SketchStoreConfig()
+        slow_rare = add_value(new_sketch(alpha=DEFAULT_ALPHA), 100.0)
+        fast_frequent = new_sketch(alpha=DEFAULT_ALPHA)
+        for _ in range(100):
+            fast_frequent = add_value(fast_frequent, 5.0)
+        put_sketch(tmp_path, "k_slow", "loop", slow_rare, config, label="pkg.mod.slow")
+        put_sketch(
+            tmp_path, "k_fast", "loop", fast_frequent, config, label="pkg.mod.fast"
+        )
+        try:
+            result = frob_perf_hot(tmp_path)
+            assert result.is_ok
+            rows = result.danger_ok
+            assert [r["section_key"] for r in rows] == ["k_fast", "k_slow"]
+        finally:
+            _close_all()
+
+    def test_by_p90_ranks_by_p90_instead(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_tools.py::frob_perf_hot kind="unit"
+        from frob.perf._sketch_store import SketchStoreConfig, _close_all, put_sketch
+        from frob.stats._sketch import DEFAULT_ALPHA, add_value, new_sketch
+
+        config = SketchStoreConfig()
+        slow_rare = add_value(new_sketch(alpha=DEFAULT_ALPHA), 100.0)
+        fast_frequent = new_sketch(alpha=DEFAULT_ALPHA)
+        for _ in range(10):
+            fast_frequent = add_value(fast_frequent, 5.0)
+        put_sketch(tmp_path, "k_slow", "loop", slow_rare, config, label="pkg.mod.slow")
+        put_sketch(
+            tmp_path, "k_fast", "loop", fast_frequent, config, label="pkg.mod.fast"
+        )
+        try:
+            result = frob_perf_hot(tmp_path, by="p90")
+            assert result.is_ok
+            rows = result.danger_ok
+            assert rows[0]["section_key"] == "k_slow"
+        finally:
+            _close_all()
+
+    def test_top_truncates_results(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_tools.py::frob_perf_hot kind="unit"
+        from frob.perf._sketch_store import SketchStoreConfig, _close_all, put_sketch
+        from frob.stats._sketch import DEFAULT_ALPHA, add_value, new_sketch
+
+        config = SketchStoreConfig()
+        put_sketch(
+            tmp_path,
+            "k1",
+            "loop",
+            add_value(new_sketch(alpha=DEFAULT_ALPHA), 1.0),
+            config,
+            label="a",
+        )
+        put_sketch(
+            tmp_path,
+            "k2",
+            "loop",
+            add_value(new_sketch(alpha=DEFAULT_ALPHA), 2.0),
+            config,
+            label="b",
+        )
+        try:
+            result = frob_perf_hot(tmp_path, top=1)
+            assert result.is_ok
+            assert len(result.danger_ok) == 1
+        finally:
+            _close_all()
 
 
 class TestGraphQuery:

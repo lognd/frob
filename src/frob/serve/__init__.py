@@ -24,6 +24,7 @@ from frob.serve._tools import (
     frob_doable_tickets,
     frob_doc_for,
     frob_graph_query,
+    frob_perf_hot,
     frob_run_touched_tests,
     frob_stale_docs,
 )
@@ -55,6 +56,7 @@ __all__ = [
     "frob_doable_tickets",
     "frob_doc_for",
     "frob_graph_query",
+    "frob_perf_hot",
     "frob_run_touched_tests",
     "frob_stale_docs",
     "run_stdio",

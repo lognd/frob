@@ -39,6 +39,7 @@ installed" message, exiting 1, instead of letting the import error propagate.
 <!-- frob:describes src/frob/serve/_tools.py::frob_doc_for -->
 <!-- frob:describes src/frob/serve/_tools.py::frob_check_delta -->
 <!-- frob:describes src/frob/serve/_tools.py::frob_run_touched_tests -->
+<!-- frob:describes src/frob/serve/_tools.py::frob_perf_hot -->
 
 - `frob_doable_tickets()` -- the doable ticket list (id/title/kind),
   oldest-first, mirroring `frob ticket doable`.
@@ -64,6 +65,11 @@ installed" message, exiting 1, instead of letting the import error propagate.
   `run_selected`), the MCP counterpart of `frob test --base <base>`,
   against the same warm graph snapshot `frob_check_delta` already paid to
   build.
+- `frob_perf_hot(top=None, by="p50xcount")` -- (T-0917, a T-0712 follow-up)
+  T-0712's persisted hot-graph sketch store (`frob.perf.list_sketches`),
+  ranked by `by` (`p50xcount` default, or `p90`) and truncated to `top`
+  rows, mirroring `frob perf hot`'s query surface with no live
+  re-collection.
 - `frob_daemon_status()` -- (T-0733) the background daemon's latest
   post-land delta/touched-tests verdict and any in-flight-worktree rebase
   conflict warnings; a pure read, never triggers a poll itself. See

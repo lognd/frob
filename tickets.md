@@ -3019,7 +3019,7 @@ intentionally-malformed fixture.
 ```yaml
 id: T-0917
 title: MCP tool mirror for frob perf hot (T-0712 follow-up)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-26'
@@ -3027,10 +3027,61 @@ priority: medium
 parent: null
 scope:
 - src/frob/serve/**
+- tests/test_serve.py
+- docs/modules/serve.md
+scope_changes:
+- op: add
+  glob: tests/test_serve.py
+  reason: add coverage for the new frob_perf_hot MCP tool
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: docs/modules/serve.md
+  reason: AFFECT001 requires updating the tools doc for the new frob_perf_hot tool
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/test_serve.py::TestPerfHot::test_empty_store_is_empty_list
+- tests/test_serve.py::TestPerfHot::test_ranks_by_default_p50xcount
+- tests/test_serve.py::TestPerfHot::test_by_p90_ranks_by_p90_instead
+- tests/test_serve.py::TestPerfHot::test_top_truncates_results
+- tests/test_serve.py::TestBuildServer::test_registers_all_five_tools
+- tests/integration/test_interfaces.py::TestInterfaces::test_serve_tools
 threat: null
 component: null
 ```
 T-0712 shipped frob perf hot (query surface over the hot-graph sketch store) but its acceptance text also called for an MCP tool mirror for agents; src/frob/serve/_tools.py is outside T-0712's declared scope (src/frob/perf/**, src/frob/app/**, src/frob/gates/**, docs/modules/perf.md), so this was filed rather than expanding scope. Add a frob_perf_hot(root, top, by) MCP tool mirroring frob perf hot's list_sketches query, following the existing frob_graph_query/frob_stale_docs pattern in src/frob/serve/_tools.py.
+
+## Done report
+
+Changed:
+- src/frob/serve/_tools.py::frob_perf_hot
+- src/frob/serve/_tools.py::_perf_hot_sort_key
+- src/frob/serve/server.py::_register_perf_tool
+- src/frob/serve/server.py::build_server
+- src/frob/serve/__init__.py (re-export frob_perf_hot)
+- docs/modules/serve.md#tools (frob_perf_hot describes edge + prose)
+- tests/test_serve.py::TestPerfHot (4 new tests)
+- tests/test_serve.py::TestBuildServer.test_registers_all_five_tools (tool-name set updated to include frob_perf_hot)
+
+Evidence:
+- tests/test_serve.py::TestPerfHot::test_empty_store_is_empty_list
+- tests/test_serve.py::TestPerfHot::test_ranks_by_default_p50xcount
+- tests/test_serve.py::TestPerfHot::test_by_p90_ranks_by_p90_instead
+- tests/test_serve.py::TestPerfHot::test_top_truncates_results
+- tests/test_serve.py::TestBuildServer::test_registers_all_five_tools
+- tests/integration/test_interfaces.py::TestInterfaces::test_serve_tools
+- full-file check: `uv run pytest -q tests/test_serve.py` -> 37 passed
+- `uv run frob test --base main` -> python exit=0, 49.01s, all selected touched-set tests pass
+
+Filed: none (no out-of-scope discoveries)
+
+Gates: `uv run frob check --ticket T-0917 --only <stage>` clean (0 errors)
+across all four stage groups (gates-fast, gates-native, gates-security,
+lint) plus `static`; scope extended twice via `frob ticket scope --add`
+(tests/test_serve.py, docs/modules/serve.md) with recorded --reason, the
+second required by AFFECT001 (build_server/frob_perf_hot's affects()-closure
+doc).
 
 <!-- ticket:T-0918 -->
 ```yaml
