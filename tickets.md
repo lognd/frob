@@ -3110,3 +3110,38 @@ timeout with a clear "gate state unmeasured" fallback (the existing
 `None` path `_check_gates_summary_fn` already has for a refused/
 unparsable spawn) is preferable to unconditionally waiting up to
 1200s combined.
+
+<!-- ticket:T-0922 -->
+```yaml
+id: T-0922
+title: 'perf: shared interprocedural effect-summary substrate for all PERF rules (sub-call
+  tracking)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-26'
+priority: high
+parent: null
+scope:
+- src/frob/perf/**
+- tests/unit/perf/**
+- docs/modules/perf.md
+acceptance:
+- text: given an expensive effect (spawn/fs-walk/net/heavy-parse) occurring only inside
+    a callee 2+ hops below the analyzed function, when any PERF rule that keys on
+    that effect class analyzes the caller, then the effect is attributed to the caller's
+    call path and the rule fires identically to a direct occurrence
+  evidence: []
+- text: given duplicate identical spawns split across two sibling callees reached
+    from one call path, when PERF012-class duplicate-spawn analysis runs, then the
+    duplicate is detected across the sub-call boundary with argv-equivalence facts
+    propagated through the summaries
+  evidence: []
+- text: given a call the resolver cannot bind (dynamic dispatch, external boundary),
+    when summaries are propagated, then the effect set degrades to an explicit Unknown
+    rather than silently empty, and rules document their Unknown policy
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-07-27: expensive-operation detection (subprocess.run is an EXAMPLE, not the whole list) must track occurrences in sub-function calls -- e.g. PERF012 repeated-duplicate-spawn must fire when the duplicates happen inside callees or are split across callees. Promote PERF008's _EffectGraph (src/frob/perf/_loop_effects.py, name-based whole-project callee propagation) into a shared per-function effect-summary substrate: function -> multiset of summarized effects with argument-invariance/argv facts, transitively propagated, explicit Unknown on unresolvable bindings (reuse the T-0659 binding-resolver conventions and the T-0745 summary-fixpoint precedent rather than inventing a third engine). All existing PERF rules (PERF008 loop-invariant effects, PERF012 duplicate spawns, future rules) consume the same summaries. Structural twin: the .strata perf obligations should consume the same facts where applicable (per the both-layers rule from T-0919). The user wants an incredibly sophisticated checker: depth over minimalism, with multi-hop true-positive tests and call-site-varying false-positive guards.
