@@ -30,6 +30,7 @@ _RUNNER_MODULE_NAMES = (
     "graph_runner",
     "map_runner",
     "mutate_runner",
+    "natives_runner",
     "outline_runner",
     "parse_runner",
     "perf_runner",
@@ -99,6 +100,7 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.doctor: "doctor_runner",
     Subcommand.clean: "clean_runner",
     Subcommand.fmt: "fmt_runner",
+    Subcommand.natives: "natives_runner",
 }
 """Every subcommand handled by a uniform `*_runner.run(AppConfig)` entry point,
 mapped to the runner module name that serves it. `bind` is excluded: it takes

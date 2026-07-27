@@ -205,39 +205,23 @@ install: $(STAMP) core
 
 # ---------- native extension (frob-core, Rust/PyO3) ----------
 
-# T-0732: shared CARGO_TARGET_DIR keyed per CLONE (not per worktree), so a
-# fresh `git worktree add` reuses every dependency crate another worktree
-# of the SAME clone already compiled, instead of a from-scratch cargo
-# build every time (T-0175's Done report measured ~34s/worktree cold;
-# ~30 worktrees/day makes that a real tax). `git rev-parse --git-common-dir`
-# resolves to the ONE `.git` directory every worktree of a clone shares --
-# a fresh worktree and its siblings all compute the identical path, so
-# this needs no per-clone hash or registration step, and two different
-# clones on the same machine (different `.git` dirs) naturally get
-# different cache directories with no collision. The cache lives INSIDE
-# `.git` deliberately: it is git-invisible build output, never a working-
-# tree path any worktree's `git status`/`git add -A` could see or a
-# worktree-local `.gitignore` would need to name (unlike a path under a
-# worktree's own tree, which would pollute exactly one worktree's status
-# and require an out-of-scope `.gitignore` edit here) -- this is NOT the
-# `.git/info/exclude` hazard from the playbook (section 1c): that hazard
-# is a shared EXCLUDE RULE silently shadowing tracked source for every
-# worktree; this is a shared CACHE DIRECTORY holding untracked build
-# artifacts only cargo ever reads or writes, nothing tracked touches it.
-# Concurrency safety: cargo itself serializes concurrent builds against
-# the same target dir via its own fingerprint-directory file lock (a
-# `.cargo-lock` inside the target dir) -- a second `make core` in a
-# sibling worktree while one is already building blocks on that lock and
-# proceeds safely once free, it does not corrupt or race the shared
-# artifacts. No frob-side locking is added on top; this is cargo's own
-# documented target-dir locking, not a new mechanism to maintain here.
-CARGO_TARGET_DIR := $(shell git rev-parse --git-common-dir 2>/dev/null)/frob-cargo-target-cache
-
-# T-0736: the `core:` target's recipe itself now lives in the
-# `makefile-core-shim` managed block at the bottom of this file (`frob
-# scaffold apply` owns it, carrying this same CARGO_TARGET_DIR mechanism
-# verbatim) instead of being hand-maintained here -- this comment marks
-# where it used to live so the target isn't hunted for twice.
+# T-0864: `core`'s recipe (below, in the `makefile-core-shim` managed
+# block) is now a one-line delegation to `uv run frob natives build`
+# (src/frob/natives/_build.py). The shared, git-common-dir-keyed
+# CARGO_TARGET_DIR mechanism T-0732 built here (so a fresh worktree reuses
+# another worktree's already-compiled dependency crates instead of a
+# from-scratch cargo build every time -- T-0175's Done report measured
+# ~34s/worktree cold) moved INTO that subcommand instead of being
+# hand-maintained per-Makefile; cargo's own target-dir file lock still
+# makes concurrent builds from sibling worktrees safe, unchanged. No
+# `CARGO_TARGET_DIR` variable is defined at this Makefile layer anymore --
+# `frob natives build` computes it itself.
+#
+# T-0865 tracks resyncing the scaffold template
+# (`src/frob/scaffold/_managed.py`'s `_MAKEFILE_CORE_SHIM`) that installs
+# this same block into other repos to match the one-liner below; until
+# that lands, this repo's own block is intentionally ahead of the
+# template it was generated from -- not a regression.
 
 # ---------- standalone tool install (T-0133) ----------
 
@@ -365,20 +349,15 @@ upload: clean
 	uv build && uv publish
 
 # frob:managed-block BEGIN makefile-core-shim (frob scaffold apply -- do not hand-edit within markers)
-# Build and install the frob-core/strata-core native extensions into the
-# venv (T-0732). Smart-dup R3+ and strata design-model parsing need them;
-# everything else works without them, so this is a best-effort step that
-# warns rather than fails when the Rust toolchain is absent. Requires a
-# STAMP variable (venv install stamp) to already be defined -- see the
-# Makefile shim installed by `frob scaffold apply`.
-# T-0732: CARGO_TARGET_DIR shared per CLONE (not per worktree) via the
-# common .git dir, so a fresh worktree reuses another worktree's already-
-# compiled dependency crates instead of a from-scratch cargo build.
-CARGO_TARGET_DIR := $(shell git rev-parse --git-common-dir 2>/dev/null)/frob-cargo-target-cache
+# Build and install every declared [[native]] extension into the venv
+# (T-0732/T-0864). Smart-dup R3+ and strata design-model parsing need
+# them; everything else works without them. `frob natives build` (frob's
+# own subcommand) reads frob.toml's [[native]] entries, is best-effort
+# when the Rust toolchain is absent, and owns the git-common-dir-keyed
+# shared CARGO_TARGET_DIR mechanism itself -- no cache logic lives in this
+# Makefile anymore. Requires a STAMP variable (venv install stamp) to
+# already be defined -- see the Makefile shim installed by `frob scaffold
+# apply`.
 core: $(STAMP)
-	@command -v cargo >/dev/null 2>&1 || { \
-		echo "cargo not found; skipping frob-core (smart-dup R3+ disabled)"; \
-		exit 0; }
-	VIRTUAL_ENV=$(CURDIR)/.venv CARGO_TARGET_DIR=$(CARGO_TARGET_DIR) uvx maturin develop --uv --release -m frob-core/Cargo.toml
-	VIRTUAL_ENV=$(CURDIR)/.venv CARGO_TARGET_DIR=$(CARGO_TARGET_DIR) uvx maturin develop --uv --release -m strata-core/Cargo.toml
+	uv run frob natives build
 # frob:managed-block END makefile-core-shim

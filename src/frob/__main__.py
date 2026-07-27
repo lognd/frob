@@ -1980,6 +1980,28 @@ def _add_fmt_parser(sub) -> None:
     fmt_p.add_argument("--json", dest="fmt_json", action="store_true")
 
 
+# frob:ticket T-0864
+def _add_natives_parser(sub) -> None:
+    """Register the `frob natives` subcommand and its `build` action
+    (T-0864): frob-owned `maturin develop` per declared `[[native]]` rust
+    crate, sharing one git-common-dir-keyed `CARGO_TARGET_DIR`."""
+    # -- natives -----------------------------------------------------------
+    natives_p = sub.add_parser(
+        "natives",
+        help="build declared [[native]] crates (T-0864: frob-owned "
+        "maturin develop, shared CARGO_TARGET_DIR)",
+    )
+    natives_sub = natives_p.add_subparsers(dest="natives_command")
+
+    natives_build_p = natives_sub.add_parser(
+        "build",
+        help="maturin develop --release per declared rust [[native]] crate",
+    )
+    natives_build_p.add_argument(
+        "--path", dest="natives_path", metavar="DIR", default="."
+    )
+
+
 # frob:ticket T-0030
 def _add_serve_parser(sub) -> None:
     """Register the `frob serve` subcommand and its arguments."""
@@ -2280,6 +2302,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_doctor_parser(sub)
     _add_clean_parser(sub)
     _add_fmt_parser(sub)
+    _add_natives_parser(sub)
 
 
 # frob:doc docs/modules/app.md#entry-point

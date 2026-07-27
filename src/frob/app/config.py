@@ -63,6 +63,9 @@ class Subcommand(str, enum.Enum):
     fleet = "fleet"
     # T-0441: `frob:` directive comment canonical-form wrap/unwrap.
     fmt = "fmt"
+    # T-0864: frob-owned native crate build (maturin develop per declared
+    # [[native]] rust crate, shared CARGO_TARGET_DIR).
+    natives = "natives"
     # T-0638: list outstanding frob:deprecated entries.
     deprecated = "deprecated"
 
@@ -521,6 +524,10 @@ class AppConfig(BaseModel):
     deploy_base_snapshot: str = "base"
     deploy_audit_output: Path | None = None
 
+    # frob natives (T-0864): frob-owned maturin-develop-per-crate build.
+    natives_command: str | None = None  # build
+    natives_path: Path | None = None
+
     # frob:waive TEST005 reason="from_external 87.2% branch cover, debt T-0160"
     @classmethod
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
@@ -627,6 +634,8 @@ class AppConfig(BaseModel):
             "fleet_title",
             "fleet_kind",
             "fleet_priority",
+            # frob:ticket T-0864
+            "natives_command",
         ):
             val = getattr(args, field, None)
             if val is not None:
@@ -684,6 +693,8 @@ class AppConfig(BaseModel):
             "clean_path",
             "fleet_manifest",
             "fmt_path",
+            # frob:ticket T-0864
+            "natives_path",
         ):
             val = getattr(args, path_field, None)
             if val is not None:

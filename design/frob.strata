@@ -436,6 +436,36 @@ node mutate : trusted {
     may "env";
 }
 
+// T-0864: `frob natives build` -- frob-owned `maturin develop` per
+// declared `[[native]]` rust crate, sharing one git-common-dir-keyed
+// `CARGO_TARGET_DIR` (T-0732's verified design, moved out of this repo's
+// own Makefile). `may` measured directly against `src/frob/natives/**`:
+// `exec` (`build_natives`'s own `guarded_subprocess_run` call spawning
+// `uvx maturin develop`, the same real, wired `frob_check_exec_kill_switch`
+// mechanism every other `guarded_subprocess_run` caller in this model
+// already names) + `env` (`os.environ.copy()` to build the maturin
+// subprocess's own env with `VIRTUAL_ENV`/`CARGO_TARGET_DIR` overlaid). No
+// `fs`/`fs-read`: `_crate_dir_for`'s `Path.is_file()` is a plain
+// existence stat, never an actual file open/read -- the real
+// `frob.toml`/crate-tree reads are `frob.testing._runners.load_natives`'s
+// own `core`-node capability, reached via the `f_natives_core` flow
+// below, not this node's own effect. No `eval`/`net`/`ffi`/`sql`/
+// `fetch_url`/`deserialize` observed either. Split onto its own node
+// rather than folded into `cli` (which already owns
+// `src/frob/app/natives_runner.py` via its `src/frob/app/**` glob) --
+// same "code owns the effect, not its caller" shape as
+// `mutate`/`deploy`/`serve` above: the CLI wiring is a thin dispatcher,
+// this package is where the real capability lives.
+// frob:doc docs/modules/cli.md#frob-natives-build-t-0864
+// frob:ticket T-0864
+node natives : trusted {
+    clearance Internal;
+    code "src/frob/natives/**";
+    may "exec";
+    attr flag=frob_check_exec_kill_switch;
+    may "env";
+}
+
 // T-0440: `frob serve` -- the MCP adapter exposing frob's enforcement
 // queries over stdio (src/frob/serve/**, docs/modules/serve.md). Split
 // off `core`'s former utility-hub node because it is the ONE component
@@ -688,6 +718,10 @@ flow f_cli_deploy : cli -> deploy { label Internal; attr local; }
 // (the `frob mutate` subcommand's CLI entrypoint).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 flow f_cli_mutate : cli -> mutate { label Internal; attr local; }
+// T-0864: `src/frob/app/natives_runner.py` imports `frob.natives` directly
+// (the `frob natives build` subcommand's CLI entrypoint).
+// frob:doc docs/modules/cli.md#frob-natives-build-t-0864
+flow f_cli_natives : cli -> natives { label Internal; attr local; }
 // T-0440: `src/frob/app/serve_runner.py` imports `frob.serve` directly
 // (the `frob serve` subcommand's CLI entrypoint).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
@@ -759,6 +793,13 @@ flow f_deploy_core : deploy -> core { label Internal; attr local; }
 // real call).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 flow f_mutate_core : mutate -> core { label Internal; attr local; }
+
+// T-0864: `frob.natives._build.build_natives` imports `frob.gitio.
+// git_common_dir` (T-0732's shared-cache keying) and `frob.testing.
+// _runners.load_natives` (T-0333's `[[native]]` parser), both `core`'s
+// own code.
+// frob:doc docs/modules/cli.md#frob-natives-build-t-0864
+flow f_natives_core : natives -> core { label Internal; attr local; }
 
 // T-0440: `frob.serve._daemon`/`_warm.py` import `frob.gitio.run_argv`
 // (git subprocess reads: `poll_rebase_bot`'s `git merge-tree` simulation)
@@ -922,6 +963,21 @@ assume "weakness:CWE-78:fleet" noflow registry -> fleet owner logan review "2026
 // 2026-07-23.
 // frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
 assume "weakness:CWE-78:mutate" noflow registry -> mutate owner logan review "2026-10-15"
+
+// T-0864: `natives` newly declares `may "exec"` (`build_natives`'s
+// `guarded_subprocess_run` call spawning `uvx maturin develop`), dragging
+// in the same CWE-78 discharge obligation as core/vet/tickets_ledger/
+// fleet/mutate above. No flow exists from `registry` to `natives` at all
+// -- `natives` only talks to `cli` (inbound) and `core` (outbound) -- so
+// this is the same graph-provable NoFlow case those nodes' comments
+// already document; `assume` used for the same uniformity reason. The
+// ONE exec call site's argv is built entirely from `frob.toml`'s own
+// tracked `[[native]]` entries (`spec.name`, resolved to a crate
+// directory via a fixed underscore/hyphen convention checked against
+// this repo's OWN tracked filesystem) plus a hardcoded `maturin develop`
+// flag list -- never from registry response bytes. Reviewed 2026-07-26.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:natives" noflow registry -> natives owner logan review "2026-10-15"
 
 // T-0440: `deploy` newly declares `may "exec"` (`_vm_runner.py`'s
 // ssh/VBoxManage `guarded_subprocess_run` calls), dragging in the same

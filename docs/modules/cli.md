@@ -74,6 +74,63 @@ Re-check organic `frob xref` telemetry again at the 2026-10-01 sunset
 before T-0802 executes it, per the caveat that most worktree telemetry
 dies with worktree removal (absence-of-evidence there is weak).
 
+## frob natives build (T-0864)
+
+`frob natives build` is frob's own native-crate build subcommand: it reads
+`frob.toml`'s `[[native]]` entries (`frob.testing._runners.load_natives`,
+already existed for T-0333's collection fingerprinting) and, for each
+declared RUST native with a matching crate directory on disk
+(`strata_core` <-> `strata-core/Cargo.toml`, the same underscore/hyphen
+convention `frob.strata._native_staleness` already checks), runs `maturin
+develop --uv --release` against it. Every crate shares one
+`CARGO_TARGET_DIR`, keyed off the clone's git-common-dir
+(`frob.gitio.git_common_dir`) rather than the calling worktree's own path
+-- T-0732's verified design, moved here from a per-repo Makefile recipe so
+every repo declaring `[[native]]` crates gets the shared-cache mechanism
+"for free" by using this subcommand, not by hand-copying Makefile logic
+(T-0865 tracks the sibling scaffold-template + drift-check follow-on).
+Concurrent builds from separate worktrees of the same clone are safe via
+cargo's own target-dir file locking, not a new lock this subcommand adds.
+
+<!-- frob:describes src/frob/natives/_build.py::NativesError -->
+<!-- frob:describes src/frob/natives/_build.py::CrateBuildResult -->
+<!-- frob:describes src/frob/natives/_build.py::BuildReport -->
+<!-- frob:describes src/frob/natives/_build.py::build_natives -->
+<!-- frob:describes src/frob/app/natives_runner.py::run -->
+
+```python
+# frob/natives/_build.py
+class NativesError(ErrorSet):
+    NoNatives, LoadFailed, NotAGitRepo, ExecDisabled
+
+class CrateBuildResult(BaseModel):
+    name: str
+    crate_dir: str
+    returncode: int
+    stdout: str
+    stderr: str
+    @property
+    def ok(self) -> bool  # returncode == 0
+
+class BuildReport(BaseModel):
+    cargo_target_dir: Path
+    results: list[CrateBuildResult]
+    @property
+    def ok(self) -> bool  # all(r.ok for r in results)
+
+def build_natives(root: Path) -> Result[BuildReport, NativesError]
+    # Err only for an infra-level failure that stops the whole run before
+    # any crate is attempted (no declared natives, unparseable frob.toml,
+    # root not a git checkout, exec kill switch refused). A per-crate
+    # build failure is recorded in the returned Ok(BuildReport) instead --
+    # BuildReport.ok is False when any attempted crate failed. A missing
+    # toolchain (no uvx/cargo on PATH) is a best-effort skip, matching the
+    # old make core recipe's own posture -- not a hard failure.
+```
+
+This repo's own `Makefile` `core:` target is now the one-line shim `uv run
+frob natives build` -- no cache logic lives in the Makefile anymore.
+
 ## Plumbing tier -- kept, unchanged (T-0580)
 
 `frob parse`, `frob exports`, `frob gitlog`, and `frob serve` were
