@@ -71,25 +71,41 @@ region-narrowing.
 
 ## `[dup].native_rungs`: gating R3/R4/R5 independently of `enforce` (T-0974)
 
-R3/R4/R5 (`DupConfig.native_rungs_enabled`, default `False`) run one
-`frob-core` native call per fingerprinted symbol each (canonical hash,
-winnowed k-gram set, WL-hash respectively). At this repo's own whole-
-snapshot scale that native-call-per-symbol cost is the dominant driver of
+R3/R4/R5 (`DupConfig.native_rungs_enabled`, default `True` at the
+`DupConfig` class level -- see its docstring for why) run one `frob-core`
+native call per fingerprinted symbol each (canonical hash, winnowed
+k-gram set, WL-hash respectively). At this repo's own whole-snapshot
+scale that native-call-per-symbol cost is the dominant driver of
 `find_clones`'s COLD wall time (no `.frob/dup.db` fingerprint cache yet --
 the common case in a fresh worktree, docs/guides/worktree-natives-
 artifact): T-0399 first measured `[dup].enforce=true` alone blowing past
 the ~150s single-stage foreground budget, and T-0974 reproduced the same
-blowout and pinned it to these three rungs specifically. R1/R2 (exact/
-alpha-renamed token hash) are pure-Python and stay cheap even cold, so
-`[dup].enforce=true` now ships ON by default in this repo's own
-`frob.toml` with `native_rungs` left off -- R1/R2 clone detection is live
-by default; R3-R5's deeper semantic ladder stays opt-in until a follow-up
-makes its cold cost affordable too (an incremental per-file re-index or a
-narrower default snapshot scope -- not attempted this pass, see T-0974's
-Done report). `dup_gate` still fails closed with DUP003 (ERROR) if
-`frob-core` is missing while `[dup].enforce=true`, regardless of
-`native_rungs` -- that check gates the whole rung ladder's availability,
-not just the native subset.
+blowout and pinned it to these three rungs specifically.
+
+Getting `[dup].enforce=true` to actually fit the budget took two rounds.
+First, splitting R1/R2 (cheap, pure-Python) from R3-R5 via this flag
+wasn't sufficient by itself -- profiling the R1/R2-only path uncovered a
+genuine cross-process DEADLOCK (not just slowness): `find_clones` takes
+`derived_state_write_lock` unconditionally, but the "clones" gate runs in
+a `ProcessPoolExecutor` worker (T-0415) while `frob check`'s main process
+holds the derived-state lock SHARED for the whole run, and the write
+lock's same-process reentrancy check couldn't see across the pool's fork
+boundary. T-0982 fixed that (the pool owner now stamps
+`FROB_DERIVED_LOCK_HELD_KEYS` before construction; see
+docs/modules/process.md). With that landed, T-0974 re-measured:
+`native_rungs=true` (the full R1-R5 ladder) still exceeds a 300s
+foreground cap cold and stays opt-in; `native_rungs=false` (R1/R2 only)
+measures ~34-44s cold / ~20-22s warm for the clones stage alone,
+comfortably inside the ~90s per-stage budget. `[dup].enforce=true` now
+ships ON by default in this repo's own `frob.toml` with `native_rungs`
+left off (`false`) -- R1/R2 clone detection is live by default; R3-R5's
+deeper semantic ladder stays opt-in until a follow-up makes its cold cost
+affordable too (an incremental per-file re-index or a narrower default
+snapshot scope -- not attempted this pass, see T-0974's Done report).
+`dup_gate` still fails closed with DUP003 (ERROR) if `frob-core` is
+missing while `[dup].enforce=true`, regardless of `native_rungs` -- that
+check gates the whole rung ladder's availability, not just the native
+subset.
 
 ```toml
 [dup]

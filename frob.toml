@@ -1,32 +1,33 @@
 check_base = "main"
 
-# T-0399 (gates-quality audit finding 2) / T-0974: investigated turning
-# [dup] on by default in THIS repo's own gate path; still held back,
-# deliberately, but for a DIFFERENT (and more serious) reason than T-0399
-# first found. T-0399 measured `enforce = true` alone blowing past this
-# repo's ~150s single-stage foreground budget (docs/guides/agent-
-# playbook.md section 3b). T-0974 re-measured cold (no `.frob/dup.db` yet)
-# and reproduced the blowout, then added `[dup].native_rungs`
-# (frob.dup.DupConfig.native_rungs_enabled, default off) so R1/R2
-# (pure-Python, cheap even cold) can run independently of R3/R4/R5 (native-
-# call-per-symbol, the actual cost driver) -- see docs/modules/dup.md's
-# "[dup].native_rungs" section. That split alone did NOT make it safe to
-# flip `enforce` on here: profiling the still-slow R1/R2-only run found a
-# genuine DEADLOCK, not just slowness -- `find_clones` unconditionally
-# takes `derived_state_write_lock` (EXCLUSIVE) for its whole body, but the
-# "clones" gate runs in a `ProcessPoolExecutor` worker (T-0415,
-# `_PROCESS_POOL_GATES`) while `frob check`'s main process holds
-# `derived_state_lock(..., exclusive=False)` (SHARED) for the whole run;
-# the write lock's same-process reentrancy check
-# (`_process_already_holds`) cannot see across the process-pool fork
-# boundary, so the worker's EXCLUSIVE request blocks forever against the
-# main process's SHARED hold (confirmed live via `lslocks`: WRITE* blocked
-# vs READ held, same `.frob/derived.lock`, different PIDs). Filed as a
-# separate blocking bug (see T-0974's Done report for the id) scoped to
-# `src/frob/process/_lock.py` / `src/frob/gates/__init__.py`'s executor
-# topology -- fixing the lock's cross-process reentrancy story is a
-# different, more careful change than this ticket's profiling/caching
-# scope. `enforce` stays `false` here until that lands.
+# T-0399 (gates-quality audit finding 2) / T-0974: [dup] is now ON by
+# default in this repo's own gate path. History: T-0399 measured
+# `enforce = true` alone blowing past this repo's ~150s single-stage
+# foreground budget. T-0974 re-measured cold and reproduced the blowout,
+# added `[dup].native_rungs` (frob.dup.DupConfig.native_rungs_enabled) so
+# R1/R2 (pure-Python, cheap) can run independently of R3/R4/R5 (native-
+# call-per-symbol, the real cost driver -- see docs/modules/dup.md's
+# "[dup].native_rungs" section), and then found the R1/R2-only path STILL
+# deadlocked: `find_clones` unconditionally takes `derived_state_write_
+# lock` (EXCLUSIVE) while the "clones" gate runs in a `ProcessPoolExecutor`
+# worker (T-0415) and `frob check`'s main process holds the SHARED
+# derived-state lock for the whole run -- the write lock's reentrancy
+# check was process-local and blind to the pool's fork boundary. Filed as
+# T-0981/T-0982; T-0982 landed the fix (`FROB_DERIVED_LOCK_HELD_KEYS`
+# stamped by the pool owner before construction, docs/modules/
+# process.md). T-0974 resumed after that landed and re-measured:
+#
+# - `native_rungs = true` (full R1-R5): still exceeds a 300s foreground
+#   cap cold (no `.frob/dup.db` yet) -- NOT flipped on, stays opt-in.
+# - `native_rungs = false` (R1/R2 only, this repo's actual setting): cold
+#   `frob check --only clones` = 33.9s; cold `--only gates-native` (the
+#   real dispatched-agent chunk shape, alongside archgate/perf/
+#   exhaustive_handling) = 43.5s; warm (cache populated) `gates-native`
+#   settles around 40-45s total, clones itself ~20-22s -- comfortably
+#   inside the ~90s per-stage foreground budget either way. `enforce`
+#   flips on here with `native_rungs` left off.
+[dup]
+enforce = true
 
 
 # T-0443: DOC004's console/bash command-drift tier (frob.gates._docblocks.
