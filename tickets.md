@@ -5694,3 +5694,22 @@ caller needs the same treatment.
 Net effect: `.frob/test-stability.json` has not been updated by a
 normal `frob test` run in this repo for as long as this bug has been
 live -- stability tracking is silently a no-op.
+
+<!-- ticket:T-0984 -->
+```yaml
+id: T-0984
+title: 'frob fmt: off-by-one line-wrapping bug touches unrelated lines repo-wide'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_fmt_directives.py
+threat: null
+component: null
+```
+Found by T-0972: a repo-wide "uv run frob fmt src/frob" intended to fix new waiver-comment line lengths touched ~180 out-of-scope files with an off-by-one wrapping decision (reverted by hand). Reproduce on a synthetic file whose directive comment sits exactly at the limit, fix the boundary condition, add a regression test asserting untouched-below-limit lines stay byte-identical.
