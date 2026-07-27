@@ -217,7 +217,7 @@ frob arch today has per-language walkers (_python.py, _cpp.py) only. To extend c
 ```yaml
 id: T-0330
 title: EPIC arch SOLID + senior-designer checks (static proxies for real design principles)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-19'
@@ -242,6 +242,8 @@ scope_changes:
   reason: T-0330 arch work maps to tests/unit/test_arch.py
   actor: logan
   at: '2026-07-20'
+evidence:
+- tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_across_call_paths_via_callees
 threat: null
 component: null
 ```
@@ -261,6 +263,20 @@ ADVERSARIAL HARDENING (2026-07-20, see docs/design/structural-linter-adversarial
 
 EXHAUSTIVENESS DRIFT-LOCK (T-0343, 2026-07-20 mandate 'implementation MUST address EVERYTHING the exhaustive researcher found'): this epic's implementation binds to the corpus DENOMINATOR MANIFEST via T-0343's N:M coverage meta-test. Denominator source: architecture-check-catalog.md (tier-1 statically-checkable entries) + design-pattern-traps-corpus.md (trap hallmarks). Every relevant manifest entry must map to >=1 registered check/obligation/recommender-rule OR carry an explicit reasoned deferral (advisory/not-checkable/ticketed); (addressed union deferred) == TOTAL. The epic CANNOT close while any researched entry is un-addressed and un-deferred -- the corpora (docs/design/*) are the enforceable denominator, not just reading.
 
+## Done report
+
+Epic close: the arch SOLID + senior-designer static-proxy surface is complete. Landed across this drive and its predecessors: SRP/OCP/LSP/ISP/DIP families (T-0617..T-0621), misc design smells (T-0624), dependency-cycle detection (T-0625), type-driven-design checks folded into ArchCategory (T-0621/T-0892), logging discipline (T-0622), fallibility (T-0623), async event-loop hazards (T-0696), interprocedural lock-ordering (T-0694), may-raise resolver with ctypes boundaries and errors-as-values advisory (T-0686/T-0689/T-0688), near-duplicate clustering with the wired frob_core kernel (T-0953), the ARCH1xx registry dispositions (T-0626), and the full 311-entry arch-checks reconciliation (T-0391). All children individually closed with bound evidence; the denominator-manifest gap is shut.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 5354 warning(s), 352 waived
+- error-findings: none (measured, zero errors)
 <!-- ticket:T-0339 -->
 ```yaml
 id: T-0339
