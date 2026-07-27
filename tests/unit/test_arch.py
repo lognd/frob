@@ -6890,3 +6890,102 @@ class TestSharedStateRaceHazards:
         assert len(hits) == 1
         assert "state" in hits[0].message
         assert "race_async.py::worker" in hits[0].message
+
+
+class TestConcurrencyModelMismatch:
+    """`frob.arch._concurrency_model` -- gil-bound-in-threadpool and
+    ipc-overhead-in-processpool (T-0698, child 5 of the T-0693
+    concurrency-hazard umbrella)."""
+
+    def test_cpu_bound_loop_in_threadpool_fires_gil_bound(self, tmp_path):
+        """A pure-arithmetic loop function submitted to a ThreadPoolExecutor
+        fires `gil-bound-in-threadpool`, naming the loop."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "cpu_thread.py").write_text(
+            "from __future__ import annotations\n"
+            "from concurrent.futures import ThreadPoolExecutor\n\n\n"
+            "def crunch():\n"
+            "    total = 0\n"
+            "    for i in range(10_000_000):\n"
+            "        total += i * i\n"
+            "    return total\n\n\n"
+            "def dispatch():\n"
+            "    with ThreadPoolExecutor() as ex:\n"
+            "        ex.submit(crunch)\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [
+            s for s in result.suggestions if s.category == "gil-bound-in-threadpool"
+        ]
+        assert len(hits) == 1
+        assert "crunch" in hits[0].message
+        assert hits[0].severity == "suggestion"
+
+    def test_io_bound_socket_read_in_threadpool_does_not_fire(self, tmp_path):
+        """A socket-read function dispatched to a ThreadPoolExecutor is the
+        CORRECT model (IO-bound work belongs in a thread pool) -- must stay
+        silent."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "io_thread.py").write_text(
+            "from __future__ import annotations\n"
+            "from concurrent.futures import ThreadPoolExecutor\n\n\n"
+            "def read_socket(sock):\n"
+            "    return sock.recv(4096)\n\n\n"
+            "def dispatch(sock):\n"
+            "    with ThreadPoolExecutor() as ex:\n"
+            "        ex.submit(read_socket, sock)\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [
+            s for s in result.suggestions if s.category == "gil-bound-in-threadpool"
+        ]
+        assert hits == []
+
+    def test_trivial_io_task_in_processpool_fires_ipc_overhead(self, tmp_path):
+        """A trivially small IO-bound task dispatched to a
+        ProcessPoolExecutor fires `ipc-overhead-in-processpool`."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "io_process.py").write_text(
+            "from __future__ import annotations\n"
+            "from concurrent.futures import ProcessPoolExecutor\n\n\n"
+            "def fetch_page(url):\n"
+            "    return requests.get(url)\n\n\n"
+            "def dispatch(url):\n"
+            "    with ProcessPoolExecutor() as ex:\n"
+            "        ex.submit(fetch_page, url)\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [
+            s for s in result.suggestions if s.category == "ipc-overhead-in-processpool"
+        ]
+        assert len(hits) == 1
+        assert "fetch_page" in hits[0].message
+
+    def test_mixed_loop_and_io_function_never_fires_either_advisory(self, tmp_path):
+        """A function that both loops AND calls IO is MIXED/UNKNOWN -- never
+        confidently classified, so no advisory fires even when dispatched
+        to a thread pool."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "mixed.py").write_text(
+            "from __future__ import annotations\n"
+            "from concurrent.futures import ThreadPoolExecutor\n\n\n"
+            "def mixed_work(urls):\n"
+            "    results = []\n"
+            "    for url in urls:\n"
+            "        results.append(requests.get(url))\n"
+            "    return results\n\n\n"
+            "def dispatch(urls):\n"
+            "    with ThreadPoolExecutor() as ex:\n"
+            "        ex.submit(mixed_work, urls)\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [
+            s
+            for s in result.suggestions
+            if s.category in ("gil-bound-in-threadpool", "ipc-overhead-in-processpool")
+        ]
+        assert hits == []

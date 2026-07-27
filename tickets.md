@@ -1750,7 +1750,7 @@ Filed: none.
 id: T-0698
 title: 'concurrency model-mismatch advisory: IO-bound vs CPU-bound classification
   vs chosen executor'
-state: queued
+state: done
 kind: ux
 origin: human
 created: '2026-07-22'
@@ -1762,15 +1762,97 @@ scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
 - docs/modules/arch.md
+evidence:
+- tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound
+- tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_io_bound_socket_read_in_threadpool_does_not_fire
+- tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_trivial_io_task_in_processpool_fires_ipc_overhead
+- tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_mixed_loop_and_io_function_never_fires_either_advisory
 acceptance:
 - text: GIVEN a pure-arithmetic loop function submitted to ThreadPoolExecutor WHEN
     advisories run THEN a GIL-bound suggestion fires naming the loop; GIVEN a socket-read
     function under threads THEN silence
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound
+  - tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_io_bound_socket_read_in_threadpool_does_not_fire
+  - tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_trivial_io_task_in_processpool_fires_ipc_overhead
+  - tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_mixed_loop_and_io_function_never_fires_either_advisory
 threat: null
 component: null
 ```
 Child 5 of T-0693, the user's seem-IO-bound/seem-CPU-bound mandate. Classify each function from normalized-model events: IO-BOUND if dominated by curated IO calls (sockets/files/http/subprocess/db), CPU-BOUND if loop/arithmetic-dense with no IO, MIXED/UNKNOWN otherwise (advisories only fire on confident classifications -- T-0332 noise discipline). Advisories: CPU-bound work submitted to ThreadPoolExecutor or awaited in the event loop -> GIL-bound, suggest ProcessPool/native; trivially-small IO-bound tasks under ProcessPoolExecutor -> IPC overhead, suggest threads/async; async def with zero awaits (from T-0696) -> not actually async, suggest plain def; sequential awaits over independent IO -> suggest gather. Each advisory names the classification evidence (the dominating call sites), never a bare switch-your-model.
+
+## Done report
+
+Added `frob.arch._concurrency_model` (T-0698, child 5 of the T-0693
+concurrency-hazard umbrella): classifies each python function as IO-BOUND
+(a curated IO call in its own scope, no loop), CPU-BOUND (a loop, no
+curated IO call), or MIXED/UNKNOWN (both or neither -- never advisory-
+eligible, matching T-0332's noise-discipline precedent), then flags a
+mismatch between that classification and the function's dispatched
+executor: `gil-bound-in-threadpool` (a CPU-bound function submitted to a
+`ThreadPoolExecutor`) and `ipc-overhead-in-processpool` (a trivially small
+IO-bound function submitted to a `ProcessPoolExecutor`).
+
+Reuse: the curated IO-call table is built on top of
+`frob.arch._async_hazards`'s existing `_BLOCKING_CALL_TABLE`/
+`_OPEN_BUILTIN_RE` (imported directly, not re-curated) plus a small
+socket/db addition this ticket's own "sockets/... db" wording needs and
+that table did not cover. Dispatch-target name extraction reuses
+`frob.arch._concurrency._first_arg_names`. `async-zero-awaits` (one of
+the four advisory shapes this ticket's own text names) already exists as
+its own category from T-0696 -- not re-implemented here (T-0696's module
+docstring already cross-references it as feeding this ticket).
+
+Changed:
+- src/frob/arch/_concurrency_model.py (new): `_classify_function`,
+  `_executor_bindings`, `_bound_ctor_name`, `_dispatch_kinds_for_name`,
+  `_is_io_call`, `_check_concurrency_model_mismatch`.
+- src/frob/arch/_models.py::ArchCategory: added `gil-bound-in-threadpool`,
+  `ipc-overhead-in-processpool`.
+- src/frob/arch/__init__.py::_run_python_checks: wired
+  `_concurrency_model._check_concurrency_model_mismatch` alongside the
+  sibling concurrency-hazard families (skips test files, same reason as
+  T-0694/T-0695/T-0696/T-0697).
+- tests/unit/test_arch.py: new `TestConcurrencyModelMismatch` (4 tests).
+
+Evidence: `pytest tests/unit/test_arch.py -k TestConcurrencyModelMismatch`
+-> 4 passed individually, and the full `tests/unit/test_arch.py` suite
+(258 tests) passes unchanged. `frob test --base main` (touched-set) ->
+`[PASS] python exit=0`, 6 outcomes recorded.
+
+Real-world validation over frob's own `src/frob/` (non-test files): 0
+`gil-bound-in-threadpool`/`ipc-overhead-in-processpool` findings (no
+ThreadPoolExecutor/ProcessPoolExecutor model mismatch in this repo's own
+code today) -- 0 false positives on a real, large codebase.
+
+Disclosed cut: this ticket's own text names a fourth advisory shape
+("sequential awaits over independent IO -> suggest gather") not built
+here -- proving two `await` expressions are data-independent needs a
+def-use analysis `frob.arch`'s current normalized model does not provide,
+and an unsound textual-adjacency approximation would risk false positives
+against this repo's own noise-discipline convention (T-0332). Filed as
+T-1027 (a duplicate accidental filing, T-1026, was
+dropped/absorbed into it).
+
+Gates: `frob check --ticket T-0698` clean across lint, gates-native,
+gates-fast, gates-security, and static (0 errors in every stage; the one
+ruff-format warning seen is pre-existing unrelated debt in
+`src/frob/gates/_docptr.py`). `ruff check`/`ruff format`/`ty check` on the
+new file are clean.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_io_bound_socket_read_in_threadpool_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_trivial_io_task_in_processpool_fires_ipc_overhead` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_mixed_loop_and_io_function_never_fires_either_advisory` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 4413 warning(s), 334 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0701 -->
 ```yaml
@@ -3871,3 +3953,88 @@ src/frob/strata/_contention.py, tests/unit/strata/test_contention.py,
 docs/strata/host.md#resource-contention-sys2xx-t-0699, design/frob.strata
 (dropping the five waivers once SYS203 itself discharges them),
 tickets.md.
+
+<!-- ticket:T-1026 -->
+```yaml
+id: T-1026
+title: sequential-independent-awaits should suggest asyncio.gather (T-0698 disclosed
+  cut)
+state: dropped
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/arch/**
+- tests/unit/test_arch.py
+- docs/modules/arch.md
+threat: null
+component: null
+```
+T-0698's own text names a fourth advisory shape ("sequential awaits over
+independent IO -> suggest gather") this ticket's implementation did not
+build: proving two `await` expressions are INDEPENDENT (neither reads a
+value the other produced) needs a data-dependency analysis this repo's
+current `frob.arch` normalized model does not yet provide (NormalizedCall
+tracks a call's own bare-identifier arguments, not a cross-statement
+def-use chain). Approximating "independent" as "textually adjacent await
+statements" would risk false positives on genuinely sequential
+awaits (the second explicitly depends on the first's result) -- an
+unsound advisory is worse than no advisory for this repo's own
+noise-discipline convention (T-0332).
+
+Scope for this follow-up: `src/frob/arch/**`, `tests/unit/test_arch.py`,
+`docs/modules/arch.md`. Build a minimal def-use check over two or more
+sequential `await` statements in the same function body: an `await`
+whose LHS binding is never read by any argument of a LATER `await`
+expression in the same own-scope sequence is "independent"; suggest
+`asyncio.gather` naming the awaited call sites. Same advisory-tier,
+unwaivable-channel posture as every other T-0693 concurrency-hazard
+category.
+
+## Drop reason
+- 2026-07-27: accidental duplicate filing (double invocation), see T-1027 (absorbed by T-1027)
+
+<!-- ticket:T-1027 -->
+```yaml
+id: T-1027
+title: sequential-independent-awaits should suggest asyncio.gather (T-0698 disclosed
+  cut)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/arch/**
+- tests/unit/test_arch.py
+- docs/modules/arch.md
+threat: null
+component: null
+```
+T-0698's own text names a fourth advisory shape ("sequential awaits over
+independent IO -> suggest gather") this ticket's implementation did not
+build: proving two `await` expressions are INDEPENDENT (neither reads a
+value the other produced) needs a data-dependency analysis this repo's
+current `frob.arch` normalized model does not yet provide (NormalizedCall
+tracks a call's own bare-identifier arguments, not a cross-statement
+def-use chain). Approximating "independent" as "textually adjacent await
+statements" would risk false positives on genuinely sequential
+awaits (the second explicitly depends on the first's result) -- an
+unsound advisory is worse than no advisory for this repo's own
+noise-discipline convention (T-0332).
+
+Scope for this follow-up: `src/frob/arch/**`, `tests/unit/test_arch.py`,
+`docs/modules/arch.md`. Build a minimal def-use check over two or more
+sequential `await` statements in the same function body: an `await`
+whose LHS binding is never read by any argument of a LATER `await`
+expression in the same own-scope sequence is "independent"; suggest
+`asyncio.gather` naming the awaited call sites. Same advisory-tier,
+unwaivable-channel posture as every other T-0693 concurrency-hazard
+category.

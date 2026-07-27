@@ -26,6 +26,7 @@ from pathlib import Path
 from frob.arch import (
     _async_hazards,
     _concurrency,
+    _concurrency_model,
     _cpp,
     _lock_ordering,
     _ocp,
@@ -339,7 +340,14 @@ def _run_python_checks(
     approximation, child 4 of the T-0693 concurrency-hazard umbrella,
     `frob.arch._shared_state_race`) skips test files for the same reason
     as the other concurrency-hazard families above -- a test fixture's own
-    shared-state usage is not production race debt."""
+    shared-state usage is not production race debt.
+
+    T-0698: `gil-bound-in-threadpool` and `ipc-overhead-in-processpool`
+    (the concurrency model-mismatch advisory, child 5 of the T-0693
+    concurrency-hazard umbrella, `frob.arch._concurrency_model`) skip test
+    files for the same reason as the other concurrency-hazard families
+    above -- a test fixture's own executor usage is not a production
+    model-mismatch."""
     if not is_test:
         _python._check_long_functions(tree, rel, limits.max_function_lines, suggestions)
         _python._check_god_classes(tree, rel, limits.max_class_methods, suggestions)
@@ -363,6 +371,7 @@ def _run_python_checks(
         _async_hazards._check_async_event_loop_hazards(tree, rel, suggestions)
         _lock_ordering._check_lock_ordering_hazards(tree, rel, suggestions)
         _shared_state_race._check_shared_state_race_hazards(tree, rel, suggestions)
+        _concurrency_model._check_concurrency_model_mismatch(tree, rel, suggestions)
         _run_srp_checks_python(tree, rel, limits, suggestions)
     _python._check_high_coupling(path, rel, root, limits.max_local_imports, suggestions)
     if not is_test:
