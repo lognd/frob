@@ -9146,36 +9146,97 @@ class TestKnownGateRuleIds:
     # (landed on main concurrently with this pass) was folded straight
     # into `_KNOWN_GATE_RULES` instead of parked here, since it is
     # exactly this ticket's own defect class.
-    _KNOWN_ISSUE_ALLOWLIST: frozenset[str] = frozenset()
+    #
+    # frob:ticket T-0964
+    # T-0964 extended the drift-lock below to also resolve `rule=
+    # CONST_NAME` references (not just inline `rule="..."` literals),
+    # which surfaced a real, pre-existing gap: SYS100-102/SYS200-203 are
+    # genuinely emitted via module-level constants in _selfconform.py/
+    # _contention.py but were never added to `_KNOWN_GATE_RULES`. T-0964's
+    # own scope is tests/test_gates.py only, so the fix (adding these
+    # seven ids to `_KNOWN_GATE_RULES` in src/frob/gates/__init__.py) is
+    # filed separately as T-0966 rather than folded in here;
+    # parked in this allowlist until that lands, exactly as T-0901's own
+    # batch was parked before T-0924 paid it down.
+    _KNOWN_ISSUE_ALLOWLIST: frozenset[str] = frozenset(
+        {
+            "SYS100",
+            "SYS101",
+            "SYS102",
+            "SYS200",
+            "SYS201",
+            "SYS202",
+            "SYS203",
+        }
+    )
 
     # frob:ticket T-0901
     # frob:ticket T-0924
+    # frob:ticket T-0964
     # frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known
     def test_every_emitted_rule_literal_is_known(self) -> None:
         """Drift-lock: statically enumerate every `rule="..."`/`"rule":
-        "..."` string literal constructed inside `src/frob/gates/**` and
-        `src/frob/strata/**` (mirroring how `_KNOWN_GATE_RULES` itself is
-        a static frozenset) and assert each one is either a member of
-        `known_gate_rule_ids()` or on the explicit, ticket-cited
-        `_KNOWN_ISSUE_ALLOWLIST` above -- so a new gate/rule added without
-        a matching `_KNOWN_GATE_RULES` entry fails loud immediately
-        instead of silently reproducing the PARSE001/TICK005/REG011/
-        PII011/PII012/SYSWAIVE002/THREAT006/PROTO004/DEC000 omission class
-        (T-0903/T-0923/T-0901)."""
+        "..."` string literal AND every `rule=CONST_NAME` reference (where
+        `CONST_NAME` resolves to a module-level `CONST_NAME = "RULE123"`
+        assignment -- the `REL_*`/`SYS_*` convention `src/frob/strata/**`
+        uses instead of inline literals) constructed inside
+        `src/frob/gates/**` and `src/frob/strata/**` (mirroring how
+        `_KNOWN_GATE_RULES` itself is a static frozenset) and assert each
+        one is either a member of `known_gate_rule_ids()` or on the
+        explicit, ticket-cited `_KNOWN_ISSUE_ALLOWLIST` above -- so a new
+        gate/rule added without a matching `_KNOWN_GATE_RULES` entry fails
+        loud immediately instead of silently reproducing the PARSE001/
+        TICK005/REG011/PII011/PII012/SYSWAIVE002/THREAT006/PROTO004/DEC000
+        omission class (T-0903/T-0923/T-0901), including the T-0964
+        variant of that same class where the id is invisible to this test
+        because it is only ever referenced via a module-level constant
+        rather than an inline literal."""
         import re as _re
 
         repo_root = Path(__file__).resolve().parents[1]
-        pattern = _re.compile(r'rule\s*[:=]\s*"([A-Z][A-Z0-9_-]*)"')
+        literal_pattern = _re.compile(r'rule\s*[:=]\s*"([A-Z][A-Z0-9_-]*)"')
+        # frob:ticket T-0964
+        # A module-level constant assignment shaped like
+        # `NAME = "RULE123"` -- resolved below so `rule=NAME` kwargs are
+        # checked identically to inline `rule="..."` literals.
+        const_assign_pattern = _re.compile(
+            r'^([A-Z][A-Z0-9_]*)\s*=\s*"([A-Z][A-Z0-9_-]*)"\s*$'
+        )
+        # A `rule=NAME` kwarg where NAME is a bare identifier (not a
+        # string literal) -- resolved against `const_assign_pattern`
+        # matches collected across the same file set.
+        const_ref_pattern = _re.compile(r"rule\s*=\s*([A-Z][A-Z0-9_]*)\b")
+
         found: dict[str, str] = {}
+        const_values: dict[str, str] = {}
+        const_refs: dict[str, str] = {}
         for base in ("src/frob/gates", "src/frob/strata"):
             for path in sorted((repo_root / base).rglob("*.py")):
                 for lineno, line in enumerate(path.read_text().splitlines(), start=1):
-                    if line.strip().startswith("#"):
+                    stripped = line.strip()
+                    if stripped.startswith("#"):
                         continue
-                    for m in pattern.finditer(line):
+                    for m in literal_pattern.finditer(line):
                         found.setdefault(
                             m.group(1), f"{path.relative_to(repo_root)}:{lineno}"
                         )
+                    assign_m = const_assign_pattern.match(stripped)
+                    if assign_m:
+                        const_values.setdefault(assign_m.group(1), assign_m.group(2))
+                    ref_m = const_ref_pattern.search(line)
+                    if ref_m:
+                        const_refs.setdefault(
+                            ref_m.group(1), f"{path.relative_to(repo_root)}:{lineno}"
+                        )
+
+        # Resolve every `rule=CONST_NAME` reference to the constant's
+        # assigned string value and fold it into `found` -- a constant
+        # referenced but never assigned in the scanned tree is left
+        # unresolved (nothing statically checkable) rather than raising.
+        for name, loc in const_refs.items():
+            value = const_values.get(name)
+            if value is not None:
+                found.setdefault(value, loc)
 
         known = known_gate_rule_ids()
         unknown = {

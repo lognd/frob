@@ -19,7 +19,7 @@
 #     fabricated ticket. As T-0397's children close a concern down to
 #     a real gate rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 119
+gate_rule_total: 212
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     name: "COV001 is a live, enforced gate rule"
@@ -497,6 +497,378 @@ gate_rule_entries:
   - id: "CHK-GATE-TODO003"
     name: "TODO003 is a live, enforced gate rule"
     disposition: "handled_by:TODO003"
+    cross_refs: []
+  - id: "CHK-GATE-AFFECT001"
+    name: "AFFECT001 is a live, enforced gate rule"
+    disposition: "handled_by:AFFECT001"
+    cross_refs: []
+  - id: "CHK-GATE-AFFECT002"
+    name: "AFFECT002 is a live, enforced gate rule"
+    disposition: "handled_by:AFFECT002"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLIANCE001"
+    name: "COMPLIANCE001 is a live, enforced gate rule"
+    disposition: "handled_by:COMPLIANCE001"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLIANCE002"
+    name: "COMPLIANCE002 is a live, enforced gate rule"
+    disposition: "handled_by:COMPLIANCE002"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLIANCE003"
+    name: "COMPLIANCE003 is a live, enforced gate rule"
+    disposition: "handled_by:COMPLIANCE003"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLIANCE004"
+    name: "COMPLIANCE004 is a live, enforced gate rule"
+    disposition: "handled_by:COMPLIANCE004"
+    cross_refs: []
+  - id: "CHK-GATE-DEC000"
+    name: "DEC000 is a live, enforced gate rule"
+    disposition: "handled_by:DEC000"
+    cross_refs: []
+  - id: "CHK-GATE-EXHAUST001"
+    name: "EXHAUST001 is a live, enforced gate rule"
+    disposition: "handled_by:EXHAUST001"
+    cross_refs: []
+  - id: "CHK-GATE-EXHAUST002"
+    name: "EXHAUST002 is a live, enforced gate rule"
+    disposition: "handled_by:EXHAUST002"
+    cross_refs: []
+  - id: "CHK-GATE-HOST-BLAST"
+    name: "HOST-BLAST is a live, enforced gate rule"
+    disposition: "handled_by:HOST-BLAST"
+    cross_refs: []
+  - id: "CHK-GATE-HOST001"
+    name: "HOST001 is a live, enforced gate rule"
+    disposition: "handled_by:HOST001"
+    cross_refs: []
+  - id: "CHK-GATE-HOST002"
+    name: "HOST002 is a live, enforced gate rule"
+    disposition: "handled_by:HOST002"
+    cross_refs: []
+  - id: "CHK-GATE-KRB001"
+    name: "KRB001 is a live, enforced gate rule"
+    disposition: "handled_by:KRB001"
+    cross_refs: []
+  - id: "CHK-GATE-KRB002"
+    name: "KRB002 is a live, enforced gate rule"
+    disposition: "handled_by:KRB002"
+    cross_refs: []
+  - id: "CHK-GATE-KRB003"
+    name: "KRB003 is a live, enforced gate rule"
+    disposition: "handled_by:KRB003"
+    cross_refs: []
+  - id: "CHK-GATE-KRB004"
+    name: "KRB004 is a live, enforced gate rule"
+    disposition: "handled_by:KRB004"
+    cross_refs: []
+  - id: "CHK-GATE-LINT001"
+    name: "LINT001 is a live, enforced gate rule"
+    disposition: "handled_by:LINT001"
+    cross_refs: []
+  - id: "CHK-GATE-LINT002"
+    name: "LINT002 is a live, enforced gate rule"
+    disposition: "handled_by:LINT002"
+    cross_refs: []
+  - id: "CHK-GATE-LINT003"
+    name: "LINT003 is a live, enforced gate rule"
+    disposition: "handled_by:LINT003"
+    cross_refs: []
+  - id: "CHK-GATE-LINT004"
+    name: "LINT004 is a live, enforced gate rule"
+    disposition: "handled_by:LINT004"
+    cross_refs: []
+  - id: "CHK-GATE-LINT005"
+    name: "LINT005 is a live, enforced gate rule"
+    disposition: "handled_by:LINT005"
+    cross_refs: []
+  - id: "CHK-GATE-PARSE001"
+    name: "PARSE001 is a live, enforced gate rule"
+    disposition: "handled_by:PARSE001"
+    cross_refs: []
+  - id: "CHK-GATE-PARSE002"
+    name: "PARSE002 is a live, enforced gate rule"
+    disposition: "handled_by:PARSE002"
+    cross_refs: []
+  - id: "CHK-GATE-PERF008"
+    name: "PERF008 is a live, enforced gate rule"
+    disposition: "handled_by:PERF008"
+    cross_refs: []
+  - id: "CHK-GATE-PERF009"
+    name: "PERF009 is a live, enforced gate rule"
+    disposition: "handled_by:PERF009"
+    cross_refs: []
+  - id: "CHK-GATE-PII001"
+    name: "PII001 is a live, enforced gate rule"
+    disposition: "handled_by:PII001"
+    cross_refs: []
+  - id: "CHK-GATE-PII002"
+    name: "PII002 is a live, enforced gate rule"
+    disposition: "handled_by:PII002"
+    cross_refs: []
+  - id: "CHK-GATE-PII003"
+    name: "PII003 is a live, enforced gate rule"
+    disposition: "handled_by:PII003"
+    cross_refs: []
+  - id: "CHK-GATE-PII004"
+    name: "PII004 is a live, enforced gate rule"
+    disposition: "handled_by:PII004"
+    cross_refs: []
+  - id: "CHK-GATE-PII011"
+    name: "PII011 is a live, enforced gate rule"
+    disposition: "handled_by:PII011"
+    cross_refs: []
+  - id: "CHK-GATE-PII012"
+    name: "PII012 is a live, enforced gate rule"
+    disposition: "handled_by:PII012"
+    cross_refs: []
+  - id: "CHK-GATE-PROTO004"
+    name: "PROTO004 is a live, enforced gate rule"
+    disposition: "handled_by:PROTO004"
+    cross_refs: []
+  - id: "CHK-GATE-PROTO005"
+    name: "PROTO005 is a live, enforced gate rule"
+    disposition: "handled_by:PROTO005"
+    cross_refs: []
+  - id: "CHK-GATE-REG011"
+    name: "REG011 is a live, enforced gate rule"
+    disposition: "handled_by:REG011"
+    cross_refs: []
+  - id: "CHK-GATE-REL200"
+    name: "REL200 is a live, enforced gate rule"
+    disposition: "handled_by:REL200"
+    cross_refs: []
+  - id: "CHK-GATE-REL201"
+    name: "REL201 is a live, enforced gate rule"
+    disposition: "handled_by:REL201"
+    cross_refs: []
+  - id: "CHK-GATE-REL210"
+    name: "REL210 is a live, enforced gate rule"
+    disposition: "handled_by:REL210"
+    cross_refs: []
+  - id: "CHK-GATE-REL211"
+    name: "REL211 is a live, enforced gate rule"
+    disposition: "handled_by:REL211"
+    cross_refs: []
+  - id: "CHK-GATE-REL220"
+    name: "REL220 is a live, enforced gate rule"
+    disposition: "handled_by:REL220"
+    cross_refs: []
+  - id: "CHK-GATE-REL221"
+    name: "REL221 is a live, enforced gate rule"
+    disposition: "handled_by:REL221"
+    cross_refs: []
+  - id: "CHK-GATE-REL222"
+    name: "REL222 is a live, enforced gate rule"
+    disposition: "handled_by:REL222"
+    cross_refs: []
+  - id: "CHK-GATE-REL230"
+    name: "REL230 is a live, enforced gate rule"
+    disposition: "handled_by:REL230"
+    cross_refs: []
+  - id: "CHK-GATE-REL231"
+    name: "REL231 is a live, enforced gate rule"
+    disposition: "handled_by:REL231"
+    cross_refs: []
+  - id: "CHK-GATE-REL240"
+    name: "REL240 is a live, enforced gate rule"
+    disposition: "handled_by:REL240"
+    cross_refs: []
+  - id: "CHK-GATE-REL241"
+    name: "REL241 is a live, enforced gate rule"
+    disposition: "handled_by:REL241"
+    cross_refs: []
+  - id: "CHK-GATE-REL250"
+    name: "REL250 is a live, enforced gate rule"
+    disposition: "handled_by:REL250"
+    cross_refs: []
+  - id: "CHK-GATE-REL260"
+    name: "REL260 is a live, enforced gate rule"
+    disposition: "handled_by:REL260"
+    cross_refs: []
+  - id: "CHK-GATE-REL261"
+    name: "REL261 is a live, enforced gate rule"
+    disposition: "handled_by:REL261"
+    cross_refs: []
+  - id: "CHK-GATE-REL270"
+    name: "REL270 is a live, enforced gate rule"
+    disposition: "handled_by:REL270"
+    cross_refs: []
+  - id: "CHK-GATE-REL271"
+    name: "REL271 is a live, enforced gate rule"
+    disposition: "handled_by:REL271"
+    cross_refs: []
+  - id: "CHK-GATE-REL272"
+    name: "REL272 is a live, enforced gate rule"
+    disposition: "handled_by:REL272"
+    cross_refs: []
+  - id: "CHK-GATE-REL280"
+    name: "REL280 is a live, enforced gate rule"
+    disposition: "handled_by:REL280"
+    cross_refs: []
+  - id: "CHK-GATE-REL281"
+    name: "REL281 is a live, enforced gate rule"
+    disposition: "handled_by:REL281"
+    cross_refs: []
+  - id: "CHK-GATE-REL290"
+    name: "REL290 is a live, enforced gate rule"
+    disposition: "handled_by:REL290"
+    cross_refs: []
+  - id: "CHK-GATE-REL291"
+    name: "REL291 is a live, enforced gate rule"
+    disposition: "handled_by:REL291"
+    cross_refs: []
+  - id: "CHK-GATE-REL300"
+    name: "REL300 is a live, enforced gate rule"
+    disposition: "handled_by:REL300"
+    cross_refs: []
+  - id: "CHK-GATE-REL301"
+    name: "REL301 is a live, enforced gate rule"
+    disposition: "handled_by:REL301"
+    cross_refs: []
+  - id: "CHK-GATE-REL310"
+    name: "REL310 is a live, enforced gate rule"
+    disposition: "handled_by:REL310"
+    cross_refs: []
+  - id: "CHK-GATE-REL311"
+    name: "REL311 is a live, enforced gate rule"
+    disposition: "handled_by:REL311"
+    cross_refs: []
+  - id: "CHK-GATE-REL320"
+    name: "REL320 is a live, enforced gate rule"
+    disposition: "handled_by:REL320"
+    cross_refs: []
+  - id: "CHK-GATE-REL321"
+    name: "REL321 is a live, enforced gate rule"
+    disposition: "handled_by:REL321"
+    cross_refs: []
+  - id: "CHK-GATE-REL330"
+    name: "REL330 is a live, enforced gate rule"
+    disposition: "handled_by:REL330"
+    cross_refs: []
+  - id: "CHK-GATE-REL331"
+    name: "REL331 is a live, enforced gate rule"
+    disposition: "handled_by:REL331"
+    cross_refs: []
+  - id: "CHK-GATE-REL340"
+    name: "REL340 is a live, enforced gate rule"
+    disposition: "handled_by:REL340"
+    cross_refs: []
+  - id: "CHK-GATE-REL350"
+    name: "REL350 is a live, enforced gate rule"
+    disposition: "handled_by:REL350"
+    cross_refs: []
+  - id: "CHK-GATE-REL351"
+    name: "REL351 is a live, enforced gate rule"
+    disposition: "handled_by:REL351"
+    cross_refs: []
+  - id: "CHK-GATE-REL360"
+    name: "REL360 is a live, enforced gate rule"
+    disposition: "handled_by:REL360"
+    cross_refs: []
+  - id: "CHK-GATE-REL370"
+    name: "REL370 is a live, enforced gate rule"
+    disposition: "handled_by:REL370"
+    cross_refs: []
+  - id: "CHK-GATE-REL371"
+    name: "REL371 is a live, enforced gate rule"
+    disposition: "handled_by:REL371"
+    cross_refs: []
+  - id: "CHK-GATE-REL372"
+    name: "REL372 is a live, enforced gate rule"
+    disposition: "handled_by:REL372"
+    cross_refs: []
+  - id: "CHK-GATE-REL380"
+    name: "REL380 is a live, enforced gate rule"
+    disposition: "handled_by:REL380"
+    cross_refs: []
+  - id: "CHK-GATE-REL381"
+    name: "REL381 is a live, enforced gate rule"
+    disposition: "handled_by:REL381"
+    cross_refs: []
+  - id: "CHK-GATE-REL382"
+    name: "REL382 is a live, enforced gate rule"
+    disposition: "handled_by:REL382"
+    cross_refs: []
+  - id: "CHK-GATE-REL383"
+    name: "REL383 is a live, enforced gate rule"
+    disposition: "handled_by:REL383"
+    cross_refs: []
+  - id: "CHK-GATE-RELWAIVE002"
+    name: "RELWAIVE002 is a live, enforced gate rule"
+    disposition: "handled_by:RELWAIVE002"
+    cross_refs: []
+  - id: "CHK-GATE-SELFAUDIT001"
+    name: "SELFAUDIT001 is a live, enforced gate rule"
+    disposition: "handled_by:SELFAUDIT001"
+    cross_refs: []
+  - id: "CHK-GATE-SYS204"
+    name: "SYS204 is a live, enforced gate rule"
+    disposition: "handled_by:SYS204"
+    cross_refs: []
+  - id: "CHK-GATE-SYSWAIVE002"
+    name: "SYSWAIVE002 is a live, enforced gate rule"
+    disposition: "handled_by:SYSWAIVE002"
+    cross_refs: []
+  - id: "CHK-GATE-THREAT001"
+    name: "THREAT001 is a live, enforced gate rule"
+    disposition: "handled_by:THREAT001"
+    cross_refs: []
+  - id: "CHK-GATE-THREAT002"
+    name: "THREAT002 is a live, enforced gate rule"
+    disposition: "handled_by:THREAT002"
+    cross_refs: []
+  - id: "CHK-GATE-THREAT003"
+    name: "THREAT003 is a live, enforced gate rule"
+    disposition: "handled_by:THREAT003"
+    cross_refs: []
+  - id: "CHK-GATE-THREAT004"
+    name: "THREAT004 is a live, enforced gate rule"
+    disposition: "handled_by:THREAT004"
+    cross_refs: []
+  - id: "CHK-GATE-THREAT005"
+    name: "THREAT005 is a live, enforced gate rule"
+    disposition: "handled_by:THREAT005"
+    cross_refs: []
+  - id: "CHK-GATE-THREAT006"
+    name: "THREAT006 is a live, enforced gate rule"
+    disposition: "handled_by:THREAT006"
+    cross_refs: []
+  - id: "CHK-GATE-TICK005"
+    name: "TICK005 is a live, enforced gate rule"
+    disposition: "handled_by:TICK005"
+    cross_refs: []
+  - id: "CHK-GATE-REL390"
+    name: "REL390 is a live, enforced gate rule"
+    disposition: "handled_by:REL390"
+    cross_refs: []
+  - id: "CHK-GATE-REL391"
+    name: "REL391 is a live, enforced gate rule"
+    disposition: "handled_by:REL391"
+    cross_refs: []
+  - id: "CHK-GATE-REL392"
+    name: "REL392 is a live, enforced gate rule"
+    disposition: "handled_by:REL392"
+    cross_refs: []
+  - id: "CHK-GATE-REL393"
+    name: "REL393 is a live, enforced gate rule"
+    disposition: "handled_by:REL393"
+    cross_refs: []
+  - id: "CHK-GATE-REL394"
+    name: "REL394 is a live, enforced gate rule"
+    disposition: "handled_by:REL394"
+    cross_refs: []
+  - id: "CHK-GATE-REL395"
+    name: "REL395 is a live, enforced gate rule"
+    disposition: "handled_by:REL395"
+    cross_refs: []
+  - id: "CHK-GATE-REL396"
+    name: "REL396 is a live, enforced gate rule"
+    disposition: "handled_by:REL396"
+    cross_refs: []
+  - id: "CHK-GATE-REL397"
+    name: "REL397 is a live, enforced gate rule"
+    disposition: "handled_by:REL397"
     cross_refs: []
 concern_family_total: 13
 concern_family_entries:
