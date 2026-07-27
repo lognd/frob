@@ -1180,6 +1180,12 @@
     "src/frob/strata/_lint.py::check_lint_surge_capacity_bound": "0f02166e5c39089c823c6909969ad785eff87f14198e322a1e91eddb2695c60a",
     "src/frob/strata/_lint.py::evaluate_lint": "8abc26a7f2acca9e48edbc1ba2717301378ae99d52863fa7734dcd9771c5d44d",
     "src/frob/strata/_lint.py::node_flag_ids": "e665f6f8994594c5fa7d031ce04e2be1af4ef6673707e6389f7e983274438bb4",
+    "src/frob/strata/_message_schema.py::MESSAGE_SCHEMA_RULES": "205b2edf284b37c191149984c7bed0ef93247cd2d5221b75ea42499d62fa5351",
+    "src/frob/strata/_message_schema.py::MessageSchemaReport": "e21380aea0bf34dfa7a1ae246afafe3fdc4ab2ed72770a440eb6de2266b60ee9",
+    "src/frob/strata/_message_schema.py::MessageSchemaViolation": "31d601db2a1c9c41b5f314e695c16ca1ff2102fa12aed1a336808cc8a053e30b",
+    "src/frob/strata/_message_schema.py::REL_MISSING_SCHEMA_VERSION": "e5191c1f5e0fa393396fcab1fb99ea890683d0aec3dfd7c9eaeaf672e026132e",
+    "src/frob/strata/_message_schema.py::REL_UNPROVEN_SCHEMA_VERSION": "cccb0f9ce47874f7f218d0ee8e91e9b067c68fc073d96ad4ce1c99cff6a51621",
+    "src/frob/strata/_message_schema.py::check_message_schema_obligations": "64aa3bad979b799ef2d77924aa7c9e0973bcb5a883067d22ec6ce2dd81304cf8",
     "src/frob/strata/_models.py::AddFlow": "15b2dedc77951b42696f4555fc46490ee1bf94ba0ecb800c7be0dd449c5013f5",
     "src/frob/strata/_models.py::BoundClaim": "13f1c31351acebd055d87e4406f029a011ca4b0ca73273876b147673abaec6fd",
     "src/frob/strata/_models.py::Boundary": "a74e5f19be11062af7c8103a4bd5c75a98758ccf7cd88682c1d79ce29fb1d2fc",
@@ -1606,5 +1612,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.166.0"
+  "version": "0.167.0"
 }

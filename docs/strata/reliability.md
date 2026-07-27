@@ -847,6 +847,75 @@ node legacy_interactive_flow : trusted {
 }
 ```
 
+## REL32x: MESSAGE SCHEMA VERSION obligation (T-0651)
+
+`_message_schema.py::check_message_schema_obligations` reads
+`KernelModel.nodes` (no new kernel field, charter law 1) to find every
+node marked `event` or `queue` (a published event or a message/work
+queue -- both populations that carry a message payload across a
+producer/consumer boundary) with an undischarged or unproven message-
+schema-version obligation. `event` is a NEW node-attr marker this family
+introduces; `queue` is reused unchanged from `_backpressure.py`'s REL26x
+population -- a queue is simultaneously subject to REL260/REL261's
+bounded-intake obligation AND this family's REL320/REL321 schema-version
+obligation (the two families are orthogonal, not exclusive).
+
+- **REL320 missing schema version** -- an `event`/`queue` node with no
+  `schema_version` attr. Deny-by-default: an event/queue with no
+  declared schema version has no backward-compat tracking -- a producer
+  can change the message shape with no version boundary for a consumer
+  to detect the break against.
+- **REL321 unproven schema version** -- a node DOES declare
+  `schema_version`, but the T-0331 PROVABILITY CONSTRAINT forbids
+  discharging it by bare declaration alone: the node must have at least
+  one file bound to it (`_code_binding.py::bind_code`) containing a real
+  schema-version-shaped token. A node with no bound code at all is
+  UNCHECKABLE, not unproven -- the same ceiling REL201/REL222/REL231/
+  REL261/REL301/REL311 draw.
+
+### Surface vocabulary
+
+```
+node order_placed : trusted {
+    event;              // this node models a published event
+    schema_version;      // discharges REL320; REL321 then checks bound code
+}
+
+node ingest_queue : trusted {
+    queue;
+    schema_version;
+}
+```
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+`event`/`queue`/`schema_version` are all presence-only bare Node attrs
+(no numeric magnitude -- the same digit-led-literal ceiling every other
+REL2xx/REL3xx marker in this family discloses), so REL320/REL321 prove
+PRESENCE of a declared schema-version obligation and its code-level
+evidence, not a specific version number or compatibility policy. REL321's
+proof-against-code is a syntactic token scan (`schema_version=`/
+`schemaVersion=`, `SCHEMA_VERSION`, `schema_registry`, an avro/protobuf
+schema-with-version construct) over the node's bound source, not a
+semantic call-argument binding -- the same "ship what current tooling
+supports" honesty line REL201/REL222/REL231/REL261/REL301/REL311 already
+establish.
+
+### Waiver channel
+
+REL320/REL321 do NOT join `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`,
+same as REL210/REL211/REL230/REL231/REL240/REL241/REL250/REL260/REL261/
+REL280/REL281/REL290/REL291/REL300/REL301/REL310/REL311: a node carries
+at most one `event`/`queue` marker and fires at most one REL320 and one
+REL321 finding, so a bare-rule `waive` clause names exactly one thing:
+
+```
+node legacy_event : trusted {
+    event;
+    waive "REL320" reason "legacy event, schema versioning tracked in T-9910-followup" ticket "T-9910";
+}
+```
+
 ## See also
 
 - `docs/strata/host.md#resource-contention-sys2xx-t-0699` -- the SYS2xx

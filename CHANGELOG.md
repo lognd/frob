@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.167.0] - unreleased
+
+- T-0651: strata: MESSAGE SCHEMA VERSION obligation on events/queues
+
 ## [0.166.0] - unreleased
 
 - T-0918: Wire derived_state_lock exclusive side into dup/graph cache rebuilders (needs process-wide reentrancy signal)
