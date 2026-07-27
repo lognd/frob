@@ -5628,8 +5628,8 @@ User directive 2026-07-27: agents and the coordinator repeatedly kill/timeout fr
 id: T-0928
 title: profile frob check end-to-end and produce ranked hot-path audit (dogfood frob
   perf collect/hot)
-state: queued
-kind: feature
+state: done
+kind: docs
 origin: human
 created: '2026-07-26'
 priority: high
@@ -5639,22 +5639,82 @@ sprint: null
 scope:
 - docs/audits/check-performance.md
 - src/frob/perf/**
+- docs/index.md
+- docs/audits/README.md
+scope_changes:
+- op: add
+  glob: docs/index.md
+  reason: 'Adding docs/index.md and docs/audits/README.md to scope: linking the new
+    audit doc into the audit index/README so DOC001 (orphaned doc) does not fire,
+    per this repo''s own house style of one bullet per audit doc.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: docs/audits/README.md
+  reason: 'Adding docs/index.md and docs/audits/README.md to scope: linking the new
+    audit doc into the audit index/README so DOC001 (orphaned doc) does not fire,
+    per this repo''s own house style of one bullet per audit doc.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- cmd:bash /tmp/claude-1000/-home-logan-projects-frob/5bfbdf34-54a2-426c-89be-ade390652f3f/scratchpad/verify_audit.sh
+  exit=0 sha256=de02c1947993
 acceptance:
 - text: given a full frob check run on this repo profiled with the T-0765/T-0712 tooling
     (frob perf collect --sampler or equivalent), when the audit doc is written, then
     it contains a ranked table of hot paths (function-level, with per-gate attribution
     and cumulative percentages) covering at least 80 percent of total runtime, each
     row marked python-optimizable / rust-candidate / io-bound with a one-line justification
-  evidence: []
+  evidence:
+  - cmd:bash /tmp/claude-1000/-home-logan-projects-frob/5bfbdf34-54a2-426c-89be-ade390652f3f/scratchpad/verify_audit.sh
+    exit=0 sha256=de02c1947993
 - text: given the ranked table, when candidate fixes are enumerated, then each top-10
     row names a concrete remedy and an estimated payoff, and every generalizable anti-pattern
     found is ALSO encoded per the both-layers rule (PERF00x detector + .strata obligation)
     or explicitly dispositioned why not
-  evidence: []
+  evidence:
+  - cmd:bash /tmp/claude-1000/-home-logan-projects-frob/5bfbdf34-54a2-426c-89be-ade390652f3f/scratchpad/verify_audit.sh
+    exit=0 sha256=de02c1947993
 threat: null
 component: null
 ```
 Child 1 of T-0927. Profile-first: no optimization without measurement. Dogfood our own perf tooling on frob check itself (python sampler over a full run plus per-stage wall timings already emitted in gate-summary). Deliverable is docs/audits/check-performance.md in the audit-doc style of docs/audits/. Known suspects to confirm/refute: archgate tree-walks, test-gate pytest collection, sys/strata native round-trips, coverage graph loads, pii/secrets file scans re-reading the same files per gate (shared file-content cache candidate), load_graph cache-drift rebuilds (the 'drifted from cache' warnings on every land).
+
+## Done report
+
+Changed: docs/audits/check-performance.md (new, ranked hot-path audit)
+Changed: docs/index.md (link the new audit doc)
+Changed: docs/audits/README.md (verdict-table row for the new audit)
+
+Evidence: cmd:bash <scratchpad>/verify_audit.sh (structural check of the
+required sections/table in check-performance.md), bound to both acceptance
+criteria via --accepts 0/1.
+
+Filed: T-0948 (frob.perf collectors blind to thread/process-pool
+gate dispatch), T-0946 (shared walk investigation for
+sys/secrets/pii_structural), T-0947 (process-pool cold-start
+overhead isolation), T-0949 (finish isolated test_gate profile,
+root-cause the isolated-vs-in-context discrepancy from Finding 5).
+
+Gates: frob check --ticket T-0928 (gates-fast/static/gates-native/
+gates-security, chunked) all clean, 0 errors. One pre-existing FAIL in the
+`lint` group (ruff-format on src/frob/arch/_lock_ordering.py and
+tests/unit/test_arch.py) predates this ticket's changes and is outside its
+scope -- not touched, not waived under this ticket.
+
+Key finding: frob's own profiling stack (cProfile-based `frob perf
+profile`, `StackSampler`, `frob perf heat`) cannot see inside `frob
+check`'s own thread-pool/process-pool gate dispatch -- `heat` itself
+reports "237 symbol(s) attributed, 30.349s unattributed" against a ~60s
+artifact. The ranked table is therefore anchored on `gate-summary`'s own
+wall-clock brackets (real per-gate elapsed time, unaffected by this blind
+spot) rather than on cProfile/heat symbol attribution. Full detail, ranked
+table (8 rows clear the 80% bar), top-10 remedies, and PERF00x/.strata
+dispositions are in docs/audits/check-performance.md.
 
 <!-- ticket:T-0929 -->
 ```yaml
@@ -6605,3 +6665,129 @@ Two frob:tests edges from T-0926 could not resolve against the obligation graph:
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 0 error(s), 4507 warning(s), 351 waived
 - error-findings: none (measured, zero errors)
+
+<!-- ticket:T-0946 -->
+```yaml
+id: T-0946
+title: investigate shared walk for sys/secrets/pii_structural gates
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: T-0927
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+threat: null
+component: null
+```
+Found while working T-0928 (frob-check-performance audit). Three
+process-pool gates -- sys (SEC1xx capability scan), secrets, and
+pii_structural -- each independently walk (a variant of) the tracked
+source-file set and parse/scan file content, measured at 6.22s/2.87s/4.60s
+respectively in a representative `--only gates-security` run. This is a
+cross-GATE duplicate-walk shape PERF007 (T-0413) does not catch (PERF007
+matches a single NAMED call repeated across call sites, not three distinct
+gates each independently walking what happens to be the same file set).
+Investigate whether these three gates can share one walk + one parsed-tree
+pass; do not blind-fix without confirming the file sets and scan needs
+actually overlap. See docs/audits/check-performance.md Finding 4.
+
+<!-- ticket:T-0947 -->
+```yaml
+id: T-0947
+title: isolate process-pool cold-start spawn overhead in gates-native
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: T-0927
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+threat: null
+component: null
+```
+Found while working T-0928 (frob-check-performance audit). Two consecutive
+`--only gates-native` runs on an idle, cache-warm repo showed archgate/perf's
+own gate-summary-bracketed times nearly identical (11.09s/9.63s vs
+11.08s/9.50s) while total WALL time differed by ~18s (35.22s vs 16.63s).
+Since the per-gate bracketed times did not move, the missing ~18s is
+process-pool orchestration/spawn overhead (T-0415's `ProcessPoolExecutor`,
+spawn context) outside any single gate's own timer -- consistent with a
+fresh worker interpreter cold-importing frob/frob_core/strata_core on first
+use. Isolate the pool's own spawn/first-submit latency directly (time
+`_open_process_pool`'s `__enter__` plus first future's queue-to-start delay)
+before sizing a fix; a warmed/reused pool or a preload step in the spawn
+bootstrap are candidate directions. See docs/audits/check-performance.md
+Finding 3.
+
+<!-- ticket:T-0948 -->
+```yaml
+id: T-0948
+title: frob.perf collectors cannot see thread-pool/process-pool gate dispatch
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/perf/**
+threat: null
+component: null
+```
+Found while working T-0928 (frob-check-performance audit). frob.perf's three
+collectors (cProfile-based `frob perf profile`, `StackSampler`/`frob perf
+collect --sampler`, and `frob perf heat`'s joiner) all instrument or sample
+only the CALLING thread. `frob check`'s own gate dispatch runs the CPU-heavy
+gates (archgate, sys, perf, pii_structural, secrets, dead_symbols,
+protocol_summary, clones) on a ProcessPoolExecutor and the rest on a
+ThreadPoolExecutor -- neither is visible to any of frob.perf's three
+collectors. Profiling a real `frob check` run this way resolves roughly half
+its wall time to `heat`'s own "unattributed" bucket (measured: "237 symbol(s)
+attributed, 30.349s unattributed" against a ~60s two-pass artifact).
+Fix direction: either attach cProfile inside the process-pool worker
+bootstrap (`_pool_worker_entry` per T-0415) and inside ThreadPoolExecutor
+worker threads (`threading.setprofile`/`threading.settrace` per-thread), or
+add a documented "serial diagnostic mode" to `frob check` (single-thread,
+single-process gate dispatch) meant only for profiling passes. See
+docs/audits/check-performance.md Finding 0 for full detail.
+
+<!-- ticket:T-0949 -->
+```yaml
+id: T-0949
+title: root-cause and finish isolated test_gate profile (T-0928 Finding 5)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: T-0927
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+threat: null
+component: null
+```
+Found while working T-0928 (frob-check-performance audit). An attempt to
+isolate test_gate's real per-function cost (bypassing the thread pool via a
+direct in-process call: `_load_inputs(GateConfig(root='.'))` then
+`test_gate(...)` under cProfile) did not complete within a 100s budget --
+markedly slower than the 12.36-13.68s gate-summary reports for the SAME
+gate inside a real `--only test` run. test_gate is this repo's single
+largest unresolved hot-path row (13.68s / 15% of the ranked table's total,
+docs/audits/check-performance.md row 2). Root-cause the isolated-call vs
+in-context-call discrepancy (candidate: GateConfig(root='.') defaults
+diverging from the real check runner's resolved config, e.g. ticket/base
+resolution taking a different path with no ticket bound) and complete the
+isolated profile to identify the actual dominating TEST00x helper
+(candidates: _test003's alpha-interface derivation, _test005's coverage
+cross-reference). See docs/audits/check-performance.md Finding 5.

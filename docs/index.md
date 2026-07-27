@@ -261,6 +261,7 @@ Full-repo pessimistic capability audit (2026-07-20): every way a green
 - [docs/audits/lang-check-docs.md](audits/lang-check-docs.md) -- polyglot enforcement.
 - [docs/audits/perf.md](audits/perf.md) -- frob check hotpaths + caching.
 - [docs/audits/gates-vacuous.md](audits/gates-vacuous.md) -- gate-by-gate vacuous-satisfaction sweep, full catalog (125 rule ids, zero unswept): SCOPE001 empty-scope, partial-parse symbol drop, _KNOWN_GATE_RULES omissions, registry/design-dir-deletion, dup native-fallback, private-parse silent-skips, lang parser DoS boundary; 7 fix+gate ticket pairs filed.
+- [docs/audits/check-performance.md](audits/check-performance.md) -- T-0928 end-to-end `frob check` profile: `frob.perf`'s own collectors are blind to thread-pool/process-pool gate dispatch; ranked wall-clock hot-path table anchored on `gate-summary` brackets instead; four follow-up tickets filed.
 
 ## Planned / tracked work
 
