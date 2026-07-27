@@ -229,3 +229,69 @@ class TestDerivedStateWriteLock:
         finally:
             release.set()
             proc.join(timeout=10)
+
+
+# frob:ticket T-0933
+class TestProcessRegistryCanonicalKey:
+    """Regression coverage for T-0933: a T-0918 regression where `frob
+    check`'s outer SHARED `derived_state_lock(root, ...)` and a nested
+    `derived_state_write_lock(root)` call disagreed on the process-wide
+    reentrancy registry key whenever the two call sites spelled the SAME
+    on-disk `root` differently (e.g. one unresolved/relative, one via
+    `root.resolve()`) -- `_process_already_holds` read `False` for the
+    resolved spelling even though the unresolved spelling's SHARED hold
+    was outstanding in this same process, so the nested writer attempted a
+    real second `flock(LOCK_EX)` against its own process's `LOCK_SH` and
+    self-deadlocked. Covers both directions: shared-then-nested-write and
+    write-then-nested-shared-read, each with mismatched spellings."""
+
+    # frob:tests tests/unit/test_process_lock.py::TestProcessRegistryCanonicalKey.test_shared_unresolved_then_nested_write_resolved_does_not_deadlock  # noqa: E501
+    def test_shared_unresolved_then_nested_write_resolved_does_not_deadlock(
+        self, tmp_path: Path
+    ) -> None:
+        """Outer SHARED hold uses an UNRESOLVED spelling of `root`
+        (`tmp_path / "."`, matching how a relative/uncanonicalized root
+        historically reached `frob.check`'s outer lock call); a nested
+        `derived_state_write_lock` on the RESOLVED spelling (matching
+        `frob.graph.build_graph`'s `root.resolve()`) must see the
+        process-wide reentrancy signal and no-op instead of deadlocking."""
+        unresolved_root = tmp_path / "." / "nested" / ".."
+        resolved_root = tmp_path.resolve()
+        result: dict[str, bool] = {}
+
+        def worker() -> None:
+            with derived_state_write_lock(resolved_root):
+                result["ran"] = True
+
+        with derived_state_lock(unresolved_root, exclusive=False):
+            assert _process_already_holds(resolved_root), (
+                "process-wide reentrancy signal did not recognize a "
+                "differently-spelled but equivalent root as already held "
+                "(T-0933 canonical-key regression)"
+            )
+            t = threading.Thread(target=worker)
+            t.start()
+            t.join(timeout=5)
+            assert not t.is_alive(), (
+                "derived_state_write_lock deadlocked against its own "
+                "process's SHARED hold on a differently-spelled root "
+                "(T-0933 regression)"
+            )
+        assert result.get("ran") is True
+
+    # frob:tests tests/unit/test_process_lock.py::TestProcessRegistryCanonicalKey.test_write_resolved_then_nested_shared_unresolved_agrees  # noqa: E501
+    def test_write_resolved_then_nested_shared_unresolved_agrees(
+        self, tmp_path: Path
+    ) -> None:
+        """Reverse spelling direction: an outer EXCLUSIVE writer hold on
+        the RESOLVED spelling must be visible to `_process_already_holds`
+        queried with the UNRESOLVED spelling of the same root."""
+        resolved_root = tmp_path.resolve()
+        unresolved_root = tmp_path / "." / "nested" / ".."
+
+        with derived_state_write_lock(resolved_root):
+            assert _process_already_holds(unresolved_root), (
+                "process-wide reentrancy signal did not recognize a "
+                "differently-spelled but equivalent root as already held "
+                "(T-0933 canonical-key regression, reverse direction)"
+            )

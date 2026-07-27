@@ -170,6 +170,28 @@ primitive, same documented no-op fallback, same per-thread re-entrancy
 bookkeeping -- applied to `.frob`'s derived state instead of the ticket
 ledger.
 
+`derived_state_write_lock` (T-0918) is the reentrancy-aware writer entry
+point `frob.dup.find_clones`/`frob.graph.build_graph` call: it consults a
+PROCESS-wide (not just thread-local) registry, `_process_held_counts`,
+before deciding whether to take a real second `flock` or no-op because
+some thread in this same process already holds `derived_state_lock` for
+the same root. That registry is keyed on a CANONICAL (`Path.resolve()`d)
+form of the root (T-0933) specifically so two call sites that reach the
+same on-disk checkout through different spellings -- e.g. `frob.check`'s
+outer shared lock receiving an unresolved/relative root while
+`build_graph` resolves its own copy before calling
+`derived_state_write_lock` -- agree on whether the process already holds
+the lock. Before this fix the registry was keyed on the literal (non-
+canonicalized) path string, so a resolved-vs-unresolved spelling mismatch
+made the no-op guard read `False` when it should have read `True`, and
+the writer attempted a genuine second `flock(LOCK_EX)` against its own
+process's outstanding `LOCK_SH` -- a same-process self-deadlock
+(`frob check --only scope`/`--only prework` hung in every worktree until
+fixed). The actual `os.open`/`flock` path is unaffected by this -- `flock`
+is inode-scoped, so different spellings of the same file already
+serialized correctly at the OS level; only the in-process dict lookup was
+spelling-sensitive.
+
 ## Dependencies
 
 Pure stdlib + `pydantic` for the shared models; no dependency on `frob.check`

@@ -109,7 +109,7 @@ def _process_already_holds(root: Path) -> bool:
     reentrancy across distinct fds). Says nothing about OTHER processes --
     those are still fully serialized through the real `flock(2)` call.
     """
-    key = str(_derived_lock_path(root))
+    key = _canonical_registry_key(root)
     with _process_registry_lock:
         return _process_held_counts.get(key, 0) > 0
 
@@ -119,6 +119,34 @@ def _derived_lock_path(root: Path) -> Path:
     """The advisory lock file path (`.frob/derived.lock`) `derived_state_lock`
     holds under checkout `root`."""
     return root / _LOCK_REL
+
+
+# frob:ticket T-0933
+def _canonical_registry_key(root: Path) -> str:
+    """CANONICAL string key for `root` in `_process_held_counts` (T-0933).
+
+    `_process_already_holds`/`derived_state_write_lock` need to answer "does
+    THIS process already hold `derived_state_lock` for this checkout" using
+    a key that is stable across however many different (but equivalent)
+    `Path` spellings of the same root different call sites happen to pass
+    in -- e.g. `frob.check`'s outer `derived_state_lock(root, ...)` call
+    historically received `root` UNRESOLVED (whatever the CLI/caller passed,
+    often relative or symlink-bearing), while `frob.graph.build_graph`
+    calls `root.resolve()` on its own copy before reaching
+    `derived_state_write_lock`. Both name the SAME on-disk checkout, but
+    `str(_derived_lock_path(root))` on the unresolved and resolved forms
+    produced two DIFFERENT dict keys -- so the resolved-root caller's
+    `_process_already_holds` read `False` even though the unresolved-root
+    caller already held the lock in this same process, and it went on to
+    attempt a real second `flock(LOCK_EX)` against its own process's
+    outstanding `LOCK_SH`, deadlocking (T-0933, a T-0918 regression).
+    Resolving here -- and ONLY here, for the registry key, not for the
+    actual `os.open` path passed to `flock` -- fixes that without changing
+    which physical file gets locked (flock is inode-scoped, so the two
+    spellings already serialized correctly at the OS level; only this
+    in-process dict lookup was spelling-sensitive).
+    """
+    return str(_derived_lock_path(root).resolve())
 
 
 # frob:doc docs/modules/process.md#derived-state-lock-t-0859
@@ -166,6 +194,14 @@ def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
     path = _derived_lock_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
     key = str(path)
+    # frob:ticket T-0933
+    # T-0933: `_process_held_counts` is keyed CANONICALLY (see
+    # `_canonical_registry_key`), independent of `key` above -- `key` is
+    # deliberately spelling-sensitive (per-thread reentrancy bookkeeping
+    # only needs to match a caller against ITSELF), but the cross-thread
+    # process-wide registry must agree with `_process_already_holds` no
+    # matter which `Path` spelling of the same root a given call site used.
+    registry_key = _canonical_registry_key(root)
     maybe_held: dict[str, tuple[int, bool, int]] | None = getattr(
         _lock_local, "held", None
     )
@@ -201,7 +237,9 @@ def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
     fcntl.flock(fd, fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
     held[key] = (fd, exclusive, 1)
     with _process_registry_lock:
-        _process_held_counts[key] = _process_held_counts.get(key, 0) + 1
+        _process_held_counts[registry_key] = (
+            _process_held_counts.get(registry_key, 0) + 1
+        )
     _log.debug(
         "process: derived_state_lock acquired (%s, exclusive=%s)",
         path,
@@ -214,11 +252,11 @@ def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
         fcntl.flock(fd, fcntl.LOCK_UN)
         os.close(fd)
         with _process_registry_lock:
-            remaining = _process_held_counts.get(key, 0) - 1
+            remaining = _process_held_counts.get(registry_key, 0) - 1
             if remaining <= 0:
-                _process_held_counts.pop(key, None)
+                _process_held_counts.pop(registry_key, None)
             else:
-                _process_held_counts[key] = remaining
+                _process_held_counts[registry_key] = remaining
         _log.debug(
             "process: derived_state_lock released (%s, exclusive=%s)",
             path,
@@ -229,7 +267,7 @@ def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
 # frob:doc docs/modules/process.md#derived-state-lock-t-0859
 # frob:tests tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_standalone_rebuild_takes_exclusive  # noqa: E501
 # frob:tests tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_nested_inside_shared_holder_does_not_deadlock  # noqa: E501
-# frob:tests tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_concurrent_other_process_writer_still_blocked  # noqa: E501
+# frob:tests tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_concurrent_separate_process_writer_still_blocked  # noqa: E501
 # frob:ticket T-0918
 @contextmanager
 def derived_state_write_lock(root: Path) -> Iterator[None]:

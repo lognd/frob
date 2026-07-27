@@ -151,6 +151,26 @@
       "ref": "src/frob/policy/__init__.py::policy_gate"
     },
     {
+      "digest": "c01321041b8d5ca8f89276df41f16466634e6dd3b3ebe644d8de5ca6f441e5e1",
+      "facet": "body",
+      "ref": "src/frob/process/_lock.py::_process_already_holds"
+    },
+    {
+      "digest": "ee8d5f981171bf783a8760a534a5da2235478f1a9a9dea9a3bbacfc1aab5c8cb",
+      "facet": "sig",
+      "ref": "src/frob/process/_lock.py::_process_already_holds"
+    },
+    {
+      "digest": "9c9b0b646ed4af20d4c07fc8c65947b27f54dcc594790c65eab67f27d8f5f307",
+      "facet": "body",
+      "ref": "src/frob/process/_lock.py::derived_state_lock"
+    },
+    {
+      "digest": "00d14cd626641cb9c8da9c671be7e34ee5ac0af415e3262f0e55c030d701f834",
+      "facet": "sig",
+      "ref": "src/frob/process/_lock.py::derived_state_lock"
+    },
+    {
       "digest": "e1173036256e0cb104e4294d327d0b4d2427ce9df329b19e775cc048cd0172ac",
       "facet": "sig",
       "ref": "src/frob/testing/_collect.py::collect_python_tests"
