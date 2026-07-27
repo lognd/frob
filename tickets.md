@@ -4579,3 +4579,91 @@ matter what order xdist picks. Alternative/complementary: have
 the top of a fresh (non-incremental) build rather than relying on every
 caller to remember, if that does not conflict with the incremental-cache
 contract (T-0414) -- needs a design decision, not assumed here.
+
+<!-- ticket:T-0927 -->
+```yaml
+id: T-0927
+title: 'EPIC: frob check performance -- audit, quick wins, Rust hot-path migration'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-26'
+priority: high
+parent: null
+scope:
+- docs/audits/check-performance.md
+threat: null
+component: null
+```
+User directive 2026-07-27: agents and the coordinator repeatedly kill/timeout frob check (full run measures 90-300s+ under load; today's foreground caps forced constant chunking, orphaned xdist fleets, and TEST016/done-report friction). Audit frob check performance end to end and, where the audit proves it out, move hot paths to Rust (frob_core / strata_core natives via the T-0864 frob natives build infra). Seed data from today's gate-summary timings on this repo (idle): archgate 10-20s, test 13-28s, sys 6-12s, perf 8-12s, coverage 5-11s, pii_structural 5-9s, dead_symbols 4-7s, secrets 3-5s, refs 2-3s, tickets 2-5s; under 8-agent load a full check exceeded a 5-minute timeout. Children carry the work; this epic closes when a full frob check on this repo runs comfortably inside the 120s agent foreground budget.
+
+<!-- ticket:T-0928 -->
+```yaml
+id: T-0928
+title: profile frob check end-to-end and produce ranked hot-path audit (dogfood frob
+  perf collect/hot)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-26'
+priority: high
+parent: T-0927
+scope:
+- docs/audits/check-performance.md
+- src/frob/perf/**
+acceptance:
+- text: given a full frob check run on this repo profiled with the T-0765/T-0712 tooling
+    (frob perf collect --sampler or equivalent), when the audit doc is written, then
+    it contains a ranked table of hot paths (function-level, with per-gate attribution
+    and cumulative percentages) covering at least 80 percent of total runtime, each
+    row marked python-optimizable / rust-candidate / io-bound with a one-line justification
+  evidence: []
+- text: given the ranked table, when candidate fixes are enumerated, then each top-10
+    row names a concrete remedy and an estimated payoff, and every generalizable anti-pattern
+    found is ALSO encoded per the both-layers rule (PERF00x detector + .strata obligation)
+    or explicitly dispositioned why not
+  evidence: []
+threat: null
+component: null
+```
+Child 1 of T-0927. Profile-first: no optimization without measurement. Dogfood our own perf tooling on frob check itself (python sampler over a full run plus per-stage wall timings already emitted in gate-summary). Deliverable is docs/audits/check-performance.md in the audit-doc style of docs/audits/. Known suspects to confirm/refute: archgate tree-walks, test-gate pytest collection, sys/strata native round-trips, coverage graph loads, pii/secrets file scans re-reading the same files per gate (shared file-content cache candidate), load_graph cache-drift rebuilds (the 'drifted from cache' warnings on every land).
+
+<!-- ticket:T-0929 -->
+```yaml
+id: T-0929
+title: 'frob check quick wins from the audit: shared caches, incremental gates, spawn
+  dedup'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-26'
+priority: high
+blocked_by:
+- T-0928
+parent: T-0927
+scope:
+- src/frob/check/**
+- src/frob/gates/**
+threat: null
+component: null
+```
+Child 2 of T-0927, blocked by the audit child. Implement the python-side remedies the audit ranks highest (e.g. one shared parsed-file/content cache across gates instead of per-gate re-reads; incremental gate evaluation off the T-0628 AFFECT digest graph; reuse of the T-0919 shared-spawn pattern anywhere check spawns twice). Each fix cites its audit row and re-measures after.
+
+<!-- ticket:T-0930 -->
+```yaml
+id: T-0930
+title: move audit-proven frob check hot paths to Rust in frob_core (maturin natives)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-26'
+priority: high
+blocked_by:
+- T-0928
+parent: T-0927
+scope:
+- src/frob/**
+threat: null
+component: null
+```
+Child 3 of T-0927, blocked by the audit child. For rows the audit marks rust-candidate (CPU-bound tree-walking, hashing, scanning loops that survive the python quick wins), implement in the existing Rust natives (frob_core, built via frob natives build / maturin, T-0864 infra) with byte-identical python fallbacks when the native is unavailable (worktree-natives artifact pattern), golden parity tests python-vs-rust, and per-path before/after benchmarks in the audit doc. Narrow this ticket's scope to the specific files once the audit names them.
