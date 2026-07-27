@@ -102,7 +102,7 @@ entries:
     checkability: ['process-only']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "out_of_scope:process-only per this entry's own checkability tag -- organizational dependency-review practice, not statically checkable by frob"
+    disposition: "out_of_scope:none -- this entry's own checkability tag is 'process': it names an organizational dependency-review PRACTICE (a human review workflow before adopting a new dependency), not a static code property; a dependency-review board or supply-chain governance process is the layer that could verify this, not frob's static checks"
     cross_refs: []
   - id: "SC-ATTACK-LOCKFILE-TAMPERING"
     class: ['attack']
@@ -186,7 +186,7 @@ entries:
     checkability: ['process-only']
     sourcing: "partial"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "out_of_scope:process-only per this entry's own checkability tag -- deployment/runtime sandboxing practice, not statically checkable by frob"
+    disposition: "out_of_scope:none -- this entry's own checkability tag is 'process': it names a deployment/runtime sandboxing PRACTICE (an operational containment measure applied at deploy time), not a property of the source code itself; a deployment/infrastructure security review is the layer that could verify this, not frob's static source-level checks"
     cross_refs: []
   - id: "SC-DETECTION-MAINTAINER-INSTALLHOOK-NET"
     class: ['detection']

@@ -52,14 +52,14 @@ entries:
     leaf_count: 8
     checkability: "process"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:organizational/process control per this entry's own checkability tag (process) -- not statically checkable by frob today"
+    disposition: "out_of_scope:none -- this entry's own checkability tag is 'process': it names an organizational/procedural control (a documented policy or workflow a human/org must follow), not a static code property; frob's checks operate on source code and cannot verify organizational process compliance -- a compliance audit or organizational policy review is the layer that could verify this"
     cross_refs: []
   - id: "CMPL-HIPAA-PHYSICAL-STANDARDS"
     framework: "HIPAA-Security-Rule"
     leaf_count: 4
     checkability: "advisory"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:organizational/advisory control per this entry's own checkability tag (advisory) -- not statically checkable by frob today"
+    disposition: "out_of_scope:none -- this entry's own checkability tag is 'advisory': it is a best-practice recommendation rather than a testable rule, and names no specific catching control; frob's checks target testable rule violations -- a compliance/design review is the layer that could evaluate adherence to this advisory guidance"
     cross_refs: []
   - id: "CMPL-HIPAA-TECHNICAL-STANDARDS"
     framework: "HIPAA-Security-Rule"
@@ -74,7 +74,7 @@ entries:
     leaf_count: 11
     checkability: "process"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:organizational/process control per this entry's own checkability tag (process) -- not statically checkable by frob today"
+    disposition: "out_of_scope:none -- this entry's own checkability tag is 'process': it names an organizational/procedural control (a documented policy or workflow a human/org must follow), not a static code property; frob's checks operate on source code and cannot verify organizational process compliance -- a compliance audit or organizational policy review is the layer that could verify this"
     cross_refs: []
   - id: "CMPL-GDPR-ARTICLES"
     framework: "GDPR"
@@ -89,14 +89,14 @@ entries:
     leaf_count: 4
     checkability: "process"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:organizational/process control per this entry's own checkability tag (process) -- not statically checkable by frob today"
+    disposition: "out_of_scope:none -- this entry's own checkability tag is 'process': it names an organizational/procedural control (a documented policy or workflow a human/org must follow), not a static code property; frob's checks operate on source code and cannot verify organizational process compliance -- a compliance audit or organizational policy review is the layer that could verify this"
     cross_refs: []
   - id: "CMPL-CPRA-ADDED-RIGHTS"
     framework: "CPRA"
     leaf_count: 3
     checkability: "process"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:organizational/process control per this entry's own checkability tag (process) -- not statically checkable by frob today"
+    disposition: "out_of_scope:none -- this entry's own checkability tag is 'process': it names an organizational/procedural control (a documented policy or workflow a human/org must follow), not a static code property; frob's checks operate on source code and cannot verify organizational process compliance -- a compliance audit or organizational policy review is the layer that could verify this"
     cross_refs: []
   - id: "CMPL-NIST80053-FAMILIES"
     framework: "NIST-SP-800-53-Rev5"
@@ -111,7 +111,7 @@ entries:
     leaf_count: 6
     checkability: "process"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:organizational/process control per this entry's own checkability tag (process) -- not statically checkable by frob today"
+    disposition: "out_of_scope:none -- this entry's own checkability tag is 'process': it names an organizational/procedural control (a documented policy or workflow a human/org must follow), not a static code property; frob's checks operate on source code and cannot verify organizational process compliance -- a compliance audit or organizational policy review is the layer that could verify this"
     cross_refs: []
   - id: "CMPL-NIST80263-VOLUMES"
     framework: "NIST-SP-800-63"
@@ -166,7 +166,7 @@ entries:
     leaf_count: 3
     checkability: "advisory"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:organizational/advisory control per this entry's own checkability tag (advisory) -- not statically checkable by frob today"
+    disposition: "out_of_scope:none -- this entry's own checkability tag is 'advisory': it is a best-practice recommendation rather than a testable rule, and names no specific catching control; frob's checks target testable rule violations -- a compliance/design review is the layer that could evaluate adherence to this advisory guidance"
     cross_refs: []
   - id: "CMPL-ASVS-CHAPTERS"
     framework: "OWASP-ASVS-4.0.3"
@@ -189,21 +189,21 @@ entries:
     leaf_count: 3
     checkability: "advisory"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:organizational/advisory control per this entry's own checkability tag (advisory) -- not statically checkable by frob today"
+    disposition: "out_of_scope:none -- this entry's own checkability tag is 'advisory': it is a best-practice recommendation rather than a testable rule, and names no specific catching control; frob's checks target testable rule violations -- a compliance/design review is the layer that could evaluate adherence to this advisory guidance"
     cross_refs: []
   - id: "CMPL-SAMM-FUNCTIONS"
     framework: "OWASP-SAMM-v2"
     leaf_count: 5
     checkability: "process"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:organizational/process control per this entry's own checkability tag (process) -- not statically checkable by frob today"
+    disposition: "out_of_scope:none -- this entry's own checkability tag is 'process': it names an organizational/procedural control (a documented policy or workflow a human/org must follow), not a static code property; frob's checks operate on source code and cannot verify organizational process compliance -- a compliance audit or organizational policy review is the layer that could verify this"
     cross_refs: []
   - id: "CMPL-SAMM-PRACTICES"
     framework: "OWASP-SAMM-v2"
     leaf_count: 15
     checkability: "process"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:organizational/process control per this entry's own checkability tag (process) -- not statically checkable by frob today"
+    disposition: "out_of_scope:none -- this entry's own checkability tag is 'process': it names an organizational/procedural control (a documented policy or workflow a human/org must follow), not a static code property; frob's checks operate on source code and cannot verify organizational process compliance -- a compliance audit or organizational policy review is the layer that could verify this"
     cross_refs: []
   - id: "CMPL-FEDRAMP-IMPACT-TIERS"
     framework: "FedRAMP"
