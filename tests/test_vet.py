@@ -2473,6 +2473,7 @@ class TestEmbeddedCodeCapability:
         )
 
 
+# frob:ticket T-0910
 class TestFingerprintScan:
     """T-0153: `_scan_file_fingerprints` -- the CVE-fingerprint sibling of
     `_scan_file_operations`, joined to `frob.strata.CVE_FINGERPRINTS`."""
@@ -2807,6 +2808,44 @@ class TestFingerprintScan:
         unrelated.parent.mkdir(parents=True)
         unrelated.write_text("# not frob's file\n")
         assert not is_self_pattern_path(unrelated, unrelated_root)
+
+    # frob:ticket T-0910
+    def test_self_pattern_exclusion_covers_logging_checks_needle_tuples(
+        self,
+    ) -> None:
+        # T-0910: `frob.arch._logging_checks`'s `_BOUNDARY_CALLEE_MARKERS`
+        # tuple stores the same class of bare-text needle literal
+        # (`subprocess.`, `requests.`, `httpx.`, `socket.`, ...) as
+        # `_srp.py`'s `_IO_MODULE_PREFIXES` (T-0729) -- a classifier table
+        # this module's `_is_boundary_call` compares a parsed callee STRING
+        # against, not code that itself execs/opens a socket/fetches a URL.
+        # Scanning the file without this exclusion misreports those
+        # needles as live net/exec/fetch_url capability USE on the
+        # `graphlang` design node (SELFAUDIT001/SYS100). Regression for
+        # exactly that false-positive class recurring here.
+        # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+        from frob.vet._capability import is_self_pattern_path
+
+        repo_root = Path(__file__).resolve().parents[1]
+        logging_checks_path = repo_root / "src" / "frob" / "arch" / "_logging_checks.py"
+        assert logging_checks_path.is_file()
+        assert is_self_pattern_path(logging_checks_path, repo_root)
+
+    # frob:ticket T-0910
+    def test_line_effects_reports_no_capability_on_logging_checks_module(
+        self,
+    ) -> None:
+        # T-0910: end-to-end companion to the exclusion-membership check
+        # above -- `frob.strata._effects._line_effects` (the SYS100/
+        # SELFAUDIT001 tier-2 effect scanner) must observe ZERO net/fs/exec
+        # effects on `_logging_checks.py` now that it is excluded, not just
+        # that `is_self_pattern_path` returns True in isolation.
+        # frob:tests src/frob/strata/_effects.py::_line_effects kind="unit"
+        from frob.strata._effects import _line_effects
+
+        repo_root = Path(__file__).resolve().parents[1]
+        logging_checks_path = repo_root / "src" / "frob" / "arch" / "_logging_checks.py"
+        assert _line_effects(logging_checks_path, repo_root) == []
 
     def test_self_pattern_exclusion_does_not_fire_when_vetting_a_dependency(
         self, tmp_path: Path

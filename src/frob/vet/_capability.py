@@ -2818,6 +2818,7 @@ _FINGERPRINT_CATALOG_PATH = (
 # dependency's own source root, which is never frob's repo, so the
 # discriminator (correctly) refuses the exclusion and the file gets scanned
 # like any other.
+# frob:ticket T-0910
 _SELF_PATTERN_SUFFIXES: tuple[tuple[str, ...], ...] = (
     ("frob", "vet", "_capability.py"),
     ("frob", "vet", "_capability_registry.py"),
@@ -2837,6 +2838,23 @@ _SELF_PATTERN_SUFFIXES: tuple[tuple[str, ...], ...] = (
     # from self-conformance's capability scan the same way, not given a
     # capability it does not have.
     ("frob", "arch", "_srp.py"),
+    # T-0910: `frob.arch._logging_checks`'s ARCH1xx logging-discipline
+    # checks store the same class of I/O-classifier signal as `_srp.py`
+    # above -- `_BOUNDARY_CALLEE_MARKERS` (`subprocess.`, `requests.`,
+    # `httpx.`, `socket.`, ...) is a bare-text needle tuple this module's
+    # `_is_boundary_call` compares a CALLEE STRING against, not code that
+    # itself execs/opens a socket/fetches a URL. The scanner (by design,
+    # for evasion detection) keys on string-literal CONTENT, so a
+    # classifier table that merely *names* these substrings as data reads
+    # as live net/exec/fetch_url capability USAGE on the `graphlang` node,
+    # which is dishonest -- `_logging_checks.py` does no such I/O itself
+    # (module docstring: it is written once against `NormalizedModule`,
+    # a parsed-fact model, and never touches subprocess/network/sockets
+    # directly). Declaring `may net`/`may exec` on `graphlang` to silence
+    # this would be an equally dishonest fix in the other direction, so
+    # this file is excluded from self-conformance's capability scan the
+    # same way `_srp.py` is, not given a capability it does not have.
+    ("frob", "arch", "_logging_checks.py"),
 )
 
 #: `[project]`-table `name = "frob"` line, tomllib-free (matches this
