@@ -4,10 +4,13 @@
 from __future__ import annotations
 
 import importlib
+import threading
+from pathlib import Path
 
 import pytest
 
 from frob import doctor
+from frob.process._lock import derived_state_lock
 
 
 def test_run_diagnosis_natives_present(monkeypatch):
@@ -76,3 +79,50 @@ def test_native_extensions_are_the_expected_set(name):
     # frob:tests src/frob/doctor.py::NATIVE_EXTENSIONS
     """`NATIVE_EXTENSIONS` names exactly the two natives frob depends on."""
     assert name in ("frob_core", "strata_core")
+
+
+# frob:ticket T-0879
+def test_run_diagnosis_holds_exclusive_lock_blocking_a_shared_reader(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # frob:tests src/frob/doctor.py::run_diagnosis
+    """`run_diagnosis`'s fingerprint-read + manifest-write span holds
+    `derived_state_lock(root, exclusive=True)` (T-0879) -- a concurrent
+    SHARED acquisition from another thread must block until `run_diagnosis`
+    releases it, and must succeed immediately afterward (the writer never
+    incorrectly blocks a reader that arrives once it is done)."""
+    entered = threading.Event()
+    release = threading.Event()
+    original_write = doctor._write_drift_manifest
+
+    def _slow_write(root: Path, fingerprints: dict[str, str]) -> None:
+        entered.set()
+        release.wait(timeout=5)
+        original_write(root, fingerprints)
+
+    monkeypatch.setattr(doctor, "_write_drift_manifest", _slow_write)
+
+    writer_thread = threading.Thread(target=lambda: doctor.run_diagnosis(tmp_path))
+    writer_thread.start()
+    assert entered.wait(timeout=5), "run_diagnosis never reached its write span"
+
+    reader_acquired = threading.Event()
+
+    def _try_shared() -> None:
+        with derived_state_lock(tmp_path, exclusive=False):
+            reader_acquired.set()
+
+    reader_thread = threading.Thread(target=_try_shared)
+    reader_thread.start()
+    reader_thread.join(timeout=0.3)
+    assert not reader_acquired.is_set(), (
+        "a SHARED reader acquired the lock while run_diagnosis's EXCLUSIVE "
+        "writer span was still in progress"
+    )
+
+    release.set()
+    writer_thread.join(timeout=5)
+    reader_thread.join(timeout=5)
+    assert reader_acquired.is_set(), (
+        "the reader never acquired the lock after the writer released it"
+    )

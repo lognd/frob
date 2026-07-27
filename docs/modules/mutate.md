@@ -160,6 +160,23 @@ the doctor-side detail. Doctor never restores anything itself; only
 `run_mutations`' own startup check (`restore_stale_journals`) performs
 the actual restore.
 
+### Cross-process exclusive lock (T-0879)
+
+<!-- frob:describes src/frob/mutate/__init__.py::run_mutations -->
+
+`run_mutations` holds `frob.process._lock.derived_state_lock(root,
+exclusive=True)` for its whole run -- restoring any stale journal,
+generating mutants, journaling the target's pre-mutation bytes, running
+the mutant loop, and the final restore, all under one EXCLUSIVE hold. This
+is the writer side of the shared/exclusive contract T-0859's
+`derived_state_lock` documents (a `frob check` run holds the SHARED
+reader form for its own entire duration); `run_mutations` is always
+invoked standalone (`frob mutate`, and `frob ticket close`/`land`'s
+mutation-evidence obligation), never nested inside an already-locked
+`frob check` run, so taking EXCLUSIVE here cannot self-deadlock against a
+SHARED holder in the same process. See `docs/modules/process.md`'s
+"Derived-state lock (T-0859)" section for the primitive's full contract.
+
 ### PID reuse: why "is the writer alive" is not enough (T-0857 reviewer fix)
 
 A reviewer caught a real gap in this ticket's first pass: "stale" was

@@ -85,6 +85,7 @@ from pydantic import BaseModel
 
 from frob.logging import get_logger
 from frob.mutate._journal import StaleJournal, list_stale_journals
+from frob.process._lock import derived_state_lock
 from frob.scaffold._managed import ManagedBlockStatus, scaffold_conformance_status
 
 _log = get_logger(__name__)
@@ -481,18 +482,30 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     T-0857: also reports every stale `frob mutate` backup journal under
     `.frob/mutate-backup/` (`list_stale_journals`) -- UNLIKE `drift`, a
     present journal DOES make `healthy` False (see `DoctorReport`'s
-    docstring)."""
+    docstring).
+
+    T-0879: the fingerprint-read + manifest-write sequence
+    (`verify_derived_state` through `_write_drift_manifest`) holds
+    `derived_state_lock(resolved_root, exclusive=True)` for its whole
+    span -- this is `run_diagnosis`'s own rebuild/write path over
+    `.frob`'s derived-state manifest, and `frob doctor` is always a
+    standalone invocation (never nested inside an already-locked `frob
+    check` run), so the EXCLUSIVE acquisition here cannot self-deadlock
+    against a SHARED holder in the same process. See
+    `derived_state_lock`'s docstring for the shared/exclusive contract.
+    """
     resolved_root = root or Path.cwd()
     extensions = [_extension_status(name) for name in NATIVE_EXTENSIONS]
     natives_healthy = all(ext.available for ext in extensions)
 
-    derived_state = verify_derived_state(resolved_root)
-    corrupt = tuple(d for d in derived_state if d.present and not d.healthy)
-    drift = detect_derived_state_drift(resolved_root, derived_state)
-    _write_drift_manifest(
-        resolved_root,
-        {d.name: d.fingerprint for d in derived_state if d.fingerprint is not None},
-    )
+    with derived_state_lock(resolved_root, exclusive=True):
+        derived_state = verify_derived_state(resolved_root)
+        corrupt = tuple(d for d in derived_state if d.present and not d.healthy)
+        drift = detect_derived_state_drift(resolved_root, derived_state)
+        _write_drift_manifest(
+            resolved_root,
+            {d.name: d.fingerprint for d in derived_state if d.fingerprint is not None},
+        )
 
     scaffold_blocks = scaffold_conformance_status(resolved_root)
     scaffold_needs_apply = tuple(s for s in scaffold_blocks if not s.present or s.stale)

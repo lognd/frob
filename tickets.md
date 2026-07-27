@@ -6346,7 +6346,7 @@ section 3b (FROB_AGENT chunked-loop requirement).
 ```yaml
 id: T-0879
 title: Wire derived_state_lock's EXCLUSIVE side into .frob writers (mutate/doctor/dup/graph)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -6357,6 +6357,36 @@ scope:
 - src/frob/doctor.py
 - src/frob/dup/**
 - src/frob/graph/**
+- tests/test_mutate.py
+- tests/test_doctor.py
+- docs/guides/install.md
+- docs/modules/mutate.md
+scope_changes:
+- op: add
+  glob: tests/test_mutate.py
+  reason: unit tests proving the exclusive-lock wiring live alongside the writers
+    they cover
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: tests/test_doctor.py
+  reason: unit tests proving the exclusive-lock wiring live alongside the writers
+    they cover
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: docs/guides/install.md
+  reason: doc updates for the T-0879 exclusive-lock wiring (AFFECT001 closure docs)
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: docs/modules/mutate.md
+  reason: doc updates for the T-0879 exclusive-lock wiring (AFFECT001 closure docs)
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/test_mutate.py::test_run_mutations_holds_exclusive_lock_blocking_a_shared_reader
+- tests/test_doctor.py::test_run_diagnosis_holds_exclusive_lock_blocking_a_shared_reader
 threat: null
 component: null
 ```
@@ -6385,6 +6415,81 @@ aspiration on the reader side.
 See docs/modules/process.md's "Derived-state lock (T-0859)" section and
 src/frob/process/_lock.py's module docstring for the primitive and its
 contract.
+
+## Done report
+
+Changed:
+- `src/frob/mutate/__init__.py::run_mutations` -- holds
+  `derived_state_lock(root, exclusive=True)` for its whole run.
+- `src/frob/doctor.py::run_diagnosis` -- its fingerprint-read +
+  manifest-write span (`verify_derived_state` through
+  `_write_drift_manifest`) holds `derived_state_lock(resolved_root,
+  exclusive=True)`.
+- `tests/test_mutate.py::test_run_mutations_holds_exclusive_lock_blocking_a_shared_reader`
+  (new)
+- `tests/test_doctor.py::test_run_diagnosis_holds_exclusive_lock_blocking_a_shared_reader`
+  (new)
+- `docs/modules/mutate.md` -- new "Cross-process exclusive lock (T-0879)"
+  section.
+- `docs/guides/install.md` -- T-0879 note in the derived-state-manifest
+  section.
+
+NOT changed (deliberate scope cut, see below): `src/frob/dup/**`,
+`src/frob/graph/**` -- `find_clones`/`build_graph` were NOT wired.
+
+Rationale for the dup/graph cut: `frob.mutate.run_mutations` and
+`frob.doctor.run_diagnosis` are safe to wrap unconditionally because
+every production call site is genuinely standalone (`frob mutate`;
+`frob.tickets._land`/`app/ticket_runner.py`'s mutation-evidence
+obligation for `run_mutations`; `frob doctor` for `run_diagnosis`) --
+confirmed by grepping every caller in `src/frob/`. `frob.dup.find_clones`
+and `frob.graph.build_graph` are NOT: both are called from INSIDE `frob
+check`'s own gate execution (`frob.check._python._run_dup`'s dup gate,
+and `build_graph` from `check/_python.py`/`gates/_prework.py`) while the
+main thread already holds check's own SHARED `derived_state_lock` for
+the run's entire duration (`check/__init__.py::_run_check_with_skips`).
+Those gate functions run inside a `ThreadPoolExecutor` worker thread --
+a DIFFERENT thread than the one holding the shared lock.
+`derived_state_lock`'s re-entrancy guard is per-thread
+(`frob.process._lock._lock_local`, `threading.local`), and POSIX
+`flock(2)` itself grants NO same-process re-entrancy across distinct
+open file descriptions (two `os.open` calls on the same path, even in
+one process, contend against each other exactly like two processes
+would). Wrapping `find_clones`/`build_graph` in `exclusive=True`
+unconditionally would therefore deadlock every real `frob check` run
+that reaches the dup gate or a cache-miss graph rebuild: the worker
+thread blocks waiting for EXCLUSIVE against the main thread's SHARED
+hold, which cannot release until that same worker returns. Forcing this
+into scope would trade the TOCTOU race T-0879 exists to close for a
+guaranteed hang -- strictly worse. Filed T-0918 (see below) as
+the prerequisite-bearing follow-up rather than forcing it.
+
+Evidence:
+- `tests/test_mutate.py::test_run_mutations_holds_exclusive_lock_blocking_a_shared_reader`
+  (recorded via `frob ticket evidence`, verified passing)
+- `tests/test_doctor.py::test_run_diagnosis_holds_exclusive_lock_blocking_a_shared_reader`
+  (recorded via `frob ticket evidence`, verified passing)
+- `pytest tests/test_mutate.py tests/test_doctor.py tests/test_mutate_journal.py
+  tests/system/test_cli_doctor.py tests/unit/test_process_lock.py` -- all pass,
+  no regressions in the mutate/doctor/lock suites.
+- `frob test --base main` -- exit 0, full touched-set selection green.
+- `frob check --only lint --ticket T-0879` -- pass.
+- `frob check --only gates-fast --ticket T-0879` -- pass (0 errors; AFFECT001/
+  SCOPE001 closed via the doc updates + scope extension above).
+- `frob check --only gates-native --ticket T-0879` -- pass.
+- `frob check --only gates-security --ticket T-0879` -- pass (0 errors).
+- `frob check --only static` -- pass.
+
+Filed: T-0918 (bug, "Wire derived_state_lock exclusive side
+into dup/graph cache rebuilders (needs process-wide reentrancy signal)")
+-- the dup/graph follow-up described above; scope
+`src/frob/process/_lock.py`, `src/frob/dup/_pipeline.py`,
+`src/frob/graph/__init__.py`.
+
+Gates: `frob check --only {lint,gates-fast,gates-native,gates-security,
+static} --ticket T-0879` all clean (chunked per agent-playbook section
+3b's FROB_AGENT foreground-cap requirement; a bare full `frob check`
+refuses under FROB_AGENT by design).
 
 <!-- ticket:T-0880 -->
 ```yaml
@@ -8561,3 +8666,70 @@ threat: null
 component: null
 ```
 T-0712 shipped frob perf hot (query surface over the hot-graph sketch store) but its acceptance text also called for an MCP tool mirror for agents; src/frob/serve/_tools.py is outside T-0712's declared scope (src/frob/perf/**, src/frob/app/**, src/frob/gates/**, docs/modules/perf.md), so this was filed rather than expanding scope. Add a frob_perf_hot(root, top, by) MCP tool mirroring frob perf hot's list_sketches query, following the existing frob_graph_query/frob_stale_docs pattern in src/frob/serve/_tools.py.
+
+<!-- ticket:T-0918 -->
+```yaml
+id: T-0918
+title: Wire derived_state_lock exclusive side into dup/graph cache rebuilders (needs
+  process-wide reentrancy signal)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-26'
+priority: medium
+parent: null
+scope:
+- src/frob/process/_lock.py
+- src/frob/dup/_pipeline.py
+- src/frob/graph/__init__.py
+threat: null
+component: null
+```
+T-0879 wired `derived_state_lock(root, exclusive=True)` into the two
+writers where it is safe to do so unconditionally: `frob.mutate.
+run_mutations` and `frob.doctor.run_diagnosis`. Both are ALWAYS invoked
+standalone (frob mutate; frob ticket close/land's mutation-evidence
+obligation; frob doctor) -- never nested inside an already-locked `frob
+check` run -- confirmed by grepping every production call site.
+
+`frob.dup.find_clones` and `frob.graph.build_graph` were deliberately
+NOT wired, because they are NOT always standalone: both are called from
+inside `frob check`'s own gate execution (`frob.check._python._run_dup`,
+and build_graph from check/_python.py and gates/_prework.py) while the
+main thread already holds check's own SHARED `derived_state_lock` for
+the run's whole duration. Those gate functions run in a
+`ThreadPoolExecutor` worker thread, a DIFFERENT thread than the one that
+acquired the shared lock.
+
+`derived_state_lock`'s re-entrancy guard (`frob.process._lock._lock_
+local`) is per-thread, and `flock(2)` itself does not grant same-process
+re-entrancy across different open file descriptions: a worker thread
+requesting EXCLUSIVE on the same lock file would genuinely block against
+the main thread's SHARED hold, which cannot release until that worker
+returns -- a real same-process deadlock, not just a logical contract
+violation. This was proven with a citation of POSIX flock(2) semantics
+(distinct fds compete even within one process) plus a direct trace of
+`_run_check_with_skips` -> `_python_tasks` -> `ThreadPoolExecutor` ->
+`_run_dup`/gates -> `find_clones`/`build_graph`.
+
+Wiring the exclusive lock into `find_clones`/`build_graph` unconditionally
+would deadlock every real `frob check` run that reaches the dup gate or a
+graph rebuild -- worse than the race T-0879 exists to close. Doing it
+correctly needs a PREREQUISITE this ticket's scope (`src/frob/dup/**`,
+`src/frob/graph/**`) cannot provide on its own: a process-wide (not
+thread-local) "is this root's derived-state lock already held by ANY
+thread in this process" signal, either exposed from
+`src/frob/process/_lock.py` itself (out of T-0879's scope, `derived_
+state_lock`'s own module `T-0859`/T-0879 scope excludes `process/**`), or
+threaded through as an explicit "caller already holds the lock" flag from
+`src/frob/check/**`/`src/frob/gates/**` (also out of scope) down through
+`build_graph`/`find_clones`'s call signature.
+
+Scope for this follow-up: `src/frob/process/_lock.py` (expose the
+process-wide reentrancy signal) plus `src/frob/dup/_pipeline.py` and
+`src/frob/graph/__init__.py` (consult it in `find_clones`/`build_graph`
+before taking EXCLUSIVE, falling back to a same-process no-op when the
+process already holds ANY mode of the lock). `src/frob/check/**` and
+`src/frob/gates/**` are read-only reference points, not touched.
+
+See T-0879's Done report for the full deadlock trace and citations.

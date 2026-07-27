@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import ast
 import subprocess
+import threading
 from pathlib import Path
 
 import pytest
+from typani.result import Result
 
+from frob import mutate as mutate_module
 from frob.mutate import (
     MUTATION_RUN_ENV,
     MutateError,
@@ -16,6 +19,7 @@ from frob.mutate import (
     generate_mutants,
     run_mutations,
 )
+from frob.process._lock import derived_state_lock
 
 
 def test_generate_mutants_covers_operators():
@@ -218,6 +222,70 @@ def test_run_mutations_missing_file(tmp_path):
     result = run_mutations(tmp_path, Path("nope.py"), ("true",))
     assert result.is_err
     assert result.danger_err == MutateError.NoSource
+
+
+# frob:ticket T-0879
+def test_run_mutations_holds_exclusive_lock_blocking_a_shared_reader(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # frob:tests src/frob/mutate/__init__.py::run_mutations
+    """`run_mutations` holds `derived_state_lock(root, exclusive=True)` for
+    its whole run (T-0879) -- a concurrent SHARED acquisition from another
+    thread must block while a mutation run is in progress, and must
+    succeed immediately once it finishes (the writer never incorrectly
+    blocks a reader that arrives afterward)."""
+    (tmp_path / "m.py").write_text(
+        "def add(a, b):\n    return a + b\n", encoding="utf-8"
+    )
+    (tmp_path / "t.py").write_text(
+        "import m\ndef test_add():\n    assert m.add(1, 2) == 3\n", encoding="utf-8"
+    )
+
+    entered = threading.Event()
+    release = threading.Event()
+    original = mutate_module._run_mutants
+
+    def _slow_run_mutants(*args, **kwargs):  # noqa: ANN001, ANN202
+        entered.set()
+        release.wait(timeout=5)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(mutate_module, "_run_mutants", _slow_run_mutants)
+
+    result_holder: dict[str, object] = {}
+
+    def _call_run_mutations() -> None:
+        result_holder["result"] = run_mutations(
+            tmp_path, Path("m.py"), ("python", "-m", "pytest", "-q", "t.py")
+        )
+
+    writer_thread = threading.Thread(target=_call_run_mutations)
+    writer_thread.start()
+    assert entered.wait(timeout=5), "run_mutations never reached _run_mutants"
+
+    reader_acquired = threading.Event()
+
+    def _try_shared() -> None:
+        with derived_state_lock(tmp_path, exclusive=False):
+            reader_acquired.set()
+
+    reader_thread = threading.Thread(target=_try_shared)
+    reader_thread.start()
+    reader_thread.join(timeout=0.3)
+    assert not reader_acquired.is_set(), (
+        "a SHARED reader acquired the lock while run_mutations's EXCLUSIVE "
+        "writer span was still in progress"
+    )
+
+    release.set()
+    writer_thread.join(timeout=10)
+    reader_thread.join(timeout=5)
+    assert reader_acquired.is_set(), (
+        "the reader never acquired the lock after the writer released it"
+    )
+    result = result_holder["result"]
+    assert isinstance(result, Result)
+    assert result.is_ok
 
 
 # frob:ticket T-0803

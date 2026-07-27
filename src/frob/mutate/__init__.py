@@ -24,6 +24,7 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 from frob.mutate._journal import remove_journal, restore_stale_journals, write_journal
+from frob.process._lock import derived_state_lock
 
 _log = get_logger(__name__)
 
@@ -340,59 +341,70 @@ def run_mutations(
     forwarded straight to `generate_mutants` -- see its docstring. Applied
     BEFORE `max_mutants` truncates, so a diff-scoped caller's cap counts
     only points that actually fall inside the changed lines.
+
+    T-0879: holds `derived_state_lock(root, exclusive=True)` for the whole
+    run -- `run_mutations` is a `.frob`-derived-state writer (the journal
+    under `.frob/mutate-backup/`) in the same sense `frob doctor`'s
+    manifest write is, and is always invoked standalone (`frob mutate`,
+    `frob ticket close/land`'s mutation-evidence obligation) rather than
+    nested inside an already-locked `frob check` run, so taking the
+    EXCLUSIVE lock here cannot self-deadlock against a SHARED holder in
+    the same process. See `derived_state_lock`'s docstring for the
+    shared/exclusive contract.
     """
     target = root / file if not file.is_absolute() else file
     if not target.exists():
         return Err(MutateError.NoSource)
-    restored = restore_stale_journals(root)
-    if restored:
-        _log.warning(
-            "mutate: restored %d stale journal(s) left by a prior crashed run "
-            "before starting: %s",
-            len(restored),
-            restored,
+    with derived_state_lock(root, exclusive=True):
+        restored = restore_stale_journals(root)
+        if restored:
+            _log.warning(
+                "mutate: restored %d stale journal(s) left by a prior crashed run "
+                "before starting: %s",
+                len(restored),
+                restored,
+            )
+        original_bytes = target.read_bytes()
+        try:
+            original = original_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            return Err(MutateError.ParseFailed)
+        generated = generate_mutants(original, str(file), line_ranges)
+        if generated.is_err:
+            return Err(generated.danger_err)
+        mutants = generated.danger_ok
+        if max_mutants is not None:
+            mutants = mutants[:max_mutants]
+        journaled = write_journal(root, target, original_bytes)
+        if journaled.is_err:
+            _log.error(
+                "mutate: aborting run for %s -- journal collision (%s)",
+                target,
+                journaled.danger_err,
+            )
+            return Err(MutateError.JournalCollision)
+        try:
+            run_result = _run_mutants(target, mutants, test_argv, root, timeout_s)
+        finally:
+            # Only drop the journal once the restore write has actually
+            # succeeded (T-0857) -- if `write_bytes` itself raises (a disk
+            # error mid-restore), the journal must survive so the NEXT
+            # `run_mutations` call's `restore_stale_journals` can still fix it.
+            target.write_bytes(original_bytes)
+            remove_journal(root, target)
+        if run_result.is_err:
+            _log.error(
+                "mutate: run aborted (%s) -- no mutation score, not a false 100%%",
+                run_result.danger_err,
+            )
+            return Err(run_result.danger_err)
+        killed, survivors = run_result.danger_ok
+        _log.info(
+            "mutate: %d mutant(s), %d killed, %d survived",
+            len(mutants),
+            killed,
+            len(survivors),
         )
-    original_bytes = target.read_bytes()
-    try:
-        original = original_bytes.decode("utf-8")
-    except UnicodeDecodeError:
-        return Err(MutateError.ParseFailed)
-    generated = generate_mutants(original, str(file), line_ranges)
-    if generated.is_err:
-        return Err(generated.danger_err)
-    mutants = generated.danger_ok
-    if max_mutants is not None:
-        mutants = mutants[:max_mutants]
-    journaled = write_journal(root, target, original_bytes)
-    if journaled.is_err:
-        _log.error(
-            "mutate: aborting run for %s -- journal collision (%s)",
-            target,
-            journaled.danger_err,
-        )
-        return Err(MutateError.JournalCollision)
-    try:
-        run_result = _run_mutants(target, mutants, test_argv, root, timeout_s)
-    finally:
-        # Only drop the journal once the restore write has actually
-        # succeeded (T-0857) -- if `write_bytes` itself raises (a disk
-        # error mid-restore), the journal must survive so the NEXT
-        # `run_mutations` call's `restore_stale_journals` can still fix it.
-        target.write_bytes(original_bytes)
-        remove_journal(root, target)
-    if run_result.is_err:
-        _log.error(
-            "mutate: run aborted (%s) -- no mutation score, not a false 100%%",
-            run_result.danger_err,
-        )
-        return Err(run_result.danger_err)
-    killed, survivors = run_result.danger_ok
-    _log.info(
-        "mutate: %d mutant(s), %d killed, %d survived",
-        len(mutants),
-        killed,
-        len(survivors),
-    )
     return Ok(
         MutationResult(total=len(mutants), killed=killed, survivors=tuple(survivors))
     )

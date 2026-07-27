@@ -319,6 +319,16 @@ artifact by `json.loads`. Each present artifact also gets a sha256
 diff two runs' derived state directly rather than just the healthy/
 unhealthy verdict.
 
+T-0879: the fingerprint-read + manifest-write span inside `run_diagnosis`
+(`verify_derived_state` through the manifest write) holds
+`frob.process._lock.derived_state_lock(root, exclusive=True)` for its
+whole duration -- `frob doctor` is a `.frob`-derived-state WRITER in the
+same sense `frob mutate` is, and always runs standalone (never nested
+inside an already-locked `frob check` run), so this cannot self-deadlock
+against a `frob check` reader's SHARED lock in the same process. See
+`docs/modules/process.md`'s "Derived-state lock (T-0859)" section for the
+shared/exclusive contract this closes the writer side of.
+
 `frob doctor --json`'s `derived_state` array carries one entry per
 artifact (`name`, `path`, `present`, `healthy`, `fingerprint`, `detail`);
 the text report's overall `healthy`/`remediation` fields fold in any
