@@ -3274,7 +3274,7 @@ fix ticket addresses.
 id: T-0901
 title: 'Add drift-lock test: every emitted rule= literal must be a _KNOWN_GATE_RULES
   member'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -3283,6 +3283,10 @@ parent: null
 scope:
 - src/frob/gates/__init__.py
 - tests/test_gates.py
+evidence:
+- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
+- tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset
 threat: null
 component: null
 ```
@@ -3297,6 +3301,20 @@ asserts it is a subset of `known_gate_rule_ids()` -- so a new gate/rule
 added without a matching `_KNOWN_GATE_RULES` entry fails CI immediately
 instead of silently reproducing the PARSE001/TICK005/REG011/PII011/
 PII012/SYSWAIVE002/THREAT006 omission class.
+
+## Done report
+
+Changed:
+src/frob/gates/__init__.py::_KNOWN_GATE_RULES (added DEC000)
+tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known
+tests/test_gates.py::TestKnownGateRuleIds._KNOWN_ISSUE_ALLOWLIST
+Evidence: uv run pytest tests/test_gates.py -q (all pass); uv run frob
+check --ticket T-0901 --only scope --only coverage --only drift --only
+gates (0 errors, 884 warnings, 94 waived)
+Filed: T-0924 (COMPLIANCE00x/HOST00x/HOST-BLAST/KRB00x/
+LINT00x/PII00x/RELWAIVE002/THREAT001-005 batch, out of this ticket's
+file scope, carried in the new test's explicit allowlist)
+Gates: frob check --ticket T-0901 clean (0 errors)
 
 <!-- ticket:T-0902 -->
 ```yaml
@@ -3329,7 +3347,7 @@ class of gap the same way T-0558 closed it for hard parse failures.
 ```yaml
 id: T-0903
 title: _KNOWN_GATE_RULES omits 7 real, currently-firing rule ids (PARSE001/TICK005/REG011/PII011/PII012/SYSWAIVE002/THREAT006)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -3337,6 +3355,9 @@ priority: medium
 parent: null
 scope:
 - src/frob/gates/__init__.py
+evidence:
+- tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
+- tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset
 threat: null
 component: null
 ```
@@ -3389,6 +3410,16 @@ durably, per this ticket's own pattern-recognition: add a drift-lock test
 `rule="..."` string literal actually constructed inside `src/frob/gates/**`
 and `src/frob/strata/**`'s Violation-building sites, failing loud on any
 gap -- so this omission class cannot recur a third time.
+
+## Done report
+
+Changed: src/frob/gates/__init__.py::_KNOWN_GATE_RULES (added PARSE001,
+TICK005, REG011, PII011, PII012, SYSWAIVE002, THREAT006)
+Evidence: uv run pytest tests/test_gates.py -q (all pass); uv run frob
+check --ticket T-0903 --only scope --only coverage --only drift --only
+gates (0 errors, 884 warnings, 94 waived)
+Filed: none
+Gates: frob check --ticket T-0903 clean (0 errors)
 
 <!-- ticket:T-0904 -->
 ```yaml
@@ -3900,7 +3931,7 @@ User directive 2026-07-27: expensive-operation detection (subprocess.run is an E
 ```yaml
 id: T-0923
 title: PROTO004 missing from _KNOWN_GATE_RULES (T-0840 listing omission)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-26'
@@ -3908,6 +3939,10 @@ priority: medium
 parent: null
 scope:
 - src/frob/gates/__init__.py
+evidence:
+- tests/test_gates.py::TestProtocolOrderingGate::test_call_before_establishing_transition_is_an_ordering_error
+- tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
+- tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset
 threat: null
 component: null
 ```
@@ -3923,3 +3958,59 @@ T-0753 already fixed once for DEAD001. Found while working T-0747
 (cleanup obligations), out of that ticket's own scope (T-0747 touches
 PROTO005 only). Fix: add "PROTO004" to _KNOWN_GATE_RULES with a comment
 citing T-0840, mirroring the PROTO001/002/003/005 entries already there.
+
+## Done report
+
+Changed: src/frob/gates/__init__.py::_KNOWN_GATE_RULES (added PROTO004)
+Evidence: uv run pytest tests/test_gates.py -q (all pass); uv run frob
+check --ticket T-0923 --only scope --only coverage --only drift --only
+gates (0 errors, 884 warnings, 94 waived)
+Filed: none
+Gates: frob check --ticket T-0923 clean (0 errors)
+
+<!-- ticket:T-0924 -->
+```yaml
+id: T-0924
+title: '_KNOWN_GATE_RULES missing batch: COMPLIANCE00x/HOST00x/HOST-BLAST/KRB00x/LINT00x/PII00x/RELWAIVE002/THREAT001-005'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-26'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- src/frob/strata/_compliance.py
+- src/frob/strata/_host_isolation.py
+- src/frob/strata/_krb_movement.py
+- src/frob/strata/_lint.py
+- src/frob/strata/_pii.py
+- src/frob/strata/_threat.py
+threat: null
+component: null
+```
+Found while building T-0901's drift-lock test (a static scan of every
+`rule="..."` literal constructed inside `src/frob/gates/**` and
+`src/frob/strata/**`, asserting it is a subset of
+`frob.gates.known_gate_rule_ids()`).
+
+Beyond the ids T-0903/T-0923 already fixed, the same scan surfaces a
+much larger pre-existing batch of rule ids that are real, currently-
+constructed Violation-shaped literals but are NOT in `_KNOWN_GATE_RULES`:
+COMPLIANCE001-004, HOST001, HOST002, HOST-BLAST, KRB001-004, LINT001-005,
+PII001-004, RELWAIVE002, THREAT001-005 (src/frob/strata/_compliance.py,
+_host_isolation.py, _audit.py, _krb_movement.py, _lint.py, _pii.py,
+_backpressure.py, _circuit_breaker.py, _threat.py).
+
+Unlike the T-0903 batch, a repo-wide grep for `caught_by`/`handled_by`
+referencing any of these ids today turns up nothing -- so this class is
+not (yet) causing an observed WAIVE002/unresolved-caught_by symptom the
+way SYSWAIVE002/THREAT006 were. Still the same listing-omission shape,
+and T-0901's new drift-lock test carries an explicit, ticket-cited
+allowlist for exactly this batch so the test can land clean without
+silently expanding T-0901's own file scope -- this ticket is that
+allowlist's paydown target. Fix direction: same as T-0903 -- either add
+each id to `_KNOWN_GATE_RULES` with a citing comment, or determine (and
+document) that a specific id is intentionally a strata-internal-only
+finding rule never meant to be caught_by-resolvable, and drop it from the
+drift-lock test's allowlist with that reasoning recorded instead.

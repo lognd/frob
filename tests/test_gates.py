@@ -8843,6 +8843,88 @@ class TestKnownGateRuleIds:
         caller could accidentally mutate shared state through."""
         assert isinstance(known_gate_rule_ids(), frozenset)
 
+    # frob:ticket T-0901
+    # T-0924 tracks paying down _KNOWN_ISSUE_ALLOWLIST to empty.
+    _KNOWN_ISSUE_ALLOWLIST = frozenset(
+        {
+            # Pre-existing gap surfaced by this test's own first run,
+            # deliberately NOT fixed here (out of T-0901's declared file
+            # scope) -- filed as T-0924 instead of silently
+            # widening this ticket. None of these currently appear in any
+            # `caught_by`/`handled_by` reference in the tree (unlike the
+            # T-0903/T-0923 batch this test exists to keep from recurring),
+            # so they are debt, not an active WAIVE002/unresolved symptom.
+            "COMPLIANCE001",
+            "COMPLIANCE002",
+            "COMPLIANCE003",
+            "COMPLIANCE004",
+            "HOST-BLAST",
+            "HOST001",
+            "HOST002",
+            "KRB001",
+            "KRB002",
+            "KRB003",
+            "KRB004",
+            "LINT001",
+            "LINT002",
+            "LINT003",
+            "LINT004",
+            "LINT005",
+            "PII001",
+            "PII002",
+            "PII003",
+            "PII004",
+            "RELWAIVE002",
+            "THREAT001",
+            "THREAT002",
+            "THREAT003",
+            "THREAT004",
+            "THREAT005",
+        }
+    )
+
+    # frob:ticket T-0901
+    # frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known
+    def test_every_emitted_rule_literal_is_known(self) -> None:
+        """Drift-lock: statically enumerate every `rule="..."`/`"rule":
+        "..."` string literal constructed inside `src/frob/gates/**` and
+        `src/frob/strata/**` (mirroring how `_KNOWN_GATE_RULES` itself is
+        a static frozenset) and assert each one is either a member of
+        `known_gate_rule_ids()` or on the explicit, ticket-cited
+        `_KNOWN_ISSUE_ALLOWLIST` above -- so a new gate/rule added without
+        a matching `_KNOWN_GATE_RULES` entry fails loud immediately
+        instead of silently reproducing the PARSE001/TICK005/REG011/
+        PII011/PII012/SYSWAIVE002/THREAT006/PROTO004/DEC000 omission class
+        (T-0903/T-0923/T-0901)."""
+        import re as _re
+
+        repo_root = Path(__file__).resolve().parents[1]
+        pattern = _re.compile(r'rule\s*[:=]\s*"([A-Z][A-Z0-9_-]*)"')
+        found: dict[str, str] = {}
+        for base in ("src/frob/gates", "src/frob/strata"):
+            for path in sorted((repo_root / base).rglob("*.py")):
+                for lineno, line in enumerate(
+                    path.read_text().splitlines(), start=1
+                ):
+                    if line.strip().startswith("#"):
+                        continue
+                    for m in pattern.finditer(line):
+                        found.setdefault(
+                            m.group(1), f"{path.relative_to(repo_root)}:{lineno}"
+                        )
+
+        known = known_gate_rule_ids()
+        unknown = {
+            rule_id: loc
+            for rule_id, loc in found.items()
+            if rule_id not in known and rule_id not in self._KNOWN_ISSUE_ALLOWLIST
+        }
+        assert not unknown, (
+            "rule id(s) constructed in src/frob/gates or src/frob/strata "
+            "but missing from _KNOWN_GATE_RULES (add an entry, or add to "
+            f"_KNOWN_ISSUE_ALLOWLIST with a citing ticket): {unknown}"
+        )
+
 
 # frob:ticket T-0459
 class TestRenderLintGate:

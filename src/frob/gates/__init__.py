@@ -1168,6 +1168,38 @@ _KNOWN_GATE_RULES = frozenset(
         # that reddens it is blocked structurally (frob.gates.sys_gate's
         # _selfaudit_violations).
         "SELFAUDIT001",
+        # frob:ticket T-0903
+        # T-0903: 7 more real, currently-firing rule ids never added here --
+        # the same DEAD001-class listing omission T-0753 already fixed once,
+        # recurring for rules landed by later tickets that never circled
+        # back to this frozenset.
+        # PARSE001 (frob.gates._parse_failures): registered as an always-run
+        # process job in _ALL_GATES's "parse_failures" entry.
+        "PARSE001",
+        # TICK005 (frob.gates.tickets_gate's _tick005_merge_state_regression).
+        "TICK005",
+        # REG011 (frob.gates._registry_exhaustiveness, T-0680's
+        # out_of_scope-reason check).
+        "REG011",
+        # PII011/PII012 (frob.gates._pii_structural, dispatched from
+        # pii_structural_gate).
+        "PII011",
+        "PII012",
+        # SYSWAIVE002 (frob.strata._contention).
+        "SYSWAIVE002",
+        # THREAT006 (frob.strata._threat).
+        "THREAT006",
+        # frob:ticket T-0923
+        # T-0923: PROTO004 (frob.gates._protocol_summary's
+        # protocol_summary_gate, T-0840's per-call-site ordering check) --
+        # never added alongside PROTO001/002/003/005, the same listing-
+        # omission class as T-0903 above.
+        "PROTO004",
+        # frob:ticket T-0901
+        # T-0901: DEC000 (this module's decisions_gate, a malformed
+        # decisions/ record) -- surfaced by T-0901's own drift-lock test,
+        # the same listing-omission class as the T-0903/T-0923 batches.
+        "DEC000",
     }
 )
 
