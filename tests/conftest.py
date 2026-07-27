@@ -37,7 +37,7 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 # frob:ticket T-0926
-# frob:tests tests/unit/test_conftest_parse_reset.py::TestConftestParseReset::test_reset_before_each_test_isolates_partial_parse_state  # noqa: E501
+# frob:tests tests/unit/test_conftest_parse_reset.py::TestConftestParseReset.test_reset_before_each_test_isolates_partial_parse_state  # noqa: E501
 @pytest.fixture(autouse=True)
 def _reset_parse_cache_before_test() -> None:
     """Clear `frob.lang`'s process-lifetime parse memo/`partial_parse_files`

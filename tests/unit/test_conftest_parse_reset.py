@@ -24,7 +24,7 @@ def _write(tmp_path: Path, name: str, text: str) -> Path:
 
 
 # frob:ticket T-0926
-# frob:tests tests/unit/test_conftest_parse_reset.py::test_leaked_partial_parse_does_not_survive_into_next_test  # noqa: E501
+# frob:tests tests/unit/test_conftest_parse_reset.py::TestConftestParseReset.test_b_does_not_see_a_leaked_partial_parse  # noqa: E501
 class TestConftestParseReset:
     """Simulates two tests in the same worker process, in order, proving
     the autouse fixture (not caller ordering) is what keeps them
