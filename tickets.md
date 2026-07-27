@@ -6258,3 +6258,30 @@ of T-0984's scope (src/frob/gates/_fmt_directives.py only, and even then
 only the wrap boundary condition). Filed separately so a repo-wide fmt
 sweep + `# noqa: E501`-aware skip logic can be planned and reviewed on
 its own, rather than smuggled into this bug fix.
+
+<!-- ticket:T-0986 -->
+```yaml
+id: T-0986
+title: promote DOC006 frob:tests target-form validation to ERROR (dotted-form mistakes
+  recurred 4x)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_docptr.py
+- frob.toml
+- tests/test_docptr_gate.py
+acceptance:
+- text: given a frob:tests directive whose target uses ::-separated class-method form,
+    when frob check runs, then it fails at ERROR severity naming the directive, while
+    dotted-form targets pass
+  evidence: []
+threat: null
+component: null
+```
+Agents wrote pytest ::-separated class-method targets in frob:tests directives four separate times today (T-0715, T-0926, T-0976 x8, plus the runtime variant T-0983), each producing DRIFT002 errors on main post-land because the obligation graph keys dotted Class.method. T-0437 shipped DOC006 with frob:tests target-form hardening at WARN; promote exactly that recognized-shape check to ERROR (scoped severity or a dedicated rule id if the family cannot be split), so a mis-formed target refuses at the author gate instead of redding main after land. Verify the check catches the exact T-0976 shape (path::Class::method) and passes the dotted form.
