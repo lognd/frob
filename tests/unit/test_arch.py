@@ -1773,6 +1773,37 @@ class TestPythonAdapter:
         assert by_kw["mode"].ident == "mode"
         assert by_kw["retries"].ident is None
 
+    # frob:ticket T-0689
+    def test_adapt_parses_frob_raises_declaration_on_call_line(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/arch/_python.py::PythonAdapter.adapt kind="unit"
+        # A same-line `# frob:raises A, B` comment on a call site becomes
+        # that NormalizedCall's declared_raises; a call with no such
+        # comment stays None; an empty-after-marker comment
+        # (`# frob:raises`) declares the empty set, not "no declaration".
+        from frob.arch._python import PythonAdapter
+        from frob.lang import raw_tree
+
+        src_path = tmp_path / "ffi.py"
+        src_path.write_text(
+            "def call_native(lib):\n"
+            "    lib.risky_call()  # frob:raises OSError, ValueError\n"
+            "    lib.quiet_call()  # frob:raises\n"
+            "    plain()\n"
+        )
+        parsed = raw_tree(src_path)
+        assert parsed.is_ok
+        tree, source, _language = parsed.danger_ok
+
+        module = PythonAdapter().adapt(tree, source, "ffi.py")
+        calls = {c.callee: c for c in module.functions[0].calls}
+        assert calls["lib.risky_call"].declared_raises == frozenset(
+            {"OSError", "ValueError"}
+        )
+        assert calls["lib.quiet_call"].declared_raises == frozenset()
+        assert calls["plain"].declared_raises is None
+
 
 # ---------------------------------------------------------------------------
 # T-0611: TypeScriptAdapter -- maps a real parsed TypeScript file onto
@@ -5887,6 +5918,137 @@ class TestMayRaiseResolver:
         result = compute_may_raise(module)
 
         assert result["pkg/mod.py::dispatch"].raises == frozenset({UNKNOWN})
+
+    # frob:ticket T-0689
+    def test_undeclared_ctypes_style_call_is_unknown(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # A call into a ctypes/cffi-loaded handle (`lib.some_c_function(...)`)
+        # is not a same-module function and not in either curated raiser
+        # table -- opaque boundary, fail-closed to Unknown (T-0689's
+        # acceptance criterion, first half).
+        from frob.arch._mayraise import UNKNOWN, compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        caller = NormalizedFunction(
+            name="call_native",
+            line=1,
+            body_line_count=2,
+            calls=[NormalizedCall(callee="lib.some_c_function", line=2)],
+        )
+        module = NormalizedModule(
+            path="pkg/native.py", language="python", functions=[caller]
+        )
+
+        result = compute_may_raise(module)
+
+        assert result["pkg/native.py::call_native"].raises == frozenset({UNKNOWN})
+
+    # frob:ticket T-0689
+    def test_declared_raises_substitutes_for_opaque_boundary_call(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # The SAME opaque ctypes-style call as the previous test, but now
+        # carrying a `frob:raises` declaration (NormalizedCall.
+        # declared_raises) -- the declared set substitutes for Unknown
+        # (T-0689's acceptance criterion, second half).
+        from frob.arch._mayraise import UNKNOWN, compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        caller = NormalizedFunction(
+            name="call_native",
+            line=1,
+            body_line_count=2,
+            calls=[
+                NormalizedCall(
+                    callee="lib.some_c_function",
+                    line=2,
+                    declared_raises=frozenset({"OSError"}),
+                )
+            ],
+        )
+        module = NormalizedModule(
+            path="pkg/native.py", language="python", functions=[caller]
+        )
+
+        result = compute_may_raise(module)
+
+        assert result["pkg/native.py::call_native"].raises == frozenset({"OSError"})
+        assert UNKNOWN not in result["pkg/native.py::call_native"].raises
+
+    # frob:ticket T-0689
+    def test_declared_raises_empty_set_is_honored_not_treated_as_absent(
+        self,
+    ) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # `declared_raises=frozenset()` ("declared to raise nothing", the
+        # valid errno-convention shape) must NOT fall through to Unknown --
+        # callers check `is not None`, never truthiness.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        caller = NormalizedFunction(
+            name="call_native",
+            line=1,
+            body_line_count=2,
+            calls=[
+                NormalizedCall(
+                    callee="lib.errno_style_call",
+                    line=2,
+                    declared_raises=frozenset(),
+                )
+            ],
+        )
+        module = NormalizedModule(
+            path="pkg/native.py", language="python", functions=[caller]
+        )
+
+        result = compute_may_raise(module)
+
+        assert result["pkg/native.py::call_native"].raises == frozenset()
+
+    # frob:ticket T-0689
+    def test_curated_stdlib_c_extension_table_resolves_precisely(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # json.loads/sqlite3.connect/struct.pack are curated stdlib
+        # C-extension raisers (T-0689's user mandate) -- resolved
+        # precisely, not Unknown, keyed on the full dotted callee text.
+        from frob.arch._mayraise import UNKNOWN, compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        caller = NormalizedFunction(
+            name="parse_all",
+            line=1,
+            body_line_count=4,
+            calls=[
+                NormalizedCall(callee="json.loads", line=2),
+                NormalizedCall(callee="sqlite3.connect", line=3),
+                NormalizedCall(callee="struct.pack", line=4),
+            ],
+        )
+        module = NormalizedModule(
+            path="pkg/parse.py", language="python", functions=[caller]
+        )
+
+        result = compute_may_raise(module)
+
+        raises = result["pkg/parse.py::parse_all"].raises
+        assert raises == frozenset({"JSONDecodeError", "sqlite3.Error", "struct.error"})
+        assert UNKNOWN not in raises
 
 
 # ---------------------------------------------------------------------------

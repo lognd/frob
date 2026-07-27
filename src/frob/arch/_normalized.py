@@ -99,13 +99,23 @@ class NormalizedCall(BaseModel):
     and its argument list (`args`, T-0632: position/keyword + bare-
     identifier detail per argument) -- the shared unit every dispatch/
     construction/delegation detector (`frob.arch._patterns`) reasons
-    about."""
+    about. `declared_raises` (T-0689) is the parsed exception-name set from
+    a same-line `# frob:raises A, B` comment covering this call site --
+    `None` when no such comment is present (the common case); an empty
+    `frozenset()` is a DISTINCT, valid declaration ("this boundary call is
+    declared to raise nothing", e.g. an errno-convention FFI call), so
+    callers must check `is not None`, never truthiness. Populated by an
+    adapter that has raw source lines to scan (today: `frob.arch._python`);
+    adapters that do not thread source text leave this `None` for every
+    call, which is indistinguishable from "no declaration" and therefore
+    safe (fail-closed still applies)."""
 
     model_config = {}
 
     callee: str
     line: int
     args: list[NormalizedCallArg] = []
+    declared_raises: frozenset[str] | None = None
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model

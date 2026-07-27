@@ -93,6 +93,37 @@ _LONG_FUNCTION_NESTING_THRESHOLD = 3
 #: decision logic clears it.
 _LONG_FUNCTION_CYCLOMATIC_THRESHOLD = 8
 
+#: Matches a `frob:raises` declaration comment (T-0689) on a call site's own
+#: source line -- `# frob:raises ValueError, OSError` or the empty-set form
+#: `# frob:raises` (declares "raises nothing", the valid errno-convention
+#: shape T-0690's sibling ticket calls out). Deliberately matched against
+#: the single physical line a `NormalizedCall.line` already names (same-line
+#: only, no lookbehind/lookahead scan) -- the same line-adjacency-proxy
+#: style `_mayraise.py`'s `_nearest_preceding_catch` already uses elsewhere
+#: in this feature, kept simple rather than parsing a leading-comment block.
+_FROB_RAISES_RE = re.compile(r"#\s*frob:raises\b[ \t]*(.*)$")
+
+
+# frob:ticket T-0689
+def _frob_raises_declaration(
+    source_lines: tuple[str, ...], line: int
+) -> frozenset[str] | None:
+    """The declared exception-name set (T-0689) from a `# frob:raises ...`
+    comment on `source_lines[line - 1]` (1-indexed, matching
+    `NormalizedCall.line`), or `None` when that line carries no such
+    comment. `# frob:raises` with nothing after it declares the EMPTY set
+    (a valid, distinct declaration -- see `NormalizedCall.declared_raises`'s
+    docstring), not "no declaration"."""
+    if line < 1 or line > len(source_lines):
+        return None
+    m = _FROB_RAISES_RE.search(source_lines[line - 1])
+    if m is None:
+        return None
+    rest = m.group(1).strip()
+    if not rest:
+        return frozenset()
+    return frozenset(name.strip() for name in rest.split(",") if name.strip())
+
 
 # frob:invariant terminates reason="recurses only into a body node one \
 # tree-sitter edge below the current node; a lexical prover cannot see \
@@ -383,6 +414,7 @@ def _py_except_exception_type(node: Node) -> str | None:
 
 # frob:ticket T-0632
 # frob:ticket T-0686
+# frob:ticket T-0689
 def _py_collect_body_events(
     node: Node,
     branches: list[NormalizedBranch],
@@ -393,13 +425,17 @@ def _py_collect_body_events(
     raises: list[NormalizedRaise],
     catches: list[NormalizedCatch],
     subscripts: list[NormalizedSubscript],
+    source_lines: tuple[str, ...] = (),
 ) -> None:
     """Flatten every structural event (T-0609 shape) inside `node`'s
     subtree, stopping at a nested `function_definition`/`class_definition`
     boundary -- those become their own `NormalizedFunction`/`NormalizedClass`
     (`_py_build_function`/`_py_build_class`), not events folded into the
     parent. `subscripts` (T-0686) collects `d[k]`-shaped expressions the
-    may-raise resolver's builtin-raiser table keys off."""
+    may-raise resolver's builtin-raiser table keys off. `source_lines`
+    (T-0689, optional -- empty when a caller has no raw source to offer)
+    lets each `call` site pick up its own `# frob:raises` declaration
+    (`_frob_raises_declaration`) onto `NormalizedCall.declared_raises`."""
     for c in node.children:
         if c.type in ("function_definition", "class_definition"):
             continue
@@ -415,11 +451,13 @@ def _py_collect_body_events(
                 NormalizedLoop(line=c.start_point[0] + 1, kind=_LOOP_KINDS[c.type])
             )
         if c.type == "call":
+            call_line = c.start_point[0] + 1
             calls.append(
                 NormalizedCall(
                     callee=_py_call_callee_text(c),
-                    line=c.start_point[0] + 1,
+                    line=call_line,
                     args=_py_call_args(c),
+                    declared_raises=_frob_raises_declaration(source_lines, call_line),
                 )
             )
         if c.type == "attribute":
@@ -466,6 +504,7 @@ def _py_collect_body_events(
             raises,
             catches,
             subscripts,
+            source_lines,
         )
 
 
@@ -501,7 +540,9 @@ def _py_normalize_params(func_node: Node) -> list[NormalizedParam]:
     return out
 
 
-def _py_build_function(func_node: Node, is_method: bool) -> NormalizedFunction:
+def _py_build_function(
+    func_node: Node, is_method: bool, source_lines: tuple[str, ...] = ()
+) -> NormalizedFunction:
     """One `function_definition` (top-level, method, or nested) as a
     `NormalizedFunction` -- events flattened via `_py_collect_body_events`,
     nested `function_definition`s recursed into `nested_functions`, and
@@ -509,7 +550,9 @@ def _py_build_function(func_node: Node, is_method: bool) -> NormalizedFunction:
     `_py_max_nesting`/`_py_cyclomatic` walks (kept as SEPARATE fields, not
     derived from the flattened event lists -- see
     `NormalizedFunction.max_nesting_depth`'s docstring) so these two metrics
-    match the original per-language walk exactly, byte-for-byte."""
+    match the original per-language walk exactly, byte-for-byte.
+    `source_lines` (T-0689, optional) is forwarded to
+    `_py_collect_body_events` for `frob:raises` declaration parsing."""
     name_node = _child(func_node, "name")
     name = _node_text(name_node) if name_node else "?"
     body = _child(func_node, "body")
@@ -534,10 +577,13 @@ def _py_build_function(func_node: Node, is_method: bool) -> NormalizedFunction:
             raises,
             catches,
             subscripts,
+            source_lines,
         )
         for c in body.named_children:
             if c.type == "function_definition":
-                nested.append(_py_build_function(c, is_method=False))
+                nested.append(
+                    _py_build_function(c, is_method=False, source_lines=source_lines)
+                )
     return NormalizedFunction(
         name=name,
         line=func_node.start_point[0] + 1,
@@ -590,12 +636,15 @@ def _py_class_fields(body: Node) -> list[NormalizedField]:
     return out
 
 
-def _py_build_class(class_node: Node) -> NormalizedClass:
+def _py_build_class(
+    class_node: Node, source_lines: tuple[str, ...] = ()
+) -> NormalizedClass:
     """One `class_definition` as a `NormalizedClass`: its base-class names
     (as written), class-level fields (`_py_class_fields`), and direct
     methods (`_py_methods`, unchanged -- only `function_definition`
     children directly inside the class body, matching `_check_god_classes`'
-    prior method count exactly)."""
+    prior method count exactly). `source_lines` (T-0689, optional) is
+    forwarded to each method's `_py_build_function`."""
     name_node = _child(class_node, "name")
     name = _node_text(name_node) if name_node else "?"
     bases: list[str] = []
@@ -607,7 +656,10 @@ def _py_build_class(class_node: Node) -> NormalizedClass:
     methods: list[NormalizedFunction] = []
     if body is not None:
         fields = _py_class_fields(body)
-        methods = [_py_build_function(m, is_method=True) for m in _py_methods(body)]
+        methods = [
+            _py_build_function(m, is_method=True, source_lines=source_lines)
+            for m in _py_methods(body)
+        ]
     return NormalizedClass(
         name=name,
         line=class_node.start_point[0] + 1,
@@ -617,18 +669,27 @@ def _py_build_class(class_node: Node) -> NormalizedClass:
     )
 
 
-def _py_build_module(tree: object, rel: str) -> NormalizedModule:
+def _py_build_module(
+    tree: object, rel: str, source_lines: tuple[str, ...] = ()
+) -> NormalizedModule:
     """The whole-file `NormalizedModule` for a parsed python file: top-level
-    imports, classes, and free functions (`PythonAdapter.adapt`)."""
+    imports, classes, and free functions (`PythonAdapter.adapt`).
+    `source_lines` (T-0689, optional -- callers with no raw source, e.g. the
+    per-check helpers in this module that only ever had a `tree`, pass
+    nothing and every call site's `declared_raises` stays `None`) threads
+    down to `_py_collect_body_events` for `frob:raises` declaration
+    parsing."""
     t: Tree = cast("Tree", tree)
     classes: list[NormalizedClass] = []
     functions: list[NormalizedFunction] = []
     imports: list[NormalizedImport] = []
     for c in t.root_node.children:
         if c.type == "class_definition":
-            classes.append(_py_build_class(c))
+            classes.append(_py_build_class(c, source_lines))
         elif c.type == "function_definition":
-            functions.append(_py_build_function(c, is_method=False))
+            functions.append(
+                _py_build_function(c, is_method=False, source_lines=source_lines)
+            )
         elif c.type == "import_statement":
             for name_node in c.named_children:
                 if name_node.type in ("dotted_name", "identifier"):
@@ -687,10 +748,12 @@ class PythonAdapter:
     # frob:tests tests/unit/test_arch.py::TestPythonAdapter.test_adapt_arch_python_fixture_shape  # noqa: E501
     def adapt(self, tree: object, source: bytes, rel: str) -> NormalizedModule:
         """Build the `NormalizedModule` for one parsed python file (`tree`,
-        `rel`) -- `source` is unused since tree-sitter `Node.text` already
-        carries its own byte slice from the buffer it was parsed with."""
-        del source
-        return _py_build_module(tree, rel)
+        `rel`) -- `source`'s decoded lines (T-0689) feed `_py_build_module`
+        so each call site's `# frob:raises` comment (`NormalizedCall.
+        declared_raises`) can be parsed; tree-sitter `Node.text` still
+        carries its own byte slice for everything else, unaffected."""
+        source_lines = tuple(source.decode("utf-8", errors="replace").splitlines())
+        return _py_build_module(tree, rel, source_lines)
 
 
 def _iter_normalized_functions(

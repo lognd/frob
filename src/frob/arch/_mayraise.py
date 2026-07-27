@@ -55,7 +55,39 @@ T-0685) is tracked SEPARATELY, exposed as the `UBIQUITOUS_TIER` constant
 below, and never folded into a `FunctionMayRaise.raises` set -- per the
 parent ticket's own doctrine, exhaustiveness never demands it be
 enumerated per-function; only a boundary catch-all discharges it, which
-is a caller's concern (T-0688's gate/advisory job), not this resolver's."""
+is a caller's concern (T-0688's gate/advisory job), not this resolver's.
+
+OPAQUE C-EXTENSION/CTYPES/CFFI BOUNDARIES (T-0689): a call whose bare name
+is not a same-module function and not in one of the curated raiser tables
+below is ALREADY fail-closed to `UNKNOWN` by the unresolved-callee path
+above -- this covers every ctypes/cffi call (`ctypes.CDLL(...)`, a loaded
+handle's `lib.some_c_function(...)`, `cffi.FFI().dlopen(...)` and its
+resulting object's calls) and any other compiled-extension call this
+resolver has no source to see into: none of them carry a fixed per-call
+raised type (a C extension's own exception behavior is opaque to a
+Python-source-level resolver, and ctypes/cffi calls specifically have no
+exception-propagation contract at all -- see T-0690's own FFI-boundary
+ticket for the cross-language enforcement built on top of this). The
+`_STDLIB_QUALIFIED_RAISERS` table curates the well-known STDLIB
+C-extension exceptions (`json.loads`/`json.load` -> `JSONDecodeError`,
+`sqlite3.connect`/`sqlite3.execute` -> `sqlite3.Error`,
+`struct.pack`/`struct.unpack` -> `struct.error`) so those specific common
+cases resolve precisely instead of falling to `UNKNOWN` -- keyed on the
+call's FULL dotted callee text (not the bare name `_BUILTIN_RAISERS`
+matches on), since a bare-name match here would risk shadowing an
+unrelated same-module function sharing one of these names.
+
+`frob:raises` DECLARATION (T-0689, `NormalizedCall.declared_raises`): a
+same-line `# frob:raises A, B` comment on a call site (parsed by
+`frob.arch._python`'s adapter for python; `# frob:raises` alone declares
+the empty set) SUBSTITUTES its declared exception-name set for that call
+UNCONDITIONALLY -- checked FIRST, before either curated table or the
+same-module lookup, so a declaration on an otherwise-opaque ctypes/cffi
+boundary call is exactly how a caller escapes the `UNKNOWN` fail-closed
+default. This resolver only CONSUMES the declaration already parsed onto
+the model; the declaration GRAMMAR/enforcement (requiring a declaration on
+every such boundary, cross-checking it against a visible Rust/C side) is
+T-0690's job, not duplicated here."""
 # frob:waive INV006 reason="this module's 'only' occurrences are source-level \
 # design-rationale prose (the module docstring's model-limit disclosures and \
 # per-function docstrings describing already-implemented resolution/matching \
@@ -129,6 +161,13 @@ _EXCEPTION_PARENT: dict[str, str | None] = {
     "ImportError": "Exception",
     "ModuleNotFoundError": "ImportError",
     "MemoryError": "Exception",
+    # T-0689: parent links for the curated stdlib C-extension raiser table
+    # below -- `JSONDecodeError` really is a `ValueError` subclass
+    # (`json.JSONDecodeError(ValueError)`); `sqlite3.Error`/`struct.error`
+    # are their own hierarchy roots directly under `Exception`.
+    "JSONDecodeError": "ValueError",
+    "sqlite3.Error": "Exception",
+    "struct.error": "Exception",
 }
 
 #: Curated builtin-raiser table (T-0685/T-0686): bare callee name -> the
@@ -149,6 +188,32 @@ _BUILTIN_RAISERS: dict[str, frozenset[str]] = {
     "open": frozenset({"OSError"}),
     "getattr": frozenset({"AttributeError"}),
     "next": frozenset({"StopIteration"}),
+}
+
+#: Curated stdlib C-EXTENSION raiser table (T-0689), keyed on the call's
+#: FULL dotted callee text (`"json.loads"`, not the bare `"loads"`) --
+#: deliberately a SEPARATE, more specific table from `_BUILTIN_RAISERS`
+#: (which matches on bare name): a bare-name match here would risk
+#: shadowing an unrelated same-module function that happens to share a
+#: name with one of these (`def pack(...)` in the caller's own module,
+#: say) the same way `_BUILTIN_RAISERS` already narrowly accepts for true
+#: builtins with no realistic same-module collision. Qualified stdlib
+#: C-extension calls (json's `_json` accelerator, sqlite3's `_sqlite3`,
+#: struct's `_struct`) resolve to their documented raised type instead of
+#: falling through to the opaque-boundary `UNKNOWN` default (this ticket's
+#: user mandate) -- extend as more curated stdlib C-extension surface is
+#: identified; anything NOT listed here (including ctypes/cffi calls,
+#: which have no fixed per-call raised type at all -- see this module's
+#: docstring) stays `UNKNOWN`, fail-closed, unless covered by a
+#: `frob:raises` declaration (`NormalizedCall.declared_raises`).
+# frob:ticket T-0689
+_STDLIB_QUALIFIED_RAISERS: dict[str, frozenset[str]] = {
+    "json.loads": frozenset({"JSONDecodeError"}),
+    "json.load": frozenset({"JSONDecodeError"}),
+    "sqlite3.connect": frozenset({"sqlite3.Error"}),
+    "sqlite3.execute": frozenset({"sqlite3.Error"}),
+    "struct.pack": frozenset({"struct.error"}),
+    "struct.unpack": frozenset({"struct.error"}),
 }
 
 #: Raised-type name a bare (dict-shaped default, see this module's
@@ -241,28 +306,40 @@ def _nearest_preceding_catch(
 
 
 # frob:ticket T-0686
+# frob:ticket T-0689
 def _own_base_raises(
     func: NormalizedFunction, name_to_func: dict[str, NormalizedFunction]
 ) -> tuple[set[str], set[str], set[str]]:
-    """`func`'s own contribution (T-0686) before callee-graph fixpoint,
-    split into two pools whose treatment under `func`'s OWN `except`
-    clauses differs (`compute_may_raise`'s docstring): `direct_raises` --
-    from `func.raises` (a resolved-directly type, or a bare re-raise
-    resolved via `_nearest_preceding_catch`) -- ALWAYS escapes `func`
-    unconditionally; a `raise` statement, once reached, executes, and a
-    catch clause earlier in the SAME flattened function body must not be
-    credited with discharging the very re-raise it produced. `catchable`
-    -- `subscripts` (`_SUBSCRIPT_RAISE`) and each call's bare name matched
-    against `_BUILTIN_RAISERS`, plus `UNKNOWN` for any call this
-    function's own body cannot resolve -- represents a call site's
-    exception, which a wrapping `try`/`except` genuinely CAN discharge,
-    so it is left subject to `func`'s own catches by the caller
-    (`compute_may_raise`'s fixpoint). Returns `(direct_raises, catchable,
-    resolved_callee_bare_names)`: the third element is every call's bare
-    name that DOES match `name_to_func` (a same-module function this
-    resolver can recurse into), consumed by the caller's fixpoint loop
-    rather than recursed into here directly, so cycles are handled by the
-    iterative fixpoint, not unbounded recursion."""
+    """`func`'s own contribution (T-0686, extended T-0689) before
+    callee-graph fixpoint, split into two pools whose treatment under
+    `func`'s OWN `except` clauses differs (`compute_may_raise`'s
+    docstring): `direct_raises` -- from `func.raises` (a resolved-directly
+    type, or a bare re-raise resolved via `_nearest_preceding_catch`) --
+    ALWAYS escapes `func` unconditionally; a `raise` statement, once
+    reached, executes, and a catch clause earlier in the SAME flattened
+    function body must not be credited with discharging the very re-raise
+    it produced. `catchable` -- `subscripts` (`_SUBSCRIPT_RAISE`) and each
+    call's contribution -- represents a call site's exception, which a
+    wrapping `try`/`except` genuinely CAN discharge, so it is left subject
+    to `func`'s own catches by the caller (`compute_may_raise`'s fixpoint).
+
+    T-0689: each call is resolved in priority order -- (1) a `frob:raises`
+    declaration (`NormalizedCall.declared_raises is not None`) SUBSTITUTES
+    its declared set unconditionally, the intended escape hatch for an
+    opaque ctypes/cffi/C-extension boundary this resolver cannot see
+    inside of (an empty declared set is honored as-is: "declared to raise
+    nothing"); (2) failing that, the curated qualified-stdlib table
+    (`_STDLIB_QUALIFIED_RAISERS`, keyed on the call's full dotted text);
+    (3) failing that, the bare-name `_BUILTIN_RAISERS` table; (4) failing
+    that, a same-module function name (`name_to_func`) is deferred to the
+    caller's fixpoint; (5) anything else -- including every ctypes/cffi
+    call and every other unrecognized compiled-extension call, since none
+    of those resolve via (2)-(4) -- fails closed to `UNKNOWN`. Returns
+    `(direct_raises, catchable, resolved_callee_bare_names)`: the third
+    element is every call's bare name that DOES match `name_to_func`,
+    consumed by the caller's fixpoint loop rather than recursed into here
+    directly, so cycles are handled by the iterative fixpoint, not
+    unbounded recursion."""
     direct: set[str] = set()
     catchable: set[str] = set()
     resolved_callees: set[str] = set()
@@ -281,8 +358,13 @@ def _own_base_raises(
         catchable.add(_SUBSCRIPT_RAISE)
 
     for call in func.calls:
+        if call.declared_raises is not None:
+            catchable |= call.declared_raises
+            continue
         bare = _bare_callee_name(call.callee)
-        if bare in _BUILTIN_RAISERS:
+        if call.callee in _STDLIB_QUALIFIED_RAISERS:
+            catchable |= _STDLIB_QUALIFIED_RAISERS[call.callee]
+        elif bare in _BUILTIN_RAISERS:
             catchable |= _BUILTIN_RAISERS[bare]
         elif bare in name_to_func:
             resolved_callees.add(bare)
