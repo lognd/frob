@@ -1922,7 +1922,7 @@ Standing home for the 39 supply-chain.yaml entries whose controls previously car
 id: T-0735
 title: 'frob natives build: frob-owned native compilation with shared cache -- Makefiles
   become one-line shims (parent)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -1936,15 +1936,106 @@ sprint: null
 scope:
 - src/frob/**
 - docs/**
+- tests/unit/test_natives_build.py
+- tests/unit/test_scaffold_natives_shim.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_natives_build.py
+  reason: 'D-02: scope-add the evidence test files used to verify T-0735''s acceptance
+    criterion at epic-close time'
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/unit/test_scaffold_natives_shim.py
+  reason: 'D-02: scope-add the evidence test files used to verify T-0735''s acceptance
+    criterion at epic-close time'
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/unit/test_natives_build.py
+  reason: 'D-02: scope-add the evidence test files used to verify T-0735''s acceptance
+    criterion at epic-close time'
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/unit/test_scaffold_natives_shim.py
+  reason: 'D-02: scope-add the evidence test files used to verify T-0735''s acceptance
+    criterion at epic-close time'
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/unit/test_natives_build.py::TestBuildNatives::test_builds_declared_rust_natives
+- tests/unit/test_natives_build.py::TestMakefileCoreShim::test_core_recipe_is_one_line_natives_build_shim
+- tests/unit/test_scaffold_natives_shim.py::TestMakefileCoreShimTemplate::test_applying_to_fresh_repo_installs_one_line_shim
+- tests/unit/test_scaffold_natives_shim.py::TestLegacyCoreCacheDrift::test_legacy_unmanaged_core_target_reports_stale
 acceptance:
 - text: GIVEN any frob-enabled repo with [natives] WHEN uv run frob natives build
     runs THEN natives compile with the shared per-clone cache and the repo Makefile
     contains no cache logic
-  evidence: []
+  evidence:
+  - tests/unit/test_natives_build.py::TestBuildNatives::test_builds_declared_rust_natives
+  - tests/unit/test_natives_build.py::TestMakefileCoreShim::test_core_recipe_is_one_line_natives_build_shim
+  - tests/unit/test_scaffold_natives_shim.py::TestMakefileCoreShimTemplate::test_applying_to_fresh_repo_installs_one_line_shim
+  - tests/unit/test_scaffold_natives_shim.py::TestLegacyCoreCacheDrift::test_legacy_unmanaged_core_target_reports_stale
 threat: null
 component: null
 ```
 User directive 2026-07-22: T-0732's shared CARGO_TARGET_DIR fix lives in THIS repo's Makefile -- wrong layer; fix ALL repos structurally. frob.toml [natives] already declares the native crates (load_natives); the build logic belongs in frob: a "frob natives build" subcommand that does what make core does (maturin develop per declared native) WITH the shared-cache mechanism (git-common-dir keyed CARGO_TARGET_DIR, cargo's own locking -- T-0732's verified design) built in. Every repo's Makefile core target becomes "uv run frob natives build" -- one line, zero per-repo cache logic, upgraded by upgrading frob. Doctor integration: the existing native-staleness fingerprint check points at the new command as remedy. Children: (1) the subcommand + this repo's Makefile shim conversion; (2) scaffold template + conformance drift check; estate rollout via fleet at close.
+
+## Done report
+
+Epic close verification (T-0735): both declared children (T-0864, T-0865 --
+the ticket's own `blocked_by` list) are `state: done`. Searched both
+tickets.md and tickets-archive.md for `parent: T-0735` -- only T-0864 and
+T-0865 reference it; no other child exists.
+
+Verified the parent's own acceptance against reality rather than trusting
+the children's claims:
+- Read the repo Makefile directly: the `core:` target
+  (Makefile:362-364) is exactly the one-line shim `uv run frob natives
+  build`, with the `# frob:managed-block END makefile-core-shim` marker
+  immediately after it -- no CARGO_TARGET_DIR assignment or maturin-develop
+  invocation left in the Makefile itself (the T-0732 drift this epic exists
+  to retire).
+- Ran `uv run frob natives build` foreground in this repo: both declared
+  [natives] crates (strata_core, frob_core) built cleanly via `maturin
+  develop --uv --release`, using `cargo_target_dir=/home/logan/projects/
+  frob/.git/frob-cargo-target-cache` -- the git-common-dir-keyed shared
+  cache path T-0732/T-0864 designed (`git -C . rev-parse --git-common-dir`
+  resolved once, logged in the command's own output), NOT a per-worktree
+  path. The build was fast (cache hit from this session's earlier `make
+  core` runs), matching "mostly cached" expectations for a repeat build.
+
+Acceptance criterion (`GIVEN any frob-enabled repo with [natives] WHEN uv
+run frob natives build runs THEN natives compile with the shared per-clone
+cache and the repo Makefile contains no cache logic`) holds for THIS repo,
+verified directly, not by proxy.
+
+Estate rollout: T-0735's own user-directive text names "estate rollout via
+fleet at close" as part of the epic. That rollout -- walking every OTHER
+frob-enabled repo, running `frob scaffold apply` to convert each one's
+Makefile core target and applying T-0865's drift check -- is fleet-level
+work outside this repo's own tree and cannot be verified or performed from
+inside this worktree. Filed T-1031 ("frob natives build: estate
+rollout of the Makefile core one-line shim across sibling repos", scope
+docs/**) as the honest follow-up rather than either forcing a fleet
+operation this repo has no reach into, or silently dropping the directive.
+This repo itself is already fully compliant (verified above); the parent
+closes on that basis, citing the draft ticket for the estate-wide half.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_natives_build.py::TestBuildNatives::test_builds_declared_rust_natives` (pytest node id, verified passing when recorded)
+- `tests/unit/test_natives_build.py::TestMakefileCoreShim::test_core_recipe_is_one_line_natives_build_shim` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold_natives_shim.py::TestMakefileCoreShimTemplate::test_applying_to_fresh_repo_installs_one_line_shim` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold_natives_shim.py::TestLegacyCoreCacheDrift::test_legacy_unmanaged_core_target_reports_stale` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 6536 warning(s), 339 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0757 -->
 ```yaml
@@ -4294,3 +4385,40 @@ threat: null
 component: null
 ```
 Three separate dispatch batches now had implementer worktrees cut from a stale base (origin tip b3589c3e era, or fa606fe8 -- 20+ files behind main): T-0958-era batch (2 agents), wave-9 gates-tests agent, wave-9 T-1018 agent (pre-filing tip). Playbook workaround (verify merge-base, git merge main) works but every agent pays it. Root-cause where the harness worktree-creation picks its base (likely origin/main or a cached default-branch ref while local main is 240+ commits ahead and never pushed) and document the definitive mitigation in the playbook; if the base choice is outside frob's control, make the playbook warm-up step a hard MUST with the exact two commands.
+
+<!-- ticket:T-1031 -->
+```yaml
+id: T-1031
+title: 'frob natives build: estate rollout of the Makefile core one-line shim across
+  sibling repos'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/**
+threat: null
+component: null
+```
+T-0735's user directive named "estate rollout via fleet at close" as part of
+the natives-build epic: every sibling repo's Makefile core target should be
+converted to the one-line `uv run frob natives build` shim (T-0864's landed
+subcommand) via `frob scaffold apply` (T-0865's landed scaffold template +
+drift check), removing any lingering per-repo CARGO_TARGET_DIR/maturin-develop
+cache logic at the wrong layer (the exact T-0732 drift class this epic exists
+to retire).
+
+This repo itself is already compliant (Makefile `core:` is the one-line shim,
+verified at T-0735's close: `uv run frob natives build` runs successfully
+using the git-common-dir-keyed shared CARGO_TARGET_DIR).
+
+Fleet-level rollout across the other frob-enabled repos is out of THIS repo's
+own scope -- draft follow-up for whichever fleet-facing ticket/process
+actually walks the sibling-repo list and runs `frob scaffold apply` +
+`frob doctor` per repo, plus a short docs note pointing at T-0864/T-0865/
+T-0735 as the design precedent for anyone doing that rollout by hand in the
+meantime.
