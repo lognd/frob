@@ -220,10 +220,13 @@ class AppConfig(BaseModel):
     parse_passthrough: bool = False
 
     # graph
-    graph_command: str | None = None  # build|query|why
+    graph_command: str | None = None  # build|query|why|affects
     graph_path: Path | None = None
     graph_ref: str | None = None
     graph_json: bool = False
+    # frob:ticket T-0628
+    graph_max_depth: int | None = None
+    graph_max_nodes: int | None = None
 
     # ack
     ack_refs: list[str] = []
@@ -719,6 +722,9 @@ class AppConfig(BaseModel):
             "vet_jobs",
             # frob:ticket T-0877
             "scaffold_pool_n",
+            # frob:ticket T-0628
+            "graph_max_depth",
+            "graph_max_nodes",
         ):
             val = getattr(args, int_field, None)
             if val is not None:

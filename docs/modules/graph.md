@@ -109,13 +109,21 @@ def affects(snapshot: GraphSnapshot, ref: str, *,
 - **Query surface**: the MCP tool `frob_affects(symref, max_depth=None,
   max_nodes=None)` (`frob.serve`), backed by the warm graph snapshot
   `frob.serve._warm.warm_state` already builds -- no cold reload, no test
-  run. A `frob graph affects <ref>` CLI counterpart is deliberately NOT
-  built in this pass (`src/frob/app/graph_runner.py` is out of this
-  ticket's scope) -- tracked as follow-up.
-- **Not yet built**: a gate that fails when a touched symbol's `affects()`
-  dependents' digests were not acked (the CLAUDE.md vision's other half) --
-  `affects` is the read-side query this gate would consume; the gate itself
-  is future work.
+  run. `frob graph affects <ref> [path] [--json] [--max-depth N]
+  [--max-nodes N]` (T-0628, `src/frob/app/graph_runner.py`) is the CLI
+  counterpart T-0325 cut as out of scope -- prints the same
+  dependents/docs/tests, `[TRUNCATED]` flagged up front in human mode.
+- **Enforcement**: `frob.gates.affect_drift_gate` (AFFECT001/AFFECT002,
+  T-0628, `src/frob/gates/__init__.py`) is the digest-drift gate this query
+  was always meant to feed -- wired into `frob check` as the `affect_drift`
+  gate name (`gates-fast` stage group). For every symbol the working diff
+  touches, it walks that symbol's `affects()` closure and FAILS when a
+  dependent doc anchor (AFFECT001) or dependent symbol's file (AFFECT002)
+  was not ALSO touched in the same diff -- the enforcement half of the
+  CLAUDE.md north-star this module's docstring describes. A symbol with an
+  empty closure (no `uses-contract` dependents, no doc/test edges) is
+  silent; a truncated closure is checked against whatever it did visit
+  (under-reports, never false-positives).
 
 ## Call graph
 

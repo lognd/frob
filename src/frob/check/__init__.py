@@ -309,6 +309,8 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             "prework",
             # T-0851: FMT001, diff-scoped like coverage/todo above.
             "fmt",
+            # T-0628: AFFECT001/AFFECT002, diff-scoped like coverage/fmt above.
+            "affect_drift",
         }
     ),
     "gates-native": frozenset({"archgate", "clones", "perf"}),

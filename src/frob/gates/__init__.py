@@ -136,6 +136,7 @@ from frob.graph import (
 )
 from frob.graph._generated import is_generated_source
 from frob.graph._models import LockFile, SymbolRecord
+from frob.graph.affects import affects as _graph_affects
 from frob.graph.dsl import fold_comment_runs
 from frob.graph.lock import drift as _graph_drift
 from frob.graph.lock import load_lock
@@ -925,6 +926,12 @@ _KNOWN_GATE_RULES = frozenset(
         "PLACE001",
         "DRIFT001",
         "DRIFT002",
+        # T-0628: `affects()`-closure digest-drift (T-0325 follow-on) --
+        # stale dependent doc anchor (AFFECT001) or stale dependent symbol
+        # file (AFFECT002) untouched by the same diff that touched their
+        # root.
+        "AFFECT001",
+        "AFFECT002",
         "SCOPE001",
         "PRE001",
         "INV001",
@@ -2446,6 +2453,101 @@ def drift_gate(snapshot: GraphSnapshot, lock: LockFile) -> tuple[Violation, ...]
     """DRIFT001 (stale ack) and DRIFT002 (dangling edge endpoint)."""
     report = _graph_drift(lock, snapshot)
     return (*_drift001(report, snapshot), *_drift002(report))
+
+
+# ---------------------------------------------------------------------------
+# Digest-drift (AFFECT001/AFFECT002): T-0325's cut enforcement half, T-0628
+# ---------------------------------------------------------------------------
+
+
+def _affect_ref_file(ref: str) -> str:
+    """The file path a doc-anchor (`path#anchor`) or symref (`path::qualname`)
+    string is rooted in -- the common split `affects()`'s two id shapes need
+    to answer "was this file touched in the diff"."""
+    if "#" in ref:
+        return ref.split("#", 1)[0]
+    return ref.split("::", 1)[0]
+
+
+def _affect001_violation(
+    ref: str, file: str, line: int, stale_docs: list[str]
+) -> Violation:
+    """AFFECT001: a touched symbol's `affects()` closure names doc anchor(s)
+    whose file was not touched in the same diff -- the CLAUDE.md north-star
+    enforcement half `docs/modules/graph.md#affects` left as future work."""
+    return Violation(
+        rule="AFFECT001",
+        severity=Severity.ERROR,
+        file=file,
+        line=line,
+        message=(
+            f"AFFECT001: {ref} changed but its affects()-closure doc(s) "
+            f"{', '.join(sorted(stale_docs))} were not touched in this diff; "
+            f"run: frob graph affects {ref}"
+        ),
+    )
+
+
+def _affect002_violation(
+    ref: str, file: str, line: int, stale_deps: list[str]
+) -> Violation:
+    """AFFECT002: a touched symbol's `affects()` closure names dependent
+    symbol(s) (`uses-contract`) whose file was not touched in the same
+    diff -- the code half of the same enforcement gap AFFECT001 covers."""
+    return Violation(
+        rule="AFFECT002",
+        severity=Severity.ERROR,
+        file=file,
+        line=line,
+        message=(
+            f"AFFECT002: {ref} changed but its affects()-closure "
+            f"dependent(s) {', '.join(sorted(stale_deps))} were not touched "
+            f"in this diff; run: frob graph affects {ref}"
+        ),
+    )
+
+
+# frob:doc docs/modules/gates.md#affect001-affect002-t-0628
+# frob:ticket T-0628
+# frob:tests tests/test_gates_affect_drift.py::TestAffectDriftGate.test_stale_dependent_doc_flagged  # noqa: E501
+# frob:tests tests/test_gates_affect_drift.py::TestAffectDriftGate.test_stale_dependent_code_flagged  # noqa: E501
+# frob:tests tests/test_gates_affect_drift.py::TestAffectDriftGate.test_clean_when_closure_also_touched  # noqa: E501
+# frob:tests tests/test_gates_affect_drift.py::TestAffectDriftGate.test_no_closure_is_silent  # noqa: E501
+def affect_drift_gate(snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation, ...]:
+    """AFFECT001/AFFECT002 (T-0628, T-0325 follow-on): for every symbol this
+    diff touches, walk its `frob.graph.affects.affects()` closure and FAIL
+    when a dependent doc anchor (AFFECT001) or dependent symbol's file
+    (AFFECT002) was NOT also touched in the same diff -- the enforcement
+    half of the CLAUDE.md north-star ("a graph of what documentation and
+    what other code needs to be updated whenever something is touched")
+    that `docs/modules/graph.md#affects` (T-0325) explicitly cut as future
+    work. Symbols with an empty `affects()` closure (no `uses-contract`
+    dependents, no doc/test edges) are silent -- there is nothing to have
+    drifted. A symbol whose closure was truncated (`max_depth`/`max_nodes`)
+    is still checked against the (possibly partial) dependents/docs actually
+    visited; a truncated closure under-reports rather than false-positiving.
+    """
+    touched = _touched_symrefs(diff, snapshot)
+    touched_files = _touched_files(diff)
+    violations: list[Violation] = []
+    for ref in sorted(touched):
+        aff = _graph_affects(snapshot, ref)
+        if not aff.dependents and not aff.docs:
+            continue
+        record = snapshot.symbols.get(ref)
+        file = ref.split("::", 1)[0]
+        line = record.span[0] if record is not None else 0
+        stale_docs = [d for d in aff.docs if _affect_ref_file(d) not in touched_files]
+        stale_deps = [
+            dep for dep in aff.dependents if _affect_ref_file(dep) not in touched_files
+        ]
+        if stale_docs:
+            _log.debug("AFFECT001: %s stale docs=%s", ref, stale_docs)
+            violations.append(_affect001_violation(ref, file, line, stale_docs))
+        if stale_deps:
+            _log.debug("AFFECT002: %s stale dependents=%s", ref, stale_deps)
+            violations.append(_affect002_violation(ref, file, line, stale_deps))
+    return tuple(violations)
 
 
 # ---------------------------------------------------------------------------
@@ -9114,6 +9216,9 @@ _ALL_GATES = frozenset(
         "compliance",
         # T-0851: FMT001, the T-0441 follow-up (frob.gates.fmt_gate).
         "fmt",
+        # T-0628: AFFECT001/AFFECT002, the T-0325 affects()-closure
+        # digest-drift enforcement half (frob.gates.affect_drift_gate).
+        "affect_drift",
     }
 )
 
@@ -9457,6 +9562,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "prework",
     # frob:ticket T-0851
     "fmt",
+    # frob:ticket T-0628
+    "affect_drift",
 )
 
 # T-0839: import-time guard making the two constants' drift impossible to
@@ -9602,6 +9709,10 @@ def _build_jobs(
         # against repo_root so a `frob check <subdir>` run resolves the same
         # repo-relative diff hunk paths coverage_gate's TODO001 half does.
         "fmt": lambda: fmt_gate(st.repo_root, st.diff),
+        # T-0628: AFFECT001/AFFECT002, diff-scoped like coverage/fmt above --
+        # touched_symrefs/touched_files are already computed against
+        # st.diff/st.snapshot by _build_jobs' shared helpers.
+        "affect_drift": lambda: affect_drift_gate(st.snapshot, st.diff),
     }
     process_jobs: dict[str, _ProcessJob] = {
         "perf": _ProcessJob(perf_gate, (st.root, st.snapshot)),
@@ -10186,6 +10297,7 @@ __all__ = [
     "Violation",
     "WaiverRef",
     "active_ticket",
+    "affect_drift_gate",
     "arch_gate",
     "clear_ratchet_entry",
     "coverage_gate",

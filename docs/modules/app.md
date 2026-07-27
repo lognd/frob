@@ -63,6 +63,12 @@ AppConfig.from_args(args: argparse.Namespace) -> AppConfig
     # `main()` actually calls.
 ```
 
+T-0628: `graph_max_depth`/`graph_max_nodes` (both `int | None`, default
+`None`) are `frob graph affects`'s optional `--max-depth`/`--max-nodes`
+overrides for `frob.graph.affects.affects`'s own bounds -- collected via
+the ordinary int-field loop in `from_external`, same posture as
+`perf_max_depth`.
+
 ## Runners
 
 Each runner exposes exactly one public function, `run(cfg: AppConfig) -> None`,
@@ -124,8 +130,10 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
   `cfg.docs_path`.
 - `release_runner.run` -- dispatches to the release subcommand named by
   `cfg.release_command` (mechanical semver stamping/checking).
-- `graph_runner.run` -- dispatches build/query/why based on
-  `cfg.graph_command` (docs/modules/graph.md).
+- `graph_runner.run` -- dispatches build/query/why/affects based on
+  `cfg.graph_command` (docs/modules/graph.md); `affects` (T-0628) reads
+  `cfg.graph_max_depth`/`cfg.graph_max_nodes` (both optional, default to
+  `frob.graph.affects.affects`'s own keyword defaults).
 - `bind_runner.run` -- verifies BIND declarations against source signatures
   (docs/modules/bind.md); parses its own argv rather than taking `AppConfig`.
 - `cycle_runner.run` -- runs `frob.cycle.graph.find_cycles` over

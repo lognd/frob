@@ -14,6 +14,8 @@ declaration).
 |---|---|---|
 | DRIFT001 | drift | acked digest moved without re-ack (`frob ack`) |
 | DRIFT002 | drift | edge endpoint no longer resolves (rename/delete) |
+| AFFECT001 | affect_drift | a diff-touched symbol's `affects()` closure names a dependent doc anchor whose file was not also touched in this diff -- see "AFFECT001/AFFECT002 (T-0628)" below |
+| AFFECT002 | affect_drift | a diff-touched symbol's `affects()` closure names a dependent symbol (`uses-contract`) whose file was not also touched in this diff -- see "AFFECT001/AFFECT002 (T-0628)" below |
 | COV001 | coverage | public symbol has no `doc` edge (docstring counts via `doc` facet only if policy says so) |
 | COV002 | coverage | changed symbol has neither a `frob:ticket` edge to an open ticket NOR an open ticket whose `scope` glob covers its file (so one scoped ticket accounts for a whole refactor, not a per-symbol directive). A `frob:ticket` edge to a ticket that just closed to `DONE` in this same uncommitted diff (`tickets.md` itself touched) also counts -- T-0214's grace window, see design decisions below |
 | COV003 | coverage | ticket in state done with evidence ids that do not resolve to collected tests (never verifies PASS/FAIL, nor scope-binding -- see the T-0398 note below the table; node-, file-, and directory-level evidence ids all resolve, T-0298 below) |
@@ -948,12 +950,49 @@ moving it to run once, serially, before any stage is dispatched removes
 the race entirely and is also strictly cheaper (one fingerprint pass per
 `frob check` run instead of one per gate family).
 
+## AFFECT001 AFFECT002 (T-0628)
+
+<!-- frob:describes src/frob/gates/__init__.py::affect_drift_gate -->
+
+T-0325 landed `frob.graph.affects.affects` (docs/modules/graph.md#affects)
+-- the warm, test-free query answering "if X's digest changed, exactly
+WHICH documentation and WHICH other code must be reviewed/updated" -- but
+explicitly cut its enforcement half as future work. `affect_drift_gate`
+(gate name `affect_drift`, `gates-fast` stage group) is that enforcement:
+for every symbol the working diff touches (`_touched_symrefs`, the same
+helper `coverage_gate`/`policy_gate` use), it walks that symbol's
+`affects()` closure and fails when
+
+- a dependent doc anchor (`frob:doc`/`frob:describes`) names a file NOT
+  also touched anywhere in the same diff (AFFECT001), or
+- a dependent symbol (reached via a `uses-contract` chain) lives in a file
+  NOT also touched anywhere in the same diff (AFFECT002).
+
+Both are ERROR, unwaivable by default like the rest of the drift family
+(waivable via the ordinary `frob:waive AFFECT001/AFFECT002 reason="..."`
+channel if a change genuinely does not need its dependent updated). A
+symbol whose `affects()` closure is empty (no `uses-contract` dependents,
+no doc/test edges at all) is silent -- there is nothing that could have
+drifted. A closure `affects()` itself reports `truncated=True` for
+(`max_depth`/`max_nodes` cut the walk short) is still checked against
+whatever it DID visit: the gate under-reports on a truncated closure
+rather than false-positiving on nodes it never saw.
+
+"Touched" is file-granular, not line/hunk-granular -- a dependent doc or
+symbol only needs SOME hunk anywhere in its file to clear the gate, not a
+hunk overlapping its own span. This mirrors `coverage_gate`'s COV002 scope
+grace posture (a file-level touch accounts for its whole contents) rather
+than requiring a caller to prove the exact line changed; the query-side
+`frob graph affects <ref>` CLI (docs/modules/graph.md#affects) is the tool
+for a developer to see precisely what the gate is asking about.
+
 ## Public API
 
 <!-- frob:describes src/frob/gates/__init__.py::SCOPED_RUN_FLAKY_RULE_IDS -->
 <!-- frob:describes src/frob/gates/__init__.py::run_gates -->
 <!-- frob:describes src/frob/gates/__init__.py::evidence_covers_scope -->
 <!-- frob:describes src/frob/gates/__init__.py::drift_gate -->
+<!-- frob:describes src/frob/gates/__init__.py::affect_drift_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::coverage_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::scope_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::prework_gate -->

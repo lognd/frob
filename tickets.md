@@ -1485,7 +1485,7 @@ playbook's `--only` loop.
 ```yaml
 id: T-0628
 title: frob graph affects CLI subcommand + digest-drift gate (T-0325 follow-on)
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -1495,16 +1495,204 @@ scope:
 - src/frob/app/graph_runner.py
 - src/frob/gates/**
 - docs/modules/graph.md
+- src/frob/app/config.py
+- src/frob/app/app.py
+- src/frob/__main__.py
+- README.md
+- tests/test_graph_affects_runner.py
+- docs/modules/gates.md
+- src/frob/check/__init__.py
+- tests/test_gates_affect_drift.py
+- docs/modules/app.md
+scope_changes:
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'A `frob graph affects` CLI subcommand needs the standard App/AppConfig
+
+    argparse wiring trio (Subcommand enum + AppConfig fields in config.py,
+
+    parser registration in __main__.py, runner-module registration in app.py)
+
+    plus the README command-table row (DOC005 drift-lock), same pattern as
+
+    T-0638''s `frob deprecated` land. The original ticket scope only listed the
+
+    runner file itself; widening to cover the wiring call sites.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: src/frob/app/app.py
+  reason: 'A `frob graph affects` CLI subcommand needs the standard App/AppConfig
+
+    argparse wiring trio (Subcommand enum + AppConfig fields in config.py,
+
+    parser registration in __main__.py, runner-module registration in app.py)
+
+    plus the README command-table row (DOC005 drift-lock), same pattern as
+
+    T-0638''s `frob deprecated` land. The original ticket scope only listed the
+
+    runner file itself; widening to cover the wiring call sites.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: src/frob/__main__.py
+  reason: 'A `frob graph affects` CLI subcommand needs the standard App/AppConfig
+
+    argparse wiring trio (Subcommand enum + AppConfig fields in config.py,
+
+    parser registration in __main__.py, runner-module registration in app.py)
+
+    plus the README command-table row (DOC005 drift-lock), same pattern as
+
+    T-0638''s `frob deprecated` land. The original ticket scope only listed the
+
+    runner file itself; widening to cover the wiring call sites.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: README.md
+  reason: 'A `frob graph affects` CLI subcommand needs the standard App/AppConfig
+
+    argparse wiring trio (Subcommand enum + AppConfig fields in config.py,
+
+    parser registration in __main__.py, runner-module registration in app.py)
+
+    plus the README command-table row (DOC005 drift-lock), same pattern as
+
+    T-0638''s `frob deprecated` land. The original ticket scope only listed the
+
+    runner file itself; widening to cover the wiring call sites.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: tests/test_graph_affects_runner.py
+  reason: 'A `frob graph affects` CLI subcommand needs the standard App/AppConfig
+
+    argparse wiring trio (Subcommand enum + AppConfig fields in config.py,
+
+    parser registration in __main__.py, runner-module registration in app.py)
+
+    plus the README command-table row (DOC005 drift-lock), same pattern as
+
+    T-0638''s `frob deprecated` land. The original ticket scope only listed the
+
+    runner file itself; widening to cover the wiring call sites.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'A `frob graph affects` CLI subcommand needs the standard App/AppConfig
+
+    argparse wiring trio (Subcommand enum + AppConfig fields in config.py,
+
+    parser registration in __main__.py, runner-module registration in app.py)
+
+    plus the README command-table row (DOC005 drift-lock), same pattern as
+
+    T-0638''s `frob deprecated` land. The original ticket scope only listed the
+
+    runner file itself; widening to cover the wiring call sites.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: 'New gate names must be added to a frob check --only stage group
+
+    (_STAGE_GROUPS in src/frob/check/__init__.py) or
+
+    TestCheckStageGroups.test_available_stages_cover_every_gate_and_tool fails --
+
+    registering "affect_drift" in frob.gates._ALL_GATES without also listing it
+
+    in gates-fast leaves it uncoverable by any --only group, which that test
+
+    catches mechanically. Widening scope to the one dict literal that needs the
+
+    new entry.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: tests/test_gates_affect_drift.py
+  reason: New AFFECT001/AFFECT002 gate needs direct unit test coverage for close's
+    TEST00x gate, same pattern as tests/test_graph_affects.py
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: docs/modules/app.md
+  reason: 'AFFECT001 (this ticket''s own new gate) correctly flagged that config.py/graph_runner.py
+    changes touch docs/modules/app.md#config and #runners obligations; updating that
+    doc to describe the new affects subcommand/fields is the real fix, not a waive'
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_affects_requires_ref
+- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_affects_unresolvable_ref_exits_1
+- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_human_mode_reports_dependents_docs_tests
+- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_json_mode_payload
+- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_truncated_closure_flagged
+- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_no_closure_is_silent
+- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_stale_dependent_doc_flagged
+- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_stale_dependent_code_flagged
+- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_clean_when_closure_also_touched
 acceptance:
 - text: GIVEN a symbol with dependents WHEN frob graph affects SYMREF runs THEN the
     affected code/docs/tests print with truncation flagged; GIVEN a diff changing
     a symbol whose affects-closure docs were untouched WHEN the drift gate runs THEN
     it reports the stale dependents
-  evidence: []
+  evidence:
+  - tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_truncated_closure_flagged
+  - tests/test_gates_affect_drift.py::TestAffectDriftGate::test_stale_dependent_doc_flagged
+  - tests/test_gates_affect_drift.py::TestAffectDriftGate::test_stale_dependent_code_flagged
 threat: null
 component: null
 ```
 T-0325 landed the warm affects() library query and frob_affects MCP tool but cut two surfaces as out of scope, noting them only in docs/modules/graph.md prose: (a) a frob graph affects REF CLI subcommand in src/frob/app/graph_runner.py so the north-star query is usable outside MCP; (b) a digest-drift gate that consumes the affects closure to FAIL when a changed symbol's dependent docs/code were not updated in the same change -- the enforcement half of the north-star (CLAUDE.md: 'a graph of WHAT DOCUMENTATION and WHAT OTHER CODE needs to be updated whenever something is touched'). Cut work must live in tickets, not prose -- this is that ticket.
+
+## Done report
+
+Changed:
+- src/frob/app/graph_runner.py: new `_run_affects` (`frob graph affects <ref>`), `_affects_json_payload`/`_render_affects_lines` helpers, dispatch case in `run()`.
+- src/frob/app/config.py: `graph_max_depth`/`graph_max_nodes` (`int | None`) AppConfig fields, wired into the existing int-field collection loop.
+- src/frob/__main__.py: `graph affects` subparser (`--json`/`--max-depth`/`--max-nodes`) registered under `_add_graph_parser`.
+- src/frob/gates/__init__.py: new `affect_drift_gate` (AFFECT001 stale doc / AFFECT002 stale dependent code), `_affect_ref_file`/`_affect001_violation`/`_affect002_violation` helpers; registered gate name `affect_drift` in `_ALL_GATES`/`_CANONICAL_GATE_ORDER`/`_build_jobs`; rule ids added to `_KNOWN_GATE_RULES`; `affect_drift_gate` exported via `__all__`.
+- src/frob/check/__init__.py: `affect_drift` added to the `gates-fast` `_STAGE_GROUPS` entry (required by `TestCheckStageGroups.test_available_stages_cover_every_gate_and_tool`).
+- README.md: `frob graph` command-table row description updated to mention `affects`.
+- docs/modules/graph.md: `#affects` section rewritten to document the new CLI subcommand and the `affect_drift_gate` enforcement half, replacing the "deliberately NOT built"/"future work" prose T-0325 left.
+- docs/modules/app.md: `graph_runner.run` bullet updated (affects dispatch + new AppConfig fields); a short note added to the Config section for the two new fields.
+- docs/modules/gates.md: two new rule-catalog rows (AFFECT001/AFFECT002) plus a full "AFFECT001 AFFECT002 (T-0628)" detail section; `affect_drift_gate` added to the Public API `frob:describes` list.
+- tests/test_graph_affects_runner.py (new): `TestGraphAffectsRunner` -- requires-ref, unresolvable-ref, human mode, JSON mode, truncated-closure cases for `_run_affects`.
+- tests/test_gates_affect_drift.py (new): `TestAffectDriftGate` -- silent-on-empty-closure, stale-doc, stale-dependent-code, and clean-when-touched cases for `affect_drift_gate`.
+
+Evidence:
+- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_affects_requires_ref
+- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_affects_unresolvable_ref_exits_1
+- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_human_mode_reports_dependents_docs_tests
+- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_json_mode_payload
+- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_truncated_closure_flagged
+- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_no_closure_is_silent
+- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_stale_dependent_doc_flagged
+- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_stale_dependent_code_flagged
+- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_clean_when_closure_also_touched
+- tests/system/test_cli_check.py -k StageGroups (4 passed) -- confirms `affect_drift`'s new stage-group membership keeps `_ALL_GATES`/`_STAGE_GROUPS` in sync.
+
+Filed: none (REG010 fired WARN-only for AFFECT001/AFFECT002 missing a check-coverage.yaml entry; docs/design/registry/** is outside this ticket's declared scope and REG010 is advisory, not blocking -- left as-is rather than widening scope again for a warn-tier registry hygiene row).
+
+Gates: `frob check . --only gates-fast --ticket T-0628` clean (0 errors, after a `frob ticket sweep T-0628` pre-work-sweep fix and two `AFFECT001` self-catches on this diff's own `docs/modules/app.md` obligations, resolved by documenting the new fields/dispatch there rather than waiving). `frob check . --only gates-native --ticket T-0628` clean. `frob check . --only gates-security --ticket T-0628` clean. `frob check . --only lint --ticket T-0628` clean (0 errors, 0 warnings after ruff-format/E501 fixes). `frob check . --only static --ticket T-0628` clean (pre-existing exports/arch findings only, unrelated to this change). `frob test --base main` (touched-set): python suite exit=0, PASS.
 
 <!-- ticket:T-0629 -->
 ```yaml

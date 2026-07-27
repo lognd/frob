@@ -1,4 +1,4 @@
-"""CLI wiring for `frob graph build|query|why` (docs/modules/graph.md)."""
+"""CLI wiring for `frob graph build|query|why|affects` (docs/modules/graph.md)."""
 
 from __future__ import annotations
 
@@ -27,8 +27,10 @@ def run(cfg: AppConfig) -> None:
         _run_query(root, cache, cfg)
     elif cfg.graph_command == "why":
         _run_why(root, cache, cfg)
+    elif cfg.graph_command == "affects":
+        _run_affects(root, cache, cfg)
     else:
-        _log.error("usage: frob graph <build|query|why> ...")
+        _log.error("usage: frob graph <build|query|why|affects> ...")
         sys.exit(1)
 
 
@@ -229,3 +231,76 @@ def _run_why(root: Path, cache: Path, cfg: AppConfig) -> None:
         return
 
     _log.info("\n".join(_render_why_lines(ref, acked, stale, dangling)))
+
+
+def _affects_json_payload(aff) -> dict:  # noqa: ANN001
+    """The `--json` payload for `frob graph affects` -- `AffectedSet`'s
+    fields verbatim, the CLI-side mirror of `frob_affects` MCP tool's
+    return shape (docs/modules/graph.md#affects)."""
+    return {
+        "root": aff.root,
+        "dependents": list(aff.dependents),
+        "docs": list(aff.docs),
+        "tests": list(aff.tests),
+        "truncated": aff.truncated,
+    }
+
+
+def _render_affects_lines(aff) -> list[str]:  # noqa: ANN001
+    """Human-readable `frob graph affects` report lines -- dependents, doc
+    anchors, and tests the `affects()` closure found, with the truncation
+    flag surfaced up front per the ticket's acceptance criterion."""
+    lines = [f"affects: {aff.root}" + ("  [TRUNCATED]" if aff.truncated else "")]
+    lines.append(f"dependents ({len(aff.dependents)}):")
+    for dep in aff.dependents:
+        lines.append(f"  {dep}")
+    lines.append(f"docs ({len(aff.docs)}):")
+    for doc in aff.docs:
+        lines.append(f"  {doc}")
+    lines.append(f"tests ({len(aff.tests)}):")
+    for test in aff.tests:
+        lines.append(f"  {test}")
+    return lines
+
+
+# frob:ticket T-0628
+# frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_human_mode_reports_dependents_docs_tests  # noqa: E501
+# frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_json_mode_payload  # noqa: E501
+# frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_truncated_closure_flagged  # noqa: E501
+def _run_affects(root: Path, cache: Path, cfg: AppConfig) -> None:
+    """`frob graph affects <ref>`: the CLI counterpart T-0325 deliberately
+    cut (docs/modules/graph.md#affects) -- prints the same `AffectedSet`
+    (dependents/docs/tests, truncation flagged) the `frob_affects` MCP tool
+    already answers, so the north-star query is usable outside MCP."""
+    from frob.graph import resolve
+    from frob.graph.affects import affects
+
+    if cfg.graph_ref is None:
+        _log.error("frob graph affects requires <ref>")
+        sys.exit(1)
+
+    loaded = _load_snapshot(root, cache)
+    if loaded.is_err:
+        _log.error("graph unavailable: %s", loaded.danger_err)
+        sys.exit(1)
+    snapshot = loaded.danger_ok
+
+    resolved = resolve(snapshot, cfg.graph_ref)
+    if resolved.is_err:
+        _log.error("graph affects: %s: %s", cfg.graph_ref, resolved.danger_err)
+        sys.exit(1)
+
+    kwargs = {}
+    if cfg.graph_max_depth is not None:
+        kwargs["max_depth"] = cfg.graph_max_depth
+    if cfg.graph_max_nodes is not None:
+        kwargs["max_nodes"] = cfg.graph_max_nodes
+    aff = affects(snapshot, cfg.graph_ref, **kwargs)
+
+    if cfg.graph_json:
+        import json
+
+        _log.info(json.dumps(_affects_json_payload(aff), indent=2))
+        return
+
+    _log.info("\n".join(_render_affects_lines(aff)))

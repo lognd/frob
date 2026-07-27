@@ -60,7 +60,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 
 | Command | Description |
 |---------|-------------|
-| `frob graph` | Obligation graph: build the cache, query a symbol's edges, or explain drift (`why`) |
+| `frob graph` | Obligation graph: build the cache, query a symbol's edges, explain drift (`why`), or walk the transitive doc/code digest-drift closure (`affects`) |
 | `frob ack` | Acknowledge current digests for one or more symbol refs, updating `frob.lock` |
 | `frob ticket` | The statically-checkable ticket queue: new/list/show/doable/start/attach/block/close/fail |
 | `frob check` | Aggregate quality gate: ruff, ty, cycle/dup/arch/bind/exports, and the enforcement gates |

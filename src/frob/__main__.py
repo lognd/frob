@@ -738,6 +738,20 @@ def _add_graph_parser(sub) -> None:
     graph_why_p.add_argument("graph_ref", metavar="ref")
     graph_why_p.add_argument("graph_path", metavar="path", nargs="?", default=".")
     graph_why_p.add_argument("--json", dest="graph_json", action="store_true")
+    # frob:ticket T-0628
+    graph_affects_p = graph_sub.add_parser(
+        "affects",
+        help="transitive uses-contract dependents + docs/tests a ref's change affects",
+    )
+    graph_affects_p.add_argument("graph_ref", metavar="ref")
+    graph_affects_p.add_argument("graph_path", metavar="path", nargs="?", default=".")
+    graph_affects_p.add_argument("--json", dest="graph_json", action="store_true")
+    graph_affects_p.add_argument(
+        "--max-depth", dest="graph_max_depth", type=int, default=None
+    )
+    graph_affects_p.add_argument(
+        "--max-nodes", dest="graph_max_nodes", type=int, default=None
+    )
 
 
 # frob:ticket T-0030
