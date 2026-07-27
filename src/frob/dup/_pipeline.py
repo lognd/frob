@@ -176,6 +176,7 @@ from frob.graph._models import GraphSnapshot, SymbolKind
 from frob.graph.callgraph import CallGraph, build_call_graph
 from frob.lang._common import _CANONICAL_VOCAB
 from frob.logging import get_logger
+from frob.process._lock import derived_state_write_lock
 
 _log = get_logger(__name__)
 
@@ -1886,6 +1887,7 @@ def _r5_groups(
 
 
 # frob:doc docs/modules/dup.md#public-api
+# frob:ticket T-0918
 def find_clones(
     snapshot: GraphSnapshot, cfg: DupConfig, diff: Diff | None = None
 ) -> Result[CloneReport, DupError]:
@@ -1895,6 +1897,13 @@ def find_clones(
     path); `diff=None` scans the whole snapshot. Fingerprints and pairwise
     verdicts are read/written through `frob.dup._cache` (content-addressed
     by body digest), so re-runs over an unchanged body/pair skip recompute.
+
+    T-0918: the fingerprint-cache rebuild below is wrapped in `frob.process.
+    _lock.derived_state_write_lock`, which takes a real cross-process
+    EXCLUSIVE `derived_state_lock` when called standalone but no-ops when
+    this process already holds the lock in another thread (e.g. nested
+    inside `frob check`'s SHARED hold) -- see that function's docstring
+    for the full reentrancy contract and its accepted soundness trade-off.
     """
     if not _core.core_available():
         _log.warning(
@@ -1903,13 +1912,15 @@ def find_clones(
         )
         return Err(DupError.CoreUnavailable)
 
-    touched = touched_refs(snapshot, diff) if diff is not None else None
-    state = _FpState(root=Path(snapshot.root), cfg=cfg)
-    for symref, record in snapshot.symbols.items():
-        _fingerprint_symbol(state, symref, record)
+    root = Path(snapshot.root)
+    with derived_state_write_lock(root):
+        touched = touched_refs(snapshot, diff) if diff is not None else None
+        state = _FpState(root=root, cfg=cfg)
+        for symref, record in snapshot.symbols.items():
+            _fingerprint_symbol(state, symref, record)
 
-    groups = _all_rung_groups(state, snapshot, touched, cfg)
-    return Ok(_clone_report(state, groups))
+        groups = _all_rung_groups(state, snapshot, touched, cfg)
+        return Ok(_clone_report(state, groups))
 
 
 def _is_private_helper(record: Any) -> bool:

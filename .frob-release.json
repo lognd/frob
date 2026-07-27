@@ -824,6 +824,7 @@
     "src/frob/process/_guard.py::guarded_subprocess_run": "e6832aeb42abc3cd3b4f9ffa108eafc827c68670cf3556925e2387416dc8af7c",
     "src/frob/process/_guard.py::net_enabled": "3b44e0836b91d9905738fe0dd9da0f426e45a52ac69107357ab93771a1319076",
     "src/frob/process/_lock.py::derived_state_lock": "00d14cd626641cb9c8da9c671be7e34ee5ac0af415e3262f0e55c030d701f834",
+    "src/frob/process/_lock.py::derived_state_write_lock": "8f3655d4128cd1cc86bef512a762b085e8f22e1092657824d4f5d1b51745ff66",
     "src/frob/process/parsers/cargo.py::parse_cargo": "1a3486be31c610b31191ae5d538e27ff27c586cf663a2c669d5b343a686b16ca",
     "src/frob/process/parsers/clang.py::parse_clang": "9add94500c3700c994062f83b277c202d4570a4e02f662aac6c794b878869a72",
     "src/frob/process/parsers/clang_tidy.py::parse_clang_tidy": "f108390d5bf1d8a69a0e56dfd659acfbff563e40cc8350357fe729698cb71d76",
@@ -1605,5 +1606,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.165.0"
+  "version": "0.166.0"
 }

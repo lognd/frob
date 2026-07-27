@@ -692,6 +692,32 @@ class TestBuildIncremental:
         _write(tmp_path, "src/b.py", "def bar() -> None:\n    pass\n")
         return tmp_path
 
+    # frob:ticket T-0918
+    def test_stats_sum_source_and_doc_counts_not_difference(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0918: `build_graph`'s `parsed_count = src_parsed + doc_parsed`
+        and `cache_hits = src_hits + doc_hits` must be the SUM of the
+        source-file and doc-file tallies, not their difference -- a
+        mutation-test regression guard (TEST016 survivor at the lines that
+        combine the two `_ingest_*_files` results). A tree with exactly one
+        source file and one doc file makes both addends non-zero and
+        unequal in effect from a subtraction on the first (fresh-parse)
+        build, and both addends non-zero again on the second (all-cache-hit)
+        build -- so a `+` -> `-` mutation on either line changes the
+        asserted totals from 2 to 0, not just off-by-something."""
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        _write(tmp_path, "README.md", "# Title\n")
+        cache = tmp_path / ".frob" / "cache.db"
+
+        first = build_graph(tmp_path, cache).danger_ok
+        assert first.stats.parsed == 2  # 1 source + 1 doc, both freshly parsed
+        assert first.stats.cache_hits == 0
+
+        second = build_graph(tmp_path, cache).danger_ok
+        assert second.stats.parsed == 0
+        assert second.stats.cache_hits == 2  # 1 source + 1 doc, both cache hits
+
     def test_second_build_is_all_cache_hits(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/__init__.py::build_graph
         root = self._tree(tmp_path)

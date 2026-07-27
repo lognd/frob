@@ -74,6 +74,45 @@ _LOCK_REL = Path(".frob") / "derived.lock"
 # OS lock; only same-thread re-entry is short-circuited.
 _lock_local = threading.local()
 
+# frob:ticket T-0918
+# T-0918: PROCESS-wide (not thread-local) reentrancy signal. `_lock_local`
+# above only answers "does THIS thread already hold the lock" -- it says
+# nothing about a SIBLING thread in the same process (e.g. `frob check`'s
+# `ThreadPoolExecutor` gate workers) holding it concurrently. `flock(2)`
+# itself gives no same-process reentrancy across distinct open file
+# descriptions: a worker thread that naively requested EXCLUSIVE while the
+# main thread already holds SHARED on the same lock file would genuinely
+# block against its own process's other thread -- a real deadlock, not a
+# logical contract violation (see T-0879's Done report and this module's
+# own docstring for the flock(2) citation). `_process_held_counts` tracks,
+# per lock-file path, how many distinct real OS-level acquisitions (across
+# ALL threads, ANY mode) are currently outstanding in THIS process; it is
+# incremented exactly once per first-time (non-reentrant) acquire and
+# decremented exactly once when that acquisition's final release happens,
+# guarded by `_process_registry_lock` since multiple threads race on it
+# concurrently. `derived_state_write_lock` below is the only reader.
+_process_registry_lock = threading.Lock()
+_process_held_counts: dict[str, int] = {}
+
+
+# frob:doc docs/modules/process.md#derived-state-lock-t-0859
+# frob:ticket T-0918
+def _process_already_holds(root: Path) -> bool:
+    """Whether ANY thread in THIS process currently holds `derived_state_lock`
+    for `root`, in any mode (shared or exclusive).
+
+    This is the process-wide reentrancy signal `derived_state_write_lock`
+    consults before taking a real OS-level exclusive lock: a `True` here
+    means some other thread in this same process (or this thread itself)
+    already has skin in the game, so a naive same-process EXCLUSIVE
+    request here would deadlock against it (flock has no same-process
+    reentrancy across distinct fds). Says nothing about OTHER processes --
+    those are still fully serialized through the real `flock(2)` call.
+    """
+    key = str(_derived_lock_path(root))
+    with _process_registry_lock:
+        return _process_held_counts.get(key, 0) > 0
+
 
 # frob:doc docs/modules/process.md#derived-state-lock-t-0859
 def _derived_lock_path(root: Path) -> Path:
@@ -161,6 +200,8 @@ def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
     fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
     fcntl.flock(fd, fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
     held[key] = (fd, exclusive, 1)
+    with _process_registry_lock:
+        _process_held_counts[key] = _process_held_counts.get(key, 0) + 1
     _log.debug(
         "process: derived_state_lock acquired (%s, exclusive=%s)",
         path,
@@ -172,6 +213,12 @@ def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
         del held[key]
         fcntl.flock(fd, fcntl.LOCK_UN)
         os.close(fd)
+        with _process_registry_lock:
+            remaining = _process_held_counts.get(key, 0) - 1
+            if remaining <= 0:
+                _process_held_counts.pop(key, None)
+            else:
+                _process_held_counts[key] = remaining
         _log.debug(
             "process: derived_state_lock released (%s, exclusive=%s)",
             path,
@@ -179,4 +226,90 @@ def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
         )
 
 
-__all__ = ["derived_state_lock"]
+# frob:doc docs/modules/process.md#derived-state-lock-t-0859
+# frob:tests tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_standalone_rebuild_takes_exclusive  # noqa: E501
+# frob:tests tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_nested_inside_shared_holder_does_not_deadlock  # noqa: E501
+# frob:tests tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_concurrent_other_process_writer_still_blocked  # noqa: E501
+# frob:ticket T-0918
+@contextmanager
+def derived_state_write_lock(root: Path) -> Iterator[None]:
+    """Writer lock for a cache rebuilder that may run standalone OR nested
+    inside an existing `derived_state_lock` holder in this SAME process
+    (T-0918).
+
+    `frob.dup.find_clones` and `frob.graph.build_graph` both rebuild
+    derived state under `.frob`, but unlike `frob.mutate.run_mutations`/
+    `frob.doctor.run_diagnosis` (which unconditionally wrap themselves in
+    `derived_state_lock(root, exclusive=True)`, T-0879) they are NOT always
+    invoked standalone: `frob check` also calls them from a
+    `ThreadPoolExecutor` gate-worker thread while ITS OWN main thread holds
+    `derived_state_lock(root, exclusive=False)` (SHARED) for the run's
+    whole duration. Wrapping them in a naive unconditional
+    `derived_state_lock(root, exclusive=True)` would deadlock every such
+    run: the worker thread's EXCLUSIVE request blocks on `flock(2)` against
+    the main thread's SHARED hold on a DIFFERENT open file description, and
+    that SHARED hold cannot release until the worker returns (see this
+    module's docstring and T-0879's Done report for the citation).
+
+    Chosen semantics: before taking a real lock, this consults
+    `_process_already_holds(root)` -- the T-0918 process-wide (not just
+    thread-local) reentrancy signal:
+
+    - If NO thread in this process currently holds `derived_state_lock`
+      for `root`, this behaves exactly like `derived_state_lock(root,
+      exclusive=True)`: a normal cross-process EXCLUSIVE acquire, blocking
+      out every other reader/writer process. This is the standalone-
+      rebuild path (e.g. a direct `frob.dup.find_clones` call outside
+      `frob check`).
+    - If SOME thread in this process already holds the lock (in EITHER
+      mode -- this thread itself via reentry, or a different thread, e.g.
+      `frob check`'s main thread holding SHARED), this is a SAME-PROCESS
+      NO-OP: no new OS-level lock is taken at all. The caller trusts that
+      the outer holder already serializes this whole process against every
+      OTHER process for the derived-state directory; this rebuild is
+      running inside that window, not opening a new one.
+
+    This is a deliberate SOUNDNESS TRADE-OFF, not a free lunch: two
+    `frob check` runs in two DIFFERENT processes each hold their own
+    SHARED lock concurrently (by design -- readers don't exclude
+    readers), and if both reach a dup/graph rebuild at the same moment,
+    each one's `derived_state_write_lock` sees its OWN process already
+    holding the lock and no-ops, so the two rebuilds are NOT mutually
+    exclusive against each other. That gap is accepted here because it is
+    no worse than the pre-T-0859 baseline (no lock at all) for this exact
+    nested case, and closing it fully needs `frob check` itself to
+    upgrade its run-wide hold to EXCLUSIVE around a rebuild stage --
+    tracked separately, out of this ticket's scope
+    (`src/frob/process/_lock.py`, `src/frob/dup/_pipeline.py`,
+    `src/frob/graph/__init__.py` only). What this DOES fully close: a
+    standalone rebuild (no other in-process holder) is still fully
+    cross-process exclusive, and a rebuild nested inside a check-style
+    SHARED holder no longer deadlocks.
+
+    The same gap applies, by construction, to two SIBLING calls racing
+    within one process with no legitimate outer holder at all: the
+    process-wide signal cannot distinguish "a real outer holder that
+    already serializes this process against others" from "some other
+    thread mid-way through its OWN standalone `derived_state_write_lock`
+    call" -- whichever caller wins the race to acquire first makes the
+    second one see `_process_already_holds(root) is True` and no-op
+    without waiting. There is no current production call site that
+    invokes `find_clones`/`build_graph` this way (both call sites are
+    either fully standalone or run under `frob check`'s single main-
+    thread SHARED hold), so this is a documented latent gap, not an
+    observed regression; a future caller that fans out concurrent
+    standalone rebuilds in one process would need a different primitive.
+    """
+    if _process_already_holds(root):
+        _log.debug(
+            "process: derived_state_write_lock: %s already held by this "
+            "process (some thread), same-process no-op (T-0918)",
+            root,
+        )
+        yield
+        return
+    with derived_state_lock(root, exclusive=True):
+        yield
+
+
+__all__ = ["derived_state_lock", "derived_state_write_lock"]

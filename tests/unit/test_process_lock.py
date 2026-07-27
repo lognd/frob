@@ -1,15 +1,28 @@
 """Tests for `frob.process._lock.derived_state_lock` (T-0859): the
 cross-process shared/exclusive `.frob/derived.lock` primitive `frob.check`'s
 entry points hold for their entire run to close the cross-process TOCTOU
-window T-0603's single in-process precheck left open."""
+window T-0603's single in-process precheck left open.
+
+Also covers `derived_state_write_lock` (T-0918): the process-wide
+reentrancy-aware writer entry point `frob.dup.find_clones`/
+`frob.graph.build_graph` use, which must take a real exclusive lock
+standalone but must not deadlock when nested inside a same-process SHARED
+holder (`frob check`'s gate-worker threads)."""
 
 from __future__ import annotations
 
+import multiprocessing
+import multiprocessing.synchronize
 import threading
 import time
 from pathlib import Path
 
-from frob.process._lock import _derived_lock_path, derived_state_lock
+from frob.process._lock import (
+    _derived_lock_path,
+    _process_already_holds,
+    derived_state_lock,
+    derived_state_write_lock,
+)
 
 
 # frob:ticket T-0859
@@ -103,3 +116,116 @@ class TestDerivedStateLock:
         for t in threads:
             t.join(timeout=10)
         assert max_active == 2
+
+
+# frob:ticket T-0918
+def _hold_exclusive_then_signal(
+    root_str: str,
+    ready: "multiprocessing.synchronize.Event",
+    release: "multiprocessing.synchronize.Event",
+) -> None:
+    """Helper process (must be a top-level function to be picklable by
+    `multiprocessing.Process`): takes a real EXCLUSIVE `derived_state_lock`
+    in a SEPARATE process, signals `ready` once held, then blocks until the
+    parent test signals `release` before letting go."""
+    with derived_state_lock(Path(root_str), exclusive=True):
+        ready.set()
+        release.wait(timeout=10)
+
+
+# frob:ticket T-0918
+class TestDerivedStateWriteLock:
+    """Exercises `derived_state_write_lock` (T-0918): the dup/graph cache
+    rebuilders' entry point, which must take a real cross-process EXCLUSIVE
+    lock when run standalone, but must NOT deadlock when nested inside a
+    same-process SHARED holder (e.g. `frob check`'s gate-worker threads)."""
+
+    # frob:ticket T-0918
+    def test_standalone_rebuild_takes_exclusive(self, tmp_path: Path) -> None:
+        """With NO outer holder anywhere in this process, `derived_state_
+        write_lock` takes a real OS-level EXCLUSIVE `derived_state_lock`
+        (visible via `_process_already_holds` flipping True for the
+        duration and back to False on exit) -- the standalone-rebuild
+        path, not a no-op. Real cross-process exclusivity for this same
+        path is covered end-to-end by
+        `test_concurrent_separate_process_writer_still_blocked` below."""
+        assert not _process_already_holds(tmp_path)
+        with derived_state_write_lock(tmp_path):
+            assert _process_already_holds(tmp_path)
+        assert not _process_already_holds(tmp_path)
+
+    # frob:ticket T-0918
+    def test_nested_inside_shared_holder_does_not_deadlock(
+        self, tmp_path: Path
+    ) -> None:
+        """The check-style scenario T-0918 exists to fix: a main thread
+        holds `derived_state_lock(..., exclusive=False)` for a whole run,
+        and a DIFFERENT (gate-worker) thread calls `derived_state_write_lock`
+        nested inside that. Must complete promptly (same-process no-op),
+        not block forever waiting on the main thread's own held lock."""
+        result: dict[str, bool] = {}
+
+        def worker() -> None:
+            with derived_state_write_lock(tmp_path):
+                result["ran"] = True
+
+        with derived_state_lock(tmp_path, exclusive=False):
+            t = threading.Thread(target=worker)
+            t.start()
+            # Timeout guard: if this were a real deadlock, join() would
+            # never return within the timeout and `t.is_alive()` would
+            # still be True below -- fail loudly instead of hanging CI.
+            t.join(timeout=5)
+            assert not t.is_alive(), (
+                "derived_state_write_lock deadlocked when nested inside a "
+                "same-process SHARED holder (T-0918 regression)"
+            )
+        assert result.get("ran") is True
+
+    # frob:ticket T-0918
+    def test_concurrent_separate_process_writer_still_blocked(
+        self, tmp_path: Path
+    ) -> None:
+        """A standalone `derived_state_write_lock` acquire in THIS process
+        must still be blocked by a real EXCLUSIVE hold in a DIFFERENT OS
+        process -- confirms the T-0918 same-process no-op path did not
+        accidentally weaken the underlying cross-process guarantee
+        `derived_state_lock` itself provides."""
+        ctx = multiprocessing.get_context("spawn")
+        ready = ctx.Event()
+        release = ctx.Event()
+        proc = ctx.Process(
+            target=_hold_exclusive_then_signal,
+            args=(str(tmp_path), ready, release),
+        )
+        proc.start()
+        try:
+            assert ready.wait(timeout=10), (
+                "helper process never signaled it acquired the exclusive lock"
+            )
+
+            acquired_at: list[float] = []
+
+            def acquire_in_parent() -> None:
+                with derived_state_write_lock(tmp_path):
+                    acquired_at.append(time.monotonic())
+
+            t = threading.Thread(target=acquire_in_parent)
+            start = time.monotonic()
+            t.start()
+            # Give the parent's acquire attempt a moment to genuinely
+            # block against the other process's exclusive hold.
+            t.join(timeout=0.3)
+            assert t.is_alive(), (
+                "parent-process derived_state_write_lock acquired the lock "
+                "while a DIFFERENT process still held it exclusively -- "
+                "cross-process exclusion regressed"
+            )
+
+            release.set()
+            t.join(timeout=10)
+            assert not t.is_alive()
+            assert acquired_at and acquired_at[0] > start
+        finally:
+            release.set()
+            proc.join(timeout=10)

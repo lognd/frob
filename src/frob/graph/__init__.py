@@ -81,6 +81,7 @@ from frob.graph.summary import (
 )
 from frob.lang import LangError, ParsedFile, parse_file, supported_extensions
 from frob.logging import get_logger
+from frob.process._lock import derived_state_write_lock
 
 _log = get_logger(__name__)
 
@@ -492,7 +493,9 @@ def _prune_stale_cache(conn, seen_paths: set[str]) -> None:
 # frob:doc docs/commands/check.md#run-scoped-memoization
 # frob:tests tests/test_graph.py::TestLoadGraph.test_non_utf8_doc_file_is_skipped_not_crashed  # noqa: E501
 # frob:tests tests/unit/test_memo.py::test_build_graph_second_call_is_memo_hit
+# frob:tests tests/test_graph.py::TestBuildIncremental.test_stats_sum_source_and_doc_counts_not_difference  # noqa: E501
 # frob:ticket T-0423
+# frob:ticket T-0918
 @memoize_per_run
 def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
     """Incrementally (re)build the obligation graph for `root` into `cache`.
@@ -501,27 +504,37 @@ def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
     per_run`): a second call with the same `(root, cache)` in the same run
     is a cache hit, not a re-walk -- closes the "same heavy analysis reruns
     across stages" class the T-0418 arch double-run was one instance of.
+
+    T-0918: the whole rebuild below is wrapped in `frob.process._lock.
+    derived_state_write_lock`, which takes a real cross-process EXCLUSIVE
+    `derived_state_lock` when called standalone but no-ops when this
+    process already holds the lock in another thread (e.g. nested inside
+    `frob check`'s SHARED hold) -- see that function's docstring for the
+    full reentrancy contract and its accepted soundness trade-off.
     """
     root = root.resolve()
     _log.info("build_graph: root=%s cache=%s", root, cache)
-    conn = _cache.connect(cache)
-    try:
-        exclude_globs = _load_exclude_globs(root)
-        source_files, doc_files = _walk_repo_files(root, exclude_globs)
+    with derived_state_write_lock(root):
+        conn = _cache.connect(cache)
+        try:
+            exclude_globs = _load_exclude_globs(root)
+            source_files, doc_files = _walk_repo_files(root, exclude_globs)
 
-        src_seen, src_parsed, src_hits, parse_failures = _ingest_source_files(
-            conn, root, source_files
-        )
-        doc_seen, doc_parsed, doc_hits = _ingest_doc_files(conn, root, doc_files)
-        seen_paths = src_seen | doc_seen
-        parsed_count = src_parsed + doc_parsed
-        cache_hits = src_hits + doc_hits
+            src_seen, src_parsed, src_hits, parse_failures = _ingest_source_files(
+                conn, root, source_files
+            )
+            doc_seen, doc_parsed, doc_hits = _ingest_doc_files(conn, root, doc_files)
+            seen_paths = src_seen | doc_seen
+            parsed_count = src_parsed + doc_parsed
+            cache_hits = src_hits + doc_hits
 
-        _prune_stale_cache(conn, seen_paths)
-        snapshot = _finalize_build(conn, root, parsed_count, cache_hits, parse_failures)
-        return Ok(snapshot)
-    finally:
-        conn.close()
+            _prune_stale_cache(conn, seen_paths)
+            snapshot = _finalize_build(
+                conn, root, parsed_count, cache_hits, parse_failures
+            )
+            return Ok(snapshot)
+        finally:
+            conn.close()
 
 
 # frob:ticket T-0216
