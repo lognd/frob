@@ -95,3 +95,62 @@ class TestEffectGraphSummaryUnknownDegradation:
         summary = graph.summary(f"{path}::caller")
         assert not any(kind == UNKNOWN_KIND for kind, _arg in summary)
         assert ("spawn", "(['git', 'status'], cwd=root)") in summary
+
+
+# frob:doc docs/modules/perf.md#duplicate-identical-subprocess-spawn-detector-perf012-t-0919
+# frob:tests tests/unit/perf/test_effect_summaries.py::TestSplatArgumentDegradesToUnknown.test_splat_argument_nested_in_a_literal_yields_an_unknown_member
+# frob:tests tests/unit/perf/test_effect_summaries.py::TestSplatArgumentDegradesToUnknown.test_plain_named_parameter_forward_is_not_treated_as_a_splat
+# frob:ticket T-1018
+class TestSplatArgumentDegradesToUnknown:
+    """T-1018: a direct-effect call whose argument list contains a
+    `*args`/`**kwargs` splat -- even nested inside a literal collection
+    argument, the real `["git", *args]` shape -- degrades to an explicit
+    `Unknown` rather than a comparable literal arg-text occurrence, since
+    the splat's real content is caller-dependent and cannot be compared
+    by static text at the wrapper's own definition site."""
+
+    def test_splat_argument_nested_in_a_literal_yields_an_unknown_member(
+        self, tmp_path: Path
+    ) -> None:
+        """`_git(*args, cwd): subprocess.run(["git", *args], cwd=cwd)` --
+        the splat sits one level below `argument_list`, inside the `list`
+        literal, not as a direct top-level call argument; the summary must
+        still surface an explicit `Unknown`, not a concrete arg-text
+        occurrence that would wrongly compare equal across every caller."""
+        src = (
+            "import subprocess\n\n\n"
+            "def _git(*args, cwd):\n"
+            "    return subprocess.run(['git', *args], cwd=cwd)\n\n\n"
+            "def caller(root):\n"
+            "    return _git('status', cwd=root)\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+        graph = EffectGraph([parsed])
+
+        summary = graph.summary(f"{path}::caller")
+        assert any(kind == UNKNOWN_KIND for kind, _arg in summary)
+        assert not any(kind == "spawn" for kind, _arg in summary)
+
+    def test_plain_named_parameter_forward_is_not_treated_as_a_splat(
+        self, tmp_path: Path
+    ) -> None:
+        """A plain named-parameter forward (`ticket_id` used directly, no
+        `*`/`**`) is NOT a splat -- the T-0919 true-positive shape must
+        keep surfacing a concrete, comparable arg-text occurrence."""
+        src = (
+            "import subprocess\n\n\n"
+            "def check_gates(root, ticket_id):\n"
+            "    return subprocess.run(\n"
+            "        ['frob', 'check', '--ticket', ticket_id], cwd=root\n"
+            "    )\n\n\n"
+            "def caller(root, ticket_id):\n"
+            "    return check_gates(root, ticket_id)\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+        graph = EffectGraph([parsed])
+
+        summary = graph.summary(f"{path}::caller")
+        assert not any(kind == UNKNOWN_KIND for kind, _arg in summary)
+        assert any(kind == "spawn" for kind, _arg in summary)

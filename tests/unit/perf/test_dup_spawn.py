@@ -245,3 +245,107 @@ class TestPerf012DuplicateSpawn:
         assert not any(
             v.rule == "PERF012" and "caller" in v.message for v in violations
         )
+
+
+# frob:doc docs/modules/perf.md#duplicate-identical-subprocess-spawn-detector-perf012-t-0919
+# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018.test_before_after_state_check_with_mutation_between_is_not_flagged
+# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018.test_adjacent_true_positive_still_fires_after_interleaving_fix
+# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018.test_splat_forwarding_wrapper_called_with_different_args_is_not_flagged
+# frob:ticket T-1018
+class TestPerf012CalibrationT1018:
+    """T-1018: the two false-positive classes discovered while calibrating
+    PERF012's 1777-repo-finding over-fire back down (see docs/modules/
+    perf.md's "T-1018 calibration" section) -- each paired with a
+    true-positive guard proving the fix does not touch the original T-0919
+    detection shape."""
+
+    def test_before_after_state_check_with_mutation_between_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """The `_rev_parse`-before, mutate, `_rev_parse`-after idiom
+        (`tests/test_ticket_land.py`'s real shape, minimized): `caller`
+        calls `read_state(root)` (a direct spawn), then `mutate(root)`
+        (a DIFFERENT direct spawn), then `read_state(root)` again. The two
+        `read_state` calls share an occurrence, but `mutate`'s own
+        effectful call sits strictly between their lines -- must NOT fire,
+        since state may have changed in between."""
+        src = (
+            "import subprocess\n\n\n"
+            "def read_state(root):\n"
+            "    return subprocess.run(\n"
+            '        ["git", "rev-parse", "HEAD"],\n'
+            "        cwd=root,\n"
+            "    )\n\n\n"
+            "def mutate(root):\n"
+            "    return subprocess.run(\n"
+            '        ["git", "commit", "-m", "x"],\n'
+            "        cwd=root,\n"
+            "    )\n\n\n"
+            "def caller(root):\n"
+            "    before = read_state(root)\n"
+            "    mutate(root)\n"
+            "    after = read_state(root)\n"
+            "    return before, after\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+
+        violations = duplicate_spawn_violations([parsed])
+        assert not any(
+            v.rule == "PERF012" and "caller" in v.message for v in violations
+        )
+
+    def test_adjacent_true_positive_still_fires_after_interleaving_fix(
+        self, tmp_path: Path
+    ) -> None:
+        """Same three-call shape as the FP guard above, but WITHOUT the
+        intervening `mutate` call between the two `read_state` calls --
+        the interleaving fix must not suppress the genuine adjacent-
+        duplicate case, only the interrupted one."""
+        src = (
+            "import subprocess\n\n\n"
+            "def read_state(root):\n"
+            "    return subprocess.run(\n"
+            '        ["git", "rev-parse", "HEAD"],\n'
+            "        cwd=root,\n"
+            "    )\n\n\n"
+            "def caller(root):\n"
+            "    before = read_state(root)\n"
+            "    after = read_state(root)\n"
+            "    return before, after\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+
+        violations = duplicate_spawn_violations([parsed])
+        assert any(v.rule == "PERF012" and "caller" in v.message for v in violations)
+
+    def test_splat_forwarding_wrapper_called_with_different_args_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """The `_git(*args, cwd): subprocess.run(["git", *args], cwd=cwd)`
+        shape (`tests/system/test_cli_check.py`'s real helper, minimized):
+        `caller` calls the SAME wrapper twice with genuinely DIFFERENT
+        real arguments (`"add"` vs `"commit"`). The wrapper's own internal
+        spawn call has ONE fixed source text (`["git", *args]`) regardless
+        of what is forwarded -- must NOT fire, since the real argv the two
+        calls produce is not actually identical."""
+        src = (
+            "import subprocess\n\n\n"
+            "def _git(*args, cwd):\n"
+            "    return subprocess.run(\n"
+            '        ["git", *args],\n'
+            "        cwd=cwd,\n"
+            "    )\n\n\n"
+            "def caller(root):\n"
+            '    a = _git("add", "-A", cwd=root)\n'
+            '    b = _git("commit", "-m", "x", cwd=root)\n'
+            "    return a, b\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+
+        violations = duplicate_spawn_violations([parsed])
+        assert not any(
+            v.rule == "PERF012" and "caller" in v.message for v in violations
+        )

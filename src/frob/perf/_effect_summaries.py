@@ -173,6 +173,44 @@ EffectOccurrence = tuple[str, EffectArg]
 
 _IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
+#: Node types marking a `*args`/`**kwargs` splat/spread argument (T-1018).
+_SPLAT_KINDS = frozenset({"list_splat", "dictionary_splat"})
+
+
+def _contains_splat(node: Node) -> bool:
+    """T-1018 calibration: True if `node` (an `arguments`/`argument_list`
+    call-site node) contains a `*args`/`**kwargs` splat ANYWHERE in its
+    subtree -- not just as a direct top-level argument (`f(*args)`) but
+    also nested inside a literal collection argument (`f(["git", *args])`,
+    the real `_git(*args, cwd): subprocess.run(["git", *args], ...)` shape
+    this fix targets: the splat sits inside the `list` literal, one level
+    below `argument_list`, not as a direct child of it) -- the false-
+    positive class behind most of PERF012's
+    post-T-0922 over-fire (1777 -> low hundreds before this fix's other
+    half, `_dup_spawn._split_clean_runs`, took the rest down further):
+    a generic pass-through wrapper like `def _git(*args, cwd):
+    subprocess.run(["git", *args], cwd=cwd)` has ONE fixed source text at
+    its OWN definition site (`["git", *args]`) regardless of what any
+    particular caller actually forwards through `*args` -- two entirely
+    different callers (`_git("add", ...)`, `_git("commit", ...)`) both
+    resolve, via `resolve_scoped`, to this SAME wrapper, whose textually
+    IDENTICAL-at-the-defsite argument shape then looks like a duplicate
+    spawn even though the real, runtime argv the two callers produce is
+    completely different. A splat argument's real content is inherently
+    caller-determined and cannot be compared by static text at the callee
+    site the way a plain named-parameter forward (`ticket_id` used
+    identically by two dedicated single-purpose helpers, T-0919's real
+    motivating shape) safely can -- see this module's `summary` docstring
+    and `_dup_spawn._entry_occurrences` for where this degrades to an
+    explicit `Unknown` instead."""
+    stack = [node]
+    while stack:
+        current = stack.pop()
+        if current.type in _SPLAT_KINDS:
+            return True
+        stack.extend(current.children)
+    return False
+
 
 def _callee_dotted(node: Node) -> tuple[str, str] | None:
     """`(receiver, attribute)` for a call node's `obj.attr(...)` function
@@ -537,9 +575,12 @@ def _index_file_occurrences(
     that def's own body -- keyed by the def's own short name (matching
     `EffectGraph`'s by-short-name resolution elsewhere). `arg_text` is
     `None` (T-0922: `summary()` turns this into an explicit `Unknown`
-    rather than dropping it) only for the pathological case of a call
-    node with no resolvable `arguments` field; the overwhelmingly common
-    case always recovers real source text. `callee_name` (T-0922) is the
+    rather than dropping it) for a call node with no resolvable
+    `arguments` field, OR (T-1018) one whose argument list contains a
+    `*args`/`**kwargs` splat -- see `_contains_splat`'s own docstring for
+    why a splat's real content can never be compared by static text at the
+    callee's definition site; the overwhelmingly common case always
+    recovers real, comparable source text. `callee_name` (T-0922) is the
     call's own bare/attribute name, carried through so `EffectGraph.
     _summary` can recognize a `_called`-edge of the SAME name as this SAME
     already-counted occurrence rather than a second, unresolvable callee.
@@ -568,7 +609,7 @@ def _index_file_occurrences(
                     args = _child_by_field(call, "arguments")
                     arg_text = (
                         _normalize_arg_text(_node_text(args))
-                        if args is not None
+                        if args is not None and not _contains_splat(args)
                         else None
                     )
                     line = call.start_point[0] + 1

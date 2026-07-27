@@ -116,6 +116,7 @@ from frob.perf._effect_summaries import (
     EffectOccurrence,
     Unknown,
     _callee_short_name,
+    _contains_splat,
     _direct_effect,
     _normalize_arg_text,
 )
@@ -206,13 +207,19 @@ def _entry_occurrences(
     effect = _direct_effect(call)
     if effect is not None:
         args = _child_by_field(call, "arguments")
-        if args is None:
+        if args is None or _contains_splat(args):
+            reason = (
+                "unresolvable argument text"
+                if args is None
+                else "a *args/**kwargs splat argument whose real content is "
+                "caller-dependent (T-1018)"
+            )
             return frozenset(
                 {
                     (
                         UNKNOWN_KIND,
                         Unknown(
-                            f"unresolvable argument text for a {effect} call "
+                            f"{reason} for a {effect} call "
                             f"at {from_path}:{call.start_point[0] + 1}"
                         ),
                     )
@@ -251,45 +258,107 @@ def _entry_occurrences(
     return frozenset(acc)
 
 
+def _split_clean_runs(
+    clean_lines: set[int], all_effect_lines: set[int]
+) -> list[list[int]]:
+    """T-1018 calibration: split `clean_lines` (this occurrence's own call
+    sites whose FULL reachable-effect set is exactly this ONE occurrence --
+    see `_def_violations`) into maximal runs with no OTHER effectful call
+    site (`all_effect_lines`, any occurrence, resolved or `Unknown`)
+    strictly between two consecutive members.
+
+    Motivation: two call sites sharing an occurrence are only a genuine
+    "paid for the same thing twice, share it instead" duplicate when
+    NOTHING effectful happens between them -- the real T-0919 shape
+    (`check_gates()` immediately followed by `check_gate_findings()`, both
+    independently spawning the identical `frob check --ticket <id>`, one
+    right after the other). The T-1018 over-fire (20 -> 1777 findings)
+    traced to a DIFFERENT, extremely common shape this used to conflate
+    with that one: a read-only, naturally-repeatable call (`git rev-parse
+    HEAD`) invoked BEFORE and AFTER an intervening call that mutates state
+    -- a before/after state-change assertion, not a redundant recomputation
+    (`tests/test_ticket_land.py`'s `_rev_parse(...)`-before, `_apply_gate_
+    rule_sync(...)`-mutate, `_rev_parse(...)`-after idiom was the single
+    largest cluster). A call site whose own summary reaches something OTHER
+    than this occurrence (multi-effect, or an `Unknown` member alongside
+    it) is treated the same as a wholly unrelated intervening call: its
+    presence between two same-occurrence call sites means something this
+    substrate cannot fully characterize happened in between, so the two
+    ends are no longer assumed interchangeable. A call site whose ENTIRE
+    reachable effect is cleanly just this one occurrence never breaks a
+    run (matches every T-0919/T-0922 true-positive fixture, none of which
+    have anything between their two duplicate call sites)."""
+    if not clean_lines:
+        return []
+    sorted_lines = sorted(clean_lines)
+    runs: list[list[int]] = [[sorted_lines[0]]]
+    for prev_line, cur_line in zip(sorted_lines, sorted_lines[1:]):
+        interrupted = any(prev_line < other < cur_line for other in all_effect_lines)
+        if interrupted:
+            runs.append([cur_line])
+        else:
+            runs[-1].append(cur_line)
+    return runs
+
+
 def _def_violations(path: str, func_def: Node, graph: _EffectGraph) -> list[Violation]:
     """PERF012 hits for one `def` node: every direct call site's own
     occurrence set (`_entry_occurrences`), grouped by `(kind, arg)`; any
-    occurrence shared by 2+ DISTINCT call-site LINES is a duplicate.
-    `Unknown` members (T-0922) never group with anything (see
-    `Unknown`'s own docstring -- identity-only equality), so they can
-    never by themselves manufacture a duplicate finding here."""
+    occurrence shared by 2+ DISTINCT call-site LINES, with nothing
+    effectful intervening between the shared lines (T-1018:
+    `_split_clean_runs`), is a duplicate. `Unknown` members (T-0922) never
+    group with anything (see `Unknown`'s own docstring -- identity-only
+    equality), so they can never by themselves manufacture a duplicate
+    finding here."""
     body = _child_by_field(func_def, "body")
     if body is None:
         return []
     by_occurrence: dict[EffectOccurrence, set[int]] = {}
+    # T-1018: per-call-site full occurrence set, keyed by line, so
+    # `_split_clean_runs` can tell a "clean" singleton call site (its
+    # ENTIRE reachable effect is exactly one occurrence) from a
+    # multi-effect/uncertain one that should break a run rather than
+    # silently extend it.
+    occurrences_by_line: dict[int, set[EffectOccurrence]] = {}
     for call in _iter_top_level_calls(body):
-        for occurrence in _entry_occurrences(call, graph, path):
-            by_occurrence.setdefault(occurrence, set()).add(call.start_point[0] + 1)
+        occs = _entry_occurrences(call, graph, path)
+        line = call.start_point[0] + 1
+        if occs:
+            occurrences_by_line.setdefault(line, set()).update(occs)
+        for occurrence in occs:
+            by_occurrence.setdefault(occurrence, set()).add(line)
+    all_effect_lines = set(occurrences_by_line)
     violations: list[Violation] = []
     line = func_def.start_point[0] + 1
     name_node = _child_by_field(func_def, "name")
     func_name = _node_text(name_node) if name_node is not None else "?"
     for (kind, arg), lines in by_occurrence.items():
-        if kind == UNKNOWN_KIND or len(lines) < 2:
+        if kind == UNKNOWN_KIND:
             continue
-        # frob:waive PERF004 reason="lines is this loop's own per-occurrence distinct set, not a shared re-sort"  # noqa: E501
-        line_list = ", ".join(str(n) for n in sorted(lines))
-        violations.append(
-            Violation(
-                rule="PERF012",
-                severity=Severity.WARN,
-                file=path,
-                line=line,
-                message=(
-                    f"PERF012: {path}:{line} `{func_name}` has {len(lines)} "
-                    f"call sites (lines {line_list}) that each independently "
-                    f"reach a {kind} call with the SAME argument shape -- "
-                    f"share one result between them instead of paying for it "
-                    f"{len(lines)} times, or add a reasoned frob:waive "
-                    f"PERF012 justifying an independent re-run"
-                ),
+        clean_lines = {
+            ln for ln in lines if occurrences_by_line.get(ln) == {(kind, arg)}
+        }
+        for run in _split_clean_runs(clean_lines, all_effect_lines):
+            if len(run) < 2:
+                continue
+            # frob:waive PERF004 reason="run is this loop's own per-run list, not a shared re-sort"  # noqa: E501
+            line_list = ", ".join(str(n) for n in sorted(run))
+            violations.append(
+                Violation(
+                    rule="PERF012",
+                    severity=Severity.WARN,
+                    file=path,
+                    line=line,
+                    message=(
+                        f"PERF012: {path}:{line} `{func_name}` has {len(run)} "
+                        f"call sites (lines {line_list}) that each independently "
+                        f"reach a {kind} call with the SAME argument shape -- "
+                        f"share one result between them instead of paying for it "
+                        f"{len(run)} times, or add a reasoned frob:waive "
+                        f"PERF012 justifying an independent re-run"
+                    ),
+                )
             )
-        )
     return violations
 
 

@@ -335,6 +335,48 @@ true-positive (two sibling helpers, the two/three-hop multi-hop-via-
 different-callees cases) and false-positive (call-site-varying
 arguments, single call site, unresolvable dynamic-dispatch callee) cases.
 
+**T-1018 calibration (1777 -> 0 repo findings)**: the T-0922 EffectGraph
+substrate expansion made PERF012 genuinely interprocedural (correct, by
+design) but also exposed two false-positive classes that did not exist at
+the T-0919 20-finding baseline, both fixed in the SAME detector pass:
+
+1. **Before/after state-check interleaving** (`_dup_spawn._split_clean_runs`):
+   two call sites sharing an occurrence are only a real "paid for the same
+   thing twice" duplicate when NOTHING effectful happens between them. The
+   single largest observed cluster was a `git rev-parse HEAD`-before,
+   mutate, `git rev-parse HEAD`-after idiom (`tests/test_ticket_land.py`'s
+   `_rev_parse`/`_apply_gate_rule_sync` shape) -- a legitimate state-change
+   assertion, not redundant recomputation. A call site whose own reachable
+   effect is a clean SINGLETON (exactly this one occurrence, nothing else)
+   still groups with its neighbors exactly as before; a call site that
+   reaches this occurrence ALONGSIDE something else (multi-effect, or an
+   `Unknown` member) now breaks the run instead of silently bridging it.
+2. **Splat-forwarding wrapper conflation** (`_effect_summaries._contains_splat`):
+   a generic pass-through helper (`def _git(*args, cwd): subprocess.run(
+   ["git", *args], cwd=cwd)`) has ONE fixed source text at its own
+   definition site regardless of what any given caller forwards through
+   `*args`/`**kwargs` -- two callers passing completely different real argv
+   (`_git("add", ...)`, `_git("commit", ...)`) both resolved to this SAME
+   wrapper and looked like a textually-identical duplicate spawn. A direct
+   effect call whose argument list contains a splat anywhere in its
+   subtree (including nested inside a literal, e.g. the `*args` inside
+   `["git", *args]`) now degrades to an explicit `Unknown` instead of a
+   comparable literal arg-text occurrence -- it can widen visibility but
+   can never manufacture a false duplicate the way `Unknown`'s identity-
+   only equality already guarantees elsewhere in this substrate.
+
+Both fixes are conservative in the SAME direction as the rest of this
+substrate (degrade toward missing a duplicate, never toward manufacturing
+one) and neither touches the T-0919/T-0922 true-positive fixtures (a
+plain named-parameter forward like `check_gates(root, ticket_id)` ->
+`subprocess.run([..., ticket_id], ...)` still fires: it has no intervening
+effect and no splat). See `tests/unit/perf/test_dup_spawn.py::
+TestPerf012DuplicateSpawn` for the T-1018 regression tests (both FP
+classes plus a true-positive guard proving the interleaving fix does not
+touch adjacent-duplicate detection) and `tests/unit/perf/
+test_effect_summaries.py::TestSplatArgumentDegradesToUnknown` for
+`_contains_splat`'s own unit coverage.
+
 ## The killer join: hot AND quadratic
 
 `frob perf heat --smells` intersects the two signals: symbols ranked by
