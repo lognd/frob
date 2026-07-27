@@ -148,6 +148,30 @@ def read_line_length(root: Path) -> int:
     return _DEFAULT_LIMIT
 
 
+# frob:ticket T-0991
+def _shift_cut_off_boundary_space(remaining: str, budget: int) -> int:
+    """The fallback (no-breakable-space-within-budget) cut point for
+    `_canonical_lines`, walked back off `budget` while `remaining[cut]` is
+    a space.
+
+    `rfind(" ", 0, budget)` only sees indices `< budget`, so a word
+    boundary sitting exactly AT `budget` is invisible to it and the naive
+    fallback (`cut = budget`) would land right on top of that space --
+    stranding it as the first character of the continuation line
+    (`remaining[cut:]`). The real directive parser's comment extraction
+    (`_strip_comment_delims`) fully `.strip()`s each physical line, so a
+    leading space there is silently dropped, concatenating the token
+    before and after the boundary with no separator (T-0991). Backing
+    `cut` off any such space(s) leaves both `head` (`remaining[:cut]`) and
+    `tail` (`remaining[cut:]`) free of an edge space -- it lands safely
+    mid-line on the next physical line instead.
+    """
+    cut = budget
+    while cut > 0 and remaining[cut] == " ":
+        cut -= 1
+    return cut
+
+
 def _canonical_lines(text: str, *, marker: str, indent: str, limit: int) -> list[str]:
     """Split `text` (one logical directive's delimiter-stripped content,
     e.g. `frob:waive RULE reason="..."`) into the fewest physical comment
@@ -199,9 +223,16 @@ def _canonical_lines(text: str, *, marker: str, indent: str, limit: int) -> list
         # `budget + 1`.
         cut = remaining.rfind(" ", 0, budget)
         if cut <= 0:
-            # No breakable space within budget -- break at the budget
-            # boundary verbatim (still round-trips, just not word-aligned).
-            cut = budget
+            # frob:ticket T-0991
+            # No breakable space within [0, budget) -- break at the budget
+            # boundary verbatim, UNLESS `remaining[budget]` is itself a
+            # space (one column past `rfind`'s exclusive bound): stranding
+            # that as `tail`'s leading char gets silently eaten by the real
+            # parser's full-`.strip()` comment extraction, concatenating
+            # the two tokens with no separator (T-0991). Walk `cut` back
+            # over it so neither `head` nor `tail` carries a boundary
+            # space -- see `_shift_cut_off_boundary_space`'s docstring.
+            cut = _shift_cut_off_boundary_space(remaining, budget)
             head, tail = remaining[:cut], remaining[cut:]
         else:
             # Keep the space attached to the earlier line so folding with

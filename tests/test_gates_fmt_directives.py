@@ -27,6 +27,28 @@ from frob.gates._fmt_directives import (
 from frob.graph.dsl import fold_comment_runs
 
 
+def _fold_lines_real_extractor(physical: list[str], marker: str) -> str:
+    """Like `_fold_lines`, but strips each physical line's marker prefix
+    with a FULL `.strip()` (both leading and trailing whitespace), matching
+    `frob.lang._common._strip_comment_delims`'s actual per-line stripping
+    -- not `_fold_lines`'s own lenient one-leading-space strip.
+
+    T-0991: `_fold_lines`'s lenient strip is why the original T-0984-era
+    property test never caught the boundary-space bug -- it only removed
+    ONE leading space per continuation line, which happened to be forgiving
+    enough to mask a case where the real parser's full `.strip()` eats a
+    boundary space entirely and silently concatenates two tokens. Any new
+    round-trip assertion against the REAL directive-parsing path must go
+    through this stricter helper instead."""
+    entries = []
+    for i, raw in enumerate(physical):
+        content = raw[len(marker) :].strip()
+        entries.append((i, content, "", 0))
+    folded = fold_comment_runs(entries)
+    assert len(folded) == 1
+    return folded[0][0]
+
+
 def _fold_lines(physical: list[str], marker: str) -> str:
     """Strip `marker` + one leading space from each of `physical`, then fold
     via T-0286's own fold (`fold_comment_runs`) -- the exact mechanism
@@ -620,3 +642,69 @@ class TestRepoWideIdempotenceT0985:
         # Sanity: this must actually exercise a non-trivial slice of the
         # repo's own source, not silently iterate zero files.
         assert checked > 100
+
+
+# frob:ticket T-0991
+class TestConventionUnitBinding:
+    """T-0991 regression: T-0988's round-trip verification protocol found
+    that wrapping a `frob:tests` directive whose target is followed by a
+    trailing attribute (`kind="unit"`) could split the line right after
+    the target while dropping the word-boundary space before the
+    continuation -- rejoining via the REAL directive parser's comment
+    extraction (which fully `.strip()`s each physical line, unlike this
+    test file's own lenient `_fold_lines` helper) then silently glued
+    target+attribute back together with no separator. Distinct from
+    T-0987's misparse-as-new-directive class: this is silent content
+    corruption INSIDE a correctly-recognized directive."""
+
+    def test_target_plus_kind_attribute_splitting_after_target_round_trips(
+        self,
+    ) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestConventionUnitBinding.test_target_plu\
+        # s_kind_attribute_splitting_after_target_round_trips
+        # limit=71 is the exact width (prefix="# " -> room=69, budget=68)
+        # at which the boundary space between this target and `kind=` sits
+        # precisely at index `budget` -- outside `rfind`'s exclusive search
+        # range -- reproducing T-0991's exact failing shape.
+        target = "tests/test_gates_fmt_directives.py::TestConventionUnitBinding.test_x"
+        content_text = f'frob:tests {target} kind="unit"'
+        limit = 71
+        src = f"# {content_text}\n"
+        out = canonicalize_text(src, path="a.py", limit=limit)
+        assert out != src
+        for line in out.splitlines():
+            assert len(line) <= limit, f"{line!r} exceeds limit={limit}"
+        physical = [line for line in out.splitlines() if line.startswith("#")]
+        assert _fold_lines_real_extractor(physical, "#") == content_text
+
+    @given(
+        st.integers(min_value=5, max_value=90),
+        st.integers(min_value=0, max_value=2),
+        st.integers(min_value=40, max_value=120),
+        st.sampled_from(["#", "//"]),
+    )
+    def test_logical_text_is_identical_across_widths_and_attribute_counts(
+        self, target_len: int, n_attrs: int, limit: int, marker: str
+    ) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestConventionUnitBinding.test_logical_te\
+        # xt_is_identical_across_widths_and_attribute_counts
+        # Property: for any target length, 0/1/2 trailing attributes, wrap
+        # width 40..120, and either supported line-comment marker, wrapping
+        # via `canonicalize_text` and folding the result back through the
+        # REAL parser's stricter per-line strip must reproduce the exact
+        # original logical directive text -- no dropped, merged, or
+        # inserted characters.
+        target = "x" * target_len
+        attrs = "".join(f' kind="unit{i}"' for i in range(n_attrs))
+        content_text = f"frob:tests {target}{attrs}"
+        suffix = ".py" if marker == "#" else ".rs"
+        src = f"{marker} {content_text}\n"
+        out = canonicalize_text(src, path=f"a{suffix}", limit=limit)
+        for line in out.splitlines():
+            assert len(line) <= limit, f"{line!r} exceeds limit={limit}"
+        physical = [
+            line for line in out.splitlines() if line.lstrip().startswith(marker)
+        ]
+        assert _fold_lines_real_extractor(physical, marker) == content_text
