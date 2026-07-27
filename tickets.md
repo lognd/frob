@@ -915,7 +915,7 @@ categories; the ticket's original scope list omitted it).
 id: T-0623
 title: 'arch: fallibility checks (ARCH1xx) -- unhandled Result, swallowed exception,
   wrong-signature raise, over-broad except'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
