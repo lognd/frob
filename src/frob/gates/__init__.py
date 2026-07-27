@@ -1196,6 +1196,12 @@ _KNOWN_GATE_RULES = frozenset(
         # register it here nor dispatch it (out of that ticket's scope);
         # this closes the catalogued-is-not-enforced gap it disclosed.
         "COMPLIANCE005",
+        # T-0894: COMPLIANCE006 (this module's compliance_gate) -- a
+        # compliance.yaml that was committed on this branch's history and
+        # has since been deleted, distinguished from "never adopted"
+        # (frob.gates._registry_exhaustiveness.path_ever_tracked). Same
+        # "adopted then deleted" family as REG012 below.
+        "COMPLIANCE006",
         # T-0851: FMT001 (frob.gates.fmt_gate) -- a diff-touched frob:
         # directive comment line over the configured line length, with a
         # `frob fmt <path>` remediation hint. T-0441 built the underlying
@@ -1240,6 +1246,12 @@ _KNOWN_GATE_RULES = frozenset(
         # T-0560: check-coverage.yaml gate-rule staleness (scheduled-audit
         # half of T-0424).
         "REG010",
+        # T-0894: REG012 (frob.gates._registry_exhaustiveness.registry_gate)
+        # -- docs/design/registry/ was committed on this branch's history
+        # and has since been deleted, distinguished from "never adopted"
+        # by path_ever_tracked. Same "adopted then deleted" family as
+        # COMPLIANCE006 above.
+        "REG012",
         # T-0436: unbound/stale fenced-code-block doc-drift heuristic
         # (frob.gates._docblocks).
         "DOC004",
@@ -1337,6 +1349,12 @@ _KNOWN_GATE_RULES = frozenset(
         # decisions/ record) -- surfaced by T-0901's own drift-lock test,
         # the same listing-omission class as the T-0903/T-0923 batches.
         "DEC000",
+        # frob:ticket T-0894
+        # T-0894: DEC003 (this module's decisions_gate) -- a decisions/
+        # directory that was committed on this branch's history and has
+        # since been deleted, distinguished from "never adopted". Same
+        # "adopted then deleted" family as REG012/COMPLIANCE006.
+        "DEC003",
         # frob:ticket T-0688
         # T-0688: EXHAUST001/EXHAUST002 (frob.gates._exhaustive_handling's
         # exhaustive_handling_gate) -- the exhaustive-exception gate over
@@ -1577,7 +1595,22 @@ def known_gate_rule_ids() -> frozenset[str]:
 # `.git/info/exclude` itself; there is nowhere honest to attach a waiver,
 # and the remedy is always the same (remove the entry, or use a
 # genuinely untracked path). See docs/modules/gates.md#excl001-t-0465.
-_UNWAIVABLE_RULES = frozenset({"TEST008", "SEC003", "TICK001", "TICK002", "EXCL001"})
+# T-0894: COMPLIANCE006/REG012 (an adopted-then-deleted registry, distinct
+# from the ordinary waivable per-entry disposition violations they sit
+# beside) are unwaivable -- deleting the registry entirely is a
+# higher-stakes claim than any individual entry it might have carried.
+_UNWAIVABLE_RULES = frozenset(
+    {
+        "TEST008",
+        "SEC003",
+        "TICK001",
+        "TICK002",
+        "EXCL001",
+        "COMPLIANCE006",
+        "REG012",
+        "DEC003",
+    }
+)
 
 
 def _unwaivable_channel_rules() -> frozenset[str]:
@@ -7748,18 +7781,54 @@ def _load_test_config(root: Path) -> tuple[TestPolicy, tuple[SystemSpec, ...]]:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0004
+# frob:ticket T-0894
 # frob:waive TEST005 reason="decisions_gate 88.9% branch cover, debt T-0160"
+# frob:tests tests/test_decisions.py::test_never_adopted_decisions_dir_is_silent  # noqa: E501
+# frob:tests tests/test_decisions.py::test_deleted_after_adoption_fires_dec003  # noqa: E501
 def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DEC001/DEC002: decision records and their code anchors (T-0004).
 
     Runs only when a `decisions/` directory exists (opt-in by convention).
     A malformed record fails loudly rather than silently degrading, since
     the record set is a contract surface like the ticket queue.
+
+    T-0894: a `decisions/` directory that was committed on this branch's
+    history and has since been deleted fires DEC003 (unwaivable, same
+    "adopted then deleted" family as REG012/COMPLIANCE006) instead of
+    silently degrading to the never-adopted empty-tuple posture.
     """
+    from frob.gates._registry_exhaustiveness import path_ever_tracked
     from frob.gates.decisions import decision_gate, decisions_dir, load_decisions
 
     root = Path(root)
-    if not decisions_dir(root).exists():
+    decisions_path = decisions_dir(root)
+    if not decisions_path.exists():
+        try:
+            rel_decisions = str(decisions_path.relative_to(root))
+        except ValueError:
+            rel_decisions = str(decisions_path)
+        if path_ever_tracked(root, rel_decisions):
+            _log.warning(
+                "decisions_gate: %s existed in HEAD's history but is now "
+                "deleted from the working tree (DEC003)",
+                decisions_path,
+            )
+            return (
+                Violation(
+                    rule="DEC003",
+                    severity=Severity.ERROR,
+                    file=rel_decisions,
+                    line=0,
+                    message=(
+                        f"DEC003: {rel_decisions} was previously committed "
+                        "on this branch but has been deleted -- a decision "
+                        "record set this repo has adopted cannot silently "
+                        "disappear back into 'never adopted' (T-0894); "
+                        "restore it or file a decision record explaining "
+                        "the removal"
+                    ),
+                ),
+            )
         return ()
     loaded = load_decisions(root)
     if loaded.is_err:
@@ -8437,12 +8506,15 @@ def _compliance005_violation(cv) -> Violation:  # noqa: ANN001
 
 
 # frob:ticket T-0788
+# frob:ticket T-0894
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#registry-exhaustiveness-drift-lock-t-0343  # noqa: E501
 # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_registered_in_known_gate_rules  # noqa: E501
 # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_fires_on_deferred_disposition  # noqa: E501
 # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_silent_on_handled_by_and_out_of_scope  # noqa: E501
 # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_missing_registry_dir_is_silent  # noqa: E501
 # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_real_repo_registry_passes  # noqa: E501
+# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance006_fires_on_deleted_registry_after_adoption  # noqa: E501
+# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance006_silent_on_never_adopted_registry  # noqa: E501
 def compliance_gate(
     repo_root: Path, registry_dir: Path | None = None
 ) -> tuple[Violation, ...]:
@@ -8455,13 +8527,20 @@ def compliance_gate(
     check` dispatch T-0607 disclosed it could not add (`_KNOWN_GATE_RULES`
     and this stage callback both lived outside T-0607's declared scope).
     Silent (empty tuple) when `registry_dir` (defaults to `repo_root /
-    "docs/design/registry"`) has no `compliance.yaml` at all -- a repo with
-    no compliance registry makes no COMPLIANCE005 claim, matching
-    `registry_gate`'s own missing-directory posture. Waivable like every
-    other registry-disposition rule (`_UNWAIVABLE_RULES` does not name it) --
-    the ticket's Description does not ask for unwaivable, and a specific,
-    honest `frob:waive COMPLIANCE005 reason=...` stays available for a
-    genuinely temporary exception the same way REG001-004 allow one."""
+    "docs/design/registry"`) has no `compliance.yaml` at all AND that path
+    was never committed on this branch's history -- a repo that genuinely
+    never adopted the compliance registry makes no COMPLIANCE005 claim.
+    T-0894: a repo that DID adopt it (the file was committed on HEAD's
+    history at some point) and then lost it -- deleted, whether by
+    accident or by a compliance-load-bearing-artifact removal attack --
+    fires COMPLIANCE006 instead of silently degrading to the
+    never-adopted posture; COMPLIANCE006 is in `_UNWAIVABLE_RULES`
+    (unlike COMPLIANCE005 itself, which stays waivable for a specific,
+    honest `frob:waive COMPLIANCE005 reason=...` temporary exception the
+    same way REG001-004 allow one -- deleting the registry entirely is a
+    different, higher-stakes claim than an individual undispositioned
+    entry, and gets no waiver escape hatch)."""
+    from frob.gates._registry_exhaustiveness import path_ever_tracked
     from frob.strata import check_cmpl_registry
 
     base = (
@@ -8469,7 +8548,34 @@ def compliance_gate(
         if registry_dir is not None
         else (repo_root / "docs/design/registry")
     )
-    if not (base / "compliance.yaml").is_file():
+    compliance_yaml = base / "compliance.yaml"
+    if not compliance_yaml.is_file():
+        try:
+            rel_compliance = str(compliance_yaml.relative_to(repo_root))
+        except ValueError:
+            rel_compliance = str(compliance_yaml)
+        if path_ever_tracked(repo_root, rel_compliance):
+            _log.warning(
+                "compliance_gate: %s existed in HEAD's history but is now "
+                "deleted from the working tree (COMPLIANCE006)",
+                compliance_yaml,
+            )
+            return (
+                Violation(
+                    rule="COMPLIANCE006",
+                    severity=Severity.ERROR,
+                    file=rel_compliance,
+                    line=0,
+                    message=(
+                        f"COMPLIANCE006: {rel_compliance} was previously "
+                        "committed on this branch but has been deleted -- "
+                        "a compliance registry this repo has adopted "
+                        "cannot silently disappear back into 'never "
+                        "adopted' (T-0894); restore it or file a decision "
+                        "record explaining the removal"
+                    ),
+                ),
+            )
         _log.info("compliance_gate: %s has no compliance.yaml, skipping", base)
         return ()
 

@@ -564,6 +564,7 @@
     "src/frob/gates/_ratchet.py::snapshot_ratchet": "4c730fee5b026875cc683b62f70b870dfe955588d5450f6f1b3acb46c3d7f730",
     "src/frob/gates/_refs.py::ref_gate": "5ba0c1e63b3dd13ab6856ceef93052ad4e88c27f03a28ef76d7d1c4a8d12cc03",
     "src/frob/gates/_registry_exhaustiveness.py::REGISTRY_FILES": "b40e300f3c6d1c635ef5c3fd45838d445c5f1ffebf8ce6afd9154b4899c291a6",
+    "src/frob/gates/_registry_exhaustiveness.py::path_ever_tracked": "ebb48169088d1eeafdb81270a34e09c8902ccedcf86dce79890bd11e399070bd",
     "src/frob/gates/_registry_exhaustiveness.py::registry_gate": "77d03c7ef935157cdfba1e8be95ca7a3003b6c3160c591e8f85acad24af0dff0",
     "src/frob/gates/_render_lint.py::render_lint_gate": "1be6f5d87ed3627cf2a5a876f4708f93f45670ac4a221373f9693b6eadadcbd9",
     "src/frob/gates/_rule_id_scan.py::RETIRED_RULE_IDS": "a930690db6dbb3518bccefcb293d45d94c2aaaf43fe20ba6171e44edb7303cdb",
@@ -1728,5 +1729,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.190.0"
+  "version": "0.191.0"
 }

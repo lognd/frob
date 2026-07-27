@@ -10614,6 +10614,46 @@ class TestComplianceGate:
         violations = compliance_gate(root)
         assert not any(v.rule == "COMPLIANCE005" for v in violations)
 
+    # frob:ticket T-0894
+    # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance006_silent_on_never_adopted_registry  # noqa: E501
+    def test_compliance006_silent_on_never_adopted_registry(
+        self, tmp_path: Path
+    ) -> None:
+        """A `tmp_path` git repo that never committed `compliance.yaml` at
+        all stays silent -- COMPLIANCE006 must not fire on a genuinely
+        never-adopted registry, only on one that existed and was deleted."""
+        _git_init(tmp_path)
+        violations = compliance_gate(tmp_path)
+        assert not any(v.rule == "COMPLIANCE006" for v in violations)
+
+    # frob:ticket T-0894
+    # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance006_fires_on_deleted_registry_after_adoption  # noqa: E501
+    def test_compliance006_fires_on_deleted_registry_after_adoption(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0894: `compliance.yaml` committed once, then deleted, must
+        fire COMPLIANCE006 (unwaivable) rather than silently degrading to
+        the "never adopted" empty-tuple posture COMPLIANCE005 alone gives
+        it."""
+        _git_init(tmp_path)
+        registry_dir = self._write_compliance_yaml(
+            tmp_path,
+            "  - id: CMPL-TEST-1\n    disposition: 'handled_by:SEC003'\n",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "adopt compliance registry"],
+            cwd=tmp_path,
+            check=True,
+        )
+        (registry_dir / "compliance.yaml").unlink()
+
+        from frob.gates import _UNWAIVABLE_RULES
+
+        violations = compliance_gate(tmp_path)
+        assert any(v.rule == "COMPLIANCE006" for v in violations)
+        assert "COMPLIANCE006" in _UNWAIVABLE_RULES
+
 
 # frob:ticket T-0688
 class TestExhaustiveHandlingGate:

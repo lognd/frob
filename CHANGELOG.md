@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.191.0] - unreleased
+
+- T-0894: Registry-backed gates (COMPLIANCE005/REG*/DEC*) cannot distinguish never-adopted from deleted-registry
+
 ## [0.190.0] - unreleased
 
 - T-1011: auto-sync check-coverage gate_rule_entries at land + generate command tables from argparse registry

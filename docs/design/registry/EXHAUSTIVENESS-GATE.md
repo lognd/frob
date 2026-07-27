@@ -159,6 +159,33 @@ future drift. Driving it green is a future reconciliation pass, same
 posture as REG001-007's own `T-0384..T-0392` lineage, not this ticket's
 job.
 
+## REG012: adopted-then-deleted registry (T-0894)
+
+T-0343's original missing-directory posture ("no `docs/design/registry/`
+at all means no claim, not a violation") could not tell a repo that never
+adopted the registry from one that adopted it and then LOST it -- whether
+by accident or by a compliance/security-load-bearing-artifact removal
+attack. Both silently returned an empty violation tuple, clearing every
+finding the registry existing would have produced, with no other gate in
+the catalog watching for the deletion itself.
+
+`registry_gate` now checks `frob.gates._registry_exhaustiveness.
+path_ever_tracked(repo_root, rel_path)` before returning empty on a
+missing directory: `git log -1 -- <rel_path>` against `HEAD` tells whether
+the path was ever committed on this branch's history, independent of its
+current working-tree state. A directory with no such history is the
+ordinary never-adopted case (still silent). A directory that WAS committed
+and is now gone fires `REG012` at `Severity.ERROR`, and `REG012` is in
+`_UNWAIVABLE_RULES` -- deleting the whole registry is a higher-stakes
+claim than any individual undispositioned entry, so it gets no waiver
+escape hatch.
+
+The same `path_ever_tracked` signal backs the two sibling instances of
+this exact posture T-0894 also closed: `compliance_gate`'s `COMPLIANCE006`
+(a deleted `compliance.yaml`) and `decisions_gate`'s `DEC003` (a deleted
+`decisions/` directory) -- see `docs/modules/gates.md#compliance005-t-0788`
+and `docs/modules/decisions.md#the-dec-gates` respectively.
+
 ## Honest first-turn-on state
 
 On first turn-on this gate is RED for the ~1950 entries the registry

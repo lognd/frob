@@ -863,3 +863,108 @@ entries:
 
         rules = _rules(*(v.rule for v in violations))
         assert "REG011" in rules
+
+
+# frob:ticket T-0894
+def _git_init(root: Path) -> None:
+    """Minimal git repo bootstrap for path_ever_tracked's history checks
+    (mirrors tests/test_gates.py's own `_git_init` helper -- this module
+    has no such fixture yet, so it is duplicated at file scope rather than
+    importing across test modules)."""
+    import subprocess
+
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "t@example.com"], cwd=root, check=True
+    )
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+    (root / ".gitkeep").write_text("")
+    subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "base"], cwd=root, check=True)
+
+
+# frob:ticket T-0894
+class TestPathEverTracked:
+    """`frob.gates._registry_exhaustiveness.path_ever_tracked` -- the
+    shared "was this ever committed on HEAD's history" signal T-0894
+    built so registry-backed gates can distinguish never-adopted from
+    adopted-then-deleted."""
+
+    def test_never_committed_path_is_false(self, tmp_path: Path) -> None:
+        """A path with no commit history at all is False -- the ordinary
+        never-adopted case."""
+        from frob.gates._registry_exhaustiveness import path_ever_tracked
+
+        _git_init(tmp_path)
+        assert path_ever_tracked(tmp_path, "docs/design/registry") is False
+
+    def test_deleted_after_commit_is_true(self, tmp_path: Path) -> None:
+        """A path committed once and then deleted from the working tree
+        is True -- the adopted-then-deleted case this ticket exists for."""
+        import subprocess
+
+        from frob.gates._registry_exhaustiveness import path_ever_tracked
+
+        _git_init(tmp_path)
+        target_dir = tmp_path / "docs" / "design" / "registry"
+        target_dir.mkdir(parents=True)
+        (target_dir / "compliance.yaml").write_text("entries: []\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "adopt registry"], cwd=tmp_path, check=True
+        )
+        (target_dir / "compliance.yaml").unlink()
+        target_dir.rmdir()
+
+        assert path_ever_tracked(tmp_path, "docs/design/registry") is True
+
+    def test_git_failure_is_false(self, tmp_path: Path) -> None:
+        """A directory that is not a git repo at all degrades to False
+        (the existing "never adopted" posture), not a crash or a false
+        violation from a plumbing failure."""
+        from frob.gates._registry_exhaustiveness import path_ever_tracked
+
+        assert path_ever_tracked(tmp_path, "docs/design/registry") is False
+
+
+# frob:ticket T-0894
+class TestDeletedRegistry:
+    """REG012 (T-0894) -- `registry_gate` distinguishes a `docs/design/
+    registry/` dir that never existed from one that was committed and
+    then deleted."""
+
+    def test_never_adopted_registry_dir_is_silent(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        violations = registry_gate(
+            tmp_path, _queue(), frozenset(), tmp_path / "docs" / "design" / "registry"
+        )
+        assert not any(v.rule == "REG012" for v in violations)
+
+    def test_deleted_after_adoption_fires_reg012(self, tmp_path: Path) -> None:
+        import subprocess
+
+        registry_dir = tmp_path / "docs" / "design" / "registry"
+        _git_init(tmp_path)
+        _write_manifest(
+            tmp_path,
+            "patterns.yaml",
+            """\
+schema_version: 1
+entries:
+  - id: "PAT-EXAMPLE"
+    disposition: "handled_by:SEC003"
+""",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "adopt registry"], cwd=tmp_path, check=True
+        )
+        (registry_dir / "patterns.yaml").unlink()
+        registry_dir.rmdir()
+
+        violations = registry_gate(tmp_path, _queue(), frozenset(), registry_dir)
+
+        rules = _rules(*(v.rule for v in violations))
+        assert "REG012" in rules
+        reg012 = next(v for v in violations if v.rule == "REG012")
+        assert reg012.severity == Severity.ERROR

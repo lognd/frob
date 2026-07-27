@@ -1038,11 +1038,25 @@ under `CMPL_REGISTRY_UNIT_IDS` from `out_of_scope` to
 **Where it runs.** `compliance_gate` is dispatched as the `compliance`
 stage callback (`frob check`'s `gates-fast` stage group). It is silent
 (returns no violations) when `registry_dir` has no `compliance.yaml` at
-all -- a repo with no compliance registry makes no COMPLIANCE005 claim,
-matching `registry_gate`'s own missing-directory posture. It is waivable
-(not in `_UNWAIVABLE_RULES`): a reasoned `frob:waive COMPLIANCE005
-reason="..."` can disposition a specific, honest, temporary exception the
-same way REG001-004 allow one.
+all AND that path was never committed on this branch's history -- a repo
+with no compliance registry makes no COMPLIANCE005 claim, matching
+`registry_gate`'s own missing-directory posture. It is waivable (not in
+`_UNWAIVABLE_RULES`): a reasoned `frob:waive COMPLIANCE005 reason="..."`
+can disposition a specific, honest, temporary exception the same way
+REG001-004 allow one.
+
+**COMPLIANCE006 (T-0894): adopted-then-deleted registry.** A repo that DID
+commit `compliance.yaml` at some point and then lost it -- deleted, by
+accident or by a compliance-load-bearing-artifact removal attack --
+fires `COMPLIANCE006` instead of silently degrading to the never-adopted
+empty-tuple posture above. `path_ever_tracked` (`frob.gates.
+_registry_exhaustiveness`, shared with `registry_gate`'s own `REG012` and
+`decisions_gate`'s `DEC003` -- see `docs/design/registry/EXHAUSTIVENESS-
+GATE.md#reg012-adopted-then-deleted-registry-t-0894`) is the signal: `git
+log -1 -- <path>` against `HEAD` tells whether the path was ever committed
+regardless of its current working-tree state. `COMPLIANCE006` is in
+`_UNWAIVABLE_RULES` -- deleting the registry entirely is a higher-stakes
+claim than any individual entry's disposition, unlike COMPLIANCE005 above.
 
 ### DERIVED001 (T-0603): derived-state integrity precheck
 

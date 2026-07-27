@@ -131,7 +131,7 @@ from frob.tickets._models import TicketQueue, TicketState
 
 _log = get_logger(__name__)
 
-__all__ = ["registry_gate", "REGISTRY_FILES"]
+__all__ = ["registry_gate", "REGISTRY_FILES", "path_ever_tracked"]
 
 # Every registry file this gate reads, as bare basenames -- quoted string
 # literals here are what makes REF001/REF002 (frob.gates._refs's
@@ -778,6 +778,54 @@ def _rel_registry_path(path: Path, repo_root: Path) -> str:
     return str(path)
 
 
+# frob:ticket T-0894
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg012-adopted-then-deleted-registry-t-0894  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestPathEverTracked.test_never_committed_path_is_false  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestPathEverTracked.test_deleted_after_commit_is_true  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestPathEverTracked.test_git_failure_is_false  # noqa: E501
+def path_ever_tracked(repo_root: Path, rel_path: str) -> bool:
+    """True if `rel_path` (relative to `repo_root`) appears anywhere in
+    HEAD's own commit history -- added, and possibly later deleted --
+    even though it is absent from the working tree right now.
+
+    T-0894: `registry_gate`/`compliance_gate`/`decisions_gate` all shared
+    one "missing backing file/dir means no claim, not a violation"
+    posture with no way to tell "this repo never adopted the registry"
+    (genuinely silent) from "this repo adopted the registry and someone
+    deleted it" (a real, structurally invisible vacuousness hole --
+    deletion cleared every violation the registry existing would have
+    produced, and nothing else in the gate catalog fired on the deletion
+    itself). This is the shared signal that tells the two apart: `git log
+    -1 -- <rel_path>` against HEAD returns a commit only if the path was
+    ever committed on this branch's history, regardless of its current
+    working-tree state. A `git` spawn failure (not a repo, no git binary,
+    timeout) degrades to `False` -- the caller's existing "never adopted"
+    posture -- rather than escalating a plumbing failure into a false
+    compliance/registry violation."""
+    from frob.gitio import run_argv
+
+    spawned = run_argv(
+        ("git", "-C", str(repo_root), "log", "-1", "--pretty=%H", "--", rel_path)
+    )
+    if spawned.is_err:
+        _log.warning(
+            "path_ever_tracked: git spawn failed for %s: %s",
+            rel_path,
+            spawned.danger_err,
+        )
+        return False
+    result = spawned.danger_ok
+    if result.returncode != 0:
+        _log.warning(
+            "path_ever_tracked: git log failed (rc=%d) for %s: %s",
+            result.returncode,
+            rel_path,
+            result.stderr,
+        )
+        return False
+    return bool(result.stdout.strip())
+
+
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#registry-exhaustiveness-drift-lock-t-0343  # noqa: E501
 # frob:ticket T-0343
 # frob:ticket T-0407
@@ -809,6 +857,10 @@ def _rel_registry_path(path: Path, repo_root: Path) -> str:
 # frob:tests tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy.test_reason_naming_resolved_rule_is_silent  # noqa: E501
 # frob:tests tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy.test_substantive_reasoned_none_is_silent  # noqa: E501
 # frob:tests tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy.test_bare_none_is_not_substantive  # noqa: E501
+# T-0894: REG012 -- a repo that ever committed docs/design/registry/ and
+# then deleted it is loud, not silently downgraded to "never adopted".
+# frob:tests tests/test_registry_exhaustiveness.py::TestDeletedRegistry.test_never_adopted_registry_dir_is_silent  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestDeletedRegistry.test_deleted_after_adoption_fires_reg012  # noqa: E501
 def registry_gate(
     repo_root: Path,
     queue: TicketQueue,
@@ -825,7 +877,10 @@ def registry_gate(
     anywhere in code, T-0428) / REG009 (a `frob:enforces` edge naming a
     concept id absent from the registry, T-0428) / REG011 (an
     out_of_scope reason naming no resolvable catching control and no
-    substantive reasoned-none, T-0680) over every
+    substantive reasoned-none, T-0680) / REG012 (the registry directory
+    itself was committed on this branch's history and has since been
+    deleted from the working tree -- "never adopted" and "adopted then
+    deleted" are structurally distinguishable now, T-0894) over every
     `docs/design/registry/*.yaml` manifest under `registry_dir` (defaults
     to `repo_root / "docs/design/registry"`).
 
@@ -858,6 +913,28 @@ def registry_gate(
         else (repo_root / "docs/design/registry")
     )
     if not base.is_dir():
+        rel_base = _rel_registry_path(base, repo_root)
+        if path_ever_tracked(repo_root, rel_base):
+            _log.warning(
+                "registry_gate: %s existed in HEAD's history but is now "
+                "deleted from the working tree (REG012)",
+                base,
+            )
+            return (
+                Violation(
+                    rule="REG012",
+                    severity=Severity.ERROR,
+                    file=rel_base,
+                    line=0,
+                    message=(
+                        f"REG012: {rel_base} was previously committed on "
+                        "this branch but has been deleted -- a registry "
+                        "this repo has adopted cannot silently disappear "
+                        "back into 'never adopted' (T-0894); restore it or "
+                        "file a decision record explaining the removal"
+                    ),
+                ),
+            )
         _log.info("registry_gate: %s does not exist, skipping", base)
         return ()
 

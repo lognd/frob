@@ -2380,7 +2380,7 @@ in a `frob check` run over an untrusted tree.
 id: T-0894
 title: Registry-backed gates (COMPLIANCE005/REG*/DEC*) cannot distinguish never-adopted
   from deleted-registry
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -2391,6 +2391,63 @@ sprint: null
 scope:
 - src/frob/gates/__init__.py
 - src/frob/gates/_registry_exhaustiveness.py
+- tests/test_gates.py
+- tests/test_registry_exhaustiveness.py
+- tests/test_decisions.py
+- docs/design/registry/EXHAUSTIVENESS-GATE.md
+- docs/modules/gates.md
+- docs/modules/decisions.md
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: add regression tests for the adopted-then-deleted registry distinction (COMPLIANCE006/REG012/DEC003)
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/test_registry_exhaustiveness.py
+  reason: add regression tests for the adopted-then-deleted registry distinction (COMPLIANCE006/REG012/DEC003)
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/test_decisions.py
+  reason: add regression tests for the adopted-then-deleted registry distinction (COMPLIANCE006/REG012/DEC003)
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: docs/design/registry/EXHAUSTIVENESS-GATE.md
+  reason: T-0894 required doc updates for REG012/COMPLIANCE006/DEC003 to close AFFECT001
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-0894 required doc updates for REG012/COMPLIANCE006/DEC003 to close AFFECT001
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: docs/modules/decisions.md
+  reason: T-0894 required doc updates for REG012/COMPLIANCE006/DEC003 to close AFFECT001
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/test_gates.py::TestComplianceGate::test_compliance005_registered_in_known_gate_rules
+- tests/test_gates.py::TestComplianceGate::test_compliance006_silent_on_never_adopted_registry
+- tests/test_gates.py::TestComplianceGate::test_compliance006_fires_on_deleted_registry_after_adoption
+- tests/test_registry_exhaustiveness.py::TestPathEverTracked::test_never_committed_path_is_false
+- tests/test_registry_exhaustiveness.py::TestPathEverTracked::test_deleted_after_commit_is_true
+- tests/test_registry_exhaustiveness.py::TestPathEverTracked::test_git_failure_is_false
+- tests/test_registry_exhaustiveness.py::TestDeletedRegistry::test_never_adopted_registry_dir_is_silent
+- tests/test_registry_exhaustiveness.py::TestDeletedRegistry::test_deleted_after_adoption_fires_reg012
+- tests/test_decisions.py::test_never_adopted_decisions_dir_is_silent
+- tests/test_decisions.py::test_deleted_after_adoption_fires_dec003
+acceptance:
+- text: Given a repo that committed docs/design/registry/compliance.yaml and then
+    deleted it, compliance_gate through its real production invocation FAILS (raises
+    a COMPLIANCE006 Violation) before this ticket's fix and PASSES (returns the expected
+    COMPLIANCE006 finding, proving the rule actually fires) after it -- test_compliance006_fires_on_deleted_registry_after_adoption
+    exercises compliance_gate exactly as frob check dispatches it, not a pure-function
+    unit test in isolation.
+  evidence:
+  - tests/test_gates.py::TestComplianceGate::test_compliance006_fires_on_deleted_registry_after_adoption
 threat: null
 component: null
 ```
@@ -2424,6 +2481,42 @@ unwaivable violation rather than silently degrading to the "never adopted"
 posture. Scope this ticket to at minimum COMPLIANCE005 (the
 highest-stakes instance); REG*/DEC* can follow the same pattern once the
 mechanism exists.
+
+## Done report
+
+Built a shared signal, `frob.gates._registry_exhaustiveness.path_ever_tracked`
+(git log -1 -- <path> against HEAD), that distinguishes "this repo never
+adopted a registry" from "this repo adopted it and someone deleted it" --
+the exact structural blind spot the ticket describes across all three
+registry-backed gates that shared the old "missing dir/file means no
+claim" posture. Wired it into registry_gate (REG012), compliance_gate
+(COMPLIANCE006), and decisions_gate (DEC003), all unwaivable, all ERROR.
+Updated docs/design/registry/EXHAUSTIVENESS-GATE.md (new REG012 section,
+the canonical home for the mechanism), docs/modules/gates.md's
+COMPLIANCE005 section, and docs/modules/decisions.md's DEC gates table to
+close AFFECT001 on the three changed gate functions. Added regression
+tests for all three (never-adopted stays silent, adopted-then-deleted
+fires the new unwaivable rule) using synthetic tmp_path git repos.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_gates.py::TestComplianceGate::test_compliance005_registered_in_known_gate_rules` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestComplianceGate::test_compliance006_silent_on_never_adopted_registry` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestComplianceGate::test_compliance006_fires_on_deleted_registry_after_adoption` (pytest node id, verified passing when recorded)
+- `tests/test_registry_exhaustiveness.py::TestPathEverTracked::test_never_committed_path_is_false` (pytest node id, verified passing when recorded)
+- `tests/test_registry_exhaustiveness.py::TestPathEverTracked::test_deleted_after_commit_is_true` (pytest node id, verified passing when recorded)
+- `tests/test_registry_exhaustiveness.py::TestPathEverTracked::test_git_failure_is_false` (pytest node id, verified passing when recorded)
+- `tests/test_registry_exhaustiveness.py::TestDeletedRegistry::test_never_adopted_registry_dir_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_registry_exhaustiveness.py::TestDeletedRegistry::test_deleted_after_adoption_fires_reg012` (pytest node id, verified passing when recorded)
+- `tests/test_decisions.py::test_never_adopted_decisions_dir_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_decisions.py::test_deleted_after_adoption_fires_dec003` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: 0 error(s), 19388 warning(s), 333 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0895 -->
 ```yaml

@@ -76,10 +76,23 @@ Runs inside `frob check` (and `frob check --only decisions`) whenever a
 | DEC000 | a decision record is malformed (hard-fail, like the ticket queue) |
 | DEC001 | a `frob:decision AD-###` edge points at a record that does not exist |
 | DEC002 | an `accepted` decision has no `frob:decision` anchor in code |
+| DEC003 | `decisions/` was committed on this branch's history and has since been deleted (T-0894, unwaivable) |
 
 `proposed`/`superseded`/`deprecated` decisions are not required to be
 anchored -- only `accepted` ones carry the obligation, so a decision can be
 recorded before it is implemented and retired without churn.
+
+**DEC003 (T-0894): adopted-then-deleted decisions dir.** "Opt-in" below
+means a `decisions/` directory that never existed makes no obligation --
+but a repo that DID commit one and then lost it is a different claim.
+`decisions_gate` checks `path_ever_tracked` (`frob.gates.
+_registry_exhaustiveness`, the same shared signal backing `registry_gate`'s
+`REG012` and `compliance_gate`'s `COMPLIANCE006` -- see `docs/design/
+registry/EXHAUSTIVENESS-GATE.md#reg012-adopted-then-deleted-registry-t-0894`)
+before treating a missing `decisions/` as silent: `git log -1 -- decisions`
+against `HEAD` tells whether the path was ever committed regardless of its
+current working-tree state. A never-committed path stays silent; a
+committed-then-deleted one fires `DEC003` at ERROR, unwaivable.
 
 ## Design notes
 
@@ -87,4 +100,5 @@ recorded before it is implemented and retired without churn.
   must be tied to the code that embodies it, verified statically.
 - **Records are tracked text; the anchor graph is derived.** The decision
   log lives in git and reviews like code.
-- **Opt-in.** No `decisions/` directory means no obligation.
+- **Opt-in.** No `decisions/` directory that was never committed means no
+  obligation -- once committed, its disappearance is DEC003, not silence.
