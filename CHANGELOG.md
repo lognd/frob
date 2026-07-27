@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.179.0] - unreleased
+
+- T-0584: PRE001 catch-22 on slow mounts: sweep needs a timeout/partial-state or async design (T-0355 item 2)
+
 ## [0.178.0] - unreleased
 
 - T-0437: Doc-pointer resolution gate: every doc reference of a RECOGNIZED resolvable shape must resolve (hardened closed-set, not fuzzy 'seems to point')

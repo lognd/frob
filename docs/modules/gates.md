@@ -1183,6 +1183,7 @@ silently folds in.
 <!-- frob:describes src/frob/gates/_coverage.py::load_coverage -->
 <!-- frob:describes src/frob/gates/__init__.py::active_ticket -->
 <!-- frob:describes src/frob/gates/_prework.py::record_prework -->
+<!-- frob:describes src/frob/gates/_prework.py::sweep_ticket -->
 <!-- frob:describes src/frob/policy/__init__.py::load_policy -->
 <!-- frob:describes src/frob/policy/__init__.py::policy_gate -->
 <!-- frob:describes src/frob/gates/invariants.py::load_invariants -->
@@ -1799,7 +1800,14 @@ def scope_gate(diff: Diff, ticket: Ticket, snapshot: GraphSnapshot, *,
     # -- fixes false SCOPE001 on files an earlier ticket already committed
     # on the same branch). Callers omitting root/queue keep the old,
     # unconditional check.
-def prework_gate(ticket: Ticket, snapshot: GraphSnapshot) -> tuple[Violation, ...]
+def prework_gate(ticket: Ticket, snapshot: GraphSnapshot,
+                 sweep: Option[PreworkSweep] = Nothing()) -> tuple[Violation, ...]
+    # PRE001. T-0584: a PARTIAL sweep (gates/_prework.py::sweep_ticket ran
+    # out of its bounded budget before finishing every scope pattern) whose
+    # digest still matches the ticket's current scope is treated as
+    # provisionally clean, not a violation -- otherwise PRE001 would demand
+    # completion of the very sweep a slow mount could not finish in one
+    # foreground-budget-sized call.
 def invariant_gate(invariants: tuple[Invariant, ...], snapshot: GraphSnapshot,
                    tests: CollectedTests) -> tuple[Violation, ...]
 
@@ -1828,6 +1836,23 @@ def record_prework(root: Path, ticket_id: str,
                    sweep: PreworkSweep) -> Result[Unit, GateError]
     # `frob ticket start` runs dup+xref over the ticket scope and stores the
     # sweep digest in the ticket body; PRE001 checks its presence.
+
+def sweep_ticket(root: Path, ticket: Ticket,
+                 budget_seconds: float | None = DEFAULT_SWEEP_BUDGET_SECONDS
+                 ) -> Result[PreworkSweep, GateError]
+    # T-0584: bounded and resumable. Times the per-scope-pattern xref loop
+    # against `budget_seconds` (None = unbounded, for tests/an explicit full
+    # sweep); the dup scan and graph load still run once, unbounded, ahead
+    # of it. If the deadline is hit with patterns still remaining, records
+    # a `partial=True` sweep with those patterns in `pending_patterns`
+    # instead of blocking to completion -- the previous fully-synchronous
+    # shape of `frob ticket sweep` (the always-available resweep-after-
+    # scope-edit path) could not complete within a slow-mount agent's
+    # foreground budget, and PRE001 only ever compared against a fully-
+    # completed digest, so the ticket could never get back into a checkable
+    # state (the T-0355-item-2 catch-22 this closes). A later call with a
+    # matching digest resumes from `pending_patterns` rather than
+    # rescanning patterns already swept.
 
 # Diff/working_diff live in frob/gitio.py (the ONE git seam, shared with
 # frob.testing -- see docs/modules/testing.md); base default "main", configurable
@@ -2225,7 +2250,12 @@ site -- no new mechanism needed.
   extra: `st.snapshot`/`st.lock` are already unconditionally loaded for
   every gate run before selection is even applied.
 - `PreworkSweep` -- a recorded dup+xref sweep over a ticket's scope,
-  stamped at `frob ticket start` time; PRE001's evidence.
+  stamped at `frob ticket start` time; PRE001's evidence. T-0584: also
+  carries `partial` (the sweep hit its budget before finishing every scope
+  pattern) and `pending_patterns` (the patterns still left to scan) --
+  `prework_gate` treats a partial sweep as provisionally clean as long as
+  its `digest` still matches, and `sweep_ticket` resumes from
+  `pending_patterns` on its next call rather than rescanning from scratch.
 - `SystemSpec` -- one `[[system]]` entry: an e2e-tested surface, its
   entrypoint, and its coverage scope for TEST004/TEST005.
 - `TestPolicy` -- the `[testing]` table: all test-obligation floors
@@ -2263,6 +2293,8 @@ class PreworkSweep(BaseModel):
     dup_findings: int
     xref_hits: tuple[str, ...]
     digest: str                 # over scope file hashes at sweep time
+    partial: bool = False       # T-0584: budget exceeded before finishing
+    pending_patterns: tuple[str, ...] = ()  # scope patterns left to scan
 
 class Invariant(BaseModel):
     id: str                     # ^INV-\d{3}$

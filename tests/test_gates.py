@@ -3571,6 +3571,7 @@ class TestDeprecatedGate:
 
 
 # frob:ticket T-0906
+# frob:ticket T-0584
 class TestScopePrework:
     def test_scope001_out_of_scope_file(self, tmp_path: Path) -> None:
         snap = _snapshot(tmp_path)
@@ -3893,6 +3894,33 @@ class TestScopePrework:
         violations = prework_gate(ticket, snap, Some(sweep))
         assert any(v.rule == "PRE001" for v in violations)
 
+    # frob:ticket T-0584
+    def test_pre001_passes_with_partial_sweep_matching_digest(
+        self, tmp_path: Path
+    ) -> None:
+        """A partial sweep (budget exceeded mid-scan, T-0584) whose digest
+        still matches the ticket's current scope is provisionally clean --
+        PRE001 must not re-demand the very sweep that timed out."""
+        from typani.option import Some
+
+        _write(tmp_path, "src/a.py", _WIDGET_PY)
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(state=TicketState.IN_PROGRESS, scope=("src/**",))
+
+        from frob.gates import _scope_digest  # noqa: PLC0415
+
+        digest = _scope_digest(ticket, snap)
+        sweep = PreworkSweep(
+            date=date(2026, 1, 1),
+            dup_findings=0,
+            xref_hits=(),
+            digest=digest,
+            partial=True,
+            pending_patterns=("src/**",),
+        )
+        violations = prework_gate(ticket, snap, Some(sweep))
+        assert violations == ()
+
     def test_prework_skips_when_not_in_progress(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::prework_gate
         from typani.option import Nothing
@@ -3913,7 +3941,44 @@ class TestScopePrework:
         loaded = load_prework(tmp_path, "T-0001")
         assert loaded == sweep
 
+    # frob:ticket T-0584
+    def test_prework_sweep_default_partial_is_false_and_treated_as_final(
+        self, tmp_path: Path
+    ) -> None:
+        """`PreworkSweep` constructed WITHOUT `partial=` (T-0584's field
+        default) must behave as a COMPLETE sweep, not a partial one: `PRE001`
+        must accept it outright with no "resume with `frob ticket sweep`"
+        debug path taken, and it must round-trip through record/load with
+        `partial` still False and no pending patterns. If the field's
+        default ever flipped to `True`, a freshly-recorded "complete" sweep
+        would misreport itself as partial forever."""
+        from typani.option import Some
 
+        _write(tmp_path, "src/a.py", _WIDGET_PY)
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(state=TicketState.IN_PROGRESS, scope=("src/**",))
+
+        from frob.gates import _scope_digest  # noqa: PLC0415
+        from frob.gates._prework import load_prework  # noqa: PLC0415
+
+        digest = _scope_digest(ticket, snap)
+        sweep = PreworkSweep(
+            date=date(2026, 1, 1), dup_findings=0, xref_hits=(), digest=digest
+        )
+        assert sweep.partial is False
+        assert sweep.pending_patterns == ()
+
+        result = record_prework(tmp_path, ticket.id, sweep)
+        assert result.is_ok
+        loaded = load_prework(tmp_path, ticket.id)
+        assert loaded is not None
+        assert loaded.partial is False
+
+        violations = prework_gate(ticket, snap, Some(sweep))
+        assert violations == ()
+
+
+# frob:ticket T-0584
 class TestPreworkSweepBounds:
     """T-0240: the sweep's xref half used to call `xref(symbol, root)` --
     ALWAYS the full repo root, ignoring the per-pattern scan path it had
@@ -3962,6 +4027,49 @@ class TestPreworkSweepBounds:
         sweep = result.danger_ok
         assert sweep.xref_hits == ("real_widget",)
         assert "**" not in sweep.xref_hits
+
+    # frob:ticket T-0584
+    def test_sweep_ticket_partial_on_budget_exceeded(self, tmp_path: Path) -> None:
+        """A `budget_seconds=0` deadline is exceeded before the first scope
+        pattern is scanned -- the sweep must record `partial=True` with
+        every pattern still pending, rather than blocking to completion or
+        erroring out."""
+        # frob:tests src/frob/gates/_prework.py::sweep_ticket
+        _write(tmp_path, "src/a/mod.py", "def a_widget():\n    pass\n")
+        _write(tmp_path, "src/b/mod.py", "def b_widget():\n    pass\n")
+        ticket = _ticket(state=TicketState.IN_PROGRESS, scope=("src/a/**", "src/b/**"))
+
+        from frob.gates._prework import sweep_ticket
+
+        result = sweep_ticket(tmp_path, ticket, budget_seconds=0.0)
+        assert result.is_ok
+        sweep = result.danger_ok
+        assert sweep.partial is True
+        assert set(sweep.pending_patterns) == {"src/a/**", "src/b/**"}
+        assert sweep.xref_hits == ()
+
+    # frob:ticket T-0584
+    def test_sweep_ticket_resumes_pending_patterns(self, tmp_path: Path) -> None:
+        """A follow-up call with a real budget picks up exactly the patterns
+        the prior partial sweep left pending, and does not re-derive hits
+        for patterns it already recorded."""
+        # frob:tests src/frob/gates/_prework.py::sweep_ticket
+        _write(tmp_path, "src/a/mod.py", "def a_widget():\n    pass\n")
+        _write(tmp_path, "src/b/mod.py", "def b_widget():\n    pass\n")
+        ticket = _ticket(state=TicketState.IN_PROGRESS, scope=("src/a/**", "src/b/**"))
+
+        from frob.gates._prework import sweep_ticket
+
+        first = sweep_ticket(tmp_path, ticket, budget_seconds=0.0)
+        assert first.is_ok
+        assert first.danger_ok.partial is True
+
+        resumed = sweep_ticket(tmp_path, ticket, budget_seconds=None)
+        assert resumed.is_ok
+        sweep = resumed.danger_ok
+        assert sweep.partial is False
+        assert sweep.pending_patterns == ()
+        assert set(sweep.xref_hits) == {"a_widget", "b_widget"}
 
 
 class TestActiveTicket:

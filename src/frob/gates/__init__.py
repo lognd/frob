@@ -5456,6 +5456,23 @@ def prework_gate(
             f"PRE001: {ticket.id}'s recorded pre-work sweep is stale against "
             f"the current scope; run: frob ticket start {ticket.id} again",
         )
+    # T-0584: a PARTIAL sweep (one that ran out of its bounded budget before
+    # finishing every scope pattern -- gates/_prework.py's sweep_ticket) is
+    # still provisionally clean here as long as its digest matches the
+    # ticket's CURRENT scope: the whole point of bounding the sweep is that
+    # PRE001 must not itself demand the very completed sweep a slow mount
+    # could not produce in one foreground-budget-sized call. `frob ticket
+    # sweep <id>` resumes the remaining patterns on the next call; this is
+    # not a permanent bypass, just a way for that resumption to happen
+    # across multiple bounded calls instead of never happening at all.
+    if sweep.danger_some.partial:
+        _log.debug(
+            "PRE001: %s sweep is partial (%d pattern(s) pending) but digest "
+            "matches -- provisionally clean, resume with `frob ticket sweep %s`",
+            ticket.id,
+            len(sweep.danger_some.pending_patterns),
+            ticket.id,
+        )
     return ()
 
 

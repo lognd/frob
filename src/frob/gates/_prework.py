@@ -23,6 +23,7 @@ back with `load_prework`.
 from __future__ import annotations
 
 import json
+import time
 from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -40,6 +41,16 @@ if TYPE_CHECKING:
 _log = get_logger(__name__)
 
 _CACHE_REL = Path(".frob") / "cache.db"
+
+# frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-0584
+# Default wall-clock budget for the per-scope-pattern xref half of
+# `sweep_ticket`, comfortably under the ~90s per-stage foreground cap
+# `docs/guides/agent-playbook.md` section 3b documents for this repo's own
+# gate stages. This is what turns a slow-mount full sweep from "block until
+# done or the caller's foreground timeout kills it" into "make as much
+# progress as the budget allows, persist it, and let the next call resume".
+DEFAULT_SWEEP_BUDGET_SECONDS = 60.0
 
 
 def _prework_path(root: Path, ticket_id: str) -> Path:
@@ -174,10 +185,31 @@ def _xref_hit_for_scope_pattern(
 # frob:tests tests/test_gates.py::TestPreworkSweepBounds.test_sweep_ticket_honors_graph_excludes  # noqa: E501
 # frob:tests tests/test_gates.py::TestPreworkSweepBounds.test_sweep_ticket_skips_builtin_skip_dirs  # noqa: E501
 # frob:tests tests/test_gates.py::TestPreworkSweepBounds.test_sweep_ticket_xref_hits_are_real_symbols  # noqa: E501
-def sweep_ticket(root: Path, ticket: Ticket) -> Result[PreworkSweep, GateError]:
+# frob:tests tests/test_gates.py::TestPreworkSweepBounds.test_sweep_ticket_partial_on_budget_exceeded  # noqa: E501
+# frob:tests tests/test_gates.py::TestPreworkSweepBounds.test_sweep_ticket_resumes_pending_patterns  # noqa: E501
+def sweep_ticket(
+    root: Path,
+    ticket: Ticket,
+    budget_seconds: float | None = DEFAULT_SWEEP_BUDGET_SECONDS,
+) -> Result[PreworkSweep, GateError]:
     """Recompute (dup findings, xref hits, scope digest) and persist `ticket`'s
     pre-work sweep against `root`'s CURRENT tree state, then record it via
     `record_prework`.
+
+    T-0584: bounded and resumable. The per-scope-pattern xref loop is timed
+    against `budget_seconds` (a wall-clock deadline measured from this
+    call's start, `None` meaning unbounded -- used by tests and by any
+    caller that deliberately wants a full synchronous sweep regardless of
+    cost). If a previously-recorded sweep for this ticket is `partial` and
+    its digest still matches the ticket's CURRENT scope digest, this resumes
+    from its `pending_patterns` instead of rescanning patterns it already
+    swept -- so a slow mount pays down the remaining work across however
+    many bounded calls it takes, rather than a single caller ever being on
+    the hook for the whole scan in one shot. Once the deadline is hit with
+    patterns still remaining, this returns (and persists) a `partial=True`
+    sweep instead of blocking -- `prework_gate` treats a partial sweep whose
+    digest matches as provisionally clean, so PRE001 does not require the
+    very sweep that timed out before it can be satisfied again.
 
     This is the single sweep-computation used by both `frob ticket
     start`/`sweep` (app/ticket_runner.py's `_run_sweep`, which this mirrors
@@ -205,6 +237,8 @@ def sweep_ticket(root: Path, ticket: Ticket) -> Result[PreworkSweep, GateError]:
     from frob.gates import scope_digest
     from frob.graph import build_graph, load_graph
 
+    started = time.monotonic()
+
     dup_result = find_duplicates(root)
     dup_findings = dup_result.total_clones
 
@@ -214,31 +248,66 @@ def sweep_ticket(root: Path, ticket: Ticket) -> Result[PreworkSweep, GateError]:
         loaded = build_graph(root, cache)
     snapshot = loaded.ok
 
-    exclude_globs = load_exclude_globs(root)
+    all_patterns = list(ticket.scope or (".",))
+    digest = scope_digest(ticket.scope, snapshot) if snapshot is not None else ""
+
+    # T-0584: resume from a prior partial sweep's leftovers when the scope
+    # digest has not moved since it was recorded -- otherwise the digest
+    # mismatch already makes the old sweep stale and a full rescan from
+    # scratch is correct (the resumption shortcut only ever saves work it is
+    # actually safe to reuse).
     xref_hits: list[str] = []
-    for pattern in ticket.scope or (".",):
+    patterns_to_scan = all_patterns
+    previous = load_prework(root, ticket.id)
+    if previous is not None and previous.partial and previous.digest == digest:
+        xref_hits = list(previous.xref_hits)
+        patterns_to_scan = [p for p in previous.pending_patterns if p in all_patterns]
+        _log.info(
+            "sweep_ticket: %s resuming partial sweep (%d pattern(s) pending)",
+            ticket.id,
+            len(patterns_to_scan),
+        )
+
+    exclude_globs = load_exclude_globs(root)
+    pending_patterns: list[str] = []
+    for i, pattern in enumerate(patterns_to_scan):
+        if budget_seconds is not None and time.monotonic() - started > budget_seconds:
+            pending_patterns = list(patterns_to_scan[i:])
+            _log.warning(
+                "sweep_ticket: %s exceeded %.1fs budget with %d pattern(s) "
+                "remaining -- recording a partial sweep, resume with "
+                "`frob ticket sweep %s`",
+                ticket.id,
+                budget_seconds,
+                len(pending_patterns),
+                ticket.id,
+            )
+            break
         hit = _xref_hit_for_scope_pattern(
             root, ticket.id, pattern, exclude_globs, snapshot
         )
         if hit is not None:
             xref_hits.append(hit)
 
-    digest = scope_digest(ticket.scope, snapshot) if snapshot is not None else ""
+    partial = bool(pending_patterns)
 
     sweep = PreworkSweep(
         date=date.today(),
         dup_findings=dup_findings,
         xref_hits=tuple(xref_hits),
         digest=digest,
+        partial=partial,
+        pending_patterns=tuple(pending_patterns),
     )
     recorded = record_prework(root, ticket.id, sweep)
     if recorded.is_err:
         return Err(recorded.danger_err)
     _log.info(
-        "sweep_ticket: %s refreshed (dup=%d, xref=%d)",
+        "sweep_ticket: %s refreshed (dup=%d, xref=%d, partial=%s)",
         ticket.id,
         dup_findings,
         len(xref_hits),
+        partial,
     )
     return Ok(sweep)
 
@@ -259,4 +328,9 @@ def load_prework(root: Path, ticket_id: str) -> PreworkSweep | None:
         return None
 
 
-__all__ = ["load_prework", "record_prework", "sweep_ticket"]
+__all__ = [
+    "DEFAULT_SWEEP_BUDGET_SECONDS",
+    "load_prework",
+    "record_prework",
+    "sweep_ticket",
+]

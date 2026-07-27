@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frob"
-version = "0.178.0"
+version = "0.179.0"
 description = "The enforcement layer for agentic development: obligation graph, ticket queue, and gates."
 readme = "README.md"
 requires-python = ">=3.11"

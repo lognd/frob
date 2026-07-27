@@ -156,7 +156,20 @@ class GateConfig(BaseModel):
 
 # frob:doc docs/modules/gates.md#data-models
 class PreworkSweep(BaseModel):
-    """A recorded dup+xref sweep over a ticket's scope at `frob ticket start` time."""
+    """A recorded dup+xref sweep over a ticket's scope at `frob ticket start` time.
+
+    T-0584: `partial`/`pending_patterns` support a bounded, resumable sweep on
+    slow mounts (see `gates/_prework.py::sweep_ticket`'s budget_seconds). A
+    sweep that ran out of budget mid-scan records `partial=True` and the
+    scope patterns it did not get to in `pending_patterns`, instead of
+    either blocking forever (the old fully-synchronous-only shape) or
+    silently dropping the unfinished patterns. `prework_gate` treats a
+    partial sweep whose `digest` still matches the ticket's current scope
+    digest as provisionally clean (not a PRE001 violation) -- the whole
+    point being that `frob ticket sweep` can never again be a catch-22 where
+    finishing the sweep requires foreground time the sweep itself does not
+    have.
+    """
 
     model_config = ConfigDict(frozen=True)
 
@@ -164,6 +177,8 @@ class PreworkSweep(BaseModel):
     dup_findings: int
     xref_hits: tuple[str, ...]
     digest: str
+    partial: bool = False
+    pending_patterns: tuple[str, ...] = ()
 
 
 # frob:doc docs/modules/gates.md#data-models
