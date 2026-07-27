@@ -143,13 +143,21 @@ from frob.lang import SymbolKind
 from frob.lang._models import ParsedFile, RawComment, RawSymbol
 from frob.lang._walk_rust import _MACRO_SYMBOL_SUFFIX
 from frob.logging import get_logger
-from frob.testing import (
-    CollectedTests,
+
+# Import from frob.testing's submodules directly, not the frob.testing
+# package __init__ -- that __init__ imports frob.gates (via
+# frob.testing._coverage_wait -> frob.gates._coverage), so importing the
+# *package* here would form a circular import that only survived by
+# accident of import order (T-0634: standalone `import frob.testing`
+# broke). Neither frob.testing._collect nor frob.testing._models imports
+# frob.gates, so this is cycle-free.
+from frob.testing._collect import (
     collect_cpp_tests,
     collect_python_tests,
     collect_rust_tests,
     collect_ts_tests,
 )
+from frob.testing._models import CollectedTests
 from frob.tickets import Ticket, TicketQueue, TicketState, closed_ticket_ids, load_queue
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,

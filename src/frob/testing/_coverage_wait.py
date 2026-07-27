@@ -30,7 +30,13 @@ from pydantic import BaseModel
 from typani import Err, Ok, Result
 from typani.error_set import ErrorSet
 
-from frob.gates import load_stamp
+# frob.gates.__init__ imports from frob.testing (public re-export of
+# CollectedTests et al.); importing the *package* here would form a
+# circular import that survives merely by accident of import order
+# (T-0634). Import `load_stamp` from its actual home module instead --
+# frob.gates._coverage does not import frob.testing -- so frob.testing
+# can be imported standalone with no ordering dependency on frob.gates.
+from frob.gates._coverage import load_stamp
 from frob.graph import GraphSnapshot, build_graph, load_graph
 from frob.logging import get_logger
 from frob.process._guard import guarded_subprocess_run

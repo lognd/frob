@@ -8,17 +8,6 @@ from unittest.mock import patch
 
 from typani import Err, Ok
 
-# Import frob.gates before frob.testing: frob.testing._coverage_wait imports
-# frob.gates at module scope, and frob.gates imports frob.testing back at
-# module scope -- a real (pre-existing, out-of-T-0575-scope) circular import
-# that only resolves cleanly when frob.gates finishes initializing first.
-# Running this file standalone (rather than alongside the rest of the suite,
-# where some earlier-collected module already warms this order) otherwise
-# raises ImportError: cannot import name 'CollectedTests' from partially
-# initialized module 'frob.testing'. Filed as a follow-up ticket; not fixed
-# here since it touches src/frob/gates/__init__.py, outside this ticket's
-# declared scope.
-import frob.gates  # noqa: F401
 from frob.gitio import ProcResult
 from frob.testing import (
     FlakeError,
