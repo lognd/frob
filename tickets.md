@@ -1837,7 +1837,7 @@ Cuts: none against the stated acceptance criteria.
 ```yaml
 id: T-0648
 title: 'strata: golden-signal SLO + error-budget obligation per service'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -1849,14 +1849,55 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_slo.py::TestMissingSlo::test_service_node_without_slo_fires
+- tests/unit/strata/test_slo.py::TestMissingSlo::test_only_slo_or_only_error_budget_still_fires
+- tests/unit/strata/test_slo.py::TestMissingSlo::test_discharged_and_non_service_nodes_clean
+- tests/unit/strata/test_slo.py::TestMissingSlo::test_waiver_discharges_finding
+- tests/unit/strata/test_slo.py::TestUnprovenSlo::test_declared_with_no_code_evidence_fires
+- tests/unit/strata/test_slo.py::TestUnprovenSlo::test_declared_with_real_code_evidence_discharges
+- tests/unit/strata/test_slo.py::TestUnprovenSlo::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
 acceptance:
 - text: Given a service node with no golden-signal SLOs + error budget declared, when
     checked, then the obligation fires
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_slo.py::TestMissingSlo::test_service_node_without_slo_fires
+  - tests/unit/strata/test_slo.py::TestMissingSlo::test_only_slo_or_only_error_budget_still_fires
+  - tests/unit/strata/test_slo.py::TestMissingSlo::test_discharged_and_non_service_nodes_clean
+  - tests/unit/strata/test_slo.py::TestMissingSlo::test_waiver_discharges_finding
+  - tests/unit/strata/test_slo.py::TestUnprovenSlo::test_declared_with_no_code_evidence_fires
+  - tests/unit/strata/test_slo.py::TestUnprovenSlo::test_declared_with_real_code_evidence_discharges
+  - tests/unit/strata/test_slo.py::TestUnprovenSlo::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
 threat: null
 component: null
 ```
 Every service node must declare golden-signal SLOs (latency/traffic/errors/saturation) and an error budget. Depends on the metrics-instrumentation obligation existing first, since an SLO without the underlying signal is unverifiable.
+
+## Done report
+
+The REL28x golden-signal-SLO-obligation family (`src/frob/strata/_slo.py`)
+and its doc section (`docs/strata/reliability.md#rel28x-golden-signal-slo--error-budget-obligation-t-0648`)
+were already implemented and committed in the same worktree pass as
+T-0649 (see T-0649's Done report note); that ticket's blocker
+(T-0647 OBSERVABILITY) has since landed, so this pass only re-runs the
+sweep, records evidence, and closes T-0648's own ledger entry -- no
+source changes were made in this pass.
+
+Changed: none this pass (code/docs/tests were already present on `main`
+via the T-0649-adjacent commit).
+Evidence: 7 pytest node ids in `tests/unit/strata/test_slo.py`, bound to
+acceptance[0] via `frob ticket evidence T-0648 ... --accepts 0`.
+Filed: none.
+Gates: `uv run frob check --only lint --ticket T-0648` -> PASS 0/0;
+`uv run frob check --only static --ticket T-0648` -> PASS (frob-cycle/
+frob-dup/frob-arch/frob-exports all pass, same pre-existing export/dup
+warnings other REL2xx modules also carry); `uv run frob ticket sweep
+T-0648` re-run after `make core` (fresh worktree had no natives built,
+T-0144 environment artifact, not a regression) then `uv run frob check
+--only gates-fast --ticket T-0648` -> PASS 0 errors; `uv run frob check
+--only gates-native --ticket T-0648` -> PASS 0 errors; `uv run frob
+check --only gates-security --ticket T-0648` -> PASS 0 errors.
+Measured: `uv run pytest -q tests/unit/strata/test_slo.py` -> 7 passed.
 
 <!-- ticket:T-0649 -->
 ```yaml
@@ -3527,6 +3568,7 @@ threat: null
 component: null
 ```
 User mandate 2026-07-22: statically enforce system state protocols -- the *_init-never-called / *_deinit-never-called class, and generally functions valid only in particular states (TCP-handshake-style machines), plus cleanup-on-all-paths. Frame: TYPESTATE over the call graph, restricted to two decidable fragments: (a) module/subsystem protocols (the object is a singleton subsystem -- reachability + summaries suffice, no alias analysis); (b) declared object protocols checked at summary granularity. DELIBERATE DECISIONS: declared protocols with name-pattern-inferred init/deinit convenience (inference ONLY for the common pair, never for general machines); per-function summary fixpoint engine shared with the T-0686 may-raise engine (one engine, three clients: exceptions, capabilities, protocols -- no-duplication); language excuses are recorded DISCHARGES naming their mechanism (Rust Drop unless mem::forget observed; C++ RAII only when init result held by destructor-bearing object; Python with-blocks, GC finalizers NEVER count; TS using/try-finally), per T-0383 caught_by doctrine. LIMITS declared: no aliased per-object heap typestate (Rust owns that); concurrent establishment races belong to T-0693 family; dynamic dispatch = Unknown fail-closed (T-0339). Children: declaration surface, summary engine, state-requirement verification + excuses, cleanup obligations. Umbrella closes when children close.
+
 <!-- ticket:T-0740 -->
 ```yaml
 id: T-0740
@@ -4200,6 +4242,7 @@ Scope: src/frob/app/check_runner.py, src/frob/gates/__init__.py (the
 
 ## Drop reason
 - 2026-07-26: already implemented by T-0787: ticket_lease_pin in gates/__init__.py wired via _refuse_ticket_lease_mismatch in check_runner.py run(), with regression coverage in tests/test_tickets_leases.py (verified against main tip c5a13a68) (absorbed by T-0787)
+
 <!-- ticket:T-0781 -->
 ```yaml
 id: T-0781
