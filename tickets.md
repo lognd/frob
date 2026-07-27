@@ -8261,3 +8261,105 @@ threat: null
 component: null
 ```
 T-0992 added the land-side monotonicity backstop and it has now correctly REFUSED a third stale-bump attempt (T-0997 land computed 0.183.0 vs main 0.184.0). But the producer bug remains: _apply_release_bump_for_land derives its baseline from the worktree-carried release manifest/pyproject that rode the squash. Fix the callback to read the baseline from ROOT current state (same git-show technique as the guard) so the guard becomes a never-fires invariant instead of a per-land speed bump requiring a manual worktree merge. Churn-epic member: each guard refusal costs a merge+reland round trip.
+
+<!-- ticket:T-1008 -->
+```yaml
+id: T-1008
+title: 'EPIC: generate, do not hand-maintain -- auto-generate the boilerplate the
+  drive kept touching by hand'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/**
+- docs/**
+threat: null
+component: null
+```
+User directive 2026-07-27: a lot of boilerplate gets touched up by hand (versioning being the worst offender -- three coordinator hand-repairs of the pyproject/uv.lock/.frob-release.json/CHANGELOG quartet this drive, each partial repair causing the next incident). Principle: every hand-maintained artifact that is derivable from a single source of truth becomes GENERATED, with a coherence gate so hand-edits are caught, not trusted. Children: (1) version quartet -- single-source version in the release manifest, a frob release sync command that regenerates all four artifacts, and a REL coherence error asserting they agree (the T-0992/T-1007 guard class becomes structurally unnecessary); (2) _KNOWN_GATE_RULES -- invert the T-0964 constant/literal scanner: the scan IS the registry, generated into the module (or checked as generated), with an explicit retired-ids allowlist as the only hand-maintained part; (3) check-coverage.yaml gate_rule_entries -- auto-run the existing --sync-gate-rules at land time instead of manual re-syncs (drifted twice this drive); (4) README/docs command tables -- generate from the live argparse registry so DOC005 becomes a generator check rather than a hand-sync lock. Epic closes when a full drive-style wave produces zero hand-edits of any generated artifact.
+
+<!-- ticket:T-1009 -->
+```yaml
+id: T-1009
+title: 'single-source version: frob release sync regenerates the quartet + REL coherence
+  error'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: high
+parent: T-1008
+tier: ticket
+sprint: null
+scope:
+- src/frob/**
+- Makefile
+- tests/**
+acceptance:
+- text: given any one artifact hand-edited out of agreement, when frob check runs,
+    then a REL error names the disagreeing files; given frob release sync, all four
+    agree afterward
+  evidence: []
+threat: null
+component: null
+```
+Child 1 of T-1008. The version lives ONCE in .frob-release.json; frob release sync regenerates pyproject.toml version, uv.lock (via uv lock), and the CHANGELOG skeleton entry from it; a REL coherence check errors when any of the four disagree (catching hand-edits immediately instead of at the next land). Fold T-1007 (bump-callback baseline from root) into this: with a single source + sync, the callback reads the manifest on ROOT and the whole stale-worktree class dies. Update the land path and make upload to use sync.
+
+<!-- ticket:T-1010 -->
+```yaml
+id: T-1010
+title: generate _KNOWN_GATE_RULES from the T-0964 scanner (registry = scan, allowlist
+  only for retired ids)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: T-1008
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- tests/test_gates.py
+acceptance:
+- text: given a new gate emitting a fresh rule id via constant or literal, when generation
+    runs, then the registry contains it with no hand edit; the drift-lock passes with
+    an empty ad hoc allowlist
+  evidence: []
+threat: null
+component: null
+```
+Child 2 of T-1008. The registry drifted repeatedly (T-0903/T-0923/T-0924/T-0961/T-0966 all hand-added batches). Invert: the T-0964 constant+literal scan derives the live rule-id set; _KNOWN_GATE_RULES becomes generated-or-verified against it, with a small hand-maintained retired-ids list as the only manual part. The drift-lock test then verifies the generator, not hand-parity.
+
+<!-- ticket:T-1011 -->
+```yaml
+id: T-1011
+title: auto-sync check-coverage gate_rule_entries at land + generate command tables
+  from argparse registry
+state: queued
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: T-1008
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/app/**
+- docs/**
+- tests/**
+acceptance:
+- text: given a land whose diff adds a gate rule id, when it lands, then check-coverage.yaml
+    carries the new row with no manual sync; given a new CLI subcommand, docs sync
+    regenerates both tables and DOC005 verifies freshness
+  evidence: []
+threat: null
+component: null
+```
+Children 3+4 of T-1008 (bundled: both are generate-at-the-source items). (a) land runs the existing registry --sync-gate-rules automatically when _KNOWN_GATE_RULES changed in the landing diff, ending manual re-syncs (drifted twice this drive). (b) README and docs/modules/cli.md command tables become generated from the live argparse registry (frob docs sync-commands or equivalent), turning DOC005 from a hand-sync lock into a generator-freshness check.
