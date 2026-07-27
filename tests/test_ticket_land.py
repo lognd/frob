@@ -2105,8 +2105,12 @@ class TestGitSubprocessFailures:
         assert result.is_err
         assert result.danger_err == LandError.GitFailed
         # The merge that already landed in the worktree must have been
-        # aborted -- no half-applied merge state left behind.
-        assert _run(["git", "status", "--porcelain"], wt).stdout.strip() == ""
+        # aborted -- no half-applied merge state left behind. Mutation
+        # evidence's own derived_state_lock legitimately leaves
+        # `.frob/derived.lock` behind (same scratch-artifact class as
+        # `.frob/land.lock`, T-0577) -- filter `.frob/` like every other
+        # such assertion in this file.
+        assert _status_ignoring_frob(wt) == ""
 
     def test_squash_command_failure(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
