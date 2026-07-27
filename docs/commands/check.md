@@ -13,7 +13,18 @@ frob check src/ --type cpp             # C++/CMake mode
 frob check src/ --type rust            # Rust/Cargo mode
 frob check src/ --type typescript      # npm/TypeScript mode
 frob check src/ --json                 # machine-readable output
+frob check --budget 100                # self-select --only chunks to fit 100s (T-1004)
 ```
+
+`--budget SECONDS` self-selects and orders `--only` stage groups
+(`frob.check.available_stages()`) to fit inside `SECONDS`, using a
+persisted rolling estimate of how long each group actually took last time
+(`.frob/check-budget-timing.json`). It runs the selected subset in one
+process, and if anything did not fit, persists the remainder as resume
+state (`.frob/check-budget-state.json`) and reports it as a `BUDGET001`
+warning naming every deferred group -- never a silent drop. Re-running
+the same command continues from the resume state. See
+`docs/guides/agent-playbook.md` section 3b for the full agent recipe.
 
 ## Public API
 

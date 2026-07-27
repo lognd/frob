@@ -742,6 +742,272 @@ def _run_stamp_baseline(root: Path, cfg: AppConfig) -> None:
     _log.info("baseline stamp written: %d violation(s)", len(all_violations))
 
 
+# frob:ticket T-1004
+#: Seconds assumed for a stage group `--budget` has never measured yet
+#: (first run, or a group added to `_STAGE_GROUPS` since the last
+#: measurement) -- the playbook's own "~90s per-stage budget" target
+#: (agent-playbook.md section 3b), so an unmeasured group is treated as
+#: "roughly at the per-stage cap" rather than free or infinite.
+_BUDGET_DEFAULT_ESTIMATE_S = 90.0
+
+#: Exponential-moving-average weight `_update_budget_timing` gives the
+#: newest measurement (T-1004): 0.5 means the last two runs dominate the
+#: estimate, so a stage group that has genuinely gotten slower/faster
+#: (new gate added, tree grown) is reflected within a couple of budgeted
+#: runs instead of being dragged out by a long history.
+_BUDGET_TIMING_EMA_ALPHA = 0.5
+
+# frob:ticket T-1004
+_BUDGET_TIMING_REL = Path(".frob") / "check-budget-timing.json"
+
+# frob:ticket T-1004
+_BUDGET_STATE_REL = Path(".frob") / "check-budget-state.json"
+
+
+# frob:ticket T-1004
+def _budget_timing_path(root: Path) -> Path:
+    """Where `--budget`'s rolling per-stage-group timing estimate lives
+    (T-1004): `{group_name: estimated_seconds}`, updated after every stage
+    group `--budget` actually runs."""
+    return root / _BUDGET_TIMING_REL
+
+
+# frob:ticket T-1004
+def _budget_state_path(root: Path) -> Path:
+    """Where `--budget`'s resume state lives (T-1004): the ordered list of
+    stage group names not yet run from the most recent budgeted pass, so
+    the next `--budget` invocation continues instead of restarting from
+    the top every time."""
+    return root / _BUDGET_STATE_REL
+
+
+# frob:ticket T-1004
+def _load_budget_timing(root: Path) -> dict[str, float]:
+    """The persisted `{group: seconds}` estimate map (T-1004), or `{}` if
+    no measurement has ever been recorded or the file is missing/corrupt
+    (corrupt is "start over with defaults", never a crash -- this is a
+    disposable performance hint, not the real gate state)."""
+    import json as _json
+
+    path = _budget_timing_path(root)
+    if not path.exists():
+        return {}
+    try:
+        data = _json.loads(path.read_text())
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    return {str(k): float(v) for k, v in data.items() if isinstance(v, (int, float))}
+
+
+# frob:ticket T-1004
+def _save_budget_timing(root: Path, timing: dict[str, float]) -> None:
+    """Persist `timing` to `_budget_timing_path`, creating `.frob/` if this
+    is the first budgeted run in this checkout."""
+    import json as _json
+
+    path = _budget_timing_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(_json.dumps(timing))
+
+
+# frob:ticket T-1004
+def _update_budget_timing(
+    timing: dict[str, float], group: str, elapsed_s: float
+) -> dict[str, float]:
+    """Fold one fresh `group` measurement into `timing` via an EMA
+    (`_BUDGET_TIMING_EMA_ALPHA`), returning a new dict (does not mutate
+    `timing` in place, so a caller can compare before/after if it wants
+    to)."""
+    updated = dict(timing)
+    prior = updated.get(group)
+    if prior is None:
+        updated[group] = elapsed_s
+    else:
+        alpha = _BUDGET_TIMING_EMA_ALPHA
+        updated[group] = (alpha * elapsed_s) + ((1.0 - alpha) * prior)
+    return updated
+
+
+# frob:ticket T-1004
+def _load_budget_remaining(root: Path) -> list[str] | None:
+    """The resume list from a prior truncated `--budget` run (T-1004), or
+    `None` if there is no resume state (a fresh start, or the last run
+    completed every stage group)."""
+    import json as _json
+
+    path = _budget_state_path(root)
+    if not path.exists():
+        return None
+    try:
+        data = _json.loads(path.read_text())
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, list) or not all(isinstance(x, str) for x in data):
+        return None
+    return data
+
+
+# frob:ticket T-1004
+def _save_budget_remaining(root: Path, remaining: list[str]) -> None:
+    """Persist `remaining` (the stage groups a `--budget` run deferred) as
+    the resume state the next `--budget` invocation continues from."""
+    import json as _json
+
+    path = _budget_state_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(_json.dumps(remaining))
+
+
+# frob:ticket T-1004
+def _clear_budget_remaining(root: Path) -> None:
+    """Delete the resume-state file (T-1004): every stage group the last
+    `--budget` run considered has now been run, so there is nothing left
+    to continue from."""
+    path = _budget_state_path(root)
+    if path.exists():
+        path.unlink()
+
+
+# frob:ticket T-1004
+# frob:tests tests/unit/test_check_budget.py::TestSelectBudgetChunks.test_greedy_pack_fits_under_budget  # noqa: E501
+# frob:tests tests/unit/test_check_budget.py::TestSelectBudgetChunks.test_first_stage_always_selected_even_if_over_budget  # noqa: E501
+def _select_budget_chunks(
+    remaining: list[str], timing: dict[str, float], budget_s: int
+) -> tuple[list[str], list[str]]:
+    """Greedily split `remaining` into `(selected, deferred)` so the summed
+    estimated cost of `selected` fits `budget_s` (T-1004).
+
+    Uses `timing.get(group, _BUDGET_DEFAULT_ESTIMATE_S)` per group and
+    walks `remaining` in order, adding a group while the running total
+    (including it) stays `<= budget_s`. The FIRST group is always
+    selected even if its own estimate alone exceeds `budget_s` --
+    guarantees every `--budget` invocation makes forward progress instead
+    of a too-small budget selecting nothing and silently spinning
+    forever."""
+    selected: list[str] = []
+    total = 0.0
+    for i, group in enumerate(remaining):
+        estimate = timing.get(group, _BUDGET_DEFAULT_ESTIMATE_S)
+        if i == 0:
+            selected.append(group)
+            total += estimate
+            continue
+        if total + estimate <= budget_s:
+            selected.append(group)
+            total += estimate
+        else:
+            break
+    deferred = remaining[len(selected) :]
+    return selected, deferred
+
+
+# frob:ticket T-1004
+def _run_budget_chunk(
+    cfg: AppConfig, root: Path, group: str
+) -> tuple[CheckResult, float]:
+    """Run one stage `group` (a `--only` group name) exactly like a normal
+    `--only <group>` invocation would, returning `(result, elapsed_s)`
+    (T-1004) so the caller can fold both the `CheckResult` and the fresh
+    timing measurement into its own accumulators."""
+    import time
+
+    chunk_cfg = cfg.model_copy(update={"check_only": [group], "check_budget": None})
+    start = time.monotonic()
+    result = _run_all_stages(chunk_cfg, root)
+    elapsed = time.monotonic() - start
+    return result, elapsed
+
+
+# frob:ticket T-1004
+def _budget_deferred_result(deferred: list[str], budget_s: int) -> ToolResult:
+    """A visible (WARNING-severity, never silent) `ToolResult` naming every
+    stage group `--budget` did NOT get to this run (T-1004) -- deferring
+    work is fine, deferring it quietly is the exact stall class this
+    ticket exists to remove."""
+    names = ", ".join(deferred)
+    message = (
+        f"BUDGET001: --budget {budget_s} deferred {len(deferred)} stage "
+        f"group(s) to a later run: {names}. Resume state persisted -- "
+        "run `frob check --budget <seconds>` again to continue."
+    )
+    return ToolResult(
+        tool="budget",
+        exit_code=0,
+        summary=f"deferred {len(deferred)} stage group(s): {names}",
+        diagnostics=[Diagnostic(severity="warning", code="BUDGET001", message=message)],
+    )
+
+
+# frob:ticket T-1004
+# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_runs_selected_chunks_and_reports_result  # noqa: E501
+# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_persists_resume_state_for_deferred_groups  # noqa: E501
+# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_resumes_from_prior_remaining_state  # noqa: E501
+# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_clears_resume_state_once_every_group_has_run  # noqa: E501
+def _run_budgeted_check(root: Path, cfg: AppConfig) -> None:
+    """`frob check --budget SECONDS`: self-select and order `--only` stage
+    groups to fit inside `SECONDS`, run exactly that subset, persist
+    resume state for whatever was deferred, and report the deferral
+    loudly (T-1004).
+
+    Reuses `frob.check.available_stages()` (the same 5 groups the
+    playbook's manual chunked `--only` loop iterates) as the chunk
+    universe -- NO DUPLICATION of a second grouping. Resume state
+    (`_budget_state_path`) carries forward across invocations: a second
+    `--budget` call continues from where the first left off rather than
+    restarting the same already-run groups. Timing estimates
+    (`_budget_timing_path`) are a rolling EMA seeded from real measured
+    wall time of each chunk actually run, persisted immediately after
+    each chunk so a mid-run crash still keeps whatever it measured.
+    """
+    from frob.check import available_stages
+
+    # narrows for the type checker; caller-guaranteed by `run`'s `is not None` check
+    assert cfg.check_budget is not None
+    budget_s = cfg.check_budget
+
+    remaining = _load_budget_remaining(root)
+    if remaining is None:
+        remaining = available_stages()
+    # A resume file can go stale relative to `available_stages()` (a group
+    # renamed/removed since it was written) -- drop anything no longer
+    # recognized rather than trying to run a stage that does not exist.
+    known = set(available_stages())
+    remaining = [g for g in remaining if g in known]
+    if not remaining:
+        remaining = available_stages()
+
+    timing = _load_budget_timing(root)
+    selected, deferred = _select_budget_chunks(remaining, timing, budget_s)
+
+    _log.info(
+        "check --budget %d: running %d stage group(s) (%s), deferring %d (%s)",
+        budget_s,
+        len(selected),
+        ", ".join(selected),
+        len(deferred),
+        ", ".join(deferred) if deferred else "none",
+    )
+
+    all_results: list[ToolResult] = []
+    for group in selected:
+        chunk_result, elapsed = _run_budget_chunk(cfg, root, group)
+        all_results.extend(chunk_result.results)
+        timing = _update_budget_timing(timing, group, elapsed)
+        _save_budget_timing(root, timing)
+        _log.info("check --budget: stage group %r done in %.1fs", group, elapsed)
+
+    if deferred:
+        all_results.append(_budget_deferred_result(deferred, budget_s))
+        _save_budget_remaining(root, deferred)
+    else:
+        _clear_budget_remaining(root)
+
+    result = CheckResult(path=str(root), results=all_results)
+    _report_check_result(cfg, result)
+
+
 # frob:ticket T-0563
 def _report_check_result(cfg: AppConfig, result) -> None:  # noqa: ANN001
     """Emit `result` as JSON or colorized text per `cfg`, then exit 1 on errors.
@@ -981,6 +1247,21 @@ def _refuse_ticket_lease_mismatch(root: Path, cfg: AppConfig) -> bool:
     return True
 
 
+# frob:ticket T-1004
+def _handle_early_exit_modes(root: Path, cfg: AppConfig) -> bool:
+    """`--only list` and `--budget SECONDS` both exit `run` immediately
+    without the normal full/`--only` dispatch below (T-1004: pulled out of
+    `run` itself to keep it under ARCH001's line threshold) -- returns
+    `True` once either has fired, so `run` can return right after."""
+    if cfg.check_only == ["list"]:
+        _print_stage_list(cfg)
+        return True
+    if cfg.check_budget is not None:
+        _run_budgeted_check(root, cfg)
+        return True
+    return False
+
+
 def _handle_stamp_modes(root: Path, cfg: AppConfig) -> bool:
     """Run `--stamp-coverage`/`--stamp-baseline` and return True when one
     fired, so `run` can return immediately instead of running any stage."""
@@ -1148,8 +1429,8 @@ def run(cfg: AppConfig) -> None:
         sys.exit(1)
 
     # frob:ticket T-0627
-    if cfg.check_only == ["list"]:
-        _print_stage_list(cfg)
+    # frob:ticket T-1004
+    if _handle_early_exit_modes(root, cfg):
         return
 
     # frob:ticket T-0627

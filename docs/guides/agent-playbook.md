@@ -160,31 +160,101 @@ about) -- this has caused silent failures where a command failed but the
 truncated output looked clean. If output is long, redirect to a file and
 read the file, or scroll -- do not filter the live command.
 
-## 3b. Never background a verification and end your turn to "wait" for it
+## 3b. Foreground + explicit `timeout` wrapper is the ONLY sanctioned pattern (T-1004)
 
-As a dispatched sub-agent, do NOT run pytest / frob check / builds with
-run_in_background (or set a Monitor) and then end your turn "waiting for
-the notification". The moment you end your turn with no live background
-children, no notification will EVER arrive -- the mission silently stalls
-until a coordinator manually notices and pokes you (this has burned
-multiple real dispatches). Run every verification command in the
-FOREGROUND and wait for it in-turn, even when it takes minutes. The only
-sanctioned exception is `make coverage`, which you must not run at all
-(section 6b) -- everything else is foreground.
+As a dispatched sub-agent, backgrounding a verification is never a choice
+that ends well -- there is no agent-initiated background mode where the
+completion notification can actually reach you. Do NOT run pytest / frob
+check / builds with `run_in_background` (or set a `Monitor`) and then end
+your turn "waiting for the notification". The moment you end your turn
+with no live background children, no notification will EVER arrive -- the
+mission silently stalls until a coordinator manually notices and pokes
+you. A full-drive coordination-churn audit measured this as the single
+largest recurring stall class in this repo's history (~10 occurrences,
+`docs/audits/coordination-churn.md` item 5): an agent runs a long
+command, the harness auto-backgrounds it at ~120s, and the agent then
+waits forever on a notification that structurally cannot arrive.
 
-**A bare `frob check` is the single most common way to trip this anti-
-pattern by accident** (T-0627: 4+ occurrences in one session before this
-was fixed). A full check/gates pass on this repo measures well past the
-~120s foreground cap on its own -- an agent who runs plain `frob check`
-is not choosing to background it, but the harness does it anyway
-the moment the timeout hits, and the stall described above follows
-automatically. As of T-0627, this is now a hard stop rather than a trap:
-when `FROB_AGENT` is set in your shell (T-0574 -- true for every
-dispatched worktree agent), a bare `frob check` with no `--only` stage
+The sanctioned pattern is mechanical, not just prose discipline: run
+every verification command in the FOREGROUND, wrapped in an explicit
+`timeout` comfortably under your harness's auto-background cap, so a
+command that runs long fails loudly and immediately with output you can
+act on in-turn -- never a silent stall:
+
+```
+timeout 100 uv run frob check --only "$s"
+timeout 100 uv run pytest tests/unit/test_foo.py -p no:cacheprovider -q
+```
+
+Pick a `timeout` value with margin under the ~120s cap (100-110s leaves
+room); a command that trips it exits nonzero instead of crossing into
+auto-background territory. There is no sanctioned exception left to this
+rule: `make coverage` (section 6b) is not run by a sub-agent at all,
+foreground or background, full stop -- it is a coordinator-only step.
+
+**A bare `frob check` is the single most common way to trip the
+auto-background trap by accident** (T-0627: 4+ occurrences in one session
+before this was fixed). A full check/gates pass on this repo measures
+well past the ~120s foreground cap on its own -- an agent who runs plain
+`frob check` is not choosing to background it, but the harness does it
+anyway the moment the timeout hits, and the stall described above follows
+automatically. As of T-0627, this is a hard stop rather than a trap: when
+`FROB_AGENT` is set in your shell (T-0574 -- true for every dispatched
+worktree agent), a bare `frob check` with no `--only`/`--budget`
 selection REFUSES immediately (exit 1) instead of running and stalling.
-Use the chunked loop below every time; do not reach for
-`FROB_ALLOW_FULL_CHECK=1` (the escape hatch, meant for a coordinator's own
-shell, not a sub-agent's) just to silence the refusal.
+Use `--budget` or the manual `--only` loop below every time; do not reach
+for `FROB_ALLOW_FULL_CHECK=1` (the escape hatch, meant for a
+coordinator's own shell, not a sub-agent's) just to silence the refusal.
+
+**Recipe 1 -- `frob check --budget SECONDS` (T-1004, preferred whenever
+you just want "whatever fits, safely, in one shot" rather than a specific
+named stage):** self-selects and orders `--only` stage groups to fit
+inside `SECONDS`, using a rolling estimate of how long each group
+actually took last time (persisted in `.frob/check-budget-timing.json`,
+seeded from a conservative ~90s default the first time a group is
+measured). It runs the selected subset in ONE foreground, `timeout`-
+wrapped invocation, updates the timing estimate for every group it ran,
+and -- if anything did not fit -- persists exactly which groups are still
+outstanding (`.frob/check-budget-state.json`) and reports them LOUDLY: a
+`BUDGET001` warning naming every deferred group by name, never a silent
+drop. Re-running the identical command continues from the resume state
+instead of restarting from the top:
+
+```
+timeout 110 uv run frob check --budget 100
+# BUDGET001 names anything deferred -- just run it again to continue:
+timeout 110 uv run frob check --budget 100
+```
+
+This removes the main reason an agent used to reach for a long/
+unbounded command in the first place: you never have to enumerate stage
+names yourself, and you never have to guess how much is left --
+`--budget`'s own output tells you, in the same invocation that ran what
+it could. Add `--ticket T-XXXX` / `--json` exactly as you would to a
+single `frob check` call.
+
+**Recipe 2 -- the manual `--only` loop (T-0627; use this when you want an
+exact stage by name, or for `--stamp-baseline`'s own chunking, which
+`--budget` does not cover -- see the next paragraph and section 6):** run
+one `--only` stage-group per invocation, each measured comfortably under
+the ~90s per-stage budget on this repo, `timeout`-wrapped per the rule
+above:
+
+```
+for s in $(timeout 30 uv run frob check --only list); do
+  timeout 100 uv run frob check --only "$s"
+done
+```
+
+`uv run frob check --only list` prints the current stage-group names, one
+per line (`lint`, `static`, `gates-fast`, `gates-native`,
+`gates-security`) -- discover them this way rather than hardcoding the
+list, since new groups may be added later. Add `--ticket T-XXXX` /
+`--json` / `--delta` to each iteration exactly as you would to a single
+`frob check` call; every existing flag composes with `--only` unchanged.
+A stage-group name is just a preset `--only` value (see
+`frob.check._STAGE_GROUPS`) -- naming an individual tool (`ruff`) or gate
+(`doclink`) directly still works exactly as before, unaffected.
 
 `frob check --stamp-baseline` used to share this exact hazard (it ran one
 undelta'd all-gates `run_gates` call, same as a bare `frob check` -- T-0751
@@ -212,10 +282,10 @@ split it further by passing individual gate ids (any bare gate name works
 via `--only`, not just a stage-group alias), e.g.:
 
 ```
-uv run frob check --stamp-baseline --only gates-native
-uv run frob check --stamp-baseline --only gates-security
-uv run frob check --stamp-baseline --only test
-uv run frob check --stamp-baseline --only drift --only coverage --only invariant \
+timeout 100 uv run frob check --stamp-baseline --only gates-native
+timeout 100 uv run frob check --stamp-baseline --only gates-security
+timeout 100 uv run frob check --stamp-baseline --only test
+timeout 110 uv run frob check --stamp-baseline --only drift --only coverage --only invariant \
   --only policy --only doclink --only docanchor --only fuzz --only release \
   --only decisions --only tickets --only refs --only registry --only compliance \
   --only docblocks --only walk_lint --only excludehazard --only debt --only deprecated \
@@ -229,26 +299,10 @@ does batching -- the accumulator only cares that the union of every gate id
 seen across calls eventually covers every gate that exists; each call logs
 how many of the total it has covered so far, so a `chunk recorded (N/35
 gate(s) covered so far)` line means keep going, not that something failed.
-
-**The sanctioned chunked loop** -- run one `--only` stage-group per
-invocation, each measured comfortably under the ~90s per-stage budget on
-this repo:
-
-```
-for s in $(uv run frob check --only list); do
-  uv run frob check --only "$s"
-done
-```
-
-`uv run frob check --only list` prints the current stage-group names, one
-per line (`lint`, `static`, `gates-fast`, `gates-native`,
-`gates-security`) -- discover them this way rather than hardcoding the
-list, since new groups may be added later. Add `--ticket T-XXXX` /
-`--json` / `--delta` to each iteration exactly as you would to a single
-`frob check` call; every existing flag composes with `--only` unchanged.
-A stage-group name is just a preset `--only` value (see
-`frob.check._STAGE_GROUPS`) -- naming an individual tool (`ruff`) or gate
-(`doclink`) directly still works exactly as before, unaffected.
+`--budget` (Recipe 1 above) does not drive `--stamp-baseline` -- it self-
+selects `--only` groups for a normal check run, not the gate-only
+accumulator `--stamp-baseline` builds; use this explicit `--only` chunking
+for stamping a baseline specifically.
 
 ## 4. Scope conventions
 
@@ -343,12 +397,11 @@ Prefer `frob check --delta` against a stamped baseline over stash-isolation
 dances (stash changes, run check, unstash, diff).
 
 ```
-uv run frob check --stamp-baseline --only gates-native      # once, before starting work
-uv run frob check --stamp-baseline --only gates-security    # (chunked -- see section 3b)
-uv run frob check --stamp-baseline --only gates-fast         #
+timeout 100 uv run frob check --stamp-baseline --only gates-native      # once, before starting work
+timeout 100 uv run frob check --stamp-baseline --only gates-security    # (chunked -- see section 3b)
+timeout 100 uv run frob check --stamp-baseline --only gates-fast         #
 # ... implement ...
-uv run frob check --delta            # reports only violations NEW since the stamp
-uv run frob check --delta --ticket T-XXXX --json   # scoped + machine-readable, if needed
+timeout 110 uv run frob check --budget 100 --delta   # or the --only loop; every flag composes with --budget
 ```
 
 A missing or stale baseline degrades `--delta` to the full violation set

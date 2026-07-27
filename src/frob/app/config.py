@@ -164,6 +164,13 @@ class AppConfig(BaseModel):
     check_stamp_coverage: bool = False
     check_stamp_baseline: bool = False
     check_delta: bool = False
+    # frob:ticket T-1004
+    #: `frob check --budget N`: self-select and order stage chunks (the same
+    #: `available_stages()` groups the playbook's chunked `--only` loop
+    #: uses) to fit inside N seconds using persisted measured timings,
+    #: instead of an agent hand-running the chunked loop itself. `None`
+    #: (default) leaves normal full/`--only` behavior untouched.
+    check_budget: int | None = None
     # frob:ticket T-0421
     #: `[check] skip_unchanged = true` in frob.toml only (no CLI flag, to
     #: keep __main__'s argument surface untouched) -- opts a polyglot
@@ -756,6 +763,11 @@ class AppConfig(BaseModel):
         parse_ec = getattr(args, "parse_exit_code", None)
         if parse_ec is not None:
             d["parse_exit_code"] = int(parse_ec)
+
+        # frob:ticket T-1004
+        check_budget = getattr(args, "check_budget", None)
+        if check_budget is not None:
+            d["check_budget"] = int(check_budget)
 
         # Float fields
         for float_field in ("vet_timeout", "perf_interval_s"):

@@ -618,12 +618,24 @@ def _add_check_selection_args(check_p) -> None:
 
 
 def _add_check_delta_and_verbose_args(check_p) -> None:
-    """Register `frob check`'s `--stamp-baseline`/`--delta`/`-v` args."""
+    """Register `frob check`'s `--stamp-baseline`/`--delta`/`--budget`/`-v` args."""
     check_p.add_argument(
         "--stamp-baseline",
         dest="check_stamp_baseline",
         action="store_true",
         help="record the current gate violations as the delta baseline and exit",
+    )
+    # frob:ticket T-1004
+    check_p.add_argument(
+        "--budget",
+        dest="check_budget",
+        type=int,
+        metavar="SECONDS",
+        help=(
+            "self-select and run as many --only stage groups as fit in "
+            "SECONDS (measured timings, persisted resume state for the "
+            "remainder) instead of hand-running the chunked --only loop"
+        ),
     )
     check_p.add_argument(
         "--delta",

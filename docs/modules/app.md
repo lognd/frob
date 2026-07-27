@@ -74,6 +74,12 @@ overrides for `frob.graph.affects.affects`'s own bounds -- collected via
 the ordinary int-field loop in `from_external`, same posture as
 `perf_max_depth`.
 
+T-1004: `check_budget` (`int | None`, default `None`) is `frob check
+--budget SECONDS`'s int field, collected the same way -- `None` leaves
+every other `check_*` behavior untouched; set, it routes `check_runner.run`
+to `_run_budgeted_check` before the normal full/`--only` dispatch (see
+docs/commands/check.md).
+
 ## Runners
 
 Each runner exposes exactly one public function, `run(cfg: AppConfig) -> None`,
@@ -120,7 +126,9 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
 - `scaffold_runner.run` -- lists project types or renders a new project
   scaffold (docs/commands/scaffold.md).
 - `check_runner.run` -- runs the full `frob check` tool pipeline
-  (docs/commands/check.md).
+  (docs/commands/check.md); `cfg.check_budget` set (T-1004) routes to
+  `_run_budgeted_check` instead, self-selecting `--only` stage groups to
+  fit the given second count.
 - `ack_runner.run` -- builds/loads the graph, acknowledges refs, writes the
   lock file (docs/modules/graph.md).
 - `ticket_runner.run` -- dispatches to the ticket subcommand named by
