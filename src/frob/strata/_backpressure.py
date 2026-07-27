@@ -231,6 +231,8 @@ def _apply_backpressure_waivers(
 
 # frob:doc docs/strata/reliability.md#rel26x-backpressure-obligation-t-0646
 # frob:ticket T-0646
+# frob:ticket T-0958
+# frob:enforces SDC-5-LOAD-SHEDDING
 # frob:tests tests/unit/strata/test_backpressure.py::TestMissingBoundedIntake.test_queue_node_without_bounded_intake_fires  # noqa: E501
 def check_backpressure_obligations(
     model: KernelModel, root: Path

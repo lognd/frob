@@ -1345,6 +1345,28 @@ _KNOWN_GATE_RULES = frozenset(
         # is exactly this ticket's defect class and this file is already
         # in scope.
         "PARSE002",
+        # frob:ticket T-0958
+        # T-0958: the T-0331 epic's REL2xx/REL3xx obligation-family rule
+        # ids (frob.strata's _reliability/_retry/_backpressure/
+        # _observability/_slo/_message_schema/_delivery_semantics/
+        # _distributed_txn/_clock_ordering modules) were never added to
+        # this frozenset when landed -- the same listing-omission class
+        # T-0903/T-0923/T-0924 already fixed for other batches. Adding
+        # only the ids this ticket's system-design.yaml reconciliation
+        # actually cites via `handled_by:<rule>` (REG002 needs them in
+        # known_rules to resolve); the full REL2xx-REL38x family beyond
+        # these is a separate, larger listing-omission still open.
+        "REL200",
+        "REL220",
+        "REL221",
+        "REL260",
+        "REL270",
+        "REL272",
+        "REL280",
+        "REL320",
+        "REL330",
+        "REL350",
+        "REL370",
     }
 )
 

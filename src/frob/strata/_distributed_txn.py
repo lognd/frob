@@ -261,6 +261,9 @@ def _apply_distributed_txn_waivers(
 
 # frob:doc docs/strata/reliability.md#rel35x-distributed-transaction-across-services-obligation-t-0655  # noqa: E501
 # frob:ticket T-0655
+# frob:ticket T-0958
+# frob:enforces SDC-4-DISTRIBUTED-TRANSACTIONS
+# frob:enforces SDC-4-OUTBOX-SAGA-PATTERNS
 # frob:tests tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_multi_service_write_op_without_saga_fires  # noqa: E501
 def check_distributed_txn_obligations(
     model: KernelModel, root: Path

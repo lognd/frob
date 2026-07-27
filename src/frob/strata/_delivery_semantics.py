@@ -285,6 +285,12 @@ def _apply_delivery_semantics_waivers(
 
 # frob:doc docs/strata/reliability.md#rel33x-delivery-semantics-obligation-t-0652  # noqa: E501
 # frob:ticket T-0652
+# frob:ticket T-0958
+# frob:enforces SDC-4-EXACTLY-ONCE-PROCESSING
+# frob:enforces SDC-5-IDEMPOTENT-RECEIVER
+# frob:enforces SDC-8-AT-MOST-ONCE
+# frob:enforces SDC-8-AT-LEAST-ONCE
+# frob:enforces SDC-8-IDEMPOTENT-CONSUMERS
 # frob:tests tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics.test_queue_node_without_delivery_semantics_fires  # noqa: E501
 def check_delivery_semantics_obligations(
     model: KernelModel, root: Path

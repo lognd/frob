@@ -296,6 +296,9 @@ def _apply_retry_waivers(model: KernelModel, violations: list[RetryViolation]): 
 
 # frob:doc docs/strata/reliability.md#rel22x-retry-obligation-t-0641
 # frob:ticket T-0641
+# frob:ticket T-0958
+# frob:enforces SDC-4-IDEMPOTENCY
+# frob:enforces SDC-5-RETRY-BACKOFF-JITTER
 # frob:tests tests/unit/strata/test_retry.py::TestMissingBackoff.test_retry_flow_without_backoff_fires  # noqa: E501
 def check_retry_obligations(
     model: KernelModel, root: Path

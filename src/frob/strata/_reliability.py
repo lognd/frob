@@ -529,6 +529,8 @@ def _apply_reliability_waivers(
 
 # frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
 # frob:ticket T-0640
+# frob:ticket T-0958
+# frob:enforces SDC-5-TIMEOUT
 # frob:tests tests/unit/strata/test_reliability.py::TestMissingTimeout.test_flow_without_timeout_fires  # noqa: E501
 def check_reliability_timeouts(
     model: KernelModel, root: Path

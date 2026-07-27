@@ -305,6 +305,8 @@ def _apply_clock_ordering_waivers(
 
 # frob:doc docs/strata/reliability.md#rel37x-clockordering-assumptions-obligation-t-0657  # noqa: E501
 # frob:ticket T-0657
+# frob:ticket T-0958
+# frob:enforces SDC-8-ORDERING-GUARANTEES
 # frob:tests tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy.test_clock_dependent_flow_without_ordering_strategy_fires  # noqa: E501
 def check_clock_ordering_obligations(
     model: KernelModel, root: Path

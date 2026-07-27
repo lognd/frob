@@ -2578,7 +2578,7 @@ T-0700 shipped access modes + resource/arbitrated_by grammar. design/frob.strata
 id: T-0958
 title: reconcile the 56 deferred:T-0331 system-design entries against the landed REL26x-REL38x
   obligation families
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-27'
@@ -2589,14 +2589,175 @@ sprint: null
 scope:
 - docs/design/registry/system-design.yaml
 - tests/test_registry_reconciliation_system_design.py
+- src/frob/gates/__init__.py
+- src/frob/strata/_distributed_txn.py
+- src/frob/strata/_delivery_semantics.py
+- src/frob/strata/_retry.py
+- src/frob/strata/_reliability.py
+- src/frob/strata/_backpressure.py
+- src/frob/strata/_observability.py
+- src/frob/strata/_slo.py
+- src/frob/strata/_clock_ordering.py
+- src/frob/strata/_message_schema.py
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: handled_by dispositions in system-design.yaml need (a) frob:enforces edges
+    in the owning REL2xx/REL3xx rule modules (REG008) and (b) the corresponding rule
+    ids registered in gates/__init__.py's _KNOWN_GATE_RULES (REG002), same listing-omission
+    class T-0903/T-0923/T-0924 already fixed for other batches
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: src/frob/strata/_distributed_txn.py
+  reason: handled_by dispositions in system-design.yaml need (a) frob:enforces edges
+    in the owning REL2xx/REL3xx rule modules (REG008) and (b) the corresponding rule
+    ids registered in gates/__init__.py's _KNOWN_GATE_RULES (REG002), same listing-omission
+    class T-0903/T-0923/T-0924 already fixed for other batches
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: src/frob/strata/_delivery_semantics.py
+  reason: handled_by dispositions in system-design.yaml need (a) frob:enforces edges
+    in the owning REL2xx/REL3xx rule modules (REG008) and (b) the corresponding rule
+    ids registered in gates/__init__.py's _KNOWN_GATE_RULES (REG002), same listing-omission
+    class T-0903/T-0923/T-0924 already fixed for other batches
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: src/frob/strata/_retry.py
+  reason: handled_by dispositions in system-design.yaml need (a) frob:enforces edges
+    in the owning REL2xx/REL3xx rule modules (REG008) and (b) the corresponding rule
+    ids registered in gates/__init__.py's _KNOWN_GATE_RULES (REG002), same listing-omission
+    class T-0903/T-0923/T-0924 already fixed for other batches
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: src/frob/strata/_reliability.py
+  reason: handled_by dispositions in system-design.yaml need (a) frob:enforces edges
+    in the owning REL2xx/REL3xx rule modules (REG008) and (b) the corresponding rule
+    ids registered in gates/__init__.py's _KNOWN_GATE_RULES (REG002), same listing-omission
+    class T-0903/T-0923/T-0924 already fixed for other batches
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: src/frob/strata/_backpressure.py
+  reason: handled_by dispositions in system-design.yaml need (a) frob:enforces edges
+    in the owning REL2xx/REL3xx rule modules (REG008) and (b) the corresponding rule
+    ids registered in gates/__init__.py's _KNOWN_GATE_RULES (REG002), same listing-omission
+    class T-0903/T-0923/T-0924 already fixed for other batches
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: src/frob/strata/_observability.py
+  reason: handled_by dispositions in system-design.yaml need (a) frob:enforces edges
+    in the owning REL2xx/REL3xx rule modules (REG008) and (b) the corresponding rule
+    ids registered in gates/__init__.py's _KNOWN_GATE_RULES (REG002), same listing-omission
+    class T-0903/T-0923/T-0924 already fixed for other batches
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: src/frob/strata/_slo.py
+  reason: handled_by dispositions in system-design.yaml need (a) frob:enforces edges
+    in the owning REL2xx/REL3xx rule modules (REG008) and (b) the corresponding rule
+    ids registered in gates/__init__.py's _KNOWN_GATE_RULES (REG002), same listing-omission
+    class T-0903/T-0923/T-0924 already fixed for other batches
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: src/frob/strata/_clock_ordering.py
+  reason: handled_by dispositions in system-design.yaml need (a) frob:enforces edges
+    in the owning REL2xx/REL3xx rule modules (REG008) and (b) the corresponding rule
+    ids registered in gates/__init__.py's _KNOWN_GATE_RULES (REG002), same listing-omission
+    class T-0903/T-0923/T-0924 already fixed for other batches
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: src/frob/strata/_message_schema.py
+  reason: handled_by dispositions in system-design.yaml need (a) frob:enforces edges
+    in the owning REL2xx/REL3xx rule modules (REG008) and (b) the corresponding rule
+    ids registered in gates/__init__.py's _KNOWN_GATE_RULES (REG002), same listing-omission
+    class T-0903/T-0923/T-0924 already fixed for other batches
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_declared_total_is_119
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_audit_reports_exhausted
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket
+- tests/test_registry_reconciliation_system_design.py::TestExhaustivenessGateOverRealSystemDesign::test_no_system_design_violations
 acceptance:
 - text: given the 56 rows, when the registry gate runs, then zero rows cite T-0331
     and every disposition resolves (REG002/REG008/REG011 clean)
-  evidence: []
+  evidence:
+  - tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_declared_total_is_119
+  - tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_audit_reports_exhausted
+  - tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
+  - tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket
+  - tests/test_registry_reconciliation_system_design.py::TestExhaustivenessGateOverRealSystemDesign::test_no_system_design_violations
+- text: T-0756 new-gate-rule fixture proof -- before this change, TestExhaustivenessGateOverRealSystemDesign::test_no_system_design_violations
+    FAILed (REG002 dangling handled_by:REL200/REL220/REL221/REL260/REL270/REL272/REL280/REL320/REL330/REL350/REL370,
+    none of those ids were in gates/__init__.py's _KNOWN_GATE_RULES yet); after adding
+    them alongside the matching handled_by dispositions and frob:enforces edges, the
+    same production `registry_gate` invocation PASSes with zero violations
+  evidence:
+  - tests/test_registry_reconciliation_system_design.py::TestExhaustivenessGateOverRealSystemDesign::test_no_system_design_violations
 threat: null
 component: null
 ```
 Successor to epic T-0331 (closing). The epic landed thirteen obligation families (REL26x backpressure through REL38x starvation, plus SYS204 contention). The 56 registry entries that deferred to the epic must now be re-dispositioned individually: handled_by:<rule> where a landed family genuinely covers the concept (with the frob:enforces edge REG008 wants), deferred to a real follow-up ticket for concepts still unbuilt, or reasoned out_of_scope per the T-0722/T-0912 precedents. Catalogued-is-not-enforced applies: no handled_by without a live registered rule.
+
+## Done report
+
+Changed:
+docs/design/registry/system-design.yaml (56 rows re-dispositioned; header note updated)
+src/frob/strata/_distributed_txn.py::check_distributed_txn_obligations (frob:enforces SDC-4-DISTRIBUTED-TRANSACTIONS, SDC-4-OUTBOX-SAGA-PATTERNS)
+src/frob/strata/_delivery_semantics.py::check_delivery_semantics_obligations (frob:enforces SDC-4-EXACTLY-ONCE-PROCESSING, SDC-5-IDEMPOTENT-RECEIVER, SDC-8-AT-MOST-ONCE, SDC-8-AT-LEAST-ONCE, SDC-8-IDEMPOTENT-CONSUMERS)
+src/frob/strata/_retry.py::check_retry_obligations (frob:enforces SDC-4-IDEMPOTENCY, SDC-5-RETRY-BACKOFF-JITTER)
+src/frob/strata/_reliability.py::check_reliability_timeouts (frob:enforces SDC-5-TIMEOUT)
+src/frob/strata/_backpressure.py::check_backpressure_obligations (frob:enforces SDC-5-LOAD-SHEDDING)
+src/frob/strata/_observability.py::check_observability_obligations (frob:enforces SDC-6-USE-METHOD-UTILIZATION-SATURATION-ERRORS, SDC-7-THREE-PILLARS-METRICS-LOGS-TRACES, SDC-7-DISTRIBUTED-TRACING-DAPPER)
+src/frob/strata/_slo.py::check_slo_obligations (frob:enforces SDC-7-SLO-BASED-ALERTING)
+src/frob/strata/_clock_ordering.py::check_clock_ordering_obligations (frob:enforces SDC-8-ORDERING-GUARANTEES)
+src/frob/strata/_message_schema.py::check_message_schema_obligations (frob:enforces SDC-13-EVERY-SERVICE-TO-SERVICE-API-DECLARES-AN-EXPLICIT-SCHEMA-CONTRACT-WITH-A-VERSIONING)
+src/frob/gates/__init__.py::_KNOWN_GATE_RULES (added REL200/220/221/260/270/272/280/320/330/350/370, the exact ids this ticket's handled_by dispositions cite -- REG002 needs them in known_rules to resolve)
+
+Disposition counts (56 rows, all previously deferred:T-0958):
+  handled_by: 17 (REL200 x1, REL220 x1, REL221 x1, REL260 x1, REL270 x2, REL272 x1, REL280 x1, REL320 x1, REL330 x5, REL350 x2)
+  deferred: 4 (to 2 new child tickets, 2 rows each -- see Filed)
+  out_of_scope: 35 (7 network-fallacy descriptive concepts, 10 named consensus/replication algorithms frob does not implement, 6 replication/sharding architecture patterns, 2 db-transaction/CDC descriptive concepts, 1 meta-concept, 1 tail-latency descriptive phenomenon, 1 named-practice/person citation, 1 log-abstraction descriptive concept, 6 deployment/ops methodology patterns)
+
+Enforces edges added: 17 `frob:enforces <SDC-id>` directives across the 9 strata modules listed above (one per handled_by row), each paired with the disposition's target rule.
+
+Filed:
+T-0962 -- static checks: ABI/ISA compat-window stability + boot-chain signed/measured attestation obligations (feature; 2 sec-13 rows deferred here)
+T-0960 -- static checks: kernel/userspace-interface classification + per-process cgroup resource-bound declaration obligations (feature; 2 sec-13 rows deferred here)
+T-0961 -- gates/__init__.py _KNOWN_GATE_RULES missing the bulk of the REL26x-REL38x + SYS204 obligation-family rule ids (bug; the broader listing-omission this ticket only partially closed, scoped to just the 11 ids it needed)
+
+Evidence:
+tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_declared_total_is_119 -- pass
+tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_audit_reports_exhausted -- pass
+tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket -- pass
+tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket -- pass
+tests/test_registry_reconciliation_system_design.py::TestExhaustivenessGateOverRealSystemDesign::test_no_system_design_violations -- pass
+Also observed passing (not separately bound as evidence): full tests/test_registry_reconciliation_system_design.py (8/8), tests/test_registry_exhaustiveness.py (33/33), tests/unit/strata/test_{retry,reliability,backpressure,observability,slo,clock_ordering,message_schema,distributed_txn,delivery_semantics}.py (all pass), tests/test_gates.py -k KnownGateRuleIds (pass).
+
+Gates: `frob check --ticket T-0958` chunked (prework, scope, coverage, doclink, docanchor, registry) all pass 0 errors after re-running `frob ticket sweep T-0958` post scope-add. `frob check --ticket T-0958 --only registry` shows 0 violations of any severity attributed to docs/design/registry/system-design.yaml (REG002/REG008/REG011 clean).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_declared_total_is_119` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_audit_reports_exhausted` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestExhaustivenessGateOverRealSystemDesign::test_no_system_design_violations` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 4971 warning(s), 220 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0959 -->
 ```yaml
@@ -2712,3 +2873,65 @@ Gates: not run repo-wide (chunked `frob check` not needed for this
 scoped, test-verified fix); scoped test suite and ruff both clean as
 above. `frob ticket close` will re-verify evidence/Done-report from
 scratch.
+
+<!-- ticket:T-0960 -->
+```yaml
+id: T-0960
+title: 'static checks: kernel/userspace-interface classification + per-process cgroup
+  resource-bound declaration obligations'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/_process_bounds.py
+- docs/strata/reliability.md
+threat: null
+component: null
+```
+Filed while reconciling T-0958's system-design.yaml deferred rows. SDC-13-EVERY-KERNEL-USERSPACE-INTERFACE-SYSCALL-PROCFS-SYSFS-ENTRY-IOCTL-IS-CLASSIFIED-INT and SDC-13-EVERY-DEPLOYED-PROCESS-DECLARES-ITS-RESOURCE-BOUNDS-CGROUP-LIMITS-CPU-MEMORY-IO-AND name two genuinely checkable, currently-unbuilt obligations: (1) every kernel/userspace interface (syscall, procfs/sysfs entry, ioctl) a node touches being classified (trusted/untrusted, read/write, etc.) into the same kind of deny-by-default declared-attr obligation REL2xx/REL3xx already use, and (2) every deployed process node declaring its resource bounds (cgroup cpu/memory/io limits) -- structurally the same "declared bound + provability" shape _backpressure.py's REL260/261 and _interactive_cost.py's REL310/311 already establish for other resource dimensions, just not yet built for process-level cgroup bounds or kernel-interface classification. No landed REL/SYS family covers either concept today. Scope: a new strata rule module (e.g. src/frob/strata/_process_bounds.py) plus docs/strata/reliability.md plus the corresponding registry re-disposition once built.
+
+<!-- ticket:T-0961 -->
+```yaml
+id: T-0961
+title: gates/__init__.py _KNOWN_GATE_RULES missing the bulk of the REL26x-REL38x +
+  SYS204 obligation-family rule ids
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/__init__.py
+threat: null
+component: null
+```
+Filed while working T-0958 (system-design.yaml reconciliation). T-0958 added exactly the 11 REL2xx/REL3xx rule ids it needed for its own handled_by dispositions (REL200/220/221/260/270/272/280/320/330/350/370) to gates/__init__.py's _KNOWN_GATE_RULES frozenset, but the REL26x-REL38x epic (T-0331's landed obligation families) shipped roughly two dozen more rule ids that were never added there either -- the same listing-omission class T-0903/T-0923/T-0924 already fixed for other batches. Known gap at filing time (non-exhaustive): REL201, REL210, REL211, REL222, REL230, REL231, REL261, REL271, REL281, REL290, REL291, REL300, REL301, REL310, REL311, REL321, REL331, REL340, REL351, REL360, REL371, REL372, REL380, REL381, REL382, REL383, and SYS204. Fix: audit every REL_MISSING_*/REL_UNPROVEN_*-shaped constant across src/frob/strata/*.py plus SYS204 (frob.strata._contention) against _KNOWN_GATE_RULES and add every one actually missing, mirroring T-0903/T-0923/T-0924's own precedent comments.
+
+<!-- ticket:T-0962 -->
+```yaml
+id: T-0962
+title: 'static checks: ABI/ISA compat-window stability + boot-chain signed/measured
+  attestation obligations'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/_supply_chain_boot.py
+- docs/strata/reliability.md
+threat: null
+component: null
+```
+Filed while reconciling T-0958's system-design.yaml deferred rows. SDC-13-A-DECLARED-ABI-ISA-TARGET-IS-STABLE-ACROSS-A-COMPATIBILITY-WINDOW-A-COMPILED-ARTIFA and SDC-13-EVERY-BOOT-CHAIN-STAGE-IS-SIGNED-SECURE-BOOT-OR-MEASURED-INTO-AN-ATTESTABLE-LOG-MEA name two genuinely checkable, currently-unbuilt supply-chain/OS obligations: (1) a declared ABI/ISA compatibility-window claim on a compiled artifact that a static check could verify stays honored across the window, and (2) each boot-chain stage being signed (secure boot) or measured into an attestable log, again a presence/provenance claim a static grammar attr + proof check could enforce, mirroring the REL2xx/REL3xx PROVABILITY CONSTRAINT pattern (_obligation_proof.py::node_has_bound_code) already established for other obligation families. No landed REL/SYS family covers either concept today. Scope: a new strata rule module (e.g. src/frob/strata/_supply_chain_boot.py) plus docs/strata/reliability.md (or a new supply-chain doc section) plus the corresponding registry re-disposition once built.

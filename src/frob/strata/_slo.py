@@ -258,6 +258,8 @@ def _apply_slo_waivers(model: KernelModel, violations: list[SloViolation]):  # n
 
 # frob:doc docs/strata/reliability.md#rel28x-golden-signal-slo--error-budget-obligation-t-0648  # noqa: E501
 # frob:ticket T-0648
+# frob:ticket T-0958
+# frob:enforces SDC-7-SLO-BASED-ALERTING
 # frob:tests tests/unit/strata/test_slo.py::TestMissingSlo.test_service_node_without_slo_fires  # noqa: E501
 def check_slo_obligations(
     model: KernelModel, root: Path

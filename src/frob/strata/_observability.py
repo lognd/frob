@@ -302,6 +302,10 @@ def _apply_observability_waivers(
 
 # frob:doc docs/strata/reliability.md#rel27x-observability--correlation-obligation-t-0647  # noqa: E501
 # frob:ticket T-0647
+# frob:ticket T-0958
+# frob:enforces SDC-6-USE-METHOD-UTILIZATION-SATURATION-ERRORS
+# frob:enforces SDC-7-THREE-PILLARS-METRICS-LOGS-TRACES
+# frob:enforces SDC-7-DISTRIBUTED-TRACING-DAPPER
 # frob:tests tests/unit/strata/test_observability.py::TestMissingObservability.test_boundary_flow_without_observability_fires  # noqa: E501
 def check_observability_obligations(
     model: KernelModel, root: Path
