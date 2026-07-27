@@ -100,7 +100,7 @@ class NormalizedCall(BaseModel):
     identifier detail per argument) -- the shared unit every dispatch/
     construction/delegation detector (`frob.arch._patterns`) reasons
     about. `declared_raises` (T-0689) is the parsed exception-name set from
-    a same-line `# frob:raises A, B` comment covering this call site --
+    a same-line `# frob:callee-raises A, B` comment covering this call site --
     `None` when no such comment is present (the common case); an empty
     `frozenset()` is a DISTINCT, valid declaration ("this boundary call is
     declared to raise nothing", e.g. an errno-convention FFI call), so

@@ -946,28 +946,45 @@ per-function `raises` set for downstream `frob.arch` categories (T-0688's
 exhaustiveness/boundary-catch-all family) to consume, not a
 warning/suggestion of its own.
 
-**Opaque boundaries and `frob:raises` declarations (T-0689).** A call
-crossing into ctypes/cffi or any other compiled C-extension module this
-resolver has no Python source to see into (not a same-module function,
-not in either curated raiser table below) is already fail-closed to
-`UNKNOWN` via the ordinary unresolved-callee path -- no special-casing is
-needed to make an opaque boundary Unknown by default. Two escapes from
-that default: (1) a curated `_STDLIB_QUALIFIED_RAISERS` table, keyed on a
-call's FULL dotted callee text (`"json.loads"`, `"sqlite3.connect"`,
-`"sqlite3.execute"`, `"struct.pack"`, `"struct.unpack"`) rather than the
-bare name `_BUILTIN_RAISERS` matches on, so well-known stdlib
-C-extension calls resolve to their documented exception precisely; (2) a
-same-line `# frob:raises A, B` comment on the call site
+**Opaque boundaries and `frob:callee-raises` declarations (T-0689,
+renamed from `frob:raises` by T-0931).** A call crossing into ctypes/cffi
+or any other compiled C-extension module this resolver has no Python
+source to see into (not a same-module function, not in either curated
+raiser table below) is already fail-closed to `UNKNOWN` via the ordinary
+unresolved-callee path -- no special-casing is needed to make an opaque
+boundary Unknown by default. Two escapes from that default: (1) a
+curated `_STDLIB_QUALIFIED_RAISERS` table, keyed on a call's FULL dotted
+callee text (`"json.loads"`, `"sqlite3.connect"`, `"sqlite3.execute"`,
+`"struct.pack"`, `"struct.unpack"`) rather than the bare name
+`_BUILTIN_RAISERS` matches on, so well-known stdlib C-extension calls
+resolve to their documented exception precisely; (2) a same-line
+`# frob:callee-raises A, B` comment on the call site
 (`NormalizedCall.declared_raises`, parsed by `frob.arch._python`'s
-`PythonAdapter` for python; `# frob:raises` alone declares the EMPTY
-set) SUBSTITUTES its declared set for that call unconditionally, checked
-FIRST before either curated table -- the intended way to clear an
-otherwise-`UNKNOWN` ctypes/cffi call. This resolver only CONSUMES a
+`PythonAdapter` for python; `# frob:callee-raises` alone declares the
+EMPTY set) SUBSTITUTES its declared set for that call unconditionally,
+checked FIRST before either curated table -- the intended way to clear
+an otherwise-`UNKNOWN` ctypes/cffi call. This resolver only CONSUMES a
 declaration already parsed onto the model; the declaration
 grammar/enforcement across FFI boundaries generally (cross-checking a
 pyo3 declaration against its visible Rust side, requiring a declaration
 on every ctypes boundary) is a separate sibling ticket's job (T-0690),
 not duplicated here.
+
+**Naming note (T-0931).** This call-site directive was originally named
+`frob:raises` (T-0689), but T-0688 landed concurrently with an unrelated
+ABOVE-THE-DEF, function-wide `frob:raises` declared-propagation
+directive consumed by `EXHAUST002` (see
+[EXHAUST001/EXHAUST002](gates.md#exhaust001-exhaust002-t-0688) in
+gates.md) -- same verb text, different placement rule, different
+semantics, different consumer. T-0931 reconciled this by keeping
+`frob:raises` for the function-wide declared-propagation surface (the
+form T-0690's FFI-boundary declarations will also extend, matching its
+`frob:deprecated`-style above-the-def placement) and renaming this
+call-site, per-`NormalizedCall` form to `frob:callee-raises`. The two
+directives remain independent: a function can carry an above-the-def
+`frob:raises` declaring what it propagates to ITS OWN callers, while any
+call inside its body can independently carry a `frob:callee-raises`
+declaring what THAT callee is known to raise.
 
 It is closely related to, but distinct from, the [Fallibility
 checks](#fallibility-checks) family above: `_fallibility.py` flags
@@ -1392,7 +1409,7 @@ each per-grammar walker implements to produce it:
 | `NormalizedParam` | one parameter: name, optional type, whether it has a default |
 | `NormalizedBranch` | one decision point (`if`/`elif`/ternary/short-circuit): line + condition source text |
 | `NormalizedLoop` | one `for`/`while`: line + kind |
-| `NormalizedCall` | one call site: callee name, line, and `declared_raises` (T-0689 -- a `# frob:raises A, B` comment's parsed exception-name set, or `None` when absent; see [may-raise resolver](#may-raise-resolver)) |
+| `NormalizedCall` | one call site: callee name, line, and `declared_raises` (T-0689 -- a `# frob:callee-raises A, B` comment's parsed exception-name set, renamed from `frob:raises` by T-0931; `None` when absent; see [may-raise resolver](#may-raise-resolver)) |
 | `NormalizedFieldAccess` | one field read/write inside a body: name, line, `is_write` |
 | `NormalizedReturn` | one `return`: line, optional value text |
 | `NormalizedRaise` | one `raise`/`throw`: line, exception type name where determinable |

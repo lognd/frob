@@ -1111,6 +1111,16 @@ comment text, so this is a raw-source scan, not a model field). A
 directive never discharges `UNKNOWN` -- it names a KNOWN type, and
 `UNKNOWN` is definitionally not one.
 
+**Naming note (T-0931).** This is the ONLY convention that owns the verb
+text `frob:raises`. A different, unrelated same-line call-site directive
+(`NormalizedCall.declared_raises`, docs/modules/arch.md#may-raise-resolver)
+was originally also named `frob:raises` when T-0689 landed concurrently
+with this ticket; T-0931 renamed that call-site form to
+`frob:callee-raises` to keep the two unambiguous -- this above-the-def,
+function-wide form keeps `frob:raises` unchanged. T-0690's planned
+FFI-boundary declarations extend this same above-the-def convention, not
+the call-site one.
+
 SCOPE: python-only (same disclosed limit `compute_may_raise` itself
 already carries); non-python files, files with no tree-sitter grammar, and
 test files (`frob.excludes.is_test_file`) are silently skipped.

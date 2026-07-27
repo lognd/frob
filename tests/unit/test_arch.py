@@ -1778,18 +1778,21 @@ class TestPythonAdapter:
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/arch/_python.py::PythonAdapter.adapt kind="unit"
-        # A same-line `# frob:raises A, B` comment on a call site becomes
-        # that NormalizedCall's declared_raises; a call with no such
+        # A same-line `# frob:callee-raises A, B` comment on a call site
+        # becomes that NormalizedCall's declared_raises; a call with no such
         # comment stays None; an empty-after-marker comment
-        # (`# frob:raises`) declares the empty set, not "no declaration".
+        # (`# frob:callee-raises`) declares the empty set, not "no
+        # declaration". Renamed from `frob:raises` (T-0931) to disambiguate
+        # from the unrelated above-the-def, function-wide `frob:raises`
+        # declared-propagation directive EXHAUST002 consumes (T-0688).
         from frob.arch._python import PythonAdapter
         from frob.lang import raw_tree
 
         src_path = tmp_path / "ffi.py"
         src_path.write_text(
             "def call_native(lib):\n"
-            "    lib.risky_call()  # frob:raises OSError, ValueError\n"
-            "    lib.quiet_call()  # frob:raises\n"
+            "    lib.risky_call()  # frob:callee-raises OSError, ValueError\n"
+            "    lib.quiet_call()  # frob:callee-raises\n"
             "    plain()\n"
         )
         parsed = raw_tree(src_path)
@@ -5951,8 +5954,9 @@ class TestMayRaiseResolver:
     def test_declared_raises_substitutes_for_opaque_boundary_call(self) -> None:
         # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
         # The SAME opaque ctypes-style call as the previous test, but now
-        # carrying a `frob:raises` declaration (NormalizedCall.
-        # declared_raises) -- the declared set substitutes for Unknown
+        # carrying a `frob:callee-raises` declaration (NormalizedCall.
+        # declared_raises, renamed from `frob:raises` by T-0931) -- the
+        # declared set substitutes for Unknown
         # (T-0689's acceptance criterion, second half).
         from frob.arch._mayraise import UNKNOWN, compute_may_raise
         from frob.arch._normalized import (

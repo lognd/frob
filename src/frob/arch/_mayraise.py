@@ -77,9 +77,9 @@ call's FULL dotted callee text (not the bare name `_BUILTIN_RAISERS`
 matches on), since a bare-name match here would risk shadowing an
 unrelated same-module function sharing one of these names.
 
-`frob:raises` DECLARATION (T-0689, `NormalizedCall.declared_raises`): a
-same-line `# frob:raises A, B` comment on a call site (parsed by
-`frob.arch._python`'s adapter for python; `# frob:raises` alone declares
+`frob:callee-raises` DECLARATION (T-0689, `NormalizedCall.declared_raises`): a
+same-line `# frob:callee-raises A, B` comment on a call site (parsed by
+`frob.arch._python`'s adapter for python; `# frob:callee-raises` alone declares
 the empty set) SUBSTITUTES its declared exception-name set for that call
 UNCONDITIONALLY -- checked FIRST, before either curated table or the
 same-module lookup, so a declaration on an otherwise-opaque ctypes/cffi
@@ -205,7 +205,7 @@ _BUILTIN_RAISERS: dict[str, frozenset[str]] = {
 #: identified; anything NOT listed here (including ctypes/cffi calls,
 #: which have no fixed per-call raised type at all -- see this module's
 #: docstring) stays `UNKNOWN`, fail-closed, unless covered by a
-#: `frob:raises` declaration (`NormalizedCall.declared_raises`).
+#: `frob:callee-raises` declaration (`NormalizedCall.declared_raises`).
 # frob:ticket T-0689
 _STDLIB_QUALIFIED_RAISERS: dict[str, frozenset[str]] = {
     "json.loads": frozenset({"JSONDecodeError"}),
@@ -323,7 +323,7 @@ def _own_base_raises(
     wrapping `try`/`except` genuinely CAN discharge, so it is left subject
     to `func`'s own catches by the caller (`compute_may_raise`'s fixpoint).
 
-    T-0689: each call is resolved in priority order -- (1) a `frob:raises`
+    T-0689: each call is resolved in priority order -- (1) a `frob:callee-raises`
     declaration (`NormalizedCall.declared_raises is not None`) SUBSTITUTES
     its declared set unconditionally, the intended escape hatch for an
     opaque ctypes/cffi/C-extension boundary this resolver cannot see

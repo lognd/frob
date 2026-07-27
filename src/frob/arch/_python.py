@@ -93,25 +93,25 @@ _LONG_FUNCTION_NESTING_THRESHOLD = 3
 #: decision logic clears it.
 _LONG_FUNCTION_CYCLOMATIC_THRESHOLD = 8
 
-#: Matches a `frob:raises` declaration comment (T-0689) on a call site's own
-#: source line -- `# frob:raises ValueError, OSError` or the empty-set form
-#: `# frob:raises` (declares "raises nothing", the valid errno-convention
+#: Matches a `frob:callee-raises` declaration comment (T-0689) on a call site's own
+#: source line -- `# frob:callee-raises ValueError, OSError` or the empty-set form
+#: `# frob:callee-raises` (declares "raises nothing", the valid errno-convention
 #: shape T-0690's sibling ticket calls out). Deliberately matched against
 #: the single physical line a `NormalizedCall.line` already names (same-line
 #: only, no lookbehind/lookahead scan) -- the same line-adjacency-proxy
 #: style `_mayraise.py`'s `_nearest_preceding_catch` already uses elsewhere
 #: in this feature, kept simple rather than parsing a leading-comment block.
-_FROB_RAISES_RE = re.compile(r"#\s*frob:raises\b[ \t]*(.*)$")
+_FROB_RAISES_RE = re.compile(r"#\s*frob:callee-raises\b[ \t]*(.*)$")
 
 
 # frob:ticket T-0689
 def _frob_raises_declaration(
     source_lines: tuple[str, ...], line: int
 ) -> frozenset[str] | None:
-    """The declared exception-name set (T-0689) from a `# frob:raises ...`
+    """The declared exception-name set (T-0689) from a `# frob:callee-raises ...`
     comment on `source_lines[line - 1]` (1-indexed, matching
     `NormalizedCall.line`), or `None` when that line carries no such
-    comment. `# frob:raises` with nothing after it declares the EMPTY set
+    comment. `# frob:callee-raises` with nothing after it declares the EMPTY set
     (a valid, distinct declaration -- see `NormalizedCall.declared_raises`'s
     docstring), not "no declaration"."""
     if line < 1 or line > len(source_lines):
@@ -434,7 +434,7 @@ def _py_collect_body_events(
     parent. `subscripts` (T-0686) collects `d[k]`-shaped expressions the
     may-raise resolver's builtin-raiser table keys off. `source_lines`
     (T-0689, optional -- empty when a caller has no raw source to offer)
-    lets each `call` site pick up its own `# frob:raises` declaration
+    lets each `call` site pick up its own `# frob:callee-raises` declaration
     (`_frob_raises_declaration`) onto `NormalizedCall.declared_raises`."""
     for c in node.children:
         if c.type in ("function_definition", "class_definition"):
@@ -552,7 +552,7 @@ def _py_build_function(
     `NormalizedFunction.max_nesting_depth`'s docstring) so these two metrics
     match the original per-language walk exactly, byte-for-byte.
     `source_lines` (T-0689, optional) is forwarded to
-    `_py_collect_body_events` for `frob:raises` declaration parsing."""
+    `_py_collect_body_events` for `frob:callee-raises` declaration parsing."""
     name_node = _child(func_node, "name")
     name = _node_text(name_node) if name_node else "?"
     body = _child(func_node, "body")
@@ -677,7 +677,7 @@ def _py_build_module(
     `source_lines` (T-0689, optional -- callers with no raw source, e.g. the
     per-check helpers in this module that only ever had a `tree`, pass
     nothing and every call site's `declared_raises` stays `None`) threads
-    down to `_py_collect_body_events` for `frob:raises` declaration
+    down to `_py_collect_body_events` for `frob:callee-raises` declaration
     parsing."""
     t: Tree = cast("Tree", tree)
     classes: list[NormalizedClass] = []
@@ -749,7 +749,7 @@ class PythonAdapter:
     def adapt(self, tree: object, source: bytes, rel: str) -> NormalizedModule:
         """Build the `NormalizedModule` for one parsed python file (`tree`,
         `rel`) -- `source`'s decoded lines (T-0689) feed `_py_build_module`
-        so each call site's `# frob:raises` comment (`NormalizedCall.
+        so each call site's `# frob:callee-raises` comment (`NormalizedCall.
         declared_raises`) can be parsed; tree-sitter `Node.text` still
         carries its own byte slice for everything else, unaffected."""
         source_lines = tuple(source.decode("utf-8", errors="replace").splitlines())

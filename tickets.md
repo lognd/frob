@@ -5704,7 +5704,7 @@ Child 3 of T-0927, blocked by the audit child. For rows the audit marks rust-can
 ```yaml
 id: T-0931
 title: Reconcile duplicate '# frob:raises' directive convention (T-0688 vs T-0689)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-26'
@@ -5715,10 +5715,150 @@ sprint: null
 scope:
 - src/frob/arch/**
 - src/frob/gates/**
+- docs/modules/arch.md
+- docs/modules/gates.md
+- tests/unit/test_arch.py
+- tests/test_gates.py
+scope_changes:
+- op: add
+  glob: docs/modules/arch.md
+  reason: T-0931 requires renaming the frob:raises call-site directive across its
+    docs sections and its own tests to reconcile the collision, per ticket instructions
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-0931 requires renaming the frob:raises call-site directive across its
+    docs sections and its own tests to reconcile the collision, per ticket instructions
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: T-0931 requires renaming the frob:raises call-site directive across its
+    docs sections and its own tests to reconcile the collision, per ticket instructions
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0931 requires renaming the frob:raises call-site directive across its
+    docs sections and its own tests to reconcile the collision, per ticket instructions
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/unit/test_arch.py::TestPythonAdapter::test_adapt_parses_frob_raises_declaration_on_call_line
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_declared_raises_substitutes_for_opaque_boundary_call
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_declared_raises_empty_set_is_honored_not_treated_as_absent
+- tests/test_gates.py::TestExhaustiveHandlingGate::test_declared_frob_raises_directive_discharges_exhaust002
 threat: null
 component: null
 ```
 T-0688 (this worktree) introduces a '# frob:raises <ExceptionType>' comment directive placed directly ABOVE a function's def, declaring function-wide intentional exception propagation (consumed by frob.gates._exhaustive_handling's EXHAUST002 check). T-0689, landed concurrently on main while this ticket was in flight, introduces a same-named '# frob:raises A, B' directive but SAME-LINE on a call site, parsed into NormalizedCall.declared_raises (a per-call-site declaration, different grammar/scope/consumer). Both use the literal verb text 'frob:raises' with different placement rules and different semantics -- this will collide/confuse at land time (a human or tool reading '# frob:raises X' cannot tell which convention applies without checking placement). Needs reconciling before both land together: rename one convention (e.g. T-0688's function-level directive to something like '# frob:propagates <Type>') or unify the grammar. Filed instead of silently deciding unilaterally, since T-0689 owns src/frob/arch/_mayraise.py and its own call-site convention outside this ticket's declared scope.
+
+## Done report
+
+Changed: reconciled the `frob:raises` name collision between T-0688 and
+T-0689 by keeping `frob:raises` for the ABOVE-THE-DEF, function-wide
+declared-propagation directive `EXHAUST002` consumes
+(`src/frob/gates/_exhaustive_handling.py`, untouched by this ticket) and
+renaming T-0689's SAME-LINE, call-site directive
+(`NormalizedCall.declared_raises`) to `frob:callee-raises` everywhere it
+is spelled, parsed, or documented:
+
+- `src/frob/arch/_python.py` -- `_FROB_RAISES_RE` regex literal,
+  `_frob_raises_declaration` docstring/comments, and every other
+  `frob:raises` mention describing this same-line form now read
+  `frob:callee-raises`.
+- `src/frob/arch/_normalized.py` -- `NormalizedCall.declared_raises`
+  field docstring updated to the new spelling.
+- `src/frob/arch/_mayraise.py` -- module docstring and
+  `_own_base_raises`/priority-order comments describing the call-site
+  substitution updated to the new spelling.
+- `tests/unit/test_arch.py` -- the two tests exercising the call-site
+  form (`TestPythonAdapter::test_adapt_parses_frob_raises_declaration_on_call_line`,
+  `TestMayRaiseResolver::test_declared_raises_substitutes_for_opaque_boundary_call`)
+  now write `# frob:callee-raises ...` in their fixture source and their
+  own comments/docstrings describe the rename; test METHOD NAMES were
+  deliberately left unchanged (they are bound as evidence on the already
+  CLOSED ticket T-0689 -- renaming the qualname would break that
+  ticket's historical evidence for no benefit).
+- `docs/modules/arch.md` -- the "Opaque boundaries and `frob:raises`
+  declarations" section renamed/updated to `frob:callee-raises` with a
+  new "Naming note (T-0931)" paragraph explaining the split and how
+  T-0690's planned FFI-boundary declarations will extend the ABOVE-THE-DEF
+  form, not this one; the `NormalizedCall` table row in the
+  normalized-code-model section updated to match.
+- `docs/modules/gates.md` -- added a "Naming note (T-0931)" paragraph
+  directly under EXHAUST002's declared-propagation-directive description
+  clarifying `frob:raises` is now the SOLE owner of that verb text and
+  cross-referencing the renamed sibling.
+
+Convention chosen and why: T-0690 (open, reads compatible) explicitly
+plans its FFI-boundary declarations to mirror `frob:deprecated`'s
+above-the-def placement -- i.e. the SAME shape as T-0688's function-wide
+directive, not T-0689's call-site one. Keeping `frob:raises` on the
+function-wide form and renaming only the call-site form (rather than
+inventing a brand-new name for both, or unifying on position-based
+disambiguation) minimizes churn: EXHAUST002 is the only current CONSUMER
+of the function-wide form and needed zero code changes; T-0690's future
+work needed zero convention changes; only T-0689's freshly-landed,
+narrower call-site feature needed a rename. Position-based
+disambiguation alone (same verb, infer meaning from placement) was
+rejected as the ticket itself calls for -- it is exactly the ambiguity
+being reconciled: a human or tool reading `# frob:raises X` mid-file
+cannot tell which grammar applies without also knowing this repo's own
+convention-of-conventions, whereas two distinct verb texts are
+self-describing at the point of use.
+
+Scope: extended via `frob ticket scope --add` to include
+`docs/modules/arch.md`, `docs/modules/gates.md`, `tests/unit/test_arch.py`,
+`tests/test_gates.py` (reason recorded on the ticket) -- the ticket's
+declared `scope` (`src/frob/arch/**`, `src/frob/gates/**`) did not cover
+the docs/tests half of "update ... all existing directive occurrences in
+the repo ... the DSL documentation ... and tests on both sides" the
+ticket explicitly asks for.
+
+Filed: T-0944 (bug) -- a genuine, reproducible self-deadlock in
+`frob check` discovered while trying to verify this ticket: the `frob
+check --only <anything>` process opens `.frob/derived.lock` twice in the
+SAME process and blocks forever trying to acquire an exclusive lock on
+one fd while it still holds a shared lock on the other (confirmed via
+`/proc/<pid>/fd` + `/proc/locks` showing the identical pid holding both a
+READ flock and a pending WRITE flock on the same inode). Reproduced
+against two different `--only` gate selections (`scope`, `prework`) in
+this worktree -- not gate-specific. `src/frob/process/_lock.py` is
+outside T-0931's scope, so not fixed here; filed instead, with the
+`/proc` evidence and a suggested fix direction in the ticket body.
+
+Evidence: this bug made `frob check --ticket T-0931 --only ...`
+completely unusable in this worktree for verification, so evidence here
+is pytest + ruff + ty directly, plus a manual deletion-filter check:
+
+- `pytest -q tests/unit/test_arch.py` -- 249 passed (whole file, includes
+  both renamed call-site tests).
+- `pytest -q tests/test_gates.py -k "ExhaustiveHandling or ErrorsAsValues"`
+  -- 9 passed (confirms the untouched, function-wide `frob:raises` /
+  EXHAUST002 path still works unchanged).
+- `pytest --collect-only tests/unit/test_arch.py -n0 | grep -i raises` --
+  confirms all bound evidence node ids below actually collect.
+- `ruff check` / `ruff format --check` clean on every touched `.py` file
+  (`src/frob/arch/_python.py`, `src/frob/arch/_normalized.py`,
+  `src/frob/arch/_mayraise.py`, `tests/unit/test_arch.py`).
+- `ty check` clean on the three touched `src/frob/arch/*.py` files.
+- `git diff main --diff-filter=D --stat` -- empty (no unintended
+  deletions carried forward from a stale merge base).
+- One PRE-EXISTING, UNRELATED failure observed and NOT caused by this
+  change: `tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known`
+  fails citing `PARSE002` (from `src/frob/gates/_parse_failures.py`,
+  landed by T-0905, a file this ticket never touches) -- confirmed
+  unrelated by file/symbol, not investigated further as out of scope.
+
+Gates: `frob check` COULD NOT BE RUN against this ticket -- every
+`--only` invocation self-deadlocks per the filed bug above (T-draft-
+851603e2). Substituted the pytest/ruff/ty verification above and the
+manual deletion-filter check per playbook section 9. This is a
+disclosed, honest gap, not a silent skip: the standard gate-verification
+step for this ticket is currently blocked by an environmental bug
+outside its scope.
 
 <!-- ticket:T-0932 -->
 ```yaml
@@ -6348,3 +6488,79 @@ or an allowlist entry citing this ticket if intentionally deferred.
 
 ## Drop reason
 - 2026-07-27: already fixed by T-0924 (absorbed by T-0924)
+
+<!-- ticket:T-0944 -->
+```yaml
+id: T-0944
+title: 'frob check self-deadlocks: derived.lock opened twice, READ+pending WRITE same
+  pid'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/process/_lock.py
+- src/frob/check/__init__.py
+threat: null
+component: null
+```
+## Description
+
+Every `frob check --ticket T-XXXX --only <anything>` invocation in this
+worktree (agent-a5842ed351bbd927e) hangs indefinitely instead of
+completing. Confirmed via `/proc/<pid>/fd` and `/proc/locks`, not a slow
+computation under contention:
+
+- The `frob check` process opens `.frob/derived.lock` TWICE, holding two
+  separate file descriptors (fd 3 and fd 4) to the same inode.
+- `/proc/locks` shows the SAME pid holding a `READ` (shared) `FLOCK` on
+  one fd and a pending `WRITE` (exclusive) `FLOCK` request on the other:
+  ```
+  31: FLOCK  ADVISORY  READ 1008549 08:30:1142126 0 EOF
+  31: -> FLOCK  ADVISORY  WRITE 1008549 08:30:1142126 0 EOF
+  ```
+- `flock(2)` has no cross-fd reentrancy/upgrade semantics within one
+  process -- a second, independent open+`LOCK_EX` request against a file
+  the same process already holds `LOCK_SH` on (via a different fd) blocks
+  forever, since the shared lock is never released before the exclusive
+  request is made.
+- `src/frob/process/_lock.py`'s own module docstring already flags this
+  exact hazard class ("an `always os.open + flock` implementation would
+  self-deadlock the moment a [...] `ThreadPoolExecutor` gate workers)
+  holding it concurrently") and tracks `_process_held_counts` to guard
+  against same-process reentrancy -- but that tracking evidently does not
+  cover whatever two call sites raced here (one held via
+  `derived_state_lock(..., exclusive=False)`, another requesting
+  `derived_state_write_lock`/`exclusive=True` before the first is
+  released).
+- Reproduced twice, with two different `--only` gate selections
+  (`scope`, then `prework`) against the same worktree -- not specific to
+  one gate's code path, so likely in shared `check` runner
+  setup/teardown around `_lock.py`, not gate-specific logic.
+
+## Plan (for whoever picks this up)
+
+1. Reproduce under `py-spy dump` or a debug build to get both call
+   stacks holding fd3 (shared) and fd4 (pending exclusive) at the moment
+   of hang.
+2. Audit `frob.process._lock`'s `_process_held_counts`/reentrancy guard
+   for the gap that let a second `os.open` + `flock` happen before the
+   first shared lock in the SAME process was released or upgraded
+   in-place (upgrade-in-place on the same fd via `LOCK_EX` again is safe
+   and non-blocking against oneself; opening a NEW fd and locking THAT is
+   not).
+3. Fix by (a) tracking open fds per-process so a nested acquire reuses
+   the existing fd/lock rather than opening a new one, or (b) removing
+   whatever code path re-derives `root` and re-opens the lock file
+   instead of reusing an already-lock-held context manager.
+
+Filed while working T-0931 (comment-DSL `frob:raises` reconciliation);
+that ticket needed `frob check` to record evidence/close and this bug
+blocks it entirely in that worktree. Not fixed there -- `src/frob/
+process/_lock.py` is outside T-0931's declared scope
+(`src/frob/arch/**`, `src/frob/gates/**`, plus the doc/test files
+scope-added for the rename itself).
