@@ -9642,3 +9642,29 @@ threat: null
 component: null
 ```
 Successor to epic T-0331 (closing). The epic landed thirteen obligation families (REL26x backpressure through REL38x starvation, plus SYS204 contention). The 56 registry entries that deferred to the epic must now be re-dispositioned individually: handled_by:<rule> where a landed family genuinely covers the concept (with the frob:enforces edge REG008 wants), deferred to a real follow-up ticket for concepts still unbuilt, or reasoned out_of_scope per the T-0722/T-0912 precedents. Catalogued-is-not-enforced applies: no handled_by without a live registered rule.
+
+<!-- ticket:T-0959 -->
+```yaml
+id: T-0959
+title: land clobbers tickets-archive.md with the worktree's stale copy (62 archived
+  blocks wiped by T-0703's land)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: critical
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- tests/test_ticket_land.py
+acceptance:
+- text: given a worktree whose tickets-archive.md predates an archive sweep on main,
+    when its ticket lands, then every block in main's pre-land archive survives in
+    the post-land archive
+  evidence: []
+threat: null
+component: null
+```
+T-0703's land (a9486381) replaced main's tickets-archive.md wholesale with the worktree's pre-archive-sweep copy, deleting the 62 blocks a TICK003 sweep had archived -- every Done report citing them then fired TICK006 phantom-filing (19 errors), plus COV003 regressions. Recovery was git checkout of the pre-land archive (2ab3c386, verified strict superset). Root cause to find: the land path stages tickets-archive.md from the worktree without the merge/splice discipline tickets.md gets; T-0740's _check_ledger_id_integrity guards _splice_only_ticket for tickets.md but the archive file appears to ride along unguarded (T-0703's worktree archive was stale because the sweep happened on main after the worktree's warmup merge). Fix: land must treat tickets-archive.md like tickets.md -- merge/splice not overwrite -- plus an id-integrity assertion that no archived id present on main's archive disappears in the staged result. Regression test: worktree with stale archive + main with newer archived blocks -> land must preserve main's blocks.
