@@ -7090,3 +7090,29 @@ threat: null
 component: null
 ```
 Found by T-0988s token-stream verification protocol (1152/1153 hunks clean): wrapping a frob:tests directive whose target is followed by a trailing attribute (kind="unit") split right after the target but dropped the word-boundary space before the continuation, so rejoining concatenated target+attribute into one corrupted token -- a live DRIFT002 (no longer resolves) absent at HEAD. Distinct class from T-0987 (misparse-as-new-directive) -- this is silent target corruption inside a correctly-recognized directive. Fix the wrap/rejoin round-trip to preserve token boundaries exactly; regression tests: the exact TestConventionUnitBinding shape, plus a property test asserting token-stream identity across wrap widths for directives with 0/1/2 trailing attributes. T-0988 (repo-wide recompaction) is blocked on this.
+
+<!-- ticket:T-0992 -->
+```yaml
+id: T-0992
+title: 'land REL001 bump keys on the worktree''s carried version, regressing main''s
+  (two incidents: T-0976, T-0989)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- tests/test_ticket_land.py
+acceptance:
+- text: given a worktree whose pyproject carries an older version than main, when
+    its ticket lands with a REL001 bump, then the resulting version is strictly greater
+    than main's pre-land version
+  evidence: []
+threat: null
+component: null
+```
+Twice today a land recomputed the REL001 version bump from the WORKTREE side and clobbered a higher version already on main: T-0976 reused 0.181.0 (its worktree had reset land-owned files pre-merge) and T-0989 wrote 0.182.0 over main 0.183.0. _apply_release_bump (or its input selection) must read the version from MAIN/root current state at land time -- never from the worktree pyproject that rode through the squash -- and must refuse loudly if the computed next version is <= the version main already has (monotonicity assertion, sibling of T-0959 archive integrity and T-0740 ledger integrity). Regression test: worktree carrying a stale version + main ahead -> land produces main+1, never a downgrade.
