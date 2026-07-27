@@ -7989,7 +7989,7 @@ targeted `uv run frob test --base main` PASS; `uv run ruff check` /
 id: T-0998
 title: 'scope generation: doc-edge + code-edge closure validation (no code without
   its docs in scope and vice versa) + private-helper capture'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-27'
@@ -8002,19 +8002,119 @@ scope:
 - src/frob/gates/**
 - src/frob/graph/**
 - tests/**
+evidence:
+- tests/test_graph_affects.py::TestScopeDocCodeGaps::test_code_in_scope_doc_target_unscoped
+- tests/test_graph.py::TestScopePrivateHelperGaps::test_flags_scoped_caller_of_unscoped_private_helper
+- tests/test_graph_affects.py::TestScopeDocCodeGaps::test_doc_in_scope_code_target_unscoped
+- tests/test_graph_affects.py::TestScopeDocCodeGaps::test_clean_when_both_sides_in_scope
+- tests/test_graph_affects.py::TestScopeTestGaps::test_code_in_scope_test_target_unscoped
+- tests/test_graph_affects.py::TestScopeTestGaps::test_test_in_scope_code_target_unscoped
+- tests/test_graph_affects.py::TestScopeTestGaps::test_clean_when_both_sides_in_scope
+- tests/test_graph.py::TestScopePrivateHelperGaps::test_only_used_by_scope_true_when_no_external_caller
+- tests/test_graph.py::TestScopePrivateHelperGaps::test_clean_when_callee_also_in_scope
+- tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_doc_target
+- tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_private_helper
+- tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_test_target
+- tests/test_gates.py::TestScope002ClosureGate::test_silent_on_closed_scope
 acceptance:
 - text: given a ticket scoped to a code file with a frob:doc edge to an unscoped doc,
     when the scope is declared or validated, then the missing doc counterpart is surfaced
     (suggestion or warning) naming the exact file
-  evidence: []
+  evidence:
+  - tests/test_graph_affects.py::TestScopeDocCodeGaps::test_code_in_scope_doc_target_unscoped
 - text: given scoped code calling a private helper defined outside the scope, when
     scope validation runs, then the helper is flagged as probable under-capture with
     its definition site
-  evidence: []
+  evidence:
+  - tests/test_graph.py::TestScopePrivateHelperGaps::test_flags_scoped_caller_of_unscoped_private_helper
 threat: null
 component: null
 ```
 User directive 2026-07-27: when generating or validating a ticket scope, run the doc-edge and code-edge closures over the declared files so scope encapsulation provably grabs BOTH sides -- a scope containing code files whose frob:doc/affects-closure doc targets are absent is under-captured (and vice versa: docs scoped without their code counterparts). This moves the AFFECT001 idea from diff-time to scope-declaration time: frob ticket new/scope should compute the closure and either auto-suggest the missing counterpart files or refuse/warn, so agents stop discovering AFFECT001/COV002 mid-ticket and scope-adding reactively (a dozen occurrences this drive). The same closure math discourages over-broad scopes: a scope whose closure balloons is visibly over-broad at declaration time, complementing the existing over-broad-glob heuristics. Additionally check private-helper usage: if scoped code calls underscore-private helpers defined OUTSIDE the scope, flag probable under-capture (you will likely touch them); private helpers used ONLY by scoped code get auto-suggested into scope. Deliverables: a scope-closure computation on the obligation graph (reuse the affects()/doc-edge machinery, do not build a second traversal), wiring into frob ticket new/scope (suggest-or-warn mode first; a SCOPE-family gate rule for enforcement second, WARN at turn-on per the promotion playbook), tests for all three directions (code-missing-docs, docs-missing-code, private-helper leakage), and docs.
+
+## Done report
+
+Moved the AFFECT001/002 idea (docs/modules/graph.md#affects) from
+diff-time to scope-DECLARATION time so agents stop discovering
+AFFECT001/COV002 reactively mid-ticket (the reactive scope-add churn
+this drive hit repeatedly). Added a closure TRIPLE over a ticket's
+declared scope: code<->docs (frob:doc/frob:describes edges), code<->
+tests (frob:tests edges, added per the repo owner's mid-task
+directive extension), and private-helper capture (build_call_graph
+substrate). All three reuse existing traversal engines (affects()'s
+own edge reads, closure()'s own call-graph substrate) rather than a
+second traversal engine, per the ticket's own mandate.
+
+Wired as a new WARN-severity SCOPE002 gate rule (frob.gates.
+_scope002_violations, folded into the existing scope_gate stage
+alongside SCOPE001) plus suggest-or-warn CLI output on `frob ticket
+new`/`frob ticket scope` (frob.app.ticket_runner.
+_scope_closure_warnings) so the feedback lands before a `frob check`
+run is even needed.
+
+Verified against two real recent ticket scopes:
+- src/frob/graph/affects.py alone (single-file scope): SCOPE002
+  correctly flagged every public symbol's missing docs/modules/
+  graph.md doc-target and missing tests/test_graph_affects.py
+  test-target -- exactly the kind of narrow single-file scope this
+  drive's tickets tend to declare before widening reactively.
+- src/frob/graph/callgraph.py alone: same doc/test gaps fired
+  correctly; the private-helper direction ALSO fired but was noisy
+  over the flat tests/ directory (filed as a follow-up ticket,
+  T-1012, rather than fixed under this ticket's scope/
+  effort budget -- WARN-only so non-blocking, but disclosed as a v1
+  limitation).
+
+FAIL/PASS fixture proof for the SCOPE002 new-gate-rule id (T-0756
+acceptance policy): before this change, `frob check --only scope
+--ticket <id>` never emitted SCOPE002 at all (the rule id did not
+exist). After this change, running `frob check --only scope --ticket
+<id> --json` against a real ticket scoped to `src/frob/graph/
+callgraph.py` alone FAILS to stay clean -- it emits real SCOPE002
+findings (e.g. "SCOPE002: <id> scope includes
+src/frob/graph/callgraph.py::CallGraph whose frob:doc target
+docs/modules/graph.md#call-graph lives in 'docs/modules/graph.md', not
+in scope") through the production `frob check` invocation, not merely
+a unit test calling `_scope002_violations` directly. Widening the same
+ticket's scope to include the missing files via `frob ticket scope
+<id> --add ...` then PASSES (SCOPE002 clears for the doc/test
+directions) -- observed live in this session (see Evidence).
+
+### Changed
+```
+ docs/modules/gates.md         |  52 +++++++++++++++
+ docs/modules/graph.md         |  67 +++++++++++++++++++
+ src/frob/app/ticket_runner.py |  67 +++++++++++++++++++
+ src/frob/gates/__init__.py    | 119 ++++++++++++++++++++++++++++++++++
+ src/frob/graph/__init__.py    |  15 ++++-
+ src/frob/graph/affects.py     | 146 +++++++++++++++++++++++++++++++++++++++++-
+ src/frob/graph/callgraph.py   |  91 ++++++++++++++++++++++++++
+ tests/test_gates.py           |  74 +++++++++++++++++++++
+ tests/test_graph.py           |  60 +++++++++++++++++
+ tests/test_graph_affects.py   | 121 ++++++++++++++++++++++++++++++++++
+ tickets.md                    |  92 +++++++++++++++++++++++++-
+ 11 files changed, 901 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/test_graph_affects.py::TestScopeDocCodeGaps::test_code_in_scope_doc_target_unscoped` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestScopePrivateHelperGaps::test_flags_scoped_caller_of_unscoped_private_helper` (pytest node id, verified passing when recorded)
+- `tests/test_graph_affects.py::TestScopeDocCodeGaps::test_doc_in_scope_code_target_unscoped` (pytest node id, verified passing when recorded)
+- `tests/test_graph_affects.py::TestScopeDocCodeGaps::test_clean_when_both_sides_in_scope` (pytest node id, verified passing when recorded)
+- `tests/test_graph_affects.py::TestScopeTestGaps::test_code_in_scope_test_target_unscoped` (pytest node id, verified passing when recorded)
+- `tests/test_graph_affects.py::TestScopeTestGaps::test_test_in_scope_code_target_unscoped` (pytest node id, verified passing when recorded)
+- `tests/test_graph_affects.py::TestScopeTestGaps::test_clean_when_both_sides_in_scope` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestScopePrivateHelperGaps::test_only_used_by_scope_true_when_no_external_caller` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestScopePrivateHelperGaps::test_clean_when_callee_also_in_scope` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_doc_target` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_private_helper` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_test_target` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestScope002ClosureGate::test_silent_on_closed_scope` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 13 passed (from 13 evidence id(s))
+- gates: 2 error(s), 8061 warning(s), 325 waived
+- error-findings: ARCH001@src/frob/gates/__init__.py, E501@/home/logan/projects/frob/.claude/worktrees/agent-ae6475a362d0f19b6/src/frob/graph/callgraph.py:695
 
 <!-- ticket:T-0999 -->
 ```yaml
@@ -8363,3 +8463,94 @@ threat: null
 component: null
 ```
 Children 3+4 of T-1008 (bundled: both are generate-at-the-source items). (a) land runs the existing registry --sync-gate-rules automatically when _KNOWN_GATE_RULES changed in the landing diff, ending manual re-syncs (drifted twice this drive). (b) README and docs/modules/cli.md command tables become generated from the live argparse registry (frob docs sync-commands or equivalent), turning DOC005 from a hand-sync lock into a generator-freshness check.
+
+<!-- ticket:T-1012 -->
+```yaml
+id: T-1012
+title: SCOPE002 private-helper direction is unusably noisy over flat top-level dirs
+  (tests/)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/graph/callgraph.py
+threat: null
+component: null
+```
+`frob.graph.callgraph.scope_private_helper_gaps` (T-0998, SCOPE002
+direction 5) narrows its `build_call_graph` candidate set to files sharing
+a scoped file's PARENT DIRECTORY. For a flat top-level directory like
+`tests/` (hundreds of files, one dir), this degrades to "every test file
+in the whole tests/ tree" the moment any single test file is in scope --
+observed live: scoping `tests/test_graph.py` alone produced 4000+ SCOPE002
+"review the dependency" findings, almost all naming a same-named `_write`/
+`_run` helper private to some unrelated sibling test file, not a real
+under-capture signal.
+
+WARN-only (never blocks), so this is noise, not a correctness bug -- but
+noisy enough that a real agent would tune it out entirely rather than
+read the real hits buried in it. Needs a narrower per-scope candidate-set
+heuristic for large flat directories (e.g. cap candidate file count, or
+require the SAME leaf-name collision to be genuinely ambiguous before
+flagging, or scope the search to files matching the ticket's own SOURCE
+directory conventions rather than a raw parent-dir match) before this
+direction is trustworthy enough to read routinely. Filed instead of fixed
+under T-0998's own scope/effort budget.
+
+<!-- ticket:T-1013 -->
+```yaml
+id: T-1013
+title: T-0998 gate smoke
+state: dropped
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/graph/callgraph.py
+- docs/modules/graph.md
+- tests/test_graph.py
+scope_changes:
+- op: add
+  glob: docs/modules/graph.md
+  reason: widen for smoke test
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/test_graph.py
+  reason: widen for smoke test
+  actor: logan
+  at: '2026-07-27'
+threat: null
+component: null
+```
+## Drop reason
+- 2026-07-27: smoke test throwaway, real production SCOPE002 firing proof captured for T-0998 Done report
+
+<!-- ticket:T-1014 -->
+```yaml
+id: T-1014
+title: T-0998 smoke test throwaway
+state: dropped
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/graph/affects.py
+threat: null
+component: null
+```
+## Drop reason
+- 2026-07-27: smoke test throwaway

@@ -133,6 +133,73 @@ def affects(snapshot: GraphSnapshot, ref: str, *,
   silent; a truncated closure is checked against whatever it did visit
   (under-reports, never false-positives).
 
+## Scope closure (T-0998)
+
+<!-- frob:describes src/frob/graph/affects.py::ScopeClosureGap -->
+<!-- frob:describes src/frob/graph/affects.py::scope_doc_code_gaps -->
+<!-- frob:describes src/frob/graph/affects.py::scope_test_gaps -->
+<!-- frob:describes src/frob/graph/callgraph.py::PrivateHelperGap -->
+<!-- frob:describes src/frob/graph/callgraph.py::scope_private_helper_gaps -->
+
+Moves the AFFECT001/002 idea from diff-time to scope-DECLARATION time: a
+scope containing code whose `frob:doc`/`frob:describes` targets are absent
+is under-captured, and the reverse (a doc in scope without its described
+code) is too -- surfaced when the scope is declared/validated, not
+discovered reactively mid-ticket the first time `frob check` runs
+AFFECT001/COV002 against it. The closure is a TRIPLE: code<->docs,
+code<->tests (a scoped code edit with no covering `frob:tests` test file
+scoped is exactly the reactive scope-add churn this feature exists to
+close), plus the private-helper capture below.
+
+Three pure functions, all reusing existing traversal engines rather than
+building a second one:
+
+```python
+# frob/graph/affects.py
+def scope_doc_code_gaps(snapshot: GraphSnapshot, scope) -> tuple[ScopeClosureGap, ...]
+def scope_test_gaps(snapshot: GraphSnapshot, scope) -> tuple[ScopeClosureGap, ...]
+```
+
+`scope_doc_code_gaps` walks the SAME `frob:doc`/`frob:describes` edges
+`affects()`'s `_doc_targets_for` already reads. `direction=
+"code_missing_doc"`: a scoped code symbol whose doc target file is not in
+scope. `direction="doc_missing_code"`: a scoped doc anchor whose described
+code file is not in scope. `scope_test_gaps` is the symmetric code<->tests
+counterpart over the SAME `EdgeKind.TESTS` edges `_test_refs_for` already
+reads: `direction="code_missing_test"` (scoped code, unscoped covering
+test file) and `direction="test_missing_code"` (scoped test, unscoped
+covered code file). Each `ScopeClosureGap` names `scoped_site` (the thing
+already in scope), `target` (the other side of the edge), and
+`missing_file` (the file to add).
+
+```python
+# frob/graph/callgraph.py
+def scope_private_helper_gaps(root: Path, scope, files: Sequence[str]) -> tuple[PrivateHelperGap, ...]
+```
+
+Builds `build_call_graph`'s private-callee graph (the SAME substrate
+`frob.dup`'s helper-inline triage and `closure` use) over `files` narrowed
+to scope-adjacent directories, then flags every scoped caller's edge to a
+private helper defined OUTSIDE scope as probable under-capture.
+`only_used_by_scope=True` when every other observed caller of that helper
+is also in scope -- the strong "just add this file" case, versus
+`only_used_by_scope=False` ("review the dependency", since some other
+in-scope-or-not caller also depends on it).
+
+- **Enforcement**: `frob.gates._scope002_violations` (SCOPE002,
+  WARN-only turn-on per the T-0756 new-gate-rule promotion playbook, see
+  docs/modules/gates.md#scope002-t-0998) wires all three functions into
+  the existing `scope` gate stage (`scope_gate`, alongside SCOPE001) --
+  runs for every ticket `frob check --ticket T-XXXX`/`frob check` resolves
+  an active ticket for.
+- **CLI surface**: `frob ticket new`/`frob ticket scope` (`frob.app.
+  ticket_runner._scope_closure_warnings`) render the identical closure
+  gaps as plain warning lines right after the scope is created/changed --
+  suggest-or-warn, before a `frob check` run is even needed.
+- **Bounds**: `scope_doc_code_gaps` is snapshot-only (no IO); the WARN
+  posture never blocks a ticket that legitimately wants a narrower scope
+  than its own doc/call graph suggests.
+
 ## Call graph
 
 <!-- frob:describes src/frob/graph/callgraph.py::CallGraph -->

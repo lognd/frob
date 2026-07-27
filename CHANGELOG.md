@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.186.0] - unreleased
+
+- T-0998: scope generation: doc-edge + code-edge closure validation (no code without its docs in scope and vice versa) + private-helper capture
+
 ## [0.185.0] - unreleased
 
 - T-0997: coverage pipeline: merge subprocess coverage and exclude .j2 templates from the module map (34% join fraction)

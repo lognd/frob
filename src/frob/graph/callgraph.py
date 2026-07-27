@@ -29,10 +29,12 @@ __all__ = [
     "UNRESOLVED_CALLEE",
     "CallGraph",
     "OrderedCallGraph",
+    "PrivateHelperGap",
     "build_call_graph",
     "build_ordered_call_graph",
     "build_reference_graph",
     "closure",
+    "scope_private_helper_gaps",
 ]
 
 _DEFAULT_MAX_DEPTH = 3
@@ -639,3 +641,92 @@ def closure(
                 break
             queue.append((callee, depth + 1))
     return tuple(order[:max_nodes])
+
+
+# frob:doc docs/modules/graph.md#scope-closure-t-0998
+class PrivateHelperGap(BaseModel):
+    """T-0998 direction (3): a scoped caller calls a private/module-local
+    helper (`callee`) defined in a file NOT in the ticket's declared
+    scope -- probable under-capture, since the caller will likely need to
+    touch `callee` too. `only_used_by_scope` is `True` when every OTHER
+    caller of `callee` this scan saw is also inside scope, which is the
+    strong "just add `definition_file` to scope" case rather than merely
+    "review this dependency"."""
+
+    model_config = ConfigDict(frozen=True)
+
+    caller: str
+    callee: str
+    definition_file: str
+    only_used_by_scope: bool
+
+
+def _file_of(symref: str) -> str:
+    """The file half of a `path::qualname` symref -- shared by
+    `scope_private_helper_gaps`'s caller/callee-side lookups."""
+    return symref.split("::", 1)[0]
+
+
+# frob:doc docs/modules/graph.md#scope-closure-t-0998
+# frob:ticket T-0998
+# frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_flags_scoped_caller_of_unscoped_private_helper  # noqa: E501
+# frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_only_used_by_scope_true_when_no_external_caller  # noqa: E501
+# frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_clean_when_callee_also_in_scope  # noqa: E501
+def scope_private_helper_gaps(
+    root: Path, scope: tuple[str, ...] | list[str], files: Sequence[str]
+) -> tuple[PrivateHelperGap, ...]:
+    """T-0998 direction (3): build the private-callee `CallGraph`
+    (`build_call_graph`, the shared substrate T-0288/T-0290 already use --
+    no second traversal engine) over `files` restricted to the SAME
+    directories `scope` actually matches, then flag every scoped caller's
+    edge to a private callee whose own file is NOT in scope. `files` is
+    the repo-relative file list to consider (callers pass
+    `GraphSnapshot.file_hashes`'s keys -- already-hashed, no extra git
+    walk needed); restricting `build_call_graph`'s own `paths` argument to
+    scope-adjacent directories (rather than the whole repo) keeps this
+    bounded the way `build_call_graph`'s own docstring assumes (a
+    per-package scan, not a whole-tree one)."""
+    from frob.tickets._models import scope_matches
+
+    all_files = tuple(files)
+    scope_files = {f for f in all_files if scope_matches(f, scope)}
+    if not scope_files:
+        return ()
+    scope_dirs = {_file_of(f).rsplit("/", 1)[0] if "/" in f else "" for f in scope_files}
+    candidate_paths = tuple(
+        f
+        for f in all_files
+        if (f.rsplit("/", 1)[0] if "/" in f else "") in scope_dirs
+    )
+    graph = build_call_graph(root, candidate_paths)
+
+    callers_of: dict[str, set[str]] = {}
+    for caller, callees in graph.calls.items():
+        for callee in callees:
+            if callee == UNRESOLVED_CALLEE:
+                continue
+            callers_of.setdefault(callee, set()).add(caller)
+
+    gaps: list[PrivateHelperGap] = []
+    for caller in sorted(graph.calls):
+        if _file_of(caller) not in scope_files:
+            continue
+        for callee in graph.calls[caller]:
+            if callee == UNRESOLVED_CALLEE:
+                continue
+            callee_file = _file_of(callee)
+            if callee_file in scope_files:
+                continue
+            other_callers = callers_of.get(callee, set())
+            only_scope = all(
+                _file_of(c) in scope_files for c in other_callers
+            )
+            gaps.append(
+                PrivateHelperGap(
+                    caller=caller,
+                    callee=callee,
+                    definition_file=callee_file,
+                    only_used_by_scope=only_scope,
+                )
+            )
+    return tuple(gaps)

@@ -4137,6 +4137,80 @@ class TestScopePrework:
         assert violations == ()
 
 
+# frob:ticket T-0998
+class TestScope002ClosureGate:
+    """`frob.gates._scope002_violations` (SCOPE002, T-0998): scope-
+    declaration-time doc-edge + code-edge + private-helper closure
+    validation over a ticket's declared scope, WARN-only turn-on."""
+
+    def test_warns_on_unscoped_doc_target(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_scope002_violations
+        from frob.gates import _scope002_violations  # noqa: PLC0415
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "# frob:doc docs/x.md#foo\ndef foo() -> None:\n    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(scope=("src/a.py",))
+        violations = _scope002_violations(ticket, snap, tmp_path)
+        assert any(v.rule == "SCOPE002" for v in violations)
+        found = [v for v in violations if v.rule == "SCOPE002"][0]
+        assert found.severity == Severity.WARN
+        assert "docs/x.md" in found.message
+
+    def test_warns_on_unscoped_private_helper(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_scope002_violations
+        from frob.gates import _scope002_violations  # noqa: PLC0415
+
+        _write(
+            tmp_path,
+            "src/pkg/a.py",
+            "def public_fn() -> None:\n    _helper()\n",
+        )
+        _write(tmp_path, "src/pkg/b.py", "def _helper() -> None:\n    pass\n")
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(scope=("src/pkg/a.py",))
+        violations = _scope002_violations(ticket, snap, tmp_path)
+        assert any(
+            v.rule == "SCOPE002" and "src/pkg/b.py" in v.message for v in violations
+        )
+
+    def test_warns_on_unscoped_test_target(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_scope002_violations
+        from frob.gates import _scope002_violations  # noqa: PLC0415
+
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::foo\ndef test_foo() -> None:\n    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(scope=("src/a.py",))
+        violations = _scope002_violations(ticket, snap, tmp_path)
+        assert any(
+            v.rule == "SCOPE002" and "tests/test_a.py" in v.message
+            for v in violations
+        )
+
+    def test_silent_on_closed_scope(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_scope002_violations
+        from frob.gates import _scope002_violations  # noqa: PLC0415
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "# frob:doc docs/x.md#foo\ndef foo() -> None:\n    pass\n",
+        )
+        _write(tmp_path, "docs/x.md", "# X\n<!-- frob:describes src/a.py::foo -->\n")
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(scope=("src/a.py", "docs/x.md"))
+        violations = _scope002_violations(ticket, snap, tmp_path)
+        assert violations == ()
+
+
 # frob:ticket T-0584
 class TestPreworkSweepBounds:
     """T-0240: the sweep's xref half used to call `xref(symbol, root)` --

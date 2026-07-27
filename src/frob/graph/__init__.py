@@ -63,14 +63,22 @@ from frob.graph._models import (
     SymbolId,
     SymbolRecord,
 )
-from frob.graph.affects import AffectedSet, affects
+from frob.graph.affects import (
+    AffectedSet,
+    ScopeClosureGap,
+    affects,
+    scope_doc_code_gaps,
+    scope_test_gaps,
+)
 from frob.graph.callgraph import (
     CallGraph,
     OrderedCallGraph,
+    PrivateHelperGap,
     build_call_graph,
     build_ordered_call_graph,
     build_reference_graph,
     closure,
+    scope_private_helper_gaps,
 )
 from frob.graph.digest import compute_digests
 from frob.graph.dsl import (
@@ -834,7 +842,9 @@ __all__ = [
     "MalformedDirective",
     "OrderedCallGraph",
     "ParseFailure",
+    "PrivateHelperGap",
     "SCCTimeout",
+    "ScopeClosureGap",
     "StaleItem",
     "SummaryResult",
     "SymbolId",
@@ -855,6 +865,9 @@ __all__ = [
     "load_graph",
     "load_lock",
     "resolve",
+    "scope_doc_code_gaps",
+    "scope_private_helper_gaps",
+    "scope_test_gaps",
     "slugify",
     "write_lock",
 ]

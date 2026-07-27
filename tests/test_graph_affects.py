@@ -173,3 +173,124 @@ class TestAffects:
         result = affects(snap, refs[0], max_nodes=3)
         assert result.truncated is True
         assert len(result.dependents) <= 2
+
+
+# frob:ticket T-0998
+class TestScopeDocCodeGaps:
+    """`frob.graph.affects.scope_doc_code_gaps` (T-0998 directions 1+2):
+    scope-declaration-time doc-edge/code-edge closure over a ticket's
+    declared scope."""
+
+    def test_code_in_scope_doc_target_unscoped(self) -> None:
+        # frob:tests src/frob/graph/affects.py::scope_doc_code_gaps
+        from frob.graph.affects import scope_doc_code_gaps
+
+        edges = (
+            Edge(
+                src="a.py::foo",
+                kind=EdgeKind.DOC,
+                target="docs/x.md#foo",
+                origin="a.py:1",
+            ),
+        )
+        snap = _snapshot(("a.py::foo",), edges)
+        gaps = scope_doc_code_gaps(snap, ("a.py",))
+        assert len(gaps) == 1
+        assert gaps[0].direction == "code_missing_doc"
+        assert gaps[0].scoped_site == "a.py::foo"
+        assert gaps[0].missing_file == "docs/x.md"
+
+    def test_doc_in_scope_code_target_unscoped(self) -> None:
+        # frob:tests src/frob/graph/affects.py::scope_doc_code_gaps
+        from frob.graph.affects import scope_doc_code_gaps
+
+        edges = (
+            Edge(
+                src="docs/x.md#foo",
+                kind=EdgeKind.DESCRIBES,
+                target="a.py::foo",
+                origin="docs/x.md:2",
+            ),
+        )
+        snap = _snapshot(("a.py::foo",), edges)
+        gaps = scope_doc_code_gaps(snap, ("docs/x.md",))
+        assert len(gaps) == 1
+        assert gaps[0].direction == "doc_missing_code"
+        assert gaps[0].scoped_site == "docs/x.md#foo"
+        assert gaps[0].missing_file == "a.py"
+
+    def test_clean_when_both_sides_in_scope(self) -> None:
+        # frob:tests src/frob/graph/affects.py::scope_doc_code_gaps
+        from frob.graph.affects import scope_doc_code_gaps
+
+        edges = (
+            Edge(
+                src="a.py::foo",
+                kind=EdgeKind.DOC,
+                target="docs/x.md#foo",
+                origin="a.py:1",
+            ),
+        )
+        snap = _snapshot(("a.py::foo",), edges)
+        gaps = scope_doc_code_gaps(snap, ("a.py", "docs/x.md"))
+        assert gaps == ()
+
+
+# frob:ticket T-0998
+class TestScopeTestGaps:
+    """`frob.graph.affects.scope_test_gaps` (T-0998 test-edge closure
+    direction, symmetric with `scope_doc_code_gaps`'s doc-edge closure)."""
+
+    def test_code_in_scope_test_target_unscoped(self) -> None:
+        # frob:tests src/frob/graph/affects.py::scope_test_gaps
+        from frob.graph.affects import scope_test_gaps
+
+        edges = (
+            Edge(
+                src="tests/test_a.py::test_foo",
+                kind=EdgeKind.TESTS,
+                target="a.py::foo",
+                origin="tests/test_a.py:5",
+            ),
+        )
+        snap = _snapshot(("a.py::foo",), edges)
+        gaps = scope_test_gaps(snap, ("a.py",))
+        assert len(gaps) == 1
+        assert gaps[0].direction == "code_missing_test"
+        assert gaps[0].scoped_site == "a.py::foo"
+        assert gaps[0].missing_file == "tests/test_a.py"
+
+    def test_test_in_scope_code_target_unscoped(self) -> None:
+        # frob:tests src/frob/graph/affects.py::scope_test_gaps
+        from frob.graph.affects import scope_test_gaps
+
+        edges = (
+            Edge(
+                src="tests/test_a.py::test_foo",
+                kind=EdgeKind.TESTS,
+                target="a.py::foo",
+                origin="tests/test_a.py:5",
+            ),
+        )
+        snap = _snapshot(("a.py::foo",), edges)
+        gaps = scope_test_gaps(snap, ("tests/test_a.py",))
+        assert len(gaps) == 1
+        assert gaps[0].direction == "test_missing_code"
+        assert gaps[0].scoped_site == "tests/test_a.py::test_foo"
+        assert gaps[0].missing_file == "a.py"
+
+    def test_clean_when_both_sides_in_scope(self) -> None:
+        # frob:tests src/frob/graph/affects.py::scope_test_gaps
+        from frob.graph.affects import scope_test_gaps
+
+        edges = (
+            Edge(
+                src="tests/test_a.py::test_foo",
+                kind=EdgeKind.TESTS,
+                target="a.py::foo",
+                origin="tests/test_a.py:5",
+            ),
+        )
+        snap = _snapshot(("a.py::foo",), edges)
+        gaps = scope_test_gaps(snap, ("a.py", "tests/test_a.py"))
+        assert gaps == ()

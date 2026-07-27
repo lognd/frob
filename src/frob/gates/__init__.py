@@ -1032,6 +1032,11 @@ _KNOWN_GATE_RULES = frozenset(
         "AFFECT001",
         "AFFECT002",
         "SCOPE001",
+        # T-0998: scope-declaration-time doc/code/private-helper closure
+        # nudge (WARN turn-on, docs/modules/gates.md#new-gate-rule-
+        # acceptance-policy-t-0756) -- distinct from SCOPE001 (a diff
+        # actually touching an unscoped file).
+        "SCOPE002",
         "PRE001",
         "INV001",
         "INV002",
@@ -5622,6 +5627,120 @@ def scope_gate(
         for v in (_scope_gate_check_file(file, ticket, diff, root, queue),)
         if v is not None
     ]
+    violations.extend(_scope002_violations(ticket, snapshot, root))
+    return tuple(violations)
+
+
+# frob:ticket T-0998
+def _scope002_violation(message: str) -> Violation:
+    """One SCOPE002 finding (T-0998, WARN turn-on per the promotion
+    playbook docs/modules/gates.md#new-gate-rule-acceptance-policy-t-0756)
+    -- a nudge, not a hard block: unlike SCOPE001 (a diff genuinely
+    touching an unscoped file), SCOPE002 fires at scope-DECLARATION time,
+    before any file is touched at all, so it must never block a ticket
+    that legitimately intends a narrower slice than its own doc/call
+    graph suggests."""
+    return Violation(
+        rule="SCOPE002",
+        severity=Severity.WARN,
+        file="tickets.md",
+        line=0,
+        message=message,
+    )
+
+
+# frob:doc docs/modules/gates.md#scope002-t-0998
+# frob:ticket T-0998
+# frob:tests tests/test_gates.py::TestScope002ClosureGate.test_warns_on_unscoped_doc_target  # noqa: E501
+# frob:tests tests/test_gates.py::TestScope002ClosureGate.test_warns_on_unscoped_private_helper  # noqa: E501
+# frob:tests tests/test_gates.py::TestScope002ClosureGate.test_warns_on_unscoped_test_target  # noqa: E501
+# frob:tests tests/test_gates.py::TestScope002ClosureGate.test_silent_on_closed_scope  # noqa: E501
+def _scope002_violations(
+    ticket: Ticket, snapshot: GraphSnapshot, root: Path | None
+) -> tuple[Violation, ...]:
+    """SCOPE002 (T-0998): scope-declaration-time doc-edge + test-edge +
+    private-helper closure validation over `ticket.scope` -- the closure
+    TRIPLE: code<->docs (`frob.graph.affects.scope_doc_code_gaps`,
+    directions 1+2, the SAME `frob:doc`/`frob:describes` edges
+    `affects()`/AFFECT001 already walk), code<->tests
+    (`frob.graph.affects.scope_test_gaps`, symmetric with the doc
+    direction -- scoped code implies its `frob:tests`-covering test file
+    in scope, and vice versa, reusing the SAME `EdgeKind.TESTS` edges
+    `_test_refs_for` already reads), and the private-helper capture
+    (`frob.graph.callgraph.scope_private_helper_gaps`, direction 3, the
+    shared `build_call_graph` substrate T-0288/T-0290 already use) -- no
+    second traversal engine anywhere in the triple. WARN-only (T-0756
+    promotion playbook: a new rule id turns on at WARN, a later ticket
+    promotes it to ERROR once the real-repo false-positive rate is
+    measured clean); an empty `ticket.scope` is skipped (nothing declared
+    yet to validate a closure over -- `frob ticket new`'s own suggest-or-
+    warn surface is where an about-to-be-created ticket gets this feedback
+    BEFORE scope is even saved, this gate covers every ticket already
+    carrying one). `scope_private_helper_gaps` needs `root` to parse
+    source files; skipped (not fail-closed -- SCOPE002 is a nudge) when
+    `root` is `None`."""
+    if not ticket.scope:
+        return ()
+    from frob.graph.affects import scope_doc_code_gaps, scope_test_gaps
+    from frob.graph.callgraph import scope_private_helper_gaps
+
+    violations: list[Violation] = []
+    for gap in scope_doc_code_gaps(snapshot, ticket.scope):
+        if gap.direction == "code_missing_doc":
+            violations.append(
+                _scope002_violation(
+                    f"SCOPE002: {ticket.id} scope includes {gap.scoped_site} "
+                    f"whose frob:doc target {gap.target} lives in "
+                    f"{gap.missing_file!r}, not in scope -- add it: "
+                    f"frob ticket scope {ticket.id} --add {gap.missing_file!r}"
+                )
+            )
+        else:
+            violations.append(
+                _scope002_violation(
+                    f"SCOPE002: {ticket.id} scope includes doc anchor "
+                    f"{gap.scoped_site} describing {gap.target} in "
+                    f"{gap.missing_file!r}, not in scope -- add it: "
+                    f"frob ticket scope {ticket.id} --add {gap.missing_file!r}"
+                )
+            )
+    for gap in scope_test_gaps(snapshot, ticket.scope):
+        if gap.direction == "code_missing_test":
+            violations.append(
+                _scope002_violation(
+                    f"SCOPE002: {ticket.id} scope includes {gap.scoped_site} "
+                    f"whose frob:tests target {gap.target} lives in "
+                    f"{gap.missing_file!r}, not in scope -- add it: "
+                    f"frob ticket scope {ticket.id} --add {gap.missing_file!r}"
+                )
+            )
+        else:
+            violations.append(
+                _scope002_violation(
+                    f"SCOPE002: {ticket.id} scope includes test "
+                    f"{gap.scoped_site} covering {gap.target} in "
+                    f"{gap.missing_file!r}, not in scope -- add it: "
+                    f"frob ticket scope {ticket.id} --add {gap.missing_file!r}"
+                )
+            )
+    if root is not None:
+        for helper_gap in scope_private_helper_gaps(
+            root, ticket.scope, tuple(snapshot.file_hashes)
+        ):
+            suggestion = (
+                "add it"
+                if helper_gap.only_used_by_scope
+                else "review the dependency"
+            )
+            violations.append(
+                _scope002_violation(
+                    f"SCOPE002: {ticket.id} scope includes {helper_gap.caller} "
+                    f"which calls private helper {helper_gap.callee} defined "
+                    f"in {helper_gap.definition_file!r}, not in scope "
+                    f"(probable under-capture) -- {suggestion}: frob ticket "
+                    f"scope {ticket.id} --add {helper_gap.definition_file!r}"
+                )
+            )
     return tuple(violations)
 
 

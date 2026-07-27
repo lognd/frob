@@ -286,6 +286,9 @@ def _new(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
     ticket = result.danger_ok
     _log.info("created %s: %s", ticket.id, ticket.title)
+    # frob:ticket T-0998
+    for warning in _scope_closure_warnings(root, ticket.scope):
+        _log.warning("ticket new %s: scope closure: %s", ticket.id, warning)
     # frob:ticket T-0178
     from frob.app.telemetry import record_ticket_event
 
@@ -297,6 +300,67 @@ def _new(root: Path, cfg: AppConfig) -> None:
             sys.exit(1)
 
     _maybe_attach_clipboard_image(root, ticket.id)
+
+
+# frob:ticket T-0998
+def _scope_closure_warnings(root: Path, scope) -> tuple[str, ...]:  # noqa: ANN001
+    """Suggest-or-warn scope-closure hints for `scope` (T-0998), rendered
+    as plain human warning lines for `frob ticket new`/`frob ticket scope`'s
+    own CLI surface -- the closure TRIPLE `frob.gates._scope002_violations`
+    consults: `frob.graph.affects.scope_doc_code_gaps` (code<->docs),
+    `frob.graph.affects.scope_test_gaps` (code<->tests, symmetric with the
+    doc direction), and `frob.graph.callgraph.scope_private_helper_gaps`
+    (private-helper capture) -- so a declaring agent sees this feedback at
+    `new`/`scope` time -- before ever running `frob check` -- instead of
+    discovering AFFECT001/COV002 reactively mid-ticket. Returns `()`
+    silently (never blocks the CLI command) when the graph cache cannot be
+    loaded/built at all -- this is a nudge, not a gate."""
+    from frob.graph.affects import scope_doc_code_gaps, scope_test_gaps
+    from frob.graph.callgraph import scope_private_helper_gaps
+
+    snapshot = _graph_snapshot(root)
+    if snapshot.is_err:
+        return ()
+    snap = snapshot.danger_ok
+    scope_tuple = tuple(scope)
+    warnings: list[str] = []
+    for gap in scope_doc_code_gaps(snap, scope_tuple):
+        if gap.direction == "code_missing_doc":
+            warnings.append(
+                f"{gap.scoped_site}'s frob:doc target lives in "
+                f"{gap.missing_file!r}, not in scope -- consider --add "
+                f"{gap.missing_file!r}"
+            )
+        else:
+            warnings.append(
+                f"doc anchor {gap.scoped_site} describes {gap.target} in "
+                f"{gap.missing_file!r}, not in scope -- consider --add "
+                f"{gap.missing_file!r}"
+            )
+    for gap in scope_test_gaps(snap, scope_tuple):
+        if gap.direction == "code_missing_test":
+            warnings.append(
+                f"{gap.scoped_site}'s frob:tests target lives in "
+                f"{gap.missing_file!r}, not in scope -- consider --add "
+                f"{gap.missing_file!r}"
+            )
+        else:
+            warnings.append(
+                f"test {gap.scoped_site} covers {gap.target} in "
+                f"{gap.missing_file!r}, not in scope -- consider --add "
+                f"{gap.missing_file!r}"
+            )
+    for helper_gap in scope_private_helper_gaps(
+        root, scope_tuple, tuple(snap.file_hashes)
+    ):
+        suggestion = "add" if helper_gap.only_used_by_scope else "review"
+        warnings.append(
+            f"{helper_gap.caller} calls private helper {helper_gap.callee} "
+            f"defined in {helper_gap.definition_file!r}, not in scope "
+            f"(probable under-capture) -- {suggestion} "
+            f"{helper_gap.definition_file!r}"
+        )
+    return tuple(warnings)
 
 
 def _filter_by_state(tickets, state):
@@ -2783,6 +2847,9 @@ def _scope(root: Path, cfg: AppConfig) -> None:
         len(cfg.ticket_scope_add),
         len(cfg.ticket_scope_remove),
     )
+    # frob:ticket T-0998
+    for warning in _scope_closure_warnings(root, ticket.scope):
+        _log.warning("ticket scope %s: scope closure: %s", ticket.id, warning)
 
 
 # frob:ticket T-0411

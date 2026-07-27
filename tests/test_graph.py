@@ -2286,3 +2286,63 @@ class TestLedgerNotDoc:
         assert "README.md" in names
         assert "tickets.md" not in names
         assert "tickets-archive.md" not in names
+
+
+# frob:ticket T-0998
+class TestScopePrivateHelperGaps:
+    """`frob.graph.callgraph.scope_private_helper_gaps` (T-0998 direction
+    3): scoped code calling a private helper defined outside scope is
+    probable under-capture."""
+
+    def test_flags_scoped_caller_of_unscoped_private_helper(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::scope_private_helper_gaps
+        from frob.graph.callgraph import scope_private_helper_gaps
+
+        _write(
+            tmp_path,
+            "pkg/a.py",
+            "def public_fn() -> None:\n    _helper()\n",
+        )
+        _write(tmp_path, "pkg/b.py", "def _helper() -> None:\n    pass\n")
+        gaps = scope_private_helper_gaps(
+            tmp_path, ("pkg/a.py",), ("pkg/a.py", "pkg/b.py")
+        )
+        assert len(gaps) == 1
+        gap = gaps[0]
+        assert gap.caller == "pkg/a.py::public_fn"
+        assert gap.callee == "pkg/b.py::_helper"
+        assert gap.definition_file == "pkg/b.py"
+
+    def test_only_used_by_scope_true_when_no_external_caller(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::scope_private_helper_gaps
+        from frob.graph.callgraph import scope_private_helper_gaps
+
+        _write(
+            tmp_path,
+            "pkg/a.py",
+            "def public_fn() -> None:\n    _helper()\n",
+        )
+        _write(tmp_path, "pkg/b.py", "def _helper() -> None:\n    pass\n")
+        gaps = scope_private_helper_gaps(
+            tmp_path, ("pkg/a.py",), ("pkg/a.py", "pkg/b.py")
+        )
+        assert gaps[0].only_used_by_scope is True
+
+    def test_clean_when_callee_also_in_scope(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/callgraph.py::scope_private_helper_gaps
+        from frob.graph.callgraph import scope_private_helper_gaps
+
+        _write(
+            tmp_path,
+            "pkg/a.py",
+            "def public_fn() -> None:\n    _helper()\n",
+        )
+        _write(tmp_path, "pkg/b.py", "def _helper() -> None:\n    pass\n")
+        gaps = scope_private_helper_gaps(
+            tmp_path, ("pkg/a.py", "pkg/b.py"), ("pkg/a.py", "pkg/b.py")
+        )
+        assert gaps == ()

@@ -29,6 +29,7 @@ declaration).
 | TODO001 | coverage | bare TODO/FIXME comment (not `frob:`-prefixed) in a diff-touched file -- work marked but not accounted for at all |
 | TODO002 | coverage | `frob:todo` edge bound to a non-open (closed or missing) ticket -- work accounted for, but the reference is dangling |
 | SCOPE001 | scope | diff touches paths/symbols outside the active ticket's `scope` |
+| SCOPE002 | scope | (warn, T-0998) scope-DECLARATION-time doc/code/private-helper closure gap -- see "SCOPE002 (T-0998)" below |
 | PRE001 | pre-work | ticket moved to in-progress without a recorded pre-work sweep |
 | INV001 | invariant | invariant has no evidence (test or policy rule) |
 | INV002 | invariant | invariant has no code anchor (`frob:invariant`) |
@@ -503,6 +504,57 @@ reddens frob's own self-audit now fails the same way landing a change that
 reddens any other ERROR-severity gate already does. No `frob.tickets`/
 `frob.app` code needed to change to wire this in; the fix was making the
 surface a gate at all.
+
+### SCOPE002 (T-0998)
+
+<!-- frob:describes src/frob/gates/__init__.py::_scope002_violations -->
+
+Moves the AFFECT001/002 idea (docs/modules/graph.md#affects) from
+diff-time to scope-DECLARATION-time: SCOPE001 catches a diff that touches
+a file outside the active ticket's declared `scope` AFTER the fact;
+SCOPE002 catches a scope that is already under-captured BEFORE any file
+is touched, by walking the doc-edge and code-edge closure over the
+declared scope itself (docs/modules/graph.md#scope-closure-t-0998).
+
+Five directions (a doc pair, a test pair, and the private-helper
+leakage), one WARN-severity rule id:
+
+1. **code-missing-doc**: a scoped code symbol's `frob:doc`/`frob:describes`
+   target file is not in scope.
+2. **doc-missing-code**: a scoped doc anchor's described code file is not
+   in scope (the reverse of 1).
+3. **code-missing-test**: a scoped code symbol's `frob:tests` target file
+   is not in scope -- the same reactive scope-add churn (AFFECT001/COV002
+   discovered mid-ticket) this ticket exists to close, for tests instead
+   of docs.
+4. **test-missing-code**: a scoped test file's covered code file is not
+   in scope (the reverse of 3, symmetric with 2).
+5. **private-helper leakage**: scoped code calls an underscore-private
+   helper defined in a file outside scope -- probable under-capture (the
+   caller will likely need to touch that helper too); a helper used ONLY
+   by scoped code is the strong "add this file" case, flagged distinctly
+   from a helper with other, unscoped callers ("review the dependency").
+
+`frob.gates._scope002_violations` computes all five via
+`frob.graph.affects.scope_doc_code_gaps` (1+2),
+`frob.graph.affects.scope_test_gaps` (3+4), and
+`frob.graph.callgraph.scope_private_helper_gaps` (5) -- reusing the SAME
+`frob:doc`/`frob:describes`/`frob:tests` edge reads `affects()` already does and the
+SAME `build_call_graph` substrate `frob.dup`/`closure` already use, not a
+second traversal engine. Wired into the existing `scope` gate stage
+(`scope_gate`), so it runs alongside SCOPE001 for every ticket `frob
+check` resolves. `frob ticket new`/`frob ticket scope` also render the
+identical gaps as plain warning lines right after scope is
+created/changed (`frob.app.ticket_runner._scope_closure_warnings`) --
+suggest-or-warn at the CLI, before a `frob check` run is even needed.
+
+**WARN turn-on, per the T-0756 new-gate-rule acceptance policy below**:
+SCOPE002 is a nudge, not a hard block -- a ticket legitimately choosing a
+narrower scope than its own doc/call graph would suggest must never be
+gated shut by it. A future ticket may promote it to ERROR once the
+real-repo false-positive rate is measured clean, the same promotion path
+PII010/PII012 already took (see "Promotion state" in this file's tickets
+history).
 
 ### New-gate-rule acceptance policy (T-0756)
 
