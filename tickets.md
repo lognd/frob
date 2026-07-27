@@ -665,6 +665,8 @@ component: null
 ```
 T-0576's ticket body wanted a deprecated symbol gaining new callers to fire a finding, but frob.graph.callgraph's caller/reference resolution only covers PRIVATE callees by design -- a PUBLIC deprecated symbol's callers are not resolvable today. Design work: either extend the callgraph to public-symbol references (cost/precision tradeoff) or diff-based detection (a new call site referencing the symbol in a change since the directive appeared). Was T-0639 (ex-draft, id lost at land) in T-0576's worktree; drafts still do not survive land (T-0637).
 
+Coordinator design decision 2026-07-27: baseline-ratchet, not callgraph extension. Record each DEPR003-deprecated symbol's current caller/reference set (file-level references via the exports --consumers machinery from T-0876 plus textual symbol references, same resolution the DEPR scan already trusts) into a committed .frob baseline (baseline-chunks.json precedent, T-0751). New rule DEPR004 fires at ERROR when a deprecated symbol's reference set gains a member absent from the baseline; shrinkage auto-tightens the baseline at land (PERF009 ratchet precedent). No general public-symbol callgraph work in this ticket -- that cost/precision investigation stays out of scope. This makes the ticket implementable as scoped.
+
 <!-- ticket:T-0658 -->
 ```yaml
 id: T-0658
