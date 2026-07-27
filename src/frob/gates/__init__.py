@@ -15,6 +15,15 @@ posture. The public gate functions stay defined in this module so their
 `frob:doc`/`frob:tests` bindings keep their `__init__.py` symref; each rule
 is decomposed into small private helpers alongside it.
 """
+# frob:waive ARCH102 reason="the naming/usage clustering itself shows one \
+# dominant connected cluster of 306 of 308 exports (every gate/helper calls \
+# into the shared _match_waiver/_apply_waivers/_assemble_gate_report spine \
+# this module IS the gate registry, so broad connectivity is the correct \
+# shape, not an accident); the only 2 outliers (known_gate_rule_ids, \
+# ticket_lease_pin) are standalone lookups with no call edges into the rest, \
+# not a second concern worth extracting -- splitting a single cohesive \
+# gate-registry module to chase a 3-cluster metric on 2 stray leaf helpers \
+# would be artificial"  # noqa: E501
 
 from __future__ import annotations
 

@@ -24,6 +24,14 @@ reaches the graph automatically.
 # already-implemented internal behavior, verifiable by reading the code it annotates) \
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
+# frob:waive ARCH102 reason="19 of 22 exports form one connected build-graph \
+# pipeline cluster (load_graph's own ingest/parse/cache-prune chain); the \
+# remaining 3 (edges_from, edges_to, resolve) are small read-only query \
+# accessors over the exact GraphSnapshot the pipeline produces, coupled to \
+# it by the shared data model rather than by direct calls -- splitting \
+# query accessors away from the builder of the structure they query would \
+# separate one cohesive graph API into pieces with no independent reason \
+# to exist apart"
 
 from __future__ import annotations
 

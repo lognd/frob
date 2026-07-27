@@ -12,6 +12,15 @@ Elements that validate untrusted/derived input (`status_pill`,
 convention; the rest are total functions over `str`/`Mapping` and cannot
 fail.
 """
+# frob:waive ARCH102 reason="this module IS a deliberate flat vocabulary of \
+# independent leaf rendering primitives (T-0448's docstring above); \
+# cohesion here is by ROLE -- every element shares the same plain/color-shape \
+# contract this docstring names -- not by naming prefix or call graph, so \
+# 9 clusters over 10 exports is the expected shape of a primitives catalog, \
+# not fragmentation. Splitting heading/subhead/kv_row/status_pill/ \
+# path_label/ticket_id_label/table/tree into 8-9 one-function files would \
+# scatter a single well-known `frob.render._elements` import surface with \
+# no independent concern gained"
 
 # frob:invariant INV-040
 from __future__ import annotations

@@ -33,6 +33,13 @@ sections get sampled over the repo's lifetime.
 # _close_all is test-teardown-only) verifiable by reading the code they \
 # annotate, not a separate cross-module contract needing its own tracked \
 # invariant; same calibration-batch disposition as the T-0585 INV006 pool"
+# frob:waive ARCH102 reason="11 of 13 exports form one connected sqlite \
+# decayed-merge store cluster (connect/put_sketch/get_sketch/ \
+# list_sketches/_evict_coldest all sharing the one on-disk store this \
+# module's docstring describes); the 2 outliers (stable_section_key, \
+# new_run_sketch) are the key-derivation and constructor helpers for rows \
+# in that exact same store, coupled to it by the schema/data model rather \
+# than a direct call -- there is one store here, not two concerns"
 
 from __future__ import annotations
 

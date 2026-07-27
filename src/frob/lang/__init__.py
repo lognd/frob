@@ -15,6 +15,26 @@ comment conventions) lives in `_extract.py`'s per-language walkers or
 `_walk_strata.py`; everything else (models, dispatch, hashing, the Result
 boundary) lives here.
 """
+# frob:waive ARCH102 reason="the 11-cluster count is a real blind spot in \
+# the naming/usage heuristic, not a real fragmentation: this module's \
+# exports fall into three groups, each cohesive around a shared resource \
+# the clustering pass cannot see because it only tracks name prefixes and \
+# direct calls. (1) supported_languages/supported_extensions/ \
+# language_for_extension/tree_sitter_extensions all read the same \
+# module-level _EXTENSION_TABLE/_SUPPORTED_LANGUAGES constants by \
+# subscript, never by calling each other. (2) reset_parse_cache/ \
+# parse_cache_stats/partial_parse_files/parse_file/_parse all read or \
+# mutate the same module-level _parse_cache dict and _parse_cache_hits/ \
+# _parse_cache_misses counters directly, again by shared state rather than \
+# calls -- this is the exact same call-graph blind spot T-0977 fixed for \
+# data-only classes, generalized to shared-mutable-state modules; \
+# splitting the cache-memo functions away from the cache dict they close \
+# over would force the cache into its own tiny module with no callers but \
+# this one. (3) cpp_function_nodes/child_by_field/node_text/ \
+# resolve_local_import are genuinely independent tree-sitter node \
+# utilities with no shared state and no calls into (1) or (2) -- a real \
+# split candidate, tracked as a follow-up rather than done speculatively \
+# in the same pass as this waiver"
 
 from __future__ import annotations
 

@@ -13,6 +13,13 @@ is the private spawn primitive; `run_argv` is the small public wrapper
 subprocess-with-timeout helper in the package, never a second copy living
 under `frob.testing`.
 """
+# frob:waive ARCH102 reason="13 of 15 exports form one connected cluster \
+# around the single subprocess seam this module's docstring names (_run_git \
+# feeding repo_root/working_diff/current_branch/git_common_dir/run_argv); \
+# the 2 outliers (reset_common_dir_cache, SpawnRecorder) are test-support-only \
+# helpers for that same cache/spawn seam with no production call edges into \
+# the rest -- splitting the one real seam this module exists to centralize \
+# just to detach its own test-support helpers would be artificial"  # noqa: E501
 
 from __future__ import annotations
 

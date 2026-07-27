@@ -6,6 +6,14 @@
 # already-implemented internal behavior, verifiable by reading the code it annotates) \
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
+# frob:waive ARCH102 reason="19 of 23 exports (after T-0977's data-only- \
+# class exclusion) form one connected cluster around scope-glob matching \
+# and done-report parsing over the same Ticket/Evidence models this \
+# module's docstring names; the 4 outliers (is_cmd_evidence, \
+# matches_collected, unbound_acceptance, render_claims_block) are small \
+# predicate/render helpers over those exact same models, not a separate \
+# concern -- this is the single tickets data-model module the docstring \
+# already scopes it to"
 
 from __future__ import annotations
 

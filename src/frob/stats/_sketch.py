@@ -37,6 +37,14 @@ plan ("deciles/any-quantile computed at read time, never stored").
 # internal behavior (verifiable by reading quantile()/add_value() below), \
 # not a separate cross-module contract needing its own tracked invariant; \
 # same calibration-batch disposition as the T-0585 INV006 pool"
+# frob:waive ARCH102 reason="6 of 10 exports form one connected cluster \
+# around the sketch's bucket algebra (_bucket_index/_bucket_value/_gamma/ \
+# add_value/quantile/total_weight); the 4 outliers (new_sketch, \
+# merge_sketches, decay_sketch, sketch_size_bytes) are lifecycle operations \
+# on the exact same QuantileSketch value type this docstring describes -- \
+# they read/write its bucket dict by field access rather than calling the \
+# algebra helpers directly, so the naming/usage heuristic cannot see the \
+# real single-value-type cohesion this module's own docstring names"
 
 from __future__ import annotations
 

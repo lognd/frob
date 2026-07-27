@@ -262,6 +262,21 @@ ARCH001 = "error"
 # (`_py_is_self_attribute`) drops both findings to zero without touching
 # `mutate/__init__.py` itself. Promoted to error at zero live findings.
 ARCH101 = "error"
+# T-0980: ARCH102 (god-module / export-cohesion clustering) -- T-0977 fixed
+# the heuristic's most severe unsoundness (data-only classes inflating
+# fragmentation) and dropped 23 live findings to 11; this ticket disposes
+# the remaining 11, each via a `frob:waive ARCH102` bound to the bare
+# module path with a per-module cohesion argument grounded in the gate's
+# own clustering output (which exports land in which cluster, and why the
+# naming/usage heuristic misses their real coupling -- shared mutable
+# state, a shared data model, or a documented multi-responsibility split).
+# No module was force-split speculatively; `frob.lang`'s genuinely
+# independent tree-sitter node helpers (cpp_function_nodes/child_by_field/
+# node_text/resolve_local_import) are flagged as a real follow-up split
+# candidate in that module's waiver reason and tracked as a separate
+# ticket rather than done in this pass. Promoted to error at zero live
+# unwaived findings.
+ARCH102 = "error"
 # T-0972: gates-quality audit finding 1 -- PERF001-004 (membership-in-list,
 # .index()/.count(), nested-loop equality-join, sorted()-in-loop) were
 # WARN-only, so a repo could carry real O(n^2)/repeated-work perf smells
