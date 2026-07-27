@@ -61,6 +61,7 @@ from frob.tickets._models import (
     ReviewVerdict,
     ScopeChangeEntry,
     ScopeChangeOp,
+    SprintReport,
     Stride,
     Ticket,
     TicketError,
@@ -68,6 +69,7 @@ from frob.tickets._models import (
     TicketQueue,
     TicketSpec,
     TicketState,
+    TicketTier,
     _done_report_section_lines,
     _glob_is_subset,
     has_substantive_done_report,
@@ -403,6 +405,8 @@ def _ticket_from_spec(
         priority=spec.priority,
         blocked_by=spec.blocked_by,
         parent=spec.parent,
+        tier=spec.tier,
+        sprint=spec.sprint,
         scope=spec.scope,
         evidence=evidence,
         attachments=(),
@@ -919,12 +923,18 @@ def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
 
 
 # frob:invariant INV-032
+# frob:ticket T-0715
 def _doable_candidates(queue: TicketQueue) -> list[Ticket]:
-    """Queued/planned tickets that currently have no open blockers, unordered."""
+    """Queued/planned LEAF tickets (tier=TICKET) that currently have no open
+    blockers, unordered. T-0715: an EPIC/STORY never surfaces here even if
+    it has no `blocked_by` of its own -- only a leaf ticket is ever
+    dispatchable work; an epic/story is pure organization, not a unit an
+    agent starts directly."""
     return [
         t
         for t in queue.tickets.values()
         if t.state in (TicketState.QUEUED, TicketState.PLANNED)
+        and t.tier is TicketTier.TICKET
         and not _open_blockers(queue, t)
     ]
 
@@ -1855,6 +1865,56 @@ def set_kind(
     return Ok(updated)
 
 
+# frob:ticket T-0715
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_tiers.py::TestSprintAssign::test_updates_sprint_field
+def set_sprint(
+    root: Path, ticket_id: str, sprint: str | None
+) -> Result[Ticket, TicketError]:
+    """`frob ticket sprint assign <id> <label>`: set `ticket_id`'s `sprint`
+    field (T-0715) -- the same single-writer, ledger-locked pattern
+    `set_component` uses. `sprint=None` clears it back to uncommitted/
+    backlog."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        updated = ticket.model_copy(update={"sprint": sprint})
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info("tickets: %s sprint set to %s", ticket_id, sprint)
+    return Ok(updated)
+
+
+# frob:ticket T-0715
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_tiers.py::TestSprintShow::test_state_rollup_and_velocity
+def sprint_view(queue: TicketQueue, sprint: str) -> SprintReport:
+    """`frob ticket sprint show <label>`: every ticket committed to
+    `sprint` (T-0715), a `TicketState -> count` rollup, and `closed`
+    (done-count, the mandate's "closed-count velocity" -- derived from
+    current ledger state, not a separate tracked counter). Always returns
+    a report, even when no ticket carries this sprint label (`tickets`
+    empty, every rollup count zero) -- there is no NotFound case, a sprint
+    label is a free-form tag, not an id that must resolve."""
+    tickets = tuple(
+        sorted(
+            (t for t in queue.tickets.values() if t.sprint == sprint),
+            key=lambda t: t.id,
+        )
+    )
+    rollup: dict[TicketState, int] = {}
+    for t in tickets:
+        rollup[t.state] = rollup.get(t.state, 0) + 1
+    closed = rollup.get(TicketState.DONE, 0)
+    return SprintReport(sprint=sprint, tickets=tickets, rollup=rollup, closed=closed)
+
+
 # frob:ticket T-0454
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_organization.py::TestSetComponent.test_updates_component_field  # noqa: E501
@@ -2066,8 +2126,10 @@ def brief_ticket(root: Path, ticket_id: str) -> Result[str, TicketError]:
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
+# frob:tests tests/test_tickets_tiers.py::TestDoableLeafOnly::test_epic_and_story_never_surface  # noqa: E501
 # frob:waive DRIFT001 reason="T-0453 added root/ignore_lease params; frob.lock ack out of scope, no inline-waivable syntax for JSON -- reviewer re-acks at land"  # noqa: E501
 # frob:invariant INV-024
+# frob:ticket T-0715
 def doable(
     queue: TicketQueue,
     root: Path | None = None,
@@ -2288,11 +2350,39 @@ def _transition_guard(
         return _done_transition_guard(
             root,
             ticket,
+            queue,
             covers_scope=covers_scope,
             reviewed=reviewed,
             mutation_evidence=mutation_evidence,
         )
     return Ok(None)
+
+
+# frob:ticket T-0715
+def _open_descendant_ids(ticket: Ticket, queue: dict[str, Ticket]) -> tuple[str, ...]:
+    """Ids of every descendant of `ticket` (via the `parent` chain, any
+    depth) whose state is not done/dropped -- the T-0715 structural rule an
+    EPIC/STORY's DONE transition enforces: it cannot close while any
+    descendant is still open. Mirrors `epic_rollup`'s own parent-chain BFS
+    (kept separate: that one builds a full rollup for display, this is a
+    cheap open/closed check for a single guard)."""
+    children_of: dict[str, list[Ticket]] = {}
+    for t in queue.values():
+        if t.parent is not None:
+            children_of.setdefault(t.parent, []).append(t)
+    open_ids: list[str] = []
+    frontier = [ticket.id]
+    seen = {ticket.id}
+    while frontier:
+        current = frontier.pop()
+        for child in children_of.get(current, ()):
+            if child.id in seen:
+                continue
+            seen.add(child.id)
+            if child.state in _OPEN_STATES:
+                open_ids.append(child.id)
+            frontier.append(child.id)
+    return tuple(sorted(open_ids))
 
 
 # T-0215 review round 2: a cmd: entry is only ever valid evidence on a
@@ -2304,13 +2394,16 @@ def _transition_guard(
 def _done_transition_guard(
     root: Path,
     ticket: Ticket,
+    queue: dict[str, Ticket],
     *,
     covers_scope: bool | None = None,
     reviewed: bool | None = None,
     mutation_evidence: bool | None = None,
 ) -> Result[None, TicketError]:
     """Enforce DONE-transition preconditions: evidence + substantive Done
-    report present, no cmd: evidence on a kind that disallows it, (D-02,
+    report present, no cmd: evidence on a kind that disallows it, (T-0715)
+    an EPIC/STORY refuses to close while any descendant (via the `parent`
+    chain) is still open, (D-02,
     when the caller supplies `covers_scope`) at least one evidence id binds
     to a touched/scope symbol, (T-0572) every declared acceptance criterion
     has at least one resolving evidence id -- see `unbound_acceptance` (a
@@ -2357,6 +2450,16 @@ def _done_transition_guard(
             ticket.id,
         )
         return Err(TicketError.MissingEvidence)
+    if ticket.tier is not TicketTier.TICKET:
+        open_descendants = _open_descendant_ids(ticket, queue)
+        if open_descendants:
+            _log.warning(
+                "tickets: %s (tier=%s) cannot close, open descendant(s): %s",
+                ticket.id,
+                ticket.tier,
+                open_descendants,
+            )
+            return Err(TicketError.OpenDescendant)
     if ticket.kind not in CMD_EVIDENCE_ALLOWED_KINDS and any(
         is_cmd_evidence(e) for e in ticket.evidence
     ):
@@ -2460,6 +2563,9 @@ def _load_ticket_and_queue(
 # frob:tests tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_rejects_when_mutation_evidence_false  # noqa: E501
 # frob:tests tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_allows_when_mutation_evidence_true  # noqa: E501
 # frob:tests tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_permissive_when_mutation_evidence_none  # noqa: E501
+# frob:tests tests/test_tickets_tiers.py::TestCloseOpenDescendantGuard::test_epic_close_refused_with_open_descendant  # noqa: E501
+# frob:tests tests/test_tickets_tiers.py::TestCloseOpenDescendantGuard::test_epic_close_allowed_once_descendant_done  # noqa: E501
+# frob:ticket T-0715
 def transition(
     root: Path,
     ticket_id: str,
@@ -3693,12 +3799,14 @@ __all__ = [
     "ReviewVerdict",
     "ScopeChangeEntry",
     "ScopeChangeOp",
+    "SprintReport",
     "Ticket",
     "TicketError",
     "TicketKind",
     "TicketQueue",
     "TicketSpec",
     "TicketState",
+    "TicketTier",
     "add_cmd_evidence",
     "add_evidence",
     "archive",
@@ -3727,6 +3835,8 @@ __all__ = [
     "set_component",
     "set_kind",
     "set_priority",
+    "set_sprint",
+    "sprint_view",
     "Stride",
     "board_view",
     "brief_ticket",

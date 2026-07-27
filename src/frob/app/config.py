@@ -267,6 +267,14 @@ class AppConfig(BaseModel):
     ticket_scope: list[str] = []
     ticket_blocked_by: list[str] = []
     ticket_parent: str | None = None
+    # frob:ticket T-0715
+    # `frob ticket new --tier epic|story|ticket` (default ticket).
+    ticket_tier: str | None = None
+    # frob:ticket T-0715
+    # `frob ticket new --sprint LABEL` / `frob ticket sprint assign <id>
+    # LABEL` / `frob ticket sprint show LABEL` -- the same field carries
+    # all three (same reuse pattern as `ticket_component`).
+    ticket_sprint: str | None = None
     ticket_body: str = ""
     # frob:ticket T-0737
     # `frob ticket new --body-file PATH` -- read the ticket body verbatim
@@ -405,6 +413,13 @@ class AppConfig(BaseModel):
     # `frob ticket board [--component NAME] [--label TAG] [--json]`.
     ticket_board_component: str | None = None
     ticket_board_label: str | None = None
+    # frob:ticket T-0715
+    # `frob ticket doable --sprint LABEL [--by-parent]`.
+    ticket_doable_sprint: str | None = None
+    ticket_doable_by_parent: bool = False
+    # frob:ticket T-0715
+    # `frob ticket sprint assign|show` -- which sprint subcommand.
+    ticket_sprint_command: str | None = None
 
     # test
     test_all: bool = False
@@ -623,6 +638,11 @@ class AppConfig(BaseModel):
             "ticket_component",
             "ticket_board_component",
             "ticket_board_label",
+            # frob:ticket T-0715
+            "ticket_tier",
+            "ticket_sprint",
+            "ticket_doable_sprint",
+            "ticket_sprint_command",
             "test_base",
             "test_fallback",
             "vet_hook",
@@ -860,6 +880,8 @@ class AppConfig(BaseModel):
             "ticket_steal",
             "ticket_reconcile_apply",
             "ticket_reconcile_remove_orphans",
+            # frob:ticket T-0715
+            "ticket_doable_by_parent",
             "deploy_check",
             "clean_all",
             "clean_deep",

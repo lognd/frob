@@ -982,6 +982,22 @@ def _add_ticket_new_graph_args(ticket_new_p) -> None:
         "--blocked-by", dest="ticket_blocked_by", action="append", default=[]
     )
     ticket_new_p.add_argument("--parent", dest="ticket_parent")
+    # frob:ticket T-0715
+    ticket_new_p.add_argument(
+        "--tier",
+        dest="ticket_tier",
+        choices=["epic", "story", "ticket"],
+        help="where this ticket sits in the epic -> story -> ticket "
+        "hierarchy (default: ticket, a plain leaf, T-0715)",
+    )
+    # frob:ticket T-0715
+    ticket_new_p.add_argument(
+        "--sprint",
+        dest="ticket_sprint",
+        metavar="LABEL",
+        help="free-form sprint commitment label (e.g. 2026-W30, "
+        "sprint-14, T-0715); omit for uncommitted/backlog",
+    )
     # frob:ticket T-0454
     ticket_new_p.add_argument(
         "--component",
@@ -1075,6 +1091,22 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         action="store_true",
         help="skip the T-0453 scope-lease collision filter and return the "
         "raw blocker-only doable list",
+    )
+    # frob:ticket T-0715
+    ticket_doable_p.add_argument(
+        "--sprint",
+        dest="ticket_doable_sprint",
+        metavar="LABEL",
+        help="restrict the doable queue to one sprint's commitment (T-0715)",
+    )
+    # frob:ticket T-0715
+    ticket_doable_p.add_argument(
+        "--by-parent",
+        dest="ticket_doable_by_parent",
+        action="store_true",
+        help="group the doable list by parent ticket (T-0715) -- a "
+        "story's remaining leaves display together instead of one flat "
+        "priority/age-ordered list",
     )
 
     # frob:ticket T-0454
@@ -1646,9 +1678,41 @@ def _add_ticket_label_parser(ticket_sub):
     return ticket_label_p
 
 
+# frob:ticket T-0715
+def _add_ticket_sprint_parser(ticket_sub):
+    """Register `frob ticket sprint assign|show` (T-0715): `assign <id>
+    <label>` sets a ticket's sprint commitment, `show <label>` lists every
+    ticket committed to it with a state rollup and closed-count velocity
+    -- same nested-subcommand shape as `_add_pool_parser`'s `pool
+    snapshot|clear` precedent (T-0569)."""
+    sprint_p = ticket_sub.add_parser(
+        "sprint",
+        help="sprint commitment: assign a ticket to a sprint label, or "
+        "show a sprint's committed tickets with a state rollup (T-0715)",
+    )
+    sprint_sub = sprint_p.add_subparsers(dest="ticket_sprint_command")
+
+    assign_p = sprint_sub.add_parser(
+        "assign", help="set a ticket's sprint commitment label"
+    )
+    assign_p.add_argument("ticket_id", metavar="id")
+    assign_p.add_argument("ticket_sprint", metavar="label")
+
+    show_p = sprint_sub.add_parser(
+        "show",
+        help="list every ticket committed to LABEL, with a state rollup "
+        "and closed-count velocity",
+    )
+    show_p.add_argument("ticket_sprint", metavar="label")
+    show_p.add_argument("--json", dest="ticket_json", action="store_true")
+
+    return sprint_p
+
+
 def _add_ticket_closeout_parsers(ticket_sub) -> list:
     """Register the ticket closeout subcommands: attach/block/close/fail/
-    evidence/done-report/scope/priority/kind/component/label/review."""
+    evidence/done-report/scope/priority/kind/component/label/review/
+    sprint."""
     return (
         _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub)
         + _add_ticket_fail_evidence_archive_parsers(ticket_sub)
@@ -1660,6 +1724,8 @@ def _add_ticket_closeout_parsers(ticket_sub) -> list:
             _add_ticket_component_parser(ticket_sub),
             _add_ticket_label_parser(ticket_sub),
             _add_ticket_review_parser(ticket_sub),
+            # frob:ticket T-0715
+            _add_ticket_sprint_parser(ticket_sub),
         ]
     )
 

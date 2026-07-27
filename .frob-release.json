@@ -1442,6 +1442,8 @@
     "src/frob/tickets/__init__.py::set_done_report": "e986c914e7ed5d017e1d766983f12cc042544a6b90712b6e34d93ce1a13cd086",
     "src/frob/tickets/__init__.py::set_kind": "8a4080d822675b2aba306037e1a3af1d01669fe4772c4ecb0077d7427781ebd0",
     "src/frob/tickets/__init__.py::set_priority": "c4c5efc225ac364f5c558302f3dffcb2ca395e77f1c280b69ebcee7bec1c73d5",
+    "src/frob/tickets/__init__.py::set_sprint": "41fda4febf6418788633d360bbd4c790e140816430cdba242c6a290aba3e51cc",
+    "src/frob/tickets/__init__.py::sprint_view": "6b42b53893077506b7811c6fad63cc3f84f58a16efd56582ea31d6f74ddd7cbe",
     "src/frob/tickets/__init__.py::transition": "450338b2daf3459c37000ad39506a9884b7d8e8dfb2e8eb70f1becbd2f8b32e2",
     "src/frob/tickets/__init__.py::undispatched_stale": "5b02a518dd1040bd603d923b7c694e96dc89f8a9076f90f41ce9ff55d4243938",
     "src/frob/tickets/__init__.py::validate_evidence": "1b4100163a3cd37930c828128c2a80be0ab108617beafbcae64cd5fa776a600c",
@@ -1487,6 +1489,7 @@
     "src/frob/tickets/_models.py::ReviewVerdict": "8490cf1d1a7a1c8b3053f255e9c454201df09247aa07e690537f769e506371db",
     "src/frob/tickets/_models.py::ScopeChangeEntry": "5279bfedcb0eef261de212495a83a9b3c94508b97f6cf4a45a4f32a174ea84a6",
     "src/frob/tickets/_models.py::ScopeChangeOp": "2592c5c3cc03ffd6879a6b074ef0316678162c55458b1f8d675cd16599de5081",
+    "src/frob/tickets/_models.py::SprintReport": "62d445e602991d74f9a6293d8e30e7534d34db106fca2247e5ed18cb53871501",
     "src/frob/tickets/_models.py::Stride": "c529e7ee47846b6f7a73f1b569b24bf5c1454e3760a9b2f69a68a3eecfcf3678",
     "src/frob/tickets/_models.py::Ticket": "cdeafe8946077fae1e9c9b61c1c3ef23d4f241d8edc4817f2dc61c3a8be6f2d6",
     "src/frob/tickets/_models.py::TicketError": "169b3aed72bae6661b68683789d850dff0f20aa0803986bd000a615634ade3dc",
@@ -1494,6 +1497,7 @@
     "src/frob/tickets/_models.py::TicketQueue": "1987a94affcf3eb9b64da1ee9f9a887135a47dc9f1c056616434969a3cfb0853",
     "src/frob/tickets/_models.py::TicketSpec": "7a1b7116d9fdf41bf60270ea79223abf19d3eb5d2bee0f79d97e4020d20efb58",
     "src/frob/tickets/_models.py::TicketState": "21b15f2435ff8eed9e334d82cd75179b00e6e72fd975117b95ef2e828ee78944",
+    "src/frob/tickets/_models.py::TicketTier": "e88b98d99f0049f581eb591c3114924e3510f6786b4a735d65889f4ad0839098",
     "src/frob/tickets/_models.py::has_substantive_done_report": "559e0efa5301fff75054f5daa8f9a88ccb5dd94d7748651d2084888a5820424e",
     "src/frob/tickets/_models.py::is_cmd_evidence": "e8b1ed06b21a176bd633ea5746afb179e7eb34eadf7e8a0299d022643ddedb52",
     "src/frob/tickets/_models.py::matches_collected": "90ca48e9c7f61d7e4a6b52d47160455e69e38ec0520b21c2dc5acab712eaee04",
@@ -1619,5 +1623,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.169.0"
+  "version": "0.170.0"
 }

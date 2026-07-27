@@ -1489,6 +1489,9 @@ class AcceptanceCriterion(BaseModel):   # T-0572
     text: str                   # given/when/then prose
     evidence: tuple[str, ...] = ()   # evidence id(s) demonstrating this criterion
 
+class TicketTier(StrEnum):      # T-0715: epic -> story -> ticket organization
+    EPIC = "epic"; STORY = "story"; TICKET = "ticket"   # default TICKET
+
 class Ticket(BaseModel):
     id: str                     # ^T-\d{4}$
     title: str
@@ -1499,6 +1502,8 @@ class Ticket(BaseModel):
     priority: Priority = Priority.MEDIUM   # T-0411: importance, doable's primary sort key
     blocked_by: tuple[str, ...]
     parent: str | None
+    tier: TicketTier = TicketTier.TICKET   # T-0715: epic|story|ticket, default ticket
+    sprint: str | None = None   # T-0715: free-form commitment label, e.g. "2026-W30"
     scope: tuple[str, ...]      # path globs and/or symrefs
     evidence: tuple[str, ...]   # pytest node ids or policy rule ids
     attachments: tuple[Attachment, ...]
@@ -1515,6 +1520,8 @@ class TicketSpec(BaseModel):    # input to new_ticket; id/created assigned
     scope: tuple[str, ...] = ()
     blocked_by: tuple[str, ...] = ()
     parent: str | None = None
+    tier: TicketTier = TicketTier.TICKET   # T-0715
+    sprint: str | None = None   # T-0715
     acceptance: tuple[AcceptanceCriterion, ...] = ()   # `frob ticket new --acceptance TEXT` (repeatable)
     component: str | None = None   # `frob ticket new --component NAME`
     labels: tuple[str, ...] = ()   # `frob ticket new --label TAG` (repeatable)
@@ -1523,6 +1530,56 @@ class TicketSpec(BaseModel):    # input to new_ticket; id/created assigned
 class TicketQueue(BaseModel):
     tickets: Mapping[str, Ticket]
 ```
+
+### Tiers: epic -> story -> ticket (T-0715)
+
+`Ticket.tier` (`TicketTier`: `epic`/`story`/`ticket`, default `ticket`)
+formalizes the dev-team organization already implicit in the `parent`
+graph: an epic parents stories, a story parents leaf tickets. Two
+structural rules follow mechanically from the tier, no separate
+enforcement path per caller:
+
+- `doable` (`frob ticket doable`) only ever surfaces `tier=ticket`
+  tickets -- an epic/story is pure organization, never a directly
+  dispatchable unit of work, even if it happens to carry no
+  `blocked_by` of its own.
+- `transition(..., TicketState.DONE)` (`frob ticket close`) refuses an
+  `epic`/`story` ticket while any descendant (via the `parent` chain, any
+  depth) is still open (`TicketError.OpenDescendant`) -- `epic_rollup`'s
+  own parent-chain BFS is mirrored by a private `_open_descendant_ids`
+  helper for this cheap open/closed check.
+
+`frob ticket new --tier epic|story|ticket` sets it at creation. Every
+pre-T-0715 ledger row has no `tier:` field at all and loads as
+`tier=ticket` (a plain leaf), unaffected. Mechanically backfilling
+existing `EPIC`-titled tickets to `tier: epic` is a separate child
+ticket of T-0715 (a one-time ledger migration, not a code change).
+
+### Sprints (T-0715)
+
+`Ticket.sprint` is a free-form commitment label (`"2026-W30"`,
+`"sprint-14"`); `None` means uncommitted/backlog.
+
+- `frob ticket new --sprint LABEL` sets it at creation.
+- `frob ticket sprint assign <id> <label>` (`set_sprint`) sets/clears it
+  on an existing ticket -- same single-writer, ledger-locked shape as
+  `frob ticket component`.
+- `frob ticket sprint show <label>` (`sprint_view`) lists every ticket
+  committed to `label`, a `TicketState -> count` rollup, and `closed`
+  (the done-count "velocity" number the mandate asked for) -- all
+  derived from the tickets' current `state`, no separate tracked
+  counter (the mandate's "no new storage" constraint).
+- `frob ticket doable --sprint LABEL` restricts the doable queue to one
+  sprint's commitment (a plain post-filter over `doable()`'s own result).
+- `frob ticket doable --by-parent` groups the doable list by `parent`
+  instead of one flat list -- a story's remaining leaves display
+  together (the "pop-the-whole-stack, not just the top" concern).
+
+Velocity/burndown mined from ledger state-transition HISTORY (not just
+current state, e.g. "closed per sprint across the last N commits") is a
+separate child ticket of T-0715 -- `sprint_view.closed` above answers
+"how many are done right now", which is as far as the current-state-only
+ledger can go without that history mining.
 
 ### `--body-file`/`--acceptance-file` (T-0737)
 
@@ -1569,6 +1626,12 @@ class EpicRollup(BaseModel):    # T-0454
     total: int = 0
     blocked_leaves: tuple[str, ...] = ()   # leaf (childless) descendants currently BLOCKED
     percent_complete: float          # property: done/total*100, or 0.0 if total==0
+
+class SprintReport(BaseModel):  # T-0715: `frob ticket sprint show <label>`
+    sprint: str
+    tickets: tuple[Ticket, ...] = ()   # every ticket carrying this sprint label
+    rollup: Mapping[TicketState, int] = {}   # state -> count
+    closed: int = 0                  # done-count "velocity", derived from current state
 ```
 
 ## Error types
@@ -1776,7 +1839,9 @@ overwrite an existing hook file without `force=True`.
   -- see "Decision record: T-0162" above.
 - CLI: `frob ticket new|list|show|doable|brief|plan|start|requeue|sweep|
   migrate|renumber|attach|block|close|fail|drop|evidence|done-report|
-  archive`. `brief <id>` (T-0568) prints the full mission briefing (see
+  archive|sprint`. `sprint assign <id> <label>`/`sprint show <label>`
+  (T-0715) set/read a ticket's sprint commitment -- see "Tiers"/"Sprints"
+  below. `brief <id>` (T-0568) prints the full mission briefing (see
   "`frob ticket brief` (T-0568)" above). `start`
   auto-plans a queued ticket (both legal steps); `requeue` is the reverse
   in-progress -> queued yield (T-0472); `sweep` re-records the pre-work

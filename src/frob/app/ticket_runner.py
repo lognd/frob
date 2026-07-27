@@ -1,7 +1,7 @@
 """CLI wiring for `frob ticket new|list|show|doable|board|epic|brief|plan|
 start|requeue|sweep|reconcile|land|merge-driver|attach|block|close|fail|
 drop|evidence|done-report|scope|priority|kind|component|label|archive|
-review` (docs/modules/tickets.md)."""
+review|sprint` (docs/modules/tickets.md)."""
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/app/ticket_runner.py's exclusivity-vocabulary hit is source-level \
 # design-rationale/scope-cut prose (a docstring or comment describing \
@@ -38,7 +38,7 @@ from frob.process._guard import (
 )
 
 if TYPE_CHECKING:
-    from frob.tickets import TicketQueue
+    from frob.tickets import Ticket, TicketQueue
 
 _log = get_logger(__name__)
 
@@ -87,6 +87,8 @@ def _ticket_dispatch_table() -> dict:
         "board": _board,
         "epic": _epic,
         "brief": _brief,
+        # frob:ticket T-0715
+        "sprint": _sprint,
         "archive": lambda root, cfg: _archive(root, force=cfg.ticket_force),
     }
 
@@ -105,7 +107,7 @@ def run(cfg: AppConfig) -> None:
             "usage: frob ticket <new|list|show|doable|board|epic|brief|plan|"
             "start|requeue|sweep|reconcile|land|merge-driver|attach|block|"
             "close|fail|drop|evidence|done-report|scope|priority|kind|"
-            "component|label|archive|review> ..."
+            "component|label|archive|review|sprint> ..."
         )
         sys.exit(1)
     with _diagnostic_log_ctx(cfg):
@@ -201,7 +203,14 @@ def _ticket_spec_from_cfg(cfg: AppConfig, *, title: str, kind: str):  # noqa: AN
     `cfg.ticket_title`/`cfg.ticket_kind`) so the caller's None-check narrows
     them to `str` here too -- `cfg`'s fields stay `str | None` on their own.
     """
-    from frob.tickets import Origin, Priority, Stride, TicketKind, TicketSpec
+    from frob.tickets import (
+        Origin,
+        Priority,
+        Stride,
+        TicketKind,
+        TicketSpec,
+        TicketTier,
+    )
 
     return TicketSpec(
         title=title,
@@ -214,6 +223,10 @@ def _ticket_spec_from_cfg(cfg: AppConfig, *, title: str, kind: str):  # noqa: AN
         scope=tuple(cfg.ticket_scope),
         blocked_by=tuple(cfg.ticket_blocked_by),
         parent=cfg.ticket_parent,
+        # frob:ticket T-0715
+        tier=TicketTier(cfg.ticket_tier) if cfg.ticket_tier else TicketTier.TICKET,
+        # frob:ticket T-0715
+        sprint=cfg.ticket_sprint,
         # T-0572: `--acceptance TEXT` (repeatable) gives plain strings;
         # TicketSpec's `_coerce_acceptance_field` validator wraps each into
         # a fresh, unbound {text, evidence: ()} AcceptanceCriterion --
@@ -425,6 +438,14 @@ def _doable(root: Path, cfg: AppConfig) -> None:
     # invocation before this fix).
     tickets = doable(queue, root, ignore_lease=cfg.ticket_ignore_lease, breadth=breadth)
 
+    # frob:ticket T-0715
+    # `frob ticket doable --sprint LABEL` restricts the queue to one
+    # sprint's commitment -- a plain post-filter, since `doable()` itself
+    # stays sprint-agnostic (the T-0453 lease/breadth machinery it already
+    # threads through has nothing to do with sprint membership).
+    if cfg.ticket_doable_sprint is not None:
+        tickets = tuple(t for t in tickets if t.sprint == cfg.ticket_doable_sprint)
+
     if cfg.ticket_json:
         import json
 
@@ -458,7 +479,11 @@ def _doable(root: Path, cfg: AppConfig) -> None:
     alarm_by_id = {t.id: (elapsed, threshold) for t, elapsed, threshold in alarms}
 
     color = _stdout_color()
-    for t in ordered:
+
+    def _row(t: "Ticket") -> str:
+        """One doable-list line for `t`, including its UNDISPATCHED alarm
+        (if any) -- shared by the flat and `--by-parent` grouped renders
+        (T-0715) so the two stay in sync instead of duplicating the format."""
         row = "%s  %s  (%s)  priority=%s" % (
             style_ticket_id(t.id, color),
             t.title,
@@ -468,7 +493,38 @@ def _doable(root: Path, cfg: AppConfig) -> None:
         if t.id in alarm_by_id:
             elapsed, threshold = alarm_by_id[t.id]
             row += "  [UNDISPATCHED %.0fh > %.0fh threshold]" % (elapsed, threshold)
-        _log.info(row)
+        return row
+
+    if cfg.ticket_doable_by_parent:
+        # frob:ticket T-0715
+        # `frob ticket doable --by-parent`: group the dispatchable list by
+        # `parent` (a story's remaining leaves display together, the
+        # user's pop-the-whole-stack-not-just-the-top concern) instead of
+        # one flat priority/age-ordered list. A row with no `parent` (or a
+        # parent id `queue` cannot resolve) falls into its own "no parent"
+        # bucket rather than being dropped. Group order follows first
+        # appearance in the already priority/age/alarm-ordered `ordered`
+        # list, so the highest-priority group still leads.
+        groups: dict[str | None, list["Ticket"]] = {}
+        for t in ordered:
+            groups.setdefault(t.parent, []).append(t)
+        for parent_id, rows in groups.items():
+            header = (
+                queue.tickets[parent_id].title
+                if parent_id is not None and parent_id in queue.tickets
+                else "(no parent)"
+            )
+            _log.info(
+                "%s:",
+                f"{style_ticket_id(parent_id, color)} {header}"
+                if parent_id is not None
+                else header,
+            )
+            for t in rows:
+                _log.info("  %s", _row(t))
+    else:
+        for t in ordered:
+            _log.info(_row(t))
 
     if in_flight:
         _log.info("In-flight (leased, already being worked):")
@@ -2797,6 +2853,81 @@ def _epic(root: Path, cfg: AppConfig) -> None:
         )
     if rollup.blocked_leaves:
         _log.info("blocked leaves: %s", list(rollup.blocked_leaves))
+
+
+# frob:ticket T-0715
+def _sprint(root: Path, cfg: AppConfig) -> None:
+    """Dispatch `frob ticket sprint assign|show` (T-0715) to its handler."""
+    if cfg.ticket_sprint_command == "assign":
+        _sprint_assign(root, cfg)
+    elif cfg.ticket_sprint_command == "show":
+        _sprint_show(root, cfg)
+    else:
+        _log.error("usage: frob ticket sprint <assign|show> ...")
+        sys.exit(1)
+
+
+# frob:ticket T-0715
+def _sprint_assign(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket sprint assign <id> <label>` (T-0715): set a ticket's
+    sprint commitment via `frob.tickets.set_sprint`."""
+    from frob.tickets import set_sprint
+
+    if cfg.ticket_id is None or cfg.ticket_sprint is None:
+        _log.error("frob ticket sprint assign requires <id> <label>")
+        sys.exit(1)
+    result = set_sprint(root, cfg.ticket_id, cfg.ticket_sprint)
+    if result.is_err:
+        _log.error("ticket sprint assign failed: %s", result.danger_err)
+        sys.exit(1)
+    _log.info("%s sprint set to %s", cfg.ticket_id, cfg.ticket_sprint)
+
+
+# frob:ticket T-0715
+def _sprint_show(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket sprint show <label>` (T-0715): render
+    `frob.tickets.sprint_view`'s commitment summary -- every ticket
+    carrying this sprint label, a state rollup, and closed-count
+    velocity."""
+    from frob.tickets import load_active, sprint_view
+
+    if cfg.ticket_sprint is None:
+        _log.error("frob ticket sprint show requires <label>")
+        sys.exit(1)
+    result = load_active(root)
+    if result.is_err:
+        _log.error("ticket sprint show failed: %s", result.danger_err)
+        sys.exit(1)
+    report = sprint_view(result.danger_ok, cfg.ticket_sprint)
+
+    if cfg.ticket_json:
+        import json
+
+        payload = {
+            "sprint": report.sprint,
+            "tickets": [t.model_dump(mode="json") for t in report.tickets],
+            "rollup": {state.value: count for state, count in report.rollup.items()},
+            "closed": report.closed,
+        }
+        _log.info(json.dumps(payload, indent=2))
+        return
+
+    color = _stdout_color()
+    _log.info(
+        "sprint %s -- %d ticket(s), %d closed",
+        report.sprint,
+        len(report.tickets),
+        report.closed,
+    )
+    for state, count in sorted(report.rollup.items(), key=lambda kv: kv[0].value):
+        _log.info("  %s: %d", state.value, count)
+    for t in report.tickets:
+        _log.info(
+            "  %s  [%s]  %s",
+            style_ticket_id(t.id, color),
+            style_state(t.state.value, color),
+            t.title,
+        )
 
 
 # frob:ticket T-0568

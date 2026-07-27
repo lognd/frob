@@ -57,6 +57,24 @@ class TicketKind(StrEnum):
     INCIDENT = "incident"
 
 
+# frob:ticket T-0715
+# frob:doc docs/modules/tickets.md#data-models
+# frob:tests tests/test_tickets_tiers.py::TestTierField::test_default_tier_is_ticket
+# frob:tests tests/test_tickets_tiers.py::TestTierField::test_serialize_parse_round_trip
+class TicketTier(StrEnum):
+    """Where a ticket sits in the epic -> story -> ticket organization
+    hierarchy (T-0715): `EPIC` parents `STORY` tickets, `STORY` parents leaf
+    `TICKET` tickets, and `doable`/close enforce the shape (only `TICKET`
+    tier ever surfaces as doable; an `EPIC`/`STORY` refuses to close while
+    any descendant is still open). Default is `TICKET` so every pre-T-0715
+    ledger row (with no `tier:` field at all) loads as a plain leaf ticket,
+    unaffected."""
+
+    EPIC = "epic"
+    STORY = "story"
+    TICKET = "ticket"
+
+
 # frob:doc docs/modules/tickets.md#public-api
 # T-0215: docs/design tickets (no pytest surface of their own) may close on
 # a vetted shell command's exit status + output digest instead of pytest
@@ -1082,6 +1100,18 @@ class Ticket(BaseModel):
     priority: Priority = Priority.MEDIUM
     blocked_by: tuple[str, ...] = ()
     parent: str | None = None
+    # frob:ticket T-0715
+    # where this ticket sits in the epic -> story -> ticket hierarchy;
+    # defaults to TICKET (a plain leaf) so every pre-T-0715 ledger row
+    # loads unaffected. Structural rules live in `frob.tickets.doable`
+    # (leaf-only) and `_done_transition_guard` (no closing over an open
+    # descendant).
+    tier: TicketTier = TicketTier.TICKET
+    # frob:ticket T-0715
+    # free-form sprint label (e.g. "2026-W30", "sprint-14") a ticket is
+    # committed to; `None` means uncommitted/backlog. Settable at
+    # creation or via `frob ticket sprint assign`.
+    sprint: str | None = None
     scope: tuple[str, ...] = ()
     # frob:ticket T-0455
     # append-only audit trail of every `frob ticket scope --add/--remove`
@@ -1192,6 +1222,10 @@ class TicketSpec(BaseModel):
     scope: tuple[str, ...] = ()
     blocked_by: tuple[str, ...] = ()
     parent: str | None = None
+    # frob:ticket T-0715
+    tier: TicketTier = TicketTier.TICKET
+    # frob:ticket T-0715
+    sprint: str | None = None
     # given/when/then acceptance criteria, each bound to evidence id(s)
     # (T-0572); see `Ticket.acceptance`
     acceptance: tuple[AcceptanceCriterion, ...] = ()
@@ -1389,6 +1423,13 @@ class TicketError(ErrorSet):
         "base ref does not resolve to a commit in this clone; fetch it or "
         "pass a base ref that exists, then retry"
     )
+    # T-0715: an EPIC/STORY tier ticket refuses `done` while any descendant
+    # (via the `parent` chain, any depth) is still open -- see
+    # `frob.tickets._open_descendant_ids`.
+    OpenDescendant = (
+        "an epic/story ticket cannot close while a descendant ticket is "
+        "still open; close or drop the descendant(s) first"
+    )
 
 
 # frob:ticket T-0176
@@ -1521,3 +1562,20 @@ class EpicRollup(BaseModel):
         if self.total == 0:
             return 0.0
         return (self.done / self.total) * 100.0
+
+
+# frob:ticket T-0715
+# frob:doc docs/modules/tickets.md#data-models
+class SprintReport(BaseModel):
+    """`frob ticket sprint show <label>`'s commitment summary (T-0715):
+    every ticket carrying this `sprint` label, a `TicketState -> count`
+    rollup, and `closed` (the done-count velocity number) -- derived
+    entirely from the tickets' current `state`, no separate tracked
+    counter."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    sprint: str
+    tickets: tuple[Ticket, ...] = ()
+    rollup: Mapping[TicketState, int] = {}
+    closed: int = 0
