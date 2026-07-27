@@ -19,7 +19,7 @@
 #     fabricated ticket. As T-0397's children close a concern down to
 #     a real gate rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 118
+gate_rule_total: 119
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     name: "COV001 is a live, enforced gate rule"
@@ -425,6 +425,10 @@ gate_rule_entries:
   - id: "CHK-GATE-DOC005"
     name: "DOC005 is a live, enforced gate rule (README.md command-table + checkable-count drift-lock against the live subparser tree, T-0435)"
     disposition: "handled_by:DOC005"
+    cross_refs: []
+  - id: "CHK-GATE-DOC006"
+    name: "DOC006 is a live, enforced gate rule (doc-pointer resolution over a closed set of recognized shapes: file/path, cli invocation, config reference, code symbol, doc-anchor link, plus frob:tests target-form hardening, T-0437)"
+    disposition: "handled_by:DOC006"
     cross_refs: []
   - id: "CHK-GATE-DEAD001"
     name: "DEAD001 is a live, enforced gate rule"

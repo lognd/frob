@@ -80,6 +80,7 @@ declaration).
 | REF003 | refs | a `frob:used-by <consumer>` declaration is dangling: the named consumer does not exist as a tracked file, or does not itself reference the declaring file back -- see "Anti-orphan file-reference gate" below |
 | DOC004 | docblocks | a fenced code block in a tracked `.md` doc references the project's OWN code surface (manifest-derived python/rust/ts namespaces) and either does not resolve (error, "stale") or resolves but carries no nearby `frob:doc`/`frob:describes`/`frob:tests` anchor (warn, "unbound") -- see "Unbound/stale doc code blocks" below |
 | DOC005 | docblocks | `README.md`'s command table is out of sync with the live top-level subcommand registry: a real subcommand has no table row (error, "missing"), a table row names a subcommand that no longer exists (error, "stale"), or a "N commands" prose count claim does not equal the live count (error) -- see "DOC005 README command-table drift-lock" below |
+| DOC006 | docblocks | (warn, T-0688 new-gate-at-WARN precedent) a doc's PROSE (inline code span or markdown link, not a fenced code block -- DOC004's territory) contains a pointer of a RECOGNIZED, mechanically resolvable shape (file/path, cli invocation, config reference, code symbol, doc-anchor link) that does not resolve, or a `frob:tests` directive's target uses pytest's `Class::method` collect-only separator where this graph wants a single `::` then a dotted `Class.method` qualname -- see "DOC006 doc-pointer resolution gate" below |
 | EXCL001 | excludehazard | a `.git/info/exclude` entry shadows a git-tracked file or a directory containing tracked files -- see "EXCL001 (T-0465)" below |
 | PROTO001 | protocol_summary | (warn) a `frob:requires`/`frob:transition`-tagged symbol's `frob.graph.summary.compute_protocol_summaries` result is `poisoned` (an `UNRESOLVED_CALLEE` somewhere in its transitive call closure) -- see "PROTO001 (T-0813)" below |
 | PROTO002 | protocol_summary | (error) a `frob:requires` symbol's required state is never established anywhere reachable (or its summary is poisoned), and no language-excuse discharges it -- see "PROTO002/PROTO003 (T-0746)" below |
@@ -1598,6 +1599,60 @@ configured `[[docblocks.commands]]` entry (`frob.__main__:_build_parser`)
 -- adding a new subcommand there and never touching `README.md` now fails
 `frob check` immediately; removing a command leaves its stale row failing
 until the row is deleted.
+
+### DOC006 doc-pointer resolution gate T-0437
+
+`frob.gates._docptr` -- `doc006_gate` (gate name `docblocks`, same as
+DOC004/DOC005, WARN severity at first-turn-on per the T-0688 new-gate
+precedent). Motivating case: a doc's prose routinely "seems to point" at
+something -- `frob edit`, `src/frob/gone.py`, `[bogus.section]`,
+`docs/missing.md#x` -- and nothing checked whether the pointer was
+actually real. Detecting fuzzy "seems to point" intent generically is
+unhardenable (high false-positive rate); this gate instead defines a
+CLOSED SET of RECOGNIZED, mechanically resolvable pointer shapes and only
+fires when a pointer of a known shape targets something that does not
+exist. An unrecognized/ambiguous token is never flagged -- that is the
+hardening.
+
+Five recognized pointer kinds, each detected in an inline code span or
+markdown link across every tracked `.md` file's PROSE (fenced code block
+bodies are DOC004's own territory and are skipped here, to avoid double-
+reporting the same token under two rule ids):
+
+1. **FILE/PATH** -- a repo-relative path (contains `/`, or a well-known
+   bare manifest basename: `frob.toml`, `pyproject.toml`, `Cargo.toml`,
+   `package.json`) must exist as a git-tracked file.
+2. **CLI INVOCATION** -- `` `<prog> <subcommand...>` `` / `` `--flag` ``
+   checked against the SAME `[[docblocks.commands]]`-configured live
+   argparse registry DOC004/DOC005 already walk -- one live source of
+   truth, never a second copy.
+3. **CONFIG REFERENCE** -- `` `[section]` ``/`` `[section.key]` `` checked
+   against this project's own loaded `frob.toml` structure.
+4. **CODE SYMBOL** -- a dotted path (`module.Class.method`) whose root
+   namespace is one of this project's own manifest-derived namespaces
+   (`frob.gates._docblocks._project_namespaces`), resolved the same way
+   DOC004's python tier resolves a `from X import Y`.
+5. **DOC-ANCHOR LINK** -- `docs/x.md#anchor`: the file must exist and
+   `anchor` must be a real heading/`<a id>` slug in it (the same resolver
+   DOC002 uses for `frob:doc` edges).
+
+A sixth, source-level check rides alongside the doc-prose scan for the
+DRIFT002 dotted-vs-`::` confusion class (T-0940/T-0945): a `frob:tests`
+directive's target is itself a recognized, mechanically-checkable shape --
+`<file>::<qualname>` with exactly one `::` separating the file from a
+DOTTED (`Class.method`) qualname. A target with a SECOND `::` (pytest's
+own `Class::method` collect-only separator) is definitively the wrong
+shape for a graph-facing `frob:tests` target, flagged here directly
+instead of waiting for it to surface later as a generic DRIFT002
+dangling-edge failure with a less specific message.
+
+Every finding is `frob:waive DOC006 reason="..."`-able (same nearby-line
+convention as DOC004: same line or up to 3 preceding lines), for a
+genuinely external/illustrative/future-facing pointer.
+
+**Turn-on disclosure**: shipped at WARN, not ERROR, because this repo's
+own tracked docs already carry pre-existing pointer drift the gate newly
+detects (see T-0437's Done report for the measured count at turn-on).
 
 ### Git-less target contract T-0705
 

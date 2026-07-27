@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.178.0] - unreleased
+
+- T-0437: Doc-pointer resolution gate: every doc reference of a RECOGNIZED resolvable shape must resolve (hardened closed-set, not fuzzy 'seems to point')
+
 ## [0.177.0] - unreleased
 
 - T-0703: strata starvation/throughput obligations: serialization-point utilization, writer starvation, unbounded waits

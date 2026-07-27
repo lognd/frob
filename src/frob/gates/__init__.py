@@ -65,6 +65,7 @@ from frob.gates._coverage import (
 from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
 from frob.gates._dead_symbols import dead_symbol_gate
 from frob.gates._docblocks import doc004_gate, doc005_gate
+from frob.gates._docptr import doc006_gate
 from frob.gates._exclude_hazard import exclude_hazard_gate
 from frob.gates._exhaustive_handling import exhaustive_handling_gate
 from frob.gates._filehash import _SOURCE_EXTS
@@ -1200,6 +1201,11 @@ _KNOWN_GATE_RULES = frozenset(
         # T-0435: README command-table + checkable-count drift-lock
         # (frob.gates._docblocks.doc005_gate).
         "DOC005",
+        # T-0437: doc-pointer resolution over a closed set of recognized
+        # shapes (file/path, cli invocation, config reference, code symbol,
+        # doc-anchor link), plus the frob:tests target-form hardening for
+        # the DRIFT002 dotted-vs-:: confusion class (frob.gates._docptr).
+        "DOC006",
         # T-0471: unpruned filesystem traversal (frob.gates._walk_lint).
         "WALK001",
         # T-0465: .git/info/exclude entry shadowing tracked source
@@ -9913,9 +9919,15 @@ def _build_jobs(
         # T-0435: DOC005 (README command-table drift-lock) fires alongside
         # DOC004 under the same "docblocks" gate name -- one config
         # ([[docblocks.commands]]), one live-registry walk, two checks.
+        # T-0437: DOC006 (doc-pointer resolution over a closed set of
+        # recognized shapes) rides alongside DOC004/DOC005 under the same
+        # "docblocks" gate name -- same repo-wide doc-drift concern, same
+        # `_docblocks` config surface it reuses (`_console_command_sources`/
+        # `_console_trees`), no new stage-group registration needed.
         "docblocks": lambda: (
             *doc004_gate(st.repo_root, st.snapshot),
             *doc005_gate(st.repo_root),
+            *doc006_gate(st.repo_root, st.snapshot),
         ),
         "fuzz": lambda: fuzz_gate(st.root, st.snapshot),
         "release": lambda: release_gate(
