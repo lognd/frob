@@ -7004,7 +7004,7 @@ reason="..."` if these are false positives, so `frob check
 id: T-0912
 title: reword 14 legacy manifest-extraction-artifact dispositions to satisfy REG011
   in system-design.yaml
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-26'
@@ -7012,6 +7012,18 @@ priority: medium
 parent: null
 scope:
 - docs/design/registry/system-design.yaml
+- tests/test_registry_reconciliation_system_design.py
+scope_changes:
+- op: add
+  glob: tests/test_registry_reconciliation_system_design.py
+  reason: 'frob.graph has no grammar for .yaml, so system-design.yaml carries no symbol
+    nodes a TESTS edge could bind to -- adding the existing pin test file directly
+    to scope (Route 2: evidence id''s own file is inside ticket.scope), same precedent
+    T-0722 used; no source outside the declared registry-YAML work is touched'
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/test_registry_reconciliation_system_design.py::TestExhaustivenessGateOverRealSystemDesign::test_no_system_design_violations
 threat: null
 component: null
 ```
@@ -7031,6 +7043,32 @@ which does NOT trigger REG011. Fix: reword the 14 pre-existing entries'
 disposition strings to a substantive out_of_scope:none -- <explanation> reason
 (same shape T-0722 used), or waive REG011 there with a reasoned frob:waive if
 the bare token is intentionally kept as a distinct "artifact" marker.
+
+## Done report
+
+Changed: docs/design/registry/system-design.yaml -- reworded all 14
+manifest-extraction-artifact disposition strings (SDC-1-*, SDC-5-*,
+SDC-10-*, SDC-13-* entries) from bare `out-of-scope(manifest-extraction-artifact)`
+to `out_of_scope:none -- manifest-extraction artifact from
+docs/design/system-design-corpus.md heading parsing (e.g. a bare
+checkability-tier heading or best-practice bullet with no distinct property
+name); not a real named entry with a property to check, no static check
+applies`, matching T-0722's reasoned-none phrasing style.
+
+Evidence:
+tests/test_registry_reconciliation_system_design.py::TestExhaustivenessGateOverRealSystemDesign::test_no_system_design_violations
+(pass, foreground); full tests/test_registry_reconciliation_system_design.py
+(8 passed, foreground).
+
+Filed: none
+
+Gates: `uv run frob check --ticket T-0912` shows zero REG011 findings against
+system-design.yaml (grep confirmed no manifest-extraction/system-design.yaml
+hits remain in REG output). Remaining FAIL gates in that same run (ty, COV,
+DRIFT, SYS, and REG011 findings in compliance.yaml/patterns.yaml) are
+pre-existing and outside this ticket's declared scope
+(docs/design/registry/system-design.yaml only) -- not caused by this change,
+which touched only disposition string text in that one file.
 
 <!-- ticket:T-0913 -->
 ```yaml
