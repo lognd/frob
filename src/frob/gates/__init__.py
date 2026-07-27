@@ -55,6 +55,7 @@ from typani.option import Nothing, Option, Some
 from typani.result import Result
 
 from frob.excludes import is_excluded, is_test_file, iter_files, load_exclude_globs
+from frob.exports import exports_consumers
 from frob.gates._arch import arch_gate
 from frob.gates._baseline import (
     delta_violations,
@@ -76,6 +77,7 @@ from frob.gates._coverage import (
 )
 from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
 from frob.gates._dead_symbols import dead_symbol_gate
+from frob.gates._deprecated_baseline import load_deprecated_baseline
 from frob.gates._design_invariants import inv007_violations, inv008_violations
 from frob.gates._docblocks import doc004_gate, doc005_gate
 from frob.gates._docptr import doc006_gate
@@ -191,6 +193,7 @@ from frob.tickets._provisional import is_draft_id, on_default_branch
 from frob.tickets._store import _parse_ledger as _tickets_parse_ledger
 from frob.tickets._store import load_all as _tickets_load_all
 from frob.tickets._store import load_archive as _tickets_load_archive
+from frob.xref import xref
 
 _log = get_logger(__name__)
 
@@ -1115,6 +1118,12 @@ _KNOWN_GATE_RULES = frozenset(
         "DEPR002",
         "DEPR003",
         "DEPR004",
+        # T-0639: a deprecated symbol's reference set (frob.exports
+        # --consumers file-level import lines + frob.xref textual usages)
+        # gains a member absent from the committed
+        # frob-deprecated-baseline.lock.json -- a genuinely NEW caller of a
+        # symbol already declared on its way out.
+        "DEPR005",
         # T-0404 finding 5: catch-all for a malformed `frob:` directive not
         # already claimed by a per-flavor check (WAIVE001/TEST010/DEBT001).
         "DSL001",
@@ -5260,7 +5269,13 @@ def _release_open_debt_violations(snapshot: GraphSnapshot) -> tuple[Violation, .
 # edge (a given `frob:deprecated` is either still in its warning window or
 # past sunset, never both), and DEPR002 suppresses both when the ticket
 # itself is not open (a mistracked deprecation is the more actionable
-# finding). `release_gate` additionally refuses to stamp a release while
+# finding). DEPR005 (T-0639): a deprecated symbol's reference set gained a
+# NEW member absent from the committed `frob-deprecated-baseline.lock.json`
+# baseline (`frob.gates._deprecated_baseline`) -- a fresh adopter of a
+# symbol already declared on its way out, distinct from DEPR003/004's
+# sunset-clock states and orthogonal to them (a symbol can be both
+# in-window/past-sunset AND gaining new callers). `release_gate` additionally
+# refuses to stamp a release while
 # ANY *expired* deprecation is still open (`_release_expired_deprecated_
 # violations`) -- unlike DEBT's release check, a still-live deprecation
 # (within its warning window) does not block a release; the point is that
@@ -5416,28 +5431,157 @@ def _depr004_violations(
     return tuple(violations)
 
 
+def _bare_symbol_name(edge_src: str) -> str:
+    """The bare identifier a `DEPRECATED` edge's `src` (`path::qualname`)
+    resolves to for `frob.exports.exports_consumers`/`frob.xref.xref`
+    lookup (T-0639): the last dotted segment of the qualname half, e.g.
+    `"src/a.py::Foo.bar"` -> `"bar"`. Both lookup functions match by bare
+    identifier, not by fully-qualified path, so this is deliberately
+    coarse -- see `deprecated_current_references`'s docstring for why that
+    coarseness is harmless for a baseline-diff rule."""
+    qualname = edge_src.rsplit("::", 1)[-1]
+    return qualname.rsplit(".", 1)[-1]
+
+
+#: Matches a call-shaped usage of a bare identifier (`name(` or `name (`,
+#: allowing a preceding `.` for a qualified call like `mod.run(`) but not
+#: a `def name(...)`/`class name(...)` declaration line itself -- narrows
+#: `deprecated_current_references`'s xref side to actual invocations,
+#: since a bare short identifier (e.g. a runner module's `run`) is
+#: otherwise reused as a completely unrelated function name/parameter/
+#: attribute across an unrelated part of the tree (T-0639).
+def _looks_like_call(symbol: str, context: str) -> bool:
+    """Whether `context` (one source line) looks like it CALLS `symbol`,
+    rather than merely mentioning or (re)declaring it -- a lightweight
+    textual heuristic, not a parse: a `def `/`class ` prefix is excluded
+    outright, otherwise the line must contain `symbol` immediately
+    followed by `(` (whitespace allowed in between)."""
+    stripped = context.strip()
+    if stripped.startswith(("def ", "class ", "async def ")):
+        return False
+    return bool(re.search(rf"\b{re.escape(symbol)}\s*\(", context))
+
+
+# frob:doc docs/modules/gates.md#depr005-new-caller-baseline-ratchet-t-0639
+# frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr005_reference_set_combines_consumers_and_xref kind="unit"  # noqa: E501
+def deprecated_current_references(symbol: str, root: Path) -> frozenset[str]:
+    """The current `file:line` reference set for bare identifier `symbol`
+    under `root` (T-0639): the union of `frob.exports.exports_consumers`'s
+    file-level import-statement consumers (T-0876) and
+    `frob.xref.xref`'s Python-scoped, call-shaped identifier usages
+    (`_looks_like_call`), excluding any usage in the symbol's own defining
+    file (its declaration line and any purely internal same-file mention
+    are not a "new caller").
+
+    Deliberately keyed on the BARE identifier, same as both underlying
+    lookups -- a common short name (e.g. `run`) can still over-match an
+    unrelated identically-named call elsewhere in the tree even after the
+    call-shape/`lang="python"` narrowing above. This rule tolerates that
+    residual noise: it is a baseline DIFF, not an absolute count, so
+    whatever remains at seed time is baselined away and only a reference
+    that is genuinely NEW since the baseline was last tightened ever
+    fires DEPR005 -- see `frob.gates._deprecated_baseline`'s module
+    docstring."""
+    refs: set[str] = set()
+    consumers_result = exports_consumers(symbol, root, lang="python")
+    if consumers_result.is_ok:
+        for consumer in consumers_result.danger_ok.consumers:
+            refs.add(f"{consumer.file}:{consumer.line}")
+    xref_result = xref(symbol, root, lang="python")
+    if xref_result.is_ok:
+        xr = xref_result.danger_ok
+        definition_file = xr.definition.file if xr.definition else None
+        for usage in xr.usages:
+            if definition_file is not None and usage.file == definition_file:
+                continue
+            if not _looks_like_call(symbol, usage.context):
+                continue
+            refs.add(f"{usage.file}:{usage.line}")
+    return frozenset(refs)
+
+
+# frob:enforces CHK-GATE-DEPR005
+def _depr005_violations(
+    snapshot: GraphSnapshot, queue: TicketQueue, root: Path, *, current_date: str
+) -> tuple[Violation, ...]:
+    """DEPR005: a live `frob:deprecated` symbol's current reference set
+    (`deprecated_current_references`) contains a `file:line` absent from
+    the committed `frob-deprecated-baseline.lock.json`
+    (`frob.gates._deprecated_baseline.load_deprecated_baseline`) -- a
+    genuinely NEW caller of a symbol already declared on its way out
+    (T-0639, the T-0576 body's original "gaining new callers" request).
+    A symbol never baselined at all fires nothing (its first-observed
+    reference set is legacy, seeded rather than flagged --
+    `tighten_deprecated_baseline` is what performs that seeding; this
+    gate only ever reads what is already committed). Suppressed when
+    DEPR002 already fired for the same edge, same posture as DEPR003/004."""
+    violations: list[Violation] = []
+    baseline = load_deprecated_baseline(root)
+    for edge in _deprecated_edges(snapshot):
+        ticket_id = edge.attrs.get("ticket", "")
+        target = queue.tickets.get(ticket_id)
+        if target is None or target.state not in _OPEN_STATES:
+            continue
+        entry = baseline.for_symbol(edge.src)
+        if entry is None:
+            _log.debug("DEPR005: %s not yet baselined, skipping", edge.src)
+            continue
+        symbol = _bare_symbol_name(edge.src)
+        current_refs = deprecated_current_references(symbol, root)
+        new_refs = sorted(current_refs - frozenset(entry.references))
+        for ref in new_refs:
+            ref_file, _, ref_line_s = ref.rpartition(":")
+            try:
+                ref_line = int(ref_line_s)
+            except ValueError:
+                ref_file, ref_line = ref, 1
+            _log.warning("DEPR005: %s gained new caller %s", edge.src, ref)
+            violations.append(
+                Violation(
+                    rule="DEPR005",
+                    severity=Severity.ERROR,
+                    file=ref_file,
+                    line=ref_line,
+                    message=(
+                        f"DEPR005: {edge.src} is deprecated (ticket={ticket_id!r}) "
+                        f"but gained a new caller at {ref} absent from "
+                        f"frob-deprecated-baseline.lock.json; migrate off the "
+                        f"deprecated symbol instead of adopting it further"
+                    ),
+                )
+            )
+    return tuple(violations)
+
+
 # frob:doc docs/modules/gates.md#deprecated-gate-t-0576
 # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr001_malformed_directive_is_reported  # noqa: E501
 # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr002_closed_ticket_is_reported  # noqa: E501
 # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr003_in_window_warns  # noqa: E501
 # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr004_past_sunset_errors  # noqa: E501
 # frob:tests tests/test_gates.py::TestDeprecatedGate.test_clean_deprecated_produces_no_violations  # noqa: E501
+# frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr005_new_caller_errors  # noqa: E501
+# frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr005_no_baseline_entry_is_silent  # noqa: E501
 def deprecated_gate(
     snapshot: GraphSnapshot,
     queue: TicketQueue,
+    root: Path,
     *,
     current_date: str,
 ) -> tuple[Violation, ...]:
-    """DEPR001-004 (T-0576): `frob:deprecated`'s four states -- a malformed
-    directive, a directive bound to a non-open ticket, a directive still in
-    its warning window, and a directive past its sunset date.
-    `current_date` (`YYYY-MM-DD`) is injected rather than computed here so
-    this stays a pure function of its inputs, matching `debt_gate`."""
+    """DEPR001-005 (T-0576, DEPR005 T-0639): `frob:deprecated`'s states --
+    a malformed directive, a directive bound to a non-open ticket, a
+    directive still in its warning window, a directive past its sunset
+    date, and a directive whose reference set gained a new, un-baselined
+    caller. `current_date` (`YYYY-MM-DD`) is injected rather than computed
+    here so this stays a pure function of its inputs, matching
+    `debt_gate`; `root` is needed only by DEPR005, to resolve
+    `frob-deprecated-baseline.lock.json` and the current reference set."""
     return (
         *_depr001_violations(snapshot),
         *_depr002_violations(snapshot, queue),
         *_depr003_violations(snapshot, queue, current_date=current_date),
         *_depr004_violations(snapshot, queue, current_date=current_date),
+        *_depr005_violations(snapshot, queue, root, current_date=current_date),
     )
 
 
@@ -10665,10 +10809,13 @@ def _build_jobs(
             current_version=_current_version(st.repo_root) or "0.0.0",
         ),
         # T-0576: same injected-current_date posture as "debt" above --
-        # deprecated_gate stays a pure function of its args.
+        # deprecated_gate stays a pure function of its args. T-0639:
+        # DEPR005 additionally needs repo_root to resolve
+        # frob-deprecated-baseline.lock.json and the live reference set.
         "deprecated": lambda: deprecated_gate(
             st.snapshot,
             st.queue,
+            st.repo_root,
             current_date=date.today().isoformat(),
         ),
         # T-0465: `.git/info/exclude` is the SHARED common-dir file across
@@ -11466,6 +11613,7 @@ __all__ = [
     "debt_gate",
     "decisions_gate",
     "deprecated_gate",
+    "deprecated_current_references",
     "doclink_gate",
     "docanchor_gate",
     "dup_gate",

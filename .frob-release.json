@@ -480,7 +480,8 @@
     "src/frob/gates/__init__.py::coverage_gate": "2e723b0affe9fb4c46163f4801fc117308eda1dede290bfb3d2eb725e481f7c4",
     "src/frob/gates/__init__.py::debt_gate": "a376c0cb523fc3a01d0fee3db265624393127590531d12a8f63e851f3f5f82ee",
     "src/frob/gates/__init__.py::decisions_gate": "f6587969f349ac0a2128eb1568924bfa8d4cd498e9f366b56255a5266c75408a",
-    "src/frob/gates/__init__.py::deprecated_gate": "c55eed141fdaed564ced1737f4c530e2f0ea144f2341e042330960165078e531",
+    "src/frob/gates/__init__.py::deprecated_current_references": "06118ebfd993eb219fb2267897e312d8950c2cea041233b046d90f4fdda22e85",
+    "src/frob/gates/__init__.py::deprecated_gate": "334422b7d71296348532a230b57b678c5899fe76d5827d0d5ed493b69d3af433",
     "src/frob/gates/__init__.py::docanchor_gate": "c42559cd1fae6c91936f804bc558ed2d3f5fd49bbd3955b96675bb566fdaef20",
     "src/frob/gates/__init__.py::doclink_gate": "bebbc03bdfb637a3724784dfda8eb4fbb98e52d9b6709f7a4b8616a2cdf773f2",
     "src/frob/gates/__init__.py::drift_gate": "5c212d52c12a13920ee34ad607ff4d2367a47d7d7f940927aae71563b733a8e4",
@@ -522,6 +523,13 @@
     "src/frob/gates/_coverage.py::write_coverage_lock": "b6000236a4cdab71fff97052b9ca64c791e6f5b129b48b7788f87bf56318957b",
     "src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate": "a7667099c722e4afaa5b0ec0fd40f6f917368267b0ae9afc8116a4f0fe34ddff",
     "src/frob/gates/_dead_symbols.py::dead_symbol_gate": "ccb75a1a6ec73b33e90b0e278ce29174ab50c40a60fd3da4e75867bee5a7eb97",
+    "src/frob/gates/_deprecated_baseline.py::BASELINE_REL": "737c39a07440357e7bf4aee9230925306f9e2399e7c7d32b7c597816ace39859",
+    "src/frob/gates/_deprecated_baseline.py::DeprecatedBaselineEntry": "11e314f11f5eae421bc9247a54dcc9d3ad118b9dd8e06ed1d5feb0d482bab991",
+    "src/frob/gates/_deprecated_baseline.py::DeprecatedBaselineLock": "e565013184ad4e3c1a243161df73243b2aca70a5255b5572453fb80f0215cc8f",
+    "src/frob/gates/_deprecated_baseline.py::DeprecatedBaselineLock.for_symbol": "01ad12638d181b6cbb703fd9d889772baec5c11f12f0e562babe14a32749ddc7",
+    "src/frob/gates/_deprecated_baseline.py::load_deprecated_baseline": "c7844197c2cca855512dde4633614a3f866e6d5207bc6e70407fd0ec7e05b19c",
+    "src/frob/gates/_deprecated_baseline.py::save_deprecated_baseline": "9490f2f7034697840d1757b8e9e325fed446c676dc1298f0438e23c161a07ba4",
+    "src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline": "a60c02358828da63241adceaeee5e7cc742785578958388a92e2910fc86b34aa",
     "src/frob/gates/_design_invariants.py::inv007_violations": "47b5143f092cb284e415305a9567fc7194f3441eb754eb06024ca1b1a9c26f39",
     "src/frob/gates/_design_invariants.py::inv008_violations": "80da5748ae1d167e2ec9e20c9279df3ec77fdc9dba04a8ffd9e94cf46f7f0cca",
     "src/frob/gates/_docblocks.py::CLI_COMMAND_TABLE_END": "43c056a3cf571aba448115fda2a58cbf8116c933f7887bf0dec28fac53824255",
@@ -1751,5 +1759,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.195.0"
+  "version": "0.196.0"
 }

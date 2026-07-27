@@ -25,6 +25,7 @@ from frob.gates import (
     coverage_gate,
     debt_gate,
     delta_violations,
+    deprecated_current_references,
     deprecated_gate,
     drift_gate,
     exclude_hazard_gate,
@@ -51,6 +52,11 @@ from frob.gates import (
 )
 from frob.gates import (
     test_gate as run_test_gate,
+)
+from frob.gates._deprecated_baseline import (
+    DeprecatedBaselineEntry,
+    DeprecatedBaselineLock,
+    save_deprecated_baseline,
 )
 from frob.gates._docblocks import doc004_gate
 from frob.gates._pii_structural import pii_structural_gate
@@ -3637,7 +3643,7 @@ class TestDeprecatedGate:
         _write(tmp_path, "src/a.py", source)
         snap = _snapshot(tmp_path)
         queue = TicketQueue(tickets={})
-        violations = deprecated_gate(snap, queue, current_date="2026-01-01")
+        violations = deprecated_gate(snap, queue, tmp_path, current_date="2026-01-01")
         v = _first_rule(violations, "DEPR001")
         assert v is not None
         assert v.severity == Severity.ERROR
@@ -3654,7 +3660,7 @@ class TestDeprecatedGate:
         _write(tmp_path, "src/a.py", source)
         snap = _snapshot(tmp_path)
         queue = TicketQueue(tickets={})
-        violations = deprecated_gate(snap, queue, current_date="2026-01-01")
+        violations = deprecated_gate(snap, queue, tmp_path, current_date="2026-01-01")
         v = _first_rule(violations, "DEPR001")
         assert v is not None
         assert v.severity == Severity.ERROR
@@ -3672,7 +3678,7 @@ class TestDeprecatedGate:
         _write(tmp_path, "src/a.py", source)
         snap = _snapshot(tmp_path)
         queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.DONE)})
-        violations = deprecated_gate(snap, queue, current_date="2026-01-01")
+        violations = deprecated_gate(snap, queue, tmp_path, current_date="2026-01-01")
         v = _first_rule(violations, "DEPR002")
         assert v is not None
         assert v.severity == Severity.ERROR
@@ -3691,7 +3697,7 @@ class TestDeprecatedGate:
         _write(tmp_path, "src/a.py", source)
         snap = _snapshot(tmp_path)
         queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
-        violations = deprecated_gate(snap, queue, current_date="2026-01-01")
+        violations = deprecated_gate(snap, queue, tmp_path, current_date="2026-01-01")
         v = _first_rule(violations, "DEPR003")
         assert v is not None
         assert v.severity == Severity.WARN
@@ -3709,7 +3715,7 @@ class TestDeprecatedGate:
         _write(tmp_path, "src/a.py", source)
         snap = _snapshot(tmp_path)
         queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
-        violations = deprecated_gate(snap, queue, current_date="2026-06-01")
+        violations = deprecated_gate(snap, queue, tmp_path, current_date="2026-06-01")
         v = _first_rule(violations, "DEPR004")
         assert v is not None
         assert v.severity == Severity.ERROR
@@ -3727,7 +3733,7 @@ class TestDeprecatedGate:
         _write(tmp_path, "src/a.py", source)
         snap = _snapshot(tmp_path)
         queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
-        violations = deprecated_gate(snap, queue, current_date="2026-01-01")
+        violations = deprecated_gate(snap, queue, tmp_path, current_date="2026-01-01")
         assert _rules(violations) == ["DEPR003"]
 
     def test_lists_every_deprecated_entry(self, tmp_path: Path) -> None:
@@ -3746,6 +3752,69 @@ class TestDeprecatedGate:
         assert entry.ticket == "T-0001"
         assert entry.sunset == "2099-01-01"
         assert entry.expired is False
+
+    def test_depr005_reference_set_combines_consumers_and_xref(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0639: `deprecated_current_references` sees both an import-line
+        consumer and a plain identifier usage, and excludes the symbol's own
+        defining file."""
+        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr005_reference_set_combines_consumers_and_xref  # noqa: E501
+        _write(tmp_path, "src/lib.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "src/importer.py",
+            "from lib import helper\nhelper(1)\n",
+        )
+        _write(tmp_path, "src/mentioner.py", "y = helper(2)\n")
+        refs = deprecated_current_references("helper", tmp_path)
+        assert any(r.endswith("importer.py:1") for r in refs)
+        assert not any(r.startswith("lib.py") or "/lib.py" in r for r in refs)
+
+    def test_depr005_new_caller_errors(self, tmp_path: Path) -> None:
+        """T-0639: a `frob:deprecated` symbol with a baselined entry that
+        omits a currently-observed reference fires DEPR005, naming the new
+        call site."""
+        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr005_new_caller_errors  # noqa: E501
+        source = (
+            "def helper(x):\n"
+            '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        _write(tmp_path, "src/caller.py", "from a import helper\nhelper(1)\n")
+        save_deprecated_baseline(
+            tmp_path,
+            DeprecatedBaselineLock(
+                entries=(
+                    DeprecatedBaselineEntry(symbol="src/a.py::helper", references=()),
+                )
+            ),
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
+        violations = deprecated_gate(snap, queue, tmp_path, current_date="2026-01-01")
+        v = _first_rule(violations, "DEPR005")
+        assert v is not None
+        assert v.severity == Severity.ERROR
+        assert v.file.endswith("caller.py")
+        assert "src/a.py::helper" in v.message
+
+    def test_depr005_no_baseline_entry_is_silent(self, tmp_path: Path) -> None:
+        """T-0639: a deprecated symbol never baselined fires no DEPR005 --
+        seeding, not flagging, is `tighten_deprecated_baseline`'s job."""
+        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr005_no_baseline_entry_is_silent  # noqa: E501
+        source = (
+            "def helper(x):\n"
+            '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        _write(tmp_path, "src/caller.py", "from a import helper\nhelper(1)\n")
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
+        violations = deprecated_gate(snap, queue, tmp_path, current_date="2026-01-01")
+        assert not any(v.rule == "DEPR005" for v in violations)
 
     # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
     # arrange-act scaffold typical of exhaustive per-case coverage; \
