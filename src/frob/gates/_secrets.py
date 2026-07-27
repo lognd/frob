@@ -1,5 +1,5 @@
-"""SEC001/SEC002/SEC003: real-looking API tokens and credentials in tracked
-files (docs/modules/gates.md#rule-catalog).
+"""SEC001/SEC002/SEC003/SEC004: real-looking API tokens and credentials in
+tracked files (docs/modules/gates.md#rule-catalog).
 
 Scope decision on `frob:secret` (T-0157, investigated before writing this
 module): `frob.graph.dsl`'s `frob:secret <construct-id>` verb already has an
@@ -12,11 +12,30 @@ a real design construct id, which SYS001 would then flag as a dangling
 reference in any repo with a `design/` directory (this repo has one), and
 (b) conflate two unrelated concerns (design attestation vs. fixture
 fake-marking) under one verb. Instead this module recognizes a sibling,
-unregistered marker -- the literal substring `frob:secret-fake` -- scanned
-directly out of tracked-file text, never routed through `frob.graph.dsl`'s
-`_VERB_TABLE` and never turned into a graph edge. It keeps the "secret"
-vocabulary (same family, same intent: mark a secret-shaped site) without
-colliding with the pre-existing directive's semantics.
+unregistered marker -- the literal substring `frob:secret-fake reason="..."`
+-- scanned directly out of tracked-file text, never routed through
+`frob.graph.dsl`'s `_VERB_TABLE` and never turned into a graph edge. It
+keeps the "secret" vocabulary (same family, same intent: mark a
+secret-shaped site) without colliding with the pre-existing directive's
+semantics.
+
+T-0968 (gates-quality audit finding 3): the marker now REQUIRES
+`reason="..."` to discharge anything, mirroring `frob:waive`'s WAIVE001
+contract (a bare marker gets its own SEC004 violation instead of silently
+discharging for free -- see `_bare_fake_marker_violations`). It still is
+NOT a graph `WAIVE` edge (the T-0157 decision above stands -- `secret-fake`
+stays a reserved, DSL-invisible marker verb, `frob.graph.dsl.
+_RESERVED_MARKER_VERBS`), so it is not literally watched by the graph-edge
+`WAIVE004` zero-findings staleness gate (`frob.gates._waive004_violations`
+iterates real `frob:waive` edges only); it is now auditable the same WAY
+`frob:waive` is (a mandatory, logged, per-site reason), not literally the
+same mechanism. Wiring an actual zero-findings staleness check for this
+marker family would mean either promoting it into a real graph edge (undoing
+the T-0157 decision above) or teaching `_apply_waivers`/`_waive004_
+violations` a second waiver source outside `frob.graph.dsl` -- both are
+changes to `frob.graph.dsl`/`frob.gates.__init__`, outside this module's
+declared scope; filed as a follow-up (T-0978) rather than forced
+here.
 
 Redaction discipline: `_redact` NEVER returns the matched token itself, only
 `<provider> <fixed-prefix>... (<N> chars)`. Every violation message and log
@@ -87,12 +106,38 @@ _log = get_logger(__name__)
 #: so a `# frob:secret-fake` comment above a fixture line still discharges it.
 _FAKE_MARKER = "frob:secret-fake"
 
+#: T-0968 (gates-quality audit finding 3): a bare `frob:secret-fake` used to
+#: discharge SEC001/SEC003 with NO reason string, NO ticket, NO waiver-ledger
+#: record at all -- unlike `frob:waive`, which is WAIVE001-enforced to always
+#: carry `reason="..."`. This mirrors that exact contract: only a marker
+#: matching `frob:secret-fake reason="..."` (this line or the line above)
+#: discharges a hit; a marker present but missing `reason=` now gets its own
+#: SEC004 violation (mirroring WAIVE001) instead of silently discharging for
+#: free -- see `_fake_marker_reason`/`_bare_fake_marker`/`_sec004_violation`.
+_FAKE_MARKER_REASON_RE = re.compile(r'frob:secret-fake\s+reason="([^"]*)"')
+
 #: Placeholder shapes inside a token that make it obviously non-real
 #: regardless of provider (T-0157: "so docs and tests stay writable").
 #: Checked case-insensitively against the matched token text only, never
 #: the whole line (a real key sitting next to the word "example" in prose
 #: must still fire).
-_PLACEHOLDER_WORDS = ("fake", "changeme", "example", "placeholder")
+#:
+#: T-0968: the bare words `example`/`fake` are DROPPED from this tuple
+#: (gates-quality audit finding 3's second complaint -- `_looks_fake` used
+#: to suppress any token merely CONTAINING one of these substrings,
+#: unanchored, so a real-shaped key sitting next to "EXAMPLE" discharged
+#: for free with no marker at all -- AWS's own canonical placeholder access
+#: key id (`AKIA` + `IOSFODNN7EXAMPLE`, split here so this comment does not
+#: itself trip this repo's own tightened gate/GH013-push-protection checks)
+#: used to slip past this way). `changeme`/`placeholder` are kept: both are
+#: template-only words no
+#: real provider token format ever legitimately contains, so they carry
+#: none of `example`/`fake`'s false-negative risk. The anchored
+#: template-shape (`_KNOWN_TEMPLATE_SHAPE_RE`) and low-entropy-phrase
+#: (`_looks_low_entropy` + `_PLACEHOLDER_PHRASE_RE`) checks below are the
+#: only path left for an `example`/`fake`-flavored fixture token; an honest
+#: fixture should carry `frob:secret-fake reason="..."` instead.
+_PLACEHOLDER_WORDS = ("changeme", "placeholder")
 _PLACEHOLDER_RUN_RE = re.compile(r"(x{4,}|\*{4,})", re.IGNORECASE)
 #: Placeholder PHRASES (as opposed to single words above) -- T-0219: a
 #: fixture like `xoxb-your-...-here` reads as an obvious template
@@ -619,34 +664,99 @@ def _looks_fake(token: str) -> bool:
     return any(word in lowered for word in _PLACEHOLDER_WORDS)
 
 
-def _line_marks_fake(lines: list[str], index: int) -> bool:
-    """True if `lines[index]` or `lines[index - 1]` carries the
-    `frob:secret-fake` marker (T-0157: annotate a fixture on its own line
-    or the comment line directly above it)."""
-    if _FAKE_MARKER in lines[index]:
-        return True
-    if index > 0 and _FAKE_MARKER in lines[index - 1]:
-        return True
-    return False
+def _fake_marker_reason(lines: list[str], index: int) -> str | None:
+    """The `reason="..."` text from a `frob:secret-fake reason="..."` marker
+    on `lines[index]` or the line directly above it (T-0968: mirrors
+    `frob:waive`'s WAIVE001 contract -- annotate a fixture on its own line or
+    the comment line directly above it, same as the pre-T-0968 bare marker's
+    same-line-or-line-above convention), or `None` if neither line carries a
+    reason-bearing marker. A bare `frob:secret-fake` with no `reason=` no
+    longer discharges anything -- see `_bare_fake_marker_violations`/SEC004."""
+    match = _FAKE_MARKER_REASON_RE.search(lines[index])
+    if match is not None:
+        return match.group(1)
+    if index > 0:
+        match = _FAKE_MARKER_REASON_RE.search(lines[index - 1])
+        if match is not None:
+            return match.group(1)
+    return None
+
+
+def _sec004_violation(rel_path: str, lineno: int) -> Violation:
+    """SEC004 (T-0968): a `frob:secret-fake` marker with no `reason="..."`
+    attribute -- mirrors WAIVE001's malformed-`frob:waive` contract so a
+    fake-marked fixture is auditable (who vouched for it, and why) the same
+    way a `frob:waive` suppression already is."""
+    _log.warning("SEC004: %s:%d frob:secret-fake missing reason=", rel_path, lineno)
+    return Violation(
+        rule="SEC004",
+        severity=Severity.ERROR,
+        file=rel_path,
+        line=lineno,
+        message=(
+            f'SEC004: {rel_path}:{lineno} frob:secret-fake missing reason="..."; '
+            f'add a reason attribute (e.g. `frob:secret-fake reason="fabricated '
+            f'test fixture value\\"`) or remove the marker -- a bare '
+            f"`frob:secret-fake` no longer discharges any secrets finding"
+        ),
+    )
+
+
+#: An ACTUAL `frob:secret-fake` directive usage (a real comment marker),
+#: never a backtick-quoted prose MENTION of the marker's name (this module's
+#: own docstrings and this file's tests reference the literal marker text
+#: constantly, e.g. "a `# frob:secret-fake` comment above ..."). The negative
+#: lookbehind on the comment leader excludes exactly that backtick-adjacent
+#: case: a real directive's `#`/`//` is never itself preceded by a backtick,
+#: only a prose reference to it inside Markdown-style inline code is.
+_BARE_FAKE_DIRECTIVE_RE = re.compile(r"(?<!`)(?:#|//)\s*frob:secret-fake\b")
+
+
+def _bare_fake_marker_violations(rel_path: str, text: str) -> list[Violation]:
+    """SEC004 for every REAL `frob:secret-fake` marker in `text` missing its
+    `reason="..."` attribute -- surfaced independently of whether the marker
+    is currently sitting next to a real secrets-pattern hit (T-0968: mirrors
+    `_waive001_violations`, which flags a malformed `frob:waive` the same
+    way regardless of whether it would have matched anything). Uses
+    `_BARE_FAKE_DIRECTIVE_RE`, not a bare substring test, so a docstring/
+    comment merely NAMING the marker (this module's own docstrings do this
+    constantly) is never mistaken for an actual malformed directive."""
+    lines = text.splitlines()
+    violations: list[Violation] = []
+    for index, line in enumerate(lines):
+        if _BARE_FAKE_DIRECTIVE_RE.search(line) is None:
+            continue
+        if _FAKE_MARKER_REASON_RE.search(line) is not None:
+            continue
+        violations.append(_sec004_violation(rel_path, index + 1))
+    return violations
 
 
 def _scan_line(lines: list[str], index: int) -> list[tuple[_SecretPattern, str]]:
     """Every `(pattern, token)` hit on `lines[index]` not already claimed by
-    an earlier (more specific) pattern's span, and not fake-marked."""
+    an earlier (more specific) pattern's span, and not fake-marked.
+
+    T-0968: a fake-marked line only discharges via a REASON-bearing
+    `frob:secret-fake reason="..."` (`_fake_marker_reason`) -- a bare marker
+    is surfaced separately as SEC004 (`_bare_fake_marker_violations`) and no
+    longer suppresses anything here."""
     line = lines[index]
     claimed: list[tuple[int, int]] = []
     hits: list[tuple[_SecretPattern, str]] = []
+    reason = _fake_marker_reason(lines, index)
     for pattern in _PATTERNS:
         for match in pattern.regex.finditer(line):
             span = match.span()
             if any(span[0] < end and start < span[1] for start, end in claimed):
                 continue
             token = match.group(0)
-            if _looks_fake(token) or _line_marks_fake(lines, index):
+            if _looks_fake(token) or reason is not None:
                 _log.debug(
-                    "secrets: %s match at line %d fake-marked/placeholder, skipping",
+                    "secrets: %s match at line %d fake-marked (reason=%r)/"
+                    "placeholder, skipping",
                     pattern.provider,
                     index + 1,
+                    reason,
                 )
                 continue
             claimed.append(span)
@@ -677,17 +787,18 @@ def _secret_violation(
             f"real-looking credential at {rel_path}:{index + 1} -- "
             f"{redacted}; if this "
             f"is a deliberate test fixture, mark it fake (placeholder "
-            f"XXXX/**** tail, the word fake/changeme/example/placeholder "
-            f"in the token, or a `frob:secret-fake` comment on this line "
+            f"XXXX/**** tail, the word changeme/placeholder in the token, "
+            f'or a `frob:secret-fake reason="..."` comment on this line '
             f"or the line above), otherwise rotate and remove it"
         ),
     )
 
 
 def _scan_text(rel_path: str, text: str) -> list[Violation]:
-    """SEC001 violations for every real-looking token found in `text`."""
+    """SEC001/SEC004 violations for every real-looking token found in `text`
+    (SEC004: T-0968, a `frob:secret-fake` marker missing `reason="..."`)."""
     lines = text.splitlines()
-    violations: list[Violation] = []
+    violations: list[Violation] = list(_bare_fake_marker_violations(rel_path, text))
     for index in range(len(lines)):
         for pattern, token in _scan_line(lines, index):
             violations.append(_secret_violation(pattern, token, rel_path, index))

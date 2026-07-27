@@ -14,7 +14,7 @@ def _init_git_repo(path: Path, *, frob_enabled: bool = True) -> None:
     `frob_enabled=False` (for the not-frob-enabled test)."""
     path.mkdir(parents=True, exist_ok=True)
     subprocess.run(["git", "init", "-q"], cwd=path, check=True)
-    # frob:secret-fake -- fixture-only git identity, not a real address
+    # frob:secret-fake reason="fixture-only git identity, not a real address"
     subprocess.run(["git", "config", "user.email", "a@b.c"], cwd=path, check=True)
     subprocess.run(["git", "config", "user.name", "a"], cwd=path, check=True)
     (path / "README.md").write_text("hello\n")

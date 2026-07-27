@@ -22,7 +22,7 @@ def _init_repo(path: Path) -> None:
     """A minimal git repo `frob fleet status` can probe for branch/dirty state."""
     path.mkdir(parents=True)
     _git(["init", "-q"], path)
-    # frob:secret-fake -- fixture-only git identity, not a real address
+    # frob:secret-fake reason="fixture-only git identity, not a real address"
     _git(["config", "user.email", "a@b.c"], path)
     _git(["config", "user.name", "a"], path)
     (path / "README.md").write_text("hello\n")

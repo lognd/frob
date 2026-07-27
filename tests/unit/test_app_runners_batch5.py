@@ -39,7 +39,7 @@ def _make_py_project(tmp_path):
 def _init_git_repo(tmp_path):
     """Init a minimal git repo with one commit, for stats' git-history reads."""
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
-    # frob:secret-fake fabricated git identity for a test fixture repo
+    # frob:secret-fake reason="fabricated git identity for a test fixture repo"
     subprocess.run(["git", "config", "user.email", "a@b.c"], cwd=tmp_path, check=True)
     subprocess.run(["git", "config", "user.name", "a"], cwd=tmp_path, check=True)
     (tmp_path / "f.txt").write_text("x")

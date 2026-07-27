@@ -335,24 +335,41 @@ class TestEmailShapeValues:
         assert any(v.rule == "PII011" for v in violations)
 
     def test_fake_marker_on_same_line_discharges(self) -> None:
+        # T-0968: bare marker no longer discharges -- reason="..." required.
         src = (
             "contact = "
             + repr("user" + "@" + "realmail.dev")
-            + "  # frob:secret-fake\n"
+            + '  # frob:secret-fake reason="fabricated fixture address"\n'
         )
         tree = ast.parse(src)
         violations = _scan_python_email_values(tree, "example.py", src)
         assert violations == ()
 
     def test_fake_marker_on_line_above_discharges(self) -> None:
+        # T-0968: bare marker no longer discharges -- reason="..." required.
         src = (
-            "# frob:secret-fake\ncontact = "
+            '# frob:secret-fake reason="fabricated fixture address"\ncontact = '
             + repr("user" + "@" + "realmail.dev")
             + "\n"
         )
         tree = ast.parse(src)
         violations = _scan_python_email_values(tree, "example.py", src)
         assert violations == ()
+
+    def test_fake_marker_without_reason_does_not_discharge(self) -> None:
+        """T-0968: a bare `frob:secret-fake` (no `reason="..."`) no longer
+        discharges PII011 -- mirrors WAIVE001's `frob:waive` contract."""
+        # T-0190 discipline: split across two literals so this test file's
+        # own raw source never contains the contiguous, un-reasoned marker.
+        src = (
+            "contact = "
+            + repr("user" + "@" + "realmail.dev")
+            + "  # frob:secret"
+            + "-fake\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "example.py", src)
+        assert any(v.rule == "PII011" for v in violations)
 
     def test_plain_string_literal_does_not_fire(self) -> None:
         src = "greeting = 'hello world'\n"
@@ -465,7 +482,7 @@ class TestKeywordSweep:
         self-trigger PII012 on the comment that discharges the OTHER
         rule's finding. `# frob:*` directive comments are excluded as a
         class."""
-        src = "x = 1  # frob:secret-fake fabricated fixture value\n"
+        src = 'x = 1  # frob:secret-fake reason="fabricated fixture value"\n'
         tree = ast.parse(src)
         violations = _scan_python_keyword_sweep(tree, "example.py", src)
         assert violations == ()

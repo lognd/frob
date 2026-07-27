@@ -1124,6 +1124,10 @@ _KNOWN_GATE_RULES = frozenset(
         "SEC001",
         "SEC002",
         "SEC003",
+        # frob:ticket T-0968
+        # T-0968: a bare `frob:secret-fake` marker missing `reason="..."`
+        # (mirrors WAIVE001's malformed-`frob:waive` contract).
+        "SEC004",
         "TICK001",
         "TICK002",
         # T-0409: ledger-hygiene gate (frob.gates.tickets_gate's

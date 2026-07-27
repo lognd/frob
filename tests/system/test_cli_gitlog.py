@@ -24,7 +24,7 @@ def _setup_repo(tmp_path: Path) -> Path:
     repo = tmp_path / "repo"
     repo.mkdir()
     _git(["init", "-b", "main"], repo)
-    # frob:secret-fake fabricated git identity for a test fixture repo
+    # frob:secret-fake reason="fabricated git identity for a test fixture repo"
     _git(["config", "user.email", "test@test.com"], repo)
     _git(["config", "user.name", "Test"], repo)
 

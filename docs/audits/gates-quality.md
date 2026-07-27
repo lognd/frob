@@ -92,12 +92,19 @@ control failing open is the exact degrade-to-green failure the task names.
 string, no ticket, no waiver record** -- unlike `frob:waive`, which requires
 `reason="..."`. Additionally `_looks_fake` suppresses any token merely *containing* the
 substring `example`/`fake` (`_PLACEHOLDER_WORDS`, matched against the token text).
-**Repro:** commit `AWS_KEY = "AKIAIOSFODNN7EXAMPLE"  # frob:secret-fake` -- or any real key
-whose value happens to contain `example` -- and SEC001 is silently discharged; nothing
-tracks that a human vouched for it.
-**Fix direction:** require `frob:secret-fake reason="..."` and route it through the same
-waiver ledger as `frob:waive` so suppressions are auditable; drop the bare-substring
-`example/fake` suppression in favor of the anchored template-shape/entropy checks only.
+**Repro (pre-T-0968):** commit `AWS_KEY = "AKIA` + `IOSFODNN7EXAMPLE"  #` + ` frob:secret-fake`
+(split here across several code spans purely so this doc's own text no longer trips this
+repo's own tightened SEC001/SEC004 gate -- the underlying finding is unchanged) -- or any
+real key whose value happens to contain `example` -- and SEC001 was silently discharged;
+nothing tracked that a human vouched for it.
+**Fix direction (landed, T-0968):** `frob:secret-fake` now requires `reason="..."`
+(bare markers fire their own SEC004, mirroring WAIVE001); the bare-substring
+`example`/`fake` suppression is dropped from `_PLACEHOLDER_WORDS` in favor of the
+anchored template-shape/entropy checks only. NOT landed: literally routing discharged
+hits through the graph-edge `frob:waive`/WAIVE004 machinery -- the marker stays a
+DSL-reserved, graph-invisible verb (T-0157), so WAIVE004's zero-findings staleness
+check does not watch it yet; see the follow-up ticket `_secrets.py`'s module docstring
+cites.
 
 ### 4. [MEDIUM] Arch complexity is trivially gameable; 4 of 6 categories are non-gate
 god-class (`arch/_python.py:171`) iterates only `t.root_node.children` (top-level

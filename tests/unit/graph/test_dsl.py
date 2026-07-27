@@ -200,7 +200,7 @@ class TestReservedMarkerVerbs:
         assert "secret-fake" in _RESERVED_MARKER_VERBS
         src = (
             "def foo() -> None:\n"
-            "    # frob:secret-fake\n"
+            '    # frob:secret-fake reason="fabricated fixture token"\n'
             '    token = "sk-fake-1234567890"\n'
             "    return token\n"
         )

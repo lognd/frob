@@ -59,9 +59,9 @@ file's string-literal constants scanned via `email.utils.parseaddr` (an
 RFC 822 header parser) plus a plain character-set validation of the parsed
 local/domain parts (`_is_email_shaped`) -- explicitly NOT a regex, per the
 ticket body's "regex is bad for email matching" mandate. Escaped the same
-way T-0157's secrets scanner escapes a fixture: a `frob:secret-fake`
-comment on the literal's own line or the line directly above it
-(`_line_marks_fake_email`).
+way T-0157's secrets scanner escapes a fixture: a `frob:secret-fake
+reason="..."` comment on the literal's own line or the line directly above
+it (`_line_marks_fake_email`; T-0968 added the `reason=` requirement).
 
 T-0350 (family 5, keyword sweep) added PII012: every plain identifier
 (variable/parameter/function name, `_scan_identifier_keywords`) and every
@@ -909,17 +909,27 @@ def _scan_python_ddl(
 #: gates' fixture literals at once.
 _EMAIL_FAKE_MARKER = "frob:secret-fake"
 
+#: T-0968: mirrors `_secrets.py::_FAKE_MARKER_REASON_RE` -- a bare
+#: `_EMAIL_FAKE_MARKER` no longer discharges PII011 either; both gates share
+#: the one literal marker string, so they now share the one reason-requiring
+#: contract too. `_secrets.py`'s own `_bare_fake_marker_violations` (SEC004)
+#: already flags a bare marker anywhere in a tracked file, PII011's included
+#: -- no second SEC004-equivalent scan needed here.
+_EMAIL_FAKE_MARKER_REASON_RE = re.compile(r'frob:secret-fake\s+reason="([^"]*)"')
+
 
 def _line_marks_fake_email(lines: list[str], lineno: int) -> bool:
     """True if the 1-indexed `lineno` line or the line directly above it
-    carries `_EMAIL_FAKE_MARKER` -- mirrors `_secrets.py::_line_marks_fake`'s
-    same-line-or-line-above convention (T-0157)."""
+    carries a REASON-bearing `_EMAIL_FAKE_MARKER` (T-0968: mirrors
+    `_secrets.py::_fake_marker_reason`'s same-line-or-line-above convention
+    and its `reason="..."` requirement -- a bare marker with no reason no
+    longer discharges PII011, same as it no longer discharges SEC001)."""
     index = lineno - 1
     if index < 0 or index >= len(lines):
         return False
-    if _EMAIL_FAKE_MARKER in lines[index]:
+    if _EMAIL_FAKE_MARKER_REASON_RE.search(lines[index]) is not None:
         return True
-    if index > 0 and _EMAIL_FAKE_MARKER in lines[index - 1]:
+    if index > 0 and _EMAIL_FAKE_MARKER_REASON_RE.search(lines[index - 1]) is not None:
         return True
     return False
 
@@ -974,9 +984,9 @@ def _pii011_violation(rel_path: str, lineno: int, value: str) -> Violation:
             f"email-shaped (structural parseaddr match) with no PII "
             f"declaration or waiver -- declare it via a std.pii `carries` "
             f"tag on the owning strata node, mark it a fixture with a "
-            f"`{_EMAIL_FAKE_MARKER}` comment on this line or the line "
-            f'above, or `frob:waive PII011 reason="..."` if this is not '
-            f"actually personal data"
+            f'`{_EMAIL_FAKE_MARKER} reason="..."` comment on this line or '
+            f'the line above, or `frob:waive PII011 reason="..."` if this '
+            f"is not actually personal data"
         ),
     )
 

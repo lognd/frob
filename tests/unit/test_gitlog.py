@@ -16,7 +16,7 @@ from frob.gitlog import git_log
 
 def _init_repo(path: Path) -> None:
     subprocess.run(["git", "init", "-q"], cwd=path, check=True)
-    # frob:secret-fake fabricated git identity for a test fixture repo
+    # frob:secret-fake reason="fabricated git identity for a test fixture repo"
     subprocess.run(["git", "config", "user.email", "a@b.c"], cwd=path, check=True)
     subprocess.run(["git", "config", "user.name", "tester"], cwd=path, check=True)
     (path / "f.txt").write_text("one\n")

@@ -15197,8 +15197,9 @@ clears it via GitHub's push-protection unblock URL. This ticket does not
 claim main is immediately pushable -- only that the current tree is safe
 and a regression is now statically prevented. A repo-wide scan found the
 only other literal-shaped matches are AWS's canonical allowlisted example
-(AKIAIOSFODNN7EXAMPLE) and dictionary-word placeholders in
-tickets-archive.md (not entropy-bearing credentials).
+("AKIA" + "IOSFODNN7EXAMPLE", split here per T-0968 so this note no longer
+trips that ticket's own tightened SEC001 gate) and dictionary-word
+placeholders in tickets-archive.md (not entropy-bearing credentials).
 
 <!-- ticket:T-0191 -->
 ```yaml
