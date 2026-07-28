@@ -1234,7 +1234,7 @@ meantime.
 id: T-1032
 title: 'fix stale test_every_deferred_entry_targets_an_open_ticket: system-design.yaml
   has 0 deferred entries now (T-0958 resolved them)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -1254,6 +1254,24 @@ Found while working T-0658: `tests/test_registry_reconciliation_system_design.py
 Root cause: the test asserts `deferred` (entries with `disposition.kind is DispositionKind.DEFERRED`) is non-empty in the live `docs/design/registry/system-design.yaml`. At the time T-0392 wrote this test, ~105 genuine entries were deferred to T-0331/a re-pointed successor. Since then, T-0958 (per system-design.yaml's own header comment) re-dispositioned all of them into `handled_by:RULE` (21 entries) or `out_of_scope:...` (97 entries) or `duplicate-of-artifact` (1 entry) -- the live file now has ZERO `deferred:` dispositions (verified directly: `frob.registry.audit_registry_file` reports `deferred=0`, `handled=21`, `out_of_scope=97`, `duplicate=1`, `unaccounted=0`, `exhausted=True`). The test's "expected at least one deferred entry to check against" assumption no longer holds -- not a regression in the registry file (it is MORE fully dispositioned now, a good outcome), but a stale assumption baked into the test itself.
 
 Fix: either loosen the assertion to `if deferred:` (skip cleanly when zero, matching the file's now-fully-resolved state) or remove/replace the test with one that positively asserts the CURRENT resolved state, whichever the reviewer judges is the more honest signal for future drift. Scope: tests/test_registry_reconciliation_system_design.py only -- the registry file itself needs no change (it is honestly, fully dispositioned already).
+
+## Done report
+
+Changed: none (verification only -- premise was already fixed)
+Evidence: tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket (passes on current main)
+Filed: none
+Gates: the `if not deferred: return` guard with an explicit T-0958/T-0960/T-0962 comment already exists in the test (lines 157-163); the test collects and passes cleanly against the live system-design.yaml (0 deferred entries, exhausted=True). No code change needed -- this ticket's premise was resolved as a side effect of T-0958/T-0960/T-0962 landing the re-dispositioning before this ticket was ever started.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 1044 warning(s), 421 waived
+- error-findings: none (measured, zero errors)
 <!-- ticket:T-1033 -->
 ```yaml
 id: T-1033
@@ -1450,7 +1468,7 @@ ERROR in src/frob/gates/_opaque.py.
 id: T-1039
 title: promote OPAQUE001 to ERROR-tier once frob's own 93-site first-turn-on set is
   fixed-or-waived
-state: queued
+state: dropped
 kind: security
 origin: human
 created: '2026-07-27'
@@ -1491,6 +1509,8 @@ infrastructure, not an evasion risk). Once the WARN count reaches zero
 real (unwaived) findings, promote opaque_gate's Severity from WARN to
 ERROR in src/frob/gates/_opaque.py.
 
+## Drop reason
+- 2026-07-28: exact duplicate of T-1038 (identical title, body, scope) tracking the same OPAQUE001 WARN->ERROR promotion; T-1038 remains the active tracking ticket
 <!-- ticket:T-1049 -->
 ```yaml
 id: T-1049
@@ -2919,7 +2939,7 @@ the self-model covers tests/scripts/native trees).
 id: T-1080
 title: 'tickets: T-0666 evidence names stale _not_detected variants that were renamed
   to _detected in tests/test_vet.py'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -2934,6 +2954,8 @@ component: null
 ```
 COV003 fires on main (independent of any in-progress worktree): T-0666's archived evidence in tickets-archive.md names tests/test_vet.py::TestCapabilityScanRustTaxonomyClosureResolution::test_struct_update_field_rebind_not_detected, TestCapabilityScanKotlinTaxonomyClosureResolution::test_destructuring_declaration_not_detected, and ::test_default_parameter_forwarding_callable_not_detected -- none of these resolve; the live tests are named test_struct_update_field_rebind_detected, test_destructuring_declaration_detected, and test_default_parameter_forwarding_callable_detected (opposite suffix). Fix the archived evidence ids to match the live test names, or waive COV003 with an honest reason if this is intentional historical drift.
 
+## Drop reason
+- 2026-07-28: premise stale: tickets-archive.md T-0666 evidence already names the _detected variants (verified at lines 70507-70530, 70714-70722, 114198-114322), not the _not_detected ones described; frob check --only coverage shows zero COV003 findings for T-0666 on current main
 <!-- ticket:T-1081 -->
 ```yaml
 id: T-1081
