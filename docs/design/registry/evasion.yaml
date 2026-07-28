@@ -11,685 +11,685 @@
 # fresh at test time and asserts every (language, category) bucket's row
 # count never exceeds EVASION_LITMUS_MAP's registered litmus-fixture count
 # for that bucket, and that every listed fixture resolves to a real,
-# collectible test. disposition is left as deferred:T-0339 (still valid --
-# T-0339 is open) rather than flipped to handled_by:<rule-id>, since no
-# live gate RULE enforces this bucket-level litmus binding (the litmus
-# COUNT check lives in a test, not a frob check gate) -- see this
-# ticket's Done report for the exact coverage table and the honest list
-# of taxonomy rows this pass found genuinely unresolved/un-fail-closed
-# (filed as T-1047).
+# collectible test. dispositions flipped at T-0339's close (after T-1047
+# closed 17 runtime-opaque rows and T-1051 the final 13): static-resolvable
+# rows are handled_by:SYS100 (the resolver feeds strata capability
+# conformance, so a resolved construct surfaces as an undeclared-capability
+# finding) and runtime-opaque rows are handled_by:OPAQUE001 (the fail-closed
+# opaque-indirection obligation). The meta-test above remains the
+# bucket-level litmus-binding lock on top of both rules.
 schema_version: 1
 entries:
   - id: "EVA-PY-S01"
     language: "Python"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-S02"
     language: "Python"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-S03"
     language: "Python"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-S04"
     language: "Python"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-S05"
     language: "Python"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-S06"
     language: "Python"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-S07"
     language: "Python"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-S08"
     language: "Python"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-S09"
     language: "Python"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-S10"
     language: "Python"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-S11"
     language: "Python"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-S12"
     language: "Python"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-S13"
     language: "Python"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-R01"
     language: "Python"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-R02"
     language: "Python"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-R03"
     language: "Python"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-R04"
     language: "Python"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-R05"
     language: "Python"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-R06"
     language: "Python"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-R07"
     language: "Python"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-R08"
     language: "Python"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-PY-R09"
     language: "Python"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S01"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S02"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S03"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S04"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S05"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S06"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S07"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S08"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S09"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S10"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S11"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S12"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S13"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S14"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S15"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S16"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-S17"
     language: "TypeScript/JavaScript"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-R01"
     language: "TypeScript/JavaScript"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-R02"
     language: "TypeScript/JavaScript"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-R03"
     language: "TypeScript/JavaScript"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-R04"
     language: "TypeScript/JavaScript"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-R05"
     language: "TypeScript/JavaScript"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-R06"
     language: "TypeScript/JavaScript"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-R07"
     language: "TypeScript/JavaScript"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-R08"
     language: "TypeScript/JavaScript"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-TSJS-R09"
     language: "TypeScript/JavaScript"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-S01"
     language: "Rust"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-S02"
     language: "Rust"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-S03"
     language: "Rust"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-S04"
     language: "Rust"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-S05"
     language: "Rust"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-S06"
     language: "Rust"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-S07"
     language: "Rust"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-S08"
     language: "Rust"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-S09"
     language: "Rust"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-S10"
     language: "Rust"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-S11"
     language: "Rust"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-S12"
     language: "Rust"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-S13"
     language: "Rust"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-R01"
     language: "Rust"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-R02"
     language: "Rust"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-R03"
     language: "Rust"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-R04"
     language: "Rust"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-R05"
     language: "Rust"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-RS-R06"
     language: "Rust"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-C-S01"
     language: "C"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-C-S02"
     language: "C"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-C-S03"
     language: "C"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-C-S04"
     language: "C"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-C-S05"
     language: "C"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-C-S06"
     language: "C"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-C-S07"
     language: "C"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-C-R01"
     language: "C"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-C-R02"
     language: "C"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-C-R03"
     language: "C"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-C-R04"
     language: "C"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-C-R05"
     language: "C"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-S01"
     language: "C++"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-S02"
     language: "C++"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-S03"
     language: "C++"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-S04"
     language: "C++"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-S05"
     language: "C++"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-S06"
     language: "C++"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-S07"
     language: "C++"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-S08"
     language: "C++"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-S09"
     language: "C++"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-S10"
     language: "C++"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-S11"
     language: "C++"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-S12"
     language: "C++"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-R01"
     language: "C++"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-R02"
     language: "C++"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-R03"
     language: "C++"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-R04"
     language: "C++"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-CPP-R05"
     language: "C++"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-S01"
     language: "Kotlin"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-S02"
     language: "Kotlin"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-S03"
     language: "Kotlin"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-S04"
     language: "Kotlin"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-S05"
     language: "Kotlin"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-S06"
     language: "Kotlin"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-S07"
     language: "Kotlin"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-S08"
     language: "Kotlin"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-S09"
     language: "Kotlin"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-S10"
     language: "Kotlin"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-S11"
     language: "Kotlin"
     category: "static-resolvable"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:SYS100
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-R01"
     language: "Kotlin"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-R02"
     language: "Kotlin"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-R03"
     language: "Kotlin"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-R04"
     language: "Kotlin"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
   - id: "EVA-KT-R05"
     language: "Kotlin"
     category: "runtime-opaque"
     source_doc: "docs/design/capability-evasion-taxonomy.md"
-    disposition: deferred:T-0339
+    disposition: handled_by:OPAQUE001
     cross_refs: ["tests/test_vet.py::TestEvasionTaxonomyExhaustiveness", "src/frob/vet/_evasion_coverage.py::EVASION_LITMUS_MAP"]
 total: 112
