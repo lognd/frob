@@ -426,6 +426,16 @@
       "ref": "src/frob/tickets/__init__.py::doable"
     },
     {
+      "digest": "b827c12e4a9e4698cd99b6a2cb21ac8013bcf9ee6689da479d8b344ac4b51d5d",
+      "facet": "body",
+      "ref": "src/frob/tickets/__init__.py::finalize_draft"
+    },
+    {
+      "digest": "fabc7d8cd6074c7a259202ce067e9bc56427516fddf119086d379eea9bab5a61",
+      "facet": "sig",
+      "ref": "src/frob/tickets/__init__.py::finalize_draft"
+    },
+    {
       "digest": "e44b20c7734cc812f5ab85900637ecc72ebb3d0a34af85eeb17cd97c1aca2d0a",
       "facet": "sig",
       "ref": "src/frob/tickets/__init__.py::load_queue"

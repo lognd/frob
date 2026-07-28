@@ -910,7 +910,9 @@ def _log_renumber_done(
 
 
 # frob:ticket T-0162
+# frob:ticket T-1090
 # frob:doc docs/modules/tickets.md#provisional-ids
+# frob:tests tests/test_tickets_ledger_concurrency.py::TestFinalizeDraftAllocationRace.test_two_concurrent_finalize_draft_calls_get_distinct_ids  # noqa: E501
 def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
     """Assign `draft_id` its final sequential `T-####` id against the CURRENT
     merged (active+archive) view and rewrite the ledger plus every code
@@ -922,25 +924,50 @@ def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
     exact collision this mechanism exists to prevent. A no-op (`Ok(draft_id)`
     unchanged) if `draft_id` is already a final id, so callers can call it
     unconditionally without checking `is_draft_id` themselves first.
+
+    T-1090: the next-id COMPUTATION (`_next_ticket_id` against `_load_merged`'s
+    snapshot) used to run entirely OUTSIDE any lock, with `renumber_one`
+    acquiring `ledger_lock` only afterward, once `final_id` was already
+    fixed. Two concurrent `finalize_draft` calls against the same `root`
+    (two sibling lands each renumbering their own residue draft, the T-1086
+    vs T-0684 field incident) could both load the same pre-write snapshot,
+    both compute the SAME `final_id`, and then serialize only at the
+    `renumber_one` write -- the second writer's `_load_and_validate_
+    renumber_ids` reload happens under the lock, but if the first writer's
+    id happened to land via a DIFFERENT path in between (e.g. a concurrent
+    `new_ticket` claiming that exact number first), the second `renumber_one`
+    call would silently rename onto a slot a third write had just vacated,
+    or a caller retrying after a transient `DuplicateId` could recompute
+    from another stale snapshot -- there was no single atomic span covering
+    both the read that decides the id and the write that claims it. Now the
+    whole read-compute-write sequence is held under ONE `ledger_lock(root)`
+    span (reentrant, so `renumber_one`'s own internal lock acquisition below
+    is a no-op re-entry in the same thread/process rather than a deadlock),
+    mirroring the `new_ticket`/T-0458 pattern and the T-1036 splice-guard
+    lineage: allocation and commit are now a single atomic unit under the
+    lock, so a concurrent finalizer blocked on the same lock always
+    recomputes its own `final_id` against the FRESH post-write ledger once
+    it acquires the lock, never a stale pre-write snapshot.
     """
     if not is_draft_id(draft_id):
         _log.debug("tickets: finalize_draft(%s): already final, no-op", draft_id)
         return Ok(draft_id)
-    merged = _load_merged(root)
-    if merged.is_err:
-        return Err(merged.danger_err)
-    tickets = merged.danger_ok
-    if draft_id not in tickets:
-        _log.error("tickets: finalize_draft: %s not found", draft_id)
-        return Err(TicketError.NotFound)
-    final_id = _next_ticket_id(
-        {tid: t for tid, t in tickets.items() if tid != draft_id}
-    )
-    result = renumber_one(root, draft_id, final_id)
-    if result.is_err:
-        return Err(result.danger_err)
-    _log.info("tickets: finalized draft %s -> %s", draft_id, final_id)
-    return Ok(final_id)
+    with ledger_lock(root):
+        merged = _load_merged(root)
+        if merged.is_err:
+            return Err(merged.danger_err)
+        tickets = merged.danger_ok
+        if draft_id not in tickets:
+            _log.error("tickets: finalize_draft: %s not found", draft_id)
+            return Err(TicketError.NotFound)
+        final_id = _next_ticket_id(
+            {tid: t for tid, t in tickets.items() if tid != draft_id}
+        )
+        result = renumber_one(root, draft_id, final_id)
+        if result.is_err:
+            return Err(result.danger_err)
+        _log.info("tickets: finalized draft %s -> %s", draft_id, final_id)
+        return Ok(final_id)
 
 
 # frob:invariant INV-032

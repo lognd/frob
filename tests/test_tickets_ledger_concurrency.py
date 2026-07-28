@@ -33,11 +33,13 @@ from frob.tickets import (
     TicketSpec,
     TicketState,
     archive,
+    finalize_draft,
     load_all,
     new_ticket,
     renumber_one,
 )
 from frob.tickets._models import RenumberReport
+from frob.tickets._provisional import DRAFT_PREFIX
 from frob.tickets._store import ledger_lock, write_ticket
 
 
@@ -230,3 +232,72 @@ class TestLedgerLockSpansWholesaleOperations:
         holder_thread.join(timeout=5)
         waiter_thread.join(timeout=5)
         assert order == ["holder-enter", "holder-exit", "waiter-enter"]
+
+
+class TestFinalizeDraftAllocationRace:
+    """T-1090: two sibling `frob ticket land` calls each renumbering their own
+    residue draft (the T-1086-vs-T-0684 field incident, third occurrence
+    2026-07-28) must never allocate the SAME final id -- `finalize_draft`'s
+    id computation must be atomic with its commit, under one held
+    `ledger_lock` span, so a concurrent finalizer always recomputes against
+    the fresh post-write ledger rather than a stale pre-write snapshot."""
+
+    def test_two_concurrent_finalize_draft_calls_get_distinct_ids(
+        self, tmp_path: Path
+    ) -> None:
+        """Two draft tickets, finalized from two threads released at the
+        same instant (a `Barrier`, forcing genuine interleaving rather than
+        an accidental ordering) against the SAME root: both must land
+        distinct final ids and both blocks must survive in the ledger --
+        neither one's block may vanish or get clobbered by the other's
+        allocation."""
+        _seed_ticket(tmp_path, ticket_id="T-0050", state=TicketState.QUEUED)
+        draft_a = f"{DRAFT_PREFIX}aaaaaaaa"
+        draft_b = f"{DRAFT_PREFIX}bbbbbbbb"
+        _seed_ticket(tmp_path, ticket_id=draft_a, state=TicketState.DONE)
+        _seed_ticket(tmp_path, ticket_id=draft_b, state=TicketState.DONE)
+
+        start_gate = threading.Barrier(2, timeout=5)
+        result_a: Result[str, TicketError] | None = None
+        result_b: Result[str, TicketError] | None = None
+
+        def _run_a() -> None:
+            nonlocal result_a
+            start_gate.wait()
+            result_a = finalize_draft(tmp_path, draft_a)
+
+        def _run_b() -> None:
+            nonlocal result_b
+            start_gate.wait()
+            result_b = finalize_draft(tmp_path, draft_b)
+
+        thread_a = threading.Thread(target=_run_a)
+        thread_b = threading.Thread(target=_run_b)
+        thread_a.start()
+        thread_b.start()
+        thread_a.join(timeout=10)
+        thread_b.join(timeout=10)
+        assert not thread_a.is_alive()
+        assert not thread_b.is_alive()
+
+        assert result_a is not None and result_a.is_ok, (
+            result_a.err if result_a is not None else None
+        )
+        assert result_b is not None and result_b.is_ok, (
+            result_b.err if result_b is not None else None
+        )
+        final_a = result_a.danger_ok
+        final_b = result_b.danger_ok
+
+        assert final_a != final_b, (
+            "two concurrent finalize_draft calls allocated the SAME final "
+            f"id ({final_a!r}) -- one block silently dropped the other"
+        )
+
+        active_after = load_all(tmp_path)
+        assert active_after.is_ok
+        active_map = active_after.danger_ok
+        assert final_a in active_map, "draft_a's finalized block did not survive"
+        assert final_b in active_map, "draft_b's finalized block did not survive"
+        assert draft_a not in active_map
+        assert draft_b not in active_map

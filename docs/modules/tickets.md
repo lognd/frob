@@ -1001,6 +1001,21 @@ step; outside of `land`, finalizing a draft is still a manual `frob ticket
 renumber <draft-id> <next-id>` (or a direct `finalize_draft` call from a
 script) -- for a worktree not going through `land` at all.
 
+**T-1090: the next-id computation is atomic with the commit.**
+`finalize_draft` used to load the merged view and compute the candidate
+final id OUTSIDE any lock, only acquiring `ledger_lock` afterward (inside
+`renumber_one`, once the id was already fixed) -- two sibling lands each
+renumbering their own residue draft against the same root could both read
+the same pre-write snapshot and both compute the SAME final id (the
+T-1086-vs-T-0684 field incident, third occurrence). The whole read
+(`_load_merged`), compute (`_next_ticket_id`), and write (`renumber_one`)
+sequence is now held under one `ledger_lock(root)` span (reentrant, so
+`renumber_one`'s own internal lock acquisition is a no-op re-entry rather
+than a deadlock) -- a concurrent finalizer blocked on the lock always
+recomputes its id against the fresh post-write ledger the moment it
+acquires the lock, never a stale pre-write snapshot. Mirrors the
+`new_ticket`/T-0458 single-writer allocation pattern.
+
 ### Decision record: T-0162
 
 Three real collisions in one day (all sequential max+1 races across
