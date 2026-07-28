@@ -103,6 +103,63 @@ _LONG_FUNCTION_CYCLOMATIC_THRESHOLD = 8
 #: in this feature, kept simple rather than parsing a leading-comment block.
 _FROB_RAISES_RE = re.compile(r"#\s*frob:callee-raises\b[ \t]*(.*)$")
 
+#: T-1066: matches an `# arch-exempt: deep-nesting reason="..."` directive on
+#: a leading-comment line directly above a function's `def`/`async def`
+#: (same physical placement `frob:waive ARCH001` already uses above a
+#: function, e.g. `_tarjan_sccs`'s existing waiver in
+#: `frob.graph.summary`). Deliberately spelled WITHOUT a `frob:` prefix --
+#: `frob.graph.dsl._LINE_RE` treats any `frob:<token>` comment as an
+#: attempted directive and DSL001s it if the verb is not registered there,
+#: and registering a new verb means editing `frob.graph.dsl` (outside this
+#: ticket's `src/frob/arch/**`-scoped territory); a distinct, non-`frob:`
+#: marker sidesteps that collision entirely rather than smuggling a new
+#: verb through a module this ticket must not touch. deep-nesting is also
+#: DELIBERATELY excluded from the generic `frob:waive` graph-edge channel
+#: (`frob.gates._unwaivable_channel_rules`'s docstring: `ArchSuggestion`s
+#: for this category never become `Violation`s, so no waiver edge could
+#: ever bind to one) -- this marker is a SEPARATE, detector-owned
+#: exemption, not a workaround of that boundary. It exists for exactly the
+#: case ARCH001's own reasoned-waiver path already covers for
+#: long-function: a genuinely irreducible algorithm (textbook iterative
+#: Tarjan's SCC, explicit work-stack unwind) where a forced split would add
+#: indirection without separating a real sub-concern, not a blanket escape
+#: hatch. `reason=` is REQUIRED (mirrors `frob:waive`'s WAIVE001
+#: discipline) -- an empty or missing reason does not match and the
+#: finding still fires.
+_ARCH_EXEMPT_DEEP_NESTING_RE = re.compile(
+    r'#\s*arch-exempt:\s*deep-nesting\s+reason="([^"]+)"'
+)
+
+
+# frob:ticket T-1066
+def _deep_nesting_exempt_reason(
+    source_lines: tuple[str, ...], def_line: int
+) -> str | None:
+    """The reasoned exemption text from an `# arch-exempt: deep-nesting
+    reason="..."` comment on one of the (possibly several) leading-comment
+    lines directly above `def_line` (1-indexed, `NormalizedFunction.line`),
+    or `None` when no such directive is present. Scans upward from
+    `def_line - 1` while each line is blank or an unindented `#` comment --
+    the same leading-comment-block shape a decorator/`frob:ticket`/
+    `frob:waive` stack already occupies above a function -- and stops at
+    the first non-comment, non-blank line, so a directive left over an
+    unrelated earlier function can never leak onto this one."""
+    i = def_line - 2  # 0-indexed line directly above def_line
+    while i >= 0:
+        stripped = source_lines[i].strip()
+        if not stripped:
+            i -= 1
+            continue
+        if not stripped.startswith("#"):
+            break
+        m = _ARCH_EXEMPT_DEEP_NESTING_RE.search(stripped)
+        if m is not None:
+            reason = m.group(1).strip()
+            if reason:
+                return reason
+        i -= 1
+    return None
+
 
 # frob:ticket T-0689
 def _frob_raises_declaration(
@@ -830,17 +887,44 @@ def _normalized_is_complex(func: NormalizedFunction) -> bool:
 
 def _check_deep_nesting(
     tree: object,
+    path: Path,
     rel: str,
     max_nesting_depth: int,
     out: list[ArchSuggestion],
 ) -> None:
     """Flag python functions whose control-flow nesting exceeds the
     threshold -- reads `NormalizedModule`/`NormalizedFunction.
-    max_nesting_depth` (T-0610) instead of walking `tree` directly."""
+    max_nesting_depth` (T-0610) instead of walking `tree` directly.
+
+    T-1066: a function whose leading-comment block carries a reasoned
+    `# arch-exempt: deep-nesting reason="..."` directive
+    (`_deep_nesting_exempt_reason`) is skipped -- a detector-owned escape
+    for a genuinely irreducible textbook algorithm (e.g. an iterative
+    Tarjan's SCC's work-stack unwind), never a blanket suppression; the
+    generic `frob:waive` channel cannot reach this category at all (see
+    `_ARCH_EXEMPT_DEEP_NESTING_RE`'s comment), so this exists specifically
+    to give deep-nesting the same reasoned-override precedent ARCH001
+    already has for long-function, without touching the gate/waiver
+    pipeline this category is deliberately kept off."""
     module = _py_build_module(tree, rel)
+    source_lines: tuple[str, ...] | None = None
     for func, prefix in _iter_normalized_functions(module):
         depth = func.max_nesting_depth
         if depth <= max_nesting_depth:
+            continue
+        if source_lines is None:
+            source_lines = tuple(
+                path.read_text(encoding="utf-8", errors="replace").splitlines()
+            )
+        exempt_reason = _deep_nesting_exempt_reason(source_lines, func.line)
+        if exempt_reason is not None:
+            _log.debug(
+                "deep-nesting: %s::%s%s exempted: %s",
+                rel,
+                prefix,
+                func.name,
+                exempt_reason,
+            )
             continue
         out.append(
             ArchSuggestion(

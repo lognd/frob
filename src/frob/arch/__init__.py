@@ -546,7 +546,9 @@ def _run_python_checks(
         _run_srp_checks_python(tree, rel, limits, suggestions)
     _python._check_high_coupling(path, rel, root, limits.max_local_imports, suggestions)
     if not is_test:
-        _python._check_deep_nesting(tree, rel, limits.max_nesting_depth, suggestions)
+        _python._check_deep_nesting(
+            tree, path, rel, limits.max_nesting_depth, suggestions
+        )
 
 
 # frob:ticket T-0728

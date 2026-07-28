@@ -104,6 +104,71 @@ class TestDeepNesting:
 
 
 # ---------------------------------------------------------------------------
+# T-1066: deep-nesting's detector-owned arch-exempt directive -- a reasoned
+# per-function override for a genuinely irreducible algorithm (mirrors the
+# ARCH001 reasoned-waiver precedent, but stays off the generic waiver/
+# Violation channel deep-nesting is deliberately excluded from).
+# ---------------------------------------------------------------------------
+
+
+# frob:ticket T-1066
+_DEEP_NEST_SRC = (FIXTURES / "arch_python" / "src" / "deep_nest.py").read_text()
+
+
+# frob:ticket T-1066
+class TestDeepNestingArchExempt:
+    # frob:ticket T-1066
+    def _analyze(self, tmp_path, source: str):
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "deep_nest.py").write_text(source)
+        return analyze_project(src_dir)
+
+    # frob:ticket T-1066
+    # frob:tests \
+    # tests/unit/test_arch.py::TestDeepNestingArchExempt.test_reasoned_exempt_suppresses_finding
+    def test_reasoned_exempt_suppresses_finding(self, tmp_path):
+        source = _DEEP_NEST_SRC.replace(
+            "def process_matrix",
+            '# arch-exempt: deep-nesting reason="textbook nested loop, test fixture"\n'
+            "def process_matrix",
+        )
+        result = self._analyze(tmp_path, source)
+        categories = {s.category for s in result.suggestions}
+        assert "deep-nesting" not in categories
+
+    # frob:ticket T-1066
+    # frob:tests \
+    # tests/unit/test_arch.py::TestDeepNestingArchExempt.test_unreasoned_exempt_still_fires
+    def test_unreasoned_exempt_still_fires(self, tmp_path):
+        # No reason= -- must not match, same discipline frob:waive enforces
+        # via WAIVE001 for the generic channel.
+        source = _DEEP_NEST_SRC.replace(
+            "def process_matrix", "# arch-exempt: deep-nesting\ndef process_matrix"
+        )
+        result = self._analyze(tmp_path, source)
+        categories = {s.category for s in result.suggestions}
+        assert "deep-nesting" in categories
+
+    # frob:ticket T-1066
+    # frob:tests \
+    # tests/unit/test_arch.py::TestDeepNestingArchExempt.test_exempt_on_unrelated_function_does_not_leak
+    def test_exempt_on_unrelated_function_does_not_leak(self, tmp_path):
+        # The directive sits above an earlier, unrelated function -- a
+        # blank/non-comment line breaks the leading-comment-block scan, so
+        # it must not exempt process_matrix below it.
+        source = (
+            '# arch-exempt: deep-nesting reason="unrelated"\n'
+            "def unrelated():\n"
+            '    """Not the deeply-nested function."""\n'
+            "    return 1\n\n\n" + _DEEP_NEST_SRC
+        )
+        result = self._analyze(tmp_path, source)
+        nest_issues = [s for s in result.suggestions if s.category == "deep-nesting"]
+        assert any("process_matrix" in s.message for s in nest_issues)
+
+
+# ---------------------------------------------------------------------------
 # analyze_project
 # ---------------------------------------------------------------------------
 
@@ -1745,9 +1810,7 @@ class TestPythonAdapter:
 
         path = tmp_path / "mod.py"
         path.write_text(
-            "import os\n"
-            "import os.path as osp\n"
-            "from collections import OrderedDict\n"
+            "import os\nimport os.path as osp\nfrom collections import OrderedDict\n"
         )
         parsed = raw_tree(path)
         assert parsed.is_ok

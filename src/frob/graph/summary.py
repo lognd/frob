@@ -239,6 +239,7 @@ def _reachable(
 
 
 # frob:waive ARCH001 reason="a textbook Tarjan's SCC (iterative, to avoid recursion-depth limits on large call graphs): index/lowlink/on-stack bookkeeping plus the explicit work-stack unwind loop are one indivisible algorithm, not independently meaningful phases -- splitting the unwind step into a helper would require passing the index/lowlink/stack triple across a new boundary for every visited node, adding indirection without separating a real sub-concern"  # noqa: E501
+# arch-exempt: deep-nesting reason="T-1066: same textbook iterative Tarjan's SCC already reasoned about in this function's ARCH001 waiver above -- the depth-5 nesting here is the index/lowlink/on-stack bookkeeping interleaved with the explicit work-stack unwind and SCC-pop loop, one indivisible algorithm; a forced split would thread the index/lowlink/stack triple across a new boundary per visited node, adding indirection without separating a real sub-concern, which the standing ARCH001 rationale on this same function already established"  # noqa: E501
 # frob:ticket T-0972
 def _tarjan_sccs(nodes: Sequence[str], callgraph: CallGraph) -> list[list[str]]:
     """Tarjan's SCC decomposition over `nodes`, restricted to edges landing
