@@ -103,7 +103,6 @@ def _scope_for_ids(model: KernelModel, ids: tuple[str, ...]) -> tuple[str, ...]:
     for node in model.nodes:
         if node.id in wanted:
             globs.update(_node_scope(node))
-    # frob:waive PERF004 reason="one sort of the final glob set, not per-iteration"
     return tuple(sorted(globs))
 
 
@@ -276,7 +275,6 @@ def _frontier_unbound(
 # frob:tests tests/unit/strata/test_plan.py::TestPlanObligations.test_refuted_claim
 # frob:tests tests/unit/strata/test_plan.py::TestPlanObligations.test_unbound_boundary
 # frob:tests tests/unit/strata/test_plan.py::TestPlanObligations.test_idempotent_markers
-# frob:waive TEST005 reason="plan_obligations 83.3% branch cover, debt T-0160"
 def plan_obligations(
     model: KernelModel,
     *,

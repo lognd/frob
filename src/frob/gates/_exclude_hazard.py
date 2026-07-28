@@ -97,9 +97,6 @@ def _pattern_prefix(pattern: str) -> str:
     return prefix.rstrip("/")
 
 
-# frob:waive DUP001 reason="the established parallel-gate-scaffolding false pair -- \
-# every gate module keeps its own private `git ls-files` copy (see \
-# _opaque.py::_tracked_files' own DUP001 waiver for the full convention) (T-0861)"
 def _tracked_files(root: Path) -> tuple[str, ...]:
     """`git ls-files` under `root`, root-relative POSIX paths, `()` on any
     git failure -- same degrade-don't-crash seam `frob.gates._secrets`

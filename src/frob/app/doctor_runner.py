@@ -1,4 +1,3 @@
-# frob:waive SCOPE001 reason="T-0319 scope comma-joined, matches nothing (T-0241 bug)"
 """CLI wiring for `frob doctor` -- native-extension diagnosis (T-0319).
 
 T-0448: migrated to `frob.render.Renderer` as the FOUNDATION exemplar for

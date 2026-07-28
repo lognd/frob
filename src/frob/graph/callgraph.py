@@ -66,8 +66,6 @@ UNRESOLVED_CALLEE = "?unresolved"
 
 
 # frob:doc docs/modules/graph.md#call-graph
-# frob:waive DUP001 reason="dup grouped this with perf/_recursion.py::_has_guard -- \
-# see that function's own DUP001 waiver for full reasoning (T-0861)"
 def is_symref(entry: str) -> bool:
     """True if `entry` looks like a real `path::qualname` call-graph node
     (a `CallGraph.calls` entry), false for a non-symref sentinel such as

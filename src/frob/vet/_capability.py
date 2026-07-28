@@ -523,7 +523,6 @@ def _embedded_capabilities(path: Path) -> set[str]:
     for region in regions:
         found |= _matched_capabilities(region, ts_table, "typescript", ())
     if found - {"embedded_code"}:
-        # frob:waive PERF004 reason="runs once, only for this log line"
         _log.info(
             "vet: %s: embedded-code region capabilities observed: %s",
             path,
@@ -770,9 +769,6 @@ def _bind_py_name(table: dict[str, str], name: str, target: str) -> None:
 _PY_ALWAYS_SHADOWS = -1
 
 
-# frob:waive DUP001 reason="see this function's own docstring -- deliberate \
-# per-language mirror of _record_rust_binding, same T-0468/T-0378 shadow-position \
-# bookkeeping shape per language (T-0861)"
 def _record_py_binding(bound: dict[str, int], name: str, position: int) -> None:
     """Record that `name` starts shadowing an enclosing import binding at
     byte `position` within its scope, keeping the EARLIEST position on
@@ -2981,7 +2977,6 @@ def non_executable_line_numbers(path: Path) -> frozenset[int]:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="scan_file_capabilities 76.9% branch cover, debt T-0160"
 def scan_file_capabilities(path: Path) -> frozenset[str]:
     """Capability tokens observed in one source file's raw text (T-0209:
     needle hits fully inside a tree-sitter comment span are excluded --
@@ -3457,8 +3452,6 @@ def _rust_use_table(root_node) -> dict[str, str]:  # noqa: ANN001
 _RUST_ALWAYS_SHADOWS = -1
 
 
-# frob:waive DUP001 reason="see _record_py_binding's own DUP001 waiver for full \
-# reasoning -- deliberate per-language mirror (T-0861)"
 def _record_rust_binding(bound: dict[str, int], name: str, position: int) -> None:
     """Record that `name` starts shadowing an enclosing `use` alias at byte
     `position` within its scope, keeping the EARLIEST position on repeat
@@ -4122,7 +4115,6 @@ def _c_shadowing_scope(name: str, site, scope_cache: dict[int, dict[str, int]]):
 
 
 # frob:ticket T-0662
-# frob:waive DUP001 reason="mirrors _resolve_ts_identifier's shadowed/unshadowed dispatch shape at C's own grammar (macro table vs var_alias_table) -- same design pattern as every other per-language resolver in this module, not accidental duplication"  # noqa: E501
 def _resolve_c_identifier(
     node,
     alias_table: dict[str, str],
@@ -4625,9 +4617,6 @@ def _c_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
 _KT_WILDCARD_DANGEROUS_MODULES = frozenset({"java.lang"})
 
 
-# frob:waive DUP001 reason="see this function's own docstring -- deliberately \
-# independent walk layer copy, same convention as frob.lang._walk_kotlin/frob.arch \
-# _kotlin's own _kt_child_of_type copies (T-0861)"
 def _kt_cap_child_of_type(node, type_name: str):  # noqa: ANN001, ANN201
     """The first DIRECT child of `node` with tree-sitter type `type_name`
     -- kotlin's grammar exposes almost no named fields (T-0614/T-0723's own
@@ -4684,7 +4673,6 @@ def _kt_import_table(root) -> tuple[dict[str, str], frozenset[str]]:  # noqa: AN
 
 
 # frob:ticket T-0664
-# frob:waive DUP001 reason="a short guard-then-lookup dispatch, structurally similar to unrelated small helpers elsewhere in this file purely by coincidence of size; genuinely different domain (kotlin callable_reference resolution) from every reported match"  # noqa: E501
 def _kt_resolve_callable_reference(node, import_table: dict[str, str]) -> str | None:  # noqa: ANN001
     """Resolve a `callable_reference` node (T-0664, taxonomy "::
     callable/function reference" row) -- a bare `::runCmd` resolves its one
@@ -4915,7 +4903,6 @@ def _kt_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
 
 
 # frob:ticket T-0664
-# frob:waive DUP001 reason="mirrors _c_binding_capabilities/_rust_binding_capabilities/_ts_binding_capabilities's identical resolved-candidate-to-registry-needle loop shape -- the intentional per-language resolver pattern this module already establishes, not accidental duplication"  # noqa: E501
 def _kt_binding_capabilities(
     path: Path,
     table: dict[str, tuple[str, ...]],
@@ -4939,7 +4926,6 @@ def _kt_binding_capabilities(
 
 
 # frob:ticket T-0664
-# frob:waive DUP001 reason="mirrors _c_binding_operations/_rust_binding_operations/_ts_binding_operations/_python_binding_operations's identical resolved-candidate-to-DANGEROUS_OPERATIONS loop shape -- the intentional per-language resolver pattern this module already establishes, not accidental duplication"  # noqa: E501
 def _kt_binding_operations(
     path: Path, comment_spans: tuple[ByteSpan, ...]
 ) -> tuple[_DangerousOperation, ...]:
@@ -4965,7 +4951,6 @@ def _kt_binding_operations(
 
 
 # frob:ticket T-0664
-# frob:waive DUP001 reason="mirrors _extra_c_binding_operations/_extra_ts_binding_operations/_extra_rust_binding_operations's identical binding-resolved-minus-already-matched dedupe shape -- the intentional per-language resolver pattern this module already establishes, not accidental duplication"  # noqa: E501
 def _extra_kt_binding_operations(
     path: Path,
     comment_spans: tuple[ByteSpan, ...],
@@ -5378,15 +5363,6 @@ def _aggregate_fingerprints(
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0665
-# frob:waive AFFECT001 reason="T-0871: _OpaqueFinding -> _OpaqueFinding rename \
-# only (frob-exports privatize: zero real consumers outside this module) -- \
-# the vet public-api contract docs/modules/vet.md#public-api describes is \
-# unchanged, this type was never part of it"
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
-# docs/modules/vet.md#public-api documents this finding's shape as part of \
-# the vet capability-scan feature; demoted to private in this ticket \
-# (frob-exports: zero real consumers outside this module) but remains the \
-# thing the doc section describes"
 # frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 class _OpaqueFinding(BaseModel):
     """One `RUNTIME_OPAQUE_CONSTRUCTS` site (T-0665) found in a file's raw

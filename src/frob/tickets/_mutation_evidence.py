@@ -88,7 +88,6 @@ class ConfirmatoryFinding(BaseModel):
     survivors: tuple[Mutant, ...] = ()
 
 
-# frob:waive COV005 reason="T-0601 rework: demoted evidence_test_ids -> _evidence_test_ids (frob-exports external-consumer test: only called intra-package by this module's own check_ticket_mutation_evidence, never imported outside frob.tickets); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestEvidenceTestIds.test_filters_non_node_id_entries  # noqa: E501
 # frob:ticket T-0601
 def _evidence_test_ids(ticket: Ticket) -> tuple[str, ...]:
@@ -140,7 +139,6 @@ def _matches_base_ref_tip(root: Path, file: str, base_ref: str) -> bool:
     return current == spawned.danger_ok.stdout.encode()
 
 
-# frob:waive COV005 reason="T-0601 rework: demoted touched_python_files -> _touched_python_files (frob-exports external-consumer test: only called intra-package by this module's own check_ticket_mutation_evidence, never imported outside frob.tickets); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_filters_to_scope_and_python  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_already_landed_sibling_content_excluded kind="unit"  # noqa: E501
 # frob:ticket T-0601
@@ -194,7 +192,6 @@ def _touched_python_files(
     return tuple(kept)
 
 
-# frob:waive COV005 reason="T-0601 rework: demoted changed_line_ranges -> _changed_line_ranges (frob-exports external-consumer test: only called intra-package by this module's own check_ticket_mutation_evidence, never imported outside frob.tickets); the frob:tests directives deliberately follow the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_confirmatory_test_flagged  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_large_file_unmutable_changed_lines_is_skipped_not_flagged  # noqa: E501
 # frob:ticket T-0601
@@ -237,7 +234,6 @@ def _is_test_file(path: str) -> bool:
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_adversarial_test_not_flagged  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_no_test_evidence_is_ok_empty  # noqa: E501
 # frob:ticket T-0601
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of _mutation_evidence_for_file from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def check_ticket_mutation_evidence(
     root: Path,
     ticket: Ticket,

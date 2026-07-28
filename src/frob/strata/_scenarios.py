@@ -525,7 +525,6 @@ def _krb_delegation_movement_flows(
                 continue
             for spn in other_manifest.spns:
                 spn_owner.setdefault(spn, other.id)
-        # frob:waive PERF004 reason="own delegation_targets, not a shared re-sort"
         targets = sorted(
             {
                 spn_owner[target_spn]

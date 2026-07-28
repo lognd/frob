@@ -1,4 +1,3 @@
-# frob:waive SCOPE001 reason="T-0429's declared scope is .claude/agents/+src/frob/+docs/guides/; tests/** is leased in-progress by T-0160 so the scope cannot be formally extended here, same ad-hoc precedent as test_registry_exhaustiveness.py's existing T-0407 SCOPE001 waiver"  # noqa: E501
 """Tests for frob.registry._corpus -- the T-0429 exhaustive-researcher
 corpus-emit mechanism (append_entry / format_entry_block)."""
 

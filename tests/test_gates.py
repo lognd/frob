@@ -1,6 +1,4 @@
 """Tests for frob.gates: drift, coverage, scope, pre-work, invariant, test gates."""
-# frob:waive SCOPE001 reason="T-0541 scope is src/frob/gates/ only; tests/** lease is \
-# held by in-progress T-0160's multi-pass backlog, so scope-add is blocked here"
 
 from __future__ import annotations
 
@@ -1000,9 +998,6 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV003" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_cov003_passes_for_parametrized_evidence_with_dot_in_case_id(
         self, tmp_path: Path
     ) -> None:
@@ -1117,9 +1112,6 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV003" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_cov003_passes_for_rust_evidence_id(self, tmp_path: Path) -> None:
         """T-0092: a done ticket citing a cargo test id resolves against
         `collect_rust_tests`' node ids the same way a pytest id resolves
@@ -1316,9 +1308,6 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV006" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_cov006_silent_when_test_reaches_via_same_file_public_wrapper(
         self, tmp_path: Path
     ) -> None:
@@ -1373,9 +1362,6 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert _first_rule(violations, "COV006") is not None
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_cov006_silent_when_test_reaches_via_two_hop_wrapper_chain(
         self, tmp_path: Path
     ) -> None:
@@ -1409,9 +1395,6 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV006" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_cov006_silent_when_wrapper_called_via_import_alias(
         self, tmp_path: Path
     ) -> None:
@@ -2221,9 +2204,6 @@ class TestDeadSymbolGate:
         assert all(v.severity == Severity.WARN for v in violations)
 
     # frob:ticket T-0422
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_called_private_helper_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
         from frob.gates._dead_symbols import dead_symbol_gate
@@ -2242,9 +2222,6 @@ class TestDeadSymbolGate:
         assert not any("_helper" in v.message for v in violations)
 
     # frob:ticket T-0422
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_dunder_method_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
         from frob.gates._dead_symbols import dead_symbol_gate
@@ -2259,9 +2236,6 @@ class TestDeadSymbolGate:
         assert not any("__init__" in v.message for v in violations)
 
     # frob:ticket T-0422
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_test_function_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
         from frob.gates._dead_symbols import dead_symbol_gate
@@ -2276,9 +2250,6 @@ class TestDeadSymbolGate:
         assert not any("_test_never_called_directly" in v.message for v in violations)
 
     # frob:ticket T-0422
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_tests_edge_target_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
         from frob.gates._dead_symbols import dead_symbol_gate
@@ -2326,9 +2297,6 @@ class TestProtocolSummaryGate:
         assert "src/a.py::enter" in v.message
         assert v.severity == Severity.WARN
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_clean_protocol_tagged_symbol_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
         # kind="unit"
@@ -2348,9 +2316,6 @@ class TestProtocolSummaryGate:
         violations = protocol_summary_gate(tmp_path, snap)
         assert not any(v.rule == "PROTO001" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_untagged_symbol_with_unresolved_call_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -2424,9 +2389,6 @@ class TestProtocolVerificationGate:
         assert "src/a.py::enter" in v.message
         assert "Net" in v.message and "active" in v.message
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_state_established_by_a_reachable_transition_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -2449,9 +2411,6 @@ class TestProtocolVerificationGate:
         violations = protocol_summary_gate(tmp_path, snap)
         assert not any(v.rule == "PROTO002" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_state_equal_to_initial_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
         # kind="unit"
@@ -2469,9 +2428,6 @@ class TestProtocolVerificationGate:
         violations = protocol_summary_gate(tmp_path, snap)
         assert not any(v.rule == "PROTO002" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_poisoned_summary_at_a_requires_symbol_is_an_error(
         self, tmp_path: Path
     ) -> None:
@@ -2496,9 +2452,6 @@ class TestProtocolVerificationGate:
         assert v.severity == Severity.ERROR
         assert "poisoned" in v.message
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_invalid_transition_precondition_never_established_is_an_error(
         self, tmp_path: Path
     ) -> None:
@@ -2521,9 +2474,6 @@ class TestProtocolVerificationGate:
         assert "src/a.py::net_close" in v.message
         assert "active" in v.message
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_valid_transition_chain_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
         # kind="unit"
@@ -2545,9 +2495,6 @@ class TestProtocolVerificationGate:
         violations = protocol_summary_gate(tmp_path, snap)
         assert not any(v.rule == "PROTO003" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (5 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_python_with_block_discharges_the_requirement(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
         # kind="unit"
@@ -2578,9 +2525,6 @@ class TestProtocolVerificationGate:
         assert "python-with" in discharge.message
 
     # frob:ticket T-0841
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_rust_file_state_never_established_is_an_error(
         self, tmp_path: Path
     ) -> None:
@@ -2603,9 +2547,6 @@ class TestProtocolVerificationGate:
         assert "src/a.rs::enter" in v.message
 
     # frob:ticket T-0841
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (5 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_rust_drop_impl_discharges_the_requirement(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
         # kind="unit"
@@ -2641,9 +2582,6 @@ class TestProtocolVerificationGate:
         assert "rust-drop" in discharge.message
 
     # frob:ticket T-0841
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (5 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_typescript_using_discharges_the_requirement(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
         # kind="unit"
@@ -2722,9 +2660,6 @@ class TestProtocolOrderingGate:
         assert "Net" in v.message and "active" in v.message
 
     # frob:ticket T-0840
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_call_after_establishing_transition_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -2753,9 +2688,6 @@ class TestProtocolOrderingGate:
         assert not any(v.rule == "PROTO004" for v in violations)
 
     # frob:ticket T-0840
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (5 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_python_with_block_discharges_the_ordering_violation(
         self, tmp_path: Path
     ) -> None:
@@ -2818,9 +2750,6 @@ class TestProtocolLanguageExcuseDischarge:
         assert result.discharged
         assert result.mechanism == "rust-drop"
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_rust_mem_forget_revokes_the_drop_discharge(self) -> None:
         # frob:tests \
         # tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_mem_forget\
@@ -2836,9 +2765,6 @@ class TestProtocolLanguageExcuseDischarge:
         assert not result.discharged
         assert "forget" in result.reason
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_rust_manually_drop_revokes_the_discharge(self) -> None:
         # frob:tests \
         # tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_manually_d\
@@ -2950,9 +2876,6 @@ class TestCleanupObligationGate:
     may-raise sets), escape transfer, and per-protocol cleanup="always"
     deinit-never-called."""
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_early_return_before_release_call_is_an_error(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
         # kind="unit"
@@ -2981,9 +2904,6 @@ class TestCleanupObligationGate:
         assert "src/a.py::open_conn" in v.message
         assert "conn" in v.message
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_release_before_return_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
         # kind="unit"
@@ -3006,9 +2926,6 @@ class TestCleanupObligationGate:
         violations = protocol_summary_gate(tmp_path, snap)
         assert not any(v.rule == "PROTO005" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_escape_transfer_discharges_the_obligation(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
         # kind="unit"
@@ -3028,9 +2945,6 @@ class TestCleanupObligationGate:
         violations = protocol_summary_gate(tmp_path, snap)
         assert not any(v.rule == "PROTO005" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_self_contained_acquire_and_release_is_trusted(
         self, tmp_path: Path
     ) -> None:
@@ -3052,9 +2966,6 @@ class TestCleanupObligationGate:
         violations = protocol_summary_gate(tmp_path, snap)
         assert not any(v.rule == "PROTO005" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (5 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_python_with_block_discharges_the_acquisition(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
         # kind="unit"
@@ -3086,9 +2997,6 @@ class TestCleanupObligationGate:
         assert discharge.severity == Severity.WARN
         assert "python-with" in discharge.message
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_process_exit_ok_policy_discharges_a_terminator_guarded_return(
         self, tmp_path: Path
     ) -> None:
@@ -3244,9 +3152,6 @@ class TestDebtGate:
         assert v is not None
         assert v.severity == Severity.ERROR
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_debt002_open_ticket_is_silent(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates.py::TestDebtGate.test_debt002_open_ticket_is_silent
@@ -3282,9 +3187,6 @@ class TestDebtGate:
         assert v is not None
         assert v.severity == Severity.ERROR
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_debt003_not_yet_expired_is_silent(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates.py::TestDebtGate.test_debt003_not_yet_expired_is_silent
@@ -3372,9 +3274,6 @@ class TestDebtGate:
         assert entry.until == "2099-01-01"
         assert entry.expired is False
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_release_gate_fails_while_debt_is_open(self, tmp_path: Path) -> None:
         """T-0412's central requirement: a release must never ship with ANY
         open frob:debt, expired or not."""
@@ -3817,9 +3716,6 @@ class TestDeprecatedGate:
         violations = deprecated_gate(snap, queue, tmp_path, current_date="2026-01-01")
         assert not any(v.rule == "DEPR005" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_release_gate_fails_while_deprecated_is_past_sunset(
         self, tmp_path: Path
     ) -> None:
@@ -4691,9 +4587,6 @@ class TestInv003Gate:
     def test_missing_docs_dir_is_silent(self, tmp_path: Path) -> None:
         assert inv003_gate(tmp_path, ()) == ()
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_claim_without_verb_in_sentence_is_silent(self, tmp_path: Path) -> None:
         """T-0509: a bare heading/fragment containing the trigger word but
         no claim-verb in the same sentence is not a claim (e.g. a
@@ -4705,9 +4598,6 @@ class TestInv003Gate:
         )
         assert inv003_gate(tmp_path, ()) == ()
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_claim_in_code_fence_is_silent(self, tmp_path: Path) -> None:
         """T-0509: `_strip_markdown_noise` drops fenced code before
         scanning -- a code sample using "only" in a comment is not prose."""
@@ -4718,9 +4608,6 @@ class TestInv003Gate:
         )
         assert inv003_gate(tmp_path, ()) == ()
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_outside_spec_dirs_is_silent(self, tmp_path: Path) -> None:
         """T-0509: INV003 is scoped to `INV003_SPEC_DIRS`
         (docs/modules, docs/strata) -- a claim in another docs/ subtree
@@ -4732,9 +4619,6 @@ class TestInv003Gate:
         )
         assert inv003_gate(tmp_path, ()) == ()
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_markdown_waive_marker_with_reason_is_silent(self, tmp_path: Path) -> None:
         """T-0509: a `<!-- frob:waive INV003 reason="..." -->` marker
         dispositions a genuine-but-unprovable exclusivity claim without
@@ -4747,9 +4631,6 @@ class TestInv003Gate:
         )
         assert inv003_gate(tmp_path, ()) == ()
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_markdown_waive_marker_without_reason_still_warns(
         self, tmp_path: Path
     ) -> None:
@@ -4764,9 +4645,6 @@ class TestInv003Gate:
         violations = inv003_gate(tmp_path, ())
         assert len(violations) == 1
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_illustrative_example_reason_does_not_self_waive(
         self, tmp_path: Path
     ) -> None:
@@ -4837,9 +4715,6 @@ class TestInv004Gate:
         assert len(violations) == 1
         assert "'# A" in violations[0].message
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_any_bound_invariant_anywhere_in_file_silences_every_section(
         self, tmp_path: Path
     ) -> None:
@@ -4858,9 +4733,6 @@ class TestInv004Gate:
     def test_missing_docs_dir_is_silent(self, tmp_path: Path) -> None:
         assert inv004_gate(tmp_path) == ()
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_outside_spec_dirs_is_silent(self, tmp_path: Path) -> None:
         """T-0515: INV004 is now scoped to `INV003_SPEC_DIRS`, matching
         INV003 -- a narrative doc outside docs/modules and docs/strata
@@ -4872,9 +4744,6 @@ class TestInv004Gate:
         )
         assert inv004_gate(tmp_path) == ()
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_markdown_waive_marker_with_reason_is_silent(self, tmp_path: Path) -> None:
         """T-0509/T-0515: a `<!-- frob:waive INV004 reason="..." -->`
         marker anywhere in the file dispositions it without a fake bound
@@ -4938,9 +4807,6 @@ class TestInv006Gate:
         assert violations[0].file == "src/pkg.py"
 
     # frob:ticket T-0408
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_exclusivity_claim_with_bound_invariant_anchor_is_silent(
         self, tmp_path: Path
     ) -> None:
@@ -4957,9 +4823,6 @@ class TestInv006Gate:
         assert violations == ()
 
     # frob:ticket T-0408
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_waived_with_reason_is_silent(self, tmp_path: Path) -> None:
         _write(
             tmp_path,
@@ -5115,9 +4978,6 @@ class TestPlace001Gate:
         assert "Foo" in v.message
         assert "bar" in v.message
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_per_field_pydantic_idiom_is_silent(self, tmp_path: Path) -> None:
         """T-0470's counterexample: a directive above one field deep in a
         class, with more real field-assignment code (not blank lines)
@@ -5145,9 +5005,6 @@ class TestPlace001Gate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert _first_rule(violations, "PLACE001") is None
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_directive_directly_above_def_is_silent(self, tmp_path: Path) -> None:
         """A directive that resolves via `following` in the ordinary way
         (immediately above its `def`) never class-falls-back at all, so
@@ -5164,9 +5021,6 @@ class TestPlace001Gate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert _first_rule(violations, "PLACE001") is None
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_no_nearby_symbol_at_all_is_silent(self, tmp_path: Path) -> None:
         """A class-fallback directive with no real symbol within the
         lookahead window at all has nothing to flag as "missed"."""
@@ -5282,9 +5136,6 @@ class TestInvariantLoad:
         assert result.is_err
         assert result.danger_err == InvariantError.Malformed
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (6 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_no_frontmatter_block_is_malformed(self, tmp_path: Path) -> None:
         """A file with no `---`-delimited frontmatter block at all is
         `Err(Malformed)` -- proves the no-match regex branch."""
@@ -5294,9 +5145,6 @@ class TestInvariantLoad:
         assert result.is_err
         assert result.danger_err == InvariantError.Malformed
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (6 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_bad_yaml_frontmatter_is_malformed(self, tmp_path: Path) -> None:
         """Unparseable YAML inside the frontmatter block is `Err(Malformed)`
         -- proves the `yaml.YAMLError` branch."""
@@ -5308,9 +5156,6 @@ class TestInvariantLoad:
         assert result.is_err
         assert result.danger_err == InvariantError.Malformed
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (6 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_non_mapping_frontmatter_is_malformed(self, tmp_path: Path) -> None:
         """A frontmatter block that parses to a YAML scalar/list, not a
         mapping, is `Err(Malformed)` -- proves the not-a-dict branch."""
@@ -5322,9 +5167,6 @@ class TestInvariantLoad:
         assert result.is_err
         assert result.danger_err == InvariantError.Malformed
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (6 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_empty_statement_is_malformed(self, tmp_path: Path) -> None:
         """An empty `statement` field fails `_validate_invariant_shape`'s
         non-empty check."""
@@ -5336,9 +5178,6 @@ class TestInvariantLoad:
         assert result.is_err
         assert result.danger_err == InvariantError.Malformed
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (6 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_evidence_not_a_list_is_malformed(self, tmp_path: Path) -> None:
         """A non-list `evidence` field is `Err(Malformed)` -- proves
         `_build_invariant`'s evidence-shape branch."""
@@ -5350,9 +5189,6 @@ class TestInvariantLoad:
         assert result.is_err
         assert result.danger_err == InvariantError.Malformed
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (6 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_bad_criticality_is_malformed(self, tmp_path: Path) -> None:
         """A `criticality` value outside the `_Criticality` enum is
         `Err(Malformed)` -- proves the criticality-membership branch."""
@@ -5366,15 +5202,7 @@ class TestInvariantLoad:
 
 
 # frob:ticket T-0549
-# frob:waive COV002 reason="T-0549 is closed and committed on this stacked, unmerged \
-# branch; T-draft-f5d48e02 files the underlying gap (the T-0214/ T-0320 closed-ticket \
-# grace window only checks the exact marker LINE, which does not fall inside this \
-# diff's narrow unified=0 hunks even though T-0549's own state transition plainly is \
-# in the diff)"
 class TestTestGate:
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_test001_public_symbol_no_unit_edge(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::test_gate
         from typani.option import Nothing
@@ -5621,9 +5449,6 @@ class TestTestGate:
         assert "TEST001" not in rule_ids
         assert "TEST002" not in rule_ids
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_test003_interface_without_integration(self, tmp_path: Path) -> None:
         from typani.option import Nothing
 
@@ -5649,9 +5474,6 @@ class TestTestGate:
         violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
         assert not any(v.rule == "TEST003" and v.file == "design" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_test003_satisfied_by_parametrized_test_node_id(
         self, tmp_path: Path
     ) -> None:
@@ -5691,9 +5513,6 @@ class TestTestGate:
         violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
         assert "TEST003" not in _rules(violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_test003_satisfied_by_parametrized_case_with_dot_in_case_id(
         self, tmp_path: Path
     ) -> None:
@@ -6696,9 +6515,6 @@ class TestCoverageLoad:
         result = load_coverage(tmp_path)
         assert result.is_err
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_parses_line_to_symbol_span(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::load_coverage
         _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
@@ -6821,9 +6637,6 @@ class TestCoverageLoad:
         assert result.is_ok
         assert result.danger_ok.module_join_fraction == 1.0
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_joins_via_repo_relative_source(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::load_coverage
         # A non-frob layout: package lives at the repo root, no `src/`
@@ -6859,9 +6672,6 @@ class TestCoverageLoad:
         assert record.symref in data.symbol_branch
         assert data.root_join_ok
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_multi_source_picks_the_root_that_joins(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::load_coverage
         # Multiple <source> entries (a monorepo-style coverage run) --
@@ -8225,9 +8035,6 @@ class TestTest010KindValidation:
     # frob:tests \
     # tests/test_gates.py::TestTest010KindValidation.test_valid_kind_not_reported \
     # kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_valid_kind_not_reported(self, tmp_path: Path) -> None:
         from typani.option import Nothing
 
@@ -8306,9 +8113,6 @@ class TestTest013NativeUnverified:
         assert "unverified" in test013[0].message
 
     # frob:ticket T-0552
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_silent_on_executed_edge(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_silent_on_executed_edge  # noqa: E501
         # A python edge with real collected execution evidence (pytest node
@@ -8728,9 +8532,6 @@ class TestTest014AmbiguousConventionMatch:
         assert "TEST014" not in _rules(violations)
 
     # frob:ticket T-0547
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_silent_when_no_leaf_name_collision(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_no_leaf_name_collision  # noqa: E501
         from typani.option import Nothing
@@ -8776,9 +8577,6 @@ class TestTest015VacuousCredit:
         assert "test_helper" in test015[0].message
 
     # frob:ticket T-0548
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_silent_when_any_matching_test_asserts(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_silent_when_any_matching_test_asserts  # noqa: E501
         from typani.option import Nothing
@@ -9437,9 +9235,6 @@ class TestSysGate:
         assert len(doc003) == 1
         assert "unknown baseline view" in doc003[0].message
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_doc003_marker_in_fenced_block_ignored(self, tmp_path: Path) -> None:
         """T-0085 round 2 (reviewer REJECT): a `frob:claims` marker inside a
         ```-fenced block documents the directive, it does not claim
@@ -9453,9 +9248,6 @@ class TestSysGate:
         )
         assert gates_mod._claims_markers(tmp_path) == []
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_doc003_marker_in_inline_code_ignored(self, tmp_path: Path) -> None:
         """T-0085 round 2: a `frob:claims` marker inside inline `backticks`
         on a prose line is a quotation, not a live claim."""
@@ -9631,11 +9423,6 @@ class TestSelfAuditGate:
         assert _by_rule(violations, "SYS004") != []
 
 
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across test_check.py, \
-# test_gates.py (2 sites) -- each file exercises a structurally \
-# similar check for a distinct domain/module with the same \
-# arrange-act shape; extracting would blur which domain owns which \
-# check"
 def _complex_function_source(fn_name: str) -> str:
     """A python module with one function long enough to trip the 30-line
     default `max_function_lines` but short enough to stay under the
@@ -10082,9 +9869,6 @@ class TestRenderLintGate:
         assert offender_hits[0].line == 2
 
     # frob:tests tests/test_gates.py::TestRenderLintGate.test_render_package_exempt
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_render_package_exempt(self, tmp_path: Path) -> None:
         """`src/frob/render/` itself is the one sanctioned home for these
         calls (`Renderer._emit`'s own `print`) and is never scanned."""
@@ -10105,9 +9889,6 @@ class TestRenderLintGate:
         assert _by_rule(violations, "RENDER001") == []
 
     # frob:tests tests/test_gates.py::TestRenderLintGate.test_stderr_directed_print_is_silent  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_stderr_directed_print_is_silent(self, tmp_path: Path) -> None:
         """A `print(..., file=sys.stderr)` call is never flagged --
         INV-RENDER-SOLE-STDOUT governs stdout only."""
@@ -10181,9 +9962,6 @@ class TestTick006PhantomFiling:
         assert tick006[0].severity == Severity.ERROR
 
     # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_phantom_filed_as_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_phantom_filed_as_fires(self, tmp_path: Path) -> None:
         """The T-0707 incident class: `filed as T-0999` where T-0999 was
         never actually filed anywhere -- an invented filing trail."""
@@ -10223,9 +10001,6 @@ class TestTick006PhantomFiling:
         assert not any(v.rule == "TICK006" for v in violations)
 
     # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_filed_colon_none_is_silent  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_filed_colon_none_is_silent(self, tmp_path: Path) -> None:
         """`Filed: none` -- the common "nothing to file" Done-report
         shape -- names no id at all and must never fire."""
@@ -10261,9 +10036,6 @@ class TestTick006PhantomFiling:
         assert not any(v.rule == "TICK006" for v in violations)
 
     # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_negation_not_filed_is_silent  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_negation_not_filed_is_silent(self, tmp_path: Path) -> None:
         """ "not filed as a new ticket" (verbatim phrase used repeatedly in
         this repo's ledger) is an explicit negation and must never fire,
@@ -10281,9 +10053,6 @@ class TestTick006PhantomFiling:
         assert not any(v.rule == "TICK006" for v in violations)
 
     # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_negation_no_ticket_filed_is_silent  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_negation_no_ticket_filed_is_silent(self, tmp_path: Path) -> None:
         """ "no new ticket filed" is an explicit negation and must never
         fire."""
@@ -10299,9 +10068,6 @@ class TestTick006PhantomFiling:
         assert not any(v.rule == "TICK006" for v in violations)
 
     # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_description_prose_mentioning_other_ticket_is_silent  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_description_prose_mentioning_other_ticket_is_silent(
         self, tmp_path: Path
     ) -> None:
@@ -10338,9 +10104,6 @@ class TestTick006PhantomFiling:
         assert not any(v.rule == "TICK006" for v in violations)
 
     # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_filed_bare_draft_without_colon_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_filed_bare_draft_without_colon_fires(self, tmp_path: Path) -> None:
         """The T-0577 draft-loss shape: `Filed T-draft-<hex> (mints a real
         T-#### id at land)` with no colon after "Filed" -- a real filing
@@ -10612,9 +10375,6 @@ class TestPiiStructuralCrossLanguage:
         path.write_text(text)
 
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_interface_email_field_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_ts_interface_email_field_fires(self, tmp_path: Path) -> None:
         """A TS `interface` field named `email` is the field-shape
         equivalent of a pydantic `BaseModel` field -- fires PII010."""
@@ -10629,9 +10389,6 @@ class TestPiiStructuralCrossLanguage:
         assert any("email" in v.message and "user.ts" in v.file for v in pii010)
 
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_type_alias_password_field_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_ts_type_alias_password_field_fires(self, tmp_path: Path) -> None:
         """A TS `type` alias object-type field named `password` fires
         PII010 -- the `type_alias_declaration`/`object_type` equivalent of
@@ -10647,9 +10404,6 @@ class TestPiiStructuralCrossLanguage:
         assert any("password" in v.message and "profile.ts" in v.file for v in pii010)
 
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_class_field_token_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_ts_class_field_token_fires(self, tmp_path: Path) -> None:
         """A TS `class` field named `token` fires PII010 -- the class-body
         `public_field_definition` equivalent."""
@@ -10664,9 +10418,6 @@ class TestPiiStructuralCrossLanguage:
         assert any("token" in v.message and "account.ts" in v.file for v in pii010)
 
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_clean_interface_is_silent  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_ts_clean_interface_is_silent(self, tmp_path: Path) -> None:
         """A TS interface with no PII-shaped field names fires nothing."""
         self._write(
@@ -10694,9 +10445,6 @@ class TestPiiStructuralCrossLanguage:
         assert any("unresolvable" in v.message for v in pii010)
 
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_process_env_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_ts_process_env_fires(self, tmp_path: Path) -> None:
         """`process.env.SECRET_KEY` fires SEC110 -- the TS equivalent of
         `os.environ[...]`/`os.getenv(...)`."""
@@ -10711,9 +10459,6 @@ class TestPiiStructuralCrossLanguage:
         assert any("process.env" in v.message and "config.ts" in v.file for v in sec110)
 
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_process_env_subscript_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_ts_process_env_subscript_fires(self, tmp_path: Path) -> None:
         """`process.env["API_TOKEN"]` (subscript form) fires SEC110."""
         self._write(
@@ -10727,9 +10472,6 @@ class TestPiiStructuralCrossLanguage:
         assert any("API_TOKEN" in v.message and "config2.ts" in v.file for v in sec110)
 
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_import_meta_env_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_ts_import_meta_env_fires(self, tmp_path: Path) -> None:
         """`import.meta.env.VITE_SECRET` (Vite-style bundler env access)
         fires SEC110 -- the ticket-named `import.meta.env` equivalent."""
@@ -10746,9 +10488,6 @@ class TestPiiStructuralCrossLanguage:
         )
 
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_dynamic_env_key_still_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_ts_dynamic_env_key_still_fires(self, tmp_path: Path) -> None:
         """T-0352 NO-FAIL-SILENT: `process.env[someDynamicKey]` (a
         non-literal subscript key) cannot be statically named -- it must
@@ -10766,9 +10505,6 @@ class TestPiiStructuralCrossLanguage:
         assert any("dynamic_env.ts" in v.file for v in sec110)
 
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_allowlisted_env_var_is_silent  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_ts_allowlisted_env_var_is_silent(self, tmp_path: Path) -> None:
         """`process.env.PATH` is an allowlisted, definitionally-non-secret
         var (`_ENV_VAR_ALLOWLIST`, shared table) -- silent."""
@@ -10778,9 +10514,6 @@ class TestPiiStructuralCrossLanguage:
         assert not any("clean_env.ts" in v.file for v in _by_rule(violations, "SEC110"))
 
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_struct_ssn_field_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_rust_struct_ssn_field_fires(self, tmp_path: Path) -> None:
         """A Rust `struct` named field `ssn` fires PII010 -- the
         `field_declaration_list` equivalent of a Python dataclass field."""
@@ -10795,9 +10528,6 @@ class TestPiiStructuralCrossLanguage:
         assert any("ssn" in v.message and "user.rs" in v.file for v in pii010)
 
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_clean_struct_is_silent  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_rust_clean_struct_is_silent(self, tmp_path: Path) -> None:
         """A Rust struct with no PII-shaped field names fires nothing."""
         self._write(
@@ -10810,9 +10540,6 @@ class TestPiiStructuralCrossLanguage:
         assert not _by_rule(violations, "PII010")
 
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_env_var_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_rust_env_var_fires(self, tmp_path: Path) -> None:
         """`std::env::var("API_KEY")` fires SEC110 -- the Rust equivalent
         of `os.getenv(...)`."""
@@ -10829,9 +10556,6 @@ class TestPiiStructuralCrossLanguage:
         )
 
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_unqualified_env_var_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_rust_unqualified_env_var_fires(self, tmp_path: Path) -> None:
         """`env::var("SECRET")` (direct-import form, no `std::` prefix)
         fires SEC110 too -- mirrors `_scan_python_env_access`'s
@@ -10847,9 +10571,6 @@ class TestPiiStructuralCrossLanguage:
         assert any("config2.rs" in v.file for v in sec110)
 
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_allowlisted_env_var_is_silent  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_rust_allowlisted_env_var_is_silent(self, tmp_path: Path) -> None:
         """`std::env::var("PATH")` is allowlisted -- silent."""
         self._write(
@@ -10862,9 +10583,6 @@ class TestPiiStructuralCrossLanguage:
         assert not any("clean_env.rs" in v.file for v in _by_rule(violations, "SEC110"))
 
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_tuple_struct_field_not_matched  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_rust_tuple_struct_field_not_matched(self, tmp_path: Path) -> None:
         """Adversarial: a Rust TUPLE struct (`Point(i32, i32)`) has no
         source field names at all -- `_rust_struct_field_names` only reads
@@ -10896,9 +10614,6 @@ class TestPiiStructuralCrossLanguage:
 
     # frob:ticket T-0762
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_secret_wrapper_type_field_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_ts_secret_wrapper_type_field_fires(self, tmp_path: Path) -> None:
         """T-0762: a TS field typed as a known secret-wrapper type
         (`SecretString`) fires PII010 even though its own NAME (`apiKey`)
@@ -10915,9 +10630,6 @@ class TestPiiStructuralCrossLanguage:
 
     # frob:ticket T-0762
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_branded_email_type_field_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_ts_branded_email_type_field_fires(self, tmp_path: Path) -> None:
         """T-0762: a TS field typed as a branded/nominal `Email` type fires
         PII010 -- the TYPE-kind signal, independent of the field's own
@@ -10934,9 +10646,6 @@ class TestPiiStructuralCrossLanguage:
 
     # frob:ticket T-0762
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_plain_string_field_type_does_not_fire  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_ts_plain_string_field_type_does_not_fire(self, tmp_path: Path) -> None:
         """Adversarial (T-0762 acceptance): a plain `string`-typed field
         with a non-PII-shaped name does not fire -- TYPE-kind matching
@@ -10954,9 +10663,6 @@ class TestPiiStructuralCrossLanguage:
 
     # frob:ticket T-0762
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_secrecy_secretstring_type_field_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_rust_secrecy_secretstring_type_field_fires(self, tmp_path: Path) -> None:
         """T-0762: a Rust field typed `secrecy::SecretString` fires PII010
         -- the ticket-named `secrecy` crate wrapper, matched via the scoped
@@ -10973,9 +10679,6 @@ class TestPiiStructuralCrossLanguage:
 
     # frob:ticket T-0762
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_secret_newtype_type_field_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_rust_secret_newtype_type_field_fires(self, tmp_path: Path) -> None:
         """T-0762: a Rust field typed `secrecy::Secret<String>` fires
         PII010 -- a generic-wrapped scoped type name still surfaces its
@@ -10992,9 +10695,6 @@ class TestPiiStructuralCrossLanguage:
 
     # frob:ticket T-0762
     # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_plain_string_field_type_does_not_fire  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_rust_plain_string_field_type_does_not_fire(self, tmp_path: Path) -> None:
         """Adversarial (T-0762 acceptance): a plain `String`-typed Rust
         field with a non-PII-shaped name does not fire."""
@@ -11240,9 +10940,6 @@ class TestExhaustiveHandlingGate:
     # frob:tests \
     # tests/test_gates.py::TestExhaustiveHandlingGate.test_catch_all_of_unknown_does_no\
     # t_fire_exhaust001
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_catch_all_of_unknown_does_not_fire_exhaust001(
         self, tmp_path: Path
     ) -> None:
@@ -11268,9 +10965,6 @@ class TestExhaustiveHandlingGate:
     # frob:tests \
     # tests/test_gates.py::TestExhaustiveHandlingGate.test_declared_frob_raises_directi\
     # ve_discharges_exhaust002
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_declared_frob_raises_directive_discharges_exhaust002(
         self, tmp_path: Path
     ) -> None:

@@ -22,9 +22,6 @@ from frob.check import CheckResult
 from frob.process.parsers.common import ToolResult
 
 
-# frob:waive DUP001 reason="parallel App runner batch tests: independent per-command \
-# cases sharing an arrange-act scaffold across the batch test files; extracting would \
-# obscure per-case intent"
 def _make_py_project(tmp_path: Path) -> Path:
     """Create a tiny single-file Python project fixture under tmp_path."""
     (tmp_path / "pkg").mkdir()
@@ -69,9 +66,6 @@ class TestGraphRunner:
             graph_run(cfg)
         assert exc.value.code == 1
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_query_unresolvable_ref_exits_1(self, tmp_path: Path) -> None:
         _make_py_project(tmp_path)
         cfg = AppConfig(
@@ -90,9 +84,6 @@ class TestGraphRunner:
             graph_run(cfg)
         assert "kind=" in caplog.text
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_query_json_mode_prints_json(self, tmp_path: Path, caplog) -> None:
         _make_py_project(tmp_path)
         cfg = AppConfig(
@@ -111,9 +102,6 @@ class TestGraphRunner:
             graph_run(cfg)
         assert exc.value.code == 1
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_why_unresolvable_ref_exits_1(self, tmp_path: Path) -> None:
         _make_py_project(tmp_path)
         cfg = AppConfig(
@@ -133,9 +121,6 @@ class TestGraphRunner:
         assert "why: pkg/mod.py::hello" in caplog.text
         assert "not acked" in caplog.text
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_why_json_mode_prints_json(self, tmp_path: Path, caplog) -> None:
         _make_py_project(tmp_path)
         cfg = AppConfig(
@@ -162,9 +147,6 @@ class TestGraphRunner:
             graph_run(cfg)
         assert exc.value.code == 1
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_query_snapshot_unavailable_exits_1(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -218,9 +200,6 @@ class TestGraphRunner:
             graph_run(cfg)
         assert exc.value.code == 1
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_why_snapshot_unavailable_exits_1(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -891,9 +870,6 @@ class TestCheckRunner:
         out = capsys.readouterr().out
         assert "SKIPPED: typescript" in out
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_pinned_cpp_dispatches_run_check_cpp(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:
@@ -907,9 +883,6 @@ class TestCheckRunner:
         out = capsys.readouterr().out
         assert out
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_pinned_rust_dispatches_run_check_rust(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:
@@ -923,9 +896,6 @@ class TestCheckRunner:
         out = capsys.readouterr().out
         assert out
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_pinned_typescript_dispatches_run_check_ts(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:

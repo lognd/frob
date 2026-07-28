@@ -320,9 +320,6 @@ class TestRunners:
         assert result.is_err
         assert result.danger_err == TestingError.NoRunner
 
-    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_bad_runner_spec_zero_placeholders(self, tmp_path: Path) -> None:
         toml_text = """
         [[test.runner]]
@@ -335,9 +332,6 @@ class TestRunners:
         assert result.is_err
         assert result.danger_err == TestingError.BadRunnerSpec
 
-    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_bad_runner_spec_two_placeholders(self, tmp_path: Path) -> None:
         toml_text = """
         [[test.runner]]
@@ -1049,11 +1043,6 @@ class TestMultipleRunnersPerLanguage:
 
 
 class TestCollectRustTests:
-    # frob:waive DUP001 reason="parallel per-domain test scaffolding across \
-    # test_docblocks_gate.py, test_testing.py (2 sites) -- each file \
-    # exercises a structurally similar check for a distinct \
-    # domain/module with the same arrange-act shape; extracting would \
-    # blur which domain owns which check"
     def _write_crate(self, root: Path) -> None:
         _write(
             root,
@@ -1284,9 +1273,6 @@ class TestFindCrates:
             """,
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def _member_crate(self, root: Path, rel: str, name: str) -> None:
         _write(
             root,
@@ -1441,9 +1427,6 @@ class TestIntegrationTestCollection:
         assert found == sorted([crate_dir / "tests/foo.rs", crate_dir / "tests/bar.rs"])
 
 
-# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) (2 \
-# sites) sharing an arrange-act scaffold typical of exhaustive per-case/per-scenario \
-# coverage; extracting would obscure per-case intent"
 def _fake_native_package(root: Path, name: str, so_bytes: bytes) -> Path:
     """A maturin-style extension PACKAGE on `root`: `name/__init__.py` plus a
     compiled `name.abi3.so` alongside it (the layout strata_core/frob_core
@@ -1485,9 +1468,6 @@ class TestNativeFingerprint:
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_load_natives_missing_field_is_err(self, tmp_path: Path) -> None:
         # frob:tests src/frob/testing/_runners.py::load_natives kind="unit"
         from frob.testing import TestingError, load_natives
@@ -1597,9 +1577,6 @@ class TestNativeFingerprint:
         (cache_dir / "sentinel").write_text("x")  # non-empty -> unlink raises
         assert drop_collection_cache(tmp_path) is False
 
-    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_load_natives_malformed_toml_is_err(self, tmp_path: Path) -> None:
         # frob:tests src/frob/testing/_runners.py::load_natives kind="unit"
         from frob.testing import TestingError, load_natives
@@ -2200,9 +2177,6 @@ class TestCollectCppTests:
     CMake build directories, mirroring `TestCollectRustTests`'s structure."""
 
     # frob:ticket T-0587
-    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def _write_project(self, root: Path) -> None:
         _write(
             root,
@@ -2301,9 +2275,6 @@ class TestCollectCppTests:
         assert any("ctest not found" in msg for msg in caplog.messages)
 
     # frob:ticket T-0587
-    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_collect_cpp_tests_genuine_failure_is_err(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -2327,9 +2298,6 @@ class TestCollectCppTests:
         assert result.danger_err == TestingError.CollectFailed
 
     # frob:ticket T-0587
-    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_collect_cpp_tests_unparseable_json_is_err(
         self, tmp_path: Path, monkeypatch
     ) -> None:

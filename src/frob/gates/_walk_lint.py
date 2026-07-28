@@ -73,9 +73,6 @@ def _attr_name(node: ast.expr) -> str | None:
     return node.attr if isinstance(node, ast.Attribute) else None
 
 
-# frob:waive DUP001 reason="see this function's own docstring -- deliberate small \
-# local unparse kept per-module rather than a cross-gate import for one helper \
-# (T-0861)"
 def _dotted_prefix(node: ast.expr) -> str | None:
     """The dotted-name text of an `Attribute`/`Name` chain (`os.walk` ->
     `"os.walk"`), or `None` for anything else -- local unparse, same shape

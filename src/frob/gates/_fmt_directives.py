@@ -288,8 +288,6 @@ def _rewrite_lines_via_runs(
     run_idx = 0
     i = 0
     n = len(lines)
-    # frob:waive PERF003 reason="two-pointer merge scan over lines/runs advancing \
-    # together, O(n) total, not a cross join"  # noqa: E501
     while i < n:
         if run_idx < len(runs) and runs[run_idx][1] == i:
             logical_text, _lineno, _src, count = runs[run_idx]
@@ -349,7 +347,6 @@ def _rewrite_lines_via_runs(
 # twice_over_real_repo_files_is_a_no_op
 # frob:ticket T-0972
 # frob:ticket T-0985
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def canonicalize_text(text: str, *, path: str, limit: int) -> str:
     """Rewrite every `frob:` directive comment run in `text` (source for
     `path`, consulted only to pick the line-comment marker via
@@ -466,7 +463,6 @@ def _format_one_path(
 # riting
 # frob:tests \
 # tests/test_gates_fmt_directives.py::TestFormatPaths.test_write_mode_rewrites_file
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def format_paths(
     root: Path, *, check_only: bool, limit: int | None = None
 ) -> FmtReport:

@@ -28,7 +28,6 @@ class ExportsResult(BaseModel):
     package_dir: str
     modules: list[ModuleExports]
 
-    # frob:waive TEST005 reason="ExportsResult.as_text 80.0% branch cover, debt T-0160"
     # frob:ticket T-0588
     # frob:tests tests/unit/test_exports.py::TestExportsPackage.test_as_text_output
     def as_text(self) -> str:
@@ -63,7 +62,6 @@ class ExportsResult(BaseModel):
             lines.append(f"__all__ = [{quoted}]")
         return "\n".join(lines)
 
-    # frob:waive TEST005 reason="ExportsResult.as_json 50.0% branch cover, debt T-0160"
     # frob:ticket T-0588
     # frob:tests tests/unit/test_app_runners.py::TestExportsRunner.test_json_mode_logs_result  # noqa: E501
     def as_json(self) -> str:

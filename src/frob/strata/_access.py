@@ -216,8 +216,6 @@ def _resource_arbiters(module: Module) -> dict[str, ResourceDecl]:
     return {resource.id: resource for resource in module.resources}
 
 
-# frob:waive DUP001 reason="see _starvation.py::_resource_accessors' own DUP001 \
-# waiver for full reasoning -- deliberate local copy (T-0861)"
 def _resource_accessors(model: KernelModel) -> dict[str, list[tuple[str, AccessMode]]]:
     """Every (node id, mode) pair declaring `access` to each resource id,
     across every node in `model` -- the per-resource accessor lists the

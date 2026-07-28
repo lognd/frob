@@ -47,10 +47,6 @@ def _snapshot(fixture_dir: str, tmp_path: Path):
     return result.danger_ok
 
 
-# frob:waive DUP001 reason="identical tiny CloneReport-flattening helper to \
-# tests/test_dup_rungs.py::_pairs -- both are private per-file test utilities over the \
-# same report shape (same convention test_dup_region.py uses under different names); \
-# not worth a shared conftest fixture for one 4-line comprehension"
 def _pairs(report, rung: str):
     return [
         (p.left.ref, p.right.ref, p)

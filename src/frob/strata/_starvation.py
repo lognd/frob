@@ -237,9 +237,6 @@ def _resource_arbiters(module: Module) -> dict[str, ResourceDecl]:
     return {resource.id: resource for resource in module.resources}
 
 
-# frob:waive DUP001 reason="see this function's own docstring -- deliberate local \
-# copy of _access.py::_resource_accessors, same independent-grammar-adjacent-module \
-# rationale this module's docstring already states (T-0861)"
 def _resource_accessors(
     model: KernelModel,
 ) -> dict[str, list[tuple[str, AccessMode]]]:

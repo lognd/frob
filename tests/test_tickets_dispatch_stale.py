@@ -5,7 +5,6 @@ exercise the pure library functions (`has_live_lease`, `dispatch_stale_hours`,
 `tests/test_tickets_lease_overlay.py`'s precedent for T-0716 (the overlay
 function these build on).
 """
-# frob:waive SCOPE001 reason="T-0752's declared scope (src/frob/tickets/**, src/frob/app/ticket_runner.py, docs/modules/tickets.md) is source-only; this new test file lives at the repo tests/ root by this repo's existing test layout, same out-of-scope-test-file shape SCOPE001 already waives for T-0716's tests/test_tickets_lease_overlay.py"  # noqa: E501
 
 from __future__ import annotations
 
@@ -53,11 +52,6 @@ def _ticket(
 
 
 # frob:ticket T-0752
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across \
-# test_tickets_dispatch_stale.py, test_tickets_lease_overlay.py (2 \
-# sites) -- each file exercises a structurally similar check for a \
-# distinct domain/module with the same arrange-act shape; extracting \
-# would blur which domain owns which check"
 def _lease(ticket_id: str, worktree: Path) -> _LeaseRecord:
     """A `_LeaseRecord` fixture pointing at `worktree` for `ticket_id`."""
     return _LeaseRecord(

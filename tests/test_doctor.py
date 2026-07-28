@@ -1,4 +1,3 @@
-# frob:waive SCOPE001 reason="T-0319 scope comma-joined, matches nothing (T-0241 bug)"
 """frob.doctor: native-extension diagnosis (T-0319)."""
 
 from __future__ import annotations

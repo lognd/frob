@@ -182,7 +182,6 @@ def _op(
 # frob:doc docs/modules/vet.md#public-api
 # frob:doc docs/guides/extending/capability-registry.md#capability-registry
 # frob:ticket T-0158
-# frob:waive SCOPE001 reason="T-0706's declared scope is docs/design/registry/check-coverage.yaml+docs/guides/extending/**+the two drift-lock test files; this one-line anchor restore is the actual root cause tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete.test_every_row_anchor_file_exists_and_mentions_guide/test_every_anchor_fragment_resolves_to_guide_h1 need to pass (T-0524 over-pruned this anchor as a false COV007 duplicate in 2642c5f3) -- same ad-hoc precedent as tests/test_check_coverage_registry.py's existing T-0424 SCOPE001 waiver"  # noqa: E501
 DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
     # -- python: process/exec ------------------------------------------------
     _op(
@@ -2346,11 +2345,6 @@ RUNTIME_OPAQUE_CONSTRUCTS: tuple[_OpaqueConstruct, ...] = (
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0665
 # frob:ticket T-1047
-# frob:waive AFFECT001 reason="T-1047 extended this tuple with 2 more \
-# entries (same shape as the existing ones); docs/modules/vet.md is outside \
-# T-1047's declared scope (src/frob/vet/**, src/frob/gates/_opaque.py, \
-# docs/design/registry/evasion.yaml, tests/test_vet.py) -- matches T-0665's \
-# own precedent for the identical situation on this same constant"
 OPAQUE_SOURCE_INVISIBLE: tuple[_MatrixExcuse, ...] = (
     _MatrixExcuse(
         capability_kind="opaque-capability-indirection",
@@ -2435,11 +2429,6 @@ class _OpaqueStructuralConstruct(BaseModel):
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-1051
-# frob:waive AFFECT001 reason="T-1051 adds this new tuple (same shape as \
-# RUNTIME_OPAQUE_CONSTRUCTS above); docs/modules/vet.md is outside T-1051's \
-# declared scope (src/frob/vet/**, src/frob/gates/_opaque.py, \
-# docs/design/registry/evasion.yaml, tests/test_vet.py) -- matches T-0665's \
-# own precedent for the identical situation on RUNTIME_OPAQUE_CONSTRUCTS"
 RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS: tuple[_OpaqueStructuralConstruct, ...] = (
     _OpaqueStructuralConstruct(
         language="python",

@@ -28,10 +28,6 @@ def _load_model(filename: str) -> KernelModel:
 
 class TestWaiveStoreLitmus:
     # frob:tests src/frob/strata/_infra.py::_elaborate_store kind="unit"
-    # frob:waive DUP001 reason="parallel litmus scenario fixtures: 2 sites across 2 \
-    # file(s) sharing the exhaustiveness-fixture arrange-act shape by design \
-    # (store-backed vs non-store-backed, or per-CWE scenario variants); extracting \
-    # would obscure per-scenario intent"
     def test_matched_store_waiver_suppresses_the_finding(self):
         """`store_waived`'s real LINT004 finding never appears in `gaps`
         (scoped to `store_waived` -- `store_multi` deliberately also holds
@@ -47,12 +43,6 @@ class TestWaiveStoreLitmus:
         assert lint_gaps == []
 
     # frob:tests src/frob/strata/_infra.py::_elaborate_store kind="unit"
-    # frob:waive PERF001 reason="three membership asserts against one already-built \
-    # detail string over a two-item fixture; not a hot loop"
-    # frob:waive DUP001 reason="parallel litmus scenario fixtures: 2 sites across 2 \
-    # file(s) sharing the exhaustiveness-fixture arrange-act shape by design \
-    # (store-backed vs non-store-backed, or per-CWE scenario variants); extracting \
-    # would obscure per-scenario intent"
     def test_matched_store_waiver_is_surfaced_in_waived_with_reason(self):
         """A waived finding is kept and visible -- never a silent drop."""
         model = _load_model("waive_lint_store.strata")
@@ -68,10 +58,6 @@ class TestWaiveStoreLitmus:
         assert "T-0200" in waived[0].detail
 
     # frob:tests src/frob/strata/_infra.py::_elaborate_store kind="unit"
-    # frob:waive DUP001 reason="parallel litmus scenario fixtures: 2 sites across 2 \
-    # file(s) sharing the exhaustiveness-fixture arrange-act shape by design \
-    # (store-backed vs non-store-backed, or per-CWE scenario variants); extracting \
-    # would obscure per-scenario intent"
     def test_stale_store_waiver_reported_as_syswaive002_gap(self):
         """`store_stale`'s `waive` clause matches nothing (its LINT004
         never fires) -- the drift-lock holds for stores too."""
@@ -92,10 +78,6 @@ class TestWaiveStoreLitmus:
         assert report.danger_ok.proved is False
 
     # frob:tests src/frob/strata/_infra.py::_elaborate_store kind="unit"
-    # frob:waive DUP001 reason="parallel litmus scenario fixtures: 2 sites across 2 \
-    # file(s) sharing the exhaustiveness-fixture arrange-act shape by design \
-    # (store-backed vs non-store-backed, or per-CWE scenario variants); extracting \
-    # would obscure per-scenario intent"
     def test_store_sub_target_waiver_does_not_suppress_a_different_sub_target(self):
         """`store_multi` fires THREAT003 for BOTH CWE-78 (exec) and CWE-89
         (sql). It declares `waive "THREAT003:CWE-78" ...` -- ONLY CWE-78

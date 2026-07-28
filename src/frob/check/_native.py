@@ -10,8 +10,6 @@ compose them. Each shells out to one tool and normalises to a `ToolResult`.
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
 
-# frob:waive TEST005 reason="module line coverage 21.9%, debt T-0160"
-
 from __future__ import annotations
 
 import subprocess

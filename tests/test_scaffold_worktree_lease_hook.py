@@ -1,6 +1,5 @@
 """T-0431: `install_worktree_lease_hook` -- pre-commit/pre-merge-commit
 git hooks that abort a raw git commit/merge under FROB_AGENT."""
-# frob:waive SCOPE001 reason="T-0731's declared scope is src/frob/tickets/**, src/frob/scaffold/**, src/frob/gates/**, docs/guides/agent-playbook.md only -- tests/** is not covered, and tests/** leases are held by other in-progress tickets, so a scope-add is blocked here"  # noqa: E501
 
 from __future__ import annotations
 

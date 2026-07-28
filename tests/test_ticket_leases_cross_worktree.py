@@ -56,11 +56,6 @@ def _spec(title: str, *, scope: tuple[str, ...] = ()) -> TicketSpec:
     )
 
 
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across test_ticket_land.py, \
-# test_ticket_leases_cross_worktree.py (2 sites) -- each file \
-# exercises a structurally similar check for a distinct \
-# domain/module with the same arrange-act shape; extracting would \
-# blur which domain owns which check"
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
     """A main checkout with an initialized ledger and one committed file,
@@ -75,11 +70,6 @@ def repo(tmp_path: Path) -> Path:
     return main_repo
 
 
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across test_ticket_leases.py, \
-# test_ticket_leases_cross_worktree.py (2 sites) -- each file \
-# exercises a structurally similar check for a distinct \
-# domain/module with the same arrange-act shape; extracting would \
-# blur which domain owns which check"
 @pytest.fixture
 def second_worktree(repo: Path) -> Path:
     """A second linked `git worktree` of `repo`, on its own branch -- shares

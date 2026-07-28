@@ -130,8 +130,6 @@ class TestExtendingGuidesComplete:
         for row in _load_inventory():
             anchor_file = REPO_ROOT / row["anchor_file"]
             text = anchor_file.read_text(encoding="utf-8")
-            # frob:waive PERF003 reason="fixed-size scan of one file's anchors per \
-            # row; indexing would obscure the check"
             fragments = [
                 frag
                 for path, frag in _ANCHOR_RE.findall(

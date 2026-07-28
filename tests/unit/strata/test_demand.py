@@ -23,9 +23,6 @@ class TestAggregateDemand:
     # frob:tests \
     # tests/unit/strata/test_demand.py::TestAggregateDemand.test_two_entry_nodes_sum_at\
     # _fan_in
-    # frob:waive DUP001 reason="parallel test methods within test_demand.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_two_entry_nodes_sum_at_fan_in(self):
         """T-0702 acceptance criterion: two entry nodes declaring users
         300000/200000 both flowing into one resource sum to 500000."""
@@ -79,9 +76,6 @@ class TestAggregateDemand:
     # frob:tests \
     # tests/unit/strata/test_demand.py::TestAggregateDemand.test_rate_and_users_compose\
     # _additively
-    # frob:waive DUP001 reason="parallel test methods within test_demand.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_rate_and_users_compose_additively(self):
         """A node declaring BOTH `users` and `rate` composes them
         additively, not exclusively (module docstring)."""
@@ -100,9 +94,6 @@ class TestAggregateDemand:
     # frob:tests \
     # tests/unit/strata/test_demand.py::TestAggregateDemand.test_self_declaring_node_re\
     # ports_its_own_demand
-    # frob:waive DUP001 reason="parallel test methods within test_demand.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_self_declaring_node_reports_its_own_demand(self):
         """A node that itself declares demand reports it directly, with no
         inbound flow needed at all."""

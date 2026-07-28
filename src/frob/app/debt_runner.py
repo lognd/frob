@@ -45,11 +45,6 @@ def _current_version(root: Path) -> str:
     return version if isinstance(version, str) else "0.0.0"
 
 
-# frob:waive DUP001 reason="dup grouped this with deprecated_runner.py's own \
-# _load_snapshot -- deprecated_runner's own module docstring already documents this as \
-# an intentional mirror of frob debt's shape (T-0638: 'mirroring frob debt's \
-# frob.app.debt_runner shape exactly'); each CLI subcommand runner keeps its own copy \
-# per this package's established per-runner convention (T-0861)"
 def _load_snapshot(root: Path):  # noqa: ANN201
     """Load (building if stale) the graph snapshot `debt` lists entries from."""
     from frob.graph import build_graph, load_graph

@@ -26,9 +26,6 @@ from frob.strata._scenarios import build_compromised_user_scenario, evaluate_sce
 from frob.strata._threat import check_catalog_completeness
 
 
-# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) (2 \
-# sites) sharing an arrange-act scaffold typical of exhaustive per-case/per-scenario \
-# coverage; extracting would obscure per-case intent"
 def _shared_user_model() -> KernelModel:
     """Two service users sharing a writable path, a listening port, and
     (T-0272) an OS group, with no declared Flow between them -- the
@@ -59,9 +56,6 @@ def _shared_user_model() -> KernelModel:
     return KernelModel(nodes=(api, worker))
 
 
-# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) (2 \
-# sites) sharing an arrange-act scaffold typical of exhaustive per-case/per-scenario \
-# coverage; extracting would obscure per-case intent"
 def _isolated_hardened_model() -> KernelModel:
     """Two service users with disjoint owns/listens/group and no declared
     sudoers grant -- the HOST001/HOST002 HARDENED shape that discharges
@@ -253,9 +247,6 @@ class TestHostIsolationWaivers:
 
     # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived \
     # kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (2 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_propagates_lateral_isolation_error(self, monkeypatch):
         """HOST001's delegate failing must short-circuit before HOST002
         ever runs -- deny by default, never a silent partial result."""
@@ -270,9 +261,6 @@ class TestHostIsolationWaivers:
 
     # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived \
     # kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (2 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_propagates_vertical_isolation_error(self, monkeypatch):
         """HOST002's delegate failing must propagate even when HOST001
         succeeded -- the second fallible step is not silently ignored."""
@@ -398,9 +386,6 @@ class TestWindowsHostIsolation:
 
     # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
     # kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_deny_acl_does_not_fire_shared_writable_path(self):
         """A shared ACL path where neither side's RULE grants write (both
         `:deny`'d, or a read-only RIGHTS) must not fire
@@ -432,9 +417,6 @@ class TestWindowsHostIsolation:
 
     # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
     # kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_explicit_deny_acl_flag_does_not_fire_shared_writable_path(self):
         """T-0791: exercise the `:deny` flag directly (not just a
         non-write RIGHTS value) -- Everyone:Modify:deny on a write-capable
@@ -573,9 +555,6 @@ class TestMultiAceDenyOverridesAllow:
         assert _join_acl_entries(entries) is True
 
     # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_narrow_deny_then_broad_allow_same_principal_denies(self):
         """T-0825 WRITE_DAC-indirection corner (the T-0792 reviewer
         finding this ticket closes; SAME test name as the pre-fix T-0791/
@@ -598,9 +577,6 @@ class TestMultiAceDenyOverridesAllow:
         assert _join_acl_entries(entries) is True
 
     # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_broad_allow_then_narrow_deny_same_principal_still_denies(self):
         """Same corner as above, declaration order reversed: `FullControl`
         allow first, narrower `Modify` deny second -- still write-capable
@@ -616,9 +592,6 @@ class TestMultiAceDenyOverridesAllow:
         assert _join_acl_entries(entries) is True
 
     # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (3 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_fullcontrol_deny_denies_fullcontrol_allow_no_indirection(self):
         """The WRITE_DAC-indirection corner does NOT apply when the deny
         is ITSELF `FullControl`-level: an explicit `FullControl` deny
@@ -633,9 +606,6 @@ class TestMultiAceDenyOverridesAllow:
         assert _join_acl_entries(entries) is False
 
     # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (3 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_narrow_deny_narrow_allow_same_principal_still_denies(self):
         """The indirection corner is `FullControl`-allow-specific: a
         `Modify` allow never grants WRITE_DAC/WRITE_OWNER in the first
@@ -649,9 +619,6 @@ class TestMultiAceDenyOverridesAllow:
         assert _join_acl_entries(entries) is False
 
     # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (3 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_write_deny_modify_allow_same_principal_still_denies(self):
         """A narrower `Write` deny against a `Modify` allow: `Modify`
         never grants WRITE_DAC either, so there is no indirection bit to

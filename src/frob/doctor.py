@@ -3,7 +3,6 @@
 # docstring or comment describing already-implemented internal behavior, verifiable by \
 # reading the code it annotates) rather than a separate cross-module contract needing \
 # its own tracked invariant; disposed as a calibration batch, not claim-by-claim"
-# frob:waive SCOPE001 reason="T-0319 scope comma-joined, matches nothing (T-0241 bug)"
 # frob:waive TEST003 reason="pre-existing T-0319 debt, system kind only"
 """`frob doctor`: verify the native extensions (`frob_core`, `strata_core`)
 are importable in the current environment and print exact remediation when
@@ -154,11 +153,6 @@ class DerivedArtifactStatus(BaseModel):
 
 
 # frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
-# docs/guides/install.md#derived-state-integrity-manifest-t-0570 documents \
-# this internal drift-detection shape; this type was demoted to private in \
-# this ticket (frob-exports: zero real consumers outside this module) but \
-# remains the thing the doc section describes"
 # frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 class _DerivedArtifactDrift(BaseModel):
     """Content drift detected for one derived artifact ACROSS TWO `frob
@@ -313,11 +307,6 @@ def _write_drift_manifest(root: Path, fingerprints: dict[str, str]) -> None:
 # frob:tests \
 # tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift.test_rewritten_artifact_\
 # between_two_runs_reports_drift kind="unit"  # noqa: E501
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
-# docs/guides/install.md#derived-state-integrity-manifest-t-0570 documents \
-# this internal drift-detection function; it was demoted to private in \
-# this ticket (frob-exports: zero real consumers outside this module) but \
-# remains the thing the doc section describes"
 # frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 def _detect_derived_state_drift(
     root: Path, current: tuple[DerivedArtifactStatus, ...]

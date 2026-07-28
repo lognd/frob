@@ -1,4 +1,3 @@
-# frob:waive SCOPE001 reason="T-0407's declared scope is src/frob/+docs/design/registry/; tests/** is leased in-progress by T-0160 so the scope cannot be formally extended here, same ad-hoc precedent as config.py's existing T-0458/T-0455 SCOPE001 waives -- this file is new pytest coverage for T-0407's own src/frob/registry change"  # noqa: E501
 """Tests for frob.registry._models -- the T-0407 unified registry schema
 (docs/design/registry/EXHAUSTIVENESS-GATE.md#unified-model-t-0407)."""
 

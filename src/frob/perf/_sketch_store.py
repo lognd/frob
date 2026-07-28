@@ -126,8 +126,6 @@ class SketchStoreConfig(BaseModel):
     ratchet_tolerance: float = _DEFAULT_RATCHET_TOLERANCE
 
 
-# frob:waive DUP001 reason="see _docblocks.py::_read_toml's own DUP001 waiver for \
-# full reasoning (T-0861)"
 def _read_toml(path: Path) -> dict | None:
     """Best-effort TOML load: `None` on any missing/unreadable/malformed
     file -- a missing/absent `[perf.sketch]` table just means store
@@ -215,9 +213,6 @@ def _ensure_label_column(conn: sqlite3.Connection) -> None:
 # frob:tests \
 # tests/unit/perf/test_sketch_store.py::TestConnectionReuse.test_close_all_drops_cached\
 # _connections  # noqa: E501
-# frob:waive DUP001 reason="see this function's own docstring -- deliberate mirror of \
-# frob.dup._cache._close_all, each module's own per-store connection-cache teardown \
-# (T-0861)"
 def _close_all() -> None:
     """Close and forget every process-cached sketch-store connection --
     test teardown only (mirrors `frob.dup._cache._close_all`); not needed

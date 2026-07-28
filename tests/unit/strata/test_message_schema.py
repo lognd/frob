@@ -26,9 +26,6 @@ class TestMissingSchemaVersion:
     # frob:tests \
     # tests/unit/strata/test_message_schema.py::TestMissingSchemaVersion.test_event_nod\
     # e_without_schema_version_fires
-    # frob:waive DUP001 reason="parallel test methods within test_message_schema.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_event_node_without_schema_version_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(Node(id="order_placed", trust="trusted", attrs=("event",)),),
@@ -45,9 +42,6 @@ class TestMissingSchemaVersion:
     # frob:tests \
     # tests/unit/strata/test_message_schema.py::TestMissingSchemaVersion.test_queue_nod\
     # e_without_schema_version_fires
-    # frob:waive DUP001 reason="parallel test methods within test_message_schema.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_queue_node_without_schema_version_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(Node(id="ingest_queue", trust="trusted", attrs=("queue",)),),

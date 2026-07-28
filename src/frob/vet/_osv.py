@@ -7,8 +7,6 @@ Honest absence: no binary on PATH -> skipped-with-note, never silent."""
 # reading the code it annotates) rather than a separate cross-module contract needing \
 # its own tracked invariant; disposed as a calibration batch, not claim-by-claim"
 
-# frob:waive TEST005 reason="module line coverage 47.9%, debt T-0160"
-
 from __future__ import annotations
 
 import json
@@ -79,7 +77,6 @@ def _is_available() -> bool:
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
-# frob:waive TEST005 reason="_run_osv_scan 19.0% branch cover, debt T-0160"
 def _run_osv_scan(lockfile: Path) -> tuple[OsvAdvisory, ...] | None:
     """Advisories for `lockfile`, or `None` if osv-scanner is absent/failed
     (caller must report a skipped-note, never treat `None` as "no findings")."""

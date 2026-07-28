@@ -37,10 +37,6 @@ def _waiver_hint(rule: str) -> str:
     return f'waive with: frob:waive {rule} reason="..."'
 
 
-# frob:waive DUP001 reason="dup grouped this DUP001 message-hint builder with three \
-# unrelated arch/gate modules' _qualname helpers purely on generic short-function \
-# structural shape -- unrelated domains (symref formatting vs extraction-hint text), \
-# false positive (T-0861)"
 def _extraction_hint(template: CloneTemplate | None) -> str:
     """DUP001's message suffix naming the synthesized extraction, or "" if none.
 
@@ -54,10 +50,6 @@ def _extraction_hint(template: CloneTemplate | None) -> str:
     return f"; candidate extraction: {template.suggested_signature}"
 
 
-# frob:waive DUP001 reason="dup grouped this gate-message builder with \
-# deploy/_generate.py's shell-heredoc blocks and _waive.py::_stale_detail purely on \
-# generic f-string shape; unrelated domain (DUP001's own violation message), false \
-# positive -- ironic given the rule id, but a real structural coincidence"
 def _dup001_message(
     new_side: CloneRegion,
     old_side: CloneRegion,
@@ -118,7 +110,6 @@ def DUP001(
 
 
 # frob:doc docs/modules/dup.md#gate-integration
-# frob:waive TEST005 reason="DUP002 77.8% branch cover, debt T-0160"
 # frob:enforces CHK-GATE-DUP002
 def DUP002(
     report: CloneReport, touched: frozenset[str], threshold: float

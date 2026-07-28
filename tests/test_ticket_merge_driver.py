@@ -13,7 +13,6 @@ Two layers, matching this repo's `test_ticket_land.py` style:
    eliminate -- and asserts git reports a clean merge with both sides'
    tickets present, not a conflict requiring a human.
 
-frob:waive SCOPE001 reason="T-0323 scope omitted this file, filed T-draft-bc39c17f"
 """
 
 from __future__ import annotations

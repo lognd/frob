@@ -164,7 +164,6 @@ def _loop_callers_by_callee(stream: HitStream, sections: dict) -> dict[str, set[
 # frob:doc docs/modules/perf.md#slow-operation-advisories-t-0712
 # frob:tests tests/unit/perf/test_advisories.py::TestNestedLoopFaninAdvisories.test_hot_loop_with_multiple_callers_fires  # noqa: E501
 # frob:tests tests/unit/perf/test_advisories.py::TestNestedLoopFaninAdvisories.test_single_caller_loop_does_not_fire  # noqa: E501
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def nested_loop_fanin_advisories(
     stream: HitStream, index: SectionIndex
 ) -> list[Violation]:

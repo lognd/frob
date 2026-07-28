@@ -1,4 +1,3 @@
-# frob:waive SCOPE001 reason="T-0319 scope comma-joined, matches nothing (T-0241 bug)"
 """End-to-end litmus for `frob doctor` (T-0319): a first-class CLI surface
 for the native-extension check that `docs/guides/install.md`'s T-0316
 section previously described only as a manual `python3 -c "import

@@ -5,8 +5,6 @@ Runs VET001 (allow conformance), VET011 (cooldown quarantine), VET-JS
 over every dependency in the project's lockfile.
 """
 
-# frob:waive TEST005 reason="module line coverage 66.1%, debt T-0160"
-
 from __future__ import annotations
 
 import hashlib
@@ -137,9 +135,6 @@ def _vet001_violation(
     )
 
 
-# frob:waive DUP001 reason="dup grouped this with frob.gates's _doc001_orphan purely \
-# on generic Violation(...)-builder shape; different gate family (dependency-vet vs \
-# doc-graph), unrelated rules"
 # frob:invariant INV-025
 # frob:tests tests/test_vet.py::TestObfuscationEnsemble.test_high_entropy_string_flagged
 def _vet004_violation(
@@ -415,11 +410,6 @@ def _apply_npm_and_prehook_checks(
         signals.extend(pre_signals)
 
 
-# frob:waive DUP001 reason="dup grouped this with _vet004_violation and \
-# gates/__init__.py::_doc001_orphan on generic Violation(...)-builder shape -- \
-# VET-SOURCE-UNAVAILABLE is an independently-evolving fail-closed rule (T-0400) with \
-# its own trigger and message; same one-builder-per-rule convention as the other two \
-# (T-0861)"
 def _source_unavailable_violation(dep: Dependency, lockfile_name: str) -> Violation:
     """T-0400 audit finding #1: a dependency `frob vet` never read must
     never be indistinguishable from one it read and found clean -- an
@@ -818,7 +808,6 @@ def _resolve_lockfiles_and_deps(
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="scan_tree 84.0% branch cover, debt T-0160"
 # frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_lockfile_arg
 # frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_unsupp_err
 def scan_tree(

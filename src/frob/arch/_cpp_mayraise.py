@@ -180,12 +180,6 @@ _NOT_A_CALL = frozenset(
 
 # frob:doc docs/modules/arch.md#cpp-may-throw-analysis-t-0687
 # frob:ticket T-0687
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
-# docs/modules/arch.md#cpp-may-throw-analysis-t-0687 documents this whole \
-# feature's internals (scan/model shape) as well as its public entry point \
-# check_cpp_noexcept_violations (own separate frob:doc below); this type \
-# was demoted to private in this ticket (frob-exports: zero real consumers \
-# outside this module) but remains the thing the doc section describes"
 # frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 class _CppFunctionRaises(BaseModel):
     """One C++ function's computed may-throw set (T-0687): its name, the
@@ -293,13 +287,6 @@ def _scan_body_raises(
 # frob:ticket T-0687
 # frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_noexcept_calling_throwing_function_fires_error  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_noexcept_calling_vector_at_fires_curated_thrower  # noqa: E501
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
-# docs/modules/arch.md#cpp-may-throw-analysis-t-0687 documents this whole \
-# feature's internals (scan/model shape) as well as its public entry point \
-# check_cpp_noexcept_violations (own separate frob:doc below); this \
-# function was demoted to private in this ticket (frob-exports: zero real \
-# consumers outside this module) but remains the thing the doc section \
-# describes"
 # frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 def _scan_cpp_functions(source: str) -> tuple[_CppFunctionRaises, ...]:
     """Every function DEFINITION (a signature followed by `{`, not a bare

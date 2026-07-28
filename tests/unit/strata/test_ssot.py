@@ -63,9 +63,6 @@ class TestMissingOwner:
 
     # frob:tests \
     # tests/unit/strata/test_ssot.py::TestMissingOwner.test_owner_attr_discharges
-    # frob:waive DUP001 reason="parallel test methods within test_ssot.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_owner_attr_discharges(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -87,9 +84,6 @@ class TestMissingOwner:
     # frob:tests \
     # tests/unit/strata/test_ssot.py::TestMissingOwner.test_reconciliation_attr_dischar\
     # ges
-    # frob:waive DUP001 reason="parallel test methods within test_ssot.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_reconciliation_attr_discharges(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

@@ -256,7 +256,6 @@ def _finding_for_pair(
 
     # Deterministic: sorted node/cwe pair order, first LIVE pair wins (a
     # live exposure on ANY covering node is reported, never averaged away).
-    # frob:waive PERF004 reason="one sort, reused below, not per-iteration"
     ordered_nodes = sorted(node_ids)
     live_pair = _first_live_pair(ordered_nodes, known_cwes, undischarged)
 
@@ -385,7 +384,6 @@ def build_containment_report(
             )
         )
 
-    # frob:waive PERF004 reason="one sort of the final findings list, not per-iteration"
     findings.sort(key=lambda f: (f.cve_id, f.package))
     return ContainmentReport(findings=tuple(findings))
 

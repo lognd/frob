@@ -16,7 +16,6 @@ from frob.logging import get_logger
 # reading the code it annotates) rather than a separate cross-module contract needing \
 # its own tracked invariant; disposed as a calibration batch, not claim-by-claim, same \
 # INV006 first-turn-on-pool disposition this repo already applies elsewhere (T-0585)"
-
 _DATA_DIR = Path(__file__).parent / "data"
 _log = get_logger(__name__)
 

@@ -238,8 +238,6 @@ class FunctionMayRaise(BaseModel):
 
 
 # frob:ticket T-0686
-# frob:waive DUP001 reason="see gates/_exhaustive_handling.py::_qualname's own DUP001 \
-# waiver for full reasoning -- deliberate narrow per-module duplicate (T-0861)"
 def _qualname(
     module: NormalizedModule, cls_name: str | None, func: NormalizedFunction
 ) -> str:
@@ -428,7 +426,6 @@ def _build_name_to_func(module: NormalizedModule) -> dict[str, NormalizedFunctio
 # frob:ticket T-0686
 # frob:tests tests/unit/test_arch.py::TestMayRaiseResolver.test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestMayRaiseResolver.test_unresolvable_call_yields_unknown  # noqa: E501
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def compute_may_raise(module: NormalizedModule) -> dict[str, FunctionMayRaise]:
     """Per-function may-raise sets for every top-level function and method
     in `module` (T-0686): each function's EXPOSED set (what escapes it,

@@ -1,4 +1,3 @@
-# frob:waive SCOPE001 reason="T-0392's declared scope is src/frob/strata/+docs/design/registry/system-design.yaml; tests/** is leased in-progress elsewhere so the scope cannot be formally extended here, same ad-hoc precedent as tests/test_check_coverage_registry.py's existing T-0424 SCOPE001 waiver and the sibling reconciliation pin tests (T-0384/T-0385/T-0386/T-0387/T-0388/T-0389/T-0390)"  # noqa: E501
 """Real-data EXHAUSTIVENESS meta-test for T-0392 (registry reconciliation:
 system-design, 119 entries) -- docs/design/registry/system-design.yaml,
 docs/design/registry/EXHAUSTIVENESS-GATE.md#unified-model-t-0407.
@@ -55,10 +54,6 @@ _SYSTEM_DESIGN_CATALOGUED_TOTAL = 119
 
 
 # frob:ticket T-0392
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across 8 sibling test modules \
-# (8 sites) -- each file exercises a structurally similar check for \
-# a distinct domain/module with the same arrange-act shape; \
-# extracting would blur which domain owns which check"
 def _real_queue() -> TicketQueue:
     """Load the repo's real ticket queue, falling back to an empty queue
     only if the ledger itself fails to parse (never masks a real
@@ -130,12 +125,6 @@ class TestSystemDesignExhaustiveness:
         assert registry_file.declared_totals["total"] == _SYSTEM_DESIGN_CATALOGUED_TOTAL
 
     # frob:ticket T-0392
-    # frob:waive DUP001 reason="parallel per-domain test scaffolding across \
-    # test_registry_reconciliation_system_design.py, \
-    # test_system_design_coverage.py (2 sites) -- each file exercises a \
-    # structurally similar check for a distinct domain/module with the \
-    # same arrange-act shape; extracting would blur which domain owns \
-    # which check"
     def test_audit_reports_exhausted(self) -> None:
         """`audit_registry_file`'s one-line honest answer: zero
         unaccounted, zero malformed, over the REAL 119-entry file."""
@@ -207,10 +196,6 @@ class TestExhaustivenessGateOverRealSystemDesign:
     default gate run), not a side-channel-only assertion."""
 
     # frob:ticket T-0392
-    # frob:waive DUP001 reason="parallel per-domain test scaffolding across 8 sibling test modules \
-    # (8 sites) -- each file exercises a structurally similar check for \
-    # a distinct domain/module with the same arrange-act shape; \
-    # extracting would blur which domain owns which check"
     def test_no_system_design_violations(self) -> None:
         real_queue = _real_queue()
 

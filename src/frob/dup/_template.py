@@ -438,7 +438,6 @@ def build_group_template(
         else ""
     )
 
-    # frob:waive PERF004 reason="runs once after the members loop, not per iteration"
     holes = tuple(sorted({binding.hole for group in bindings for binding in group}))
     frozen_bindings = tuple(bindings)
     value_holes = [h for h in holes if h not in type_var_by_hole]

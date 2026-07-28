@@ -26,10 +26,6 @@ from frob.arch import analyze_project
 from frob.xref import xref
 
 
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across 9 sibling test modules \
-# (9 sites) -- each file exercises a structurally similar check for \
-# a distinct domain/module with the same arrange-act shape; \
-# extracting would blur which domain owns which check"
 def _git(root: Path, *args: str) -> None:
     subprocess.run(
         ["git", "-C", str(root), *args],

@@ -126,8 +126,6 @@ WIRED_MODE_FAMILIES: Final[frozenset[str]] = frozenset({"fs"})
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
 # frob:tests tests/unit/vet/test_capability_modes.py::TestModeQualified.test_joins_family_and_mode kind="unit"  # noqa: E501
-# frob:waive AFFECT001 reason="T-0871: privatize-only rename (frob-exports: zero real consumers outside this module) -- the shared T-0700 capability-mode vocabulary docs/strata/selfconform.md#fs-read-fs-write describes is unchanged in shape/values, only this symbol's own name changed"  # noqa: E501
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/strata/selfconform.md#fs-read-fs-write documents the shared T-0700 capability-mode vocabulary; demoted to private in this ticket (frob-exports: zero real consumers outside this module) but remains the thing the doc section describes"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 def _mode_qualified(family: str, mode: str) -> str:
     """The ONE `"family.mode"` construction site -- every caller that
@@ -140,7 +138,6 @@ def _mode_qualified(family: str, mode: str) -> str:
 #: Every `family.mode` id this vocabulary defines, GENERATED from
 #: `FAMILY_MODES` (never hand-duplicated) so the two structures cannot
 #: diverge.
-# frob:waive AFFECT001 reason="T-0871: privatize-only rename (frob-exports: zero real consumers outside this module) -- the shared T-0700 capability-mode vocabulary docs/strata/selfconform.md#fs-read-fs-write describes is unchanged in shape/values, only this symbol's own name changed"  # noqa: E501
 CAPABILITY_MODE_KINDS: Final[tuple[str, ...]] = tuple(
     _mode_qualified(family, mode)
     for family, modes in sorted(FAMILY_MODES.items())
@@ -149,8 +146,6 @@ CAPABILITY_MODE_KINDS: Final[tuple[str, ...]] = tuple(
 
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
-# frob:waive AFFECT001 reason="T-0871: privatize-only rename (frob-exports: zero real consumers outside this module) -- the shared T-0700 capability-mode vocabulary docs/strata/selfconform.md#fs-read-fs-write describes is unchanged in shape/values, only this symbol's own name changed"  # noqa: E501
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/strata/selfconform.md#fs-read-fs-write documents the shared T-0700 capability-mode vocabulary; demoted to private in this ticket (frob-exports: zero real consumers outside this module) but remains the thing the doc section describes"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 class _DeprecatedCapabilityAlias(BaseModel):
     """One legacy capability spelling's migration record: the precise
@@ -175,7 +170,6 @@ class _DeprecatedCapabilityAlias(BaseModel):
 #: are DELIBERATELY absent -- mandate point 2 keeps them legal, coarse
 #: declarations forever; only spellings that were themselves an attempt at
 #: mode-precision (`fs-write`, `fs-read`) are deprecated aliases here.
-# frob:waive AFFECT001 reason="T-0871: privatize-only rename (frob-exports: zero real consumers outside this module) -- the shared T-0700 capability-mode vocabulary docs/strata/selfconform.md#fs-read-fs-write describes is unchanged in shape/values, only this symbol's own name changed"  # noqa: E501
 LEGACY_CAPABILITY_ALIASES: Final[dict[str, _DeprecatedCapabilityAlias]] = {
     "fs-write": _DeprecatedCapabilityAlias(
         alias="fs-write",
@@ -280,12 +274,6 @@ def canonical_declared_kind(raw: str) -> str:
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
 # frob:tests tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind.test_coarse_fs_covers_union_of_modes kind="unit"  # noqa: E501
-# frob:waive AFFECT001 reason="T-0871: this symbol's own signature/body is \
-# unchanged -- flagged only because a sibling private helper elsewhere in \
-# this file was renamed for frob-exports (T-0871's export decision made \
-# expand_declared_kind itself newly package-exported, no behavior change); \
-# the shared T-0700 capability-mode vocabulary docs/strata/selfconform.md \
-# #fs-read-fs-write is unchanged in shape/values"
 def expand_declared_kind(kind: str) -> frozenset[str]:
     """Every precise `family.mode` id a DECLARED capability kind covers
     for conformance-join purposes (mandate point 2): a precise
@@ -306,8 +294,6 @@ def expand_declared_kind(kind: str) -> frozenset[str]:
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
 # frob:tests tests/unit/vet/test_capability_modes.py::TestCanonicalAndNormalize.test_normalize_observed_kind_matches_canonical kind="unit"  # noqa: E501
-# frob:waive AFFECT001 reason="T-0871: privatize-only rename (frob-exports: zero real consumers outside this module) -- the shared T-0700 capability-mode vocabulary docs/strata/selfconform.md#fs-read-fs-write describes is unchanged in shape/values, only this symbol's own name changed"  # noqa: E501
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/strata/selfconform.md#fs-read-fs-write documents the shared T-0700 capability-mode vocabulary; demoted to private in this ticket (frob-exports: zero real consumers outside this module) but remains the thing the doc section describes"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 def _normalize_observed_kind(raw: str) -> str:
     """The precise canonical kind a scanner-OBSERVED capability spelling

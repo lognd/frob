@@ -26,7 +26,6 @@ them (T-0748 wires native/V8/JVM collectors into the identical contract).
 # already-implemented internal behavior, verifiable by reading the code it annotates) \
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
-
 from __future__ import annotations
 
 import sys

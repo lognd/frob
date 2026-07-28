@@ -1,4 +1,3 @@
-# frob:waive SCOPE001 reason="T-0560's declared scope is docs/design/registry/+src/frob/; tests/** is leased in-progress by T-0160 so the scope cannot be formally extended here, same ad-hoc precedent as test_registry_corpus.py's existing T-0429 SCOPE001 waiver"  # noqa: E501
 """Tests for frob.registry._staleness -- the T-0560 gate-rule-staleness
 auto-file mechanism (missing_gate_rule_ids / sync_gate_rule_entries)."""
 

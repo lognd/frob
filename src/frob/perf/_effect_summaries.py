@@ -336,7 +336,6 @@ def _callee_short_name(node: Node) -> str | None:
 # frob:doc docs/modules/perf.md#shared-interprocedural-effect-summary-substrate-effectgraph-t-0922  # noqa: E501
 # frob:tests tests/unit/perf/test_effect_summaries.py::TestEffectGraphSummaryUnknownDegradation.test_fully_resolvable_call_path_has_no_unknown_member  # noqa: E501
 # frob:ticket T-0922
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helper methods from this already-documented class, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 class EffectGraph:
     """The SHARED interprocedural EFFECT-SUMMARY substrate (T-0922,
     promoted from `_loop_effects._EffectGraph`, T-0775/T-0919): a local,

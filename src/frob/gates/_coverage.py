@@ -475,7 +475,6 @@ def exclude_filtered_coverage(
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:waive TEST005 reason="stamp_coverage 68.8% branch cover, debt T-0160"
 def stamp_coverage(
     root: Path, snapshot: GraphSnapshot | None = None
 ) -> Result[Unit, GateError]:
@@ -603,7 +602,6 @@ def coverage_lock_diff(
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:waive TEST005 reason="load_stamp 85.7% branch cover, debt T-0160"
 def load_stamp(root: Path) -> dict | None:
     """The raw `.frob/coverage-stamp` document, or `None` if missing/unreadable."""
     stamp_path = root / _STAMP_REL

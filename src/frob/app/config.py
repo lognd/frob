@@ -3,9 +3,6 @@
 # docstring or comment describing already-implemented internal behavior, verifiable by \
 # reading the code it annotates) rather than a separate cross-module contract needing \
 # its own tracked invariant; disposed as a calibration batch, not claim-by-claim"
-# frob:waive SCOPE001 reason="T-0319 scope comma-joined, matches nothing (T-0241 bug)"
-# frob:waive SCOPE001 reason="T-0458 needs new AppConfig dest fields for done-report's CLI flags; T-0455's formal scope protocol is queued, not built -- ad-hoc waive per existing T-0176/T-0220 precedent"  # noqa: E501
-# frob:waive SCOPE001 reason="T-0455 itself needs new AppConfig fields (ticket_scope_add/remove/reason) for its own `frob ticket scope` CLI wiring -- T-0455's declared scope is tickets/**+ticket_runner.py+__main__.py, not config.py; bootstrap precedent, same as the T-0458 waive above"  # noqa: E501
 from __future__ import annotations
 
 import argparse
@@ -306,7 +303,6 @@ class AppConfig(BaseModel):
     ticket_caption: str = ""
     ticket_attach_path: Path | None = None
     ticket_json: bool = False
-    # frob:waive SCOPE001 reason="T-0453 scope omitted this file; doable --show-blocked/--ignore-lease need AppConfig fields, T-0176/T-0220 precedent (T-0455)"  # noqa: E501
     ticket_show_blocked: bool = False
     ticket_ignore_lease: bool = False
     # frob:ticket T-0810
@@ -324,7 +320,6 @@ class AppConfig(BaseModel):
     # exclusive with `--reason`.
     ticket_scope_reason_file: Path | None = None
     # frob:ticket T-0411
-    # frob:waive SCOPE001 reason="T-0411 needs new/priority AppConfig fields; T-0453/T-0455 bootstrap precedent, T-0446 tracks the general gap"  # noqa: E501
     ticket_priority: str | None = None
     ticket_priority_level: str | None = None
     # frob:ticket T-0834
@@ -401,7 +396,6 @@ class AppConfig(BaseModel):
     ticket_why: str | None = None
     ticket_why_file: Path | None = None
     ticket_base_ref: str = "main"
-    # frob:waive SCOPE001 reason="T-0323 scope omitted this file, filed T-draft-bc39c17f"  # noqa: E501
     # T-0323: `frob ticket merge-driver %O %A %B` -- git's merge-driver
     # protocol passes base/ours/theirs as temp file paths; ours (%A) is
     # both read and overwritten with the splice result.
@@ -559,7 +553,6 @@ class AppConfig(BaseModel):
     natives_command: str | None = None  # build
     natives_path: Path | None = None
 
-    # frob:waive TEST005 reason="from_external 87.2% branch cover, debt T-0160"
     @classmethod
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
         # frob:doc docs/modules/app.md#config

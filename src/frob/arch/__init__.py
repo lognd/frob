@@ -16,8 +16,6 @@ orchestration that fans each parsed file out to its language's checks.
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
 
-# frob:waive TEST005 reason="module line coverage 83.1%, debt T-0160"
-
 from __future__ import annotations
 
 from dataclasses import dataclass

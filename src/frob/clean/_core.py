@@ -79,7 +79,6 @@ def _match_candidates(root: Path, patterns: tuple[str, ...]) -> dict[Path, str]:
                 continue
             candidates.setdefault(resolved, pattern)
 
-    # frob:waive PERF004 reason="runs once after the loop above, not per iteration"
     matched_dirs = sorted(
         (p for p in candidates if p.is_dir()), key=lambda p: len(p.parts)
     )

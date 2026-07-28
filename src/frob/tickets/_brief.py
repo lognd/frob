@@ -42,7 +42,6 @@ class _PlaybookSection(BaseModel):
 
 
 # frob:ticket T-0568
-# frob:waive COV005 reason="T-0601 rework: demoted parse_playbook_sections -> _parse_playbook_sections (frob-exports external-consumer test: only used by this module's own _load_playbook_sections/compose_brief, never imported outside frob.tickets); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_tickets_brief.py::TestParsePlaybookSections.test_parses_numbered_headings_only  # noqa: E501
 # frob:ticket T-0601
 def _parse_playbook_sections(text: str) -> tuple[_PlaybookSection, ...]:
@@ -75,7 +74,6 @@ def _parse_playbook_sections(text: str) -> tuple[_PlaybookSection, ...]:
 
 
 # frob:ticket T-0568
-# frob:waive COV005 reason="T-0601 rework: demoted load_playbook_sections -> _load_playbook_sections (frob-exports external-consumer test: only called by this module's own compose_brief, never imported outside frob.tickets)"  # noqa: E501
 # frob:tests tests/test_tickets_brief.py::TestLoadPlaybookSections.test_reads_real_file
 # frob:ticket T-0601
 def _load_playbook_sections(root: Path) -> tuple[_PlaybookSection, ...]:
@@ -92,7 +90,6 @@ def _load_playbook_sections(root: Path) -> tuple[_PlaybookSection, ...]:
 
 
 # frob:ticket T-0568
-# frob:waive COV005 reason="T-0601 rework: demoted infer_verify_commands -> _infer_verify_commands (frob-exports external-consumer test: only called by this module's own compose_brief, never imported outside frob.tickets)"  # noqa: E501
 # frob:tests tests/test_tickets_brief.py::TestInferVerifyCommands.test_scope_naming_tests_dir_is_used_directly  # noqa: E501
 # frob:ticket T-0601
 def _infer_verify_commands(root: Path, ticket: Ticket) -> tuple[str, ...]:
@@ -130,7 +127,6 @@ def _infer_verify_commands(root: Path, ticket: Ticket) -> tuple[str, ...]:
 
 
 # frob:ticket T-0568
-# frob:waive COV005 reason="T-0601 rework: demoted gate_baseline_summary -> _gate_baseline_summary (frob-exports external-consumer test: only called by this module's own compose_brief, never imported outside frob.tickets)"  # noqa: E501
 # frob:tests tests/test_tickets_brief.py::TestGateBaselineSummary.test_missing_baseline
 # frob:ticket T-0601
 def _gate_baseline_summary(root: Path) -> str:
@@ -151,7 +147,6 @@ def _gate_baseline_summary(root: Path) -> str:
 
 
 # frob:ticket T-0568
-# frob:waive COV005 reason="T-0601 rework: demoted current_version -> _current_version (frob-exports external-consumer test: only called by this module's own _rel_land_rules, never imported outside frob.tickets)"  # noqa: E501
 # frob:tests tests/test_tickets_brief.py::TestCurrentVersion.test_reads_project_version
 # frob:ticket T-0601
 def _current_version(root: Path) -> str | None:

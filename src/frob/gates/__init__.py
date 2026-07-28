@@ -2946,9 +2946,6 @@ def _affect_ref_file(ref: str) -> str:
     return ref.split("::", 1)[0]
 
 
-# frob:waive DUP001 reason="dup grouped this with _affect002_violation and \
-# _docptr.py::_doc007_violation -- see _doc007_violation's own DUP001 waiver for \
-# full reasoning (T-0861)"
 def _affect001_violation(
     ref: str, file: str, line: int, stale_docs: list[str]
 ) -> Violation:
@@ -2968,8 +2965,6 @@ def _affect001_violation(
     )
 
 
-# frob:waive DUP001 reason="dup grouped this with _affect001_violation -- see \
-# _docptr.py::_doc007_violation's own DUP001 waiver for full reasoning (T-0861)"
 def _affect002_violation(
     ref: str, file: str, line: int, stale_deps: list[str]
 ) -> Violation:
@@ -4260,7 +4255,6 @@ def _cov006_full_call_graph(root: Path, paths: tuple[str, ...]):
 
 
 # frob:ticket T-0528
-# frob:waive ARCH001 reason="a multi-stage heuristic (gather test's called names, expand through same-file helpers, resolve imports to candidate files, then seed a closure search from each resolved public entrypoint) where each stage's input is the prior stage's derived set (called, resolved_called, import_files, entrypoints); splitting would thread that same chain of derived sets across new function boundaries without reducing it"  # noqa: E501
 # frob:ticket T-0814
 def _is_symref(entry: str) -> bool:
     """True if `entry` looks like a real `path::qualname` call-graph node
@@ -4962,7 +4956,6 @@ def _fmt001_touched_lines(diff: Diff, file: str) -> set[int]:
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_long_code_line_not_flagged
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_untouched_line_not_flagged
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_short_directive_not_flagged
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def _fmt001_file(
     root: Path, file: str, limit: int, touched: set[int]
 ) -> list[Violation]:
@@ -6267,9 +6260,6 @@ def _invariant_evidence_proves_anchor(
     return evidence.split("::", 1)[0] in anchor_files
 
 
-# frob:waive DUP001 reason="Violation-builder boilerplate shared shape with _inv002 \
-# below; distinct rule ids and distinct remediation messages (missing evidence vs \
-# missing anchor) -- structural coincidence"
 # frob:enforces CHK-GATE-INV001
 def _inv001(inv: Invariant) -> Violation:
     """INV001: an invariant with no standing evidence."""
@@ -6286,8 +6276,6 @@ def _inv001(inv: Invariant) -> Violation:
     )
 
 
-# frob:waive DUP001 reason="Violation-builder boilerplate shared shape with _inv001 \
-# above; distinct rule id and message -- structural coincidence"
 # frob:enforces CHK-GATE-INV002
 def _inv002(inv: Invariant) -> Violation:
     """INV002: an invariant with no code anchor."""
@@ -6554,7 +6542,6 @@ def _markdown_sections(text: str) -> tuple[str, ...]:
 
 # frob:doc docs/modules/gates.md#invariants
 # frob:ticket T-0515
-# frob:waive COV005 reason="removing the three now-dead T-0509 section-waiver helpers above (_inv004_waived_headings, _INV004_MESSAGE_HEADING_RE, _inv004_message_heading) shifted this file's Nth same-target 'docs/modules/gates.md#invariants' directive; COV005's rebind check matches old/new bindings by (kind, target) alone and reads the shift as a rebind onto a new private symbol -- this directive has bound _inv004_doc_violations (private) all along, see _file_has_reasoned_doc_waiver's docstring for the same false-positive class"  # noqa: E501
 # frob:waive COV007 reason="docs/modules/gates.md's Invariants section (INV004 \
 # subsection) is a deliberate architecture doc walking through this exact helper's \
 # design (T-0524), not a caller-side public-API summary"
@@ -8066,7 +8053,6 @@ def _load_test_config(root: Path) -> tuple[TestPolicy, tuple[SystemSpec, ...]]:
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0004
 # frob:ticket T-0894
-# frob:waive TEST005 reason="decisions_gate 88.9% branch cover, debt T-0160"
 # frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to the deferred \
 # imports of decision_gate/decisions_dir/load_decisions/path_ever_tracked, whose \
 # own call surfaces the resolver cannot follow through a function-local import; \
@@ -8659,7 +8645,6 @@ def _tick007_undispatched_stale(
 # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_silent_on_clean_ledger  # noqa: E501
 # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_real_repo_ledger_is_tick008_clean  # noqa: E501
 # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_waivable  # noqa: E501
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def _tick008_unknown_ledger_fields(queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK008 (T-0842): WARN on every ticket in the CHECKED ledger that
     carries unknown/extra frontmatter field(s) -- the mechanical follow-up
@@ -9625,7 +9610,6 @@ def _dup_config(root: Path) -> tuple[bool, float, bool, bool]:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0001
-# frob:waive TEST005 reason="dup_gate 52.2% branch cover, debt T-0160"
 # frob:invariant INV-011
 # frob:ticket T-0399
 # invariant spec: [INV-011](invariants/INV-011.md)
@@ -9904,7 +9888,6 @@ def _rel001_land_owned(root: Path, ticket_id: str | None) -> bool:
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0003
 # frob:ticket T-0807
-# frob:waive TEST005 reason="release_gate 82.4% branch cover, debt T-0160"
 def release_gate(
     root: Path, snapshot: GraphSnapshot, ticket_id: str | None = None
 ) -> tuple[Violation, ...]:
@@ -10311,9 +10294,6 @@ def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return violations
 
 
-# frob:waive DUP001 reason="dup grouped this with frob.vet._scan's _vet004_violation \
-# purely on generic Violation(...)-builder shape; different gate family (doc-graph vs \
-# dependency-vet), unrelated rules"
 # frob:enforces CHK-GATE-DOC001
 def _doc001_orphan(orphan: str, link_hint: str) -> Violation:
     """DOC001: `orphan` is a doc file linked from nowhere."""
@@ -10484,7 +10464,6 @@ def _perf_gate_candidate_paths(snapshot: GraphSnapshot) -> list[str]:
 # frob:doc docs/modules/perf.md#integration-points
 # frob:ticket T-0021
 # frob:ticket T-0203
-# frob:waive TEST005 reason="perf_gate 85.7% branch cover, debt T-0160"
 def perf_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """PERF001..PERF008 (`frob.perf.perf_rules`) plus PERF009 (T-0712's
     regression ratchet, `frob.perf._ratchet.ratchet_violations`), run at
@@ -11062,14 +11041,6 @@ def _wrap_cacheable(
     return lambda: evaluate_cacheable_gate(root, name, st.snapshot, call, extra)
 
 
-# frob:waive ARCH001 reason="pre-existing (196 lines on main before T-0602 touched \
-# this function at all -- verified via git show main:src/frob/gates/__init__.py); the \
-# body is one large thread_jobs/process_jobs dict-literal gate-job registry, not \
-# T-0602's own logic (T-0602 added ~8 net lines: a use_cache param and one call to the \
-# newly extracted _substitute_cacheable_jobs helper). Decomposing the registry itself \
-# is out of T-0602's scope (src/frob/gates/**, src/frob/serve/**, this test file, \
-# docs/modules/{serve,gates}.md) -- filed as T-1049 (refactor: decompose \
-# oversized _build_jobs gate-job registry)" ceiling="210"
 def _build_jobs(
     selected: frozenset[str], st: _GateInputs, *, use_cache: bool = False
 ) -> tuple[

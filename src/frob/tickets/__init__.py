@@ -165,7 +165,6 @@ _DROP_REASON_HEADING = DROP_REASON_HEADING
 
 
 # frob:doc docs/modules/tickets.md#public-api
-# frob:waive TEST005 reason="load_active 80.0% branch cover, debt T-0160"
 def load_active(root: Path) -> Result[TicketQueue, TicketError]:
     """Load only the active store (single-file ledger or legacy dir), NOT the
     archive -- the source `frob ticket list`/`doable` display against, so a
@@ -234,7 +233,6 @@ def migrate(root: Path) -> Result[int, TicketError]:
 # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_force_overrides_the_live_lease_refusal  # noqa: E501
 # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_ignores_a_stale_lease_from_a_removed_worktree  # noqa: E501
 # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_ignores_a_live_lease_for_a_ticket_it_would_not_touch  # noqa: E501
-# frob:waive TEST005 reason="archive 75.0% branch cover, debt T-0160"
 # T-0633: the whole load-filter-write sequence below is held under ONE
 # `ledger_lock` span, not just the final `write_all`/`write_archive` calls
 # individually -- `load_all` used to run UNLOCKED, so a concurrent
@@ -272,7 +270,6 @@ def migrate(root: Path) -> Result[int, TicketError]:
 # call would move into `tickets-archive.md` (e.g. a DONE/DROPPED ticket
 # whose lease was never released) -- a red TICK003 caused by unrelated
 # in-flight work no longer has to wait for that work to finish.
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of _refuse_archive_if_leased from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def archive(root: Path, *, force: bool = False) -> Result[int, TicketError]:
     """Move every done/dropped ticket from the active store into
     tickets-archive.md, verbatim (same section format, still tracked and
@@ -448,7 +445,6 @@ def _ticket_from_spec(
 # frob:ticket T-0140
 # frob:ticket T-0398
 # frob:doc docs/modules/tickets.md#public-api
-# frob:waive TEST005 reason="new_ticket 80.0% branch cover, debt T-0160"
 def new_ticket(
     root: Path,
     spec: TicketSpec,
@@ -567,7 +563,6 @@ def _apply_renumber(
 # frob:ticket T-0633
 # frob:ticket T-0889
 # frob:tests tests/test_tickets_ledger_concurrency.py::TestLedgerLockSpansWholesaleOperations.test_concurrent_ledger_lock_acquisition_serializes  # noqa: E501
-# frob:waive TEST005 reason="renumber 69.2% branch cover, debt T-0160"
 def renumber(root: Path) -> Result[int, TicketError]:
     """Reassign ticket ids to a contiguous T-0001.. sequence (ordered by
     current id), rewriting blocked_by/parent references so the queue stays
@@ -832,7 +827,6 @@ def _log_renumber_dry_run(old_id: str, new_id: str, report: RenumberReport) -> N
 # frob:ticket T-0633
 # frob:ticket T-0889
 # frob:tests tests/test_tickets_ledger_concurrency.py::TestRenumberOneRaceWithConcurrentNew.test_concurrent_new_ticket_survives_a_racing_renumber_one  # noqa: E501
-# frob:waive TEST005 reason="renumber_one 68.3% branch cover, debt T-0160"
 def renumber_one(
     root: Path, old_id: str, new_id: str, *, dry_run: bool = False
 ) -> Result[RenumberReport, TicketError]:
@@ -915,7 +909,6 @@ def _log_renumber_done(
 
 # frob:ticket T-0162
 # frob:doc docs/modules/tickets.md#provisional-ids
-# frob:waive TEST005 reason="finalize_draft 64.7% branch cover, debt T-0160"
 def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
     """Assign `draft_id` its final sequential `T-####` id against the CURRENT
     merged (active+archive) view and rewrite the ledger plus every code
@@ -1520,7 +1513,6 @@ def _current_actor() -> str:
 # frob:ticket T-0455
 # frob:ticket T-0561
 # frob:ticket T-0422
-# frob:waive COV005 reason="T-0485's docstring/signature edit to this already-private helper shifted line offsets against the many other symbols in this file sharing the frob:ticket T-0455 target; COV005's rebind check matches old/new bindings by (kind, target) alone across the whole file and reads the shift as a rebind onto a new private symbol -- this directive has bound _scope_add_conflicts (private) all along, same false-positive class as gates/__init__.py's own documented COV005 waiver"  # noqa: E501
 # frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_new_file_under_broad_lease_is_exempt  # noqa: E501
 # frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_existing_file_under_broad_lease_still_conflicts  # noqa: E501
 # frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_new_file_exact_match_of_holder_scope_still_conflicts  # noqa: E501
@@ -1639,7 +1631,6 @@ def _validate_scope_request(
 # frob:ticket T-0455
 # frob:ticket T-0561
 # frob:ticket T-0422
-# frob:waive COV005 reason="T-0485's caller-signature edit (own_scope passthrough to _scope_add_conflicts) shifted line offsets against the many other symbols in this file sharing the frob:ticket T-0455 target; COV005's rebind check matches old/new bindings by (kind, target) alone across the whole file and reads the shift as a rebind onto a new private symbol -- this directive has bound _validate_scope_mutation (private) all along, same false-positive class as gates/__init__.py's own documented COV005 waiver"  # noqa: E501
 def _validate_scope_mutation(
     ticket_id: str,
     ticket: Ticket,
@@ -1869,11 +1860,6 @@ def _set_ticket_field(
 # frob:ticket T-0411
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_priority.py::TestSetPriority.test_updates_priority_field
-# frob:waive DUP001 reason="dup grouped this with set_kind/set_sprint/set_component -- \
-# after T-0861's own _set_ticket_field extraction (the real shared logic), each is now \
-# an intentionally-thin, independently-documented public-API wrapper naming its own \
-# ticket/field; collapsing further would erase the distinct docstrings/frob:tests \
-# bindings each public entrypoint carries"
 def set_priority(
     root: Path, ticket_id: str, priority: Priority
 ) -> Result[Ticket, TicketError]:
@@ -1890,8 +1876,6 @@ def set_priority(
 # frob:ticket T-0834
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_ticket_evidence.py::TestSetKind.test_updates_kind_field
-# frob:waive DUP001 reason="see set_priority's own DUP001 waiver for full reasoning \
-# (T-0861)"
 def set_kind(
     root: Path, ticket_id: str, kind: TicketKind
 ) -> Result[Ticket, TicketError]:
@@ -1906,8 +1890,6 @@ def set_kind(
 # frob:ticket T-0715
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_tiers.py::TestSprintAssign.test_updates_sprint_field
-# frob:waive DUP001 reason="see set_priority's own DUP001 waiver for full reasoning \
-# (T-0861)"
 def set_sprint(
     root: Path, ticket_id: str, sprint: str | None
 ) -> Result[Ticket, TicketError]:
@@ -1945,8 +1927,6 @@ def sprint_view(queue: TicketQueue, sprint: str) -> SprintReport:
 # frob:ticket T-0454
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_organization.py::TestSetComponent.test_updates_component_field  # noqa: E501
-# frob:waive DUP001 reason="see set_priority's own DUP001 waiver for full reasoning \
-# (T-0861)"
 def set_component(
     root: Path, ticket_id: str, component: str | None
 ) -> Result[Ticket, TicketError]:
@@ -2670,7 +2650,6 @@ def _recover_missing_evidence_for_done(
 # frob:tests tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_permissive_when_evidence_reverified_none  # noqa: E501
 # frob:ticket T-0715
 # frob:ticket T-0417
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of _recover_missing_evidence_for_done from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def transition(
     root: Path,
     ticket_id: str,
@@ -3554,7 +3533,6 @@ def _capture_done_report_claims(
 # frob:tests tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims.test_claims_captured_from_real_callables  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity kind="integration"  # noqa: E501
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of _capture_done_report_claims from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def set_done_report(
     root: Path,
     ticket_id: str,
@@ -3910,7 +3888,6 @@ def _attachment_bytes(
 
 
 # frob:doc docs/modules/tickets.md#public-api
-# frob:waive TEST005 reason="attach 87.5% branch cover, debt T-0160"
 def attach(
     root: Path, ticket_id: str, source: AttachmentSource, caption: str
 ) -> Result[Attachment, AttachError]:

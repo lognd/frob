@@ -143,7 +143,6 @@ def _parse_runner_entry(entry: dict) -> RunnerSpec | None:
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:waive TEST005 reason="load_runners 76.2% branch cover, debt T-0160"
 def load_runners(root: Path) -> Result[tuple[RunnerSpec, ...], TestingError]:
     """Parse `frob.toml`'s `[[test.runner]]` entries; missing file/table is `Ok(())`."""
     toml_path = root / "frob.toml"

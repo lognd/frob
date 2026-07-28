@@ -1,4 +1,3 @@
-# frob:waive SCOPE001 reason="T-0424's declared scope is docs/audits/+src/frob/+frob.toml+docs/design/registry/; tests/** is leased in-progress by T-0160 so the scope cannot be formally extended here, same ad-hoc precedent as config.py's existing T-0458/T-0455 SCOPE001 waives -- this file is new pytest coverage for T-0424's own check-coverage.yaml"  # noqa: E501
 """Tests for the T-0424 reflexive check-coverage registry
 (docs/design/registry/check-coverage.yaml, docs/design/registry/
 README.md#check-coverageyaml-t-0424-frobs-own-reflexive-check-coverage-registry).

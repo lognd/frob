@@ -22,9 +22,6 @@ from frob.app.scaffold_runner import run as scaffold_run
 from frob.app.xref_runner import run as xref_run
 
 
-# frob:waive DUP001 reason="parallel App runner batch tests: independent per-command \
-# cases sharing an arrange-act scaffold across the batch test files; extracting would \
-# obscure per-case intent"
 def _make_py_project(tmp_path):
     """Create a tiny single-file Python project fixture under tmp_path."""
     (tmp_path / "pkg").mkdir()

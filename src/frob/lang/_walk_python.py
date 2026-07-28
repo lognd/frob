@@ -6,8 +6,6 @@ Python's declaration vocabulary (docstring-as-first-statement,
 shared token/span/doc mechanism lives in `_common.py`.
 """
 
-# frob:waive REF002 reason="private per-language walker imported only by its sibling aggregator frob.lang._extract; a single inbound anchor is intentional for a language-dispatch leaf module, T-0450"  # noqa: E501
-
 from __future__ import annotations
 
 from tree_sitter import Node
@@ -235,11 +233,6 @@ def _make_type_symbol(node: Node, name: str) -> RawSymbol:
 
 
 # frob:ticket T-0565
-# frob:waive DUP001 reason="T-0871: pre-existing similarity surfaced by an \
-# unrelated import-rename touching this file (child_text -> _child_text, \
-# a frob-exports privatize decision); this function's own body/logic is \
-# unchanged -- not a duplication introduced by this ticket, out of this \
-# ticket's __init__.py-only scope to extract"
 def _const_assignment_name(node: Node) -> str | None:
     """The SCREAMING_CASE target name of a module-level constant assignment
     `node`, or None if it doesn't match that shape.

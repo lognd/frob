@@ -16,8 +16,6 @@ rather than half-implemented against data this scan doesn't have).
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
 
-# frob:waive TEST005 reason="module line coverage 83.0%, debt T-0160"
-
 from __future__ import annotations
 
 from pathlib import Path

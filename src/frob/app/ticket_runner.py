@@ -9,11 +9,6 @@ review|sprint` (docs/modules/tickets.md)."""
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
 
-# frob:waive TEST005 reason="module line coverage 22.7%, debt T-0160"
-# frob:waive SCOPE001 reason="T-0323 scope omitted this file, filed T-draft-bc39c17f"
-# frob:waive SCOPE001 reason="T-0453 needs doable --show-blocked/--ignore-lease wiring here, T-0176/T-0220 precedent"  # noqa: E501
-# frob:waive SCOPE001 reason="T-0411 needs new --priority/priority-subcommand wiring here; T-0453/T-0455 bootstrap precedent, T-0446 tracks the general gap"  # noqa: E501
-
 from __future__ import annotations
 
 import json
@@ -100,7 +95,6 @@ def _ticket_dispatch_table() -> dict:
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
 # frob:doc docs/modules/tickets.md#frob-ticket-land
 # frob:doc docs/modules/tickets.md#structured-review-channel-t-0571
-# frob:waive TEST005 reason="run 20.0% branch cover, debt T-0160"
 # frob:ticket T-0588
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
 def run(cfg: AppConfig) -> None:

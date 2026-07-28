@@ -149,9 +149,6 @@ class TestPerf008LoopInvariantEffect:
         violations = loop_invariant_effect_violations([gitio_parsed, tickets_parsed])
         assert not any(v.rule == "PERF008" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_loop_effects.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_no_effectful_call_in_loop_is_not_flagged(self, tmp_path: Path) -> None:
         """A loop calling a harmless, non-effectful helper never fires,
         regardless of argument invariance."""
@@ -215,9 +212,6 @@ class TestPerf008LoopInvariantEffect:
         violations = loop_invariant_effect_violations(files)
         assert any(v.rule == "PERF008" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_loop_effects.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_unresolvable_callee_does_not_crash_and_does_not_fire(
         self, tmp_path: Path
     ) -> None:

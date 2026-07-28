@@ -471,7 +471,6 @@ def _find_crates(root: Path) -> list[Path]:
     exclude` (T-0274) -- an excluded directory (e.g. stale agent
     worktrees under `.claude/worktrees/**`) is pruned before its
     `Cargo.toml`, if any, is ever inspected."""
-    # frob:waive PERF004 reason="one sort of the final result list, not per-iteration"
     exclude_globs = load_exclude_globs(root)
     found: list[Path] = []
     # frob:waive WALK001 reason="needs per-directory descend control (stop past a found crate root, _classify_crate_dir's should_prune) that the file-only iter_files/walk_pruned API cannot express; already prunes via _prune_dirnames using frob.excludes primitives"  # noqa: E501

@@ -180,8 +180,6 @@ _KNOWN_TEMPLATE_SHAPE_RE = re.compile(
 # guide dedicated to this private dataclass, frob:describes-anchored at its own top \
 # heading (T-0529) -- a deliberate architecture doc, not accidental drift onto a \
 # private helper"
-# frob:waive AFFECT001 reason="T-0988 pure mechanical frob:-directive comment rewrap; \
-# no behavior/contract change, doc anchor remains accurate as-is"
 class _SecretPattern:
     """One provider's detection rule: what to match, how bad it is, and how
     much of the match is safe to print back in a violation message."""
@@ -1040,10 +1038,6 @@ def _is_env_file(rel_path: str) -> bool:
     return name == ".env" or name.startswith(".env.")
 
 
-# frob:waive DUP001 reason="the established parallel-gate-scaffolding false pair -- \
-# every gate module (_secrets/_refs/_exclude_hazard/_cve_fingerprint_scan/_opaque) \
-# keeps its own private `git ls-files` copy per this repo's already-accepted \
-# convention (see _opaque.py::_tracked_files' own docstring, T-0665) (T-0861)"
 def _tracked_files(root: Path) -> tuple[str, ...]:
     """`git ls-files` under `root`, root-relative POSIX paths, `()` on any
     git failure (no repo, git missing) -- mirrors `frob.gitio`'s

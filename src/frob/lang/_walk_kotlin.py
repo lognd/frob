@@ -77,9 +77,6 @@ def raw_kotlin_tree(source: bytes) -> TreeNode:
     return export_tree(tree.root_node, COMMENT_TYPES)
 
 
-# frob:waive DUP001 reason="see this function's own docstring -- deliberately \
-# independent walk layer copy, same convention as frob.vet._capability/frob.arch \
-# _kotlin's own copies (T-0861)"
 def _kt_child_of_type(node: Node, type_name: str) -> Node | None:
     """The first DIRECT child of `node` with tree-sitter type `type_name`
     -- positional stand-in for a named-field lookup (see module docstring;
@@ -132,12 +129,6 @@ def _kt_function_symbol(
     )
 
 
-# frob:waive DUP002 reason="T-0871: pre-existing similarity surfaced by an \
-# unrelated import-rename touching this file (child_text -> _child_text, \
-# a frob-exports privatize decision) -- both functions' own bodies/logic are \
-# unchanged, and DUP002's 'both new in this diff' flag is an artifact of the \
-# same line being touched in each, not new duplication; out of this ticket's \
-# __init__.py-only scope to extract"
 def _kt_class_symbol(node: Node, stack: tuple[str, ...]) -> RawSymbol:
     """A `class_declaration` `RawSymbol` (kotlin's grammar uses this same
     node type for both `class` and `interface` -- see module docstring)."""

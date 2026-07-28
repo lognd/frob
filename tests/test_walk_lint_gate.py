@@ -14,10 +14,6 @@ from pathlib import Path
 from frob.gates._walk_lint import _scan_python_walks, walk_lint_gate
 
 
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across 9 sibling test modules \
-# (9 sites) -- each file exercises a structurally similar check for \
-# a distinct domain/module with the same arrange-act shape; \
-# extracting would blur which domain owns which check"
 def _git(root: Path, *args: str) -> None:
     subprocess.run(
         ["git", "-C", str(root), *args],
@@ -132,9 +128,6 @@ class TestOsWalk:
 class TestHelper:
     """WALK001: a call to the shared `frob.excludes` helper is silent."""
 
-    # frob:waive DUP001 reason="parallel test methods within test_walk_lint_gate.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_helper_call_is_silent(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_python_walks
         src = (
@@ -146,9 +139,6 @@ class TestHelper:
         tree = ast.parse(src)
         assert _scan_python_walks(tree) == ()
 
-    # frob:waive DUP001 reason="parallel test methods within test_walk_lint_gate.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_walk_pruned_call_is_silent(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_python_walks
         src = (

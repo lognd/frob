@@ -8,9 +8,6 @@ is threaded through the walk in a `_Ctx` (never a module global -- the parser
 runs under `frob.check`'s thread pool).
 """
 
-# frob:waive TEST005 reason="module line coverage 69.9%, debt T-0160"
-# frob:waive REF002 reason="private per-language walker imported only by its sibling aggregator frob.lang._extract; a single inbound anchor is intentional for a language-dispatch leaf module, T-0450"  # noqa: E501
-
 from __future__ import annotations
 
 from dataclasses import dataclass

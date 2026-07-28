@@ -17,8 +17,6 @@ re-exported here for the same reason (T-0599).
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
 
-# frob:waive TEST005 reason="module line coverage 79.1%, debt T-0160"
-
 from __future__ import annotations
 
 import concurrent.futures
@@ -222,7 +220,6 @@ class CheckResult(BaseModel):
             f"{paint(warns, YELLOW if warn else DIM, color)}"
         )
 
-    # frob:waive TEST005 reason="CheckResult.as_json 50.0% branch cover, debt T-0160"
     # frob:ticket T-0588
     # frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_json_mode_prints_json_and_errors_exit_1  # noqa: E501
     def as_json(self) -> str:
@@ -532,7 +529,6 @@ def _collect_results(
 # frob:ticket T-0028
 # frob:doc docs/commands/check.md#public-api
 # frob:doc docs/modules/gates.md#rule-catalog
-# frob:waive TEST005 reason="run_check 83.3% branch cover, debt T-0160"
 def run_check(
     root: Path,
     *,
@@ -639,7 +635,6 @@ def _run_check_with_skips(
 
 # frob:doc docs/commands/check.md#public-api
 # frob:ticket T-0554
-# frob:waive TEST005 reason="run_check_cpp 50.0% branch cover, debt T-0160"
 def run_check_cpp(
     root: Path,
     *,
@@ -737,7 +732,6 @@ def _cpp_post_build_tasks(
 
 # frob:doc docs/commands/check.md#public-api
 # frob:ticket T-0554
-# frob:waive TEST005 reason="run_check_rust 33.3% branch cover, debt T-0160"
 def run_check_rust(
     root: Path,
     *,
@@ -805,7 +799,6 @@ def run_check_rust(
 
 # frob:doc docs/commands/check.md#public-api
 # frob:ticket T-0554
-# frob:waive TEST005 reason="run_check_ts 58.8% branch cover, debt T-0160"
 def run_check_ts(
     root: Path,
     *,

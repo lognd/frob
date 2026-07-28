@@ -59,9 +59,6 @@ _USAGE = (
 )
 
 
-# frob:waive DUP001 reason="documented precedent duplication (own docstring): a \
-# two-line frob.toml read, deliberately not worth a cross-module import per every \
-# other strata-consuming runner's copy"
 def _design_dir(root: Path) -> str:
     """`[strata].design_dir` from `frob.toml`, defaulting like every other
     strata-consuming runner (`frob.app.sys_runner._design_dir` precedent;

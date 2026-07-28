@@ -115,9 +115,6 @@ def _ts_call_callee_text(node: Node) -> str:
     return _node_text(func) if func is not None else _node_text(node)
 
 
-# frob:waive DUP001 reason="dup grouped this with _python.py::_py_is_field_write and \
-# _rust.py::_rust_is_field_write -- see _py_is_field_write's own DUP001 waiver for \
-# full reasoning (T-0861)"
 def _ts_is_field_write(node: Node) -> bool:
     """Whether a `this.x` `member_expression` is the assignment-target of
     an `assignment_expression` (a write) rather than being read."""

@@ -305,9 +305,6 @@ class TestDispatchFamilySuppression:
         categories = {s.category for s in result.suggestions}
         assert "abstraction-opportunity" not in categories
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_accidental_same_signature_still_flagged(self, tmp_path):
         # frob:tests src/frob/arch/_python.py::_is_dispatch_family
         # frob:tests src/frob/arch/_python.py::_near_duplicate_cluster
@@ -360,9 +357,6 @@ class TestDispatchFamilySuppression:
         assert "normalize_beta" in msg
         assert "normalize_gamma" in msg
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_init_reexport_does_not_suppress(self, tmp_path):
         # frob:tests src/frob/arch/__init__.py::_is_init_file
         # Reviewer-demonstrated false-suppression path: three near-
@@ -512,9 +506,6 @@ class TestLargeFile:
         categories = {s.category for s in result.suggestions}
         assert "large-file" not in categories
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_large_src_file_still_flagged(self, tmp_path):
         # frob:tests src/frob/arch/__init__.py::analyze_project
         src_dir = tmp_path / "src"
@@ -560,9 +551,6 @@ class TestLargeFile:
         categories = {s.category for s in result.suggestions}
         assert "large-file" not in categories
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_large_py_src_still_flagged(self, tmp_path):
         # T-0372: real source (has a tree-sitter grammar) must never be
         # exempted by this data-file skip.
@@ -675,9 +663,6 @@ class TestAbstractionOpportunityDiscriminators:
         categories = {s.category for s in result.suggestions}
         assert "abstraction-opportunity" not in categories
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_generic_signature_near_duplicate_bodies_still_flagged(self, tmp_path):
         # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
         # frob:tests src/frob/arch/_python.py::_near_duplicate_cluster
@@ -737,9 +722,6 @@ class TestAbstractionOpportunityDiscriminators:
         assert "run_stamp" in msg
         assert "run_sweep" in msg
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_specific_signature_genuine_family_still_flagged(self, tmp_path):
         # frob:tests src/frob/arch/_python.py::_signature_is_specific
         # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
@@ -844,9 +826,6 @@ class TestAbstractionOpportunityDiscriminators:
 
 
 class TestPatternRecommender:
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_isinstance_chain_recommends_strategy(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -863,9 +842,6 @@ class TestPatternRecommender:
         hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
         assert any("Strategy" in s.message for s in hits)
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_two_arm_isinstance_chain_not_flagged(self, tmp_path: Path) -> None:
         # STRONG-HALLMARK-ONLY: two arms is routine control flow, not a
         # growing type-switch -- must not fire.
@@ -885,9 +861,6 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_state_field_chain_recommends_state_machine(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -905,9 +878,6 @@ class TestPatternRecommender:
         hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
         assert any("State machine" in s.message for s in hits)
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_non_state_attribute_chain_not_flagged_state_machine(
         self, tmp_path: Path
     ) -> None:
@@ -934,9 +904,6 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_telescoping_ctor_recommends_builder(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -949,9 +916,6 @@ class TestPatternRecommender:
         hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
         assert any("Builder" in s.message for s in hits)
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_normal_ctor_not_flagged_as_telescoping(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -992,9 +956,6 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_wrap_delegate_recommends_decorator(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -1016,9 +977,6 @@ class TestPatternRecommender:
         hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
         assert any("Decorator" in s.message for s in hits)
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_two_method_delegating_wrapper_not_flagged_decorator(
         self, tmp_path: Path
     ) -> None:
@@ -1075,9 +1033,6 @@ class TestPatternRecommender:
         assert "god-class" not in categories
         assert "anti-pattern-escape" not in categories
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_stringly_typed_recommends_newtype(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -1096,9 +1051,6 @@ class TestPatternRecommender:
         hits = [s for s in result.suggestions if s.category == "anti-pattern-escape"]
         assert any("newtype" in s.message for s in hits)
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_short_string_chain_not_flagged_stringly_typed(
         self, tmp_path: Path
     ) -> None:
@@ -1130,9 +1082,6 @@ class TestPatternRecommender:
 
     # -- T-0605: interface-translate -> Adapter -----------------------------
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_translating_wrapper_recommends_adapter(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -1154,9 +1103,6 @@ class TestPatternRecommender:
         hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
         assert any("Adapter" in s.message for s in hits)
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_same_name_wrapper_not_flagged_adapter(self, tmp_path: Path) -> None:
         # Disjointness proof: a SAME-name pass-through wrapper (3+ methods)
         # is `wrap-delegate` -> Decorator, never `interface-translate` ->
@@ -1185,9 +1131,6 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_two_translating_methods_not_flagged_adapter(self, tmp_path: Path) -> None:
         # STRONG-HALLMARK-ONLY: only 2 translating methods (below
         # _MIN_TRANSLATE_METHODS=3) is an ordinary small wrapper, not the
@@ -1255,9 +1198,6 @@ class TestPatternRecommender:
 
     # -- T-0605: manual-callback-list -> Observer ----------------------------
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_manual_callback_list_recommends_observer(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -1277,9 +1217,6 @@ class TestPatternRecommender:
         hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
         assert any("Observer" in s.message for s in hits)
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_append_only_list_not_flagged_observer(self, tmp_path: Path) -> None:
         # No notify loop -- an ordinary list attribute that is only ever
         # appended to (a plain accumulator) must not fire Observer.
@@ -1300,9 +1237,6 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_iterate_without_append_not_flagged_observer(self, tmp_path: Path) -> None:
         # A notify-shaped loop over a list nothing ever appends to (e.g. a
         # fixed, pre-populated list) must not fire Observer either -- both
@@ -1327,9 +1261,6 @@ class TestPatternRecommender:
 
     # -- T-0605: anemic-accessors -> move behavior to data -------------------
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_anemic_accessors_recommends_move_behavior(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -1356,9 +1287,6 @@ class TestPatternRecommender:
         hits = [s for s in result.suggestions if s.category == "anti-pattern-escape"]
         assert any("move behavior to data" in s.message for s in hits)
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_class_with_real_method_not_flagged_anemic(self, tmp_path: Path) -> None:
         # One real method (actual computation) alongside several trivial
         # accessors must disqualify the whole class -- a mixed
@@ -1393,9 +1321,6 @@ class TestPatternRecommender:
             if s.category == "anti-pattern-escape"
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_two_accessor_class_not_flagged_anemic(self, tmp_path: Path) -> None:
         # STRONG-HALLMARK-ONLY: only 2 accessor methods (below
         # _MIN_ANEMIC_ACCESSORS=3) is an ordinary small value holder, not
@@ -1421,9 +1346,6 @@ class TestPatternRecommender:
             if s.category == "anti-pattern-escape"
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_dataclass_boilerplate_recommends_dataclass(self, tmp_path: Path) -> None:
         # T-0849: a plain class whose only method is a pure
         # assign-every-param `__init__` recommends `@dataclass`.
@@ -1440,9 +1362,6 @@ class TestPatternRecommender:
         hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
         assert any("@dataclass" in s.message for s in hits)
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_dataclass_boilerplate_with_computed_field_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -1469,9 +1388,6 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_dataclass_boilerplate_with_extra_method_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -1496,9 +1412,6 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_dataclass_boilerplate_with_decorated_extra_method_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -1531,9 +1444,6 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_already_dataclass_not_flagged(self, tmp_path: Path) -> None:
         # An already-`@dataclass`-decorated class is a `decorated_
         # definition` node, structurally excluded before body inspection.
@@ -1555,9 +1465,6 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (10 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_manual_decorator_wrap_recommends_decorator_syntax(
         self, tmp_path: Path
     ) -> None:
@@ -1582,9 +1489,6 @@ class TestPatternRecommender:
         hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
         assert any("decorator syntax" in s.message for s in hits)
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_two_manual_decorator_wraps_not_flagged(self, tmp_path: Path) -> None:
         # Adversarial near-miss (hand-verified, T-0849): mutate the
         # discriminator by dropping to 2 occurrences (below
@@ -1610,9 +1514,6 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (17 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_decorator_syntax_wrap_not_flagged(self, tmp_path: Path) -> None:
         # Functions already wrapped via real `@decorator` syntax are
         # `decorated_definition` nodes, not bare `function_definition`s --
@@ -1988,9 +1889,6 @@ class TestTypeScriptAdapter:
         assert funcs["double"].params[0].name == "a"
         assert funcs["double"].returns[0].value_text == "a * 2"
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_adapt_branches_loops_calls_field_accesses(self, tmp_path: Path) -> None:
         module = self._adapt(
             tmp_path,
@@ -2545,9 +2443,6 @@ class TestRustAdapter:
         fmt_method = next(m for m in animal.methods if m.name == "fmt")
         assert fmt_method.overrides == "fmt"
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_adapt_branches_loops_calls_field_accesses(self, tmp_path: Path) -> None:
         module = self._adapt(
             tmp_path,
@@ -3539,9 +3434,6 @@ class TestForkPoolHazards:
         assert hits[0].severity == "warning"
         assert hits[0].symref == "combined.py::run_combined"
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs(self):
         """Acceptance (T-0767): the restructured gates tree carries ZERO
         fork/pool-hazard findings. T-0695's real-repo acceptance originally
@@ -3567,9 +3459,6 @@ class TestForkPoolHazards:
         hits = [s for s in result.suggestions if s.category in hazard_categories]
         assert hits == []
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_self_join_deadlock_discharges_on_real_repo_vet_scan(self):
         """Acceptance (T-0794): `src/frob/vet` carries ZERO fork/pool-
         hazard findings. `_run_with_timeout` used to be dispatched as a
@@ -3601,9 +3490,6 @@ class TestForkPoolHazards:
         hits = [s for s in result.suggestions if s.category in hazard_categories]
         assert hits == []
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (5 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_fork_after_threads_fires_when_fork_follows_thread_start(self, tmp_path):
         """An `os.fork()` reachable AFTER a `Thread(...).start()` on the
         same function's line order fires `fork-after-threads`."""
@@ -3624,9 +3510,6 @@ class TestForkPoolHazards:
         assert len(hits) == 1
         assert hits[0].symref == "forker.py::spawn_then_fork"
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_fork_before_threads_does_not_fire(self, tmp_path):
         """Forking BEFORE any thread starts is the safe order (T-0581's
         own fix shape) -- `fork-after-threads` must not fire on it."""
@@ -3646,9 +3529,6 @@ class TestForkPoolHazards:
         hits = [s for s in result.suggestions if s.category == "fork-after-threads"]
         assert hits == []
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (5 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_pipe_wait_deadlock_fires_without_communicate(self, tmp_path):
         """A `Popen(..., stdout=PIPE)` followed by a bare `.wait()` with no
         `.communicate()` anywhere in the function fires
@@ -3668,9 +3548,6 @@ class TestForkPoolHazards:
         assert len(hits) == 1
         assert hits[0].symref == "piper.py::run_and_wait"
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_pipe_wait_deadlock_does_not_fire_with_communicate(self, tmp_path):
         """The same `Popen(..., stdout=PIPE)` shape, but drained via
         `.communicate()` instead of a bare `.wait()`, must not fire."""
@@ -3688,9 +3565,6 @@ class TestForkPoolHazards:
         hits = [s for s in result.suggestions if s.category == "pipe-wait-deadlock"]
         assert hits == []
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (5 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool(
         self, tmp_path
     ):
@@ -3711,9 +3585,6 @@ class TestForkPoolHazards:
         assert len(hits) == 1
         assert hits[0].symref == "selfjoin.py::worker"
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_self_join_deadlock_does_not_fire_on_undispatched_join(self, tmp_path):
         """A function that calls `.join()` on a pool it owns, but is never
         itself submitted/started as a task, must not fire -- this is the
@@ -3739,9 +3610,6 @@ class TestAsyncEventLoopHazards:
     nested-event-loop, unawaited-coroutine, async-zero-awaits (T-0696,
     child 3 of the T-0693 concurrency-hazard umbrella)."""
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_blocking_call_in_async_fires_on_time_sleep(self, tmp_path):
         """`time.sleep` reachable inside an `async def` body, with no
         executor dispatch, fires `blocking-call-in-async`."""
@@ -3760,9 +3628,6 @@ class TestAsyncEventLoopHazards:
         assert hits[0].symref == "blocker.py::poll"
         assert hits[0].severity == "warning"
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_blocking_call_in_async_does_not_fire_via_to_thread(self, tmp_path):
         """The same `time.sleep` call, but dispatched via
         `asyncio.to_thread`, must not fire -- it is correctly offloaded
@@ -3781,9 +3646,6 @@ class TestAsyncEventLoopHazards:
         hits = [s for s in result.suggestions if s.category == "blocking-call-in-async"]
         assert hits == []
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (5 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_nested_event_loop_fires_on_asyncio_run_inside_coroutine(self, tmp_path):
         """`asyncio.run(...)` reachable inside an `async def` body fires
         `nested-event-loop` -- it raises RuntimeError at runtime since a
@@ -3803,9 +3665,6 @@ class TestAsyncEventLoopHazards:
         assert len(hits) == 1
         assert hits[0].symref == "nested.py::outer"
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_nested_event_loop_does_not_fire_at_top_level_sync_code(self, tmp_path):
         """`asyncio.run(...)` called from ordinary (non-async) top-level
         code is the standard entry-point shape -- must not fire."""
@@ -3823,9 +3682,6 @@ class TestAsyncEventLoopHazards:
         hits = [s for s in result.suggestions if s.category == "nested-event-loop"]
         assert hits == []
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (5 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_unawaited_coroutine_fires_on_bare_call_statement(self, tmp_path):
         """A bare call to a module-defined `async def` function, used as
         its own statement (neither awaited, gathered, nor stored), fires
@@ -3844,9 +3700,6 @@ class TestAsyncEventLoopHazards:
         assert len(hits) == 1
         assert hits[0].symref == "dropped.py::trigger"
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_unawaited_coroutine_does_not_fire_when_awaited_or_stored(self, tmp_path):
         """The same call, but awaited in one function and stored (never
         called bare) in another, must not fire either time."""
@@ -3866,9 +3719,6 @@ class TestAsyncEventLoopHazards:
         hits = [s for s in result.suggestions if s.category == "unawaited-coroutine"]
         assert hits == []
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_async_zero_awaits_fires_on_no_await_body(self, tmp_path):
         """An `async def` whose body never awaits anything fires
         `async-zero-awaits` at suggestion severity."""
@@ -3886,9 +3736,6 @@ class TestAsyncEventLoopHazards:
         assert hits[0].symref == "noawait.py::compute"
         assert hits[0].severity == "suggestion"
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_async_zero_awaits_does_not_fire_when_awaiting(self, tmp_path):
         """An `async def` that awaits something in its own body must not
         fire `async-zero-awaits`."""
@@ -3940,9 +3787,6 @@ class TestLockOrderingHazards:
         assert "deadlock.py::g" in hits[0].message
         assert hits[0].severity == "warning"
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_two_lock_ab_ba_cycle_fires_across_call_paths_via_callees(self, tmp_path):
         """The SAME cycle, but each function's second lock is acquired
         inside a CALLEE, not its own body -- the interprocedural
@@ -3975,9 +3819,6 @@ class TestLockOrderingHazards:
         assert "lock_a" in hits[0].message
         assert "lock_b" in hits[0].message
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_consistent_global_order_does_not_fire(self, tmp_path):
         """Every function acquires `lock_a` before `lock_b`, never the
         reverse -- a consistent global order must stay silent."""
@@ -4001,9 +3842,6 @@ class TestLockOrderingHazards:
         hits = [s for s in result.suggestions if s.category == "lock-order-cycle"]
         assert hits == []
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_reentrant_same_lock_does_not_fire(self, tmp_path):
         """A function acquiring the SAME `RLock` twice (nested `with`) must
         not fire `lock-order-cycle` -- reentrant use of one lock is never
@@ -5913,9 +5751,6 @@ class TestMayRaiseResolver:
         assert result["pkg/mod.py::f"].raises == frozenset({"KeyError"})
 
     # frob:ticket T-0686
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_unresolvable_call_yields_unknown(self) -> None:
         # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
         from frob.arch._mayraise import UNKNOWN, compute_may_raise
@@ -6066,9 +5901,6 @@ class TestMayRaiseResolver:
         assert result["pkg/mod.py::dispatch"].raises == frozenset({UNKNOWN})
 
     # frob:ticket T-0689
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_undeclared_ctypes_style_call_is_unknown(self) -> None:
         # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
         # A call into a ctypes/cffi-loaded handle (`lib.some_c_function(...)`)
@@ -6956,9 +6788,6 @@ class TestSharedStateRaceHazards:
         assert "race.py::worker" in hits[0].message
         assert hits[0].severity == "warning"
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_same_write_under_with_lock_does_not_fire(self, tmp_path):
         """The same shape, but the write is enclosed by `with lock:` --
         must stay silent."""
@@ -6981,9 +6810,6 @@ class TestSharedStateRaceHazards:
         hits = [s for s in result.suggestions if s.category == "unguarded-shared-write"]
         assert hits == []
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_write_reachable_via_callee_of_dispatched_function_fires(self, tmp_path):
         """The dispatched function itself does nothing but call a helper
         that performs the unguarded write -- still fires, since the write
@@ -7008,9 +6834,6 @@ class TestSharedStateRaceHazards:
         assert "race_via_callee.py::helper" in hits[0].message
         assert "totals" in hits[0].message
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (11 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_write_not_reachable_from_any_dispatch_does_not_fire(self, tmp_path):
         """A module-level list written by a function that is never
         dispatched to a thread/task anywhere in the module -- must stay
@@ -7029,9 +6852,6 @@ class TestSharedStateRaceHazards:
         hits = [s for s in result.suggestions if s.category == "unguarded-shared-write"]
         assert hits == []
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_async_create_task_dispatch_fires_same_as_thread_submit(self, tmp_path):
         """A coroutine dispatched via `asyncio.create_task` that writes an
         unguarded module-level dict fires identically to the thread-submit
@@ -7084,9 +6904,6 @@ class TestConcurrencyModelMismatch:
         assert "crunch" in hits[0].message
         assert hits[0].severity == "suggestion"
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (12 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_io_bound_socket_read_in_threadpool_does_not_fire(self, tmp_path):
         """A socket-read function dispatched to a ThreadPoolExecutor is the
         CORRECT model (IO-bound work belongs in a thread pool) -- must stay
@@ -7188,9 +7005,6 @@ class TestCppMayThrow:
         assert any(s.severity == "error" for s in hits)
 
     # frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_noexcept_with_catch_all_does_not_fire  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_noexcept_with_catch_all_does_not_fire(self, tmp_path):
         """Same shape as above, but `caller` wraps the risky call in a
         try/catch (...) -- the hard boundary is discharged, no finding."""
@@ -7214,9 +7028,6 @@ class TestCppMayThrow:
         assert hits == []
 
     # frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_non_noexcept_function_never_fires  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_non_noexcept_function_never_fires(self, tmp_path):
         """A function that may throw but is NOT noexcept is normal
         propagation, not a hard-boundary violation -- never flagged."""

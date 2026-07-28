@@ -3,9 +3,6 @@
 # docstring or comment describing already-implemented internal behavior, verifiable by \
 # reading the code it annotates) rather than a separate cross-module contract needing \
 # its own tracked invariant; disposed as a calibration batch, not claim-by-claim"
-# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
-# frob:waive SCOPE001 reason="T-0176 scope omitted this file, filed T-0220"
-# frob:waive SCOPE001 reason="T-0411 needs --priority/priority subcommand wiring here; T-0453/T-0455 bootstrap precedent, T-0446 tracks the general scope-declaration gap for CLI-wiring tickets"  # noqa: E501
 from __future__ import annotations
 
 import argparse
@@ -2533,7 +2530,6 @@ def _add_workflow_subparsers(sub) -> None:
 
 
 # frob:doc docs/modules/app.md#entry-point
-# frob:waive TEST005 reason="main 0.0% branch cover, debt T-0160"
 # frob:ticket T-0355
 # frob:ticket T-0358
 # frob:tests tests/unit/test_main_entry.py::TestMainSigint.test_keyboard_interrupt_prints_clean_message_and_exits_130  # noqa: E501

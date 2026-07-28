@@ -233,10 +233,6 @@ class WaiverApplication(BaseModel, Generic[_F]):
 # COV006 correctly flagged as an unreachable/nonsensical binding) is
 # removed -- real, directly-reachable coverage already exists at
 # tests/unit/strata/test_waive.py::TestStaleDetail.test_names_rule_node_and_reason.
-# frob:waive DUP001 reason="dup grouped this with deploy/_generate.py's shell-heredoc \
-# builders and dup/_rules.py's _dup001_message purely on generic f-string-message \
-# shape; unrelated domains (waiver drift text vs systemd unit scripts vs gate \
-# messages), false positive"
 def _stale_detail(stale: WaiverMatch) -> str:
     """The human detail string every caller uses for a STALE waiver's
     generated finding -- one home for the message so `_audit.py`/

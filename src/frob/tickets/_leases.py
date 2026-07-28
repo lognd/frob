@@ -278,7 +278,6 @@ def is_lease_ttl_expired(
     return age > ttl_seconds
 
 
-# frob:waive COV005 reason="T-0601 rework: demoted git_common_dir -> _git_common_dir (frob-exports external-consumer test: only used intra-package by this module's own leases_dir, never imported outside frob.tickets); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestGitCommonDir.test_shared_across_linked_worktrees kind="unit"  # noqa: E501
 # frob:ticket T-0601
 def _git_common_dir(root: Path) -> Result[Path, LeaseError]:
@@ -601,7 +600,6 @@ def _add_and_commit_tickets_md(root: Path, ticket_id: str) -> Result[None, Lease
 # frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_ambiguous_failure_is_logged_once_per_process kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_genuine_enoent_still_unlinks kind="unit"  # noqa: E501
 # frob:ticket T-0601
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of _parse_lease_files_cached/_live_leases_pruning_stale/etc from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def read_all_leases(root: Path) -> tuple[_LeaseRecord, ...]:
     """Every currently-recorded cross-worktree lease visible from `root`'s
     repository (T-0473), id-ordered. Degrades to `()` if there is no shared
@@ -926,7 +924,6 @@ def _is_agent_worktree_path(path: Path) -> bool:
 
 
 # frob:ticket T-0836
-# frob:waive COV005 reason="T-0601 rework: demoted list_agent_worktrees -> _list_agent_worktrees (frob-exports external-consumer test: only called intra-package by this module's own sweep_worktrees, never imported outside frob.tickets); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestListAgentWorktrees.test_lists_only_dot_claude_worktrees_paths kind="unit"  # noqa: E501
 # frob:ticket T-0601
 def _list_agent_worktrees(root: Path) -> Result[tuple[Path, ...], _WorktreeSweepError]:
@@ -1000,7 +997,6 @@ def _worktree_head_age_seconds(
 # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_branches_survive_removal kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_min_age_keeps_recent_worktree kind="unit"  # noqa: E501
 # frob:ticket T-0601
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of _sweep_verdict_for_worktree from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def sweep_worktrees(
     root: Path,
     *,

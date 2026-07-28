@@ -119,7 +119,6 @@ def _crate_dir_for(root: Path, spec: NativeSpec) -> Path | None:
 # frob:doc docs/modules/cli.md#frob-natives-build-t-0864
 # frob:tests \
 # tests/unit/test_natives_build.py::TestBuildNatives.test_builds_declared_rust_natives
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def build_natives(root: Path) -> Result[BuildReport, NativesError]:
     """Build every declared rust `[[native]]` crate via `maturin develop
     --uv --release`, all sharing one `CARGO_TARGET_DIR` keyed off `root`'s

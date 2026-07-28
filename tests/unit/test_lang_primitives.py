@@ -164,12 +164,6 @@ def test_child_by_field_and_node_text_public_wrappers(tmp_path: Path):
     # frob:tests src/frob/lang/_common.py::child_by_field kind="unit"
     # frob:tests src/frob/lang/_nodes.py::child_by_field kind="unit"
     # frob:tests src/frob/lang/_nodes.py::node_text kind="unit"
-    # frob:waive DUP001 reason="shares the file's common _py_tree(tmp_path) \
-    # fixture-setup boilerplate with several small sibling node-utility tests \
-    # (T-0989); the shorter '_nodes.py' target string in the directives above (vs. the \
-    # prior '__init__.py') tipped this test's length-normalized similarity ratio past \
-    # the r2 threshold with no change to test logic -- not a real duplicate worth \
-    # extracting"
     tree, _src, _lang = _py_tree(tmp_path)
     fn = next(n for n in tree.root_node.children if n.type == "function_definition")
     name_node = child_by_field(fn, "name")

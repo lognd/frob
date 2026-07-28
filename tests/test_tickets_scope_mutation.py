@@ -376,15 +376,6 @@ class TestScopeCli:
         assert exc_info.value.code == 1
 
     # frob:ticket T-0995
-    # frob:waive DUP001 reason="parallel scaffolding across two distinct test \
-    # suites (this file's general scope-CLI coverage vs \
-    # tests/unit/test_ticket_file_flags.py's T-0458 reason-file-exclusivity \
-    # coverage) -- both currently exercise the same 'no reason provided at \
-    # all' input, but each documents a different named regression/feature; \
-    # extracting a shared helper across the two files would blur which \
-    # suite owns which check (T-0995 judged this pair not a genuine \
-    # single-owner copy, unlike the same-file pair T-0995 also found and \
-    # did extract in test_evidence_integrity.py)"  # noqa: E501
     def test_cli_requires_reason(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_requires_reason

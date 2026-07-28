@@ -672,7 +672,6 @@ def extract_imports(path: Path) -> Result[tuple[str, ...], LangError]:
 
 
 # frob:doc docs/modules/graph.md#public-api
-# frob:waive TEST005 reason="iter_identifiers 75.0% branch cover, debt T-0160"
 def iter_identifiers(path: Path) -> Result[tuple[tuple[str, int], ...], LangError]:
     """(name, 1-based line) for every identifier-like leaf token in `path`.
 

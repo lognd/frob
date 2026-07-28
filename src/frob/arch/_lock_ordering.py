@@ -133,9 +133,6 @@ _LOCK_NAME_HINT_RE = re.compile(r"lock|mutex|semaphore", re.IGNORECASE)
 _ACQUIRE_CALL_RE = re.compile(r"\.acquire$")
 
 
-# frob:waive DUP001 reason="see this function's own docstring -- see \
-# _shared_state_race.py::_iter_own_scope's own DUP001 waiver for full reasoning \
-# (T-0861)"
 def _iter_own_scope(node: Node) -> Iterator[Node]:
     """Every node in `node`'s subtree belonging to the OWNING function's own
     scope -- stops descending at a nested `function_definition`/
@@ -327,9 +324,6 @@ class _FunctionLockInfo:
         self.unresolved = unresolved
 
 
-# frob:waive DUP001 reason="dup grouped this __slots__-class constructor with \
-# _shared_state_race.py::_FunctionScan -- see that class's own DUP001 waiver for full \
-# reasoning (T-0861)"
 class _OrderEdge:
     """One directed lock-order edge (T-0694): `lockA -> lockB` observed on
     some call path, tagged with the contributing function's `symref` and
@@ -337,9 +331,6 @@ class _OrderEdge:
 
     __slots__ = ("src", "dst", "symref", "line")
 
-    # frob:waive DUP001 reason="dup grouped this bind-every-field-from-args __init__ \
-    # with _shared_state_race.py::_FunctionScan.__init__ -- see that class's own \
-    # DUP001 waiver for full reasoning (T-0861)"
     def __init__(self, src: str, dst: str, symref: str, line: int) -> None:
         """Bind this edge's source/destination lock ids and the
         contributing function's symref/line."""
@@ -549,7 +540,6 @@ def _lock_identity_unresolved_finding(rel: str, info: "_FunctionLockInfo"):  # n
     lock-shaped usage."""
     if not info.unresolved:
         return None
-    # frob:waive PERF004 reason="info.unresolved is this call's own per-info distinct set, not a shared re-sort"  # noqa: E501
     sample = sorted(info.unresolved)[0]
     _log.info(
         "lock-identity-unresolved: %s has lock-shaped usage `%s` this "

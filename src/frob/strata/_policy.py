@@ -106,7 +106,6 @@ def _resolve_label_scope(
         _log.error("policy scope: unknown label level %r", value)
         return Err(StrataError.UnknownReference)
     ids: list[str] = []
-    # frob:waive PERF004 reason="sorted() runs once after this loop, not in it"
     for node in model.nodes:
         leq = model.labels.leq(value, node.clearance)
         if leq.is_err:

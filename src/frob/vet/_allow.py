@@ -46,7 +46,6 @@ def _parse_allow(allow_raw: object) -> dict[str, tuple[str, ...] | bool]:
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
-# frob:waive TEST005 reason="_load_vet_config 82.4% branch cover, debt T-0160"
 def _load_vet_config(root: Path) -> VetConfig:
     """Read `frob.toml`'s `[vet]` table; absent table -> `present=False`
     (advisory-only)."""

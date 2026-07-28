@@ -252,9 +252,6 @@ def _check_lint002_node(
     return Ok(_lint002_violation(node, inbound, total, service.danger_ok))
 
 
-# frob:waive DUP001 reason="Violation-builder boilerplate shared shape with \
-# _lint005_violation below; distinct rule ids, fields (service vs headroom), and \
-# messages -- structural coincidence, not shared logic"
 def _lint002_violation(
     node: Node, inbound: list, total: float, service: float
 ) -> LintViolation:
@@ -419,9 +416,6 @@ def _check_lint005_node(
     return Ok(_lint005_violation(node, total, headroom))
 
 
-# frob:waive DUP001 reason="Violation-builder boilerplate shared shape with \
-# _lint002_violation above; distinct rule id and fields -- structural coincidence, not \
-# shared logic"
 def _lint005_violation(node: Node, total: float, headroom: float) -> LintViolation:
     """Build the LINT005 `LintViolation` for a node whose fan-in exceeds
     its capacity headroom -- split out of `_check_lint005_node` purely to

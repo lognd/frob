@@ -328,9 +328,6 @@ def _compliance_gaps(
     )
 
 
-# frob:waive DUP001 reason="parallel family-gap adapter shape shared with _lint_gaps \
-# below by design (T-0154 precedent, see docstrings); distinct violation types and \
-# family tags, not shared logic"
 def _pii_gaps(violations: tuple[PiiViolation, ...]) -> tuple[FamilyGap, ...]:
     """Adapt `_pii.py::PiiViolation`s into `FamilyGap`s. `_pii.py::
     evaluate_pii` has no baseline-view concept (PII001-004 are all
@@ -348,8 +345,6 @@ def _pii_gaps(violations: tuple[PiiViolation, ...]) -> tuple[FamilyGap, ...]:
     )
 
 
-# frob:waive DUP001 reason="parallel family-gap adapter shape shared with _pii_gaps \
-# above by design; distinct violation types and family tags, not shared logic"
 def _lint_gaps(violations: tuple[LintViolation, ...]) -> tuple[FamilyGap, ...]:
     """Adapt `_lint.py::LintViolation`s into `FamilyGap`s. `_lint.py::
     evaluate_lint` has no baseline-view concept (LINT001-005 are all
@@ -710,8 +705,6 @@ def _blast_radius_gaps_per_user(
 # frob:tests tests/unit/strata/test_audit.py::TestHostWiring.test_shared_model_gaps
 # frob:tests tests/unit/strata/test_audit.py::TestHostWiring.test_hardened_model_proved
 # frob:tests tests/unit/strata/test_audit.py::TestHostWiring.test_no_runs_as_no_gaps
-# frob:waive TEST005 reason="Err branches need a deep StrataError; debt T-0160"
-# frob:waive PERF004 reason="sorted() builds iterable once, not a re-sort (T-0283)"
 # frob:ticket T-0601
 # frob:enforces CHK-GATE-HOST-BLAST
 def evaluate_exhaustiveness(

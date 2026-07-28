@@ -142,11 +142,6 @@ class _ProjectNamespaces:
     rust_crate_dirs: dict[str, str] = field(default_factory=dict)
 
 
-# frob:waive DUP001 reason="dup grouped this with _redundancy.py/_sketch_store.py's \
-# own _read_toml wrappers -- after T-0861's own read_toml_lenient extraction (the real \
-# shared logic), each is now an intentionally-thin per-module wrapper naming its own \
-# log_prefix; collapsing further would erase the distinct log-prefix binding each \
-# module needs (T-0861)"
 def _read_toml(path: Path) -> dict | None:
     """Best-effort TOML load: `None` on any missing/unreadable/malformed file,
     never a crash -- a missing manifest just means that language contributes

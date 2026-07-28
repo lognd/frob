@@ -574,8 +574,6 @@ def host_manifest_for(node: Node) -> HostManifest | None:
 # frob:ticket T-0861
 # frob:doc docs/strata/host.md#hostmanifest
 # frob:tests tests/unit/strata/test_host_isolation.py::TestLateralIsolation.test_skips_below_two_users  # noqa: E501
-# frob:waive DUP001 reason="see _krb_movement.py::_manifests_by_node's own DUP001 \
-# waiver for full reasoning (T-0861)"
 def manifests_by_node(model: KernelModel) -> dict[str, HostManifest]:
     """Every node with a declared std.host manifest, keyed by node id --
     the shared per-node lookup HOST001/HOST002 (`_host_isolation.py`) and

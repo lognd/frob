@@ -806,7 +806,6 @@ def render_claims_block(claims: DoneReportClaims) -> str:
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_error_findings_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_measured_empty_error_findings_differs_from_none kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of _extract_claims_section_lines/_parse_claims_lines from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def parse_claims_from_done_report(body: str) -> DoneReportClaims | None:
     """Recover a `### Captured claims` section from `body`'s `## Done
     report`, the inverse of `render_claims_block` (T-0754). Returns `None`
@@ -1125,7 +1124,6 @@ class ReviewEntry(BaseModel):
 
 
 # frob:ticket T-0838
-# frob:waive COV005 reason="T-0601 rework: demoted omit_empty_collections -> _omit_empty_collections (frob-exports external-consumer test: only called intra-package by Ticket._omit_empty_collections_on_dump, never imported outside frob.tickets; a frob:doc anchor alone is not evidence of external need)"  # noqa: E501
 # frob:tests tests/test_tickets.py::TestEmptyCollectionOmission.test_dict_without_empty_collections_returned_unchanged  # noqa: E501
 def _omit_empty_collections(data: Mapping[str, object]) -> dict[str, object]:
     """Drop every key of `data` whose value is an empty `list`/`tuple` (T-0838).

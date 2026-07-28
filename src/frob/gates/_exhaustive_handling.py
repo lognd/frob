@@ -117,9 +117,6 @@ _DIRECTIVE_PREFIX = "# frob:raises "
 _DIRECTIVE_LOOKBACK_LINES = 15
 
 
-# frob:waive DUP001 reason="see this function's own docstring -- deliberate narrow \
-# per-module duplicate of one small helper, same as _mayraise.py/_exceptions.py/ \
-# dup/_rules.py's own copies, chosen over a cross-module private import (T-0861)"
 def _qualname(
     module: NormalizedModule, cls_name: str | None, func: NormalizedFunction
 ) -> str:

@@ -94,8 +94,6 @@ def _language_for(rel_path: str) -> str | None:
     return _EXT_LANGUAGE.get(suffix)
 
 
-# frob:waive DUP001 reason="the established parallel-gate-scaffolding false pair -- \
-# see _opaque.py::_tracked_files' own DUP001 waiver for the full convention (T-0861)"
 def _tracked_files(root: Path) -> tuple[str, ...]:
     """`git ls-files` under `root`, root-relative POSIX paths, `()` on any
     git failure -- mirrors `frob.gates._secrets._tracked_files`'s

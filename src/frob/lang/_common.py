@@ -404,12 +404,6 @@ def child_by_field(node: Node, field: str) -> Node | None:
 
 
 # frob:doc docs/modules/lang.md#primitives
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
-# docs/modules/lang.md#primitives documents the shared tree-sitter \
-# primitives this file exists to centralize, including this one; demoted \
-# to private in this ticket (frob-exports: used only by frob.lang's own \
-# walkers, never a cross-package import) but remains the thing the doc \
-# section describes, and the doc text/directive were updated to the new name"
 def _child_text(node: Node | None) -> str:
     """Decode a node's own text, or '' if the node is absent -- a programmer
     convenience for optional field lookups (missing name is a grammar bug,
@@ -601,12 +595,6 @@ def _cpp_class_methods(node: Node) -> list[tuple[Node, str]]:
 
 
 # frob:doc docs/modules/lang.md#primitives
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
-# docs/modules/lang.md#primitives documents the shared tree-sitter \
-# primitives this file exists to centralize, including this one; demoted \
-# to private in this ticket (frob-exports: used only by frob.lang's own \
-# walkers, never a cross-package import) but remains the thing the doc \
-# section describes, and the doc text/directive were updated to the new name"
 def _iter_cpp_functions(root: Node) -> tuple[tuple[Node, str], ...]:
     """(node, qualified_name) for every C/C++ function under `root`.
 

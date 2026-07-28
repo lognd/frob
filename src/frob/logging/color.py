@@ -32,7 +32,6 @@ DIM = "2"
 
 
 # frob:doc docs/modules/logging.md#public-api
-# frob:waive TEST005 reason="should_color 71.4% branch cover, debt T-0160"
 # invariant spec: [INV-037](invariants/INV-037.md)
 def should_color(stream: IO[str] | None = None) -> bool:
     """Whether ANSI color belongs on `stream` (default stdout) right now."""

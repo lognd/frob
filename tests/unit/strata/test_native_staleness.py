@@ -21,9 +21,6 @@ from frob.strata._native_staleness import (
 )
 
 
-# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) (2 \
-# sites) sharing an arrange-act scaffold typical of exhaustive per-case/per-scenario \
-# coverage; extracting would obscure per-case intent"
 def _fake_native_package(root: Path, name: str, so_bytes: bytes) -> Path:
     """A maturin-style extension PACKAGE on `root`: `name/__init__.py` plus a
     compiled `name.abi3.so` alongside it -- mirrors

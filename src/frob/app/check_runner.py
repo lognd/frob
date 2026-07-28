@@ -164,12 +164,6 @@ def _language_unchanged(root: Path, base: str, project_type: str) -> bool:
 
 
 # frob:ticket T-0421
-# frob:waive DUP001 reason="dup grouped this with _skip_note_result on the shared \
-# synthetic ToolResult SKIPPED-line boilerplate -- unchanged-since-base (T-0421) and \
-# pinned-away-by-check_type are two distinct, independently-documented skip reasons \
-# with different messages; each keeps its own named builder so the honest-not-silent \
-# distinction each docstring argues for stays visible in the code, not just prose \
-# (T-0861)"
 def _unchanged_skip_result(project_type: str) -> ToolResult:
     """A `SKIPPED (unchanged)` `ToolResult` for `project_type` (T-0421): the
     language IS present in the project but nothing under its own suffixes
@@ -186,8 +180,6 @@ def _unchanged_skip_result(project_type: str) -> ToolResult:
     )
 
 
-# frob:waive DUP001 reason="dup grouped this with _unchanged_skip_result -- see that \
-# function's own DUP001 waiver for full reasoning (T-0861)"
 def _skip_note_result(skipped: str, chosen: str) -> ToolResult:
     """A synthetic `ToolResult` recording that `skipped`'s stage did NOT run.
 

@@ -33,9 +33,6 @@ class TestRunPytestDirectlyStripsLeaseEnv:
 
         captured: dict = {}
 
-        # frob:waive DUP001 reason="parallel test methods within test_ticket_runner_pytest_env.py (2 \
-        # sites) sharing an arrange-act scaffold typical of exhaustive \
-        # per-case coverage; extracting would obscure per-case intent"
         def fake_guarded_subprocess_run(args, **kwargs):  # noqa: ANN001
             captured["env"] = kwargs.get("env")
             return Ok(

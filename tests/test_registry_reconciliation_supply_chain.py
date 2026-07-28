@@ -1,4 +1,3 @@
-# frob:waive SCOPE001 reason="T-0389's declared scope is src/frob/vet/+docs/design/registry/supply-chain.yaml; tests/** is leased in-progress elsewhere so the scope cannot be formally extended here, same ad-hoc precedent as tests/test_check_coverage_registry.py's existing T-0424 SCOPE001 waiver and the sibling reconciliation pin tests (T-0384/T-0385/T-0386/T-0387/T-0388)"  # noqa: E501
 """Real-data EXHAUSTIVENESS meta-test for T-0389 (registry reconciliation:
 supply-chain, 41 entries) -- docs/design/registry/supply-chain.yaml,
 docs/design/registry/EXHAUSTIVENESS-GATE.md#unified-model-t-0407.
@@ -47,10 +46,6 @@ _SUPPLY_CHAIN_CATALOGUED_TOTAL = 41
 
 
 # frob:ticket T-0389
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across 8 sibling test modules \
-# (8 sites) -- each file exercises a structurally similar check for \
-# a distinct domain/module with the same arrange-act shape; \
-# extracting would blur which domain owns which check"
 def _real_queue() -> TicketQueue:
     """Load the repo's real ticket queue, falling back to an empty queue
     only if the ledger itself fails to parse (never masks a real
@@ -185,10 +180,6 @@ class TestExhaustivenessGateOverRealSupplyChain:
     default gate run), not a side-channel-only assertion."""
 
     # frob:ticket T-0389
-    # frob:waive DUP001 reason="parallel per-domain test scaffolding across 8 sibling test modules \
-    # (8 sites) -- each file exercises a structurally similar check for \
-    # a distinct domain/module with the same arrange-act shape; \
-    # extracting would blur which domain owns which check"
     def test_no_supply_chain_violations(self) -> None:
         real_queue = _real_queue()
 

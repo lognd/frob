@@ -42,12 +42,6 @@ from frob.tickets._models import recover_done_report_why
 from frob.tickets._store import _serialize_ticket
 
 
-# frob:waive DUP001 reason="mirrors tests/test_tickets_evidence_cli.py's own \
-# _patch_collect/_patch_passing hermetic-collection fixtures exactly (same \
-# monkeypatch target, same rationale: stay fast/hermetic without spawning a real \
-# pytest/cargo subprocess) -- a shared helper module for these two would be a purely \
-# cosmetic extraction across otherwise-independent test files, not a real duplicated \
-# rule"
 def _patch_collect(monkeypatch: pytest.MonkeyPatch, node_ids: frozenset[str]) -> None:
     """Make `frob.testing.collect_python_tests` return `node_ids` without
     spawning pytest, so CLI evidence-routing tests stay hermetic."""
@@ -60,12 +54,6 @@ def _patch_collect(monkeypatch: pytest.MonkeyPatch, node_ids: frozenset[str]) ->
     )
 
 
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across \
-# test_app_runners_batch7.py, test_ticket_reverify.py, \
-# test_tickets_acceptance.py, test_tickets_evidence_cli.py (4 sites) \
-# -- each file exercises a structurally similar check for a distinct \
-# domain/module with the same arrange-act shape; extracting would \
-# blur which domain owns which check"
 def _patch_passing(monkeypatch: pytest.MonkeyPatch) -> None:
     """Make `_verify_ids_passing` report every id it is asked about as
     passing, without spawning pytest/cargo."""

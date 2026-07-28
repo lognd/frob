@@ -84,8 +84,6 @@ class _HeavyComputation:
     cached_by: tuple[str, ...]
 
 
-# frob:waive DUP001 reason="see _docblocks.py::_read_toml's own DUP001 waiver for \
-# full reasoning (T-0861)"
 def _read_toml(path: Path) -> dict | None:
     """Best-effort TOML load: `None` on any missing/unreadable/malformed
     file -- a missing/absent `[[perf.heavy]]` table just means no PERF007

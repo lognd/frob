@@ -150,10 +150,6 @@ _SLUG_STRIP_RE = re.compile(r"[^\w\- ]", re.UNICODE)
 
 
 # frob:doc docs/modules/graph.md#comment-dsl
-# frob:waive DUP001 reason="tests/unit/test_research_assets.py::_slugify deliberately \
-# mirrors this exactly (own docstring: checks the same anchor resolution the \
-# doclink/docanchor gates perform, without importing gate internals into a unit test) \
-# -- intentional test isolation, not an unaccounted duplicate"
 def slugify(heading: str) -> str:
     """GitHub heading-anchor slug: lowercase, strip disallowed punctuation
     (keeping word chars/hyphens/spaces), spaces become hyphens one-for-one
@@ -265,11 +261,6 @@ def _attrs_verb_error_waive(
     return None
 
 
-# frob:waive DUP001 reason="dup grouped this with _attrs_verb_error_requires on the \
-# shared missing-attrs-check MalformedDirective boilerplate -- frob:debt and \
-# frob:requires are two independently-evolving directive verbs with different \
-# mandatory-attr sets and messages; each keeps its own per-verb checker by this \
-# module's established per-verb-function convention (T-0861)"
 def _attrs_verb_error_debt(
     attrs: dict[str, str], *, path: str, lineno: int
 ) -> MalformedDirective | None:
@@ -378,8 +369,6 @@ def _attrs_verb_error_transition(
     )
 
 
-# frob:waive DUP001 reason="dup grouped this with _attrs_verb_error_debt -- see that \
-# function's own DUP001 waiver for full reasoning (T-0861)"
 def _attrs_verb_error_requires(
     attrs: dict[str, str], *, path: str, lineno: int
 ) -> MalformedDirective | None:

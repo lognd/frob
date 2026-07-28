@@ -1,8 +1,6 @@
 """CLI wiring for `frob test [--all] [--base REF] [--lang L] [--fallback MODE]`
 (docs/modules/testing.md)."""
 
-# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
-
 from __future__ import annotations
 
 import sys
@@ -339,7 +337,6 @@ def _refresh_collection(root: Path) -> None:
         )
 
 
-# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 # frob:ticket T-0322
 # frob:tests tests/test_app.py::TestWaitCoverage.test_wait_coverage_flag_dispatches_and_exits_zero_on_success  # noqa: E501
 # frob:tests tests/test_app.py::TestWaitCoverage.test_wait_coverage_flag_exits_1_on_failure  # noqa: E501

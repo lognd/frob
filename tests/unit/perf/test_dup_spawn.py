@@ -61,9 +61,6 @@ class TestPerf012DuplicateSpawn:
         violations = duplicate_spawn_violations([parsed])
         assert any(v.rule == "PERF012" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_dup_spawn.py (2 sites) sharing \
-    # an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_two_helpers_spawning_different_subprocess_args_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -93,9 +90,6 @@ class TestPerf012DuplicateSpawn:
         violations = duplicate_spawn_violations([parsed])
         assert not any(v.rule == "PERF012" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_dup_spawn.py (2 sites) sharing \
-    # an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_single_helper_call_is_not_flagged(self, tmp_path: Path) -> None:
         """Calling just ONE spawning helper once is the ordinary, non-
         duplicated case -- never a PERF012 finding on its own."""
@@ -115,9 +109,6 @@ class TestPerf012DuplicateSpawn:
         violations = duplicate_spawn_violations([parsed])
         assert not any(v.rule == "PERF012" for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_dup_spawn.py (2 sites) sharing \
-    # an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_multi_hop_duplicate_via_different_intermediate_callees_is_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -155,9 +146,6 @@ class TestPerf012DuplicateSpawn:
         violations = duplicate_spawn_violations([parsed])
         assert any(v.rule == "PERF012" and "caller" in v.message for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_dup_spawn.py (2 sites) sharing \
-    # an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_call_site_varying_argument_is_not_flagged(self, tmp_path: Path) -> None:
         """Same multi-hop shape as the true positive, but each leaf spawn's
         argument is genuinely per-call-site distinct (a different
@@ -193,9 +181,6 @@ class TestPerf012DuplicateSpawn:
             v.rule == "PERF012" and "caller" in v.message for v in violations
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_dup_spawn.py (2 sites) sharing \
-    # an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_three_hop_duplicate_split_across_sibling_callees_is_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -237,9 +222,6 @@ class TestPerf012DuplicateSpawn:
         violations = duplicate_spawn_violations([parsed])
         assert any(v.rule == "PERF012" and "caller" in v.message for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_dup_spawn.py (2 sites) sharing \
-    # an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_unresolvable_dynamic_dispatch_callee_never_manufactures_a_duplicate(
         self, tmp_path: Path
     ) -> None:
@@ -277,9 +259,6 @@ class TestPerf012CalibrationT1018:
     true-positive guard proving the fix does not touch the original T-0919
     detection shape."""
 
-    # frob:waive DUP001 reason="parallel test methods within test_dup_spawn.py (4 sites) sharing \
-    # an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_before_after_state_check_with_mutation_between_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -316,9 +295,6 @@ class TestPerf012CalibrationT1018:
             v.rule == "PERF012" and "caller" in v.message for v in violations
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_dup_spawn.py (3 sites) sharing \
-    # an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_adjacent_true_positive_still_fires_after_interleaving_fix(
         self, tmp_path: Path
     ) -> None:
@@ -344,9 +320,6 @@ class TestPerf012CalibrationT1018:
         violations = duplicate_spawn_violations([parsed])
         assert any(v.rule == "PERF012" and "caller" in v.message for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_dup_spawn.py (4 sites) sharing \
-    # an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_splat_forwarding_wrapper_called_with_different_args_is_not_flagged(
         self, tmp_path: Path
     ) -> None:

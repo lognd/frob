@@ -175,7 +175,6 @@ def _parse_for_outline(
 
 
 # frob:doc docs/commands/outline.md#public-api
-# frob:waive TEST005 reason="outline_file 86.7% branch cover, debt T-0160"
 def outline_file(path: Path) -> Result[ModuleOutline, OutlineError]:
     ext = path.suffix.lower()
     if ext not in _OUTLINE_EXTS:

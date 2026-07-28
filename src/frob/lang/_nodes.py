@@ -22,12 +22,6 @@ from frob.lang._common import child_by_field as _child_by_field
 
 
 # frob:doc docs/modules/graph.md#public-api
-# frob:waive AFFECT001 reason="T-0871: a docstring cross-reference update to \
-# the private \
-# cross-reference name (child_text -> _child_text, an unrelated frob-exports \
-# privatize decision) -- this function's own public signature/behavior is \
-# unchanged, docs/modules/graph.md#public-api describes the public contract, \
-# not the private helper it happens to delegate to"
 def cpp_function_nodes(tree: Tree) -> tuple[tuple[Node, str], ...]:
     """(node, qualified_name) for every C/C++ function in `tree` (one level
     of class/struct nesting). Thin public wrapper around
@@ -45,12 +39,6 @@ def child_by_field(node: Node, field: str) -> Node | None:
 
 
 # frob:doc docs/modules/graph.md#public-api
-# frob:waive AFFECT001 reason="T-0871: a docstring cross-reference update to \
-# the private \
-# cross-reference name (child_text -> _child_text, an unrelated frob-exports \
-# privatize decision) -- this function's own public signature/behavior is \
-# unchanged, docs/modules/graph.md#public-api describes the public contract, \
-# not the private helper it happens to delegate to"
 def node_text(node: Node | None) -> str:
     """Decode `node`'s own text, or '' if absent. Public alias of
     `frob.lang._common._child_text` for callers doing raw node traversal
@@ -59,7 +47,6 @@ def node_text(node: Node | None) -> str:
 
 
 # frob:doc docs/modules/graph.md#public-api
-# frob:waive TEST005 reason="resolve_local_import 57.1% branch cover, debt T-0160"
 def resolve_local_import(
     specifier: str, language: str, *, file_dir: Path, root: Path
 ) -> str | None:

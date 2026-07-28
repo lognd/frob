@@ -32,9 +32,6 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _MODEL_PATH = _REPO_ROOT / "design" / "frob.strata"
 
 
-# frob:waive DUP001 reason="parallel CLI system-test scaffolding: independent commands \
-# sharing the subprocess-dispatch arrange-act shape; extracting would obscure \
-# per-command intent"
 @pytest.fixture(scope="module")
 def _model():
     """Parse + elaborate `design/frob.strata` once for every test in this module."""

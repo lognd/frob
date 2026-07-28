@@ -200,11 +200,6 @@ _MIN_MANUAL_DECORATOR_WRAPS = 3
 
 # frob:doc docs/modules/arch.md#design-pattern-registry
 # frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_isinstance_chain_recommends_strategy  # noqa: E501
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
-# docs/modules/arch.md#design-pattern-registry documents this registry's row \
-# shape; this type was demoted to private in this ticket (frob-exports: \
-# zero real consumers outside this module) but remains the thing the doc \
-# section describes"
 @dataclass(frozen=True)
 # frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 class _PatternRuleSpec:

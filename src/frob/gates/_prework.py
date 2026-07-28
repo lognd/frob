@@ -18,8 +18,6 @@ back with `load_prework`.
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
 
-# frob:waive TEST005 reason="module line coverage 81.8%, debt T-0160"
-
 from __future__ import annotations
 
 import json
@@ -59,7 +57,6 @@ def _prework_path(root: Path, ticket_id: str) -> Path:
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:waive TEST005 reason="record_prework 66.7% branch cover, debt T-0160"
 def record_prework(
     root: Path, ticket_id: str, sweep: PreworkSweep
 ) -> Result[Unit, GateError]:
@@ -243,7 +240,6 @@ def _bounded_xref_scan(
 # frob:tests tests/test_gates.py::TestPreworkSweepBounds.test_sweep_ticket_xref_hits_are_real_symbols  # noqa: E501
 # frob:tests tests/test_gates.py::TestPreworkSweepBounds.test_sweep_ticket_partial_on_budget_exceeded  # noqa: E501
 # frob:tests tests/test_gates.py::TestPreworkSweepBounds.test_sweep_ticket_resumes_pending_patterns  # noqa: E501
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def sweep_ticket(
     root: Path,
     ticket: Ticket,
@@ -346,7 +342,6 @@ def sweep_ticket(
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:waive TEST005 reason="load_prework 88.9% branch cover, debt T-0160"
 def load_prework(root: Path, ticket_id: str) -> PreworkSweep | None:
     """The recorded sweep for `ticket_id`, or `None` if never recorded/unreadable."""
     path = _prework_path(root, ticket_id)

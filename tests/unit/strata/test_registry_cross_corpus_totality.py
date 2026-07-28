@@ -1,4 +1,3 @@
-# frob:waive SCOPE001 reason="T-0678's declared scope is docs/design/registry/**+src/frob/strata/**+tests/unit/strata/**; this test module reads shared registry-loader infrastructure (frob.registry) this ticket does not own, same ad-hoc precedent as tests/test_registry_reconciliation_system_design.py's T-0392 SCOPE001 waiver and tests/unit/strata/test_system_design_coverage.py's T-0658 SCOPE001 waiver"  # noqa: E501
 """T-0678 (epic T-0346's cross-corpus totality close condition): extends
 T-0343's per-domain drift-lock with a standing check spanning the WHOLE
 registry (all 11 source docs / 1950+ entries), not one domain file at a

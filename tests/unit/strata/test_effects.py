@@ -71,9 +71,6 @@ class TestExtractEffects:
 
 class TestCheckCapabilityConformance:
     # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_effects.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_declared_may_capability_silences_matching_effect(self, tmp_path: Path):
         _write(tmp_path, "api/handler.py", "requests.get('https://stripe.com')\n")
         model = KernelModel(
@@ -133,9 +130,6 @@ class TestCheckCapabilityConformance:
         assert report.violations == ()
 
     # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_effects.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_fs_write_effect_needs_fs_kind_declaration(self, tmp_path: Path):
         _write(tmp_path, "api/handler.py", "open('f').write('x')\n")
         model = KernelModel(
@@ -252,9 +246,6 @@ class TestLegacyCapabilityAliases:
 # TestFrobSelfModel.test_sys_gate_zero_violations` already covers.
 class TestDeployServeMutateNodeSplitConformance:
     # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_effects.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_deploy_declares_every_real_effect_it_exercises(self):
         root = Path(__file__).resolve().parents[3]
         model = KernelModel(
@@ -272,9 +263,6 @@ class TestDeployServeMutateNodeSplitConformance:
         assert report.violations == ()
 
     # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_effects.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_mutate_declares_every_real_effect_it_exercises(self):
         root = Path(__file__).resolve().parents[3]
         model = KernelModel(

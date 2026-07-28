@@ -119,9 +119,6 @@ def _iter_calls_crossing_closures(node: Node) -> Iterator[Node]:
         yield from _iter_calls_crossing_closures(c)
 
 
-# frob:waive DUP001 reason="see this function's own docstring -- see \
-# _shared_state_race.py::_iter_own_scope's own DUP001 waiver for full reasoning \
-# (T-0861)"
 def _iter_own_scope(node: Node) -> Iterator[Node]:
     """Every node in `node`'s subtree belonging to the OWNING function's
     own scope -- stops descending at a nested `function_definition`/

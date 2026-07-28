@@ -21,9 +21,6 @@ from frob.testing._models import CollectedTests
 from frob.tickets import TicketState, load_queue
 
 
-# frob:waive DUP001 reason="parallel App runner batch tests: independent per-command \
-# cases sharing an arrange-act scaffold across the batch test files; extracting would \
-# obscure per-case intent"
 def _patch_collect(monkeypatch: pytest.MonkeyPatch, node_ids: frozenset[str]) -> None:
     """Make `frob.testing.collect_python_tests` return `node_ids` without
     spawning a real pytest subprocess, so evidence-routing tests stay fast
@@ -37,12 +34,6 @@ def _patch_collect(monkeypatch: pytest.MonkeyPatch, node_ids: frozenset[str]) ->
     )
 
 
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across \
-# test_app_runners_batch7.py, test_ticket_reverify.py, \
-# test_tickets_acceptance.py, test_tickets_evidence_cli.py (4 sites) \
-# -- each file exercises a structurally similar check for a distinct \
-# domain/module with the same arrange-act shape; extracting would \
-# blur which domain owns which check"
 def _patch_passing(monkeypatch: pytest.MonkeyPatch) -> None:
     """Make D-01's `_verify_ids_passing` (T-0398 CLI wiring) report every
     id it is asked about as passing, without spawning pytest/cargo (same
@@ -87,9 +78,6 @@ class TestTicketList:
             ticket_run(cfg)
         assert "no tickets" in caplog.text
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_list_json_mode(self, tmp_path: Path, caplog) -> None:
         cfg = AppConfig(
             ticket_command="new",
@@ -118,9 +106,6 @@ class TestTicketList:
             ticket_run(cfg)
         assert "no tickets" in caplog.text
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_list_text_mode_prints_ticket_line(self, tmp_path: Path, caplog) -> None:
         cfg = AppConfig(
             ticket_command="new",
@@ -219,9 +204,6 @@ class TestTicketDoable:
             ticket_run(cfg)
         assert "zero doable tickets" in caplog.text
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_doable_json_mode(self, tmp_path: Path, caplog) -> None:
         cfg = AppConfig(
             ticket_command="new",
@@ -235,9 +217,6 @@ class TestTicketDoable:
             ticket_run(cfg)
         assert '"title": "a ticket"' in caplog.text
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_doable_text_mode(self, tmp_path: Path, caplog) -> None:
         cfg = AppConfig(
             ticket_command="new",
@@ -474,9 +453,6 @@ class TestTicketStart:
         with pytest.raises(SystemExit):
             ticket_run(cfg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_app_runners_batch7.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_unknown_id_exits_1(self, tmp_path: Path, caplog) -> None:
         cfg = AppConfig(
             ticket_command="start", ticket_path=tmp_path, ticket_id="T-9999"
@@ -662,9 +638,6 @@ class TestTicketRequeue:
         with pytest.raises(SystemExit):
             ticket_run(cfg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_app_runners_batch7.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_unknown_id_exits_1(self, tmp_path: Path, caplog) -> None:
         cfg = AppConfig(
             ticket_command="requeue", ticket_path=tmp_path, ticket_id="T-9999"
@@ -700,9 +673,6 @@ class TestTicketRequeue:
             load_queue(tmp_path).danger_ok.tickets["T-0001"].state == TicketState.QUEUED
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_app_runners_batch7.py (3 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_requeue_not_in_progress_exits_1(self, tmp_path: Path, caplog) -> None:
         cfg = AppConfig(
             ticket_command="new",
@@ -756,9 +726,6 @@ class TestTicketSweep:
         with pytest.raises(SystemExit):
             ticket_run(cfg)
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_not_in_progress_exits_1(self, tmp_path: Path, caplog) -> None:
         cfg = AppConfig(
             ticket_command="new",
@@ -947,9 +914,6 @@ class TestTicketClose:
         with pytest.raises(SystemExit):
             ticket_run(cfg)
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_close_queued_gives_start_hint(self, tmp_path: Path, caplog) -> None:
         cfg = AppConfig(
             ticket_command="new",
@@ -1187,9 +1151,6 @@ class TestSysRunnerDispatch:
 
 
 class TestSysPlan:
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_no_design_models(self, tmp_path: Path, caplog) -> None:
         repo = tmp_path / "empty"
         repo.mkdir()
@@ -1278,9 +1239,6 @@ class TestSysPlan:
 
 
 class TestSysDoc:
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_no_design_models(self, tmp_path: Path, caplog) -> None:
         repo = tmp_path / "empty"
         repo.mkdir()
@@ -1378,9 +1336,6 @@ class TestSysExport:
 
 
 class TestSysAudit:
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_no_design_models(self, tmp_path: Path, caplog) -> None:
         repo = tmp_path / "empty"
         repo.mkdir()

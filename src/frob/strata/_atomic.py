@@ -204,7 +204,6 @@ def _fault_cases_for_operation(
 
 
 # frob:doc docs/strata/boundary.md#frames-and-failure-atomicity
-# frob:waive TEST005 reason="evaluate_atomic_contracts 83.3% branch cover, debt T-0160"
 def evaluate_atomic_contracts(
     module: Module,
     model: KernelModel,

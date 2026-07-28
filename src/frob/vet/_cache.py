@@ -7,8 +7,6 @@ sqlite, same posture as `_registry.py`'s publish-date cache: unreadable db
 never crashes the scan, it just means "no prior verdict" (cold cache).
 """
 
-# frob:waive TEST005 reason="module line coverage 74.5%, debt T-0160"
-
 from __future__ import annotations
 
 import json
@@ -50,7 +48,6 @@ def _connect(db_path: Path) -> sqlite3.Connection | None:
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
-# frob:waive TEST005 reason="_store_verdict 61.5% branch cover, debt T-0160"
 def _store_verdict(db_path: Path, verdict: PackageVerdict) -> None:
     """Persist `verdict`, content-addressed by (ecosystem, name, artifact_hash).
     Best-effort: a write failure is logged, never raised (the scan already
@@ -98,7 +95,6 @@ def _insert_verdict(conn: sqlite3.Connection, verdict: PackageVerdict) -> None:
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
-# frob:waive TEST005 reason="_latest_verdict 68.8% branch cover, debt T-0160"
 def _latest_verdict(db_path: Path, ecosystem: str, name: str) -> PackageVerdict | None:
     """The most recently stored verdict for (ecosystem, name), any hash --
     used as the "previous version" baseline for VET003 escalation diffs."""

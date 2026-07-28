@@ -947,7 +947,6 @@ def _discharge(root: Path, symref: str, resource: str) -> Violation | None:
 # frob:tests tests/test_gates.py::TestCleanupObligationGate.test_deinit_reachable_for_cleanup_always_protocol_is_not_flagged  # noqa: E501
 # frob:ticket T-0972
 # frob:enforces CHK-GATE-PROTO004
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def protocol_summary_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """PROTO001: the real `mark_unresolved=True` production entrypoint into
     `frob.graph.summary.compute_protocol_summaries` (T-0813) -- every
@@ -1030,7 +1029,6 @@ def _package_protocol_violations(
     `_entrypoint_protocol_violations` per tagged entrypoint --
     `protocol_summary_gate`'s per-package half, split from its top-level
     package-iteration loop."""
-    # frob:waive PERF004 reason="symrefs is this call's own per-package distinct list, not a shared re-sort"  # noqa: E501
     entrypoints = sorted(set(symrefs))
     sample_symref = entrypoints[0]
     sample_path = sample_symref.split("::", 1)[0]

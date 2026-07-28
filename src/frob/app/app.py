@@ -1,5 +1,3 @@
-# frob:waive TEST005 reason="module line coverage 52.0%, debt T-0160"
-# frob:waive SCOPE001 reason="T-0319 scope comma-joined, matches nothing (T-0241 bug)"
 from __future__ import annotations
 
 import sys
@@ -122,9 +120,6 @@ def _dispatch_table() -> dict[Subcommand, Callable[[AppConfig], None]]:
 
 
 # frob:doc docs/modules/app.md#entry-point
-# frob:waive AFFECT001 reason="T-0988 pure mechanical frob:-directive comment rewrap \
-# in an inner method's body; no behavior/contract change, doc anchor remains accurate \
-# as-is"
 class App:
     # frob:ticket T-0021
     def __init__(self, cfg: AppConfig) -> None:

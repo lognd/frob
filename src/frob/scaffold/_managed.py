@@ -178,11 +178,6 @@ exit 0
 _OURS_MARKER = "# Installed by `frob scaffold install-worktree-lease-hook` (T-0431)."
 
 
-# frob:waive DUP001 reason="dup grouped this f-string-message builder with \
-# strata/_waive.py::_stale_detail, deploy/_generate.py's shell-heredoc builders, and \
-# dup/_rules.py::_dup001_message purely on generic f-string shape -- unrelated domain \
-# (managed-block marker line), false positive, same established false-pair as those \
-# functions' own DUP001 waivers (T-0861)"
 def _marker_begin(block_id: str) -> str:
     """The opening marker line for managed-block `block_id` -- content
     between this and `_marker_end(block_id)` is frob-owned and safe to
@@ -206,15 +201,6 @@ def _digest(content: str) -> str:
 
 
 # frob:doc docs/commands/scaffold.md#managed-blocks-t-0736
-# frob:waive AFFECT001 reason="T-0871: ManagedTextBlock -> _ManagedTextBlock \
-# rename only (frob-exports privatize: zero real consumers outside this \
-# module) -- the managed-blocks CONTRACT docs/commands/scaffold.md#managed-\
-# blocks-t-0736 describes is unchanged, this type was never part of it"
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
-# docs/commands/scaffold.md#managed-blocks-t-0736 documents this managed- \
-# block row shape; demoted to private in this ticket (frob-exports: zero \
-# real consumers outside this module) but remains the thing the doc \
-# section describes"
 # frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 @dataclass(frozen=True)
 class _ManagedTextBlock:
@@ -303,10 +289,6 @@ FROBLEMS.md
 """
 
 # frob:doc docs/commands/scaffold.md#managed-blocks-t-0736
-# frob:waive AFFECT001 reason="T-0871: only the ManagedTextBlock -> \
-# _ManagedTextBlock type-annotation rename touched this constant's own \
-# line (frob-exports privatize, zero real consumers outside this module) -- \
-# its contents/order are unchanged"
 #: All text-kind managed blocks. Order matters only for `apply`'s report
 #: ordering, not for correctness (each targets a distinct file/marker id).
 MANAGED_TEXT_BLOCKS: tuple[_ManagedTextBlock, ...] = (

@@ -59,9 +59,6 @@ class TestPhaseBlockHappyPath:
 
 class TestPhaseBlockFailClosed:
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_boundary_phases.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_parse_phase_frame_must_be_empty(self):
         text = """
         module m
@@ -77,9 +74,6 @@ class TestPhaseBlockFailClosed:
         assert result.danger_err is StrataError.FrameViolation
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="parallel test fixtures across 3 sibling test file(s) \
-    # (7 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_effect_frame_target_must_be_declared(self):
         text = """
         module m
@@ -93,9 +87,6 @@ class TestPhaseBlockFailClosed:
         assert result.danger_err is StrataError.UnknownReference
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="parallel test fixtures across 3 sibling test file(s) \
-    # (7 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_record_audit_target_must_be_declared(self):
         text = """
         module m
@@ -109,9 +100,6 @@ class TestPhaseBlockFailClosed:
         assert result.danger_err is StrataError.UnknownReference
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_boundary_phases.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_refuse_frame_target_must_be_append_only(self):
         text = """
         module m
@@ -212,9 +200,6 @@ class TestOperationFailClosed:
         assert result.is_ok
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="parallel test fixtures across 3 sibling test file(s) \
-    # (7 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_atomic_via_must_be_declared(self):
         text = """
         module m

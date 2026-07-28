@@ -5,8 +5,6 @@ rule surface than Python (no coupling/nesting/abstraction) mirrors the
 grammar's lack of a single import mechanism to reason about.
 """
 
-# frob:waive TEST005 reason="module line coverage 23.5%, debt T-0160"
-
 from __future__ import annotations
 
 from typing import cast

@@ -409,9 +409,6 @@ class TestDetectProjectType:
         (tmp_path / "tsconfig.json").write_text("{}")
         assert detect_project_type(tmp_path) == "typescript"
 
-    # frob:waive DUP001 reason="parallel test methods within test_check.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_package_json_alone_is_typescript(self, tmp_path: Path) -> None:
         """T-0404 finding 11: `detect_project_type` and
         `app.check_runner._detected_types` must agree on what counts as a
@@ -425,9 +422,6 @@ class TestDetectProjectType:
     def test_no_sentinel_is_unknown(self, tmp_path: Path) -> None:
         assert detect_project_type(tmp_path) == "unknown"
 
-    # frob:waive DUP001 reason="parallel test methods within test_check.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_bare_py_file_no_pyproject_is_python(self, tmp_path: Path) -> None:
         """T-0718: a root-level `.py` file with no `pyproject.toml`/
         `setup.py` must still detect as 'python', not fall through to
@@ -834,11 +828,6 @@ class TestDupArchWaiverAwareSummaries:
             for d in result.diagnostics
         )
 
-    # frob:waive DUP001 reason="parallel per-domain test scaffolding across test_check.py, \
-    # test_gates.py (2 sites) -- each file exercises a structurally \
-    # similar check for a distinct domain/module with the same \
-    # arrange-act shape; extracting would blur which domain owns which \
-    # check"
     @staticmethod
     def _calibrated_source(fn_name: str = "do_work") -> str:
         """A function long enough to trip `frob.arch.analyze_project`'s bare

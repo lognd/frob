@@ -130,9 +130,6 @@ def test_ticket_list_plain_stdout_has_no_ansi(tmp_path, monkeypatch, caplog):
     assert "queued" in out
 
 
-# frob:waive DUP001 reason="parallel test methods within test_app_style.py (2 sites) \
-# sharing an arrange-act scaffold typical of exhaustive per-case coverage; extracting \
-# would obscure per-case intent"
 def test_ticket_list_force_color_has_ansi(tmp_path, monkeypatch, caplog):
     # frob:tests tests/unit/test_app_style.py::test_ticket_list_force_color_has_ansi \
     # kind="unit"
@@ -221,9 +218,6 @@ def test_ticket_doable_plain_stdout_has_no_ansi(tmp_path, monkeypatch, caplog):
     assert "T-0001" in out
 
 
-# frob:waive DUP001 reason="parallel test methods within test_app_style.py (2 sites) \
-# sharing an arrange-act scaffold typical of exhaustive per-case coverage; extracting \
-# would obscure per-case intent"
 def test_ticket_doable_force_color_has_ansi(tmp_path, monkeypatch, caplog):
     # frob:tests tests/unit/test_app_style.py::test_ticket_doable_force_color_has_ansi \
     # kind="unit"

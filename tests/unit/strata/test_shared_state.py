@@ -14,9 +14,6 @@ class TestSharedState:
     # frob:tests \
     # tests/unit/strata/test_shared_state.py::TestSharedState.test_mutable_node_shared_\
     # by_two_services_fires
-    # frob:waive DUP001 reason="parallel test methods within test_shared_state.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_mutable_node_shared_by_two_services_fires(self):
         model = KernelModel(
             nodes=(
@@ -38,9 +35,6 @@ class TestSharedState:
     # frob:tests \
     # tests/unit/strata/test_shared_state.py::TestSharedState.test_read_only_accessor_s\
     # till_fires
-    # frob:waive DUP001 reason="parallel test methods within test_shared_state.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_read_only_accessor_still_fires(self):
         # svc_b only READS shared_db (a flow FROM shared_db) while svc_a
         # writes it -- still 2 distinct accessors of mutable state

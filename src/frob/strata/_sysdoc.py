@@ -160,7 +160,6 @@ def _md_row(cells: tuple[str, ...]) -> str:
 
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
 # frob:ticket T-0148
-# frob:waive TEST005 reason="render_audit_matrix 85.7% branch cover, debt T-0160"
 def render_audit_matrix(
     model: KernelModel,
     view: str,
@@ -269,7 +268,6 @@ def _matrix_entries(
     """The `(entries, excused)` pair for `view`'s member CWEs, sorted --
     split out of `render_audit_matrix` purely to keep that function's body
     short."""
-    # frob:waive PERF004 reason="sorts once per call, not per loop iteration"
     entries = sorted(
         (e for e in catalog if e.id in members), key=lambda e: (e.family, e.id)
     )

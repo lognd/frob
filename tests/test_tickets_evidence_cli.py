@@ -30,9 +30,6 @@ from frob.testing._models import CollectedTests
 from frob.tickets import TicketState, load_queue
 
 
-# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) (2 \
-# sites) sharing an arrange-act scaffold typical of exhaustive per-case/per-scenario \
-# coverage; extracting would obscure per-case intent"
 def _patch_collect(monkeypatch: pytest.MonkeyPatch, node_ids: frozenset[str]) -> None:
     """Make `frob.testing.collect_python_tests` return `node_ids` without
     spawning pytest, so CLI evidence-routing tests stay hermetic."""
@@ -45,12 +42,6 @@ def _patch_collect(monkeypatch: pytest.MonkeyPatch, node_ids: frozenset[str]) ->
     )
 
 
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across \
-# test_app_runners_batch7.py, test_ticket_reverify.py, \
-# test_tickets_acceptance.py, test_tickets_evidence_cli.py (4 sites) \
-# -- each file exercises a structurally similar check for a distinct \
-# domain/module with the same arrange-act shape; extracting would \
-# blur which domain owns which check"
 def _patch_passing(monkeypatch: pytest.MonkeyPatch) -> None:
     """Make `_verify_ids_passing` (D-01's actual-run step) report every id
     it is asked about as passing, without spawning pytest/cargo -- for

@@ -129,7 +129,6 @@ def _sorted_py_files(root: Path, exclude_globs: tuple[str, ...] = ()) -> list[Pa
     found = [
         p for p in walk_pruned(root, exclude_globs=exclude_globs) if p.suffix == ".py"
     ]
-    # frob:waive PERF004 reason="one sort after the walk loop above, not per iteration"
     return sorted(found)
 
 

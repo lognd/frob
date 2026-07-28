@@ -1,4 +1,3 @@
-# frob:waive SCOPE001 reason="T-0658's declared scope is src/frob/strata/**+docs/design/registry/system-design.yaml+tests/unit/strata/**; this test module lives in tests/unit/strata/ per that scope, but the registry loader/gate machinery it exercises (frob.registry, frob.gates._registry_exhaustiveness) is shared infrastructure this ticket does not own, same ad-hoc precedent as tests/test_registry_reconciliation_system_design.py's T-0392 SCOPE001 waiver"  # noqa: E501
 """T-0658 (epic T-0331's N:M coverage close condition): binds every
 `docs/design/registry/system-design.yaml` entry (the system-design-corpus.md
 denominator) to a real disposition -- a registered SYS2xx/REL2xx check
@@ -41,10 +40,6 @@ _SYSTEM_DESIGN_CATALOGUED_TOTAL = 119
 
 
 # frob:ticket T-0658
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across 9 sibling test modules \
-# (9 sites) -- each file exercises a structurally similar check for \
-# a distinct domain/module with the same arrange-act shape; \
-# extracting would blur which domain owns which check"
 def _real_queue() -> TicketQueue:
     """The repo's real, live ticket queue -- falls back to an empty queue
     only if the ledger itself fails to parse, so a real deferred-to-
@@ -75,7 +70,6 @@ class TestSystemDesignCorpusCoverage:
     single source of truth this whole module reads)."""
 
     # frob:ticket T-0658
-    # frob:waive DUP001 reason="shares the same audit_registry_file(total/exhausted/unaccounted) assertion shape every sibling registry-domain reconciliation test uses (test_registry_reconciliation_system_design.py/supply_chain.py/evasion.py/weaknesses.py/...) -- each one pins a DIFFERENT registry file's own live state as that domain's own standing evidence; T-0658 owns this one for system-design.yaml specifically under the epic's own scope/test tree (see module docstring), extracting a shared helper across ~10 independently-scoped reconciliation tickets is a real but separate refactor, not this ticket's job"  # noqa: E501
     def test_every_corpus_entry_is_dispositioned_and_total_matches(self) -> None:
         """`audit.exhausted is True` and `audit.unaccounted == 0`: every
         one of the 119 catalogued entries (105 genuine + 14 manifest-
@@ -95,7 +89,6 @@ class TestSystemDesignCorpusCoverage:
         )
 
     # frob:ticket T-0658
-    # frob:waive DUP001 reason="shares a set-comprehension-over-entry_lists shape with sibling reconciliation tests' test_no_entry_defers_to_this_reconciliation_ticket (each pins a DIFFERENT registry file's own disposition-target set for a DIFFERENT reason -- theirs excludes a self-referential ticket id, this asserts a SYS2xx/REL2xx-family target exists); same cross-domain-refactor deferral as this class's other DUP001 waiver above"  # noqa: E501
     def test_at_least_one_systems_checks_family_rule_is_bound(self) -> None:
         """At least one `handled_by:RULE` disposition names a REL2xx/
         SYS2xx-family rule id (the epic's own obligation families,
@@ -138,12 +131,6 @@ class TestSystemDesignGateLiveZero:
     not re-proven here."""
 
     # frob:ticket T-0658
-    # frob:waive DUP001 reason="parallel per-domain test scaffolding across \
-    # test_registry_reconciliation_system_design.py, \
-    # test_system_design_coverage.py (2 sites) -- each file exercises a \
-    # structurally similar check for a distinct domain/module with the \
-    # same arrange-act shape; extracting would blur which domain owns \
-    # which check"
     def test_no_system_design_violations(self) -> None:
         real_queue = _real_queue()
 

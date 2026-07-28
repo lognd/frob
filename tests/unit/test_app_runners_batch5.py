@@ -23,9 +23,6 @@ from frob.app.stats_runner import run as stats_run
 from frob.app.vet_runner import run as vet_run
 
 
-# frob:waive DUP001 reason="parallel App runner batch tests: independent per-command \
-# cases sharing an arrange-act scaffold across the batch test files; extracting would \
-# obscure per-case intent"
 def _make_py_project(tmp_path):
     """Create a tiny single-file Python project fixture under tmp_path."""
     (tmp_path / "pkg").mkdir()
@@ -441,9 +438,6 @@ class TestDocsRunner:
             docs_run(cfg)
         assert exc.value.code == 1
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_search_finds_match_text_mode(self, tmp_path, caplog):
         """`--search` over a real docs/ dir logs matching heading/excerpt."""
         docs_dir = tmp_path / "docs"
@@ -464,9 +458,6 @@ class TestDocsRunner:
             docs_run(cfg)
         assert any("[" in r.message for r in caplog.records)
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_search_no_matches_logs_message(self, tmp_path, caplog):
         """`--search` with no hits logs 'no matches found'."""
         docs_dir = tmp_path / "docs"
@@ -560,9 +551,6 @@ class TestReleaseRunner:
         assert "stamped public API" in out
         assert (tmp_path / ".frob-release.json").exists()
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_check_no_manifest_exits_1(self, tmp_path, caplog):
         """`check` with no manifest yet errors and exits 1."""
         _make_py_project(tmp_path)
@@ -586,9 +574,6 @@ class TestReleaseRunner:
         out = capsys.readouterr().out
         assert "OK" in out
 
-    # frob:waive DUP001 reason="parallel App runner batch tests: independent \
-    # per-command cases sharing an arrange-act scaffold across the batch test files; \
-    # extracting would obscure per-case intent"
     def test_stamp_missing_version_exits_1(self, tmp_path, caplog):
         """A pyproject.toml with no `[project].version` errors and exits 1."""
         _make_py_project(tmp_path)
@@ -677,9 +662,6 @@ class TestReleaseSyncRunner:
         monkeypatch.setattr(gitio_mod, "run_argv", _fake_run_argv)
         return calls
 
-    # frob:waive DUP001 reason="parallel test methods within test_app_runners_batch5.py (3 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_sync_no_manifest_exits_1(self, tmp_path, caplog):
         """`sync` with no `.frob-release.json` yet errors and exits 1."""
         _make_py_project(tmp_path)

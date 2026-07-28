@@ -26,7 +26,6 @@ threads/processes -- see that module's docstring for why cProfile/
 StackSampler cannot see pool-dispatched work otherwise.
 """
 
-# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/perf/_harness.py's exclusivity-vocabulary hit is source-level \
 # design-rationale/scope-cut prose (a docstring or comment describing \
@@ -84,7 +83,6 @@ def _log_hotgraph_summary(stacks: list[SampledStack]) -> None:
 
 
 # frob:doc docs/modules/perf.md#integration-points
-# frob:waive TEST005 reason="main 0.0% branch cover, debt T-0160"
 # frob:tests tests/unit/perf/test_harness_sampling.py::TestHarnessSerialPoolsDecision.test_env_unset_installs_serial_pools  # noqa: E501
 # frob:tests tests/unit/perf/test_harness_sampling.py::TestHarnessSerialPoolsDecision.test_env_one_installs_serial_pools  # noqa: E501
 # frob:tests tests/unit/perf/test_harness_sampling.py::TestHarnessSerialPoolsDecision.test_env_zero_skips_serial_pools  # noqa: E501

@@ -108,10 +108,6 @@ _lock_local = threading.local()
 # frob:tests \
 # tests/unit/test_ticket_store.py::TestLockPath.test_lock_path_under_frob_dir  # noqa: \
 # E501
-# frob:waive COV005 reason="T-0601 deliberate rename lock_path -> _lock_path \
-# (frob-exports demote decision, no external consumer); the frob:tests directive \
-# intentionally follows the same function to its new private name, not an accidental \
-# rebind onto a different extracted helper"  # noqa: E501
 # frob:ticket T-0601
 def _lock_path(root: Path) -> Path:
     """The advisory lock file path (`.frob/tickets.lock`) `ledger_lock` holds.
@@ -372,11 +368,6 @@ def _render_ledger(tickets: dict[str, Ticket], header: str = _LEDGER_HEADER) -> 
 
 
 # frob:ticket T-0764
-# frob:waive COV005 reason="T-0601 rework: demoted check_ledger_id_integrity -> \
-# _check_ledger_id_integrity (frob-exports external-consumer test: consumed \
-# cross-module by this package's own _land.py, never imported outside frob.tickets); \
-# the frob:tests directive deliberately follows the same function to its new private \
-# name"  # noqa: E501
 # frob:tests \
 # tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an\
 # _id_is_refused kind="unit"  # noqa: E501

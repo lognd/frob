@@ -1,4 +1,3 @@
-# frob:waive SCOPE001 reason="T-0407's declared scope is src/frob/+docs/design/registry/; tests/** is leased in-progress by T-0160 so the scope cannot be formally extended here, same ad-hoc precedent as config.py's existing T-0458/T-0455 SCOPE001 waives -- this file's edits are new pytest coverage for T-0407's own gate refactor"  # noqa: E501
 """Tests for frob.gates._registry_exhaustiveness -- REG001-REG007
 (docs/modules/gates.md#registry-exhaustiveness-drift-lock-t-0343, REG006/
 REG007 added by T-0407).
@@ -47,9 +46,6 @@ def _rules(*rule_ids: str) -> list[str]:
 class TestDisposition:
     """REG001/REG002/REG003 -- the anti-lie mandate's core three checks."""
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (7 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_undispositioned_entry_fails(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -70,9 +66,6 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG001" in rules
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (6 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_dangling_handled_by_fails(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -95,9 +88,6 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG002" in rules
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (2 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_handled_by_real_rule_passes(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -140,9 +130,6 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG003" in rules
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (7 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_deferred_to_missing_ticket_fails(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -212,9 +199,6 @@ entries:
 
         assert violations == ()
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (7 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_bare_addressed_fails(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -234,9 +218,6 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG001" in rules
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (7 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_dangling_duplicate_of_fails(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -256,9 +237,6 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG004" in rules
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (7 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_out_of_scope_no_reason_fails(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -305,9 +283,6 @@ entries:
 class TestTotalDrift:
     """REG005 -- declared `total:`/`<prefix>_total:` drift from actual entries."""
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (6 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_total_mismatch_fails(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -330,9 +305,6 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG005" in rules
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (6 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_split_entries_key_total_checked(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -355,9 +327,6 @@ cwe_entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG005" in rules
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (2 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_no_declared_total_not_checked(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -463,9 +432,6 @@ class TestMalformedEntry:
     """REG006 (T-0407) -- a structurally malformed list item is loud, not
     silently dropped from the count."""
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (6 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_malformed_entry_fails(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -488,9 +454,6 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG006" in rules
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (6 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_entry_missing_id_fails(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -512,9 +475,6 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG006" in rules
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (3 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_all_well_formed_entries_no_reg006(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -573,9 +533,6 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG007" in rules
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (6 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_duplicate_id_same_file_fails(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -600,9 +557,6 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG007" in rules
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (3 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_no_duplicate_ids_no_reg007(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -672,9 +626,6 @@ entries:
         assert reg008.severity == Severity.WARN
 
     # frob:ticket T-0428
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (2 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_handled_by_with_frob_enforces_edge_is_silent(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -773,9 +724,6 @@ entries:
         assert reg009.severity == Severity.WARN
 
     # frob:ticket T-0428
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (2 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_matching_enforces_edge_no_reg009(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -834,9 +782,6 @@ entries:
         reg011 = next(v for v in violations if v.rule == "REG011")
         assert reg011.severity == Severity.WARN
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (7 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_reason_naming_unresolved_rule_warns(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -858,9 +803,6 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG011" in rules
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (3 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_reason_naming_resolved_rule_is_silent(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -902,9 +844,6 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG011" not in rules
 
-    # frob:waive DUP001 reason="parallel test methods within test_registry_exhaustiveness.py (7 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
     def test_bare_none_is_not_substantive(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -926,11 +865,6 @@ entries:
 
 
 # frob:ticket T-0894
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across test_decisions.py, \
-# test_registry_exhaustiveness.py (2 sites) -- each file exercises a \
-# structurally similar check for a distinct domain/module with the \
-# same arrange-act shape; extracting would blur which domain owns \
-# which check"
 def _git_init(root: Path) -> None:
     """Minimal git repo bootstrap for path_ever_tracked's history checks
     (mirrors tests/test_gates.py's own `_git_init` helper -- this module

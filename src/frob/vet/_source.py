@@ -16,8 +16,6 @@ signal, never a crash (docs/modules/vet.md "Honest limits").
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
 
-# frob:waive TEST005 reason="module line coverage 78.3%, debt T-0160"
-
 from __future__ import annotations
 
 import os
@@ -48,7 +46,6 @@ def _normalize_py_name(name: str) -> str:
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
-# frob:waive TEST005 reason="_locate_pypi_source 73.3% branch cover, debt T-0160"
 def _locate_pypi_source(root: Path, name: str, version: str) -> Path | None:
     """A directory containing `name`'s Python source, or `None`.
 
@@ -92,7 +89,6 @@ def _locate_npm_source(root: Path, name: str) -> Path | None:
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
-# frob:waive TEST005 reason="_locate_cargo_source 55.6% branch cover, debt T-0160"
 def _locate_cargo_source(name: str, version: str) -> Path | None:
     """A directory containing `name`'s Rust source under `~/.cargo/registry/src`."""
     registry_root = Path.home() / ".cargo" / "registry" / "src"
@@ -112,7 +108,6 @@ def _locate_cargo_source(name: str, version: str) -> Path | None:
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
-# frob:waive TEST005 reason="_locate_source 71.4% branch cover, debt T-0160"
 def _locate_source(root: Path, ecosystem: str, name: str, version: str) -> Path | None:
     """Dispatch to the ecosystem-appropriate local-cache source locator."""
     if ecosystem == "pypi":

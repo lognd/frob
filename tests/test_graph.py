@@ -1,4 +1,3 @@
-# frob:waive SCOPE001 reason="T-0841 declared scope is src/frob/gates/_protocol_summary.py+src/frob/graph/callgraph.py; tests/test_graph.py file-level scope lease is held by sibling ticket T-0840 (same worktree/dispatch, both tickets share src/frob/gates/_protocol_summary.py per their own scope declarations, and frob ticket scope lease is exclusive per file) -- T-0841 own Rust build_call_graph-resolution tests here carry their own frob:ticket T-0841 directive; this waiver only silences the SCOPE001 false hit from checking the whole file against T-0841 when the lease itself cannot be duplicated"  # noqa: E501
 """Tests for frob.graph -- obligation graph registry (docs/modules/graph.md)."""
 
 from __future__ import annotations
@@ -162,8 +161,6 @@ class TestDsl:
         assert edges[0].target == "T-0042"
         assert edges[0].src.endswith("::foo")
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
-    # scaffold; extracting would obscure per-case intent"
     def test_slash_slash_directive(self, tmp_path: Path) -> None:
         src = """function foo(): void {
     // frob:invariant INV-007
@@ -188,8 +185,6 @@ class TestDsl:
         assert edges[0].target == "RULE-1"
         assert edges[0].attrs["reason"] == "known issue"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
-    # scaffold; extracting would obscure per-case intent"
     def test_binds_to_enclosing_symbol(self, tmp_path: Path) -> None:
         src = """def foo() -> None:
     # frob:ticket T-0001
@@ -199,8 +194,6 @@ class TestDsl:
         edges, _ = parse_directives(pf)
         assert edges[0].src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
-    # scaffold; extracting would obscure per-case intent"
     def test_binds_to_following_symbol(self, tmp_path: Path) -> None:
         src = """# frob:ticket T-0002
 def foo() -> None:
@@ -210,8 +203,6 @@ def foo() -> None:
         edges, _ = parse_directives(pf)
         assert edges[0].src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
-    # scaffold; extracting would obscure per-case intent"
     def test_binds_to_nested_method_not_enclosing_class(self, tmp_path: Path) -> None:
         # frob:ticket T-0044
         src = """class Foo:
@@ -223,8 +214,6 @@ def foo() -> None:
         edges, _ = parse_directives(pf)
         assert edges[0].src == f"{pf.path}::Foo.bar"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
-    # scaffold; extracting would obscure per-case intent"
     def test_binds_three_stacked_directives_to_def(self, tmp_path: Path) -> None:
         # frob:ticket T-0100
         src = """# frob:ticket T-0100
@@ -240,8 +229,6 @@ def foo() -> None:
         for edge in edges:
             assert edge.src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
-    # scaffold; extracting would obscure per-case intent"
     def test_binds_five_stacked_directives_to_def(self, tmp_path: Path) -> None:
         # frob:ticket T-0100
         src = """# frob:ticket T-0100
@@ -259,8 +246,6 @@ def foo() -> None:
         for edge in edges:
             assert edge.src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
-    # scaffold; extracting would obscure per-case intent"
     def test_directive_binds_past_trailing_comment_on_def_line(
         self, tmp_path: Path
     ) -> None:
@@ -281,8 +266,6 @@ def foo():  # noqa: N802 - rule-id naming convention
         assert len(edges) == 1
         assert edges[0].src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
-    # scaffold; extracting would obscure per-case intent"
     def test_stacked_directives_bind_past_trailing_comment_on_def_line(
         self, tmp_path: Path
     ) -> None:
@@ -300,8 +283,6 @@ def foo():  # noqa: N802 - rule-id naming convention
         for edge in edges:
             assert edge.src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
-    # scaffold; extracting would obscure per-case intent"
     def test_directive_does_not_chain_upward_through_prior_trailing_comment(
         self, tmp_path: Path
     ) -> None:
@@ -322,8 +303,6 @@ def foo() -> None:
         assert len(edges) == 1
         assert edges[0].src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
-    # scaffold; extracting would obscure per-case intent"
     def test_directive_separated_from_def_by_non_directive_comment(
         self, tmp_path: Path
     ) -> None:
@@ -343,8 +322,6 @@ def foo() -> None:
         assert len(edges) == 1
         assert edges[0].src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
-    # scaffold; extracting would obscure per-case intent"
     def test_directive_separated_from_def_by_blank_line(self, tmp_path: Path) -> None:
         # frob:ticket T-0100
         #
@@ -416,11 +393,6 @@ def foo() -> None:
     # tests/test_graph.py::TestDsl.test_invalid_kind_in_module_docstring_is_surfaced_no\
     # t_silent
     # frob:ticket T-0269
-    # frob:waive DUP001 reason="parallel per-domain test scaffolding across test_dsl.py, \
-    # test_graph.py (7 sites) -- each file exercises a structurally \
-    # similar check for a distinct domain/module with the same \
-    # arrange-act shape; extracting would blur which domain owns which \
-    # check"
     def test_invalid_kind_in_module_docstring_is_surfaced_not_silent(
         self, tmp_path: Path
     ) -> None:
@@ -496,8 +468,6 @@ def foo() -> None:
         assert len(malformed) == 1
         assert malformed[0].file == pf.path
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
-    # scaffold; extracting would obscure per-case intent"
     def test_missing_target_is_malformed(self, tmp_path: Path) -> None:
         src = """def foo() -> None:
     # frob:ticket
@@ -507,8 +477,6 @@ def foo() -> None:
         _edges, malformed = parse_directives(pf)
         assert len(malformed) == 1
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
-    # scaffold; extracting would obscure per-case intent"
     def test_waive_without_reason_is_malformed(self, tmp_path: Path) -> None:
         src = """def foo() -> None:
     # frob:waive RULE-1
@@ -518,8 +486,6 @@ def foo() -> None:
         _edges, malformed = parse_directives(pf)
         assert len(malformed) == 1
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
-    # scaffold; extracting would obscure per-case intent"
     def test_bad_attr_syntax_is_malformed(self, tmp_path: Path) -> None:
         src = """def foo() -> None:
     # frob:ticket T-1 not-an-attr
@@ -1112,9 +1078,6 @@ class TestEdgesFromTo:
 
 
 class TestLoadGraph:
-    # frob:waive DUP001 reason="parallel test methods within test_graph.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_cache_stale_after_edit(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/__init__.py::load_graph
         _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
@@ -1229,9 +1192,6 @@ class TestLoadGraph:
         assert result.is_err
         assert result.danger_err == GraphError.CacheCorrupt
 
-    # frob:waive DUP001 reason="parallel test methods within test_graph.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_cache_stale_after_new_file_added(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/__init__.py::load_graph
         # G1 (T-0402): a file added since the last build has no cache row
@@ -1249,9 +1209,6 @@ class TestLoadGraph:
         assert result.is_err
         assert result.danger_err == GraphError.CacheStale
 
-    # frob:waive DUP001 reason="parallel test methods within test_graph.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_cache_stale_after_new_doc_added(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/__init__.py::load_graph
         # Same as above (G1) but for a newly-added doc file under docs/,
@@ -1875,9 +1832,6 @@ class TestCallGraph:
         assert ref_graph.calls == {"src/a.py::register": ("src/a.py::_handler",)}
 
     # frob:ticket T-0583
-    # frob:waive DUP001 reason="parallel test methods within test_graph.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_build_call_graph_sees_through_memoize_per_run_wrapper(
         self, tmp_path: Path
     ) -> None:
@@ -1902,9 +1856,6 @@ class TestCallGraph:
         assert call_graph.calls == {"src/a.py::public_entry": ("src/a.py::_helper",)}
 
     # frob:ticket T-0809
-    # frob:waive DUP001 reason="parallel test methods within test_graph.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_build_call_graph_marks_unresolved_private_looking_callee(
         self, tmp_path: Path
     ) -> None:
@@ -1925,9 +1876,6 @@ class TestCallGraph:
         assert call_graph.calls == {"src/a.py::public_entry": (UNRESOLVED_CALLEE,)}
 
     # frob:ticket T-0809
-    # frob:waive DUP001 reason="parallel test methods within test_graph.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_build_call_graph_does_not_mark_unresolved_public_looking_call(
         self, tmp_path: Path
     ) -> None:
@@ -1947,9 +1895,6 @@ class TestCallGraph:
         assert call_graph.calls == {}
 
     # frob:ticket T-0809
-    # frob:waive DUP001 reason="parallel test methods within test_graph.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_build_call_graph_default_preserves_old_silent_omission_behavior(
         self, tmp_path: Path
     ) -> None:
@@ -1988,9 +1933,6 @@ class TestCallGraph:
         assert UNRESOLVED_CALLEE not in call_graph.calls["src/a.py::public_entry"]
 
     # frob:ticket T-0813
-    # frob:waive DUP001 reason="parallel test methods within test_graph.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_build_call_graph_exempts_attribute_call_on_foreign_receiver_from_unresolved(
         self, tmp_path: Path
     ) -> None:
@@ -2010,9 +1952,6 @@ class TestCallGraph:
         assert call_graph.calls == {}
 
     # frob:ticket T-0813
-    # frob:waive DUP001 reason="parallel test methods within test_graph.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_build_call_graph_exempts_super_dunder_call_from_unresolved(
         self, tmp_path: Path
     ) -> None:
@@ -2030,9 +1969,6 @@ class TestCallGraph:
         assert call_graph.calls == {}
 
     # frob:ticket T-0813
-    # frob:waive DUP001 reason="parallel test methods within test_graph.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_build_call_graph_still_marks_unresolved_self_attribute_call(
         self, tmp_path: Path
     ) -> None:
@@ -2051,9 +1987,6 @@ class TestCallGraph:
         assert call_graph.calls == {"src/a.py::Foo.bar": (UNRESOLVED_CALLEE,)}
 
     # frob:ticket T-0841
-    # frob:waive DUP001 reason="parallel test methods within test_graph.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_build_call_graph_resolves_a_rust_private_callee_by_pub_keyword(
         self, tmp_path: Path
     ) -> None:
@@ -2075,9 +2008,6 @@ class TestCallGraph:
         assert call_graph.calls == {"src/a.rs::entry": ("src/a.rs::helper",)}
 
     # frob:ticket T-0841
-    # frob:waive DUP001 reason="parallel test methods within test_graph.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_build_call_graph_does_not_resolve_a_rust_pub_callee(
         self, tmp_path: Path
     ) -> None:

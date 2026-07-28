@@ -28,8 +28,6 @@ registrations scoped instead of bleeding across projects sharing a process.
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
 
-# frob:waive TEST005 reason="module line coverage 77.2%, debt T-0160"
-
 from __future__ import annotations
 
 from typing import Any, get_type_hints
@@ -162,7 +160,6 @@ def _field_strategies_for(
 
 
 # frob:doc docs/modules/fuzz.md#public-api
-# frob:waive TEST005 reason="resolve 88.2% branch cover, debt T-0160"
 def resolve(
     tp: type, *, registry: FuzzRegistry | None = None
 ) -> Result[object, FuzzError]:

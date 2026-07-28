@@ -25,8 +25,6 @@ INSTALL_HINT = (
 
 
 # frob:doc docs/modules/graph.md#rust-core
-# frob:waive TEST005 reason="core_available is the same 66.7%-branch-cover shape as \
-# frob.dup._core's twin (T-0160 debt), not a new gap this ticket introduces"
 @lru_cache(maxsize=1)
 def core_available() -> bool:
     """Whether the compiled `frob_core` extension is importable, cached once."""

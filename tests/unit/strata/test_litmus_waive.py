@@ -26,10 +26,6 @@ def _load_model(filename: str) -> KernelModel:
 
 class TestWaiveLitmus:
     # frob:tests src/frob/strata/_waive.py::apply_waivers kind="unit"
-    # frob:waive DUP001 reason="parallel litmus scenario fixtures: 2 sites across 2 \
-    # file(s) sharing the exhaustiveness-fixture arrange-act shape by design \
-    # (store-backed vs non-store-backed, or per-CWE scenario variants); extracting \
-    # would obscure per-scenario intent"
     def test_matched_waiver_suppresses_the_finding(self):
         """`node_waived`'s real LINT004 finding never appears in `gaps`
         (scoped to `node_waived` -- `node_multi` deliberately also holds
@@ -46,12 +42,6 @@ class TestWaiveLitmus:
         assert lint_gaps == []
 
     # frob:tests src/frob/strata/_waive.py::apply_waivers kind="unit"
-    # frob:waive PERF001 reason="three membership asserts against one already-built \
-    # detail string over a two-item fixture; not a hot loop"
-    # frob:waive DUP001 reason="parallel litmus scenario fixtures: 2 sites across 2 \
-    # file(s) sharing the exhaustiveness-fixture arrange-act shape by design \
-    # (store-backed vs non-store-backed, or per-CWE scenario variants); extracting \
-    # would obscure per-scenario intent"
     def test_matched_waiver_is_surfaced_in_waived_with_reason(self):
         """A waived finding is kept and visible -- never a silent drop
         (module docstring's "loud in output" requirement)."""
@@ -68,10 +58,6 @@ class TestWaiveLitmus:
         assert "T-0200" in waived[0].detail
 
     # frob:tests src/frob/strata/_waive.py::apply_waivers kind="unit"
-    # frob:waive DUP001 reason="parallel litmus scenario fixtures: 2 sites across 2 \
-    # file(s) sharing the exhaustiveness-fixture arrange-act shape by design \
-    # (store-backed vs non-store-backed, or per-CWE scenario variants); extracting \
-    # would obscure per-scenario intent"
     def test_stale_waiver_reported_as_syswaive002_gap(self):
         """`node_stale`'s `waive` clause matches nothing (its LINT004 never
         fires) -- the drift-lock: STALE waivers fail, not silently pass."""
@@ -94,10 +80,6 @@ class TestWaiveLitmus:
         assert report.danger_ok.proved is False
 
     # frob:tests src/frob/strata/_waive.py::apply_waivers kind="unit"
-    # frob:waive DUP001 reason="parallel litmus scenario fixtures: 2 sites across 2 \
-    # file(s) sharing the exhaustiveness-fixture arrange-act shape by design \
-    # (store-backed vs non-store-backed, or per-CWE scenario variants); extracting \
-    # would obscure per-scenario intent"
     # invariant spec: [INV-036](invariants/INV-036.md)
     def test_sub_target_waiver_does_not_suppress_a_different_sub_target(self):
         """T-0174 REJECT round, the critical fixture: `node_multi` fires

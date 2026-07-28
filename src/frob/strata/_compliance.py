@@ -320,7 +320,6 @@ def _regulation_caught_by_violation(
     )
 
 
-# frob:waive COV005 reason="T-0601 rework: demoted check_regulation_caught_by_integrity -> _check_regulation_caught_by_integrity (frob-exports external-consumer test: only called from this module's own evaluate_compliance, never imported outside frob.strata); the frob:tests directives deliberately follow the same function to its new private name"  # noqa: E501
 # frob:tests tests/unit/strata/test_compliance.py::TestRegulationCaughtByIntegrity.test_caught_by_naming_absent_control_is_refused  # noqa: E501
 # frob:tests tests/unit/strata/test_compliance.py::TestRegulationCaughtByIntegrity.test_caught_by_naming_present_control_discharges  # noqa: E501
 # frob:ticket T-0601
@@ -759,7 +758,6 @@ def _check_minimization(model: KernelModel) -> tuple[ComplianceViolation, ...]:
 
 
 # frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
-# frob:waive TEST005 reason="check_regulation_discharge 83.3% branch cover, debt T-0160"
 # frob:enforces CHK-GATE-COMPLIANCE002
 def check_regulation_discharge(
     model: KernelModel,
@@ -841,7 +839,6 @@ def _privacy_policy_flow_violation(
 
 
 # frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
-# frob:waive TEST005 reason="check_privacy_policy 81.8% branch cover, debt T-0160"
 # frob:enforces CHK-GATE-COMPLIANCE003
 def check_privacy_policy(
     model: KernelModel, policy: PrivacyPolicy
@@ -972,7 +969,6 @@ def _cmpl_disposition_violation(entry: RegistryEntry) -> ComplianceViolation:
     )
 
 
-# frob:waive COV005 reason="T-0601 rework: demoted check_cmpl_registry_unit_dispositions -> _check_cmpl_registry_unit_dispositions (frob-exports external-consumer test: only called from this module's own check_cmpl_registry, never imported outside frob.strata); the frob:tests/frob:ticket directives deliberately follow the same function to its new private name"  # noqa: E501
 # frob:ticket T-0607
 # frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistry.test_deferred_disposition_is_refused  # noqa: E501
 # frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistry.test_handled_by_and_out_of_scope_dispositions_pass  # noqa: E501

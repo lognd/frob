@@ -4,7 +4,6 @@
 # already-implemented internal behavior, verifiable by reading the code it annotates) \
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
-# frob:waive TEST005 reason="module line coverage 76.6%, debt T-0160"
 from __future__ import annotations
 
 import re
@@ -101,7 +100,6 @@ def _docstring_for_symbol(sym: RawSymbol, filters: _SymbolFilters) -> Docstring 
 
 
 # frob:doc docs/modules/app.md#frobdocs-library
-# frob:waive TEST005 reason="extract_docstrings 85.7% branch cover, debt T-0160"
 def extract_docstrings(path: Path, symbol: str | None = None) -> list[Docstring]:
     """Every python docstring in `path` (module, class, function, method).
 
@@ -164,7 +162,6 @@ def _module_docstring(path: Path) -> tuple[int, str] | None:
 
 
 # frob:doc docs/modules/app.md#frobdocs-library
-# frob:waive TEST005 reason="find_docs_dir 80.0% branch cover, debt T-0160"
 def find_docs_dir(start: Path) -> Path | None:
     current = start if start.is_dir() else start.parent
     for _ in range(8):
@@ -205,7 +202,6 @@ def _md_headings_and_summaries(md_path: Path) -> list[tuple[int, str, str]]:
 
 
 # frob:doc docs/modules/app.md#frobdocs-library
-# frob:waive TEST005 reason="overview 60.0% branch cover, debt T-0160"
 def overview(path: Path, symbol: str | None = None) -> list[DocEntry]:
     docs_dir = find_docs_dir(path)
     if not docs_dir:

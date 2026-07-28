@@ -43,8 +43,6 @@ class TestMatrixExhaustiveness:
         cells = capability_matrix()
         assert len(cells) == len(CAPABILITY_KINDS) * len(LANGUAGES)
         seen = {(c.capability_kind, c.language) for c in cells}
-        # frob:waive PERF003 reason="13x4 fixed small cross product asserting matrix \
-        # completeness, not a data-scale join"
         for kind in CAPABILITY_KINDS:
             for language in LANGUAGES:
                 assert (kind, language) in seen

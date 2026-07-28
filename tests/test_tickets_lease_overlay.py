@@ -7,7 +7,6 @@ fixtures rather than real `git worktree add` checkouts, since the decision
 under test (decorate vs. not) only depends on `read_all_leases`' already-
 tested stale-vs-live judgment (T-0473/T-0476), not on git plumbing.
 """
-# frob:waive SCOPE001 reason="T-0716's declared scope (src/frob/tickets/**, docs/modules/tickets.md) is source-only; this new test file lives at the repo tests/ root by this repo's existing test layout, same out-of-scope-test-file shape SCOPE001 already waives elsewhere for this ticket's CLI wiring in src/frob/app/ticket_runner.py"  # noqa: E501
 
 from __future__ import annotations
 
@@ -45,11 +44,6 @@ def _ticket(*, ticket_id: str, state: TicketState = TicketState.QUEUED) -> Ticke
 
 
 # frob:ticket T-0716
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across \
-# test_tickets_dispatch_stale.py, test_tickets_lease_overlay.py (2 \
-# sites) -- each file exercises a structurally similar check for a \
-# distinct domain/module with the same arrange-act shape; extracting \
-# would blur which domain owns which check"
 def _lease(ticket_id: str, worktree: Path) -> _LeaseRecord:
     """A `_LeaseRecord` fixture pointing at `worktree` for `ticket_id`."""
     return _LeaseRecord(

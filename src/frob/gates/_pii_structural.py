@@ -662,11 +662,6 @@ def _parse001_violation(rel_path: str, reason: str) -> Violation:
     )
 
 
-# frob:waive DUP001 reason="dup grouped this with _pii012_violation on the shared \
-# Violation-builder boilerplate shape -- PII010 (declared-surface finding) and PII012 \
-# (suggestion-tier keyword sweep) are independently-evolving rules with different \
-# severity/message semantics; each rule keeps its own builder by the same per-rule- \
-# builder convention this file already uses throughout (T-0861)"
 def _pii010_violation(
     rel_path: str, lineno: int, field_name: str, sig: _FieldSignature
 ) -> Violation:
@@ -964,11 +959,6 @@ def _is_email_shaped(value: str) -> bool:
     return True
 
 
-# frob:waive DUP001 reason="dup grouped this with _sec110_violation on the shared \
-# Violation-builder boilerplate shape -- PII011 (email-shaped literal) and SEC110 \
-# (unmapped env-access site) are independently-evolving rules over different families \
-# (structural PII vs secret-source) with different message text; each keeps its own \
-# builder by the one-builder-per-rule convention this file uses throughout (T-0861)"
 def _pii011_violation(rel_path: str, lineno: int, value: str) -> Violation:
     """The PII011 `Violation` for one email-shaped string literal (T-0349)."""
     _log.warning("PII011: %s:%d email-shaped literal %r", rel_path, lineno, value)
@@ -1019,8 +1009,6 @@ def _scan_python_email_values(
 _COMMENT_WORD_RE = re.compile(r"[A-Za-z_]+")
 
 
-# frob:waive DUP001 reason="dup grouped this with _pii010_violation -- see that \
-# function's own DUP001 waiver for full reasoning (T-0861)"
 def _pii012_violation(
     rel_path: str, lineno: int, token: str, sig: _FieldSignature
 ) -> Violation:
@@ -1506,10 +1494,6 @@ def _subscript_key(node: ast.Subscript) -> ast.expr:
     return node.slice
 
 
-# frob:waive DUP001 reason="dup grouped this with _walk_lint.py/_render_lint.py's own \
-# _dotted_prefix copies -- each module's docstring already documents this as a \
-# deliberate small local unparse kept per-module rather than a cross-gate import for \
-# one helper (T-0861)"
 def _dotted_prefix(node: ast.expr) -> str | None:
     """The dotted-name text of an `Attribute`/`Name` chain (`os.environ` ->
     `"os.environ"`), or `None` for anything else -- a small, local
@@ -1548,8 +1532,6 @@ def _is_env_call(node: ast.Call) -> bool:
     return False
 
 
-# frob:waive DUP001 reason="dup grouped this with _pii011_violation -- see that \
-# function's own DUP001 waiver for full reasoning (T-0861)"
 def _sec110_violation(rel_path: str, lineno: int, site: str) -> Violation:
     """The SEC110 `Violation` for one unmapped env-access site."""
     _log.warning("SEC110: %s:%d env access %s", rel_path, lineno, site)
@@ -2106,7 +2088,6 @@ def _scan_one_python_file(
 # frob:enforces CHK-GATE-SEC110
 # frob:enforces CHK-GATE-PII011
 # frob:enforces CHK-GATE-PII012
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
     """PII010/SEC110 (docs/modules/gates.md#structural-pii-secrets-
     detection-t-0207): every git-tracked `.py`/`.ts`/`.tsx`/`.rs` file

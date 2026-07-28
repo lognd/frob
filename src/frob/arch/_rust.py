@@ -174,9 +174,6 @@ def _rust_call_method_name(node: Node) -> str | None:
     return _node_text(field) if field is not None else None
 
 
-# frob:waive DUP001 reason="dup grouped this with _python.py::_py_is_field_write and \
-# _typescript.py::_ts_is_field_write -- see _py_is_field_write's own DUP001 waiver for \
-# full reasoning (T-0861)"
 def _rust_is_field_write(node: Node) -> bool:
     """Whether a `field_expression` node is the assignment-target of an
     `assignment_expression` (a write) rather than being read."""
@@ -187,10 +184,6 @@ def _rust_is_field_write(node: Node) -> bool:
     return target is not None and target.id == node.id
 
 
-# frob:waive DUP001 reason="dup grouped this with _python.py::_py_is_field_write and \
-# _typescript.py::_ts_is_field_write -- see _py_is_field_write's own DUP001 waiver \
-# for full reasoning; this is _rust_is_field_write's sibling call-target check, same \
-# assignment-target-check boilerplate shape (T-0861)"
 def _rust_is_call_target(node: Node) -> bool:
     """Whether a `field_expression` node is itself the `function` field of
     its parent `call_expression` (`obj.method(...)` -- `obj.method` is a
@@ -388,10 +381,6 @@ def _rust_cyclomatic(node: Node) -> int:
     return count
 
 
-# frob:waive DUP001 reason="dup grouped this with _kotlin.py::_kt_type_text on the \
-# shared raw-text-passthrough shape -- two independently-evolving per-language \
-# tree-sitter adapters (Rust type nodes vs Kotlin user_type nodes), same \
-# per-language-file convention as the rest of frob.arch (T-0861)"
 def _rust_type_text(node: Node | None) -> str | None:
     """The source text of a rust type node (a `parameter`'s `type` field, a
     function's `return_type` field, or a `field_declaration`'s `type`

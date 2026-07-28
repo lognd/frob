@@ -1355,7 +1355,6 @@ def _capability_violation(kind: str, node_id: str) -> ThreatViolation:
 
 
 # frob:doc docs/strata/threat.md#phasing
-# frob:waive ARCH001 reason="body is 9 lines of a single sorted-nodes/sorted-kinds classify-or-flag loop; the rest is the docstring explaining the T-0171 taxonomy-wide classification contract -- splitting the loop would hide, not clarify, the one join it performs" ceiling="40"  # noqa: E501
 def check_capability_completeness(
     model: KernelModel,
     catalog: tuple[WeaknessEntry, ...] = CWE_CATALOG,
@@ -1438,7 +1437,6 @@ def _caught_by_referenced_tokens(
     )
 
 
-# frob:waive COV005 reason="T-0601 rework: demoted caught_by_unresolved_tokens -> _caught_by_unresolved_tokens (frob-exports external-consumer test: only called intra-package from _compliance.py and this module's own check_caught_by_integrity, never imported outside frob.strata); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
 # frob:tests tests/unit/strata/test_threat.py::TestCaughtByUnresolvedTokens.test_unknown_rule_id_is_unresolved  # noqa: E501
 # frob:ticket T-0601
 def _caught_by_unresolved_tokens(
@@ -2312,7 +2310,6 @@ def _run_all_completeness_checks(
 
 
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
-# frob:waive TEST005 reason="evaluate_threats 83.3% branch cover, debt T-0160"
 def evaluate_threats(
     model: KernelModel,
     view: str,

@@ -27,8 +27,6 @@ from frob.gates._secrets import (
 )
 
 
-# frob:waive DUP001 reason="parallel secrets-gate case table: independent fire/no-fire \
-# cases sharing an arrange-act scaffold; extracting would obscure per-case intent"
 def _git(root: Path, *args: str) -> None:
     subprocess.run(
         ["git", "-C", str(root), *args],
@@ -225,9 +223,6 @@ class TestProviderParityT0427:
         # pattern (table ordering discipline).
         assert not any("basic-auth-url" in v.message for v in violations)
 
-    # frob:waive DUP001 reason="parallel test methods within test_secrets_gate.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_hashicorp_vault_service_token_flagged_sec001(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
         repo = tmp_path / "repo"
@@ -240,9 +235,6 @@ class TestProviderParityT0427:
         matches = [v for v in violations if "hashicorp-vault-service" in v.message]
         assert len(matches) == 1
 
-    # frob:waive DUP001 reason="parallel test methods within test_secrets_gate.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_hashicorp_vault_batch_token_flagged_sec001(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
         repo = tmp_path / "repo"
@@ -272,9 +264,6 @@ class TestProviderParityT0427:
 
 
 class TestFakeMarking:
-    # frob:waive DUP001 reason="parallel secrets-gate case table: independent \
-    # fire/no-fire cases sharing an arrange-act scaffold; extracting would obscure \
-    # per-case intent"
     def test_placeholder_xxxx_tail_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
         repo = tmp_path / "repo"
@@ -285,9 +274,6 @@ class TestFakeMarking:
         violations = secrets_gate(repo)
         assert violations == ()
 
-    # frob:waive DUP001 reason="parallel secrets-gate case table: independent \
-    # fire/no-fire cases sharing an arrange-act scaffold; extracting would obscure \
-    # per-case intent"
     def test_literal_fake_word_in_token_is_not_flagged(self, tmp_path: Path) -> None:
         """T-0968 (gates-quality audit finding 3) INVERTS this case's
         original pre-T-0968 assertion -- name kept as-is (an already-closed
@@ -308,9 +294,6 @@ class TestFakeMarking:
         violations = secrets_gate(repo)
         assert any(v.rule == "SEC001" for v in violations)
 
-    # frob:waive DUP001 reason="parallel secrets-gate case table: independent \
-    # fire/no-fire cases sharing an arrange-act scaffold; extracting would obscure \
-    # per-case intent"
     def test_fake_marker_same_line(self, tmp_path: Path) -> None:
         repo = tmp_path / "repo"
         _init_repo(repo)
@@ -359,9 +342,6 @@ class TestFakeMarking:
         assert any(v.rule == "SEC001" for v in violations)
         assert any(v.rule == "SEC004" for v in violations)
 
-    # frob:waive DUP001 reason="parallel secrets-gate case table: independent \
-    # fire/no-fire cases sharing an arrange-act scaffold; extracting would obscure \
-    # per-case intent"
     def test_placeholder_phrase_your_dash_here_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -382,9 +362,6 @@ class TestFakeMarking:
         violations = secrets_gate(repo)
         assert violations == ()
 
-    # frob:waive DUP001 reason="parallel secrets-gate case table: independent \
-    # fire/no-fire cases sharing an arrange-act scaffold; extracting would obscure \
-    # per-case intent"
     def test_placeholder_phrase_insert_dash_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -420,9 +397,6 @@ class TestFakeMarking:
         assert len(violations) == 1
         assert violations[0].rule == "SEC001"
 
-    # frob:waive DUP001 reason="parallel secrets-gate case table: independent \
-    # fire/no-fire cases sharing an arrange-act scaffold; extracting would obscure \
-    # per-case intent"
     def test_placeholder_phrase_your_does_not_suppress_high_entropy_token(
         self, tmp_path: Path
     ) -> None:
@@ -443,9 +417,6 @@ class TestFakeMarking:
         matches = [v for v in violations if v.rule == "SEC001"]
         assert len(matches) == 1
 
-    # frob:waive DUP001 reason="parallel secrets-gate case table: independent \
-    # fire/no-fire cases sharing an arrange-act scaffold; extracting would obscure \
-    # per-case intent"
     def test_placeholder_phrase_insert_does_not_suppress_high_entropy_token(
         self, tmp_path: Path
     ) -> None:
@@ -479,9 +450,6 @@ class TestFakeMarking:
         matches = [v for v in violations if v.rule == "SEC001"]
         assert len(matches) == 1
 
-    # frob:waive DUP001 reason="parallel secrets-gate case table: independent \
-    # fire/no-fire cases sharing an arrange-act scaffold; extracting would obscure \
-    # per-case intent"
     def test_digit_free_mixed_case_your_token_still_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
         # T-0219 round 3 (reviewer-reproduced live bypass): round 2's
@@ -503,9 +471,6 @@ class TestFakeMarking:
         matches = [v for v in violations if v.rule == "SEC001"]
         assert len(matches) == 1
 
-    # frob:waive DUP001 reason="parallel secrets-gate case table: independent \
-    # fire/no-fire cases sharing an arrange-act scaffold; extracting would obscure \
-    # per-case intent"
     def test_digit_free_insert_alphabet_run_still_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
         # Same round-3 bypass class: digit-free, single-case, but a wide
@@ -549,9 +514,6 @@ class TestFakeMarkerStaleness:
     at the gate level (T-0157's reserved-verb constraint stands: this
     marker never becomes a real `frob:waive` graph `Edge`)."""
 
-    # frob:waive DUP001 reason="parallel gate-level fire/no-fire cases sharing an \
-    # arrange-act scaffold; extracting would obscure per-case intent, same shape as \
-    # TestFakeMarking above"
     def test_stale_marker_fires_waive004(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_secrets.py::fake_marker_staleness_gate
         """A marker discharging a site with no real secret-shaped token
@@ -600,9 +562,6 @@ class TestFakeMarkerStaleness:
         violations = fake_marker_staleness_gate(repo)
         assert violations == ()
 
-    # frob:waive DUP001 reason="parallel test methods within test_secrets_gate.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_marker_discharging_email_shaped_pii_does_not_fire(
         self, tmp_path: Path
     ) -> None:
@@ -641,9 +600,6 @@ class TestFakeMarkerStaleness:
         violations = fake_marker_staleness_gate(repo)
         assert violations == ()
 
-    # frob:waive DUP001 reason="parallel test methods within test_secrets_gate.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_docstring_style_mention_is_not_a_staleness_site(
         self, tmp_path: Path
     ) -> None:
@@ -678,9 +634,6 @@ class TestTrackedEnvFile:
         assert sec002[0].severity == Severity.ERROR
         assert sec002[0].file == ".env"
 
-    # frob:waive DUP001 reason="parallel secrets-gate case table: independent \
-    # fire/no-fire cases sharing an arrange-act scaffold; extracting would obscure \
-    # per-case intent"
     def test_env_example_is_not_flagged(self, tmp_path: Path) -> None:
         repo = tmp_path / "repo"
         _init_repo(repo)

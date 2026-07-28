@@ -178,9 +178,6 @@ class TestResourceContentionViolations:
     # frob:tests \
     # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_read_only\
     # _modes_discharge_without_arbiter
-    # frob:waive DUP001 reason="parallel test methods within test_access.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_read_only_modes_discharge_without_arbiter(self):
         """Two read-mode accessors of the same resource, no arbiter --
         clean (T-0700 acceptance criterion: read-only modes discharge)."""
@@ -228,9 +225,6 @@ class TestResourceContentionViolations:
     # frob:tests \
     # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_unrelated\
     # _resources_do_not_cross_conflict
-    # frob:waive DUP001 reason="parallel test methods within test_access.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_unrelated_resources_do_not_cross_conflict(self):
         """Two nodes writing DIFFERENT resources never conflict -- the
         proof is per-resource, not global."""

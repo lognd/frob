@@ -138,9 +138,6 @@ _MUTATING_METHOD_RE = re.compile(
 _ASYNC_TASK_CALL_RE = re.compile(r"(?:^|\.)(?:create_task|ensure_future)$")
 
 
-# frob:waive DUP001 reason="see this function's own docstring -- deliberate per-module \
-# copy of the concurrency-hazard-family scope-walk convention (_lock_ordering/ \
-# _async_hazards/_concurrency_model each keep their own) (T-0861)"
 def _iter_own_scope(node: Node) -> Iterator[Node]:
     """Every node in `node`'s subtree belonging to the OWNING function's own
     scope -- stops descending at a nested `function_definition`/
@@ -155,8 +152,6 @@ def _iter_own_scope(node: Node) -> Iterator[Node]:
         yield from _iter_own_scope(c)
 
 
-# frob:waive DUP001 reason="see _concurrency.py::_iter_calls's own DUP001 waiver for \
-# full reasoning (T-0861)"
 def _iter_calls(node: Node) -> Iterator[Node]:
     """Every `call` node in `node`'s full subtree, without stopping at a
     nested `function_definition`/`class_definition` boundary -- mirrors
@@ -275,10 +270,6 @@ def _dispatch_entrypoints(root: Node) -> set[str]:
     return names
 
 
-# frob:waive DUP001 reason="dup grouped this __slots__-class constructor with \
-# _lock_ordering.py::_OrderEdge purely on generic bind-every-field-from-args \
-# boilerplate shape -- different fields, different domains (function-scan cache vs \
-# lock-order graph edge), false positive (T-0861)"
 class _FunctionScan:
     """One function's precomputed shared-state inputs (T-0697): its
     `symref`, bare name, the set of same-module bare callee names it calls
@@ -288,10 +279,6 @@ class _FunctionScan:
 
     __slots__ = ("symref", "fname", "calls", "writes")
 
-    # frob:waive DUP001 reason="dup grouped this bind-every-field-from-args __init__ \
-    # with _lock_ordering.py::_OrderEdge.__init__ purely on generic constructor \
-    # boilerplate shape -- different fields, different domains, false positive, same \
-    # class-level DUP001 waiver reasoning as _FunctionScan's own (T-0861)"
     def __init__(
         self,
         symref: str,

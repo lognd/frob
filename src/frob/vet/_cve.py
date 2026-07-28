@@ -355,7 +355,6 @@ def _best_cvss(record: CveRecord) -> tuple[float | None, str | None]:
 def _description_summary(record: CveRecord, *, max_len: int = 240) -> str:
     """The first English description across CNA/ADP containers, truncated
     to `max_len` chars; empty string when the record carries none."""
-    # frob:waive PERF003 reason="flat walk over few containers x descriptions"
     for container in (record.containers.cna, *record.containers.adp):
         for desc in container.descriptions:
             if desc.lang == "en" and desc.value:
@@ -468,7 +467,6 @@ def _usable_mirror_record(
 # only ever called when a mirror IS configured, so failing to read it
 # must never look like "zero CVEs found".
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="match_deps_against_mirror 88.9% branch cover, debt T-0160"
 def match_dependencies_against_mirror(
     deps: tuple[Dependency, ...], mirror_root: Path
 ) -> Result[tuple[CveMatch, ...], VetError]:

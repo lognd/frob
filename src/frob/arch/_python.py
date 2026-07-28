@@ -406,12 +406,6 @@ def _py_is_self_attribute(node: Node) -> bool:
     return True
 
 
-# frob:waive DUP001 reason="dup grouped this with _rust.py::_rust_is_field_write and \
-# _typescript.py::_ts_is_field_write on the shared assignment-target-check shape -- \
-# these are three independently-evolving per-language tree-sitter adapters (Python \
-# `assignment`, Rust `assignment_expression`, TS `assignment_expression` -- different \
-# grammars, different node type names), following this package's established \
-# per-language-file convention (T-0861)"
 def _py_is_field_write(node: Node) -> bool:
     """Whether an `attribute` node (`self.x`) is the assignment-target of an
     `assignment` (a write) rather than being read."""
@@ -921,7 +915,6 @@ def _body_fingerprint(func: Node) -> str:
 _DISPATCH_CONTAINER_TYPES = frozenset({"list", "set", "tuple"})
 
 
-# frob:waive ARCH001 reason="detector internal owned by a separate ticket (T-0360 dispatch-family detection); a single recursive tree-walk over one grammar's dispatch-position cases, splitting the case list across functions would scatter one cohesive traversal without reducing its real complexity" ceiling="60"  # noqa: E501
 def _collect_dispatch_refs(node: Node, out: set[str]) -> None:
     """Collect every identifier used in a DISPATCH-LIKE syntactic position
     under `node`, into `out` (T-0360, reviewer-required fix).

@@ -81,11 +81,6 @@ def test_no_decisions_dir_skips(tmp_path):
     assert decisions_gate(tmp_path, _snap(tmp_path)) == ()
 
 
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across test_decisions.py, \
-# test_registry_exhaustiveness.py (2 sites) -- each file exercises a \
-# structurally similar check for a distinct domain/module with the \
-# same arrange-act shape; extracting would blur which domain owns \
-# which check"
 def _git_init(root: Path) -> None:
     """Minimal git repo bootstrap for T-0894's adopted-then-deleted
     check (mirrors tests/test_gates.py's own `_git_init` helper)."""

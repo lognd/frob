@@ -44,7 +44,6 @@ _log = get_logger(__name__)
 JOURNAL_DIRNAME = "journal"
 
 
-# frob:waive COV005 reason="T-0601 rework: demoted JournalError -> _JournalError (frob-exports external-consumer test: only used intra-package by _land.py, never imported outside frob.tickets)"  # noqa: E501
 # frob:ticket T-0601
 class _JournalError(ErrorSet):
     """Fallible outcomes of the intent-journal side-channel (T-0456)."""
@@ -52,7 +51,6 @@ class _JournalError(ErrorSet):
     WriteFailed = "writing the journal record failed"
 
 
-# frob:waive COV005 reason="T-0601 rework: demoted LandIntent -> _LandIntent (frob-exports external-consumer test: only used intra-package by _reconcile.py, never imported outside frob.tickets)"  # noqa: E501
 # frob:ticket T-0601
 class _LandIntent(BaseModel):
     """One in-flight `frob ticket land` operation (T-0456): which ticket,
@@ -66,7 +64,6 @@ class _LandIntent(BaseModel):
     started_at: str
 
 
-# frob:waive COV005 reason="T-0601 rework: demoted journal_dir -> _journal_dir (frob-exports external-consumer test: only used intra-package by this module's own helpers, never imported outside frob.tickets)"  # noqa: E501
 # frob:ticket T-0601
 def _journal_dir(root: Path) -> Path:
     """`<root>/.frob/journal`, where in-flight land intent records live (T-0456)."""
@@ -79,7 +76,6 @@ def _intent_path(root: Path, ticket_id: str) -> Path:
     return _journal_dir(root) / f"{ticket_id}.json"
 
 
-# frob:waive COV005 reason="T-0601 rework: demoted write_intent -> _write_intent (frob-exports external-consumer test: only called intra-package by _land.py, never imported outside frob.tickets); the frob:tests directives deliberately follow the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_ticket_journal.py::TestWriteIntent.test_write_then_read_round_trips  # noqa: E501
 # frob:tests tests/test_ticket_journal.py::TestWriteIntent.test_write_failure_returns_err  # noqa: E501
 # frob:ticket T-0601
@@ -112,7 +108,6 @@ def _write_intent(
     return Ok(None)
 
 
-# frob:waive COV005 reason="T-0601 rework: demoted clear_intent -> _clear_intent (frob-exports external-consumer test: only called intra-package by _land.py, never imported outside frob.tickets); the frob:tests directives deliberately follow the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_ticket_journal.py::TestClearIntent.test_clear_removes_the_file  # noqa: E501
 # frob:tests tests/test_ticket_journal.py::TestClearIntent.test_clear_missing_file_is_a_no_op  # noqa: E501
 # frob:ticket T-0601
@@ -129,7 +124,6 @@ def _clear_intent(root: Path, ticket_id: str) -> None:
         _log.warning("tickets: could not clear land intent for %s: %s", ticket_id, exc)
 
 
-# frob:waive COV005 reason="T-0601 rework: demoted read_all_intents -> _read_all_intents (frob-exports external-consumer test: only called intra-package by _reconcile.py, never imported outside frob.tickets); the frob:tests directives deliberately follow the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_ticket_journal.py::TestReadAllIntents.test_reads_every_recorded_intent  # noqa: E501
 # frob:tests tests/test_ticket_journal.py::TestReadAllIntents.test_no_journal_dir_returns_empty  # noqa: E501
 # frob:tests tests/test_ticket_journal.py::TestReadAllIntents.test_malformed_record_is_skipped_not_fatal  # noqa: E501

@@ -35,8 +35,6 @@ seccomp/IAM mapping semantics.
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
 
-# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
-
 from __future__ import annotations
 
 import sys
@@ -165,9 +163,6 @@ def _resolve_design_root(cfg: AppConfig, command: str) -> Path:
     return root
 
 
-# frob:waive DUP001 reason="documented precedent duplication (own docstring): a \
-# two-line frob.toml read, deliberately not worth a cross-module import; \
-# frob.app.deploy_runner carries the same waiver"
 def _design_dir(root: Path) -> str:
     """`[strata].design_dir` from frob.toml, defaulting to `DEFAULT_DESIGN_DIR`
     (duplicated from `frob.gates`'s identical helper -- T-0084 scope excludes
@@ -833,7 +828,6 @@ def _run_audit(cfg: AppConfig) -> None:
 # frob:ticket T-0084
 # frob:ticket T-0085
 # frob:ticket T-0086
-# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 # frob:ticket T-0588
 # frob:tests tests/unit/test_app_runners_batch7.py::TestSysRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
 def run(cfg: AppConfig) -> None:

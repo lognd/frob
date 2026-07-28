@@ -276,9 +276,6 @@ class TestClosure:
         assert age == float("inf")
 
     # frob:tests src/frob/strata/_facts.py::FactBase.demand kind="unit"
-    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_demand_sums_inbound_rates_in_base_units(self):
         model = KernelModel(
             nodes=(_node("a"), _node("b"), _node("api")),

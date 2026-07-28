@@ -287,16 +287,6 @@ def _identity_of(manifest: HostManifest) -> str | None:
     )
 
 
-# frob:waive DUP001 reason="near-identical parse of \
-# _contention.py::_acl_rule_write_capable's SAME PRINCIPAL:RIGHTS[:deny] RULE grammar, \
-# deliberately duplicated (not extracted) because the two callers need different \
-# return shapes for different questions: _contention.py's SYS201 asks a flat \
-# is-this-ACE-write-capable-and-not-denied bool for its own per-ACE contention join, \
-# while T-0825 needs the (principal, is_deny, rights LEVEL) triple to reason about the \
-# WRITE_DAC-indirection corner across MULTIPLE ACEs for the same principal -- \
-# extracting a shared parse helper across strata/_contention.py and \
-# strata/_host_isolation.py (out of this ticket's declared scope) is a legitimate \
-# follow-up, not done here"
 def _acl_ace_of(rule: str) -> tuple[str, bool, str | None]:
     """Decompose a validated windows `acl` RULE into its (PRINCIPAL,
     is_deny, rights) triple -- the one parse `_join_acl_entries`

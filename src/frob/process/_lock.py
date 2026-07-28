@@ -45,7 +45,6 @@ from frob.logging import get_logger
 # re-entrant mode a thread already holds) rather than a separate cross-module contract \
 # needing its own tracked invariant, mirroring frob.check's INV006 T-0585 \
 # calibration-batch waiver in src/frob/check/__init__.py"
-
 # T-0859: `fcntl` is posix-only; `derived_state_lock` degrades to a
 # documented no-op (see its docstring) on a platform without it, mirroring
 # `frob.tickets._store.ledger_lock`'s T-0458 precedent.

@@ -141,8 +141,6 @@ Implements docs/modules/dup.md's `find_clones` across the full rung ladder:
   normalization above.
 """
 
-# frob:waive TEST005 reason="module line coverage 57.9%, debt T-0160"
-
 from __future__ import annotations
 
 import hashlib
@@ -2498,7 +2496,6 @@ def _smt_bind_params(
 # frob:waive COV007 reason="docs/modules/dup.md's Rung R7 section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
-# frob:waive TEST005 reason="_probe_smt_equivalence 66.7% branch cover, debt T-0160"
 def _probe_smt_equivalence(
     a: str, b: str, snapshot: GraphSnapshot
 ) -> Result[ProbeVerdict, DupError]:

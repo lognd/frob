@@ -12,8 +12,6 @@ ever opened -- a disabled switch degrades exactly like a network failure
 never raises and never blocks.
 """
 
-# frob:waive TEST005 reason="module line coverage 39.5%, debt T-0160"
-
 from __future__ import annotations
 
 import json
@@ -58,9 +56,6 @@ def _cache_key(ecosystem: str, name: str, version: str) -> str:
     return f"{ecosystem}:{name}:{version}"
 
 
-# frob:waive DUP001 reason="documented deliberate split: same shape as \
-# _nvd.py::_cache_get, kept separate since the two caches key different id spaces and \
-# expire on different TTLs (see _nvd.py's docstring)"
 # frob:waive ARCH103 reason="T-0977: sqlite cache-read helper -- open, query, \
 # expiry-check, return-or-None; same shape and same reasoning as _nvd.py::_cache_get's \
 # ARCH103 waiver"
@@ -89,8 +84,6 @@ def _cache_get(db_path: Path, key: str) -> str | None:
     return value
 
 
-# frob:waive DUP001 reason="mirrors _nvd.py::_cache_set; the two caches are \
-# independent artifacts with different TTLs, not worth forcing into one abstraction"
 def _cache_set(db_path: Path, key: str, value: str) -> None:
     """Best-effort cache write; failures are logged, never raised."""
     try:
@@ -229,7 +222,6 @@ def _result_from_network(
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
-# frob:waive TEST005 reason="_fetch_publish_date 87.5% branch cover, debt T-0160"
 def _fetch_publish_date(
     ecosystem: str,
     name: str,

@@ -138,7 +138,6 @@ def _collect_comment_nodes(root: Node, comment_types: frozenset[str]) -> list[No
             walk(child)
 
     walk(root)
-    # frob:waive PERF004 reason="one sort per file, not in a loop; walk() is recursion"
     raw_nodes.sort(key=lambda n: _span_of(n)[0])
     return raw_nodes
 
@@ -286,7 +285,6 @@ _IMPORT_WALKERS = {
 
 
 # frob:doc docs/modules/lang.md#extraction-api
-# frob:waive TEST005 reason="extract_imports 80.0% branch cover, debt T-0160"
 def extract_imports(tree: Tree, language: str) -> tuple[str, ...]:
     """Raw import/include specifiers for `language` (empty tuple if unsupported)."""
     walker = _IMPORT_WALKERS.get(language)

@@ -131,9 +131,6 @@ class TestTypeHoleClassification:
     (python's `type` wrapper node) in EVERY group member propose a shared
     type variable instead of a bare value hole."""
 
-    # frob:waive DUP001 reason="parallel test methods within test_dup_template.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def _write_typed(self, root: Path, name: str, type_name: str) -> CloneRegion:
         """A one-function file annotating both its parameter and return
         type as `type_name` (kept equal on purpose: this isolates the
@@ -226,9 +223,6 @@ class TestHoleParamName:
     directly rather than only indirectly through a full `anti_unify` fold.
     """
 
-    # frob:waive DUP001 reason="parallel test methods within test_dup_template.py (3 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_reuses_shared_plain_identifier(self, tmp_path):
         # frob:tests src/frob/dup/_template.py::_hole_param_name kind="unit"
         region = CloneRegion(ref="a.py::f", span=(1, 2))
@@ -239,9 +233,6 @@ class TestHoleParamName:
 
         assert _hole_param_name(0, bindings) == "count"
 
-    # frob:waive DUP001 reason="parallel test methods within test_dup_template.py (3 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_falls_back_when_members_disagree(self, tmp_path):
         # frob:tests src/frob/dup/_template.py::_hole_param_name kind="unit"
         region = CloneRegion(ref="a.py::f", span=(1, 2))
@@ -252,9 +243,6 @@ class TestHoleParamName:
 
         assert _hole_param_name(0, bindings) == "hole_0"
 
-    # frob:waive DUP001 reason="parallel test methods within test_dup_template.py (3 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_falls_back_when_shared_text_is_not_a_plain_identifier(self, tmp_path):
         # frob:tests src/frob/dup/_template.py::_hole_param_name kind="unit"
         region = CloneRegion(ref="a.py::f", span=(1, 2))
@@ -338,9 +326,6 @@ class TestTypeHoleClassificationC:
     "c/cpp if feasible" acceptance note -- cpp inherits the identical
     grammar shape for this construct and is not independently fixtured."""
 
-    # frob:waive DUP001 reason="parallel test methods within test_dup_template.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def _write_typed(self, root: Path, name: str, type_name: str) -> CloneRegion:
         """A one-function c file annotating both its parameter and return
         type as `type_name` (kept equal on purpose, mirroring the rust

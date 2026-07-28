@@ -50,9 +50,6 @@ class TestUndeclaredInterfaceCore:
     `check_capability_conformance` (docs/strata/selfconform.md#the-three-rules)."""
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
-    # boundary testing; extracting would obscure per-case intent"
     def test_core_undeclared_interface_fires(self, tmp_path: Path):
         _write(
             tmp_path, "src/frob/widget/_io.py", "import requests\nrequests.get('x')\n"
@@ -70,9 +67,6 @@ class TestUndeclaredInterfaceCore:
         assert any(v.node == "widget" and "net" in v.detail for v in hit)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
-    # boundary testing; extracting would obscure per-case intent"
     def test_core_undeclared_interface_discharges_once_declared(self, tmp_path: Path):
         _write(
             tmp_path, "src/frob/widget/_io.py", "import requests\nrequests.get('x')\n"
@@ -99,9 +93,6 @@ class TestUndeclaredInterfaceExtended:
     structurally cannot see (docs/strata/selfconform.md#the-three-rules)."""
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
-    # boundary testing; extracting would obscure per-case intent"
     def test_extended_undeclared_interface_fires(self, tmp_path: Path):
         _write(tmp_path, "src/frob/widget/_io.py", "x = compile('1', '<s>', 'eval')\n")
         model = KernelModel(
@@ -117,9 +108,6 @@ class TestUndeclaredInterfaceExtended:
         assert any(v.node == "widget" and "eval" in v.detail for v in hit)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
-    # boundary testing; extracting would obscure per-case intent"
     def test_extended_undeclared_interface_discharges_once_declared(
         self, tmp_path: Path
     ):
@@ -246,9 +234,6 @@ class TestUndeclaredInterfaceFsReadAlias:
     (docs/strata/selfconform.md#fs-read-fs-write)."""
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
-    # boundary testing; extracting would obscure per-case intent"
     def test_broad_fs_declaration_discharges_read_only_observation(
         self, tmp_path: Path
     ):
@@ -281,9 +266,6 @@ class TestUndeclaredInterfaceFsReadAlias:
         )
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
-    # boundary testing; extracting would obscure per-case intent"
     def test_narrow_fs_read_declaration_does_not_cover_fs_read(self, tmp_path: Path):
         """A node that already declares `may "fs-read"` directly is
         unaffected by the alias (it never needed it): a read-only
@@ -347,9 +329,6 @@ class TestUndeclaredInterfaceFsReadAlias:
 
 class TestStaleDesign:
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
-    # boundary testing; extracting would obscure per-case intent"
     def test_stale_design_fires(self, tmp_path: Path):
         """A `may` capability declared for a node never observed in its
         `code=`-bound files is SYS101."""
@@ -389,9 +368,6 @@ class TestStaleDesign:
         assert not any(v.rule == SYS_STALE_DESIGN for v in result.danger_ok.violations)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
-    # boundary testing; extracting would obscure per-case intent"
     def test_legacy_fs_declaration_discharges_on_read_only_observation(
         self, tmp_path: Path
     ):
@@ -422,9 +398,6 @@ class TestStaleDesign:
         assert not any(v.rule == SYS_STALE_DESIGN for v in result.danger_ok.violations)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
-    # boundary testing; extracting would obscure per-case intent"
     def test_fs_read_declaration_discharges_on_read_only_observation(
         self, tmp_path: Path
     ):
@@ -535,9 +508,6 @@ class TestStaleDesign:
 
 class TestUnmodeledCode:
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_selfconform.py (2 sites) sharing \
-    # an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_unmodeled_code_fires(self, tmp_path: Path):
         """A `src/frob/` directory claimed by no node's `code=` glob at
         all is SYS102, even with zero observable capabilities."""
@@ -604,9 +574,6 @@ class TestUnmodeledCodeForeignFileGranularity:
         assert not any(v.node == "widget" for v in hit)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_selfconform.py (2 sites) sharing \
-    # an arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_loose_top_level_file_fires(self, tmp_path: Path):
         """A `.py` file placed directly under `src/frob/` (no
         subdirectory at all) with no node's `code=` glob binding it must
@@ -742,9 +709,6 @@ class TestNonPythonLanguageWiring:
         )
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
-    # boundary testing; extracting would obscure per-case intent"
     def test_typescript_stale_design_fires(self, tmp_path: Path):
         """`may=("fetch_url",)` declared on a node whose `code=`-bound `.ts`
         file never calls `fetch`/etc. is SYS101 for a non-Python language,
@@ -806,9 +770,6 @@ class TestCoreUndeclaredInterfaceNonPython:
     superset as SYS100-extended/SYS101."""
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
-    # boundary testing; extracting would obscure per-case intent"
     def test_typescript_core_net_undeclared_fires(self, tmp_path: Path):
         """A `.ts` file calling `axios.get(...)` (raw `net`, THREAT004's
         core delegated kind) with no `may` declaration is SYS100, and NOT
@@ -835,9 +796,6 @@ class TestCoreUndeclaredInterfaceNonPython:
         assert not any(v.rule == SYS_UNMODELED_CODE for v in violations)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
-    # boundary testing; extracting would obscure per-case intent"
     def test_typescript_core_net_discharges_once_declared(self, tmp_path: Path):
         """The same `axios.get(...)` fixture with `may=("net",)` declared
         produces no SYS100 for `net` -- proves the TS core-kind scan
@@ -866,9 +824,6 @@ class TestCoreUndeclaredInterfaceNonPython:
         )
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
-    # boundary testing; extracting would obscure per-case intent"
     def test_rust_core_exec_undeclared_fires(self, tmp_path: Path):
         """A `.rs` file calling `Command::new(...).spawn()` (raw `exec`)
         with no `may` declaration is SYS100, and NOT also a spurious
@@ -895,9 +850,6 @@ class TestCoreUndeclaredInterfaceNonPython:
         assert not any(v.rule == SYS_UNMODELED_CODE for v in violations)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
-    # boundary testing; extracting would obscure per-case intent"
     def test_rust_core_exec_discharges_once_declared(self, tmp_path: Path):
         """The same `Command::new(...).spawn()` fixture with
         `may=("exec",)` declared produces no SYS100 for `exec`."""
@@ -1038,8 +990,6 @@ class TestWaiverChannel:
     is reported as a new SYSWAIVE002 violation (drift-lock)."""
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive PERF001 reason="an any()-generator plus a two-clause list \
-    # comprehension over one tiny fixture result, not a hot loop"
     def test_matching_waiver_moves_violation_to_waived(self, tmp_path: Path):
         """SYS100 is multi-instance-per-node (T-0174 REJECT round), so the
         waiver must name the exact capability kind (`net`, matching

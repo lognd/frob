@@ -23,8 +23,6 @@ both matter here. A second small graph is built locally instead of
 widening `callgraph`'s contract for a use case it was not designed for.
 """
 
-# frob:waive TEST005 reason="module line coverage, new T-0290 rule, debt T-0160"
-
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -236,9 +234,6 @@ def _is_tail_call(tokens: tuple[str, ...], callee_short: str) -> bool:
     return False
 
 
-# frob:waive DUP001 reason="dup grouped this with graph/callgraph.py::is_symref \
-# purely on generic one-liner docstring+return shape -- unrelated domains (recursion \
-# base-case guard heuristic vs symref sentinel check), false positive (T-0861)"
 def _has_guard(tokens: tuple[str, ...]) -> bool:
     """A base-case guard is present: an `if`/`return` appears before the
     recursive call could plausibly fire. Approximated, per this package's

@@ -69,9 +69,6 @@ class TestMissingTxnBoundary:
     # frob:tests \
     # tests/unit/strata/test_txn.py::TestMissingTxnBoundary.test_transaction_attr_disch\
     # arges
-    # frob:waive DUP001 reason="parallel test methods within test_txn.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_transaction_attr_discharges(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -94,9 +91,6 @@ class TestMissingTxnBoundary:
 
     # frob:tests \
     # tests/unit/strata/test_txn.py::TestMissingTxnBoundary.test_saga_attr_discharges
-    # frob:waive DUP001 reason="parallel test methods within test_txn.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
-    # extracting would obscure per-case intent"
     def test_saga_attr_discharges(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

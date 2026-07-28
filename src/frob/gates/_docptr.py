@@ -178,11 +178,6 @@ def _doc006_violation(file: str, line: int, kind: str, detail: str) -> Violation
 
 
 # frob:enforces CHK-GATE-DOC007
-# frob:waive DUP001 reason="dup grouped this with gates/__init__.py's \
-# _affect001_violation/_affect002_violation on the shared Violation(...)-builder \
-# boilerplate shape -- DOC007/AFFECT001/AFFECT002 are three independently-evolving \
-# gate rules, each with its own message text and severity, following the same \
-# one-builder-per-rule convention used throughout gates/ (T-0861)"
 def _doc007_violation(file: str, line: int, detail: str) -> Violation:
     """Build one DOC007 violation (T-0986): a `frob:tests` target using
     pytest's `Class::method` collect-only separator instead of this

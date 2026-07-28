@@ -30,12 +30,6 @@ def _write(root: Path, rel: str, text: str) -> Path:
     return path
 
 
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across \
-# test_gate_cache.py and test_gates.py -- both files need an identical \
-# minimal-git-repo fixture for their own independent gate-under-test \
-# scenarios; extracting a shared conftest helper is a real option but not \
-# this ticket's scope (src/frob/gates/**, src/frob/serve/**, this test \
-# file, docs/modules/{serve,gates}.md only)"
 def _git_init(root: Path) -> None:
     """A minimal git repo, matching `tests/test_gates.py`'s own helper."""
     subprocess.run(["git", "init", "-q", "-b", "main"], cwd=root, check=True)

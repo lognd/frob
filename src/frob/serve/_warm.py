@@ -55,7 +55,6 @@ _ALWAYS_DIRTY = "frob-serve-no-git-signal"
 
 
 # frob:doc docs/modules/serve.md#warm-state
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 class _WarmState(BaseModel):
     """One repo root's cached graph snapshot, stamped baseline, and
@@ -105,7 +104,6 @@ def _stat_tag(root: Path, rel_path: str) -> str:
 
 # frob:doc docs/modules/serve.md#warm-state
 # frob:tests tests/test_serve.py::TestRepoDirtyKey.test_non_git_root_is_always_dirty kind="unit"  # noqa: E501
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 def _repo_dirty_key(root: Path) -> str:
     """`git rev-parse HEAD` + `git status --porcelain=v1 --untracked-files=all`
@@ -190,7 +188,6 @@ def _build_cold(root: Path, dirty_key: str) -> Result[_WarmState, BuildError]:
 # frob:doc docs/modules/serve.md#warm-state
 # frob:tests tests/test_serve.py::TestWarmState.test_second_call_is_cache_hit kind="unit"  # noqa: E501
 # frob:tests tests/test_serve.py::TestWarmState.test_file_change_forces_rebuild kind="unit"  # noqa: E501
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 def _warm_state(root: Path) -> Result[_WarmState, BuildError]:
     """The cached `_WarmState` for `root` if its `_repo_dirty_key` still
@@ -222,7 +219,6 @@ def _warm_state(root: Path) -> Result[_WarmState, BuildError]:
 
 
 # frob:doc docs/modules/serve.md#warm-state
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 def _invalidate(root: Path) -> None:
     """Drop `root`'s cached `_WarmState` so the next `_warm_state` call is

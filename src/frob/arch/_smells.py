@@ -564,7 +564,6 @@ def check_temporal_coupling(module: NormalizedModule) -> list[ArchSuggestion]:
 # frob:doc docs/modules/arch.md#module-dependency-cycles
 # frob:tests tests/unit/test_arch.py::TestModuleDependencyCycles.test_two_file_import_cycle_flagged  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestModuleDependencyCycles.test_acyclic_imports_not_flagged  # noqa: E501
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def check_module_dependency_cycles(root: Path) -> list[ArchSuggestion]:
     """Module dependency cycle detection (T-0625): builds one project-wide
     import graph under `root` using the SAME primitives `frob.app.

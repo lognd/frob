@@ -164,7 +164,6 @@ class _Mutator(ast.NodeTransformer):
             node.op = _BOOLOP_SWAPS[type(node.op)]()
         return node
 
-    # frob:waive TEST005 reason="visit_Constant 75.0% branch cover, debt T-0160"
     def visit_Constant(self, node: ast.Constant):  # noqa: N802
         # frob:doc docs/modules/mutate.md#public-api
         if isinstance(node.value, bool) and self._hit(
@@ -267,7 +266,6 @@ def _mutation_at(
 
 
 # frob:doc docs/modules/mutate.md#public-api
-# frob:waive TEST005 reason="generate_mutants 88.0% branch cover, debt T-0160"
 def generate_mutants(
     source: str,
     file: str,
@@ -310,9 +308,7 @@ def generate_mutants(
 
 
 # frob:doc docs/modules/mutate.md#public-api
-# frob:waive TEST005 reason="run_mutations 85.2% branch cover, debt T-0160"
 # frob:invariant INV-017
-# frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 # invariant spec: [INV-017](invariants/INV-017.md)
 def run_mutations(
     root: Path,

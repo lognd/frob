@@ -58,7 +58,6 @@ DEFAULT_POLL_INTERVAL_S = 20.0
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 class _PostLandVerdict(BaseModel):
     """One post-land re-verify pass's result (T-0733): the `main` HEAD it
@@ -78,7 +77,6 @@ class _PostLandVerdict(BaseModel):
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 class _RebaseWarning(BaseModel):
     """One in-flight worktree branch whose eventual land against `main`
@@ -96,7 +94,6 @@ class _RebaseWarning(BaseModel):
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 class _DaemonStatus(BaseModel):
     """The daemon's latest post-land verdict and outstanding rebase
@@ -150,7 +147,6 @@ def _main_head(root: Path) -> str | None:
 # frob:doc docs/modules/serve.md#daemon-jobs
 # frob:tests tests/test_serve_daemon.py::TestPollPostLand.test_head_unchanged_is_noop kind="unit"  # noqa: E501
 # frob:tests tests/test_serve_daemon.py::TestPollPostLand.test_head_moved_refreshes_verdict kind="unit"  # noqa: E501
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 def _poll_post_land(root: Path, *, run_tests: bool = True) -> _PostLandVerdict | None:
     """One post-land re-verify cycle (T-0733, job 1): if `main`'s HEAD has
@@ -320,7 +316,6 @@ def _merge_would_conflict(root: Path, branch: str, main_head: str) -> bool | Non
 # frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_conflicting_branch_warns kind="unit"  # noqa: E501
 # frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_clean_branch_no_warning kind="unit"  # noqa: E501
 # frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_ttl_expired_lease_skipped_and_logged_once kind="unit"  # noqa: E501
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 def _poll_rebase_bot(root: Path) -> tuple[_RebaseWarning, ...]:
     """One rebase-bot cycle (T-0733, job 2): for every in-flight worktree
@@ -375,7 +370,6 @@ def daemon_status(root: Path) -> _DaemonStatus:
 
 # frob:doc docs/modules/serve.md#daemon-jobs
 # frob:tests tests/test_serve_daemon.py::TestRunDaemonCycle.test_runs_both_jobs_and_returns_status kind="unit"  # noqa: E501
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 def _run_daemon_cycle(root: Path, *, run_tests: bool = True) -> _DaemonStatus:
     """One full daemon cycle: `_poll_post_land` then `_poll_rebase_bot`,
@@ -390,7 +384,6 @@ def _run_daemon_cycle(root: Path, *, run_tests: bool = True) -> _DaemonStatus:
 
 # frob:doc docs/modules/serve.md#daemon-jobs
 # frob:tests tests/test_serve_daemon.py::TestStartDaemon.test_background_loop_runs_a_cycle_then_stops kind="unit"  # noqa: E501
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 def _start_daemon(
     root: Path,

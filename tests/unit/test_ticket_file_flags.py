@@ -95,9 +95,6 @@ class TestNewAcceptanceFile:
     """`frob ticket new --acceptance-file PATH` (T-0737)."""
 
     # frob:ticket T-0737
-    # frob:waive DUP001 reason="parallel test methods within test_ticket_file_flags.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_blank_line_separated_blocks_become_criteria(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_ticket_file_flags.py::TestNewAcceptanceFile.test_blank_line_separated_blocks_become_criteria  # noqa: E501
         acc_path = tmp_path / "acceptance.txt"
@@ -121,9 +118,6 @@ class TestNewAcceptanceFile:
         ]
 
     # frob:ticket T-0737
-    # frob:waive DUP001 reason="parallel test methods within test_ticket_file_flags.py (2 sites) \
-    # sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
     def test_one_per_line_when_no_blank_lines(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_ticket_file_flags.py::TestNewAcceptanceFile.test_one_per_line_when_no_blank_lines  # noqa: E501
         acc_path = tmp_path / "acceptance.txt"
@@ -210,11 +204,6 @@ class TestScopeReasonFile:
         assert exc_info.value.code == 1
 
     # frob:ticket T-0737
-    # frob:waive DUP001 reason="parallel per-domain test scaffolding across \
-    # test_ticket_file_flags.py, test_tickets_scope_mutation.py (2 \
-    # sites) -- each file exercises a structurally similar check for a \
-    # distinct domain/module with the same arrange-act shape; extracting \
-    # would blur which domain owns which check"
     def test_neither_reason_nor_reason_file_errors_cleanly(
         self, tmp_path: Path
     ) -> None:

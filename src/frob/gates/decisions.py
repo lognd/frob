@@ -69,7 +69,6 @@ def decisions_dir(root: Path) -> Path:
 
 
 # frob:doc docs/modules/decisions.md#anchoring-in-code
-# frob:waive TEST005 reason="load_decisions 64.3% branch cover, debt T-0160"
 def load_decisions(root: Path) -> Result[tuple[Decision, ...], DecisionError]:
     """Parse every decisions/AD-###.md record; any malformation is a hard Err."""
     d = decisions_dir(root)

@@ -119,12 +119,6 @@ class JournalError(ErrorSet):
 
 
 # frob:doc docs/modules/mutate.md#crash-safe-backup-journal-t-0857
-# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
-# docs/modules/mutate.md#crash-safe-backup-journal-t-0857 documents this \
-# journal entry's persisted shape; demoted to private in this ticket \
-# (frob-exports: zero real consumers outside this module) but remains the \
-# thing the doc section describes, and the doc's own code sample was \
-# updated to the new name"
 # frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 class _MutationJournalEntry(BaseModel):
     """One target file's pre-mutation bytes, persisted so `run_mutations`

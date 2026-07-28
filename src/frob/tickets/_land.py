@@ -705,7 +705,6 @@ def _drop_resurrected_ids(
     for ticket_id in resurrected:
         del merged[ticket_id]
     if resurrected:
-        # frob:waive PERF004 reason="runs once after the loop above, not inside it"
         _log.info(
             "tickets: land splice -- dropped %d already-archived id(s): %s",
             len(resurrected),
@@ -2303,7 +2302,6 @@ def _reverify_done_report_claims_post_merge(
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_matching_claims_land_succeeds kind="integration"  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_divergent_test_count_refuses_land kind="integration"  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_strictly_improved_test_count_auto_accepts_and_rewrites_recap kind="integration"  # noqa: E501
-# frob:waive DUP001 reason="T-1000: coincidental structural similarity to frob.app.ticket_runner._reverify_evidence_for_close (non_cmd-evidence extraction + failing-check shape) -- not real duplication, both independently derive 'which of this ticket's non-cmd evidence ids still pass' from their own module's evidence-resolution primitives; frob.tickets cannot import frob.app (docs/rework.md cycle-avoidance), so no shared extraction site exists without a layering violation, and this ticket's scope does not cover ticket_runner.py"  # noqa: E501
 def _reverify_test_count_claim(
     worktree: Path,
     ticket: Ticket,

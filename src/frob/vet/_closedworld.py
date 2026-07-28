@@ -25,8 +25,6 @@ always safe, never silently claimed done ahead of being built.
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
 
-# frob:waive TEST005 reason="line coverage debt, mirrors _cache.py/_registry.py waivers"
-
 from __future__ import annotations
 
 import ast
@@ -74,7 +72,6 @@ def _registry_import_roots(language: str) -> frozenset[str]:
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0180
-# frob:waive TEST005 reason="88.2% cover; truncation branch needs a 300+-file fixture"
 def walk_python_imports(
     source_dir: Path, *, max_files: int = _MAX_FILES
 ) -> frozenset[str]:

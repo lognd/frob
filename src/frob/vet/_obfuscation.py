@@ -107,7 +107,6 @@ _MAX_SCAN_BYTES = 2 * 1024 * 1024
 # candidate opens at or after that position, it can never close and is
 # rejected without scanning -- one linear pre-pass plus O(1) per
 # rejection keeps the whole function O(len(text)).
-# frob:waive PERF003 reason="two-pointer scan not a join; each char visited once, O(n)"
 def _iter_string_literals(text: str) -> list[str]:
     """Single-pass, backtracking-free scan for `'...'`/`"..."` literal
     bodies (single-char delimiters only, matching the prior regex's scope)."""
@@ -228,7 +227,6 @@ def _high_entropy_strings(text: str) -> tuple[str, ...]:
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
-# frob:waive TEST005 reason="_invisible_text_signal 85.7% branch cover, debt T-0160"
 def _invisible_text_signal(text: str) -> bool:
     """True if `text` contains a Unicode bidi override, zero-width character,
     or BOM outside the file's leading position -- the Trojan Source family.
@@ -265,7 +263,6 @@ def _hex_identifier_ratio_signal(text: str) -> bool:
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
-# frob:waive TEST005 reason="_scan_text_obfuscation 85.7% branch cover, debt T-0160"
 def _scan_text_obfuscation(text: str) -> tuple[str, ...]:
     """All obfuscation signal names present in `text` (empty = clean)."""
     signals: list[str] = []
