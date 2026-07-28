@@ -1393,6 +1393,7 @@ tests/docs updated to the new module path):
 
 Plan carefully before moving code; verify with the full gates test suite
 after each chunk; land incrementally, same discipline T-1072 used.
+
 <!-- ticket:T-1081 -->
 ```yaml
 id: T-1081
@@ -1997,6 +1998,85 @@ threat: null
 component: null
 ```
 T-1103 extracted archive + new/renumber families (tickets/__init__.py 4287->3489) and stopped on budget; per its done report the remaining ~8 families are doable/leases/scope-breadth, scope mutation, field setters/sprint, evidence/transition, done-report/review/drop/attach, and _land.py (4762 lines) was not touched. Continue the same extraction pattern: per-family private modules re-exported from __init__, zero behavior change, existing tests as the safety net. Beware the load-time circular import noted in T-1103's report (evidence family).
+
+<!-- ticket:T-1109 -->
+```yaml
+id: T-1109
+title: 'docs: DOC006 doc-pointer round-3 burn-down (~41 residual warnings after T-1015/T-1016)'
+state: queued
+kind: docs
+origin: agent
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/**
+- docs/**
+- tests/**
+acceptance:
+- text: GIVEN a full frob check WHEN the doc gate runs THEN DOC006 reports zero unwaived
+    warnings, with every fixed pointer resolving to a real heading slug and no matcher
+    loosening
+  evidence: []
+threat: null
+component: null
+```
+T-1015 (matcher hardening, 771->133) and T-1016 (round 2) left ~41 DOC006 doc-pointer warnings. Round 3: fix or reasoned-waive every residual site. No matcher/threshold loosening; follow T-1015's FP-class analysis before touching the matcher. Narrow scope to the real finding sites at start.
+
+<!-- ticket:T-1110 -->
+```yaml
+id: T-1110
+title: 'warnings: DEAD001/COV/REF edge burn-down (DEAD 32, COV 10, REF 10 unwaived)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/**
+- docs/**
+- tests/**
+acceptance:
+- text: GIVEN a full frob check WHEN the dead/coverage/refs gates run THEN DEAD001,
+    COV00x, and REF00x report zero unwaived warnings, each finding either root-fixed
+    (dead code removed, edge bound) or waived with a grounded reason
+  evidence: []
+threat: null
+component: null
+```
+Post-wave-16 residue: 32 DEAD001 dead-symbol warnings, 10 COV coverage-edge warnings, 10 REF reference warnings (unwaived, per gate summary). T-1024 precedent: DEAD001 13->0 and COV006 3->0 via real removals and edge bindings, not blanket waivers. Callgraph blind spots (cross-package privates, indexed-constant mutation) get confirmed-exercised waivers per the 3d574f3a precedent. Narrow scope to the real finding sites at start.
+
+<!-- ticket:T-1111 -->
+```yaml
+id: T-1111
+title: 'warnings: small-residue sweep to zero (DEPR 4, LANG 3, INV 2, REG 2, WAIVE
+  2, WALK 2)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-28'
+priority: low
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/**
+- docs/**
+- tests/**
+- frob.toml
+acceptance:
+- text: GIVEN a full frob check WHEN all gates run THEN the DEPR, LANG, INV, REG,
+    WAIVE, and WALK families each report zero unwaived warnings
+  evidence: []
+threat: null
+component: null
+```
+Endgame tail: the sub-five-warning families (DEPR003 x4, LANG003 x3, INV003/004 x2, REG009/REG010 x2, WAIVE004 x2, WALK001 x2 per gate summary). Fix or grounded-waive each. REG009/REG010 residue is the CPPTHROW001 check-coverage auto-sync gap noted at T-1042 land -- fold the registry entry fix here. Narrow scope at start.
 
 <!-- ticket:T-draft-a418305e -->
 ```yaml
