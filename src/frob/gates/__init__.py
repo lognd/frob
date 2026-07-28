@@ -11737,7 +11737,7 @@ def _run_combined_jobs(
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:doc docs/modules/serve.md#per-gate-cache-t-0602
+# frob:doc docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:ticket T-0021
 # frob:ticket T-0602
 def run_gates(
