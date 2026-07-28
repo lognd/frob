@@ -62,6 +62,30 @@ def _symbol(path: str, qualname: str, span: tuple[int, int]) -> SymbolRecord:
     )
 
 
+# frob:ticket T-0995
+def _assert_transition_to_done_allows(
+    tmp_path: Path, **transition_kwargs: bool
+) -> None:
+    """A single IN_PROGRESS ticket, written then transitioned to DONE with
+    the given `transition()` override kwarg(s), succeeds (T-0995): the
+    shared arrange/act/assert `TestD02ScopeBinding.
+    test_transition_allows_when_covers_scope_true` and
+    `TestT0417ReverifyEvidenceOnClose.
+    test_transition_allows_when_evidence_reverified_true` used to duplicate
+    byte-for-byte, differing only in which override kwarg they passed --
+    extracted here since both live in this same file, testing two closely
+    related evidence-transition safety overrides side by side, not two
+    distinct domains whose ownership dedup would blur."""
+    ticket = _ticket(
+        state=TicketState.IN_PROGRESS,
+        evidence=("tests/test_thing.py::test_x",),
+        body="## Description\nx\n\n## Done report\nDone.\n",
+    )
+    _write(tmp_path, ticket)
+    result = transition(tmp_path, "T-0001", TicketState.DONE, **transition_kwargs)
+    assert result.is_ok
+
+
 # frob:waive DUP001 reason="parallel per-domain test scaffolding across \
 # test_evidence_integrity.py, \
 # test_tickets_new_gate_rule_acceptance.py (2 sites) -- each file \
@@ -168,23 +192,11 @@ class TestD02ScopeBinding:
         assert result.is_err
         assert result.danger_err == TicketError.EvidenceScopeUnbound
 
-    # frob:waive DUP001 reason="pre-existing duplication with \
-    # TestT0417ReverifyEvidenceOnClose.test_transition_allows_when_evidence_reverified_true \
-    # in this same file, surfaced (not introduced) by T-0988's mechanical fmt \
-    # sweep touching this file's directive comments; dedup tracked separately \
-    # in T-0995, not fixed opportunistically here"  # noqa: E501
     def test_transition_allows_when_covers_scope_true(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_transition_allows_\
         # when_covers_scope_true
-        ticket = _ticket(
-            state=TicketState.IN_PROGRESS,
-            evidence=("tests/test_thing.py::test_x",),
-            body="## Description\nx\n\n## Done report\nDone.\n",
-        )
-        _write(tmp_path, ticket)
-        result = transition(tmp_path, "T-0001", TicketState.DONE, covers_scope=True)
-        assert result.is_ok
+        _assert_transition_to_done_allows(tmp_path, covers_scope=True)
 
     def test_evidence_covers_scope_true_for_bound_test(self) -> None:
         # frob:tests \
@@ -352,16 +364,7 @@ class TestT0417ReverifyEvidenceOnClose:
         self, tmp_path: Path
     ) -> None:
         # frob:tests tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_allows_when_evidence_reverified_true  # noqa: E501
-        ticket = _ticket(
-            state=TicketState.IN_PROGRESS,
-            evidence=("tests/test_thing.py::test_x",),
-            body="## Description\nx\n\n## Done report\nDone.\n",
-        )
-        _write(tmp_path, ticket)
-        result = transition(
-            tmp_path, "T-0001", TicketState.DONE, evidence_reverified=True
-        )
-        assert result.is_ok
+        _assert_transition_to_done_allows(tmp_path, evidence_reverified=True)
 
     def test_transition_permissive_when_evidence_reverified_none(
         self, tmp_path: Path
