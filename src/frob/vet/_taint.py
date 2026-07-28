@@ -92,8 +92,8 @@ _VALIDATOR_NAME_RE = re.compile(
 )
 
 
-@dataclass(frozen=True)
 # frob:doc docs/modules/vet.md#sec005-taint-rule-t-0781
+@dataclass(frozen=True)
 class TaintFinding:
     """One SEC005 finding: a repo-state-sourced value reaching an argv sink
     with no validator hop or `--` terminator between source and sink."""
