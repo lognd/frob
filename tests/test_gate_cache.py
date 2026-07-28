@@ -15,6 +15,7 @@ from frob.gates import GateConfig, run_gates
 from frob.gates._gate_cache import (
     TrackedSnapshot,
     evaluate_cacheable_gate,
+    extra_key,
     invalidate,
 )
 from frob.graph import build_graph
@@ -80,6 +81,27 @@ class TestTrackedSnapshot:
         tracked = TrackedSnapshot(snap, touched)
         _ = tracked.symbols[key_a]
         assert touched == {"a.py"}
+
+    def test_file_hashes(self, tmp_path: Path) -> None:
+        """frob:tests src/frob/gates/_gate_cache.py::TrackedSnapshot.file_hashes"""
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _write(tmp_path, "b.py", "def g():\n    pass\n")
+        _git_init(tmp_path)
+        snap = _snapshot(tmp_path)
+        touched: set[str] = set()
+        tracked = TrackedSnapshot(snap, touched)
+        _ = tracked.file_hashes["a.py"]
+        assert touched == {"a.py"}
+
+
+class TestExtraKey:
+    def test_extra_key(self) -> None:
+        """frob:tests src/frob/gates/_gate_cache.py::extra_key"""
+        assert extra_key(["T-0001", "2026-01-01"]) == extra_key(
+            ["T-0001", "2026-01-01"]
+        )
+        assert extra_key(["T-0001"]) != extra_key(["T-0002"])
+        assert extra_key([]) != extra_key(["T-0001"])
 
 
 class TestEvaluateCacheableGate:

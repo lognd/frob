@@ -1,3 +1,9 @@
+# frob:waive INV006 reason="module/design docstring prose: the 'only' \
+# claims describe this module's own implemented cacheability rules \
+# (dependency-key gating, hit-or-miss answering), verifiable by reading \
+# the code they annotate -- not a separate cross-module contract needing \
+# a tracked invariant; same disposition as the T-0585 first-turn-on \
+# calibration batch"
 """T-0602: per-obligation dependency-tracked partial re-evaluation.
 
 `run_gates` (this package's `__init__.py`) evaluates every selected gate in
