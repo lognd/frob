@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.209.0] - unreleased
+
+- T-0938: sprint velocity/burndown derived from ledger state-transition history
+
 ## [0.208.0] - unreleased
 
 - T-0667: strata: SYS-COV coverage-totality check - every capable module binds to a modeled node

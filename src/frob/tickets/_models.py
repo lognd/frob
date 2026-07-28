@@ -19,7 +19,7 @@ from __future__ import annotations
 import fnmatch
 import re
 from collections.abc import Mapping, Sequence
-from datetime import date
+from datetime import date, datetime
 from enum import StrEnum
 from pathlib import Path
 
@@ -1656,3 +1656,43 @@ class SprintReport(BaseModel):
     tickets: tuple[Ticket, ...] = ()
     rollup: Mapping[TicketState, int] = {}
     closed: int = 0
+
+
+# frob:ticket T-0938
+# frob:doc docs/modules/tickets.md#data-models
+class SprintTransition(BaseModel):
+    """One mined `state: done` transition (T-0938) for a single ticket,
+    read from `tickets.md`'s own git history: `sprint_velocity` walks
+    every commit that ever touched the ledger and reads this ticket's
+    `state:` value out of that commit's blob -- the "no new storage"
+    derivation source: no field on this model is ever hand-set or
+    persisted outside git's own commit log."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    ticket_id: str
+    sha: str
+    committed_at: datetime
+    from_state: str | None
+    to_state: str
+
+
+# frob:ticket T-0938
+# frob:doc docs/modules/tickets.md#data-models
+class SprintVelocityReport(BaseModel):
+    """`frob ticket sprint velocity <label>`'s history-derived summary
+    (T-0938): every mined `SprintTransition` into `done` for tickets
+    currently committed to this sprint, ordered oldest-first (a burndown
+    timeline), plus `closed`/`remaining`/`total` counts. Unlike
+    `SprintReport.closed` (a snapshot of CURRENT ledger state),
+    `transitions` is mined from `tickets.md`'s git history -- see
+    `frob.tickets.sprint_velocity`'s docstring for exactly what that can
+    and cannot see."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    sprint: str
+    transitions: tuple[SprintTransition, ...] = ()
+    closed: int = 0
+    remaining: int = 0
+    total: int = 0

@@ -1773,11 +1773,51 @@ ticket of T-0715 (a one-time ledger migration, not a code change).
   instead of one flat list -- a story's remaining leaves display
   together (the "pop-the-whole-stack, not just the top" concern).
 
-Velocity/burndown mined from ledger state-transition HISTORY (not just
-current state, e.g. "closed per sprint across the last N commits") is a
-separate child ticket of T-0715 -- `sprint_view.closed` above answers
-"how many are done right now", which is as far as the current-state-only
-ledger can go without that history mining.
+**Velocity/burndown mined from git history (T-0938):** `sprint_view.
+closed` above answers "how many are done right now" -- a snapshot of
+CURRENT ledger state, not history. `frob.tickets.sprint_velocity(root,
+queue, sprint)` answers the harder question the mandate also asked for:
+"closed per sprint across the last N commits", a real burndown timeline.
+
+Derivation source, decided honestly (no new storage was added):
+`tickets.md` retains no transition-history field of its own, only each
+ticket's CURRENT `state` -- so `sprint_velocity` mines it from `tickets.
+md`'s own git history instead. It walks every commit that ever touched
+the ledger (oldest-first, `git log --format=%H%x1f%aI -- tickets.md`),
+reads each commit's `tickets.md` blob ONCE, and for every ticket
+currently committed to the sprint checks whether that ticket's `state:`
+value in this commit is `done` and differs from its previously observed
+state -- each such flip is one `SprintTransition` (`ticket_id`, `sha`,
+`committed_at`, `from_state`, `to_state`). A `git log -G<anchor>`
+pickaxe restriction (mine only commits whose diff touches a ticket's
+`<!-- ticket:ID -->` anchor line) was tried first and rejected: the
+anchor line itself never changes across a state edit -- only the
+`state:` line inside its block does -- so `-G` on the anchor
+structurally misses every transition after a ticket's own creation
+commit. The full walk is genuinely the correct approach here, not an
+unoptimized shortcut.
+
+This is real history, not a snapshot: unlike `sprint_view.closed`, a
+ticket that was done and later reopened shows up as TWO transitions, and
+every closure carries a real commit + timestamp usable as a burndown
+chart's x-axis. `SprintVelocityReport` also reports `closed` (`len(
+transitions)`), `remaining` (current non-done count), and `total`, for a
+single-call summary shape that mirrors `SprintReport`'s.
+
+Known, disclosed gaps of this derivation (accepted tradeoffs of "no new
+storage", not bugs): (1) a ticket's CURRENT `sprint` label selects which
+tickets to mine -- `tickets.md` does not retain sprint-REASSIGNMENT
+history, so a ticket closed under a different sprint label before being
+reassigned will not appear in either sprint's velocity; (2) if `tickets.
+md` was ever squash-merged or hand-edited such that a `done` transition
+never appears as its own commit, that transition is invisible to this
+mining (git history is a lower bound on real-world transitions, not a
+guarantee of completeness).
+
+A CLI surface (`frob ticket sprint velocity <label>`, argparse + runner
+wiring in `src/frob/__main__.py`/`src/frob/app/ticket_runner.py`) is a
+separate child ticket of T-0938 -- this ticket's own scope
+(`src/frob/tickets/**`) is the derivation function and its models only.
 
 ### `--body-file`/`--acceptance-file` (T-0737)
 
@@ -1830,6 +1870,20 @@ class SprintReport(BaseModel):  # T-0715: `frob ticket sprint show <label>`
     tickets: tuple[Ticket, ...] = ()   # every ticket carrying this sprint label
     rollup: Mapping[TicketState, int] = {}   # state -> count
     closed: int = 0                  # done-count "velocity", derived from current state
+
+class SprintTransition(BaseModel):  # T-0938: one mined `state: done` flip
+    ticket_id: str
+    sha: str
+    committed_at: datetime
+    from_state: str | None
+    to_state: str
+
+class SprintVelocityReport(BaseModel):  # T-0938: `sprint_velocity`'s history-derived summary
+    sprint: str
+    transitions: tuple[SprintTransition, ...] = ()   # oldest-first, a burndown timeline
+    closed: int = 0        # len(transitions) -- history-derived, unlike SprintReport.closed
+    remaining: int = 0     # current non-done count
+    total: int = 0
 ```
 
 ## Error types

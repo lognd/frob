@@ -27,7 +27,7 @@ import shlex
 import subprocess
 import tomllib
 from collections.abc import Callable, Sequence
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 from typani.result import Err, Ok, Result
@@ -72,6 +72,8 @@ from frob.tickets._models import (
     ScopeChangeEntry,
     ScopeChangeOp,
     SprintReport,
+    SprintTransition,
+    SprintVelocityReport,
     Stride,
     Ticket,
     TicketError,
@@ -1900,6 +1902,22 @@ def set_sprint(
     return _set_ticket_field(root, ticket_id, "sprint", sprint, log_value=sprint)
 
 
+# frob:ticket T-0938
+def _tickets_committed_to(queue: TicketQueue, sprint: str) -> tuple[Ticket, ...]:
+    """Every ticket in `queue` carrying `sprint` as its `Ticket.sprint`
+    label, id-sorted -- the shared "who's committed to this sprint"
+    lookup both `sprint_view` (T-0715, a current-state rollup) and
+    `sprint_velocity` (T-0938, a history-mined rollup) start from,
+    extracted to keep the two in lock-step rather than drifting two
+    copies of the same filter/sort (DUP001)."""
+    return tuple(
+        sorted(
+            (t for t in queue.tickets.values() if t.sprint == sprint),
+            key=lambda t: t.id,
+        )
+    )
+
+
 # frob:ticket T-0715
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_tiers.py::TestSprintShow.test_state_rollup_and_velocity
@@ -1911,17 +1929,188 @@ def sprint_view(queue: TicketQueue, sprint: str) -> SprintReport:
     a report, even when no ticket carries this sprint label (`tickets`
     empty, every rollup count zero) -- there is no NotFound case, a sprint
     label is a free-form tag, not an id that must resolve."""
-    tickets = tuple(
-        sorted(
-            (t for t in queue.tickets.values() if t.sprint == sprint),
-            key=lambda t: t.id,
-        )
-    )
+    tickets = _tickets_committed_to(queue, sprint)
     rollup: dict[TicketState, int] = {}
     for t in tickets:
         rollup[t.state] = rollup.get(t.state, 0) + 1
     closed = rollup.get(TicketState.DONE, 0)
     return SprintReport(sprint=sprint, tickets=tickets, rollup=rollup, closed=closed)
+
+
+_STATE_LINE_RE = re.compile(r"(?m)^state:\s*(\S+)\s*$")
+
+
+# frob:ticket T-0938
+def _ticket_state_in_blob(text: str, ticket_id: str) -> str | None:
+    """Read `ticket_id`'s `state:` value out of a full `tickets.md` blob
+    (any revision's text, not necessarily the working tree's), by slicing
+    the text between this ticket's `<!-- ticket:ID -->` anchor and the
+    next one -- the same anchor `_store._LEDGER_MARKER_RE` splits sections
+    on. Returns `None` if the anchor is absent from this revision (the
+    ticket did not exist yet) or its block has no `state:` line (never
+    happens in a well-formed ledger, but a malformed/mid-conflict blob
+    must not raise)."""
+    anchor = f"<!-- ticket:{ticket_id} -->"
+    start = text.find(anchor)
+    if start == -1:
+        return None
+    next_start = text.find("<!-- ticket:", start + len(anchor))
+    block = text[start : next_start if next_start != -1 else len(text)]
+    match = _STATE_LINE_RE.search(block)
+    return match.group(1) if match else None
+
+
+# frob:ticket T-0938
+def _ledger_commit_history(root: Path) -> tuple[tuple[str, str], ...]:
+    """Every commit that ever touched `tickets.md` in `root`'s clone,
+    oldest-first, as `(sha, author-date-iso)` pairs (`git log --reverse
+    --format=%H%x1f%aI -- tickets.md`) -- fetched ONCE per
+    `sprint_velocity` call and re-used across every ticket in the sprint,
+    since the ledger is one shared file and a per-ticket `git log` call
+    would re-walk the same commit list once per ticket for no reason.
+    Returns an empty tuple (never raises) if `root` is not a git
+    checkout, `tickets.md` has no history yet, or the `git` call fails --
+    a caller must treat that the same as "no history observed", matching
+    `compute_changed_lines`'s existing best-effort git contract in this
+    module."""
+    from frob.gitio import run_argv
+
+    spawned = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "log",
+            "--reverse",
+            "--format=%H%x1f%aI",
+            "--",
+            "tickets.md",
+        ]
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return ()
+    commits: list[tuple[str, str]] = []
+    for line in spawned.danger_ok.stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        sha, _, iso = line.partition("\x1f")
+        if sha and iso:
+            commits.append((sha, iso))
+    return tuple(commits)
+
+
+# frob:ticket T-0938
+def _blob_at(root: Path, sha: str) -> str | None:
+    """`tickets.md`'s full text at commit `sha` (`git show
+    <sha>:tickets.md`), or `None` if that revision can't be read (an
+    unresolvable sha, a `git` failure) -- caller treats `None` the same
+    as "this revision has no readable ticket state"."""
+    from frob.gitio import run_argv
+
+    spawned = run_argv(["git", "-C", str(root), "show", f"{sha}:tickets.md"])
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    return spawned.danger_ok.stdout
+
+
+# frob:ticket T-0938
+def _mine_done_transitions(
+    root: Path, ticket_ids: Sequence[str]
+) -> tuple[SprintTransition, ...]:
+    """Mine every `state: done` transition each id in `ticket_ids` has
+    ever made in `tickets.md`'s git history (T-0938's derivation source
+    -- see `sprint_velocity`'s docstring for the honest tradeoffs of this
+    approach): walk `_ledger_commit_history` oldest-first, reading each
+    commit's `tickets.md` blob ONCE (`_blob_at`) and checking every
+    tracked id's `state:` value against that one blob -- a `done` value
+    that differs from the id's previous observed state is a transition.
+    A `git log -G<anchor>` pickaxe restriction was tried first and
+    rejected: the `<!-- ticket:ID -->` anchor line itself never changes
+    across a state edit (only the `state:` line inside its block does),
+    so `-G` on the anchor structurally misses every transition after the
+    ticket's own creation commit -- a full walk is the only correct
+    approach here, not an optimization left undone."""
+    if not ticket_ids:
+        return ()
+    transitions: list[SprintTransition] = []
+    prev_state: dict[str, str | None] = dict.fromkeys(ticket_ids)
+    for sha, iso in _ledger_commit_history(root):
+        blob = _blob_at(root, sha)
+        if blob is None:
+            continue
+        for ticket_id in ticket_ids:
+            state = _ticket_state_in_blob(blob, ticket_id)
+            if state is None:
+                continue
+            if state == TicketState.DONE.value and state != prev_state[ticket_id]:
+                try:
+                    committed_at = datetime.fromisoformat(iso)
+                except ValueError:
+                    prev_state[ticket_id] = state
+                    continue
+                transitions.append(
+                    SprintTransition(
+                        ticket_id=ticket_id,
+                        sha=sha,
+                        committed_at=committed_at,
+                        from_state=prev_state[ticket_id],
+                        to_state=state,
+                    )
+                )
+            prev_state[ticket_id] = state
+    return tuple(transitions)
+
+
+# frob:ticket T-0938
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_velocity.py::TestSprintVelocity.test_transitions_mined_from_history  # noqa: E501
+def sprint_velocity(
+    root: Path, queue: TicketQueue, sprint: str
+) -> SprintVelocityReport:
+    """`frob ticket sprint velocity <label>` (T-0938): history-derived
+    burndown/velocity for every ticket currently committed to `sprint`.
+
+    Derivation source, decided honestly per this ticket's acceptance
+    criterion: `tickets.md` carries no transition-history field of its
+    own (only each ticket's CURRENT `state`, same as `sprint_view`
+    reads) and the "no new storage" mandate rules out adding one. The
+    only place a past transition is actually recoverable is git's own
+    commit history of `tickets.md` -- so this mines it directly, walking
+    every commit that ever touched the ledger (oldest-first) and reading
+    each tracked ticket's `state:` field out of that commit's blob, to
+    find the specific commits where it flipped INTO `done`. This is
+    genuinely history, not a state snapshot -- unlike `sprint_view.
+    closed`, `sprint_velocity` sees a ticket that was done and later
+    reopened (both transitions appear) and gives each closure a real
+    commit + timestamp for a burndown chart's x-axis.
+
+    Known, disclosed gaps (not silently papered over): (1) a ticket's
+    CURRENT `sprint` label is used to select which tickets to mine --
+    `tickets.md` does not retain sprint-REASSIGNMENT history, so a
+    ticket closed under a different sprint label before being
+    reassigned will not appear in either sprint's velocity; (2) if
+    `tickets.md` was ever squash-merged or hand-edited such that a
+    `done` transition never appears as its own commit, that transition
+    is invisible to this mining (git history is a lower bound on
+    real-world transitions, not a guarantee of completeness) -- both are
+    accepted tradeoffs of "no new storage", not bugs.
+
+    Always returns a report, even for a sprint label no ticket carries or
+    a `root` with no git history -- same no-NotFound-case contract as
+    `sprint_view`."""
+    tickets = _tickets_committed_to(queue, sprint)
+    transitions = list(_mine_done_transitions(root, tuple(t.id for t in tickets)))
+    transitions.sort(key=lambda tr: tr.committed_at)
+    closed = len(transitions)
+    remaining = sum(1 for t in tickets if t.state != TicketState.DONE)
+    return SprintVelocityReport(
+        sprint=sprint,
+        transitions=tuple(transitions),
+        closed=closed,
+        remaining=remaining,
+        total=len(tickets),
+    )
 
 
 # frob:ticket T-0454
@@ -3969,6 +4158,8 @@ __all__ = [
     "ScopeChangeEntry",
     "ScopeChangeOp",
     "SprintReport",
+    "SprintTransition",
+    "SprintVelocityReport",
     "Ticket",
     "TicketError",
     "TicketKind",
@@ -4005,6 +4196,7 @@ __all__ = [
     "set_kind",
     "set_priority",
     "set_sprint",
+    "sprint_velocity",
     "sprint_view",
     "Stride",
     "board_view",
