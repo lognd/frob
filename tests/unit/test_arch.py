@@ -3848,7 +3848,8 @@ class TestForkPoolHazards:
 class TestAsyncEventLoopHazards:
     """`frob.arch._async_hazards` -- blocking-call-in-async,
     nested-event-loop, unawaited-coroutine, async-zero-awaits (T-0696,
-    child 3 of the T-0693 concurrency-hazard umbrella)."""
+    child 3 of the T-0693 concurrency-hazard umbrella), and
+    sequential-independent-awaits (T-1027, T-0698's own disclosed cut)."""
 
     def test_blocking_call_in_async_fires_on_time_sleep(self, tmp_path):
         """`time.sleep` reachable inside an `async def` body, with no
@@ -3990,6 +3991,82 @@ class TestAsyncEventLoopHazards:
         )
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "async-zero-awaits"]
+        assert hits == []
+
+    def test_sequential_independent_awaits_fires_on_unrelated_calls(self, tmp_path):
+        """Three sequential awaits, none reading an earlier one's bound
+        name, fire ONE `sequential-independent-awaits` suggestion naming
+        all three call sites."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "gatherable.py").write_text(
+            "from __future__ import annotations\n\n"
+            "async def fetch_all():\n"
+            "    a = await fetch_one()\n"
+            "    b = await fetch_two()\n"
+            "    c = await fetch_three()\n"
+            "    return a, b, c\n\n"
+            "async def fetch_one(): ...\n"
+            "async def fetch_two(): ...\n"
+            "async def fetch_three(): ...\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [
+            s
+            for s in result.suggestions
+            if s.category == "sequential-independent-awaits"
+        ]
+        assert len(hits) == 1
+        assert hits[0].symref == "gatherable.py::fetch_all"
+        assert hits[0].severity == "suggestion"
+        assert "fetch_one" in hits[0].message
+        assert "fetch_two" in hits[0].message
+        assert "fetch_three" in hits[0].message
+
+    def test_sequential_independent_awaits_does_not_fire_when_second_reads_first(
+        self, tmp_path
+    ):
+        """The second await's argument reads the first await's bound
+        name -- a real sequential dependency, must not fire."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "dependent.py").write_text(
+            "from __future__ import annotations\n\n"
+            "async def pipeline():\n"
+            "    a = await fetch_one()\n"
+            "    b = await fetch_two(a)\n"
+            "    return b\n\n"
+            "async def fetch_one(): ...\n"
+            "async def fetch_two(x): ...\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [
+            s
+            for s in result.suggestions
+            if s.category == "sequential-independent-awaits"
+        ]
+        assert hits == []
+
+    def test_sequential_independent_awaits_does_not_fire_on_single_await(
+        self, tmp_path
+    ):
+        """A single await has no sibling to be independent OF -- must not
+        fire (this check needs 2+ awaits in the same run)."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "single.py").write_text(
+            "from __future__ import annotations\n\n"
+            "async def fetch():\n"
+            "    a = await fetch_one()\n"
+            "    return a\n\n"
+            "async def fetch_one(): ...\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [
+            s
+            for s in result.suggestions
+            if s.category == "sequential-independent-awaits"
+        ]
         assert hits == []
 
 
