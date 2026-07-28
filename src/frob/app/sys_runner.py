@@ -944,12 +944,15 @@ def _run_audit(cfg: AppConfig) -> None:
     model, store_ids, resource_module = loaded
 
     report, selfconform = _evaluate_audit(model, root)
-    # NOTE (T-1061 scope note): check_resource_contention's own optional
-    # module= param (T-1025) is deliberately NOT threaded here -- wiring
-    # that (and dropping the design/frob.strata SYS203:tickets_ledger
-    # waivers it would let go clean) is T-1146's own declared scope, not
-    # this ticket's; `resource_module` below exists for SYS205 only.
-    contention = check_resource_contention(model, store_ids=store_ids)
+    # T-1146: `resource_module` (built above for SYS205's `check_mode_
+    # conformance` call) is now ALSO passed as `check_resource_contention`'s
+    # `module=` -- SYS203/SYS201's arbiter-awareness (T-1025/T-1149) was
+    # fully built and tested but never wired into this LIVE `frob sys
+    # audit` call site until now (this ticket's own disclosed-gap closure,
+    # the T-1061 scope note this comment used to carry).
+    contention = check_resource_contention(
+        model, store_ids=store_ids, module=resource_module
+    )
     binding = bind_code(model, root)
     if binding.is_err:
         _log.error("sys audit: mode-conformance: %s", binding.danger_err)

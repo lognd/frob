@@ -5835,6 +5835,13 @@ def _selfaudit_violation(
 
 
 # frob:doc docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756
+# frob:waive AFFECT001 reason="T-1146 threads the SAME resource_module \
+# this function already built for check_mode_conformance into \
+# check_resource_contention's module= too (moved a few lines earlier, no \
+# new fact for docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756 \
+# to describe -- SELFAUDIT001's own shape/behavior is unchanged, only \
+# which findings it now correctly skips); docs/modules/gates.md is not in \
+# T-1146's declared scope"
 # frob:invariant INV-041
 # frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_folds_selfconform_violation  # noqa: E501
 # frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_clean_model_no_violations  # noqa: E501
@@ -5912,18 +5919,27 @@ def _selfaudit_violations(
             for v in selfconform.danger_ok.violations
         )
 
-    contention = check_resource_contention(model, store_ids=design_ids.store_ids)
+    # T-1061: `resource_module` is a throwaway `Module` carrying only
+    # `design_ids.resources` (T-1061's own `DesignIds` field), since
+    # `check_mode_conformance`'s only use for a `Module` argument is
+    # `.resources` (the `lock`/`arbitrated_by` arbiter lookup,
+    # `_mode_conformance.py` module docstring). T-1146: built BEFORE the
+    # `check_resource_contention` call below (moved up from its original
+    # position just above `check_mode_conformance`) so the SAME `Module`
+    # can also be passed as `check_resource_contention`'s `module=` --
+    # SYS203/SYS201's arbiter-awareness (T-1025/T-1149) was fully built
+    # and tested but never wired into this LIVE gate until now (this
+    # ticket's own disclosed-gap closure).
+    resource_module = Module(name="selfaudit-resources", resources=design_ids.resources)
+
+    contention = check_resource_contention(
+        model, store_ids=design_ids.store_ids, module=resource_module
+    )
     violations.extend(
         _selfaudit_violation(v.rule, v.node, v.detail, design_dir)
         for v in contention.violations
     )
 
-    # T-1061: SYS205 mode-conformance -- `resource_module` is a throwaway
-    # `Module` carrying only `design_ids.resources` (T-1061's own
-    # `DesignIds` field), since `check_mode_conformance`'s only use for a
-    # `Module` argument is `.resources` (the `lock`/`arbitrated_by`
-    # arbiter lookup, `_mode_conformance.py` module docstring).
-    resource_module = Module(name="selfaudit-resources", resources=design_ids.resources)
     binding = bind_code(model, root)
     if binding.is_err:
         _log.warning(

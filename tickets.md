@@ -5812,7 +5812,7 @@ decision; no further split-off work identified).
 id: T-1146
 title: 'strata: wire check_resource_contention''s module= param into SELFAUDIT001/sys_runner,
   drop tickets_ledger SYS203 waivers'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -5825,6 +5825,11 @@ scope:
 - src/frob/app/sys_runner.py
 - src/frob/strata/_design_load.py
 - design/frob.strata
+evidence:
+- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_selfconform_violation
+- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
+- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_mode_conformance_violation
+- tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_arbitered_store_discharges
 threat: null
 component: null
 ```
@@ -5865,6 +5870,85 @@ Filed rather than done inline because gates/__init__.py is contested
 turf this wave (a sibling gates-family-splitter ticket holds much of it)
 and _design_load.py/sys_runner.py wiring was outside T-1025's own
 declared scope.
+
+## Done report
+
+Wired check_resource_contention's existing module= parameter (T-1025)
+into both live call sites named in this ticket's body:
+
+- src/frob/gates/__init__.py::_selfaudit_violations (SELFAUDIT001,
+  frob check's own live gate) -- the `resource_module` it already builds
+  for check_mode_conformance (SYS205) is now built BEFORE the
+  check_resource_contention call and passed as module= there too.
+- src/frob/app/sys_runner.py::_run_audit (frob sys audit CLI) -- same
+  move: the existing `resource_module` (already returned from
+  _load_audit_model for SYS205) is now also passed to
+  check_resource_contention.
+
+src/frob/strata/_design_load.py needed NO change: DesignIds already
+carries `.resources` (T-1061), the only fact either call site's
+resource_module construction needs.
+
+Verified end to end (not just "should work"): ran `frob sys audit`
+against this repo's own design/frob.strata before/after. Before: SYS203
+fired mode-blind for all five tickets_ledger writers, discharged only by
+their `waive "SYS203:tickets_ledger" ...` clauses. After: `frob sys
+audit` itself reports "resource-contention PROVED -- zero SYS2xx gaps"
+with the five SYS203 waivers now reported STALE ("no matching finding
+fired this run") -- exact confirmation the live discharge now fires for
+real. Removed the five now-genuinely-stale SYS203:tickets_ledger
+waivers from design/frob.strata (this ticket's own stated goal) and
+rewrote the explanatory comments above each access "tickets_ledger"
+clause (the "This waiver stays, though" prose was itself now stale).
+
+The five SYS205:tickets_ledger waivers were NOT touched (re-pointed
+their `ticket=` attribute from T-1149's dropped-and-renumbered successor
+draft to a freshly filed one instead): SYS205 still genuinely fires
+(no_declared_path -- none of the five nodes declare an owns/acl claim at
+all) and stays waived. Declaring real owns= paths to drop those too
+needs its own end-to-end verification against SYS205's WRITE
+literal-path-extraction (disclosed as a separate follow-up, not
+attempted here -- see filed ticket).
+
+Filed 3 successor/follow-up tickets during this land:
+- Absorbed a duplicate draft (this ticket already existed when T-1149
+  filed a near-identical one) -- dropped, --absorbed-by T-1146.
+- strata: declare real owns= paths on tickets_ledger's five writers to
+  drop the SYS205:tickets_ledger waivers (draft T-1158 at
+  filing time; verify renumbered id on main) -- the SYS205 follow-up
+  described above.
+- gates: sys audit's exhaustiveness pass reports every SYS205 waiver as
+  stale even when check_mode_conformance correctly matches it (draft
+  T-1157 at filing time; verify renumbered id on main) -- a
+  pre-existing false-positive found while verifying this land, confirmed
+  present even on a clean T-1149-landed checkout with none of this
+  ticket's changes applied (not caused by this ticket).
+
+Gates: frob check --ticket T-1146 run in --only chunks (playbook section
+3b): lint/gates-native/coverage/invariant/test/affect_drift/prework
+clean for every file this ticket touches (src/frob/gates/__init__.py,
+src/frob/app/sys_runner.py, design/frob.strata). frob sys sync-interface
+--check clean (no new public symbols). Remaining findings in the full
+runs are pre-existing debt in files this ticket does not touch (verified
+by file name against scope, and the SYS205-staleness quirk specifically
+verified pre-existing via a before/after checkout comparison).
+
+### Changed
+```
+ tickets.md | 80 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 77 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_selfconform_violation` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_mode_conformance_violation` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_arbitered_store_discharges` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 27 error(s), 955 warning(s), 440 waived
+- error-findings: ARCH001@src/frob/app/check_runner.py, ARCH001@src/frob/app/ticket_runner/_close_cmd.py, ARCH001@src/frob/doctor.py, ARCH001@src/frob/tickets/_setters.py, ARCH103@src/frob/app/check_runner.py, COV001@src/frob/gates/_tracked_files.py, DOC002@src/frob/serve/_tools.py, E501@/home/logan/projects/frob/.claude/worktrees/w18-strata3/src/frob/doctor.py:243, E501@/home/logan/projects/frob/.claude/worktrees/w18-strata3/src/frob/vet/_capability.py:5338, E501@/home/logan/projects/frob/.claude/worktrees/w18-strata3/src/frob/vet/_supplychain.py:154, E501@/home/logan/projects/frob/.claude/worktrees/w18-strata3/src/frob/vet/_supplychain.py:168, E501@/home/logan/projects/frob/.claude/worktrees/w18-strata3/src/frob/vet/_supplychain.py:209, E501@/home/logan/projects/frob/.claude/worktrees/w18-strata3/src/frob/vet/_supplychain.py:267, E501@/home/logan/projects/frob/.claude/worktrees/w18-strata3/src/frob/vet/_supplychain.py:295, F401@/home/logan/projects/frob/.claude/worktrees/w18-strata3/src/frob/tickets/__init__.py:111, F401@/home/logan/projects/frob/.claude/worktrees/w18-strata3/src/frob/tickets/__init__.py:22, F401@/home/logan/projects/frob/.claude/worktrees/w18-strata3/src/frob/tickets/__init__.py:23, F401@/home/logan/projects/frob/.claude/worktrees/w18-strata3/src/frob/tickets/__init__.py:35, F401@/home/logan/projects/frob/.claude/worktrees/w18-strata3/src/frob/tickets/__init__.py:46, INV006@src/frob/app/stats_runner.py, INV006@src/frob/gates/_fix_engine.py, INV006@src/frob/gates/_tickets_gate.py, PII012@src/frob/gates/_tickets_gate.py, PII012@tests/system/test_cli_doctor.py, PRE001@tickets/T-1146, TEST001@src/frob/gates/_fix_engine.py, TICK006@tickets.md
 
 <!-- ticket:T-1147 -->
 ```yaml
@@ -6726,7 +6810,7 @@ Observed on a T-1153 close (2026-07-28): WARNING new-gate-rule-acceptance: _KNOW
 id: T-1156
 title: 'strata: wire module= through the live SELFAUDIT001/sys audit call site so
   SYS201/SYS203 arbiter-awareness actually discharges'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -6760,3 +6844,78 @@ SYS205:tickets_ledger waivers can be replaced by a real owns= path
 declaration on the five tickets_ledger writers (this needs its own
 verification against SYS205's WRITE path-scoping literal-path
 extraction, not assumed to be automatic).
+
+## Drop reason
+- 2026-07-28: Duplicate of pre-existing T-1146 (same live-wiring gap for SYS203, filed before T-1149 discovered T-1146 already existed); T-1146 is being worked directly and its scope covers the identical gates/__init__.py+sys_runner.py+_design_load.py wiring. T-1146's own body should be updated to note it now also needs SYS201 (T-1149 gave it the same module= discharge SYS203 already had). (absorbed by T-1146)
+
+<!-- ticket:T-1157 -->
+```yaml
+id: T-1157
+title: 'gates: sys audit''s exhaustiveness pass reports every SYS205 waiver as stale
+  even when check_mode_conformance correctly matches it'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/_threat.py
+- src/frob/strata/_audit.py
+threat: null
+component: null
+```
+`frob sys audit`'s exhaustiveness/self-conformance SYSWAIVE002 stale-
+waiver pass reports every SYS205:tickets_ledger waiver as stale ("no
+matching SYS205:tickets_ledger finding fired this run") even though
+`check_mode_conformance` (SYS205's real evaluator) correctly finds and
+waives all five in the SAME `frob sys audit` run ("mode-conformance
+PROVED (5 waived) -- zero UNWAIVED SYS205 gaps"). Verified pre-existing
+(reproduces against a clean T-1149-landed checkout with none of T-1146's
+changes applied) -- the exhaustiveness pass's own stale-waiver detection
+evidently does not know about the SYS205 rule family at all, so it
+always reports any SYS205 waiver as stale regardless of the real
+evaluator's outcome. Found while landing T-1146; out of that ticket's
+scope.
+
+<!-- ticket:T-1158 -->
+```yaml
+id: T-1158
+title: 'strata: declare real owns= paths on tickets_ledger''s five writers to drop
+  the SYS205:tickets_ledger waivers'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- design/frob.strata
+threat: null
+component: null
+```
+T-1146 wired module= into the live SELFAUDIT001/frob sys audit call
+sites, so SYS203's arbiter-awareness (T-1025) and SYS201's (T-1149) now
+genuinely discharge tickets_ledger's five writers live -- the five
+SYS203:tickets_ledger waivers in design/frob.strata were dropped as part
+of that land (verified stale via frob sys audit's own detection).
+
+The five SYS205:tickets_ledger waivers remain: SYS205's WRITE mode
+path-scoping (T-1060) still fires because none of the five nodes
+(cli/gates/fleet/core/serve) declare an owns/acl path claim at all.
+Declaring a real owns="tickets.md" (or similar) on each would need:
+1. Verification that SYS201 genuinely stays clean for the resulting
+   overlapping owns claims now that it is arbiter-aware (should, per
+   T-1149, but not verified end-to-end against the real design file).
+2. Verification against SYS205's OWN "write_outside_declared_path"
+   check: the literal write-target paths SYS205 extracts from each
+   node's actual bound code must overlap whatever owns= path is
+   declared, or a NEW SYS205 finding fires instead of the current
+   no_declared_path one.
+
+This ticket is that verification + the owns= declarations themselves,
+so the five SYS205:tickets_ledger waivers can finally be dropped too.

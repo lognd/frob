@@ -127,20 +127,17 @@ node cli : trusted {
     // through the `.frob/tickets.lock` flock (T-0458 single-writer CLI,
     // hardened by T-0633's locked wholesale ops) -- is now a model-level
     // fact too (`resource tickets_ledger { lock "tickets.lock"; }` below,
-    // plus this node's own `access "tickets_ledger" mode write;`),
-    // and SYS204's mode-aware `resource_contention_violations` proof
-    // confirms it discharges cleanly. This waiver stays, though: SYS203
-    // itself (`_contention.py::check_resource_contention`) is a SEPARATE,
-    // strictly mode-blind check that has no code path reading `resources`/
-    // `access` at all (module docstring, "no grammar change") -- it counts
-    // any inbound Flow as a conflicting write regardless of what the newer
-    // SYS204 proof establishes, so it keeps firing here by design, not by
-    // omission. Wiring SYS203 itself to consult the arbiter is a separate,
-    // undischarged follow-up (src/frob/strata/_contention.py is out of
-    // this docs-only ticket's scope).
-    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1146";
+    // plus this node's own `access "tickets_ledger" mode write;`), and
+    // SYS204's mode-aware `resource_contention_violations` proof confirms
+    // it discharges cleanly. T-1025 taught `check_resource_contention`
+    // (SYS203) to consult the same arbiter given a `module=` argument;
+    // T-1146 wired that argument into the LIVE SELFAUDIT001/`frob sys
+    // audit` call sites, so SYS203 now genuinely discharges here too --
+    // the `waive "SYS203:tickets_ledger" ...` clause this comment used to
+    // justify is REMOVED (it went stale the moment that wiring landed,
+    // verified via `frob sys audit`'s own stale-waiver detection).
     access "tickets_ledger" mode write;
-    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. T-1149 gave SYS201 arbiter-awareness (mirroring SYS203/T-1025) so declaring owns=tickets.md would no longer create new SYS201 findings for these five nodes IN PRINCIPLE, but the live SELFAUDIT001/frob sys audit call sites still do not pass module= to check_resource_contention (same disclosed gap T-1025 left for SYS203), so neither rule actually discharges live yet. Waived pending that wiring plus end-to-end verification against SYS205 own WRITE path-scoping." ticket "T-1156";
+    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. T-1149 gave SYS201 arbiter-awareness (mirroring SYS203/T-1025) so declaring owns=tickets.md would no longer create new SYS201 findings for these five nodes IN PRINCIPLE, but the live SELFAUDIT001/frob sys audit call sites still do not pass module= to check_resource_contention (same disclosed gap T-1025 left for SYS203), so neither rule actually discharges live yet. Waived pending that wiring plus end-to-end verification against SYS205 own WRITE path-scoping." ticket "T-1158";
     attr interface=ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS;
     attr interface=ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS;
     attr interface=ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS;
@@ -702,16 +699,13 @@ node gates : trusted {
     // target comes from tracked frob.toml, not user input, and failures
     // fail open to the unbound warning path.
     may "eval";
-    // T-0956: same SYS203/tickets_ledger disposition as `cli` above --
-    // the `.frob/tickets.lock` flock is now modeled via `resource
-    // tickets_ledger { lock ... }` + this node's own `access` clause below,
-    // SYS204 confirms the arbiter discharges the write/write pair cleanly,
-    // and SYS203 stays waived only because it is a separate, mode-blind
-    // check with no path to consult that model at all (see `cli`'s full
-    // comment above for the reasoning).
-    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1146";
+    // T-0956/T-1146: same SYS203/tickets_ledger disposition as `cli`
+    // above -- SYS203 now genuinely discharges live here too (the
+    // `waive "SYS203:tickets_ledger" ...` clause this comment used to
+    // justify is REMOVED; see `cli`'s full comment above for the
+    // reasoning).
     access "tickets_ledger" mode write;
-    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. T-1149 gave SYS201 arbiter-awareness (mirroring SYS203/T-1025) so declaring owns=tickets.md would no longer create new SYS201 findings for these five nodes IN PRINCIPLE, but the live SELFAUDIT001/frob sys audit call sites still do not pass module= to check_resource_contention (same disclosed gap T-1025 left for SYS203), so neither rule actually discharges live yet. Waived pending that wiring plus end-to-end verification against SYS205 own WRITE path-scoping." ticket "T-1156";
+    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. T-1149 gave SYS201 arbiter-awareness (mirroring SYS203/T-1025) so declaring owns=tickets.md would no longer create new SYS201 findings for these five nodes IN PRINCIPLE, but the live SELFAUDIT001/frob sys audit call sites still do not pass module= to check_resource_contention (same disclosed gap T-1025 left for SYS203), so neither rule actually discharges live yet. Waived pending that wiring plus end-to-end verification against SYS205 own WRITE path-scoping." ticket "T-1158";
     attr interface=ALL_PROVIDERS;
     attr interface=BASELINE_REL;
     attr interface=CRITICAL_PROVIDERS;
@@ -1474,16 +1468,13 @@ node fleet : trusted {
     // `subprocess.run` call sites (src/frob/fleet/__init__.py, not the
     // git seam T-0778 wired) are not yet routed through it -- an honest
     // remaining gap, not a pending mechanism. Follow-on: T-0803.
-    // T-0956: same SYS203/tickets_ledger disposition as `cli` above --
-    // the `.frob/tickets.lock` flock is now modeled via `resource
-    // tickets_ledger { lock ... }` + this node's own `access` clause below,
-    // SYS204 confirms the arbiter discharges the write/write pair cleanly,
-    // and SYS203 stays waived only because it is a separate, mode-blind
-    // check with no path to consult that model at all (see `cli`'s full
-    // comment above for the reasoning).
-    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1146";
+    // T-0956/T-1146: same SYS203/tickets_ledger disposition as `cli`
+    // above -- SYS203 now genuinely discharges live here too (the
+    // `waive "SYS203:tickets_ledger" ...` clause this comment used to
+    // justify is REMOVED; see `cli`'s full comment above for the
+    // reasoning).
     access "tickets_ledger" mode write;
-    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. T-1149 gave SYS201 arbiter-awareness (mirroring SYS203/T-1025) so declaring owns=tickets.md would no longer create new SYS201 findings for these five nodes IN PRINCIPLE, but the live SELFAUDIT001/frob sys audit call sites still do not pass module= to check_resource_contention (same disclosed gap T-1025 left for SYS203), so neither rule actually discharges live yet. Waived pending that wiring plus end-to-end verification against SYS205 own WRITE path-scoping." ticket "T-1156";
+    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. T-1149 gave SYS201 arbiter-awareness (mirroring SYS203/T-1025) so declaring owns=tickets.md would no longer create new SYS201 findings for these five nodes IN PRINCIPLE, but the live SELFAUDIT001/frob sys audit call sites still do not pass module= to check_resource_contention (same disclosed gap T-1025 left for SYS203), so neither rule actually discharges live yet. Waived pending that wiring plus end-to-end verification against SYS205 own WRITE path-scoping." ticket "T-1158";
     attr interface=DEFAULT_MANIFEST_PATH;
     attr interface=FleetError;
     attr interface=FleetManifest;
@@ -1570,16 +1561,13 @@ node core : trusted {
     // both DO route their subprocess spawns through the real,
     // guarded_subprocess_run kill switch already, unlike the packages
     // still listed here.)
-    // T-0956: same SYS203/tickets_ledger disposition as `cli` above --
-    // the `.frob/tickets.lock` flock is now modeled via `resource
-    // tickets_ledger { lock ... }` + this node's own `access` clause below,
-    // SYS204 confirms the arbiter discharges the write/write pair cleanly,
-    // and SYS203 stays waived only because it is a separate, mode-blind
-    // check with no path to consult that model at all (see `cli`'s full
-    // comment above for the reasoning).
-    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1146";
+    // T-0956/T-1146: same SYS203/tickets_ledger disposition as `cli`
+    // above -- SYS203 now genuinely discharges live here too (the
+    // `waive "SYS203:tickets_ledger" ...` clause this comment used to
+    // justify is REMOVED; see `cli`'s full comment above for the
+    // reasoning).
     access "tickets_ledger" mode write;
-    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. T-1149 gave SYS201 arbiter-awareness (mirroring SYS203/T-1025) so declaring owns=tickets.md would no longer create new SYS201 findings for these five nodes IN PRINCIPLE, but the live SELFAUDIT001/frob sys audit call sites still do not pass module= to check_resource_contention (same disclosed gap T-1025 left for SYS203), so neither rule actually discharges live yet. Waived pending that wiring plus end-to-end verification against SYS205 own WRITE path-scoping." ticket "T-1156";
+    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. T-1149 gave SYS201 arbiter-awareness (mirroring SYS203/T-1025) so declaring owns=tickets.md would no longer create new SYS201 findings for these five nodes IN PRINCIPLE, but the live SELFAUDIT001/frob sys audit call sites still do not pass module= to check_resource_contention (same disclosed gap T-1025 left for SYS203), so neither rule actually discharges live yet. Waived pending that wiring plus end-to-end verification against SYS205 own WRITE path-scoping." ticket "T-1158";
     attr interface=ACCENT;
     attr interface=ALL_SENTINEL;
     attr interface=AdpContainer;
@@ -2131,15 +2119,13 @@ node serve : trusted {
     // `tickets_ledger` (`f_serve_tickets` below) via `frob.tickets`'s own
     // locked writer path, so SYS203's mode-blind "any inbound flow counted
     // as a write" join fires here too.
-    // T-0956: the `.frob/tickets.lock` flock is now modeled via `resource
-    // tickets_ledger { lock ... }` + this node's own `access` clause below,
-    // SYS204 confirms the arbiter discharges the write/write pair cleanly,
-    // and SYS203 stays waived only because it is a separate, mode-blind
-    // check with no path to consult that model at all (see `cli`'s full
-    // comment above for the reasoning).
-    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1146";
+    // T-0956/T-1146: same SYS203/tickets_ledger disposition as `cli`
+    // above -- SYS203 now genuinely discharges live here too (the
+    // `waive "SYS203:tickets_ledger" ...` clause this comment used to
+    // justify is REMOVED; see `cli`'s full comment above for the
+    // reasoning).
     access "tickets_ledger" mode write;
-    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. T-1149 gave SYS201 arbiter-awareness (mirroring SYS203/T-1025) so declaring owns=tickets.md would no longer create new SYS201 findings for these five nodes IN PRINCIPLE, but the live SELFAUDIT001/frob sys audit call sites still do not pass module= to check_resource_contention (same disclosed gap T-1025 left for SYS203), so neither rule actually discharges live yet. Waived pending that wiring plus end-to-end verification against SYS205 own WRITE path-scoping." ticket "T-1156";
+    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. T-1149 gave SYS201 arbiter-awareness (mirroring SYS203/T-1025) so declaring owns=tickets.md would no longer create new SYS201 findings for these five nodes IN PRINCIPLE, but the live SELFAUDIT001/frob sys audit call sites still do not pass module= to check_resource_contention (same disclosed gap T-1025 left for SYS203), so neither rule actually discharges live yet. Waived pending that wiring plus end-to-end verification against SYS205 own WRITE path-scoping." ticket "T-1158";
     attr interface=CoverageWatcher;
     attr interface=DEFAULT_COVERAGE_POLL_INTERVAL_S;
     attr interface=DEFAULT_IDLE_TIMEOUT_S;
