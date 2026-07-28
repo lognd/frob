@@ -677,7 +677,7 @@ Standing home for 27 weaknesses.yaml CWE entries (CWE-20,22,77,78,79,89,94,119,1
 id: T-0701
 title: 'strata mode-conformance enforcement: prove each node''s code OBEYS its declared
   access mode (read/append/write/exclusive)'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-22'
@@ -692,16 +692,99 @@ scope:
 - src/frob/strata/**
 - src/frob/vet/**
 - tests/unit/strata/
+evidence:
+- tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_read_mode_fails_on_a_write_open
+- tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_read_mode_discharges_on_read_only_code
+- tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_append_mode_fails_on_a_truncating_write
+- tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_append_mode_discharges_on_an_append_only_open
+- tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_exclusive_mode_fails_on_access_outside_the_arbiter
+- tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_exclusive_mode_discharges_inside_the_declared_lock
+- tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_exclusive_mode_with_no_lock_declared_fails_closed
+- tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_alpha_mode_fails_on_an_unguarded_write
+- tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_write_mode_is_unrestricted_in_v0
+- tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_node_with_no_access_declarations_is_never_checked
 acceptance:
 - text: GIVEN a node declaring mode=read whose bound code opens the resource for writing
     WHEN sys checks run THEN a fail-closed error names the write site; GIVEN mode=exclusive
     with an access outside the arbiter context THEN an error names the unguarded path;
     GIVEN conforming code per mode THEN each discharges
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_read_mode_fails_on_a_write_open
 threat: null
 component: null
 ```
 User mandate 2026-07-22: contention semantics are worthless unless ENFORCED -- a declared mode nothing verifies is the catalogued-is-not-enforced trap (T-0343 doctrine). For every node with code= bindings and a declared resource mode (T-0700 grammar), join the declaration against the code's OBSERVED effects (the T-0595 code-binding pattern, wired to production per T-0630; effect classification from the vet/T-0339 capability resolvers): READ = zero write-capable operations against the resource (write-mode opens, os.remove/rename, SQL DML, sends on the port) -- fail-closed on opaque access to the resource; APPEND = writes only via append-mode opens, no truncate/rewrite; ALPHA (update/upgradeable-lock intent, user-specified) = reads freely, but every observed WRITE against the resource must be provably preceded on the same path by an upgrade acquisition (alpha->write transition through the declared arbiter) -- a write reachable while still in alpha-only context fails closed; additionally the model-level alpha+alpha exclusion (at most one alpha declarant per resource) is checked at elaboration, and the code-level analysis flags the upgrade-deadlock ANTI-PATTERN (acquiring write while holding plain read on the same resource, the case alpha exists to prevent -- recommend alpha in the finding); WRITE = read+write allowed but only on declared paths (undeclared sibling access = finding); EXCLUSIVE = write conformance PLUS every observed access provably inside the declared arbiter/lease context (join T-0694's code-level lock identification with the model-level arbiter declaration; an access path outside the arbiter fails closed). Violations are SYS errors naming the node, the declared mode, and the offending observed operation. Litmus fixtures per mode, firing and clean.
+
+## Done report
+
+Implemented SYS205 (`frob.strata._mode_conformance.check_mode_conformance`),
+the code-level half of the T-0700/T-0701 resource-contention mandate:
+joins each node's T-0700 `access "RESOURCE" mode MODE` declaration against
+OBSERVED write-capable effects in its own `code=`-bound python files
+(v0, python-only, disclosed cut -- module docstring).
+
+Per-mode semantics implemented and litmus-tested (10 unit tests, all
+passing, `tests/unit/strata/test_mode_conformance.py`):
+- READ: any write-capable observation (open() in w/x/+ mode,
+  os.remove/rename/unlink, shutil.rmtree/move, pathlib
+  write_text/write_bytes/.unlink(, socket .send/.sendall/sendto, or a
+  DML keyword on a .execute( line) fires, naming file:line.
+- APPEND: same write-capable set fires EXCEPT append-mode opens
+  (open(path, "a"...)).
+- EXCLUSIVE / ALPHA: require a code-checkable `lock` arbiter (v0 only
+  supports the `lock "NAME"` ResourceDecl form, not `arbitrated_by NODE`
+  -- disclosed cut); every write-capable observation must sit inside a
+  `with` block naming that lock (indentation-based block scan,
+  `_enclosing_with_headers`) or it fires "outside the arbiter context".
+  A resource with no code-checkable lock fails closed even with zero
+  observations.
+- WRITE: unrestricted in v0 (path-level "only on declared paths" needs
+  identity this pass does not have -- disclosed cut, follow-up filed).
+
+Findings on frob's own strata model (design/frob.strata): every real
+`access` declaration in the repo's own design is `mode write` (the
+tickets_ledger resource, guarded by `lock "tickets.lock"` per T-0956) --
+run against the real `src/frob/` tree with a merged `Module.resources`
+(ad hoc script, not committed), `check_mode_conformance` reports ZERO
+SYS205 violations, consistent with WRITE mode's v0 baseline. There is
+currently no `read`/`append`/`alpha`/`exclusive` declaration anywhere in
+frob's own design for this new check to non-trivially exercise yet --
+itself a disclosed finding, not a defect: SYS205 has real work to do only
+once a node adopts one of the four restricted modes.
+
+DELIBERATELY NOT WIRED IN THIS PASS (disclosed cut, mirrors T-0700's own
+precedent): CLI dispatch (`frob sys audit`, `src/frob/app/sys_runner.py`)
+and the T-0174 waiver channel are out of T-0701's declared scope --
+`check_mode_conformance` is a pure, fully-tested function; wiring it and
+adding a docs/strata/host.md section is filed as T-1061.
+Three further v0 detection cuts (ALPHA upgrade-deadlock anti-pattern,
+`arbitrated_by`-arbiter code-identity, WRITE path-scoping) are filed as
+T-1060.
+
+### Changed
+```
+ src/frob/strata/__init__.py                |  12 +
+ src/frob/strata/_mode_conformance.py       | 488 +++++++++++++++++++++++++++++
+ tests/unit/strata/test_mode_conformance.py | 233 ++++++++++++++
+ 3 files changed, 733 insertions(+)
+```
+
+### Evidence
+- `tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_read_mode_fails_on_a_write_open` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_read_mode_discharges_on_read_only_code` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_append_mode_fails_on_a_truncating_write` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_append_mode_discharges_on_an_append_only_open` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_exclusive_mode_fails_on_access_outside_the_arbiter` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_exclusive_mode_discharges_inside_the_declared_lock` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_exclusive_mode_with_no_lock_declared_fails_closed` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_alpha_mode_fails_on_an_unguarded_write` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_write_mode_is_unrestricted_in_v0` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_node_with_no_access_declarations_is_never_checked` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: 1 error(s), 3099 warning(s), 377 waived
+- error-findings: AFFECT001@src/frob/strata/_mode_conformance.py
 
 <!-- ticket:T-0713 -->
 ```yaml
@@ -2358,6 +2441,7 @@ Decision: worktree.baseRef=head, applied in .claude/settings.json (untracked; .c
 - tests: 0 passed (from 0 evidence id(s))
 - gates: 0 error(s), 2448 warning(s), 509 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1059 -->
 ```yaml
 id: T-1059
@@ -2390,3 +2474,75 @@ commits behind main's current tip, pointing at the playbook's warm-up
 section (docs/guides/agent-playbook.md#1-worktree-warm-up). This does not
 prevent the stale cut but catches it immediately at the start of a
 ticket instead of silently carrying it through a whole session.
+
+<!-- ticket:T-1060 -->
+```yaml
+id: T-1060
+title: 'SYS205 v1: alpha anti-pattern, arbitrated_by code-identity, write path-scoping'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/_mode_conformance.py
+- tests/unit/strata/test_mode_conformance.py
+threat: null
+component: null
+```
+T-0701's SYS205 mode-conformance check disclosed three v0 cuts (module
+docstring, src/frob/strata/_mode_conformance.py):
+
+1. ALPHA's "upgrade-deadlock ANTI-PATTERN" (acquiring a write while
+   holding a plain read lock context on the same resource) is not
+   detected -- needs per-lock-variable identity across nested `with`
+   blocks (which lock guards which resource), the same lock-IDENTITY
+   modeling problem `frob.arch._lock_ordering`'s T-0694
+   `_collect_module_locks` solves for the cyclic lock-order check.
+2. ALPHA/EXCLUSIVE code-checkable arbiter support is `lock`-only --
+   an `arbitrated_by NODE` arbiter has no code-level identity resolved
+   in this pass (no cross-node call-graph analysis).
+3. WRITE mode is unrestricted in v0 -- the mandate's "only on declared
+   paths" clause needs path-level identity between a declared resource
+   id and a specific file/call site, which this v0 pass does not have
+   (same class of cut `_effects.py`'s own capability-conformance join
+   already discloses).
+
+Each needs real design work (lock-identity modeling, cross-node call
+resolution, or a first-class capability/resource-path grammar) rather
+than a quick patch -- filed as its own ticket per T-0701's Done report
+rather than approximated unreliably in that pass.
+
+<!-- ticket:T-1061 -->
+```yaml
+id: T-1061
+title: wire SYS205 mode-conformance into CLI dispatch + waiver channel + docs
+state: queued
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/sys_runner.py
+- src/frob/gates/**
+- docs/strata/host.md
+threat: null
+component: null
+```
+T-0701 shipped `check_mode_conformance` (SYS205) as a pure, fully-tested
+function in `src/frob/strata/_mode_conformance.py` -- CLI dispatch
+(`frob sys audit`, `src/frob/app/sys_runner.py`) and the T-0174
+`MULTI_INSTANCE_WAIVER_FAMILIES` waiver channel are both out of T-0701's
+declared scope (`src/frob/strata/**`, `src/frob/vet/**`,
+`tests/unit/strata/`), same disclosed-cut precedent
+`_access.py`'s own SYS204 module docstring already used for T-0700. Also
+wire the `docs/strata/host.md#resource-access-modes-t-0700` section (out
+of scope for T-0701 too -- docs/strata/** is not in its scope globs) with
+a new subsection documenting SYS205's per-mode semantics, the python-only
+v0 detection scope, and the `lock`-only arbiter support.

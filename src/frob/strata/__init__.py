@@ -278,6 +278,13 @@ from frob.strata._message_schema import (
     MessageSchemaViolation,
     check_message_schema_obligations,
 )
+from frob.strata._mode_conformance import (
+    SYS_MODE_NONCONFORMANCE,
+    ModeConformanceReport,
+    ModeConformanceViolation,
+    ModeObservation,
+    check_mode_conformance,
+)
 from frob.strata._models import (
     LABELS,
     TRUST,
@@ -857,6 +864,11 @@ __all__ = [
     "mode_conflict",
     "node_access_declarations",
     "resource_contention_violations",
+    "SYS_MODE_NONCONFORMANCE",
+    "ModeConformanceReport",
+    "ModeConformanceViolation",
+    "ModeObservation",
+    "check_mode_conformance",
     "host_movement_flows",
     "flow_authenticates_via",
     "krb_manifest_for",
