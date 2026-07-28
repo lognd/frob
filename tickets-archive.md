@@ -70504,15 +70504,15 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanTsTaxonomyClosureResolution::test_named_import_with_alias_detected
 - tests/test_vet.py::TestCapabilityScanRustTaxonomyClosureResolution::test_function_pointer_coercion_from_named_fn_detected
 - tests/test_vet.py::TestCapabilityScanRustTaxonomyClosureResolution::test_type_alias_for_function_pointer_type_detected
-- tests/test_vet.py::TestCapabilityScanRustTaxonomyClosureResolution::test_struct_update_field_rebind_not_detected
+- tests/test_vet.py::TestCapabilityScanRustTaxonomyClosureResolution::test_struct_update_field_rebind_detected
 - tests/test_vet.py::TestCapabilityScanRustTaxonomyClosureResolution::test_macro_rules_expansion_emitting_fixed_call_not_detected
 - tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_using_namespace_directive_qualified_call_detected
 - tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_define_macro_aliasing_detected_on_cpp_extension
 - tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_member_function_pointer_bound_to_named_member_not_detected
 - tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_argument_dependent_lookup_call_detected
-- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_destructuring_declaration_not_detected
+- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_destructuring_declaration_detected
 - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_lambda_closure_capturing_bound_name_detected
-- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_default_parameter_forwarding_callable_not_detected
+- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_default_parameter_forwarding_callable_detected
 - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_operator_fun_invoke_making_object_directly_callable_not_detected
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_python_exec_always_fires_regardless_of_argument
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_python_setattr_monkeypatch_fires
@@ -70711,15 +70711,15 @@ only this ticket's own 4 files.
 - `tests/test_vet.py::TestCapabilityScanTsTaxonomyClosureResolution::test_named_import_with_alias_detected` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestCapabilityScanRustTaxonomyClosureResolution::test_function_pointer_coercion_from_named_fn_detected` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestCapabilityScanRustTaxonomyClosureResolution::test_type_alias_for_function_pointer_type_detected` (pytest node id, verified passing when recorded)
-- `tests/test_vet.py::TestCapabilityScanRustTaxonomyClosureResolution::test_struct_update_field_rebind_not_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanRustTaxonomyClosureResolution::test_struct_update_field_rebind_detected` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestCapabilityScanRustTaxonomyClosureResolution::test_macro_rules_expansion_emitting_fixed_call_not_detected` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_using_namespace_directive_qualified_call_detected` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_define_macro_aliasing_detected_on_cpp_extension` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_member_function_pointer_bound_to_named_member_not_detected` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_argument_dependent_lookup_call_detected` (pytest node id, verified passing when recorded)
-- `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_destructuring_declaration_not_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_destructuring_declaration_detected` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_lambda_closure_capturing_bound_name_detected` (pytest node id, verified passing when recorded)
-- `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_default_parameter_forwarding_callable_not_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_default_parameter_forwarding_callable_detected` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_operator_fun_invoke_making_object_directly_callable_not_detected` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestOpaqueIndirectionGate::test_python_exec_always_fires_regardless_of_argument` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestOpaqueIndirectionGate::test_python_setattr_monkeypatch_fires` (pytest node id, verified passing when recorded)

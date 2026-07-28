@@ -11,7 +11,13 @@ it is WAIVE002's own "every rule id that can ever appear" source of
 truth). Re-exported from `frob.gates.__init__` unchanged so every existing
 `frob.gates.<name>` call site keeps working.
 """
-
+# frob:waive ARCH102 reason="fresh T-1072 tier-1 extraction: this module \
+# deliberately carries the whole waiver-matching family PLUS the rule-id \
+# literal and lease helpers that rode along with it in gates/__init__, so \
+# its export clusters mirror the original module's own accepted shape; \
+# further cohesion splits are exactly T-1076's (tier 2) remit -- waive at \
+# the transitional module, do not block the split that shrank __init__ by \
+# 1900 lines"
 from __future__ import annotations
 
 import re
