@@ -1615,7 +1615,6 @@
     "src/frob/tickets/__init__.py::has_approved_review_for_commit": "c94c49e255bf631358fc025662289c936589bf877659909283cddb0f98eb91ca",
     "src/frob/tickets/__init__.py::load_require_review_for_close": "7362bf52bd10e4ccc0c2c206e7b628a898b250cde5b7f7cec0b555e65a57a5ea",
     "src/frob/tickets/__init__.py::mutate_labels": "d0eaca68e920242f3c2fe1a8c660e9283eb2fa9c9d6c9a629fd41eef5d3cb634",
-    "src/frob/tickets/__init__.py::mutate_scope": "c0261fba55cf8031a29d4bb5f8cfa53f5ccb6fe930d15251ef57076e949926d5",
     "src/frob/tickets/__init__.py::normalize_evidence_separator": "2c834f619eade001ce0268feb3aa12f8ffdbacc02969ee6c69dd99d373ef03b9",
     "src/frob/tickets/__init__.py::record_failure": "ed4f7d8066c114b4aa0f7868f15d069ad386184f6c3d8289481e8c65ffef8dd8",
     "src/frob/tickets/__init__.py::record_review": "57c6f4c0fd34fae360a6049dd736c3958d01cfef3388657fc5eb0cc5edbf62f7",
@@ -1737,6 +1736,7 @@
     "src/frob/tickets/_provisional.py::on_default_branch": "c2b5008828542ab1d72ff75028b2454039bc72ce6efc4b895276c7b7c40f3dc0",
     "src/frob/tickets/_reconcile.py::ReconcileReport": "6fcf1082746b1f61aaafacf99f15a9fbd20c963a30da6fdaea42e00fe8eacb0f",
     "src/frob/tickets/_reconcile.py::reconcile": "58835d71ad4e6042338e50dd303c4f966ed5023eaab07bd4c0831773d5073f2f",
+    "src/frob/tickets/_scope.py::mutate_scope": "c0261fba55cf8031a29d4bb5f8cfa53f5ccb6fe930d15251ef57076e949926d5",
     "src/frob/tickets/_store.py::archive_path": "b43c31381608f17460946fe847701fe090597c5cdf4b9a2168c425c1dfedcd3f",
     "src/frob/tickets/_store.py::atomic_write": "e3383dd5e644221e31346fb42f32fbc2ce60a0b9192c3fab154f067812e1866c",
     "src/frob/tickets/_store.py::attachments_dir": "79f6d2cf489151d44c0b8dfbec875118b81fec28188d96e49ba653762f7c70a7",
@@ -1849,5 +1849,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.252.0"
+  "version": "0.253.0"
 }

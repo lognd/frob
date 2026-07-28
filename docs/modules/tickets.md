@@ -117,7 +117,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::compute_changed_lines -->
 <!-- frob:describes src/frob/tickets/__init__.py::base_ref_resolvable -->
 <!-- frob:describes src/frob/tickets/_store.py::ledger_lock -->
-<!-- frob:describes src/frob/tickets/__init__.py::mutate_scope -->
+<!-- frob:describes src/frob/tickets/_scope.py::mutate_scope -->
 <!-- frob:describes src/frob/tickets/__init__.py::set_priority -->
 <!-- frob:describes src/frob/tickets/__init__.py::_doable_sort_key -->
 <!-- frob:describes src/frob/tickets/__init__.py::set_component -->
@@ -891,7 +891,13 @@ of waiving the gate, and the mutation is recorded, not hidden.
   reason="...")` is the library entry point; the CLI subcommand is a thin
   forward with no logic of its own. Held under `ledger_lock` end to end
   (load, validate, write) -- the T-0458 single-writer invariant, never a
-  hand-edit of `tickets.md`.
+  hand-edit of `tickets.md`. T-1123: `mutate_scope` and its private
+  validation/conflict-detection helpers live in `src/frob/tickets/
+  _scope.py` (carved out of `tickets/__init__.py`, T-1108/T-1103's per-
+  family extraction pattern -- smallest cohesive unit, `__all__` re-export,
+  zero caller-visible behavior change), re-exported from the package
+  unchanged so `frob.tickets.mutate_scope` keeps working for every
+  existing caller.
 - **Audit trail**: every mutated glob appends one `ScopeChangeEntry` (`op`,
   `glob`, `reason`, `actor`, `at`) to the ticket's `scope_changes` list --
   append-only, never edited or removed, so scope creep is visible in the
