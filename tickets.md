@@ -4154,7 +4154,7 @@ Child (f) of T-0321. Today T-0322's coverage.lock is a plain per-worktree fcntl.
 ```yaml
 id: T-1098
 title: T-1087 land left REG003 x13 + TICK006 phantom-draft debt on main
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -4184,6 +4184,8 @@ Found incidentally while verifying T-1090's own scoped gate state stayed
 clean; unrelated to T-1090's finalize_draft fix (files are outside
 T-1090's scope). Filed rather than fixed to keep T-1090 scoped.
 
+## Drop reason
+- 2026-07-28: both halves resolved: the REG003 x13 deferred-to-closed claims were already flipped to handled_by by T-1087's own land (verified 0 'deferred:T-1087' in supply-chain.yaml), and the TICK006 phantom draft was refiled as T-1101 with prose repointed in d9d1a6e3 -- gate:TICK and gate:REG both green
 <!-- ticket:T-1099 -->
 ```yaml
 id: T-1099
