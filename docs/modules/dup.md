@@ -25,7 +25,7 @@ reimplemented in TypeScript is still a clone.
 
 R6 is honest about limits: full Type-4 equivalence is undecidable; probing
 gives high-confidence evidence, not proof. R7 is real for its explicitly
-bounded subset (see `frob.dup._pipeline._smt_translate`'s accepted node
+bounded subset (see `frob.dup._pipeline._smt._smt_translate`'s accepted node
 set) -- it is a formal proof only within that subset, not a general
 equivalence checker; anything outside the subset is refused
 (`Err(SmtUnsupported)`), never silently approximated.
@@ -43,7 +43,7 @@ over the WHOLE corpus's concatenated, R2-normalized token stream (one
 "document" per fingerprinted symbol, a unique per-document sentinel
 between documents so no match crosses a symbol boundary) --
 `frob_core.exact_regions` (`frob-core/src/lib.rs`), wired through
-`frob.dup._core._exact_regions` and `frob.dup._pipeline._region_groups`.
+`frob.dup._core._exact_regions` and `frob.dup._pipeline._fingerprint._region_groups`.
 This finds every MAXIMAL exact-token-match region of length
 `>= [dup].region_min_tokens` in one pass -- a strict superset of R1/R2's
 exact-match recall, extended to sub-symbol regions, without waiting for
@@ -124,7 +124,7 @@ run: a run larger than the cap only pairs its first `region_run_cap`
 occurrences with each other, capping per-run cost at O(region_run_cap^2)
 no matter how many more times the block repeats. Truncation is signaled,
 never silent (the T-0193-recall-bug lesson) -- `frob_core.exact_regions`
-returns `(regions, truncated)`, and `frob.dup._pipeline._region_groups`
+returns `(regions, truncated)`, and `frob.dup._pipeline._fingerprint._region_groups`
 logs a WARN naming `[dup].region_run_cap` when at least one run was
 capped.
 
@@ -457,7 +457,7 @@ T-0195 (docs/modules/dup-sota-survey.md sec 4): a synthesis stage over the
 `anti_unify` kernel that turns a clone group's already-detected `ClonePair`s
 into a human-readable report -- "these N functions share this template,
 differing only at these holes" -- rather than just a similarity percentage.
-No new detection; `frob.dup._pipeline._clone_report` calls
+No new detection; `frob.dup._pipeline._fingerprint._clone_report` calls
 `build_group_template` once per group and attaches the result as
 `CloneMatchGroup.template`, `None` when reverse-templating did not apply.
 
@@ -583,7 +583,7 @@ them (both filed as T-draft-d6bca168, not fixed here -- out of T-0199's scope,
 which excludes `frob-core/**`):
 
 - **R3 currently cannot be distinguished from R2 by any fixture.**
-  `frob.dup._pipeline._fingerprint_symbol` feeds `r3_canonical_hash` the
+  `frob.dup._pipeline._fingerprint._fingerprint_symbol` feeds `r3_canonical_hash` the
   same `_r2_normalize` output R2 hashes -- no literal abstraction, no
   commutative-operand ordering, no for/while control-flow desugaring is
   implemented, despite `frob-core/src/lib.rs::r3_canonical_hash`'s
@@ -862,7 +862,7 @@ walks) is deleted. Both modules now route through `frob.lang`:
   (`Tree`, source bytes, language label), for callers that need real
   tree-sitter `Node` access rather than `frob.lang`'s normalized shapes.
 - `frob.lang.cpp_function_nodes(tree)` -- the shared C/C++
-  function-declaration walk (`frob.lang._common.iter_cpp_functions`) that
+  function-declaration walk (`frob.lang._common._iter_cpp_functions`) that
   used to be duplicated, with slightly different depth handling, in both
   <!-- frob:waive DOC006 reason="frob.ast.cpp is a historical reference to a module removed before this doc pass; the sentence is describing PAST duplication, not current code" -->`frob.ast.cpp` and `frob.dup._legacy`.
 - `frob.lang.symbol_tree(path, span)` / `frob.lang._common.flatten_tree` --

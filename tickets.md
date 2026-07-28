@@ -474,7 +474,8 @@ Filed from T-1067 (T-0393's remainder, re-measured post T-1068). The
 remainder of the 84 abstraction-opportunity findings not covered by this
 pass's sibling per-package tickets (gates/**, arch/**, app/**) is spread
 one-or-two-per-file across ~19 small/standalone modules, ~23 findings
-total: `check/_native.py` 1, `check/_python.py` 1, `dup/_pipeline.py` 2,
+total: `check/_native.py` 1, `check/_python.py` 1,
+<!-- frob:waive DOC006 reason="describes the per-file finding count as measured at filing time (T-1067); dup/_pipeline.py has since been split into a package (T-1099-era), rewriting would misrepresent what was actually filed" -->`dup/_pipeline.py` 2,
 `lang/__init__.py` 1, `lang/_extract.py` 1, `lang/_walk_kotlin.py` 1,
 `perf/_loop_effects.py` 1, `process/parsers/cargo.py` 1,
 `render/_renderer.py` 1, `serve/_tools.py` 1, `strata/_compliance.py` 1,
@@ -525,7 +526,7 @@ starting; other tickets may land in the interim and change the count.
 ```yaml
 id: T-1109
 title: 'docs: DOC006 doc-pointer round-3 burn-down (~41 residual warnings after T-1015/T-1016)'
-state: queued
+state: done
 kind: docs
 origin: agent
 created: '2026-07-28'
@@ -534,18 +535,122 @@ parent: null
 tier: ticket
 sprint: null
 scope:
-- src/frob/**
 - docs/**
-- tests/**
+- CHANGELOG.md
+- tickets.md
+scope_changes:
+- op: remove
+  glob: src/frob/**
+  reason: 'narrow to real DOC006 finding sites: docs/**, CHANGELOG.md, tickets.md
+    (T-1109 re-measure, TICK009)'
+  actor: logan
+  at: '2026-07-28'
+- op: remove
+  glob: tests/**
+  reason: 'narrow to real DOC006 finding sites: docs/**, CHANGELOG.md, tickets.md
+    (T-1109 re-measure, TICK009)'
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: CHANGELOG.md
+  reason: CHANGELOG.md and tickets.md carry real DOC006 finding sites
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: tickets.md
+  reason: CHANGELOG.md and tickets.md carry real DOC006 finding sites
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- cmd:uv run frob check --only docblocks exit=0 sha256=e5cda9cbf307
 acceptance:
 - text: GIVEN a full frob check WHEN the doc gate runs THEN DOC006 reports zero unwaived
     warnings, with every fixed pointer resolving to a real heading slug and no matcher
     loosening
-  evidence: []
+  evidence:
+  - cmd:uv run frob check --only docblocks exit=0 sha256=e5cda9cbf307
 threat: null
 component: null
 ```
 T-1015 (matcher hardening, 771->133) and T-1016 (round 2) left ~41 DOC006 doc-pointer warnings. Round 3: fix or reasoned-waive every residual site. No matcher/threshold loosening; follow T-1015's FP-class analysis before touching the matcher. Narrow scope to the real finding sites at start.
+
+## Done report
+
+Re-measured DOC006 at ticket start: 54 live warnings (up from the ~41 noted
+at filing -- heavy landing waves since T-1015/T-1016 shifted counts, as
+expected). Scope narrowed to docs/**, CHANGELOG.md, tickets.md (TICK009).
+
+Fixed (real stale pointers, code-verified before editing):
+- strata-core/src/parse.rs split into strata-core/src/parse/ (T-1099) --
+  19 bare file-path references across 14 docs updated to
+  strata-core/src/parse/mod.rs (::symbol-qualified references already
+  resolved correctly and were left untouched).
+- frob.gates._unwaivable_channel_rules -> frob.gates._waive._unwaivable_channel_rules
+  (9 occurrences, docs/modules/arch.md) -- symbol exists, doc dropped the
+  module qualifier.
+- frob.serve._warm.warm_state -> frob.serve._warm._warm_state
+  (docs/modules/graph.md) -- symbol is private, doc had the public spelling.
+- frob.dup._pipeline.{_smt_translate,_region_groups,_clone_report,_fingerprint_symbol}
+  -> frob.dup._pipeline.{_smt,_fingerprint}.<same name> (docs/modules/dup.md)
+  -- dup/_pipeline.py was split into a package; symbols moved to submodules.
+- frob.lang._common.iter_cpp_functions -> frob.lang._common._iter_cpp_functions
+  (docs/modules/dup.md) -- symbol was demoted private (T-0871) after this
+  doc reference was written.
+- docs/modules/tickets.md: src/frob/app/ticket_runner.py -> .../ticket_runner/
+  in the one non-literal-quote occurrence (the sprint-velocity CLI-surface
+  pointer); the CLI_WIRING_FILES-quoting occurrence was left as a verbatim
+  quote and waived instead (see below -- the constant itself is stale).
+- docs/audits/gates-quality.md: gates/_pii_structural.py -> gates/_pii_structural/
+  (real package now, PII010/SEC110 checks span several submodules there).
+- docs/modules/gates.md: doc-anchor #per-gate-cache-t-0602 -> the real
+  slug #per-gate-dependency-tracked-partial-re-evaluation-t-0602 in
+  docs/modules/serve.md (heading text confirmed by reading the file).
+
+Grounded-waived (verified genuinely external/historical, not fixable
+without falsifying the record; no matcher/threshold change):
+- CHANGELOG.md (6 sites): frozen historical release-note prose describing
+  file paths/symbols as they existed at that release; the codebase has
+  since been restructured (ticket_runner.py, parse.rs, dup/_core symbols).
+  Rewriting would misrepresent what actually shipped in that version.
+- docs/audits/tickets-testing-round2.md:6 and tickets.md:477 (dup/_pipeline.py
+  finding count): point-in-time audit/filing snapshots whose surrounding
+  prose (line numbers, per-file counts) is frozen against a tree that has
+  since moved; fixing just the flagged pointer would desync it from the
+  rest of the same frozen paragraph.
+- docs/guides/agent-playbook.md:50 (.claude/settings.json): confirmed
+  gitignored (.gitignore:15) -- a real, intentionally untracked per-clone
+  config path, can never resolve.
+- docs/guides/estate-capability-migration.md (5 sites): design/*.strata
+  paths live in SIBLING repos (lithos/graphite/aprog-public/aprog-private/
+  logand.app), never trackable from this repo's own worktree.
+- docs/modules/gates.md:2730 (`frob check --fix`): the surrounding prose
+  explicitly says wiring this CLI flag is a LATER batch of the same
+  T-1137 epic -- genuinely not built yet, not a broken pointer.
+
+Verified: `frob check --only docblocks --json` shows DOC006 count 54 -> 0
+(remaining 4 warnings on that gate are pre-existing DOC004, out of this
+ticket's rule scope). No matcher/threshold change made anywhere in
+src/frob/gates/_docptr.py.
+
+Filed out-of-scope discovery: T-1163 (frob.tickets._models.
+CLI_WIRING_FILES still names the retired src/frob/app/ticket_runner.py
+path post-package-split, silently defeating T-0446's implicit-scope
+mechanism for FEATURE tickets) -- fix is in src/frob/tickets/_models.py,
+outside this ticket's docs-only scope.
+
+### Changed
+```
+ tickets.md | 61 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 56 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1110 -->
 ```yaml
@@ -1125,3 +1230,31 @@ threat: null
 component: null
 ```
 The only remaining errors on main after the wave-18 fallout pass: four functions grew past the 60-line threshold in this wave's lands (T-1147, T-1131/T-1132, T-1142/T-1151). Standard extraction discipline; ARCH103 on _try_check_delta_via_daemon wants the I/O vs formatting vs decision split, not just a length cut.
+
+<!-- ticket:T-1163 -->
+```yaml
+id: T-1163
+title: 'fix: CLI_WIRING_FILES still points at retired src/frob/app/ticket_runner.py'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_models.py
+threat: null
+component: null
+```
+Found while working T-1109 (DOC006 round-3 burn-down): frob.tickets._models.CLI_WIRING_FILES
+(src/frob/tickets/_models.py ~line 204) still lists "src/frob/app/ticket_runner.py" as one of
+the three always-in-scope CLI wiring files for a FEATURE ticket. That file was split into a
+package (src/frob/app/ticket_runner/) by an earlier landing; the frozenset entry is now a
+stale path that can never match a real file glob, silently defeating the T-0446 implicit-scope
+mechanism for the ticket_runner half of CLI wiring on any FEATURE ticket.
+
+Fix: update CLI_WIRING_FILES to the correct current path (e.g. a glob covering
+src/frob/app/ticket_runner/**, or the package's __init__.py) and re-verify T-0446's own
+tests still pass.

@@ -3,7 +3,7 @@
 Re-audit AFTER the T-0398 evidence-integrity fix landed (commits 26eadf9,
 476bc4c, 2d4ceb3, plus CLI wiring). Scope: `src/frob/tickets/**`,
 `src/frob/testing/**`, evidence/close/land enforcement in
-`src/frob/gates/__init__.py` and `src/frob/app/ticket_runner.py`. All CLI
+<!-- frob:waive DOC006 reason="point-in-time audit snapshot (0.31.0); ticket_runner.py has since been split into a package and every ticket_runner.py:NNN citation throughout this file is frozen against that snapshot -- rewriting just this one would misrepresent what was actually audited" -->`src/frob/gates/__init__.py` and `src/frob/app/ticket_runner.py`. All CLI
 claims read against `uv run frob` (0.31.0); bare `frob` is stale 0.9.0.
 
 North-star: closing/landing a ticket must MEAN the work was tested, the tests

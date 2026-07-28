@@ -116,7 +116,7 @@ def affects(snapshot: GraphSnapshot, ref: str, *,
   every node actually visited.
 - **Query surface**: the MCP tool `frob_affects(symref, max_depth=None,
   max_nodes=None)` (`frob.serve`), backed by the warm graph snapshot
-  `frob.serve._warm.warm_state` already builds -- no cold reload, no test
+  `frob.serve._warm._warm_state` already builds -- no cold reload, no test
   run. `frob graph affects <ref> [path] [--json] [--max-depth N]
   [--max-nodes N]` (T-0628, `src/frob/app/graph_runner.py`) is the CLI
   counterpart T-0325 cut as out of scope -- prints the same

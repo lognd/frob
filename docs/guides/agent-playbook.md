@@ -47,6 +47,7 @@ caution.
    Two concrete mitigations exist but are NOT applied automatically --
    see T-1058 (filed by T-1030) for the coordinator-level
    decision on which to adopt:
+   <!-- frob:waive DOC006 reason=".claude/settings.json is a real, gitignored per-clone config file (.gitignore:15) -- never tracked by design, so it can never resolve as a tracked path" -->
    - Set `worktree.baseRef: "head"` in `.claude/settings.json` so the
      dispatch tool branches from local `HEAD` instead of `origin`.
    - Push local `main` to `origin` before dispatching a wave, so even the

@@ -1103,6 +1103,7 @@ instead of falling through the generic non-python language-gap excuse.
 T-0446: `frob.tickets.scope_matches` gained an optional `kind` keyword --
 when `kind=TicketKind.FEATURE`, the three well-known CLI-wiring files
 (`src/frob/__main__.py`, `src/frob/app/config.py`,
+<!-- frob:waive DOC006 reason="src/frob/app/ticket_runner.py is a frozen historical release-note reference (0.52.0); file has since been split into a package" -->
 `src/frob/app/ticket_runner.py`, `frob.tickets._models.CLI_WIRING_FILES`)
 are implicitly in scope, mirroring `LEDGER_PATH`'s always-in-scope rule
 (T-0241). The SCOPE001 gate (`scope_gate`) now passes `ticket.kind`
@@ -1223,6 +1224,7 @@ additive (minor) bump -- new `frob.strata.scan_text_for_fingerprints`/
 ## [0.48.0] - unreleased (strata round 2, part 1)
 
 Public-API surface change since 0.43.0 (mechanical semver via REL001): an
+<!-- frob:waive DOC006 reason="frob.strata.COMPLIANCE_OUT_OF_SCOPE is a frozen historical release-note reference; symbol/module has since been reorganized" -->
 additive (minor) bump -- new `frob.strata.COMPLIANCE_OUT_OF_SCOPE` catalog.
 
 - T-0503: COMPLIANCE004 (`caught_by` integrity for compliance out-of-scope
@@ -1640,6 +1642,7 @@ Public-API surface changes since 0.17.0 (mechanical semver via REL001).
 
 - T-0171: THREAT002 no longer fires in quality views for a capability that
   IS classified, just in a different family's catalog (e.g. a security-only
+<!-- frob:waive DOC006 reason="frob.strata.ALL_CATALOG is a frozen historical release-note reference; symbol/module has since been reorganized" -->
   `exec`/`html_render`). New `frob.strata.ALL_CATALOG` (the union sink
   taxonomy across every family catalog) and a `taxonomy=` parameter on
   `check_capability_completeness` (defaults to the per-family `catalog`, so
@@ -1765,6 +1768,7 @@ Public-API surface changes since 0.8.0 (mechanical semver via REL001):
 
 - T-0262: `std.krb` -- Kerberos/AD domain trust, SPNs, and delegation as
   first-class strata (deploy epic T-0254's auth pillar, built on T-0255's
+<!-- frob:waive DOC006 reason="strata-core/src/parse.rs is a frozen historical release-note reference (0.9.0); file has since been split (T-1099) into strata-core/src/parse/" -->
   `HostManifest`/`runs_as`). New grammar (`strata-core/src/parse.rs`):
   node clauses `realm "NAME"`, `kdc`, `spn "SPN"`+, `delegation
   none|constrained|rbcd|unconstrained [target "SPN"]*`, `trusts IDENT
@@ -1813,6 +1817,7 @@ Public-API surface changes since 0.6.0 (mechanical semver via REL001):
   `frob.deploy.deploy_conformance_violations`, `ConformanceViolation`,
   `extract_mutation_surface`, `expected_mutation_surface`,
   `MutationTarget` (`_conform.py`): structured extraction of committed
+<!-- frob:waive DOC006 reason="deploy/install.sh is a frozen historical release-note reference to a deploy-epic artifact path as it existed at that release" -->
   `deploy/install.sh`/`uninstall.sh`'s actual mutation surface
   (`useradd`/`groupadd`/`userdel`/`groupdel`/`mkdir`/`install`/`cp`/
   `chown`/`chmod`/`rm -f`/`rm -rf`/`systemctl enable|disable|start|
@@ -1846,6 +1851,7 @@ Public-API surface changes since 0.4.0 (mechanical semver via REL001):
 
 - T-0193: R1.5 exact-region dup kernel -- new public `frob_core.exact_regions`
   (generalized suffix array + LCP over a normalized token corpus) and
+<!-- frob:waive DOC006 reason="frob.dup._core.exact_regions is a frozen historical release-note reference; symbol has since moved/reorganized in the dup pipeline split" -->
   `frob.dup._core.exact_regions`; `DupConfig` gained `region_kernel_enabled`
   and `region_min_tokens` fields (`[dup].region_kernel`/`region_min_tokens`
   in frob.toml). Off by default, independent of `[dup].enforce`.

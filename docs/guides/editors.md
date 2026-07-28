@@ -7,7 +7,7 @@ consumed directly by VSCode and, unmodified, by JetBrains IDEs via their
 TextMate Bundles feature. There is exactly one place the strata surface
 keyword vocabulary is spelled out for editors, and
 `tests/unit/test_strata_tmlanguage.py` drift-locks it bidirectionally
-against `strata-core/src/parse.rs`'s own dispatch table, so a keyword added
+against `strata-core/src/parse/mod.rs`'s own dispatch table, so a keyword added
 to the parser without a matching grammar update fails CI instead of
 silently going unhighlighted (or, worse, a keyword removed from the parser
 lingering forever in the grammar).
@@ -68,6 +68,6 @@ pytest tests/unit/test_strata_tmlanguage.py -v
 
 The test extracts the construct-keyword dispatch table and the
 `at_keyword`/`expect_keyword` call sites directly from
-`strata-core/src/parse.rs` and asserts they match the grammar's
+`strata-core/src/parse/mod.rs` and asserts they match the grammar's
 declaration- and clause-keyword patterns. If the parser's keyword
 vocabulary and the grammar disagree, this is the test that catches it.

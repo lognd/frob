@@ -94,7 +94,7 @@ keep its own prohibitions sound.
 ## v0 implementation
 
 What compiles now (T-0067/T-0068): the surface grammar for all five
-`policy_rule` forms and `SCOPESPEC` (`strata-core/src/parse.rs`), typed
+`policy_rule` forms and `SCOPESPEC` (`strata-core/src/parse/mod.rs`), typed
 AST models with `enables`/`rationale` split out as policy-level metadata
 (`_ast.py::PolicyDecl`), and `compile_policies` (`_policy.py`) -- semantic
 scope resolution against the elaborated `KernelModel` (component name,

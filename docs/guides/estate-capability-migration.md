@@ -75,11 +75,11 @@ change, not new capability), body pointing back at this guide:
 
 | Sibling | Routed ticket (filed 2026-07-28, kind `docs`, scope `design/*.strata`) | Hits found |
 |---|---|---|
-| lithos | T-0076 | `may "net"` (registry-fetch client, `design/lithos.strata`) |
-| graphite | T-0024 | `may "net"`, `may "fs-read"` (x2), `design/graphite.strata` |
-| aprog-public | T-0062 | `may "net"` (x3), `design/aprog-public.strata` |
-| aprog-private | T-0017 | `may "net"` (x2), `design/aprog-private.strata` |
-| logand.app | T-0007 | `may "net"` (x3), `design/logand-app.strata` |
+| lithos | T-0076 | `may "net"` (registry-fetch client, `design/lithos.strata`) <!-- frob:waive DOC006 reason="path lives in the lithos sibling repo, not this repo" --> |
+| graphite | T-0024 | `may "net"`, `may "fs-read"` (x2), `design/graphite.strata` <!-- frob:waive DOC006 reason="path lives in the graphite sibling repo, not this repo" --> |
+| aprog-public | T-0062 | `may "net"` (x3), `design/aprog-public.strata` <!-- frob:waive DOC006 reason="path lives in the aprog-public sibling repo, not this repo" --> |
+| aprog-private | T-0017 | `may "net"` (x2), `design/aprog-private.strata` <!-- frob:waive DOC006 reason="path lives in the aprog-private sibling repo, not this repo" --> |
+| logand.app | T-0007 | `may "net"` (x3), `design/logand-app.strata` <!-- frob:waive DOC006 reason="path lives in the logand.app sibling repo, not this repo" --> |
 
 Ticket ids are as returned by `frob fleet route` (`fleet: routed T-XXXX
 into <repo>`) at call time -- they are that sibling's own ids, in that

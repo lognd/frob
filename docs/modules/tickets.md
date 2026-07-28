@@ -944,7 +944,7 @@ Every `frob ticket <subcommand>` a feature ticket adds structurally needs
 to touch the SAME three files no matter what scope was declared at filing
 time: the dispatch table (`src/frob/__main__.py`), the CLI flags it reads
 (`src/frob/app/config.py`), and the runner that implements it
-(`src/frob/app/ticket_runner.py`) -- `frob.tickets._models.
+<!-- frob:waive DOC006 reason="quotes CLI_WIRING_FILES verbatim; the constant itself still says src/frob/app/ticket_runner.py post-split (now a package dir), a pre-existing code bug filed separately -- rewriting the doc would misquote the live constant" -->(`src/frob/app/ticket_runner.py`) -- `frob.tickets._models.
 CLI_WIRING_FILES`. T-0323 (the `merge-driver` subcommand) hit exactly this:
 scoped to `src/frob/tickets/**`, it needed all three and had to run
 `frob ticket scope --add` per file, which is exactly the "scope-expansion
@@ -2003,7 +2003,7 @@ mining (git history is a lower bound on real-world transitions, not a
 guarantee of completeness).
 
 A CLI surface (`frob ticket sprint velocity <label>`, argparse + runner
-wiring in `src/frob/__main__.py`/`src/frob/app/ticket_runner.py`) is a
+wiring in `src/frob/__main__.py`/`src/frob/app/ticket_runner/`) is a
 separate child ticket of T-0938 -- this ticket's own scope
 (`src/frob/tickets/**`) is the derivation function and its models only.
 

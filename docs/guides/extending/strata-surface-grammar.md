@@ -5,7 +5,7 @@
 ## What it is and where it lives
 
 The `.strata` design-file surface grammar is a hand-written recursive
-descent parser in `strata-core/src/parse.rs` (Rust, compiled via PyO3 into
+descent parser in `strata-core/src/parse/mod.rs` (Rust, compiled via PyO3 into
 `strata_core`, see `make core`). Top-level declaration keywords (`node`,
 `flow`, `boundary`, `scenario`, `claim`, `deploy`, `managed`, `abstract`,
 `observe`, ...) are dispatched in `Parser::parse_program`; keyword
@@ -18,7 +18,7 @@ highlighting only, in `editors/vscode-strata/syntaxes/strata.tmLanguage.json`
 ## Add-an-entry recipe (new keyword)
 
 1. Add the keyword to `parse_program`'s top-level dispatch (or the
-   relevant construct's field parser) in `strata-core/src/parse.rs`.
+   relevant construct's field parser) in `strata-core/src/parse/mod.rs`.
 2. Add the SAME keyword string to
    `editors/vscode-strata/syntaxes/strata.tmLanguage.json`'s keyword
    pattern list -- this is a hand-edit, not generated.

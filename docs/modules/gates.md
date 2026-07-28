@@ -1545,7 +1545,8 @@ input the gate also depends on is unchanged. `use_cache` defaults to
 `frob check`) is unaffected; only `frob.serve._tools.frob_check_delta`
 opts in today. Full design, the membership-guard soundness argument, and
 the cold-diff oracle property test live in `frob.gates._gate_cache`'s
-module docstring and `docs/modules/serve.md#per-gate-cache-t-0602`.
+module docstring and
+`docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602`.
 `deprecated` is deliberately NOT on this allowlist even though it looks
 snapshot-shaped: T-0639 (landed on `main` after T-0602 started) gave it a
 `root: Path` argument for DEPR005's baseline-lock/live-reference-set
@@ -2727,7 +2728,8 @@ concurrent renumber's own ledger-prose rewrite) and returns every
 rather than only what was left alone.
 
 **Scope boundary (T-1138):** this module is the fix HANDLERS and their
-callable entry point (`src/frob/gates/**`), not the `frob check --fix`
+callable entry point (`src/frob/gates/**`), not the
+<!-- frob:waive DOC006 reason="frob check --fix is explicitly future-facing here -- the next sentence says wiring it is a LATER batch of the T-1137 epic, not yet built" -->`frob check --fix`
 CLI flag itself -- wiring `apply_tier_a_fixes` behind an actual CLI flag
 (argument parsing in `src/frob/_cli_parsers/_check.py`, orchestration in
 `src/frob/app/check_runner.py`) is a later batch of the same T-1137

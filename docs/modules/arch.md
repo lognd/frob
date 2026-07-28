@@ -148,7 +148,7 @@ structural extraction plus these two corpus exclusions are what makes
 pass.
 
 Because `abstraction-opportunity` is one of the advisory,
-unwaivable-channel categories (`frob.gates._unwaivable_channel_rules`,
+unwaivable-channel categories (`frob.gates._waive._unwaivable_channel_rules`,
 T-0101), a `frob:waive abstraction-opportunity reason="..."` directive
 can never reach it -- disposition for a real finding is either fix it (add
 the shared abstraction) or teach the detector to recognize a legitimate
@@ -266,7 +266,7 @@ structural HALLMARK to a recommended GoF/modern PATTERN, or a detected
 ANTI-PATTERN to a concrete ESCAPE route. Both directions are pure
 ADVISORY findings -- `severity="suggestion"`, never an error, and both
 categories stay on the unwaivable advisory channel every other
-`frob.arch` category is on (`frob.gates._unwaivable_channel_rules`,
+`frob.arch` category is on (`frob.gates._waive._unwaivable_channel_rules`,
 T-0101) -- forcing a pattern is itself over-engineering, so there is
 nothing here a build can fail on.
 
@@ -464,7 +464,7 @@ Done report for the full per-pattern reasoning.
 `frob.arch._ocp` is the OCP (Open/Closed Principle) slice of T-0330's
 SOLID catalog (the ARCH1xx family). Both checks stay on the same
 unwaivable advisory channel every other `frob.arch` category is on
-(`frob.gates._unwaivable_channel_rules`) until a future ticket wires a
+(`frob.gates._waive._unwaivable_channel_rules`) until a future ticket wires a
 real ARCH1xx gate the way `ARCH001` already exists for `long-function`;
 every finding already carries `symref`/`metric` so that wiring is a
 gate-side addition, not a re-instrumentation of these checks.
@@ -514,7 +514,7 @@ written ONCE against the T-0609 normalized model
 precedent (T-0616): every check below fires identically for every
 `LanguageAdapter` output with no per-language branch in the check itself.
 All five categories stay on the same unwaivable advisory channel every
-other `frob.arch` category is on (`frob.gates._unwaivable_channel_rules`)
+other `frob.arch` category is on (`frob.gates._waive._unwaivable_channel_rules`)
 until a future ticket wires a real ARCH1xx gate the way `ARCH001` already
 exists for `long-function`; every finding already carries `symref` (and
 `metric` where there is a natural count) so that wiring is a gate-side
@@ -1281,7 +1281,7 @@ severity `warning`) whose `message` reports the full cycle path
 runtime tracer: every finding is a FAIL-CLOSED syntactic co-occurrence
 heuristic over one parsed python file's function bodies, on the same
 unwaivable advisory channel every other `frob.arch` category is on
-(`frob.gates._unwaivable_channel_rules`). It exists because this repo's
+(`frob.gates._waive._unwaivable_channel_rules`). It exists because this repo's
 own `_run_combined_jobs` produced a real 6-hour CI hang (T-0265) from a
 `ProcessPoolExecutor` forked while a sibling thread pool was open --
 T-0581 fixed the runtime ordering, but nothing statically caught the
@@ -1335,7 +1335,7 @@ umbrella (the fork/pool family above is child 1/2). Same posture as that
 family: every finding is a FAIL-CLOSED syntactic co-occurrence heuristic
 over one parsed python file's function bodies, on the same unwaivable
 advisory channel every other `frob.arch` category is on
-(`frob.gates._unwaivable_channel_rules`) -- a structural shape that makes
+(`frob.gates._waive._unwaivable_channel_rules`) -- a structural shape that makes
 an event-loop hazard possible, never a runtime proof that it fires.
 
 - **`blocking-call-in-async`.** A curated blocking call (`time.sleep`,
@@ -1396,7 +1396,7 @@ scan for the classic AB/BA two-lock deadlock shape, generalized to fire
 even when the second acquisition happens inside a callee rather than the
 same function body. It never traces at runtime -- every finding is a
 FAIL-CLOSED heuristic on the same unwaivable advisory channel every other
-`frob.arch` category is on (`frob.gates._unwaivable_channel_rules`): a
+`frob.arch` category is on (`frob.gates._waive._unwaivable_channel_rules`): a
 shape that makes a deadlock POSSIBLE, not a proof it fires.
 
 The model, in order:
@@ -1460,7 +1460,7 @@ release ordering is not modeled at all -- only acquisition order, since a
 deadlock is caused by acquisition order, not release order.
 
 Resolving (or waiving) a finding: this channel is unwaivable by design
-(`frob.gates._unwaivable_channel_rules` auto-adopts any new
+(`frob.gates._waive._unwaivable_channel_rules` auto-adopts any new
 `ArchCategory`, so no separate `frob.gates` change was needed to give
 this category the same posture as its siblings) -- there is no `frob:waive`
 escape hatch for `lock-order-cycle` or `lock-identity-unresolved`. The
@@ -1597,7 +1597,7 @@ plain module defaults.
 `long-function` is the one `frob.arch` category channeled into a real
 gate `Violation` (`frob.gates._arch.arch_gate`, rule id `ARCH001`) --
 every other category stays an advisory, unwaivable-channel suggestion
-(see `frob.gates._unwaivable_channel_rules`'s docstring, T-0101). A
+(see `frob.gates._waive._unwaivable_channel_rules`'s docstring, T-0101). A
 long-AND-complex function that is genuinely justified takes the same
 reasoned, auditable waiver every other gate rule does:
 
@@ -1733,7 +1733,7 @@ against one path), not only a directory. Before T-1102, a plain file
 iter_files` both assume a directory (`(root / ".git").exists()` and
 `os.walk(root)` are no-ops on a file), so `frob arch <file>` printed "no
 architectural issues found" for every category, not just `large-file` --
-the exact gap that made a 4346-line `strata-core/src/parse.rs` invisible
+the exact gap that made a 4346-line `strata-core/src/parse/mod.rs` invisible
 to a single-file scan even after `large-file` existed as a category.
 `analyze_project` now detects `root.is_file()` and, in that case, resolves
 the walk root to `root.parent` (every relative-path/exclude-glob

@@ -12,7 +12,7 @@ than recording the debt where it belongs. This is that channel.
 ## Surface syntax
 
 A `waive` clause lives ON THE NODE it excuses, inside the `node { ... }`
-block, alongside `may`/`code`/`carries` (`strata-core/src/parse.rs`'s
+block, alongside `may`/`code`/`carries` (`strata-core/src/parse/mod.rs`'s
 `parse_node`):
 
 ```
@@ -174,7 +174,7 @@ error class; staleness already covers it.
 
 ## Implementation
 
-- Grammar: `strata-core/src/parse.rs`'s `waive` node property (the
+- Grammar: `strata-core/src/parse/mod.rs`'s `waive` node property (the
   `RULE:SUBTARGET` convention is NOT a grammar feature -- it is an
   ordinary STRING value the parser never inspects).
 - Errors: `_errors.py::StrataError.MalformedWaiver` -- blank reason or a

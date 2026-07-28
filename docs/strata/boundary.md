@@ -105,7 +105,7 @@ compile yet: fault-injection *generation* from `modifies {} on Err`
 claims (L2, T-0075) and wiring the ERR/OBS gates into `frob check`
 (phase 4) -- both out of scope here.
 
-### Grammar (`strata-core/src/parse.rs`)
+### Grammar (`strata-core/src/parse/mod.rs`)
 
 ```
 phase_block := "{" admit? parse_phase? judge? effect? record? refuse? "}"

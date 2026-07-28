@@ -216,7 +216,7 @@ already read regardless of any platform gating before T-0261 existed.
 
 ### MODE/PORT validation (T-0270, deferred from T-0255)
 
-`strata-core/src/parse.rs`'s grammar keeps `owns`' MODE and `listens`'
+`strata-core/src/parse/mod.rs`'s grammar keeps `owns`' MODE and `listens`'
 PORT platform-agnostic atoms (a string, a number) -- the surface grammar
 has no notion of "which OS". Validation instead fires at elaborate/
 read-back time in `_host.py`, where the platform IS known

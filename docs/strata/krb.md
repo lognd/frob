@@ -226,7 +226,7 @@ HOST002's compromised-service-owner family (`docs/strata/host.md
 - **KRB002 (Kerberoasting exposure)** -- every declared `spn` is presumed
   roastable. `std.krb` has no vocabulary distinguishing a gMSA/machine-
   account principal from a human-memorable one (that grammar lives in
-  `strata-core/src/parse.rs`, outside T-0263's `src/frob/strata/**` scope,
+  `strata-core/src/parse/mod.rs`, outside T-0263's `src/frob/strata/**` scope,
   the identical cut T-0256 hit before T-0272 added `group`/`sudoers`), so
   this is an always-fire honest gap exactly like HOST002's pre-T-0272
   `sudoers` sub-target -- an operator either accepts the finding or waives

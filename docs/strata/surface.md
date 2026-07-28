@@ -389,7 +389,7 @@ block into the kernel model:
 <!-- frob:describes src/frob/strata/_code_binding.py::ImportViolation -->
 
 The surface grammar's `code glob+` comp_item (`comp_item` above) is not
-yet lexed by `strata-core/src/parse.rs` -- v0 binds code the same way
+yet lexed by `strata-core/src/parse/mod.rs` -- v0 binds code the same way
 `skew`/`fanout`/`growth` desugar (`kernel.md#capacity-semantics`): a node
 declares one or more `code=<glob>` attrs directly in the kernel model
 (Python API today; a first-class `code` keyword is a parser follow-up,
@@ -629,7 +629,7 @@ validates the resulting JSON into frozen pydantic AST models and never
 re-implements the grammar. Every malformed input yields a `{"line",
 "col", "message"}` diagnostic instead of a panic or a Python exception.
 
-Rust (`strata-core/src/parse.rs`, exposed as `strata_core.parse_source`):
+Rust (`strata-core/src/parse/mod.rs`, exposed as `strata_core.parse_source`):
 
 - `parse_source(text: &str) -> String` <!-- frob:describes strata-core/src/lib.rs::parse_source -->
   lexes and parses one source file, returning `{"ok": <module JSON>}` or
@@ -754,7 +754,7 @@ mappings are cheap and change often, unlike the parser and closure kernels
 
 The second vocabulary: `store`/`cache`/`queue`/`cdn`/`balancer` are all
 pure sugar over `Node`/`Flow`/`Boundary` (charter law 1) -- the prover
-never learns any of these five words. Grammar (`strata-core/src/parse.rs`,
+never learns any of these five words. Grammar (`strata-core/src/parse/mod.rs`,
 `parse_store`/`parse_cache`/`parse_queue`/`parse_cdn`/`parse_balancer`):
 
 ```

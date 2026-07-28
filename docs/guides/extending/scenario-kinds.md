@@ -24,7 +24,7 @@ claims are proved/refuted/assumed identically to ordinary claims.
    rewritten model -- never mutates the input (`KernelModel` is frozen).
 3. Wire the new `_apply_<kind>` into the dispatch that walks a
    `Scenario.rewrites` tuple applying each in order.
-4. Add surface grammar support in `strata-core/src/parse.rs` for the new
+4. Add surface grammar support in `strata-core/src/parse/mod.rs` for the new
    rewrite's `.strata` syntax (see
    `docs/guides/extending/strata-surface-grammar.md`).
 5. Add a litmus-style fixture pair or a direct `test_scenarios.py` case

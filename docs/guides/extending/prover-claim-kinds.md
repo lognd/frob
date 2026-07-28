@@ -22,7 +22,7 @@ claim variant and delegates to a `FactBase` closure query
    refutation -- charter law 4: never a vibe, always a witness path or
    number).
 3. Add surface grammar support for the new claim shape in
-   `strata-core/src/parse.rs` (parser must accept the new claim's syntax)
+   `strata-core/src/parse/mod.rs` (parser must accept the new claim's syntax)
    -- see `docs/guides/extending/strata-surface-grammar.md`.
 4. Add fixtures under `tests/unit/strata/` exercising both a refuted and a
    proved case (mirrors the litmus vuln/hardened pairing convention, see
@@ -59,7 +59,7 @@ a subsection.
 
 ## Common mistakes
 
-- Forgetting the parser side (`strata-core/src/parse.rs`): a claim kind
+- Forgetting the parser side (`strata-core/src/parse/mod.rs`): a claim kind
   that exists in the Python model but has no grammar production is
   unreachable from `.strata` source -- it can only ever be constructed by
   Python code (e.g. an auto-instantiated obligation), never authored

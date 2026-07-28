@@ -26,7 +26,7 @@ undeclared PII fields, god-classes, deep nesting, and clones, and still exit 0.
   `fake/changeme/example/placeholder`), plus a `frob:secret-fake` line/prev-line marker.
 - Redaction via `_redact` (never echoes token).
 
-### Structural PII / env-secrets (`gates/_pii_structural.py`, PII010/SEC110) -- both WARN
+### Structural PII / env-secrets (`gates/_pii_structural/`, PII010/SEC110) -- both WARN
 - AST over tracked `.py`. PII010: a pydantic/dataclass/TypedDict/NamedTuple/attrs class
   `AnnAssign` field whose `_`-split name token equals a `FIELD_SIGNATURES` keyword, or
   whose annotation contains `EmailStr`/`SecretStr`. Deny-by-default; discharged only by a
