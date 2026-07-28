@@ -519,9 +519,7 @@ def _doable(root: Path, cfg: AppConfig) -> None:
         return
 
     _render_active_leases(queue)
-
-    for warning in _active_large_glob_warnings(root, queue, breadth=breadth):
-        _log.warning("ticket doable: %s", warning)
+    _render_scope_breadth_summary(root, queue, breadth=breadth)
 
     if not tickets:
         _log.info(
@@ -671,10 +669,12 @@ def _active_large_glob_warnings(
 ) -> list[str]:
     """Large-glob-warning nudges (T-0453) for every ticket currently
     holding a scope-lease (in-progress) or waiting to (queued/planned) --
-    surfaced alongside `frob ticket doable` output so an over-broad scope
-    that is serializing the queue is visible, not silently hand-diagnosed.
-    Pass a precomputed `breadth` (`scope_breadth_context(root)`) so the
-    breadth walk runs once for the whole listing, not once per ticket."""
+    the full per-ticket detail `frob check`'s TICK009 (T-0714) renders one
+    line per finding for. `frob ticket doable` itself only shows a single
+    count line (`_render_scope_breadth_summary`) -- this function is the
+    shared detail computation both consume. Pass a precomputed `breadth`
+    (`scope_breadth_context(root)`) so the breadth walk runs once for the
+    whole listing, not once per ticket."""
     from frob.tickets import TicketState, large_glob_warnings
 
     warnings: list[str] = []
@@ -686,6 +686,32 @@ def _active_large_glob_warnings(
         ):
             warnings.extend(large_glob_warnings(t, root, breadth=breadth))
     return warnings
+
+
+# frob:ticket T-0714
+def _render_scope_breadth_summary(
+    root: Path,
+    queue: "TicketQueue",
+    *,
+    breadth: tuple[int, tuple[str, ...]] | None = None,
+) -> None:
+    """`frob ticket doable`'s scope-breadth diagnostic (T-0714): a single
+    summary line naming how many over-broad-scope nudges are outstanding
+    across the queue, instead of one `WARNING:` line per nudge per
+    invocation (the pre-T-0714 behavior, which flooded every `doable` call
+    with a repeated wall of per-ticket warnings -- see TICK009's
+    `docs/modules/gates.md` entry). The per-ticket detail moved to `frob
+    check`'s TICK009 gate, which reports each one exactly once with
+    remediation; doable's job is a clean ordered queue listing, not a
+    diagnostic dump. Prints nothing when the count is zero."""
+    warnings = _active_large_glob_warnings(root, queue, breadth=breadth)
+    if not warnings:
+        return
+    _log.info(
+        "%d scope-breadth nudge(s) outstanding across the queue -- "
+        "see 'frob check --only tickets' (TICK009) for detail",
+        len(warnings),
+    )
 
 
 # frob:ticket T-0453

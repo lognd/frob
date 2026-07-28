@@ -42,6 +42,8 @@ declaration).
 | TICK006 | tickets | a Done report's affirmative "filed" claim (`Filed: T-####`, `filed as T-####`, `Filed T-draft-<hex>`, ...) whose id resolves to no block in `tickets.md` or `tickets-archive.md` -- see "TICK006 (T-0726)" below |
 | TICK007 | tickets | (warn) a dispatchable (unblocked, unleased) CRITICAL/HIGH ticket has sat past its `frob.tickets.undispatched_stale` threshold -- see "TICK007 (T-0820)" below |
 | TICK008 | tickets | (warn) a ticket in the checked ledger carries unknown/extra frontmatter field(s) (`Ticket`'s `extra="allow"` captured them into `__pydantic_extra__` instead of hard-failing) -- often a typoed known field, whose value is silently lost to the schema default; see "TICK008 (T-0842)" below |
+| TICK009 | tickets | (warn) a queued/planned/in-progress ticket's declared scope is over-broad (`frob.tickets.large_glob_warnings`) -- relocated out of `frob ticket doable`'s own per-invocation output; see "TICK009/TICK010 (T-0714)" below |
+| TICK010 | tickets | (warn) a cross-worktree lease file (`.git/frob-leases/*.json`) whose recorded worktree path no longer exists on disk -- names the lease file and the remedy; see "TICK009/TICK010 (T-0714)" below |
 | COMPLIANCE005 | compliance | a `docs/design/registry/compliance.yaml` `CMPL_REGISTRY_UNIT_IDS` member carries a `deferred`/undispositioned disposition instead of `handled_by`/`out_of_scope` -- see "COMPLIANCE005 (T-0788)" below |
 | FMT001 | fmt | (warn) a diff-touched `frob:` directive comment line exceeds the project's configured line length -- see "FMT001 (T-0851)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a record that does not exist (opt-in: a `decisions/` dir must exist) |
@@ -1055,6 +1057,57 @@ TICK007 precedent: a genuinely temporary, disclosed exception (e.g. a
 worktree deliberately carrying a not-yet-landed schema-extending field
 across a short review window) can be dispositioned with a reasoned
 `frob:waive TICK008 reason="..."` instead of blocking on it.
+
+### TICK009/TICK010 (T-0714)
+
+<!-- frob:describes src/frob/gates/__init__.py::_tick009_scope_breadth_nudges -->
+<!-- frob:describes src/frob/gates/__init__.py::_tick010_stale_lease_report -->
+
+Before T-0714, `frob ticket doable` printed two kinds of diagnostic
+directly into the queue listing on EVERY invocation: a `WARNING:` line
+per over-broad-scope nudge (`frob.tickets.large_glob_warnings`, one per
+matching scope entry across every queued/planned/in-progress ticket) and
+implicit stale-lease chatter riding the same output. A session with 65
+outstanding over-broad-scope nudges saw all 65 repeated on every single
+`doable` call -- a wall of noise on top of the actual queue listing
+`doable`'s job is to render cleanly.
+
+TICK009/TICK010 relocate the DETAIL half of that diagnostic into `frob
+check`'s `tickets` stage, where it is reported once per check run instead
+of once per queue query:
+
+- **TICK009** wraps `frob.tickets.large_glob_warnings` (T-0453, unchanged)
+  as one WARN `Violation` per nudge, for every ticket in
+  `IN_PROGRESS`/`QUEUED`/`PLANNED` state -- exactly the same detail
+  `doable` used to print, just relocated.
+- **TICK010** scans `.git/frob-leases/*.json` directly (a plain
+  `Path.exists()` check against each lease's recorded `worktree` field,
+  not the internal TOCTOU-hardened liveness probe
+  `frob.tickets._leases._probe_worktree_liveness` uses for its own
+  opportunistic-unlink decision) and emits one WARN per lease whose
+  worktree is gone, naming the lease file's path and the remedy (delete
+  it, or let the next `doable`/`start` call's own opportunistic prune
+  handle it).
+
+`frob ticket doable` itself now shows only a single summary line
+(`frob.app.ticket_runner._render_scope_breadth_summary`, e.g. "65
+scope-breadth nudge(s) outstanding across the queue -- see 'frob check
+--only tickets' (TICK009) for detail") when the count is nonzero, and
+nothing at all when it is zero -- log-level discipline per the T-0202/
+T-0235 precedent this ticket's acceptance criteria named: per-item detail
+belongs to a gate's DEBUG/finding-list channel, not doable's stdout.
+
+**Ordering constraint.** `tickets_gate` computes TICK010's report BEFORE
+any call that touches `frob.tickets.read_all_leases` (TICK007, via
+`doable`/`has_live_lease`) -- that call opportunistically UNLINKS a
+lease file the moment it confirms the worktree is gone, so a TICK010 scan
+run after it would find the very files it should be reporting already
+removed.
+
+**Where they run.** Both are `tickets_gate` checks (`frob check`'s
+`tickets` stage), waivable (not in `_UNWAIVABLE_RULES`) -- a genuinely
+temporary over-broad scope or a lease cleanup already in flight can be
+dispositioned with a reasoned `frob:waive TICK009|TICK010 reason="..."`.
 
 ### COMPLIANCE005 (T-0788)
 

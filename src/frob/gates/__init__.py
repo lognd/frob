@@ -1218,6 +1218,22 @@ _KNOWN_GATE_RULES = frozenset(
         # often a typoed known field silently losing its value to a schema
         # default.
         "TICK008",
+        # T-0714: over-broad-scope nudge (frob.gates.tickets_gate's
+        # _tick009_scope_breadth_nudges) -- relocated from `frob ticket
+        # doable`'s own per-invocation WARNING wall (T-0453's
+        # `large_glob_warnings`, reused verbatim) so the doable listing
+        # stays a clean queue and this diagnostic reports once per `frob
+        # check` run instead of once per queue query.
+        "TICK009",
+        # T-0714: stale cross-worktree lease report (frob.gates.
+        # tickets_gate's _tick010_stale_lease_report) -- one WARN per lease
+        # file (`.git/frob-leases/*.json`, T-0473) whose recorded worktree
+        # path no longer exists, naming the file and the remedy (delete
+        # it, or let `frob ticket doable`'s own opportunistic prune handle
+        # it next time that path is read). Complements TICK009: doable
+        # stays quiet, `frob check` is the one place both diagnostics
+        # surface with detail.
+        "TICK010",
         # T-0788: COMPLIANCE005 (frob.gates.compliance_gate, dispatching
         # frob.strata._compliance.check_cmpl_registry built by T-0607) --
         # a checkable-control CMPL-* compliance-registry unit left
@@ -8662,14 +8678,107 @@ def _tick008_violations_for_ticket(
     return violations
 
 
+# frob:ticket T-0714
+def _tick009_scope_breadth_nudges(
+    root: Path, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """TICK009 (T-0714): one WARN per over-broad-scope nudge
+    `frob.tickets.large_glob_warnings` finds across every queued/planned/
+    in-progress ticket -- the same detail `frob ticket doable` used to
+    print, unconditionally, as a `WARNING:` line PER nudge on EVERY queue
+    query (observed flooding a 5-lease session-start listing). `doable`
+    now only shows a single count line
+    (`frob.app.ticket_runner._render_scope_breadth_summary`); this gate is
+    where the per-ticket remediation detail lives instead, reported once
+    per `frob check` run rather than once per `doable` invocation. Purely
+    a relocation -- `large_glob_warnings` itself (T-0453) is unchanged."""
+    from frob.tickets import TicketState, large_glob_warnings, scope_breadth_context
+
+    breadth = scope_breadth_context(root)
+    violations: list[Violation] = []
+    for t in sorted(queue.tickets.values(), key=lambda t: t.id):
+        if t.state not in (
+            TicketState.IN_PROGRESS,
+            TicketState.QUEUED,
+            TicketState.PLANNED,
+        ):
+            continue
+        for warning in large_glob_warnings(t, root, breadth=breadth):
+            violations.append(
+                Violation(
+                    rule="TICK009",
+                    severity=Severity.WARN,
+                    file="tickets.md",
+                    line=0,
+                    message=f"TICK009: {warning}",
+                )
+            )
+    return tuple(violations)
+
+
+# frob:ticket T-0714
+def _tick010_stale_lease_report(root: Path) -> tuple[Violation, ...]:
+    """TICK010 (T-0714): one WARN per cross-worktree lease file
+    (`.git/frob-leases/*.json`, T-0473) whose recorded `worktree` path no
+    longer exists on disk -- named by its lease-file path and ticket id,
+    with the remedy spelled out (`frob.tickets._leases`'s own
+    opportunistic prune already unlinks these the next time a `doable`/
+    `start` call reads the leases directory; this gate exists to surface
+    them ONCE with a location and remedy for a human/auditor, not to
+    re-implement the prune). Silent when the leases directory does not
+    exist or every lease's worktree is present -- this is a read-only scan
+    (`Path.exists()`, not the internal TOCTOU-hardened liveness probe
+    `frob.tickets._leases._probe_worktree_liveness` uses for its own
+    unlink decision) so it never mutates the leases directory itself."""
+    import json
+
+    from frob.tickets._leases import leases_dir
+
+    resolved = leases_dir(root)
+    if resolved.is_err:
+        return ()
+    leases_root = resolved.danger_ok
+    if not leases_root.is_dir():
+        return ()
+
+    violations: list[Violation] = []
+    for path in sorted(leases_root.glob("*.json")):
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        worktree = raw.get("worktree")
+        ticket_id = raw.get("ticket_id", "?")
+        if not worktree or Path(worktree).exists():
+            continue
+        violations.append(
+            Violation(
+                rule="TICK010",
+                severity=Severity.WARN,
+                file=str(path),
+                line=0,
+                message=(
+                    f"TICK010: {ticket_id} lease {path} references worktree "
+                    f"{worktree!r}, which no longer exists -- remove the "
+                    f"lease file (it will also be opportunistically "
+                    f"pruned the next time `frob ticket doable`/`start` "
+                    f"reads the leases directory)"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
 # frob:doc docs/modules/tickets.md#decision-record-t-0162
 def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
-    """TICK001/TICK002/TICK003/TICK004/TICK005/TICK006/TICK007/TICK008: the
-    T-0162 ticket-id collision invariant gate, plus the T-0409 ledger-
-    hygiene check, the T-0411 priority-rot check, the T-0537 post-merge
-    terminal-state-regression lint, the T-0726 phantom-filing-claim check,
-    the T-0820/T-0752 undispatched-stale-CRITICAL/HIGH alarm, and the
-    T-0842 unknown-ledger-field check.
+    """TICK001/TICK002/TICK003/TICK004/TICK005/TICK006/TICK007/TICK008/
+    TICK009/TICK010: the T-0162 ticket-id collision invariant gate, plus
+    the T-0409 ledger-hygiene check, the T-0411 priority-rot check, the
+    T-0537 post-merge terminal-state-regression lint, the T-0726
+    phantom-filing-claim check, the T-0820/T-0752 undispatched-stale-
+    CRITICAL/HIGH alarm, the T-0842 unknown-ledger-field check, and the
+    T-0714 scope-breadth-nudge/stale-lease reports (relocated out of
+    `frob ticket doable`'s own per-invocation diagnostics).
 
     T-0929 (docs/audits/check-performance.md row 10, `tickets` gate): the
     full `tickets.md`/`tickets-archive.md` ledger text is now loaded ONCE
@@ -8679,6 +8788,14 @@ def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     same-shape duplicate as the cross-stage redundant-parse class the
     audit's meta-gap finding (E) describes, one level down inside a
     single gate)."""
+    # T-0714: TICK010 reads the leases directory directly (a plain
+    # `Path.exists()` scan, not the internal liveness probe) and must run
+    # BEFORE any call that touches `frob.tickets.read_all_leases` (TICK007
+    # below, via `doable`/`has_live_lease`) -- that call opportunistically
+    # UNLINKS a lease file the moment it confirms the worktree is gone, so
+    # a report computed after it would find the very files it should be
+    # reporting already removed out from under it.
+    stale_leases = _tick010_stale_lease_report(root)
     active = _tickets_load_all(root)
     archived = _tickets_load_archive(root)
     return (
@@ -8690,6 +8807,8 @@ def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
         + _tick006_phantom_filing(queue, archived)
         + _tick007_undispatched_stale(root, queue)
         + _tick008_unknown_ledger_fields(queue)
+        + _tick009_scope_breadth_nudges(root, queue)
+        + stale_leases
     )
 
 

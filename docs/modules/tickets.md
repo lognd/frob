@@ -538,11 +538,17 @@ and update on every dispatch.
 - **Large-glob warning**: a ticket whose scope contains a chronically
   over-broad glob (`tests/**`, `src/frob/**`, `docs/`, `docs/**`, ...) or one
   matching more real files than `[tickets] large_glob_max_files` in
-  `frob.toml` (default 25) gets a `large_glob_warnings` nudge surfaced
-  alongside `frob ticket doable` output -- narrow the scope to the specific
-  files the ticket actually touches. This is a NUDGE, not a hard gate: it
-  fixes over-hiding at the scope-DECLARATION level instead of ignoring
-  broad directories in the overlap check itself.
+  `frob.toml` (default 25) gets a `large_glob_warnings` nudge. This is a
+  NUDGE, not a hard gate: it fixes over-hiding at the scope-DECLARATION
+  level instead of ignoring broad directories in the overlap check itself.
+  T-0714: the per-nudge detail no longer prints alongside `frob ticket
+  doable` output (that flooded every queue query with a repeated
+  `WARNING:` wall) -- `doable` now shows one summary count line only
+  (`frob.app.ticket_runner._render_scope_breadth_summary`), and `frob
+  check`'s TICK009 gate (`docs/modules/gates.md#tick009tick010-t-0714`)
+  reports each nudge once, with remediation, alongside `frob check`'s
+  other findings. The same T-0714 relocation applies to stale
+  cross-worktree leases -- TICK010 reports those.
 - **Over-broad-lease demotion**: when a repo root is available (the CLI
   path always has one), a HOLDER's over-broad scope entries -- the exact
   same breadth test the warning uses -- are dropped before the overlap
