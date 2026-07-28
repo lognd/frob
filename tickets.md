@@ -1244,6 +1244,8 @@ tier: ticket
 sprint: null
 scope:
 - tests/test_registry_reconciliation_system_design.py
+evidence:
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
 threat: null
 component: null
 ```
@@ -3556,3 +3558,225 @@ repo with zero findings either way, that restriction can be dropped (or
 narrowed to a real, disclosed exception) so the live gate actually
 checks what the model now claims to cover, closing the gap for real
 rather than just in a test harness.
+
+<!-- ticket:T-1092 -->
+```yaml
+id: T-1092
+title: 'daemon: standalone unix-socket JSON-RPC process + single-instance guard'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: high
+parent: T-0321
+tier: story
+sprint: null
+scope:
+- src/frob/serve/**
+- docs/modules/serve.md
+- tickets.md
+- tests/test_serve_socket.py
+acceptance:
+- text: GIVEN no daemon is running WHEN a client connects to the project's .frob/daemon.sock
+    THEN an atomic flock/socket-bind guard spawns exactly one daemon process even
+    under N racing concurrent connect attempts, never an 'already running' error and
+    never two daemons
+  evidence: []
+- text: GIVEN a running daemon WHEN a second client sends a JSON-RPC request over
+    the socket THEN it receives a response built from the SAME warm state (frob.serve._warm)
+    the MCP stdio path already serves, with no protocol-specific re-implementation
+    of the query logic
+  evidence: []
+- text: GIVEN the daemon has been idle for N minutes (default configurable) WHEN the
+    idle timer fires THEN the process exits cleanly, leaving no orphaned process and
+    no stale socket file
+  evidence: []
+threat: null
+component: null
+```
+Splits out child (c)+(a-lifecycle) of T-0321: today frob.serve._daemon runs ONLY as a background thread inside a live frob-serve MCP stdio process (T-0733) -- there is no standalone process reachable outside an MCP client session, and no unix-socket transport at all (grep for AF_UNIX/jsonrpc across src/frob/serve/ returns nothing as of 2026-07-28). Build a standalone daemon process (frob.serve._daemon or a new frob.serve._socketd module) that: (1) listens on a per-project-root unix socket (.frob/daemon.sock), (2) speaks a minimal JSON-RPC-shaped protocol wrapping the SAME frob.serve._tools functions the MCP transport already calls (no logic fork -- MCP and socket become two frontends over one core, per T-0321's integration map), (3) uses an atomic single-instance guard (flock on a .frob/daemon.lock file, checked+held before bind) so racing clients converge on exactly one daemon, (4) auto-exits after an idle timeout with no orphaned process. This does NOT yet wire the CLI to use the socket (that is the next child) -- this ticket only stands the process + protocol up and proves it answers correctly. Explicitly NOT in scope: FS-watch invalidation (separate child), cross-worktree single-flight (separate child).
+
+<!-- ticket:T-1093 -->
+```yaml
+id: T-1093
+title: 'daemon: CLI auto-proxy to socket daemon with transparent in-process fallback'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: high
+blocked_by:
+- T-1092
+parent: T-0321
+tier: story
+sprint: null
+scope:
+- src/frob/app/**
+- src/frob/__main__.py
+- Makefile
+- docs/modules/serve.md
+- docs/modules/app.md
+- tickets.md
+- tests/test_app_daemon_proxy.py
+acceptance:
+- text: GIVEN a fresh clone with no daemon running WHEN a user runs frob check THEN
+    it autostarts the daemon transparently (no init/deinit command issued) and the
+    result is identical to the pre-existing in-process path
+  evidence: []
+- text: GIVEN the daemon is unreachable, crashed, or reports a stale frob version
+    WHEN a client issues any command THEN the client silently falls back to in-process
+    computation with no surfaced daemon error and no hang, and best-effort respawns
+    a fresh daemon
+  evidence: []
+- text: GIVEN FROB_NO_DAEMON=1 is set WHEN any frob command runs THEN it fully bypasses
+    the daemon and produces output identical to a daemon-served run (differential
+    parity)
+  evidence: []
+threat: null
+component: null
+```
+Child (d) of T-0321. Today nothing in src/frob/app/ or __main__.py references 'daemon' at all (confirmed 2026-07-28) -- the CLI always computes in-process; T-1092's socket daemon exists but nothing talks to it. Wire the frob CLI entrypoint to: (1) probe for a live daemon socket for the current project root, (2) if present and version-matched, proxy the query-shaped subcommands (outline, map, xref, parse, graph, exports, bind, docs, stats, check-delta-style reads per T-0321's integration map) over the socket instead of recomputing, (3) on any failure (no socket, connect refused, stale version reported by the daemon, timeout) transparently fall back to the existing in-process code path with zero user-visible error, (4) respect FROB_NO_DAEMON=1 as an unconditional bypass. Makefile targets stay thin shims calling frob subcommands (no Makefile-level daemon awareness). Also implements T-0321's HARD requirement 6 (self-healing version skew): the client detects a version-mismatched daemon and triggers its self-replacement rather than erroring. Add a differential test asserting daemon-served and in-process answers are byte-identical for each proxied query type -- this is T-0321's #1 safety invariant (correctness must not depend on the daemon).
+
+<!-- ticket:T-1094 -->
+```yaml
+id: T-1094
+title: 'daemon: FS-watch push invalidation replaces git-status-poll warm-state key'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+blocked_by:
+- T-1092
+parent: T-0321
+tier: story
+sprint: null
+scope:
+- src/frob/serve/**
+- docs/modules/serve.md
+- tickets.md
+- tests/test_serve_watch.py
+acceptance:
+- text: GIVEN the daemon is running and a source file changes on disk WHEN the change
+    is saved (no frob command run) THEN the warm GraphSnapshot is invalidated and
+    rebuilt via an FS-watch callback, not on the next client's git-status recomputation
+  evidence: []
+- text: GIVEN a differential harness comparing FS-watch-driven invalidation against
+    the existing _repo_dirty_key git-status signature across randomized edit sequences
+    THEN the two invalidation decisions always agree (no watch-miss, no stale-serve)
+  evidence: []
+threat: null
+component: null
+```
+Child (a) of T-0321, the remaining half of T-0177's deliverable (a): src/frob/serve/_warm.py's _repo_dirty_key currently recomputes a git rev-parse+status signature PLUS a per-dirty-path (mtime_ns,size) tag on every _warm_state() call (pull-based, paid at query time) -- there is no OS-level file-watch (inotify/watchdog) anywhere in src/frob/serve/ (confirmed 2026-07-28). For a standalone daemon (T-1092) sitting idle between queries, pull-based invalidation means the FIRST query after an edit still pays the git-status walk; push-based FS-watch lets the daemon pre-invalidate/pre-rebuild during idle time so a query never pays it. Add an inotify-backed (or watchdog-library) watcher scoped to the project's tracked+untracked-but-not-.frob paths, feeding frob.serve._warm._invalidate on change. Treat this as an OPTIMIZATION LAYER over the existing git-status key, not a replacement of its correctness: T-0321 requirement 4 demands daemon-answer == cold-answer always, so the git-status key stays as the authoritative correctness check on every call and FS-watch only pre-warms; a watch-miss (missed event, e.g. under WSL/mount quirks per T-0245) must never serve stale data because the git-status recheck still runs. Add the differential harness proving the two signals never disagree on invalidation decision.
+
+<!-- ticket:T-1095 -->
+```yaml
+id: T-1095
+title: 'daemon: cross-worktree single-flight coverage/collection keyed by source digest'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+blocked_by:
+- T-1092
+parent: T-0321
+tier: story
+sprint: null
+scope:
+- src/frob/testing/**
+- src/frob/serve/**
+- docs/modules/testing.md
+- docs/modules/serve.md
+- tickets.md
+- tests/test_coverage_wait_shared.py
+acceptance:
+- text: GIVEN two worktrees checked out to commits whose tracked source content hashes
+    identically WHEN both concurrently request coverage via run_coverage_wait THEN
+    only one real coverage subprocess runs across BOTH worktrees and the second gets
+    the shared fresh-or-failed result instead of independently re-running the suite
+  evidence: []
+- text: GIVEN two worktrees whose source content differs WHEN both request coverage
+    concurrently THEN each runs its own independent coverage pass (no cross-contamination
+    of results across differing digests)
+  evidence: []
+threat: null
+component: null
+```
+Child (b) of T-0321. T-0322 shipped run_coverage_wait with a PER-WORKTREE single-flight lock (.frob/coverage.lock, a path inside that worktree's own .frob/ -- confirmed 2026-07-28 via src/frob/testing/_coverage_wait.py) and a staleness check against that worktree's own coverage stamp. It does not share across worktrees: N agents on N git worktrees of the same commit (the common parallel-dispatch shape, per docs/guides/agent-playbook.md) each still pay their own full coverage run because each has its own .frob/coverage.lock and .frob/ cache. Move the single-flight lock and the content-addressed result cache to a location keyed by TREE DIGEST (source content hash, not worktree path) rather than worktree-local path -- e.g. a shared cache under the daemon's project-root-independent state dir (or the T-1092 daemon arbitrating across worktrees it can see via .claude/worktrees enumeration, matching T-0733's existing lease-enumeration pattern). A worktree with identical source content to one that already has a fresh coverage result gets that result immediately with zero subprocess spawned.
+
+<!-- ticket:T-1096 -->
+```yaml
+id: T-1096
+title: 'daemon: subscribe/push event stream (coverage-fresh, graph-changed) over the
+  socket'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+blocked_by:
+- T-1092
+parent: T-0321
+tier: story
+sprint: null
+scope:
+- src/frob/serve/**
+- docs/modules/serve.md
+- tickets.md
+- tests/test_serve_events.py
+acceptance:
+- text: GIVEN a client subscribed over the socket connection WHEN the daemon finishes
+    an incremental graph rebuild or a coverage run completes THEN the client receives
+    a graph-changed or coverage-fresh push event without polling
+  evidence: []
+- text: GIVEN an agent that today backgrounds make coverage and stalls waiting on
+    a notification it cannot act on (docs/guides/agent-playbook.md 6b/3b, the T-0322
+    stall this epic names as THE stall-killer) WHEN it instead subscribes and blocks
+    on the socket THEN it receives a definitive coverage-fresh push the moment the
+    run this ticket's single-flight (T-1095) resolves, in-band on the same connection,
+    no separate poll loop
+  evidence: []
+threat: null
+component: null
+```
+Child (e) of T-0321, its named 'stall-killer'. T-0733 already runs a background poll loop (post-land re-verify every 20s, rebase-bot) but it is PULL-based: frob_daemon_status is read by a client on its own schedule, nothing is pushed. Extend the T-1092 socket protocol with a subscribe verb: a client keeps its connection open and receives async event frames (coverage-fresh, graph-changed, post-land-verdict-updated) as soon as the daemon's own state changes, instead of the client re-polling frob_daemon_status or backgrounding a subprocess. This directly replaces the make-coverage-background-and-stall failure mode T-0322 patched with foreground blocking + single-flight: with push events, a client can subscribe once and get a definitive completion signal even when someone ELSE'S single-flight run (T-1095) is what resolves it, rather than each caller blocking its own foreground call.
+
+<!-- ticket:T-1097 -->
+```yaml
+id: T-1097
+title: 'daemon: resource leases/semaphores (coverage=1 writer) arbitrated by the socket
+  daemon'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+blocked_by:
+- T-1092
+- T-1095
+parent: T-0321
+tier: story
+sprint: null
+scope:
+- src/frob/serve/**
+- src/frob/testing/**
+- docs/modules/serve.md
+- docs/modules/testing.md
+- tickets.md
+- tests/test_serve_leases.py
+acceptance:
+- text: GIVEN N concurrent clients requesting a coverage run WHEN the daemon arbitrates
+    access THEN exactly one holds the coverage writer semaphore at a time and the
+    rest block or receive the shared result, with no two coverage subprocesses running
+    concurrently against overlapping state
+  evidence: []
+- text: GIVEN a client holding a lease crashes or disconnects WHEN the daemon detects
+    the dead connection THEN the lease is released automatically (no permanently stuck
+    semaphore requiring a daemon restart)
+  evidence: []
+threat: null
+component: null
+```
+Child (f) of T-0321. Today T-0322's coverage.lock is a plain per-worktree fcntl.flock with no arbitration beyond OS-level blocking, no visibility into who holds it, and no daemon-mediated release-on-crash semantics. Once T-1095 makes coverage single-flight CROSS-worktree (arbitrated by the T-1092 daemon rather than a per-worktree file lock), formalize it as a general named-resource lease/semaphore primitive the daemon owns (starting with coverage=1 writer, per T-0321's body), so other future contended resources (e.g. a future write-serializing need) can register the same way instead of each inventing its own flock convention. Lease release must be tied to socket connection liveness (a crashed/killed client's lease is freed by the daemon detecting the closed connection), not just an explicit release call, to satisfy T-0321's requirement 3 (killing a client loses nothing, nothing to clean up).
