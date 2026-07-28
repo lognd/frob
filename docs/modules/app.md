@@ -76,6 +76,13 @@ overrides for `frob.graph.affects.affects`'s own bounds -- collected via
 the ordinary int-field loop in `from_external`, same posture as
 `perf_max_depth`.
 
+T-1069: `ticket_tier_value` (`str | None`, default `None`) is `frob ticket
+tier <id> <epic|story|ticket>`'s new-tier argument, collected via the
+ordinary string-field loop in `from_external` -- same shape as
+`ticket_priority_level`/`ticket_kind_value`'s precedents, kept distinct
+from `ticket_tier` (already `frob ticket new --tier`'s set-at-creation
+field).
+
 T-1004: `check_budget` (`int | None`, default `None`) is `frob check
 --budget SECONDS`'s int field, collected the same way -- `None` leaves
 every other `check_*` behavior untouched; set, it routes `check_runner.run`

@@ -1770,6 +1770,26 @@ def _add_ticket_label_parser(ticket_sub):
     return ticket_label_p
 
 
+# frob:ticket T-1069
+def _add_ticket_tier_parser(ticket_sub):
+    """Register `frob ticket tier <id> <epic|story|ticket>` -- reclassify an
+    already-created ticket's place in the epic -> story -> ticket hierarchy
+    (T-1069), the mutate-in-place counterpart to `frob ticket new --tier`
+    (T-0715 created the field but never gave existing tickets a way to
+    change it). Same shape as `_add_ticket_priority_parser`'s T-0411
+    precedent."""
+    ticket_tier_p = ticket_sub.add_parser(
+        "tier", help="set an existing ticket's tier (T-1069)"
+    )
+    ticket_tier_p.add_argument("ticket_id", metavar="id")
+    ticket_tier_p.add_argument(
+        "ticket_tier_value",
+        metavar="tier",
+        choices=["epic", "story", "ticket"],
+    )
+    return ticket_tier_p
+
+
 # frob:ticket T-0715
 def _add_ticket_sprint_parser(ticket_sub):
     """Register `frob ticket sprint assign|show` (T-0715): `assign <id>
@@ -1804,7 +1824,7 @@ def _add_ticket_sprint_parser(ticket_sub):
 def _add_ticket_closeout_parsers(ticket_sub) -> list:
     """Register the ticket closeout subcommands: attach/block/close/
     reverify/fail/evidence/done-report/scope/priority/kind/component/
-    label/review/sprint."""
+    label/review/sprint/tier."""
     return (
         _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub)
         + _add_ticket_fail_evidence_archive_parsers(ticket_sub)
@@ -1820,6 +1840,8 @@ def _add_ticket_closeout_parsers(ticket_sub) -> list:
             _add_ticket_review_parser(ticket_sub),
             # frob:ticket T-0715
             _add_ticket_sprint_parser(ticket_sub),
+            # frob:ticket T-1069
+            _add_ticket_tier_parser(ticket_sub),
         ]
     )
 

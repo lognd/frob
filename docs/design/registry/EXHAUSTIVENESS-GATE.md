@@ -113,7 +113,10 @@ on request -- `_sync_gate_rules_for_land` (`ticket_runner.py`, wired as
 `land()`'s `sync_gate_rules` callback, `src/frob/tickets/_land.py`) diffs
 the landing worktree's own `_KNOWN_GATE_RULES` change against the squash-
 applied tree right after the REL001 bump is staged; if the diff touched
-`_KNOWN_GATE_RULES`, it scans root's on-disk tree (never a live import --
+`_KNOWN_GATE_RULES` (unaffected by T-1069's unrelated `tier` dispatch-table
+addition to `ticket_runner.run`, which merely added a new `frob ticket
+tier` verb alongside the existing `priority`/`kind`/`component`/`sprint`
+mutators), it scans root's on-disk tree (never a live import --
 `frob.gates._rule_id_scan.generated_gate_rule_ids`, the T-0964 scanner) and
 stages any newly-missing `check-coverage.yaml` rows into the SAME land
 commit. This ends the manual re-sync docs/audits/coordination-churn.md

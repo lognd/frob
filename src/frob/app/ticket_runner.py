@@ -1,7 +1,7 @@
 """CLI wiring for `frob ticket new|list|show|doable|board|epic|brief|plan|
 start|requeue|sweep|reconcile|land|merge-driver|attach|block|close|fail|
 drop|evidence|done-report|scope|priority|kind|component|label|archive|
-review|sprint` (docs/modules/tickets.md)."""
+review|sprint|tier` (docs/modules/tickets.md)."""
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/app/ticket_runner.py's exclusivity-vocabulary hit is source-level \
 # design-rationale/scope-cut prose (a docstring or comment describing \
@@ -87,6 +87,8 @@ def _ticket_dispatch_table() -> dict:
         "brief": _brief,
         # frob:ticket T-0715
         "sprint": _sprint,
+        # frob:ticket T-1069
+        "tier": _tier,
         "archive": lambda root, cfg: _archive(root, force=cfg.ticket_force),
     }
 
@@ -107,7 +109,7 @@ def run(cfg: AppConfig) -> None:
             "usage: frob ticket <new|list|show|doable|board|epic|brief|plan|"
             "start|requeue|sweep|reconcile|land|merge-driver|attach|block|"
             "close|fail|drop|evidence|done-report|scope|priority|kind|"
-            "component|label|archive|review|sprint> ..."
+            "component|label|archive|review|sprint|tier> ..."
         )
         sys.exit(1)
     with _diagnostic_log_ctx(cfg):
@@ -3366,6 +3368,38 @@ def _epic(root: Path, cfg: AppConfig) -> None:
         )
     if rollup.blocked_leaves:
         _log.info("blocked leaves: %s", list(rollup.blocked_leaves))
+
+
+# frob:ticket T-1069
+def _tier(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket tier <id> <epic|story|ticket>`: the ONLY thing this
+    command does is forward to `frob.tickets.set_tier` -- no validation is
+    re-derived here (T-1069, same pattern as `_priority`/T-0411). `tier` is
+    validated strictly against the real `TicketTier` enum inside
+    `TicketTier(...)`; an unknown value raises `ValueError`, reported and
+    exited the same way an unresolvable ticket id is."""
+    from frob.tickets import TicketTier, set_tier
+
+    if cfg.ticket_id is None or cfg.ticket_tier_value is None:
+        _log.error("frob ticket tier requires <id> <tier>")
+        sys.exit(1)
+
+    try:
+        tier = TicketTier(cfg.ticket_tier_value)
+    except ValueError:
+        _log.error(
+            "frob ticket tier: %r is not a valid tier (choose from %s)",
+            cfg.ticket_tier_value,
+            sorted(t.value for t in TicketTier),
+        )
+        sys.exit(1)
+
+    result = set_tier(root, cfg.ticket_id, tier)
+    if result.is_err:
+        _log.error("tier change failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info("%s: tier now %s", cfg.ticket_id, ticket.tier.value)
 
 
 # frob:ticket T-0715

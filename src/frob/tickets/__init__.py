@@ -1889,6 +1889,25 @@ def set_kind(
     return _set_ticket_field(root, ticket_id, "kind", kind, log_value=kind.value)
 
 
+# frob:ticket T-1069
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_tiers.py::TestSetTier.test_updates_tier_field
+def set_tier(
+    root: Path, ticket_id: str, tier: TicketTier
+) -> Result[Ticket, TicketError]:
+    """`frob ticket tier <id> <epic|story|ticket>`: set `ticket_id`'s `tier`
+    field (T-1069) -- the accountable, single-writer way to reclassify an
+    already-created ticket's place in the epic -> story -> ticket hierarchy
+    instead of hand-editing `tickets.md` frontmatter, same ledger-locked
+    `_set_ticket_field` pattern `set_priority`/`set_kind`/`set_component`/
+    `set_sprint` all share. This changes only the `tier` label itself --
+    T-0715's structural rules (`doable`'s leaf-only surfacing, `transition`'s
+    open-descendant close guard) key off whatever `tier` a ticket currently
+    carries, so they apply to the new value on the very next read; this
+    function does not re-validate or move `parent` links."""
+    return _set_ticket_field(root, ticket_id, "tier", tier, log_value=tier.value)
+
+
 # frob:ticket T-0715
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_tiers.py::TestSprintAssign.test_updates_sprint_field
@@ -4196,6 +4215,7 @@ __all__ = [
     "set_kind",
     "set_priority",
     "set_sprint",
+    "set_tier",
     "sprint_velocity",
     "sprint_view",
     "Stride",

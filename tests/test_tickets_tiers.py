@@ -22,6 +22,7 @@ from frob.tickets import (
     doable,
     new_ticket,
     set_sprint,
+    set_tier,
     sprint_view,
     transition,
 )
@@ -197,6 +198,79 @@ class TestCloseOpenDescendantGuard:
 
         result = transition(tmp_path, "T-0001", TicketState.DONE)
         assert result.is_ok
+
+
+# frob:ticket T-1069
+class TestSetTier:
+    """`set_tier` (T-1069), the `frob ticket tier <id> <value>` primitive --
+    same single-writer, ledger-locked shape as `set_priority`/`set_kind`/
+    `set_component`/`set_sprint`, the mutate-in-place counterpart T-0715's
+    `new --tier` never got."""
+
+    # frob:ticket T-1069
+    def test_updates_tier_field(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::set_tier kind="unit"
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        spec = TicketSpec(
+            title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+        assert created.danger_ok.tier is TicketTier.TICKET
+
+        result = set_tier(tmp_path, ticket_id, TicketTier.EPIC)
+        assert result.is_ok
+        assert result.danger_ok.tier is TicketTier.EPIC
+
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok[ticket_id].tier is TicketTier.EPIC
+
+    # frob:ticket T-1069
+    def test_unknown_ticket_id_is_err(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::set_tier kind="unit"
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        result = set_tier(tmp_path, "T-9999", TicketTier.STORY)
+        assert result.is_err
+
+    # frob:ticket T-1069
+    def test_structural_rules_apply_to_new_tier_on_next_read(
+        self, tmp_path: Path
+    ) -> None:
+        """A ticket retiered to EPIC via `set_tier` (not created as one)
+        picks up the open-descendant close guard on its very next read --
+        the rule keys off the CURRENT tier field, not how the ticket was
+        originally created."""
+        # frob:tests src/frob/tickets/__init__.py::set_tier kind="unit"
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        parent = _ticket(
+            ticket_id="T-0001",
+            tier=TicketTier.TICKET,
+            state=TicketState.IN_PROGRESS,
+            evidence=("tests/x.py::test_a",),
+            body="## Done report\nsome real content here.\n",
+        )
+        leaf = _ticket(ticket_id="T-0002", tier=TicketTier.TICKET, parent="T-0001")
+        write_ticket(tmp_path, parent)
+        write_ticket(tmp_path, leaf)
+
+        retiered = set_tier(tmp_path, "T-0001", TicketTier.EPIC)
+        assert retiered.is_ok
+        assert retiered.danger_ok.tier is TicketTier.EPIC
+
+        result = transition(tmp_path, "T-0001", TicketState.DONE)
+        assert result.is_err
+        assert result.danger_err == TicketError.OpenDescendant
 
 
 class TestSprintAssign:

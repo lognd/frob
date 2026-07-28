@@ -110,6 +110,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::set_priority -->
 <!-- frob:describes src/frob/tickets/__init__.py::_doable_sort_key -->
 <!-- frob:describes src/frob/tickets/__init__.py::set_component -->
+<!-- frob:describes src/frob/tickets/__init__.py::set_tier -->
 <!-- frob:describes src/frob/tickets/__init__.py::mutate_labels -->
 <!-- frob:describes src/frob/tickets/__init__.py::board_view -->
 <!-- frob:describes src/frob/tickets/__init__.py::epic_rollup -->
@@ -324,6 +325,13 @@ def set_component(root: Path, ticket_id: str, component: str | None) -> Result[T
     # ticket belongs to (freeform, not an enum). `component=None` clears it
     # back to uncategorized. Same single-writer, ledger-locked pattern as
     # set_priority.
+def set_tier(root: Path, ticket_id: str, tier: TicketTier) -> Result[Ticket, TicketError]
+    # T-1069: `frob ticket tier <id> <epic|story|ticket>` -- reclassify an
+    # already-created ticket's place in the epic -> story -> ticket
+    # hierarchy (T-0715 landed the field and `new --tier` for set-at-create,
+    # but no mutator for an existing ticket). Same single-writer,
+    # ledger-locked pattern as set_priority/set_kind/set_component/
+    # set_sprint. Does not re-validate or move `parent` links.
 def mutate_labels(root: Path, ticket_id: str, *, add: Sequence[str] = (),
                    remove: Sequence[str] = ()) -> Result[Ticket, TicketError]
     # T-0454: `frob ticket label <id> --add TAG... --remove TAG...` --
@@ -1747,11 +1755,17 @@ enforcement path per caller:
   own parent-chain BFS is mirrored by a private `_open_descendant_ids`
   helper for this cheap open/closed check.
 
-`frob ticket new --tier epic|story|ticket` sets it at creation. Every
-pre-T-0715 ledger row has no `tier:` field at all and loads as
-`tier=ticket` (a plain leaf), unaffected. Mechanically backfilling
-existing `EPIC`-titled tickets to `tier: epic` is a separate child
-ticket of T-0715 (a one-time ledger migration, not a code change).
+`frob ticket new --tier epic|story|ticket` sets it at creation.
+`frob ticket tier <id> <epic|story|ticket>` (`set_tier`, T-1069) sets it
+on an already-created ticket -- same single-writer, ledger-locked shape
+as `frob ticket priority`/`kind`/`component`; the two structural rules
+above key off whatever `tier` a ticket currently carries, so they apply
+to the new value on the very next read, and `parent` links are not
+re-validated or moved. Every pre-T-0715 ledger row has no `tier:` field
+at all and loads as `tier=ticket` (a plain leaf), unaffected.
+Mechanically backfilling existing `EPIC`-titled tickets to `tier: epic`
+is a separate child ticket of T-0715 (T-0936, a one-time ledger
+migration, not a code change) that this verb unblocks.
 
 ### Sprints (T-0715)
 

@@ -327,6 +327,11 @@ class AppConfig(BaseModel):
     # `ticket_priority_level`'s T-0411 precedent (`ticket_kind` above is
     # already taken by `frob ticket new --kind`).
     ticket_kind_value: str | None = None
+    # frob:ticket T-1069
+    # `frob ticket tier <id> <epic|story|ticket>` -- the new tier value, same
+    # shape as `ticket_priority_level`'s T-0411 precedent (`ticket_tier`
+    # above is already taken by `frob ticket new --tier`).
+    ticket_tier_value: str | None = None
     ticket_evidence_ids: list[str] = []
     ticket_evidence_cmd: str | None = None
     # frob:ticket T-0572
@@ -640,6 +645,8 @@ class AppConfig(BaseModel):
             "ticket_board_label",
             # frob:ticket T-0715
             "ticket_tier",
+            # frob:ticket T-1069
+            "ticket_tier_value",
             "ticket_sprint",
             "ticket_doable_sprint",
             "ticket_sprint_command",
