@@ -623,6 +623,7 @@ def _reverify(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1131
+# frob:ticket T-1130
 def _fail(root: Path, cfg: AppConfig) -> None:
     """`frob ticket fail <id> --summary TEXT`: record a dead-end failure
     log entry, then requeue the ticket (T-1131).
@@ -640,7 +641,11 @@ def _fail(root: Path, cfg: AppConfig) -> None:
     candidate, not a permanently stuck ticket -- and it is the one
     `transition` call that actually releases the lease. A ticket that was
     NOT IN_PROGRESS when fail-logged (no lease to release) is left in its
-    current state unchanged, matching pre-T-1131 behavior for that case."""
+    current state unchanged, matching pre-T-1131 behavior for that case.
+
+    T-1130: auto-commits the fail-log (plus any requeue transition) as ONE
+    ledger change, the same way `start` auto-commits its own transition
+    (T-1054 parity) -- `--no-commit` (`cfg.ticket_no_commit`) opts out."""
     from frob.tickets import (
         FailureEntry,
         TicketState,
@@ -648,6 +653,7 @@ def _fail(root: Path, cfg: AppConfig) -> None:
         record_failure,
         transition,
     )
+    from frob.tickets._leases import commit_ticket_ledger_change
 
     if cfg.ticket_id is None or cfg.ticket_summary is None:
         _log.error("frob ticket fail requires <id> and --summary")
@@ -684,16 +690,31 @@ def _fail(root: Path, cfg: AppConfig) -> None:
             "%s: requeued (in-progress -> queued), lease released", cfg.ticket_id
         )
 
+    committed = commit_ticket_ledger_change(
+        root,
+        cfg.ticket_id,
+        f"chore(tickets): {cfg.ticket_id} fail-logged",
+        no_commit=cfg.ticket_no_commit,
+    )
+    if committed.is_err:
+        sys.exit(1)
+
 
 # frob:ticket T-0579
+# frob:ticket T-1130
 def _drop(root: Path, cfg: AppConfig) -> None:
     """CLI wiring for `frob ticket drop <id> --reason TEXT [--absorbed-by
     T-####]` (T-0579): the first-class replacement for hand-editing
     `state: dropped` directly. Delegates entirely to `frob.tickets.
     drop_ticket` for the reason-line + transition + lease-release
     mechanics; this layer only validates required args and reports the
-    Result."""
+    Result.
+
+    T-1130: auto-commits the drop's ledger change (reason line + DROPPED
+    transition) the same way `start` auto-commits its own transition
+    (T-1054 parity) -- `--no-commit` (`cfg.ticket_no_commit`) opts out."""
     from frob.tickets import drop_ticket
+    from frob.tickets._leases import commit_ticket_ledger_change
 
     if cfg.ticket_id is None or not cfg.ticket_reason:
         _log.error("frob ticket drop requires <id> and --reason")
@@ -706,6 +727,15 @@ def _drop(root: Path, cfg: AppConfig) -> None:
         _log.error("drop failed: %s", result.danger_err)
         sys.exit(1)
     _log.info("%s dropped", cfg.ticket_id)
+
+    committed = commit_ticket_ledger_change(
+        root,
+        cfg.ticket_id,
+        f"chore(tickets): drop {cfg.ticket_id}",
+        no_commit=cfg.ticket_no_commit,
+    )
+    if committed.is_err:
+        sys.exit(1)
 
 
 # frob:ticket T-0094

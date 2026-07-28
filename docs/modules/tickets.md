@@ -696,6 +696,55 @@ immediately after `transition(root, ticket_id, IN_PROGRESS)` succeeds, it
    `sys.exit(1)`, never a silently-swallowed warning, since a failure here
    IS the DirtyMain-at-next-land bug reproducing itself.
 
+## New/drop/fail auto-commit (T-1130)
+
+Parity with T-1054's start-transition auto-commit above, extended to the
+remaining three ledger-writing verbs: `frob ticket new`/`drop`/`fail`
+used to leave `tickets.md` dirty the same way `start` did before T-1054
+-- "commit before dispatching" was coordinator memory (bit the T-1018
+agent once, carried in `docs/guides/agent-playbook.md` as a must-
+remember) rather than something the tool itself guaranteed.
+
+`frob.tickets._leases.commit_ticket_ledger_change(root, ticket_id,
+message, *, no_commit=False)` generalizes `commit_start_transition`'s own
+add-and-commit primitive (both now funnel through the same
+`_add_and_commit_tickets_md(root, ticket_id, message)` helper) to an
+arbitrary caller-supplied commit message plus an explicit opt-out flag:
+
+1. `no_commit=True` (`frob ticket new/drop/fail --no-commit`) skips
+   entirely, no dirtiness check even performed -- for a caller that wants
+   to batch several ledger writes into one commit of its own.
+2. Otherwise no-ops (`Ok(None)`) if `tickets.md` is not actually dirty,
+   same as `commit_start_transition`.
+3. Otherwise stages and commits exactly `tickets.md` with `message`.
+4. On a commit-step failure, returns `Err(LeaseError.CommitFailed)` and
+   logs the exact recovery command -- callers treat this as a hard
+   `sys.exit(1)`, the same posture `commit_start_transition`'s callers
+   already have.
+
+Per-verb wiring (`frob.app.ticket_runner._new._new` / `_close_cmd._drop`
+/ `_close_cmd._fail`):
+
+- `new` commits LAST, after every other write the command makes
+  (`new_ticket`'s own frontmatter block, plus any `--evidence` ids
+  applied right after) -- `chore(tickets): file <id> <title>` -- so the
+  one commit captures the WHOLE filed block, not a partial commit
+  followed by a second separately-dirty write.
+- `drop` commits its `## Drop reason` line + DROPPED transition as one
+  change -- `chore(tickets): drop <id>`.
+- `fail` commits its Failure-log entry (plus any T-1131 requeue
+  transition) as one change -- `chore(tickets): <id> fail-logged`.
+
+`start`'s own T-1054 auto-commit is unaffected -- it stays on
+`commit_start_transition` (still gated by `warn_if_worktree_stale`, which
+`commit_ticket_ledger_change` does NOT run, since a stale-base warning is
+specific to the moment a ticket is started, not to every later ledger
+write on it). Worktree-side behavior is unchanged either way: both
+functions commit under ANY git root they are pointed at, main or
+worktree, exactly like `commit_start_transition` already did before this
+ticket -- a worktree agent's own eventual close/land commits already
+absorb this the same way they always have.
+
 ## Stale-worktree-cut warning (T-1059)
 
 T-1030 root-caused a recurring incident (fa606fe8, b3589c3e): dispatched

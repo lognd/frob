@@ -160,12 +160,23 @@ def _maybe_attach_clipboard_image(root: Path, ticket_id: str) -> None:
 
 # frob:ticket T-0030
 # frob:ticket T-0106
+# frob:ticket T-1130
 def _new(root: Path, cfg: AppConfig) -> None:
     """Create a ticket from `cfg`'s new-ticket flags; if `--evidence` ids
     were given, apply them (via `_apply_evidence`) after creation succeeds,
-    then offer to attach a clipboard image on a TTY."""
+    then offer to attach a clipboard image on a TTY.
+
+    T-1130: auto-commits the ledger change LAST, after every other write
+    this command makes (`new_ticket`'s own frontmatter block, plus any
+    `--evidence` ids applied right after) -- so the one commit captures
+    the WHOLE filed block, evidence included, rather than a partial commit
+    of just the bare ticket followed by a second, separately-dirty write.
+    `--no-commit` (`cfg.ticket_no_commit`) opts out entirely, matching
+    `start`'s T-1054 auto-commit precedent (parity, T-1130's own acceptance
+    criterion)."""
     # frob:ticket T-0005
     from frob.tickets import new_ticket
+    from frob.tickets._leases import commit_ticket_ledger_change
 
     if cfg.ticket_title is None or cfg.ticket_kind is None:
         _log.error("frob ticket new requires --title and --kind")
@@ -192,6 +203,15 @@ def _new(root: Path, cfg: AppConfig) -> None:
             sys.exit(1)
 
     _maybe_attach_clipboard_image(root, ticket.id)
+
+    committed = commit_ticket_ledger_change(
+        root,
+        ticket.id,
+        f"chore(tickets): file {ticket.id} {ticket.title}",
+        no_commit=cfg.ticket_no_commit,
+    )
+    if committed.is_err:
+        sys.exit(1)
 
 
 # frob:ticket T-0998

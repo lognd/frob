@@ -133,6 +133,15 @@ def _add_ticket_new_parser(ticket_sub) -> None:
         metavar="NODE-ID",
         help="pytest node id to record as evidence on the new ticket (repeatable)",
     )
+    # frob:ticket T-1130
+    ticket_new_p.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip T-1130's auto-commit of the new ticket's ledger block "
+        "(parity with `start`'s T-1054 auto-commit) -- for a caller that "
+        "wants to batch several ledger writes into one commit of its own",
+    )
 
 
 # frob:ticket T-0030
@@ -618,6 +627,14 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
     )
     ticket_fail_p.add_argument("ticket_id", metavar="id")
     ticket_fail_p.add_argument("--summary", dest="ticket_summary", required=True)
+    # frob:ticket T-1130
+    ticket_fail_p.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip T-1130's auto-commit of the fail-log/requeue ledger "
+        "change (parity with `start`'s T-1054 auto-commit)",
+    )
 
     ticket_evidence_p = ticket_sub.add_parser(
         "evidence",
@@ -663,6 +680,14 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         default=None,
         metavar="T-####",
         help="cross-reference the ticket this work was folded into",
+    )
+    # frob:ticket T-1130
+    ticket_drop_p.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip T-1130's auto-commit of the drop ledger change (parity "
+        "with `start`'s T-1054 auto-commit)",
     )
 
     ticket_archive_p = ticket_sub.add_parser(

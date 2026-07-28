@@ -562,6 +562,151 @@ class TestCommitStartTransition:
         assert status.stdout.strip() == ""
 
 
+# frob:ticket T-1130
+class TestCommitTicketLedgerChange:
+    """T-1130: `commit_ticket_ledger_change` -- the generalized (arbitrary
+    message, `--no-commit` opt-out) sibling of `commit_start_transition`
+    that `frob ticket new`/`drop`/`fail` now use for the same auto-commit
+    parity T-1054 gave `start`."""
+
+    def test_commits_dirty_ledger_with_given_message(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_commits_dirty_ledger_with_given_message  # noqa: E501
+        from frob.tickets import transition
+        from frob.tickets._leases import commit_ticket_ledger_change
+
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+
+        result = commit_ticket_ledger_change(repo, "T-0001", "chore(tickets): drop T-0001")
+        assert result.is_ok
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert status.stdout.strip() == ""
+
+        log = _run(["git", "log", "-1", "--pretty=%s"], repo)
+        assert log.stdout.strip() == "chore(tickets): drop T-0001"
+
+    def test_no_op_when_ledger_already_clean(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_op_when_ledger_already_clean  # noqa: E501
+        from frob.tickets._leases import commit_ticket_ledger_change
+
+        result = commit_ticket_ledger_change(repo, "T-0001", "chore(tickets): drop T-0001")
+        assert result.is_ok
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert status.stdout.strip() == ""
+
+    def test_no_commit_flag_skips_entirely_even_when_dirty(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_skips_entirely_even_when_dirty  # noqa: E501
+        from frob.tickets import transition
+        from frob.tickets._leases import commit_ticket_ledger_change
+
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+
+        result = commit_ticket_ledger_change(
+            repo, "T-0001", "chore(tickets): drop T-0001", no_commit=True
+        )
+        assert result.is_ok
+
+        # --no-commit means tickets.md is left dirty on purpose.
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert status.stdout.strip() != ""
+
+
+# frob:ticket T-1130
+class TestNewDropFailAutoCommit:
+    """T-1130: `frob ticket new`/`drop`/`fail` each auto-commit their own
+    ledger write (parity with `start`'s T-1054 auto-commit) unless
+    `--no-commit` is given."""
+
+    def test_new_auto_commits_the_filed_block(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestNewDropFailAutoCommit.test_new_auto_commits_the_filed_block  # noqa: E501
+        main_repo = tmp_path / "main"
+        _git_init(main_repo)
+        (main_repo / ".gitkeep").write_text("")
+        _commit_all(main_repo, "init")
+
+        ticket_run(
+            AppConfig(
+                ticket_command="new",
+                ticket_path=main_repo,
+                ticket_title="a new ticket",
+                ticket_kind="bug",
+            )
+        )
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], main_repo)
+        assert status.stdout.strip() == ""
+        log = _run(["git", "log", "-1", "--pretty=%s"], main_repo)
+        assert log.stdout.strip().startswith("chore(tickets): file T-")
+        assert "a new ticket" in log.stdout.strip()
+
+    def test_new_no_commit_leaves_ledger_dirty(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestNewDropFailAutoCommit.test_new_no_commit_leaves_ledger_dirty  # noqa: E501
+        main_repo = tmp_path / "main"
+        _git_init(main_repo)
+        (main_repo / ".gitkeep").write_text("")
+        _commit_all(main_repo, "init")
+
+        ticket_run(
+            AppConfig(
+                ticket_command="new",
+                ticket_path=main_repo,
+                ticket_title="a new ticket",
+                ticket_kind="bug",
+                ticket_no_commit=True,
+            )
+        )
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], main_repo)
+        assert status.stdout.strip() != ""
+
+    def test_drop_auto_commits_the_state_change(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestNewDropFailAutoCommit.test_drop_auto_commits_the_state_change  # noqa: E501
+        ticket_run(
+            AppConfig(
+                ticket_command="drop",
+                ticket_path=repo,
+                ticket_id="T-0001",
+                ticket_reason="obsolete",
+            )
+        )
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert status.stdout.strip() == ""
+        log = _run(["git", "log", "-1", "--pretty=%s"], repo)
+        assert log.stdout.strip() == "chore(tickets): drop T-0001"
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0001"].state == TicketState.DROPPED
+
+    def test_fail_auto_commits_the_failure_log_and_requeue(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestNewDropFailAutoCommit.test_fail_auto_commits_the_failure_log_and_requeue  # noqa: E501
+        from frob.tickets import transition
+
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+        assert transition(repo, "T-0001", TicketState.IN_PROGRESS).is_ok
+        _commit_all(repo, "start T-0001")
+
+        ticket_run(
+            AppConfig(
+                ticket_command="fail",
+                ticket_path=repo,
+                ticket_id="T-0001",
+                ticket_summary="dead end",
+            )
+        )
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert status.stdout.strip() == ""
+        log = _run(["git", "log", "-1", "--pretty=%s"], repo)
+        assert log.stdout.strip() == "chore(tickets): T-0001 fail-logged"
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0001"].state == TicketState.QUEUED
+
+
 # frob:ticket T-1059
 class TestWarnIfWorktreeStale:
     """T-1059: `frob ticket start` warns loudly when the worktree's HEAD is

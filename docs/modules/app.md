@@ -89,6 +89,14 @@ every other `check_*` behavior untouched; set, it routes `check_runner.run`
 to `_run_budgeted_check` before the normal full/`--only` dispatch (see
 docs/commands/check.md).
 
+T-1130: `ticket_no_commit` (`bool`, default `False`) is `frob ticket
+new/drop/fail --no-commit`'s opt-out flag (`action="store_true"` in the
+parser, one field shared across all three subcommands the way
+`ticket_json`/`ticket_force` already are) -- `True` skips
+`frob.tickets._leases.commit_ticket_ledger_change`'s auto-commit of that
+verb's own ledger write entirely (see docs/modules/tickets.md
+#newdropfail-auto-commit-t-1130).
+
 T-1011: `docs_sync_commands` (`bool`, default `False`) is `frob docs
 --sync-commands`'s flag, collected via the ordinary bool-field loop in
 `from_external` -- set, `docs_runner.run` regenerates `docs/modules/

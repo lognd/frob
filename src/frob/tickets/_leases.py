@@ -488,7 +488,9 @@ def commit_start_transition(root: Path, ticket_id: str) -> Result[None, LeaseErr
     warn_if_worktree_stale(root, ticket_id)
     if not _tickets_md_dirty(root, ticket_id):
         return Ok(None)
-    return _add_and_commit_tickets_md(root, ticket_id)
+    return _add_and_commit_tickets_md(
+        root, ticket_id, f"chore(tickets): record {ticket_id} start transition"
+    )
 
 
 # frob:ticket T-1059
@@ -596,17 +598,19 @@ def warn_if_worktree_stale(
 
 
 # frob:ticket T-1054
+# frob:ticket T-1130
 def _tickets_md_dirty(root: Path, ticket_id: str) -> bool:
-    """Whether `root`'s `tickets.md` has an uncommitted change (T-1054) --
-    `False` (best-effort, logged) whenever `root` is not a git work tree,
-    so a caller degrades to a no-op instead of erroring on a non-git
-    fixture root."""
+    """Whether `root`'s `tickets.md` has an uncommitted change (T-1054,
+    now shared by `commit_start_transition` AND `commit_ticket_ledger_
+    change`, T-1130) -- `False` (best-effort, logged) whenever `root` is
+    not a git work tree, so a caller degrades to a no-op instead of
+    erroring on a non-git fixture root."""
     status = gitio.run_argv(
         ["git", "-C", str(root), "status", "--porcelain", "--", "tickets.md"]
     )
     if status.is_err:
         _log.warning(
-            "tickets: %s start-transition commit skipped (git status failed "
+            "tickets: %s ledger-change commit skipped (git status failed "
             "under %s, likely not a git work tree)",
             ticket_id,
             root,
@@ -614,7 +618,7 @@ def _tickets_md_dirty(root: Path, ticket_id: str) -> bool:
         return False
     if not status.danger_ok.stdout.strip():
         _log.debug(
-            "tickets: %s start-transition commit skipped (tickets.md already "
+            "tickets: %s ledger-change commit skipped (tickets.md already "
             "clean under %s)",
             ticket_id,
             root,
@@ -662,11 +666,15 @@ def _without_agent_commit_guard() -> Iterator[None]:
 
 
 # frob:ticket T-1054
-def _add_and_commit_tickets_md(root: Path, ticket_id: str) -> Result[None, LeaseError]:
-    """`git add tickets.md && git commit -m "chore(tickets): record
-    <ticket_id> start transition"` in `root` (T-1054); `Err(CommitFailed)`,
-    loudly logged with the exact recovery command, if either step fails."""
-    message = f"chore(tickets): record {ticket_id} start transition"
+def _add_and_commit_tickets_md(
+    root: Path, ticket_id: str, message: str
+) -> Result[None, LeaseError]:
+    """`git add tickets.md && git commit -m message` in `root` (T-1054,
+    generalized T-1130 to take an explicit `message` rather than always
+    hardcoding "start transition" -- `commit_start_transition` and
+    `commit_ticket_ledger_change` both funnel through this one add+commit
+    primitive with their own message text). `Err(CommitFailed)`, loudly
+    logged with the exact recovery command, if either step fails."""
     added = gitio.run_argv(["git", "-C", str(root), "add", "tickets.md"])
     if added.is_ok and added.danger_ok.returncode == 0:
         with _without_agent_commit_guard():
@@ -682,7 +690,7 @@ def _add_and_commit_tickets_md(root: Path, ticket_id: str) -> Result[None, Lease
         or committed.danger_ok.returncode != 0
     ):
         _log.error(
-            "tickets: %s start transition left %s DIRTY -- the commit step "
+            "tickets: %s ledger change left %s DIRTY -- the commit step "
             "failed. Run this by hand before anything else lands: "
             'git -C %s add tickets.md && git -C %s commit -m "%s"',
             ticket_id,
@@ -694,12 +702,46 @@ def _add_and_commit_tickets_md(root: Path, ticket_id: str) -> Result[None, Lease
         return Err(LeaseError.CommitFailed)
 
     _log.info(
-        "tickets: %s start transition committed in %s (%s)",
+        "tickets: %s ledger change committed in %s (%s)",
         ticket_id,
         root,
         message,
     )
     return Ok(None)
+
+
+# frob:ticket T-1130
+# frob:doc docs/modules/tickets.md#newdropfail-auto-commit-t-1130
+# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_commits_dirty_ledger_with_given_message kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_op_when_ledger_already_clean kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_skips_entirely_even_when_dirty kind="unit"  # noqa: E501
+def commit_ticket_ledger_change(
+    root: Path, ticket_id: str, message: str, *, no_commit: bool = False
+) -> Result[None, LeaseError]:
+    """Auto-commit `root`'s just-written `tickets.md` change with `message`
+    (T-1130, parity with T-1054's `commit_start_transition` for `frob
+    ticket new`/`drop`/`fail`'s own ledger writes -- these three verbs
+    used to leave `tickets.md` dirty the same way `start` did before
+    T-1054, and "commit before dispatching" was coordinator memory rather
+    than something the tool itself guaranteed; T-1018 is the incident this
+    closes for the remaining verbs).
+
+    `no_commit=True` (the opt-out flag, `frob ticket new/drop/fail
+    --no-commit`) skips entirely without even checking dirtiness -- for a
+    caller that wants to batch several ledger writes into one commit of
+    its own. Otherwise a no-op (`Ok(None)`) whenever `tickets.md` is not
+    actually dirty (same reasoning as `commit_start_transition`: a `root`
+    that is not a git work tree, or a write that happened to be a no-op,
+    must never manufacture an empty commit). `Err(LeaseError.CommitFailed)`
+    only when `tickets.md` IS dirty and either `git add`/`git commit`
+    itself fails -- callers are expected to surface this as a hard
+    `sys.exit(1)`, the same posture `commit_start_transition`'s own
+    callers already have."""
+    if no_commit:
+        return Ok(None)
+    if not _tickets_md_dirty(root, ticket_id):
+        return Ok(None)
+    return _add_and_commit_tickets_md(root, ticket_id, message)
 
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473

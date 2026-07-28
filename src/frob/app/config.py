@@ -294,6 +294,13 @@ class AppConfig(BaseModel):
     ticket_state: str | None = None
     ticket_by: str | None = None
     ticket_summary: str | None = None
+    # frob:ticket T-1130
+    # `frob ticket new/drop/fail --no-commit` -- opts out of the T-1130
+    # auto-commit these three verbs perform on their own ledger write when
+    # run against a git work tree (parity with T-1054's `start` auto-
+    # commit). Default False: the commit happens unless explicitly opted
+    # out, matching `start`'s own always-on precedent.
+    ticket_no_commit: bool = False
     # frob:ticket T-0472
     # `frob ticket requeue <id> [--reason TEXT]` -- optional, logged only.
     ticket_reason: str | None = None
