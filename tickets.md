@@ -1840,3 +1840,71 @@ threat: null
 component: null
 ```
 Every split this drive (T-1103, T-1107, T-1072, T-1077, T-1081, T-1082) required hand-carrying INV006 calibration-batch waivers to the new modules -- 3 more by the coordinator today (0abc4e3a) after the gates splits redded main. The clone/dup machinery can already detect verbatim-moved prose; INV006 should use it to stop making 'remember the carried waiver' a human step. Also applies to PII012's (file,token)-keyed allowlist entries which have the same code-moves-need-new-entries failure mode (T-1076 precedent).
+
+<!-- ticket:T-1135 -->
+```yaml
+id: T-1135
+title: 'EPIC frob refactor: transactional move/rename/split with full reference, directive,
+  and obligation rewrite'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: high
+parent: null
+tier: epic
+sprint: null
+scope:
+- src/frob/**
+- docs/**
+- tests/**
+acceptance:
+- text: 'GIVEN frob refactor move/rename/split on a symbol or module family WHEN it
+    completes THEN all imports and call sites are rewritten (absolute imports, auto-aliasing
+    on destination or import-site name conflicts, with a disclosed alias report),
+    and every frob-owned reference moves with the symbol: frob:tests/frob:doc/frob:enforces
+    target forms, waiver symrefs including path:: prefixes, PII012 (file,token) allowlist
+    entries, check-coverage registry citations, and archived-ticket evidence node
+    ids'
+  evidence: []
+- text: GIVEN a refactor that cannot complete every rewrite THEN it refuses and rolls
+    back rather than leaving a half-move; post-conditions verified in-command (import
+    graph resolves, tests collect, gate findings diff-clean vs pre-refactor)
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-07-28: refactors today mean an agent hand-editing every import and callsite, and -- the expensive part -- hand-carrying frob's symbol-attached bookkeeping. Evidence from this drive: 3 coordinator INV006 waiver carries in one wave (0abc4e3a), PII012 allowlist re-keying on every move (T-1076), the ARCH101/103 waiver-symref path:: bug where moved waivers never matched again, archived evidence repoints after litmus renames (8dae48c5), DRIFT002 edge repoints. frob owns the graph/binding/exports substrate to do this transactionally. Python first; the multi-language binding tables (TS/Rust/C-C++/Kotlin) extend it later. Children to file at design time: reference-rewrite engine, directive/waiver carrier (absorbs T-1134), registry/evidence repointer, split verb built on the T-1072/T-1077 family-extraction pattern, alias-conflict policy. Relationship: makes T-1108/T-1115-class split tickets mechanical.
+
+<!-- ticket:T-1136 -->
+```yaml
+id: T-1136
+title: 'EPIC ledger v2: per-ticket files replace the tickets.md monofile (design first,
+  then migration)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: high
+parent: null
+tier: epic
+sprint: null
+scope:
+- src/frob/tickets/**
+- docs/design/**
+- tests/**
+acceptance:
+- text: GIVEN the design doc WHEN reviewed THEN it covers file-per-ticket layout (block
+    + done report), draft lifecycle without splice restores, cross-ticket operations
+    (renumber with reference rewrite, doable ordering, archive as git mv, flow/velocity
+    mining), lock model, merge story with the frob-ledger driver retired, greppability,
+    and a reversible migration plan with a compatibility window
+  evidence: []
+- text: GIVEN the migration lands THEN the land path performs no monofile splice,
+    two agents landing disjoint tickets produce no ledger merge conflict, and the
+    TICK002/TICK006 draft-death classes are structurally impossible or auto-repaired
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-07-28: too much manual work rides on tickets.md mechanics. The monofile is the root cause of a documented incident museum: land splice regression (T-0577), archive clobber (T-0959), ledger churn rewrites (T-1036), id collision (T-1090), draft deaths in 10b restores (4 coordinator refiles on 2026-07-28 alone: T-1115, T-1126, T-1127, T-1128), DirtyMain transitions (T-1054), hand splices where the merge driver is unregistered in worktrees, ledger-lock starvation and deadlocks (T-0933, T-0982). Per-ticket files make disjoint tickets disjoint git objects so merge/lease/draft/renumber/archive become ordinary git operations. The global convention (tickets/ tracked in git) already names the directory form. Design doc in docs/design/ first; migration is a separate child with golden round-trip tests; T-1125 (draft-id prose rewrite) stays valuable pre-migration and its engine is reusable for renumber-with-references after.
