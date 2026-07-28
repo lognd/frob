@@ -356,7 +356,7 @@ re-litigated here, each ticket's own Done report has the detail): SYS104/
 SYS105 are opt-in per-node (a node must already declare `interface=`/
 `purpose=` to be checked) since making them mandatory requires editing
 `design/frob.strata`, which sat outside every child ticket's declared
-scope. T-1109 (filed by T-0668) tracks that follow-up plus the
+scope. T-1113 (filed by T-0668) tracks that follow-up plus the
 CHK-GATE-SYS104/105/106 `check-coverage.yaml` cross-reference gap (same
 shape as SYS103/T-0667's own deferred registry gap).
 
@@ -370,7 +370,7 @@ all --accepts-bound)
 - tests/unit/strata/test_structural_linter_hardening_totality.py::TestDenominatorFullyDispositioned::test_arch_checks_gate_reports_zero_unaccounted_slh_entries
 - tests/unit/strata/test_structural_linter_hardening_totality.py::TestConformanceChecksBoundToDenominator::test_each_conformance_row_handled_by_its_real_check
 
-Filed: T-1109 (SYS104/SYS105 mandatory-declaration promotion +
+Filed: T-1113 (SYS104/SYS105 mandatory-declaration promotion +
 CHK-GATE-SYS104/105/106 registry cross-reference, filed by T-0668).
 
 Gates: each child ticket's own `frob check --ticket T-0XXX` ran clean
@@ -634,7 +634,7 @@ which is outside this ticket's declared scope (`src/frob/strata/**`,
 `src/frob/graph/**`, `docs/modules/strata.md`, `tests/unit/strata/**` --
 not `design/frob.strata`). This mirrors the T-0667/SYS103 precedent
 (`_coverage_totality_scan_prefix`'s own disclosed scope cut). Filed
-T-1109 to promote SYS104 to mandatory once `design/frob.strata` can be
+T-1113 to promote SYS104 to mandatory once `design/frob.strata` can be
 edited to carry real `interface=` declarations.
 
 Also landed in this same worktree pass (implementation only lives in
@@ -654,7 +654,7 @@ Evidence:
 - tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_node_with_no_interface_attr_is_never_checked
 - tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_dunder_all_overrides_name_based_collection
 
-Filed: T-1109 (promote SYS104 to mandatory once design/frob.strata is in scope; follow-up to add CHK-GATE-SYS104 registry cross-reference in docs/design/registry/check-coverage.yaml, mirroring SYS103's own deferred registry gap)
+Filed: T-1113 (promote SYS104 to mandatory once design/frob.strata is in scope; follow-up to add CHK-GATE-SYS104 registry cross-reference in docs/design/registry/check-coverage.yaml, mirroring SYS103's own deferred registry gap)
 
 Gates: `uv run frob check --ticket T-0668` clean across prework/lint/
 static/gates-native/gates-security/test/coverage/doc*/tickets/registry
@@ -750,7 +750,7 @@ profile fires, and an unrecognized profile name is itself a finding
 SCOPE CUT (disclosed, same shape as T-0668's): SYS105 only evaluates a
 node that has already declared a `purpose=` attr -- mandating every node
 declare one requires editing `design/frob.strata`, outside this ticket's
-declared scope. Filed as part of T-1109 (same follow-up ticket T-0668
+declared scope. Filed as part of T-1113 (same follow-up ticket T-0668
 filed, which bundles both SYS104 and SYS105's identical scope-cut
 follow-up).
 
@@ -761,7 +761,7 @@ Evidence:
 - tests/unit/strata/test_selfconform.py::TestPurposeContract::test_effect_inside_profile_is_silent
 - tests/unit/strata/test_selfconform.py::TestPurposeContract::test_node_with_no_purpose_attr_is_never_checked
 
-Filed: none new (T-1109, filed by T-0668, already covers this ticket's
+Filed: none new (T-1113, filed by T-0668, already covers this ticket's
 scope-cut follow-up)
 
 Gates: `uv run frob check --ticket T-0669` clean across prework/static/
@@ -863,7 +863,7 @@ Evidence:
 
 Filed: none new (this check has no `design/frob.strata` opt-in scope cut
 -- unlike SYS104/SYS105, it always runs once any node is bound at all,
-so there is no analogous "make it mandatory" follow-up; T-1109 already
+so there is no analogous "make it mandatory" follow-up; T-1113 already
 covers the CHK-GATE-SYS104/105/106 registry cross-reference for all
 three).
 
@@ -1115,7 +1115,7 @@ Evidence:
 - tests/unit/strata/test_structural_linter_hardening_totality.py::TestConformanceChecksBoundToDenominator::test_bound_rules_are_real_known_gate_rules
 
 Filed: none new (the CHK-GATE-SYS104/105/106 check-coverage.yaml
-cross-reference gap T-1109 already covers is the only remaining
+cross-reference gap T-1113 already covers is the only remaining
 registry-side follow-up touching this area).
 
 Gates: `uv run frob check --ticket T-0672` clean across prework/static/
