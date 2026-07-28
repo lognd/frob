@@ -509,12 +509,30 @@ def _attach(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0081
+# frob:ticket T-1132
 def _block(root: Path, cfg: AppConfig) -> None:
-    from frob.tickets import _load_one
+    from frob.tickets import _load_one, is_valid_ticket_ref
     from frob.tickets._store import write_ticket
 
     if cfg.ticket_id is None or cfg.ticket_by is None:
         _log.error("frob ticket block requires <id> and --by")
+        sys.exit(1)
+
+    # T-1132: `--by` becomes a `blocked_by` entry via `model_copy` below,
+    # which pydantic never re-validates (model_copy is documented to skip
+    # validation entirely, unlike `model_validate`/direct construction) --
+    # this is the ONE CLI verb that appends to an EXISTING ticket's
+    # `blocked_by` post-creation, so it is the exact site the T-0380
+    # incident (an empty-string blocked_by entry left a ticket silently
+    # undoable for days) can still slip through even with
+    # `Ticket`/`TicketSpec`'s own field validators in place. Refuse here,
+    # by hand, before the write ever happens.
+    if not is_valid_ticket_ref(cfg.ticket_by):
+        _log.error(
+            "frob ticket block: --by %r is not a valid ticket id "
+            "(expected T-#### or T-draft-<8 hex chars>)",
+            cfg.ticket_by,
+        )
         sys.exit(1)
 
     loaded = _load_one(root, cfg.ticket_id)

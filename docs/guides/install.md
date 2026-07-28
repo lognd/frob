@@ -428,6 +428,45 @@ keeps refusing with `JournalCollision`, inspect
 `.frob/mutate-backup/<hash>.json` by hand -- the recorded PID may have
 been reused.**
 
+## Malformed ticket edge scan (T-1132)
+
+<!-- frob:describes src/frob/doctor.py::scan_malformed_ticket_edges -->
+<!-- frob:describes src/frob/doctor.py::MalformedTicketEdge -->
+
+`frob doctor` also scans `tickets.md`/`tickets-archive.md` for an existing
+malformed `blocked_by`/`parent` entry -- an empty string, or anything not
+shaped like a real `T-####`/`T-draft-<hex>` ticket id
+(`DoctorReport.malformed_ticket_edges`). This is the READ-side complement
+to write-time validation (`TicketSpec`'s field validators for `frob ticket
+new`, and `frob ticket block`'s own `--by` check): T-0380 is the incident
+motivating both halves -- an empty-string `blocked_by` entry sat alongside
+three real (done) blockers, and `doable()`'s open-blocker check treated the
+empty entry as an unresolvable id, so the ticket sat silently undoable for
+days with nothing surfacing WHY.
+
+Like a stale mutate-backup journal (previous section), a finding here DOES
+fold into the overall `healthy`/`remediation` verdict:
+
+```bash
+frob doctor
+# ... malformed ticket edge(s) found: T-0380.blocked_by='' -- fix by hand
+# in tickets.md/tickets-archive.md (empty-string or non-T-#### blocked_by/
+# parent entries are refused going forward at write time, but an existing
+# one is not auto-repaired)
+```
+
+`frob doctor` never repairs a malformed edge itself -- it only reports;
+fixing an already-malformed ledger row is a manual `tickets.md`/
+`tickets-archive.md` edit (there is exactly one such row this scan would
+ever ideally find, since new writes are refused going forward). The scan
+deliberately reads RAW frontmatter dicts (`frob.tickets._store.
+iter_raw_ledger_frontmatter`), never the strict `Ticket` loader `load_all`
+uses -- `Ticket.model_validate` does NOT reject a malformed edge (see that
+model's own docstring in `docs/modules/tickets.md#data-models`), specifically
+so this scan can find one WITHOUT every OTHER `frob` command built on
+`load_all` being at risk of a single bad edge hard-failing the entire
+shared (1000+-ticket) ledger's load.
+
 ## Scaffold managed-block conformance (T-0736)
 
 <!-- frob:describes src/frob/scaffold/_managed.py::scaffold_conformance_status -->

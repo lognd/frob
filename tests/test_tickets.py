@@ -679,6 +679,186 @@ class TestDropCli:
         assert exc_info.value.code == 1
 
 
+# frob:ticket T-1132
+class TestBlockCliValidatesBy:
+    """T-1132: `frob ticket block <id> --by <other>` mutates an EXISTING
+    ticket's `blocked_by` via `model_copy`, which pydantic never
+    re-validates (unlike `TicketSpec`'s own field validators, which only
+    fire at `frob ticket new` construction time) -- this is the exact
+    write path the T-0380 incident (an empty-string blocked_by entry left
+    a ticket silently undoable for days) can still slip through even with
+    `TicketSpec` validated, so `_block` must check `--by` by hand."""
+
+    def test_cli_refuses_empty_string_by(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_block kind="unit"
+        from frob.app.ticket_runner._lifecycle import _block
+
+        _write(tmp_path, _ticket(state=TicketState.QUEUED))
+        cfg = AppConfig(
+            ticket_command="block",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_by="",
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _block(tmp_path, cfg)
+        assert exc_info.value.code == 1
+        # the ledger was never touched
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].blocked_by == ()
+
+    def test_cli_refuses_malformed_by(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_block kind="unit"
+        from frob.app.ticket_runner._lifecycle import _block
+
+        _write(tmp_path, _ticket(state=TicketState.QUEUED))
+        cfg = AppConfig(
+            ticket_command="block",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_by="not-a-ticket-id",
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _block(tmp_path, cfg)
+        assert exc_info.value.code == 1
+
+    def test_cli_accepts_valid_by(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_block kind="unit"
+        from frob.app.ticket_runner._lifecycle import _block
+
+        _write(tmp_path, _ticket(state=TicketState.QUEUED))
+        cfg = AppConfig(
+            ticket_command="block",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_by="T-0042",
+        )
+        _block(tmp_path, cfg)
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].blocked_by == ("T-0042",)
+
+
+# frob:ticket T-1132
+class TestTicketSpecValidatesBlockedByAndParent:
+    """T-1132: `TicketSpec` (the ONLY path `frob ticket new --blocked-by`/
+    `--parent` construct a ticket through) refuses an empty-string or
+    malformed entry at construction time, closing the T-0380 incident at
+    the source for every NEW ticket."""
+
+    def test_new_ticket_refuses_empty_string_blocked_by(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_models.py::TicketSpec kind="unit"
+        with pytest.raises(Exception, match="blocked_by"):
+            TicketSpec(
+                title="bad",
+                kind=TicketKind.BUG,
+                origin=Origin.HUMAN,
+                blocked_by=("", "T-0002"),
+            )
+
+    def test_new_ticket_refuses_malformed_parent(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_models.py::TicketSpec kind="unit"
+        with pytest.raises(Exception, match="parent"):
+            TicketSpec(
+                title="bad",
+                kind=TicketKind.BUG,
+                origin=Origin.HUMAN,
+                parent="nope",
+            )
+
+    def test_new_ticket_accepts_well_formed_blocked_by_and_parent(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_models.py::TicketSpec kind="unit"
+        spec = TicketSpec(
+            title="good",
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            blocked_by=("T-0001", "T-draft-deadbeef"),
+            parent="T-0001",
+        )
+        assert spec.blocked_by == ("T-0001", "T-draft-deadbeef")
+        assert spec.parent == "T-0001"
+
+
+# frob:ticket T-1132
+class TestIsValidTicketRef:
+    """T-1132: `is_valid_ticket_ref` accepts only a real T-####/T-draft-<hex>
+    id shape -- the shared check both `TicketSpec`'s construction-time
+    validators and `frob ticket block`'s hand-rolled `--by` check use."""
+
+    def test_accepts_final_id(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::is_valid_ticket_ref kind="unit"
+        from frob.tickets import is_valid_ticket_ref
+
+        assert is_valid_ticket_ref("T-0042") is True
+
+    def test_accepts_draft_id(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::is_valid_ticket_ref kind="unit"
+        from frob.tickets import is_valid_ticket_ref
+
+        assert is_valid_ticket_ref("T-draft-deadbeef") is True
+
+    def test_rejects_empty_string(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::is_valid_ticket_ref kind="unit"
+        from frob.tickets import is_valid_ticket_ref
+
+        assert is_valid_ticket_ref("") is False
+
+    def test_rejects_malformed_id(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::is_valid_ticket_ref kind="unit"
+        from frob.tickets import is_valid_ticket_ref
+
+        assert is_valid_ticket_ref("not-a-ticket-id") is False
+        assert is_valid_ticket_ref("T-42") is False
+
+
+# frob:ticket T-1132
+class TestIterRawLedgerFrontmatter:
+    """T-1132: the tolerant raw-dict reader `frob doctor`'s malformed-edge
+    scan uses -- must survive a malformed section rather than raising, the
+    exact property the strict `_parse_ledger` deliberately does not have."""
+
+    def test_returns_raw_dict_per_ticket(self) -> None:
+        # frob:tests src/frob/tickets/_store.py::iter_raw_ledger_frontmatter kind="unit"  # noqa: E501
+        from frob.tickets._store import iter_raw_ledger_frontmatter
+
+        text = (
+            "# Tickets\n\n"
+            "<!-- ticket:T-0001 -->\n"
+            "```yaml\n"
+            "id: T-0001\n"
+            "title: a\n"
+            'blocked_by: ["", "T-0002"]\n'
+            "```\n"
+        )
+        blocks = iter_raw_ledger_frontmatter(text)
+        assert len(blocks) == 1
+        ticket_id, data = blocks[0]
+        assert ticket_id == "T-0001"
+        assert data["blocked_by"] == ["", "T-0002"]
+
+    def test_skips_malformed_yaml_block_without_raising(self) -> None:
+        # frob:tests src/frob/tickets/_store.py::iter_raw_ledger_frontmatter kind="unit"  # noqa: E501
+        from frob.tickets._store import iter_raw_ledger_frontmatter
+
+        text = (
+            "# Tickets\n\n"
+            "<!-- ticket:T-0001 -->\n"
+            "```yaml\n"
+            "id: T-0001\n"
+            "  bad: [unterminated\n"
+            "```\n"
+            "\n"
+            "<!-- ticket:T-0002 -->\n"
+            "```yaml\n"
+            "id: T-0002\n"
+            "title: fine\n"
+            "```\n"
+        )
+        blocks = iter_raw_ledger_frontmatter(text)
+        assert [tid for tid, _ in blocks] == ["T-0002"]
+
+
 class TestAttach:
     def test_file_source_copies_and_records_sha256(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/__init__.py::attach

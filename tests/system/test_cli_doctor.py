@@ -419,3 +419,104 @@ class TestDoctorMutateJournal:
         report = run_diagnosis(tmp_path)
         assert report.mutate_journals == []
         assert report.healthy is True
+
+
+class TestDoctorMalformedTicketEdges:
+    """T-1132: `frob doctor` flags an existing malformed `blocked_by`/
+    `parent` entry in the shared ledger (the T-0380 incident: an
+    empty-string `blocked_by` entry left a ticket silently undoable for
+    days with nothing surfacing why) -- read-only, it never repairs
+    anything itself."""
+
+    # frob:tests src/frob/doctor.py
+    def test_run_diagnosis_healthy_with_no_malformed_edges(
+        self, tmp_path: Path
+    ) -> None:
+        """No tickets.md at all (or one with only well-formed edges)
+        reports an empty `malformed_ticket_edges` list."""
+        from frob.doctor import run_diagnosis
+
+        report = run_diagnosis(tmp_path)
+        assert report.malformed_ticket_edges == []
+        assert report.healthy is True
+
+    # frob:tests src/frob/doctor.py::scan_malformed_ticket_edges
+    def test_scan_flags_empty_string_blocked_by(self, tmp_path: Path) -> None:
+        """The exact T-0380 repro: an empty-string blocked_by entry
+        alongside real ones."""
+        from frob.doctor import run_diagnosis
+
+        (tmp_path / "tickets.md").write_text(
+            "# Tickets\n\n"
+            "<!-- ticket:T-0001 -->\n"
+            "```yaml\n"
+            "id: T-0001\n"
+            "title: bad\n"
+            "state: queued\n"
+            "kind: bug\n"
+            "origin: human\n"
+            "created: 2026-01-01\n"
+            'blocked_by: ["", "T-0002"]\n'
+            "```\n"
+        )
+
+        report = run_diagnosis(tmp_path)
+        assert report.healthy is False
+        assert len(report.malformed_ticket_edges) == 1
+        edge = report.malformed_ticket_edges[0]
+        assert edge.ticket_id == "T-0001"
+        assert edge.field == "blocked_by"
+        assert edge.value == ""
+        assert edge.ledger_file == "tickets.md"
+        assert report.remediation is not None
+        assert "T-0001.blocked_by" in report.remediation
+
+    # frob:tests src/frob/doctor.py::scan_malformed_ticket_edges
+    def test_scan_flags_malformed_parent(self, tmp_path: Path) -> None:
+        """A `parent` value that is not a real ticket-id shape is flagged
+        too, independent of `blocked_by`."""
+        from frob.doctor import run_diagnosis
+
+        (tmp_path / "tickets.md").write_text(
+            "# Tickets\n\n"
+            "<!-- ticket:T-0001 -->\n"
+            "```yaml\n"
+            "id: T-0001\n"
+            "title: bad\n"
+            "state: queued\n"
+            "kind: bug\n"
+            "origin: human\n"
+            "created: 2026-01-01\n"
+            "parent: nope\n"
+            "```\n"
+        )
+
+        report = run_diagnosis(tmp_path)
+        assert report.healthy is False
+        assert len(report.malformed_ticket_edges) == 1
+        assert report.malformed_ticket_edges[0].field == "parent"
+        assert report.malformed_ticket_edges[0].value == "nope"
+
+    # frob:tests src/frob/doctor.py::scan_malformed_ticket_edges
+    def test_scan_ignores_well_formed_edges(self, tmp_path: Path) -> None:
+        """Real T-#### and T-draft-<hex> edges are never flagged."""
+        from frob.doctor import run_diagnosis
+
+        (tmp_path / "tickets.md").write_text(
+            "# Tickets\n\n"
+            "<!-- ticket:T-0002 -->\n"
+            "```yaml\n"
+            "id: T-0002\n"
+            "title: good\n"
+            "state: queued\n"
+            "kind: bug\n"
+            "origin: human\n"
+            "created: 2026-01-01\n"
+            'blocked_by: ["T-0001", "T-draft-deadbeef"]\n'
+            "parent: T-0001\n"
+            "```\n"
+        )
+
+        report = run_diagnosis(tmp_path)
+        assert report.malformed_ticket_edges == []
+        assert report.healthy is True

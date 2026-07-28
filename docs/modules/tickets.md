@@ -46,6 +46,17 @@ kind: feature                 # feature|bug|security|ux|docs|invariant
 origin: human                 # human|agent|auditor
 created: 2026-07-16
 blocked_by: []                # ticket ids; open blockers make this not doable
+                               # T-1132: TicketSpec refuses an empty-string
+                               # or non-T-####/T-draft-<hex> entry at
+                               # `frob ticket new` construction time (the
+                               # T-0380 incident); `frob ticket block <id>
+                               # --by <other>` (the one CLI verb that
+                               # appends to an EXISTING ticket's blocked_by)
+                               # validates --by by hand for the same reason
+                               # -- see is_valid_ticket_ref below and
+                               # `frob doctor`'s malformed-edge scan for the
+                               # read-side complement (an already-malformed
+                               # entry in the ledger, from before this fix).
 parent: T-0040                # hierarchy: planner decomposes goals into trees
 scope:                        # blast radius for the scope gate
   - src/frob/tickets/**
@@ -117,6 +128,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/_doable.py::has_live_lease -->
 <!-- frob:describes src/frob/tickets/_doable.py::dispatch_stale_hours -->
 <!-- frob:describes src/frob/tickets/_doable.py::undispatched_stale -->
+<!-- frob:describes src/frob/tickets/_models.py::is_valid_ticket_ref -->
 
 ```python
 # frob/tickets/__init__.py
@@ -268,6 +280,14 @@ def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]
 def archive(root: Path) -> Result[int, TicketError]
     # Moves every done/dropped ticket from the active store into
     # tickets-archive.md verbatim (same section format); idempotent.
+def is_valid_ticket_ref(value: str) -> bool
+    # T-1132: whether value is a well-formed ticket-id reference (T-####
+    # or T-draft-<8 hex>) -- the same shape TicketSpec's blocked_by/parent
+    # field validators enforce at construction time. Exposed for call
+    # sites that mutate an EXISTING Ticket via model_copy (which bypasses
+    # pydantic field validators entirely) and must therefore validate a
+    # new edge by hand before writing -- see `frob ticket block`'s CLI
+    # handler (frob.app.ticket_runner._lifecycle._block).
 def set_done_report(root: Path, ticket_id: str, *, why: str,
                      base_ref: str = "main") -> Result[Ticket, TicketError]
     # T-0458: THE single write path for a ticket's Done report. `why` is
@@ -2089,6 +2109,7 @@ AttachError = TicketError | ClipboardError
 <!-- frob:describes src/frob/tickets/_store.py::migrate_to_ledger -->
 <!-- frob:describes src/frob/tickets/_store.py::atomic_write -->
 <!-- frob:describes src/frob/tickets/_store.py::ledger_lock -->
+<!-- frob:describes src/frob/tickets/_store.py::iter_raw_ledger_frontmatter -->
 
 `frob/tickets/_store.py` implements the single-file-ledger-vs-legacy-dir
 backend switch described under Storage above; `frob/tickets/__init__.py`
@@ -2152,6 +2173,17 @@ def ledger_lock(root: Path) -> Iterator[None]
     #       write_ticket(root, ticket)                       # claim it
     #   # no concurrent new_ticket() call can observe the pre-write state
     #   # in between -- the whole allocate+claim sequence is atomic.
+def iter_raw_ledger_frontmatter(text: str) -> list[tuple[str, dict]]
+    # T-1132: every <!-- ticket:ID --> section's RAW (unvalidated)
+    # frontmatter dict, tolerating one malformed YAML block by skipping
+    # just that section (logged) rather than failing the whole scan --
+    # unlike _parse_ledger, which is strict end to end. This is the read-
+    # side complement `frob doctor`'s malformed-edge scan
+    # (scan_malformed_ticket_edges) needs: Ticket.model_validate
+    # deliberately does NOT reject a malformed blocked_by/parent entry, so
+    # a strict loader cannot be doctor's data source for finding one
+    # without risking the entire shared ledger's load failing the moment
+    # a single bad edge exists anywhere in it.
 ```
 
 ## Worktree-lease guard (T-0431)

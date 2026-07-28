@@ -37,6 +37,68 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
+# frob:ticket T-1132
+# T-0380 incident: `blocked_by` held an empty string alongside three real
+# (done) blockers, and `doable()`'s open-blocker check treated the empty
+# entry as an unresolvable id -- the ticket sat silently undoable for days
+# with nothing surfacing WHY. Mirrors `frob.tickets._store._TICKET_ID_RE`'s
+# shape (final `T-####` or provisional `T-draft-<8 hex>`, T-0162) -- kept
+# as its own copy rather than a shared import because `_store` imports
+# `Ticket` from this module at load time, so the reverse import would be
+# circular; if the id-shape ever changes, update both.
+_BLOCKED_BY_ID_RE = re.compile(r"^T-(?:\d{4}|draft-[0-9a-f]{8})$")
+
+
+# frob:ticket T-1132
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_accepts_final_id kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_accepts_draft_id kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_rejects_empty_string kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_rejects_malformed_id kind="unit"  # noqa: E501
+def is_valid_ticket_ref(value: str) -> bool:
+    """Whether `value` is a well-formed ticket-id reference (final
+    `T-####` or provisional `T-draft-<8 hex>`) -- the same check
+    `Ticket`/`TicketSpec`'s `blocked_by`/`parent` field validators enforce
+    at construction time (T-1132), exposed for call sites that mutate an
+    EXISTING `Ticket` via `model_copy` (which bypasses pydantic field
+    validators entirely, per pydantic's own documented `model_copy`
+    semantics) and must therefore validate a new edge by hand before
+    writing it -- see `frob.app.ticket_runner._lifecycle._block`."""
+    return bool(_BLOCKED_BY_ID_RE.match(value))
+
+
+def _validate_ticket_id_ref(value: str, *, field: str) -> str:
+    """Reject an empty-string or malformed (non-`T-####`/`T-draft-<hex>`)
+    ticket-id reference in a `blocked_by`/`parent` entry (T-1132) -- raises
+    `ValueError` (pydantic wraps it into a `ValidationError`) so a
+    malformed edge can never reach the ledger via `Ticket`/`TicketSpec`
+    construction in the first place, closing the T-0380 class at the
+    source rather than only detecting it after the fact (see `frob doctor`
+    for the existing-ledger scan)."""
+    if not _BLOCKED_BY_ID_RE.match(value):
+        raise ValueError(
+            f"{field} entry {value!r} is not a valid ticket id "
+            "(expected T-#### or T-draft-<8 hex chars>)"
+        )
+    return value
+
+
+def _validate_blocked_by(value: Sequence[str]) -> tuple[str, ...]:
+    """`field_validator` body shared by `Ticket.blocked_by` and
+    `TicketSpec.blocked_by` (T-1132): every entry must be a well-formed
+    ticket id, empty string included as the T-0380 incident's own
+    reproduction."""
+    return tuple(_validate_ticket_id_ref(v, field="blocked_by") for v in value)
+
+
+def _validate_parent(value: str | None) -> str | None:
+    """`field_validator` body shared by `Ticket.parent` and
+    `TicketSpec.parent` (T-1132): `None` (no parent) passes through
+    unchanged; a present value must be a well-formed ticket id."""
+    if value is None:
+        return None
+    return _validate_ticket_id_ref(value, field="parent")
+
 
 # frob:doc docs/modules/tickets.md#data-models
 # frob:doc docs/guides/extending/ticket-kinds-states.md#ticket-kinds-and-states
@@ -1245,6 +1307,22 @@ class Ticket(BaseModel):
         structured `{text, evidence}` form -- see `_coerce_acceptance`."""
         return _coerce_acceptance(value)
 
+    # T-1132: deliberately NOT validating `blocked_by`/`parent` here (unlike
+    # `TicketSpec` below). `Ticket.model_validate` is also the LEDGER LOAD
+    # path (`frob.tickets._store._parse_ledger`/`_validate`) -- a strict
+    # field validator here would hard-fail loading the ENTIRE shared ledger
+    # (all ~1000+ tickets, active+archive) the moment a single historical
+    # malformed edge exists anywhere in it, a much worse failure mode than
+    # the T-0380 incident itself (one ticket silently miscomputed, not
+    # every command refusing to run). New-edge validation lives at the
+    # actual write sites instead: `TicketSpec` (used only by `frob ticket
+    # new`, never by the loader) and the `_block` CLI verb's explicit
+    # `is_valid_ticket_ref` check (`model_copy` bypasses field validators
+    # entirely regardless, so putting one here would not even close that
+    # gap). `frob doctor`'s malformed-edge scan (T-1132) is the READ-side
+    # complement: it flags an EXISTING bad edge without depending on strict
+    # `Ticket` construction succeeding.
+
     # frob:ticket T-0838
     # frob:tests tests/test_tickets.py::TestUnknownFieldForwardCompat.test_unknown_field_logs_warning_named  # noqa: E501
     @model_validator(mode="after")
@@ -1333,6 +1411,23 @@ class TicketSpec(BaseModel):
         """Accept legacy plain-string acceptance items alongside the T-0572
         structured `{text, evidence}` form -- see `_coerce_acceptance`."""
         return _coerce_acceptance(value)
+
+    # frob:ticket T-1132
+    @field_validator("blocked_by")
+    @classmethod
+    def _validate_blocked_by_field(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        """Reject an empty-string or malformed `blocked_by` entry at
+        `frob ticket new` time (T-1132, the T-0380 incident) -- see
+        `_validate_blocked_by`."""
+        return _validate_blocked_by(value)
+
+    # frob:ticket T-1132
+    @field_validator("parent")
+    @classmethod
+    def _validate_parent_field(cls, value: str | None) -> str | None:
+        """Reject a malformed `parent` entry at `frob ticket new` time
+        (T-1132) -- see `_validate_parent`."""
+        return _validate_parent(value)
 
 
 # frob:doc docs/modules/tickets.md#data-models

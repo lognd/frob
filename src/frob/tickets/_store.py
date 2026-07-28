@@ -310,6 +310,57 @@ def _dir_path_for(root: Path, ticket: Ticket) -> Path:
 # ---------------------------------------------------------------------------
 
 
+# frob:ticket T-1132
+# frob:doc docs/modules/tickets.md#storage-internals
+# frob:tests tests/test_tickets.py::TestIterRawLedgerFrontmatter.test_returns_raw_dict_per_ticket kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets.py::TestIterRawLedgerFrontmatter.test_skips_malformed_yaml_block_without_raising kind="unit"  # noqa: E501
+def iter_raw_ledger_frontmatter(text: str) -> list[tuple[str, dict]]:
+    """Every `<!-- ticket:ID -->` section's RAW (unvalidated) frontmatter
+    dict, tolerating a malformed YAML block by skipping just that one
+    section (logged) rather than failing the whole scan -- unlike
+    `_parse_ledger`, which is strict end to end (any single malformed
+    section fails the entire load, matching how the shared ledger's other
+    consumers need an all-or-nothing view).
+
+    T-1132: this is the read-side complement `frob doctor`'s malformed-
+    edge scan needs -- `Ticket.model_validate` deliberately does NOT
+    reject a malformed `blocked_by`/`parent` entry (see `Ticket`'s
+    docstring note in `frob.tickets._models`), so a strict loader like
+    `_parse_ledger`/`load_all` cannot be doctor's data source for finding
+    one: a single bad edge anywhere in the ~1000+-ticket shared ledger
+    would otherwise make EVERY `frob` command relying on `load_all` refuse
+    outright the moment it existed. Reading raw dicts here means doctor
+    can find and report a malformed edge without the rest of the toolchain
+    ever being at risk of the same hard failure."""
+    out: list[tuple[str, dict]] = []
+    markers = list(_LEDGER_MARKER_RE.finditer(text))
+    for i, marker in enumerate(markers):
+        ticket_id = marker.group(1)
+        chunk_end = markers[i + 1].start() if i + 1 < len(markers) else len(text)
+        chunk = text[marker.end() : chunk_end]
+        fence = _YAML_FENCE_RE.match(chunk.lstrip("\n"))
+        if fence is None:
+            _log.warning(
+                "tickets: %s section has no ```yaml frontmatter, skipping "
+                "in raw scan",
+                ticket_id,
+            )
+            continue
+        try:
+            data = yaml.safe_load(fence.group(1))
+        except yaml.YAMLError as exc:
+            _log.warning(
+                "tickets: %s frontmatter is not valid YAML, skipping in "
+                "raw scan: %s",
+                ticket_id,
+                exc,
+            )
+            continue
+        if isinstance(data, dict):
+            out.append((ticket_id, data))
+    return out
+
+
 def _parse_ledger(text: str) -> Result[dict[str, Ticket], TicketError]:
     """Parse a `tickets.md` ledger into an id -> Ticket map (strict)."""
     tickets: dict[str, Ticket] = {}

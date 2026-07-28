@@ -173,6 +173,96 @@ class _DerivedArtifactDrift(BaseModel):
     current_fingerprint: str
 
 
+# frob:ticket T-1132
+# frob:doc docs/guides/install.md#malformed-ticket-edge-scan-t-1132
+class MalformedTicketEdge(BaseModel):
+    """One malformed `blocked_by`/`parent` entry found in the shared ledger
+    (T-1132, the T-0380 incident: an empty-string `blocked_by` entry left
+    a ticket silently undoable for days with nothing surfacing why)."""
+
+    model_config = {}
+
+    ticket_id: str
+    field: str  # "blocked_by" or "parent"
+    value: str
+    ledger_file: str
+
+
+def _malformed_edges_in_dict(
+    ticket_id: str, data: dict, ledger_file: str
+) -> list[MalformedTicketEdge]:
+    """Every malformed `blocked_by`/`parent` entry in one raw ticket dict
+    (T-1132) -- both fields tolerate being entirely absent (older/partial
+    ledger rows), but a PRESENT value must satisfy `is_valid_ticket_ref`."""
+    from frob.tickets import is_valid_ticket_ref
+
+    found: list[MalformedTicketEdge] = []
+    blocked_by = data.get("blocked_by") or ()
+    if isinstance(blocked_by, (list, tuple)):
+        for entry in blocked_by:
+            if not isinstance(entry, str) or not is_valid_ticket_ref(entry):
+                found.append(
+                    MalformedTicketEdge(
+                        ticket_id=ticket_id,
+                        field="blocked_by",
+                        value=str(entry),
+                        ledger_file=ledger_file,
+                    )
+                )
+    parent = data.get("parent")
+    if parent is not None and (
+        not isinstance(parent, str) or not is_valid_ticket_ref(parent)
+    ):
+        found.append(
+            MalformedTicketEdge(
+                ticket_id=ticket_id,
+                field="parent",
+                value=str(parent),
+                ledger_file=ledger_file,
+            )
+        )
+    return found
+
+
+# frob:ticket T-1132
+# frob:doc docs/guides/install.md#malformed-ticket-edge-scan-t-1132
+# frob:tests tests/system/test_cli_doctor.py kind="integration"
+def scan_malformed_ticket_edges(root: Path) -> list[MalformedTicketEdge]:
+    """Every malformed `blocked_by`/`parent` entry across `tickets.md` AND
+    `tickets-archive.md` (T-1132) -- an empty string, or anything not
+    shaped like a real `T-####`/`T-draft-<hex>` id.
+
+    Reads RAW frontmatter dicts (`frob.tickets._store.
+    iter_raw_ledger_frontmatter`), never the strict `Ticket` loader --
+    `Ticket.model_validate` deliberately does NOT reject a malformed edge
+    (see that model's docstring), specifically so this scan can find one
+    WITHOUT the rest of the toolchain (`load_all` and everything built on
+    it) being at risk of a single bad edge hard-failing the entire shared
+    ledger's load. Missing ledger file(s) (a fresh checkout with no
+    `tickets-archive.md` yet) contribute zero findings, not an error."""
+    from frob.tickets._store import archive_path, iter_raw_ledger_frontmatter, ledger_path
+
+    found: list[MalformedTicketEdge] = []
+    for path in (ledger_path(root), archive_path(root)):
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8")
+        for ticket_id, data in iter_raw_ledger_frontmatter(text):
+            found.extend(_malformed_edges_in_dict(ticket_id, data, path.name))
+    return found
+
+
+def _malformed_edges_remediation(edges: tuple[MalformedTicketEdge, ...]) -> str:
+    """Remediation hint naming each malformed edge's ticket/field (T-1132)."""
+    names = ", ".join(f"{e.ticket_id}.{e.field}={e.value!r}" for e in edges)
+    return (
+        f"malformed ticket edge(s) found: {names} -- fix by hand in tickets.md/"
+        "tickets-archive.md (empty-string or non-T-#### blocked_by/parent "
+        "entries are refused going forward at write time, but an existing "
+        "one is not auto-repaired)"
+    )
+
+
 def _sqlite_validity(data: bytes) -> str | None:
     """`None` if `data` starts with the SQLite magic header, else a short
     corruption detail string -- never raises on garbage bytes."""
@@ -400,7 +490,10 @@ class DoctorReport(BaseModel):
     way a corrupt (`derived_state`) artifact does. `mutate_journals` is
     the opposite: any entry DOES make `healthy` False -- it names a real
     source file currently sitting in mutant form on disk, not disposable
-    cache churn."""
+    cache churn. `malformed_ticket_edges` (T-1132) is the same class as
+    `mutate_journals`: any entry DOES make `healthy` False -- an empty-
+    string or malformed `blocked_by`/`parent` entry is a real, silently
+    wrong ledger row (the T-0380 incident), not disposable state."""
 
     model_config = {}
 
@@ -410,6 +503,7 @@ class DoctorReport(BaseModel):
     drift: list[_DerivedArtifactDrift] = []
     scaffold_blocks: list[ManagedBlockStatus] = []
     mutate_journals: list[StaleJournal] = []
+    malformed_ticket_edges: list[MalformedTicketEdge] = []
     healthy: bool
     remediation: str | None = None
 
@@ -442,11 +536,12 @@ def _combined_remediation(
     corrupt: tuple[DerivedArtifactStatus, ...],
     scaffold_needs_apply: tuple[ManagedBlockStatus, ...] = (),
     stale_mutate_journals: tuple[StaleJournal, ...] = (),
+    malformed_ticket_edges: tuple[MalformedTicketEdge, ...] = (),
 ) -> str | None:
     """The full remediation text for a `DoctorReport`: natives hint,
     derived-state hint, scaffold-conformance hint (T-0736), stale mutate-
-    journal hint (T-0857), or all joined -- `None` only when every part is
-    clean."""
+    journal hint (T-0857), malformed-ticket-edge hint (T-1132), or all
+    joined -- `None` only when every part is clean."""
     parts = []
     if not natives_healthy:
         parts.append(REMEDIATION_HINT)
@@ -456,6 +551,8 @@ def _combined_remediation(
         parts.append(_scaffold_remediation(scaffold_needs_apply))
     if stale_mutate_journals:
         parts.append(_mutate_journal_remediation(stale_mutate_journals))
+    if malformed_ticket_edges:
+        parts.append(_malformed_edges_remediation(malformed_ticket_edges))
     return " | ".join(parts) if parts else None
 
 
@@ -481,6 +578,10 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     `.frob/mutate-backup/` (`list_stale_journals`) -- UNLIKE `drift`, a
     present journal DOES make `healthy` False (see `DoctorReport`'s
     docstring).
+
+    T-1132: also scans `tickets.md`/`tickets-archive.md` for existing
+    malformed `blocked_by`/`parent` entries (`scan_malformed_ticket_edges`,
+    the T-0380 incident) -- any finding DOES make `healthy` False.
 
     T-0879: the fingerprint-read + manifest-write sequence
     (`verify_derived_state` through `_write_drift_manifest`) holds
@@ -509,12 +610,14 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     scaffold_needs_apply = tuple(s for s in scaffold_blocks if not s.present or s.stale)
 
     stale_mutate_journals = list_stale_journals(resolved_root)
+    malformed_ticket_edges = tuple(scan_malformed_ticket_edges(resolved_root))
 
     healthy = (
         natives_healthy
         and not corrupt
         and not scaffold_needs_apply
         and not stale_mutate_journals
+        and not malformed_ticket_edges
     )
     report = DoctorReport(
         frob_version=_frob_version(),
@@ -523,19 +626,26 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         drift=list(drift),
         scaffold_blocks=list(scaffold_blocks),
         mutate_journals=list(stale_mutate_journals),
+        malformed_ticket_edges=list(malformed_ticket_edges),
         healthy=healthy,
         remediation=_combined_remediation(
-            natives_healthy, corrupt, scaffold_needs_apply, stale_mutate_journals
+            natives_healthy,
+            corrupt,
+            scaffold_needs_apply,
+            stale_mutate_journals,
+            malformed_ticket_edges,
         ),
     )
     _log.info(
         "doctor: healthy=%s extensions=%s derived_state_corrupt=%s drift=%s "
-        "scaffold_needs_apply=%s stale_mutate_journals=%s",
+        "scaffold_needs_apply=%s stale_mutate_journals=%s "
+        "malformed_ticket_edges=%s",
         healthy,
         extensions,
         [d.name for d in corrupt],
         [d.name for d in drift],
         [s.block_id for s in scaffold_needs_apply],
         [s.target for s in stale_mutate_journals],
+        [f"{e.ticket_id}.{e.field}" for e in malformed_ticket_edges],
     )
     return report
