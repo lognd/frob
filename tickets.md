@@ -542,7 +542,7 @@ existing test surface, all passing (see Evidence); `git diff main
 ```yaml
 id: T-0395
 title: 'advisories: large-file residue after calibrated thresholds (T-0373)'
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -561,7 +561,6 @@ After T-0373 re-thresholds frob-arch large-file to 800 lines / 60 (function), ad
 
 ## Failure log
 - 2026-07-28 attempt 1: 31 in-scope large-file findings after T-0373 calibration (43 total minus 12 strata/vet sibling-owned), up to 12047 lines (gates/__init__.py); large-file is unwaivable per docs/modules/gates.md, real splits needed -- too large for one pass, decomposition tickets filed
-
 <!-- ticket:T-0397 -->
 ```yaml
 id: T-0397
@@ -5301,7 +5300,7 @@ ticket's own acceptance framing.
 ```yaml
 id: T-1070
 title: add frob ticket tier CLI verb to mutate an existing ticket's tier
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -5340,3 +5339,6 @@ in src/frob/app/ticket_runner.py. Keep the existing structural rules
 (epic/story parent-child conventions from T-0715) intact -- this ticket
 only adds the missing mutate-in-place verb, it does not change tier
 semantics.
+
+## Drop reason
+- 2026-07-28: exact duplicate of T-1069 (same title, same body intent) from a filing race
