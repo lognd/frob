@@ -1549,6 +1549,21 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/_waive.py
+- src/frob/gates/__init__.py
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: cohering _waive.py into smaller sibling modules to clear ARCH102 requires
+    updating __init__.py's re-export imports to the new module paths, the same mechanical
+    consequence T-1072 hit when it first created _waive.py
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/test_waive_gate.py::TestWaive006CommentChannel::test_ticket_attr_bound_to_done_ticket_fires
+- tests/test_waive_gate.py::TestWaive006StrataChannel::test_strata_ticket_attr_bound_to_done_ticket_fires
+- tests/test_waive_gate.py::TestWaive007CommentChannel::test_ticket_attr_bound_to_unresolvable_id_fires
+- tests/test_waive_gate.py::TestWaive007StrataChannel::test_strata_ticket_attr_bound_to_unresolvable_id_fires
+- tests/test_gates.py::TestActiveTicket::test_explicit_flag_wins
 threat: null
 component: null
 ```
