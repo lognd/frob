@@ -30,6 +30,7 @@ import os
 import sys
 from typing import IO, Literal
 
+# frob:doc docs/modules/render.md#color-resolution
 ColorFlag = Literal["auto", "always", "never"]
 
 

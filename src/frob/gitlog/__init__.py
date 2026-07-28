@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 from frob.process._guard import guarded_subprocess_run
 
+# frob:doc docs/commands/gitlog.md#public-api
 GranularityLevel = Literal["major", "user", "full", "changelog"]
 
 _CC_PATTERN = re.compile(

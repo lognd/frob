@@ -7,6 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+# frob:doc docs/modules/arch.md#checks
 ArchCategory = Literal[
     "long-function",
     "god-class",
@@ -210,6 +211,7 @@ ArchCategory = Literal[
 #: "built and tested first, dispatch wiring landed later" precedent
 #: `frob.arch._exceptions.check_errors_as_values`'s own module docstring
 #: already establishes for exactly this class of scope carve-out.
+# frob:doc docs/modules/arch.md#arch-suggestion
 ArchSeverity = Literal["warning", "suggestion", "info", "error"]
 
 

@@ -18,6 +18,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+# frob:doc docs/modules/process.md#public-api
 Severity = Literal["error", "warning", "note", "info"]
 
 

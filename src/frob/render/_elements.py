@@ -34,6 +34,7 @@ from typani.result import Err, Ok, Result
 from frob.render._errors import RenderError
 from frob.render._palette import accent, critical, good, muted, warn
 
+# frob:doc docs/modules/render.md#element-vocabulary
 Status = Literal["ok", "warn", "error", "skip"]
 
 _STATUS_PAINTERS = {
