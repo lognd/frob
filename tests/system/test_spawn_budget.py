@@ -40,6 +40,7 @@ from frob.tickets._models import Origin
 
 
 # frob:ticket T-0908
+# frob:waive DEAD001 reason="T-1024: pytest autouse fixture, invoked by the test runner for every test in this module without ever appearing as a name/call token anywhere -- the one DEAD001 false-positive class autouse fixtures fall into, same disposition as tests/test_dup_cross_lang.py's own autouse fixture waiver"  # noqa: E501
 @pytest.fixture(autouse=True)
 def _clear_worktree_lease_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """T-0908: strip `FROB_WORKTREE`/`FROB_AGENT` for the duration of every

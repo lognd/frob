@@ -46,6 +46,7 @@ class TestEvaluateCrashContractsNoContracts:
 
 
 class TestNoHangCheck:
+    # invariant spec: [INV-027](invariants/INV-027.md)
     def test_missing_timeout_into_crashable_node_fails_closed(self):
         # frob:tests src/frob/strata/_crash.py::evaluate_crash_contracts kind="unit"
         model = KernelModel(

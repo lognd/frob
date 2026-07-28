@@ -101,6 +101,7 @@ class TestServeGetattr:
 
 
 class TestBuildServer:
+    # invariant spec: [INV-021](invariants/INV-021.md)
     def test_registers_all_five_tools(self, tmp_path: Path) -> None:
         # Name kept as-is despite now covering 10 tools (T-0177 added 2 more,
         # T-0325 added frob_affects, T-0733 added frob_daemon_status,

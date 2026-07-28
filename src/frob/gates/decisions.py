@@ -136,6 +136,7 @@ def _anchored_decisions(snapshot: GraphSnapshot) -> set[str]:
 # frob:invariant INV-010
 # frob:tests tests/test_decisions.py::test_dec002_accepted_decision_unanchored
 # frob:enforces CHK-GATE-DEC002
+# invariant spec: [INV-010](invariants/INV-010.md)
 def _dec002(decisions: tuple[Decision, ...], anchored: set[str]) -> list:
     """DEC002: an accepted decision has no `frob:decision` anchor in code."""
     from frob.gates._models import Severity, Violation

@@ -75,6 +75,7 @@ def test_record_ticket_event_shape(tmp_path: Path):
     }
 
 
+# invariant spec: [INV-022](invariants/INV-022.md)
 def test_redact_command_hides_recognizable_secret():
     # frob:tests src/frob/app/telemetry.py::redact_command
     fake_key = "sk-ant-api03-" + ("a" * 95)

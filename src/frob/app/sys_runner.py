@@ -633,7 +633,6 @@ def _log_contention_violations(report: ResourceContentionReport) -> None:
         )
 
 
-# frob:doc docs/strata/host.md#resource-contention-sys2xx-t-0699
 # frob:ticket T-0724
 def _print_contention_report(report: ResourceContentionReport) -> None:
     """Print `frob sys audit`'s SYS2xx resource-contention summary (T-0724
@@ -697,7 +696,6 @@ def _log_reliability_violations(report: ReliabilityReport) -> None:
         )
 
 
-# frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
 # frob:ticket T-0640
 # frob:ticket T-0644
 def _print_reliability_report(report: ReliabilityReport) -> None:
@@ -860,6 +858,8 @@ def _run_audit(cfg: AppConfig) -> None:
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:doc docs/strata/host.md#resource-contention-sys2xx-t-0699
+# frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
 # frob:ticket T-0084
 # frob:ticket T-0085
 # frob:ticket T-0086

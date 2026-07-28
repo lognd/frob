@@ -603,6 +603,7 @@ class TestErrors:
         assert result.is_err
         assert result.danger_err == LangError.IoFailed
 
+    # invariant spec: [INV-015](invariants/INV-015.md)
     def test_syntax_error_yields_partial_symbols(self) -> None:
         result = parse_file(_FIXTURES / "broken.py")
         assert result.is_ok

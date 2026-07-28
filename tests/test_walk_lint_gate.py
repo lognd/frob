@@ -43,6 +43,7 @@ def _commit(root: Path, message: str = "commit") -> None:
 class TestRglob:
     """WALK001: raw `Path.rglob` always fires (unconditionally recursive)."""
 
+    # invariant spec: [INV-005](invariants/INV-005.md)
     def test_raw_rglob_fires(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_python_walks
         src = "def f(root):\n    return list(root.rglob('*'))\n"

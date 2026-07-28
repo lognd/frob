@@ -4518,6 +4518,7 @@ class TestFingerprintScan:
 
 
 class TestObfuscationEnsemble:
+    # invariant spec: [INV-025](invariants/INV-025.md)
     def test_high_entropy_string_flagged(self) -> None:
         # frob:tests src/frob/vet/_obfuscation.py::_scan_text_obfuscation kind="unit"
         from frob.vet._obfuscation import _scan_text_obfuscation
@@ -6282,6 +6283,7 @@ class TestEvasionTaxonomyExhaustiveness:
 
     def test_every_doc_heading_recognized(self) -> None:
         # frob:tests src/frob/vet/_evasion_coverage.py::_DOC_HEADING_TO_LANGUAGE_KEY kind="unit"  # noqa: E501
+        # frob:waive COV006 reason="T-1024: genuinely read directly by this test (dict subscript/iteration/membership, not a call), which frob.graph.callgraph's best-effort reachability heuristic cannot see"  # noqa: E501
         # Dangling-heading check: every `## <Language>` heading actually
         # present in the taxonomy doc must be a key
         # `_DOC_HEADING_TO_LANGUAGE_KEY` recognizes -- a renamed heading
@@ -6307,6 +6309,7 @@ class TestEvasionTaxonomyExhaustiveness:
 
     def test_every_litmus_path_resolves_to_a_real_test(self) -> None:
         # frob:tests src/frob/vet/_evasion_coverage.py::_EVASION_LITMUS_MAP kind="unit"
+        # frob:waive COV006 reason="T-1024: genuinely read directly by this test (dict subscript/iteration/membership, not a call), which frob.graph.callgraph's best-effort reachability heuristic cannot see"  # noqa: E501
         # Dangling-ref check (direction 2): every "Class.method" string in
         # _EVASION_LITMUS_MAP must be a REAL class+method actually defined
         # in this file -- a typo'd or renamed-but-not-updated reference
@@ -6340,6 +6343,7 @@ class TestEvasionTaxonomyExhaustiveness:
         self,
     ) -> None:
         # frob:tests src/frob/vet/_evasion_coverage.py::_EVASION_LITMUS_MAP kind="unit"
+        # frob:waive COV006 reason="T-1024: genuinely read directly by this test (dict subscript/iteration/membership, not a call), which frob.graph.callgraph's best-effort reachability heuristic cannot see"  # noqa: E501
         # Acceptance [0]: "given the full evasion taxonomy denominator,
         # when the meta-test runs, then every entry maps to >=1 registered
         # litmus fixture." Acceptance [1]: "given a new taxonomy entry
@@ -6364,6 +6368,7 @@ class TestEvasionTaxonomyExhaustiveness:
 
     def test_map_has_no_orphaned_language_category_pairs(self) -> None:
         # frob:tests src/frob/vet/_evasion_coverage.py::_EVASION_LITMUS_MAP kind="unit"
+        # frob:waive COV006 reason="T-1024: genuinely read directly by this test (dict subscript/iteration/membership, not a call), which frob.graph.callgraph's best-effort reachability heuristic cannot see"  # noqa: E501
         # Reverse sanity: every (language, category) key in
         # _EVASION_LITMUS_MAP must correspond to a pair the doc actually has
         # at least one row for -- catches a typo'd language/category key
@@ -6379,6 +6384,7 @@ class TestEvasionTaxonomyExhaustiveness:
 
     def test_combined_registered_total_matches_112_entry_denominator(self) -> None:
         # frob:tests src/frob/vet/_evasion_coverage.py::_EVASION_LITMUS_MAP kind="unit"
+        # frob:waive COV006 reason="T-1024: genuinely read directly by this test (dict subscript/iteration/membership, not a call), which frob.graph.callgraph's best-effort reachability heuristic cannot see"  # noqa: E501
         # T-0339's own framing (and `docs/design/registry/evasion.yaml`'s
         # 112 EVA-<LANG>-<S|R><NN> ids, reconciled in
         # `docs/design/registry/RECONCILIATION.md`) name 112 as the

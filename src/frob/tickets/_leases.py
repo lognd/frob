@@ -196,22 +196,6 @@ def _log_rejected_lease_once(path: Path, record: _LeaseRecord) -> None:
         )
 
 
-# frob:ticket T-0773
-def _clear_lease_caches() -> None:
-    """Drop all T-0773 memoization state (`gitio`'s common-dir cache via
-    `reset_common_dir_cache`, `_lease_file_cache`, `_stale_lease_logged`)
-    -- available to tests that need to simulate a fresh CLI invocation (or
-    a fresh daemon poll cycle) within one interpreter; not required for
-    correctness on the read path any more (`read_all_leases` self-heals
-    against sibling-process writes via per-file stat comparison), but
-    still useful to force a clean-slate re-parse."""
-    gitio.reset_common_dir_cache()
-    with _cache_lock:
-        _lease_file_cache.clear()
-        _stale_lease_logged.clear()
-        _ambiguous_liveness_logged.clear()
-
-
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 class LeaseError(ErrorSet):
     """Fallible outcomes of the cross-worktree lease side-channel (T-0473)."""

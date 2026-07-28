@@ -57,6 +57,7 @@ class TestResolveColor:
         assert resolve_color(_FakeStream(tty=False)) is False
 
     # frob:tests src/frob/render/_color.py::resolve_color
+    # invariant spec: [INV-020](invariants/INV-020.md)
     def test_no_color_flag_wins_over_everything(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -215,6 +216,7 @@ class TestElementsPlainShapeInvariant:
     # frob:invariant INV-040
     # frob:ticket T-0585
     @given(st.text(min_size=0, max_size=40))
+    # invariant spec: [INV-040](invariants/INV-040.md)
     def test_heading_subhead_shape_stable_under_color(self, text: str) -> None:
         assert _ANSI_RE.sub("", heading(text, color=True)) == heading(text, color=False)
         assert _ANSI_RE.sub("", subhead(text, color=True)) == subhead(text, color=False)

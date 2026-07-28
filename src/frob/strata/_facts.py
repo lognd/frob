@@ -219,6 +219,7 @@ class FactBase:
         return paths
 
     # frob:invariant INV-028
+    # invariant spec: [INV-028](invariants/INV-028.md)
     def worst_age(self, target: str) -> tuple[float, tuple[str, ...]]:
         """Worst-case accumulated staleness reaching `target`, in seconds.
 

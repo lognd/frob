@@ -62,6 +62,7 @@ class TestNetEnabled:
 
 # frob:ticket T-0200
 class TestGuardedSubprocessRun:
+    # invariant spec: [INV-019](invariants/INV-019.md)
     def test_disabled_returns_err_without_spawning(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:

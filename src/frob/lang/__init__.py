@@ -479,6 +479,7 @@ _parse_file_memoized: Callable[[Path], Result[ParsedFile, LangError]] | None = N
 # frob:invariant INV-015
 # frob:ticket T-0410
 # frob:tests tests/unit/test_memo.py::test_parse_file_second_call_is_memo_hit
+# invariant spec: [INV-015](invariants/INV-015.md)
 # frob:tests tests/test_lang.py::TestErrors.test_syntax_error_yields_partial_symbols
 def parse_file(path: Path) -> Result[ParsedFile, LangError]:
     """Read, parse, and extract `path` into a `ParsedFile` (dispatch by extension).

@@ -1,3 +1,4 @@
+# invariant spec: [INV-033](invariants/INV-033.md)
 """HOST001/HOST002: movement-impossibility proofs over `std.host`
 manifests (T-0256, docs/strata/host.md#movement-impossibility-proofs).
 
@@ -260,7 +261,6 @@ class HostIsolationViolation(BaseModel):
     detail: str = ""
 
 
-# frob:doc docs/strata/host.md#windows-wiring-t-0606
 class _PathClaim(BaseModel):
     """One owned filesystem/registry path, unified across linux `owns`
     (`HostOwns`, POSIX MODE) and windows `acl` (`HostAcl`, NTFS DACL
@@ -337,9 +337,6 @@ def _net_acl_levels_by_principal(
     return net_allow, net_deny
 
 
-# frob:doc \
-# docs/strata/host.md#multi-ace-deny-overrides-allow-join-and-the-write_dac-indirection\
-# -corner-t-0792t-0825
 def _join_acl_entries(entries: list[HostAcl]) -> bool:
     """T-0792: real NTFS deny-overrides-allow join across EVERY ACE
     declared for one path, replacing the last-declaration-wins collapse
@@ -500,16 +497,6 @@ def _owned_paths_by_user(
     return claims
 
 
-def _listens_by_user(
-    user_nodes: list[str], manifests: dict[str, HostManifest]
-) -> set[int]:
-    """Every port a user's node(s) declare `listens` on."""
-    ports: set[int] = set()
-    for node_id in user_nodes:
-        ports.update(manifests[node_id].listens)
-    return ports
-
-
 def _listening_surface_by_user(
     user_nodes: list[str], manifests: dict[str, HostManifest]
 ) -> set[str]:
@@ -531,7 +518,7 @@ def _groups_by_user(
 ) -> set[str]:
     """Every OS group a user's node(s) declare `group` membership in
     (T-0272) -- the union HOST001's shared-group sub-target intersects
-    across a pair, same shape as `_listens_by_user`."""
+    across a pair, same shape as `_listening_surface_by_user`."""
     groups: set[str] = set()
     for node_id in user_nodes:
         groups.update(manifests[node_id].group)
@@ -1095,6 +1082,10 @@ def _vertical_user_violations(
 
 
 # frob:doc docs/strata/host.md#movement-impossibility-proofs
+# frob:doc docs/strata/host.md#windows-wiring-t-0606
+# frob:doc \
+# docs/strata/host.md#multi-ace-deny-overrides-allow-join-and-the-write_dac-indirection\
+# -corner-t-0792t-0825
 # frob:invariant INV-033
 def evaluate_vertical_isolation(
     model: KernelModel,

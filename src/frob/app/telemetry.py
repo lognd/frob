@@ -61,6 +61,7 @@ def iso_now() -> str:
 
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
 # frob:invariant INV-022
+# invariant spec: [INV-022](invariants/INV-022.md)
 def redact_command(text: str) -> str:
     """`text` with any recognizable provider-secret substring replaced by
     `frob.gates._secrets`'s fixed-shape placeholder (T-0157 reuse).

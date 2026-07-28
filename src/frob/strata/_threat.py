@@ -1302,6 +1302,7 @@ def _catalog_violation(view: str, cwe_id: str) -> ThreatViolation:
 
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
 # frob:invariant INV-035
+# invariant spec: [INV-035](invariants/INV-035.md)
 def check_catalog_completeness(
     view: str,
     catalog: tuple[WeaknessEntry, ...] = CWE_CATALOG,
@@ -1564,7 +1565,6 @@ def _discharge_violation(
     return ThreatViolation(rule="THREAT003", cwe=entry.id, node=node_id, detail=detail)
 
 
-# frob:doc docs/strata/threat.md#phasing
 _FOREIGN_TRUST = "foreign"
 
 
@@ -1906,6 +1906,7 @@ def _mitigation_is_chokepoint(
 
 
 # frob:invariant INV-029
+# invariant spec: [INV-029](invariants/INV-029.md)
 # frob:tests tests/unit/strata/test_threat.py::TestDischargeCompleteness.test_discharge_claim_below_required_rung_is_a_violation  # noqa: E501
 def _check_discharge_shape_and_rung(
     entry: WeaknessEntry,

@@ -352,6 +352,7 @@ def _symbols_by_short_name(
 
 # frob:doc docs/modules/perf.md#public-api
 # frob:ticket T-0290
+# invariant spec: [INV-018](invariants/INV-018.md)
 def recursion_rules(
     snapshot: GraphSnapshot, files: Sequence[ParsedFile]
 ) -> tuple[Violation, ...]:

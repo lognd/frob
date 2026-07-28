@@ -62,7 +62,6 @@ def _walk_tsx(root: Node) -> tuple[RawSymbol, ...]:
     return _walk_typescript(root)
 
 
-# frob:doc docs/guides/extending/language-grammar-handlers.md#language-grammar-handlers
 _WALKERS = {
     "python": _walk_python,
     "typescript": _walk_typescript,
@@ -87,6 +86,7 @@ _DOCSTRING_COMMENT_WALKERS = {
 
 
 # frob:doc docs/modules/lang.md#extraction-api
+# frob:doc docs/guides/extending/language-grammar-handlers.md#language-grammar-handlers
 def extract(
     tree: Tree, source: bytes, language: str
 ) -> tuple[tuple[RawSymbol, ...], tuple[RawComment, ...]]:

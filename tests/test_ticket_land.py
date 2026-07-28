@@ -5499,7 +5499,8 @@ def _synthetic_ticket(
 class TestNewerWinnerQualifiedPreferenceProperty:
     """T-0757: an establish-property obligation (INV008, `frob:invariant
     INV-043 establishes="..."` anchored on `_land._newer`) for T-0682's
-    own qualified-preference rule -- exhaustively over the small state
+    own qualified-preference rule (invariant spec:
+    `invariants/INV-043.md`) -- exhaustively over the small state
     space `_newer_winner` actually discriminates on (rank in {0,1,2,3},
     Done-report presence, evidence count), rather than the hand-picked
     field-incident cases `TestSpliceLedgerRicherStatePreference` covers.

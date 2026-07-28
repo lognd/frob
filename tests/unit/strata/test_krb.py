@@ -87,6 +87,7 @@ class TestKrbManifest:
 
 class TestKrbTrustFlows:
     # frob:tests src/frob/strata/_krb.py::krb_trust_flows kind="unit"
+    # invariant spec: [INV-031](invariants/INV-031.md)
     def test_sync(self):
         # T-0282: transitive=False synthesizes the krb_no_transit attr too,
         # which _facts.py::FactBase.reachable reads into the kernel's

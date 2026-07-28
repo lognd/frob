@@ -53,7 +53,6 @@ __all__ = [
 
 _log = get_logger(__name__)
 
-# frob:doc docs/modules/graph.md#protocol-summary-engine
 # frob:ticket T-0809
 # Re-exported from `frob.graph.callgraph` (T-0809) -- ONE sentinel string,
 # not two. `callgraph.build_call_graph` is now the real producer of this

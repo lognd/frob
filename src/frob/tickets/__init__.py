@@ -951,6 +951,7 @@ def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
 # frob:invariant INV-032
 # frob:tests tests/test_tickets.py::TestDoable.test_blocked_excluded
 # frob:ticket T-0715
+# invariant spec: [INV-032](invariants/INV-032.md)
 def _doable_candidates(queue: TicketQueue) -> list[Ticket]:
     """Queued/planned LEAF tickets (tier=TICKET) that currently have no open
     blockers, unordered. T-0715: an EPIC/STORY never surfaces here even if
@@ -2157,6 +2158,7 @@ def brief_ticket(root: Path, ticket_id: str) -> Result[str, TicketError]:
 # frob:waive DRIFT001 reason="T-0453 added root/ignore_lease params; frob.lock ack out of scope, no inline-waivable syntax for JSON -- reviewer re-acks at land"  # noqa: E501
 # frob:invariant INV-024
 # frob:ticket T-0715
+# invariant spec: [INV-024](invariants/INV-024.md)
 def doable(
     queue: TicketQueue,
     root: Path | None = None,

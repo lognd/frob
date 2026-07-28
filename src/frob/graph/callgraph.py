@@ -306,6 +306,7 @@ def _parse_package(root: Path, paths: Sequence[str]) -> dict[str, list]:
 # frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_does_not_mark_unresolved_public_looking_call  # noqa: E501
 # frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_default_preserves_old_silent_omission_behavior  # noqa: E501
 # frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_resolved_private_callee_is_not_also_unresolved  # noqa: E501
+# invariant spec: [INV-014](invariants/INV-014.md)
 def build_call_graph(
     root: Path, paths: Sequence[str], *, mark_unresolved: bool = False
 ) -> CallGraph:

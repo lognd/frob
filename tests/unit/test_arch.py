@@ -6930,8 +6930,8 @@ class TestProtocolSummaryEngine:
 
 
 class TestSharedStateRaceHazards:
-    """`frob.arch._shared_state_race` -- unguarded-shared-write (T-0697,
-    child 4 of the T-0693 concurrency-hazard umbrella)."""
+    """`src/frob/arch/_shared_state_race.py` -- unguarded-shared-write
+    (T-0697, child 4 of the T-0693 concurrency-hazard umbrella)."""
 
     def test_unguarded_write_from_thread_submitted_function_fires(self, tmp_path):
         """A module-level dict written from a thread-submitted function
@@ -7055,7 +7055,7 @@ class TestSharedStateRaceHazards:
 
 
 class TestConcurrencyModelMismatch:
-    """`frob.arch._concurrency_model` -- gil-bound-in-threadpool and
+    """`src/frob/arch/_concurrency_model.py` -- gil-bound-in-threadpool and
     ipc-overhead-in-processpool (T-0698, child 5 of the T-0693
     concurrency-hazard umbrella)."""
 

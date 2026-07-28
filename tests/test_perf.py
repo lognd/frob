@@ -519,6 +519,7 @@ def test_perf003_call_operand_join_stays_narrow_no_recursive_unwind(tmp_path):
     assert not any(v.rule == "PERF003" for v in violations)
 
 
+# invariant spec: [INV-018](invariants/INV-018.md)
 def test_perf005_fires_on_unproven_self_recursion(tmp_path):
     """PERF005: a self-recursive function with no descent/guard shape and
     no `frob:invariant terminates` directive is unproven -- ERROR."""

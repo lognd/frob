@@ -18,6 +18,7 @@ def test_get_logger_returns_named_logger():
     assert log.name == "frob.test.example"
 
 
+# invariant spec: [INV-016](invariants/INV-016.md)
 def test_below_level_filter():
     # frob:tests src/frob/logging/filter.py::_BelowLevelFilter.filter kind="unit"
     f = _BelowLevelFilter("WARNING")
@@ -27,6 +28,7 @@ def test_below_level_filter():
     assert f.filter(warn_record) is False
 
 
+# invariant spec: [INV-037](invariants/INV-037.md)
 def test_should_color_respects_no_color(monkeypatch):
     # frob:tests src/frob/logging/color.py::should_color kind="unit"
     monkeypatch.setenv("NO_COLOR", "1")

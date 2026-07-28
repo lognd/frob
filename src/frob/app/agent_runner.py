@@ -46,7 +46,6 @@ def _build_agent_parser() -> argparse.ArgumentParser:
     return p
 
 
-# frob:doc docs/modules/app.md#runners
 def _run_env(path: str) -> None:
     """`frob agent env [path]`: resolve `path`'s (default cwd) worktree
     root and print `export FROB_WORKTREE=...` / `export FROB_AGENT=1`

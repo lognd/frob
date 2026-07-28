@@ -1,4 +1,5 @@
-"""Unit tests for frob.fleet manifest loading (docs/modules/fleet.md#manifest)."""
+"""Unit tests for frob.fleet manifest loading; see `docs/modules/fleet.md`
+for the manifest-format contract this exercises."""
 
 from __future__ import annotations
 

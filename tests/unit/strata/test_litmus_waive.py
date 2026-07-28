@@ -98,6 +98,7 @@ class TestWaiveLitmus:
     # file(s) sharing the exhaustiveness-fixture arrange-act shape by design \
     # (store-backed vs non-store-backed, or per-CWE scenario variants); extracting \
     # would obscure per-scenario intent"
+    # invariant spec: [INV-036](invariants/INV-036.md)
     def test_sub_target_waiver_does_not_suppress_a_different_sub_target(self):
         """T-0174 REJECT round, the critical fixture: `node_multi` fires
         THREAT003 for BOTH CWE-78 (exec) and CWE-89 (sql). It declares

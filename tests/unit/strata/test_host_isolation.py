@@ -172,6 +172,7 @@ class TestVerticalIsolation:
     # outside this ticket's declared scope) -- kept as the historical
     # name, behavior updated to match the new derived-not-honest-gap
     # semantics (module docstring).
+    # invariant spec: [INV-033](invariants/INV-033.md)
     def test_sudoers_always_fires_as_honest_gap(self):
         """T-0272: `sudoers` fires when a user's HostManifest.sudoers is
         non-empty -- derived from the grant, not an always-fire gap

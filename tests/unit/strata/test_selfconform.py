@@ -29,6 +29,7 @@ from frob.strata._errors import StrataError
 from frob.strata._selfconform import (
     _EXTENDED_KINDS,
     _dedupe_sys100_extended_against_core,
+    _observed_all_kinds_by_node,
     _observed_extended_kinds_by_node,
     _sorted_capability_files,
 )
@@ -477,6 +478,7 @@ class TestStaleDesign:
         assert any(v.node == "widget" and "fs-read" in v.detail for v in hit)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # invariant spec: [INV-026](invariants/INV-026.md)
     def test_stale_design_skips_node_fully_within_graph_exclude(self, tmp_path: Path):
         """T-0310: a node whose ENTIRE `code=` glob resolves only to
         `[graph].exclude`'d paths (aprog-public's activities/slidegen/
@@ -1010,6 +1012,24 @@ class TestExtendedKindsDriftLock:
         assert observed == {"node.danger": frozenset({"eval"})}
         assert observed["node.danger"] <= _EXTENDED_KINDS
         assert observed["node.danger"].isdisjoint(_KIND_MAP.keys())
+
+    # frob:tests tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock.test_observed_all_kinds_by_node_normalizes_through_kind_map  # noqa: E501
+    def test_observed_all_kinds_by_node_normalizes_through_kind_map(
+        self, tmp_path: Path
+    ):
+        """`_observed_all_kinds_by_node`'s SYS101 sibling: a real
+        `subprocess.run(...)` call scans as the raw `"exec"` kind, which
+        `_KIND_MAP` maps to itself (`"exec" -> "exec"`) -- confirms the
+        normalized-view wrapper reaches a `_KIND_MAP`-covered kind end to
+        end, not just `_observed_extended_kinds_by_node`'s disjoint-kind
+        case above."""
+        src = tmp_path / "spawn.py"
+        src.write_text('import subprocess\ndef f():\n    subprocess.run(["ls"])\n')
+        binding = CodeBinding(owner={"spawn.py": "node.spawn"})
+
+        observed = _observed_all_kinds_by_node(binding, tmp_path)
+
+        assert observed == {"node.spawn": frozenset({_KIND_MAP["exec"]})}
 
 
 class TestWaiverChannel:

@@ -12,7 +12,6 @@ from frob.scaffold.project import list_project_types, render_project
 _log = get_logger(__name__)
 
 
-# frob:doc docs/guides/worktree-pool.md#cli-frob-scaffold-pool-t-0877
 # frob:ticket T-0877
 # frob:tests tests/system/test_scaffold_pool_cli.py::TestScaffoldPoolCli.test_warm_lease_status_roundtrip  # noqa: E501
 # frob:waive ARCH103 reason="T-0977: thin CLI wrapper dispatching to \
@@ -59,6 +58,7 @@ def _run_pool(cfg: AppConfig) -> None:
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:doc docs/guides/worktree-pool.md#cli-frob-scaffold-pool-t-0877
 # frob:ticket T-0736
 # frob:tests tests/system/test_cli_scaffold_apply.py::TestScaffoldApplyCli.test_apply_reports_changes  # noqa: E501
 def run(cfg: AppConfig) -> None:

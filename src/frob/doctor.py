@@ -194,7 +194,6 @@ def _json_validity(data: bytes) -> str | None:
 _VALIDATORS = {"sqlite": _sqlite_validity, "json": _json_validity}
 
 
-# frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
 def _artifact_status(
     root: Path, name: str, rel_path: str, kind: str
 ) -> DerivedArtifactStatus:
@@ -353,7 +352,6 @@ def detect_derived_state_drift(
     return tuple(drift)
 
 
-# frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
 def _derived_state_remediation(corrupt: tuple[DerivedArtifactStatus, ...]) -> str:
     """One clear remediation line naming every corrupt derived artifact and
     the exact command to clear each, instead of dozens of misleading
@@ -373,7 +371,6 @@ def _scaffold_remediation(missing_or_stale: tuple[ManagedBlockStatus, ...]) -> s
     )
 
 
-# frob:doc docs/modules/mutate.md#crash-safe-backup-journal-t-0857
 # frob:tests \
 # tests/system/test_cli_doctor.py::TestDoctorMutateJournal.test_run_diagnosis_unhealthy\
 # _with_stale_mutate_journal kind="unit"  # noqa: E501

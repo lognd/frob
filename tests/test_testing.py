@@ -207,6 +207,7 @@ class TestSelect:
         report = select_tests(snapshot, diff, SelectConfig(fallback="suite"))
         assert ALL_SENTINEL in report.selected["python"]
 
+    # invariant spec: [INV-023](invariants/INV-023.md)
     def test_reversed_directive_never_selects_the_source_symbol(
         self, tmp_path: Path
     ) -> None:

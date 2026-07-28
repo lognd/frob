@@ -56,6 +56,7 @@ def test_dec001_dangling_decision_edge(tmp_path):
     assert any(v.rule == "DEC001" and "AD-042" in v.message for v in violations)
 
 
+# invariant spec: [INV-010](invariants/INV-010.md)
 def test_dec002_accepted_decision_unanchored(tmp_path):
     _record(tmp_path, "AD-001", "accepted")
     (tmp_path / "src").mkdir()

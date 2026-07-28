@@ -508,6 +508,7 @@ class TestDoable:
         result = doable(queue)
         assert [t.id for t in result] == ["T-0002", "T-0003", "T-0001"]
 
+    # invariant spec: [INV-032](invariants/INV-032.md)
     def test_blocked_excluded(self, tmp_path: Path) -> None:
         _write(
             tmp_path,

@@ -130,6 +130,7 @@ def test_parse_rejected_record() -> None:
     assert record.cveMetadata.dateRejected != ""
 
 
+# invariant spec: [INV-009](invariants/INV-009.md)
 def test_parse_missing_file() -> None:
     # frob:tests src/frob/cve/_parser.py::parse_record kind="unit"
     """A record path that does not exist is `Err(CveError.NotFound)`, never

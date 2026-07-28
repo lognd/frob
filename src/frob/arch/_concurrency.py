@@ -328,7 +328,6 @@ def _check_self_join(
     )
 
 
-# frob:doc docs/modules/arch.md#fork-pool-hazards
 # frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_fork_after_threads_fires_when_fork_follows_thread_start  # noqa: E501

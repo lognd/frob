@@ -27,6 +27,7 @@ and checking exactly as before; nothing here is wired into
 `analyze_project` yet.
 """
 # frob:invariant INV-042 no_import="tree_sitter"
+# invariant spec: [INV-042](invariants/INV-042.md)
 # frob:tests tests/unit/test_design_invariants.py::TestInv007.test_forbidden_import_fires  # noqa: E501
 # T-1023: the frob:tests edge above is what INV005 needs to see this
 # evidence actually REACH this file's own anchor (same-file trust does

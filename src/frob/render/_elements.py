@@ -206,3 +206,4 @@ __all__ = [
     "ticket_id_label",
     "tree",
 ]
+# invariant spec: [INV-040](invariants/INV-040.md)

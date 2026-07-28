@@ -133,6 +133,7 @@ def _validate_no_hang_flow(flow: Flow, node: Node) -> Result[None, StrataError]:
     return Ok(None)
 
 
+# invariant spec: [INV-027](invariants/INV-027.md)
 def _validate_no_hang(
     model: KernelModel, crashable: dict[str, Node]
 ) -> Result[None, StrataError]:

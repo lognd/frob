@@ -136,6 +136,7 @@ class TestScopeResolution:
         assert compiled.policies[0].node_ids == ("api",)
 
     # frob:tests src/frob/strata/_policy.py::compile_policies kind="unit"
+    # invariant spec: [INV-030](invariants/INV-030.md)
     def test_trust_scope_resolves_via_lattice(self):
         module = _module(
             """

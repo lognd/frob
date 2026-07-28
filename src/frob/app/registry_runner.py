@@ -51,7 +51,6 @@ def _render_audit_line(audit) -> str:  # noqa: ANN001
     )
 
 
-# frob:doc docs/guides/exhaustive-research.md#corpus-emit-mechanism-t-0429
 # frob:ticket T-0429
 def _run_add(cfg: AppConfig, registry_dir: Path) -> None:
     """`frob registry add`: append one new `disposition: pending` entry to
@@ -88,7 +87,6 @@ def _run_add(cfg: AppConfig, registry_dir: Path) -> None:
     )
 
 
-# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
 # frob:ticket T-0560
 def _run_sync_gate_rules(registry_dir: Path) -> None:
     """`frob registry audit --sync-gate-rules`: append a `CHK-GATE-<rule>`
@@ -122,6 +120,8 @@ def _run_sync_gate_rules(registry_dir: Path) -> None:
 # frob:ticket T-0560
 # frob:ticket T-0875
 # frob:doc docs/modules/app.md#runners
+# frob:doc docs/guides/exhaustive-research.md#corpus-emit-mechanism-t-0429
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
 # frob:tests tests/unit/test_app_runners_t0875_leaf_collision.py::TestRegistryRunnerRun.test_missing_registry_dir_logs_and_returns kind="unit"  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """`frob registry audit`: per-registry-file disposition counts under

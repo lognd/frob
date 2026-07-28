@@ -403,6 +403,7 @@ def _elaborate_secrets(
 
 # frob:ticket T-0148
 # frob:invariant INV-034
+# invariant spec: [INV-034](invariants/INV-034.md)
 # frob:tests tests/unit/strata/test_elaborate.py::TestElaborateValidation.test_duplicate_node_id_fails_closed  # noqa: E501
 def _validate_no_duplicates(module: Module) -> Result[None, StrataError]:
     """Node ids and flow ids must each be unique within their own kind.

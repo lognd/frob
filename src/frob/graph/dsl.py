@@ -22,7 +22,6 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
-# frob:doc docs/guides/extending/comment-dsl-directives.md#comment-dsl-directives
 _VERB_TABLE: dict[str, EdgeKind] = {
     "doc": EdgeKind.DOC,
     "uses-contract": EdgeKind.USES_CONTRACT,
@@ -981,6 +980,7 @@ def _inferred_protocol_edges_for_pair(
 
 
 # frob:doc docs/modules/graph.md#comment-dsl
+# frob:doc docs/guides/extending/comment-dsl-directives.md#comment-dsl-directives
 def parse_directives(
     parsed: ParsedFile,
 ) -> tuple[tuple[Edge, ...], tuple[MalformedDirective, ...]]:

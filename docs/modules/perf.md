@@ -662,7 +662,9 @@ with zero changes needed to that contract.
   python+native frames; this adapter only resolves the native side (a
   frame with an `(file:line)` debuginfo suffix) -- a frame with no
   debuginfo (a python frame on the same stack, or a foreign module frame)
-  gets `SampledFrame(file="", line=0)` rather than a guess.
+  gets `SampledFrame(file="", line=0)` rather than a guess. Sample text
+  matching this exact shape lives at
+  `tests/unit/perf/fixtures/sample.perf.script`.
 - `parse_v8_cpuprofile(text: str, source: str) -> Result[list[SampledStack], CollectorError]`
   -- `node --cpu-prof` V8 `.cpuprofile` JSON (Chrome DevTools CPU profile
   format), for TS/JS. V8's `nodes` array only records child pointers, so
@@ -679,6 +681,8 @@ with zero changes needed to that contract.
   `build_section_index` indexes. A class name seen in more than one
   module is ambiguous and is dropped from the map entirely (never
   guessed) -- an unmapped class's frame still parses, with `file=""`.
+  Sample text matching this exact shape lives at
+  `tests/unit/perf/fixtures/sample.jfr.txt`.
 
 `CollectorError` (`ErrorSet`) is the shared failure type all three return
 when a WHOLE profile is unparseable (never for one bad sample inside an

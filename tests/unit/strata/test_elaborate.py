@@ -295,6 +295,7 @@ class TestElaborateValidation:
     # frob:waive DUP001 reason="parallel test methods within test_elaborate.py (2 \
     # sites) sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
+    # invariant spec: [INV-034](invariants/INV-034.md)
     def test_duplicate_node_id_fails_closed(self):
         text = """
         module m

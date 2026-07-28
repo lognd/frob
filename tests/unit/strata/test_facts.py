@@ -262,6 +262,7 @@ class TestClosure:
         assert path == ("truth", "f1", "replica", "f2", "view")
 
     # frob:tests src/frob/strata/_facts.py::FactBase.worst_age kind="unit"
+    # invariant spec: [INV-028](invariants/INV-028.md)
     def test_worst_age_reports_unbounded_on_a_positive_cycle(self):
         model = KernelModel(
             nodes=(_node("a"), _node("b")),

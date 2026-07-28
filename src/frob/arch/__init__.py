@@ -422,6 +422,9 @@ def _run_srp_checks_python(
 
 # frob:doc docs/modules/arch.md#public-api
 # frob:doc docs/commands/check.md#run-scoped-memoization
+# frob:doc docs/modules/arch.md#fork-pool-hazards
+# frob:doc docs/modules/arch.md#async-event-loop-hazards
+# frob:doc docs/modules/arch.md#lock-ordering-hazards
 # frob:tests tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit
 # frob:ticket T-0423
 @memoize_per_run

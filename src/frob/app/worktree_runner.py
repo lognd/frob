@@ -55,7 +55,6 @@ def _build_worktree_parser() -> argparse.ArgumentParser:
     return p
 
 
-# frob:doc docs/modules/app.md#runners
 def _run_sweep(path: str, *, dry_run: bool, min_age_hours: float | None) -> None:
     """`frob worktree sweep [path]`: enumerate agent worktrees registered
     under `path`'s repository (default cwd), decide removed/kept per

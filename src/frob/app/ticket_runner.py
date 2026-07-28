@@ -97,6 +97,9 @@ def _ticket_dispatch_table() -> dict:
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
+# frob:doc docs/modules/tickets.md#frob-ticket-land
+# frob:doc docs/modules/tickets.md#structured-review-channel-t-0571
 # frob:waive TEST005 reason="run 20.0% branch cover, debt T-0160"
 # frob:ticket T-0588
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
@@ -977,7 +980,6 @@ def _land_sync_gate_rules_fn():  # noqa: ANN201
 
 
 # frob:ticket T-1011
-# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
 def _sync_gate_rules_for_land(root: Path, pre_land_tip: str):  # noqa: ANN201
     """The body of `_land_sync_gate_rules_fn`'s callback (T-1011): diffs
     `root`'s just-squashed working tree against `pre_land_tip` for
@@ -1045,7 +1047,6 @@ def _sync_gate_rules_for_land(root: Path, pre_land_tip: str):  # noqa: ANN201
 
 # frob:ticket T-0338
 # frob:ticket T-1007
-# frob:doc docs/modules/tickets.md#frob-ticket-land
 def _root_release_manifest(root: Path):  # noqa: ANN201
     """Read `.frob-release.json` as it stood at `root`'s CURRENT git HEAD
     (T-1007/T-1009) -- never the worktree-carried on-disk copy, which can
@@ -2218,7 +2219,6 @@ def _current_commit(root: Path) -> str | None:
 
 
 # frob:ticket T-0571
-# frob:doc docs/modules/tickets.md#structured-review-channel-t-0571
 # frob:tests tests/test_tickets_review.py::TestReviewCli.test_cli_writes_review_record
 # frob:tests tests/test_tickets_review.py::TestReviewCli.test_cli_requires_all_flags
 def _review(root: Path, cfg: AppConfig) -> None:
@@ -2435,7 +2435,6 @@ def _close(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1005
-# frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_ticket_reverify.py::TestReverifyCli.test_reruns_verification_and_refreshes_recap_state_unchanged  # noqa: E501
 # frob:tests tests/test_ticket_reverify.py::TestReverifyCli.test_surfaces_now_failing_evidence_loudly  # noqa: E501
 # frob:tests tests/test_ticket_reverify.py::TestReverifyCli.test_refuses_non_done_ticket

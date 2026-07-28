@@ -74,7 +74,6 @@ directive text and force-wrapping it defeats the whole point of the
 pragma. `canonicalize_text` checks single-line runs against this pattern
 and leaves a match byte-identical rather than re-wrapping it."""
 
-# frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
 _MARKERS: dict[str, str] = {
     ".py": "#",
     ".pyi": "#",

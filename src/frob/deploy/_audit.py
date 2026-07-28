@@ -334,7 +334,6 @@ def install_exactness_holds(
     return (not extra and not missing, extra, missing)
 
 
-# frob:doc docs/commands/deploy.md#status-assertions
 _STATUS_UNIT_LINE_RE = re.compile(
     r"unit=(?P<unit>\S+) node=(?P<node>\S+) "
     r"active=(?P<active>\S*) enabled=(?P<enabled>\S*)"

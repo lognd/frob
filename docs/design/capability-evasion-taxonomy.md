@@ -303,6 +303,10 @@ Combined split: 73 static-resolvable constructs (analyzer MUST resolve),
 39 runtime-opaque constructs (analyzer MUST fail closed with an
 `opaque-capability-indirection` obligation).
 
+The 112-entry denominator above is enforced against the litmus-fixture
+registry in `src/frob/vet/_evasion_coverage.py`, cross-checked by
+`tests/test_vet.py::TestEvasionTaxonomyExhaustiveness` (T-0666).
+
 ---
 
 ## Honesty and sourcing

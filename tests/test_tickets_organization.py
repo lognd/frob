@@ -92,6 +92,7 @@ class TestFieldRoundTrip:
 
     def test_comma_joined_label_splits(self) -> None:
         # frob:tests src/frob/tickets/_models.py::_split_scope_entries kind="unit"
+        # frob:waive COV006 reason="T-1024: genuinely reachable -- constructing a Ticket runs the labels field's @field_validator (_normalize_labels), which calls _split_scope_entries (T-0454's reuse of the scope-splitting helper for labels too); frob.graph.callgraph's best-effort BFS cannot trace through pydantic's validator-decorator dispatch"  # noqa: E501
         ticket = _ticket(ticket_id="T-0001", labels=("a,b",))
         assert ticket.labels == ("a", "b")
 

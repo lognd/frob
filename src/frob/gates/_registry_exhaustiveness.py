@@ -256,7 +256,6 @@ def _is_reasoned_none(reason: str) -> bool:
     return bool(remainder)
 
 
-# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg011-out-of-scope-caught_by-t-0680  # noqa: E501
 # frob:ticket T-0680
 # frob:enforces CHK-GATE-REG011
 def _classify_out_of_scope_caught_by(
@@ -631,7 +630,6 @@ def _reconciliation_violations(
     return _reg004_unresolved_splits(rel_reconciliation, split_ids, entries_by_id)
 
 
-# frob:doc docs/design/registry/RECONCILIATION.md#reg008reg009-t-0428
 # frob:ticket T-0428
 def _enforced_concept_ids(snapshot: GraphSnapshot) -> frozenset[str]:
     """Every concept id named by a `frob:enforces <concept-id>` edge
@@ -644,7 +642,6 @@ def _enforced_concept_ids(snapshot: GraphSnapshot) -> frozenset[str]:
     )
 
 
-# frob:doc docs/design/registry/RECONCILIATION.md#reg008reg009-t-0428
 # frob:ticket T-0428
 # frob:enforces CHK-GATE-REG008
 def _reg008_undeclared_enforcement(
@@ -689,7 +686,6 @@ def _reg008_undeclared_enforcement(
     return violations
 
 
-# frob:doc docs/design/registry/RECONCILIATION.md#reg008reg009-t-0428
 # frob:ticket T-0428
 # frob:enforces CHK-GATE-REG009
 def _reg009_phantom_enforcement(
@@ -727,7 +723,6 @@ def _reg009_phantom_enforcement(
     return violations
 
 
-# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
 # frob:ticket T-0560
 # frob:enforces CHK-GATE-REG010
 def _reg010_gate_rule_staleness(
@@ -827,6 +822,9 @@ def path_ever_tracked(repo_root: Path, rel_path: str) -> bool:
 
 
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#registry-exhaustiveness-drift-lock-t-0343  # noqa: E501
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg011-out-of-scope-caught_by-t-0680  # noqa: E501
+# frob:doc docs/design/registry/RECONCILIATION.md#reg008reg009-t-0428
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
 # frob:ticket T-0343
 # frob:ticket T-0407
 # REG001-007 fire at Severity.ERROR: every registry entry must carry an

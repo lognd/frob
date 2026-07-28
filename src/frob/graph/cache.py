@@ -406,6 +406,7 @@ def get_root(conn: sqlite3.Connection) -> str | None:
 
 
 # frob:ticket T-0600
+# frob:tests tests/test_graph.py::TestCacheModule.test_store_and_load_file_data_roundtrip  # noqa: E501
 def _get_file_hash(conn: sqlite3.Connection, file_path: str) -> str | None:
     """The cached content hash for `file_path`, or `None` if never stored.
 

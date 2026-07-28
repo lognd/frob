@@ -1813,12 +1813,6 @@ def _shadowing_ts_scope(name: str, site, scope_cache: dict[int, frozenset[str]])
     return None
 
 
-def _is_ts_shadowed(name: str, site, scope_cache: dict[int, frozenset[str]]) -> bool:  # noqa: ANN001
-    """True if `name` is bound by a local scope enclosing `site` (T-0377
-    shadow check) -- thin bool wrapper over `_shadowing_ts_scope`."""
-    return _shadowing_ts_scope(name, site, scope_cache) is not None
-
-
 def _ts_string_text(string_node) -> str:  # noqa: ANN001
     """The literal text of a TS/JS `string` node, joined across its
     `string_fragment` children (T-0377) -- excludes the quote tokens
@@ -3584,14 +3578,6 @@ def _rust_shadowing_scope(name: str, site, scope_cache: dict[int, dict[str, int]
                 break
         cur = cur.parent
     return None
-
-
-def _rust_is_shadowed(name: str, site, scope_cache: dict[int, dict[str, int]]) -> bool:  # noqa: ANN001
-    """True if `name` is bound by a local scope enclosing `site` AT OR
-    BEFORE `site`'s position (T-0378 round 2 position-aware shadow check)
-    -- thin bool wrapper over `_rust_shadowing_scope`, mirrors `_is_
-    shadowed`."""
-    return _rust_shadowing_scope(name, site, scope_cache) is not None
 
 
 def _resolve_rust_identifier(
@@ -5503,6 +5489,7 @@ def _byte_offset_inside_string_literal(raw: bytes, idx: int) -> bool:
     return (dq % 2 == 1) or (sq % 2 == 1)
 
 
+# frob:waive DEAD001 reason="T-1024: genuinely called from frob.gates._opaque.opaque_gate, a sibling package under src/frob/gates/ -- DEAD001's intra-package reference graph is built per-directory (dead_symbol_gate's docstring) so a cross-package caller in a different directory is invisible to it; directly unit-tested via the frob:tests directives in tests/test_vet.py"  # noqa: E501
 def _opaque_indirection_findings(path: Path) -> tuple[OpaqueFinding, ...]:
     """`RUNTIME_OPAQUE_CONSTRUCTS` sites in `path` (T-0665, coordinator-
     signed category 1: "evasion-indicative dynamic lookup") -- the

@@ -28,6 +28,7 @@ class TestQuietStdoutLogsReentrance:
     """Nested/interleaved calls must restore the original level exactly
     once, regardless of exit order -- the T-0125 race."""
 
+    # invariant spec: [INV-038](invariants/INV-038.md)
     def test_nested_calls_restore_after_outermost_exits(self) -> None:
         # frob:tests src/frob/logging/quiet.py::quiet_stdout_logs kind="unit"
         handler = _install_stdout_handler(logging.DEBUG)

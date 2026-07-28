@@ -57,7 +57,6 @@ except ImportError:  # pragma: no cover -- posix-only in this repo's CI
 
 _log = get_logger(__name__)
 
-# frob:doc docs/modules/process.md#derived-state-lock-t-0859
 #: The advisory lock file `derived_state_lock` holds, relative to a
 #: checkout's `root` -- distinct from `frob.tickets._store._LOCK_REL`
 #: (`.frob/tickets.lock`) so a ledger mutation and a derived-state check
@@ -196,7 +195,6 @@ def _process_already_holds(root: Path) -> bool:
         return _process_held_counts.get(key, 0) > 0
 
 
-# frob:doc docs/modules/process.md#derived-state-lock-t-0859
 def _derived_lock_path(root: Path) -> Path:
     """The advisory lock file path (`.frob/derived.lock`) `derived_state_lock`
     holds under checkout `root`."""

@@ -54,9 +54,6 @@ from frob.scaffold.project import (
 
 _log = get_logger(__name__)
 
-# frob:doc \
-# docs/guides/agent-playbook.md#1b-never-git-stash-in-a-worktree-it-is-repo-global-not-\
-# worktree-local  # noqa: E501
 #: T-0574: git has NO native pre-stash hook, and this was checked
 #: empirically rather than assumed -- two candidates were tried and one
 #: was disproven before landing on this one:
@@ -112,13 +109,14 @@ _log = get_logger(__name__)
 #: verified to actually intercept `git stash` through this repo's own git
 #: version -- not an unbypassable sandbox.
 _STASH_GUARD_HOOK_NAME = "reference-transaction"
-# frob:doc docs/commands/scaffold.md#managed-blocks-t-0736
+
 #: T-0574: the stash-guard hook's own name(s), exposed the same shape as
 #: `MANAGED_HOOK_NAMES` (a tuple, even though there is exactly one today)
 #: so a block-count computation like `scaffold_conformance_status`'s test
 #: can stay structural (`len(MANAGED_TEXT_BLOCKS) + len(MANAGED_HOOK_NAMES)
 #: + len(STASH_GUARD_HOOK_NAMES)`) instead of a magic `+1` that silently
 #: goes stale the next time a managed block is added or removed.
+# frob:doc docs/commands/scaffold.md#managed-blocks-t-0736
 STASH_GUARD_HOOK_NAMES: tuple[str, ...] = (_STASH_GUARD_HOOK_NAME,)
 _STASH_GUARD_HOOK_MARKER = "# Installed by `frob scaffold apply` (T-0574 stash guard)."
 # frob:ticket T-0870
@@ -473,6 +471,9 @@ def _hook_status(root: Path, hook_name: str) -> ManagedBlockStatus:
 
 
 # frob:doc docs/commands/scaffold.md#managed-blocks-t-0736
+# frob:doc \
+# docs/guides/agent-playbook.md#1b-never-git-stash-in-a-worktree-it-is-repo-global-not-\
+# worktree-local  # noqa: E501
 # frob:tests \
 # tests/unit/test_scaffold_managed.py::TestScaffoldConformanceStatus.test_non_frob_repo\
 # _reports_nothing  # noqa: E501

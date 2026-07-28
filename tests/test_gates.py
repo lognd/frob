@@ -1074,6 +1074,7 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV003" for v in violations)
 
+    # invariant spec: [INV-013](invariants/INV-013.md)
     def test_cov003_rejects_empty_directory_level_evidence(
         self, tmp_path: Path
     ) -> None:
@@ -7724,6 +7725,7 @@ class TestCov002ScopeCoverage:
     # frob:tests src/frob/gates/__init__.py::_scope_covers
     # frob:ticket T-0542
     # frob:ticket T-0543
+    # frob:waive COV006 reason="T-1024: genuinely reachable via run_gates -> the SCOPE gate's job-table dispatch -> _scope_covers, but frob.graph.callgraph's best-effort BFS cannot trace through the gate job-table's dict-of-callables indirection; the binding is correct, the reachability heuristic just cannot see it"  # noqa: E501
     def test_ambiguous_overlapping_open_scopes_do_not_cover(self, tmp_path):
         """B10: two open, EQUALLY specific tickets whose scopes both cover
         the same file must NOT silently cover a changed symbol -- that is
@@ -7772,6 +7774,7 @@ class TestCov002ScopeCoverage:
     # frob:tests src/frob/gates/__init__.py::_scope_covers
     # frob:ticket T-0542
     # frob:ticket T-0543
+    # frob:waive COV006 reason="T-1024: same reachability-heuristic gap as test_ambiguous_overlapping_open_scopes_do_not_cover above -- genuinely reachable via run_gates -> the SCOPE gate's job-table dispatch -> _scope_covers, just not provable by frob.graph.callgraph's best-effort BFS"  # noqa: E501
     def test_active_ticket_own_scope_wins_over_a_broader_open_ticket(self, tmp_path):
         """B10: the active ticket's own scope covers the symbol even when a
         second, broader open ticket ALSO happens to cover the same file --
@@ -8893,6 +8896,7 @@ class TestOptInGates:
     each gate must genuinely no-op when its config key is absent, and this
     is verified against a real GraphSnapshot/Diff rather than mocked."""
 
+    # invariant spec: [INV-011](invariants/INV-011.md)
     def test_dup_gate_off_by_default(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::dup_gate
         from frob.gates import dup_gate
@@ -9573,6 +9577,7 @@ class TestSelfAuditGate:
     test_selfconform.py` already covers at the pure-function level."""
 
     # frob:tests src/frob/gates/__init__.py::sys_gate kind="unit"
+    # invariant spec: [INV-041](invariants/INV-041.md)
     def test_selfaudit001_folds_selfconform_violation(self, tmp_path: Path) -> None:
         """GIVEN a node declaring a `code=` glob over a file that exercises
         a capability (`requests.get`, net) with NO matching `may`

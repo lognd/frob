@@ -93,6 +93,7 @@ def test_scan_tier1_matches_expected(repo: Path) -> None:
 
 
 # frob:tests tests/test_clean.py::test_scan_skips_tracked_files
+# invariant spec: [INV-008](invariants/INV-008.md)
 def test_scan_skips_tracked_files(repo: Path) -> None:
     """A file that matches an allowlist pattern but is git-tracked is skipped,
     never reported as a removal candidate."""

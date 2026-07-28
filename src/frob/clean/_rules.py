@@ -24,7 +24,6 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
-# frob:doc docs/modules/clean.md#tiers
 _TIER1_PATTERNS: tuple[str, ...] = (
     # .coverage.<host>.<pid>.<random> parallel-run fragments (T-0464's
     # COVERAGE_PROCESS_START setup); the bare `.coverage` combined file is
@@ -39,7 +38,6 @@ _TIER1_PATTERNS: tuple[str, ...] = (
     "**/.playwright-mcp",
 )
 
-# frob:doc docs/modules/clean.md#tiers
 _TIER2_PATTERNS: tuple[str, ...] = (
     "build",
     "dist",
@@ -55,7 +53,6 @@ _TIER2_PATTERNS: tuple[str, ...] = (
     ".coverage",
 )
 
-# frob:doc docs/modules/clean.md#tiers
 _TIER3_PATTERNS: tuple[str, ...] = (
     ".frob",
     "FROBLEMS.md",

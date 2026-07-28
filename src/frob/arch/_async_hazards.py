@@ -344,7 +344,6 @@ def _check_unawaited_coroutines(
 # frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_unawaited_coroutine_does_not_fire_when_awaited_or_stored  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_async_zero_awaits_fires_on_no_await_body  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_async_zero_awaits_does_not_fire_when_awaiting  # noqa: E501
-# frob:doc docs/modules/arch.md#async-event-loop-hazards
 def _check_async_event_loop_hazards(
     tree: object, rel: str, out: list[ArchSuggestion]
 ) -> None:

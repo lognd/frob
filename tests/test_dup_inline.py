@@ -194,6 +194,7 @@ class TestCallGraphBounds:
         result = closure(graph, "a.py::_a", max_depth=1, max_nodes=10)
         assert result == ("a.py::_b",)
 
+    # invariant spec: [INV-014](invariants/INV-014.md)
     def test_public_callee_never_becomes_an_edge(self):
         # frob:tests \
         # tests/test_dup_inline.py::TestCallGraphBounds.test_public_callee_never_become\

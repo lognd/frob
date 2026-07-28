@@ -428,7 +428,6 @@ def _find_cycle(
 
 
 # frob:ticket T-0694
-# frob:doc docs/modules/arch.md#lock-ordering-hazards
 # frob:tests tests/unit/test_arch.py::TestLockOrderingHazards.test_two_lock_ab_ba_cycle_fires_within_one_function  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestLockOrderingHazards.test_two_lock_ab_ba_cycle_fires_across_call_paths_via_callees  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestLockOrderingHazards.test_consistent_global_order_does_not_fire  # noqa: E501

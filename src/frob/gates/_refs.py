@@ -298,7 +298,6 @@ def _read_text(root: Path, rel_path: str) -> str | None:
         return None
 
 
-# frob:doc docs/modules/gates.md#anti-orphan-file-reference-gate-t-0396
 # The ticket's own reference shapes -- import/require/include/use
 # statements, config/string path literals, markdown/doc LINKS, frob:doc
 # directive targets -- all collapse to "a path/basename token appearing in

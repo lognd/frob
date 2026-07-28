@@ -133,6 +133,7 @@ def _register_daemon_tool(server, root: Path) -> None:  # noqa: ANN001
 
 # frob:doc docs/modules/serve.md#mcp-sdk
 # frob:invariant INV-021
+# invariant spec: [INV-021](invariants/INV-021.md)
 def build_server(root: Path):  # noqa: ANN201
     """Construct a `FastMCP` server bound to `root`, every read-only tool registered."""
     FastMCP = _require_mcp()  # noqa: N806

@@ -1106,7 +1106,6 @@ _BODY_SIMILARITY_THRESHOLD = 0.9
 _BODY_MIN_TOKENS = 8
 
 
-# frob:doc docs/modules/dup.md#rust-core
 def _near_duplicate_cluster_native(
     bodies: list[str],
 ) -> list[int] | None:

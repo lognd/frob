@@ -411,6 +411,7 @@ def _is_path_level_evidence(evidence: str) -> bool:
 
 # frob:ticket T-0298
 # frob:invariant INV-013
+# invariant spec: [INV-013](invariants/INV-013.md)
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov003_rejects_empty_directory_level_evidence  # noqa: E501
 def _path_level_evidence_collected(evidence: str, tests: CollectedTests) -> bool:
     """COV003 file-/directory-level evidence resolution: `evidence` (a bare
@@ -2658,6 +2659,7 @@ def _ceiling_ok(waiver: Edge, violation: Violation) -> bool:
     return violation.metric <= ceiling
 
 
+# invariant spec: [INV-006](invariants/INV-006.md)
 def _match_waiver(
     violation: Violation, waivers_by_rule: dict[str, list[Edge]]
 ) -> Edge | None:
@@ -5875,7 +5877,7 @@ def scope_gate(
     branch (T-0108).
 
     An empty `ticket.scope` is deliberately NOT treated as "nothing to
-    enforce" (T-0906/H1 in docs/audits/gates-vacuous.md): `scope_matches`
+    enforce" (T-0906/H1 in `docs/audits/gates-vacuous.md`): `scope_matches`
     already treats an empty scope as matching only `LEDGER_PATH` (plus a
     FEATURE ticket's implicit CLI-wiring files), so falling through to the
     normal per-file loop below already produces the correct, loud SCOPE001
@@ -9334,6 +9336,7 @@ def _doc003(root: Path, design_ids) -> list[Violation]:  # noqa: ANN001
 # standalone (`uv tool install frob`, no natives) install must not crash
 # `frob check` on every repo, only degrade (T-0134) on repos that actually
 # opted into `design/`.
+# invariant spec: [INV-041](invariants/INV-041.md)
 def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """SYS001 (dangling directive), SYS002 (unbound boundary/secret), SYS003
     (undeclared cross-component import, tier-2 conformance), SYS004 (a
@@ -9537,6 +9540,7 @@ def _dup_config(root: Path) -> tuple[bool, float, bool, bool]:
 # frob:waive TEST005 reason="dup_gate 52.2% branch cover, debt T-0160"
 # frob:invariant INV-011
 # frob:ticket T-0399
+# invariant spec: [INV-011](invariants/INV-011.md)
 # frob:enforces CHK-GATE-DUP003
 def dup_gate(root: Path, snapshot: GraphSnapshot, diff) -> tuple[Violation, ...]:  # noqa: ANN001
     """DUP001/DUP002: the diff introduces a clone of an existing symbol.

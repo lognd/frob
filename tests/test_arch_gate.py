@@ -96,6 +96,7 @@ class TestArchGateWaivers:
         # still fires (kept, not suppressed).
         assert any(v.rule == "ARCH001" for v in report.violations)
 
+    # invariant spec: [INV-006](invariants/INV-006.md)
     def test_ceiling_refires_when_grown_past_it(self, tmp_path):
         src = _complex_long_source(
             "complex_long",

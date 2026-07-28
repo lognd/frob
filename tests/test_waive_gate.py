@@ -30,7 +30,6 @@ from frob.gates import (
     waive007_gate,
 )
 from frob.graph import build_graph
-from frob.graph._models import Edge, EdgeKind
 from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -68,23 +67,6 @@ def _ticket(
         evidence=(),
         attachments=(),
         body="## Description\nx\n\n## Done report\ndone\n",
-    )
-
-
-def _waive_edge(
-    *, src: str, target: str = "COV001", reason: str, ticket: str | None = None
-) -> Edge:
-    """A synthetic `frob:waive` `Edge` carrying `reason`/optional `ticket`
-    attrs, shaped like `frob.graph.dsl`'s real parse output."""
-    attrs = {"reason": reason}
-    if ticket is not None:
-        attrs["ticket"] = ticket
-    return Edge(
-        kind=EdgeKind.WAIVE,
-        src=src,
-        target=target,
-        attrs=attrs,
-        origin=f"{src.split('::', 1)[0]}:1",
     )
 
 

@@ -307,6 +307,7 @@ def generate_mutants(
 # frob:waive TEST005 reason="run_mutations 85.2% branch cover, debt T-0160"
 # frob:invariant INV-017
 # frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
+# invariant spec: [INV-017](invariants/INV-017.md)
 def run_mutations(
     root: Path,
     file: Path,

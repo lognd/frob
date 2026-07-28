@@ -50,7 +50,8 @@ class TestMainSigint:
 class TestDidYouMean:
     """`_build_parser`'s `_SuggestingArgumentParser` appends a "did you
     mean" suggestion to argparse's own error for an unknown subcommand or
-    an unrecognized flag (T-0578)."""
+    an unrecognized flag (T-0578); see `docs/commands/cli-vocabulary.md`
+    for the full vocabulary/back-compat-alias contract this exercises."""
 
     # frob:ticket T-0578
     def test_unknown_subcommand_suggests_closest(self, capsys) -> None:

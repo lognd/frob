@@ -274,6 +274,7 @@ class TestFuzz002:
 
 
 class TestFuzz003:
+    # invariant spec: [INV-012](invariants/INV-012.md)
     def test_flags_missing_stamp(self) -> None:
         # frob:tests src/frob/fuzz/_rules.py::FUZZ003 kind="unit"
         snapshot = _snapshot({"a.py::f": _record("a.py::f")})

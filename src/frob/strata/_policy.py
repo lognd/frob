@@ -77,6 +77,7 @@ def _resolve_scope(
 
 
 # frob:invariant INV-030
+# invariant spec: [INV-030](invariants/INV-030.md)
 # frob:tests tests/unit/strata/test_policy.py::TestScopeResolution.test_trust_scope_resolves_via_lattice  # noqa: E501
 def _resolve_trust_scope(
     value: str, model: KernelModel

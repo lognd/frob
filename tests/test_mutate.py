@@ -40,6 +40,7 @@ def test_generate_mutants_syntax_error_is_err():
     assert result.danger_err == MutateError.ParseFailed
 
 
+# invariant spec: [INV-017](invariants/INV-017.md)
 def test_run_mutations_survivors_when_tests_weak(tmp_path):
     # frob:tests src/frob/mutate/__init__.py::run_mutations
     (tmp_path / "m.py").write_text(

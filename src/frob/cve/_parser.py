@@ -28,6 +28,7 @@ _MIRROR_GLOB = "cves/*/*/CVE-*.json"
 # frob:doc docs/modules/cve.md#public-api
 # frob:waive TEST005 reason="parse_record 85.0% branch cover, debt T-0160"
 # frob:invariant INV-009
+# invariant spec: [INV-009](invariants/INV-009.md)
 def parse_record(path: Path) -> Result[CveRecord, CveError]:
     """Parse one CVE Record Format v5 JSON file at `path`.
 

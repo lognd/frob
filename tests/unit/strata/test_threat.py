@@ -71,6 +71,7 @@ class TestCatalogCompleteness:
         assert result.danger_ok == ()
 
     # frob:tests src/frob/strata/_threat.py::check_catalog_completeness kind="unit"
+    # invariant spec: [INV-035](invariants/INV-035.md)
     def test_missing_entry_is_a_violation(self):
         thin_catalog = tuple(e for e in CWE_CATALOG if e.id != "CWE-79")
         result = check_catalog_completeness("owasp-top-10", catalog=thin_catalog)
@@ -491,6 +492,7 @@ class TestDischargeCompleteness:
         assert result.danger_ok == ()
 
     # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # invariant spec: [INV-029](invariants/INV-029.md)
     def test_discharge_claim_below_required_rung_is_a_violation(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
         claim_id = _discharge_claim_id("CWE-79", "Web")

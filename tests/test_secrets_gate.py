@@ -52,6 +52,7 @@ def _commit(root: Path, message: str = "commit") -> None:
 
 
 class TestRedact:
+    # invariant spec: [INV-039](invariants/INV-039.md)
     def test_never_returns_the_token(self) -> None:
         # frob:tests src/frob/gates/_secrets.py::_redact
         # Runtime-constructed (never a contiguous literal in this file's

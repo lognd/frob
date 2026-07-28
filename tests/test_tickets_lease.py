@@ -193,6 +193,7 @@ class TestDoable:
         result = doable(queue)
         assert [t.id for t in result] == ["T-1002"]
 
+    # invariant spec: [INV-024](invariants/INV-024.md)
     def test_real_collision_is_hidden_from_default_doable(self) -> None:
         holder = _ticket(
             ticket_id="T-1000",

@@ -52,6 +52,7 @@ def repo(tmp_path: Path) -> Path:
 
 
 @pytest.fixture(autouse=True)
+# frob:waive DEAD001 reason="T-1024: pytest autouse fixture, invoked by the test runner for every test in this module without ever appearing as a name/call token anywhere -- the one DEAD001 false-positive class autouse fixtures fall into, same disposition as tests/test_dup_cross_lang.py's own autouse fixture waiver"  # noqa: E501
 def _clean_daemon_status():
     """Every test starts and ends with a clean `_daemon._STATUS`/`_warm`
     cache -- these module-level dicts persist across tests in the same

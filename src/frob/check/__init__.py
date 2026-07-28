@@ -70,7 +70,6 @@ _TOOL_STAGES = frozenset(
 )
 
 
-# frob:doc docs/modules/gates.md#rule-catalog
 # frob:ticket T-0603
 # frob:tests tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_corrupt_artifact_fails_closed_before_any_stage_runs  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_absent_artifact_is_not_a_violation  # noqa: E501
@@ -532,6 +531,7 @@ def _collect_results(
 
 # frob:ticket T-0028
 # frob:doc docs/commands/check.md#public-api
+# frob:doc docs/modules/gates.md#rule-catalog
 # frob:waive TEST005 reason="run_check 83.3% branch cover, debt T-0160"
 def run_check(
     root: Path,

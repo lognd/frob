@@ -206,6 +206,7 @@ def _shannon_entropy(s: str) -> float:
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
+# invariant spec: [INV-025](invariants/INV-025.md)
 def _high_entropy_strings(text: str) -> tuple[str, ...]:
     """String literals whose Shannon entropy exceeds the baseline -- likely
     base64/hex/packed payloads rather than legitimate code strings. O(len(text))

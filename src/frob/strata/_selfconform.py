@@ -98,6 +98,7 @@ SYS_UNDECLARED_INTERFACE = "SYS100"
 # frob:doc docs/strata/selfconform.md#the-three-rules
 #: `frob sys audit` rule id for SYS101 stale design: a `may` capability
 #: declared for a node but never observed in its `code=`-bound files.
+# invariant spec: [INV-026](invariants/INV-026.md)
 SYS_STALE_DESIGN = "SYS101"
 # frob:doc docs/strata/selfconform.md#the-three-rules
 #: `frob sys audit` rule id for SYS102 unmodeled code: a `src/frob/`
@@ -355,6 +356,7 @@ def _all_kinds_view(
     }
 
 
+# frob:tests tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock.test_observed_extended_kinds_by_node_only_ever_yields_extended_kinds  # noqa: E501
 def _observed_extended_kinds_by_node(
     binding: CodeBinding, root: Path
 ) -> dict[str, frozenset[str]]:
@@ -374,6 +376,7 @@ def _observed_extended_kinds_by_node(
     return _extended_kinds_view(_observed_raw_kinds_by_node(binding, root))
 
 
+# frob:tests tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock.test_observed_all_kinds_by_node_normalizes_through_kind_map  # noqa: E501
 def _observed_all_kinds_by_node(
     binding: CodeBinding, root: Path
 ) -> dict[str, frozenset[str]]:

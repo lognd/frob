@@ -310,6 +310,9 @@ duplicate-detection (`frob.dup`), structural arch checks (`frob.arch`),
 and DOC004 fenced-code-block doc-drift (`frob.gates._docblocks`). This
 does not re-implement any of those registries; it derives a snapshot from
 each one's live state, so this module is always checking today's reality.
+Which languages are registered here at all is itself a standing decision,
+not an open door: see `docs/design/language-adapter-tier-decision.md` for
+the T-0691 call on the next tier (Go/Java/C#) and its reopen criterion.
 
 ```python
 FACETS: tuple[str, ...]  # ("grammar", "capability", "dup", "arch", "docblock")
