@@ -1823,7 +1823,7 @@ frob check --ticket T-1081 --only drift/--only test: 0 errors both runs.
 id: T-1082
 title: 'arch: abstraction-opportunity gates package extraction (T-0393/T-1067 remainder,
   29 findings)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -1874,7 +1874,6 @@ duplication) is fine, with the remainder re-filed with exact counts.
 Re-measure `uv run frob check --only arch --json`, filter to
 abstraction-opportunity + `src/frob/gates/`, before starting -- other
 tickets may land in the interim and change the count.
-
 <!-- ticket:T-1083 -->
 ```yaml
 id: T-1083
