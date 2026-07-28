@@ -2047,3 +2047,77 @@ threat: null
 component: null
 ```
 User directive 2026-07-28: too much manual work rides on tickets.md mechanics. The monofile is the root cause of a documented incident museum: land splice regression (T-0577), archive clobber (T-0959), ledger churn rewrites (T-1036), id collision (T-1090), draft deaths in 10b restores (4 coordinator refiles on 2026-07-28 alone: T-1115, T-1126, T-1127, T-1128), DirtyMain transitions (T-1054), hand splices where the merge driver is unregistered in worktrees, ledger-lock starvation and deadlocks (T-0933, T-0982). Per-ticket files make disjoint tickets disjoint git objects so merge/lease/draft/renumber/archive become ordinary git operations. The global convention (tickets/ tracked in git) already names the directory form. Design doc in docs/design/ first; migration is a separate child with golden round-trip tests; T-1125 (draft-id prose rewrite) stays valuable pre-migration and its engine is reusable for renumber-with-references after.
+
+<!-- ticket:T-1137 -->
+```yaml
+id: T-1137
+title: 'EPIC frob check --fix: tiered auto-fix engine (auto / verified-auto / assisted
+  fix-its)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: high
+parent: null
+tier: epic
+sprint: null
+scope:
+- src/frob/gates/**
+- src/frob/app/**
+- docs/**
+- tests/**
+acceptance:
+- text: GIVEN frob check --fix WHEN Tier-A findings exist THEN deterministic semantics-preserving
+    fixes are applied (directive-form rewrite, unique anchor-slug correction, fmt,
+    draft renumber, generated-registry regeneration, release sync, full-run-verified
+    stale-waiver removal) and the affected gates re-run clean in the same invocation
+  evidence: []
+- text: 'GIVEN a Tier-B fix WHEN applied THEN it is transactional: affected gates
+    plus the finding''s bound tests re-run per fix and any regression rolls that fix
+    back with a disclosed report'
+  evidence: []
+- text: GIVEN a Tier-C (content-required) finding THEN --fix never edits it and never
+    inserts a waiver; it emits a structured fix-it (file, line, proposed patch) for
+    explicit acceptance -- an obligation can never be auto-discharged by waiver
+  evidence: []
+- text: GIVEN the generated rule registry THEN every rule id carries a fixability
+    tier (auto/verified/assisted/manual) that is generated-verified against the fix
+    engine's actual handler table, so an unwired fixability claim is a check failure
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-07-28: the annoying errors are the ones whose fix is mechanical but manual. Drive evidence: DRIFT002 dotted-form rewrites redded main twice and are pure string rewrites; T-0602's one wrong anchor slug caused 11 COV001s with an unambiguous correct slug available; TICK002's message prints its own fix command; REL002 took three incidents before land invoked the existing frob release sync; E501-on-waive-lines when frob fmt exists and is idempotent; WAIVE004 removal is mechanical given a full run (mechanizes T-1021's hand-sweep); REG008/REG010 enforces edges are derivable from emitting sites (T-1008 generate-and-verify precedent). Design doc first (docs/design/): fix-handler protocol per rule id, transaction/rollback model, interaction with frob doctor (inventory what doctor already repairs and fold or delegate), daemon-warm --fix, and the two anti-goals (no auto-waivers ever; no threshold loosening ever). Children at design time: Tier-A handler batch, Tier-B transaction engine, fixability registry field, fix-it emission format for agents.
+
+<!-- ticket:T-1138 -->
+```yaml
+id: T-1138
+title: 'gates --fix Tier-A batch 1: directive-form rewrite + unique anchor-slug correction
+  + TICK002 renumber'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- src/frob/tickets/**
+- tests/test_gates.py
+acceptance:
+- text: 'GIVEN a frob:tests edge in pytest :: form WHEN --fix runs THEN it is rewritten
+    to the dotted Class.method form and DRIFT002/DOC007 re-verify clean'
+  evidence: []
+- text: GIVEN a frob:doc/frob:tests anchor whose slug mismatches but fuzzy-matches
+    exactly one real heading slug in the target doc THEN --fix rewrites it to that
+    slug; zero or multiple candidates stay unfixed with an assisted fix-it
+  evidence: []
+- text: GIVEN a TICK002 draft-survived-onto-main finding THEN --fix performs the renumber
+    it already prescribes, including prose-reference rewrite once T-1125 lands
+  evidence: []
+threat: null
+component: null
+```
+First concrete slice of the T-1137 fix engine, restricted to the three fix classes with unambiguous deterministic rewrites and repeated main-redding history (DRIFT002 dotted-form x4+, T-0602 slug incident, TICK002 this wave). Ship behind --fix; no waiver insertion; each applied fix re-runs its gate in-process.
