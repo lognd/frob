@@ -3283,3 +3283,57 @@ or, on closer investigation, a reasoned disposition explaining why it is
 NOT actually structurally checkable after all (narrower than it first
 looks). Do not leave any of the five at a bare `deferred` pointing back
 here without investigating first.
+
+<!-- ticket:T-1089 -->
+```yaml
+id: T-1089
+title: 'arch: split ticket_runner.py (3957), tickets/__init__.py (4260), tickets/_land.py
+  (4762) -- T-1086 residue (refile after T-1087 id collision)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/ticket_runner.py
+- src/frob/tickets/__init__.py
+- src/frob/tickets/_land.py
+acceptance:
+- text: given the three files, when the splits land, then each follows the T-1072/T-1076/T-1086
+    package discipline (families to private modules, surface re-exported, zero caller
+    edits, directives and allowlist entries carried) and no file exceeds 2000 lines
+  evidence: []
+threat: null
+component: null
+```
+Refile: T-1086's residue draft was renumbered to T-1087 by its land, then the SAME id was assigned to the security chain's VET-wiring filing by a concurrent land -- the splits-residue block lost the race and vanished (the T-1042/T-1043 incident class, id-allocation side; the T-1036 splice guard protects blocks, not id assignment). Content: the three remaining monsters from the T-0395 tier-2 program, smallest-first, one land per file acceptable.
+
+<!-- ticket:T-1090 -->
+```yaml
+id: T-1090
+title: 'ticket-id allocation race: two concurrent lands can renumber drafts to the
+  same next id, silently dropping one block'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/tickets/_store.py
+- tests/test_ticket_land.py
+acceptance:
+- text: given two lands renumbering drafts concurrently, when both allocate ids, then
+    the ids are distinct and both blocks survive (allocation is atomic under the ledger
+    lock), proven by an interleaving regression test
+  evidence: []
+threat: null
+component: null
+```
+Third occurrence 2026-07-28 (~07:45): T-1086's land renumbered its residue draft to T-1087 while the T-0684 land's filing took the same id -- the splits block vanished and the surviving T-1087 holds the other content. Prior occurrences: T-1042 clobber, T-1043 refile-eaten (2026-07-27). T-1036's splice guard protects existing blocks from stale-snapshot rewrites but id ALLOCATION (next-id computation during renumber/new) is still race-prone across concurrent lands. Fix: allocate under the same ledger lock with a recompute-at-commit, mirroring the T-1036 pattern.
