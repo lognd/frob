@@ -318,16 +318,32 @@ def _recursive_pairs(
             if short_name in called:
                 hits.append((symref, symbol, short_name))
                 continue
-            other_candidates = called - {short_name}
-            for other_short in other_candidates:
-                if other_short not in by_name_and_key:
-                    continue
-                candidates = by_name_and_key[other_short].get((path, scope), ())
-                for _other_symref, other_symbol in candidates:
-                    if short_name in _called_names(other_symbol.body_tokens):
-                        hits.append((symref, symbol, other_short))
-                        break
+            mutual = _mutual_recursion_callee(
+                short_name, called, path, scope, by_name_and_key
+            )
+            if mutual is not None:
+                hits.append((symref, symbol, mutual))
     return hits
+
+
+def _mutual_recursion_callee(
+    short_name: str,
+    called: frozenset[str] | set[str],
+    path: str,
+    scope: str,
+    by_name_and_key: dict[str, dict[tuple[str, str], list[tuple[str, RawSymbol]]]],
+) -> str | None:
+    """The short name of a same-file, same-scope callee that mutually
+    recurses back into `short_name` (A calls B, B calls A), or `None`
+    (extracted from `_recursive_pairs` to cut nesting, T-0394)."""
+    for other_short in called - {short_name}:
+        if other_short not in by_name_and_key:
+            continue
+        candidates = by_name_and_key[other_short].get((path, scope), ())
+        for _other_symref, other_symbol in candidates:
+            if short_name in _called_names(other_symbol.body_tokens):
+                return other_short
+    return None
 
 
 def _symbols_by_short_name(

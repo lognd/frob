@@ -745,28 +745,48 @@ def _index_file_occurrences(
     while stack:
         node = stack.pop()
         if node.type == "function_definition":
-            name_node = _child_by_field(node, "name")
-            short = _node_text(name_node) if name_node is not None else None
-            body = _child_by_field(node, "body")
-            if short is not None and body is not None:
-                occurrences: list[tuple[str, str | None, int, str]] = []
-                for call in _iter_calls(body):
-                    effect = _direct_effect(call)
-                    if effect is None:
-                        continue
-                    args = _child_by_field(call, "arguments")
-                    arg_text = (
-                        _normalize_arg_text(_node_text(args))
-                        if args is not None and not _contains_splat(args)
-                        else None
-                    )
-                    line = call.start_point[0] + 1
-                    callee_name = _callee_short_name(call) or "?"
-                    occurrences.append((effect, arg_text, line, callee_name))
-                if occurrences:
-                    by_short.setdefault(short, []).extend(occurrences)
+            _record_def_effect_occurrences(node, by_short)
         stack.extend(node.children)
     return {short: tuple(occ) for short, occ in by_short.items()}
+
+
+def _call_effect_occurrence(call: Node) -> tuple[str, str | None, int, str] | None:
+    """One `(kind, arg_text_or_None, line, callee_name)` occurrence for a
+    single `call` node, or `None` if it is not a direct process-spawn/
+    directory-walk call (extracted from `_index_file_occurrences` to cut
+    nesting, T-0394)."""
+    effect = _direct_effect(call)
+    if effect is None:
+        return None
+    args = _child_by_field(call, "arguments")
+    arg_text = (
+        _normalize_arg_text(_node_text(args))
+        if args is not None and not _contains_splat(args)
+        else None
+    )
+    line = call.start_point[0] + 1
+    callee_name = _callee_short_name(call) or "?"
+    return (effect, arg_text, line, callee_name)
+
+
+def _record_def_effect_occurrences(
+    def_node: Node, by_short: dict[str, list[tuple[str, str | None, int, str]]]
+) -> None:
+    """Record every direct-effect call occurrence inside one `def`'s body
+    into `by_short`, keyed by its short name (extracted from
+    `_index_file_occurrences` to cut nesting, T-0394)."""
+    name_node = _child_by_field(def_node, "name")
+    short = _node_text(name_node) if name_node is not None else None
+    body = _child_by_field(def_node, "body")
+    if short is None or body is None:
+        return
+    occurrences = [
+        occ
+        for call in _iter_calls(body)
+        if (occ := _call_effect_occurrence(call)) is not None
+    ]
+    if occurrences:
+        by_short.setdefault(short, []).extend(occurrences)
 
 
 def _direct_effect_from_tokens(tokens: tuple[str, ...]) -> str | None:

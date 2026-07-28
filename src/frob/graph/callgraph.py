@@ -425,15 +425,27 @@ def build_ordered_call_graph(root: Path, paths: Sequence[str]) -> OrderedCallGra
     for path, symbols in parsed_by_path.items():
         for sym in symbols:
             caller_symref = f"{path}::{sym.qualname}"
-            callees: list[str] = []
-            for name in _ordered_called_names(sym.body_tokens):
-                for symref, _cand_path, is_private in by_name.get(name, ()):
-                    if symref == caller_symref or not is_private:
-                        continue
-                    callees.append(symref)
+            callees = _ordered_private_callees(sym.body_tokens, caller_symref, by_name)
             if callees:
                 calls[caller_symref] = tuple(callees)
     return OrderedCallGraph(calls=calls)
+
+
+def _ordered_private_callees(
+    body_tokens: tuple[str, ...],
+    caller_symref: str,
+    by_name: Mapping[str, list[tuple[str, str, bool]]],
+) -> list[str]:
+    """Source-order private-callee symrefs `body_tokens` resolves to via
+    `by_name`, excluding self-calls and any non-private candidate
+    (extracted from `build_ordered_call_graph` to cut nesting, T-0394)."""
+    callees: list[str] = []
+    for name in _ordered_called_names(body_tokens):
+        for symref, _cand_path, is_private in by_name.get(name, ()):
+            if symref == caller_symref or not is_private:
+                continue
+            callees.append(symref)
+    return callees
 
 
 # frob:doc docs/modules/graph.md#call-graph

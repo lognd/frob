@@ -215,28 +215,37 @@ def _rust_namespaces(root: Path) -> tuple[frozenset[str], dict[str, str]]:
     return frozenset(names), dirs
 
 
+def _ts_workspace_member_names(root: Path, pattern: str) -> set[str]:
+    """Package names declared by every `package.json` matching one
+    `workspaces` glob pattern (extracted from `_ts_namespaces` to cut
+    nesting, T-0394)."""
+    names: set[str] = set()
+    # frob:waive WALK001 reason="npm workspaces glob (e.g. 'packages/*'), a single shallow level, not a recursive repo walk"  # noqa: E501
+    # frob:waive PERF004 reason="sorted() is this loop's own iterable, not repeated -- a fresh glob() per member pattern, evaluated once at loop entry"  # noqa: E501
+    for member_dir in sorted(root.glob(pattern)):
+        member_data = _read_toml_json(member_dir / "package.json")
+        if member_data is None:
+            continue
+        member_name = member_data.get("name")
+        if isinstance(member_name, str) and member_name:
+            names.add(member_name)
+    return names
+
+
 def _ts_namespaces(root: Path) -> frozenset[str]:
     """`package.json`'s `name` plus every `workspaces` member's own name."""
     names: set[str] = set()
     data = _read_toml_json(root / "package.json")
-    if data is not None:
-        name = data.get("name")
-        if isinstance(name, str) and name:
-            names.add(name)
-        workspaces = data.get("workspaces", [])
-        if isinstance(workspaces, list):
-            for pattern in workspaces:
-                if not isinstance(pattern, str):
-                    continue
-                # frob:waive WALK001 reason="npm workspaces glob (e.g. 'packages/*'), a single shallow level, not a recursive repo walk"  # noqa: E501
-                # frob:waive PERF004 reason="sorted() is this loop's own iterable, not repeated -- a fresh glob() per member pattern, evaluated once at loop entry"  # noqa: E501
-                for member_dir in sorted(root.glob(pattern)):
-                    member_data = _read_toml_json(member_dir / "package.json")
-                    if member_data is None:
-                        continue
-                    member_name = member_data.get("name")
-                    if isinstance(member_name, str) and member_name:
-                        names.add(member_name)
+    if data is None:
+        return frozenset(names)
+    name = data.get("name")
+    if isinstance(name, str) and name:
+        names.add(name)
+    workspaces = data.get("workspaces", [])
+    if isinstance(workspaces, list):
+        for pattern in workspaces:
+            if isinstance(pattern, str):
+                names |= _ts_workspace_member_names(root, pattern)
     return frozenset(names)
 
 

@@ -507,6 +507,31 @@ def _ts_import_module_text(string_node: Node | None) -> str:
     return _node_text(string_node).strip("\"'")
 
 
+def _ts_named_import_names(named_imports: Node) -> list[str]:
+    """Bound names from one `named_imports` (`{ a, b }`) clause (extracted
+    from `_ts_build_import` to cut nesting, T-0394)."""
+    names: list[str] = []
+    for spec in named_imports.named_children:
+        if spec.type == "import_specifier":
+            name_node = _child(spec, "name")
+            if name_node is not None:
+                names.append(_node_text(name_node))
+    return names
+
+
+def _ts_import_clause_names(clause: Node) -> list[str]:
+    """Every bound name in an `import_clause` -- a default import
+    identifier and/or a `named_imports` group (extracted from
+    `_ts_build_import` to cut nesting, T-0394)."""
+    names: list[str] = []
+    for c in clause.children:
+        if c.type == "identifier":
+            names.append(_node_text(c))
+        elif c.type == "named_imports":
+            names.extend(_ts_named_import_names(c))
+    return names
+
+
 def _ts_build_import(node: Node) -> NormalizedImport:
     """One `import_statement` as a `NormalizedImport`: the module text
     (`_ts_import_module_text`) and every bound name -- `named_imports`
@@ -515,18 +540,8 @@ def _ts_build_import(node: Node) -> NormalizedImport:
     (`import * as fs from "mod"`) or side-effect-only import (`import
     "mod"`) binds no individually-named symbol, so `names` stays `[]`."""
     module = _ts_import_module_text(_child(node, "source"))
-    names: list[str] = []
     clause = next((c for c in node.named_children if c.type == "import_clause"), None)
-    if clause is not None:
-        for c in clause.children:
-            if c.type == "identifier":
-                names.append(_node_text(c))
-            elif c.type == "named_imports":
-                for spec in c.named_children:
-                    if spec.type == "import_specifier":
-                        name_node = _child(spec, "name")
-                        if name_node is not None:
-                            names.append(_node_text(name_node))
+    names = _ts_import_clause_names(clause) if clause is not None else []
     return NormalizedImport(module=module, line=node.start_point[0] + 1, names=names)
 
 

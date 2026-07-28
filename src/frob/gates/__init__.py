@@ -4132,8 +4132,6 @@ def _cov006_resolve_import_files(
     re-exported exactly once through a package `__init__.py`); best-effort
     and python-only, feeds `_cov006_third_file_reachable`.
     """
-    from frob.lang import parse_file
-
     files: set[str] = set()
     for module_path, names in _cov006_imported_names(source):
         for name in names:
@@ -4142,32 +4140,43 @@ def _cov006_resolve_import_files(
             candidate = _cov006_module_path_to_file(root, module_path)
             if candidate is None:
                 continue
-            # Each imported NAME is chased independently (not the whole
-            # `from ... import a, b` group at once): a package `__init__.py`
-            # routinely re-exports several names from DIFFERENT submodules
-            # in separate lines, so grouping would let one name's resolved
-            # hop silently steal the search for another (T-0528 fix during
-            # calibration -- the first version of this helper had exactly
-            # that bug).
-            for _hop in range(2):
-                parsed = parse_file(root / candidate)
-                if parsed.is_err:
-                    break
-                defined = {sym.qualname for sym in parsed.danger_ok.symbols}
-                if name in defined:
-                    files.add(candidate)
-                    break
-                reexport_source = (root / candidate).read_text(encoding="utf-8")
-                next_candidate = None
-                for mod2, names2 in _cov006_imported_names(reexport_source):
-                    if name in names2:
-                        next_candidate = _cov006_module_path_to_file(root, mod2)
-                        break
-                if next_candidate is None:
-                    files.add(candidate)
-                    break
-                candidate = next_candidate
+            resolved = _cov006_chase_reexport_hops(root, candidate, name)
+            if resolved is not None:
+                files.add(resolved)
     return files
+
+
+def _cov006_chase_reexport_hops(root: Path, candidate: str, name: str) -> str | None:
+    """Follow `candidate`'s own re-export chain up to two hops to find the
+    file that actually DEFINES `name`, or the last file reached if neither
+    hop resolves further (extracted from `_cov006_resolve_import_files` to
+    cut nesting, T-0394; see that function's docstring for the two-hop
+    re-export shape this chases). Each imported NAME is chased
+    independently (not the whole `from ... import a, b` group at once): a
+    package `__init__.py` routinely re-exports several names from
+    DIFFERENT submodules in separate lines, so grouping would let one
+    name's resolved hop silently steal the search for another (T-0528 fix
+    during calibration -- the first version of this helper had exactly
+    that bug)."""
+    from frob.lang import parse_file
+
+    for _hop in range(2):
+        parsed = parse_file(root / candidate)
+        if parsed.is_err:
+            return None
+        defined = {sym.qualname for sym in parsed.danger_ok.symbols}
+        if name in defined:
+            return candidate
+        reexport_source = (root / candidate).read_text(encoding="utf-8")
+        next_candidate = None
+        for mod2, names2 in _cov006_imported_names(reexport_source):
+            if name in names2:
+                next_candidate = _cov006_module_path_to_file(root, mod2)
+                break
+        if next_candidate is None:
+            return candidate
+        candidate = next_candidate
+    return None
 
 
 def _cov006_expand_project_imports(
@@ -4397,6 +4406,54 @@ def _cov006_third_file_entrypoints(
     return entrypoints
 
 
+def _cov006_dispatcher_holds_bare_target(
+    dispatcher: RawSymbol, target_short_name: str
+) -> bool:
+    """True if `dispatcher`'s own body tokens reference `target_short_name`
+    as a bare, non-call token (never `name(`) -- the T-0528 Class 1
+    dispatch-table literal shape (extracted from
+    `_cov006_dispatch_table_wrapper_names` to cut nesting, T-0394)."""
+    tokens = dispatcher.body_tokens
+    for i, tok in enumerate(tokens):
+        if tok != target_short_name:
+            continue
+        if i + 1 < len(tokens) and tokens[i + 1] == "(":
+            continue
+        return True
+    return False
+
+
+def _cov006_dispatch_table_wrapper_names(
+    target_file: str,
+    target_symbols: tuple[RawSymbol, ...],
+    target_graph: "CallGraph",
+    target_qualname: str,
+) -> set[str]:
+    """T-0528 Class 1 last-resort widening (extracted from
+    `_cov006_public_wrapper_reachable` to cut nesting, T-0394): if no
+    wrapper reaches the target via real calls, accept a private function
+    that holds the target's short name as a bare dispatch-table token, as
+    long as that dispatch-holding function is itself call-reachable from a
+    public wrapper. See `_cov006_public_wrapper_reachable`'s own docstring
+    for the full rationale."""
+    from frob.graph.callgraph import _short_name, closure
+
+    target_short_name = _short_name(target_qualname)
+    for sym in target_symbols:
+        if not sym.public:
+            continue
+        wrapper_symref = f"{target_file}::{sym.qualname}"
+        reached = closure(target_graph, wrapper_symref, max_depth=8, max_nodes=200)
+        reached_symrefs = set(reached) | {wrapper_symref}
+        for dispatcher in target_symbols:
+            dispatcher_symref = f"{target_file}::{dispatcher.qualname}"
+            if dispatcher_symref not in reached_symrefs:
+                continue
+            if _cov006_dispatcher_holds_bare_target(dispatcher, target_short_name):
+                return {_short_name(sym.qualname)}
+    return set()
+
+
 # frob:ticket T-0506
 # frob:ticket T-0516
 # frob:ticket T-0528
@@ -4473,29 +4530,9 @@ def _cov006_public_wrapper_reachable(root: Path, edge: Edge) -> bool:
         )
     }
     if not wrapper_short_names:
-        target_short_name = _short_name(target_qualname)
-        for sym in target_symbols:
-            if not sym.public:
-                continue
-            wrapper_symref = f"{target_file}::{sym.qualname}"
-            reached = closure(target_graph, wrapper_symref, max_depth=8, max_nodes=200)
-            reached_symrefs = set(reached) | {wrapper_symref}
-            for dispatcher in target_symbols:
-                dispatcher_symref = f"{target_file}::{dispatcher.qualname}"
-                if dispatcher_symref not in reached_symrefs:
-                    continue
-                tokens = dispatcher.body_tokens
-                for i, tok in enumerate(tokens):
-                    if tok != target_short_name:
-                        continue
-                    if i + 1 < len(tokens) and tokens[i + 1] == "(":
-                        continue
-                    wrapper_short_names = {_short_name(sym.qualname)}
-                    break
-                if wrapper_short_names:
-                    break
-            if wrapper_short_names:
-                break
+        wrapper_short_names = _cov006_dispatch_table_wrapper_names(
+            target_file, target_symbols, target_graph, target_qualname
+        )
     if not wrapper_short_names:
         return False
 
