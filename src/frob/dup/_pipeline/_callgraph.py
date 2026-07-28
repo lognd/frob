@@ -535,4 +535,3 @@ def _apted_similarity_for_pair(
     if sim_result.is_err:
         return None
     return sim_result.danger_ok
-
