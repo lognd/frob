@@ -73,11 +73,39 @@ spawn signals are registered under the pre-existing, unrelated `"exec"`
 kind, not `"proc"` (`ffi` IS a real registry kind, `ctypes`/`cffi`/
 `ExtensionFileLoader` entries, but again has no tier-2 join). `FAMILY_MODES`
 still defines every family's mode set so the vocabulary is genuinely
-single-source from day one; reconciling the `proc`/`exec` naming mismatch,
-building the `env`/`proc`/`ffi` tier-2 joins, and sweeping this repo's own
-`.strata` models plus the 8 sibling repos' declarations (mandate point 3's
-"ESTATE" migration) are explicitly follow-up work, filed rather than
-forced into this pass (T-0771 Done report).
+single-source from day one; building the `env`/`proc`/`ffi` tier-2 joins
+and sweeping this repo's own `.strata` models plus the 8 sibling repos'
+declarations (mandate point 3's "ESTATE" migration) are explicitly
+follow-up work, filed rather than forced into this pass (T-0771 Done
+report).
+
+Naming-reconciliation DECISION (T-1073, closing the T-0771 follow-up):
+`FAMILY_MODES`'s `"proc"` stays `"proc"` -- it is NOT renamed to `"exec"`
+to match the registry. Two reasons, both load-bearing:
+
+1. `"exec"` is not renameable in place without a large, genuinely
+   cross-cutting blast radius (14+ files: `frob.vet._capability_registry`'s
+   own `_DangerousOperation` entries, `frob.strata._threat.CWE_CATALOG`/
+   `DEFAULT_BENIGN_CAPABILITIES`, docs, and every sibling-repo `.strata`
+   declaration that already spells the observed kind `"exec"`) -- doing
+   that rename is real migration work belonging to whichever ticket
+   actually BUILDS the `proc` tier-2 join (see point 2), not a pure
+   naming-decision ticket.
+2. The two vocabularies are DIFFERENT LAYERS by established convention,
+   not a naming accident this module invented: `fs`/`net` already have
+   this exact split today -- the registry's raw SCANNER kind is
+   hyphenated (`"fs-write"`, `"net-connect"`) while `FAMILY_MODES`'s
+   mode-qualified vocabulary is dotted (`"fs.write"`, `"net.connect"`);
+   both spellings are independently registered in `CAPABILITY_KINDS`
+   (`_capability_registry.py`) and bridged only at the tier-2 join
+   (`frob.strata._effects._KIND_MAP`), never by making one string equal
+   the other. `proc`/`"exec"` is the SAME shape: `PROC_FAMILY_SCANNER_KIND`
+   below records the bridge explicitly (mirrors the fs/net precedent) so
+   whichever ticket wires `proc`'s tier-2 join has ONE named constant to
+   join through, instead of a bare string literal `"exec"` scattered at
+   the call site or a rename that would fork the vet-registry's
+   already-published scanner-kind vocabulary out from under every
+   existing consumer.
 """
 # frob:waive INV006 reason="T-1023 INV006 burn-down: this file's \
 # exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
@@ -143,6 +171,24 @@ FAMILY_MODES: Final[dict[str, tuple[str, ...]]] = {
 #: existing bare `may "net"` declaration spuriously go SYS101-stale).
 #: Extending this set is the sibling ticket's job (module docstring).
 WIRED_MODE_FAMILIES: Final[frozenset[str]] = frozenset({"fs", "net"})
+
+# frob:doc docs/strata/selfconform.md#fs-read-fs-write
+# frob:waive AFFECT001 reason="T-1073 naming-reconciliation decision, no \
+# behavior change to any existing wired join; docs/strata/selfconform.md is \
+# outside T-1073's declared scope (src/frob/vet/_capability_modes.py, \
+# src/frob/vet/_capability_registry.py) -- matches T-1047's own precedent \
+# for the identical situation on CAPABILITY_KINDS"
+#: T-1073 naming-reconciliation decision (module docstring): the `"proc"`
+#: family here is DELIBERATELY not the same string as the vet registry's
+#: `capability_kind="exec"` (`frob.vet._capability_registry.CAPABILITY_
+#: KINDS`) -- process-spawn signals are registered there under the
+#: pre-existing `"exec"` kind, never `"proc"`. This constant is the ONE
+#: named bridge between the two vocabularies (mirrors how `fs-write`/
+#: `net-connect` bridge to `fs`/`net` only via `frob.strata._effects.
+#: _KIND_MAP`, never by string equality) -- whichever ticket eventually
+#: builds `proc`'s tier-2 `may`-declaration join should join through THIS
+#: constant, not a bare `"exec"` literal at the call site.
+PROC_FAMILY_SCANNER_KIND: Final[str] = "exec"
 
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
@@ -330,6 +376,7 @@ __all__ = [
     "CAPABILITY_MODE_KINDS",
     "FAMILY_MODES",
     "LEGACY_CAPABILITY_ALIASES",
+    "PROC_FAMILY_SCANNER_KIND",
     "WIRED_MODE_FAMILIES",
     "CapabilityModeError",
     "_DeprecatedCapabilityAlias",

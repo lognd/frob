@@ -9,7 +9,9 @@ from datetime import date
 
 from frob.vet._capability_modes import (
     CAPABILITY_MODE_KINDS,
+    FAMILY_MODES,
     LEGACY_CAPABILITY_ALIASES,
+    PROC_FAMILY_SCANNER_KIND,
     CapabilityModeError,
     _mode_qualified,
     _normalize_observed_kind,
@@ -26,6 +28,21 @@ class TestModeQualified:
     def test_capability_mode_kinds_includes_fs_read_write(self):
         assert "fs.read" in CAPABILITY_MODE_KINDS
         assert "fs.write" in CAPABILITY_MODE_KINDS
+
+
+class TestProcFamilyNamingReconciliation:
+    """T-1073: `FAMILY_MODES`'s `"proc"` family stays `"proc"`, deliberately
+    NOT renamed to match `frob.vet._capability_registry`'s pre-existing
+    `"exec"` scanner kind -- `PROC_FAMILY_SCANNER_KIND` is the one named
+    bridge between the two vocabulary layers instead of a rename or a bare
+    string literal at whichever call site eventually wires `proc`'s tier-2
+    join."""
+
+    # frob:tests tests/unit/vet/test_capability_modes.py::TestProcFamilyNamingReconciliation.test_proc_family_kept_distinct_from_registry_exec_kind kind="unit"  # noqa: E501
+    def test_proc_family_kept_distinct_from_registry_exec_kind(self):
+        assert "proc" in FAMILY_MODES
+        assert PROC_FAMILY_SCANNER_KIND == "exec"
+        assert PROC_FAMILY_SCANNER_KIND != "proc"
 
 
 class TestExpandDeclaredKind:

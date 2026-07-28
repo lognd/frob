@@ -63,6 +63,15 @@ LANGUAGES: tuple[str, ...] = ("python", "typescript", "rust", "c-cpp", "kotlin")
 #: patterns. Any kind used anywhere else that is NOT in this tuple is a
 #: drift bug -- `_validate_registry_kinds` (below) is the loud failure.
 CAPABILITY_KINDS: tuple[str, ...] = (
+    #: T-1073 naming-reconciliation decision: this stays `"exec"`, NOT
+    #: renamed to `"proc"` to match `frob.vet._capability_modes.
+    #: FAMILY_MODES`'s `"proc"` family -- the two are deliberately
+    #: different vocabulary LAYERS (raw scanner kind here vs. mode-
+    #: qualified `family.mode` id there), same split `fs-write`/`fs` and
+    #: `net-connect`/`net` already carry below. `_capability_modes.
+    #: PROC_FAMILY_SCANNER_KIND` is the one named bridge between this
+    #: string and that family, for whichever ticket wires `proc`'s
+    #: tier-2 join.
     "exec",
     "eval",
     "net",
