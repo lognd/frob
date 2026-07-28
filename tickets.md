@@ -212,7 +212,8 @@ loss are landed on main, done:
 Additionally landed this wave: T-1105 (done) -- a real daemon-side
 version-handshake RPC (frob_version/frob_shutdown) replacing T-1093's
 original client-written .frob/daemon.meta.json sidecar file, closing
-that ticket's own disclosed residual (T-draft-8a56400c).
+that ticket's own disclosed residual (its draft died at land and was
+refiled as T-1105/T-1106 by the coordinator).
 
 Client-interface HARD requirements verified against the landed code:
 1. No lifecycle commands in the happy path -- `ensure_daemon`/`query`
@@ -237,7 +238,8 @@ Client-interface HARD requirements verified against the landed code:
 
 Disclosed, tracked, NOT this epic's remaining scope (each already has a
 follow-on ticket, not silently dropped):
-- T-draft-296d0d77: wiring frob_graph_query/frob_check_delta/
+- T-1128 (coordinator refile; the original draft died to a 10b ledger
+  restore): wiring frob_graph_query/frob_check_delta/
   frob_run_touched_tests/frob_doable_tickets through the proxy once each
   CLI payload is reconciled field-for-field with its `_tools`
   counterpart.
@@ -4026,7 +4028,8 @@ rewrote the "Version-skew self-heal" subsection under "CLI daemon proxy
 instead of the sidecar file.
 
 Cut: none -- T-1093's disclosed residual (a real version-handshake RPC,
-T-draft-8a56400c) is now fully closed by this ticket.
+tracked as T-1105 after its draft died at land) is now fully closed by
+this ticket.
 
 ### Changed
 ```
@@ -4140,7 +4143,8 @@ docs/modules/serve.md: added the new command to "Proxied commands" and
 narrowed "Scope cut (disclosed)" to explain the remaining gap precisely
 -- `frob_graph_query`/`frob_check_delta`/`frob_run_touched_tests`/
 `frob_doable_tickets` need a CLI-side shape reconciliation only
-(T-draft-296d0d77); `outline`/`map`/`xref`/`exports`/`stats` need NEW
+(T-1128, a coordinator refile after the draft died); `outline`/`map`/
+`xref`/`exports`/`stats` need NEW
 server-side `_tools` functions first (no RPC method exists for any of
 them yet) -- a materially bigger gap than a reconciliation, called out
 separately so it isn't mistaken for the same kind of follow-on work.
@@ -4856,7 +4860,7 @@ query's own Ok(daemon)/Err(fallback) shape.
 ```yaml
 id: T-1119
 title: 'gates: TICK006 phantom draft citations from T-1077/T-1084 Done reports'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -4870,8 +4874,9 @@ threat: null
 component: null
 ```
 frob check reports TICK006 phantom-filing-trail errors for T-1077 and
-T-1084: both Done reports cite T-draft-a418305e / T-draft-372a1425 as
-filed follow-on tickets, but neither draft resolves to a real block in
+T-1084: both Done reports cited draft ids (since repaired by the
+coordinator in 0abc4e3a) as
+filed follow-on tickets, but neither draft resolved to a real block in
 tickets.md or tickets-archive.md -- the classic T-0707/T-0615 draft-loss
 incident class (a worktree's draft ticket getting wiped by the section
 10b tickets.md restore recipe before the citing Done report landed).
@@ -4881,12 +4886,14 @@ Done report meant to cite and correcting the citation, or adding an
 honest frob:waive TICK006 noting the historical draft loss if the
 underlying work is otherwise already covered.
 
+## Drop reason
+- 2026-07-28: moot: the T-1077/T-1084 TICK006 phantom citations were repaired inline by the coordinator (0abc4e3a: T-1115 refile + T-1112 repoint) before this ticket landed
 <!-- ticket:T-1120 -->
 ```yaml
 id: T-1120
 title: 'test: test_every_deferred_entry_targets_an_open_ticket fails, zero deferred
   entries exist in weaknesses.yaml'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -4922,6 +4929,8 @@ out_of_scope-reason substantive-disclosure, already independently fixed
 by T-1019 before this wave started -- confirmed zero REG011 violations
 and the ticket's own named regression test passing on current main).
 
+## Drop reason
+- 2026-07-28: exact duplicate of T-1116 (same test, same zero-deferred-entries cause), filed independently by two wave-17 agents; T-1116 is in progress with the w17b gates agent
 <!-- ticket:T-1121 -->
 ```yaml
 id: T-1121
@@ -5294,3 +5303,30 @@ threat: null
 component: null
 ```
 T-0321's close disclosed: outline/map/xref/exports/stats have no frob.serve._tools RPC surface at all, so T-1106 could not proxy them. outline/map/xref (and docs-search) are scheduled for REMOVAL by T-0802's 2026-10-01 navigation-command sunset -- do NOT build RPC for those; only exports and stats warrant a surface. If T-0802 executes first, re-scope to exports/stats only (already assumed here).
+
+<!-- ticket:T-1128 -->
+```yaml
+id: T-1128
+title: 'daemon: reconcile CLI payload shapes to proxy graph-query/check-delta/touched-tests/doable
+  (T-1106 residual)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/**
+- src/frob/serve/_tools.py
+- docs/modules/serve.md
+acceptance:
+- text: GIVEN a running daemon WHEN frob graph query, frob check --delta, frob test
+    (touched-set), or frob ticket doable runs THEN each is served through the proxy
+    with field-for-field differential parity against in-process execution
+  evidence: []
+threat: null
+component: null
+```
+T-1106 wired frob graph affects and disclosed this residual: frob_graph_query/frob_check_delta/frob_run_touched_tests/frob_doable_tickets RPC methods EXIST server-side but each CLI payload needs field-for-field shape reconciliation with its _tools counterpart before proxying (docs/modules/serve.md Scope cut section). Coordinator refile: the original draft died to a 10b ledger restore.
