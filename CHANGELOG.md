@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.229.0] - unreleased
+
+- T-1027: sequential-independent-awaits should suggest asyncio.gather (T-0698 disclosed cut)
+
 ## [0.228.0] - unreleased
 
 - T-0668: strata: exact interface-conformance check - declared node interface == real public code surface

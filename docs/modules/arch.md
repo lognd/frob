@@ -1278,7 +1278,7 @@ synthetic fixtures keep proving each detector fires.
   fire on an unrelated `.join()` inside a dispatched function -- treat a
   finding as "investigate", not "definitely this exact pool".
 
-### Async event-loop hazards: `blocking-call-in-async` / `nested-event-loop` / `unawaited-coroutine` / `async-zero-awaits` (T-0696)
+### Async event-loop hazards: `blocking-call-in-async` / `nested-event-loop` / `unawaited-coroutine` / `async-zero-awaits` / `sequential-independent-awaits` (T-0696, T-1027)
 
 <a id="async-event-loop-hazards"></a>
 <!-- frob:describes src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards -->
@@ -1317,6 +1317,25 @@ an event-loop hazard possible, never a runtime proof that it fires.
   function's body -- that nested function is visited separately) -- it
   never actually suspends back to the loop, so it should probably be a
   plain `def` (feeds T-0698's IO/CPU-bound model-mismatch advisory too).
+- **`sequential-independent-awaits`** (T-1027, T-0698's own disclosed
+  cut). A MINIMAL def-use check over 2+ `await` statements that are
+  direct statement children of the SAME `block` node (a branch already
+  puts its body in a separate `block`, out of scope), in source order.
+  An await statement is either a bare `await CALL(...)` expression
+  statement or `NAME = await CALL(...)` (a non-identifier assignment
+  target, or a `return`/`yield` of an await, is left alone). Two awaits
+  are INDEPENDENT when the earlier one's bound NAME does not appear as
+  an identifier anywhere inside the later one's `call` node (callee text
+  AND every argument -- deliberately broader than "argument" alone, so a
+  bound value read as a call's RECEIVER, e.g. `a.close()`, still counts
+  as a real dependency). A MAXIMAL contiguous run of 2+ mutually
+  independent awaits fires ONE `suggestion`-severity finding naming every
+  awaited call site and proposing `asyncio.gather`. MODEL LIMIT
+  (disclosed): a NAME-identity check, not a real def-use/alias analysis
+  -- it cannot see through indirection (`some_dict[name]` reading a name
+  an earlier await bound), and a bare `await CALL(...)` with no LHS is
+  always treated as independent of every later await in its run (nothing
+  for a later await to depend on).
 
 ### Lock-ordering hazards: `lock-order-cycle` / `lock-identity-unresolved` (T-0694)
 

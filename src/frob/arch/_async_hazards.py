@@ -3,7 +3,7 @@ hazard umbrella): structural, syntactic co-occurrence heuristics over one
 parsed python file's functions -- same fail-closed, non-runtime-tracing
 posture as `frob.arch._concurrency`'s fork/pool family (T-0695): every
 detector here flags the STRUCTURAL shape that makes an event-loop hazard
-possible, not a proof that it fires at runtime. Four detectors:
+possible, not a proof that it fires at runtime. Five detectors:
 
 - `blocking-call-in-async`: a curated blocking call (`time.sleep`,
   `requests.get/post/put/delete/patch/head/request`, `urllib`'s
@@ -32,6 +32,31 @@ possible, not a proof that it fires at runtime. Four detectors:
   never actually suspends back to the loop, so it should probably be a
   plain `def` (feeds T-0698's IO/CPU-bound model-mismatch advisory too,
   per that ticket's own text).
+- `sequential-independent-awaits` (T-1027, T-0698's own disclosed cut): a
+  MINIMAL def-use check over 2+ `await` statements that are direct
+  statement children of the SAME `block` node (so branching between them
+  already puts them in different blocks and out of scope for this check),
+  in source order. An await statement is either a bare `await CALL(...)`
+  expression statement, or `NAME = await CALL(...)` (a non-identifier
+  assignment target -- tuple/attribute/subscript -- is left alone; so is
+  `return await ...`/`yield await ...`, neither of which binds a rebindable
+  name). Two awaits are INDEPENDENT when the earlier one's bound NAME does
+  not appear as an identifier anywhere inside the later one's `call` node
+  (function callee text AND every argument -- deliberately broader than
+  "argument" alone, since a bound value read as a call's RECEIVER, e.g.
+  `a.close()`, is just as much a real dependency as reading it as an
+  argument; narrowing to arguments alone would risk the exact unsound
+  false-independent case T-0332's noise discipline forbids). A MAXIMAL
+  contiguous run of such awaits, all pairwise independent of one another,
+  fires ONE suggestion naming every awaited call site and proposing
+  `asyncio.gather`. MODEL LIMIT (disclosed, matching T-0698's own
+  "unsound is worse than no advisory" framing): this is a NAME-identity
+  check, not a real def-use/alias analysis -- it cannot see through
+  indirection (an await using `some_dict[name]` where `name` was bound by
+  an earlier await reads as independent here, though it may not be), and
+  a bare `await CALL(...)` with no LHS at all can never itself be *read*
+  by anything later, so it is always treated as independent of every
+  later await in its run (it has nothing for a later await to depend on).
 
 Every finding stays on the same unwaivable advisory channel every other
 `frob.arch` category is on (`frob.gates._unwaivable_channel_rules` auto-
@@ -51,6 +76,7 @@ from tree_sitter import Node, Tree
 from frob.arch._models import ArchSuggestion
 from frob.arch._python import _iter_py_functions, _py_call_callee_text
 from frob.lang import child_by_field as _child
+from frob.lang import node_text as _node_text
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -272,6 +298,127 @@ def _check_zero_awaits(
     )
 
 
+def _await_statement_shape(stmt: Node) -> tuple[str | None, Node] | None:
+    """`(bound_name_or_None, call_node)` if `stmt` is a bare `await
+    CALL(...)` expression statement or a `NAME = await CALL(...)`
+    assignment (T-1027); `None` for every other statement shape,
+    including an assignment whose target is not a plain identifier
+    (tuple/attribute/subscript -- ambiguous "what got bound") and a
+    `return`/`yield` of an await (not a rebindable name a later statement
+    could read back)."""
+    if stmt.type == "await":
+        call = next((c for c in stmt.named_children if c.type == "call"), None)
+        return (None, call) if call is not None else None
+    if stmt.type == "assignment":
+        left = _child(stmt, "left")
+        right = _child(stmt, "right")
+        if left is None or left.type != "identifier" or right is None:
+            return None
+        if right.type != "await":
+            return None
+        call = next((c for c in right.named_children if c.type == "call"), None)
+        return (_node_text(left), call) if call is not None else None
+    return None
+
+
+def _call_identifier_names(call_node: Node) -> set[str]:
+    """Every `identifier` token anywhere inside `call_node` (callee AND
+    every argument) -- deliberately broader than "argument names alone"
+    so a bound value read as a call's RECEIVER (`a.close()`) counts as a
+    real dependency too, per this module's `sequential-independent-
+    awaits` docstring section."""
+    names: set[str] = set()
+
+    def walk(n: Node) -> None:
+        if n.type == "identifier":
+            names.add(_node_text(n))
+        for c in n.children:
+            walk(c)
+
+    walk(call_node)
+    return names
+
+
+def _iter_own_scope_blocks(node: Node) -> Iterator[Node]:
+    """Every `block` node in `node`'s subtree, stopping at a nested
+    `function_definition`/`class_definition` boundary (mirrors
+    `_iter_own_scope`) -- each `block` is its own independent statement
+    sequence for `sequential-independent-awaits`' purposes, since a
+    branch (`if`/`for`/`try`/...) already puts its body in a SEPARATE
+    `block` node, correctly out of sequence with the awaits before/after
+    it."""
+    if node.type in ("function_definition", "class_definition"):
+        return
+    if node.type == "block":
+        yield node
+    for c in node.children:
+        yield from _iter_own_scope_blocks(c)
+
+
+def _check_sequential_independent_awaits(
+    rel: str, fqname: str, body: Node, out: list[ArchSuggestion]
+) -> None:
+    """`sequential-independent-awaits` (T-1027): within each own-scope
+    `block`, find every maximal contiguous run of 2+ await statements
+    (`_await_statement_shape`) where no earlier await's bound name is
+    read (`_call_identifier_names`) by any later await's call in the same
+    run -- see this module's docstring for the exact independence
+    definition and disclosed model limits."""
+    for block in _iter_own_scope_blocks(body):
+        run: list[tuple[int, str | None, Node]] = []
+
+        def flush(run: list[tuple[int, str | None, Node]]) -> None:
+            if len(run) < 2:
+                return
+            first_line = run[0][0]
+            callees = [_py_call_callee_text(call) for _line, _name, call in run]
+            _log.warning(
+                "sequential-independent-awaits: %s::%s lines %s are mutually "
+                "independent",
+                rel,
+                fqname,
+                [line for line, _name, _call in run],
+            )
+            out.append(
+                ArchSuggestion(
+                    file=rel,
+                    line=first_line,
+                    category="sequential-independent-awaits",
+                    severity="suggestion",
+                    message=(
+                        f"{fqname}: {len(run)} sequential awaits at lines "
+                        f"{', '.join(str(line) for line, _n, _c in run)} "
+                        f"({', '.join(callees)}) do not read each other's "
+                        f"results -- they can run concurrently"
+                    ),
+                    detail=(
+                        "wrap the independent calls in `asyncio.gather(...)` "
+                        "instead of awaiting them one at a time"
+                    ),
+                    symref=f"{rel}::{fqname}",
+                )
+            )
+
+        for stmt in block.named_children:
+            shape = _await_statement_shape(stmt)
+            if shape is None:
+                flush(run)
+                run = []
+                continue
+            name, call = shape
+            line = stmt.start_point[0] + 1
+            depends_on_run = any(
+                bound is not None and bound in _call_identifier_names(call)
+                for _rline, bound, _rcall in run
+            )
+            if depends_on_run:
+                flush(run)
+                run = [(line, name, call)]
+            else:
+                run.append((line, name, call))
+        flush(run)
+
+
 def _collect_async_function_names(root: Node) -> set[str]:
     """Bare names of every `async def` function/method defined anywhere in
     the module -- the corpus `_check_unawaited_coroutines` matches a bare
@@ -344,11 +491,15 @@ def _check_unawaited_coroutines(
 # frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_unawaited_coroutine_does_not_fire_when_awaited_or_stored  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_async_zero_awaits_fires_on_no_await_body  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_async_zero_awaits_does_not_fire_when_awaiting  # noqa: E501
+# frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_sequential_independent_awaits_fires_on_unrelated_calls  # noqa: E501
+# frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_sequential_independent_awaits_does_not_fire_when_second_reads_first  # noqa: E501
+# frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_sequential_independent_awaits_does_not_fire_on_single_await  # noqa: E501
 def _check_async_event_loop_hazards(
     tree: object, rel: str, out: list[ArchSuggestion]
 ) -> None:
-    """Run all four async event-loop hazard detectors (this module's
-    docstring) over one parsed python file's functions/methods (T-0696)."""
+    """Run all five async event-loop hazard detectors (this module's
+    docstring) over one parsed python file's functions/methods (T-0696,
+    T-1027)."""
     t = cast("Tree", tree)
     async_names = _collect_async_function_names(t.root_node)
     for func_node, class_prefix, fname in _iter_py_functions(t.root_node):
@@ -361,3 +512,4 @@ def _check_async_event_loop_hazards(
             continue
         _check_blocking_and_nested_loop(rel, fqname, func_node, body, out)
         _check_zero_awaits(rel, fqname, body, out)
+        _check_sequential_independent_awaits(rel, fqname, body, out)

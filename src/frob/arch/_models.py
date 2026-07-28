@@ -132,6 +132,12 @@ ArchCategory = Literal[
     "nested-event-loop",
     "unawaited-coroutine",
     "async-zero-awaits",
+    # T-1027 (T-0698's own disclosed cut): a maximal run of 2+ sequential
+    # `await` statements in the same own-scope block where NO earlier
+    # await's bound name is read anywhere in a later await's call --
+    # `frob.arch._async_hazards._check_sequential_independent_awaits`.
+    # Same unwaivable advisory channel as every other category above.
+    "sequential-independent-awaits",
     # T-0621/T-0892: type-driven-design checks (ARCH1xx family, T-0330's
     # fifth "Logan Smith" family alongside SRP/OCP/LSP/ISP/DIP) --
     # `frob.arch._typedesign`, written once against the T-0609 normalized
