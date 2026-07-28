@@ -649,6 +649,42 @@ immediately after `transition(root, ticket_id, IN_PROGRESS)` succeeds, it
    `sys.exit(1)`, never a silently-swallowed warning, since a failure here
    IS the DirtyMain-at-next-land bug reproducing itself.
 
+## Stale-worktree-cut warning (T-1059)
+
+T-1030 root-caused a recurring incident (fa606fe8, b3589c3e): dispatched
+worktrees can be cut from a stale base -- the dispatch harness's
+`EnterWorktree` tool defaults to branching from `origin/<default-branch>`
+rather than local `HEAD`, and this repo's `origin/main` regularly lags
+local `main` by dozens to hundreds of commits across a session. The
+playbook's warm-up step (`docs/guides/agent-playbook.md#1-worktree-warm-
+up`) is the manual fix; this is the mechanical detector that catches it at
+`frob ticket start` time instead of relying on an agent to remember.
+
+`frob.tickets._leases.warn_if_worktree_stale(root, ticket_id, main_ref=
+"main")` runs unconditionally from `commit_start_transition` (before its
+own dirty-ledger check), so every `start` measures it regardless of
+whether the ledger write needed a commit:
+
+1. `git merge-base HEAD <main_ref>` in `root`.
+2. `git rev-list --count <merge-base>..<main_ref>` -- how many commits
+   `main_ref`'s tip is ahead of the merge-base, i.e. how far behind `root`'s
+   own `HEAD` currently sits.
+3. If that count is at or above the `[tickets] stale_worktree_warn_commits`
+   threshold (`frob.toml`, default 20), logs a `_log.warning` naming the
+   ticket id, the commit count, and the exact playbook anchor to re-read.
+
+Best-effort and non-fatal throughout: any git failure (non-git `root`,
+missing `main_ref`, an unparsable count) degrades to a silent no-op, the
+same posture `_tickets_md_dirty` already takes for its own optional git
+probe -- this is a detector, never a gate, and must never block `start`
+itself. `_load_stale_worktree_warn_commits` reads `[tickets]
+stale_worktree_warn_commits` via the shared `load_positive_int_config(root,
+key, default)` helper (T-1059, DUP001) -- the same degrade-quietly
+`frob.toml` reader `_load_large_glob_max_files` (`large_glob_max_files`,
+T-0453) now also delegates to, extracted so the absent-file/malformed-
+TOML/non-positive-value fallback chain has exactly one home instead of two
+95%-identical copies.
+
 ## `frob ticket reconcile` (T-0476)
 
 The fuller two-way healing the T-0473 section above defers to. Reuses the

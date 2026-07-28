@@ -34,6 +34,7 @@ import json
 import os
 import re
 import threading
+import tomllib
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -478,10 +479,120 @@ def commit_start_transition(root: Path, ticket_id: str) -> Result[None, LeaseErr
     IS dirty and either `git add` or `git commit` itself fails -- the
     caller (`ticket_runner._start`) is expected to surface this as a hard
     `sys.exit(1)`, never a silently-swallowed warning, since a failure here
-    is exactly the DirtyMain-at-next-land bug reproducing itself."""
+    is exactly the DirtyMain-at-next-land bug reproducing itself.
+
+    T-1059: also runs `warn_if_worktree_stale` unconditionally, before the
+    dirty-ledger short-circuit below, so a stale-base worktree (T-1030) is
+    flagged on every `start` regardless of whether this particular ticket
+    happens to be the first one committed in it."""
+    warn_if_worktree_stale(root, ticket_id)
     if not _tickets_md_dirty(root, ticket_id):
         return Ok(None)
     return _add_and_commit_tickets_md(root, ticket_id)
+
+
+# frob:ticket T-1059
+_STALE_WORKTREE_WARN_COMMITS_DEFAULT = 20
+
+
+# frob:ticket T-1059
+# frob:doc docs/modules/tickets.md#stale-worktree-cut-warning-t-1059
+# frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_returns_default_when_frob_toml_absent kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_reads_configured_value kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_non_positive_value_falls_back_to_default kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_malformed_toml_falls_back_to_default kind="unit"  # noqa: E501
+def load_positive_int_config(root: Path, key: str, default: int) -> int:
+    """Read `[tickets] <key>` from `root`'s `frob.toml` as a positive `int`
+    (T-1059): the shared degrade-quietly `frob.toml` reader every optional
+    `[tickets]` integer tunable uses (`_load_large_glob_max_files`'s
+    `large_glob_max_files`, `_load_stale_worktree_warn_commits`'s
+    `stale_worktree_warn_commits`) -- extracted here (DUP001) rather than
+    each caller re-parsing the same absent-file/malformed-TOML/non-positive-
+    value fallback chain. Absent config, an unreadable/malformed file, or a
+    non-positive (or bool, since `bool` is an `int` subclass in Python) value
+    all fall back to `default` rather than erroring."""
+    toml_path = root / "frob.toml"
+    if not toml_path.exists():
+        return default
+    try:
+        with toml_path.open("rb") as handle:
+            doc = tomllib.load(handle)
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        _log.warning("tickets: could not parse %s: %s", toml_path, exc)
+        return default
+    value = doc.get("tickets", {}).get(key)
+    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+        return default
+    return value
+
+
+# frob:ticket T-1059
+def _load_stale_worktree_warn_commits(root: Path) -> int:
+    """`[tickets] stale_worktree_warn_commits` from `frob.toml` (T-1059) --
+    the commits-behind-main-tip threshold `warn_if_worktree_stale` warns at.
+    Thin wrapper over `load_positive_int_config` binding its own key/default."""
+    return load_positive_int_config(
+        root, "stale_worktree_warn_commits", _STALE_WORKTREE_WARN_COMMITS_DEFAULT
+    )
+
+
+# frob:ticket T-1059
+# frob:doc docs/modules/tickets.md#stale-worktree-cut-warning-t-1059
+# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_warns_when_behind_threshold kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_silent_when_within_threshold kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_silent_on_non_git_root kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_respects_configured_threshold kind="unit"  # noqa: E501
+def warn_if_worktree_stale(
+    root: Path, ticket_id: str, *, main_ref: str = "main"
+) -> None:
+    """T-1059/T-1030: warn LOUDLY when `root`'s HEAD is `[tickets]
+    stale_worktree_warn_commits`-or-more commits behind `main_ref`'s tip
+    (measured from `git merge-base HEAD <main_ref>` to `<main_ref>`) -- the
+    stale-worktree-cut hazard T-1030 root-caused (a dispatch harness's
+    `EnterWorktree` defaulting to `origin/<default-branch>` instead of local
+    HEAD, T-1030 measured 81 commits behind at incident time) caught at
+    `start` time instead of silently carried through a whole session,
+    pointing at the exact recovery step
+    (docs/guides/agent-playbook.md#1-worktree-warm-up).
+
+    Best-effort and non-fatal: any git failure (non-git `root`, missing
+    `main_ref`, unparsable count) degrades to a silent no-op, matching this
+    module's other optional-signal helpers (`_tickets_md_dirty`) -- this is a
+    detector, not a gate, and must never block `start` itself."""
+    threshold = _load_stale_worktree_warn_commits(root)
+    merge_base_result = gitio.run_argv(
+        ["git", "-C", str(root), "merge-base", "HEAD", main_ref]
+    )
+    if merge_base_result.is_err or merge_base_result.danger_ok.returncode != 0:
+        return
+    merge_base = merge_base_result.danger_ok.stdout.strip()
+    if not merge_base:
+        return
+    count_result = gitio.run_argv(
+        ["git", "-C", str(root), "rev-list", "--count", f"{merge_base}..{main_ref}"]
+    )
+    if count_result.is_err or count_result.danger_ok.returncode != 0:
+        return
+    try:
+        behind = int(count_result.danger_ok.stdout.strip())
+    except ValueError:
+        return
+    if behind < threshold:
+        return
+    _log.warning(
+        "ticket start: %s worktree is %d commit(s) behind %s's tip "
+        "(merge-base %s) -- this repo has repeatedly been bitten by "
+        "worktrees cut from a stale base (T-1030); run `git merge %s` "
+        "and re-verify `git log --oneline -1` shows (or descends from) "
+        "%s's tip before continuing "
+        "(docs/guides/agent-playbook.md#1-worktree-warm-up)",
+        ticket_id,
+        behind,
+        main_ref,
+        merge_base[:8],
+        main_ref,
+        main_ref,
+    )
 
 
 # frob:ticket T-1054

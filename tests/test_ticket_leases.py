@@ -560,3 +560,145 @@ class TestCommitStartTransition:
 
         status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
         assert status.stdout.strip() == ""
+
+
+# frob:ticket T-1059
+class TestWarnIfWorktreeStale:
+    """T-1059: `frob ticket start` warns loudly when the worktree's HEAD is
+    N+ commits behind `main`'s tip (T-1030's stale-worktree-cut hazard),
+    instead of silently carrying a stale base through a whole session."""
+
+    # frob:ticket T-1059
+    def test_warns_when_behind_threshold(self, second_worktree: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_warns_when_behind_threshold  # noqa: E501
+        from frob.tickets._leases import warn_if_worktree_stale
+
+        main_repo = second_worktree.parent / "main"
+        for i in range(21):
+            (main_repo / f"extra-{i}.py").write_text(f"# extra {i}\n")
+            _commit_all(main_repo, f"extra commit {i}")
+
+        import logging
+
+        logger = logging.getLogger("frob.tickets._leases")
+        records: list[str] = []
+
+        class _Capture(logging.Handler):
+            def emit(self, record: logging.LogRecord) -> None:
+                records.append(record.getMessage())
+
+        handler = _Capture()
+        logger.addHandler(handler)
+        try:
+            warn_if_worktree_stale(second_worktree, "T-0001", main_ref="main")
+        finally:
+            logger.removeHandler(handler)
+
+        assert any("commit(s) behind" in msg for msg in records)
+        assert any("T-1030" in msg for msg in records)
+
+    # frob:ticket T-1059
+    def test_silent_when_within_threshold(self, second_worktree: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_silent_when_within_threshold  # noqa: E501
+        from frob.tickets._leases import warn_if_worktree_stale
+
+        main_repo = second_worktree.parent / "main"
+        (main_repo / "extra.py").write_text("# extra\n")
+        _commit_all(main_repo, "one extra commit")
+
+        import logging
+
+        logger = logging.getLogger("frob.tickets._leases")
+        records: list[str] = []
+
+        class _Capture(logging.Handler):
+            def emit(self, record: logging.LogRecord) -> None:
+                records.append(record.getMessage())
+
+        handler = _Capture()
+        logger.addHandler(handler)
+        try:
+            warn_if_worktree_stale(second_worktree, "T-0001", main_ref="main")
+        finally:
+            logger.removeHandler(handler)
+
+        assert not any("commit(s) behind" in msg for msg in records)
+
+    # frob:ticket T-1059
+    def test_silent_on_non_git_root(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_silent_on_non_git_root  # noqa: E501
+        from frob.tickets._leases import warn_if_worktree_stale
+
+        not_a_repo = tmp_path / "not-a-repo"
+        not_a_repo.mkdir()
+        # Must not raise despite there being no git repository here at all.
+        warn_if_worktree_stale(not_a_repo, "T-0001", main_ref="main")
+
+    # frob:ticket T-1059
+    def test_respects_configured_threshold(self, second_worktree: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_respects_configured_threshold  # noqa: E501
+        from frob.tickets._leases import warn_if_worktree_stale
+
+        main_repo = second_worktree.parent / "main"
+        (second_worktree / "frob.toml").write_text(
+            "[tickets]\nstale_worktree_warn_commits = 2\n"
+        )
+        for i in range(3):
+            (main_repo / f"small-{i}.py").write_text(f"# small {i}\n")
+            _commit_all(main_repo, f"small commit {i}")
+
+        import logging
+
+        logger = logging.getLogger("frob.tickets._leases")
+        records: list[str] = []
+
+        class _Capture(logging.Handler):
+            def emit(self, record: logging.LogRecord) -> None:
+                records.append(record.getMessage())
+
+        handler = _Capture()
+        logger.addHandler(handler)
+        try:
+            warn_if_worktree_stale(second_worktree, "T-0001", main_ref="main")
+        finally:
+            logger.removeHandler(handler)
+
+        assert any("commit(s) behind" in msg for msg in records)
+
+
+# frob:ticket T-1059
+class TestLoadPositiveIntConfig:
+    """T-1059: the shared `[tickets] <key>` positive-int `frob.toml` reader
+    both `_load_large_glob_max_files` (T-0453) and
+    `_load_stale_worktree_warn_commits` (T-1059) now delegate to."""
+
+    # frob:ticket T-1059
+    def test_returns_default_when_frob_toml_absent(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_returns_default_when_frob_toml_absent  # noqa: E501
+        from frob.tickets._leases import load_positive_int_config
+
+        assert load_positive_int_config(tmp_path, "some_key", 7) == 7
+
+    # frob:ticket T-1059
+    def test_reads_configured_value(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_reads_configured_value  # noqa: E501
+        from frob.tickets._leases import load_positive_int_config
+
+        (tmp_path / "frob.toml").write_text("[tickets]\nsome_key = 42\n")
+        assert load_positive_int_config(tmp_path, "some_key", 7) == 42
+
+    # frob:ticket T-1059
+    def test_non_positive_value_falls_back_to_default(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_non_positive_value_falls_back_to_default  # noqa: E501
+        from frob.tickets._leases import load_positive_int_config
+
+        (tmp_path / "frob.toml").write_text("[tickets]\nsome_key = 0\n")
+        assert load_positive_int_config(tmp_path, "some_key", 7) == 7
+
+    # frob:ticket T-1059
+    def test_malformed_toml_falls_back_to_default(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_malformed_toml_falls_back_to_default  # noqa: E501
+        from frob.tickets._leases import load_positive_int_config
+
+        (tmp_path / "frob.toml").write_text("not valid toml [[[")
+        assert load_positive_int_config(tmp_path, "some_key", 7) == 7
