@@ -497,10 +497,10 @@ Tarjan SCC's index/lowlink/on-stack bookkeeping plus its unwind loop are
 one indivisible algorithm, and splitting would add indirection without
 separating a real sub-concern -- forcing a split here would contradict
 that standing, reviewed rationale on the same function. Filed
-T-draft-26c6346f to resolve it properly (real decomposition confirmed
+T-1066 to resolve it properly (real decomposition confirmed
 safe by a reviewer, or a scoped detector exemption mirroring ARCH001's
 override path) rather than force a bad split. Also filed
-T-draft-e6eef9c9 and T-draft-8205bb39 as the T-0393 decomposition
+T-1068 and T-1067 as the T-0393 decomposition
 (that ticket failed -- 84 in-scope abstraction-opportunity findings,
 also unwaivable, too large for one pass).
 
@@ -537,6 +537,7 @@ existing test surface, all passing (see Evidence); `git diff main
 ### Captured claims
 - tests: 21 passed (from 21 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-0395 -->
 ```yaml
 id: T-0395
@@ -4763,9 +4764,9 @@ header waiver) and a fix or a documented is-this-really-flaky
 determination -- WAIVE004's own gate:WAIVE never reaches zero while this
 class exists, since these waivers are demonstrably still required.
 
-<!-- ticket:T-draft-0a8f8fe9 -->
+<!-- ticket:T-1065 -->
 ```yaml
-id: T-draft-0a8f8fe9
+id: T-1065
 title: x
 state: dropped
 kind: feature
@@ -4785,9 +4786,9 @@ x
 ## Drop reason
 - 2026-07-28: accidental test ticket, superseded
 
-<!-- ticket:T-draft-26c6346f -->
+<!-- ticket:T-1066 -->
 ```yaml
-id: T-draft-26c6346f
+id: T-1066
 title: 'arch: resolve deep-nesting on graph/summary.py::_tarjan_sccs (T-0394 remainder)'
 state: queued
 kind: bug
@@ -4823,9 +4824,9 @@ itself (mirroring how ARCH001 already carries a reasoned per-function
 override path) -- evaluate both options; do not force a split that
 contradicts the standing ARCH001 rationale on the same function.
 
-<!-- ticket:T-draft-8205bb39 -->
+<!-- ticket:T-1067 -->
 ```yaml
-id: T-draft-8205bb39
+id: T-1067
 title: 'arch: abstraction-opportunity per-package extraction pass (T-0393 remainder)'
 state: queued
 kind: feature
@@ -4859,9 +4860,9 @@ unwaivable). Do not attempt all ~40 in one ticket; src/frob/gates/__init__.py
 alone carries ~15 of these groups and is a large-file residue candidate in
 its own right (see T-0395's sibling ticket).
 
-<!-- ticket:T-draft-e6eef9c9 -->
+<!-- ticket:T-1068 -->
 ```yaml
-id: T-draft-e6eef9c9
+id: T-1068
 title: 'arch: abstraction-opportunity language-parity exclusion (detector precision)'
 state: queued
 kind: feature
