@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.223.0] - unreleased
+
+- T-1093: daemon: CLI auto-proxy to socket daemon with transparent in-process fallback
+
 ## [0.222.0] - unreleased
 
 - T-1089: arch: split ticket_runner.py (3957), tickets/__init__.py (4260), tickets/_land.py (4762) -- T-1086 residue (refile after T-1087 id collision)

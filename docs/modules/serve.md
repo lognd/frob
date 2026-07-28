@@ -337,6 +337,106 @@ unlinked unconditionally the next time a caller wins the lock (safe: no
 other live daemon can be bound to it once this process holds the
 exclusive lock).
 
+## CLI daemon proxy (T-1093)
+
+<!-- frob:describes src/frob/app/_daemon_proxy.py::ProxyReason -->
+<!-- frob:describes src/frob/app/_daemon_proxy.py::ensure_daemon -->
+<!-- frob:describes src/frob/app/_daemon_proxy.py::query -->
+
+`frob.app._daemon_proxy` (T-1093) is the client-side seam the CLI dispatch
+layer uses to talk to the T-1092 socket daemon above, transparently: a
+runner calls `query(root, method, params)` instead of computing a proxyable
+answer itself, and always gets back a `Result` -- `Ok(result)` on a daemon
+hit (render it exactly as the in-process path would have) or `Err(reason)`
+meaning "fall back to in-process, nothing user-visible happened". Today
+`frob perf hot --json` is the one CLI command wired through it (see
+"Proxied commands" below); every other query-shaped subcommand this ticket's
+epic (T-0321) names is a disclosed residual, not yet wired -- see "Scope
+cut" below.
+
+### Decision tree
+
+```
+query(root, method, params)
+  |
+  +-- FROB_NO_DAEMON=1 set? --------------------------> Err(Disabled)
+  |
+  +-- ensure_daemon(root):
+  |     read .frob/daemon.meta.json (version, pid this
+  |     module last spawned, if any)
+  |       |
+  |       +-- no meta recorded ----------------------> spawn a fresh daemon
+  |       +-- meta.version != this client's version --> SIGTERM the stale
+  |       |                                              pid, then spawn a
+  |       |                                              fresh daemon
+  |       +-- meta.version matches -------------------> no-op, trust the
+  |                                                       existing daemon
+  |
+  +-- send_request(root, method, params) over the socket
+        |
+        +-- Unreachable (no socket yet, just spawned) -> retry for up to
+        |                                                  _SPAWN_GRACE_S
+        |                                                  (1.5s), then
+        |                                                  Err(Unreachable)
+        +-- RemoteError (daemon returned a JSON-RPC
+        |    error, e.g. unknown method) ---------------> Err(RemoteError)
+        +-- Ok(result) ---------------------------------> Ok(result)
+```
+
+Every `Err` reason means the same thing to the caller: compute the answer
+in-process, right now, with no surfaced daemon error and no hang -- T-1093
+acceptance [1]. `FROB_NO_DAEMON=1` (acceptance [2]) short-circuits before
+ANY daemon I/O, so a differential test can produce a trustworthy in-process
+reference answer to diff a daemon-served one against.
+
+### Version-skew self-heal
+
+`_socketd`'s JSON-RPC protocol carries no version field of its own (that
+module is a sibling ticket's scope this wave, not touched here). Instead,
+`_daemon_proxy` tags the daemon IT spawns with a sidecar
+`<root>/.frob/daemon.meta.json` (`{"version": ..., "pid": ...}`, written at
+spawn time from `importlib.metadata.version("frob")`) and compares that
+recorded version against the CURRENT client's own version before trusting
+an already-running daemon. A mismatch (most likely: a daemon spawned before
+a `frob` upgrade, still idling) gets `SIGTERM`'d and replaced, never
+consulted -- this is `_socketd.acquire_singleton_lock`'s `flock` doing the
+real exclusivity guarantee underneath; the sidecar file only decides WHEN
+to ask a live daemon to step aside. A real version-handshake RPC method on
+`_socketd` itself (so any client, not just one sharing this module's own
+meta file, can detect skew) is filed as a follow-on -- T-draft-8a56400c.
+
+### Proxied commands
+
+- `frob perf hot --json` -> `frob_perf_hot` -- the CLI's own in-process
+  `--json` payload (`section_key`/`kind`/`label`/`p50`/`p90`/`sample_count`
+  per row) is built field-for-field identically to `frob_perf_hot`'s
+  `Result[list[dict], ServeError]` shape, so a daemon hit serializes to
+  exactly the same JSON `frob perf hot --json` would have printed computing
+  it locally -- proven by
+  `tests/test_app_daemon_proxy.py::TestDifferentialParity`, a real
+  subprocess-vs-subprocess (`FROB_NO_DAEMON=1` in-process vs a live daemon)
+  diff of the rendered payload.
+
+### Scope cut (disclosed)
+
+T-0321's integration map names `outline`/`map`/`xref`/`parse`/`graph`/
+`exports`/`bind`/`docs`/`stats` as eventual proxy targets alongside `check
+--delta`-style reads. `_socketd._TOOL_DISPATCH` (T-1092) only exposes ten
+methods today, most of which have no field-for-field-identical CLI JSON
+payload to diff against yet (e.g. `frob_graph_query`'s dict omits `span`/
+`digests` that `frob graph query --json` prints). This ticket ships the
+proxy MECHANISM (`ensure_daemon`/`query`, spawn, version-skew self-heal,
+`FROB_NO_DAEMON=1` bypass) plus one fully-wired, differentially-proven
+command (`frob perf hot --json`) rather than force a shape mismatch onto
+the remaining commands just to claim broader coverage. Wiring
+`frob_graph_query`/`frob_check_delta`/`frob_run_touched_tests` /
+`frob_doable_tickets` through the same `query()` seam is straightforward
+follow-on work once each CLI payload is reconciled field-for-field with its
+`_tools` counterpart (or the counterpart is extended to match) -- tracked as
+T-draft-296d0d77. `frob ticket doable` specifically cannot be wired from this
+ticket's own scope: `src/frob/app/ticket_runner.py` is a sibling ticket's
+file this wave.
+
 ## CLI
 
 ```

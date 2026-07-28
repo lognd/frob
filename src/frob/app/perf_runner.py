@@ -581,39 +581,81 @@ def _hot_sort_key(row, by: str):  # noqa: ANN001, ANN202
     return p50 * total_weight(row.sketch)
 
 
+# frob:ticket T-1093
+def _hot_json_payload(root: Path, by: str, top: int | None) -> list[dict]:  # noqa: ANN201
+    """The rendered `frob perf hot --json` row list -- computed in-process,
+    field-for-field identical to `frob_perf_hot`'s daemon response shape
+    (docs/modules/serve.md#cli-daemon-proxy-t-1093), so `_hot`'s daemon-hit
+    branch and this fallback branch always serialize to the same JSON."""
+    from frob.perf._sketch_store import list_sketches
+    from frob.stats._sketch import quantile, total_weight
+
+    rows = list_sketches(root)
+    rows.sort(key=lambda row: _hot_sort_key(row, by), reverse=True)
+    if top is not None:
+        rows = rows[:top]
+    return [
+        {
+            "section_key": row.section_key,
+            "kind": row.kind,
+            "label": row.label,
+            "p50": quantile(row.sketch, 0.5),
+            "p90": quantile(row.sketch, 0.9),
+            "sample_count": total_weight(row.sketch),
+        }
+        for row in rows
+    ]
+
+
+# frob:ticket T-1093
+def _hot_json(cfg: AppConfig, root: Path, by: str) -> None:
+    """`frob perf hot --json`'s body (split out of `_hot`, T-1093, to keep
+    both under ARCH001's line threshold): tries the T-1092 daemon's
+    `frob_perf_hot` method first via `frob.app._daemon_proxy.query`, and on
+    any `ProxyReason` (no daemon, unreachable, stale version mid-restart)
+    falls back to `_hot_json_payload`'s in-process computation -- the two
+    are proven byte-for-byte identical by
+    `tests/test_app_daemon_proxy.py::TestDifferentialParity`."""
+    import json
+
+    from frob.app._daemon_proxy import query as _daemon_query
+
+    params: dict[str, object] = {"by": by}
+    if cfg.perf_top is not None:
+        params["top"] = cfg.perf_top
+    proxied = _daemon_query(root, "frob_perf_hot", params)
+    payload = (
+        proxied.danger_ok
+        if proxied.is_ok
+        else _hot_json_payload(root, by, cfg.perf_top)
+    )
+    Renderer.for_stream(sys.stdout).line(json.dumps(payload, indent=2))
+
+
 # frob:ticket T-0712
+# frob:ticket T-1093
 def _hot(cfg: AppConfig) -> None:
     """`frob perf hot [--path DIR] [--top N] [--by p90|p50xcount] [--json]`:
     render T-0711's persisted sketch store, ranked by `--by` (default
     `p50xcount`) -- the query surface T-0712's plan calls for, reading
     the store directly with no live re-collection (a `frob perf collect`
-    run is what populates it)."""
+    run is what populates it). The `--json` path is handled by `_hot_json`
+    (T-1093's daemon-proxy seam); this function still renders the default
+    table itself."""
     from frob.perf._sketch_store import list_sketches
     from frob.stats._sketch import quantile, total_weight
 
     root = (cfg.perf_path or Path(".")).resolve()
     by = cfg.perf_by or "p50xcount"
+
+    if cfg.perf_json:
+        _hot_json(cfg, root, by)
+        return
+
     rows = list_sketches(root)
     rows.sort(key=lambda row: _hot_sort_key(row, by), reverse=True)
     if cfg.perf_top is not None:
         rows = rows[: cfg.perf_top]
-
-    if cfg.perf_json:
-        import json
-
-        payload = [
-            {
-                "section_key": row.section_key,
-                "kind": row.kind,
-                "label": row.label,
-                "p50": quantile(row.sketch, 0.5),
-                "p90": quantile(row.sketch, 0.9),
-                "sample_count": total_weight(row.sketch),
-            }
-            for row in rows
-        ]
-        Renderer.for_stream(sys.stdout).line(json.dumps(payload, indent=2))
-        return
 
     renderer = Renderer.for_stream(sys.stdout)
     color = should_color(sys.stdout)

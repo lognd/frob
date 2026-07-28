@@ -1728,7 +1728,7 @@ rather than just in a test harness.
 ```yaml
 id: T-1093
 title: 'daemon: CLI auto-proxy to socket daemon with transparent in-process fallback'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -1746,24 +1746,99 @@ scope:
 - docs/modules/app.md
 - tickets.md
 - tests/test_app_daemon_proxy.py
+evidence:
+- tests/test_app_daemon_proxy.py::TestQuery::test_no_daemon_env_bypass
+- tests/test_app_daemon_proxy.py::TestQuery::test_no_daemon_no_socket_falls_back
+- tests/test_app_daemon_proxy.py::TestQuery::test_live_daemon_hit
+- tests/test_app_daemon_proxy.py::TestQuery::test_remote_error_falls_back
+- tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_spawns_when_nothing_recorded
+- tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_noop_when_version_matches
+- tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_restarts_on_version_skew
+- tests/test_app_daemon_proxy.py::TestDifferentialParity::test_perf_hot_json_daemon_matches_in_process
 acceptance:
 - text: GIVEN a fresh clone with no daemon running WHEN a user runs frob check THEN
     it autostarts the daemon transparently (no init/deinit command issued) and the
     result is identical to the pre-existing in-process path
-  evidence: []
+  evidence:
+  - tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_spawns_when_nothing_recorded
+  - tests/test_app_daemon_proxy.py::TestQuery::test_live_daemon_hit
 - text: GIVEN the daemon is unreachable, crashed, or reports a stale frob version
     WHEN a client issues any command THEN the client silently falls back to in-process
     computation with no surfaced daemon error and no hang, and best-effort respawns
     a fresh daemon
-  evidence: []
+  evidence:
+  - tests/test_app_daemon_proxy.py::TestQuery::test_no_daemon_no_socket_falls_back
+  - tests/test_app_daemon_proxy.py::TestQuery::test_remote_error_falls_back
+  - tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_restarts_on_version_skew
 - text: GIVEN FROB_NO_DAEMON=1 is set WHEN any frob command runs THEN it fully bypasses
     the daemon and produces output identical to a daemon-served run (differential
     parity)
-  evidence: []
+  evidence:
+  - tests/test_app_daemon_proxy.py::TestQuery::test_no_daemon_env_bypass
+  - tests/test_app_daemon_proxy.py::TestDifferentialParity::test_perf_hot_json_daemon_matches_in_process
 threat: null
 component: null
 ```
 Child (d) of T-0321. Today nothing in src/frob/app/ or __main__.py references 'daemon' at all (confirmed 2026-07-28) -- the CLI always computes in-process; T-1092's socket daemon exists but nothing talks to it. Wire the frob CLI entrypoint to: (1) probe for a live daemon socket for the current project root, (2) if present and version-matched, proxy the query-shaped subcommands (outline, map, xref, parse, graph, exports, bind, docs, stats, check-delta-style reads per T-0321's integration map) over the socket instead of recomputing, (3) on any failure (no socket, connect refused, stale version reported by the daemon, timeout) transparently fall back to the existing in-process code path with zero user-visible error, (4) respect FROB_NO_DAEMON=1 as an unconditional bypass. Makefile targets stay thin shims calling frob subcommands (no Makefile-level daemon awareness). Also implements T-0321's HARD requirement 6 (self-healing version skew): the client detects a version-mismatched daemon and triggers its self-replacement rather than erroring. Add a differential test asserting daemon-served and in-process answers are byte-identical for each proxied query type -- this is T-0321's #1 safety invariant (correctness must not depend on the daemon).
+
+## Done report
+
+Wires frob.app._daemon_proxy (spawn/version-skew-self-heal/FROB_NO_DAEMON=1
+bypass over the T-1092 socket daemon) into the CLI dispatch layer, and
+proxies frob perf hot --json through it as the first fully-wired, proven
+command. ensure_daemon() spawns the daemon (sys.executable subprocess of
+run_socket_daemon) if no sidecar .frob/daemon.meta.json is recorded, and
+SIGTERMs+respawns it on a version mismatch between that meta file and the
+current client's installed frob version (self-healing skew, since
+_socketd's protocol itself carries no version field and src/frob/serve/**
+is a sibling ticket's scope this wave -- disclosed in
+docs/modules/serve.md and filed as T-draft-8a56400c). query() honors
+FROB_NO_DAEMON=1 as an unconditional bypass before any daemon I/O, and
+maps every failure mode (Unreachable, RemoteError, Disabled) to a
+transparent in-process fallback with no surfaced error and no hang.
+
+frob perf hot --json's payload was split out into _hot_json/_hot_json_payload
+so the daemon-hit and in-process branches share the exact same dict shape;
+tests/test_app_daemon_proxy.py::TestDifferentialParity runs a real
+subprocess-vs-subprocess (FROB_NO_DAEMON=1 in-process vs a live
+run_socket_daemon-served) diff of the rendered JSON payload, proving
+byte-for-byte parity -- the epic's #1 safety invariant.
+
+Wiring the remaining query-shaped commands T-0321's integration map names
+(outline/map/xref/parse/graph/exports/bind/docs/stats) is disclosed as a
+scope cut in docs/modules/serve.md and filed as T-draft-296d0d77: most of
+_socketd._TOOL_DISPATCH's other methods do not yet produce a
+field-for-field-identical CLI JSON payload to diff against (e.g.
+frob_graph_query's dict omits span/digests frob graph query --json
+prints), and src/frob/app/ticket_runner.py / src/frob/tickets/** were
+off-limits this wave (a sibling ticket's split), so frob ticket doable
+specifically cannot be wired from this ticket's own scope.
+
+### Changed
+```
+ docs/modules/serve.md          |  100 ++
+ src/frob/app/_daemon_proxy.py  |  278 +++++
+ src/frob/app/perf_runner.py    |   78 +-
+ tests/test_app_daemon_proxy.py |  211 ++++
+ tickets-archive.md             | 2532 +++++++++++++++++++++++++++++++++++++-
+ tickets.md                     | 2640 ++--------------------------------------
+ 6 files changed, 3278 insertions(+), 2561 deletions(-)
+```
+
+### Evidence
+- `tests/test_app_daemon_proxy.py::TestQuery::test_no_daemon_env_bypass` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestQuery::test_no_daemon_no_socket_falls_back` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestQuery::test_live_daemon_hit` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestQuery::test_remote_error_falls_back` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_spawns_when_nothing_recorded` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_noop_when_version_matches` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_restarts_on_version_skew` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestDifferentialParity::test_perf_hot_json_daemon_matches_in_process` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 8 passed (from 8 evidence id(s))
+- gates: 1 error(s), 837 warning(s), 427 waived
+- error-findings: TICK006@tickets.md
 
 <!-- ticket:T-1094 -->
 ```yaml

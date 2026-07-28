@@ -84,6 +84,9 @@
     "frob-core/src/lib.rs::wl_hash": "f345548ad8eb20215c8479a35f30dd915284b318ea06fd89a5b545e3f8a29320",
     "src/frob/__main__.py::_SuggestingArgumentParser.error": "53b25f4073b9c9cce74e1dbecd2fa27854cbfb9f06a7345555c38af52dc33fb3",
     "src/frob/__main__.py::main": "a87346f60f77c98d14a0c83f059fb1dbc7738bb54732a146f8793d55b5262976",
+    "src/frob/app/_daemon_proxy.py::ProxyReason": "086cf4f3d1b1990991d064130300e802372b63556e3a4bc4b78461736ee3ab95",
+    "src/frob/app/_daemon_proxy.py::ensure_daemon": "ba420f72117bcd6db756c95503fc099661cacae76cc3b64068770b660b143ff8",
+    "src/frob/app/_daemon_proxy.py::query": "c12ba23d9c19903308cd2fef2ad42b188420be459cf0287388a60cd09ccf1ca4",
     "src/frob/app/_style.py::STATE_STYLE": "2af4798352f364d9a8483f7a700e26b28cdedf7ab22b2f3358bc1a17b60cc2b5",
     "src/frob/app/_style.py::style_fail": "c14acfbd13f9f4dbb65c1906c9cffa711c52ba65463e3c904356c4ae9596c36a",
     "src/frob/app/_style.py::style_header": "c43a76a7a90a952651e583bd613c1b7b7e1c2b8a805e0425f2e332b956ea67f6",
@@ -1793,5 +1796,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.222.0"
+  "version": "0.223.0"
 }

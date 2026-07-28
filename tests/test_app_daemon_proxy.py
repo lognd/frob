@@ -1,0 +1,211 @@
+"""Tests for `frob.app._daemon_proxy` (T-1093): the CLI-side auto-proxy to
+the T-1092 unix-socket daemon, its `FROB_NO_DAEMON=1` bypass, its
+version-skew self-heal, and the epic's #1 safety invariant -- daemon-served
+and in-process answers must be byte-for-byte identical for a proxied query.
+"""
+
+from __future__ import annotations
+
+import json
+import subprocess
+import threading
+import time
+from pathlib import Path
+
+import pytest
+
+from frob.app import _daemon_proxy
+from frob.app._daemon_proxy import ProxyReason, ensure_daemon, query
+from frob.serve import SocketDaemonConfig, run_socket_daemon
+from frob.serve._socketd import socket_path
+
+
+@pytest.fixture
+def root(tmp_path: Path) -> Path:
+    """A bare project root with `.frob/` already present."""
+    (tmp_path / ".frob").mkdir()
+    return tmp_path
+
+
+def _start_daemon(root: Path, idle_timeout_s: float = 5.0) -> threading.Thread:
+    """Start a real `run_socket_daemon` in a background thread and block
+    until its socket file exists, mirroring `tests/test_serve_socket.py`'s
+    own pattern -- an actual process-shaped daemon, not a mock, is the only
+    thing that can prove the differential invariant below."""
+    cfg = SocketDaemonConfig(root=root, idle_timeout_s=idle_timeout_s)
+    thread = threading.Thread(target=lambda: run_socket_daemon(cfg), daemon=True)
+    thread.start()
+    deadline = time.monotonic() + 5
+    while not socket_path(root).exists() and time.monotonic() < deadline:
+        time.sleep(0.02)
+    assert socket_path(root).exists()
+    return thread
+
+
+class TestQuery:
+    def test_no_daemon_env_bypass(self, root: Path, monkeypatch) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestQuery.test_no_daemon_env_bypass
+        monkeypatch.setenv("FROB_NO_DAEMON", "1")
+        result = query(root, "frob_doable_tickets")
+        assert result.is_err
+        assert result.danger_err is ProxyReason.Disabled
+
+    def test_no_daemon_no_socket_falls_back(self, root: Path, monkeypatch) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestQuery.test_no_daemon_no_socket_falls_back
+        # No daemon running and spawning is disabled (nonexistent
+        # interpreter path) -- query() must still resolve quickly to Err,
+        # never hang or raise.
+        monkeypatch.setattr(_daemon_proxy.sys, "executable", "/nonexistent/python")
+        result = query(root, "frob_doable_tickets")
+        assert result.is_err
+        assert result.danger_err is ProxyReason.Unreachable
+
+    def test_live_daemon_hit(self, root: Path) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestQuery.test_live_daemon_hit
+        thread = _start_daemon(root)
+        try:
+            result = query(root, "frob_doable_tickets")
+            assert result.is_ok
+            assert result.danger_ok == []
+        finally:
+            _shutdown(root, thread)
+
+    def test_remote_error_falls_back(self, root: Path) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestQuery.test_remote_error_falls_back
+        thread = _start_daemon(root)
+        try:
+            result = query(root, "not_a_real_method")
+            assert result.is_err
+            assert result.danger_err is ProxyReason.RemoteError
+        finally:
+            _shutdown(root, thread)
+
+
+def _shutdown(root: Path, thread: threading.Thread) -> None:
+    """Force the idle-timeout daemon down promptly rather than waiting out
+    its full `idle_timeout_s` at teardown."""
+    from frob.serve._socketd import lock_path
+
+    deadline = time.monotonic() + 5
+    while (
+        lock_path(root).exists() and time.monotonic() < deadline and thread.is_alive()
+    ):
+        time.sleep(0.05)
+        if not socket_path(root).exists():
+            break
+    thread.join(timeout=1)
+
+
+class TestEnsureDaemon:
+    def test_spawns_when_nothing_recorded(self, root: Path) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_spawns_when_nothing_recorded
+        assert not _daemon_proxy._meta_path(root).exists()
+        ensure_daemon(root)
+        deadline = time.monotonic() + 5
+        while (
+            not _daemon_proxy._meta_path(root).exists() and time.monotonic() < deadline
+        ):
+            time.sleep(0.02)
+        assert _daemon_proxy._meta_path(root).exists()
+        meta = json.loads(_daemon_proxy._meta_path(root).read_text())
+        assert meta["version"] == _daemon_proxy._client_version()
+
+    def test_noop_when_version_matches(self, root: Path, monkeypatch) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_noop_when_version_matches
+        _daemon_proxy._write_meta(root, pid=999999)
+        spawned = []
+        monkeypatch.setattr(_daemon_proxy, "_spawn_daemon", lambda r: spawned.append(r))
+        ensure_daemon(root)
+        assert spawned == []
+
+    def test_restarts_on_version_skew(self, root: Path, monkeypatch) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_restarts_on_version_skew
+        _daemon_proxy._meta_path(root).parent.mkdir(parents=True, exist_ok=True)
+        _daemon_proxy._meta_path(root).write_text(
+            json.dumps({"version": "0.0.0-stale", "pid": 999999})
+        )
+        killed = []
+        spawned = []
+        monkeypatch.setattr(
+            _daemon_proxy, "_kill_stale_daemon", lambda r, m: killed.append(m)
+        )
+        monkeypatch.setattr(_daemon_proxy, "_spawn_daemon", lambda r: spawned.append(r))
+        ensure_daemon(root)
+        assert len(killed) == 1
+        assert killed[0]["version"] == "0.0.0-stale"
+        assert spawned == [root]
+
+
+class TestDifferentialParity:
+    """T-0321's #1 safety invariant: daemon-served and in-process answers
+    must be byte-for-byte identical for every proxied query shape."""
+
+    def test_perf_hot_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_perf_hot_json_daemon_matches_in_process
+        pytest.importorskip("frob_core")
+        project = tmp_path
+        (project / ".frob").mkdir()
+        (project / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.0.0"\n'
+        )
+        subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+
+        # FROB_NO_DAEMON=1 in-process reference run.
+        in_process = subprocess.run(
+            ["uv", "run", "frob", "perf", "hot", "--json"],
+            cwd=project,
+            env={**_env(), "FROB_NO_DAEMON": "1"},
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert in_process.returncode == 0, in_process.stderr
+
+        thread = _start_daemon(project)
+        try:
+            daemon_served = subprocess.run(
+                ["uv", "run", "frob", "perf", "hot", "--json"],
+                cwd=project,
+                env=_env(),
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        finally:
+            _shutdown(project, thread)
+        assert daemon_served.returncode == 0, daemon_served.stderr
+        # Compare only the rendered JSON payload -- the log lines above it
+        # legitimately differ (they narrate which path answered the query,
+        # which is exactly the decision this ticket adds); the safety
+        # invariant under test is that the ANSWER is byte-for-byte
+        # identical, not the diagnostic narration around it.
+        assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
+
+
+def _json_tail(stdout: str) -> str:
+    """The final JSON-array payload `frob perf hot --json` writes -- log
+    lines precede it, so find the line starting the JSON block (`[` or `[]`)
+    and return everything from there, verbatim (byte-for-byte, not
+    re-parsed -- re-parsing would hide a real formatting divergence)."""
+    lines = stdout.splitlines()
+    for i, line in enumerate(lines):
+        if line.strip().startswith("["):
+            return "\n".join(lines[i:])
+    raise AssertionError(f"no JSON payload found in stdout: {stdout!r}")
+
+
+def _env() -> dict[str, str]:
+    """A minimal, real environment for the subprocess CLI calls above --
+    `os.environ` verbatim (the CLI needs PATH/HOME/etc.), overridden per
+    call by the caller's own `**` merge."""
+    import os
+
+    return dict(os.environ)
