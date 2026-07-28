@@ -2941,7 +2941,7 @@ two-worktree test, not a simulated stand-in.
 id: T-1097
 title: 'daemon: resource leases/semaphores (coverage=1 writer) arbitrated by the socket
   daemon'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -2959,20 +2959,128 @@ scope:
 - docs/modules/testing.md
 - tickets.md
 - tests/test_serve_leases.py
+- tests/test_app_daemon_proxy.py
+scope_changes:
+- op: add
+  glob: tests/test_app_daemon_proxy.py
+  reason: 'tests/test_serve_leases.py imports _start_daemon from this file (DUP001:
+    reuse the existing helper rather than a byte-identical duplicate)'
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/test_serve_leases.py::TestResourceLeaseManager::test_second_acquire_blocks_until_first_releases
+- tests/test_serve_leases.py::TestResourceLeaseManager::test_acquire_times_out_if_never_freed
+- tests/test_serve_leases.py::TestResourceLeaseManager::test_release_holder_frees_every_resource_that_holder_held
+- tests/test_serve_leases.py::TestResourceLeaseManager::test_distinct_resources_do_not_contend
+- tests/test_serve_leases.py::TestResourceLeaseManager::test_reentrant_acquire_by_same_holder_does_not_deadlock
+- tests/test_serve_leases.py::TestResourceLeaseManager::test_release_of_unheld_resource_is_a_noop
+- tests/test_serve_leases.py::TestLeaseRpc::test_explicit_release_frees_the_slot_for_the_next_waiter
+- tests/test_serve_leases.py::TestLeaseRpc::test_second_client_blocks_until_first_releases
+- tests/test_serve_leases.py::TestConnectionCrashReleasesLease::test_closing_connection_without_explicit_release_frees_the_lease
 acceptance:
 - text: GIVEN N concurrent clients requesting a coverage run WHEN the daemon arbitrates
     access THEN exactly one holds the coverage writer semaphore at a time and the
     rest block or receive the shared result, with no two coverage subprocesses running
     concurrently against overlapping state
-  evidence: []
+  evidence:
+  - tests/test_serve_leases.py::TestLeaseRpc::test_second_client_blocks_until_first_releases
 - text: GIVEN a client holding a lease crashes or disconnects WHEN the daemon detects
     the dead connection THEN the lease is released automatically (no permanently stuck
     semaphore requiring a daemon restart)
-  evidence: []
+  evidence:
+  - tests/test_serve_leases.py::TestConnectionCrashReleasesLease::test_closing_connection_without_explicit_release_frees_the_lease
 threat: null
 component: null
 ```
 Child (f) of T-0321. Today T-0322's coverage.lock is a plain per-worktree fcntl.flock with no arbitration beyond OS-level blocking, no visibility into who holds it, and no daemon-mediated release-on-crash semantics. Once T-1095 makes coverage single-flight CROSS-worktree (arbitrated by the T-1092 daemon rather than a per-worktree file lock), formalize it as a general named-resource lease/semaphore primitive the daemon owns (starting with coverage=1 writer, per T-0321's body), so other future contended resources (e.g. a future write-serializing need) can register the same way instead of each inventing its own flock convention. Lease release must be tied to socket connection liveness (a crashed/killed client's lease is freed by the daemon detecting the closed connection), not just an explicit release call, to satisfy T-0321's requirement 3 (killing a client loses nothing, nothing to clean up).
+
+## Done report
+
+Generalized T-0322/T-1095's coverage-only fcntl.flock single-flight into
+a named resource lease/semaphore primitive the T-1092 socket daemon
+itself owns and arbitrates, with release tied to socket connection
+liveness.
+
+src/frob/serve/_leases.py (new): `ResourceLeaseManager` -- a
+threading.Condition-guarded dict of named resources, each with a fixed
+capacity (default `DEFAULT_LEASE_CAPACITY` = 1, an exclusive writer lock,
+matching coverage's own contract), created on first mention.
+`acquire(resource, holder_id, capacity=, timeout_s=)` blocks until a slot
+frees or the timeout elapses (re-entrant for a holder that already holds
+the slot, so a redundant acquire from the same connection can't
+self-deadlock); `release` frees one slot; `release_holder` frees every
+slot a given holder occupies in one call.
+
+src/frob/serve/_socketd.py: two new JSON-RPC methods special-cased in
+`_RequestHandler.handle` alongside subscribe/frob_version/frob_shutdown:
+`frob_lease_acquire` (blocks THIS connection's own handler thread --
+ThreadingUnixStreamServer gives each connection its own thread, so
+blocking here never blocks another connection) and `frob_lease_release`.
+Each connection gets a `_lease_holder_id` in `setup()`; `handle`'s
+`finally` block now unconditionally calls `lease_manager.release_
+holder(self._lease_holder_id)`, same place `subscribe`'s per-connection
+unsubscribe already runs -- a crashed or killed client (socket closed
+with no explicit frob_lease_release) has every lease it held freed the
+moment the daemon notices, no daemon restart required (acceptance [1]).
+`_DaemonServer.__init__` now constructs one `ResourceLeaseManager` shared
+across every connection thread.
+
+tests/test_serve_leases.py: `TestResourceLeaseManager` covers the pure
+manager directly (blocking/release, timeout, multi-resource independence,
+re-entrancy, release-of-unheld no-op). `TestLeaseRpc.test_second_client_
+blocks_until_first_releases` runs two REAL persistent socket connections
+against a real running daemon and proves exactly one holds "coverage" at
+a time, the second blocks until the first explicitly releases (acceptance
+[0]). `TestConnectionCrashReleasesLease.test_closing_connection_without_
+explicit_release_frees_the_lease` acquires the lease on one connection,
+closes that socket with NO release sent (a real crash-shaped event), and
+proves a second client can then acquire it (acceptance [1]).
+
+Scope note (disclosed, not silently dropped): this ticket ships and
+proves the daemon-owned arbitration primitive itself. It does NOT rewire
+frob.testing._coverage_wait.run_coverage_wait's actual subprocess flow to
+acquire ITS lock through this daemon RPC instead of its existing
+per-worktree (T-0322) and shared-per-digest (T-1095) fcntl.flock layers
+-- that wiring touches frob.app._daemon_proxy, contended with T-1106's
+own src/frob/app/ work this wave and outside this ticket's src/frob/
+serve/**, src/frob/testing/** scope. Filed as a follow-on:
+T-1118.
+
+Also filed (pre-existing, unrelated, found while re-running gates on
+this ticket): T-1119 -- gate:TICK006 phantom-draft-citation
+errors from T-1077/T-1084's (and, this session, T-1095's own) Done
+reports citing drafts a later tickets.md ledger-restore step wiped
+before land; a repeat of the historical T-0707/T-0615 incident class the
+playbook's section 10b step 6 warns about, hit again despite following
+the recipe (the draft in question was filed BEFORE this session's own
+restore step for T-1095, not after -- exactly the ordering mistake
+section 10b step 6 calls out). Not fixed inline; same disposition as the
+pre-existing T-1077/T-1084 instances.
+
+### Changed
+```
+ docs/modules/serve.md      |  64 ++++++++++++
+ src/frob/serve/_leases.py  | 201 +++++++++++++++++++++++++++++++++++
+ src/frob/serve/_socketd.py |  64 ++++++++++++
+ tests/test_serve_leases.py | 255 +++++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                 |  69 +++++++++++-
+ 5 files changed, 651 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_serve_leases.py::TestResourceLeaseManager::test_second_acquire_blocks_until_first_releases` (pytest node id, verified passing when recorded)
+- `tests/test_serve_leases.py::TestResourceLeaseManager::test_acquire_times_out_if_never_freed` (pytest node id, verified passing when recorded)
+- `tests/test_serve_leases.py::TestResourceLeaseManager::test_release_holder_frees_every_resource_that_holder_held` (pytest node id, verified passing when recorded)
+- `tests/test_serve_leases.py::TestResourceLeaseManager::test_distinct_resources_do_not_contend` (pytest node id, verified passing when recorded)
+- `tests/test_serve_leases.py::TestResourceLeaseManager::test_reentrant_acquire_by_same_holder_does_not_deadlock` (pytest node id, verified passing when recorded)
+- `tests/test_serve_leases.py::TestResourceLeaseManager::test_release_of_unheld_resource_is_a_noop` (pytest node id, verified passing when recorded)
+- `tests/test_serve_leases.py::TestLeaseRpc::test_explicit_release_frees_the_slot_for_the_next_waiter` (pytest node id, verified passing when recorded)
+- `tests/test_serve_leases.py::TestLeaseRpc::test_second_client_blocks_until_first_releases` (pytest node id, verified passing when recorded)
+- `tests/test_serve_leases.py::TestConnectionCrashReleasesLease::test_closing_connection_without_explicit_release_frees_the_lease` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 9 passed (from 9 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1099 -->
 ```yaml
@@ -3707,3 +3815,69 @@ Out of T-1037's declared scope (that ticket is specifically about REG011
 out_of_scope-reason substantive-disclosure, already independently fixed
 by T-1019 before this wave started -- confirmed zero REG011 violations
 and the ticket's own named regression test passing on current main).
+
+<!-- ticket:T-1118 -->
+```yaml
+id: T-1118
+title: 'daemon: wire run_coverage_wait through the T-1097 daemon-owned coverage lease'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/testing/_coverage_wait.py
+- src/frob/app/_daemon_proxy.py
+threat: null
+component: null
+```
+T-1097 shipped a daemon-owned named resource lease/semaphore primitive
+(frob.serve._leases.ResourceLeaseManager, frob_lease_acquire/frob_lease_
+release RPC methods) with connection-liveness release, proven against
+real socket clients directly.
+
+It did NOT rewire frob.testing._coverage_wait.run_coverage_wait's own
+subprocess flow to acquire the coverage lock THROUGH this daemon RPC
+instead of its existing file-lock layers (T-0322's per-worktree
+fcntl.flock, T-1095's shared per-digest fcntl.flock) -- that wiring
+touches frob.app's CLI-proxy layer (_daemon_proxy.query), which was
+contended with T-1106's own src/frob/app/ work this wave and out of
+T-1097's src/frob/serve/**/src/frob/testing/** scope.
+
+Follow-on: wire run_coverage_wait (or a new coverage-specific daemon
+client call) to acquire/release the "coverage" resource lease via the
+daemon RPC when a daemon is reachable, falling back to the existing
+file-lock layers when it is not -- mirroring frob.app._daemon_proxy.
+query's own Ok(daemon)/Err(fallback) shape.
+
+<!-- ticket:T-1119 -->
+```yaml
+id: T-1119
+title: 'gates: TICK006 phantom draft citations from T-1077/T-1084 Done reports'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tickets.md
+threat: null
+component: null
+```
+frob check reports TICK006 phantom-filing-trail errors for T-1077 and
+T-1084: both Done reports cite T-draft-a418305e / T-draft-372a1425 as
+filed follow-on tickets, but neither draft resolves to a real block in
+tickets.md or tickets-archive.md -- the classic T-0707/T-0615 draft-loss
+incident class (a worktree's draft ticket getting wiped by the section
+10b tickets.md restore recipe before the citing Done report landed).
+Found incidentally while landing T-1095 (unrelated ticket); not this
+ticket's scope to fix. Resolve by either re-filing the real ticket each
+Done report meant to cite and correcting the citation, or adding an
+honest frob:waive TICK006 noting the historical draft loss if the
+underlying work is otherwise already covered.

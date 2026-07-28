@@ -67,6 +67,7 @@ from typani.result import Result
 
 from frob.logging import get_logger
 from frob.serve import _tools
+from frob.serve._leases import DEFAULT_LEASE_CAPACITY, ResourceLeaseManager
 from frob.serve._watch import WatchThread
 
 _log = get_logger(__name__)
@@ -299,6 +300,11 @@ class _RequestHandler(socketserver.StreamRequestHandler):
     _write_lock: threading.Lock
     _sub_id: int | None
     _events_thread: threading.Thread | None
+    # T-1097: this connection's identity in `server.lease_manager` --
+    # every resource lease this connection acquires is tracked under this
+    # one id, so `release_holder(self._lease_holder_id)` in `handle`'s
+    # `finally` frees all of them in one call on disconnect/crash.
+    _lease_holder_id: str
 
     # frob:doc docs/modules/serve.md#subscribepush-events-t-1096
     def setup(self) -> None:  # noqa: ANN201
@@ -309,6 +315,7 @@ class _RequestHandler(socketserver.StreamRequestHandler):
         self._write_lock = threading.Lock()
         self._sub_id = None
         self._events_thread = None
+        self._lease_holder_id = f"{id(self)}-{time.monotonic_ns()}"
 
     # frob:doc docs/modules/serve.md#protocol
     # frob:tests tests/test_serve_socket.py::TestRunSocketDaemon.test_serves_one_request_then_idle_exits kind="unit"  # noqa: E501
@@ -347,12 +354,20 @@ class _RequestHandler(socketserver.StreamRequestHandler):
                         response = self._handle_version(request)
                     elif request.method == "frob_shutdown":
                         response = self._handle_shutdown(request)
+                    elif request.method == "frob_lease_acquire":
+                        response = self._handle_lease_acquire(request)
+                    elif request.method == "frob_lease_release":
+                        response = self._handle_lease_release(request)
                     else:
                         response = dispatch_request(self.server.root, request)
                 self._write_line(response)
         finally:
             if self._sub_id is not None:
                 self.server.event_bus.unsubscribe(self._sub_id)
+            # T-1097 acceptance [1]: a crashed/disconnected client's
+            # leases are freed HERE, unconditionally, regardless of
+            # whether it ever sent an explicit frob_lease_release.
+            self.server.lease_manager.release_holder(self._lease_holder_id)
 
     # frob:doc docs/modules/serve.md#subscribepush-events-t-1096
     # frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_receives_graph_changed_after_edit kind="unit"  # noqa: E501
@@ -403,6 +418,52 @@ class _RequestHandler(socketserver.StreamRequestHandler):
             target=self.server.shutdown, name="frob-socketd-shutdown", daemon=True
         ).start()
         return {"id": request.id, "result": {"shutting_down": True}}
+
+    # frob:doc docs/modules/serve.md#resource-leasessemaphores-t-1097
+    # frob:tests tests/test_serve_leases.py::TestLeaseRpc.test_second_client_blocks_until_first_releases kind="unit"  # noqa: E501
+    def _handle_lease_acquire(self, request: _JsonRpcRequest) -> dict[str, Any]:
+        """Answer `frob_lease_acquire` (T-1097): block THIS connection's
+        handler thread (blocking here only blocks this one connection --
+        every other connection has its own thread, T-1092's `Threading
+        UnixStreamServer`) until `server.lease_manager` grants a slot of
+        `params["resource"]` to this connection's `_lease_holder_id`, or
+        `params["timeout_s"]` elapses first. `params["capacity"]` is only
+        consulted the FIRST time a given resource name is ever acquired
+        (`ResourceLeaseManager._state_for`'s create-on-first-mention
+        rule)."""
+        resource = request.params.get("resource")
+        if not isinstance(resource, str) or not resource:
+            return {
+                "id": request.id,
+                "error": {"code": "bad_params", "message": "resource must be a str"},
+            }
+        capacity = request.params.get("capacity", DEFAULT_LEASE_CAPACITY)
+        timeout_s = request.params.get("timeout_s")
+        acquired = self.server.lease_manager.acquire(
+            resource,
+            self._lease_holder_id,
+            capacity=capacity,
+            timeout_s=timeout_s,
+        )
+        return {"id": request.id, "result": {"acquired": acquired}}
+
+    # frob:doc docs/modules/serve.md#resource-leasessemaphores-t-1097
+    # frob:tests tests/test_serve_leases.py::TestLeaseRpc.test_explicit_release_frees_the_slot_for_the_next_waiter kind="unit"  # noqa: E501
+    def _handle_lease_release(self, request: _JsonRpcRequest) -> dict[str, Any]:
+        """Answer `frob_lease_release` (T-1097): free THIS connection's
+        slot of `params["resource"]`, if it holds one -- the explicit
+        counterpart to the implicit `release_holder` teardown `handle`'s
+        `finally` block always performs on disconnect, for a well-behaved
+        client that wants to free a resource without closing the whole
+        connection."""
+        resource = request.params.get("resource")
+        if not isinstance(resource, str) or not resource:
+            return {
+                "id": request.id,
+                "error": {"code": "bad_params", "message": "resource must be a str"},
+            }
+        released = self.server.lease_manager.release(resource, self._lease_holder_id)
+        return {"id": request.id, "result": {"released": released}}
 
     def _pump_events(self, q: queue.Queue[dict[str, Any] | None]) -> None:
         """Event-pump thread body: block on `q.get()` and write each frame
@@ -455,6 +516,9 @@ class _DaemonServer(socketserver.ThreadingUnixStreamServer):
         self.root = root
         self.idle_tracker = _IdleTracker()
         self.event_bus = _EventBus()
+        # T-1097: one ResourceLeaseManager per daemon process, shared
+        # across every connection-handling thread.
+        self.lease_manager = ResourceLeaseManager()
         super().__init__(str(sock_path), _RequestHandler, bind_and_activate=True)
 
 

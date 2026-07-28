@@ -1047,6 +1047,11 @@
     "src/frob/serve/_events.py::_EventBus.subscribe": "07fedffb31e56b5a9588d44a3a8a3cda7a21d142dadb2d7150ea1536c9282d51",
     "src/frob/serve/_events.py::_EventBus.unsubscribe": "86f91cec6017fa3502a79b0eac7c263b4b5926071bf7602e5fb954145929d045",
     "src/frob/serve/_events.py::subscribe_and_wait": "c0035bbd8e239d6de4ab9409e62e1211c816f3f8e1a4abea8c6e513fee2ad6d7",
+    "src/frob/serve/_leases.py::DEFAULT_LEASE_CAPACITY": "0d11c8d6cadb1d0f908b3f9753073058334011d397669cb937ca46d872a6a400",
+    "src/frob/serve/_leases.py::ResourceLeaseManager": "6cfe1e8b12e057cebcf1adcc96e337017ec09d5e263445228292e226b2abd754",
+    "src/frob/serve/_leases.py::ResourceLeaseManager.acquire": "be6c50bf7d7d30517ccc0b850b725dc4f47b771bed4b0dc958fab1136c3c911d",
+    "src/frob/serve/_leases.py::ResourceLeaseManager.release": "94668e25ec403f3b9132e5e32a3e45603c0d005f6bbad7dc1e1acac5f885b767",
+    "src/frob/serve/_leases.py::ResourceLeaseManager.release_holder": "fbbcc675186ebe01a48ea279df155e5fb69a5044a2b1d99183de50d92f1e68bb",
     "src/frob/serve/_socketd.py::DEFAULT_IDLE_TIMEOUT_S": "bcbeade66ec2958246af784abab7ca5fd072ad04e8a31d51c20f71bbc4e60a0d",
     "src/frob/serve/_socketd.py::DaemonError": "4848956460da9a5106a58be43ec56763cb2de2e1c2a18684ea30f69fd8bc873f",
     "src/frob/serve/_socketd.py::SocketDaemonConfig": "c30b49b4d3e6186404fbbdd1eda9fb61ddf5381f4120d15626573c40d4352acf",
@@ -1822,5 +1827,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.234.0"
+  "version": "0.235.0"
 }

@@ -520,6 +520,70 @@ Subscribing only replaces the "when do I bother asking" polling loop; it
 never substitutes for, or bypasses, the "is this answer correct" check
 any query tool still performs on every call.
 
+## Resource leases/semaphores (T-1097)
+
+<!-- frob:describes src/frob/serve/_leases.py::ResourceLeaseManager -->
+<!-- frob:describes src/frob/serve/_leases.py::DEFAULT_LEASE_CAPACITY -->
+
+T-0322 shipped coverage single-flight as a plain per-worktree `fcntl.
+flock` -- OS-level blocking only, no visibility into who holds it, and no
+daemon-mediated release-on-crash semantics. T-1095 moved that arbitration
+cross-worktree via a shared, content-digest-keyed lock/cache. This ticket
+generalizes the underlying primitive one step further: a NAMED resource
+lease/semaphore the daemon itself owns and arbitrates over its own
+JSON-RPC connections (`frob.serve._leases.ResourceLeaseManager`),
+starting with `coverage` at `DEFAULT_LEASE_CAPACITY` (1, i.e. an
+exclusive writer lock) so any future contended resource can register
+under its own name instead of each caller inventing its own flock
+convention.
+
+Two new JSON-RPC methods, special-cased in `_RequestHandler.handle`
+alongside `subscribe`/`frob_version`/`frob_shutdown`:
+
+```
+--> {"id": 1, "method": "frob_lease_acquire",
+     "params": {"resource": "coverage", "timeout_s": 30.0}}
+<-- {"id": 1, "result": {"acquired": true}}
+
+--> {"id": 2, "method": "frob_lease_release", "params": {"resource": "coverage"}}
+<-- {"id": 2, "result": {"released": true}}
+```
+
+`frob_lease_acquire` blocks THIS connection's own handler thread (never
+another connection's -- `_DaemonServer` is a `ThreadingUnixStreamServer`,
+one thread per connection) until a slot of `params["resource"]` frees up
+or `params["timeout_s"]` elapses; `params["capacity"]` is only consulted
+the FIRST time a given resource name is ever mentioned
+(`ResourceLeaseManager._state_for`'s create-on-first-mention rule) --
+every later acquire of the same name reuses whatever capacity was
+established then. `acquired: false` means the timeout elapsed with
+nothing held; the caller holds no slot to release.
+
+**Connection-liveness release (T-1097 acceptance [1], T-0321 requirement
+3):** every lease is tracked under the ACQUIRING CONNECTION's own
+`_lease_holder_id` (assigned once in `_RequestHandler.setup`), not just
+an explicit release call the client must remember to make.
+`ResourceLeaseManager.release_holder` runs unconditionally in `handle`'s
+`finally` block -- the same place `subscribe`'s per-connection
+`unsubscribe` already runs (T-1096) -- so a client that crashes or is
+killed mid-lease has every resource it held freed the instant the daemon
+notices the closed connection, with no explicit `frob_lease_release` and
+no daemon restart required. `frob_lease_release` is the well-behaved
+client's EXPLICIT counterpart for freeing a resource without closing the
+whole connection.
+
+**Scope note**: this ticket ships the daemon-owned arbitration primitive
+and proves both acceptance criteria against it directly (real socket
+clients, real connection teardown) -- it does NOT rewire `frob.testing.
+_coverage_wait.run_coverage_wait`'s own subprocess flow to acquire its
+lock THROUGH this daemon RPC instead of its existing file-lock layers
+(T-0322's per-worktree `fcntl.flock`, T-1095's shared per-digest
+`fcntl.flock`). That wiring would touch `frob.app`'s CLI-proxy layer
+(`_daemon_proxy.query`), out of this ticket's `src/frob/serve/**`/
+`src/frob/testing/**` scope and contended with T-1106's own `src/frob/
+app/` work this wave -- tracked as a disclosed follow-on, not silently
+dropped.
+
 ## CLI daemon proxy (T-1093)
 
 <!-- frob:describes src/frob/app/_daemon_proxy.py::ProxyReason -->
