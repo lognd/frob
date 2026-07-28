@@ -4326,6 +4326,30 @@ def _read_root_pyproject_version(root: Path, pre_land_tip: str) -> str | None:
     return match.group(1) if match else None
 
 
+# frob:ticket T-1078
+def _read_root_manifest_version(root: Path, pre_land_tip: str) -> str | None:
+    """Read `.frob-release.json`'s `version` field as it stood at
+    `pre_land_tip` (T-1078) -- the same git-object-read technique
+    `_read_root_pyproject_version` uses for `pyproject.toml`, applied to
+    the release manifest so an incoherent quartet (manifest lagging
+    pyproject, the T-1078 incident class) can be DETECTED from ground
+    truth rather than the worktree-carried on-disk copy the squash-apply
+    may have already overwritten. `None` if the manifest did not exist at
+    `pre_land_tip`, is unparsable JSON, or has no string `version` field --
+    all treated as "nothing to compare", never raised."""
+    shown = run_argv(
+        ["git", "-C", str(root), "show", f"{pre_land_tip}:.frob-release.json"]
+    )
+    if shown.is_err or shown.danger_ok.returncode != 0:
+        return None
+    try:
+        data = json.loads(shown.danger_ok.stdout)
+    except ValueError:
+        return None
+    version = data.get("version") if isinstance(data, dict) else None
+    return version if isinstance(version, str) else None
+
+
 # frob:ticket T-0992
 def _release_bump_is_monotonic(pre_bump_version: str | None, new_version: str) -> bool:
     """Whether `new_version` is strictly greater than `pre_bump_version`
@@ -4350,6 +4374,88 @@ def _release_bump_is_monotonic(pre_bump_version: str | None, new_version: str) -
 # frob:ticket T-0338
 # frob:ticket T-0907
 # frob:ticket T-0992
+# frob:ticket T-1078
+def _log_monotonicity_refusal(
+    final_id: str,
+    new_version: str,
+    pre_bump_version: str | None,
+    pre_manifest_version: str | None,
+) -> None:
+    """Log the T-0992 monotonicity refusal (T-1078: split out of
+    `_apply_release_bump` for ARCH001) -- names an incoherent quartet
+    (`.frob-release.json` lagging `pyproject.toml` at `pre_land_tip`)
+    explicitly and prescribes `frob release sync` when that desync is the
+    actual cause, instead of the bare "not strictly greater" message that
+    reads like a genuine version regression."""
+    quartet_desynced = (
+        pre_manifest_version is not None
+        and pre_bump_version is not None
+        and pre_manifest_version != pre_bump_version
+    )
+    if quartet_desynced:
+        _log.error(
+            "land: %s REL001 version-bump callback computed %s from "
+            "a release manifest still at %s, but pyproject.toml is "
+            "already at %s -- the release quartet (pyproject.toml/"
+            "CHANGELOG.md/.frob-release.json) is INCOHERENT on main "
+            "(manifest lagging pyproject); refusing (T-0992 "
+            "monotonicity assertion) and unwinding the staged "
+            "squash -- run `frob release sync` to reconcile the "
+            "manifest to pyproject's actual version, then retry "
+            "the land",
+            final_id,
+            new_version,
+            pre_manifest_version,
+            pre_bump_version,
+        )
+    else:
+        _log.error(
+            "land: %s REL001 version-bump callback computed %s, "
+            "which is not strictly greater than main's pre-land "
+            "version %s -- refusing (T-0992 monotonicity assertion) "
+            "and unwinding the staged squash; the bump input must "
+            "be derived from root's current state, never a stale "
+            "worktree-carried value",
+            final_id,
+            new_version,
+            pre_bump_version,
+        )
+
+
+# frob:ticket T-1078
+def _resync_release_manifest(
+    root: Path, final_id: str, new_version: str
+) -> Result[None, LandError]:
+    """Force `.frob-release.json`'s version to `new_version` and stage it
+    (T-1078: split out of `_apply_release_bump` for ARCH001) -- the
+    atomic-write fix for the incident where a REL001 bump updated
+    `pyproject.toml`/`CHANGELOG.md` but left the manifest on its old
+    version, regardless of whether the `bump_version` callback itself
+    wrote (or correctly wrote) the manifest. `Ok(None)` when there was
+    nothing to resync (`ReleaseError.NoManifest` -- a repo that never
+    adopted `frob release stamp`) as well as on a successful resync;
+    `Err(LandError.ReleaseBumpFailed)` if the write or the `git add`
+    fails."""
+    from frob.release import ReleaseError, set_manifest_version
+
+    resynced = set_manifest_version(root, new_version)
+    if resynced.is_err and resynced.danger_err != ReleaseError.NoManifest:
+        _log.error(
+            "land: %s could not resync .frob-release.json to %s (%s) -- "
+            "unwinding the staged squash",
+            final_id,
+            new_version,
+            resynced.danger_err,
+        )
+        return Err(LandError.ReleaseBumpFailed)
+    if resynced.is_ok:
+        staged = run_argv(["git", "-C", str(root), "add", ".frob-release.json"])
+        if staged.is_err or staged.danger_ok.returncode != 0:
+            _log.error("land: %s failed to stage resynced .frob-release.json", final_id)
+            return Err(LandError.ReleaseBumpFailed)
+    return Ok(None)
+
+
 def _apply_release_bump(
     root: Path,
     ticket: Ticket,
@@ -4358,25 +4464,26 @@ def _apply_release_bump(
     pre_land_tip: str,
 ) -> Result[str | None, LandError]:
     """Invoke `bump_version(root, ticket, final_id)` if supplied, unwinding
-    the staged squash via `_verified_reset_root` (T-0907 -- resets to the
-    explicit `pre_land_tip`, not a bare `HEAD`) on failure (T-0338).
-    `bump_version=None` (the library default) is a no-op returning
-    `Ok(None)` -- see `land`'s docstring for why this is a caller-supplied
-    callback rather than computed here.
+    the staged squash via `_verified_reset_root` (T-0907) on failure
+    (T-0338). `bump_version=None` is a no-op returning `Ok(None)` -- see
+    `land`'s docstring for why this is a caller-supplied callback.
 
-    T-0992: captures MAIN's own `pyproject.toml` version as it stood at
-    `pre_land_tip` (git object read, immune to the squash-apply's own
-    working-tree mutation) and, if the callback reports a bump, hard-
-    refuses (unwinding the squash, same as any other bump failure) unless
-    the new version is strictly greater than that captured value. This
-    guards against a `bump_version` implementation that (accidentally, via
-    a stale manifest or any other worktree-carried input) computes its
-    "next version" from something other than main's actual current state
-    -- twice observed clobbering a higher version already on main (T-0976,
-    T-0989)."""
+    T-0992: captures main's own pre-`pre_land_tip` `pyproject.toml`
+    version and hard-refuses (via `_log_monotonicity_refusal`, T-1078)
+    unless a reported bump is strictly greater than it -- guards against a
+    `bump_version` implementation computing its "next version" from a
+    stale, worktree-carried input (T-0976, T-0989).
+
+    T-1078: after a successful, monotonic bump, `_resync_release_manifest`
+    force-resyncs `.frob-release.json`'s version to `new_version` in this
+    SAME step, regardless of whether `bump_version` itself wrote the
+    manifest correctly -- the fix for a REL001 bump that updated
+    pyproject.toml/CHANGELOG.md but left the manifest stale, desyncing the
+    quartet and blocking every subsequent land on the T-0992 guard."""
     if bump_version is None:
         return Ok(None)
     pre_bump_version = _read_root_pyproject_version(root, pre_land_tip)
+    pre_manifest_version = _read_root_manifest_version(root, pre_land_tip)
     bumped = bump_version(root, ticket, final_id)
     if bumped.is_err:
         _log.error(
@@ -4391,20 +4498,17 @@ def _apply_release_bump(
     if bumped.danger_ok is not None:
         new_version = bumped.danger_ok
         if not _release_bump_is_monotonic(pre_bump_version, new_version):
-            _log.error(
-                "land: %s REL001 version-bump callback computed %s, which is "
-                "not strictly greater than main's pre-land version %s -- "
-                "refusing (T-0992 monotonicity assertion) and unwinding the "
-                "staged squash; the bump input must be derived from root's "
-                "current state, never a stale worktree-carried value",
-                final_id,
-                new_version,
-                pre_bump_version,
+            _log_monotonicity_refusal(
+                final_id, new_version, pre_bump_version, pre_manifest_version
             )
             unwound = _verified_reset_root(root, pre_land_tip, final_id)
             return Err(
                 unwound.danger_err if unwound.is_err else LandError.ReleaseBumpFailed
             )
+        resynced = _resync_release_manifest(root, final_id, new_version)
+        if resynced.is_err:
+            unwound = _verified_reset_root(root, pre_land_tip, final_id)
+            return Err(unwound.danger_err if unwound.is_err else resynced.danger_err)
         _log.info(
             "land: %s REL001 version bump applied and staged: -> %s",
             final_id,

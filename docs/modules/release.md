@@ -91,13 +91,19 @@ precedent): a repo that has actually run `sync` has zero disagreements.
 <!-- frob:describes src/frob/release/__init__.py::diff_class -->
 <!-- frob:describes src/frob/release/__init__.py::required_version -->
 <!-- frob:describes src/frob/release/__init__.py::satisfies -->
+<!-- frob:describes src/frob/release/__init__.py::set_manifest_version -->
 
 `BumpClass` is the ordered semver change class (`NONE < PATCH < MINOR <
 MAJOR`). `ReleaseManifest` is the pydantic model persisted to
 `.frob-release.json` (`version` + `api` symref-to-digest map).
 `ReleaseError` is the `ErrorSet` of fallible outcomes (`NoManifest`,
 `Malformed`, `BadVersion`). `manifest_path` resolves the tracked manifest
-path under a repo root.
+path under a repo root. `set_manifest_version` (T-1078) rewrites ONLY the
+manifest's `version` field in place, preserving its recorded `api` map --
+`frob.tickets._land`'s write-side guarantee that a REL001 bump's
+`.frob-release.json` stays coherent with `pyproject.toml`/`CHANGELOG.md`
+in the same land step, regardless of what a `bump_version` callback did
+or forgot to do.
 
 ```python
 class BumpClass(IntEnum):        # NONE = 0, PATCH = 1, MINOR = 2, MAJOR = 3
@@ -115,6 +121,7 @@ class ReleaseError(ErrorSet):
 def manifest_path(root) -> Path
 def load_manifest(root) -> Result[ReleaseManifest, ReleaseError]
 def stamp(root, snapshot, version) -> Result[str, ReleaseError]
+def set_manifest_version(root, version) -> Result[str, ReleaseError]
 def diff_class(manifest, snapshot) -> BumpClass         # NONE|PATCH|MINOR|MAJOR
 def required_version(previous, bump) -> Result[str, ReleaseError]
 def satisfies(current, minimum) -> bool

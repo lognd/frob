@@ -1286,6 +1286,27 @@ Order of operations, and why it is this order:
     committed pre-land state, never the worktree-carried working-tree
     copy -- making the T-0992 guard a never-fires invariant for this
     callback instead of a per-land speed bump.
+
+    **T-1078 quartet-atomicity backstop**: after a successful, monotonic
+    bump, `_apply_release_bump` force-resyncs `.frob-release.json`'s
+    `version` field to the callback's reported version via
+    `frob.release.set_manifest_version` and stages it in this SAME step
+    -- regardless of whether `bump_version`'s own implementation wrote
+    (or correctly wrote) the manifest itself. This is the fix for the
+    incident where a land's REL001 bump updated `pyproject.toml`/
+    `CHANGELOG.md` but silently left the manifest on its old version:
+    every subsequent land then re-derived an already-taken "next
+    version" from the stale manifest and refused on the T-0992
+    monotonicity guard, blocking three lands in a row until a
+    coordinator hand-reconciled the manifest and ran `frob release
+    sync`. The refusal diagnostic for that guard also now detects this
+    exact desync independently (comparing `.frob-release.json`'s version
+    against `pyproject.toml`'s version, both read at `pre_land_tip` via
+    `_read_root_manifest_version`/`_read_root_pyproject_version`) and,
+    when it is the actual cause of a monotonicity refusal, names the
+    incoherent quartet explicitly and prescribes `frob release sync`
+    instead of the bare "not strictly greater than main's pre-land
+    version" message.
 9.7. **Native rebuild trigger** (T-0338, only when `rebuild_natives` was
     supplied AND the landed changeset touches a native source tree --
     `frob-core/` or `strata-core/`): `rebuild_natives(root)` runs `make

@@ -2738,6 +2738,108 @@ class TestReleaseBump:
         assert (repo / "pyproject.toml").read_text().count('version = "0.183.0"') == 1
 
 
+# frob:ticket T-1078
+class TestReleaseBumpQuartetAtomicity:
+    """T-1078: land's REL001 bump used to update pyproject.toml/
+    CHANGELOG.md while leaving `.frob-release.json` on its old version
+    whenever a `bump_version` callback forgot (or failed silently) to
+    write the manifest itself -- the desync then made every later land
+    compute an already-taken version and refuse on the T-0992
+    monotonicity guard. `land` now force-resyncs the manifest to the
+    callback's reported version in the SAME step, and its refusal
+    diagnostic names an incoherent quartet explicitly when that is the
+    actual cause of a monotonicity refusal."""
+
+    def test_manifest_version_written_same_step_as_pyproject(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity.test_manifest_version_written_same_step_as_pyproject  # noqa: E501
+        (repo / ".frob-release.json").write_text(
+            '{"version": "0.183.0", "api": {"a": "digest"}}\n'
+        )
+        _commit_all(repo, "seed release manifest at 0.183.0")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-quartet", str(wt)], repo)
+        created = new_ticket(wt, _spec("Quartet atomicity", scope=("src/qa.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "qa.py").write_text("# quartet atomicity\n")
+        _commit_all(wt, "add qa.py")
+
+        def bump_version(root: Path, ticket: Any, final_id: str) -> Any:
+            # Models the incident's root cause: the callback bumps
+            # pyproject.toml/CHANGELOG.md but never touches (or fails to
+            # write) `.frob-release.json` at all -- land itself must be
+            # the thing that keeps the manifest coherent.
+            (root / "pyproject.toml").write_text(
+                '[project]\nname = "frob"\nversion = "0.184.0"\n'
+            )
+            _run(["git", "add", "pyproject.toml"], root)
+            return Ok("0.184.0")
+
+        result = land(repo, tid, wt, dry_run=False, bump_version=bump_version)
+        assert result.is_ok, result.err
+        assert result.danger_ok.release_bumped_to == "0.184.0"
+
+        manifest_text = (repo / ".frob-release.json").read_text()
+        assert '"version": "0.184.0"' in manifest_text
+        # The pre-existing api map must survive the resync untouched.
+        assert '"a": "digest"' in manifest_text
+        # Landed in the SAME commit as pyproject.toml -- no leftover diff.
+        assert _status_ignoring_frob(repo) == ""
+        head_files = _run(["git", "show", "--stat", "--format=", "HEAD"], repo).stdout
+        assert ".frob-release.json" in head_files
+        assert "pyproject.toml" in head_files
+
+    def test_incoherent_quartet_refusal_names_desync(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity.test_incoherent_quartet_refusal_names_desync  # noqa: E501
+        # Main's own quartet is ALREADY desynced before this land even
+        # starts (mirrors the real incident: a prior land bumped
+        # pyproject.toml but left the manifest stale).
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "frob"\nversion = "0.211.0"\n'
+        )
+        (repo / ".frob-release.json").write_text('{"version": "0.210.0", "api": {}}\n')
+        _commit_all(repo, "main quartet desynced: pyproject 0.211.0, manifest 0.210.0")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-desync", str(wt)], repo)
+        created = new_ticket(wt, _spec("Desync refusal", scope=("src/dr.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "dr.py").write_text("# desync refusal\n")
+        _commit_all(wt, "add dr.py")
+
+        before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        def bump_version(root: Path, ticket: Any, final_id: str) -> Any:
+            # Derived from the stale manifest (0.210.0 -> 0.211.0), which
+            # collides with pyproject's already-bumped 0.211.0 -- exactly
+            # the incident's monotonicity trip.
+            (root / "pyproject.toml").write_text(
+                '[project]\nname = "frob"\nversion = "0.211.0"\n'
+            )
+            _run(["git", "add", "pyproject.toml"], root)
+            return Ok("0.211.0")
+
+        with caplog.at_level("ERROR", logger="frob.tickets._land"):
+            result = land(repo, tid, wt, dry_run=False, bump_version=bump_version)
+
+        assert result.is_err
+        assert result.danger_err == LandError.ReleaseBumpFailed
+        assert (
+            _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == before_main_sha
+        )
+        assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
+        assert "INCOHERENT" in caplog.text
+        assert "frob release sync" in caplog.text
+        assert "0.210.0" in caplog.text
+        assert "0.211.0" in caplog.text
+
+
 # frob:ticket T-1007
 class TestRealCallbackStaleWorktreeManifest:
     """T-1007: the SAME T-0992 acceptance criterion (a stale worktree-

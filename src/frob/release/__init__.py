@@ -209,6 +209,38 @@ def changelog_skeleton_entry(root: Path, version: str, note: str | None = None) 
 
 
 # frob:doc docs/modules/release.md#public-api
+# frob:ticket T-1078
+# frob:tests tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity.test_manifest_version_written_same_step_as_pyproject  # noqa: E501
+def set_manifest_version(root: Path, version: str) -> Result[str, ReleaseError]:
+    """Rewrite ONLY the `version` field of the tracked `.frob-release.json`
+    manifest in place, preserving its recorded `api` map unchanged (T-1078:
+    the write-side companion to the T-1009 read-side authority). Used by
+    `frob.tickets._land._apply_release_bump` as a forced resync step,
+    invoked immediately after a `bump_version` callback reports success, so
+    the manifest's version is guaranteed coherent with `pyproject.toml`/
+    `CHANGELOG.md` in the SAME land step regardless of whether the
+    callback itself remembered to (or was able to) write the manifest --
+    the exact gap that let a land's REL001 bump update pyproject/CHANGELOG
+    while `.frob-release.json` stayed on the old version (three lands
+    blocked on the T-0992 monotonicity guard until a coordinator hand-
+    reconciled, commit b7fa63d9). Returns `Err(NoManifest)` if no manifest
+    exists yet -- a repo that never adopted `frob release stamp` has
+    nothing here to keep coherent -- or `Err(Malformed)` if the existing
+    file is not valid JSON."""
+    loaded = load_manifest(root)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    manifest = ReleaseManifest(version=version, api=loaded.danger_ok.api)
+    path = manifest_path(root)
+    path.write_text(
+        json.dumps(manifest.model_dump(), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    _log.info("release: manifest version resynced to %s at %s", version, path)
+    return Ok(version)
+
+
+# frob:doc docs/modules/release.md#public-api
 def diff_class(manifest: ReleaseManifest, snapshot: GraphSnapshot) -> BumpClass:
     """The semver bump class implied by the current API vs the manifest."""
     current = _public_api(snapshot)
@@ -276,5 +308,6 @@ __all__ = [
     "required_version",
     "rewrite_pyproject_version",
     "satisfies",
+    "set_manifest_version",
     "stamp",
 ]

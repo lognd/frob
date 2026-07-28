@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.215.0] - unreleased
+
+- T-1078: land REL001 bump updates pyproject/CHANGELOG but can leave .frob-release.json version stale -- quartet desync makes every later land refuse on the T-0992 guard
+
 ## [0.214.0] - unreleased
 
 - T-1072: arch: split src/frob/gates/__init__.py (12047 lines, T-0395 remainder tier 1)
