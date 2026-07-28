@@ -730,7 +730,7 @@ deviations, so nothing here is silently assumed done:
   demoted from "the only path" to "the fallback path."
 
   **R5 per-language coverage (T-0196, verified against
-  `src/frob/dup/_pipeline.py`'s `_BLOCK_LABELS`/`_ASSIGNMENT_LABELS`/
+  `src/frob/dup/_pipeline/_shared.py`'s `_BLOCK_LABELS`/`_ASSIGNMENT_LABELS`/
   `_DECLARATOR_LABELS` and `tests/test_dup_r5_multilang.py`, not
   aspirational):**
 
@@ -853,24 +853,24 @@ artifact) returns nothing.
 ## Public API reference
 
 <a id="public-api"></a>
-<!-- frob:describes src/frob/dup/_pipeline.py::find_clones -->
-<!-- frob:describes src/frob/dup/_pipeline.py::probe_equivalence -->
+<!-- frob:describes src/frob/dup/_pipeline/_fingerprint.py::find_clones -->
+<!-- frob:describes src/frob/dup/_pipeline/_probe.py::probe_equivalence -->
 **`find_clones`/`probe_equivalence`**: see the "Public API" code block
 above for signatures. `find_clones` runs the R1-R5 ladder; `probe_equivalence`
 is R6, opt-in and separate from the gate path.
 
 <a id="rung-r7"></a>
-<!-- frob:describes src/frob/dup/_pipeline.py::_probe_smt_equivalence -->
+<!-- frob:describes src/frob/dup/_pipeline/_smt.py::_probe_smt_equivalence -->
 **`probe_smt_equivalence`**: R7, opt-in bounded-SMT formal-equivalence
 check for tiny int/bool functions (`z3-solver`, optional).
 
 <a id="pipeline"></a>
-<!-- frob:describes src/frob/dup/_pipeline.py::touched_refs -->
+<!-- frob:describes src/frob/dup/_pipeline/_callgraph.py::touched_refs -->
 **`touched_refs`**: symrefs in a `GraphSnapshot` whose span overlaps a
 `Diff` hunk -- the "new side" restriction `find_clones` uses for the
 DUP001 gate path.
 
-<!-- frob:describes src/frob/dup/_pipeline.py::find_helper_clones -->
+<!-- frob:describes src/frob/dup/_pipeline/_fingerprint.py::find_helper_clones -->
 **`find_helper_clones`**: see "Helper-inlining triage" above -- the
 dedicated dup pass over the private-helper population, at
 `DupConfig.helper_min_tokens` instead of `DupConfig.min_tokens`.

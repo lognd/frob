@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.218.0] - unreleased
+
+- T-1086: arch: split remaining T-1076 tier-2 large files (dup/_pipeline, ticket_runner, tickets/__init__, _land)
+
 ## [0.217.0] - unreleased
 
 - T-1076: arch: split 2000-5000 line files (T-0395 remainder tier 2)

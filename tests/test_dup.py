@@ -93,7 +93,7 @@ class TestR3LiteralAbstraction:
         assert result.is_ok, result.err
         return result.danger_ok
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0447
     def test_r3_fires_where_r2_does_not(self, snapshot):
         report = find_clones(
@@ -109,7 +109,7 @@ class TestR3LiteralAbstraction:
             f"pair; got rungs={rungs}"
         )
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0447
     def test_r3_does_not_collapse_a_different_operator(self, snapshot):
         # Negative pair: `x - 1` differs from `x + 1` by operator, not
@@ -167,7 +167,7 @@ class TestR3ElifDesugar:
         assert result.is_ok, result.err
         return result.danger_ok
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0447
     def test_r3_fires_where_r2_does_not(self, snapshot):
         report = find_clones(
@@ -183,7 +183,7 @@ class TestR3ElifDesugar:
             f"pair; got rungs={rungs}"
         )
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0447
     def test_r3_does_not_collapse_a_different_condition(self, snapshot):
         # Negative pair: the elif branch tests a different condition
@@ -232,14 +232,14 @@ class TestCrossLanguageR5Litmus:
         assert result.is_ok, result.err
         return result.danger_ok
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0447
     def test_both_languages_parse_into_the_snapshot(self, snapshot):
         refs = set(snapshot.symbols)
         assert any("sum_py" in r for r in refs)
         assert any("sum_rs" in r for r in refs)
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0447
     def test_r5_fires_across_languages(self, snapshot):
         report = find_clones(
@@ -252,7 +252,7 @@ class TestCrossLanguageR5Litmus:
             f"rungs={rungs}, groups={report.groups!r}"
         )
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0447
     def test_r1_r2_r3_do_not_fire_across_languages(self, snapshot):
         # Characterizes the known lexical-vocabulary limit for the
@@ -300,7 +300,7 @@ class TestCrossLanguageR5WithLet:
         assert result.is_ok, result.err
         return result.danger_ok
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0487
     def test_r5_fires_across_languages_with_a_let_binding(self, snapshot):
         report = find_clones(
@@ -488,7 +488,7 @@ class TestErrorChannelDupPairing:
         assert result.is_ok, result.err
         return result.danger_ok
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0785
     def test_result_and_optional_git_common_dir_register_as_a_duplicate_group(
         self, snapshot
@@ -693,7 +693,7 @@ class TestConditionalShapeDupPairing:
         assert result.is_ok, result.err
         return result.danger_ok
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0801
     def test_combined_vs_split_guard_git_common_dir_registers_as_a_duplicate_group(
         self, snapshot
@@ -731,7 +731,7 @@ class TestRealGitCommonDirPairRegisters:
         assert result.is_ok, result.err
         return result.danger_ok
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0801
     def test_real_git_common_dir_pair_registers_as_a_duplicate_group(self, snapshot):
         report = find_clones(
@@ -776,7 +776,7 @@ class TestErrorChannelNormalizationDoesNotOverFire:
         assert result.is_ok, result.err
         return result.danger_ok
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0785
     def test_genuinely_different_logic_does_not_falsely_pair(self, snapshot):
         report = find_clones(
@@ -789,7 +789,7 @@ class TestErrorChannelNormalizationDoesNotOverFire:
             f"rungs={rungs}, groups={report.groups!r}"
         )
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0801
     def test_genuinely_different_guard_bodies_do_not_falsely_pair(self, tmp_path):
         """T-0801/T-0800 negative control: two functions that both use a

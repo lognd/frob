@@ -55,7 +55,7 @@ class TestNativeRungsDefaultsOnForDirectCallers:
     turns this off; see frob.gates._dup_config)."""
 
     def test_default_config_still_reports_native_rungs(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline.py::_fingerprint_symbol kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_fingerprint.py::_fingerprint_symbol kind="unit"
         report = find_clones(
             snapshot, DupConfig(min_tokens=5, threshold=0.85)
         ).danger_ok
@@ -67,7 +67,7 @@ class TestNativeRungsOffWhenDisabled:
     (the shape `frob.gates.dup_gate` requests by default)."""
 
     def test_explicit_false_reports_no_native_rungs(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline.py::_fingerprint_symbol kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_fingerprint.py::_fingerprint_symbol kind="unit"
         report = find_clones(
             snapshot,
             DupConfig(min_tokens=5, threshold=0.85, native_rungs_enabled=False),
@@ -80,7 +80,7 @@ class TestNativeRungsEnabled:
     matching the always-on behavior test_dup_rungs.py exercises."""
 
     def test_enabled_finds_the_r4_gapped_clone(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
         report = find_clones(
             snapshot,
             DupConfig(min_tokens=5, threshold=0.85, native_rungs_enabled=True),
@@ -101,7 +101,7 @@ class TestNativeRungsEnabled:
         assert matched, f"expected an r4 hit for process_gapped_a/b, got: {r4}"
 
     def test_enabled_finds_the_r5_dataflow_clone(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
         report = find_clones(
             snapshot,
             DupConfig(min_tokens=5, threshold=0.85, native_rungs_enabled=True),

@@ -42,7 +42,7 @@ def _pairs(report, rung):
 
 class TestR4NearMiss:
     def test_fires_on_gapped_clone(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
         report = find_clones(
             snapshot, DupConfig(min_tokens=5, threshold=0.85)
         ).danger_ok
@@ -74,7 +74,7 @@ class TestR4NearMiss:
 
 class TestR5Dataflow:
     def test_fires_on_reordered_dataflow_identical_functions(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
         report = find_clones(
             snapshot, DupConfig(min_tokens=5, threshold=0.85)
         ).danger_ok
@@ -103,7 +103,7 @@ class TestR6Probing:
         return next(r for r in snapshot.symbols if name in r)
 
     def test_fires_on_behaviorally_equivalent_pure_functions(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline.py::probe_equivalence kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_probe.py::probe_equivalence kind="unit"
         a = self._ref(snapshot, "add_twice_a")
         b = self._ref(snapshot, "add_twice_b")
         result = probe_equivalence(a, b, snapshot, budget_s=2.0)
@@ -113,7 +113,7 @@ class TestR6Probing:
         assert verdict.cases_run > 0
 
     def test_does_not_false_positive_on_different_pure_functions(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline.py::probe_equivalence kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_probe.py::probe_equivalence kind="unit"
         a = self._ref(snapshot, "add_twice_a")
         b = self._ref(snapshot, "double_plus_one")
         result = probe_equivalence(a, b, snapshot, budget_s=2.0)
@@ -123,7 +123,7 @@ class TestR6Probing:
     def test_fires_on_equivalent_functions_with_renamed_multi_arg_params(
         self, snapshot
     ):
-        # frob:tests src/frob/dup/_pipeline.py::probe_equivalence kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_probe.py::probe_equivalence kind="unit"
         # frob:ticket T-0041
         # Regression for the kwargs-by-name bug where _call_safe bound fn_b
         # with fn_a's parameter names, so any renamed multi-arg pair (the
@@ -145,7 +145,7 @@ class TestR6Probing:
         assert result.err == DupError.NotPure
 
     def test_refuses_keyword_only_params_instead_of_vacuous_pass(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline.py::probe_equivalence kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_probe.py::probe_equivalence kind="unit"
         # frob:ticket T-0041
         # Reviewer repro: kwonly_subtract(a-b) and kwonly_add(x+y) are
         # OPPOSITE logic. Before the KEYWORD_ONLY guard, _run_probe_cases
@@ -162,7 +162,7 @@ class TestR6Probing:
         assert result.err == DupError.NoGenerator
 
     def test_refuses_mismatched_arity_instead_of_vacuous_pass(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline.py::probe_equivalence kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_probe.py::probe_equivalence kind="unit"
         # frob:ticket T-0041
         # Same vacuous-pass shape as the kwonly case, but via arity:
         # arity_three requires a 3rd positional arg arity_two doesn't have,

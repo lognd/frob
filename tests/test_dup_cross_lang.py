@@ -129,14 +129,14 @@ class TestCrossLanguageCloneNotYetDetected:
     (that blanket assertion is false since T-0487 -- R5 fires -- see
     `TestCrossLanguageR5NowFires`)."""
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0198
     def test_both_languages_parse_into_the_snapshot(self, snapshot):
         refs = set(snapshot.symbols)
         assert any("compute_total" in r for r in refs)
         assert any("computeTotal" in r for r in refs)
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0198
     def test_both_symbols_are_individually_fingerprinted(self, snapshot):
         # Confirms the negative lexical-rung result below is a bucketing
@@ -158,7 +158,7 @@ class TestCrossLanguageR5NowFires:
     (which asserted the opposite and went stale the moment `_KEYWORDS`
     started correctly recognizing TypeScript's `let`/`const`)."""
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0494
     @pytest.mark.parametrize("threshold", [0.9, 0.7, 0.5, 0.3, 0.1])
     def test_r5_group_fires_at_every_threshold(self, snapshot, threshold):
@@ -181,7 +181,7 @@ class TestCrossLanguageR5NowFires:
             "src/mod_b.ts::computeTotal",
         }
 
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
     # frob:ticket T-0494
     def test_r5_group_is_not_gated_by_a_threshold_above_its_own_similarity(
         self, snapshot

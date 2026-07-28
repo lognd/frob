@@ -411,10 +411,10 @@
     "src/frob/dup/_models.py::DupError": "0252357417db93aff891dbf97f3ac7c24f5ff1d84ae2e3cd3eeaabc4dc20c608",
     "src/frob/dup/_models.py::DupStats": "d19c0a8e57c6da3f2ceed1fc28a4d5acc5643acc71895022c0bb74988e0e573b",
     "src/frob/dup/_models.py::ProbeVerdict": "78333bbcf2dfacc95f376a5853340dfa25a936a75bc124aad17d999aa0af7fc6",
-    "src/frob/dup/_pipeline.py::find_clones": "aadc6e714e8efb69d9a8993a4d2a6dde1d7b331ea75443bc29986a4f7f940330",
-    "src/frob/dup/_pipeline.py::find_helper_clones": "eaa363372747fb14db63a21cffce6a4e18b8a679d2e28ef0010314abc468bf66",
-    "src/frob/dup/_pipeline.py::probe_equivalence": "86807dfd6ceb63f7b439334f3ccbdc5c48310b2d4ba7d5ddbaf58df2a33f9b1c",
-    "src/frob/dup/_pipeline.py::touched_refs": "452ae8547270cf4474d617838f95bc2b7d673ade2bd7a536e0412b05606a7551",
+    "src/frob/dup/_pipeline/_callgraph.py::touched_refs": "452ae8547270cf4474d617838f95bc2b7d673ade2bd7a536e0412b05606a7551",
+    "src/frob/dup/_pipeline/_fingerprint.py::find_clones": "aadc6e714e8efb69d9a8993a4d2a6dde1d7b331ea75443bc29986a4f7f940330",
+    "src/frob/dup/_pipeline/_fingerprint.py::find_helper_clones": "eaa363372747fb14db63a21cffce6a4e18b8a679d2e28ef0010314abc468bf66",
+    "src/frob/dup/_pipeline/_probe.py::probe_equivalence": "86807dfd6ceb63f7b439334f3ccbdc5c48310b2d4ba7d5ddbaf58df2a33f9b1c",
     "src/frob/dup/_rules.py::DUP001": "6165ee1b857f003776a57ba42485843c688daa2ae6c13fefc9aa6e9eb0851883",
     "src/frob/dup/_rules.py::DUP002": "9b940607fe9b7d7eb8ccec313575b126df8b49a603e8a8071f839897352a94ec",
     "src/frob/dup/_template.py::build_group_template": "c3dd160df1d4341c702f5bc9f6921a2c9cd08c7d02911a110d58c1ed55a860c4",
@@ -1774,5 +1774,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.217.0"
+  "version": "0.218.0"
 }

@@ -7,7 +7,7 @@
 `frob.dup` is not a declarative registry table the way the capability or
 threat catalogs are -- it is an ORDERED RUNG LADDER of detectors, each
 stage stricter and more expensive than the last, implemented in
-`src/frob/dup/_pipeline.py`: R1 (exact token hash, `_r1_hash`), R2
+`src/frob/dup/_pipeline/` (T-1086 split package): R1 (exact token hash, `_r1_hash`), R2
 (alpha-renamed token hash, `_r2_normalize`/`_r2_hash`), R3 (canonicalized
 subtree hash, `_r3_fingerprint`, needs `frob_core`), R4 (winnowed
 fingerprints + statement-alignment verification, `_r4_fingerprint`), R5

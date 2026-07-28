@@ -134,7 +134,7 @@ class TestSharedHelperNotDuplication:
 
 class TestHelperPop:
     def test_tiny_helpers(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline.py::find_helper_clones kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_helper_clones kind="unit"
         result = find_helper_clones(snapshot, DupConfig(threshold=0.7))
         assert result.is_ok, result.err
         refs = _pair_refs(result.danger_ok)

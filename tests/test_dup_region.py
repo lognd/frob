@@ -63,12 +63,12 @@ def _whole_symbol_pairs(report):
 
 class TestRegionKernelOffByDefault:
     def test_disabled_by_default_finds_no_region_pairs(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
         report = find_clones(snapshot, DupConfig(min_tokens=5)).danger_ok
         assert _r1_5_pairs(report) == []
 
     def test_whole_symbol_rungs_miss_the_partial_clone(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline.py::_hash_rung_groups kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_fingerprint.py::_hash_rung_groups kind="unit"
         # The whole point of this ticket: R1 (exact) and R2 (alpha-rename)
         # hash entire bodies, so alpha_process/beta_transform -- which
         # differ outside their shared block -- never collide on either.
@@ -89,7 +89,7 @@ class TestRegionKernelFindsPartialClone:
     def test_enabled_finds_shared_region_between_otherwise_different_functions(
         self, snapshot
     ):
-        # frob:tests src/frob/dup/_pipeline.py::_region_groups kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_fingerprint.py::_region_groups kind="unit"
         # frob:tests src/frob/dup/_core.py::_exact_regions kind="unit"
         report = find_clones(
             snapshot,

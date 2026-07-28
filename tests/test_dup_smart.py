@@ -79,7 +79,7 @@ class TestFindClones:
 
 class TestTouchedRefs:
     def test_hunk_overlapping_span_marks_symbol_touched(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline.py::touched_refs kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_callgraph.py::touched_refs kind="unit"
         # compute_total is defined at the top of mod_a.py.
         diff = Diff(base="main", hunks=(Hunk(file="src/mod_a.py", span=(1, 3)),))
         touched = touched_refs(snapshot, diff)

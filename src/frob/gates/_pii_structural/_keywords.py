@@ -116,8 +116,14 @@ _PII012_REVIEWED_NON_PII: frozenset[tuple[str, str]] = frozenset(
         ("src/frob/dup/_exhaustiveness.py", "token"),
         ("src/frob/dup/_legacy_cpp.py", "_cpp_leaf_token"),
         ("src/frob/dup/_legacy_py.py", "_leaf_token"),
-        ("src/frob/dup/_pipeline.py", "TOKEN"),
-        ("src/frob/dup/_pipeline.py", "token"),
+        # T-1086's split moved `dup/_pipeline.py` into the `dup/_pipeline/`
+        # package -- same reviewed "token" homonym, new per-file homes.
+        ("src/frob/dup/_pipeline/__init__.py", "token"),
+        ("src/frob/dup/_pipeline/_callgraph.py", "TOKEN"),
+        ("src/frob/dup/_pipeline/_callgraph.py", "token"),
+        ("src/frob/dup/_pipeline/_fingerprint.py", "token"),
+        ("src/frob/dup/_pipeline/_normalize.py", "token"),
+        ("src/frob/dup/_pipeline/_shared.py", "token"),
         ("src/frob/gates/__init__.py", "token"),
         # T-1072's split moved the waiver machinery (and its SEC110/secret-
         # fake vocabulary, the same reviewed non-PII homonyms below) from
