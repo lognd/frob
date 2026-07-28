@@ -93,6 +93,10 @@ _ERROR_SEVERITY_CATEGORIES = frozenset({"cpp-noexcept-throws"})
 # `_ARCH_CATEGORY_TO_RULE` sites ARCH001 already binds to.
 # frob:enforces CHK-GATE-ARCH101
 # frob:enforces CHK-GATE-ARCH102
+# T-0339-close pass: CPPTHROW001 channels through this same
+# category-to-rule map (T-1034 wired it above), so its enforces edge
+# binds here with its ARCH siblings.
+# frob:enforces CHK-GATE-CPPTHROW001
 # frob:enforces CHK-GATE-ARCH103
 # frob:enforces CHK-GATE-CPPTHROW001
 # frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_two_cluster_class_fires_arch101  # noqa: E501

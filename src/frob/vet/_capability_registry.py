@@ -1982,6 +1982,45 @@ class _OpaqueConstruct(BaseModel):
 # T-1047's declared scope (src/frob/vet/**, src/frob/gates/_opaque.py, \
 # docs/design/registry/evasion.yaml, tests/test_vet.py) -- matches T-0665's \
 # own precedent for the identical situation on this same constant"
+# frob:enforces EVA-PY-R01
+# frob:enforces EVA-PY-R02
+# frob:enforces EVA-PY-R03
+# frob:enforces EVA-PY-R04
+# frob:enforces EVA-PY-R05
+# frob:enforces EVA-PY-R06
+# frob:enforces EVA-PY-R07
+# frob:enforces EVA-PY-R08
+# frob:enforces EVA-PY-R09
+# frob:enforces EVA-TSJS-R01
+# frob:enforces EVA-TSJS-R02
+# frob:enforces EVA-TSJS-R03
+# frob:enforces EVA-TSJS-R04
+# frob:enforces EVA-TSJS-R05
+# frob:enforces EVA-TSJS-R06
+# frob:enforces EVA-TSJS-R07
+# frob:enforces EVA-TSJS-R08
+# frob:enforces EVA-TSJS-R09
+# frob:enforces EVA-RS-R01
+# frob:enforces EVA-RS-R02
+# frob:enforces EVA-RS-R03
+# frob:enforces EVA-RS-R04
+# frob:enforces EVA-RS-R05
+# frob:enforces EVA-RS-R06
+# frob:enforces EVA-C-R01
+# frob:enforces EVA-C-R02
+# frob:enforces EVA-C-R03
+# frob:enforces EVA-C-R04
+# frob:enforces EVA-C-R05
+# frob:enforces EVA-CPP-R01
+# frob:enforces EVA-CPP-R02
+# frob:enforces EVA-CPP-R03
+# frob:enforces EVA-CPP-R04
+# frob:enforces EVA-CPP-R05
+# frob:enforces EVA-KT-R01
+# frob:enforces EVA-KT-R02
+# frob:enforces EVA-KT-R03
+# frob:enforces EVA-KT-R04
+# frob:enforces EVA-KT-R05
 RUNTIME_OPAQUE_CONSTRUCTS: tuple[_OpaqueConstruct, ...] = (
     _OpaqueConstruct(
         language="python",

@@ -165,7 +165,13 @@ class TestSystemDesignExhaustiveness:
             for entry in entries
             if entry.disposition.kind is DispositionKind.DEFERRED
         ]
-        assert deferred, "expected at least one deferred entry to check against"
+        if not deferred:
+            # Zero deferred entries is the GOAL state, not a vacuous pass:
+            # T-0958 re-pointed the T-0331 rows and T-0960/T-0962 flipped
+            # the SDC-13 family to handled_by, draining this registry's
+            # deferrals entirely. The positive case below simply has
+            # nothing left to check.
+            return
         for entry in deferred:
             ticket_id = entry.disposition.target
             assert ticket_id is not None, f"{entry.id} deferred with no target ticket"

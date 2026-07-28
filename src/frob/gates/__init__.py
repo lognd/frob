@@ -5102,6 +5102,7 @@ def _debt_edges(snapshot: GraphSnapshot) -> tuple[Edge, ...]:
 # independently-evolving per-directive checks -- frob:debt/frob:deprecated/frob:tests \
 # kind= -- with the same MalformedDirective-surfacing shape by established convention) \
 # (T-0861)"
+# frob:enforces CHK-GATE-DEBT001
 def _debt001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DEBT001: a `frob:debt` directive missing `reason="..."` and/or
     `ticket="T-####"` -- surfaced from `frob.graph`'s MalformedDirective
@@ -5359,6 +5360,7 @@ def _deprecated_edges(snapshot: GraphSnapshot) -> tuple[Edge, ...]:
 
 # frob:waive DUP001 reason="dup grouped this with the sibling per-directive \
 # malformed-directive builders -- see _debt001_violations for full reasoning (T-0861)"
+# frob:enforces CHK-GATE-DEPR001
 def _depr001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DEPR001: a `frob:deprecated` directive missing/invalid `sunset=` or
     missing `ticket=` -- surfaced from `frob.graph`'s MalformedDirective
@@ -7879,6 +7881,7 @@ def _test006(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
 # frob:waive DUP001 reason="dup grouped this with the sibling per-directive \
 # malformed-directive builders -- see _debt001_violations for full reasoning (T-0861)"
+# frob:enforces CHK-GATE-TEST010
 def _test010_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """TEST010: a `frob:tests` directive's `kind=` attribute is not one of
     unit/integration/e2e (T-0237).
@@ -8069,6 +8072,8 @@ def _load_test_config(root: Path) -> tuple[TestPolicy, tuple[SystemSpec, ...]]:
 # own call surfaces the resolver cannot follow through a function-local import; \
 # every locally-visible fallible operation in this gate (path checks, the two \
 # try/except blocks below) is already narrowly handled"
+# frob:enforces CHK-GATE-DEC000
+# frob:enforces CHK-GATE-DEC003
 def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DEC001/DEC002: decision records and their code anchors (T-0004).
 
@@ -8750,6 +8755,7 @@ def _tick008_violations_for_ticket(
 
 
 # frob:ticket T-0714
+# frob:enforces CHK-GATE-TICK009
 def _tick009_scope_breadth_nudges(
     root: Path, queue: TicketQueue
 ) -> tuple[Violation, ...]:
@@ -8794,6 +8800,7 @@ def _tick009_scope_breadth_nudges(
 # frob:waive EXHAUST002 reason="T-1056: json.JSONDecodeError is a ValueError \
 # subclass already covered by this function's own except (OSError, ValueError); \
 # the resolver does not perform subclass reasoning against the caught tuple"
+# frob:enforces CHK-GATE-TICK010
 def _tick010_stale_lease_report(root: Path) -> tuple[Violation, ...]:
     """TICK010 (T-0714): one WARN per cross-worktree lease file
     (`.git/frob-leases/*.json`, T-0473) whose recorded `worktree` path no

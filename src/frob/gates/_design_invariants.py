@@ -85,6 +85,7 @@ def _import_violates(spec: str, forbidden: str) -> bool:
 # frob:ticket T-0757
 # frob:tests tests/unit/test_design_invariants.py::TestInv007.test_forbidden_import_fires  # noqa: E501
 # frob:tests tests/unit/test_design_invariants.py::TestInv007.test_clean_module_no_finding  # noqa: E501
+# frob:enforces CHK-GATE-INV007
 def inv007_violations(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """INV007: a `frob:invariant ... no_import="pkg"` anchor whose own file
     actually imports (a raw specifier match, not a resolved/transitive
@@ -177,6 +178,7 @@ def _has_bound_property_test(anchor_src: str, snapshot: GraphSnapshot) -> bool:
 # frob:ticket T-0757
 # frob:tests tests/unit/test_design_invariants.py::TestInv008.test_missing_property_test_fires  # noqa: E501
 # frob:tests tests/unit/test_design_invariants.py::TestInv008.test_bound_property_test_clears  # noqa: E501
+# frob:enforces CHK-GATE-INV008
 def inv008_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """INV008: a `frob:invariant ... establishes="..."` anchor with no
     `frob:tests ... kind="property"` edge reaching it -- an establish-
