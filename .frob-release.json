@@ -1544,8 +1544,11 @@
     "src/frob/testing/_collect.py::drop_collection_cache": "22f01b16e6e3d0cca3528a9b7ee2bef5e7f4a4944edc8bb6d73e29b630a30cb5",
     "src/frob/testing/_coverage_wait.py::CoverageWaitError": "b6edc0934bbc2ffb9b11259a4fe36b8dd33ee2fc7ccc2936dfca5e967e730db9",
     "src/frob/testing/_coverage_wait.py::CoverageWaitOutcome": "5c673dd2d06d7e5469a445522a8ad01c93cd0cc3757583ceef2b1d363c957fda",
+    "src/frob/testing/_coverage_wait.py::SharedCoverageResult": "b06b24c2786b8d65a2715c34a0944991320dcdb1decf418cf232874b98bc27d8",
     "src/frob/testing/_coverage_wait.py::coverage_lock_path": "a978588bed6a9fdf500e4f3944878907b2a8ac493c16a76468517c237fafe559",
     "src/frob/testing/_coverage_wait.py::run_coverage_wait": "9782ab6a7110a82edcea4558f916267bcffc479dee447f8f23d2c5e07dd5ec89",
+    "src/frob/testing/_coverage_wait.py::shared_state_dir": "8e6197f1d143a4831bea557e315a38c9416dc6ace43afc34c9b4ae30abfca15a",
+    "src/frob/testing/_coverage_wait.py::tree_digest": "5521b3911794fe5bbd7a219481a4156543e4859e2da9db0b9fa69de5dcfc5c24",
     "src/frob/testing/_incremental_coverage.py::python_coverage_targets": "4ff9bbaa63e65dfe58fbf73cde272c9d0df5b54a5b30a4d84cd0cd4461afb106",
     "src/frob/testing/_models.py::CollectedTests": "47b7fa5e69be193dc3ff6b6afc49367dba9aa1e718125e2a787305bd9085b071",
     "src/frob/testing/_models.py::NativeSpec": "8fadcf70d85d58c237c87b94378c88b5fdac0bafd3429187b7a8f74dbbd953f8",
@@ -1818,5 +1821,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.232.0"
+  "version": "0.233.0"
 }
