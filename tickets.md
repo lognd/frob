@@ -1265,7 +1265,7 @@ regression fixtures.
 id: T-1037
 title: 'REG011 quality-bar drift: 798 out_of_scope reasons in weaknesses.yaml fail
   T-0680''s substantive-disclosure check'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -1285,7 +1285,6 @@ Found while closing epic T-0346: `tests/test_registry_reconciliation_weaknesses.
 Root cause: REG011 was added by T-0680, which landed after T-0384's reconciliation test was written and pinned "zero violations" against `weaknesses.yaml`. T-0384 never anticipated this new WARN-level quality bar. `weaknesses.yaml`'s `out_of_scope:` dispositions (presumably many of its CWE `out-of-scope-naming-the-missing-concept` entries, per T-0346's own acceptance criterion [1] wording) apparently do not meet REG011's substantive-reason bar.
 
 This is a real, live gate warning (not an error) affecting a file this session did not touch. Two possible fixes, for the reviewer to choose: (1) improve the ~798 flagged `out_of_scope` reason strings in weaknesses.yaml to satisfy REG011's substantive-disclosure bar (real remediation, likely large), or (2) if the reasons are already substantive and REG011's heuristic is simply too strict for this file's phrasing convention, adjust REG011 or file targeted waivers. Scope: docs/design/registry/weaknesses.yaml, tests/test_registry_reconciliation_weaknesses.py, possibly src/frob/gates/_registry_exhaustiveness.py (REG011 itself) depending on the reviewer's chosen direction.
-
 <!-- ticket:T-1038 -->
 ```yaml
 id: T-1038
