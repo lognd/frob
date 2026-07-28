@@ -860,6 +860,7 @@ node gates : trusted {
     attr interface=taint_gate;
     attr interface=test_gate;
     attr interface=ticket_lease_pin;
+    attr interface=tickets_gate;
     attr interface=tighten_deprecated_baseline;
     attr interface=tracked_files;
     attr interface=violation_fingerprint;
