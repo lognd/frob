@@ -542,7 +542,7 @@ existing test surface, all passing (see Evidence); `git diff main
 ```yaml
 id: T-0395
 title: 'advisories: large-file residue after calibrated thresholds (T-0373)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -558,7 +558,6 @@ threat: null
 component: null
 ```
 After T-0373 re-thresholds frob-arch large-file to 800 lines / 60 (function), address the residue that still exceeds 800 lines among the 34 large-file advisories: real module splits, or accepted-with-reason for files that don't decompose cleanly. Acceptance: frob check arch large-file advisories at the calibrated threshold reduced to zero unresolved.
-
 <!-- ticket:T-0397 -->
 ```yaml
 id: T-0397
