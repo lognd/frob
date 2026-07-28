@@ -89,7 +89,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 from frob.logging import get_logger
 
-from ._models import Node
+from ._models import KernelModel, Node
 
 _log = get_logger(__name__)
 
@@ -569,3 +569,24 @@ def host_manifest_for(node: Node) -> HostManifest | None:
         bin_path=parsed.bin_path,
         bin_path_args=parsed.bin_path_args,
     )
+
+
+# frob:ticket T-0861
+# frob:doc docs/strata/host.md#hostmanifest
+# frob:tests tests/unit/strata/test_host_isolation.py::TestLateralIsolation.test_skips_below_two_users  # noqa: E501
+# frob:waive DUP001 reason="see _krb_movement.py::_manifests_by_node's own DUP001 \
+# waiver for full reasoning (T-0861)"
+def manifests_by_node(model: KernelModel) -> dict[str, HostManifest]:
+    """Every node with a declared std.host manifest, keyed by node id --
+    the shared per-node lookup HOST001/HOST002 (`_host_isolation.py`) and
+    every SYS2xx rule (`_contention.py`) build their user/manifest index
+    from (T-0861 dup group: this was two byte-identical private copies,
+    `_host_isolation.py::_manifests_by_node`/`_contention.py::
+    _node_manifests`, now promoted to their shared import, `_host.py`,
+    the same module both already import `host_manifest_for` from)."""
+    manifests: dict[str, HostManifest] = {}
+    for node in model.nodes:
+        manifest = host_manifest_for(node)
+        if manifest is not None:
+            manifests[node.id] = manifest
+    return manifests

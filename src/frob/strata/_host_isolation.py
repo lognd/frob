@@ -174,7 +174,7 @@ from typani.result import Err, Ok, Result
 from frob.logging import get_logger
 
 from ._errors import StrataError
-from ._host import HostAcl, HostManifest, HostOwns, host_manifest_for
+from ._host import HostAcl, HostManifest, HostOwns, manifests_by_node
 from ._models import Flow, KernelModel, Node, Rung
 from ._threat import OutOfScopeEntry, WeaknessEntry
 from ._waive import (
@@ -408,18 +408,6 @@ def _sub_target_of(v: HostIsolationViolation) -> str | None:
     """`apply_waivers` extractor: HOST001/HOST002 are always sub-targeted
     (module docstring), so this is never `None` for a real finding."""
     return v.sub_target
-
-
-def _manifests_by_node(model: KernelModel) -> dict[str, HostManifest]:
-    """Every node with a declared `std.host` manifest, keyed by node id --
-    the one join HOST001/HOST002 both build their user index from
-    (charter: no duplication)."""
-    manifests: dict[str, HostManifest] = {}
-    for node in model.nodes:
-        manifest = host_manifest_for(node)
-        if manifest is not None:
-            manifests[node.id] = manifest
-    return manifests
 
 
 def _nodes_by_user(
@@ -740,7 +728,7 @@ def evaluate_lateral_isolation(
     `user`/`peer` in the deterministic (sorted) order the users were
     encountered so a run is reproducible."""
     nodes_by_id = {n.id: n for n in model.nodes}
-    manifests = _manifests_by_node(model)
+    manifests = manifests_by_node(model)
     by_user = _nodes_by_user(nodes_by_id, manifests)
     users = sorted(by_user)
     if len(users) < 2:
@@ -900,7 +888,7 @@ def host_movement_flows(model: KernelModel) -> tuple[Flow, ...]:
     still visible to the closure -- sound (more edges only tighten a
     `NoFlow` proof, never loosen it), not scoped to any one pair."""
     nodes_by_id = {n.id: n for n in model.nodes}
-    manifests = _manifests_by_node(model)
+    manifests = manifests_by_node(model)
     by_user = _nodes_by_user(nodes_by_id, manifests)
     users = sorted(by_user)
     flows = _all_movement_flows(users, by_user, manifests)
@@ -1096,7 +1084,7 @@ def evaluate_vertical_isolation(
     every finding DERIVED from `HostManifest` plus the model's existing
     trust lattice (module docstring), never hand-written per user."""
     nodes_by_id = {n.id: n for n in model.nodes}
-    manifests = _manifests_by_node(model)
+    manifests = manifests_by_node(model)
     by_user = _nodes_by_user(nodes_by_id, manifests)
     if not by_user:
         _log.info("host_isolation: HOST002 skipped -- no runs_as users declared")
@@ -1215,7 +1203,7 @@ def evaluate_host_isolation_waived(
     if vertical.is_err:
         return Err(vertical.danger_err)
 
-    by_user = _nodes_by_user({n.id: n for n in model.nodes}, _manifests_by_node(model))
+    by_user = _nodes_by_user({n.id: n for n in model.nodes}, manifests_by_node(model))
     host001, host002 = _apply_host_waivers(
         model, lateral.danger_ok, vertical.danger_ok, by_user
     )

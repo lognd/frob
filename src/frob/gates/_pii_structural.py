@@ -133,6 +133,7 @@ from tree_sitter import Node, Tree
 
 from frob.excludes import is_excluded, load_exclude_globs
 from frob.gates._models import Severity, Violation
+from frob.gates._parse_failures import local_parse001_violation
 from frob.gitio import run_argv
 from frob.lang import node_text, raw_tree
 from frob.logging import get_logger
@@ -650,29 +651,22 @@ def _is_data_structure(cls: ast.ClassDef) -> bool:
 # frob:ticket T-0897
 def _parse001_violation(rel_path: str, reason: str) -> Violation:
     """PARSE001 `Violation` for a file this gate's own read/parse could not
-    get through (T-0897): mirrors `frob.gates._parse_failures.
-    parse_failure_gate`'s rule id, severity, and message shape so a file
-    PII010/SEC110 cannot inspect surfaces the SAME PARSE001 signal as the
-    centrally-tracked `frob.lang`/`snapshot.parse_failures` path, instead
-    of the private silent-skip this gate used to do (T-0786 finding: zero
-    Violation, DEBUG-only log, on an unparseable file -- exactly the class
-    PARSE001 exists to make loud)."""
-    _log.warning("PARSE001: %s could not be parsed/read (%s)", rel_path, reason)
-    return Violation(
-        rule="PARSE001",
-        severity=Severity.ERROR,
-        file=rel_path,
-        line=0,
-        message=(
-            f"PARSE001: {rel_path} could not be parsed/read -- PII010/SEC110 "
-            f"cannot inspect it for PII-shaped fields or secret sources "
-            f"(reason: {reason}); fix the file or "
-            'frob:waive PARSE001 reason="..." if this is a known, '
-            "intentionally-unparseable fixture"
-        ),
+    get through (T-0897): delegates to `frob.gates._parse_failures.
+    local_parse001_violation` (extracted T-0861) with this gate's own
+    capability-loss clause so PII010/SEC110's message stays distinct while
+    the rule id/severity/message shape is the ONE shared home."""
+    return local_parse001_violation(
+        rel_path,
+        reason,
+        "PII010/SEC110 cannot inspect it for PII-shaped fields or secret sources",
     )
 
 
+# frob:waive DUP001 reason="dup grouped this with _pii012_violation on the shared \
+# Violation-builder boilerplate shape -- PII010 (declared-surface finding) and PII012 \
+# (suggestion-tier keyword sweep) are independently-evolving rules with different \
+# severity/message semantics; each rule keeps its own builder by the same per-rule- \
+# builder convention this file already uses throughout (T-0861)"
 def _pii010_violation(
     rel_path: str, lineno: int, field_name: str, sig: _FieldSignature
 ) -> Violation:
@@ -970,6 +964,11 @@ def _is_email_shaped(value: str) -> bool:
     return True
 
 
+# frob:waive DUP001 reason="dup grouped this with _sec110_violation on the shared \
+# Violation-builder boilerplate shape -- PII011 (email-shaped literal) and SEC110 \
+# (unmapped env-access site) are independently-evolving rules over different families \
+# (structural PII vs secret-source) with different message text; each keeps its own \
+# builder by the one-builder-per-rule convention this file uses throughout (T-0861)"
 def _pii011_violation(rel_path: str, lineno: int, value: str) -> Violation:
     """The PII011 `Violation` for one email-shaped string literal (T-0349)."""
     _log.warning("PII011: %s:%d email-shaped literal %r", rel_path, lineno, value)
@@ -1020,6 +1019,8 @@ def _scan_python_email_values(
 _COMMENT_WORD_RE = re.compile(r"[A-Za-z_]+")
 
 
+# frob:waive DUP001 reason="dup grouped this with _pii010_violation -- see that \
+# function's own DUP001 waiver for full reasoning (T-0861)"
 def _pii012_violation(
     rel_path: str, lineno: int, token: str, sig: _FieldSignature
 ) -> Violation:
@@ -1505,6 +1506,10 @@ def _subscript_key(node: ast.Subscript) -> ast.expr:
     return node.slice
 
 
+# frob:waive DUP001 reason="dup grouped this with _walk_lint.py/_render_lint.py's own \
+# _dotted_prefix copies -- each module's docstring already documents this as a \
+# deliberate small local unparse kept per-module rather than a cross-gate import for \
+# one helper (T-0861)"
 def _dotted_prefix(node: ast.expr) -> str | None:
     """The dotted-name text of an `Attribute`/`Name` chain (`os.environ` ->
     `"os.environ"`), or `None` for anything else -- a small, local
@@ -1543,6 +1548,8 @@ def _is_env_call(node: ast.Call) -> bool:
     return False
 
 
+# frob:waive DUP001 reason="dup grouped this with _pii011_violation -- see that \
+# function's own DUP001 waiver for full reasoning (T-0861)"
 def _sec110_violation(rel_path: str, lineno: int, site: str) -> Violation:
     """The SEC110 `Violation` for one unmapped env-access site."""
     _log.warning("SEC110: %s:%d env access %s", rel_path, lineno, site)

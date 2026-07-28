@@ -88,7 +88,7 @@ node cli : trusted {
     // this class of file rather than inventing a new node for three
     // small files.
     code "src/frob/app/**" "src/frob/__main__.py" "src/frob/__init__.py"
-        "src/frob/doctor.py" "src/frob/excludes.py";
+        "src/frob/doctor.py" "src/frob/excludes.py" "src/frob/tomlio.py";
     may "eval";
     may "fs";
     may "fs-read";

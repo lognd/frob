@@ -238,6 +238,8 @@ class FunctionMayRaise(BaseModel):
 
 
 # frob:ticket T-0686
+# frob:waive DUP001 reason="see gates/_exhaustive_handling.py::_qualname's own DUP001 \
+# waiver for full reasoning -- deliberate narrow per-module duplicate (T-0861)"
 def _qualname(
     module: NormalizedModule, cls_name: str | None, func: NormalizedFunction
 ) -> str:

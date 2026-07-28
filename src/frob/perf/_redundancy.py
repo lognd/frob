@@ -55,7 +55,6 @@ posture as every DOC004 namespace/command source.
 from __future__ import annotations
 
 import re
-import tomllib
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -65,6 +64,7 @@ from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv
 from frob.lang._models import ParsedFile, SymbolKind
 from frob.logging import get_logger
+from frob.tomlio import read_toml_lenient
 
 _log = get_logger(__name__)
 
@@ -84,18 +84,15 @@ class _HeavyComputation:
     cached_by: tuple[str, ...]
 
 
+# frob:waive DUP001 reason="see _docblocks.py::_read_toml's own DUP001 waiver for \
+# full reasoning (T-0861)"
 def _read_toml(path: Path) -> dict | None:
     """Best-effort TOML load: `None` on any missing/unreadable/malformed
     file -- a missing/absent `[[perf.heavy]]` table just means no PERF007
-    checking, never a gate crash (fail-open, matching `_docblocks._read_toml`)."""
-    if not path.exists():
-        return None
-    try:
-        with path.open("rb") as handle:
-            return tomllib.load(handle)
-    except (OSError, tomllib.TOMLDecodeError) as exc:
-        _log.warning("perf007: %s unreadable: %s", path, exc)
-        return None
+    checking, never a gate crash (fail-open). Thin wrapper over
+    `frob.tomlio.read_toml_lenient` (extracted T-0861) that fixes this
+    module's own `log_prefix`."""
+    return read_toml_lenient(path, log_prefix="perf007")
 
 
 def _heavy_computations(root: Path) -> tuple[_HeavyComputation, ...]:

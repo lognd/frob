@@ -148,6 +148,11 @@ def _target_of(v: KrbMovementViolation) -> str | None:
     return v.node
 
 
+# frob:waive DUP001 reason="dup grouped this with strata/_host.py::manifests_by_node \
+# purely on the shared 'iterate nodes, keyed dict of declared manifest' shape -- \
+# different manifest types (KrbManifest here vs HostManifest there), independently \
+# evolving std.krb/std.host domains; same per-domain-module local-copy convention as \
+# _access.py/_starvation.py's own DUP001 waivers (T-0861)"
 def _manifests_by_node(model: KernelModel) -> dict[str, KrbManifest]:
     """Every node with a declared `std.krb` manifest, keyed by node id --
     the one join every rule below builds its working set from (charter:

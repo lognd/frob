@@ -2926,6 +2926,9 @@ def _affect_ref_file(ref: str) -> str:
     return ref.split("::", 1)[0]
 
 
+# frob:waive DUP001 reason="dup grouped this with _affect002_violation and \
+# _docptr.py::_doc007_violation -- see _doc007_violation's own DUP001 waiver for \
+# full reasoning (T-0861)"
 def _affect001_violation(
     ref: str, file: str, line: int, stale_docs: list[str]
 ) -> Violation:
@@ -2945,6 +2948,8 @@ def _affect001_violation(
     )
 
 
+# frob:waive DUP001 reason="dup grouped this with _affect001_violation -- see \
+# _docptr.py::_doc007_violation's own DUP001 waiver for full reasoning (T-0861)"
 def _affect002_violation(
     ref: str, file: str, line: int, stale_deps: list[str]
 ) -> Violation:
@@ -4245,8 +4250,11 @@ def _is_symref(entry: str) -> bool:
     (a `closure()`/`CallGraph.calls` entry), false for a non-symref
     sentinel such as `frob.graph.callgraph.UNRESOLVED_CALLEE` -- every
     closure consumer here must check this before `split("::", 1)[1]`,
-    which IndexErrors on a bare sentinel with no `::` (T-0814)."""
-    return "::" in entry
+    which IndexErrors on a bare sentinel with no `::` (T-0814). Thin
+    wrapper over `frob.graph.callgraph.is_symref` (extracted T-0861)."""
+    from frob.graph.callgraph import is_symref
+
+    return is_symref(entry)
 
 
 def _cov006_third_file_reachable(root: Path, edge: Edge) -> bool:
@@ -5068,7 +5076,11 @@ def _debt_edges(snapshot: GraphSnapshot) -> tuple[Edge, ...]:
     return tuple(e for e in snapshot.edges if e.kind == EdgeKind.DEBT)
 
 
-# frob:enforces CHK-GATE-DEBT001
+# frob:waive DUP001 reason="dup grouped this with the sibling per-directive \
+# malformed-directive builders (DEBT001/DEPR001/TEST010 are three \
+# independently-evolving per-directive checks -- frob:debt/frob:deprecated/frob:tests \
+# kind= -- with the same MalformedDirective-surfacing shape by established convention) \
+# (T-0861)"
 def _debt001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DEBT001: a `frob:debt` directive missing `reason="..."` and/or
     `ticket="T-####"` -- surfaced from `frob.graph`'s MalformedDirective
@@ -5324,7 +5336,8 @@ def _deprecated_edges(snapshot: GraphSnapshot) -> tuple[Edge, ...]:
     return tuple(e for e in snapshot.edges if e.kind == EdgeKind.DEPRECATED)
 
 
-# frob:enforces CHK-GATE-DEPR001
+# frob:waive DUP001 reason="dup grouped this with the sibling per-directive \
+# malformed-directive builders -- see _debt001_violations for full reasoning (T-0861)"
 def _depr001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DEPR001: a `frob:deprecated` directive missing/invalid `sunset=` or
     missing `ticket=` -- surfaced from `frob.graph`'s MalformedDirective
@@ -7817,7 +7830,8 @@ def _test006(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # ---------------------------------------------------------------------------
 
 
-# frob:enforces CHK-GATE-TEST010
+# frob:waive DUP001 reason="dup grouped this with the sibling per-directive \
+# malformed-directive builders -- see _debt001_violations for full reasoning (T-0861)"
 def _test010_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """TEST010: a `frob:tests` directive's `kind=` attribute is not one of
     unit/integration/e2e (T-0237).
@@ -9624,8 +9638,12 @@ def _dup_gate_violations(
     )
 
 
-def _current_version(root: Path) -> str | None:
-    """The project version from pyproject.toml, or None if undetectable."""
+def _pyproject_project_field(root: Path, field: str) -> str | None:
+    """One `[project].<field>` string from `root/pyproject.toml`, or
+    `None` if the file, table, or field is missing/mistyped (extracted
+    T-0861): the ONE toml-read-and-key shape `_current_version`
+    (`field="version"`) and `_current_project_name` (`field="name"`)
+    both need."""
     toml_path = root / "pyproject.toml"
     if not toml_path.exists():
         return None
@@ -9634,8 +9652,13 @@ def _current_version(root: Path) -> str | None:
             data = tomllib.load(fh)
     except (OSError, tomllib.TOMLDecodeError):
         return None
-    version = data.get("project", {}).get("version")
-    return version if isinstance(version, str) else None
+    value = data.get("project", {}).get(field)
+    return value if isinstance(value, str) else None
+
+
+def _current_version(root: Path) -> str | None:
+    """The project version from pyproject.toml, or None if undetectable."""
+    return _pyproject_project_field(root, "version")
 
 
 # frob:ticket T-0403
@@ -9887,16 +9910,7 @@ def _current_project_name(root: Path) -> str | None:
     """The project name from `pyproject.toml`'s `[project].name`, or
     `None` if undetectable (T-1009 -- `_uv_lock_version`'s key into
     `uv.lock`'s `[[package]]` table)."""
-    toml_path = root / "pyproject.toml"
-    if not toml_path.exists():
-        return None
-    try:
-        with toml_path.open("rb") as fh:
-            data = tomllib.load(fh)
-    except (OSError, tomllib.TOMLDecodeError):
-        return None
-    name = data.get("project", {}).get("name")
-    return name if isinstance(name, str) else None
+    return _pyproject_project_field(root, "name")
 
 
 # frob:doc docs/modules/gates.md#public-api

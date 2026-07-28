@@ -187,6 +187,11 @@ def manifest_digest(model: KernelModel) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+# frob:waive DUP001 reason="dup grouped this with _generate_windows.py::_header on the \
+# shared banner+digest lines -- the two are genuinely different shell targets (bash \
+# shebang/set -euo pipefail vs PowerShell $ErrorActionPreference), each already \
+# documented as intentionally sharing manifest_digest() so ONE DEPLOY001 drift lock \
+# covers both platforms' output while keeping platform-specific syntax apart (T-0861)"
 def _header(model: KernelModel, title: str) -> str:
     """The shared `#!/usr/bin/env bash` + banner + digest header every
     generated script opens with -- ONE place the header shape is written

@@ -143,3 +143,35 @@ def parse_failure_gate(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     violations = violations + _partial_parse_violations(Path(snapshot.root))
     _log.info("parse_failure_gate: %d violation(s)", len(violations))
     return violations
+
+
+# frob:doc docs/modules/gates.md#rule-catalog
+# frob:tests tests/test_gates.py::TestRenderLintGate.test_unparseable_file_fires_parse001  # noqa: E501
+def local_parse001_violation(
+    rel_path: str,
+    reason: str,
+    cannot_clause: str,
+    unparseable_word: str = "unparseable",
+) -> Violation:
+    """PARSE001 `Violation` for a per-gate LOCAL read/parse failure (T-0897,
+    extracted T-0861): the shared shape three independent gates
+    (`_pii_structural`, `_render_lint`, `_cve_fingerprint_scan`) each need
+    when their own file read/`ast.parse` fails mid-scan -- one home so the
+    rule id, severity, and PARSE001 message convention can never drift
+    between the three call sites. `cannot_clause` is the gate-specific
+    capability the caller lost (e.g. "PII010/SEC110 cannot inspect it for
+    PII-shaped fields"); `unparseable_word` lets a caller say
+    "unreadable" instead of "unparseable" where that reads better."""
+    _log.warning("PARSE001: %s could not be parsed/read (%s)", rel_path, reason)
+    return Violation(
+        rule="PARSE001",
+        severity=Severity.ERROR,
+        file=rel_path,
+        line=0,
+        message=(
+            f"PARSE001: {rel_path} could not be parsed/read -- {cannot_clause} "
+            f"(reason: {reason}); fix the file or "
+            'frob:waive PARSE001 reason="..." if this is a known, '
+            f"intentionally-{unparseable_word} fixture"
+        ),
+    )

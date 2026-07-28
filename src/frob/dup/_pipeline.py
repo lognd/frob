@@ -173,7 +173,7 @@ from frob.dup._models import (
 from frob.dup._template import build_group_template
 from frob.gitio import Diff
 from frob.graph._models import GraphSnapshot, SymbolKind
-from frob.graph.callgraph import CallGraph, build_call_graph
+from frob.graph.callgraph import CallGraph, build_call_graph, is_symref
 from frob.lang._common import _CANONICAL_VOCAB
 from frob.logging import get_logger
 from frob.process._lock import derived_state_write_lock
@@ -838,8 +838,9 @@ def _is_symref(entry: str) -> bool:
     (a `CallGraph.calls` entry), false for a non-symref sentinel such as
     `frob.graph.callgraph.UNRESOLVED_CALLEE` -- every raw `graph.calls`
     consumer here must check this before `split("::", 1)`, which
-    IndexErrors/ValueErrors on a bare sentinel with no `::` (T-0814)."""
-    return "::" in entry
+    IndexErrors/ValueErrors on a bare sentinel with no `::` (T-0814). Thin
+    wrapper over `frob.graph.callgraph.is_symref` (extracted T-0861)."""
+    return is_symref(entry)
 
 
 def _callee_name_map(graph: CallGraph, caller_symref: str) -> dict[str, str]:

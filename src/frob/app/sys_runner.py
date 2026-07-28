@@ -524,50 +524,77 @@ def _print_audit_report(report: AuditReport) -> None:
     _log_gaps(report)
 
 
+# frob:ticket T-0861
+def _log_sys_waived_findings(waived) -> None:  # noqa: ANN001
+    """Log every waived SYS-family finding (rule/node/detail shape), one
+    per line (T-0174: ALWAYS printed). Shared by self-conformance/
+    contention/reliability (T-0861 dup group -- these three families
+    logged byte-identical WAIVED lines from three separate copies)."""
+    color = _stderr_color()
+    for item in waived:
+        _log.warning(
+            "sys audit: %s family=sys rule=%s node=%s detail=%s",
+            style_warn("WAIVED", color),
+            style_rule(item.rule, color),
+            item.node,
+            item.detail,
+        )
+
+
+# frob:ticket T-0861
+def _log_sys_findings(findings, *, label: str) -> None:  # noqa: ANN001
+    """Log `%d <label> gap(s) found` then every finding (rule/node/detail
+    shape), one per line. Shared by self-conformance/contention/
+    reliability's violation-listing (T-0861 dup group)."""
+    color = _stderr_color()
+    _log.error("sys audit: %d %s gap(s) found", len(findings), label)
+    for item in findings:
+        _log.error(
+            "sys audit: %s family=sys rule=%s node=%s detail=%s",
+            style_fail("GAP", color),
+            style_rule(item.rule, color),
+            item.node,
+            item.detail,
+        )
+
+
+# frob:ticket T-0861
+def _log_sys_proved(waived, *, label: str, gap_kind: str) -> None:  # noqa: ANN001
+    """Log the `<label> PROVED` summary line, carrying the waived count
+    inline (T-0174 REJECT round honesty fix). Shared by self-conformance/
+    contention/reliability's proved-summary line (T-0861 dup group)."""
+    color = _stdout_color()
+    if waived:
+        _log.info(
+            "sys audit: %s %s (%d waived) -- zero UNWAIVED %s",
+            label,
+            style_ok("PROVED", color),
+            len(waived),
+            gap_kind,
+        )
+    else:
+        _log.info(
+            "sys audit: %s %s -- zero %s", label, style_ok("PROVED", color), gap_kind
+        )
+
+
 # frob:ticket T-0150
 def _log_waived_selfconform(report: SelfConformReport) -> None:
     """Log every waived self-conformance violation (T-0174: ALWAYS printed,
     matching `_print_audit_report`'s "loud in output" WAIVED line)."""
-    color = _stderr_color()
-    for waived in report.waived:
-        _log.warning(
-            "sys audit: %s family=sys rule=%s node=%s detail=%s",
-            style_warn("WAIVED", color),
-            style_rule(waived.rule, color),
-            waived.node,
-            waived.detail,
-        )
+    _log_sys_waived_findings(report.waived)
 
 
 def _log_selfconform_proved(report: SelfConformReport) -> None:
     """Log the self-conformance PROVED summary line, carrying the waived
     count inline (T-0174 REJECT round: same honesty fix as
     `_print_audit_report`)."""
-    color = _stdout_color()
-    if report.waived:
-        _log.info(
-            "sys audit: self-conformance %s (%d waived) -- zero UNWAIVED SYS gaps",
-            style_ok("PROVED", color),
-            len(report.waived),
-        )
-    else:
-        _log.info(
-            "sys audit: self-conformance %s -- zero SYS gaps", style_ok("PROVED", color)
-        )
+    _log_sys_proved(report.waived, label="self-conformance", gap_kind="SYS gaps")
 
 
 def _log_selfconform_violations(report: SelfConformReport) -> None:
     """Log every self-conformance violation, one per line."""
-    color = _stderr_color()
-    _log.error("sys audit: %d self-conformance gap(s) found", len(report.violations))
-    for violation in report.violations:
-        _log.error(
-            "sys audit: %s family=sys rule=%s node=%s detail=%s",
-            style_fail("GAP", color),
-            style_rule(violation.rule, color),
-            violation.node,
-            violation.detail,
-        )
+    _log_sys_findings(report.violations, label="self-conformance")
 
 
 def _print_selfconform_report(report: SelfConformReport) -> None:
@@ -587,15 +614,7 @@ def _log_waived_contention(report: ResourceContentionReport) -> None:
     """Log every waived SYS2xx resource-contention finding (T-0174: ALWAYS
     printed, matching `_print_audit_report`/`_log_waived_selfconform`'s
     "loud in output" WAIVED line)."""
-    color = _stderr_color()
-    for waived in report.waived:
-        _log.warning(
-            "sys audit: %s family=sys rule=%s node=%s detail=%s",
-            style_warn("WAIVED", color),
-            style_rule(waived.rule, color),
-            waived.node,
-            waived.detail,
-        )
+    _log_sys_waived_findings(report.waived)
 
 
 # frob:ticket T-0724
@@ -603,34 +622,13 @@ def _log_contention_proved(report: ResourceContentionReport) -> None:
     """Log the SYS2xx resource-contention PROVED summary line, carrying the
     waived count inline (same honesty convention as `_log_selfconform_
     proved`)."""
-    color = _stdout_color()
-    if report.waived:
-        _log.info(
-            "sys audit: resource-contention %s (%d waived) -- zero UNWAIVED "
-            "SYS2xx gaps",
-            style_ok("PROVED", color),
-            len(report.waived),
-        )
-    else:
-        _log.info(
-            "sys audit: resource-contention %s -- zero SYS2xx gaps",
-            style_ok("PROVED", color),
-        )
+    _log_sys_proved(report.waived, label="resource-contention", gap_kind="SYS2xx gaps")
 
 
 # frob:ticket T-0724
 def _log_contention_violations(report: ResourceContentionReport) -> None:
     """Log every SYS2xx resource-contention violation, one per line."""
-    color = _stderr_color()
-    _log.error("sys audit: %d resource-contention gap(s) found", len(report.violations))
-    for violation in report.violations:
-        _log.error(
-            "sys audit: %s family=sys rule=%s node=%s detail=%s",
-            style_fail("GAP", color),
-            style_rule(violation.rule, color),
-            violation.node,
-            violation.detail,
-        )
+    _log_sys_findings(report.violations, label="resource-contention")
 
 
 # frob:ticket T-0724
@@ -652,48 +650,20 @@ def _log_waived_reliability(report: ReliabilityReport) -> None:
     """Log every waived REL2xx reliability finding (T-0174: ALWAYS
     printed, matching `_log_waived_contention`'s "loud in output" WAIVED
     line)."""
-    color = _stderr_color()
-    for waived in report.waived:
-        _log.warning(
-            "sys audit: %s family=sys rule=%s node=%s detail=%s",
-            style_warn("WAIVED", color),
-            style_rule(waived.rule, color),
-            waived.node,
-            waived.detail,
-        )
+    _log_sys_waived_findings(report.waived)
 
 
 # frob:ticket T-0640
 def _log_reliability_proved(report: ReliabilityReport) -> None:
     """Log the REL2xx reliability PROVED summary line, carrying the waived
     count inline (same honesty convention as `_log_contention_proved`)."""
-    color = _stdout_color()
-    if report.waived:
-        _log.info(
-            "sys audit: reliability %s (%d waived) -- zero UNWAIVED REL2xx gaps",
-            style_ok("PROVED", color),
-            len(report.waived),
-        )
-    else:
-        _log.info(
-            "sys audit: reliability %s -- zero REL2xx gaps",
-            style_ok("PROVED", color),
-        )
+    _log_sys_proved(report.waived, label="reliability", gap_kind="REL2xx gaps")
 
 
 # frob:ticket T-0640
 def _log_reliability_violations(report: ReliabilityReport) -> None:
     """Log every REL2xx reliability violation, one per line."""
-    color = _stderr_color()
-    _log.error("sys audit: %d reliability gap(s) found", len(report.violations))
-    for violation in report.violations:
-        _log.error(
-            "sys audit: %s family=sys rule=%s node=%s detail=%s",
-            style_fail("GAP", color),
-            style_rule(violation.rule, color),
-            violation.node,
-            violation.detail,
-        )
+    _log_sys_findings(report.violations, label="reliability")
 
 
 # frob:ticket T-0640

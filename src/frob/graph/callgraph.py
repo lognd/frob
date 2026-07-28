@@ -16,6 +16,14 @@ a triage aid, not a soundness guarantee, matching every other rung in
 `frob.dup` (docs/modules/dup.md's no-silent-fallback rule only applies to
 frob_core-dependent rungs, not to this best-effort resolution step).
 """
+# frob:waive ARCH102 reason="T-0861's is_symref extraction pushed this module past \
+# the export-cluster threshold: the graph-building pipeline (build_call_graph/ \
+# build_ordered_call_graph/build_reference_graph/closure/scope_private_helper_gaps/ \
+# UNRESOLVED_CALLEE/CallGraph/OrderedCallGraph/PrivateHelperGap) forms the one real \
+# cohesive seam this module exists to centralize; is_symref is a tiny, independently \
+# reusable sentinel-vs-real-symref predicate over the same CallGraph.calls shape those \
+# exports produce -- coupled to the pipeline by the data model it validates, not a \
+# second unrelated concern to split into its own module"
 
 from __future__ import annotations
 
@@ -34,6 +42,7 @@ __all__ = [
     "build_ordered_call_graph",
     "build_reference_graph",
     "closure",
+    "is_symref",
     "scope_private_helper_gaps",
 ]
 
@@ -54,6 +63,19 @@ _DEFAULT_MAX_NODES = 12
 # re-exports this same object for backward compatibility, never a second
 # divergent sentinel string.
 UNRESOLVED_CALLEE = "?unresolved"
+
+
+# frob:doc docs/modules/graph.md#call-graph
+# frob:waive DUP001 reason="dup grouped this with perf/_recursion.py::_has_guard -- \
+# see that function's own DUP001 waiver for full reasoning (T-0861)"
+def is_symref(entry: str) -> bool:
+    """True if `entry` looks like a real `path::qualname` call-graph node
+    (a `CallGraph.calls` entry), false for a non-symref sentinel such as
+    `UNRESOLVED_CALLEE` (extracted T-0861 from two independent private
+    copies in `frob.gates`/`frob.dup._pipeline`) -- every raw
+    `graph.calls` consumer must check this before `split("::", 1)`, which
+    IndexErrors/ValueErrors on a bare sentinel with no `::` (T-0814)."""
+    return "::" in entry
 
 
 # frob:doc docs/modules/graph.md#call-graph
@@ -722,9 +744,7 @@ def scope_private_helper_gaps(
     scope_files = {f for f in all_files if scope_matches(f, scope)}
     if not scope_files:
         return ()
-    graph = build_call_graph(
-        root, _scope_candidate_paths(all_files, scope_files)
-    )
+    graph = build_call_graph(root, _scope_candidate_paths(all_files, scope_files))
 
     callers_of: dict[str, set[str]] = {}
     for caller, callees in graph.calls.items():

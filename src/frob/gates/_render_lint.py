@@ -36,7 +36,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from frob.gates._models import Severity, Violation
-from frob.gitio import run_argv
+from frob.gates._parse_failures import local_parse001_violation
+from frob.gates._walk_lint import tracked_python_files_for_gate
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -61,6 +62,9 @@ class _PrintSite:
 
 
 # frob:ticket T-0459
+# frob:waive DUP001 reason="see this function's own docstring -- deliberate small \
+# local unparse kept per-module rather than a cross-gate import for one helper \
+# (T-0861)"
 def _dotted_prefix(node: ast.expr) -> str | None:
     """The dotted-name text of an `Attribute`/`Name` chain (`sys.stdout.write`
     -> `"sys.stdout.write"`), or `None` for anything else -- same local
@@ -173,56 +177,24 @@ def _render001_violation(rel_path: str, site: _PrintSite) -> Violation:
 # frob:ticket T-0897
 def _parse001_violation(rel_path: str, reason: str) -> Violation:
     """PARSE001 `Violation` for a file this gate's own read/`ast.parse`
-    could not get through (T-0897): mirrors `frob.gates._parse_failures.
-    parse_failure_gate`'s rule id, severity, and message shape so a file
-    RENDER001 cannot inspect surfaces the SAME PARSE001 signal as the
-    centrally-tracked `frob.lang`/`snapshot.parse_failures` path, instead
-    of the private silent-skip this gate used to do (T-0786 finding: zero
-    Violation, DEBUG-only log, on an unparseable file -- exactly the class
-    PARSE001 exists to make loud)."""
-    _log.warning("PARSE001: %s could not be parsed/read (%s)", rel_path, reason)
-    return Violation(
-        rule="PARSE001",
-        severity=Severity.ERROR,
-        file=rel_path,
-        line=0,
-        message=(
-            f"PARSE001: {rel_path} could not be parsed/read -- RENDER001 "
-            f"cannot inspect it for a bare stdout write (reason: {reason}); "
-            f"fix the file or "
-            'frob:waive PARSE001 reason="..." if this is a known, '
-            "intentionally-unparseable fixture"
-        ),
+    could not get through (T-0897): delegates to `frob.gates._parse_failures.
+    local_parse001_violation` (extracted T-0861) with this gate's own
+    capability-loss clause so RENDER001's message stays distinct while the
+    rule id/severity/message shape is the ONE shared home."""
+    return local_parse001_violation(
+        rel_path, reason, "RENDER001 cannot inspect it for a bare stdout write"
     )
 
 
 # frob:ticket T-0459
+# frob:ticket T-0861
 def _tracked_python_files(root: Path) -> tuple[str, ...]:
-    """`git ls-files -- src/frob` under `root`, filtered to `.py`,
-    root-relative POSIX paths, `()` on any git failure -- RENDER001 only
-    scans frob's own package source (module docstring), mirroring
-    `_walk_lint`'s degrade-don't-crash posture.
-
-    Logs at WARNING (T-0705), not ERROR: a git-less target (no `.git`,
-    or `git` itself unavailable) is a supported, silently-empty scan --
-    the same posture `ref_gate`/`doc004` already use for the identical
-    condition (docs/modules/gates.md#git-less-target-contract-t-0705).
-    An ERROR here previously painted this gate's line red for a target
-    that was never a violation, just an environment with nothing
-    tracked to scan."""
-    spawned = run_argv(("git", "-C", str(root), "ls-files", "--", "src/frob"))
-    if spawned.is_err:
-        _log.warning("render_lint_gate: git ls-files failed: %s", spawned.danger_err)
-        return ()
-    result = spawned.danger_ok
-    if result.returncode != 0:
-        _log.warning("render_lint_gate: git ls-files exited %d", result.returncode)
-        return ()
-    return tuple(
-        line
-        for line in result.stdout.splitlines()
-        if line.strip() and line.endswith(".py")
-    )
+    """RENDER001's own thin wrapper around `frob.gates._walk_lint.
+    tracked_python_files_for_gate` (T-0861: this was a byte-identical
+    private copy of WALK001's own `_tracked_python_files`, now the shared
+    home), pinning `log_prefix="render_lint_gate"` so every existing
+    caller in this module keeps calling a zero-arg helper."""
+    return tracked_python_files_for_gate(root, log_prefix="render_lint_gate")
 
 
 # frob:doc docs/modules/render.md#renderer

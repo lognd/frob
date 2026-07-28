@@ -183,6 +183,33 @@ class ScopeClosureGap(BaseModel):
     missing_file: str
 
 
+def _add_scope_gap(
+    gaps: list[ScopeClosureGap],
+    seen: set[tuple[str, str, str]],
+    direction: str,
+    site: str,
+    target: str,
+    missing_file: str,
+) -> None:
+    """Append one deduplicated `ScopeClosureGap` to `gaps` (extracted
+    T-0861): the ONE dedup-by-`(direction, site, target)` shape
+    `scope_doc_code_gaps` and `scope_test_gaps` each close over locally --
+    a plain module-level function (not a closure) since both callers
+    already hold their own `gaps`/`seen` accumulators explicitly."""
+    key = (direction, site, target)
+    if key in seen:
+        return
+    seen.add(key)
+    gaps.append(
+        ScopeClosureGap(
+            direction=direction,
+            scoped_site=site,
+            target=target,
+            missing_file=missing_file,
+        )
+    )
+
+
 # frob:doc docs/modules/graph.md#scope-closure-t-0998
 # frob:ticket T-0998
 # frob:tests tests/test_graph_affects.py::TestScopeDocCodeGaps.test_code_in_scope_doc_target_unscoped  # noqa: E501
@@ -204,20 +231,6 @@ def scope_doc_code_gaps(
     gaps: list[ScopeClosureGap] = []
     seen: set[tuple[str, str, str]] = set()
 
-    def _add(direction: str, site: str, target: str, missing_file: str) -> None:
-        key = (direction, site, target)
-        if key in seen:
-            return
-        seen.add(key)
-        gaps.append(
-            ScopeClosureGap(
-                direction=direction,
-                scoped_site=site,
-                target=target,
-                missing_file=missing_file,
-            )
-        )
-
     scoped_symbols = sorted(
         ref for ref in snapshot.symbols if scope_matches(ref.split("::", 1)[0], scope)
     )
@@ -225,7 +238,7 @@ def scope_doc_code_gaps(
         for target in sorted(_doc_targets_for(snapshot, ref)):
             doc_file = target.split("#", 1)[0]
             if not scope_matches(doc_file, scope):
-                _add("code_missing_doc", ref, target, doc_file)
+                _add_scope_gap(gaps, seen, "code_missing_doc", ref, target, doc_file)
 
     for edge in snapshot.edges:
         if edge.kind == EdgeKind.DOC:
@@ -239,7 +252,9 @@ def scope_doc_code_gaps(
         if scope_matches(doc_file, scope) and not scope_matches(code_file, scope):
             doc_site = edge.target if edge.kind == EdgeKind.DOC else edge.src
             code_ref = edge.src if edge.kind == EdgeKind.DOC else edge.target
-            _add("doc_missing_code", doc_site, code_ref, code_file)
+            _add_scope_gap(
+                gaps, seen, "doc_missing_code", doc_site, code_ref, code_file
+            )
 
     return tuple(gaps)
 
@@ -267,20 +282,6 @@ def scope_test_gaps(
     gaps: list[ScopeClosureGap] = []
     seen: set[tuple[str, str, str]] = set()
 
-    def _add(direction: str, site: str, target: str, missing_file: str) -> None:
-        key = (direction, site, target)
-        if key in seen:
-            return
-        seen.add(key)
-        gaps.append(
-            ScopeClosureGap(
-                direction=direction,
-                scoped_site=site,
-                target=target,
-                missing_file=missing_file,
-            )
-        )
-
     scoped_symbols = sorted(
         ref for ref in snapshot.symbols if scope_matches(ref.split("::", 1)[0], scope)
     )
@@ -288,7 +289,9 @@ def scope_test_gaps(
         for test_ref in sorted(_test_refs_for(snapshot, ref)):
             test_file = test_ref.split("::", 1)[0]
             if not scope_matches(test_file, scope):
-                _add("code_missing_test", ref, test_ref, test_file)
+                _add_scope_gap(
+                    gaps, seen, "code_missing_test", ref, test_ref, test_file
+                )
 
     for edge in snapshot.edges:
         if edge.kind != EdgeKind.TESTS:
@@ -296,7 +299,9 @@ def scope_test_gaps(
         test_file = edge.src.split("::", 1)[0]
         code_file = edge.target.split("::", 1)[0]
         if scope_matches(test_file, scope) and not scope_matches(code_file, scope):
-            _add("test_missing_code", edge.src, edge.target, code_file)
+            _add_scope_gap(
+                gaps, seen, "test_missing_code", edge.src, edge.target, code_file
+            )
 
     return tuple(gaps)
 

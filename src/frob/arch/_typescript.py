@@ -115,6 +115,9 @@ def _ts_call_callee_text(node: Node) -> str:
     return _node_text(func) if func is not None else _node_text(node)
 
 
+# frob:waive DUP001 reason="dup grouped this with _python.py::_py_is_field_write and \
+# _rust.py::_rust_is_field_write -- see _py_is_field_write's own DUP001 waiver for \
+# full reasoning (T-0861)"
 def _ts_is_field_write(node: Node) -> bool:
     """Whether a `this.x` `member_expression` is the assignment-target of
     an `assignment_expression` (a write) rather than being read."""
@@ -399,13 +402,15 @@ def _ts_build_function(node: Node, name: str, is_method: bool) -> NormalizedFunc
     )
 
 
-def _ts_class_fields(body: Node) -> list[NormalizedField]:
-    """`public_field_definition` class members directly inside a class
-    body (covers both `public`/`private`/`protected`-modified and
-    unmodified fields -- TS's grammar uses one node type for all three)."""
+def _ts_fields_of_type(body: Node, member_node_type: str) -> list[NormalizedField]:
+    """Every `member_node_type`-typed direct child of `body` as a
+    `NormalizedField` (extracted T-0861): the ONE field-member-walk shape
+    `_ts_class_fields` (`public_field_definition`) and `_ts_interface_fields`
+    (`property_signature`) both need, parameterized by which grammar node
+    type each container's fields use."""
     out: list[NormalizedField] = []
     for c in body.named_children:
-        if c.type != "public_field_definition":
+        if c.type != member_node_type:
             continue
         name_node = _child(c, "name")
         if name_node is None:
@@ -419,6 +424,13 @@ def _ts_class_fields(body: Node) -> list[NormalizedField]:
             )
         )
     return out
+
+
+def _ts_class_fields(body: Node) -> list[NormalizedField]:
+    """`public_field_definition` class members directly inside a class
+    body (covers both `public`/`private`/`protected`-modified and
+    unmodified fields -- TS's grammar uses one node type for all three)."""
+    return _ts_fields_of_type(body, "public_field_definition")
 
 
 def _ts_class_bases(class_node: Node) -> list[str]:
@@ -443,17 +455,26 @@ def _ts_class_bases(class_node: Node) -> list[str]:
     return bases
 
 
-def _ts_class_methods(body: Node) -> list[NormalizedFunction]:
-    """`NormalizedFunction`s for every `method_definition` (including
-    `constructor`) directly inside a class body."""
+def _ts_methods_of_type(body: Node, member_node_type: str) -> list[NormalizedFunction]:
+    """Every `member_node_type`-typed direct child of `body` as a
+    `NormalizedFunction` (extracted T-0861): the ONE method-member-walk
+    shape `_ts_class_methods` (`method_definition`) and
+    `_ts_interface_methods` (`method_signature`) both need, parameterized
+    by which grammar node type each container's methods use."""
     out: list[NormalizedFunction] = []
     for c in body.named_children:
-        if c.type != "method_definition":
+        if c.type != member_node_type:
             continue
         name_node = _child(c, "name")
         name = _node_text(name_node) if name_node is not None else "?"
         out.append(_ts_build_function(c, name, is_method=True))
     return out
+
+
+def _ts_class_methods(body: Node) -> list[NormalizedFunction]:
+    """`NormalizedFunction`s for every `method_definition` (including
+    `constructor`) directly inside a class body."""
+    return _ts_methods_of_type(body, "method_definition")
 
 
 def _ts_build_class(class_node: Node) -> NormalizedClass:
@@ -526,22 +547,7 @@ def _ts_interface_bases(node: Node) -> list[str]:
 def _ts_interface_fields(body: Node) -> list[NormalizedField]:
     """`property_signature` members directly inside an `interface_body` as
     `NormalizedField`s."""
-    out: list[NormalizedField] = []
-    for c in body.named_children:
-        if c.type != "property_signature":
-            continue
-        name_node = _child(c, "name")
-        if name_node is None:
-            continue
-        ann = _child(c, "type")
-        out.append(
-            NormalizedField(
-                name=_node_text(name_node),
-                line=c.start_point[0] + 1,
-                type=_ts_annotation_text(ann),
-            )
-        )
-    return out
+    return _ts_fields_of_type(body, "property_signature")
 
 
 def _ts_interface_methods(body: Node) -> list[NormalizedFunction]:
@@ -550,14 +556,7 @@ def _ts_interface_methods(body: Node) -> list[NormalizedFunction]:
     method has no implementation), so `_ts_build_function` naturally
     produces `body_line_count=0` and empty event lists for them, the same
     shape a bodyless abstract method gets from any other adapter."""
-    out: list[NormalizedFunction] = []
-    for c in body.named_children:
-        if c.type != "method_signature":
-            continue
-        name_node = _child(c, "name")
-        name = _node_text(name_node) if name_node is not None else "?"
-        out.append(_ts_build_function(c, name, is_method=True))
-    return out
+    return _ts_methods_of_type(body, "method_signature")
 
 
 def _ts_build_interface(node: Node) -> NormalizedClass:

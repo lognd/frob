@@ -46,7 +46,6 @@ import hashlib
 import sqlite3
 import threading
 import time
-import tomllib
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
@@ -62,6 +61,7 @@ from frob.stats._sketch import (
     merge_sketches,
     new_sketch,
 )
+from frob.tomlio import read_toml_lenient
 
 _log = get_logger(__name__)
 
@@ -126,18 +126,15 @@ class SketchStoreConfig(BaseModel):
     ratchet_tolerance: float = _DEFAULT_RATCHET_TOLERANCE
 
 
+# frob:waive DUP001 reason="see _docblocks.py::_read_toml's own DUP001 waiver for \
+# full reasoning (T-0861)"
 def _read_toml(path: Path) -> dict | None:
     """Best-effort TOML load: `None` on any missing/unreadable/malformed
     file -- a missing/absent `[perf.sketch]` table just means store
-    defaults, never a crash (fail-open, matching `_redundancy._read_toml`)."""
-    if not path.exists():
-        return None
-    try:
-        with path.open("rb") as handle:
-            return tomllib.load(handle)
-    except (OSError, tomllib.TOMLDecodeError) as exc:
-        _log.warning("sketch store: %s unreadable: %s", path, exc)
-        return None
+    defaults, never a crash (fail-open). Thin wrapper over
+    `frob.tomlio.read_toml_lenient` (extracted T-0861) that fixes this
+    module's own `log_prefix`."""
+    return read_toml_lenient(path, log_prefix="sketch store")
 
 
 # frob:doc docs/modules/perf.md#hot-graph-sketch-store-t-0711-epic-t-0709
@@ -218,6 +215,9 @@ def _ensure_label_column(conn: sqlite3.Connection) -> None:
 # frob:tests \
 # tests/unit/perf/test_sketch_store.py::TestConnectionReuse.test_close_all_drops_cached\
 # _connections  # noqa: E501
+# frob:waive DUP001 reason="see this function's own docstring -- deliberate mirror of \
+# frob.dup._cache._close_all, each module's own per-store connection-cache teardown \
+# (T-0861)"
 def _close_all() -> None:
     """Close and forget every process-cached sketch-store connection --
     test teardown only (mirrors `frob.dup._cache._close_all`); not needed

@@ -239,6 +239,13 @@ def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
 # frob:ticket T-0775
 # frob:ticket T-0922
 # frob:enforces CHK-GATE-PERF008
+# frob:waive DUP001 reason="dup grouped this with \
+# _dup_spawn.py::duplicate_spawn_violations on the shared per-file driver-loop shape \
+# (dedupe seen_paths, iterate files, delegate to a per-file helper, log a summary) -- \
+# PERF008 and PERF012 are two independently-evolving rules \
+# (loop-invariant-effect vs duplicate-spawn detection) with genuinely different \
+# per-file bodies; unifying the loop alone would couple two rules for no real desync \
+# risk (T-0861)"
 def loop_invariant_effect_violations(
     files: Sequence[ParsedFile],
     graph: _EffectGraph | None = None,

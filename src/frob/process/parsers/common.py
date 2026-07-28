@@ -206,6 +206,11 @@ class ToolResult(BaseModel):
 
 # frob:doc docs/modules/process.md#public-api
 # frob:ticket T-0142
+# frob:waive DUP001 reason="dup grouped this with tool_disabled_result on the shared \
+# ToolResult(...)-builder boilerplate shape -- missing-binary (T-0142) and \
+# exec-disabled (T-0200) are two independently-evolving failure kinds with different \
+# triggering conditions and messages; each keeps its own named builder by the same \
+# loud-not-silent doctrine both docstrings cite (T-0861)"
 def tool_unavailable_result(tool: str, binary: str) -> ToolResult:
     """A missing `binary` on PATH is a FAILING `ToolResult`, never a silent
     skip (vacuous-pass doctrine, T-0142): every `_run_*` check-stage helper
@@ -229,6 +234,8 @@ def tool_unavailable_result(tool: str, binary: str) -> ToolResult:
 
 # frob:doc docs/modules/process.md#public-api
 # frob:ticket T-0200
+# frob:waive DUP001 reason="dup grouped this with tool_unavailable_result -- see that \
+# function's own DUP001 waiver for full reasoning (T-0861)"
 def tool_disabled_result(tool: str, flag_env: str) -> ToolResult:
     """A `ProcessGuardError.ExecDisabled` refusal (`frob.process._guard.
     guarded_subprocess_run`) is a FAILING `ToolResult` naming the exact env

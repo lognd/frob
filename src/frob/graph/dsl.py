@@ -265,6 +265,11 @@ def _attrs_verb_error_waive(
     return None
 
 
+# frob:waive DUP001 reason="dup grouped this with _attrs_verb_error_requires on the \
+# shared missing-attrs-check MalformedDirective boilerplate -- frob:debt and \
+# frob:requires are two independently-evolving directive verbs with different \
+# mandatory-attr sets and messages; each keeps its own per-verb checker by this \
+# module's established per-verb-function convention (T-0861)"
 def _attrs_verb_error_debt(
     attrs: dict[str, str], *, path: str, lineno: int
 ) -> MalformedDirective | None:
@@ -373,6 +378,8 @@ def _attrs_verb_error_transition(
     )
 
 
+# frob:waive DUP001 reason="dup grouped this with _attrs_verb_error_debt -- see that \
+# function's own DUP001 waiver for full reasoning (T-0861)"
 def _attrs_verb_error_requires(
     attrs: dict[str, str], *, path: str, lineno: int
 ) -> MalformedDirective | None:

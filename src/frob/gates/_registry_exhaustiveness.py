@@ -176,6 +176,11 @@ _CHECK_COVERAGE_FILE = "check-coverage.yaml"
 
 
 # frob:enforces CHK-GATE-REG002
+# frob:waive DUP001 reason="dup grouped this with the sibling per-disposition \
+# classifiers (_classify_deferred/_classify_duplicate/_classify_out_of_scope) on the \
+# shared not-found/tuple-return boilerplate shape -- REG002/REG003/REG004/REG001 are \
+# four independently-evolving rules deliberately split out of one _classify for \
+# ARCH001 already; each keeps its own function by that same convention (T-0861)"
 def _classify_handled_by(
     entry_id: str, rule: str, known_rules: frozenset[str]
 ) -> tuple[str, str] | None:
@@ -192,6 +197,8 @@ def _classify_handled_by(
 
 
 # frob:enforces CHK-GATE-REG003
+# frob:waive DUP001 reason="dup grouped this with _classify_handled_by -- see that \
+# function's own DUP001 waiver for full reasoning (T-0861)"
 def _classify_deferred(
     entry_id: str, ticket_id: str, queue: TicketQueue
 ) -> tuple[str, str] | None:
@@ -214,6 +221,8 @@ def _classify_deferred(
     return None
 
 
+# frob:waive DUP001 reason="dup grouped this with _classify_handled_by -- see that \
+# function's own DUP001 waiver for full reasoning (T-0861)"
 def _classify_duplicate(
     entry_id: str, target: str, all_entry_ids: frozenset[str]
 ) -> tuple[str, str] | None:

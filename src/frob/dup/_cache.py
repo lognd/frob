@@ -164,6 +164,8 @@ def _connect(root: Path) -> Result[sqlite3.Connection, DupError]:
 
 # frob:ticket T-0565
 # frob:tests tests/unit/test_dup_cache.py::TestConnectionReuse.test_close_all_drops_cached_connections  # noqa: E501
+# frob:waive DUP001 reason="see frob.perf._sketch_store._close_all's own DUP001 waiver \
+# for full reasoning -- deliberate per-store connection-cache teardown mirror (T-0861)"
 def _close_all() -> None:
     """Close and forget every process-cached dup-cache connection.
 

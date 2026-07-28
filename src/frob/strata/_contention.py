@@ -69,7 +69,7 @@ from pydantic import BaseModel, ConfigDict
 
 from frob.logging import get_logger
 
-from ._host import HostManifest, host_manifest_for
+from ._host import HostManifest, manifests_by_node
 from ._models import KernelModel
 from ._waive import apply_waivers
 
@@ -149,18 +149,6 @@ class ResourceContentionReport(BaseModel):
 
     violations: tuple[ResourceContentionViolation, ...] = ()
     waived: tuple[ResourceContentionViolation, ...] = ()
-
-
-def _node_manifests(model: KernelModel) -> dict[str, HostManifest]:
-    """Every node's `HostManifest`, keyed by node id, skipping nodes with
-    no std.host construct at all (`host_manifest_for` returns `None` for
-    those) -- the shared per-node lookup every SYS2xx rule reads from."""
-    manifests: dict[str, HostManifest] = {}
-    for node in model.nodes:
-        manifest = host_manifest_for(node)
-        if manifest is not None:
-            manifests[node.id] = manifest
-    return manifests
 
 
 # frob:ticket T-0972
@@ -434,7 +422,7 @@ def check_resource_contention(
     (`Module.stores`, pre-elaboration) -- `KernelModel` alone cannot
     reconstruct which of its nodes were stores (module docstring), so
     SYS203 is silent without it."""
-    manifests = _node_manifests(model)
+    manifests = manifests_by_node(model)
     violations: list[ResourceContentionViolation] = []
     violations.extend(_duplicate_port_violations(manifests))
     violations.extend(_overlapping_path_violations(manifests))

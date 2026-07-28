@@ -80,6 +80,9 @@ _SUBMIT_LIKE_RE = re.compile(r"\.(?:submit|map|apply_async)$")
 _TARGET_KWARG_RE = re.compile(r"target\s*=\s*([A-Za-z_][A-Za-z0-9_.]*)")
 
 
+# frob:waive DUP001 reason="see this function's own docstring -- deliberate per-module \
+# copy of the concurrency-hazard-family full-subtree call walk, mirrored in \
+# _shared_state_race.py/_concurrency_model.py (T-0861)"
 def _iter_calls(node: Node) -> Iterator[Node]:
     """Every `call` node in `node`'s full subtree, without stopping at a
     nested `function_definition`/`class_definition` boundary -- unlike

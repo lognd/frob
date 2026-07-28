@@ -152,6 +152,8 @@ def _krb_manifest_by_node_id(model: KernelModel) -> dict:
     return {node.id: krb_manifest_for(node) for node in model.nodes}
 
 
+# frob:waive DUP001 reason="dup grouped this with _generate.py::_header -- see that \
+# function's own DUP001 waiver for full reasoning (T-0861)"
 def _header(model: KernelModel, title: str) -> str:
     """The shared banner + digest header every generated windows script
     opens with -- same digest (`manifest_digest`, computed over every
@@ -191,6 +193,11 @@ def _distinct_service_accounts(
     return tuple(seen.items())
 
 
+# frob:waive DUP001 reason="dup grouped this with _uninstall_service_account_block on \
+# the shared check-then-apply PowerShell template shape -- install vs uninstall are \
+# intentional mirror-image operations (different cmdlets, different messages) \
+# generated side-by-side for readability of the emitted script; unifying them would \
+# obscure the emitted PowerShell rather than clarify it (T-0861)"
 def _install_service_account_block(name: str, gmsa: bool) -> str:
     """Check-then-apply service-account creation: `Install-ADServiceAccount`
     for a `gmsa`-marked identity, `New-LocalUser` otherwise -- gated so a
@@ -217,6 +224,8 @@ def _install_service_account_block(name: str, gmsa: bool) -> str:
     )
 
 
+# frob:waive DUP001 reason="dup grouped this with _install_service_account_block -- \
+# see that function's own DUP001 waiver for full reasoning (T-0861)"
 def _uninstall_service_account_block(name: str, gmsa: bool) -> str:
     """Check-then-apply service-account removal, mirroring
     `_install_service_account_block`'s gate."""
@@ -287,6 +296,11 @@ def _firewall_rule_name(node_id: str, port: int) -> str:
     return f"FrobDeploy-{node_id}-{port}"
 
 
+# frob:waive DUP001 reason="dup grouped this with _uninstall_firewall_block on the \
+# shared check-then-apply PowerShell template shape -- install vs uninstall are \
+# intentional mirror-image operations generated side-by-side for readability of the \
+# emitted script, same convention as _install_service_account_block's own waiver \
+# (T-0861)"
 def _install_firewall_block(entry: ManifestEntry) -> str:
     """Check-then-apply firewall rule per declared `listens` port:
     `Get-NetFirewallRule` gates `New-NetFirewallRule` so a re-run issues
@@ -307,6 +321,8 @@ def _install_firewall_block(entry: ManifestEntry) -> str:
     return "".join(lines)
 
 
+# frob:waive DUP001 reason="dup grouped this with _install_firewall_block -- see that \
+# function's own DUP001 waiver for full reasoning (T-0861)"
 def _uninstall_firewall_block(entry: ManifestEntry) -> str:
     """Remove EXACTLY the firewall rules `_install_firewall_block` created
     for this node's declared `listens` ports."""

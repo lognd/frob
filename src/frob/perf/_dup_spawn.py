@@ -391,6 +391,10 @@ def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
 # frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn.test_unresolvable_dynamic_dispatch_callee_never_manufactures_a_duplicate  # noqa: E501
 # frob:ticket T-0919
 # frob:ticket T-0922
+# frob:waive DUP001 reason="dup grouped this with \
+# _loop_effects.py::loop_invariant_effect_violations on the shared per-file \
+# driver-loop shape -- see that function's own DUP001 waiver for full reasoning \
+# (T-0861)"
 def duplicate_spawn_violations(
     files: Sequence[ParsedFile], graph: _EffectGraph | None = None
 ) -> tuple[Violation, ...]:

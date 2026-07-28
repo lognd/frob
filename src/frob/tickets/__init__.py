@@ -1839,9 +1839,41 @@ def _write_scope_mutation(
     return Ok(updated)
 
 
+def _set_ticket_field(
+    root: Path, ticket_id: str, field: str, value: object, *, log_value: object
+) -> Result[Ticket, TicketError]:
+    """Set one `field` on `ticket_id` to `value` (extracted T-0861): the
+    ONE lease-check + ledger-locked-load + `model_copy(update=...)` +
+    write + log shape `set_priority`/`set_kind`/`set_sprint`/
+    `set_component` each need for their own single-field setter, so the
+    accountable single-writer discipline can never desync between fields.
+    `log_value` lets a caller log an enum's `.value` instead of the enum
+    repr where that reads better; the field name itself is embedded in
+    the log line by the caller via `field`."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        updated = ticket.model_copy(update={field: value})
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info("tickets: %s %s set to %s", ticket_id, field, log_value)
+    return Ok(updated)
+
+
 # frob:ticket T-0411
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_priority.py::TestSetPriority.test_updates_priority_field
+# frob:waive DUP001 reason="dup grouped this with set_kind/set_sprint/set_component -- \
+# after T-0861's own _set_ticket_field extraction (the real shared logic), each is now \
+# an intentionally-thin, independently-documented public-API wrapper naming its own \
+# ticket/field; collapsing further would erase the distinct docstrings/frob:tests \
+# bindings each public entrypoint carries"
 def set_priority(
     root: Path, ticket_id: str, priority: Priority
 ) -> Result[Ticket, TicketError]:
@@ -1850,25 +1882,16 @@ def set_priority(
     `tickets.md` frontmatter. Held under `ledger_lock` (same discipline as
     `mutate_scope`) so this can never interleave with a concurrent ledger
     mutation. A no-op write (still logged) if `priority` already matches."""
-    leased = enforce_worktree_lease(root)
-    if leased.is_err:
-        return Err(leased.danger_err)
-    with ledger_lock(root):
-        loaded = _load_ticket_and_queue(root, ticket_id)
-        if loaded.is_err:
-            return Err(loaded.danger_err)
-        ticket, _queue = loaded.danger_ok
-        updated = ticket.model_copy(update={"priority": priority})
-        write_result = write_ticket(root, updated)
-        if write_result.is_err:
-            return Err(write_result.danger_err)
-    _log.info("tickets: %s priority set to %s", ticket_id, priority.value)
-    return Ok(updated)
+    return _set_ticket_field(
+        root, ticket_id, "priority", priority, log_value=priority.value
+    )
 
 
 # frob:ticket T-0834
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_ticket_evidence.py::TestSetKind.test_updates_kind_field
+# frob:waive DUP001 reason="see set_priority's own DUP001 waiver for full reasoning \
+# (T-0861)"
 def set_kind(
     root: Path, ticket_id: str, kind: TicketKind
 ) -> Result[Ticket, TicketError]:
@@ -1877,25 +1900,14 @@ def set_kind(
     `tickets.md` frontmatter, same ledger-locked, no-terminal-state-check
     pattern `set_priority` uses. A no-op write (still logged) if `kind`
     already matches."""
-    leased = enforce_worktree_lease(root)
-    if leased.is_err:
-        return Err(leased.danger_err)
-    with ledger_lock(root):
-        loaded = _load_ticket_and_queue(root, ticket_id)
-        if loaded.is_err:
-            return Err(loaded.danger_err)
-        ticket, _queue = loaded.danger_ok
-        updated = ticket.model_copy(update={"kind": kind})
-        write_result = write_ticket(root, updated)
-        if write_result.is_err:
-            return Err(write_result.danger_err)
-    _log.info("tickets: %s kind set to %s", ticket_id, kind.value)
-    return Ok(updated)
+    return _set_ticket_field(root, ticket_id, "kind", kind, log_value=kind.value)
 
 
 # frob:ticket T-0715
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_tiers.py::TestSprintAssign.test_updates_sprint_field
+# frob:waive DUP001 reason="see set_priority's own DUP001 waiver for full reasoning \
+# (T-0861)"
 def set_sprint(
     root: Path, ticket_id: str, sprint: str | None
 ) -> Result[Ticket, TicketError]:
@@ -1903,20 +1915,7 @@ def set_sprint(
     field (T-0715) -- the same single-writer, ledger-locked pattern
     `set_component` uses. `sprint=None` clears it back to uncommitted/
     backlog."""
-    leased = enforce_worktree_lease(root)
-    if leased.is_err:
-        return Err(leased.danger_err)
-    with ledger_lock(root):
-        loaded = _load_ticket_and_queue(root, ticket_id)
-        if loaded.is_err:
-            return Err(loaded.danger_err)
-        ticket, _queue = loaded.danger_ok
-        updated = ticket.model_copy(update={"sprint": sprint})
-        write_result = write_ticket(root, updated)
-        if write_result.is_err:
-            return Err(write_result.danger_err)
-    _log.info("tickets: %s sprint set to %s", ticket_id, sprint)
-    return Ok(updated)
+    return _set_ticket_field(root, ticket_id, "sprint", sprint, log_value=sprint)
 
 
 # frob:ticket T-0715
@@ -1946,26 +1945,17 @@ def sprint_view(queue: TicketQueue, sprint: str) -> SprintReport:
 # frob:ticket T-0454
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_organization.py::TestSetComponent.test_updates_component_field  # noqa: E501
+# frob:waive DUP001 reason="see set_priority's own DUP001 waiver for full reasoning \
+# (T-0861)"
 def set_component(
     root: Path, ticket_id: str, component: str | None
 ) -> Result[Ticket, TicketError]:
     """Set `ticket_id`'s `component` field (T-0454) -- which module/area this
     ticket belongs to, the same single-writer, ledger-locked pattern
     `set_priority` uses. `component=None` clears it back to uncategorized."""
-    leased = enforce_worktree_lease(root)
-    if leased.is_err:
-        return Err(leased.danger_err)
-    with ledger_lock(root):
-        loaded = _load_ticket_and_queue(root, ticket_id)
-        if loaded.is_err:
-            return Err(loaded.danger_err)
-        ticket, _queue = loaded.danger_ok
-        updated = ticket.model_copy(update={"component": component})
-        write_result = write_ticket(root, updated)
-        if write_result.is_err:
-            return Err(write_result.danger_err)
-    _log.info("tickets: %s component set to %s", ticket_id, component)
-    return Ok(updated)
+    return _set_ticket_field(
+        root, ticket_id, "component", component, log_value=component
+    )
 
 
 # frob:ticket T-0454

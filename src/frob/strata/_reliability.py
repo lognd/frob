@@ -114,6 +114,7 @@ from frob.logging import get_logger
 from ._code_binding import bind_code
 from ._errors import StrataError
 from ._models import KernelModel
+from ._obligation_proof import owner_index
 from ._waive import apply_waivers
 
 _log = get_logger(__name__)
@@ -329,16 +330,6 @@ def _files_evidence_timeout(paths: list[str], root: Path) -> bool:
     return False
 
 
-def _owner_index(owner: dict[str, str]) -> dict[str, list[str]]:
-    """`CodeBinding.owner` (file -> node id) inverted to node id -> its
-    bound files, in deterministic path order -- the per-node lookup
-    `_node_has_bound_code`/`_files_evidence_timeout` both need."""
-    by_node: dict[str, list[str]] = {}
-    for rel, node_id in sorted(owner.items()):
-        by_node.setdefault(node_id, []).append(rel)
-    return by_node
-
-
 def _bound_endpoints(
     flow_src: str, flow_dst: str, owner_by_node: dict[str, list[str]]
 ) -> list[str]:
@@ -546,7 +537,7 @@ def check_reliability_timeouts(
     bound = bind_code(model, root)
     if bound.is_err:
         return Err(bound.danger_err)
-    owner_by_node = _owner_index(bound.danger_ok.owner)
+    owner_by_node = owner_index(bound.danger_ok.owner)
 
     violations: list[ReliabilityViolation] = []
     violations.extend(_missing_timeout_violations(model))
@@ -593,13 +584,13 @@ def check_reliability_health(
     discipline `check_reliability_timeouts` uses). A separate entrypoint
     from `check_reliability_timeouts` (rather than folded into it) keeps
     each function's name honest about what it actually checks; both share
-    this module's `RELIABILITY_RULES`/waiver-application/`_owner_index`
+    this module's `RELIABILITY_RULES`/waiver-application/`owner_index`
     machinery (charter: no duplication) and both are wired into `frob sys
     audit` by `frob.app.sys_runner`."""
     bound = bind_code(model, root)
     if bound.is_err:
         return Err(bound.danger_err)
-    owner_by_node = _owner_index(bound.danger_ok.owner)
+    owner_by_node = owner_index(bound.danger_ok.owner)
 
     violations: list[ReliabilityViolation] = []
     violations.extend(_missing_health_violations(model))

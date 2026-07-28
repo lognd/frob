@@ -31,6 +31,9 @@ _CACHE_REL = Path(".frob") / "cache.db"
 _CLOSED_TICKET_STATES = frozenset({"done", "dropped"})
 
 
+# frob:waive DUP001 reason="see this module's own docstring -- intentional mirror of \
+# frob debt's frob.app.debt_runner shape (T-0638); see \
+# debt_runner.py::_load_snapshot's own DUP001 waiver for full reasoning (T-0861)"
 def _load_snapshot(root: Path):  # noqa: ANN201
     """Load (building if stale) the graph snapshot `deprecated` lists entries from."""
     from frob.graph import build_graph, load_graph

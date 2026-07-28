@@ -769,6 +769,9 @@ def _bind_py_name(table: dict[str, str], name: str, target: str) -> None:
 _PY_ALWAYS_SHADOWS = -1
 
 
+# frob:waive DUP001 reason="see this function's own docstring -- deliberate \
+# per-language mirror of _record_rust_binding, same T-0468/T-0378 shadow-position \
+# bookkeeping shape per language (T-0861)"
 def _record_py_binding(bound: dict[str, int], name: str, position: int) -> None:
     """Record that `name` starts shadowing an enclosing import binding at
     byte `position` within its scope, keeping the EARLIEST position on
@@ -3453,6 +3456,8 @@ def _rust_use_table(root_node) -> dict[str, str]:  # noqa: ANN001
 _RUST_ALWAYS_SHADOWS = -1
 
 
+# frob:waive DUP001 reason="see _record_py_binding's own DUP001 waiver for full \
+# reasoning -- deliberate per-language mirror (T-0861)"
 def _record_rust_binding(bound: dict[str, int], name: str, position: int) -> None:
     """Record that `name` starts shadowing an enclosing `use` alias at byte
     `position` within its scope, keeping the EARLIEST position on repeat
@@ -4619,6 +4624,9 @@ def _c_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
 _KT_WILDCARD_DANGEROUS_MODULES = frozenset({"java.lang"})
 
 
+# frob:waive DUP001 reason="see this function's own docstring -- deliberately \
+# independent walk layer copy, same convention as frob.lang._walk_kotlin/frob.arch \
+# _kotlin's own _kt_child_of_type copies (T-0861)"
 def _kt_cap_child_of_type(node, type_name: str):  # noqa: ANN001, ANN201
     """The first DIRECT child of `node` with tree-sitter type `type_name`
     -- kotlin's grammar exposes almost no named fields (T-0614/T-0723's own

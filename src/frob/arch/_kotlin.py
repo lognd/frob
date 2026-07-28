@@ -120,6 +120,9 @@ _KT_BOOLEAN_TYPES = frozenset({"conjunction_expression", "disjunction_expression
 _KT_BOUNDARY_TYPES = frozenset({"function_declaration", "class_declaration"})
 
 
+# frob:waive DUP001 reason="see this function's own docstring -- deliberately \
+# independent walk layer copy, same convention as frob.vet._capability/frob.lang \
+# ._walk_kotlin's own copies (T-0861)"
 def _kt_child_of_type(node: Node, type_name: str) -> Node | None:
     """The first DIRECT child of `node` with tree-sitter type `type_name`
     -- the positional stand-in every lookup in this module uses instead of
@@ -131,6 +134,8 @@ def _kt_child_of_type(node: Node, type_name: str) -> Node | None:
     return None
 
 
+# frob:waive DUP001 reason="dup grouped this with _rust.py::_rust_type_text -- see \
+# that function's own DUP001 waiver for full reasoning (T-0861)"
 def _kt_type_text(node: Node | None) -> str | None:
     """The raw source text of a `user_type` node (a parameter's, return
     type's, or field's type annotation), or `None` if absent -- kotlin

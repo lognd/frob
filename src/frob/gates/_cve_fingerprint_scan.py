@@ -42,6 +42,7 @@ from typing import TYPE_CHECKING
 
 from frob.excludes import is_excluded, load_exclude_globs
 from frob.gates._models import Severity, Violation
+from frob.gates._parse_failures import local_parse001_violation
 from frob.gitio import run_argv
 from frob.logging import get_logger
 
@@ -93,6 +94,8 @@ def _language_for(rel_path: str) -> str | None:
     return _EXT_LANGUAGE.get(suffix)
 
 
+# frob:waive DUP001 reason="the established parallel-gate-scaffolding false pair -- \
+# see _opaque.py::_tracked_files' own DUP001 waiver for the full convention (T-0861)"
 def _tracked_files(root: Path) -> tuple[str, ...]:
     """`git ls-files` under `root`, root-relative POSIX paths, `()` on any
     git failure -- mirrors `frob.gates._secrets._tracked_files`'s
@@ -115,26 +118,16 @@ def _tracked_files(root: Path) -> tuple[str, ...]:
 # frob:ticket T-0897
 def _parse001_violation(rel_path: str, reason: str) -> Violation:
     """PARSE001 `Violation` for a file this gate's own read could not get
-    through (T-0897): mirrors `frob.gates._parse_failures.
-    parse_failure_gate`'s rule id, severity, and message shape so a file
-    SEC-CVE-FINGERPRINT-001 cannot inspect surfaces the SAME PARSE001
-    signal as the centrally-tracked `frob.lang`/`snapshot.parse_failures`
-    path, instead of the private silent-skip this gate used to do (T-0786
-    finding: zero Violation, DEBUG-only log, on an unreadable file --
-    exactly the class PARSE001 exists to make loud)."""
-    _log.warning("PARSE001: %s could not be parsed/read (%s)", rel_path, reason)
-    return Violation(
-        rule="PARSE001",
-        severity=Severity.ERROR,
-        file=rel_path,
-        line=0,
-        message=(
-            f"PARSE001: {rel_path} could not be parsed/read -- "
-            f"SEC-CVE-FINGERPRINT-001 cannot scan it for a vulnerable-usage "
-            f"fingerprint (reason: {reason}); fix the file or "
-            'frob:waive PARSE001 reason="..." if this is a known, '
-            "intentionally-unreadable fixture"
-        ),
+    through (T-0897): delegates to `frob.gates._parse_failures.
+    local_parse001_violation` (extracted T-0861) with this gate's own
+    capability-loss clause so SEC-CVE-FINGERPRINT-001's message stays
+    distinct while the rule id/severity/message shape is the ONE shared
+    home."""
+    return local_parse001_violation(
+        rel_path,
+        reason,
+        "SEC-CVE-FINGERPRINT-001 cannot scan it for a vulnerable-usage fingerprint",
+        unparseable_word="unreadable",
     )
 
 

@@ -73,6 +73,9 @@ def _attr_name(node: ast.expr) -> str | None:
     return node.attr if isinstance(node, ast.Attribute) else None
 
 
+# frob:waive DUP001 reason="see this function's own docstring -- deliberate small \
+# local unparse kept per-module rather than a cross-gate import for one helper \
+# (T-0861)"
 def _dotted_prefix(node: ast.expr) -> str | None:
     """The dotted-name text of an `Attribute`/`Name` chain (`os.walk` ->
     `"os.walk"`), or `None` for anything else -- local unparse, same shape
@@ -243,10 +246,17 @@ def _walk001_violation(rel_path: str, site: _WalkSite) -> Violation:
     )
 
 
-def _tracked_python_files(root: Path) -> tuple[str, ...]:
+# frob:ticket T-0861
+# frob:doc docs/modules/gates.md#rule-catalog
+# frob:tests tests/test_walk_lint_gate.py::TestRglob.test_raw_rglob_fires
+# frob:tests tests/test_gates.py::TestRenderLintGate.test_render_package_exempt
+def tracked_python_files_for_gate(root: Path, *, log_prefix: str) -> tuple[str, ...]:
     """`git ls-files -- src/frob` under `root`, filtered to `.py`,
-    root-relative POSIX paths, `()` on any git failure -- WALK001 only scans
-    frob's own package source (module docstring), mirroring
+    root-relative POSIX paths, `()` on any git failure -- shared by WALK001
+    and RENDER001, which both only scan frob's own package source
+    (T-0861 dup group: this was two byte-identical private copies,
+    `_walk_lint.py::_tracked_python_files`/`_render_lint.py::
+    _tracked_python_files`, differing only in `log_prefix`), mirroring
     `_pii_structural`'s degrade-don't-crash posture. A directory pathspec
     (not a `**` glob -- plain `git ls-files` pathspecs don't expand `**`
     without glob magic) already matches every file at any depth under it.
@@ -254,20 +264,30 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
     Logs at WARNING (T-0705), not ERROR: a git-less target (no `.git`,
     or `git` itself unavailable) is a supported, silently-empty scan --
     the same posture `ref_gate`/`doc004` already use for the identical
-    condition (docs/modules/gates.md#git-less-target-contract-t-0705)."""
+    condition (docs/modules/gates.md#git-less-target-contract-t-0705).
+    `log_prefix` (e.g. `"walk_lint_gate"`/`"render_lint_gate"`) keeps each
+    caller's own log line identity so a WARNING still names which gate hit
+    the git failure."""
     spawned = run_argv(("git", "-C", str(root), "ls-files", "--", "src/frob"))
     if spawned.is_err:
-        _log.warning("walk_lint_gate: git ls-files failed: %s", spawned.danger_err)
+        _log.warning("%s: git ls-files failed: %s", log_prefix, spawned.danger_err)
         return ()
     result = spawned.danger_ok
     if result.returncode != 0:
-        _log.warning("walk_lint_gate: git ls-files exited %d", result.returncode)
+        _log.warning("%s: git ls-files exited %d", log_prefix, result.returncode)
         return ()
     return tuple(
         line
         for line in result.stdout.splitlines()
         if line.strip() and line.endswith(".py")
     )
+
+
+def _tracked_python_files(root: Path) -> tuple[str, ...]:
+    """WALK001's own thin wrapper around `tracked_python_files_for_gate`
+    (T-0861), pinning `log_prefix="walk_lint_gate"` so every existing
+    caller in this module keeps calling a zero-arg helper."""
+    return tracked_python_files_for_gate(root, log_prefix="walk_lint_gate")
 
 
 # frob:doc docs/modules/gates.md#walk001-unpruned-traversal-t-0471

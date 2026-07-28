@@ -178,6 +178,11 @@ exit 0
 _OURS_MARKER = "# Installed by `frob scaffold install-worktree-lease-hook` (T-0431)."
 
 
+# frob:waive DUP001 reason="dup grouped this f-string-message builder with \
+# strata/_waive.py::_stale_detail, deploy/_generate.py's shell-heredoc builders, and \
+# dup/_rules.py::_dup001_message purely on generic f-string shape -- unrelated domain \
+# (managed-block marker line), false positive, same established false-pair as those \
+# functions' own DUP001 waivers (T-0861)"
 def _marker_begin(block_id: str) -> str:
     """The opening marker line for managed-block `block_id` -- content
     between this and `_marker_end(block_id)` is frob-owned and safe to

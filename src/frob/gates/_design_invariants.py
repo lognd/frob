@@ -191,7 +191,7 @@ def inv008_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
             continue
         file, _, line = edge.origin.rpartition(":")
         _log.warning(
-            "INV008: %s establishes=%r has no bound kind=\"property\" test",
+            'INV008: %s establishes=%r has no bound kind="property" test',
             edge.target,
             edge.attrs.get("establishes"),
         )

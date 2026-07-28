@@ -236,6 +236,9 @@ def _is_tail_call(tokens: tuple[str, ...], callee_short: str) -> bool:
     return False
 
 
+# frob:waive DUP001 reason="dup grouped this with graph/callgraph.py::is_symref \
+# purely on generic one-liner docstring+return shape -- unrelated domains (recursion \
+# base-case guard heuristic vs symref sentinel check), false positive (T-0861)"
 def _has_guard(tokens: tuple[str, ...]) -> bool:
     """A base-case guard is present: an `if`/`return` appears before the
     recursive call could plausibly fire. Approximated, per this package's

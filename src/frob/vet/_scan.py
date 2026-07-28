@@ -415,6 +415,11 @@ def _apply_npm_and_prehook_checks(
         signals.extend(pre_signals)
 
 
+# frob:waive DUP001 reason="dup grouped this with _vet004_violation and \
+# gates/__init__.py::_doc001_orphan on generic Violation(...)-builder shape -- \
+# VET-SOURCE-UNAVAILABLE is an independently-evolving fail-closed rule (T-0400) with \
+# its own trigger and message; same one-builder-per-rule convention as the other two \
+# (T-0861)"
 def _source_unavailable_violation(dep: Dependency, lockfile_name: str) -> Violation:
     """T-0400 audit finding #1: a dependency `frob vet` never read must
     never be indistinguishable from one it read and found clean -- an

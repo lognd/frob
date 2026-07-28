@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.201.0] - unreleased
+
+- T-0861: frob-dup: triage src/frob/** extraction-candidate groups (25 groups, split from T-0597)
+
 ## [0.200.0] - unreleased
 
 - T-1022: EXHAUST001/002 turn-on debt burn-down: 190 escape-hatch sites (135 unknown-escape, 55 named-escape)

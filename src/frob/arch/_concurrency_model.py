@@ -114,6 +114,9 @@ _SUBMIT_LIKE_RE = re.compile(r"\.(?:submit|map)$")
 _TRIVIAL_BODY_LINE_CEILING = 3
 
 
+# frob:waive DUP001 reason="see this function's own docstring -- see \
+# _shared_state_race.py::_iter_own_scope's own DUP001 waiver for full reasoning \
+# (T-0861)"
 def _iter_own_scope(node: Node) -> Iterator[Node]:
     """Every node in `node`'s subtree belonging to the OWNING function's
     own scope -- stops descending at a nested `function_definition`/
@@ -127,6 +130,8 @@ def _iter_own_scope(node: Node) -> Iterator[Node]:
         yield from _iter_own_scope(c)
 
 
+# frob:waive DUP001 reason="see _concurrency.py::_iter_calls's own DUP001 waiver for \
+# full reasoning (T-0861)"
 def _iter_calls(node: Node) -> Iterator[Node]:
     """Every `call` node in `node`'s full subtree, without stopping at a
     nested `function_definition`/`class_definition` boundary -- mirrors

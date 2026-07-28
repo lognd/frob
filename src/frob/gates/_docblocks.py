@@ -110,7 +110,6 @@ registry-reading mechanism.
 from __future__ import annotations
 
 import re
-import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 
@@ -118,6 +117,7 @@ from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv
 from frob.graph._models import GraphSnapshot
 from frob.logging import get_logger
+from frob.tomlio import read_toml_lenient
 
 _log = get_logger(__name__)
 
@@ -142,18 +142,18 @@ class _ProjectNamespaces:
     rust_crate_dirs: dict[str, str] = field(default_factory=dict)
 
 
+# frob:waive DUP001 reason="dup grouped this with _redundancy.py/_sketch_store.py's \
+# own _read_toml wrappers -- after T-0861's own read_toml_lenient extraction (the real \
+# shared logic), each is now an intentionally-thin per-module wrapper naming its own \
+# log_prefix; collapsing further would erase the distinct log-prefix binding each \
+# module needs (T-0861)"
 def _read_toml(path: Path) -> dict | None:
     """Best-effort TOML load: `None` on any missing/unreadable/malformed file,
     never a crash -- a missing manifest just means that language contributes
-    no namespaces, not a gate failure."""
-    if not path.exists():
-        return None
-    try:
-        with path.open("rb") as handle:
-            return tomllib.load(handle)
-    except (OSError, tomllib.TOMLDecodeError) as exc:
-        _log.warning("doc004: %s unreadable: %s", path, exc)
-        return None
+    no namespaces, not a gate failure. Thin wrapper over `frob.tomlio.
+    read_toml_lenient` (extracted T-0861) that fixes this module's own
+    `log_prefix`."""
+    return read_toml_lenient(path, log_prefix="doc004")
 
 
 def _python_namespaces(root: Path) -> frozenset[str]:

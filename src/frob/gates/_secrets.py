@@ -1040,6 +1040,10 @@ def _is_env_file(rel_path: str) -> bool:
     return name == ".env" or name.startswith(".env.")
 
 
+# frob:waive DUP001 reason="the established parallel-gate-scaffolding false pair -- \
+# every gate module (_secrets/_refs/_exclude_hazard/_cve_fingerprint_scan/_opaque) \
+# keeps its own private `git ls-files` copy per this repo's already-accepted \
+# convention (see _opaque.py::_tracked_files' own docstring, T-0665) (T-0861)"
 def _tracked_files(root: Path) -> tuple[str, ...]:
     """`git ls-files` under `root`, root-relative POSIX paths, `()` on any
     git failure (no repo, git missing) -- mirrors `frob.gitio`'s

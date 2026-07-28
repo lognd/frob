@@ -406,6 +406,12 @@ def _py_is_self_attribute(node: Node) -> bool:
     return True
 
 
+# frob:waive DUP001 reason="dup grouped this with _rust.py::_rust_is_field_write and \
+# _typescript.py::_ts_is_field_write on the shared assignment-target-check shape -- \
+# these are three independently-evolving per-language tree-sitter adapters (Python \
+# `assignment`, Rust `assignment_expression`, TS `assignment_expression` -- different \
+# grammars, different node type names), following this package's established \
+# per-language-file convention (T-0861)"
 def _py_is_field_write(node: Node) -> bool:
     """Whether an `attribute` node (`self.x`) is the assignment-target of an
     `assignment` (a write) rather than being read."""

@@ -77,6 +77,9 @@ def raw_kotlin_tree(source: bytes) -> TreeNode:
     return export_tree(tree.root_node, COMMENT_TYPES)
 
 
+# frob:waive DUP001 reason="see this function's own docstring -- deliberately \
+# independent walk layer copy, same convention as frob.vet._capability/frob.arch \
+# _kotlin's own copies (T-0861)"
 def _kt_child_of_type(node: Node, type_name: str) -> Node | None:
     """The first DIRECT child of `node` with tree-sitter type `type_name`
     -- positional stand-in for a named-field lookup (see module docstring;
