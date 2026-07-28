@@ -131,18 +131,61 @@ re-evaluated must not have had a changed input.
 
 **What it does NOT cover** (scope cut, disclosed honestly rather than
 implied): `frob.gates.run_gates` itself still evaluates every selected gate
-in full on each `frob_check_delta` call -- there is no per-obligation
-dependency-tracked partial re-evaluation inside `run_gates` today. The
-"only obligations whose inputs changed" framing in T-0177's plan is
-achieved at the GRAPH/baseline/test-collection layer (this module), not by
-threading a pre-built snapshot into `run_gates`'s own gate dispatch, which
-would require changing `_load_inputs`/`_build_jobs`'s signatures -- a
-larger, separately-ticketed project (see the Done report / a filed
-follow-up ticket). What `frob_check_delta` DOES guarantee: its reported
-delta is always computed against a freshly-run `run_gates` pass (never a
-stale cached violation list) filtered through `delta_violations`/
-`is_baseline_stale` -- the same baseline-diff machinery `frob check
---delta` uses on the CLI side, so the two stay consistent by construction.
+in full on each `frob_check_delta` call, EXCEPT for the closed
+`_CACHEABLE_GATES` allowlist T-0602 added (`drift`, `test`, `policy`,
+`parse_failures`, `debt`, `lang_conformance`,
+`affect_drift`) -- see "Per-gate dependency-tracked partial re-evaluation
+(T-0602)" below. Every OTHER gate (the large majority: anything reading
+`st.root`/`st.repo_root` directly, or any combined dispatch name that
+bundles a root-scanning sub-check alongside a snapshot-only one, e.g.
+`invariant`/`docblocks`) is still fully re-evaluated on every call -- T-0602
+excludes these LOUDLY (a hand-audited allowlist, not a best-effort guess)
+rather than risk serving a stale answer for a gate this module cannot
+soundly observe every file it reads. What `frob_check_delta` DOES
+guarantee, unconditionally: its reported delta is always computed against
+a freshly-run `run_gates` pass (never a stale cached violation list, for
+either the cached or uncached gates) filtered through
+`delta_violations`/`is_baseline_stale` -- the same baseline-diff machinery
+`frob check --delta` uses on the CLI side, so the two stay consistent by
+construction.
+
+### Per-gate dependency-tracked partial re-evaluation (T-0602)
+
+<!-- frob:describes src/frob/gates/_gate_cache.py::TrackedSnapshot -->
+<!-- frob:describes src/frob/gates/_gate_cache.py::evaluate_cacheable_gate -->
+<!-- frob:describes src/frob/gates/_gate_cache.py::invalidate -->
+<!-- frob:describes src/frob/gates/__init__.py::run_gates -->
+
+`run_gates(cfg, use_cache=True)` -- the call `frob_check_delta` makes --
+opts every selected gate in `frob.gates._CACHEABLE_GATES` (drift, test,
+policy, parse_failures, debt, lang_conformance, affect_drift) into
+`frob.gates._gate_cache.evaluate_cacheable_gate`: a gate's cached
+result from `.frob/gate-cache.db` (a new table alongside `frob.graph.
+cache`'s `cache.db` and `frob.gates._baseline`'s `.frob/baseline`, sharing
+the SAME `.frob/` derived-state directory -- no parallel cache) is served
+instead of re-running the gate, whenever (a) every file the gate touched
+last time still hashes identically, (b) the tree's overall tracked-file
+membership (its full path SET, not just the touched subset -- T-0602's
+"membership guard") is unchanged, closing the "a new file the gate would
+now also touch did not exist when its dependency set was last recorded"
+soundness hole, and (c) any non-file scalar input the gate also depends on
+(`debt`'s `current_date`/`current_version`) is unchanged. `TrackedSnapshot`
+records the touched-file set by OBSERVING real reads through
+`.symbols`/`.edges`/`.file_hashes`/`.malformed`/`.parse_failures` during
+the gate's own run, rather than a hand-maintained per-gate file-selector
+that could silently drift out of sync with the gate's actual logic.
+`run_gates`'s default (`use_cache=False`, every pre-T-0602 call site) is
+byte-for-byte unaffected. Single-flight safety around concurrent dispatch
+(two gate-worker threads, or two `frob` processes, racing to fill the same
+cache entry) reuses `frob.process._lock.derived_state_write_lock`
+(T-0918's process-wide reentrancy registry) -- the primitive built exactly
+for "a worker thread wants EXCLUSIVE while the main `frob check` thread
+holds SHARED for the run's whole duration", which is this call's exact
+nesting shape. See `frob.gates._gate_cache`'s module docstring for the
+full design and `tests/test_gate_cache.py::TestColdDiffOracle` for the
+correctness property test: a cold (uncached) evaluation and a
+cache-aware evaluation from any prior cache state must agree, across
+random file edits, adds, removes, and scalar-extra changes.
 
 `verify=True` is the correctness guarantee for the part that IS cached: it
 drops the warm cache (`invalidate`), re-runs `run_gates` fully cold, and

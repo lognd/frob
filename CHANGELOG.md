@@ -17,21 +17,9 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
-## [0.197.0] - unreleased
+## [0.198.0] - unreleased
 
-- T-0823: lang: LANG003 known-gap ticket refs unresolvable in adopter repos (escalates to ERROR outside frob itself)
-
-## [0.196.0] - unreleased
-
-- T-0639: design: detect a deprecated symbol gaining NEW callers (public-symbol caller graph)
-
-## [0.195.0] - unreleased
-
-- T-0757: design-invariant encoding: import-forbidding frob:invariant + establish-property obligation (T-0611/T-0682 class as gates)
-
-## [0.194.0] - unreleased
-
-- T-0665: vet/strata: fail-closed opaque-capability-indirection obligation for runtime-resolved dispatch
+- T-0602: serve: per-obligation dependency-tracked partial re-evaluation inside gate dispatch
 
 ## [0.193.0] - unreleased
 

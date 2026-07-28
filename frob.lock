@@ -81,7 +81,12 @@
       "ref": "src/frob/gates/__init__.py::prework_gate"
     },
     {
-      "digest": "72d803c6ae83e55cc93daf84e07a20c4fb5d2bed6c671385028240cf9f5217ee",
+      "digest": "36d8cded05be56a763c628d9cf938e1b25bcf6e0300e7ae248dd788f0d24967b",
+      "facet": "body",
+      "ref": "src/frob/gates/__init__.py::run_gates"
+    },
+    {
+      "digest": "09fd1fa5e1ac00102c10809674530f47a75e8f11f6cc2f2ccf8b26a008d22eaa",
       "facet": "sig",
       "ref": "src/frob/gates/__init__.py::run_gates"
     },

@@ -1454,6 +1454,31 @@ EXHAUST001/002's own carve-out).
 <!-- frob:describes src/frob/gates/_pii_structural.py::_scan_python_fields -->
 <!-- frob:describes src/frob/gates/_pii_structural.py::_scan_python_env_access -->
 <!-- frob:describes src/frob/gates/__init__.py::known_gate_rule_ids -->
+<!-- frob:describes src/frob/gates/_gate_cache.py::TrackedSnapshot -->
+<!-- frob:describes src/frob/gates/_gate_cache.py::evaluate_cacheable_gate -->
+<!-- frob:describes src/frob/gates/_gate_cache.py::invalidate -->
+
+### Per-gate result cache (T-0602)
+
+`run_gates(cfg, use_cache=True)` opts the closed `_CACHEABLE_GATES`
+allowlist (`drift`, `test`, `policy`, `parse_failures`, `debt`,
+`lang_conformance`, `affect_drift`) into
+`frob.gates._gate_cache.evaluate_cacheable_gate`: a gate's prior result is
+served from `.frob/gate-cache.db` instead of re-running it, whenever every
+file the gate is observed to have read still hashes the same, the tree's
+overall tracked-file membership is unchanged, and any non-file scalar
+input the gate also depends on is unchanged. `use_cache` defaults to
+`False` -- every pre-T-0602 `run_gates` call site (including a plain
+`frob check`) is unaffected; only `frob.serve._tools.frob_check_delta`
+opts in today. Full design, the membership-guard soundness argument, and
+the cold-diff oracle property test live in `frob.gates._gate_cache`'s
+module docstring and `docs/modules/serve.md#per-gate-cache-t-0602`.
+`deprecated` is deliberately NOT on this allowlist even though it looks
+snapshot-shaped: T-0639 (landed on `main` after T-0602 started) gave it a
+`root: Path` argument for DEPR005's baseline-lock/live-reference-set
+resolution, filesystem-dependent beyond what `TrackedSnapshot` observes --
+excluded per this section's own soundness rule the moment that landed,
+rather than cached unsoundly.
 
 - `exclude_filtered_coverage` -- re-filters a `CoverageData` against
   `[graph] exclude` (T-0997); `stamp_coverage` calls it before writing

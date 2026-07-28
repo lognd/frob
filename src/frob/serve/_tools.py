@@ -337,6 +337,8 @@ def _run_verify_pass(root: Path, cfg, warm_violations: tuple) -> dict:
 
 
 # frob:doc docs/modules/serve.md#tools
+# frob:doc docs/modules/serve.md#per-gate-cache-t-0602
+# frob:ticket T-0602
 # frob:tests tests/test_serve.py::TestCheckDelta.test_delta_against_fresh_baseline_is_empty kind="unit"  # noqa: E501
 # frob:tests tests/test_serve.py::TestCheckDelta.test_delta_reports_new_violation kind="unit"  # noqa: E501
 # frob:tests tests/test_serve.py::TestCheckDelta.test_missing_baseline_is_full_set kind="unit"  # noqa: E501
@@ -363,7 +365,14 @@ def frob_check_delta(
     baseline = state_result.danger_ok.baseline
 
     cfg = GateConfig(root=str(root), base=base, ticket=ticket_id, gates=frozenset())
-    gate_result = run_gates(cfg)
+    # T-0602: this is the "gate dispatch runs" call `docs/modules/serve.md`'s
+    # "What it does NOT cover" section named as a follow-up -- `use_cache`
+    # opts into `_gate_cache`'s per-gate dependency-tracked partial
+    # re-evaluation for the closed cacheable-gate allowlist. `verify=True`'s
+    # own cold cross-check below deliberately does NOT pass `use_cache` (it
+    # must stay a genuinely cold, cache-bypassing run to be the correctness
+    # oracle it claims to be).
+    gate_result = run_gates(cfg, use_cache=True)
     if gate_result.is_err:
         _log.error("serve: frob_check_delta: %s", gate_result.danger_err)
         return Err(ServeError.GateFailed)

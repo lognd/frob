@@ -92,6 +92,8 @@ from frob.gates._fmt_directives import (
     marker_for,
     read_line_length,
 )
+from frob.gates._gate_cache import evaluate_cacheable_gate
+from frob.gates._gate_cache import invalidate as invalidate_gate_cache
 from frob.gates._lang_conformance import (
     lang_conformance_gate,
     project_lang_conformance_gate,
@@ -10861,8 +10863,103 @@ class _ProcessJob:
 
 
 # frob:ticket T-0415
+# frob:ticket T-0602
+# T-0602: the closed, hand-audited allowlist `_gate_cache.evaluate_
+# cacheable_gate` is permitted to serve from `.frob/gate-cache.db` instead
+# of re-running for real. A gate qualifies only if its ENTIRE thread-pool
+# closure body (see the matching case in `_build_jobs` below) reads
+# `st.snapshot` (via the tracked `TrackedSnapshot` proxy, so every file it
+# touches is observed) plus, at most, a short tuple of already-hashable
+# scalars folded in through `extra` -- never `st.root`/`st.repo_root`
+# (an unbounded, untracked filesystem walk) and never a gate whose single
+# dispatch name secretly bundles a root-scanning sub-check alongside a
+# snapshot-only one (e.g. "invariant", "docblocks" -- excluded for exactly
+# this reason). See `_gate_cache`'s module docstring for the full
+# reasoning and `docs/modules/serve.md`'s "What it does NOT cover" section
+# for the gates this EXCLUDES and why, disclosed rather than silently
+# assumed safe.
+# T-0639 (post-T-0602 landing): "deprecated" gained a `root: Path` argument
+# (DEPR005's baseline-lock/live-reference-set resolution, filesystem-
+# dependent beyond the snapshot) -- removed from this allowlist rather than
+# cached unsoundly; see the exclusion note above.
+_CACHEABLE_GATES: frozenset[str] = frozenset(
+    {
+        "drift",
+        "test",
+        "policy",
+        "parse_failures",
+        "debt",
+        "lang_conformance",
+        "affect_drift",
+    }
+)
+
+
+def _cacheable_gate_call(
+    name: str, st: _GateInputs
+) -> tuple[Callable[[GraphSnapshot], tuple[Violation, ...]], tuple[str, ...]]:
+    """The pure `(snapshot) -> violations` call for one `_CACHEABLE_GATES`
+    member, plus its `extra` scalar key inputs -- kept in exact lockstep
+    with the matching (non-cached) closure body in `_build_jobs` below by
+    construction: both read from the same `st`, this one just takes
+    `snapshot` as an explicit argument instead of closing over `st.snapshot`
+    directly, so `_gate_cache.evaluate_cacheable_gate` can substitute a
+    `TrackedSnapshot` in its place."""
+    from frob.policy import policy_gate
+
+    current_date = date.today().isoformat()
+    if name == "drift":
+        return (lambda snap: drift_gate(snap, st.lock), ())
+    if name == "test":
+        return (
+            lambda snap: test_gate(
+                snap, st.systems, st.coverage, st.tests, st.test_policy
+            ),
+            (),
+        )
+    if name == "policy":
+        return (lambda snap: policy_gate(st.rules, snap, st.diff), ())
+    if name == "parse_failures":
+        return (lambda snap: parse_failure_gate(snap), ())
+    if name == "debt":
+        current_version = _current_version(st.repo_root) or "0.0.0"
+        return (
+            lambda snap: debt_gate(
+                snap,
+                st.queue,
+                current_date=current_date,
+                current_version=current_version,
+            ),
+            (current_date, current_version),
+        )
+    if name == "lang_conformance":
+        return (lambda _snap: lang_conformance_gate(), ())
+    if name == "affect_drift":
+        return (lambda snap: affect_drift_gate(snap, st.diff), ())
+    raise AssertionError(f"_cacheable_gate_call: {name!r} not in _CACHEABLE_GATES")
+
+
+def _wrap_cacheable(
+    root: Path, name: str, st: _GateInputs
+) -> Callable[[], tuple[Violation, ...]]:
+    """A zero-arg thread-pool job for `name` that goes through
+    `_gate_cache.evaluate_cacheable_gate` instead of running unconditionally
+    -- same return type/shape as every other `thread_jobs` entry, so
+    `_run_combined_jobs` needs no special case for a cached gate."""
+    call, extra = _cacheable_gate_call(name, st)
+    return lambda: evaluate_cacheable_gate(root, name, st.snapshot, call, extra)
+
+
+# frob:waive ARCH001 reason="pre-existing (196 lines on main before T-0602 touched \
+# this function at all -- verified via git show main:src/frob/gates/__init__.py); the \
+# body is one large thread_jobs/process_jobs dict-literal gate-job registry, not \
+# T-0602's own logic (T-0602 added ~8 net lines: a use_cache param and one call to the \
+# newly extracted _substitute_cacheable_jobs helper). Decomposing the registry itself \
+# is out of T-0602's scope (src/frob/gates/**, src/frob/serve/**, this test file, \
+# docs/modules/{serve,gates}.md) -- filed as T-1049 (refactor: decompose \
+# oversized _build_jobs gate-job registry)" ceiling="210"
 def _build_jobs(
-    selected: frozenset[str], st: _GateInputs
+    selected: frozenset[str], st: _GateInputs, *, use_cache: bool = False
 ) -> tuple[
     dict[str, Callable[[], tuple[Violation, ...]]],
     dict[str, _ProcessJob],
@@ -10870,7 +10967,16 @@ def _build_jobs(
 ]:
     """Map each selected gate name to a job over the loaded state: a zero-arg
     thread-pool closure for I/O-bound/cheap gates, or a `_ProcessJob`
-    (T-0415) for the CPU-bound giants in `_PROCESS_POOL_GATES`."""
+    (T-0415) for the CPU-bound giants in `_PROCESS_POOL_GATES`.
+
+    T-0602: when `use_cache=True`, every selected gate in `_CACHEABLE_GATES`
+    is dispatched through `_gate_cache.evaluate_cacheable_gate` instead of
+    its normal unconditional closure -- a cache HIT skips real work, a MISS
+    (or no cache entry yet) runs exactly the same call a normal `frob check`
+    would. `use_cache=False` (the default, and every existing `frob check`/
+    `run_gates` call site) is byte-for-byte the pre-T-0602 behavior -- this
+    flag opts a caller IN, it never changes behavior for a caller that does
+    not pass it."""
     from frob.policy import policy_gate
 
     thread_jobs: dict[str, Callable[[], tuple[Violation, ...]]] = {
@@ -11064,7 +11170,25 @@ def _build_jobs(
         selected_thread["drift"] = thread_jobs["drift"]
     ticket_jobs, skipped = _build_ticket_scoped_jobs(selected, st)
     selected_thread.update(ticket_jobs)
+    if use_cache:
+        _substitute_cacheable_jobs(selected_thread, st)
     return selected_thread, selected_process, skipped
+
+
+# frob:ticket T-0602
+def _substitute_cacheable_jobs(
+    selected_thread: dict[str, Callable[[], tuple[Violation, ...]]], st: _GateInputs
+) -> None:
+    """`_build_jobs`'s `use_cache=True` step, split out to keep `_build_jobs`
+    itself under ARCH001's line threshold: replace every selected gate in
+    `_CACHEABLE_GATES` with a cache-aware job (`_wrap_cacheable`) in place --
+    "drift" (which `_build_jobs` may have force-added even when unselected)
+    is included too, so an unconditionally-forced drift check gets the same
+    cache benefit a directly-selected one would. Mutates `selected_thread`
+    in place; returns nothing."""
+    for name in list(selected_thread):
+        if name in _CACHEABLE_GATES:
+            selected_thread[name] = _wrap_cacheable(st.repo_root, name, st)
 
 
 def _b9_exempt_file(file: str) -> bool:
@@ -11609,13 +11733,29 @@ def _run_combined_jobs(
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:doc docs/modules/serve.md#per-gate-cache-t-0602
 # frob:ticket T-0021
-def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
-    """Load everything once, then run the selected gates in parallel and merge."""
+# frob:ticket T-0602
+def run_gates(
+    cfg: GateConfig, *, use_cache: bool = False
+) -> Result[GateReport, GateError]:
+    """Load everything once, then run the selected gates in parallel and merge.
+
+    T-0602: `use_cache=True` opts into per-gate dependency-tracked partial
+    re-evaluation (`_gate_cache.evaluate_cacheable_gate`) for the closed
+    `_CACHEABLE_GATES` allowlist -- every other gate, and every call site
+    that leaves this at its `False` default (every existing `frob check`
+    call), is unaffected: identical behavior to before this ticket. See
+    `_gate_cache`'s module docstring for the full design and
+    `docs/modules/serve.md` for which call sites opt in and why."""
     start_all = time.monotonic()
     selected = cfg.gates or _ALL_GATES
     _log.info(
-        "run_gates: root=%s base=%s gates=%s", cfg.root, cfg.base, sorted(selected)
+        "run_gates: root=%s base=%s gates=%s use_cache=%s",
+        cfg.root,
+        cfg.base,
+        sorted(selected),
+        use_cache,
     )
 
     inputs_result = _load_inputs(cfg)
@@ -11623,7 +11763,7 @@ def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
         return Err(inputs_result.danger_err)
     st = inputs_result.danger_ok
 
-    thread_jobs, process_jobs, skipped = _build_jobs(selected, st)
+    thread_jobs, process_jobs, skipped = _build_jobs(selected, st, use_cache=use_cache)
     report = _assemble_gate_report(
         cfg, st, thread_jobs, process_jobs, skipped, start_all
     )
@@ -11735,6 +11875,7 @@ __all__ = [
     "inv003_gate",
     "inv004_gate",
     "inv006_gate",
+    "invalidate_gate_cache",
     "inv007_violations",
     "inv008_violations",
     "invariant_gate",
