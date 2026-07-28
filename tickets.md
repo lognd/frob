@@ -1159,7 +1159,7 @@ src/frob/vet/_supplychain.py.
 id: T-1108
 title: 'arch: extract remaining ~8 verb families from tickets/__init__.py (3489) and
   split tickets/_land.py (4762) -- T-1103 residue'
-state: queued
+state: dropped
 kind: feature
 origin: agent
 created: '2026-07-28'
@@ -1351,6 +1351,8 @@ evidence/close family, not the doable family this ticket touched.
 - gates: 8 error(s), 878 warning(s), 425 waived
 - error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w17-tickets/src/frob/vet/_supplychain.py:154, E501@/home/logan/projects/frob/.claude/worktrees/w17-tickets/src/frob/vet/_supplychain.py:168, E501@/home/logan/projects/frob/.claude/worktrees/w17-tickets/src/frob/vet/_supplychain.py:209, E501@/home/logan/projects/frob/.claude/worktrees/w17-tickets/src/frob/vet/_supplychain.py:267, E501@/home/logan/projects/frob/.claude/worktrees/w17-tickets/src/frob/vet/_supplychain.py:295, INV006@src/frob/gates/_todo_fmt.py, INV006@src/frob/gates/_waive_comments.py, TICK006@tickets.md
 
+## Drop reason
+- 2026-07-28: absorbed: T-1122 (done) landed the doable/leases/scope-breadth family this ticket's first slice; successor T-1123 carries the identical remaining scope (other verb families + _land.py split) with the accurate post-T-1122 line counts
 <!-- ticket:T-1109 -->
 ```yaml
 id: T-1109
