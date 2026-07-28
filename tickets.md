@@ -1020,7 +1020,7 @@ ERROR in src/frob/gates/_opaque.py.
 ```yaml
 id: T-1049
 title: 'refactor: decompose oversized _build_jobs gate-job registry (ARCH001)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -1049,7 +1049,6 @@ itself drops under the ARCH001 threshold. Out of T-0602's scope
 (src/frob/gates/**, src/frob/serve/**, tests/test_gate_cache.py,
 docs/modules/{serve,gates}.md) -- this refactor would touch the entire
 existing gate-job assembly, not the T-0602 feature itself.
-
 <!-- ticket:T-1050 -->
 ```yaml
 id: T-1050
