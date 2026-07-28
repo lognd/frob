@@ -110,6 +110,14 @@ node cli : trusted {
     // exec_enabled) by degrading to the synchronous in-process sweep, so
     // this is a switchable capability, not an aspirational claim.
     may "exec";
+    // T-1126: the CLI daemon proxy (app/_daemon_proxy.py) now opens the
+    // project daemon's unix socket directly for lease acquire/release
+    // (_LeaseConnection, promoted from the T-1097 test-only _RawClient)
+    // in addition to the query path -- a local AF_UNIX connect to the
+    // T-1092 socket under the project state dir, never a remote network
+    // endpoint; degrades to the in-process/file-lock fallback when no
+    // daemon is up.
+    may "net";
     attr flag=frob_check_exec_kill_switch;
     // T-0724: SYS203 (shared store write) fires because cli/core/fleet/
     // gates/serve all have a Flow into tickets_ledger -- correctly, per
