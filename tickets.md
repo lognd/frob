@@ -2314,7 +2314,7 @@ Observed 2026-07-27: 'uv run frob ticket land T-0861 --worktree .claude/worktree
 ```yaml
 id: T-1058
 title: 'coordinator: decide worktree.baseRef=head or push-main-before-dispatch policy'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-07-27'
@@ -2340,7 +2340,6 @@ change, and not something this agent should apply silently mid-ticket.
 Filed so a coordinator/user can decide: either flip worktree.baseRef to
 "head" in .claude/settings.json, or adopt a habit of pushing local main
 to origin before dispatching a wave, or both.
-
 <!-- ticket:T-1059 -->
 ```yaml
 id: T-1059
