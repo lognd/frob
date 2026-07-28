@@ -1543,7 +1543,7 @@ starting; other tickets may land in the interim and change the count.
 id: T-1084
 title: 'arch: abstraction-opportunity arch package extraction (T-0393/T-1067 remainder,
   27 findings)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -1597,7 +1597,6 @@ ticket rather than hand-waiving it here.
 Re-measure `uv run frob check --only arch --json` (filter to
 abstraction-opportunity + `src/frob/arch/`) before starting; other
 tickets may land in the interim and change the count.
-
 <!-- ticket:T-1085 -->
 ```yaml
 id: T-1085
