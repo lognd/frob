@@ -2292,9 +2292,9 @@ component: null
 ```
 Endgame tail: the sub-five-warning families (DEPR003 x4, LANG003 x3, INV003/004 x2, REG009/REG010 x2, WAIVE004 x2, WALK001 x2 per gate summary). Fix or grounded-waive each. REG009/REG010 residue is the CPPTHROW001 check-coverage auto-sync gap noted at T-1042 land -- fold the registry entry fix here. Narrow scope at start.
 
-<!-- ticket:T-draft-372a1425 -->
+<!-- ticket:T-1112 -->
 ```yaml
-id: T-draft-372a1425
+id: T-1112
 title: 'arch: abstraction-opportunity check-registry-protocol detector exclusion'
 state: queued
 kind: feature
