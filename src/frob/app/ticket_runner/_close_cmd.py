@@ -622,8 +622,32 @@ def _reverify(root: Path, cfg: AppConfig) -> None:
     )
 
 
+# frob:ticket T-1131
 def _fail(root: Path, cfg: AppConfig) -> None:
-    from frob.tickets import FailureEntry, load_queue, record_failure
+    """`frob ticket fail <id> --summary TEXT`: record a dead-end failure
+    log entry, then requeue the ticket (T-1131).
+
+    T-1131 (the T-1050 incident): `record_failure` only ever appended the
+    failure-log entry -- it never called `transition`, so a ticket that
+    was IN_PROGRESS when fail-logged stayed IN_PROGRESS forever, holding
+    its cross-worktree lease (`_sync_cross_worktree_lease` only releases a
+    lease on a `transition` call OUT of IN_PROGRESS, and `record_failure`
+    never made one). An agent fail-logged a superseded ticket, removed its
+    worktree, and the ticket sat in-progress pointing at a now-nonexistent
+    path until a coordinator noticed and hand-dropped it. Requeuing
+    (IN_PROGRESS -> QUEUED, a legal `_TRANSITIONS` edge) after a fail-log
+    is the correct semantics anyway: a failed attempt is a retry
+    candidate, not a permanently stuck ticket -- and it is the one
+    `transition` call that actually releases the lease. A ticket that was
+    NOT IN_PROGRESS when fail-logged (no lease to release) is left in its
+    current state unchanged, matching pre-T-1131 behavior for that case."""
+    from frob.tickets import (
+        FailureEntry,
+        TicketState,
+        load_queue,
+        record_failure,
+        transition,
+    )
 
     if cfg.ticket_id is None or cfg.ticket_summary is None:
         _log.error("frob ticket fail requires <id> and --summary")
@@ -645,6 +669,20 @@ def _fail(root: Path, cfg: AppConfig) -> None:
         _log.error("fail failed: %s", result.danger_err)
         sys.exit(1)
     _log.info("%s: recorded failure attempt %d", cfg.ticket_id, attempt)
+
+    if ticket.state is TicketState.IN_PROGRESS:
+        requeued = transition(root, cfg.ticket_id, TicketState.QUEUED)
+        if requeued.is_err:
+            _log.error(
+                "fail: %s failure log recorded but requeue failed (%s) -- "
+                "lease NOT released, needs manual attention",
+                cfg.ticket_id,
+                requeued.danger_err,
+            )
+            sys.exit(1)
+        _log.info(
+            "%s: requeued (in-progress -> queued), lease released", cfg.ticket_id
+        )
 
 
 # frob:ticket T-0579

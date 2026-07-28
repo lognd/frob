@@ -520,3 +520,132 @@ class TestDoctorMalformedTicketEdges:
         report = run_diagnosis(tmp_path)
         assert report.malformed_ticket_edges == []
         assert report.healthy is True
+
+
+class TestDoctorStaleTicketLeases:
+    """T-1131 (the T-1050 incident): `frob doctor` reports any ticket
+    stuck IN_PROGRESS with no live cross-worktree lease, reusing
+    `frob.tickets._reconcile.reconcile`'s dry-run detection -- read-only,
+    it never requeues anything itself."""
+
+    @staticmethod
+    def _git_init(root: Path) -> None:
+        subprocess.run(
+            ["git", "init", "-q", "-b", "main"], cwd=str(root), check=True
+        )
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=str(root),
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test"], cwd=str(root), check=True
+        )
+        (root / ".gitkeep").write_text("")
+        subprocess.run(["git", "add", "-A"], cwd=str(root), check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "init"], cwd=str(root), check=True
+        )
+
+    # frob:tests src/frob/doctor.py
+    def test_run_diagnosis_healthy_with_no_stale_leases(self, tmp_path: Path) -> None:
+        """A fresh checkout with no tickets.md at all reports an empty
+        `stale_ticket_leases` list."""
+        from frob.doctor import run_diagnosis
+
+        self._git_init(tmp_path)
+        report = run_diagnosis(tmp_path)
+        assert report.stale_ticket_leases == []
+        assert report.healthy is True
+
+    # frob:tests src/frob/doctor.py::scan_stale_ticket_leases
+    def test_scan_flags_in_progress_ticket_with_no_lease(
+        self, tmp_path: Path
+    ) -> None:
+        """A ticket whose `state:` was set to in-progress WITHOUT ever
+        going through `transition` (so no lease was recorded -- the exact
+        shape a lease-stamp ledger sync onto a checkout produces, per
+        `tests/test_ticket_reconcile.py`'s own fixture recipe) is flagged,
+        with a remediation naming the fix."""
+        from frob.doctor import run_diagnosis
+        from frob.tickets import Origin, TicketKind, TicketSpec, new_ticket
+        from frob.tickets._store import load_all, write_ticket
+
+        self._git_init(tmp_path)
+        created = new_ticket(
+            tmp_path,
+            TicketSpec(title="Stuck", kind=TicketKind.BUG, origin=Origin.AGENT),
+        )
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        ticket = loaded.danger_ok[ticket_id]
+        from frob.tickets import TicketState
+
+        assert write_ticket(
+            tmp_path, ticket.model_copy(update={"state": TicketState.IN_PROGRESS})
+        ).is_ok
+
+        report = run_diagnosis(tmp_path)
+        assert report.healthy is False
+        assert ticket_id in report.stale_ticket_leases
+        assert report.remediation is not None
+        assert ticket_id in report.remediation
+        assert "frob ticket requeue" in report.remediation
+
+        # T-1131: `frob doctor` is READ-ONLY -- it must never actually
+        # requeue the ticket itself (that is scan_stale_ticket_leases's
+        # `reconcile(root, apply=False)` call's whole point). Confirm the
+        # ledger's own state is untouched by the scan.
+        reloaded = load_all(tmp_path)
+        assert reloaded.is_ok
+        assert reloaded.danger_ok[ticket_id].state == TicketState.IN_PROGRESS
+
+    # frob:tests src/frob/doctor.py::scan_stale_ticket_leases
+    def test_scan_ignores_live_leased_ticket(self, tmp_path: Path) -> None:
+        """A ticket started normally (via `transition`, which records a
+        real lease) is never flagged."""
+        from frob.doctor import run_diagnosis
+        from frob.tickets import (
+            Origin,
+            TicketKind,
+            TicketSpec,
+            TicketState,
+            new_ticket,
+            transition,
+        )
+
+        self._git_init(tmp_path)
+        created = new_ticket(
+            tmp_path,
+            TicketSpec(title="Live", kind=TicketKind.BUG, origin=Origin.AGENT),
+        )
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+        assert transition(tmp_path, ticket_id, TicketState.PLANNED).is_ok
+        assert transition(tmp_path, ticket_id, TicketState.IN_PROGRESS).is_ok
+
+        report = run_diagnosis(tmp_path)
+        assert ticket_id not in report.stale_ticket_leases
+        assert report.healthy is True
+
+    # frob:tests src/frob/doctor.py::scan_stale_ticket_leases
+    def test_scan_degrades_to_empty_on_a_malformed_ledger(
+        self, tmp_path: Path
+    ) -> None:
+        """A ledger `reconcile` cannot even load (malformed frontmatter)
+        must not crash `frob doctor` -- `scan_stale_ticket_leases` degrades
+        to an empty tuple, logging a warning, so one broken ledger row
+        never blocks the OTHER native/derived-state/mutate-journal checks
+        `run_diagnosis` also performs in the same call."""
+        from frob.doctor import run_diagnosis
+
+        self._git_init(tmp_path)
+        (tmp_path / "tickets.md").write_text(
+            "# Tickets\n\n<!-- ticket:T-0001 -->\n```yaml\nnot: [valid, ticket\n```\n"
+        )
+
+        report = run_diagnosis(tmp_path)
+        assert report.stale_ticket_leases == []

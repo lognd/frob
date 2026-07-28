@@ -386,6 +386,7 @@
     "src/frob/doctor.py::REMEDIATION_HINT": "72cba9976f5df20853ad28c1ce4d321119df5f4c0588b11ec7e117f23e0801b6",
     "src/frob/doctor.py::run_diagnosis": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
     "src/frob/doctor.py::scan_malformed_ticket_edges": "6ce0127b57a6808dd573a11421e19d445c2b30a7df80cc5e6ead715ec2e15f19",
+    "src/frob/doctor.py::scan_stale_ticket_leases": "8c4cb4195a857fba8b41f5870469e08785481bad36fa06310b1d5557a9176f4f",
     "src/frob/doctor.py::verify_derived_state": "49abd14b5828c5397700248137fe88c069f916fb8a465cab5b7ac92a61be3765",
     "src/frob/dup/_cache.py::get_fingerprint": "13d3a6a454e05691e443e7d8dc6ed772d0242112249fd8e098171317edde0f44",
     "src/frob/dup/_cache.py::get_verdict": "d8ef14a6a2df2d90d5587f8c97cc41ff1a9e4268d5aa8799df7f520c26e2df52",
@@ -1847,5 +1848,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.247.0"
+  "version": "0.248.0"
 }

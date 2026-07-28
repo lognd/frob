@@ -196,6 +196,19 @@ def unbound_acceptance(ticket: Ticket) -> tuple[AcceptanceCriterion, ...]
     # ticket.evidence reads as unbound again (the binding must hold NOW).
 def record_failure(root: Path, ticket_id: str, entry: FailureEntry) -> Result[Ticket, TicketError]
     # Appends to the failure log so no future session retries a dead end.
+    # T-1131: `record_failure` itself stays a pure append (no transition --
+    # some callers log a historical failure retroactively on a ticket that
+    # is not IN_PROGRESS). `frob ticket fail`'s CLI handler
+    # (frob.app.ticket_runner._close_cmd._fail) is the one that ALSO
+    # requeues (IN_PROGRESS -> QUEUED) whenever the ticket was IN_PROGRESS,
+    # right after logging -- that transition is what actually releases the
+    # cross-worktree lease (_sync_cross_worktree_lease only fires on a
+    # transition call). Before T-1131, `frob ticket fail` never
+    # transitioned at all, so a ticket fail-logged mid-flight stayed
+    # IN_PROGRESS holding its lease forever (the T-1050 incident) -- see
+    # `frob doctor`'s stale-ticket-lease scan (docs/guides/install.md
+    # #stale-ticket-lease-scan-t-1131) for the read-side complement (a
+    # ticket already stuck this way, from before this fix).
 def drop_ticket(root: Path, ticket_id: str, reason: str, *,
                  absorbed_by: str | None = None) -> Result[Ticket, TicketError]
     # T-0579: appends a dated line under '## Drop reason' (same append-a-

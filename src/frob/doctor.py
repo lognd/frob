@@ -263,6 +263,45 @@ def _malformed_edges_remediation(edges: tuple[MalformedTicketEdge, ...]) -> str:
     )
 
 
+# frob:ticket T-1131
+# frob:doc docs/guides/install.md#stale-ticket-lease-scan-t-1131
+# frob:tests tests/system/test_cli_doctor.py kind="integration"
+def scan_stale_ticket_leases(root: Path) -> tuple[str, ...]:
+    """Every ticket id `frob.tickets._reconcile.reconcile`'s dry-run
+    (`apply=False`) would requeue right now (T-1131, the T-1050 incident):
+    an `IN_PROGRESS` ticket with no corresponding LIVE cross-worktree
+    lease -- either the lease file's own worktree path no longer exists
+    (T-0473's own liveness probe already judged it stale and pruned the
+    file) or no lease was ever recorded for it at all. This is a pure
+    READ, never a mutation: `reconcile(root, apply=False)` is the exact
+    same detection `frob ticket reconcile --apply`/individual `frob
+    ticket requeue <id>` perform, reused rather than reimplemented here
+    -- `frob doctor` only ever reports, it never repairs. Degrades to an
+    empty tuple on any load failure (a malformed ledger is `frob check`'s
+    own gate to catch, not doctor's job to duplicate)."""
+    from frob.tickets._reconcile import reconcile
+
+    result = reconcile(root, apply=False)
+    if result.is_err:
+        _log.warning(
+            "doctor: stale-ticket-lease scan could not load the ledger: %s",
+            result.danger_err,
+        )
+        return ()
+    return result.danger_ok.requeued_tickets
+
+
+def _stale_ticket_leases_remediation(stale_ids: tuple[str, ...]) -> str:
+    """Remediation hint naming each stuck ticket and the exact fix
+    (T-1131)."""
+    names = ", ".join(stale_ids)
+    return (
+        f"ticket(s) stuck in-progress with no live lease: {names} -- run "
+        "`frob ticket requeue <id>` for each (or `frob ticket reconcile "
+        "--apply` to requeue all of them at once)"
+    )
+
+
 def _sqlite_validity(data: bytes) -> str | None:
     """`None` if `data` starts with the SQLite magic header, else a short
     corruption detail string -- never raises on garbage bytes."""
@@ -493,7 +532,10 @@ class DoctorReport(BaseModel):
     cache churn. `malformed_ticket_edges` (T-1132) is the same class as
     `mutate_journals`: any entry DOES make `healthy` False -- an empty-
     string or malformed `blocked_by`/`parent` entry is a real, silently
-    wrong ledger row (the T-0380 incident), not disposable state."""
+    wrong ledger row (the T-0380 incident), not disposable state.
+    `stale_ticket_leases` (T-1131) is the same class again: a ticket id
+    stuck `IN_PROGRESS` with no live lease (its worktree gone, the T-1050
+    incident) is a real stuck ticket, not disposable state."""
 
     model_config = {}
 
@@ -504,6 +546,7 @@ class DoctorReport(BaseModel):
     scaffold_blocks: list[ManagedBlockStatus] = []
     mutate_journals: list[StaleJournal] = []
     malformed_ticket_edges: list[MalformedTicketEdge] = []
+    stale_ticket_leases: list[str] = []
     healthy: bool
     remediation: str | None = None
 
@@ -537,11 +580,13 @@ def _combined_remediation(
     scaffold_needs_apply: tuple[ManagedBlockStatus, ...] = (),
     stale_mutate_journals: tuple[StaleJournal, ...] = (),
     malformed_ticket_edges: tuple[MalformedTicketEdge, ...] = (),
+    stale_ticket_leases: tuple[str, ...] = (),
 ) -> str | None:
     """The full remediation text for a `DoctorReport`: natives hint,
     derived-state hint, scaffold-conformance hint (T-0736), stale mutate-
-    journal hint (T-0857), malformed-ticket-edge hint (T-1132), or all
-    joined -- `None` only when every part is clean."""
+    journal hint (T-0857), malformed-ticket-edge hint (T-1132), stale-
+    ticket-lease hint (T-1131), or all joined -- `None` only when every
+    part is clean."""
     parts = []
     if not natives_healthy:
         parts.append(REMEDIATION_HINT)
@@ -553,6 +598,8 @@ def _combined_remediation(
         parts.append(_mutate_journal_remediation(stale_mutate_journals))
     if malformed_ticket_edges:
         parts.append(_malformed_edges_remediation(malformed_ticket_edges))
+    if stale_ticket_leases:
+        parts.append(_stale_ticket_leases_remediation(stale_ticket_leases))
     return " | ".join(parts) if parts else None
 
 
@@ -583,6 +630,10 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     malformed `blocked_by`/`parent` entries (`scan_malformed_ticket_edges`,
     the T-0380 incident) -- any finding DOES make `healthy` False.
 
+    T-1131: also reports any ticket stuck `IN_PROGRESS` with no live
+    cross-worktree lease (`scan_stale_ticket_leases`, the T-1050
+    incident) -- any finding DOES make `healthy` False.
+
     T-0879: the fingerprint-read + manifest-write sequence
     (`verify_derived_state` through `_write_drift_manifest`) holds
     `derived_state_lock(resolved_root, exclusive=True)` for its whole
@@ -611,6 +662,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
 
     stale_mutate_journals = list_stale_journals(resolved_root)
     malformed_ticket_edges = tuple(scan_malformed_ticket_edges(resolved_root))
+    stale_ticket_leases = scan_stale_ticket_leases(resolved_root)
 
     healthy = (
         natives_healthy
@@ -618,6 +670,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         and not scaffold_needs_apply
         and not stale_mutate_journals
         and not malformed_ticket_edges
+        and not stale_ticket_leases
     )
     report = DoctorReport(
         frob_version=_frob_version(),
@@ -627,6 +680,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         scaffold_blocks=list(scaffold_blocks),
         mutate_journals=list(stale_mutate_journals),
         malformed_ticket_edges=list(malformed_ticket_edges),
+        stale_ticket_leases=list(stale_ticket_leases),
         healthy=healthy,
         remediation=_combined_remediation(
             natives_healthy,
@@ -634,12 +688,13 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
             scaffold_needs_apply,
             stale_mutate_journals,
             malformed_ticket_edges,
+            stale_ticket_leases,
         ),
     )
     _log.info(
         "doctor: healthy=%s extensions=%s derived_state_corrupt=%s drift=%s "
         "scaffold_needs_apply=%s stale_mutate_journals=%s "
-        "malformed_ticket_edges=%s",
+        "malformed_ticket_edges=%s stale_ticket_leases=%s",
         healthy,
         extensions,
         [d.name for d in corrupt],
@@ -647,5 +702,6 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         [s.block_id for s in scaffold_needs_apply],
         [s.target for s in stale_mutate_journals],
         [f"{e.ticket_id}.{e.field}" for e in malformed_ticket_edges],
+        stale_ticket_leases,
     )
     return report

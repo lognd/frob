@@ -467,6 +467,40 @@ so this scan can find one WITHOUT every OTHER `frob` command built on
 `load_all` being at risk of a single bad edge hard-failing the entire
 shared (1000+-ticket) ledger's load.
 
+## Stale ticket lease scan (T-1131)
+
+<!-- frob:describes src/frob/doctor.py::scan_stale_ticket_leases -->
+
+`frob doctor` also reports any ticket stuck `IN_PROGRESS` with no live
+cross-worktree lease (`DoctorReport.stale_ticket_leases`, a tuple of ticket
+ids) -- the T-1050 incident: an agent `frob ticket fail`-logged a
+superseded ticket, removed its worktree, and the ticket sat `IN_PROGRESS`
+pointing at a now-nonexistent path until a coordinator noticed and
+hand-dropped it. `frob ticket fail` itself now requeues automatically
+(T-1131, see `docs/modules/tickets.md#public-api`'s `record_failure`/
+`_fail` note) -- this scan is the safety net for every OTHER way a ticket
+can end up stuck this way (a lease-stamp ledger sync, a crashed agent that
+never ran `fail` at all, `docs/modules/tickets.md#frob-ticket-reconcile-
+t-0476`'s own "stale hold" anomaly class).
+
+Reuses `frob.tickets._reconcile.reconcile(root, apply=False)` -- the SAME
+dry-run detection `frob ticket reconcile`/`frob ticket requeue <id>`
+perform -- rather than reimplementing lease-staleness logic a second time.
+Like a stale mutate-backup journal, a finding here DOES fold into the
+overall `healthy`/`remediation` verdict:
+
+```bash
+frob doctor
+# ... ticket(s) stuck in-progress with no live lease: T-1050 -- run
+# `frob ticket requeue <id>` for each (or `frob ticket reconcile --apply`
+# to requeue all of them at once)
+```
+
+`frob doctor` never requeues anything itself -- it only reports; the fix
+is `frob ticket requeue <id>` (one ticket) or `frob ticket reconcile
+--apply` (every stale hold at once, see `docs/modules/tickets.md#frob-
+ticket-reconcile-t-0476` for the full reconcile design).
+
 ## Scaffold managed-block conformance (T-0736)
 
 <!-- frob:describes src/frob/scaffold/_managed.py::scaffold_conformance_status -->

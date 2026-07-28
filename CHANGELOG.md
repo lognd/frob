@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.248.0] - unreleased
+
+- T-1131: tickets: fail/retire releases leases; doctor flags leases on nonexistent worktrees
+
 ## [0.247.0] - unreleased
 
 - T-1126: daemon: wire run_coverage_wait through the daemon-owned coverage lease RPC (T-1097 follow-up)

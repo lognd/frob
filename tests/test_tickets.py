@@ -679,6 +679,65 @@ class TestDropCli:
         assert exc_info.value.code == 1
 
 
+# frob:ticket T-1131
+class TestFailCliRequeues:
+    """T-1131 (the T-1050 incident): `frob ticket fail` used to only
+    append a Failure log entry, never transitioning the ticket -- an
+    IN_PROGRESS ticket stayed IN_PROGRESS (and its cross-worktree lease
+    stayed held) forever after a fail-log, even once the worktree that
+    held the lease was removed. `_fail` now requeues (IN_PROGRESS ->
+    QUEUED) whenever the ticket was IN_PROGRESS, which is exactly the
+    `transition` call that releases the lease
+    (`_sync_cross_worktree_lease`)."""
+
+    def test_fail_requeues_an_in_progress_ticket(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_fail kind="unit"
+        from frob.app.ticket_runner._close_cmd import _fail
+
+        _write(tmp_path, _ticket(state=TicketState.IN_PROGRESS))
+        cfg = AppConfig(
+            ticket_command="fail",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_summary="dead end, superseded by T-9999",
+        )
+        _fail(tmp_path, cfg)
+
+        queue = load_queue(tmp_path).danger_ok
+        ticket = queue.tickets["T-0001"]
+        assert ticket.state == TicketState.QUEUED
+        assert "dead end, superseded by T-9999" in ticket.body
+
+    def test_fail_leaves_a_non_in_progress_ticket_state_unchanged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_fail kind="unit"
+        from frob.app.ticket_runner._close_cmd import _fail
+
+        _write(tmp_path, _ticket(state=TicketState.QUEUED))
+        cfg = AppConfig(
+            ticket_command="fail",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_summary="attempted before start, noting a dead end",
+        )
+        _fail(tmp_path, cfg)
+
+        queue = load_queue(tmp_path).danger_ok
+        # already QUEUED, not IN_PROGRESS -- no transition attempted, no
+        # InvalidTransition crash, state stays exactly what it was.
+        assert queue.tickets["T-0001"].state == TicketState.QUEUED
+
+    def test_fail_requires_id_and_summary(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_fail kind="unit"
+        from frob.app.ticket_runner._close_cmd import _fail
+
+        cfg = AppConfig(ticket_command="fail", ticket_path=tmp_path)
+        with pytest.raises(SystemExit) as exc_info:
+            _fail(tmp_path, cfg)
+        assert exc_info.value.code == 1
+
+
 # frob:ticket T-1132
 class TestBlockCliValidatesBy:
     """T-1132: `frob ticket block <id> --by <other>` mutates an EXISTING
