@@ -1543,7 +1543,7 @@ starting; other tickets may land in the interim and change the count.
 id: T-1084
 title: 'arch: abstraction-opportunity arch package extraction (T-0393/T-1067 remainder,
   27 findings)'
-state: in-progress
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -1686,6 +1686,9 @@ touched).
 
 ## Failure log
 - 2026-07-28 attempt 1: triage of all 27 groups found none safely extractable in src/frob/arch/ scope without reversing prior reviewed design decisions (T-0686) or fragmenting deliberate check-registry/per-language-mirror conventions; filed T-draft-372a1425 for the one genuine detector-precision gap found
+
+## Drop reason
+- 2026-07-28: triage of all 27 groups (read every member body) found none safely extractable in src/frob/arch/ scope without reversing a prior reviewed design decision (T-0686) or fragmenting the deliberate check-registry/per-language-mirror conventions; the one genuine detector-precision gap found is filed separately, not this ticket's own extraction plan (absorbed by T-draft-372a1425)
 <!-- ticket:T-1085 -->
 ```yaml
 id: T-1085
