@@ -1187,3 +1187,16 @@ What landed on top of the lockfile-conformance MVP:
   `versionType=custom`), and `tests/unit/cve/test_parser.py` asserts an
   exact file count over the T-0146 mirror directory, so adding files there
   would have broken it.
+
+## SEC005 taint rule (T-0781)
+
+`frob.vet._taint.taint_findings` is the intra-function/intra-module taint
+pass behind the SEC005 gate (`frob.gates._taint_gate`): a value parsed
+from repo-writable state (`.git/`- or `.frob/`-relative reads) reaching a
+`subprocess`/`frob.gitio.run_argv` argv position without an intervening
+validator-shaped call or a preceding literal `--` terminator is a
+command-injection-adjacent trust-boundary finding. Each finding is a
+`TaintFinding` (source line, sink line, variable, sink call). Disclosed
+scope cuts: literal-argv sinks only, no interprocedural flow (phase 2 per
+T-0781's body); WARN-tier at first turn-on per the T-0688/T-0973
+promotion precedent.

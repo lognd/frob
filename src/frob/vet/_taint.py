@@ -93,6 +93,7 @@ _VALIDATOR_NAME_RE = re.compile(
 
 
 @dataclass(frozen=True)
+# frob:doc docs/modules/vet.md#sec005-taint-rule-t-0781
 class TaintFinding:
     """One SEC005 finding: a repo-state-sourced value reaching an argv sink
     with no validator hop or `--` terminator between source and sink."""
@@ -185,6 +186,40 @@ def _validated_names(call: ast.Call) -> list[str]:
     return names
 
 
+def _sink_findings(
+    call: ast.Call, func_name: str | None, tainted: dict[str, int]
+) -> list[TaintFinding]:
+    """Findings for one sink call's literal argv: every element still
+    tainted at its position, honoring a preceding literal `"--"` in the
+    SAME argv list as a terminator that clears every later element
+    (T-0781's acceptance criterion)."""
+    elements = _sink_argv_elements(call)
+    if elements is None:
+        return []
+    findings: list[TaintFinding] = []
+    cleared = False
+    for elt in elements:
+        if (
+            isinstance(elt, ast.Constant)
+            and isinstance(elt.value, str)
+            and elt.value == "--"
+        ):
+            cleared = True
+            continue
+        if cleared:
+            continue
+        if isinstance(elt, ast.Name) and elt.id in tainted:
+            findings.append(
+                TaintFinding(
+                    source_line=tainted[elt.id],
+                    sink_line=call.lineno,
+                    var_name=elt.id,
+                    sink_call=func_name or "<unknown>",
+                )
+            )
+    return findings
+
+
 def _scan_statements(stmts: list[ast.stmt], rel_path: str) -> list[TaintFinding]:
     """One linear top-to-bottom pass over a function/module body's direct
     statement list: tracks `tainted: dict[name, source_line]`, clears an
@@ -205,29 +240,7 @@ def _scan_statements(stmts: list[ast.stmt], rel_path: str) -> list[TaintFinding]
                 for name in _validated_names(call):
                     tainted.pop(name, None)
             if func_name in _SINK_CALL_NAMES:
-                elements = _sink_argv_elements(call)
-                if elements is None:
-                    continue
-                cleared = False
-                for elt in elements:
-                    if (
-                        isinstance(elt, ast.Constant)
-                        and isinstance(elt.value, str)
-                        and elt.value == "--"
-                    ):
-                        cleared = True
-                        continue
-                    if cleared:
-                        continue
-                    if isinstance(elt, ast.Name) and elt.id in tainted:
-                        findings.append(
-                            TaintFinding(
-                                source_line=tainted[elt.id],
-                                sink_line=call.lineno,
-                                var_name=elt.id,
-                                sink_call=func_name or "<unknown>",
-                            )
-                        )
+                findings.extend(_sink_findings(call, func_name, tainted))
 
         if isinstance(stmt, (ast.Assign, ast.AnnAssign)) and stmt.value is not None:
             targets = stmt.targets if isinstance(stmt, ast.Assign) else [stmt.target]
@@ -255,6 +268,7 @@ def _scan_statements(stmts: list[ast.stmt], rel_path: str) -> list[TaintFinding]
 
 # frob:tests tests/unit/vet/test_taint.py::TestTaintFindings.test_unvalidated_state_read_reaching_argv_fires  # noqa: E501
 # frob:tests tests/unit/vet/test_taint.py::TestTaintFindings.test_validated_value_does_not_fire  # noqa: E501
+# frob:doc docs/modules/vet.md#sec005-taint-rule-t-0781
 def taint_findings(path: Path) -> tuple[TaintFinding, ...]:
     """SEC005 findings for the Python source file at `path`: every
     function body (`FunctionDef`/`AsyncFunctionDef`) and the module's own
