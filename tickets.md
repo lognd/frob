@@ -1815,9 +1815,8 @@ frob check --ticket T-1081 --only drift/--only test: 0 errors both runs.
 - `tests/test_gates.py::TestActiveTicket::test_explicit_flag_wins` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 5 passed (from 5 evidence id(s))
+- tests: 6 passed (from 6 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
-
 <!-- ticket:T-1082 -->
 ```yaml
 id: T-1082
