@@ -204,41 +204,67 @@ is the more actionable finding); DEPR003 and DEPR004 are otherwise mutually
 exclusive per edge (a given deprecation is either still in its window or
 past sunset, never both).
 
-#### DEPR005: new-caller baseline ratchet (T-0639)
+#### DEPR005: new-caller baseline ratchet (T-0639, redesigned T-1052)
 
 T-0576's original body wanted a deprecated symbol GAINING new callers to
 fire a finding, but a public symbol's callers are not resolvable by
 `frob.graph.callgraph` (private-callee-only by design, T-0639's design
-decision). Rather than extend the callgraph, DEPR005 is a baseline-ratchet
-over a MEASURED reference set, the same idiom `PERF009`'s hot-graph
-regression ratchet (`frob.perf._ratchet`) applies to a quantile:
+decision -- extending it to public callees is out of scope for this rule
+too, T-1052). Rather than extend the callgraph, DEPR005 is a
+baseline-ratchet over a MEASURED reference set, the same idiom `PERF009`'s
+hot-graph regression ratchet (`frob.perf._ratchet`) applies to a quantile:
 
 - `frob.gates.deprecated_current_references(symbol, root)` -- the current
-  `file:line` reference set for a deprecated symbol's bare identifier,
-  the union of `frob.exports.exports_consumers` (T-0876, file-level
-  import-statement consumers) and `frob.xref.xref` (parsed identifier
-  usages), excluding the symbol's own defining file.
+  `file:line` reference set for a deprecated symbol's bare identifier.
+  T-0639's original version unioned `frob.exports.exports_consumers`
+  (T-0876, file-level import-statement consumers) with EVERY call-shaped
+  `frob.xref.xref` identifier usage in the tree, which bare-name-matched
+  any identically-named call anywhere (`subprocess.run(` counted as a
+  caller of any `run`-named deprecated symbol -- ~900 junk references per
+  symbol in practice). T-1052 adds the missing edge-resolution step: a
+  call-shaped usage only counts when its file is ALSO one of
+  `exports_consumers`' import-statement hits for that same symbol -- i.e.
+  the file actually imports the deprecated name, not merely spells it.
+  This is this rule's own resolution over the same "is this really an
+  edge to that symbol" question `frob.graph.callgraph.build_call_graph`
+  answers for private callees, without extending that module. The
+  symbol's own defining file is still excluded (its declaration line and
+  any purely internal same-file mention are not a "new caller").
+- `frob.gates._deprecated_baseline.file_reference_counts(refs)` -- projects
+  a `file:line` reference set down to `{file: count}`, dropping line
+  numbers; this is the line-insensitivity boundary (T-1052).
 - `frob.gates._deprecated_baseline.DeprecatedBaselineLock` -- the
   committed `frob-deprecated-baseline.lock.json` (repo-root, outside
   `.frob/`'s gitignored reach, same naming convention as
   `frob-ratchet.lock.json`/`frob-coverage.lock.json`, T-0569/T-0545): one
-  entry per deprecated symbol, each a frozen `file:line` reference set.
-- **DEPR005**: a live `frob:deprecated` symbol's current reference set
-  contains a member absent from its committed baseline entry -- a
-  genuinely NEW adopter of a symbol already declared on its way out.
-  ERROR. A symbol never baselined at all fires nothing (`deprecated_gate`
-  only ever READS the committed file; seeding is
-  `tighten_deprecated_baseline`'s job, never the gate's).
+  entry per deprecated symbol, each a frozen set of `"file#count"`-encoded
+  per-file reference counts (`DeprecatedBaselineEntry.file_counts`) --
+  keyed on `(file, symbol)`, NOT `(file, line)`, so a pure line-shift
+  edit inside an already-referencing file never changes the baseline
+  (T-1052; the old `file:line` shape churned on every such edit, forcing
+  three coordinator re-baselines in one session before T-1052 -- see the
+  incident history this rewrite closed out).
+- **DEPR005**: a live `frob:deprecated` symbol has a referencing file whose
+  CURRENT reference count exceeds what is baselined for that file (a new
+  file entirely, or more call sites inside an already-referencing file) --
+  a genuinely NEW adopter of a symbol already declared on its way out, or
+  growing adoption inside a file that already had some. ERROR. A symbol
+  never baselined at all fires nothing (`deprecated_gate` only ever READS
+  the committed file; seeding is `tighten_deprecated_baseline`'s job,
+  never the gate's).
 - `frob.gates._deprecated_baseline.tighten_deprecated_baseline` -- the
   write side, called separately (at land) once a fresh reference-set
   snapshot exists: a symbol never baselined before is seeded whole (its
-  first-observed references are legacy, not flagged); an already-
-  baselined symbol's entry SHRINKS to the intersection of what was
-  baselined and what is still observed (a caller that disappeared
-  auto-tightens the baseline) but never GROWS past what was baselined (a
-  genuinely new reference stays un-baselined, and DEPR005 keeps firing,
-  until a human re-baselines deliberately); a symbol no longer deprecated
-  drops out of the baseline entirely.
+  first-observed per-file counts are legacy, not flagged); an already-
+  baselined symbol's entry SHRINKS, per file, to the MINIMUM of the
+  baselined count and the currently-observed count, over files present in
+  both (a caller file that disappeared drops out entirely; a file whose
+  count fell keeps only the lower count) but never GROWS a file's count
+  past what was baselined (a genuinely new reference -- a new file, or
+  more references inside an already-baselined file -- stays un-baselined,
+  and DEPR005 keeps firing on it, until a human re-baselines
+  deliberately); a symbol no longer deprecated drops out of the baseline
+  entirely.
 
 DEPR005 is orthogonal to DEPR003/DEPR004 -- a symbol can be both
 in-window/past-sunset AND gaining new callers at once; DEPR002 (ticket not

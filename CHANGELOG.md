@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.204.0] - unreleased
+
+- T-1052: DEPR005: callgraph-resolved references + line-insensitive baseline keying (bare-name text match plus file:line keys red-main on nearly every land)
+
 ## [0.203.0] - unreleased
 
 - T-1054: frob ticket start from a worktree leaves the root ledger state transition uncommitted -- DirtyMain then blocks every land until a human commits it

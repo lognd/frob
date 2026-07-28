@@ -77,7 +77,10 @@ from frob.gates._coverage import (
 )
 from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
 from frob.gates._dead_symbols import dead_symbol_gate
-from frob.gates._deprecated_baseline import load_deprecated_baseline
+from frob.gates._deprecated_baseline import (
+    file_reference_counts,
+    load_deprecated_baseline,
+)
 from frob.gates._design_invariants import inv007_violations, inv008_violations
 from frob.gates._docblocks import doc004_gate, doc005_gate
 from frob.gates._docptr import doc006_gate
@@ -5509,37 +5512,48 @@ def _looks_like_call(symbol: str, context: str) -> bool:
     return bool(re.search(rf"\b{re.escape(symbol)}\s*\(", context))
 
 
-# frob:doc docs/modules/gates.md#depr005-new-caller-baseline-ratchet-t-0639
+# frob:doc docs/modules/gates.md#depr005-new-caller-baseline-ratchet-t-0639-redesigned-t-1052  # noqa: E501
 # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr005_reference_set_combines_consumers_and_xref kind="unit"  # noqa: E501
+# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDeprecatedCurrentReferencesImportGating.test_unrelated_same_name_call_in_non_importing_file_is_excluded kind="unit"  # noqa: E501
 def deprecated_current_references(symbol: str, root: Path) -> frozenset[str]:
     """The current `file:line` reference set for bare identifier `symbol`
-    under `root` (T-0639): the union of `frob.exports.exports_consumers`'s
-    file-level import-statement consumers (T-0876) and
-    `frob.xref.xref`'s Python-scoped, call-shaped identifier usages
-    (`_looks_like_call`), excluding any usage in the symbol's own defining
-    file (its declaration line and any purely internal same-file mention
-    are not a "new caller").
+    under `root` (T-0639, callgraph-resolved as of T-1052): the union of
+    `frob.exports.exports_consumers`'s file-level import-statement
+    consumers (T-0876) and `frob.xref.xref`'s Python-scoped, call-shaped
+    identifier usages (`_looks_like_call`) -- but a call-shaped usage only
+    counts when it falls in a file that itself imports `symbol` (i.e. is
+    also an `exports_consumers` hit for `symbol`), excluding any usage in
+    the symbol's own defining file (its declaration line and any purely
+    internal same-file mention are not a "new caller").
 
-    Deliberately keyed on the BARE identifier, same as both underlying
-    lookups -- a common short name (e.g. `run`) can still over-match an
-    unrelated identically-named call elsewhere in the tree even after the
-    call-shape/`lang="python"` narrowing above. This rule tolerates that
-    residual noise: it is a baseline DIFF, not an absolute count, so
-    whatever remains at seed time is baselined away and only a reference
-    that is genuinely NEW since the baseline was last tightened ever
-    fires DEPR005 -- see `frob.gates._deprecated_baseline`'s module
-    docstring."""
+    `frob.graph.callgraph.build_call_graph` itself never resolves an edge
+    to a PUBLIC callee by design (T-0639's original design decision, see
+    this module's DEPR005 docs anchor above) -- extending it would be a
+    much larger change than this rule needs.
+    The import-gate here is this rule's own edge resolution over the same
+    substrate `build_call_graph` uses for private helpers: a bare
+    identifier match is not accepted as a reference unless the file
+    actually imports that exact name, which is what tells
+    `subprocess.run(` (a file that never imports the deprecated `run`)
+    apart from a genuine caller of a deprecated `run` (a file with `from
+    xref_runner import run` and a `run(...)` call site) -- T-1052's fix
+    for the bare-short-name over-match that made nearly every `.run(` in
+    the tree count as a caller of any `run`-named deprecated symbol."""
     refs: set[str] = set()
     consumers_result = exports_consumers(symbol, root, lang="python")
+    importing_files: set[str] = set()
     if consumers_result.is_ok:
         for consumer in consumers_result.danger_ok.consumers:
             refs.add(f"{consumer.file}:{consumer.line}")
+            importing_files.add(consumer.file)
     xref_result = xref(symbol, root, lang="python")
     if xref_result.is_ok:
         xr = xref_result.danger_ok
         definition_file = xr.definition.file if xr.definition else None
         for usage in xr.usages:
             if definition_file is not None and usage.file == definition_file:
+                continue
+            if usage.file not in importing_files:
                 continue
             if not _looks_like_call(symbol, usage.context):
                 continue
@@ -5548,15 +5562,22 @@ def deprecated_current_references(symbol: str, root: Path) -> frozenset[str]:
 
 
 # frob:enforces CHK-GATE-DEPR005
+# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth.test_same_count_as_baseline_does_not_fire kind="unit"  # noqa: E501
+# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth.test_growth_beyond_baseline_fires_at_the_right_file_and_line kind="unit"  # noqa: E501
 def _depr005_violations(
     snapshot: GraphSnapshot, queue: TicketQueue, root: Path, *, current_date: str
 ) -> tuple[Violation, ...]:
     """DEPR005: a live `frob:deprecated` symbol's current reference set
-    (`deprecated_current_references`) contains a `file:line` absent from
+    (`deprecated_current_references`) has a referencing file whose
+    resolved-reference COUNT exceeds what is baselined for that file in
     the committed `frob-deprecated-baseline.lock.json`
-    (`frob.gates._deprecated_baseline.load_deprecated_baseline`) -- a
-    genuinely NEW caller of a symbol already declared on its way out
-    (T-0639, the T-0576 body's original "gaining new callers" request).
+    (`frob.gates._deprecated_baseline.load_deprecated_baseline`,
+    `DeprecatedBaselineEntry.file_counts`) -- a genuinely NEW adopter of a
+    symbol already declared on its way out, or a new call site added
+    inside a file that already had some (T-0639, redesigned line-
+    insensitively on the `(file, symbol)` key in T-1052: a file's count
+    exceeding its baseline is what fires, never a raw file:line diff, so
+    a pure line-shift inside an already-referencing file changes nothing).
     A symbol never baselined at all fires nothing (its first-observed
     reference set is legacy, seeded rather than flagged --
     `tighten_deprecated_baseline` is what performs that seeding; this
@@ -5575,23 +5596,33 @@ def _depr005_violations(
             continue
         symbol = _bare_symbol_name(edge.src)
         current_refs = deprecated_current_references(symbol, root)
-        new_refs = sorted(current_refs - frozenset(entry.references))
-        for ref in new_refs:
-            ref_file, _, ref_line_s = ref.rpartition(":")
-            try:
-                ref_line = int(ref_line_s)
-            except ValueError:
-                ref_file, ref_line = ref, 1
-            _log.warning("DEPR005: %s gained new caller %s", edge.src, ref)
+        current_counts = file_reference_counts(current_refs)
+        baseline_counts = entry.file_counts()
+        grown_files = sorted(
+            file
+            for file, count in current_counts.items()
+            if count > baseline_counts.get(file, 0)
+        )
+        for grown_file in grown_files:
+            grown_lines = sorted(
+                int(ref.rpartition(":")[2])
+                for ref in current_refs
+                if ref.rpartition(":")[0] == grown_file
+                and ref.rpartition(":")[2].isdigit()
+            )
+            ref_line = grown_lines[0] if grown_lines else 1
+            _log.warning(
+                "DEPR005: %s gained new caller(s) in %s", edge.src, grown_file
+            )
             violations.append(
                 Violation(
                     rule="DEPR005",
                     severity=Severity.ERROR,
-                    file=ref_file,
+                    file=grown_file,
                     line=ref_line,
                     message=(
                         f"DEPR005: {edge.src} is deprecated (ticket={ticket_id!r}) "
-                        f"but gained a new caller at {ref} absent from "
+                        f"but gained a new caller in {grown_file} absent from "
                         f"frob-deprecated-baseline.lock.json; migrate off the "
                         f"deprecated symbol instead of adopting it further"
                     ),

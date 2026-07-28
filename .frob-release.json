@@ -525,8 +525,10 @@
     "src/frob/gates/_dead_symbols.py::dead_symbol_gate": "ccb75a1a6ec73b33e90b0e278ce29174ab50c40a60fd3da4e75867bee5a7eb97",
     "src/frob/gates/_deprecated_baseline.py::BASELINE_REL": "737c39a07440357e7bf4aee9230925306f9e2399e7c7d32b7c597816ace39859",
     "src/frob/gates/_deprecated_baseline.py::DeprecatedBaselineEntry": "11e314f11f5eae421bc9247a54dcc9d3ad118b9dd8e06ed1d5feb0d482bab991",
+    "src/frob/gates/_deprecated_baseline.py::DeprecatedBaselineEntry.file_counts": "59fca6a0cc0247b7b17fb2ff59d361abcec03ece90123b6d22d621db77caa6ef",
     "src/frob/gates/_deprecated_baseline.py::DeprecatedBaselineLock": "e565013184ad4e3c1a243161df73243b2aca70a5255b5572453fb80f0215cc8f",
     "src/frob/gates/_deprecated_baseline.py::DeprecatedBaselineLock.for_symbol": "01ad12638d181b6cbb703fd9d889772baec5c11f12f0e562babe14a32749ddc7",
+    "src/frob/gates/_deprecated_baseline.py::file_reference_counts": "c7d32bbfbe4503ba03d9320a70d6e274bb25cf16847f339bd73238d870404d21",
     "src/frob/gates/_deprecated_baseline.py::load_deprecated_baseline": "c7844197c2cca855512dde4633614a3f866e6d5207bc6e70407fd0ec7e05b19c",
     "src/frob/gates/_deprecated_baseline.py::save_deprecated_baseline": "9490f2f7034697840d1757b8e9e325fed446c676dc1298f0438e23c161a07ba4",
     "src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline": "a60c02358828da63241adceaeee5e7cc742785578958388a92e2910fc86b34aa",
@@ -1783,5 +1785,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.203.0"
+  "version": "0.204.0"
 }
