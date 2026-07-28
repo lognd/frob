@@ -260,6 +260,18 @@ bug; others (the gitless-target severity assertion, the render-lint
 stderr-vs-logging-capture mismatch) look like real, fixable test/gate
 bugs. Scope was deliberately not widened to fix these under T-0997.
 
+2026-07-28 coordinator addendum (refiled from a w18-strata3 draft that
+died to ledger-restore cycles): three more members of this failure set,
+each verified pre-existing on main and unrelated to the wave-17/18
+changes: tests/system/test_export_golden.py TestExportGolden
+test_seccomp; tests/unit/strata/test_effects.py
+TestDeployServeMutateNodeSplitConformance
+test_serve_declares_zero_may_and_exercises_zero_effects;
+tests/test_registry_cross_corpus_totality.py
+TestCrossCorpusLinkageIntegrity
+test_every_cross_ref_is_mutually_navigable. Fold them into this
+ticket's triage denominator.
+
 <!-- ticket:T-1012 -->
 ```yaml
 id: T-1012
