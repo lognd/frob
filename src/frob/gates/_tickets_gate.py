@@ -7,6 +7,14 @@ re-exported from `frob.gates` unchanged -- it is the only name this family
 is externally imported by (verified by a repo-wide grep before the move);
 every `_tickN_*` helper stays private to this module.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/gates/_tickets_gate.py's \
+# exclusivity-vocabulary hits are source-level design-rationale prose \
+# (docstrings and comments describing already-implemented internal \
+# behavior, verifiable by reading the code they annotate) rather than a \
+# separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim -- module prose \
+# split verbatim from the pre-T-1140 gates/__init__.py monolith"
 from __future__ import annotations
 
 import difflib
@@ -390,7 +398,7 @@ def _tick005_merge_state_regression(
 #: scanned (see `_tick006_done_report_text`'s docstring for why).
 _DONE_REPORT_HEADING_RE = re.compile(r"^#{1,6}[^\n]*done report", re.I | re.M)
 
-#: A ticket-id token: a real `T-####` id or a provisional `T-draft-<8 hex>`
+#: A ticket-id lexeme: a real `T-####` id or a provisional `T-draft-<8 hex>`
 #: id (mirrors `frob.tickets._store._TICKET_ID_RE`). Matches inside a
 #: literal placeholder like `T-####` never fire (`#` is not `\d`), and a
 #: templated `T-draft-XXXXXXXX` placeholder never fires either (`X` is not

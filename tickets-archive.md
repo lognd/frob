@@ -127572,8 +127572,9 @@ follow-up ticket for docs/commands/sys.md (which also documents plan/doc/
 export/audit and was similarly out of scope) was filed as a draft.
 
 Out-of-scope findings filed as new draft tickets (not fixed here):
-- docs: document frob sys sync-interface in docs/commands/sys.md (draft
-  T-draft-84b54204 at filing time; verify renumbered id on main)
+- docs: document frob sys sync-interface in docs/commands/sys.md (the
+  draft died to ledger-restore cycles; refiled by the coordinator as
+  T-1160)
 - test: 3 pre-existing main test failures unrelated to T-1150, verified by
   reverting design/frob.strata to HEAD in this worktree and reproducing all
   three unchanged (test_export_golden.py::test_seccomp,

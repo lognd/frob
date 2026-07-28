@@ -398,6 +398,7 @@ Unlike drift (previous section), this DOES fold into the overall
 `healthy`/`remediation` verdict -- a stale journal names a live source-
 file problem, not disposable cache churn:
 
+<!-- frob:waive DOC004 reason="illustrative frob doctor output example -- demonstrates the remediation verdict format with stand-in paths, not a bound, executable command sequence" -->
 ```bash
 frob doctor
 # ... mutate-backup journal(s) needing restore: src/pkg/m.py -- re-run
@@ -447,6 +448,7 @@ days with nothing surfacing WHY.
 Like a stale mutate-backup journal (previous section), a finding here DOES
 fold into the overall `healthy`/`remediation` verdict:
 
+<!-- frob:waive DOC004 reason="illustrative frob doctor output example -- demonstrates the malformed-edge remediation format with a historical specimen, not a bound, executable command sequence" -->
 ```bash
 frob doctor
 # ... malformed ticket edge(s) found: T-0380.blocked_by='' -- fix by hand

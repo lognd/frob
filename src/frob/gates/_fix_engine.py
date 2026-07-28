@@ -14,6 +14,14 @@ actual `frob check --fix` CLI flag is a later batch of the same epic
 `apply_tier_a_fixes` is this module's callable entry point, ready for
 that CLI batch to call directly.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/gates/_fix_engine.py's \
+# exclusivity-vocabulary hits are source-level design-rationale prose \
+# (docstrings and comments describing already-implemented internal \
+# behavior, verifiable by reading the code they annotate) rather than a \
+# separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim -- new T-1138 \
+# module documenting its own tier contract"
 
 from __future__ import annotations
 
@@ -260,6 +268,7 @@ def fix_tick002_renumber(root: Path, queue: TicketQueue) -> list[FixApplied]:
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+# frob:tests tests/test_gates.py::TestFixEngineTierA.test_doc007_dotted_form_rewrite_applies_and_reverifies_clean kind="unit"  # noqa: E501
 def apply_tier_a_fixes(
     root: Path, snapshot: GraphSnapshot, queue: TicketQueue
 ) -> list[FixApplied]:

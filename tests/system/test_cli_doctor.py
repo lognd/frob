@@ -429,6 +429,7 @@ class TestDoctorMalformedTicketEdges:
     anything itself."""
 
     # frob:tests src/frob/doctor.py
+    # frob:waive PII012 reason="test name mirrors the run_diagnosis API symbol it exercises; repository self-check machinery, no person-related data anywhere in the test"  # noqa: E501
     def test_run_diagnosis_healthy_with_no_malformed_edges(
         self, tmp_path: Path
     ) -> None:
@@ -548,6 +549,7 @@ class TestDoctorStaleTicketLeases:
         )
 
     # frob:tests src/frob/doctor.py
+    # frob:waive PII012 reason="test name mirrors the run_diagnosis API symbol it exercises; repository self-check machinery, no person-related data anywhere in the test"  # noqa: E501
     def test_run_diagnosis_healthy_with_no_stale_leases(self, tmp_path: Path) -> None:
         """A fresh checkout with no tickets.md at all reports an empty
         `stale_ticket_leases` list."""

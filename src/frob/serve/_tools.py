@@ -406,7 +406,7 @@ def _run_verify_pass(root: Path, cfg, warm_violations: tuple) -> dict:
 
 # frob:doc docs/modules/serve.md#tools
 # frob:doc docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602  # noqa: E501
-# frob:doc docs/modules/serve.md#frob-check---delta-cli-parity-t-1147
+# frob:doc docs/modules/serve.md#proxied-commands
 # frob:ticket T-0602
 # frob:ticket T-1147
 # frob:tests tests/test_serve.py::TestCheckDelta.test_delta_against_fresh_baseline_is_empty kind="unit"  # noqa: E501
