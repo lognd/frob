@@ -6283,3 +6283,34 @@ afterward, and (if feasible) look at whether the tickets-archive.md
 merge/land path needs a splice-guard the way tickets.md already has
 (frob ticket merge-driver) to prevent this class of regression from
 recurring for any future ledger-adjacent file.
+
+<!-- ticket:T-1154 -->
+```yaml
+id: T-1154
+title: 'land: take main''s side for ledger/archive files the ticket did not deliberately
+  edit (wrong-side-merge corruption, 3rd occurrence)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- tests/test_ticket_land.py
+acceptance:
+- text: GIVEN a worktree whose tickets-archive.md (or tickets.md blocks outside the
+    landing ticket's own edits) is merely stale relative to main WHEN frob ticket
+    land merges THEN main's newer content wins wholesale and the landed diff contains
+    no reversion of main-side ledger/archive content the ticket never touched
+  evidence: []
+- text: GIVEN a ticket that DID deliberately edit tickets-archive.md (e.g. an evidence-path
+    migration) THEN its edits land normally -- staleness detection distinguishes unchanged-since-branch
+    from deliberately-edited
+  evidence: []
+threat: null
+component: null
+```
+Third occurrence of the wrong-side-merge corruption class (standing rule: 3rd hit files the root-cause ticket on the merge path). Latest instance: T-1145's land bc834b95 reverted T-1143's tickets-archive.md evidence-path migration (40 parse.rs -> parse/mod.rs occurrences reintroduced) because the worktree's stale archive copy won the merge; T-1153 documents the damage. Two prior agent-observed instances noted in wave 9. T-0959's splice guard covers archive BLOCK LOSS; this is content regression. Detection: compare the worktree file to the merge-base version -- unchanged-in-worktree means the worktree has no claim, take main's side.
