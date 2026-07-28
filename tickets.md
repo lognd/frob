@@ -1481,6 +1481,7 @@ silently declaring the whole remainder done.
 ### Captured claims
 - tests: 11 passed (from 11 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-1081 -->
 ```yaml
 id: T-1081
