@@ -4815,7 +4815,7 @@ User directive 2026-07-28: the annoying errors are the ones whose fix is mechani
 id: T-1138
 title: 'gates --fix Tier-A batch 1: directive-form rewrite + unique anchor-slug correction
   + TICK002 renumber'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -4827,21 +4827,148 @@ scope:
 - src/frob/gates/**
 - src/frob/tickets/**
 - tests/test_gates.py
+- design/frob.strata
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: 'This ticket adds real new public symbols to frob.gates (FixApplied,
+
+    apply_tier_a_fixes, fix_doc002_unique_slug, fix_doc007_dotted_form,
+
+    fix_tick002_renumber). SYS104 is now mandatory (coordinator directive,
+
+    T-1113''s flip): the gates node in design/frob.strata needs its
+
+    interface= attrs updated in the same land or main goes red. Adding it
+
+    so that mechanical upkeep can land alongside the new symbols.
+
+    '
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
+- tests/test_gates.py::TestFixEngineTierA::test_doc007_already_dotted_is_a_no_op
+- tests/test_gates.py::TestFixEngineTierA::test_doc002_unique_fuzzy_candidate_rewritten_and_reverifies_clean
+- tests/test_gates.py::TestFixEngineTierA::test_doc002_ambiguous_candidates_stay_unfixed
+- tests/test_gates.py::TestFixEngineTierA::test_doc002_zero_candidates_stay_unfixed
+- tests/test_gates.py::TestFixEngineTierA::test_tick002_renumbers_draft_and_reverifies_clean
+- tests/test_gates.py::TestFixEngineTierA::test_tick002_off_default_branch_is_a_no_op
 acceptance:
 - text: 'GIVEN a frob:tests edge in pytest :: form WHEN --fix runs THEN it is rewritten
     to the dotted Class.method form and DRIFT002/DOC007 re-verify clean'
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
+  - tests/test_gates.py::TestFixEngineTierA::test_doc007_already_dotted_is_a_no_op
 - text: GIVEN a frob:doc/frob:tests anchor whose slug mismatches but fuzzy-matches
     exactly one real heading slug in the target doc THEN --fix rewrites it to that
     slug; zero or multiple candidates stay unfixed with an assisted fix-it
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierA::test_doc002_unique_fuzzy_candidate_rewritten_and_reverifies_clean
+  - tests/test_gates.py::TestFixEngineTierA::test_doc002_ambiguous_candidates_stay_unfixed
+  - tests/test_gates.py::TestFixEngineTierA::test_doc002_zero_candidates_stay_unfixed
 - text: GIVEN a TICK002 draft-survived-onto-main finding THEN --fix performs the renumber
     it already prescribes, including prose-reference rewrite once T-1125 lands
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierA::test_tick002_renumbers_draft_and_reverifies_clean
+  - tests/test_gates.py::TestFixEngineTierA::test_tick002_off_default_branch_is_a_no_op
 threat: null
 component: null
 ```
 First concrete slice of the T-1137 fix engine, restricted to the three fix classes with unambiguous deterministic rewrites and repeated main-redding history (DRIFT002 dotted-form x4+, T-0602 slug incident, TICK002 this wave). Ship behind --fix; no waiver insertion; each applied fix re-runs its gate in-process.
+
+## Done report
+
+Shipped batch 1 of the T-1137 `--fix` epic: the three Tier-A
+deterministic fix handlers named in this ticket's acceptance criteria,
+in a new src/frob/gates/_fix_engine.py:
+
+- `fix_doc007_dotted_form`: rewrites a `frob:tests` directive using
+  pytest's `Class::method` collect-only separator to this graph's own
+  dotted `Class.method` form, in place at its recorded origin. Pure
+  string surgery keeping the first `::` (file separator) intact and
+  replacing every subsequent `::` with `.`. An already-dotted target is
+  a no-op.
+- `fix_doc002_unique_slug`: for a `frob:doc`/`frob:tests` `<file>#<slug>`
+  anchor that does not resolve, rewrites `#<slug>` to the single
+  `difflib.get_close_matches` candidate (cutoff 0.6, n=len(slugs) so a
+  3-way-ambiguous slug is never misreported as unique) if EXACTLY one
+  exists; zero or 2+ candidates are left untouched (the assisted
+  fix-it path, out of this ticket's own scope).
+- `fix_tick002_renumber`: performs the renumber TICK002's own message
+  already prescribes, by calling the existing `frob.tickets.
+  _new_renumber.finalize_draft` (the same function `frob ticket land`
+  calls) for every draft id in the queue while on the default branch --
+  no new renumber logic, per the ticket's own scope note. T-1125 already
+  landed (confirmed: `frob ticket show T-1125` -> done) so its
+  prose-reference rewrite is included automatically via
+  `finalize_draft` -> `renumber_one`.
+
+`apply_tier_a_fixes(root, snapshot, queue)` runs all three in order and
+returns every `FixApplied` (rule/file/line/one-line rewrite summary)
+actually made -- disclosed, never a waiver insertion, never a guess.
+
+Scope note (disclosed, not silently cut): this ticket's declared scope
+is src/frob/gates/**, src/frob/tickets/**, tests/test_gates.py -- the
+actual `frob check --fix` CLI FLAG (argument parsing in
+src/frob/_cli_parsers/_check.py, orchestration in
+src/frob/app/check_runner.py) is out of that scope and NOT wired in
+this ticket. `apply_tier_a_fixes` is the callable entry point a later
+CLI-wiring batch of the same T-1137 epic calls directly; documented as
+this exact scope boundary in docs/modules/gates.md's new section. No
+tickets/** files needed touching beyond calling the existing
+finalize_draft API, matching the ticket's own scope note.
+
+SYS104 upkeep (coordinator directive, mandatory as of this wave): added
+`attr interface=` entries to design/frob.strata's `gates` node for the
+5 new public symbols (FixApplied, apply_tier_a_fixes,
+fix_doc002_unique_slug, fix_doc007_dotted_form, fix_tick002_renumber).
+While verifying this, `frob check --only sys` also surfaced that
+T-1141's TestGateRuleBuilderExclusion and T-1144's
+TestToolResultBuilderExclusion (both landed earlier this same wave,
+before SYS104 became mandatory) were missing their `testsuite` node
+interface= entries -- fixed those too in the same land (design/
+frob.strata scope, reasoned addition) rather than leaving a known
+SELFAUDIT001 gap for the next agent to trip over.
+
+Verification: ruff check clean (both `ruff` and `uv run ruff`) on
+src/frob/gates/_fix_engine.py, src/frob/gates/__init__.py,
+tests/test_gates.py, docs/modules/gates.md.
+tests/test_gates.py::TestFixEngineTierA (7 cases, one per acceptance
+criterion plus its negative/no-op counterpart) passes; full
+tests/test_tickets_collision.py (15 cases, unaffected by this change)
+passes. frob check --ticket T-1138 --only coverage/docanchor/doclink/
+drift: clean for this ticket's own symbols (the 1 remaining COV001 and
+several COV006/COV007 findings are pre-existing repo debt unrelated to
+_fix_engine, confirmed by name). frob check --ticket T-1138 --only sys:
+0 SELFAUDIT001 findings after the design/frob.strata upkeep.
+
+Filed: none.
+
+### Changed
+```
+ design/frob.strata            |   8 ++
+ docs/modules/gates.md         |  61 +++++++++
+ src/frob/gates/__init__.py    |   7 ++
+ src/frob/gates/_fix_engine.py | 280 ++++++++++++++++++++++++++++++++++++++++++
+ tests/test_gates.py           | 249 +++++++++++++++++++++++++++++++++++++
+ tickets.md                    |  43 ++++++-
+ 6 files changed, 643 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierA::test_doc007_already_dotted_is_a_no_op` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierA::test_doc002_unique_fuzzy_candidate_rewritten_and_reverifies_clean` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierA::test_doc002_ambiguous_candidates_stay_unfixed` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierA::test_doc002_zero_candidates_stay_unfixed` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierA::test_tick002_renumbers_draft_and_reverifies_clean` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierA::test_tick002_off_default_branch_is_a_no_op` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 23 error(s), 1872 warning(s), 433 waived
+- error-findings: ARCH001@src/frob/app/ticket_runner/_close_cmd.py, ARCH001@src/frob/doctor.py, ARCH001@src/frob/tickets/_setters.py, COV001@src/frob/gates/_tracked_files.py, E501@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/doctor.py:243, E501@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/vet/_capability.py:5338, E501@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/vet/_supplychain.py:154, E501@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/vet/_supplychain.py:168, E501@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/vet/_supplychain.py:209, E501@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/vet/_supplychain.py:267, E501@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/vet/_supplychain.py:295, F401@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/tickets/__init__.py:111, F401@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/tickets/__init__.py:22, F401@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/tickets/__init__.py:23, F401@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/tickets/__init__.py:35, F401@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/tickets/__init__.py:46, INV006@src/frob/app/stats_runner.py, INV006@src/frob/gates/_fix_engine.py, INV006@src/frob/gates/_tickets_gate.py, PII012@src/frob/gates/_tickets_gate.py, PII012@tests/system/test_cli_doctor.py, PRE001@tickets/T-1138, TEST001@src/frob/gates/_fix_engine.py
 
 <!-- ticket:T-1139 -->
 ```yaml
@@ -6112,3 +6239,47 @@ moved prose trips it, watch for tests that monkeypatch a moved function
 via the PACKAGE attribute (tickets_mod.<name>) -- those need a late
 `from frob.tickets import <name>` inside the moved function body instead
 of a module-top-level binding.
+
+<!-- ticket:T-1153 -->
+```yaml
+id: T-1153
+title: 'tickets-archive.md: T-1145''s land reverted T-1143''s parse.rs->parse/mod.rs
+  evidence fix (40 occurrences back)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tickets-archive.md
+threat: null
+component: null
+```
+T-1143 fixed the remaining 40 stale `strata-core/src/parse.rs::tests::X`
+evidence citations in tickets-archive.md (T-1099's parse.rs -> parse/mod.rs
+migration residue), landing clean at ce0d0753 with 0 COV003 violations.
+
+T-1145's land (bc834b95, immediately after T-1143 in main's history)
+reintroduced all 40 stale `parse.rs::tests::` occurrences in
+tickets-archive.md -- `git show bc834b95 -- tickets-archive.md` shows 40
+insertions of the exact `parse.rs::tests::` pattern and 0 removals of it,
+a straight revert of T-1143's fix. This looks like T-1145's landing
+worktree branched from a `main` before T-1143 merged forward and its own
+stale tickets-archive.md snapshot won a merge/land conflict resolution,
+per the playbook's "ledger-conflict splice guidance" hazard class
+(section 10), applied here to tickets-archive.md rather than tickets.md.
+
+Confirmed present on main right now:
+`git show main:tickets-archive.md | grep -c "strata-core/src/parse.rs::tests::"`
+-> 40.
+
+Fix: re-apply the same mechanical path-only substitution T-1143 already
+verified works (`strata-core/src/parse\.rs::tests::` ->
+`strata-core/src/parse/mod.rs::tests::`), re-verify 0 COV003 findings
+afterward, and (if feasible) look at whether the tickets-archive.md
+merge/land path needs a splice-guard the way tickets.md already has
+(frob ticket merge-driver) to prevent this class of regression from
+recurring for any future ledger-adjacent file.

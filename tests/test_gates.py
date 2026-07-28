@@ -7559,6 +7559,255 @@ class TestDocanchorGate:
         assert any("no #anchor" in v.message for v in violations)
 
 
+# frob:ticket T-1138
+class TestFixEngineTierA:
+    """`frob.gates._fix_engine`'s Tier-A deterministic --fix handlers
+    (T-1138): DOC007 dotted-form rewrite, DOC002 unique-anchor-slug
+    correction, TICK002 draft renumber. Each is a GIVEN/WHEN/THEN
+    acceptance criterion off this ticket's own body."""
+
+    def _snap(self, root: Path):
+        from frob.graph import build_graph
+
+        return build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+    # -- acceptance [0]: DOC007 dotted-form rewrite ------------------------
+
+    def test_doc007_dotted_form_rewrite_applies_and_reverifies_clean(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_doc007_dotted_form kind="unit"
+        # frob:tests src/frob/gates/_docptr.py::_tests_target_shape_violations kind="unit"
+        from frob.gates import apply_tier_a_fixes, doc006_gate
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src" / "pkg").mkdir(parents=True)
+        (root / "src" / "pkg" / "mod.py").write_text(
+            "# frob:tests tests/test_mod.py::TestX::test_y\ndef real():\n    pass\n",
+            encoding="utf-8",
+        )
+        snapshot = self._snap(root)
+        before = doc006_gate(root, snapshot)
+        assert any(v.rule == "DOC007" for v in before)
+
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        doc007_applied = [a for a in applied if a.rule == "DOC007"]
+        assert len(doc007_applied) == 1
+        assert "tests/test_mod.py::TestX.test_y" in doc007_applied[0].detail
+
+        rewritten = (root / "src" / "pkg" / "mod.py").read_text(encoding="utf-8")
+        assert "# frob:tests tests/test_mod.py::TestX.test_y" in rewritten
+        assert "TestX::test_y" not in rewritten
+
+        after_snapshot = self._snap(root)
+        after = doc006_gate(root, after_snapshot)
+        assert not [v for v in after if v.rule == "DOC007"]
+
+    def test_doc007_already_dotted_is_a_no_op(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_doc007_dotted_form kind="unit"
+        from frob.gates import apply_tier_a_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src" / "pkg").mkdir(parents=True)
+        content = "# frob:tests tests/test_mod.py::TestX.test_y\ndef real():\n    pass\n"
+        (root / "src" / "pkg" / "mod.py").write_text(content, encoding="utf-8")
+        snapshot = self._snap(root)
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        assert not [a for a in applied if a.rule == "DOC007"]
+        assert (root / "src" / "pkg" / "mod.py").read_text(encoding="utf-8") == content
+
+    # -- acceptance [1]: DOC002 unique-anchor-slug correction --------------
+
+    def test_doc002_unique_fuzzy_candidate_rewritten_and_reverifies_clean(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_doc002_unique_slug kind="unit"
+        # frob:tests src/frob/gates/__init__.py::docanchor_gate kind="unit"
+        from frob.gates import apply_tier_a_fixes, docanchor_gate
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "src").mkdir()
+        (root / "docs" / "m.md").write_text("# Title\n\n## Real Heading\n", encoding="utf-8")
+        (root / "src" / "m.py").write_text(
+            "# frob:doc docs/m.md#real-headin\ndef f():\n    return 1\n",
+            encoding="utf-8",
+        )
+        snapshot = self._snap(root)
+        before = docanchor_gate(root, snapshot)
+        assert any(v.rule == "DOC002" for v in before)
+
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        doc002_applied = [a for a in applied if a.rule == "DOC002"]
+        assert len(doc002_applied) == 1
+        assert "docs/m.md#real-heading" in doc002_applied[0].detail
+
+        rewritten = (root / "src" / "m.py").read_text(encoding="utf-8")
+        assert "# frob:doc docs/m.md#real-heading" in rewritten
+
+        after = docanchor_gate(root, self._snap(root))
+        assert not [v for v in after if v.rule == "DOC002"]
+
+    def test_doc002_ambiguous_candidates_stay_unfixed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_doc002_unique_slug kind="unit"
+        from frob.gates import apply_tier_a_fixes, docanchor_gate
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "src").mkdir()
+        # Two headings close enough to the mismatched target slug that
+        # neither is an unambiguous single candidate -- the "stays unfixed
+        # with an assisted fix-it" half of this ticket's acceptance
+        # criterion.
+        (root / "docs" / "m.md").write_text(
+            "# Title\n\n## Widget Alpha\n\n## Widget Beta\n", encoding="utf-8"
+        )
+        (root / "src" / "m.py").write_text(
+            "# frob:doc docs/m.md#widget-gamma\ndef f():\n    return 1\n",
+            encoding="utf-8",
+        )
+        snapshot = self._snap(root)
+        before = docanchor_gate(root, snapshot)
+        assert any(v.rule == "DOC002" for v in before)
+
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        assert not [a for a in applied if a.rule == "DOC002"]
+        unchanged = (root / "src" / "m.py").read_text(encoding="utf-8")
+        assert "widget-gamma" in unchanged
+
+        after = docanchor_gate(root, self._snap(root))
+        assert any(v.rule == "DOC002" for v in after)
+
+    def test_doc002_zero_candidates_stay_unfixed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_doc002_unique_slug kind="unit"
+        from frob.gates import apply_tier_a_fixes, docanchor_gate
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "src").mkdir()
+        (root / "docs" / "m.md").write_text("# Title\n\n## Real Heading\n", encoding="utf-8")
+        (root / "src" / "m.py").write_text(
+            "# frob:doc docs/m.md#totally-unrelated-slug\ndef f():\n    return 1\n",
+            encoding="utf-8",
+        )
+        snapshot = self._snap(root)
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        assert not [a for a in applied if a.rule == "DOC002"]
+        after = docanchor_gate(root, self._snap(root))
+        assert any(v.rule == "DOC002" for v in after)
+
+    # -- acceptance [2]: TICK002 draft renumber -----------------------------
+
+    def test_tick002_renumbers_draft_and_reverifies_clean(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_tick002_renumber kind="unit"
+        # frob:tests src/frob/gates/_tickets_gate.py::_tick002_draft_on_default kind="unit"
+        import subprocess
+
+        from frob.gates import tickets_gate
+        from frob.gates._fix_engine import fix_tick002_renumber
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._provisional import is_draft_id, mint_draft_id
+        from frob.tickets._store import write_ticket
+
+        root = tmp_path / "repo"
+        root.mkdir()
+
+        def _git(*args: str) -> None:
+            subprocess.run(
+                ["git", "-C", str(root), *args],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+        _git("init", "-q", "-b", "main")
+        _git("config", "user.email", "test@example.com")
+        _git("config", "user.name", "Test")
+        (root / "tickets.md").write_text("# Tickets\n\n", encoding="utf-8")
+        (root / "tickets-archive.md").write_text("# Archive\n\n", encoding="utf-8")
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "init")
+
+        draft_id = mint_draft_id()
+        assert is_draft_id(draft_id)
+        draft = Ticket(
+            id=draft_id,
+            title="stray draft on main",
+            state=TicketState.QUEUED,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+        )
+        write_result = write_ticket(root, draft)
+        assert write_result.is_ok
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "file draft ticket directly on main (TICK002 repro)")
+
+        queue = TicketQueue(tickets={draft_id: draft})
+        before = tickets_gate(root, queue)
+        assert any(v.rule == "TICK002" for v in before)
+
+        applied = fix_tick002_renumber(root, queue)
+        assert len(applied) == 1
+        assert applied[0].rule == "TICK002"
+        assert draft_id in applied[0].detail
+
+        from frob.tickets._store import load_all
+
+        reloaded = load_all(root)
+        assert reloaded.is_ok
+        assert draft_id not in reloaded.danger_ok
+        after_queue = TicketQueue(tickets=reloaded.danger_ok)
+        after = tickets_gate(root, after_queue)
+        assert not [v for v in after if v.rule == "TICK002"]
+
+    def test_tick002_off_default_branch_is_a_no_op(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_tick002_renumber kind="unit"
+        import subprocess
+
+        from frob.gates._fix_engine import fix_tick002_renumber
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._provisional import mint_draft_id
+
+        root = tmp_path / "repo"
+        root.mkdir()
+
+        def _git(*args: str) -> None:
+            subprocess.run(
+                ["git", "-C", str(root), *args],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+        _git("init", "-q", "-b", "feature-branch")
+        _git("config", "user.email", "test@example.com")
+        _git("config", "user.name", "Test")
+        (root / "tickets.md").write_text("# Tickets\n\n", encoding="utf-8")
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "init")
+
+        draft_id = mint_draft_id()
+        draft = Ticket(
+            id=draft_id,
+            title="draft still in flight",
+            state=TicketState.QUEUED,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+        )
+        queue = TicketQueue(tickets={draft_id: draft})
+        applied = fix_tick002_renumber(root, queue)
+        assert applied == []
+
+
 # frob:ticket T-0542
 # frob:ticket T-0543
 class TestCov002ScopeCoverage:

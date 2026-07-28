@@ -726,6 +726,7 @@ node gates : trusted {
     attr interface=DeprecatedEntry;
     attr interface=EXCLUSIVITY_CLAIM_PATTERNS;
     attr interface=FIELD_SIGNATURES;
+    attr interface=FixApplied;
     attr interface=FmtChange;
     attr interface=FmtReport;
     attr interface=GateConfig;
@@ -777,6 +778,7 @@ node gates : trusted {
     attr interface=_waive007_strata_violations;
     attr interface=active_ticket;
     attr interface=affect_drift_gate;
+    attr interface=apply_tier_a_fixes;
     attr interface=arch_gate;
     attr interface=canonicalize_text;
     attr interface=clear_ratchet_entry;
@@ -809,6 +811,9 @@ node gates : trusted {
     attr interface=file_reference_counts;
     attr interface=find_exclusivity_claims;
     attr interface=find_normative_claims;
+    attr interface=fix_doc002_unique_slug;
+    attr interface=fix_doc007_dotted_form;
+    attr interface=fix_tick002_renumber;
     attr interface=fmt_gate;
     attr interface=format_paths;
     attr interface=fuzz_gate;
@@ -3332,6 +3337,7 @@ node testsuite : trusted {
     attr interface=TestFingerprintRoundTrip;
     attr interface=TestFingerprintScan;
     attr interface=TestFiringFromParsedSurfaceSource;
+    attr interface=TestFixEngineTierA;
     attr interface=TestFixtureCoverageIsExhaustive;
     attr interface=TestFlagHelper;
     attr interface=TestFleetIntegration;
@@ -3362,6 +3368,7 @@ node testsuite : trusted {
     attr interface=TestGateBaselineSummary;
     attr interface=TestGateIsGreenOnItself;
     attr interface=TestGateOrderSetEquality;
+    attr interface=TestGateRuleBuilderExclusion;
     attr interface=TestGateRules;
     attr interface=TestGatesDegradeWithoutDiff;
     attr interface=TestGccExecutable;
@@ -4161,6 +4168,7 @@ node testsuite : trusted {
     attr interface=TestTighten;
     attr interface=TestToolCrashResult;
     attr interface=TestToolResult;
+    attr interface=TestToolResultBuilderExclusion;
     attr interface=TestToolUnavailableResult;
     attr interface=TestTotalDrift;
     attr interface=TestTouchedPythonFiles;

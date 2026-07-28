@@ -2677,6 +2677,67 @@ rules`, baseline its current findings with `frob pool snapshot`, and call
 `resolve_ratchet_severity` at that gate's own severity-decision call
 site -- no new mechanism needed.
 
+## `--fix` Tier-A deterministic auto-fix handlers (T-1138)
+
+<!-- frob:describes src/frob/gates/_fix_engine.py::apply_tier_a_fixes -->
+<!-- frob:describes src/frob/gates/_fix_engine.py::fix_doc007_dotted_form -->
+<!-- frob:describes src/frob/gates/_fix_engine.py::fix_doc002_unique_slug -->
+<!-- frob:describes src/frob/gates/_fix_engine.py::fix_tick002_renumber -->
+<!-- frob:describes src/frob/gates/_fix_engine.py::FixApplied -->
+
+First concrete slice of the T-1137 `--fix` epic ("tiered auto-fix
+engine"): `frob.gates._fix_engine` implements exactly the three fix
+classes T-1138 scoped in, each a deterministic, semantics-preserving
+rewrite with a repeated main-redding incident history behind it (never a
+guess, never a waiver insertion):
+
+- **`fix_doc007_dotted_form`**: a `frob:tests` directive whose target
+  uses pytest's `Class::method` collect-only separator (DOC007, T-0986)
+  where this graph's own convention wants a single `::` then a DOTTED
+  `Class.method` qualname -- rewritten in place at its recorded origin
+  site. Pure string surgery (`path::Class::method` -> `path::
+  Class.method`); a target already in the correct shape is untouched
+  (no-op, not an error).
+- **`fix_doc002_unique_slug`**: a `frob:doc`/`frob:tests` anchor
+  (`<file>#<slug>`) whose slug does not resolve (DOC002) but
+  fuzzy-matches (`difflib.get_close_matches`, cutoff 0.6 -- difflib's own
+  conventional "plausible typo/rename" threshold) EXACTLY ONE real
+  heading/`<a id>` slug in `<file>` is rewritten to that slug. Zero or
+  MORE THAN ONE candidate above cutoff is left entirely alone -- an
+  ambiguous or absent match has no single correct rewrite to make
+  automatically, so it stays a normal DOC002 finding (the assisted
+  fix-it path, not this ticket's own scope).
+- **`fix_tick002_renumber`**: TICK002 (a `T-draft-*` id that survived
+  onto the default branch) already prescribes its own remedy in its
+  message; this performs exactly that renumber via `frob.tickets.
+  _new_renumber.finalize_draft` (the same function `frob ticket land`
+  calls) for every draft id in the queue while on the default branch --
+  no new renumber logic, just invoking the existing API surface.
+  Includes T-1125's prose-reference rewrite automatically, since
+  `finalize_draft` -> `renumber_one` already performs it. A no-op off
+  the default branch.
+
+`apply_tier_a_fixes(root, snapshot, queue)` runs all three in order
+(DOC007/DOC002 first, since they are pure source-text rewrites with no
+ledger interaction; TICK002 last, so a source-text fix never races a
+concurrent renumber's own ledger-prose rewrite) and returns every
+`FixApplied` (rule, file, line, one-line rewrite summary) actually made
+-- the disclosed audit trail every fix must leave, mirroring T-1137's own
+"no silent auto-discharge" anti-goal applied to what WAS auto-fixed
+rather than only what was left alone.
+
+**Scope boundary (T-1138):** this module is the fix HANDLERS and their
+callable entry point (`src/frob/gates/**`), not the `frob check --fix`
+CLI flag itself -- wiring `apply_tier_a_fixes` behind an actual CLI flag
+(argument parsing in `src/frob/_cli_parsers/_check.py`, orchestration in
+`src/frob/app/check_runner.py`) is a later batch of the same T-1137
+epic, out of `src/frob/gates/**`/`src/frob/tickets/**`/
+`tests/test_gates.py`'s declared scope. `apply_tier_a_fixes` is ready
+for that CLI batch to call directly; `tests/test_gates.py::
+TestFixEngineTierA` exercises every handler at the function level
+against real `GraphSnapshot`s/`TicketQueue`s, GIVEN/WHEN/THEN per this
+ticket's own acceptance criteria.
+
 ## Data models
 
 <!-- frob:describes src/frob/gates/_models.py::Severity -->

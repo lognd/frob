@@ -91,6 +91,13 @@ from frob.gates._exclude_hazard import exclude_hazard_gate
 from frob.gates._exhaustive_handling import exhaustive_handling_gate
 from frob.gates._ffi_boundary import ffi_boundary_gate
 from frob.gates._filehash import _SOURCE_EXTS
+from frob.gates._fix_engine import (  # noqa: F401 -- T-1138's public --fix API surface, consumed by a later CLI-wiring batch (T-1137 epic) and tests/test_gates.py directly
+    FixApplied,
+    apply_tier_a_fixes,
+    fix_doc002_unique_slug,
+    fix_doc007_dotted_form,
+    fix_tick002_renumber,
+)
 from frob.gates._fmt_directives import (
     FmtChange,
     FmtReport,

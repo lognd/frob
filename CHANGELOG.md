@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.255.0] - unreleased
+
+- T-1138: gates --fix Tier-A batch 1: directive-form rewrite + unique anchor-slug correction + TICK002 renumber
+
 ## [0.254.0] - unreleased
 
 - T-1151: arch: extract remaining tickets/__init__.py families (setters/evidence/done-report) + split _land.py -- T-1123 residue
