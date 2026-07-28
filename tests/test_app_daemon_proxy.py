@@ -6,7 +6,6 @@ and in-process answers must be byte-for-byte identical for a proxied query.
 
 from __future__ import annotations
 
-import json
 import subprocess
 import threading
 import time
@@ -101,24 +100,23 @@ def _shutdown(root: Path, thread: threading.Thread) -> None:
 
 
 class TestEnsureDaemon:
-    def test_spawns_when_nothing_recorded(self, root: Path) -> None:
+    def test_spawns_when_nothing_recorded(self, root: Path, monkeypatch) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_spawns_when_nothing_recorded
-        assert not _daemon_proxy._meta_path(root).exists()
+        # No daemon is up, so the frob_version RPC finds nothing to answer
+        # and ensure_daemon must spawn one.
+        monkeypatch.setattr(_daemon_proxy, "_query_daemon_version", lambda r: None)
+        spawned = []
+        monkeypatch.setattr(_daemon_proxy, "_spawn_daemon", lambda r: spawned.append(r))
         ensure_daemon(root)
-        deadline = time.monotonic() + 5
-        while (
-            not _daemon_proxy._meta_path(root).exists() and time.monotonic() < deadline
-        ):
-            time.sleep(0.02)
-        assert _daemon_proxy._meta_path(root).exists()
-        meta = json.loads(_daemon_proxy._meta_path(root).read_text())
-        assert meta["version"] == _daemon_proxy._client_version()
+        assert spawned == [root]
 
     def test_noop_when_version_matches(self, root: Path, monkeypatch) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_noop_when_version_matches
-        _daemon_proxy._write_meta(root, pid=999999)
+        monkeypatch.setattr(
+            _daemon_proxy, "_query_daemon_version", lambda r: _daemon_proxy._client_version()
+        )
         spawned = []
         monkeypatch.setattr(_daemon_proxy, "_spawn_daemon", lambda r: spawned.append(r))
         ensure_daemon(root)
@@ -127,20 +125,33 @@ class TestEnsureDaemon:
     def test_restarts_on_version_skew(self, root: Path, monkeypatch) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_restarts_on_version_skew
-        _daemon_proxy._meta_path(root).parent.mkdir(parents=True, exist_ok=True)
-        _daemon_proxy._meta_path(root).write_text(
-            json.dumps({"version": "0.0.0-stale", "pid": 999999})
+        monkeypatch.setattr(
+            _daemon_proxy, "_query_daemon_version", lambda r: "0.0.0-stale"
         )
-        killed = []
+        shutdown_calls = []
         spawned = []
         monkeypatch.setattr(
-            _daemon_proxy, "_kill_stale_daemon", lambda r, m: killed.append(m)
+            _daemon_proxy, "_shutdown_stale_daemon", lambda r: shutdown_calls.append(r)
         )
         monkeypatch.setattr(_daemon_proxy, "_spawn_daemon", lambda r: spawned.append(r))
         ensure_daemon(root)
-        assert len(killed) == 1
-        assert killed[0]["version"] == "0.0.0-stale"
+        assert shutdown_calls == [root]
         assert spawned == [root]
+
+    def test_version_handshake_end_to_end(self, root: Path) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_version_handshake_end_to_end
+        # A real running daemon (not mocked): frob_version RPC must report
+        # this client's own version, so ensure_daemon must not spawn a
+        # second, redundant daemon.
+        thread = _start_daemon(root)
+        try:
+            assert (
+                _daemon_proxy._query_daemon_version(root)
+                == _daemon_proxy._client_version()
+            )
+        finally:
+            _shutdown(root, thread)
 
 
 class TestDifferentialParity:

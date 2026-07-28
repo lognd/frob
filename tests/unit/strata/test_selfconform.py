@@ -15,7 +15,10 @@ from pathlib import Path
 import pytest
 
 from frob.strata import (
+    SYS_BINDING_TOTALITY,
     SYS_COVERAGE_TOTALITY,
+    SYS_INTERFACE_CONFORMANCE,
+    SYS_PURPOSE_CONTRACT,
     SYS_STALE_DESIGN,
     SYS_UNDECLARED_INTERFACE,
     SYS_UNMODELED_CODE,
@@ -1370,3 +1373,324 @@ class TestCoverageTotality:
         assert result.is_ok, result.err
         violations = result.danger_ok.violations
         assert violations == (), [(v.rule, v.node, v.detail) for v in violations]
+
+
+class TestInterfaceConformance:
+    """SYS104 (T-0668): a node's `interface=` attrs must equal its bound
+    files' real public surface -- opt-in only (module docstring's SYS104
+    scope cut), so a node with no `interface=` attr is never checked."""
+
+    # frob:tests src/frob/strata/_selfconform.py::_interface_conformance_violations kind="unit"  # noqa: E501
+    def test_undeclared_public_symbol_fires(self, tmp_path: Path):
+        """A real public function the node's `interface=` set omits fires
+        SYS104 -- the "undeclared public surface" evasion row."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "def public_fn():\n    pass\n\ndef secret_backdoor():\n    pass\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**", "interface=public_fn"),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hits = [
+            v
+            for v in result.danger_ok.violations
+            if v.rule == SYS_INTERFACE_CONFORMANCE
+        ]
+        assert any(v.capability == "secret_backdoor" for v in hits)
+
+    # frob:tests src/frob/strata/_selfconform.py::_interface_conformance_violations kind="unit"  # noqa: E501
+    def test_declared_but_absent_symbol_fires(self, tmp_path: Path):
+        """A declared `interface=` entry with no matching real export
+        fires SYS104 -- the "declared-but-absent declaration" row."""
+        _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=(
+                        "code=src/frob/widget/**",
+                        "interface=public_fn",
+                        "interface=phantom_fn",
+                    ),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hits = [
+            v
+            for v in result.danger_ok.violations
+            if v.rule == SYS_INTERFACE_CONFORMANCE
+        ]
+        assert any(v.capability == "phantom_fn" for v in hits)
+
+    # frob:tests src/frob/strata/_selfconform.py::_interface_conformance_violations kind="unit"  # noqa: E501
+    def test_exact_match_is_silent(self, tmp_path: Path):
+        """A node whose `interface=` set EQUALS the real surface fires no
+        SYS104 at all."""
+        _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**", "interface=public_fn"),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_INTERFACE_CONFORMANCE for v in result.danger_ok.violations
+        )
+
+    # frob:tests src/frob/strata/_selfconform.py::_interface_conformance_violations kind="unit"  # noqa: E501
+    def test_node_with_no_interface_attr_is_never_checked(self, tmp_path: Path):
+        """A node declaring no `interface=` attr at all is silently
+        skipped (opt-in scope cut) even though its real surface has an
+        undeclared public symbol."""
+        _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+        model = KernelModel(
+            nodes=(
+                Node(id="widget", trust="trusted", attrs=("code=src/frob/widget/**",)),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_INTERFACE_CONFORMANCE for v in result.danger_ok.violations
+        )
+
+    # frob:tests src/frob/strata/_selfconform.py::_interface_conformance_violations kind="unit"  # noqa: E501
+    def test_dunder_all_overrides_name_based_collection(self, tmp_path: Path):
+        """When a module declares `__all__`, that literal list -- not the
+        name-based (non-underscore) heuristic -- is the real surface."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "__all__ = ['public_fn']\n\ndef public_fn():\n    pass\n\n"
+            "def also_public_but_not_exported():\n    pass\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**", "interface=public_fn"),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_INTERFACE_CONFORMANCE for v in result.danger_ok.violations
+        )
+
+
+class TestPurposeContract:
+    """SYS105 (T-0669): a node's `purpose=` attr bounds its allowed
+    observed effect kinds -- opt-in only (module docstring's SYS105
+    scope cut)."""
+
+    # frob:tests src/frob/strata/_selfconform.py::_purpose_contract_violations kind="unit"  # noqa: E501
+    def test_effect_outside_profile_fires(self, tmp_path: Path):
+        """A `purpose=logging` node that opens a network socket fires
+        SYS105 -- the design doc's "purpose drift" evasion row."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    may=("net",),
+                    attrs=("code=src/frob/widget/**", "purpose=logging"),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hits = [
+            v for v in result.danger_ok.violations if v.rule == SYS_PURPOSE_CONTRACT
+        ]
+        assert any(v.capability == "net.connect" for v in hits)
+
+    # frob:tests src/frob/strata/_selfconform.py::_purpose_contract_violations kind="unit"  # noqa: E501
+    def test_unrecognized_profile_fires(self, tmp_path: Path):
+        """A typo'd `purpose=` profile name is itself a finding -- never
+        silently treated as permissive."""
+        _write(tmp_path, "src/frob/widget/_io.py", "x = 1\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**", "purpose=logg1ng"),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hits = [
+            v for v in result.danger_ok.violations if v.rule == SYS_PURPOSE_CONTRACT
+        ]
+        assert any("logg1ng" in v.detail for v in hits)
+
+    # frob:tests src/frob/strata/_selfconform.py::_purpose_contract_violations kind="unit"  # noqa: E501
+    def test_effect_inside_profile_is_silent(self, tmp_path: Path):
+        """A `purpose=read-only` node that only reads a file fires no
+        SYS105."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "from pathlib import Path\nPath('x').read_text()\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    may=("fs.read",),
+                    attrs=("code=src/frob/widget/**", "purpose=read-only"),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_PURPOSE_CONTRACT for v in result.danger_ok.violations
+        )
+
+    # frob:tests src/frob/strata/_selfconform.py::_purpose_contract_violations kind="unit"  # noqa: E501
+    def test_node_with_no_purpose_attr_is_never_checked(self, tmp_path: Path):
+        """A node declaring no `purpose=` attr at all is silently skipped
+        (opt-in scope cut)."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    may=("net",),
+                    attrs=("code=src/frob/widget/**",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_PURPOSE_CONTRACT for v in result.danger_ok.violations
+        )
+
+
+class TestBindingTotality:
+    """SYS106 (T-0670): a `FOREIGN` file reachable via resolved local
+    imports from a bound node's own files, with an observed capability,
+    fires -- "logic laundered into an unbound file"."""
+
+    # frob:tests src/frob/strata/_selfconform.py::_binding_totality_violations kind="unit"  # noqa: E501
+    def test_laundered_capable_file_fires(self, tmp_path: Path):
+        """A bound node's file imports an unmodeled helper module that
+        itself performs a capable effect -- the helper is FOREIGN but
+        reachable, so SYS106 fires on it."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "from . import _helper\n_helper.do_it()\n",
+        )
+        _write(
+            tmp_path,
+            "src/frob/widget/_helper.py",
+            "import requests\n\n\ndef do_it():\n    requests.get('x')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget", trust="trusted", attrs=("code=src/frob/widget/_io.py",)
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hits = [
+            v for v in result.danger_ok.violations if v.rule == SYS_BINDING_TOTALITY
+        ]
+        assert any(v.node == "src/frob/widget/_helper.py" for v in hits)
+
+    # frob:tests src/frob/strata/_selfconform.py::_binding_totality_violations kind="unit"  # noqa: E501
+    def test_unreachable_foreign_file_does_not_fire_sys106(self, tmp_path: Path):
+        """A capable FOREIGN file that no bound file imports (unreachable)
+        does not fire SYS106, even though SYS103 catches it under its own
+        blanket unbound-and-capable rule."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "def public_fn():\n    pass\n",
+        )
+        _write(
+            tmp_path,
+            "src/frob/orphan/_io.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(id="widget", trust="trusted", attrs=("code=src/frob/widget/**",)),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_BINDING_TOTALITY and v.node == "src/frob/orphan/_io.py"
+            for v in result.danger_ok.violations
+        )
+
+    # frob:tests src/frob/strata/_selfconform.py::_binding_totality_violations kind="unit"  # noqa: E501
+    def test_bound_reachable_file_does_not_fire_sys106(self, tmp_path: Path):
+        """A reachable file that IS bound to some node (any node, not
+        just the reaching one) never fires SYS106 -- the rule is about
+        binding, not about which specific node owns it."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "from ..other import _helper\n_helper.do_it()\n",
+        )
+        _write(
+            tmp_path,
+            "src/frob/other/_helper.py",
+            "import requests\n\n\ndef do_it():\n    requests.get('x')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget", trust="trusted", attrs=("code=src/frob/widget/_io.py",)
+                ),
+                Node(
+                    id="other",
+                    trust="trusted",
+                    may=("net",),
+                    attrs=("code=src/frob/other/**",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_BINDING_TOTALITY for v in result.danger_ok.violations
+        )

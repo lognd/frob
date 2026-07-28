@@ -1054,6 +1054,7 @@
     "src/frob/serve/_socketd.py::_RequestHandler.handle": "c5e2e1df87d1c246a913146c3f43bdad7835b5db3bfb6953e2b5acb7f644bbac",
     "src/frob/serve/_socketd.py::_RequestHandler.setup": "b80d16501e5bd8cf07b78512e5437c5b3667b2741026ba7b01dbc672a5463bde",
     "src/frob/serve/_socketd.py::acquire_singleton_lock": "028758279cdb8c8b91ae63d115bfe642337e022d2c46041a5ab6e108a94707c2",
+    "src/frob/serve/_socketd.py::daemon_version": "39ef1a60e663360e9795552449daeac06c1072665ab59db8c7f4a49415b27e3d",
     "src/frob/serve/_socketd.py::dispatch_request": "544287e25c78e4fb16a9f53842f00d9fe612acfeccdc20a8efb81749cec14006",
     "src/frob/serve/_socketd.py::lock_path": "4d392269559e2f947ed44623abf4e416671761fe6da0bae85321aba304b193ef",
     "src/frob/serve/_socketd.py::run_socket_daemon": "31a1f3f67e0404bf1b9f1648fd62c544bfd6ebf02e20cdbf804e3a0cefc15f46",
@@ -1444,7 +1445,10 @@
     "src/frob/strata/_secrets.py::SecretExpansion": "6aa68d5d375bd531cc218779fb4d7b2af0e7bf2826eac1c30ec5b2346d4fdf55",
     "src/frob/strata/_secrets.py::SecretSpec": "27b6fa8245796badbf4b4aa5c367767bb701757d19844aaffdbe21e744b616ce",
     "src/frob/strata/_secrets.py::elaborate_secret": "e15ed46b1be7e097c6b4d5dee074edb5fedb577d6fe47459538f1545ad7b03eb",
+    "src/frob/strata/_selfconform.py::SYS_BINDING_TOTALITY": "2260608eecce3d447bfb5b250b3db63ac4527387f1e7466e4e45effdedbf88f7",
     "src/frob/strata/_selfconform.py::SYS_COVERAGE_TOTALITY": "43b4bf36e49b6ddb443e2e2e61bf53f4606fb99ac37a28f3db83fbe42b52dc74",
+    "src/frob/strata/_selfconform.py::SYS_INTERFACE_CONFORMANCE": "ffa449855a198151693f5452172b218a2c369cfc48d297b0e088dc520da4d8c4",
+    "src/frob/strata/_selfconform.py::SYS_PURPOSE_CONTRACT": "ce6d1b18e6fd6443e4de5b9b1bff99a7584e293914e38ee86799b506dc512379",
     "src/frob/strata/_selfconform.py::SYS_STALE_DESIGN": "8dc430cda31d121e654ad55c1662dbce2065f34e554abe4836f3304b0dfc6612",
     "src/frob/strata/_selfconform.py::SYS_UNDECLARED_INTERFACE": "cc6603b2f1fbe548a1a4994605213ae77e9f2b3f2b25db6110510ef45c42c8b5",
     "src/frob/strata/_selfconform.py::SYS_UNMODELED_CODE": "1ac6689fe1a605248c5049aa48c47b76dc5e8ff65601cbea1520f23293268d31",
@@ -1811,5 +1815,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.226.0"
+  "version": "0.228.0"
 }

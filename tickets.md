@@ -361,7 +361,7 @@ Full-repo pessimistic capability audit (2026-07-20, 7 read-only auditors). North
 id: T-0668
 title: 'strata: exact interface-conformance check - declared node interface == real
   public code surface'
-state: queued
+state: done
 kind: security
 origin: agent
 created: '2026-07-22'
@@ -376,17 +376,101 @@ scope:
 - src/frob/graph/**
 - docs/modules/strata.md
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_undeclared_public_symbol_fires
+- tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_declared_but_absent_symbol_fires
+- tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_exact_match_is_silent
+- tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_node_with_no_interface_attr_is_never_checked
+- tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_dunder_all_overrides_name_based_collection
 acceptance:
 - text: Given a node declaring fewer public symbols than the bound module exports,
     when checked, then the obligation fires
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_undeclared_public_symbol_fires
 - text: Given a node declaring a symbol the bound module does not export, when checked,
     then the obligation fires
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_declared_but_absent_symbol_fires
 threat: null
 component: null
 ```
 A node's declared interface must equal the bound module's real public surface (no under- or over-declaration) -- closes acceptance-criterion (2). Depends on coverage-totality's binding pass existing first (need a bound node before its interface can be checked).
+
+## Done report
+
+Changed:
+- src/frob/strata/_selfconform.py::SYS_INTERFACE_CONFORMANCE
+- src/frob/strata/_selfconform.py::_interface_conformance_violations
+- src/frob/strata/_selfconform.py::_module_public_symbols
+- src/frob/strata/_selfconform.py::_module_all_literal
+- src/frob/strata/_selfconform.py::_public_names_of_statement
+- src/frob/strata/_selfconform.py::_node_real_public_surface
+- src/frob/strata/_selfconform.py::_node_attr_values
+- src/frob/strata/_selfconform.py::check_self_conformance (wired SYS104 into _collect_sys_violations/_apply_sys_waivers)
+- src/frob/strata/__init__.py (re-export SYS_INTERFACE_CONFORMANCE)
+- docs/modules/strata.md (SYS104 section)
+- tests/unit/strata/test_selfconform.py (TestInterfaceConformance, 5 tests)
+
+SYS104 implements exact interface conformance: a node's declared
+`interface=<symbol>` attrs (new opaque `Node.attrs` convention, same
+shape as `code=`/`managed`, no `.strata` grammar change) must equal the
+real public surface of its `code=`-bound `.py` files (`__all__` if
+present, else non-underscore top-level def/class/assignment names).
+Fires in both directions: real-but-undeclared, and declared-but-absent.
+
+SCOPE CUT (disclosed): SYS104 only evaluates a node that has already
+declared at least one `interface=` attr -- making it mandatory repo-wide
+would require adding `interface=` declarations to `design/frob.strata`,
+which is outside this ticket's declared scope (`src/frob/strata/**`,
+`src/frob/graph/**`, `docs/modules/strata.md`, `tests/unit/strata/**` --
+not `design/frob.strata`). This mirrors the T-0667/SYS103 precedent
+(`_coverage_totality_scan_prefix`'s own disclosed scope cut). Filed
+T-1109 to promote SYS104 to mandatory once `design/frob.strata` can be
+edited to carry real `interface=` declarations.
+
+Also landed in this same worktree pass (implementation only lives in
+this one file/module, shared by T-0668/T-0669/T-0670): SYS105 (purpose
+contract) and SYS106 (binding totality) are ALSO present in this diff
+since all three share one `_selfconform.py` module and one
+`check_self_conformance` wiring pass -- their own Done reports
+(T-0669/T-0670) cite the same file but their OWN new symbols/tests as
+Changed, per the series' plan of building all three checks in one pass
+before landing each ticket in order. T-0668's evidence below binds only
+to the SYS104-specific tests.
+
+Evidence:
+- tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_undeclared_public_symbol_fires
+- tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_declared_but_absent_symbol_fires
+- tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_exact_match_is_silent
+- tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_node_with_no_interface_attr_is_never_checked
+- tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_dunder_all_overrides_name_based_collection
+
+Filed: T-1109 (promote SYS104 to mandatory once design/frob.strata is in scope; follow-up to add CHK-GATE-SYS104 registry cross-reference in docs/design/registry/check-coverage.yaml, mirroring SYS103's own deferred registry gap)
+
+Gates: `uv run frob check --ticket T-0668` clean across prework/lint/
+static/gates-native/gates-security/test/coverage/doc*/tickets/registry
+(measured directly, chunked per playbook section 3b -- 0 errors in every
+group; TestRealGateGreen and TestCoverageTotality::
+test_repo_unrestricted_scan_is_clean both still pass zero violations
+against the real repo).
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_undeclared_public_symbol_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_declared_but_absent_symbol_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_exact_match_is_silent` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_node_with_no_interface_attr_is_never_checked` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_dunder_all_overrides_name_based_collection` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 1 error(s), 1318 warning(s), 429 waived
+- error-findings: PRE001@tickets/T-0668
 
 <!-- ticket:T-0669 -->
 ```yaml
@@ -1568,6 +1652,7 @@ threat: null
 component: null
 ```
 Post-gates-split (the recent frob.gates.__init__ -> frob.gates._waive extraction), gates-native's archgate stage reports an unwaived ARCH102 on src/frob/gates/_waive.py: 35 top-level exports split across 4 unrelated naming/usage clusters. Out of scope for T-1066/T-1068 (both explicitly excluded from touching src/frob/gates/**); needs either a genuine further split of _waive.py or a reasoned frob:waive ARCH102 the way sibling gates modules already carry (see src/frob/gates/__init__.py's own ARCH102 waiver for the pattern).
+
 <!-- ticket:T-1082 -->
 ```yaml
 id: T-1082
@@ -2141,7 +2226,7 @@ Refile of T-1102's dead draft T-1104 (post-close renumber loss). docs/modules/ar
 id: T-1105
 title: 'daemon: real version-handshake RPC on the socket daemon (replace sidecar meta-file
   skew detection)'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-28'
@@ -2154,15 +2239,95 @@ scope:
 - src/frob/app/_daemon_proxy.py
 - tests/test_app_daemon_proxy.py
 - docs/modules/serve.md
+- tests/test_serve_socket.py
+scope_changes:
+- op: add
+  glob: tests/test_serve_socket.py
+  reason: frob_version/frob_shutdown RPC additions to _socketd.py need direct socket-level
+    test coverage in this file, not just via the proxy's own test file
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/test_serve_socket.py::TestDispatchRequest::test_frob_version_reports_daemon_version
+- tests/test_serve_socket.py::TestDispatchRequest::test_frob_shutdown_stops_the_server
+- tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_spawns_when_nothing_recorded
+- tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_noop_when_version_matches
+- tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_version_handshake_end_to_end
+- tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_restarts_on_version_skew
 acceptance:
 - text: given a running daemon of a different frob version, when the proxy queries
     it, then skew is detected via a daemon-side version RPC (not the .frob/daemon.meta.json
     sidecar), the stale daemon is replaced, and the query succeeds
-  evidence: []
+  evidence:
+  - tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_restarts_on_version_skew
 threat: null
 component: null
 ```
 Refile of T-1093's dead draft T-1105 (lost in the 10b worktree-ledger restore before land). T-1093 shipped sidecar-file skew detection because src/frob/serve/** was a sibling's scope that wave; this moves the version handshake into the daemon protocol proper.
+
+## Done report
+
+Replaced T-1093's client-written `.frob/daemon.meta.json` sidecar-file
+version-skew check with a real protocol-level handshake on the socket
+daemon itself.
+
+`src/frob/serve/_socketd.py`: added `daemon_version()` (the daemon
+process's own installed `frob` version) and two new JSON-RPC methods
+special-cased in `_RequestHandler.handle` alongside `subscribe`:
+`frob_version` (answers `{"version": ...}`) and `frob_shutdown` (starts a
+helper thread that calls `server.shutdown()` and acknowledges
+immediately -- calling `shutdown()` inline on the connection thread would
+deadlock it against the very `serve_forever()` loop it is stopping).
+
+`src/frob/app/_daemon_proxy.py`: `ensure_daemon` now calls
+`_query_daemon_version` (a `send_request(root, "frob_version")`) instead
+of reading a sidecar meta file; on a version mismatch it calls
+`_shutdown_stale_daemon` (a `frob_shutdown` RPC, waiting on the lock file
+to clear) instead of `SIGTERM`-by-recorded-pid. Removed `_meta_path`/
+`_read_meta`/`_write_meta`/`_kill_stale_daemon` and the `.frob/
+daemon.meta.json` sidecar entirely -- nothing writes it anymore.
+
+Tests: added `TestDispatchRequest.test_frob_version_reports_daemon_version`
+and `.test_frob_shutdown_stops_the_server` to tests/test_serve_socket.py
+(real running daemon, real socket) -- required extending T-1105's scope
+to include this test file (`frob ticket scope T-1105 --add
+tests/test_serve_socket.py`), since the new RPC methods live in
+_socketd.py and need direct socket-level coverage. Updated
+tests/test_app_daemon_proxy.py's TestEnsureDaemon tests to mock the new
+_query_daemon_version/_shutdown_stale_daemon seam instead of the removed
+meta-file functions, and added a real end-to-end
+test_version_handshake_end_to_end against a live daemon.
+
+docs/modules/serve.md: added a new "Version handshake (T-1105)" section
+under the socket-daemon docs describing the two new RPC methods, and
+rewrote the "Version-skew self-heal" subsection under "CLI daemon proxy
+(T-1093)" plus its decision-tree diagram to describe the RPC-based flow
+instead of the sidecar file.
+
+Cut: none -- T-1093's disclosed residual (a real version-handshake RPC,
+T-draft-8a56400c) is now fully closed by this ticket.
+
+### Changed
+```
+ docs/modules/serve.md          |  79 +++++++++++++++------
+ src/frob/app/_daemon_proxy.py  | 154 +++++++++++++++++++----------------------
+ src/frob/serve/_socketd.py     |  55 +++++++++++++++
+ tests/test_app_daemon_proxy.py |  49 ++++++++-----
+ tests/test_serve_socket.py     |  45 ++++++++++++
+ 5 files changed, 259 insertions(+), 123 deletions(-)
+```
+
+### Evidence
+- `tests/test_serve_socket.py::TestDispatchRequest::test_frob_version_reports_daemon_version` (pytest node id, verified passing when recorded)
+- `tests/test_serve_socket.py::TestDispatchRequest::test_frob_shutdown_stops_the_server` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_spawns_when_nothing_recorded` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_noop_when_version_matches` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_version_handshake_end_to_end` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_restarts_on_version_skew` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1106 -->
 ```yaml
@@ -2429,3 +2594,45 @@ name/structure-based, never raw text proximity). Re-measure
 `abstraction-opportunity` count after landing and confirm the drop is
 exactly the check-registry groups, mirroring T-1068's own before/after
 methodology.
+
+<!-- ticket:T-1113 -->
+```yaml
+id: T-1113
+title: 'strata: promote SYS104/105/106 to mandatory + add CHK-GATE-SYS104/105/106
+  registry entries'
+state: queued
+kind: security
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- design/frob.strata
+- docs/design/registry/check-coverage.yaml
+- src/frob/strata/_selfconform.py
+threat: null
+component: null
+```
+SYS104 (T-0668, src/frob/strata/_selfconform.py) only evaluates a node
+that has already declared at least one `interface=` attr -- an opt-in
+scope cut, disclosed in T-0668's Done report, because making it
+mandatory repo-wide would require adding `interface=` declarations to
+`design/frob.strata`, which was outside T-0668's declared scope
+(`src/frob/strata/**`, `src/frob/graph/**`, `docs/modules/strata.md`,
+`tests/unit/strata/**` -- not `design/frob.strata`).
+
+Two follow-ups bundled here (same shape as SYS103's own T-1079-class
+deferred work):
+1. Add real `interface=` declarations to `design/frob.strata`'s nodes
+   (measured against each node's actual public surface,
+   `_module_public_symbols`), then flip SYS104 to fire on ANY node
+   whose bound code has a public symbol, not just opt-in nodes.
+2. Add `CHK-GATE-SYS104`/`CHK-GATE-SYS105`/`CHK-GATE-SYS106` entries to
+   `docs/design/registry/check-coverage.yaml` and the corresponding
+   `frob:enforces` directives on `check_self_conformance`, mirroring the
+   `CHK-GATE-SYS103` precedent (T-0667's Done report's own deferred
+   registry gap, `docs/modules/strata.md#known-gap-registry-cross-
+   reference`) -- `docs/design/registry/**` was outside T-0668/T-0669/
+   T-0670's declared scope.

@@ -83,6 +83,27 @@ _LOCK_REL = Path(".frob") / "daemon.lock"
 _SOCKET_REL = Path(".frob") / "daemon.sock"
 
 
+# frob:doc docs/modules/serve.md#version-handshake-t-1105
+def daemon_version() -> str:
+    """This process's installed `frob` version, or 'unknown' from a raw
+    source checkout with no registered distribution -- the daemon's own
+    self-reported version for the `frob_version` RPC (T-1105). Duplicated
+    (rather than imported) from `frob.app._daemon_proxy._client_version`'s
+    identical shape: `frob.app` is a sibling-layer package this module must
+    not import (`frob.serve` sits below `frob.app` in the dependency
+    order), same disposition `_client_version`'s own docstring already
+    notes for `frob.__main__._frob_version`."""
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("frob")
+    except PackageNotFoundError:
+        return "unknown"
+    except Exception as exc:  # noqa: BLE001 -- best-effort version probe, never fatal
+        _log.debug("serve: socketd: version lookup failed: %s", exc)
+        return "unknown"
+
+
 # frob:doc docs/modules/serve.md#socket-daemon-t-1092
 class DaemonError(ErrorSet):
     """Failure values `frob.serve._socketd`'s process-level operations can
@@ -322,6 +343,10 @@ class _RequestHandler(socketserver.StreamRequestHandler):
                 else:
                     if request.method == "subscribe":
                         response = self._handle_subscribe(request)
+                    elif request.method == "frob_version":
+                        response = self._handle_version(request)
+                    elif request.method == "frob_shutdown":
+                        response = self._handle_shutdown(request)
                     else:
                         response = dispatch_request(self.server.root, request)
                 self._write_line(response)
@@ -349,6 +374,35 @@ class _RequestHandler(socketserver.StreamRequestHandler):
         thread.start()
         _log.info("serve: socketd: connection subscribed (sub_id=%d)", sid)
         return {"id": request.id, "result": {"subscribed": True}}
+
+    # frob:doc docs/modules/serve.md#version-handshake-t-1105
+    # frob:tests tests/test_serve_socket.py::TestDispatchRequest.test_frob_version_reports_daemon_version kind="unit"  # noqa: E501
+    def _handle_version(self, request: _JsonRpcRequest) -> dict[str, Any]:
+        """Answer the `frob_version` handshake RPC (T-1105) with this
+        daemon process's own installed `frob` version -- the real,
+        daemon-side replacement for the old client-written
+        `.frob/daemon.meta.json` sidecar-file skew check (T-1093), which
+        could go stale relative to whichever process actually happens to
+        be running the daemon."""
+        return {"id": request.id, "result": {"version": daemon_version()}}
+
+    # frob:doc docs/modules/serve.md#version-handshake-t-1105
+    # frob:tests tests/test_serve_socket.py::TestDispatchRequest.test_frob_shutdown_stops_the_server kind="unit"  # noqa: E501
+    def _handle_shutdown(self, request: _JsonRpcRequest) -> dict[str, Any]:
+        """Answer `frob_shutdown` (T-1105) and asynchronously stop the
+        server -- a graceful, protocol-level replacement for the old
+        client-side `SIGTERM`-by-recorded-pid dance (T-1093's
+        `_kill_stale_daemon`), which needed a pid sidecar file to exist and
+        stay accurate. `server.shutdown()` blocks until `serve_forever`'s
+        loop notices and returns, so it is invoked from a short-lived
+        helper thread rather than this connection's own handler thread --
+        calling it inline here would deadlock this exact thread against
+        the loop it is asking to stop."""
+        _log.info("serve: socketd: frob_shutdown requested, stopping server")
+        threading.Thread(
+            target=self.server.shutdown, name="frob-socketd-shutdown", daemon=True
+        ).start()
+        return {"id": request.id, "result": {"shutting_down": True}}
 
     def _pump_events(self, q: queue.Queue[dict[str, Any] | None]) -> None:
         """Event-pump thread body: block on `q.get()` and write each frame
@@ -570,6 +624,7 @@ __all__ = [
     "DaemonError",
     "SocketDaemonConfig",
     "acquire_singleton_lock",
+    "daemon_version",
     "dispatch_request",
     "lock_path",
     "run_socket_daemon",

@@ -86,10 +86,59 @@ narrower still, a capability-free FOREIGN file was never the threat this
 rule exists to catch). SYS102 is UNCHANGED and still runs alongside
 SYS103 for frob's own tree -- SYS103 does not replace it, it closes the
 gap SYS102's `_PACKAGE_ROOT` scope leaves on every OTHER repo.
+
+SYS104 (T-0668) exact interface conformance -- a node's declared
+`interface=<symbol>` attrs (this ticket's convention, same "opaque attr
+string" mechanism `code=`/`managed` already use, T-0078/T-0172; no
+grammar change) must EQUAL the union of top-level public symbols
+(`__all__` if the module declares one, else every non-underscore-prefixed
+module-level `def`/`class`/assignment target) across the node's own
+`code=`-bound `.py` files. Fires TWO ways: a declared symbol absent from
+the real surface (`docs/design/structural-linter-adversarial-hardening.md`
+"declared-but-absent declaration" row), and a real public symbol the node
+never declared (the same doc's "undeclared public surface" row --
+`secret_backdoor` example). SCOPE CUT (T-0668, disclosed rather than
+silently applied): this rule only evaluates a node that has declared AT
+LEAST ONE `interface=` attr already -- it does not (yet) mandate that
+EVERY node declare an interface, since making that mandatory would
+require adding `interface=` declarations to `design/frob.strata` itself,
+which sits outside this ticket's `scope` (`src/frob/strata/**`,
+`src/frob/graph/**`, `docs/modules/strata.md`, `tests/unit/strata/**` --
+not `design/frob.strata`). This mirrors the SYS103/T-1079 precedent above
+(`_coverage_totality_scan_prefix`'s own disclosed scope cut): the rule
+ships real, opt-in, zero-regression conformance now; making it total
+(every node must declare) is filed as an explicit follow-up rather than
+forced through an out-of-scope file edit. Python-only, same boundary
+`bind_code` itself already draws (module docstring above).
+
+SYS105 (T-0669) purpose contract -- a node's declared `purpose=<profile>`
+attr (same opaque-attr convention, at most one per node) names a fixed,
+closed vocabulary of allowed-effect profiles (`_PURPOSE_PROFILES`); any
+observed effect kind (the SAME `_observed_raw_kinds_by_node`/
+`_all_kinds_view` union SYS101 already computes) outside the declared
+profile's allowed set fires. An unrecognized profile name is itself a
+finding (a typo'd purpose is not silently permissive). Same SYS104 scope
+cut: only a node that HAS declared a `purpose=` attr is checked; making
+every node declare one is a disclosed follow-up, not forced here.
+
+SYS106 (T-0670) binding totality / laundering -- code laundered into an
+unbound (`FOREIGN`) file that is nonetheless *reachable* (via resolved
+local python imports, `_code_binding.py::resolve_local_import`, followed
+transitively) from a bound node's own files. SYS103 already flags any
+`FOREIGN` file with an observed capability, but only within its scan
+prefix (`_coverage_totality_scan_prefix`, `_PACKAGE_ROOT`-restricted on
+frob's own tree); SYS106 closes the specific evasion the design doc names
+("binding need not be total, so logic can be laundered into an unbound
+file") by following the REACHABILITY edge itself, prefix-independent --
+a helper file reached by import from a bound node is checked regardless
+of where it lives, since the laundering threat is precisely that such a
+file might sit outside whatever prefix a coverage scan restricts itself
+to. Cycle-safe (visited-set BFS over resolved import targets).
 """
 
 from __future__ import annotations
 
+import ast
 import fnmatch
 import os
 from pathlib import Path
@@ -98,6 +147,7 @@ from pydantic import BaseModel, ConfigDict
 from typani.result import Err, Ok, Result
 
 from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs, walk_pruned
+from frob.lang import resolve_local_import
 from frob.logging import get_logger
 from frob.vet._capability import (
     is_self_pattern_path,
@@ -106,7 +156,15 @@ from frob.vet._capability import (
 )
 from frob.vet._capability_modes import canonical_declared_kind, expand_declared_kind
 
-from ._code_binding import FOREIGN, CodeBinding, _node_code_globs, bind_code
+from ._code_binding import (
+    FOREIGN,
+    CodeBinding,
+    _absolute_imports,
+    _node_code_globs,
+    _parse_ast,
+    _relative_imports,
+    bind_code,
+)
 from ._effects import (
     _KIND_MAP,
     _declared_kinds,
@@ -138,6 +196,23 @@ SYS_UNMODELED_CODE = "SYS102"
 #: least one capability in, on ANY audited root -- the repo-general form
 #: of SYS102's frob-own-tree-only unmodeled-code check.
 SYS_COVERAGE_TOTALITY = "SYS103"
+# frob:doc docs/modules/strata.md#sys104-interface-conformance-t-0668
+#: `frob sys audit` rule id for SYS104 (T-0668) exact interface
+#: conformance: a node's declared `interface=<symbol>` attrs must equal
+#: its bound files' real public surface (module docstring's SYS104
+#: section) -- fires for either direction of mismatch.
+SYS_INTERFACE_CONFORMANCE = "SYS104"
+# frob:doc docs/modules/strata.md#sys105-purpose-contract-t-0669
+#: `frob sys audit` rule id for SYS105 (T-0669) purpose contract: a
+#: node's declared `purpose=<profile>` attr bounds its allowed observed
+#: effect kinds (module docstring's SYS105 section).
+SYS_PURPOSE_CONTRACT = "SYS105"
+# frob:doc docs/modules/strata.md#sys106-binding-totality-t-0670
+#: `frob sys audit` rule id for SYS106 (T-0670) binding totality /
+#: laundering: a `FOREIGN` file reachable via resolved local imports from
+#: a bound node's own files, with an observed capability (module
+#: docstring's SYS106 section).
+SYS_BINDING_TOTALITY = "SYS106"
 
 #: `src/` subtree self-conformance actually scans -- our own package root
 #: (module docstring: `design/frob.strata` models exactly this one tree).
@@ -739,6 +814,310 @@ def _coverage_totality_violations(
     return found
 
 
+#: Node attr prefix for a SYS104 (T-0668) declared-interface entry (one
+#: attr per declared public symbol name), mirroring `_code_binding.py`'s
+#: `code=<glob>` attr-string convention (module docstring's SYS104
+#: section).
+_INTERFACE_PREFIX = "interface="
+
+#: Node attr prefix for a SYS105 (T-0669) declared purpose profile (at
+#: most one per node), same opaque-attr convention.
+_PURPOSE_PREFIX = "purpose="
+
+#: SYS105's fixed, closed allowed-effect-profile vocabulary (module
+#: docstring's SYS105 section): profile name -> the set of observed effect
+#: kinds (the SAME normalized vocabulary `_observed_all_kinds_by_node`
+#: yields) that profile permits. `"full"` is the explicit opt-out --
+#: still requires declaring a purpose (so a node cannot hide behind
+#: silence), but permits every observed kind.
+_PURPOSE_PROFILES: dict[str, frozenset[str] | None] = {
+    "pure": frozenset(),
+    "read-only": frozenset({"fs.read", "net.connect", "env.read"}),
+    "logging": frozenset({"fs.write"}),
+    "network": frozenset({"net.connect", "net.listen", "fetch_url"}),
+    "full": None,  # None = no restriction (explicit opt-out)
+}
+
+
+def _node_attr_values(node, prefix: str) -> list[str]:  # noqa: ANN001
+    """Every `node.attrs` entry's tail past `prefix`, in declaration order
+    -- the same opaque-attr-string convention `_code_binding.py::
+    _node_code_globs` reads for `code=`, generalized to `interface=`/
+    `purpose=` so SYS104/SYS105 do not duplicate the split logic."""
+    return [attr[len(prefix) :] for attr in node.attrs if attr.startswith(prefix)]
+
+
+def _module_public_symbols(path: Path) -> frozenset[str] | None:
+    """The real top-level public symbol set of one `.py` file: `__all__`'s
+    string-literal entries if the module declares one, else every
+    non-underscore-prefixed module-level `def`/`class`/plain-assignment
+    target name. `None` on a parse failure (deny-by-default: the caller
+    treats an unparseable file as contributing nothing rather than
+    crashing the whole SYS104 pass, same posture `_parse_ast` establishes
+    in `_code_binding.py`)."""
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    except (SyntaxError, OSError, UnicodeDecodeError) as exc:
+        _log.warning("selfconform: SYS104 could not parse %s: %s", path, exc)
+        return None
+    all_literal = _module_all_literal(tree)
+    if all_literal is not None:
+        return all_literal
+    names: set[str] = set()
+    for stmt in tree.body:
+        names |= _public_names_of_statement(stmt)
+    return frozenset(names)
+
+
+def _module_all_literal(tree: ast.Module) -> frozenset[str] | None:
+    """`__all__`'s string-literal entries if `tree` assigns it a plain
+    list/tuple of string constants at module level, else `None` (no
+    `__all__`, or one this static pass cannot resolve -- falls back to
+    name-based public-symbol collection, never crashes)."""
+    for stmt in tree.body:
+        if not (
+            isinstance(stmt, ast.Assign)
+            and any(isinstance(t, ast.Name) and t.id == "__all__" for t in stmt.targets)
+        ):
+            continue
+        if not isinstance(stmt.value, (ast.List, ast.Tuple)):
+            return None
+        names: set[str] = set()
+        for elt in stmt.value.elts:
+            if not (isinstance(elt, ast.Constant) and isinstance(elt.value, str)):
+                return None
+            names.add(elt.value)
+        return frozenset(names)
+    return None
+
+
+def _public_names_of_statement(stmt: ast.stmt) -> frozenset[str]:
+    """The public (non-underscore-prefixed) top-level name(s) one module
+    body statement introduces -- `def`/`class`/plain assignment targets --
+    split out of `_module_public_symbols` purely to keep its loop body
+    short."""
+    if isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+        return frozenset({stmt.name}) if not stmt.name.startswith("_") else frozenset()
+    if isinstance(stmt, ast.Assign):
+        return frozenset(
+            t.id
+            for t in stmt.targets
+            if isinstance(t, ast.Name) and not t.id.startswith("_")
+        )
+    if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+        name = stmt.target.id
+        return frozenset({name}) if not name.startswith("_") else frozenset()
+    return frozenset()
+
+
+def _node_real_public_surface(
+    binding: CodeBinding, root: Path, node_id: str
+) -> frozenset[str]:
+    """The union of `_module_public_symbols` across every `.py` file
+    `binding` binds to `node_id` -- SYS104's real (ground-truth) side."""
+    surface: set[str] = set()
+    for rel in sorted(binding.owner):
+        if binding.owner[rel] != node_id or not rel.endswith(".py"):
+            continue
+        found = _module_public_symbols(root / rel)
+        if found is not None:
+            surface |= found
+    return frozenset(surface)
+
+
+# frob:tests tests/unit/strata/test_selfconform.py::TestInterfaceConformance.test_undeclared_public_symbol_fires  # noqa: E501
+# frob:tests tests/unit/strata/test_selfconform.py::TestInterfaceConformance.test_declared_but_absent_symbol_fires  # noqa: E501
+def _interface_conformance_violations(
+    model: KernelModel, binding: CodeBinding, root: Path
+) -> list[SelfConformViolation]:
+    """SYS104 (T-0668): for every node declaring at least one
+    `interface=` attr, the declared symbol set must equal the real public
+    surface of its `code=`-bound `.py` files (module docstring's SYS104
+    section, including its disclosed opt-in scope cut)."""
+    found: list[SelfConformViolation] = []
+    for node in model.nodes:
+        declared = frozenset(_node_attr_values(node, _INTERFACE_PREFIX))
+        if not declared:
+            continue  # SYS104 scope cut: opt-in only, see module docstring
+        real = _node_real_public_surface(binding, root, node.id)
+        for missing in sorted(real - declared):
+            _log.warning(
+                "selfconform: SYS104 undeclared public symbol %s on %s",
+                missing,
+                node.id,
+            )
+            found.append(
+                SelfConformViolation(
+                    rule=SYS_INTERFACE_CONFORMANCE,
+                    node=node.id,
+                    detail=(
+                        f"public symbol {missing!r} exported by code but not "
+                        "declared in interface="
+                    ),
+                    capability=missing,
+                )
+            )
+        for absent in sorted(declared - real):
+            _log.warning(
+                "selfconform: SYS104 declared-but-absent symbol %s on %s",
+                absent,
+                node.id,
+            )
+            found.append(
+                SelfConformViolation(
+                    rule=SYS_INTERFACE_CONFORMANCE,
+                    node=node.id,
+                    detail=(
+                        f"interface= declares {absent!r} but no bound file exports it"
+                    ),
+                    capability=absent,
+                )
+            )
+    return found
+
+
+# frob:tests tests/unit/strata/test_selfconform.py::TestPurposeContract.test_effect_outside_profile_fires  # noqa: E501
+# frob:tests tests/unit/strata/test_selfconform.py::TestPurposeContract.test_unrecognized_profile_fires  # noqa: E501
+def _purpose_contract_violations(
+    model: KernelModel, observed_by_node: dict[str, frozenset[str]]
+) -> list[SelfConformViolation]:
+    """SYS105 (T-0669): for every node declaring a `purpose=` attr, every
+    observed effect kind must lie inside that profile's allowed set
+    (`_PURPOSE_PROFILES`, module docstring's SYS105 section). An
+    unrecognized profile name is itself a finding -- a typo must not read
+    as a silently-permissive `"full"`."""
+    found: list[SelfConformViolation] = []
+    for node in model.nodes:
+        declared = _node_attr_values(node, _PURPOSE_PREFIX)
+        if not declared:
+            continue  # SYS105 scope cut: opt-in only, see module docstring
+        profile = declared[0]
+        allowed = _PURPOSE_PROFILES.get(profile)
+        if profile not in _PURPOSE_PROFILES:
+            _log.warning(
+                "selfconform: SYS105 unrecognized purpose profile %r on %s",
+                profile,
+                node.id,
+            )
+            found.append(
+                SelfConformViolation(
+                    rule=SYS_PURPOSE_CONTRACT,
+                    node=node.id,
+                    detail=f"purpose={profile!r} is not a recognized profile",
+                )
+            )
+            continue
+        if allowed is None:
+            continue  # "full" -- explicit opt-out, no restriction
+        observed = observed_by_node.get(node.id, frozenset())
+        for kind in sorted(observed - allowed):
+            _log.warning(
+                "selfconform: SYS105 %s effect outside purpose=%s on %s",
+                kind,
+                profile,
+                node.id,
+            )
+            found.append(
+                SelfConformViolation(
+                    rule=SYS_PURPOSE_CONTRACT,
+                    node=node.id,
+                    detail=(
+                        f"effect {kind!r} observed outside purpose={profile!r}'s "
+                        "allowed profile"
+                    ),
+                    capability=kind,
+                )
+            )
+    return found
+
+
+def _reachable_local_files(start_files: list[str], root: Path) -> frozenset[str]:
+    """BFS closure of every in-repo `.py` file reachable from `start_files`
+    via resolved local python imports (`frob.lang.resolve_local_import`),
+    visited-set guarded against import cycles -- SYS106's "reachable from
+    a bound node" side (module docstring's SYS106 section)."""
+    visited: set[str] = set(start_files)
+    queue: list[str] = list(start_files)
+    while queue:
+        rel = queue.pop()
+        path = root / rel
+        tree = _parse_ast(path)
+        if tree is None:
+            continue
+        for spec, _line in _python_imports_with_lines_module(tree, path.parent, root):
+            dst = resolve_local_import(spec, "python", file_dir=path.parent, root=root)
+            if dst is None or dst in visited:
+                continue
+            visited.add(dst)
+            queue.append(dst)
+    return frozenset(visited)
+
+
+def _python_imports_with_lines_module(
+    tree: ast.Module, file_dir: Path, root: Path
+) -> list[tuple[str, int]]:
+    """Same extraction `_code_binding.py::_python_imports_with_lines` does
+    (reusing its `_absolute_imports`/`_relative_imports` helpers directly,
+    charter: no duplication), but over an ALREADY-parsed `tree` --
+    `_reachable_local_files`'s BFS parses each visited file once for
+    reachability and must not re-parse it a second time just to re-derive
+    imports."""
+    results: list[tuple[str, int]] = []
+    for node in ast.walk(tree):
+        results.extend(_absolute_imports(node))
+        results.extend(_relative_imports(node, file_dir, root))
+    return results
+
+
+# frob:tests tests/unit/strata/test_selfconform.py::TestBindingTotality.test_laundered_capable_file_fires  # noqa: E501
+def _binding_totality_violations(
+    model: KernelModel, binding: CodeBinding, root: Path
+) -> list[SelfConformViolation]:
+    """SYS106 (T-0670): a `FOREIGN` file reachable (via resolved local
+    imports, `_reachable_local_files`) from ANY bound node's own files,
+    that `scan_file_capabilities` observes a capability in -- "logic
+    laundered into an unbound file" (module docstring's SYS106 section).
+    One finding per such file (not per reaching node -- the file itself is
+    the escaping unit, and could be reached from more than one node)."""
+    bound_files = [
+        rel
+        for rel, owner in binding.owner.items()
+        if owner != FOREIGN and rel.endswith(".py")
+    ]
+    if not bound_files:
+        return []
+    reachable = _reachable_local_files(bound_files, root)
+    found: list[SelfConformViolation] = []
+    for rel in sorted(reachable):
+        if binding.owner.get(rel, FOREIGN) != FOREIGN:
+            continue
+        path = root / rel
+        if is_self_pattern_path(path, root):
+            continue
+        kinds = scan_file_capabilities(path)
+        if not kinds:
+            continue
+        capability = ", ".join(sorted(kinds))
+        _log.warning(
+            "selfconform: SYS106 laundered capable file %s (%s) reachable "
+            "from bound code",
+            rel,
+            capability,
+        )
+        found.append(
+            SelfConformViolation(
+                rule=SYS_BINDING_TOTALITY,
+                node=rel,
+                detail=(
+                    f"{rel} has an observed capability ({capability}), is "
+                    "reachable from bound code via local imports, but no "
+                    "node's code= glob binds it"
+                ),
+            )
+        )
+    return found
+
+
 def _top_level_dirs(root: Path) -> list[str]:
     """Every immediate, non-skipped subdirectory name of `root / _PACKAGE_ROOT`
     (module docstring's SYS102 unit of "unmodeled code"), in sorted order.
@@ -1029,6 +1408,11 @@ def _collect_sys_violations(
     )
     violations.extend(_unmodeled_violations(root, capability_binding))
     violations.extend(_coverage_totality_violations(capability_binding, root))
+    violations.extend(
+        _interface_conformance_violations(model, capability_binding, root)
+    )
+    violations.extend(_purpose_contract_violations(model, _all_kinds_view(raw_by_node)))
+    violations.extend(_binding_totality_violations(model, capability_binding, root))
     return violations
 
 
@@ -1045,6 +1429,9 @@ def _apply_sys_waivers(model: KernelModel, violations: list[SelfConformViolation
             SYS_STALE_DESIGN,
             SYS_UNMODELED_CODE,
             SYS_COVERAGE_TOTALITY,
+            SYS_INTERFACE_CONFORMANCE,
+            SYS_PURPOSE_CONTRACT,
+            SYS_BINDING_TOTALITY,
         )
     )
     return apply_waivers(
@@ -1107,7 +1494,10 @@ def _fold_waived_violations(applied) -> tuple[SelfConformViolation, ...]:  # noq
 
 
 __all__ = [
+    "SYS_BINDING_TOTALITY",
     "SYS_COVERAGE_TOTALITY",
+    "SYS_INTERFACE_CONFORMANCE",
+    "SYS_PURPOSE_CONTRACT",
     "SYS_STALE_DESIGN",
     "SYS_UNDECLARED_INTERFACE",
     "SYS_UNMODELED_CODE",
