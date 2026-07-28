@@ -5611,9 +5611,7 @@ def _depr005_violations(
                 and ref.rpartition(":")[2].isdigit()
             )
             ref_line = grown_lines[0] if grown_lines else 1
-            _log.warning(
-                "DEPR005: %s gained new caller(s) in %s", edge.src, grown_file
-            )
+            _log.warning("DEPR005: %s gained new caller(s) in %s", edge.src, grown_file)
             violations.append(
                 Violation(
                     rule="DEPR005",

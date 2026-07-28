@@ -535,7 +535,8 @@ def _without_agent_commit_guard() -> Iterator[None]:
     the commit spawn (not `git add`, which the hook does not gate) so a
     concurrent thread's own `FROB_AGENT` read is never affected for longer
     than necessary."""
-    # frob:waive SEC110 reason="FROB_AGENT is a dispatch-context marker (T-0574), not a secret"
+    # frob:waive SEC110 reason="FROB_AGENT is a dispatch-context marker \
+    # (T-0574), not a secret"
     prior = os.environ.get("FROB_AGENT")
     if prior is not None:
         # frob:waive SEC110 reason="removing a dispatch-context marker, not a secret"
