@@ -230,3 +230,32 @@ every `frob sys audit` run, never behind a flag -- so an active
 conformance waiver cannot be hidden from default output without editing
 the printing code itself, which is exactly the "cannot be hidden from
 default output" acceptance criterion.
+
+<a id="hardening-doc-denominator-totality-t-0672"></a>
+## Hardening-doc denominator totality (T-0672, T-0341 epic close condition)
+
+`tests/unit/strata/test_structural_linter_hardening_totality.py` binds
+`docs/design/structural-linter-adversarial-hardening.md`'s full corpus
+denominator (5 named principles + 9 arch-evasion rows + 9 strata-evasion
+rows, `docs/design/registry/arch-checks.yaml`'s `SLH-RULE-*`/
+`SLH-ARCH-EVA-*`/`SLH-SYS-EVA-*` ids) to the registry, real-data (not
+fixture) style, mirroring the `tests/test_registry_reconciliation_*.py`
+sibling pin tests: every denominator id must resolve to a real registry
+entry with a non-`UNDISPOSITIONED` disposition, and the registry must
+carry no `SLH-*` id the denominator does not know about either (both
+directions of the N:M totality claim).
+
+The five `SLH-SYS-EVA-01..05` rows (unmodeled module / under-declared
+capability / undeclared public surface / purpose drift / binding
+laundering) are additionally re-dispositioned from a generic
+`out_of_scope:none` reasoned-deferral to `handled_by:SYS103`/`SYS100`/
+`SYS104`/`SYS105`/`SYS106` respectively -- addressed-by-check, now that
+T-0667-T-0670 built a real registered rule for each. `check_self_
+conformance` carries the matching `frob:enforces SLH-SYS-EVA-0N-...`
+directives (REG008's "the disposition names a real code site" half).
+The other 18 denominator rows (the 5 design PRINCIPLES and the arch-
+evasion/remaining strata-evasion rows) stay as their existing, honest
+reasoned-deferral dispositions -- they motivate gate DESIGN holistically
+(the waiver/debt/deprecation escape-hatch families, fail-closed posture)
+rather than naming one bindable rule, and forcing a `handled_by:` there
+would be a false, over-narrow claim.

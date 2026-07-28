@@ -1297,6 +1297,15 @@ def _unmodeled_violations(
 # entry existed and SYS103 registered in the live rule set (the follow-up
 # T-0667's Done report deferred).
 # frob:enforces CHK-GATE-SYS103
+# T-0672: SLH-SYS-EVA-* edges bind this function directly to the
+# structural-linter-adversarial-hardening.md denominator rows T-0668/
+# T-0669/T-0670 close (docs/design/registry/arch-checks.yaml's
+# `handled_by:SYS100`/`SYS104`/`SYS105`/`SYS106` dispositions).
+# frob:enforces SLH-SYS-EVA-01-UNMODELED-MODULE
+# frob:enforces SLH-SYS-EVA-02-UNDER-DECLARED-CAPABILITY
+# frob:enforces SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE
+# frob:enforces SLH-SYS-EVA-04-PURPOSE-DRIFT
+# frob:enforces SLH-SYS-EVA-05-BINDING-LAUNDERING
 def check_self_conformance(
     model: KernelModel, root: Path
 ) -> Result[SelfConformReport, StrataError]:

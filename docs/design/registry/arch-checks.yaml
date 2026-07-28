@@ -2180,35 +2180,35 @@ entries:
     source_doc: "docs/design/structural-linter-adversarial-hardening.md"
     source_ref: "sys-evasion"
     checkability: "design-defense"
-    disposition: "out_of_scope:none -- this is an adversarial-evasion ROW from structural-linter-adversarial-hardening.md's threat-model table for strata/systems modeling: a way an author might evade an obligation, used to motivate strata's own deny-by-default/provability design elsewhere, not itself a single checkable claim with one bindable rule id"
-    cross_refs: []
+    disposition: "handled_by:SYS103"
+    cross_refs: ["CHK-GATE-SYS103"]
   - id: "SLH-SYS-EVA-02-UNDER-DECLARED-CAPABILITY"
     name: "Under-declared capability: node uses exec but doesn't declare it"
     source_doc: "docs/design/structural-linter-adversarial-hardening.md"
     source_ref: "sys-evasion"
     checkability: "design-defense"
-    disposition: "out_of_scope:none -- this is an adversarial-evasion ROW from structural-linter-adversarial-hardening.md's threat-model table for strata/systems modeling: a way an author might evade an obligation, used to motivate strata's own deny-by-default/provability design elsewhere, not itself a single checkable claim with one bindable rule id"
-    cross_refs: []
+    disposition: "handled_by:SYS100"
+    cross_refs: ["CHK-GATE-SYS100"]
   - id: "SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE"
     name: "Undeclared public surface: node declares interface {f,g} but code exports more"
     source_doc: "docs/design/structural-linter-adversarial-hardening.md"
     source_ref: "sys-evasion"
     checkability: "design-defense"
-    disposition: "out_of_scope:none -- this is an adversarial-evasion ROW from structural-linter-adversarial-hardening.md's threat-model table for strata/systems modeling: a way an author might evade an obligation, used to motivate strata's own deny-by-default/provability design elsewhere, not itself a single checkable claim with one bindable rule id"
+    disposition: "handled_by:SYS104"
     cross_refs: []
   - id: "SLH-SYS-EVA-04-PURPOSE-DRIFT"
     name: "Purpose drift: a logging module that opens sockets"
     source_doc: "docs/design/structural-linter-adversarial-hardening.md"
     source_ref: "sys-evasion"
     checkability: "design-defense"
-    disposition: "out_of_scope:none -- this is an adversarial-evasion ROW from structural-linter-adversarial-hardening.md's threat-model table for strata/systems modeling: a way an author might evade an obligation, used to motivate strata's own deny-by-default/provability design elsewhere, not itself a single checkable claim with one bindable rule id"
+    disposition: "handled_by:SYS105"
     cross_refs: []
   - id: "SLH-SYS-EVA-05-BINDING-LAUNDERING"
     name: "Binding laundering: node binds to file X, real logic sits in unbound file Y"
     source_doc: "docs/design/structural-linter-adversarial-hardening.md"
     source_ref: "sys-evasion"
     checkability: "design-defense"
-    disposition: "out_of_scope:none -- this is an adversarial-evasion ROW from structural-linter-adversarial-hardening.md's threat-model table for strata/systems modeling: a way an author might evade an obligation, used to motivate strata's own deny-by-default/provability design elsewhere, not itself a single checkable claim with one bindable rule id"
+    disposition: "handled_by:SYS106"
     cross_refs: []
   - id: "SLH-SYS-EVA-06-FLOW-BREAK"
     name: "Flow-break: taint laundered through opaque store round-trip / global / DB write-read"
