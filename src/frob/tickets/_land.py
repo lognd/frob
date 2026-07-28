@@ -59,6 +59,7 @@ from frob.tickets._store import (
     _render_ledger,
     archive_path,
     ledger_digest,
+    ledger_lock,
     ledger_path,
     load_all,
     load_archive,
@@ -3711,6 +3712,8 @@ def _check_squash_conflicted(
 
 
 # frob:ticket T-0907
+# frob:ticket T-1036
+# frob:tests tests/test_ticket_land.py::TestSquashSpliceLedgerChurn.test_concurrent_write_between_squash_and_splice_survives_land  # noqa: E501
 def _squash_and_splice_ledger(
     root: Path,
     worktree: Path,
@@ -3724,11 +3727,33 @@ def _squash_and_splice_ledger(
     unwinds the squash on any conflict outside `ticket.scope` (or a true
     in-scope conflict), or a splice failure. `pre_land_tip` (T-0907) is this
     run's verified pre-mutation root tip, threaded through to
-    `_check_squash_conflicted` and this function's own unwind."""
-    root_pre_text = _read_ledger_text_or_empty(root)
-    # frob:ticket T-0959
-    root_pre_archive_text = _read_archive_text_or_empty(root)
+    `_check_squash_conflicted` and this function's own unwind.
 
+    T-1036: the ledger read that this splice is BASED ON is deliberately
+    deferred until immediately before the write, and taken under `root`'s
+    own `ledger_lock` -- the same lock every ordinary single-ticket verb
+    (`write_ticket`/`write_all`/`write_archive`) already serializes
+    through. Before this fix, `root_pre_text`/`root_pre_archive_text` were
+    captured once, BEFORE the `git merge --squash` step, then used to
+    build the spliced write several git operations (and, on a busy
+    checkout, several seconds) later with no lock held in between: any
+    concurrent `frob ticket new`/`evidence`/`done-report`/... writing
+    `root`'s tickets.md in that window had its bytes silently overwritten
+    the moment this splice wrote its own stale-based text back out --
+    a real lost update (a tail-filed coordinator block clobbered twice by
+    concurrent lands' squash-splices, and stale-snapshot draft-id
+    collisions from the same root cause). Re-reading fresh, under the
+    lock, right before the single write that actually lands means any
+    writer that got in first is captured in this splice's base text
+    instead of being silently discarded; a writer that loses the lock
+    race simply writes to the working tree after this land's commit,
+    same as any other sequential edit -- never a lost update. The
+    squash-merge itself (a `git` operation against `root`'s working tree,
+    run once per land, well before this point) is deliberately NOT run
+    under `ledger_lock` -- see `_land_lock`'s own module comment for why
+    a worktree's committed lock-file artifact once made reusing that
+    exact path across a squash-merge unsafe; only the narrow
+    read-splice-write critical section needs the lock, not the merge."""
     squash = run_argv(
         ["git", "-C", str(root), "merge", "--squash", "--no-commit", branch_name]
     )
@@ -3743,42 +3768,55 @@ def _squash_and_splice_ledger(
         return Err(conflict_check.danger_err)
 
     worktree_final_text = ledger_path(worktree).read_text(encoding="utf-8")
-    # T-0479: base on root's CURRENT tickets.md, overlay only `final_id`'s
-    # own block from the worktree's finalized copy -- see the analogous
-    # comment in `_merge_main_into_worktree`. This is the final splice that
-    # actually lands on main, so it is the last line of defense against
-    # sibling-ticket resurrection even if something upstream missed it.
-    archived_ids = _archived_ids(root)
-    spliced = _splice_and_stage(
-        root,
-        root_pre_text,
-        worktree_final_text,
-        archived_ids=archived_ids,
-        ticket_id=final_id,
-    )
-    if spliced.is_err:
-        return _unwind_squash_apply(root, pre_land_tip, final_id, spliced.danger_err)
-
-    # frob:ticket T-0959
-    # T-0959: tickets-archive.md's final splice, mirroring the tickets.md
-    # splice just above -- this is the LAST line of defense against the
-    # T-0703 incident (a stale worktree archive wholesale-overwriting main's
-    # newer one), since this is the squash-apply commit that actually lands
-    # on main. `root_pre_archive_text` (captured before the squash ran, i.e.
-    # root's CURRENT tip) is authoritative; the worktree's finalized archive
-    # copy is the other side.
     worktree_final_archive_text = _read_archive_text_or_empty(worktree)
-    archive_spliced = _splice_and_stage_archive(
-        root, root_pre_archive_text, worktree_final_archive_text
-    )
-    if archive_spliced.is_err:
-        return _unwind_squash_apply(
-            root, pre_land_tip, final_id, archive_spliced.danger_err
-        )
 
-    return _refuse_if_land_regresses_terminal_state(
-        root, pre_land_tip, final_id, root_pre_text, spliced.danger_ok, archived_ids
-    )
+    with ledger_lock(root):
+        # T-1036: re-read root's CURRENT ledger/archive/archived-ids HERE,
+        # under the lock, not from a stale pre-squash snapshot -- see this
+        # function's own docstring for the incident this closes.
+        root_pre_text = _read_ledger_text_or_empty(root)
+        # frob:ticket T-0959
+        root_pre_archive_text = _read_archive_text_or_empty(root)
+
+        # T-0479: base on root's CURRENT tickets.md, overlay only
+        # `final_id`'s own block from the worktree's finalized copy -- see
+        # the analogous comment in `_merge_main_into_worktree`. This is the
+        # final splice that actually lands on main, so it is the last line
+        # of defense against sibling-ticket resurrection even if something
+        # upstream missed it.
+        archived_ids = _archived_ids(root)
+        spliced = _splice_and_stage(
+            root,
+            root_pre_text,
+            worktree_final_text,
+            archived_ids=archived_ids,
+            ticket_id=final_id,
+        )
+        if spliced.is_err:
+            return _unwind_squash_apply(
+                root, pre_land_tip, final_id, spliced.danger_err
+            )
+
+        # frob:ticket T-0959
+        # T-0959: tickets-archive.md's final splice, mirroring the
+        # tickets.md splice just above -- this is the LAST line of defense
+        # against the T-0703 incident (a stale worktree archive
+        # wholesale-overwriting main's newer one), since this is the
+        # squash-apply commit that actually lands on main.
+        # `root_pre_archive_text` (re-read fresh under the lock, i.e.
+        # root's CURRENT tip) is authoritative; the worktree's finalized
+        # archive copy is the other side.
+        archive_spliced = _splice_and_stage_archive(
+            root, root_pre_archive_text, worktree_final_archive_text
+        )
+        if archive_spliced.is_err:
+            return _unwind_squash_apply(
+                root, pre_land_tip, final_id, archive_spliced.danger_err
+            )
+
+        return _refuse_if_land_regresses_terminal_state(
+            root, pre_land_tip, final_id, root_pre_text, spliced.danger_ok, archived_ids
+        )
 
 
 # frob:ticket T-0976

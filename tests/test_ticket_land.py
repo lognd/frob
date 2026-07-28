@@ -886,6 +886,62 @@ class TestLand:
         assert _run(["git", "status", "--porcelain"], wt).stdout.strip() == ""
 
 
+# frob:ticket T-1036
+class TestSquashSpliceLedgerChurn:
+    """T-1036 regression: a concurrent single-ticket write against `root`
+    landing in the window between `land`'s squash-merge and its own
+    ledger splice must survive, never be silently overwritten by the
+    splice's (previously stale) base-text snapshot."""
+
+    # frob:tests tests/test_ticket_land.py::TestSquashSpliceLedgerChurn.test_concurrent_write_between_squash_and_splice_survives_land  # noqa: E501
+    def test_concurrent_write_between_squash_and_splice_survives_land(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-race", str(wt)], repo)
+        created = new_ticket(wt, _spec("Race widget", scope=("src/widget.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "widget.py").write_text("# race widget\n")
+        _commit_all(wt, "add race widget")
+
+        real_run_argv = _land_mod.run_argv
+        injected: dict[str, Any] = {"done": False, "sibling_id": None}
+
+        def _fake_run_argv(argv: Sequence[str], **kwargs: Any) -> Any:
+            result = real_run_argv(argv, **kwargs)
+            # Fire exactly once, right after the squash-merge -- the
+            # earliest possible moment `root`'s working tree has the
+            # worktree's finalized branch content, and (before this
+            # ticket's fix) exactly the window `_squash_and_splice_ledger`
+            # used to build its splice from a snapshot taken BEFORE this
+            # point, silently discarding anything written here.
+            if (
+                not injected["done"]
+                and "merge" in argv
+                and "--squash" in argv
+                and result.is_ok
+                and result.danger_ok.returncode == 0
+            ):
+                sibling = new_ticket(repo, _spec("Concurrent sibling"))
+                assert sibling.is_ok
+                injected["sibling_id"] = sibling.danger_ok.id
+                injected["done"] = True
+            return result
+
+        monkeypatch.setattr(_land_mod, "run_argv", _fake_run_argv)
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+        assert injected["done"] is True
+
+        landed = load_all(repo)
+        assert landed.is_ok
+        assert injected["sibling_id"] in landed.danger_ok
+        assert landed.danger_ok[result.danger_ok.final_id].state == TicketState.DONE
+
+
 class TestPlannedStateAutoAdvanceOnLand:
     """T-0821: a ticket left in PLANNED (never run through `frob ticket
     start`, or reverted there by a section-10b ledger restore) but
