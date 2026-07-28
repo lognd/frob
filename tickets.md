@@ -1064,3 +1064,34 @@ threat: null
 component: null
 ```
 Refile of a T-1150 draft that died to ledger-restore cycles during its land (disclosed in the w18-strata3 done report): the new frob sys sync-interface subcommand landed (5103c0f1) but docs/commands/sys.md does not mention it.
+
+<!-- ticket:T-1161 -->
+```yaml
+id: T-1161
+title: 'doctor/testing: detect root-venv entrypoint shebangs pointing outside this
+  venv; collector must fail loudly, not emit 6219 COV003s'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/testing/**
+- src/frob/doctor.py
+- tests/test_testing_collect.py
+acceptance:
+- text: GIVEN .venv/bin entrypoint scripts whose shebang points outside this venv
+    (e.g. a removed worktree's python) WHEN frob doctor runs THEN it reports each
+    corrupted shim with the uv sync --reinstall-package repair command
+  evidence: []
+- text: GIVEN pytest --collect-only exits nonzero WHEN the coverage gate needs collection
+    THEN it emits ONE error naming the collection failure and its stderr tail instead
+    of an unresolved-evidence COV003 for every archived ticket
+  evidence: []
+threat: null
+component: null
+```
+2026-07-28 incident: worktree uv operations rewrote the ROOT venv's pytest shim shebang to point at .claude/worktrees/w18-tickets/.venv/bin/python; after that worktree was removed, uv run pytest broke, collect_python_tests returned CollectFailed, and the coverage gate emitted 6219 COV003 errors (one per archived evidence id) with a misleading refresh-the-cache hint. Two misattribution layers: (1) doctor has no venv-shim integrity check; (2) the coverage gate degrades a total-collection failure into per-evidence noise. Sibling of T-1148 (natives staleness honest-failure); same design: detect the environment fault once, loudly, with the repair command.
