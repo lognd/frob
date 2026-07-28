@@ -5740,7 +5740,7 @@ suite verification per group.
 ```yaml
 id: T-1075
 title: wire env.read/env.write tier-2 join (_KIND_MAP + WIRED_MODE_FAMILIES)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -5751,10 +5751,151 @@ sprint: null
 scope:
 - src/frob/strata/_effects.py
 - src/frob/vet/_capability_modes.py
+- src/frob/strata/_selfconform.py
+- src/frob/strata/_threat.py
+- tests/unit/strata/test_selfconform.py
+- tests/unit/strata/test_effects.py
+- tests/unit/strata/test_threat.py
+- tests/unit/vet/test_capability_modes.py
+- src/frob/vet/_capability_registry.py
+- tests/test_capability_registry.py
+scope_changes:
+- op: add
+  glob: src/frob/strata/_selfconform.py
+  reason: removing _UNWIRED_ENV_MODE_ALIASES's transitional fold is the point of this
+    ticket's tier-2 join, per the ticket's own plan point 2
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: src/frob/strata/_threat.py
+  reason: 'T-0771 mandate point 2 / ticket plan point 3: sweep DEFAULT_BENIGN_CAPABILITIES/CWE_CATALOG
+    for env.read/env.write entries the new join requires'
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: existing litmus tests for _EXTENDED_KINDS/_KIND_MAP that this ticket's env
+    wiring changes
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: tests/unit/strata/test_effects.py
+  reason: existing litmus tests for _KIND_MAP this ticket extends
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: tests/unit/strata/test_threat.py
+  reason: existing litmus tests for DEFAULT_BENIGN_CAPABILITIES this ticket extends
+    with env.read/env.write
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: tests/unit/vet/test_capability_modes.py
+  reason: existing litmus tests for WIRED_MODE_FAMILIES this ticket extends
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: src/frob/vet/_capability_registry.py
+  reason: CAPABILITY_KINDS must register the new mode-qualified env.read/env.write
+    spellings DEFAULT_BENIGN_CAPABILITIES now excuses, mirroring net.connect/net.listen's
+    own T-0771 registration
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: tests/test_capability_registry.py
+  reason: existing litmus tests for CAPABILITY_KINDS this ticket extends
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind::test_coarse_env_covers_union_of_modes
+- tests/unit/strata/test_effects.py::TestDeployServeMutateNodeSplitConformance::test_mutate_declares_every_real_effect_it_exercises
+- tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells
+- tests/test_capability_registry.py::TestValidateRegistryKinds::test_every_threat_catalog_kind_is_registered
 threat: null
 component: null
 ```
 T-0771 gave env a real read-vs-write needle split (frob.vet._capability_registry env-read/env-write, per language) but deliberately left env OUT of WIRED_MODE_FAMILIES and _effects.py::_KIND_MAP -- env has no tier-2 (THREAT004/SYS100/SYS101) may-declaration join at all today, so there is nothing to feed. This ticket: (1) decide whether env gets its own THREAT004-delegated join like net/fs, or stays a SYS100-extended-only kind; (2) if wired, add env-read/env-write to _KIND_MAP and WIRED_MODE_FAMILIES, remove _selfconform.py's _UNWIRED_ENV_MODE_ALIASES transitional fold; (3) sweep frob.strata._threat.DEFAULT_BENIGN_CAPABILITIES / CWE_CATALOG for any env.read/env.write entries the new join would require (T-0717 mandate point 2's sweep, applied to env).
+
+## Done report
+
+Decision (ticket plan point 1): env gets its own THREAT004-delegated join
+like net/fs, not a SYS100-extended-only kind. Matches the exact precedent
+net just got in T-0771, and the ticket's own title says "wire" the join,
+not merely decide about it.
+
+Implementation (ticket plan points 2-3):
+- _effects.py::_KIND_MAP gained env-read -> env.read, env-write ->
+  env.write (same shape as fs-write/fs-read/net-connect/net-listen).
+- _capability_modes.py::WIRED_MODE_FAMILIES gained "env" (FAMILY_MODES
+  already defined env's read/write modes; only the wiring flag was
+  missing).
+- _selfconform.py::_UNWIRED_ENV_MODE_ALIASES (the transitional fold) is
+  removed. Its two call sites (_extended_kinds_view, _all_kinds_view)
+  simplified back to their fs/net shape. IMPORTANT CORRECTION mid-work:
+  bare "env" could NOT be removed from _EXTENDED_KINDS wholesale --
+  3 pre-existing registry entries (sys.exit/os._exit, signal.signal) are
+  tagged capability_kind="env" despite being process-lifecycle/signal
+  operations, not actual environment-variable access; only "env-read"/
+  "env-write" moved out of _EXTENDED_KINDS into the _KIND_MAP join. Caught
+  by the drift-lock test (TestExtendedKindsDriftLock.test_extended_kinds_
+  is_disjoint_from_kind_map) failing on first attempt -- see that test's
+  updated docstring for the disambiguation.
+- _threat.py::DEFAULT_BENIGN_CAPABILITIES gained env.read/env.write
+  BenignCapability entries (mirrors net.connect/net.listen's own T-0771
+  addition) so THREAT005 does not fire on the newly-precise observed
+  kinds. 13 entries now (was 11); TestCaughtByAuditExhaustive's count
+  lock updated to match.
+- _capability_registry.py::CAPABILITY_KINDS gained the dotted env.read/
+  env.write spellings (registered so DEFAULT_BENIGN_CAPABILITIES's kind
+  is known -- _validate_registry_kinds enforces this); CAPABILITY_MATRIX_
+  EXCUSES gained 10 excuse entries (env.read/env.write x 5 languages,
+  dotted spellings are never scanner-emitted directly, only produced by
+  _KIND_MAP downstream -- same shape as net.connect/net.listen's own
+  10-entry excuse block).
+
+Real-code fallout: tests/unit/strata/test_effects.py's mutate fixture
+started observing a real, previously-invisible env.read effect
+(os.environ read building a subprocess env) once env's tier-2 join went
+live -- added "env" to that test's declared may= set. The REAL repo
+.strata model (design/frob.strata, node mutate) already declares `may
+"env"` since T-0860, so this is a test-fixture-only fix, not a real
+model gap.
+
+Scope note: the ticket's declared scope named only _effects.py and
+_capability_modes.py; the ticket's own body plan (points 2-3) requires
+touching _selfconform.py, _threat.py, and _capability_registry.py plus
+their test files to actually wire and verify the join -- extended scope
+for all of these via `frob ticket scope --add` with reasons recorded in
+tickets.md, same pattern T-1063/T-1073 used.
+
+Ran tests/unit/strata/ + tests/unit/vet/ + tests/test_vet.py +
+tests/test_capability_registry.py in full (all pass, no failures) after
+the change. gates-fast/gates-native/gates-security/ruff all pass under
+--ticket T-1075 except: the pre-existing TICK006 (T-0667's own
+phantom-draft finding, unrelated, unchanged before/after -- same one
+noted in T-1063/T-1073's Done reports), and REL002 (.frob-release.json
+stale at 0.210.0 vs pyproject.toml's 0.211.0 -- confirmed pre-existing on
+main itself, a land-owned-file artifact from T-1073's own land, not
+something this worktree touched or can fix per the playbook's land-owned-
+files rule).
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind::test_coarse_env_covers_union_of_modes` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_effects.py::TestDeployServeMutateNodeSplitConformance::test_mutate_declares_every_real_effect_it_exercises` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map` (pytest node id, verified passing when recorded)
+- `tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells` (pytest node id, verified passing when recorded)
+- `tests/test_capability_registry.py::TestValidateRegistryKinds::test_every_threat_catalog_kind_is_registered` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1076 -->
 ```yaml

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.212.0] - unreleased
+
+- T-1075: wire env.read/env.write tier-2 join (_KIND_MAP + WIRED_MODE_FAMILIES)
+
 ## [0.211.0] - unreleased
 
 - T-1073: reconcile FAMILY_MODES 'proc' vs vet registry's 'exec' kind naming mismatch

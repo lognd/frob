@@ -58,14 +58,17 @@ the same way `may "fs"` expands to `{fs.read, fs.write}`.
 `env` ALSO got a real read-vs-write needle split in T-0771 (`env-read`/
 `env-write` registry entries, per language, `env-write` excused rather
 than patterned for c-cpp/kotlin where no clean single-process-mutation
-idiom exists) -- but `env` is deliberately NOT in `WIRED_MODE_FAMILIES`
-yet: unlike `net`/`fs`, `env` has no tier-2 (`_effects.py::_KIND_MAP`)
-`may`-declaration join at all today (`env` is one of the vet-only kinds
-`_effects.py`'s own module comment calls out as having "no `may`-
-capability analog yet") -- there is no live conformance join for
-`env.read`/`env.write` to feed, so exploding a coarse `may "env"`
-declaration into modes now would be inert, not wrong, and is deferred to
-the ticket that actually builds that join (T-0771 Done report files it).
+idiom exists), and now (T-1075) has its own tier-2 join like `net`/`fs`:
+`env-read`/`env-write` are in `_effects.py::_KIND_MAP` (normalizing to
+`env.read`/`env.write`) and `env` is in `WIRED_MODE_FAMILIES`, so a bare
+`may "env"` declaration expands to `{env.read, env.write}` the same way
+`may "fs"`/`may "net"` do. Decision (T-1075, closing the T-0771 follow-up
+"decide whether env gets its own THREAT004-delegated join like net/fs, or
+stays a SYS100-extended-only kind"): env gets the SAME delegated join --
+`_selfconform.py`'s own `_UNWIRED_ENV_MODE_ALIASES` transitional fold
+(which existed ONLY to keep a coarse `may "env"` declaration matching an
+env-read/env-write observation while no tier-2 join existed) is removed
+now that the real join makes that folding unnecessary.
 
 `proc`/`ffi` remain unwired for a DIFFERENT reason, found during T-0771:
 the vet registry has no `capability_kind="proc"` entries at all -- process-
@@ -164,13 +167,16 @@ FAMILY_MODES: Final[dict[str, tuple[str, ...]]] = {
 #: docstring's "wiring status"): `expand_declared_kind`/`normalize_
 #: observed_kind` only ever explode a bare family name from THIS set into
 #: its `FAMILY_MODES` union -- a family present in `FAMILY_MODES` but NOT
-#: here (net/env/proc/ffi today) has its vocabulary DEFINED but its
-#: scanner/declaration join still coarse (a bare `may "net"` stays exactly
-#: `{"net"}`, never silently exploded into `{"net.connect", "net.listen"}`
-#: that no scanner-observed kind could ever match, which would make every
-#: existing bare `may "net"` declaration spuriously go SYS101-stale).
-#: Extending this set is the sibling ticket's job (module docstring).
-WIRED_MODE_FAMILIES: Final[frozenset[str]] = frozenset({"fs", "net"})
+#: here (proc/ffi today) has its vocabulary DEFINED but its
+#: scanner/declaration join still coarse (a bare `may "proc"` stays exactly
+#: `{"proc"}`, never silently exploded into a mode set that no
+#: scanner-observed kind could ever match, which would make every
+#: existing bare `may "proc"` declaration spuriously go SYS101-stale).
+#: T-1075 adds `env` (module docstring's wiring-status update): env-read/
+#: env-write now has a real tier-2 join (`_effects.py::_KIND_MAP`), so a
+#: coarse `may "env"` declaration can safely explode too. Extending this
+#: set further (`proc`/`ffi`) is the next sibling ticket's job.
+WIRED_MODE_FAMILIES: Final[frozenset[str]] = frozenset({"fs", "net", "env"})
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
 # frob:waive AFFECT001 reason="T-1073 naming-reconciliation decision, no \

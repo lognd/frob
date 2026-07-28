@@ -90,8 +90,12 @@ class TestUndeclaredInterfaceCore:
 
 
 class TestUndeclaredInterfaceExtended:
-    """SYS100 for eval/env/ffi/install-hook -- the slice THREAT004
-    structurally cannot see (docs/strata/selfconform.md#the-three-rules)."""
+    """SYS100 for eval/ffi/install-hook -- the slice THREAT004
+    structurally cannot see (docs/strata/selfconform.md#the-three-rules).
+    T-1075: `env` moved OUT of this extended slice into THREAT004's own
+    core delegated join (`env-read`/`env-write` -> `env.read`/`env.write`
+    via `_effects.py::_KIND_MAP`), same as `fs-read`'s own T-0717
+    promotion."""
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     def test_extended_undeclared_interface_fires(self, tmp_path: Path):

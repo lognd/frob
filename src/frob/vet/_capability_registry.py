@@ -122,16 +122,19 @@ CAPABILITY_KINDS: tuple[str, ...] = (
     "fs-read",
     "env",
     #: T-0771: precise read-vs-write scanner-observed kinds for `env`, the
-    #: same shape as `net-connect`/`net-listen` above -- NOT added to
-    #: `frob.vet._capability_modes.WIRED_MODE_FAMILIES` yet, unlike `net`:
-    #: `env` still has no tier-2 (`frob.strata._effects._KIND_MAP`) `may`-
-    #: declaration join at all (module docstring there), so there is no
-    #: live conformance join for the precise kinds to feed. The needle-
-    #: level split exists now (this registry) so that follow-up join work
-    #: does not have to redo the needle research; wiring the join itself
-    #: is filed as separate follow-up (T-0771 Done report).
+    #: same shape as `net-connect`/`net-listen` above.
     "env-read",
     "env-write",
+    #: T-1075: `env` joined `frob.vet._capability_modes.WIRED_MODE_
+    #: FAMILIES` -- `frob.strata._threat.DEFAULT_BENIGN_CAPABILITIES` now
+    #: excuses THREAT005 against the tier-2 `_effects.py::_KIND_MAP`-
+    #: NORMALIZED observed kind (`env.read`/`env.write`, mode-qualified,
+    #: the same spelling `may` declarations resolve to) -- a DIFFERENT
+    #: string from the raw vet-scanner kind just above (`env-read`/
+    #: `env-write`, hyphenated), mirroring `net.connect`/`net.listen`'s
+    #: own T-0771 dual-registration just above.
+    "env.read",
+    "env.write",
     "ffi",
     "install-hook",
     "html_render",
@@ -2001,6 +2004,68 @@ CAPABILITY_MATRIX_EXCUSES: tuple[_MatrixExcuse, ...] = (
         "System.getenv() entry (T-0771) is precise env-read from the "
         "start, so this cell was never a reclassification, just never "
         "patterned coarse",
+    ),
+    # T-1075: `env.read`/`env.write` (dotted, the tier-2 `_KIND_MAP`-
+    # normalized spelling `frob.strata._threat.DEFAULT_BENIGN_CAPABILITIES`
+    # excuses THREAT005 against) are a DIFFERENT registered kind from the
+    # raw scanner's `env-read`/`env-write` (hyphenated, patterned above) --
+    # same shape as `net.connect`/`net.listen` above. Nothing in
+    # `DANGEROUS_OPERATIONS` ever emits the dotted spelling directly (only
+    # `_effects.py::_KIND_MAP` produces it, downstream of the scanner), so
+    # every language cell for both dotted kinds is excused, not patterned.
+    _MatrixExcuse(
+        capability_kind="env.read",
+        language="python",
+        reason="dotted mode-qualified spelling, never emitted directly by "
+        "the scanner (only frob.strata._effects.py::_KIND_MAP produces "
+        "it from the raw env-read scanner kind, already patterned above) "
+        "-- registered only so THREAT005's BenignCapability excuse kind "
+        "is a known kind, not a separate detection surface",
+    ),
+    _MatrixExcuse(
+        capability_kind="env.read",
+        language="typescript",
+        reason="see the python/env.read excuse above",
+    ),
+    _MatrixExcuse(
+        capability_kind="env.read",
+        language="rust",
+        reason="see the python/env.read excuse above",
+    ),
+    _MatrixExcuse(
+        capability_kind="env.read",
+        language="c-cpp",
+        reason="see the python/env.read excuse above",
+    ),
+    _MatrixExcuse(
+        capability_kind="env.read",
+        language="kotlin",
+        reason="see the python/env.read excuse above",
+    ),
+    _MatrixExcuse(
+        capability_kind="env.write",
+        language="python",
+        reason="see the python/env.read excuse above, write-side",
+    ),
+    _MatrixExcuse(
+        capability_kind="env.write",
+        language="typescript",
+        reason="see the python/env.read excuse above, write-side",
+    ),
+    _MatrixExcuse(
+        capability_kind="env.write",
+        language="rust",
+        reason="see the python/env.read excuse above, write-side",
+    ),
+    _MatrixExcuse(
+        capability_kind="env.write",
+        language="c-cpp",
+        reason="see the python/env.read excuse above, write-side",
+    ),
+    _MatrixExcuse(
+        capability_kind="env.write",
+        language="kotlin",
+        reason="see the python/env.read excuse above, write-side",
     ),
     _MatrixExcuse(
         capability_kind="fs",

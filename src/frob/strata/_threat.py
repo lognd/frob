@@ -208,6 +208,13 @@ class BenignCapability(BaseModel):
 #: it only takes effect for the quality loop, where it is a genuine gap in
 #: `QUALITY_CATALOG`'s vocabulary, not a security exemption.
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
+# frob:waive AFFECT001 reason="T-1075 added env.read/env.write entries, \
+# same shape as every other entry already in this tuple; docs/strata/threat.md \
+# is outside T-1075's declared scope (src/frob/strata/_effects.py, \
+# src/frob/vet/_capability_modes.py, extended to src/frob/strata/_selfconform.py, \
+# src/frob/strata/_threat.py, src/frob/vet/_capability_registry.py, and their \
+# test files) -- matches T-1047's own precedent for the identical situation on \
+# CAPABILITY_KINDS"
 DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
     BenignCapability(
         kind="exec",
@@ -304,13 +311,48 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
     BenignCapability(
         kind="env",
         reason=(
-            "vet dependency-vetting signal (environment-variable read "
-            "access); no CWE_CATALOG entry targets environment-variable "
-            "reads as a sink"
+            "process-lifecycle/signal-handling registry entries (sys.exit/"
+            "os._exit, signal.signal) that share the bare 'env' capability "
+            "kind despite not being an actual environment-variable read or "
+            "write (frob.strata._selfconform's own T-1075 disambiguation "
+            "comment); no CWE_CATALOG entry targets process termination or "
+            "signal-handler installation as a sink on their own"
+        ),
+        caught_by=(
+            "none -- no CWE_CATALOG entry targets process termination or "
+            "signal-handler installation as a sink on their own; not "
+            "compensated elsewhere"
+        ),
+    ),
+    # T-1075: `env` joined `frob.vet._capability_modes.WIRED_MODE_FAMILIES`
+    # -- `_effects.py::_KIND_MAP` now normalizes an observed env-read/
+    # env-write effect to the precise `env.read`/`env.write` spelling
+    # (T-0771's needle split) instead of the coarse bare `env` THREAT005's
+    # `check_effect_completeness` used to see for those two, so these two
+    # excuses are ADDITIONAL to (not a replacement for) the bare `env`
+    # excuse above, mirroring `net`'s T-0771 precedent exactly.
+    BenignCapability(
+        kind="env.read",
+        reason=(
+            "tier-2 environment-variable-read capability (T-0079/T-1075 "
+            "_KIND_MAP, from vet's env-read); no CWE_CATALOG entry targets "
+            "environment-variable reads as a sink on their own"
         ),
         caught_by=(
             "none -- no CWE_CATALOG entry targets environment-variable "
-            "reads as a sink; not compensated elsewhere"
+            "reads as a sink on their own; not compensated elsewhere"
+        ),
+    ),
+    BenignCapability(
+        kind="env.write",
+        reason=(
+            "tier-2 environment-variable-write capability (T-0079/T-1075 "
+            "_KIND_MAP, from vet's env-write); no CWE_CATALOG entry "
+            "targets environment-variable writes as a sink on their own"
+        ),
+        caught_by=(
+            "none -- no CWE_CATALOG entry targets environment-variable "
+            "writes as a sink on their own; not compensated elsewhere"
         ),
     ),
     BenignCapability(

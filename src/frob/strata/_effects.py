@@ -77,29 +77,40 @@ from ._models import KernelModel, Node
 _log = get_logger(__name__)
 
 #: vet capability-table key -> tier-2 effect kind. net-connect/net-listen/
-#: fs-write/fs-read/exec are in this ticket's scope (T-0079's title,
-#: T-0717/T-0771's mode split); eval/env/ffi/install-hook are vet-specific
-#: dependency-vetting signals with no `may`-capability analog yet. T-0717:
-#: `fs-write`/`fs-read` normalize to the precise, mode-qualified
-#: `fs.write`/`fs.read` spellings (`frob.vet._capability_modes`) instead of
-#: the old ambiguous bare `fs` -- `fs-read` is promoted here from
+#: fs-write/fs-read/exec/env-read/env-write are in this ticket's scope
+#: (T-0079's title, T-0717/T-0771/T-1075's mode split); eval/ffi/
+#: install-hook are vet-specific dependency-vetting signals with no
+#: `may`-capability analog yet. T-0717: `fs-write`/`fs-read` normalize to
+#: the precise, mode-qualified `fs.write`/`fs.read` spellings
+#: (`frob.vet._capability_modes`) instead of the old ambiguous bare `fs`
+#: -- `fs-read` is promoted here from `_selfconform.py::_EXTENDED_KINDS`
+#: (it now has a real tier-2/THREAT004 analog, closing that module's old
+#: SYS100 gap statement for this one kind) so both directions of the
+#: fs-read/fs-write join share ONE normalization site instead of two.
+#: T-0771 does the same for `net`: the registry's `net-connect`/
+#: `net-listen` scanner kinds (T-0771's needle split, `frob.vet.
+#: _capability_registry`) now normalize to the precise `net.connect`/
+#: `net.listen` spellings and `net` is added to `WIRED_MODE_FAMILIES`
+#: (`frob.vet._capability_modes`) so a coarse `may "net"` declaration
+#: still covers both -- the old bare `"net": "net"` entry is retired
+#: since no registry entry emits the unqualified `"net"` vet-kind anymore
+#: (mirrors fs's own retirement of a bare `"fs"` entry). T-1075 does the
+#: SAME for `env`: `env-read`/`env-write` normalize to `env.read`/
+#: `env.write` and `env` joins `WIRED_MODE_FAMILIES`, promoted here from
 #: `_selfconform.py::_EXTENDED_KINDS` (it now has a real tier-2/THREAT004
-#: analog, closing that module's old SYS100 gap statement for this one
-#: kind) so both directions of the fs-read/fs-write join share ONE
-#: normalization site instead of two. T-0771 does the same for `net`: the
-#: registry's `net-connect`/`net-listen` scanner kinds (T-0771's needle
-#: split, `frob.vet._capability_registry`) now normalize to the precise
-#: `net.connect`/`net.listen` spellings and `net` is added to
-#: `WIRED_MODE_FAMILIES` (`frob.vet._capability_modes`) so a coarse
-#: `may "net"` declaration still covers both -- the old bare `"net": "net"`
-#: entry is retired since no registry entry emits the unqualified `"net"`
-#: vet-kind anymore (mirrors fs's own retirement of a bare `"fs"` entry).
+#: analog, same promotion `fs-read` got); `_selfconform.py`'s own
+#: `_UNWIRED_ENV_MODE_ALIASES` transitional fold (which existed only to
+#: keep a coarse `may "env"` declaration matching an env-read/env-write
+#: observation while no tier-2 join existed) is removed now that this
+#: join makes it redundant.
 _KIND_MAP: dict[str, str] = {
     "net-connect": "net.connect",
     "net-listen": "net.listen",
     "fs-write": "fs.write",
     "fs-read": "fs.read",
     "exec": "exec",
+    "env-read": "env.read",
+    "env-write": "env.write",
 }
 
 

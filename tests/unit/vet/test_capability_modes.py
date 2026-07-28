@@ -62,15 +62,25 @@ class TestExpandDeclaredKind:
         above."""
         assert expand_declared_kind("net") == frozenset({"net.connect", "net.listen"})
 
+    # frob:tests tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind.test_coarse_env_covers_union_of_modes kind="unit"  # noqa: E501
+    def test_coarse_env_covers_union_of_modes(self):
+        """T-1075: `env` joined `WIRED_MODE_FAMILIES` once its own tier-2
+        join (`_effects.py::_KIND_MAP`) was wired -- a coarse `may "env"`
+        declaration is now the UNION of env's modes, same shape as `fs`/
+        `net` above (test renamed from `test_unwired_family_stays_coarse`,
+        `env` no longer being the unwired example)."""
+        assert expand_declared_kind("env") == frozenset({"env.read", "env.write"})
+
     def test_unwired_family_stays_coarse(self):
-        """`env` has a defined mode set (`FAMILY_MODES`) but is not in
-        `WIRED_MODE_FAMILIES` (T-0771: `net` moved INTO the wired set once
-        its own connect/listen needle split landed, so this test now
-        exercises `env` -- still unwired, since `env` has no tier-2 `may`-
-        declaration join yet) -- a bare `may "env"` must stay exactly
-        `{"env"}`, never silently explode into modes no scanner can
+        """`proc` has a defined mode set (`FAMILY_MODES`) but is not in
+        `WIRED_MODE_FAMILIES` (T-1075: `env` moved INTO the wired set once
+        its own tier-2 join landed, so this test now exercises `proc` --
+        still unwired, since the vet registry has no `capability_
+        kind="proc"` entries at all, module docstring's naming-
+        reconciliation note) -- a bare `may "proc"` must stay exactly
+        `{"proc"}`, never silently explode into modes no scanner can
         observe yet (module docstring's "wiring status")."""
-        assert expand_declared_kind("env") == frozenset({"env"})
+        assert expand_declared_kind("proc") == frozenset({"proc"})
 
     def test_kind_with_no_modes_defined_stays_itself(self):
         assert expand_declared_kind("exec") == frozenset({"exec"})

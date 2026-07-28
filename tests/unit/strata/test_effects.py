@@ -269,6 +269,11 @@ class TestDeployServeMutateNodeSplitConformance:
 
     # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
     def test_mutate_declares_every_real_effect_it_exercises(self):
+        """T-1075: `mutate` also reads `os.environ` (building a child
+        process's env for the mutation-test subprocess run) -- `env` joins
+        this fixture's declared `may` set now that `env` is wired (was
+        invisible to `check_capability_conformance`, THREAT004's core
+        join, before this ticket; only ever caught by SYS100-extended)."""
         root = Path(__file__).resolve().parents[3]
         model = KernelModel(
             nodes=(
@@ -276,7 +281,7 @@ class TestDeployServeMutateNodeSplitConformance:
                     id="mutate",
                     trust="trusted",
                     attrs=("code=src/frob/mutate/**",),
-                    may=("exec", "fs", "fs-read"),
+                    may=("exec", "fs", "fs-read", "env"),
                 ),
             )
         )
