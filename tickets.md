@@ -990,7 +990,8 @@ errors, ALL pre-existing and confirmed unrelated via `git diff main --stat`
   -- all pre-existing on main, outside scope.
 - 1 INV006 (src/frob/app/ticket_runner/_mutate.py) and 2 INV003/INV004
   (docs/modules/strata.md) -- pre-existing on main, outside scope.
-- 1 TICK006 (T-1114's phantom draft T-draft-6cae7298) -- pre-existing on
+- 1 TICK006 (T-1114's report citing a draft id that renumbered to
+  T-1141; repaired by the coordinator) -- pre-existing on
   main, outside scope (same finding disclosed in T-1099's Done report).
 No error touches src/frob/dup/**, src/frob/check/_python.py's dup surface,
 docs/modules/dup.md, or the two test files this ticket actually changed.
@@ -1583,8 +1584,9 @@ built via `frob natives build`):
   `git diff main` showing zero touch to either file):
   - COV001 src/frob/gates/_tracked_files.py::tracked_files (pre-existing on
     main, `src/frob/**` outside this ticket's scope).
-  - TICK006 T-1114's Done report citing phantom draft T-draft-6cae7298
-    (pre-existing on main, an unrelated wave-17/18 land artifact).
+  - TICK006 T-1114's Done report citing a draft id that renumbered to
+    T-1141 (pre-existing on main, an unrelated wave-17/18 land
+    artifact, repaired by the coordinator).
 
 Filed: none (T-1035, next in this series, already exists and covers the
 DUP001/DUP002 waiver-binding gap surfaced above -- not a new filing).
@@ -2470,10 +2472,10 @@ lease operations, _pii_structural/_env_access.py's ast predicates) --
 the same "protocol family" and "coincidental tree-walk shape" categories
 T-1112 already established for src/frob/arch/**'s own detector.
 
-Filed T-draft-6cae7298 (generalizes T-1112's exclusion mechanism to
+Filed T-1141 (generalizes T-1112's exclusion mechanism to
 cover a package's own gate/rule-builder convention, scoped to
-src/frob/arch/** where the detector itself lives -- renumbers at land,
-verify the real id on main before citing it elsewhere).
+src/frob/arch/** where the detector itself lives; final id verified on
+main after renumbering at land).
 
 Evidence: tests/test_gates.py::TestDebtGate::test_debt001_malformed_directive_is_reported,
 tests/unit/test_design_invariants.py (Inv007/Inv008 classes),
