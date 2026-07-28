@@ -721,13 +721,9 @@ def scope_private_helper_gaps(
     scope_files = {f for f in all_files if scope_matches(f, scope)}
     if not scope_files:
         return ()
-    scope_dirs = {
-        _file_of(f).rsplit("/", 1)[0] if "/" in f else "" for f in scope_files
-    }
-    candidate_paths = tuple(
-        f for f in all_files if (f.rsplit("/", 1)[0] if "/" in f else "") in scope_dirs
+    graph = build_call_graph(
+        root, _scope_candidate_paths(all_files, scope_files)
     )
-    graph = build_call_graph(root, candidate_paths)
 
     callers_of: dict[str, set[str]] = {}
     for caller, callees in graph.calls.items():
@@ -740,33 +736,64 @@ def scope_private_helper_gaps(
     for caller in sorted(graph.calls):
         if _file_of(caller) not in scope_files:
             continue
-        caller_file = _file_of(caller)
-        callees = graph.calls[caller]
-        # T-1012: short names this caller ALSO resolves to a private
-        # symbol in its OWN file -- these are same-file self-matches, so
-        # any OTHER file's same-named candidate is noise, not a real
-        # cross-file dependency, in a flat-directory scan.
-        self_resolved_names = {
-            _short_name_of_symref(c)
-            for c in callees
-            if c != UNRESOLVED_CALLEE and _file_of(c) == caller_file
-        }
-        for callee in callees:
-            if callee == UNRESOLVED_CALLEE:
-                continue
-            if _short_name_of_symref(callee) in self_resolved_names:
-                continue
-            callee_file = _file_of(callee)
-            if callee_file in scope_files:
-                continue
-            other_callers = callers_of.get(callee, set())
-            only_scope = all(_file_of(c) in scope_files for c in other_callers)
-            gaps.append(
-                PrivateHelperGap(
-                    caller=caller,
-                    callee=callee,
-                    definition_file=callee_file,
-                    only_used_by_scope=only_scope,
-                )
+        gaps.extend(
+            _caller_private_helper_gaps(
+                caller, graph.calls[caller], scope_files, callers_of
             )
+        )
     return tuple(gaps)
+
+
+def _scope_candidate_paths(
+    all_files: tuple[str, ...], scope_files: set[str]
+) -> tuple[str, ...]:
+    """Every file sharing a parent directory with a scoped file -- the
+    scope-adjacent restriction that keeps `scope_private_helper_gaps`'s
+    `build_call_graph` call a per-package scan, not a whole-tree one."""
+    scope_dirs = {
+        _file_of(f).rsplit("/", 1)[0] if "/" in f else "" for f in scope_files
+    }
+    return tuple(
+        f for f in all_files if (f.rsplit("/", 1)[0] if "/" in f else "") in scope_dirs
+    )
+
+
+def _caller_private_helper_gaps(
+    caller: str,
+    callees: tuple[str, ...],
+    scope_files: set[str],
+    callers_of: dict[str, set[str]],
+) -> list[PrivateHelperGap]:
+    """One scoped caller's out-of-scope private-callee gaps, with the
+    T-1012 flat-directory suppression applied (see
+    `scope_private_helper_gaps`'s docstring for the full rationale)."""
+    caller_file = _file_of(caller)
+    # T-1012: short names this caller ALSO resolves to a private
+    # symbol in its OWN file -- these are same-file self-matches, so
+    # any OTHER file's same-named candidate is noise, not a real
+    # cross-file dependency, in a flat-directory scan.
+    self_resolved_names = {
+        _short_name_of_symref(c)
+        for c in callees
+        if c != UNRESOLVED_CALLEE and _file_of(c) == caller_file
+    }
+    gaps: list[PrivateHelperGap] = []
+    for callee in callees:
+        if callee == UNRESOLVED_CALLEE:
+            continue
+        if _short_name_of_symref(callee) in self_resolved_names:
+            continue
+        callee_file = _file_of(callee)
+        if callee_file in scope_files:
+            continue
+        other_callers = callers_of.get(callee, set())
+        only_scope = all(_file_of(c) in scope_files for c in other_callers)
+        gaps.append(
+            PrivateHelperGap(
+                caller=caller,
+                callee=callee,
+                definition_file=callee_file,
+                only_used_by_scope=only_scope,
+            )
+        )
+    return gaps
