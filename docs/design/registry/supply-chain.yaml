@@ -18,84 +18,84 @@ entries:
     checkability: ['statically-detectable', 'requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1087"
     cross_refs: []
   - id: "SC-ATTACK-DEPENDENCY-CONFUSION"
     class: ['attack']
     checkability: ['requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- requires-external-data checkability tag -- distinguishing a legitimate internal-registry package from a name-confused public one needs live registry-namespace/ownership data frob does not fetch; no registry-namespace-authority integration exists yet"
     cross_refs: []
   - id: "SC-ATTACK-MAINTAINER-TAKEOVER"
     class: ['attack']
     checkability: ['statically-detectable', 'requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- requires-external-data checkability tag -- detecting a maintainer account compromise needs historical publish/account data (a sudden publish from a new maintainer/IP/pattern) frob does not fetch; no registry-account-history integration exists yet"
     cross_refs: []
   - id: "SC-ATTACK-PROTESTWARE"
     class: ['attack']
     checkability: ['statically-detectable', 'advisory']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- checkability tags are 'statically-detectable'+'advisory' -- distinguishing deliberate protest sabotage from an ordinary bug needs a subjective intent judgment over behavior, not a structural pattern; a maintainer/security-review judgment call is the layer that could catch this, advisory only by the entry's own tag"
     cross_refs: []
   - id: "SC-ATTACK-BUILD-SYSTEM-COMPROMISE"
     class: ['attack']
     checkability: ['requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- requires-external-data checkability tag -- verifying a build pipeline's own integrity needs provenance/attestation data (SLSA/in-toto) frob does not fetch or verify; no build-provenance integration exists yet (see SC-DEFENSE-SLSA/SC-DEFENSE-IN-TOTO, same gap)"
     cross_refs: []
   - id: "SC-ATTACK-CICD-PIPELINE-COMPROMISE"
     class: ['attack']
     checkability: ['requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- requires-external-data checkability tag -- verifying CI/CD pipeline integrity needs live runner/credential/workflow-history data frob does not fetch; no CI-provider API integration exists yet"
     cross_refs: []
   - id: "SC-ATTACK-REGISTRY-WORM"
     class: ['attack']
     checkability: ['statically-detectable', 'requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- requires-external-data checkability tag -- detecting a self-propagating registry worm needs live cross-package publish telemetry (many packages publishing a shared malicious payload in a short window) frob has no registry-telemetry feed for"
     cross_refs: []
   - id: "SC-ATTACK-INSTALL-SCRIPT-ABUSE"
     class: ['attack']
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1087"
     cross_refs: []
   - id: "SC-ATTACK-STARJACKING"
     class: ['attack']
     checkability: ['requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- requires-external-data checkability tag -- detecting a package that impersonates a popular repo's star count/README needs live GitHub API data (actual vs claimed stars/repo linkage) frob does not fetch; no GitHub-metadata integration exists yet"
     cross_refs: []
   - id: "SC-ATTACK-MANIFEST-CONFUSION"
     class: ['attack']
     checkability: ['requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- requires-external-data checkability tag -- detecting a manifest that lies about its own published metadata needs a live diff against the registry's own served manifest, which frob does not fetch (cross-refs SC-DETECTION-MANIFEST-TARBALL-MISMATCH, same gap)"
     cross_refs: []
   - id: "SC-ATTACK-CACHE-POISONING"
     class: ['attack']
     checkability: ['requires-external-data']
     sourcing: "partial"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- requires-external-data checkability tag -- detecting registry-mirror/CDN cache poisoning needs live multi-mirror data (the same package version differing across mirrors) frob has no registry-mirror-comparison integration for"
     cross_refs: []
   - id: "SC-ATTACK-UNPINNED-DEPENDENCIES"
     class: ['attack']
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1088"
     cross_refs: []
   - id: "SC-ATTACK-TRANSITIVE-BLINDNESS"
     class: ['attack']
@@ -109,77 +109,77 @@ entries:
     checkability: ['statically-detectable', 'requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- checkability tags are 'statically-detectable'+'requires-external-data' -- frob.vet._lockfile parses lockfiles structurally today but performs no hash/integrity re-verification against the registry's own published tarball digest (the actual tamper-detection signal), which needs a live registry fetch frob does not perform; parsing alone cannot distinguish a tampered lockfile entry from a legitimate one"
     cross_refs: []
   - id: "SC-ATTACK-SLOPSQUATTING"
     class: ['attack']
     checkability: ['requires-external-data', 'advisory']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- checkability tags are 'requires-external-data'+'advisory' -- detecting an LLM-hallucinated package name a user installed by mistake needs live registry-existence + popularity data at install time frob does not fetch in this context; advisory by the entry's own tag"
     cross_refs: []
   - id: "SC-ATTACK-NATIVE-EXTENSION-OPACITY"
     class: ['attack', 'detection']
     checkability: ['statically-detectable', 'requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1087"
     cross_refs: []
   - id: "SC-DEFENSE-SLSA"
     class: ['defense']
     checkability: ['requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- requires-external-data checkability tag -- verifying a SLSA provenance attestation needs fetching and cryptographically verifying the attestation against a transparency log frob does not implement; no SLSA-verification integration exists yet"
     cross_refs: []
   - id: "SC-DEFENSE-OPENSSF-SCORECARD"
     class: ['defense', 'detection']
     checkability: ['requires-external-data', 'statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- checkability tags are 'requires-external-data'+'statically-detectable' -- the OpenSSF Scorecard itself is a hosted service frob would need to query (or reimplement) to verify a project's score; no Scorecard-API/reimplementation integration exists yet"
     cross_refs: []
   - id: "SC-DEFENSE-SIGSTORE-COSIGN"
     class: ['defense']
     checkability: ['requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- requires-external-data checkability tag -- verifying a Sigstore/cosign signature needs fetching the signature and querying the Rekor transparency log frob does not implement; no Sigstore-verification integration exists yet"
     cross_refs: []
   - id: "SC-DEFENSE-SBOM-FORMATS"
     class: ['defense']
     checkability: ['requires-external-data', 'advisory']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- checkability tags are 'requires-external-data'+'advisory' -- verifying an SBOM (CycloneDX/SPDX) is both present AND accurate against the real dependency tree needs cross-checking against live registry data frob does not fetch; advisory by the entry's own tag"
     cross_refs: []
   - id: "SC-DEFENSE-OSV"
     class: ['defense', 'detection']
     checkability: ['requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1087"
     cross_refs: []
   - id: "SC-DEFENSE-REPRODUCIBLE-BUILDS"
     class: ['defense']
     checkability: ['requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- requires-external-data checkability tag -- verifying a build is reproducible needs re-running the build in a second environment and comparing output digests, an external build-verification step frob does not perform"
     cross_refs: []
   - id: "SC-DEFENSE-2FA-TRUSTED-PUBLISHING"
     class: ['defense']
     checkability: ['requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- requires-external-data checkability tag -- verifying a maintainer's 2FA/trusted-publishing (OIDC) status needs live registry account-security data frob does not fetch; no registry-account-security-API integration exists yet"
     cross_refs: []
   - id: "SC-DEFENSE-IN-TOTO"
     class: ['defense']
     checkability: ['requires-external-data']
     sourcing: "partial"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- requires-external-data checkability tag -- verifying an in-toto supply-chain attestation layout needs fetching and verifying the attestation chain frob does not implement; same gap as SC-DEFENSE-SLSA"
     cross_refs: []
   - id: "SC-DEFENSE-CAPABILITY-SANDBOXING"
     class: ['defense']
@@ -193,112 +193,112 @@ entries:
     checkability: ['statically-detectable', 'requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1087"
     cross_refs: []
   - id: "SC-DETECTION-EDIT-DISTANCE-NAME"
     class: ['detection']
     checkability: ['statically-detectable', 'requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1087"
     cross_refs: []
   - id: "SC-DETECTION-LOCKFILE-MISMATCH"
     class: ['detection']
     checkability: ['statically-detectable', 'requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- checkability tags are 'statically-detectable'+'requires-external-data' -- detecting a lockfile entry that no longer matches the manifest's own declared range is a real structural comparison frob.vet._lockfile's parser could support, but the higher-value half of this entry (the lockfile entry vs the REGISTRY's actual served package) needs a live fetch frob does not perform; the purely-local manifest-vs-lockfile-range comparison is not yet implemented as its own rule"
     cross_refs: []
   - id: "SC-DETECTION-OBFUSCATED-SOURCE"
     class: ['detection']
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1087"
     cross_refs: []
   - id: "SC-DETECTION-ENTROPY-BLOB"
     class: ['detection']
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1087"
     cross_refs: []
   - id: "SC-DETECTION-TROJAN-SOURCE"
     class: ['detection']
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1087"
     cross_refs: []
   - id: "SC-DETECTION-HEX-IDENTIFIER-RATIO"
     class: ['detection']
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1087"
     cross_refs: []
   - id: "SC-DETECTION-REPO-URL-MISMATCH"
     class: ['detection']
     checkability: ['requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- requires-external-data checkability tag -- detecting a package's declared repository URL not actually containing that package's source needs fetching and diffing the linked repo frob does not perform; no repo-fetch-and-diff integration exists yet"
     cross_refs: []
   - id: "SC-DETECTION-MANIFEST-TARBALL-MISMATCH"
     class: ['detection']
     checkability: ['requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "out_of_scope:none -- requires-external-data checkability tag -- detecting a published tarball that differs from its own declared manifest/repo needs fetching the actual published tarball to diff against, which frob does not do; same gap as SC-ATTACK-MANIFEST-CONFUSION"
     cross_refs: []
   - id: "SC-DETECTION-QUARANTINE-WINDOW"
     class: ['detection']
     checkability: ['requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1087"
     cross_refs: []
   - id: "SC-DETECTION-PROC-MACRO-BUILDRS"
     class: ['detection']
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1087"
     cross_refs: []
   - id: "SC-DETECTION-PYTHON-INSTALL-ARTIFACTS"
     class: ['detection']
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1088"
     cross_refs: []
   - id: "SC-DETECTION-NPM-NON-REGISTRY-SOURCE"
     class: ['detection']
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1088"
     cross_refs: []
   - id: "SC-DETECTION-UNPINNED-CI-ACTION"
     class: ['detection']
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1088"
     cross_refs: []
   - id: "SC-DETECTION-OPAQUE-BINARY-ARTIFACT"
     class: ['detection']
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1088"
     cross_refs: []
   - id: "SC-DETECTION-OSV-ADVISORY-MATCH"
     class: ['detection']
     checkability: ['requires-external-data']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-0721"
+    disposition: "deferred:T-1087"
     cross_refs: []
 total: 41
 total_per_source_doc_TOTAL_field: 41  # T-0676: fixed. Source doc's own denominator_manifest.TOTAL

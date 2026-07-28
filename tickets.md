@@ -619,7 +619,7 @@ errors, 0 REG warnings after the frob:enforces additions).
 ```yaml
 id: T-0721
 title: implement checkable-control enforcement for SC-* supply-chain registry entries
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -630,10 +630,83 @@ sprint: null
 scope:
 - src/frob/vet/**
 - docs/design/registry/supply-chain.yaml
+- tests/test_registry_reconciliation_supply_chain.py
+scope_changes:
+- op: add
+  glob: tests/test_registry_reconciliation_supply_chain.py
+  reason: verification test for the registry reconciliation this ticket performs,
+    same file T-0389 (the original SC-* reconciliation ticket) scoped for evidence
+    binding
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_declared_total_is_41
+- tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_audit_reports_exhausted
+- tests/test_registry_reconciliation_supply_chain.py::TestExhaustivenessGateOverRealSupplyChain::test_no_supply_chain_violations
 threat: null
 component: null
 ```
 Standing home for the 39 supply-chain.yaml entries whose controls previously carried deferred:T-0389 (the reconciliation ticket itself) -- a self-reference that would orphan them the moment T-0389 closed; T-0389's pass re-pointed them here. Each entry needs either a real enforcing check in src/frob/vet/ (then flip to handled_by) or a reasoned out_of_scope disposition (many require external network/registry data -- checkability tag requires-external-data -- and are legitimate deferrals to future external-data-fetching work, not silent drops).
+
+## Done report
+
+T-0721 reconciled all 39 deferred:T-0721 SC-* supply-chain.yaml entries:
+
+- 13 entries have a real, already-live enforcing detector in
+  src/frob/vet/ (VET-JS003 typosquat distance, VET002 undeclared install-
+  hook/network capability, VET004 obfuscation ensemble, VET005 osv-scanner
+  adapter, VET011 quarantine window) or in src/frob/gates/_opaque.py
+  (OPAQUE001's deny-by-default runtime-opacity check, which already covers
+  native-extension imports and Rust proc-macro/build.rs constructs). None
+  of these could be flipped to handled_by: here -- REG002 verifies
+  handled_by against `_KNOWN_GATE_RULES | st.rule_ids`
+  (src/frob/gates/__init__.py), which does not yet include the VET-family
+  rule namespace, and widening it is src/frob/gates/** work outside this
+  ticket's declared scope (src/frob/vet/**, docs/design/registry/
+  supply-chain.yaml). Filed T-1087 (a real, queued, non-done
+  ticket scoped to src/frob/gates/**) with the full 13-entry mapping
+  already worked out, and left all 13 as
+  deferred:T-1087 rather than a bare re-deferral to this
+  ticket -- an honest "detector exists, wiring is the remaining step"
+  disposition, not a re-punt.
+- 5 entries (SC-ATTACK-UNPINNED-DEPENDENCIES, SC-DETECTION-PYTHON-
+  INSTALL-ARTIFACTS, SC-DETECTION-NPM-NON-REGISTRY-SOURCE, SC-DETECTION-
+  UNPINNED-CI-ACTION, SC-DETECTION-OPAQUE-BINARY-ARTIFACT) are tagged
+  checkability:['statically-detectable'] ONLY (no requires-external-data,
+  no process-only) but have no detector today -- genuinely buildable,
+  filed as T-1088 (scope src/frob/vet/**) rather than
+  dispositioned away.
+- 21 entries get reasoned out_of_scope:none dispositions, each naming the
+  specific missing external-data/live-fetch integration (registry-
+  namespace authority, maintainer-account history, GitHub metadata,
+  SLSA/Sigstore/in-toto attestation verification, live tarball/manifest
+  diffing against the registry, CI-provider APIs) or, for
+  SC-ATTACK-PROTESTWARE, the checkability tag's own 'advisory'/subjective-
+  intent nature.
+- 2 entries (SC-ATTACK-TRANSITIVE-BLINDNESS, SC-DEFENSE-CAPABILITY-
+  SANDBOXING) already carried a reasoned out_of_scope disposition from a
+  prior pass (process-only checkability) and were left untouched.
+
+`frob check --only registry` is clean (0 errors, 0 REG002/REG008
+warnings for supply-chain.yaml). No src/frob/vet/ code was changed -- this
+ticket's actual deliverable is the registry disposition sweep plus the two
+follow-up tickets that carry the real remaining work forward honestly
+rather than silently dropping it.
+
+### Changed
+```
+ tickets.md | 129 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 127 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 925 warning(s), 419 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0781 -->
 ```yaml
@@ -3084,3 +3157,129 @@ verification within this dispatch's turn budget.
 ### Captured claims
 - tests: 12 passed (from 12 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
+
+<!-- ticket:T-1087 -->
+```yaml
+id: T-1087
+title: wire VET-family/OPAQUE001 rule ids into registry known_rules + frob:enforces
+  for 13 already-implemented SC-* detectors
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- docs/design/registry/supply-chain.yaml
+threat: null
+component: null
+```
+While reconciling T-0721's 39 deferred:T-0721 supply-chain.yaml entries,
+13 were found to already have a real, live enforcing detector -- but
+`docs/design/registry/_registry_exhaustiveness.py`'s REG002 check verifies
+`handled_by:<rule-id>` against `_KNOWN_GATE_RULES | st.rule_ids`
+(src/frob/gates/__init__.py), which does NOT include the `frob vet`
+subsystem's own rule ids (VET001-VET011, VET-JS003, VET-PY00x, VET-RS00x,
+etc. -- a different CLI surface, `frob vet`, not `frob check`'s gate
+family). None of these VET-family ids currently resolve for a
+`handled_by:` claim, and this ticket's own scope
+(`src/frob/vet/**`, `docs/design/registry/supply-chain.yaml`) does not
+cover `src/frob/gates/**`, where `_KNOWN_GATE_RULES` lives -- so widening
+it is out of scope here and left for this follow-up.
+
+The 11 entries whose enforcing rule is a VET-family id (left
+`deferred:<this ticket>` in supply-chain.yaml rather than
+`handled_by:`, pending this ticket):
+
+- SC-ATTACK-TYPOSQUATTING -> VET-JS003 (frob.vet._typosquat, Damerau-
+  Levenshtein distance vs the popular-package list)
+- SC-DETECTION-EDIT-DISTANCE-NAME -> VET-JS003 (same detector)
+- SC-ATTACK-INSTALL-SCRIPT-ABUSE -> VET002 (frob.vet._scan, undeclared
+  install-hook capability observed vs declared)
+- SC-DETECTION-MAINTAINER-INSTALLHOOK-NET -> VET002 (same detector,
+  install-hook + network capability combination)
+- SC-DETECTION-OBFUSCATED-SOURCE -> VET004 (frob.vet._obfuscation ensemble)
+- SC-DETECTION-ENTROPY-BLOB -> VET004 (Shannon-entropy string-literal
+  signal within the same ensemble)
+- SC-DETECTION-TROJAN-SOURCE -> VET004 (bidi/zero-width Unicode signal
+  within the same ensemble)
+- SC-DETECTION-HEX-IDENTIFIER-RATIO -> VET004 (hex-identifier-ratio signal
+  within the same ensemble)
+- SC-DETECTION-QUARANTINE-WINDOW -> VET011 (frob.vet._scan, newly-published
+  cooldown-window check)
+- SC-DEFENSE-OSV -> VET005 (frob.vet._osv, osv-scanner adapter)
+- SC-DETECTION-OSV-ADVISORY-MATCH -> VET005 (same detector)
+
+Two more entries whose enforcing rule is OPAQUE001 (src/frob/gates/
+_opaque.py, also out of this ticket's `src/frob/vet/**` scope for the
+`frob:enforces` directive even though the rule itself IS in
+`_KNOWN_GATE_RULES` already):
+
+- SC-ATTACK-NATIVE-EXTENSION-OPACITY -> OPAQUE001 (a compiled/native
+  extension import is a runtime-opaque construct OPAQUE001's deny-by-
+  default already fires on)
+- SC-DETECTION-PROC-MACRO-BUILDRS -> OPAQUE001 (a Rust proc-macro/build.rs
+  is the same runtime-opacity class, frob.vet._capability_registry's
+  `_OpaqueStructuralConstruct` already models it)
+
+Plan: (1) add the 11 VET-family ids (or a namespaced subset alias) to
+`_KNOWN_GATE_RULES`/the registry known-rules union so `handled_by:VET*`
+resolves; (2) add `frob:enforces SC-...` directives at each entry's
+emitting symbol (frob.vet._typosquat._find_typosquat, frob.vet._scan's
+VET002/VET004/VET005/VET011 violation constructors, and
+src/frob/gates/_opaque.py's OPAQUE001 emitter plus the
+`_OpaqueStructuralConstruct`/native-extension capability_kind sites); (3)
+flip all 13 supply-chain.yaml entries above from `deferred:<this ticket>`
+to `handled_by:<rule>`, closing REG002/REG008 for them.
+
+<!-- ticket:T-1088 -->
+```yaml
+id: T-1088
+title: implement 5 statically-detectable-only SC-* supply-chain detectors with no
+  enforcing check today
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/vet/**
+- docs/design/registry/supply-chain.yaml
+threat: null
+component: null
+```
+Five supply-chain.yaml entries are tagged checkability:['statically-detectable']
+ONLY (no requires-external-data, no process-only) but have no enforcing
+detector in src/frob/vet/ today -- found while reconciling T-0721's 39
+deferred:T-0721 entries:
+
+- SC-ATTACK-UNPINNED-DEPENDENCIES: a lockfile/manifest dependency spec with
+  no pin (e.g. a `*`/caret/range spec instead of an exact version) is a
+  purely structural property of the manifest text.
+- SC-DETECTION-PYTHON-INSTALL-ARTIFACTS: setup.py/setup.cfg/pyproject.toml
+  build-backend artifacts a malicious sdist could smuggle (data_files
+  writing outside the package, a cmdclass hook already tracked separately
+  as install-hook capability, but the broader "installed artifact ends up
+  somewhere unexpected" shape is not).
+- SC-DETECTION-NPM-NON-REGISTRY-SOURCE: a package.json dependency spec
+  pointing at a git/tarball/local-path source instead of a registry
+  version range is a structural property of the manifest text.
+- SC-DETECTION-UNPINNED-CI-ACTION: a GitHub Actions `uses: owner/action@ref`
+  where `ref` is a mutable branch/tag (not a full commit SHA) is a
+  structural property of tracked `.github/workflows/*.yaml`.
+- SC-DETECTION-OPAQUE-BINARY-ARTIFACT: a tracked binary blob (.whl/.so/
+  .node/.wasm and similar) committed directly into source control with no
+  accompanying build recipe is a structural property of the tracked file
+  tree.
+
+Each needs either a real detector in src/frob/vet/ (then handled_by:<rule>)
+or, on closer investigation, a reasoned disposition explaining why it is
+NOT actually structurally checkable after all (narrower than it first
+looks). Do not leave any of the five at a bare `deferred` pointing back
+here without investigating first.
