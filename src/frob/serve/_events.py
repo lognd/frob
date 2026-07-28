@@ -93,6 +93,7 @@ class _EventBus:
         self._next_id = 0
 
     # frob:doc docs/modules/serve.md#subscribepush-events-t-1096
+    # frob:tests tests/test_serve_events.py::TestEventBus.test_publish_reaches_all_subscribers kind="unit"  # noqa: E501
     def subscribe(self) -> tuple[int, queue.Queue[dict[str, Any] | None]]:
         """Register a new subscriber and return its id (for `unsubscribe`)
         plus the queue frames get pushed onto -- a blocking `queue.get()`
@@ -139,6 +140,12 @@ class _EventBus:
 # helper; splitting connect/send/read-loop into separate functions would not reduce \
 # real complexity, only relocate it behind an extra call boundary for a single caller, \
 # mirroring _socketd.send_request's existing ARCH103 waiver for the same shape"
+# frob:waive ARCH001 reason="T-1096: 65 lines against a 60-line threshold, same \
+# single-caller connect/write/read-loop/error-mapping body the ARCH103 waiver above \
+# already justifies as one cohesive unit -- splitting the read-loop or the \
+# TimeoutError/OSError distinction into a separate function would not shrink real \
+# complexity, only relocate it behind an extra call boundary this function's one \
+# caller would immediately re-inline"
 def subscribe_and_wait(
     root: Path,
     event: str,
@@ -259,6 +266,7 @@ class CoverageWatcher:
         )
 
     # frob:doc docs/modules/serve.md#subscribepush-events-t-1096
+    # frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_receives_coverage_fresh_on_stamp_write kind="unit"  # noqa: E501
     def start(self) -> None:
         """Start the background poll thread."""
         self._thread.start()

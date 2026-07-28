@@ -430,6 +430,14 @@ alongside the existing idle-monitor and (T-1094) `WatchThread`:
   or a future cross-worktree cache hit, T-1095) -- any write to the stamp
   file is treated as a legitimate freshness signal.
 
+`_EventBus.subscribe` and `CoverageWatcher.start` each carry an explicit
+`frob:tests` edge (`TestEventBus.test_publish_reaches_all_subscribers` and
+`TestSubscribeAndWait.test_receives_coverage_fresh_on_stamp_write`
+respectively) rather than relying on the convention-matched-name fallback
+`TEST001`/`TEST014` would otherwise credit ambiguously against
+`WatchThread.start`/`StackSampler.stop`'s same leaf names elsewhere in
+this module and `frob.perf`.
+
 ### Protocol and connection handling
 
 `_RequestHandler._handle_subscribe` registers the connection with the
