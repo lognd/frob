@@ -106,7 +106,7 @@ class TestFindsTokens:
         assert any(v.rule == "SEC001" for v in violations)
 
     def test_sec003_waiver_is_inert(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/__init__.py::_match_waiver
+        # frob:tests src/frob/gates/_waive.py::_match_waiver
         # SEC003 is unwaivable BY CONSTRUCTION (frob.gates._UNWAIVABLE_RULES),
         # not merely because nobody has tried to waive it. TEST008 already
         # locks the mechanism generically (test_gates.py::

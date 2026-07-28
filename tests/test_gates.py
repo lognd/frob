@@ -1809,7 +1809,7 @@ class TestCoverageGate:
         assert violations[0].severity == Severity.ERROR
 
     def test_waive002_known_gate_rule_is_not_flagged(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/__init__.py::_waive002_violations kind="unit"
+        # frob:tests src/frob/gates/_waive.py::_waive002_violations kind="unit"
         source = 'def helper(x):\n    # frob:waive COV001 reason="ok"\n    return x\n'
         _write(tmp_path, "src/a.py", source)
         snap = _snapshot(tmp_path)
@@ -2023,7 +2023,7 @@ class TestDsl001:
     dropped."""
 
     def test_malformed_frob_doc_directive_flagged(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/__init__.py::_dsl001_violations kind="unit"
+        # frob:tests src/frob/gates/_waive.py::_dsl001_violations kind="unit"
         # A bare `frob:doc` with no target parses to a MalformedDirective
         # ("missing target for verb 'doc'") -- before DSL001 existed this
         # produced NO violation at all.
@@ -4378,7 +4378,7 @@ class TestPreworkSweepBounds:
 
 class TestActiveTicket:
     def test_explicit_flag_wins(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/__init__.py::active_ticket
+        # frob:tests src/frob/gates/_waive.py::active_ticket
         _git_init(tmp_path)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "T-0002-other"], cwd=tmp_path, check=True
@@ -5833,7 +5833,7 @@ class TestTestGate:
         must now match ONLY a waiver whose own site is that exact
         file/directory string -- never a waiver nested somewhere under
         it via the prefix fallback."""
-        # frob:tests src/frob/gates/__init__.py::_match_waiver
+        # frob:tests src/frob/gates/_waive.py::_match_waiver
         from frob.gates import _match_waiver
         from frob.graph import Edge, EdgeKind
 
@@ -5882,7 +5882,7 @@ class TestTestGate:
         via the same directory-prefix fallback -- both are real TEST003
         violations the same directive silently suppresses. WAIVE003 must
         flag that as over-broad."""
-        # frob:tests src/frob/gates/__init__.py::_waive003_violations
+        # frob:tests src/frob/gates/_waive.py::_waive003_violations
         from frob.gates import _waive003_violations
         from frob.graph import Edge, EdgeKind, GraphSnapshot
 
@@ -5925,7 +5925,7 @@ class TestTestGate:
         site produces ZERO findings under that rule this run is the stale
         class WAIVE002 cannot see (the rule id is known; only the site is
         stale) -- WAIVE004 must flag it."""
-        # frob:tests src/frob/gates/__init__.py::_waive004_violations
+        # frob:tests src/frob/gates/_waive.py::_waive004_violations
         from frob.gates import _waive004_violations
         from frob.graph import Edge, EdgeKind, GraphSnapshot
 
@@ -5993,7 +5993,7 @@ class TestTestGate:
         """T-0753: `frob:waive`'s optional `until="YYYY-MM-DD"` boundary
         having passed forces a hard ERROR demanding re-review, mirroring
         DEBT003/DEPR004's expiry escalation."""
-        # frob:tests src/frob/gates/__init__.py::_waive005_violations
+        # frob:tests src/frob/gates/_waive.py::_waive005_violations
         from frob.gates import _waive005_violations
         from frob.graph import Edge, EdgeKind, GraphSnapshot
 
@@ -6247,7 +6247,7 @@ class TestTestGate:
         assert not any(v.rule == "TEST008" for v in violations)
 
     def test_test008_cannot_be_waived(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/__init__.py::_match_waiver
+        # frob:tests src/frob/gates/_waive.py::_match_waiver
         # TEST008 is unwaivable BY CONSTRUCTION (_UNWAIVABLE_RULES), not
         # just by nobody thinking to try -- a same-repo `frob:waive
         # TEST008` directive must never suppress it, since this gate's
@@ -7304,7 +7304,7 @@ class TestSeverityOverrides:
         assert _apply_severity_overrides(violations, tmp_path) == violations
 
     def test_sec110_promoted_to_error_gates_a_real_repo_toml(self, tmp_path):
-        # frob:tests src/frob/gates/__init__.py::_apply_severity_overrides kind="unit"
+        # frob:tests src/frob/gates/_waive.py::_apply_severity_overrides kind="unit"
         # T-0973 before-fails/after-passes fixture: proves the SEC110
         # WARN -> ERROR promotion in this repo's own frob.toml actually
         # changes gate outcome, not merely that the override table parses.

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.214.0] - unreleased
+
+- T-1072: arch: split src/frob/gates/__init__.py (12047 lines, T-0395 remainder tier 1)
+
 ## [0.213.0] - unreleased
 
 - T-1069: add frob ticket tier CLI verb to mutate an existing ticket's tier
