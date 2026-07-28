@@ -56,7 +56,7 @@ class TestFieldNames:
     """PII010: field-name/type detection over Python data structures."""
 
     def test_password_field_fires(self) -> None:
-        # frob:tests src/frob/gates/_pii_structural.py::_scan_python_fields
+        # frob:tests src/frob/gates/_pii_structural/_python_fields.py::_scan_python_fields
         src = (
             "from dataclasses import dataclass\n\n"
             "@dataclass\n"
@@ -85,7 +85,7 @@ class TestFieldNames:
 
     # frob:ticket T-0971
     def test_camelcase_password_hash_field_fires(self) -> None:
-        # frob:tests src/frob/gates/_pii_structural.py::_field_name_hit
+        # frob:tests src/frob/gates/_pii_structural/_signatures.py::_field_name_hit
         """T-0971 (gates-quality audit finding 5): a camelCase field name
         must still match its snake_case keyword equivalent."""
         src = (
@@ -178,7 +178,7 @@ class TestEnvAccess:
     """SEC110: os.environ/os.getenv access-site detection."""
 
     def test_os_getenv_fires(self) -> None:
-        # frob:tests src/frob/gates/_pii_structural.py::_scan_python_env_access
+        # frob:tests src/frob/gates/_pii_structural/_env_access.py::_scan_python_env_access
         src = "import os\nvalue = os.getenv('SOME_VAR')\n"
         tree = ast.parse(src)
         violations = _scan_python_env_access(tree, "example.py")
@@ -214,7 +214,7 @@ class TestDdlSchema:
     and raw-SQL `CREATE TABLE` string literals."""
 
     def test_orm_column_password_fires(self) -> None:
-        # frob:tests src/frob/gates/_pii_structural.py::_scan_python_ddl
+        # frob:tests src/frob/gates/_pii_structural/_python_fields.py::_scan_python_ddl
         src = (
             "from sqlalchemy import Column, String\n\n"
             "class User(Base):\n"
@@ -283,7 +283,7 @@ class TestEmailShapeValues:
     own self-match exclusion is never the reason a case passes."""
 
     def test_is_email_shaped_accepts_plain_address(self) -> None:
-        # frob:tests src/frob/gates/_pii_structural.py::_is_email_shaped
+        # frob:tests src/frob/gates/_pii_structural/_emails.py::_is_email_shaped
         assert _is_email_shaped("user" + "@" + "example.com")
 
     def test_is_email_shaped_rejects_display_name_wrapped(self) -> None:
@@ -307,7 +307,7 @@ class TestEmailShapeValues:
         assert not _is_email_shaped("not an email at all")
 
     def test_email_literal_fires(self) -> None:
-        # frob:tests src/frob/gates/_pii_structural.py::_scan_python_email_values  # noqa: E501
+        # frob:tests src/frob/gates/_pii_structural/_emails.py::_scan_python_email_values  # noqa: E501
         # non-reserved domain (T-0539: `example.com` is RFC 2606-reserved
         # and no longer fires PII011 -- see TestReservedTestDomainEmails)
         src = "contact = " + repr("user" + "@" + "realmail.dev") + "\n"
@@ -366,7 +366,7 @@ class TestReservedTestDomainEmails:
     file it appears in -- the dominant PII011 false-positive shape found
     in this gate's 336-finding warn-pool audit (57 of 66 findings)."""
 
-    # frob:tests src/frob/gates/_pii_structural.py::_scan_python_email_values  # noqa: E501
+    # frob:tests src/frob/gates/_pii_structural/_emails.py::_scan_python_email_values  # noqa: E501
     def test_example_com_does_not_fire(self) -> None:
         src = "contact = " + repr("user" + "@" + "example.com") + "\n"
         tree = ast.parse(src)
@@ -407,7 +407,7 @@ class TestKeywordSweep:
     suggestion severity, excluding sites PII010 already reports."""
 
     def test_identifier_keyword_fires_at_suggestion_severity(self) -> None:
-        # frob:tests src/frob/gates/_pii_structural.py::_scan_python_keyword_sweep  # noqa: E501
+        # frob:tests src/frob/gates/_pii_structural/_keywords.py::_scan_python_keyword_sweep  # noqa: E501
         src = "def handler():\n    password = fetch_value()\n    return password\n"
         tree = ast.parse(src)
         violations = _scan_python_keyword_sweep(tree, "example.py", src)
@@ -484,7 +484,7 @@ class TestDeclaredSurfaceJoin:
     a real declaration discharges a finding outright, not just a waiver."""
 
     def test_pii010_discharged_by_matching_carries_tag(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_pii_structural.py::_load_declared_surface  # noqa: E501
+        # frob:tests src/frob/gates/_pii_structural/_declared_surface.py::_load_declared_surface  # noqa: E501
         _init_repo(tmp_path)
         (tmp_path / "design").mkdir()
         (tmp_path / "design" / "join.strata").write_text(
@@ -582,24 +582,28 @@ class TestSelfMatchExclusion:
     """T-0201 lesson: the registry file must not detect itself."""
 
     def test_own_file_not_scanned(self, tmp_path: Path) -> None:
+        # T-1076: `_pii_structural.py` split into a package -- copy every
+        # sibling module (not just one file) into the synthetic repo, and
+        # assert none of them produce a finding under their own path.
         _init_repo(tmp_path)
-        src_dir = tmp_path / "src" / "frob" / "gates"
-        src_dir.mkdir(parents=True)
-        module_path = (
+        dest_dir = tmp_path / "src" / "frob" / "gates" / "_pii_structural"
+        dest_dir.mkdir(parents=True)
+        source_dir = (
             Path(__file__).resolve().parents[1]
             / "src"
             / "frob"
             / "gates"
-            / "_pii_structural.py"
+            / "_pii_structural"
         )
-        (src_dir / "_pii_structural.py").write_text(
-            module_path.read_text(encoding="utf-8"), encoding="utf-8"
-        )
+        rel_paths = []
+        for module_path in sorted(source_dir.glob("*.py")):
+            (dest_dir / module_path.name).write_text(
+                module_path.read_text(encoding="utf-8"), encoding="utf-8"
+            )
+            rel_paths.append(f"src/frob/gates/_pii_structural/{module_path.name}")
         _commit(tmp_path)
         violations = pii_structural_gate(tmp_path)
-        assert not any(
-            v.file == "src/frob/gates/_pii_structural.py" for v in violations
-        )
+        assert not any(v.file in rel_paths for v in violations)
 
 
 class TestGateIsGreenOnItself:
@@ -608,14 +612,16 @@ class TestGateIsGreenOnItself:
     exercising the real module source, not a copy)."""
 
     def test_own_module_source_produces_no_self_finding(self) -> None:
-        # frob:tests src/frob/gates/_pii_structural.py::pii_structural_gate
+        # frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate
         root = Path(__file__).resolve().parents[1]
         violations = pii_structural_gate(root)
-        assert not any(
-            v.file == "src/frob/gates/_pii_structural.py" for v in violations
-        )
+        pkg_dir = root / "src" / "frob" / "gates" / "_pii_structural"
+        own_rel_paths = {
+            f"src/frob/gates/_pii_structural/{p.name}" for p in pkg_dir.glob("*.py")
+        }
+        assert not any(v.file in own_rel_paths for v in violations)
 
-    # frob:tests src/frob/gates/_pii_structural.py::_is_pii_self_pattern_file  # noqa: E501
+    # frob:tests src/frob/gates/_pii_structural/_self_match.py::_is_pii_self_pattern_file  # noqa: E501
     @pytest.mark.parametrize(
         "rel_path",
         [

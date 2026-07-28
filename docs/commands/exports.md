@@ -5,7 +5,7 @@ directory. Also used by `frob check` to detect missing exports.
 
 ## Usage
 
-<!-- frob:describes src/frob/__main__.py::_add_exports_parser -->
+<!-- frob:describes src/frob/_cli_parsers/_core.py::_add_exports_parser -->
 ```bash
 frob exports src/frob/edit/                      # show generated __init__.py
 frob exports src/frob/edit/ --all                # include private symbols (_foo)

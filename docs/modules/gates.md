@@ -1505,10 +1505,10 @@ EXHAUST001/002's own carve-out).
 <!-- frob:describes src/frob/gates/_secrets.py::secrets_gate -->
 <!-- frob:describes src/frob/gates/_secrets.py::_redact -->
 <!-- frob:describes src/frob/gates/_secrets.py::fake_marker_staleness_gate -->
-<!-- frob:describes src/frob/gates/_pii_structural.py::pii_structural_gate -->
-<!-- frob:describes src/frob/gates/_pii_structural.py::_FieldSignature -->
-<!-- frob:describes src/frob/gates/_pii_structural.py::_scan_python_fields -->
-<!-- frob:describes src/frob/gates/_pii_structural.py::_scan_python_env_access -->
+<!-- frob:describes src/frob/gates/_pii_structural/__init__.py::pii_structural_gate -->
+<!-- frob:describes src/frob/gates/_pii_structural/_signatures.py::_FieldSignature -->
+<!-- frob:describes src/frob/gates/_pii_structural/_python_fields.py::_scan_python_fields -->
+<!-- frob:describes src/frob/gates/_pii_structural/_env_access.py::_scan_python_env_access -->
 <!-- frob:describes src/frob/gates/_waive.py::known_gate_rule_ids -->
 <!-- frob:describes src/frob/gates/_gate_cache.py::TrackedSnapshot -->
 <!-- frob:describes src/frob/gates/_gate_cache.py::evaluate_cacheable_gate -->
@@ -1650,9 +1650,10 @@ structures and env-var access sites, drawn from
 - Both rules are file-scoped (same waiver-matching mode as SEC001-003:
   `violation.symref` is `None`, so a waiver anywhere in the file suppresses
   every hit in it).
-- Self-match exclusion (T-0201 lesson): `_pii_structural.py`'s own path is
-  hardcoded-excluded from the scan, so `FIELD_SIGNATURES`'s own keyword
-  string literals can never be misread as a scanned field.
+- Self-match exclusion (T-0201 lesson): `_pii_structural/`'s own module
+  paths are hardcoded-excluded from the scan (T-1076 split the module into
+  a package -- every sibling file, not just one), so `FIELD_SIGNATURES`'s
+  own keyword string literals can never be misread as a scanned field.
 - **PII010 also covers DB/DDL schema scanning (T-0348, family 2)**:
   sqlalchemy ORM declarative `name = Column(...)` assignments and alembic-
   style positional `Column("name", ...)` calls (`_scan_orm_columns`), plus
@@ -1692,8 +1693,8 @@ structures and env-var access sites, drawn from
   exactly as before this ticket, waiver-only. PII011 (bare string-literal
   values have no "owning field" to carry a category against) and PII012
   (already suggestion-severity, not deny-by-default) are NOT joined.
-- **Deliberately not built this pass** (see `_pii_structural.py`'s module
-  docstring and this ticket's Done report): non-Python language
+- **Deliberately not built this pass** (see `_pii_structural/__init__.py`'s
+  module docstring and this ticket's Done report): non-Python language
   equivalents and non-Python DDL sources (`.sql` migration files). Filed
   as follow-on tickets, not silently dropped.
 - **TypeScript/Rust field-shape and env-access equivalents (T-0352)**:

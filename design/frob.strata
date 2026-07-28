@@ -87,7 +87,12 @@ node cli : trusted {
     // top-level entrypoint, so it is the existing-convention home for
     // this class of file rather than inventing a new node for three
     // small files.
+    // T-1076: __main__.py's own _add_*_parser argparse builders split out
+    // into src/frob/_cli_parsers/** (a package, same T-1072/T-0989 pattern
+    // as the earlier gates/_pii_structural split) -- still the same cli
+    // entrypoint code, just no longer a single file.
     code "src/frob/app/**" "src/frob/__main__.py" "src/frob/__init__.py"
+        "src/frob/_cli_parsers/**"
         "src/frob/doctor.py" "src/frob/excludes.py" "src/frob/tomlio.py";
     may "eval";
     may "fs";

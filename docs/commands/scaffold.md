@@ -8,7 +8,7 @@ available; verify by inspection if it isn't).
 
 ## Usage
 
-<!-- frob:describes src/frob/__main__.py::_add_scaffold_parser -->
+<!-- frob:describes src/frob/_cli_parsers/_core.py::_add_scaffold_parser -->
 ```bash
 frob scaffold list                  # list available project types
 frob scaffold new python-tool demo  # scaffold into ./demo/

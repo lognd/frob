@@ -133,6 +133,12 @@ search-shaped model (batch index pipelines with freshness lag).
   alone cannot deliver. Wiring SYS203 to consult the arbiter (a
   `src/frob/strata/_contention.py` code change) remains a separate,
   undischarged follow-up, out of this docs-only ticket's scope.
+- T-1076 split `src/frob/__main__.py`'s own `_add_*_parser` argparse
+  builders out into a `src/frob/_cli_parsers/**` package (pure file
+  reorganization, no behavior change, same T-1072/T-0989 pattern as the
+  earlier `gates/_pii_structural` split) -- the `cli` node's `code=` glob
+  in `design/frob.strata` was updated to own the new package too, so the
+  model still matches the real tree.
 
 ## Ticket map
 
