@@ -5341,3 +5341,35 @@ regressing SYS201.
 Filed at T-1061's own close (LiveTrackerCited refusal -- the five
 waivers above cite T-1061 as their live tracker; re-pointed to this
 ticket's id so T-1061 itself can close).
+
+<!-- ticket:T-1150 -->
+```yaml
+id: T-1150
+title: 'strata: frob sys sync-interface -- measure and update interface= attrs mechanically
+  (SYS104-mandatory upkeep)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/**
+- src/frob/app/sys_runner.py
+- design/frob.strata
+- docs/strata/surface.md
+acceptance:
+- text: GIVEN a node whose bound code's public surface changed WHEN frob sys sync-interface
+    runs THEN design/frob.strata's interface= attrs for that node are updated to the
+    measured surface (additions and removals, sorted, preserving comments), printing
+    a reviewable diff; a --check mode reports drift without writing
+  evidence: []
+- text: GIVEN the T-1137 fix engine THEN SYS104 undeclared-symbol drift is registered
+    as a Tier-A auto-fix backed by this command
+  evidence: []
+threat: null
+component: null
+```
+T-1113 made SYS104 mandatory, which makes design/frob.strata's interface= attrs a hand-maintained mirror of every node's real public surface: the w18-strata agent re-synced it several times with a throwaway script, and main went red twice within hours of landing (tickets_gate, then SYS100 net.connect from T-1126) with the coordinator hand-editing the .strata file both times. Same churn-bomb shape as DEPR005's line-keyed baseline (T-1052): a mandatory check whose upkeep is manual is a red-main generator. The measurement already exists (_module_public_symbols per T-1113); ship it as a sys subcommand + --check gate hint + T-1137 Tier-A handler. If red-main recurrence continues before this lands, the DEPR005 demote-with-citation precedent applies to SYS104.
