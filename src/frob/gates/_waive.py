@@ -1933,7 +1933,7 @@ def _apply_waivers(
 # docs/modules/gates.md#public-api anchor (COV007).
 # frob:uses-contract src/frob/graph/__init__.py::build_graph
 # frob:uses-contract src/frob/graph/lock.py::drift
-# frob:uses-contract src/frob/tickets/__init__.py::load_queue
+# frob:uses-contract src/frob/tickets/_archive.py::load_queue
 def _severity_overrides(root: Path | str) -> dict[str, Severity]:
     """The `[gates.severity]` table from frob.toml: rule id -> warn|error.
 

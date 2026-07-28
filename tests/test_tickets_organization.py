@@ -97,7 +97,7 @@ class TestFieldRoundTrip:
         assert ticket.labels == ("a", "b")
 
     def test_new_ticket_carries_component_and_labels(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::new_ticket kind="unit"
+        # frob:tests src/frob/tickets/_new_renumber.py::new_ticket kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True

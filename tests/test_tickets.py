@@ -69,9 +69,11 @@ def _write(root: Path, ticket: Ticket, slug: str = "sample-ticket") -> Path:
     return path
 
 
+# frob:ticket T-1103
 class TestQueue:
+    # frob:ticket T-1103
     def test_round_trip_load(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::load_queue
+        # frob:tests src/frob/tickets/_archive.py::load_queue
         ticket = _ticket(body="## Description\ntrailing spaces   \n\nmore text\n")
         _write(tmp_path, ticket)
         result = load_queue(tmp_path)
@@ -172,7 +174,7 @@ class TestQueue:
 
 class TestNewTicket:
     def test_allocates_sequential_id(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::new_ticket
+        # frob:tests src/frob/tickets/_new_renumber.py::new_ticket
         _write(tmp_path, _ticket(ticket_id="T-0001"))
         from frob.tickets import TicketSpec
 
@@ -818,10 +820,12 @@ class TestEvidence:
         assert result.danger_err is TicketError.NotFound
 
 
+# frob:ticket T-1103
 class TestArchive:
+    # frob:ticket T-1103
     def test_moves_done_and_dropped_only(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::archive
-        # frob:tests src/frob/tickets/__init__.py::load_active
+        # frob:tests src/frob/tickets/_archive.py::archive
+        # frob:tests src/frob/tickets/_archive.py::load_active
         _write(tmp_path, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
         _write(
             tmp_path,
@@ -887,7 +891,7 @@ class TestArchive:
         assert started.is_ok
 
     def test_new_ticket_id_continues_past_archived_max(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::new_ticket
+        # frob:tests src/frob/tickets/_new_renumber.py::new_ticket
         # T-0140 regression: archive a full T-0001..T-0136 queue, then file a
         # fresh ticket -- the allocator must skip past the archived max, not
         # restart at T-0001 (which would collide and make the merged queue
@@ -918,7 +922,7 @@ class TestArchive:
         assert "T-0137" in merged.danger_ok.tickets
 
     def test_new_ticket_fresh_repo_no_archive_file(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::new_ticket
+        # frob:tests src/frob/tickets/_new_renumber.py::new_ticket
         # A repo that has never archived anything has no tickets-archive.md
         # at all -- allocation must not error just because the file is
         # absent (T-0140).
@@ -935,7 +939,7 @@ class TestArchive:
         assert created.danger_ok.id == "T-0001"
 
     def test_new_ticket_corrupt_archive_fails_loudly(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::new_ticket
+        # frob:tests src/frob/tickets/_new_renumber.py::new_ticket
         # A malformed archive must never be silently skipped during id
         # allocation -- vacuous-pass doctrine: fail loudly rather than
         # allocating an id that might collide with unreadable content.
@@ -1402,6 +1406,7 @@ class TestScopeMatching:
 
 
 # frob:ticket T-0838
+# frob:ticket T-1103
 class TestEmptyCollectionOmission:
     """T-0838: empty-collection ledger fields (`reviews: []` and every peer
     default-empty tuple field) must never be written -- an additive field
@@ -1457,10 +1462,11 @@ class TestEmptyCollectionOmission:
         assert "reviews:" in text
         assert "verdict: approve" in text
 
+    # frob:ticket T-1103
     def test_ticket_with_empty_reviews_round_trips_through_ledger(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/tickets/__init__.py::load_queue
+        # frob:tests src/frob/tickets/_archive.py::load_queue
         ticket = _ticket()
         assert ticket.reviews == ()
         _write(tmp_path, ticket)
@@ -1472,6 +1478,7 @@ class TestEmptyCollectionOmission:
 
 
 # frob:ticket T-0838
+# frob:ticket T-1103
 class TestUnknownFieldForwardCompat:
     """T-0838 regression: an older frob binary must be able to land a newer
     worktree's ledger -- a ledger block carrying a field this model does not
@@ -1497,8 +1504,9 @@ class TestUnknownFieldForwardCompat:
         "body text\n"
     )
 
+    # frob:ticket T-1103
     def test_unknown_field_loads_without_exception(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::load_active
+        # frob:tests src/frob/tickets/_archive.py::load_active
         (tmp_path / "tickets.md").write_text(self._UNKNOWN_FIELD_LEDGER)
         result = load_active(tmp_path)
         assert result.is_ok
@@ -1535,8 +1543,9 @@ class TestUnknownFieldForwardCompat:
         reloaded = load_active(tmp_path).danger_ok.tickets["T-0001"]
         assert reloaded.__pydantic_extra__ == ticket.__pydantic_extra__
 
+    # frob:ticket T-1103
     def test_known_field_still_validated_strictly(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::load_active
+        # frob:tests src/frob/tickets/_archive.py::load_active
         malformed = self._UNKNOWN_FIELD_LEDGER.replace(
             "state: queued", "state: not-a-real-state"
         )

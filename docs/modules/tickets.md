@@ -71,8 +71,8 @@ attachments:
 
 ## Public API
 
-<!-- frob:describes src/frob/tickets/__init__.py::load_queue -->
-<!-- frob:describes src/frob/tickets/__init__.py::new_ticket -->
+<!-- frob:describes src/frob/tickets/_archive.py::load_queue -->
+<!-- frob:describes src/frob/tickets/_new_renumber.py::new_ticket -->
 <!-- frob:describes src/frob/tickets/__init__.py::doable -->
 <!-- frob:describes src/frob/tickets/__init__.py::transition -->
 <!-- frob:describes src/frob/tickets/__init__.py::record_failure -->
@@ -83,12 +83,12 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::add_cmd_evidence -->
 <!-- frob:describes src/frob/tickets/clipboard.py::clipboard_image -->
 <!-- frob:describes src/frob/tickets/clipboard.py::clipboard_has_image -->
-<!-- frob:describes src/frob/tickets/__init__.py::migrate -->
-<!-- frob:describes src/frob/tickets/__init__.py::renumber -->
-<!-- frob:describes src/frob/tickets/__init__.py::renumber_one -->
-<!-- frob:describes src/frob/tickets/__init__.py::finalize_draft -->
-<!-- frob:describes src/frob/tickets/__init__.py::archive -->
-<!-- frob:describes src/frob/tickets/__init__.py::load_active -->
+<!-- frob:describes src/frob/tickets/_archive.py::migrate -->
+<!-- frob:describes src/frob/tickets/_new_renumber.py::renumber -->
+<!-- frob:describes src/frob/tickets/_new_renumber.py::renumber_one -->
+<!-- frob:describes src/frob/tickets/_new_renumber.py::finalize_draft -->
+<!-- frob:describes src/frob/tickets/_archive.py::archive -->
+<!-- frob:describes src/frob/tickets/_archive.py::load_active -->
 <!-- frob:describes src/frob/tickets/_provisional.py::on_default_branch -->
 <!-- frob:describes src/frob/tickets/_provisional.py::mint_draft_id -->
 <!-- frob:describes src/frob/tickets/__init__.py::doable_blocked -->

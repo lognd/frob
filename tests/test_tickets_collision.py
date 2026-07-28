@@ -55,7 +55,7 @@ class TestPostArchiveReissueIncident:
     this proves it still holds under the T-0162 changes)."""
 
     def test_new_ticket_never_reissues_an_archived_id(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::new_ticket kind="unit"
+        # frob:tests src/frob/tickets/_new_renumber.py::new_ticket kind="unit"
         first = new_ticket(tmp_path, _spec("First"))
         assert first.is_ok
         assert first.danger_ok.id == "T-0001"
@@ -98,7 +98,7 @@ class TestTwoCheckoutConcurrentFilingIncident:
     branches mint disjoint provisional ids so no coordination is needed."""
 
     def test_two_worktrees_file_concurrently_no_collision(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::finalize_draft kind="unit"
+        # frob:tests src/frob/tickets/_new_renumber.py::finalize_draft kind="unit"
         # frob:tests src/frob/tickets/_provisional.py::on_default_branch kind="unit"
         # frob:tests src/frob/tickets/_provisional.py::is_draft_id kind="unit"
         main_repo = tmp_path / "main"
@@ -201,7 +201,7 @@ class TestSweepWorktreeCollisionIncident:
     def test_renumber_one_rewrites_ledger_and_many_code_references(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/tickets/__init__.py::renumber_one kind="unit"
+        # frob:tests src/frob/tickets/_new_renumber.py::renumber_one kind="unit"
         _git_init(tmp_path)
         collided = new_ticket(tmp_path, _spec("Collided ticket"))
         assert collided.is_ok
@@ -242,7 +242,7 @@ class TestSweepWorktreeCollisionIncident:
         assert old_id in (src_dir / "unrelated.py").read_text()
 
     def test_dry_run_reports_without_writing(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::renumber_one kind="unit"
+        # frob:tests src/frob/tickets/_new_renumber.py::renumber_one kind="unit"
         collided = new_ticket(tmp_path, _spec("Collided ticket"))
         old_id = collided.danger_ok.id
         src = tmp_path / "mod.py"
