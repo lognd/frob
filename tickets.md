@@ -4209,3 +4209,32 @@ Two candidate directions, either judged out of scope for a plain
 Investigate which direction (or a third) is worth taking, and implement
 it. Scope: src/frob/serve/_tools.py, src/frob/app/check_runner.py,
 docs/modules/serve.md.
+
+<!-- ticket:T-1148 -->
+```yaml
+id: T-1148
+title: 'check: detect missing/stale strata_core+frob_core natives and fail honestly
+  (or auto-build) instead of 43 bogus DRIFT002s'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- src/frob/strata/**
+- tests/test_gates.py
+acceptance:
+- text: GIVEN a checkout whose installed natives are missing or stale relative to
+    the native source tree WHEN frob check runs any stage that needs them THEN it
+    reports ONE actionable finding naming the cause and the fix command (frob natives
+    build) -- or auto-builds under a config flag -- and never emits resolver no-candidates
+    errors misattributed to design/doc drift
+  evidence: []
+threat: null
+component: null
+```
+2026-07-28 incident: a root uv sync reinstalled frob without the natives; the next check produced 43 DRIFT002 'no candidates' errors against every design/frob.strata node -- misattributed, alarming, and fixed only by coordinator memory of the worktree-natives artifact (this also recurs in fresh worktrees and sibling repos per the estate rollout T-1031/T-1071 work). The elaboration path knows when strata_core failed to import or its build stamp trails the native source tree; surface THAT, once, with the fix command. Pairs with the T-0864 natives build subcommand and the T-1031 estate shim.
