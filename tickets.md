@@ -1334,7 +1334,7 @@ suite verification per group.
 id: T-1077
 title: 'arch: split remaining gate families out of src/frob/gates/__init__.py (T-0395/T-1072
   remainder)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -1461,14 +1461,25 @@ silently declaring the whole remainder done.
 ```
  src/frob/gates/__init__.py  | 364 +---------------------------------------
  src/frob/gates/_todo_fmt.py | 396 ++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 397 insertions(+), 363 deletions(-)
+ tickets.md                  |  90 +++++++++-
+ 3 files changed, 486 insertions(+), 364 deletions(-)
 ```
 
 ### Evidence
-(no evidence recorded)
+- `tests/test_gates.py::TestCoverageGate::test_todo002_unbound_directive` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_todo001_bare_comment_in_touched_file` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_todo002_edge_to_closed_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_todo003_fires_after_version_bump_since_deferral_landed` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_todo003_silent_when_no_version_bump_since_deferral` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_todo003_silent_when_ticket_closes` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFmt001Gate::test_directive_run_over_limit_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFmt001Gate::test_ordinary_long_comment_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFmt001Gate::test_long_code_line_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFmt001Gate::test_untouched_line_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFmt001Gate::test_short_directive_not_flagged` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
+- tests: 11 passed (from 11 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
 <!-- ticket:T-1081 -->
 ```yaml
