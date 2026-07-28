@@ -1334,7 +1334,7 @@ suite verification per group.
 id: T-1077
 title: 'arch: split remaining gate families out of src/frob/gates/__init__.py (T-0395/T-1072
   remainder)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -1381,7 +1381,6 @@ tests/docs updated to the new module path):
 
 Plan carefully before moving code; verify with the full gates test suite
 after each chunk; land incrementally, same discipline T-1072 used.
-
 <!-- ticket:T-1081 -->
 ```yaml
 id: T-1081
