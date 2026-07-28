@@ -43,6 +43,28 @@ before elaboration folds stores into nodes) must pass those ids in
 explicitly; an empty `store_ids` (the default) makes SYS203 emit
 nothing, never a false-positive guess at which nodes are stores.
 
+ARBITER-AWARE (T-1025): SYS203 used to be permanently mode-blind AND
+arbiter-blind -- it had no code path that consulted `Module.resources`
+(the `resource ID { arbitrated_by NODE | lock "NAME" }` declaration
+T-0700's grammar added, `_access.py::resource_contention_violations`'s
+SYS204 already reads this) at all, so a store with a provably-safe
+declared arbiter still fired SYS203 on every one of its writers,
+permanently, with no way to discharge it short of a standing waiver.
+`check_resource_contention` now accepts an optional `module: Module |
+None` (mirroring `resource_contention_violations`'s own signature) --
+when a store id in `store_ids` is ALSO a resource id in
+`module.resources` with a declared `arbitrated_by` or `lock`, SYS203
+treats that store's shared-write finding as discharged (the SAME
+"declared arbiter is trusted, whether it is actually RESPECTED is a
+separate code-level conformance proof" posture SYS204 already
+establishes, `_access.py` module docstring) and skips it entirely --
+not merely waived, since the model-level fact this rule exists to catch
+("a shared store has multiple writers with no declared coordination")
+is no longer true once a real arbiter is declared. `module=None` (the
+default) keeps every existing caller's behavior byte-for-byte unchanged
+(no arbiter lookup possible without it, same fail-closed posture as an
+empty `store_ids`) -- this is additive, not a signature break.
+
 Waiver channel: all four rules can fire more than once per node (a node
 can declare several ports/paths/pipes, or write several stores), so each
 is registered in `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES` and a
@@ -69,6 +91,7 @@ from pydantic import BaseModel, ConfigDict
 
 from frob.logging import get_logger
 
+from ._ast import Module
 from ._host import HostManifest, manifests_by_node
 from ._models import KernelModel
 from ._waive import apply_waivers
@@ -338,23 +361,54 @@ def _shared_pipe_violations(
     return violations
 
 
+def _arbitered_resource_ids(module: Module | None) -> frozenset[str]:
+    """T-1025: every `Module.resources` id declaring a real arbiter
+    (`arbitrated_by` or `lock`) -- the SAME discharge condition
+    `_access.py::resource_contention_violations` (SYS204) already
+    applies, reused here so SYS203 and SYS204 never disagree about what
+    counts as "arbitered". `module=None` (no AST available to this
+    caller) yields the empty set, i.e. no discharge -- fail-closed, same
+    posture as an empty `store_ids`."""
+    if module is None:
+        return frozenset()
+    return frozenset(
+        resource.id
+        for resource in module.resources
+        if resource.arbitrated_by is not None or resource.lock is not None
+    )
+
+
 # frob:ticket T-0972
 def _shared_store_write_violations(
-    model: KernelModel, store_ids: frozenset[str]
+    model: KernelModel,
+    store_ids: frozenset[str],
+    module: Module | None = None,
 ) -> list[ResourceContentionViolation]:
     """SYS203: every store id in `store_ids` written (module docstring:
     ANY inbound `Flow`, mode-blind) by >=2 distinct non-store nodes fires
     once per writer, naming its co-writers. `store_ids` empty (the
     default) means "no store facts available to this caller" -- emits
-    nothing, never a guessed-at store set (module docstring)."""
+    nothing, never a guessed-at store set (module docstring). T-1025: a
+    store id that is ALSO a `module.resources` id with a declared arbiter
+    (`_arbitered_resource_ids`) is skipped entirely -- the model already
+    proves that store's writes are coordinated, so there is nothing left
+    for this mode-blind rule to usefully flag (module docstring's
+    "ARBITER-AWARE" section)."""
     if not store_ids:
         return []
+    arbitered = _arbitered_resource_ids(module)
     writers: dict[str, set[str]] = defaultdict(set)
     for flow in model.flows:
         if flow.dst in store_ids and flow.src != flow.dst:
             writers[flow.dst].add(flow.src)
     violations: list[ResourceContentionViolation] = []
     for store_id, node_id_set in sorted(writers.items()):
+        if store_id in arbitered:
+            _log.debug(
+                "contention: SYS203 store %s has a declared arbiter, skipped",
+                store_id,
+            )
+            continue
         # frob:waive PERF004 reason="node_id_set is this loop's own per-store distinct set, not a shared re-sort"  # noqa: E501
         distinct = sorted(node_id_set)
         if len(distinct) < 2:
@@ -412,7 +466,9 @@ def _apply_contention_waivers(
 # frob:enforces CHK-GATE-SYSWAIVE002
 # frob:tests tests/unit/strata/test_contention.py::TestDuplicatePort.test_two_nodes_same_port_fires  # noqa: E501
 def check_resource_contention(
-    model: KernelModel, store_ids: frozenset[str] = frozenset()
+    model: KernelModel,
+    store_ids: frozenset[str] = frozenset(),
+    module: Module | None = None,
 ) -> ResourceContentionReport:
     """The SYS2xx resource-contention entrypoint (T-0699): every
     duplicate-port (SYS200), overlapping-path (SYS201), shared-pipe
@@ -421,13 +477,18 @@ def check_resource_contention(
     supplied set of node ids that originated from a `store` construct
     (`Module.stores`, pre-elaboration) -- `KernelModel` alone cannot
     reconstruct which of its nodes were stores (module docstring), so
-    SYS203 is silent without it."""
+    SYS203 is silent without it. `module` (T-1025, optional, additive) is
+    the same pre-elaboration AST `_access.py::resource_contention_
+    violations` already takes, threaded through so SYS203 can consult a
+    store's declared arbiter (`_arbitered_resource_ids`) the same way
+    SYS204 does -- `module=None` keeps every pre-T-1025 caller's
+    behavior unchanged."""
     manifests = manifests_by_node(model)
     violations: list[ResourceContentionViolation] = []
     violations.extend(_duplicate_port_violations(manifests))
     violations.extend(_overlapping_path_violations(manifests))
     violations.extend(_shared_pipe_violations(manifests))
-    violations.extend(_shared_store_write_violations(model, store_ids))
+    violations.extend(_shared_store_write_violations(model, store_ids, module))
     applied = _apply_contention_waivers(model, violations)
     waived = tuple(wf.finding for wf in applied.waived)
     stale = tuple(

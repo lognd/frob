@@ -1,0 +1,38 @@
+// contention_store_arbitered.strata -- T-1025 SYS203 litmus: the SAME
+// two-writer shape as contention_store_vuln.strata, but `shared_store`
+// declares a real arbiter (`resource shared_store { lock "shared.lock"; }`)
+// -- SYS203 must now discharge this store's shared-write finding
+// entirely (module docstring of `_contention.py`'s "ARBITER-AWARE
+// (T-1025)" section), the same way SYS204's resource_contention_
+// violations already discharges a mode-conflict finding for an
+// arbitered resource (`_access.py`).
+//
+// tested end to end by tests/unit/strata/test_contention.py (loaded via
+// `parse_module`+`elaborate`; `module.stores`/`module.resources` are
+// read directly, same "not a KernelModel-level fact" limitation
+// `contention_store_vuln.strata`'s own header comment documents).
+//
+// frob:ticket T-1025
+
+module contention_store_arbitered
+
+store shared_store : trusted {
+    clearance Internal;
+}
+
+node writer_a : trusted {
+    clearance Internal;
+}
+
+node writer_b : trusted {
+    clearance Internal;
+}
+
+flow f_a_shared : writer_a -> shared_store { label Internal; }
+flow f_b_shared : writer_b -> shared_store { label Internal; }
+
+resource shared_store {
+    lock "shared.lock";
+}
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0699/T-1025 litmus suites); a second consumer would not be genuine"

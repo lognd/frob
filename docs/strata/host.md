@@ -591,6 +591,40 @@ All four rules join the SAME T-0174 waiver channel SYS100-102 use
 -- the sub-target is the port number, the overlapping path, the pipe
 name, or the store id).
 
+### SYS203 arbiter-awareness (T-1025)
+
+SYS203 used to be permanently arbiter-blind on top of being mode-blind: it
+had no code path that consulted `Module.resources` (the
+`resource ID { arbitrated_by NODE | lock "NAME" }` declaration below) at
+all, so a store with a genuinely-modeled, provably-safe arbiter still
+fired SYS203 on every writer, forever, with no way to discharge it short
+of a standing waiver. `check_resource_contention` (and
+`_shared_store_write_violations`) now accept an optional `module: Module
+| None` parameter -- when a store id is ALSO a `resource` id declaring
+`arbitrated_by`/`lock`, its SYS203 finding is skipped entirely (not
+merely waived), the same discharge condition SYS204's
+`resource_contention_violations` already applies (below). `module=None`
+(the default) keeps every pre-T-1025 caller's behavior byte-for-byte
+unchanged -- purely additive, no signature break.
+
+**Disclosed gap, not silently left incomplete:** the LIVE `SELFAUDIT001`
+gate (`frob check --only sys`, `src/frob/gates/__init__.py`) and the
+`frob sys audit` CLI report (`src/frob/app/sys_runner.py`) both call
+`check_resource_contention` today WITHOUT a `module=` argument -- neither
+of those files, nor `_design_load.py`'s `DesignIds` (which has no
+`Module`-carrying field to source one from), is in this ticket's declared
+`scope`. Wiring `module` through those callers is real, disclosed
+follow-up work (see this ticket's Done report for the filed id), not done
+here -- the five `SYS203:tickets_ledger` waivers in `design/frob.strata`
+therefore stay in place for now: dropping them without that wiring would
+regress the live gate from clean to five errors, verified directly (the
+same `check_resource_contention(model, store_ids=...)` call the live gate
+makes, with no `module`, still reports all five findings against the
+current `design/frob.strata`). The capability itself is fully built and
+tested (`tests/unit/strata/test_contention.py::TestSharedStoreWrite`,
+including `contention_store_arbitered.strata`'s dedicated litmus fixture)
+-- only the last-mile CLI wiring remains.
+
 ## Resource access modes (T-0700)
 
 `_access.py` adds a MODE-aware contention proof (SYS204) alongside

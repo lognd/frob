@@ -150,3 +150,50 @@ class TestSharedStoreWrite:
         _module, model = _load("contention_store_vuln.strata")
         report = check_resource_contention(model)
         assert not [v for v in report.violations if v.rule == SYS_SHARED_STORE_WRITE]
+
+    # frob:tests \
+    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_arbitered_store_d\
+    # ischarges
+    def test_arbitered_store_discharges(self):
+        """T-1025: the SAME two-writer shape as
+        contention_store_vuln.strata, but the store also declares a real
+        `resource ID { lock "..." }` arbiter (contention_store_
+        arbitered.strata) -- passing `module=` now discharges SYS203
+        entirely for that store, since a declared arbiter proves the
+        model-level "multiple writers with no coordination" claim is no
+        longer true (`_contention.py`'s "ARBITER-AWARE (T-1025)" section)."""
+        module, model = _load("contention_store_arbitered.strata")
+        store_ids = frozenset(s.id for s in module.stores)
+        report = check_resource_contention(model, store_ids=store_ids, module=module)
+        assert not [v for v in report.violations if v.rule == SYS_SHARED_STORE_WRITE]
+
+    # frob:tests \
+    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_arbitered_store_s\
+    # till_fires_without_module
+    def test_arbitered_store_still_fires_without_module(self):
+        """The SAME arbitered fixture, called the OLD way (no `module=`
+        argument) -- SYS203 must still fire, exactly as it did before
+        T-1025, since `module=None` (the default) has no way to look up
+        the arbiter. This is the "additive, not a signature break"
+        guarantee `check_resource_contention`'s docstring promises: every
+        pre-T-1025 caller keeps its exact prior behavior unless it opts
+        in to passing `module`."""
+        module, model = _load("contention_store_arbitered.strata")
+        store_ids = frozenset(s.id for s in module.stores)
+        report = check_resource_contention(model, store_ids=store_ids)
+        findings = [v for v in report.violations if v.rule == SYS_SHARED_STORE_WRITE]
+        assert {v.node for v in findings} == {"writer_a", "writer_b"}
+
+    # frob:tests \
+    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_unarbitered_store\
+    # _still_fires_with_module
+    def test_unarbitered_store_still_fires_with_module(self):
+        """Passing `module=` does not blanket-discharge every store --
+        contention_store_vuln.strata's `shared_store` has NO `resource`
+        block at all, so SYS203 still fires for it even when `module` is
+        supplied (only a genuinely arbitered store id is skipped)."""
+        module, model = _load("contention_store_vuln.strata")
+        store_ids = frozenset(s.id for s in module.stores)
+        report = check_resource_contention(model, store_ids=store_ids, module=module)
+        findings = [v for v in report.violations if v.rule == SYS_SHARED_STORE_WRITE]
+        assert {v.node for v in findings} == {"writer_a", "writer_b"}

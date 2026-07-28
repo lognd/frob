@@ -328,7 +328,7 @@ WAIVE004 flags waivers that match 0 findings. Its own message warns the signal i
 id: T-1025
 title: 'strata SYS203: make shared-store-write contention consult a resource''s declared
   arbiter, drop tickets_ledger waivers'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-27'
@@ -342,6 +342,19 @@ scope:
 - docs/strata/host.md
 - design/frob.strata
 - tickets.md
+- tests/unit/strata/litmus/contention_store_arbitered.strata
+scope_changes:
+- op: add
+  glob: tests/unit/strata/litmus/contention_store_arbitered.strata
+  reason: new litmus fixture proving SYS203's arbiter-discharge (T-1025's own code
+    capability), mirroring the sibling contention_store_vuln.strata litmus precedent
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_arbitered_store_discharges
+- tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_arbitered_store_still_fires_without_module
+- tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_unarbitered_store_still_fires_with_module
+- tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_two_writers_fires_mode_blind
 threat: null
 component: null
 ```
@@ -366,6 +379,101 @@ src/frob/strata/_contention.py, tests/unit/strata/test_contention.py,
 docs/strata/host.md#resource-contention-sys2xx-t-0699, design/frob.strata
 (dropping the five waivers once SYS203 itself discharges them),
 tickets.md.
+
+## Done report
+
+_shared_store_write_violations/check_resource_contention (SYS203) now
+accept an optional `module: Module | None` parameter. When a store id in
+`store_ids` is ALSO a `Module.resources` id declaring a real arbiter
+(`arbitrated_by`/`lock`), its shared-store-write finding is now skipped
+entirely, the SAME discharge condition `_access.py::resource_contention_
+violations` (SYS204) already applies. `module=None` (the default) keeps
+every pre-existing caller's behavior byte-for-byte unchanged -- purely
+additive, no signature break. New helper `_arbitered_resource_ids(module)`
+mirrors `_access.py::_resource_arbiters`'s lookup.
+
+Tests (tests/unit/strata/test_contention.py, 18 total -- 14 pre-existing
++ 4 new):
+- New litmus fixture tests/unit/strata/litmus/contention_store_
+  arbitered.strata: two writers into a store that DOES declare
+  `resource shared_store { lock "shared.lock"; }`.
+- test_arbitered_store_discharges: passing module= discharges the
+  finding entirely.
+- test_arbitered_store_still_fires_without_module: the OLD call shape
+  (no module=) against the SAME arbitered fixture still fires -- proves
+  the change is additive, not a silent behavior flip for existing
+  callers.
+- test_unarbitered_store_still_fires_with_module: passing module= does
+  NOT blanket-discharge every store -- contention_store_vuln.strata's
+  store (no resource block at all) still fires even with module
+  supplied.
+
+DISCLOSED GAP (not silently left incomplete -- the ticket's stated goal
+of dropping the five design/frob.strata SYS203:tickets_ledger waivers is
+NOT done this round): neither of the two LIVE callers
+(src/frob/gates/__init__.py's SELFAUDIT001 gate, src/frob/app/
+sys_runner.py's `frob sys audit` CLI report) passes `module=` today, and
+neither has an in-scope path to source one -- src/frob/strata/
+_design_load.py's DesignIds carries only elaborated KernelModels and a
+merged store-id set, never the raw parsed Module (or its `.resources`).
+Wiring that through touches src/frob/gates/__init__.py, which is
+contested turf this wave (a sibling gates-family-splitter ticket holds
+much of it) -- all three files (gates/__init__.py, sys_runner.py,
+_design_load.py) are outside T-1025's own declared scope. VERIFIED
+directly rather than assumed: calling check_resource_contention(model,
+store_ids=...) the SAME way the live gate does (no module=) against the
+CURRENT design/frob.strata still reports all five tickets_ledger
+findings -- dropping the waivers now would regress `frob check --only
+sys` from clean to five errors. The five waivers therefore stay in
+design/frob.strata unchanged. Filed T-1146 ("strata: wire
+check_resource_contention's module= param into SELFAUDIT001/sys_runner,
+drop tickets_ledger SYS203 waivers") as the exact follow-up; cite its
+REAL renumbered id (grep tickets.md after landing) in any status report.
+
+docs/strata/host.md: new "SYS203 arbiter-awareness (T-1025)" subsection
+under "Resource contention (SYS2xx, T-0699)" documents the capability
+and the disclosed gap above, with the exact verification command.
+
+Gate verification (all foreground, chunked):
+- uv run pytest tests/unit/strata/test_contention.py -q: 18 passed.
+- uv run frob check --ticket T-1025 --only gates-native: 0 errors.
+- uv run frob check --ticket T-1025 --only gates-security: 0 errors.
+- uv run frob check --ticket T-1025 --only static: 0 errors.
+- uv run frob check --ticket T-1025 --only gates-fast: 26 remaining
+  errors, ALL pre-existing/unrelated -- 24 COV003 findings citing
+  strata-core/src/parse.rs::tests::* evidence on FIVE unrelated,
+  already-closed tickets (T-0138/T-0226/T-0629/T-0700/T-0702); these
+  became stale because T-1099 (landed on main before this ticket
+  started, unrelated to T-1025) split parse.rs into strata-core/src/
+  parse/*.rs, moving those Rust tests out from under their old path --
+  verified this predates T-1025 (T-1099 is a sibling wave-18 ticket, not
+  touched by this diff). 1 COV001 on src/frob/gates/_tracked_files.py
+  (untouched by this diff). 1 TICK006 on T-1114's own phantom draft
+  citation (different, already-landed ticket's residue).
+- uv run frob check --ticket T-1025 --only lint: 0 errors in this
+  ticket's own files; the 6 remaining ruff-check errors are pre-existing
+  in src/frob/vet/_capability.py and src/frob/vet/_supplychain.py.
+- git diff main --diff-filter=D --stat: empty.
+
+### Changed
+```
+ docs/strata/host.md                                |  34 ++
+ src/frob/strata/_contention.py                     |  71 ++-
+ .../litmus/contention_store_arbitered.strata       |  38 ++
+ tests/unit/strata/test_contention.py               |  47 ++
+ tickets.md                                         | 480 ++++++++++++++++++++-
+ 5 files changed, 657 insertions(+), 13 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_arbitered_store_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_arbitered_store_still_fires_without_module` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_unarbitered_store_still_fires_with_module` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_two_writers_fires_mode_blind` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1029 -->
 ```yaml
@@ -3545,3 +3653,62 @@ T-1110/T-1111/T-1135/etc naming the same package). Investigate either:
     broad glob.
 
 Filed while working T-1125; out of that ticket's own scope to fix.
+
+<!-- ticket:T-1146 -->
+```yaml
+id: T-1146
+title: 'strata: wire check_resource_contention''s module= param into SELFAUDIT001/sys_runner,
+  drop tickets_ledger SYS203 waivers'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/__init__.py
+- src/frob/app/sys_runner.py
+- src/frob/strata/_design_load.py
+- design/frob.strata
+threat: null
+component: null
+```
+T-1025 taught check_resource_contention/_shared_store_write_violations
+(src/frob/strata/_contention.py) an optional `module: Module | None`
+parameter: when a store id is also a `resource` id declaring
+`arbitrated_by`/`lock`, its SYS203 shared-store-write finding is now
+skipped entirely (the same discharge condition SYS204's
+resource_contention_violations already applies).
+
+This is fully built and tested in isolation, but NOT yet wired into
+either live caller:
+- src/frob/gates/__init__.py's SELFAUDIT001 gate (the `frob check --only
+  sys` stage) calls check_resource_contention(model,
+  store_ids=design_ids.store_ids) with no `module=` argument.
+- src/frob/app/sys_runner.py's `frob sys audit` CLI report does the same.
+
+Neither caller has an in-scope way to source a `module` today:
+src/frob/strata/_design_load.py's DesignIds dataclass carries only
+elaborated KernelModels (`models`) and a merged store-id set
+(`store_ids`), never the raw pre-elaboration `Module` objects (or their
+`.resources`) needed to look up an arbiter.
+
+To close the loop and let the five `SYS203:tickets_ledger` waivers in
+design/frob.strata finally be dropped (T-1025's own stated goal), this
+follow-up needs:
+1. DesignIds (or a new sibling field) to also carry the merged
+   `Module.resources` (or the raw parsed Modules) alongside `store_ids`.
+2. gates/__init__.py's SELFAUDIT001 call site and sys_runner.py's `frob
+   sys audit` call site both updated to pass `module=` (or an
+   equivalent merged-resources argument) through to
+   check_resource_contention.
+3. Verify `frob check --only sys` stays green with the five
+   `SYS203:tickets_ledger` waivers REMOVED from design/frob.strata (the
+   arbiter should now discharge them for real, not via the waiver).
+
+Filed rather than done inline because gates/__init__.py is contested
+turf this wave (a sibling gates-family-splitter ticket holds much of it)
+and _design_load.py/sys_runner.py wiring was outside T-1025's own
+declared scope.

@@ -130,7 +130,7 @@ node cli : trusted {
     // omission. Wiring SYS203 itself to consult the arbiter is a separate,
     // undischarged follow-up (src/frob/strata/_contention.py is out of
     // this docs-only ticket's scope).
-    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1025";
+    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1146";
     access "tickets_ledger" mode write;
     attr interface=ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS;
     attr interface=ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS;
@@ -695,7 +695,7 @@ node gates : trusted {
     // and SYS203 stays waived only because it is a separate, mode-blind
     // check with no path to consult that model at all (see `cli`'s full
     // comment above for the reasoning).
-    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1025";
+    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1146";
     access "tickets_ledger" mode write;
     attr interface=ALL_PROVIDERS;
     attr interface=BASELINE_REL;
@@ -1455,7 +1455,7 @@ node fleet : trusted {
     // and SYS203 stays waived only because it is a separate, mode-blind
     // check with no path to consult that model at all (see `cli`'s full
     // comment above for the reasoning).
-    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1025";
+    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1146";
     access "tickets_ledger" mode write;
     attr interface=DEFAULT_MANIFEST_PATH;
     attr interface=FleetError;
@@ -1550,7 +1550,7 @@ node core : trusted {
     // and SYS203 stays waived only because it is a separate, mode-blind
     // check with no path to consult that model at all (see `cli`'s full
     // comment above for the reasoning).
-    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1025";
+    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1146";
     access "tickets_ledger" mode write;
     attr interface=ACCENT;
     attr interface=ALL_SENTINEL;
@@ -2109,7 +2109,7 @@ node serve : trusted {
     // and SYS203 stays waived only because it is a separate, mode-blind
     // check with no path to consult that model at all (see `cli`'s full
     // comment above for the reasoning).
-    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1025";
+    waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1146";
     access "tickets_ledger" mode write;
     attr interface=CoverageWatcher;
     attr interface=DEFAULT_COVERAGE_POLL_INTERVAL_S;
