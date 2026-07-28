@@ -31,6 +31,10 @@ real.
   research (audit every module, read every paper): external pending/done
   store instead of an in-context to-do list, plus the `.mcp.json` wiring for
   `fetch`/`arxiv`.
+- `docs/guides/estate-capability-migration.md` -- the per-repo recipe for
+  narrowing a `.strata` `may` declaration to the precise `family.mode`
+  capability spelling (`fs.read`/`fs.write`, `net.connect`/`net.listen`),
+  plus the T-1071 fleet-routed ticket record for the sibling estate.
 
 ## Extending frob
 

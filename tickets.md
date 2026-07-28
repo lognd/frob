@@ -332,6 +332,7 @@ Triage the 37 frob-arch abstraction-opportunity advisories: for each genuine nea
 
 ## Drop reason
 - 2026-07-28: absorbed: its decomposition landed in full -- T-1068 (detector language-parity precision, 5beeed09) + T-1067 (per-package extraction pass, 3da9178d); the advisory bucket this ticket tracked is now measured and worked at the successor granularity
+
 <!-- ticket:T-0395 -->
 ```yaml
 id: T-0395
@@ -1851,8 +1852,8 @@ No file under src/frob/gates/** was touched.
 id: T-1071
 title: 'ESTATE migration: sibling repos adopt net.connect/net.listen precise capability
   spelling (T-0573 fleet routing)'
-state: queued
-kind: feature
+state: done
+kind: docs
 origin: human
 created: '2026-07-28'
 priority: medium
@@ -1861,10 +1862,122 @@ tier: ticket
 sprint: null
 scope:
 - docs/design/registry/**
+- docs/guides/**
+- docs/index.md
+scope_changes:
+- op: add
+  glob: docs/guides/**
+  reason: 'Declared scope (docs/design/registry/**) does not cover the ticket''s own
+
+    described deliverable: filing per-repo migration tickets via T-0573 fleet
+
+    routing and documenting the per-repo recipe. docs/design/registry holds
+
+    the unrelated design-knowledge corpus registry (arch checks, patterns,
+
+    CWEs, ...), nothing about capability vocabulary or fleet migration.
+
+    Adding docs/guides/** for a new estate-migration recipe guide, matching
+
+    where every other agent-facing process doc in this repo already lives
+
+    (agent-playbook.md, worktree-pool.md, ...). No sibling-repo or vet-code
+
+    edit is being made from this repo; routing itself uses the existing
+
+    frob.fleet CLI (T-0573), which writes into each sibling''s own ledger, not
+
+    this repo''s tree.
+
+    '
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: docs/index.md
+  reason: 'gate:DOC (DOC001) requires the new docs/guides/estate-capability-migration.md
+
+    be linked from somewhere, matching every other docs/guides/*.md entry --
+
+    they are all listed in docs/index.md''s "Getting started" section. Adding
+
+    one line there is the minimal, idiomatic fix, not a new content addition.
+
+    '
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- cmd:uv run frob check --ticket T-1071 --only gates-fast exit=0 sha256=9ab894d95b1e
 threat: null
 component: null
 ```
 T-0771 wired net (WIRED_MODE_FAMILIES + _KIND_MAP net-connect/net-listen -> net.connect/net.listen) ahead of the T-0717 fs-write/fs-read alias sunset (2026-10-20). Per T-0717's mandate point 3 (ESTATE migration), file per-repo tickets (route via T-0573 fleet routing) for the 8 sibling repos' own capability declarations to adopt net.connect/net.listen precise spellings where they currently use bare net or (post-sunset) the legacy fs-write/fs-read hyphenated forms. Coordinate with the fs-write/fs-read sunset date so both migrations land in the same sweep per repo rather than two separate touches.
+
+## Done report
+
+Changed:
+docs/guides/estate-capability-migration.md (new)
+docs/index.md
+
+Deliverable is frob-side machinery + docs, per this repo's own
+constraint (this repo cannot edit the 8 sibling repos' source). The
+actual "sibling repo declarations narrow to net.connect/net.listen"
+edits are out of scope for a frob-repo worktree by construction and are
+left to whichever agent picks up each sibling's own routed ticket,
+following the per-repo recipe this doc records.
+
+Machinery used (pre-existing, T-0573): `frob fleet route` filed one
+ticket per sibling directly into that sibling's own ledger (not a code
+edit in this repo, not a hand-edited sibling file) for the 5 siblings
+whose design/*.strata actually has a bare `may "net"` or literal
+fs-write/fs-read hit:
+- lithos T-0076
+- graphite T-0024
+- aprog-public T-0062
+- aprog-private T-0017
+- logand.app T-0007
+
+feldspar/typani/lograder had zero matching declarations (grepped their
+design/*.strata) -- no ticket filed for them, recorded as such in the
+guide rather than silently skipped.
+
+Scope was widened twice from the ticket's originally declared
+docs/design/registry/** (which does not cover this deliverable at all --
+that directory is the unrelated design-knowledge corpus registry) to add
+docs/guides/** (the recipe doc itself, matching where every other
+agent-facing process doc lives) and docs/index.md (one line linking the
+new guide, required by gate:DOC/DOC001's orphan-doc rule). Both changes
+went through `frob ticket scope --add --reason-file`, reasons recorded
+in the ticket's own scope_changes audit trail.
+
+Evidence: this is a docs-only ticket with no code changed in this repo,
+so there are no frob:tests-bound pytest node ids to bind (no code
+symbol was added or changed). Evidence is the passing gate groups below,
+run per T-1004/T-0627's foreground+timeout recipe (`frob test --base
+main` falls back to a suite-wide pytest run for unknown-language .md
+files' selection, ~900s -- not run; not applicable, since there is no
+code-level touched-set to select tests against).
+
+Gates: frob check --ticket T-1071 --only <group> clean for lint (ruff-
+check/ty clean; ruff-format's one finding is in src/frob/gates/_waive.py,
+a file this ticket never touched, pre-existing), static, gates-fast,
+gates-native, gates-security -- 0 errors across every group after fixing
+DOC001 (link the new guide from docs/index.md) and PRE001 (re-swept
+after the scope widen).
+
+### Changed
+```
+ docs/guides/estate-capability-migration.md | 100 +++++++++++++++++++++++++++++
+ tickets.md                                 |  32 ++++++++-
+ 2 files changed, 130 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 700 warning(s), 419 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1074 -->
 ```yaml
