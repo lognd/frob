@@ -8551,3 +8551,78 @@ does not fully hold. T-0339 remains open until this closes (or until each
 remaining row gets a reasoned OPAQUE_SOURCE_INVISIBLE excuse instead, if
 investigation shows any of them are genuinely source-invisible per T-0665
 doctrine rather than needing a detector/resolver).
+
+<!-- ticket:T-1052 -->
+```yaml
+id: T-1052
+title: 'DEPR005: callgraph-resolved references + line-insensitive baseline keying
+  (bare-name text match plus file:line keys red-main on nearly every land)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_deprecated_baseline.py
+- src/frob/gates/__init__.py
+- tests/unit/gates/test_deprecated_baseline.py
+- docs/modules/gates.md
+- frob-deprecated-baseline.lock.json
+acceptance:
+- text: given a repo where subprocess.run is called in a new file, when DEPR005 evaluates
+    a deprecated symbol named run, then the new file is NOT reported as a caller unless
+    the call graph resolves an edge to that exact symbol
+  evidence: []
+- text: given a land that only shifts line numbers in a file already referencing a
+    deprecated symbol, when DEPR005 re-evaluates, then no new-caller violation fires
+    and the committed baseline is byte-identical
+  evidence: []
+- text: given the redesigned lock format, when tighten_deprecated_baseline runs, then
+    the shrink-only contract holds on the new (file, symbol) key shape
+  evidence: []
+threat: null
+component: null
+```
+## Description
+
+DEPR005's new-caller ratchet red-mained three times in one session
+(2026-07-27 night: re-baselines 54273735, 1ed269c1, plus a third hit
+from T-0602's land) because BOTH of its axes are churn-hostile:
+
+1. Reference DETECTION is a bare-short-name text match.
+   `deprecated_current_references` matches the deprecated symbol's bare
+   name, so for `src/frob/app/xref_runner.py::run` every
+   `subprocess.run(`, gate-runner `.run(`, and any other textual `run`
+   occurrence in the repo counts as a "caller" -- the committed baseline
+   carries ~900 references per `run`-named symbol, nearly all junk
+   (verified: the flagged "new callers" at
+   tests/test_gates_tick009_tick010.py:86 and
+   src/frob/app/ticket_runner.py:2206 are literally `subprocess.run`
+   calls). Any land that ADDS a file containing `.run(` red-mains.
+
+2. Baseline KEYING is file:line. Any land that edits lines ABOVE an
+   existing reference shifts it, and the shifted line reads as a new
+   caller (T-1023's test_gates.py edit produced 198 false errors at
+   once; T-0714's land produced 6 more).
+
+Fix both axes:
+- Resolve references through the call graph / import resolution the way
+  DEPR001-004 and the T-0639 caller-graph design doc already intend --
+  a caller is an edge to THAT symbol, not a name coincidence.
+  `frob.graph.callgraph.build_call_graph` is the shared substrate.
+- Key the baseline line-insensitively: (referencing file, deprecated
+  symbol) pairs, optionally with a per-file count for growth detection
+  inside an already-referencing file. A pure line shift or an unrelated
+  edit to a referencing file must NOT change the baseline identity.
+- Regenerate the committed lock in the new format; drop the junk
+  references that bare-name matching accumulated.
+- Keep tighten_deprecated_baseline's shrink-only contract on the new
+  key shape.
+
+Until this lands, DEPR005 is demoted to warn in frob.toml
+[gates.severity] (comment cites this ticket) -- three coordinator
+re-stamps in 90 minutes is hand-maintenance of a broken signal, not
+enforcement.
