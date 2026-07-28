@@ -1679,6 +1679,39 @@ def analyze_project(
     # unparseable file is skipped (logged at DEBUG), not a whole-scan abort.
 ```
 
+**Single-file-mode parity (T-1102).** `root` may be a single file
+(`frob arch <file>`, or `frob.gates._arch.arch_gate` invoked narrowly
+against one path), not only a directory. Before T-1102, a plain file
+`root` silently produced ZERO candidates: `_collect_files`/`frob.excludes.
+iter_files` both assume a directory (`(root / ".git").exists()` and
+`os.walk(root)` are no-ops on a file), so `frob arch <file>` printed "no
+architectural issues found" for every category, not just `large-file` --
+the exact gap that made a 4346-line `strata-core/src/parse.rs` invisible
+to a single-file scan even after `large-file` existed as a category.
+`analyze_project` now detects `root.is_file()` and, in that case, resolves
+the walk root to `root.parent` (every relative-path/exclude-glob
+computation downstream stays identical to a directory walk that happened
+to contain only this one file) and seeds the candidate list with just
+`root` itself instead of calling `_collect_files` at all -- the
+single-file finding runs through the exact same `_analyze_one_file` path
+a directory walk uses, so its category/message shape is byte-identical,
+never a parallel single-file code path that could drift from the
+directory one (`tests/test_arch_gate.py::TestArchGateLargeFile::
+test_single_file_mode_matches_directory_walk`).
+
+**`large-file` / `LARGE001` (T-0368/T-0372 advisory, T-1102 gate wiring).**
+Any file (any `frob.lang`-supported language) over `max_file_lines`
+(`frob.toml`'s `[arch]` table, or the calibrated default) is flagged
+`info`-severity `large-file` by `analyze_project` itself; test files and
+`fixtures/`-rooted data files stay exempt. `frob.gates._arch.arch_gate`
+channels this same category into a real gate `Violation` (`LARGE001`,
+WARN first-turn-on given this repo's own pre-existing over-threshold file
+corpus at filing time) -- previously advisory-only text/JSON output,
+invisible to `frob check`/`frob:waive` entirely. A file-level finding has
+no function/class symbol, so a `frob:waive LARGE001 reason="..."` binds
+by file/line, not `symref`. See docs/modules/gates.md's rule catalog entry
+for the gate-side detail (turn-on count, waiver shape).
+
 <a id="arch-suggestion"></a>
 <!-- frob:describes src/frob/arch/_models.py::ArchSuggestion -->
 

@@ -599,12 +599,7 @@ def _run_srp_checks_python(
 # frob:tests tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit
 # frob:ticket T-0423
 # frob:ticket T-1102
-# frob:waive AFFECT001 reason="T-1102's declared scope (src/frob/gates/_arch.py, \
-# src/frob/arch/__init__.py, tests/test_arch_gate.py, docs/modules/gates.md) does \
-# not include docs/modules/arch.md -- the single-file-mode parity fix here is \
-# documented in this function's own docstring plus docs/modules/gates.md's new \
-# LARGE001 entry instead. Follow-up filed: T-draft-46c68525 (docs: document \
-# T-1102 single-file-mode parity + LARGE001 in docs/modules/arch.md)."
+# frob:ticket T-1104
 @memoize_per_run
 def analyze_project(
     root: Path,
