@@ -759,8 +759,8 @@ Candidates (b) and (c) landed here as COV006/COV007:
 
 ### PLACE001 (T-0504)
 
-<!-- frob:describes src/frob/gates/_waive.py::_place001_missed_symbol -->
-<!-- frob:describes src/frob/gates/_waive.py::_place001_bindings -->
+<!-- frob:describes src/frob/gates/_waive_comments.py::_place001_missed_symbol -->
+<!-- frob:describes src/frob/gates/_waive_comments.py::_place001_bindings -->
 
 T-0470 first prototyped a class-directive placement lint as "distance
 from the class's own span start" and DELIBERATELY DROPPED it before
@@ -1482,7 +1482,7 @@ EXHAUST001/002's own carve-out).
 <!-- frob:describes src/frob/gates/_coverage.py::stamp_coverage -->
 <!-- frob:describes src/frob/gates/_coverage.py::load_coverage -->
 <!-- frob:describes src/frob/gates/_coverage.py::exclude_filtered_coverage -->
-<!-- frob:describes src/frob/gates/_waive.py::active_ticket -->
+<!-- frob:describes src/frob/gates/_waive_lease.py::active_ticket -->
 <!-- frob:describes src/frob/gates/_prework.py::record_prework -->
 <!-- frob:describes src/frob/gates/_prework.py::sweep_ticket -->
 <!-- frob:describes src/frob/policy/__init__.py::load_policy -->

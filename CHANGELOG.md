@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.231.0] - unreleased
+
+- T-1081: arch: ARCH102 fires on newly-split src/frob/gates/_waive.py (35 exports, 4 clusters)
+
 ## [0.230.0] - unreleased
 
 - T-1088: implement 5 statically-detectable-only SC-* supply-chain detectors with no enforcing check today

@@ -145,24 +145,25 @@ from frob.gates._waive import (
     _apply_waivers,
     _dsl001_violations,
     _match_waiver,
-    _place001,
     _waive001_violations,
     _waive002_violations,
     _waive003_violations,
     _waive004_violations,
     _waive005_violations,
+    known_gate_rule_ids,
+)
+from frob.gates._waive_comments import (
+    _place001,
     _waive006_binding_ticket_refs,
     _waive006_comment_violations,
     _waive006_strata_violations,
     _waive007_comment_violations,
     _waive007_is_exempt_dangling_ref,
     _waive007_strata_violations,
-    active_ticket,
-    known_gate_rule_ids,
-    ticket_lease_pin,
     waive006_gate,
     waive007_gate,
 )
+from frob.gates._waive_lease import active_ticket, ticket_lease_pin
 from frob.gates._walk_lint import walk_lint_gate
 from frob.gates.decisions import DecisionError
 from frob.gates.invariants import (

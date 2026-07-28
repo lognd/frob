@@ -4378,7 +4378,7 @@ class TestPreworkSweepBounds:
 
 class TestActiveTicket:
     def test_explicit_flag_wins(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_waive.py::active_ticket
+        # frob:tests src/frob/gates/_waive_lease.py::active_ticket
         _git_init(tmp_path)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "T-0002-other"], cwd=tmp_path, check=True
