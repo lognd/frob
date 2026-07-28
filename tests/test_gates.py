@@ -4780,6 +4780,7 @@ class TestInv004Gate:
 
 
 # frob:ticket T-0408
+# frob:ticket T-1107
 class TestInv006Gate:
     """T-0408: INV006 extends the same claim-vocabulary scan INV003 runs
     over docs (`INV003_SPEC_DIRS`) to SOURCE trees (`INV006_SRC_DIRS`) --
@@ -4904,6 +4905,28 @@ class TestInv006Gate:
         violations = inv006_gate(tmp_path, snapshot)
         assert len(violations) == 1
         assert violations[0].severity == Severity.WARN
+
+    # frob:ticket T-1107
+    def test_new_renumber_file_has_no_unanchored_exclusivity_claim(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1107: `_new_renumber.py`'s exclusivity claims (`only`, lines
+        ~68/140/148/150/152) are covered by the `frob:waive INV006` at the
+        top of the file (carried in from T-0585/T-1103) -- copying the real
+        source into an isolated snapshot proves the live file itself
+        produces zero INV006 findings, not just that a waiver line exists
+        somewhere in it."""
+        real = (
+            Path(__file__).resolve().parents[1]
+            / "src"
+            / "frob"
+            / "tickets"
+            / "_new_renumber.py"
+        )
+        _write(tmp_path, "src/frob/tickets/_new_renumber.py", real.read_text())
+        snapshot = _snapshot(tmp_path)
+        violations = inv006_gate(tmp_path, snapshot)
+        assert violations == ()
 
     # frob:ticket T-0594
     def test_ratchet_rule_not_enabled_stays_static_warn(self, tmp_path: Path) -> None:
