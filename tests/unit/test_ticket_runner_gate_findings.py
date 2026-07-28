@@ -75,7 +75,11 @@ _UNPARSABLE_STDOUT = "some garbage output with no gate-summary line at all\n"
 
 
 class TestCheckGateFindingsFn:
-    """frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn"""
+    """`_check_gate_findings_fn` parsing/filtering behavior -- each method
+    below carries its own `frob:tests` edge (T-1055: this class docstring
+    used to itself be a class-level `frob:tests` directive, flagged
+    PLACE001 as class-falling-back when it was really meant for the
+    method immediately below, which already has its own directive)."""
 
     # frob:ticket T-0846
     # frob:ticket T-0850
@@ -276,7 +280,11 @@ class TestCheckGatesSummaryFn:
 
 
 class TestPythonForTree:
-    """frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree"""
+    """`_python_for_tree` resolution -- each method below carries its own
+    `frob:tests` edge (T-1055: this class docstring used to itself be a
+    class-level `frob:tests` directive, flagged PLACE001 as class-falling-
+    back when it was really meant for the method immediately below,
+    which already has its own directive)."""
 
     # frob:ticket T-0846
     def test_uses_tree_venv_python_when_present(self, tmp_path: Path) -> None:
