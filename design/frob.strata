@@ -1043,6 +1043,7 @@ node stratamod : trusted {
     attr interface=FallbackViolation;
     attr interface=FamilyGap;
     attr interface=FaultInjectionCase;
+    attr interface=FileSyncResult;
     attr interface=FingerprintHit;
     attr interface=FingerprintViolation;
     attr interface=Flow;
@@ -1095,6 +1096,7 @@ node stratamod : trusted {
     attr interface=Node;
     attr interface=NodeAccess;
     attr interface=NodeDecl;
+    attr interface=NodeInterfaceDiff;
     attr interface=OBSERVABILITY_RULES;
     attr interface=ObservabilityReport;
     attr interface=ObservabilityViolation;
@@ -1247,6 +1249,7 @@ node stratamod : trusted {
     attr interface=SurfaceCapacity;
     attr interface=SyncDepthReport;
     attr interface=SyncDepthViolation;
+    attr interface=SyncInterfaceReport;
     attr interface=TRUST;
     attr interface=TXN_RULES;
     attr interface=ThreatReport;
@@ -1266,6 +1269,7 @@ node stratamod : trusted {
     attr interface=_split_waiver_rule;
     attr interface=_stale_detail;
     attr interface=_validate_waiver_fields;
+    attr interface=apply_sync_interface;
     attr interface=apply_waivers;
     attr interface=audit_claim;
     attr interface=bind_code;
@@ -1383,6 +1387,7 @@ node stratamod : trusted {
     attr interface=stale_native_warning;
     attr interface=stale_natives;
     attr interface=summarize;
+    attr interface=sync_interface_report;
     attr interface=unbound_constructs;
 }
 
@@ -2841,6 +2846,7 @@ node testsuite : trusted {
     attr interface=TestAckWorktreeLease;
     attr interface=TestAcquireSingletonLock;
     attr interface=TestActiveTicket;
+    attr interface=TestAddAcceptance;
     attr interface=TestAddCmdEvidenceLoadAndWriteFailures;
     attr interface=TestAddEvidenceAccepts;
     attr interface=TestAffectDriftGate;
@@ -2859,6 +2865,7 @@ node testsuite : trusted {
     attr interface=TestAppendEntry;
     attr interface=TestApplyManagedBlocks;
     attr interface=TestApplyReleaseBumpForLand;
+    attr interface=TestApplySyncInterface;
     attr interface=TestAptedSimilarity;
     attr interface=TestArchChecksReg008BurnDown;
     attr interface=TestArchComplexityAware;
@@ -2907,6 +2914,7 @@ node testsuite : trusted {
     attr interface=TestBindingTotality;
     attr interface=TestBlastRadius;
     attr interface=TestBlockBinding;
+    attr interface=TestBlockCliValidatesBy;
     attr interface=TestBoardView;
     attr interface=TestBooleanFlagParam;
     attr interface=TestBoundClaimEdgeCases;
@@ -2989,6 +2997,7 @@ node testsuite : trusted {
     attr interface=TestCheckOnlyPerf;
     attr interface=TestCheckPolyglot;
     attr interface=TestCheckRatchet;
+    attr interface=TestCheckRegistryExclusion;
     attr interface=TestCheckResultCounts;
     attr interface=TestCheckResultRendersUnavailableTool;
     attr interface=TestCheckRunner;
@@ -3048,6 +3057,7 @@ node testsuite : trusted {
     attr interface=TestCollectTsTests;
     attr interface=TestColor;
     attr interface=TestCommitStartTransition;
+    attr interface=TestCommitTicketLedgerChange;
     attr interface=TestCommonDirAndBranch;
     attr interface=TestComplianceExhaustiveness;
     attr interface=TestComplianceGate;
@@ -3191,8 +3201,10 @@ node testsuite : trusted {
     attr interface=TestDoctorDerivedStateDrift;
     attr interface=TestDoctorDerivedStateManifest;
     attr interface=TestDoctorGolden;
+    attr interface=TestDoctorMalformedTicketEdges;
     attr interface=TestDoctorMutateJournal;
     attr interface=TestDoctorScaffoldConformance;
+    attr interface=TestDoctorStaleTicketLeases;
     attr interface=TestDoneReportClaimsModel;
     attr interface=TestDoneReportCli;
     attr interface=TestDoneReportHeadingImpersonation;
@@ -3313,6 +3325,7 @@ node testsuite : trusted {
     attr interface=TestExtraKey;
     attr interface=TestExtract;
     attr interface=TestExtractEffects;
+    attr interface=TestFailCliRequeues;
     attr interface=TestFailureLog;
     attr interface=TestFakeMarkerStaleness;
     attr interface=TestFakeMarking;
@@ -3457,6 +3470,8 @@ node testsuite : trusted {
     attr interface=TestIsCmdEvidence;
     attr interface=TestIsFlaky;
     attr interface=TestIsSelfPatternPath;
+    attr interface=TestIsValidTicketRef;
+    attr interface=TestIterRawLedgerFrontmatter;
     attr interface=TestKernelModel;
     attr interface=TestKeywordSweep;
     attr interface=TestKillSwitch;
@@ -3643,6 +3658,7 @@ node testsuite : trusted {
     attr interface=TestNetEnabled;
     attr interface=TestNewAcceptanceFile;
     attr interface=TestNewBodyFile;
+    attr interface=TestNewDropFailAutoCommit;
     attr interface=TestNewFileCarveOut;
     attr interface=TestNewGateRuleIds;
     attr interface=TestNewTicket;
@@ -3881,6 +3897,7 @@ node testsuite : trusted {
     attr interface=TestRenderScopeBreadthSummary;
     attr interface=TestRenderer;
     attr interface=TestRenumberOneRaceWithConcurrentNew;
+    attr interface=TestRenumberRewritesLedgerProse;
     attr interface=TestReplaceDoneReportSection;
     attr interface=TestReplayEvidenceFromDoneReport;
     attr interface=TestRepoDirtyKey;
@@ -4090,6 +4107,7 @@ node testsuite : trusted {
     attr interface=TestSyncDepth;
     attr interface=TestSyncGateRuleEntries;
     attr interface=TestSyncGateRulesCallback;
+    attr interface=TestSyncInterfaceReport;
     attr interface=TestSysAudit;
     attr interface=TestSysAuditCli;
     attr interface=TestSysAuditContentionCli;
@@ -4140,6 +4158,7 @@ node testsuite : trusted {
     attr interface=TestTicketEvidence;
     attr interface=TestTicketEvidenceRustOracle;
     attr interface=TestTicketFail;
+    attr interface=TestTicketFlow;
     attr interface=TestTicketLand;
     attr interface=TestTicketLeasePin;
     attr interface=TestTicketList;
@@ -4157,6 +4176,7 @@ node testsuite : trusted {
     attr interface=TestTicketRoundTrip;
     attr interface=TestTicketRunnerDispatch;
     attr interface=TestTicketShow;
+    attr interface=TestTicketSpecValidatesBlockedByAndParent;
     attr interface=TestTicketSprintAssignShow;
     attr interface=TestTicketStart;
     attr interface=TestTicketStartTransitionFailure;
@@ -4286,6 +4306,7 @@ node testsuite : trusted {
     attr interface=TestWorkingDiff;
     attr interface=TestWorktree;
     attr interface=TestWorktreeGuardWiredIntoMutations;
+    attr interface=TestWorktreeLock;
     attr interface=TestWorktreeSweepCli;
     attr interface=TestWriteAllRefusesAStaleSnapshot;
     attr interface=TestWriteArchiveRefusesAStaleSnapshot;
@@ -4487,6 +4508,7 @@ node testsuite : trusted {
     attr interface=test_finds_counterexample_for_non_equivalent_functions;
     attr interface=test_fire_fixture_flags_capability;
     attr interface=test_fire_fixture_names_a_registry_entry;
+    attr interface=test_fixture_design_binds_cleanly;
     attr interface=test_fixtures_are_ascii_and_escaped_unicode_round_trips;
     attr interface=test_fixtures_exist_and_are_nonempty;
     attr interface=test_frob_core_module_registers_exported_kernels;
@@ -4989,20 +5011,6 @@ node testsuite : trusted {
     attr interface=test_xref_no_files_nonzero;
     attr interface=test_xref_shows_definition;
     attr interface=xref_project;
-    attr interface=TestAddAcceptance;
-    attr interface=TestTicketFlow;
-    attr interface=TestBlockCliValidatesBy;
-    attr interface=TestCheckRegistryExclusion;
-    attr interface=TestDoctorMalformedTicketEdges;
-    attr interface=TestIsValidTicketRef;
-    attr interface=TestIterRawLedgerFrontmatter;
-    attr interface=TestRenumberRewritesLedgerProse;
-    attr interface=TestTicketSpecValidatesBlockedByAndParent;
-    attr interface=TestCommitTicketLedgerChange;
-    attr interface=TestDoctorStaleTicketLeases;
-    attr interface=TestFailCliRequeues;
-    attr interface=TestNewDropFailAutoCommit;
-    attr interface=TestWorktreeLock;
 }
 
 // Repo maintenance scripts run by a human/CI outside the installed CLI

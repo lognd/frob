@@ -67,10 +67,19 @@ class Subcommand(str, enum.Enum):
 
 
 # frob:doc docs/modules/app.md#config
+# frob:waive AFFECT001 reason="T-1150 added one new bool field (sys_check, \
+# frob sys sync-interface --check); the established convention here IS a \
+# short per-field paragraph (see the T-1004/T-1029/T-1057/T-1069/T-1130 \
+# precedents just above this attr), but docs/modules/app.md is not in \
+# T-1150's declared scope and adding it opened a scope-closure cascade \
+# over dozens of unrelated app/ symbols (SCOPE002, verified) -- disclosed \
+# deferral, not a convention change; a follow-up should add the T-1150 \
+# paragraph under its own scoped ticket"
 # frob:ticket T-0030
 # frob:ticket T-0085
 # frob:ticket T-0115
 # frob:ticket T-0877
+# frob:ticket T-1150
 class AppConfig(BaseModel):
     # frob:ticket T-0021
     subcommand: Subcommand | None = None
@@ -530,12 +539,14 @@ class AppConfig(BaseModel):
     # sys (T-0084 plan; T-0085 doc; T-0086 export; T-0115 audit;
     # check/trace/capacity/
     # threats are later phase-5 tickets, not yet landed)
-    sys_command: str | None = None  # plan|doc|export (more per roadmap phase 5)
+    sys_command: str | None = None  # plan|doc|export|sync-interface (more per phase 5)
     sys_path: Path | None = None
     sys_apply: bool = False
     sys_view: str = "owasp-top-10"  # T-0085: `frob sys doc`'s baseline view
     sys_export_format: str | None = None
     sys_export_path: Path | None = None
+    # frob:ticket T-1150
+    sys_check: bool = False  # `frob sys sync-interface --check`: report, never write
 
     # deploy (T-0257: `frob deploy generate` -- install/status/uninstall
     # bash compiled from std.host HostManifest facts)
@@ -574,9 +585,14 @@ class AppConfig(BaseModel):
     @classmethod
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
         # frob:doc docs/modules/app.md#config
+        # frob:waive AFFECT001 reason="same T-1150 sys_check/scope-closure \
+        # disclosed deferral as this class's own AFFECT001 waiver above -- \
+        # this is the bool-field loop `sys_check` was added to, no separate \
+        # rationale needed"
         # frob:ticket T-0021
         # frob:ticket T-0085
         # frob:ticket T-0030
+        # frob:ticket T-1150
         file_cfg: dict = {}
         if file.exists():
             with file.open("rb") as f:
@@ -920,6 +936,8 @@ class AppConfig(BaseModel):
             "perf_smells",
             "perf_sampler",
             "sys_apply",
+            # frob:ticket T-1150
+            "sys_check",
             "ticket_dry_run",
             "ticket_skip_mutation_evidence",
             "ticket_close_skip_mutation_evidence",

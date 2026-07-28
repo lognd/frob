@@ -1,12 +1,22 @@
 """CLI wiring for `frob sys` -- strata design-model applications
 (docs/strata/roadmap.md phase 5, docs/commands/sys.md).
 
-Three verbs today: `plan` (T-0084, obligation -> ticket compiler), `doc`
-(T-0085, threat-catalog audit matrix), and `export` (T-0086, k8s/seccomp/
-IAM config skeletons). `check`/`trace`/`capacity`/`threats` are later
+Four verbs today: `plan` (T-0084, obligation -> ticket compiler), `doc`
+(T-0085, threat-catalog audit matrix), `export` (T-0086, k8s/seccomp/
+IAM config skeletons), and `sync-interface` (T-1150, mechanical
+`interface=` attr upkeep). `check`/`trace`/`capacity`/`threats` are later
 phase-5 tickets, not yet landed -- `run` below should grow one more `if
 cfg.sys_command == "..."` branch per verb as they land, never a parallel
 dispatch mechanism.
+
+`sync-interface` measures every node's bound-code public surface
+(`frob.strata._sync_interface`, reusing SYS104's own
+`_node_real_public_surface`) and rewrites `design/frob.strata`'s (or any
+other loaded `.strata` file's) `interface=` attrs to match exactly,
+printing a reviewable diff; `--check` reports drift without writing. This
+exists because SYS104 went mandatory at T-1113 and its upkeep was
+previously a hand-maintained mirror that redded main twice (T-1150 module
+docstring has the incident detail).
 
 `plan` loads every `.strata` design file under the repo's design dir,
 computes the obligation frontier (`frob.strata.plan_obligations`), diffs
@@ -60,6 +70,8 @@ from frob.strata import (
     ReliabilityReport,
     ResourceContentionReport,
     SelfConformReport,
+    SyncInterfaceReport,
+    apply_sync_interface,
     bind_code,
     check_mode_conformance,
     check_reliability_health,
@@ -73,6 +85,7 @@ from frob.strata import (
     merge_models,
     plan_obligations,
     render_audit_matrix,
+    sync_interface_report,
 )
 from frob.strata._elaborate import elaborate
 from frob.strata._parse import parse_module
@@ -390,6 +403,80 @@ def _run_export(cfg: AppConfig) -> None:
         "iam": export_iam,
     }[fmt]
     Renderer.for_stream(sys.stdout).line(exporter(model))
+
+
+# ---------------------------------------------------------------------------
+# sync-interface (T-1150)
+# ---------------------------------------------------------------------------
+
+
+def _print_sync_interface_diff(report: SyncInterfaceReport) -> None:
+    """Print a reviewable per-node diff (additions/removals) for every
+    drifted file in `report`, INFO-level, deterministic (sorted node/symbol
+    order matches `_sync_interface.py`'s own sort)."""
+    for file_result in report.files:
+        if not file_result.changed:
+            continue
+        _log.info("sys sync-interface: %s", file_result.path)
+        for diff in file_result.diffs:
+            if diff.added:
+                _log.info("  %s: +%s", diff.node, ", ".join(diff.added))
+            if diff.removed:
+                _log.info("  %s: -%s", diff.node, ", ".join(diff.removed))
+
+
+# frob:ticket T-1150
+def _load_sync_interface_report(cfg: AppConfig) -> SyncInterfaceReport | None:
+    """Resolve `cfg.sys_path` and run `sync_interface_report`; returns
+    `None` with the error already logged on failure (same "helper logs,
+    caller exits" split `_load_export_model` uses), else the report. Split
+    out of `_run_sync_interface` purely to keep that function's own body to
+    one decision (drift or not) rather than mixing in the load's own
+    error-branch decision (ARCH103: I/O plus multiple decision points in
+    one body)."""
+    root = _resolve_design_root(cfg, "sync-interface")
+    design_dir = _design_dir(root)
+    result = sync_interface_report(root, design_dir)
+    if result.is_err:
+        _log.error("sys sync-interface: %s", result.danger_err)
+        return None
+    return result.danger_ok
+
+
+def _finish_sync_interface(cfg: AppConfig, report: SyncInterfaceReport) -> None:
+    """The write-or-check tail of `_run_sync_interface`: apply the fix (the
+    default) or, under `--check`, report drift and exit 1 without writing.
+    Split out for the same ARCH103 reason `_load_sync_interface_report`
+    documents."""
+    root = _resolve_design_root(cfg, "sync-interface")
+    if cfg.sys_check:
+        _log.error(
+            "sys sync-interface --check: interface= drift found (see above); "
+            "run `frob sys sync-interface` (no --check) to write the fix"
+        )
+        sys.exit(1)
+    written = apply_sync_interface(root, report)
+    _log.info(
+        "sys sync-interface: wrote %d file(s): %s", len(written), ", ".join(written)
+    )
+
+
+def _run_sync_interface(cfg: AppConfig) -> None:
+    """`frob sys sync-interface [--check]`: mechanically measure every
+    node's bound-code public surface and rewrite `interface=` attrs to
+    match (module docstring, `frob.strata._sync_interface`). `--check`
+    reports drift (nonzero exit if any) without writing; the default mode
+    writes the corrected files and prints what changed."""
+    report = _load_sync_interface_report(cfg)
+    if report is None:
+        sys.exit(1)
+
+    if not report.has_drift:
+        _log.info("sys sync-interface: no drift -- every interface= attr is current")
+        return
+
+    _print_sync_interface_diff(report)
+    _finish_sync_interface(cfg, report)
 
 
 # ---------------------------------------------------------------------------
@@ -902,16 +989,23 @@ def _run_audit(cfg: AppConfig) -> None:
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/strata/host.md#resource-contention-sys2xx-t-0699
 # frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
+# frob:waive AFFECT001 reason="T-1150 added a new dispatch branch (sync-interface) \
+# alongside plan/doc/export/audit; the host.md/ reliability.md anchors document the \
+# SYS2xx resource-contention/REL2xx reliability CHECKS run() dispatches into (audit's \
+# own machinery), which T-1150 does not touch -- docs/commands/sys.md's own drift is \
+# tracked by a filed follow-up (draft T-draft-84b54204, out of this ticket's declared \
+# scope) rather than hand-patched here"
 # frob:ticket T-0084
 # frob:ticket T-0085
 # frob:ticket T-0086
 # frob:ticket T-0588
+# frob:ticket T-1150
 # frob:tests tests/unit/test_app_runners_batch7.py::TestSysRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
 def run(cfg: AppConfig) -> None:
-    """Dispatch `frob sys <command>`: `plan` (T-0084), `doc` (T-0085), and
-    `export` (T-0086) exist today; roadmap phase 5's `check`/`trace`/
-    `capacity`/`threats` are later tickets -- extend this dispatch, never
-    replace it."""
+    """Dispatch `frob sys <command>`: `plan` (T-0084), `doc` (T-0085),
+    `export` (T-0086), and `sync-interface` (T-1150) exist today; roadmap
+    phase 5's `check`/`trace`/`capacity`/`threats` are later tickets --
+    extend this dispatch, never replace it."""
     if cfg.sys_command == "plan":
         _run_plan(cfg)
         return
@@ -924,5 +1018,8 @@ def run(cfg: AppConfig) -> None:
     if cfg.sys_command == "export":
         _run_export(cfg)
         return
-    _log.error("usage: frob sys <plan|doc|export> ...")
+    if cfg.sys_command == "sync-interface":
+        _run_sync_interface(cfg)
+        return
+    _log.error("usage: frob sys <plan|doc|export|sync-interface> ...")
     sys.exit(1)

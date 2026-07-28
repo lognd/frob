@@ -475,6 +475,48 @@ consistent with third-party/stdlib specifiers.
   attaches to a synthetic node id in `bind_code`'s output.
 
 <a id="directives-t-0080"></a>
+## Interface conformance mechanical upkeep (SYS104, T-1150)
+
+<!-- frob:ticket T-1150 -->
+<!-- frob:describes src/frob/strata/_sync_interface.py::sync_interface_report -->
+<!-- frob:describes src/frob/strata/_sync_interface.py::apply_sync_interface -->
+<!-- frob:describes src/frob/strata/_sync_interface.py::SyncInterfaceReport -->
+<!-- frob:describes src/frob/strata/_sync_interface.py::FileSyncResult -->
+<!-- frob:describes src/frob/strata/_sync_interface.py::NodeInterfaceDiff -->
+
+SYS104 (`_selfconform.py`'s "Key construct semantics" above) went
+MANDATORY at T-1113: every node whose bound code has a non-empty real
+public surface is evaluated whether or not it has declared any
+`interface=` attr yet. A mandatory check whose satisfying state
+(`design/frob.strata`'s own `interface=` attrs) is hand-maintained is a
+red-main generator, same shape as DEPR005's line-keyed baseline (T-1052)
+-- `design/frob.strata` went red twice within hours of T-1113 landing
+(a missing `tickets_gate` symbol, then a missing `net.connect` capability
+from T-1126's daemon-lease socket), both hand-fixed by the coordinator
+directly in the `.strata` file.
+
+`frob sys sync-interface` (`docs/commands/sys.md`) closes that gap: it
+reuses the SAME measurement SYS104 itself computes
+(`_selfconform.py::_node_real_public_surface`) and mechanically rewrites
+every drifted node's `interface=` block in place -- additions AND
+removals, sorted, every other line (including every comment) copied
+through untouched. `sync_interface_report` is the pure compute half
+(never writes); `apply_sync_interface` is the only function in the module
+with a write side effect. `--check` (the CLI layer,
+`app/sys_runner.py::_run_sync_interface`) calls only the former and exits
+nonzero on any drift, never writing -- suitable as a pre-commit/CI gate
+hint alongside SYS104 itself.
+
+T-1137/T-1138 Tier-A auto-fix registration (this ticket's second
+acceptance criterion): DISCLOSED DEFERRAL. T-1138 (the first Tier-A
+fix-engine handler batch) was still `queued` -- with no handler-table
+surface yet to register against -- as of this ticket's own land; wiring
+SYS104 drift as a Tier-A auto-fix belongs to whichever of T-1137's
+children actually ships that plumbing. The pure-compute/write split above
+is deliberately shaped so a future Tier-A handler can call
+`sync_interface_report`/`apply_sync_interface` directly with no rework
+once that surface exists.
+
 ## Directives: frob:channel / frob:boundary / frob:secret (T-0080)
 
 <!-- frob:ticket T-0080 -->

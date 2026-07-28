@@ -1521,6 +1521,13 @@
     "src/frob/strata/_sync_depth.py::SyncDepthReport": "c41dba771c57cae6eee39f6f586076014ab88cae64ad3bb3000a891628e72f8b",
     "src/frob/strata/_sync_depth.py::SyncDepthViolation": "4e81bbb9f86919f8ddef79632a097a93e1bb64be54031501ab11d32b970f98e3",
     "src/frob/strata/_sync_depth.py::check_sync_chain_depth": "c8b641f353c8270f053f07c16f58d2a715bdfef674d802f4043afc93c6498f4c",
+    "src/frob/strata/_sync_interface.py::FileSyncResult": "13193a0559b94a52ece82716040eac00edd4426497bfec62f6c610619427de8d",
+    "src/frob/strata/_sync_interface.py::FileSyncResult.changed": "4714a9cf379a715c303bf72c0245a61a301338b3549596f20494197d5e6d8f9c",
+    "src/frob/strata/_sync_interface.py::NodeInterfaceDiff": "959c5b3b473add326cfff9fbe94a6f6410edb9777377227df9fd91b17aaaf3b9",
+    "src/frob/strata/_sync_interface.py::SyncInterfaceReport": "a992b078ffb9ad70993f1f9fc34a51b4d086046af353a454544da1bd7a9b6561",
+    "src/frob/strata/_sync_interface.py::SyncInterfaceReport.has_drift": "a551f9ac238650f520485586f45b6af678dd0e9c858738a38bad0eaa43af9d0c",
+    "src/frob/strata/_sync_interface.py::apply_sync_interface": "6d614f13f32ba44f849f2b3af5e4ec30caa3d003c88688dbfb192cc688ee1acd",
+    "src/frob/strata/_sync_interface.py::sync_interface_report": "9af2cd2ff7b43381db0612399674cf13d57b89269e59a196a1dd9eb04f251e1e",
     "src/frob/strata/_sysdoc.py::ClaimAuditResult": "e4ecc9428d9309e4d391809714bfd835be06160a7fd34ff7f189dfaef7ddcbd1",
     "src/frob/strata/_sysdoc.py::audit_claim": "85416fe8ae1ab4a6eca3112ef343e42749844bcb32d43adfd0dc323e9d19bc46",
     "src/frob/strata/_sysdoc.py::merge_models": "358eedd96ca85636376add043672dfcde45ac53e13bde703c63bafc7a2d89610",
@@ -1854,5 +1861,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.255.0"
+  "version": "0.256.0"
 }

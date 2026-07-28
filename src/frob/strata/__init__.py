@@ -468,6 +468,13 @@ from frob.strata._sync_depth import (
     SyncDepthViolation,
     check_sync_chain_depth,
 )
+from frob.strata._sync_interface import (
+    FileSyncResult,
+    NodeInterfaceDiff,
+    SyncInterfaceReport,
+    apply_sync_interface,
+    sync_interface_report,
+)
 from frob.strata._sysdoc import (
     ClaimAuditResult,
     audit_claim,
@@ -747,6 +754,11 @@ __all__ = [
     "SpofViolation",
     "SyncDepthReport",
     "SyncDepthViolation",
+    "FileSyncResult",
+    "NodeInterfaceDiff",
+    "SyncInterfaceReport",
+    "apply_sync_interface",
+    "sync_interface_report",
     "REL_MISSING_OWNER",
     "REL_UNPROVEN_OWNER",
     "SSOT_RULES",

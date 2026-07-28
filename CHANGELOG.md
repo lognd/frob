@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.256.0] - unreleased
+
+- T-1150: strata: frob sys sync-interface -- measure and update interface= attrs mechanically (SYS104-mandatory upkeep)
+
 ## [0.255.0] - unreleased
 
 - T-1138: gates --fix Tier-A batch 1: directive-form rewrite + unique anchor-slug correction + TICK002 renumber
