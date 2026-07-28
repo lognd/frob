@@ -1234,7 +1234,7 @@ meantime.
 id: T-1032
 title: 'fix stale test_every_deferred_entry_targets_an_open_ticket: system-design.yaml
   has 0 deferred entries now (T-0958 resolved them)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -1252,7 +1252,6 @@ Found while working T-0658: `tests/test_registry_reconciliation_system_design.py
 Root cause: the test asserts `deferred` (entries with `disposition.kind is DispositionKind.DEFERRED`) is non-empty in the live `docs/design/registry/system-design.yaml`. At the time T-0392 wrote this test, ~105 genuine entries were deferred to T-0331/a re-pointed successor. Since then, T-0958 (per system-design.yaml's own header comment) re-dispositioned all of them into `handled_by:RULE` (21 entries) or `out_of_scope:...` (97 entries) or `duplicate-of-artifact` (1 entry) -- the live file now has ZERO `deferred:` dispositions (verified directly: `frob.registry.audit_registry_file` reports `deferred=0`, `handled=21`, `out_of_scope=97`, `duplicate=1`, `unaccounted=0`, `exhausted=True`). The test's "expected at least one deferred entry to check against" assumption no longer holds -- not a regression in the registry file (it is MORE fully dispositioned now, a good outcome), but a stale assumption baked into the test itself.
 
 Fix: either loosen the assertion to `if deferred:` (skip cleanly when zero, matching the file's now-fully-resolved state) or remove/replace the test with one that positively asserts the CURRENT resolved state, whichever the reviewer judges is the more honest signal for future drift. Scope: tests/test_registry_reconciliation_system_design.py only -- the registry file itself needs no change (it is honestly, fully dispositioned already).
-
 <!-- ticket:T-1033 -->
 ```yaml
 id: T-1033
