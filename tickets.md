@@ -1792,7 +1792,7 @@ SIGTERMs+respawns it on a version mismatch between that meta file and the
 current client's installed frob version (self-healing skew, since
 _socketd's protocol itself carries no version field and src/frob/serve/**
 is a sibling ticket's scope this wave -- disclosed in
-docs/modules/serve.md and filed as T-draft-8a56400c). query() honors
+docs/modules/serve.md and filed as T-1105). query() honors
 FROB_NO_DAEMON=1 as an unconditional bypass before any daemon I/O, and
 maps every failure mode (Unreachable, RemoteError, Disabled) to a
 transparent in-process fallback with no surfaced error and no hang.
@@ -1806,7 +1806,7 @@ byte-for-byte parity -- the epic's #1 safety invariant.
 
 Wiring the remaining query-shaped commands T-0321's integration map names
 (outline/map/xref/parse/graph/exports/bind/docs/stats) is disclosed as a
-scope cut in docs/modules/serve.md and filed as T-draft-296d0d77: most of
+scope cut in docs/modules/serve.md and filed as T-1106: most of
 _socketd._TOOL_DISPATCH's other methods do not yet produce a
 field-for-field-identical CLI JSON payload to diff against (e.g.
 frob_graph_query's dict omits span/digests frob graph query --json
@@ -2114,3 +2114,60 @@ threat: null
 component: null
 ```
 Refile of T-1102's dead draft T-1104 (post-close renumber loss). docs/modules/arch.md was outside T-1102's declared scope; this carries the doc debt plus retiring the disclosed AFFECT001 waiver.
+
+<!-- ticket:T-1105 -->
+```yaml
+id: T-1105
+title: 'daemon: real version-handshake RPC on the socket daemon (replace sidecar meta-file
+  skew detection)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-28'
+priority: medium
+parent: T-0321
+tier: ticket
+sprint: null
+scope:
+- src/frob/serve/_socketd.py
+- src/frob/app/_daemon_proxy.py
+- tests/test_app_daemon_proxy.py
+- docs/modules/serve.md
+acceptance:
+- text: given a running daemon of a different frob version, when the proxy queries
+    it, then skew is detected via a daemon-side version RPC (not the .frob/daemon.meta.json
+    sidecar), the stale daemon is replaced, and the query succeeds
+  evidence: []
+threat: null
+component: null
+```
+Refile of T-1093's dead draft T-1105 (lost in the 10b worktree-ledger restore before land). T-1093 shipped sidecar-file skew detection because src/frob/serve/** was a sibling's scope that wave; this moves the version handshake into the daemon protocol proper.
+
+<!-- ticket:T-1106 -->
+```yaml
+id: T-1106
+title: 'daemon: wire remaining query-shaped CLI commands through the proxy (T-0321
+  integration map)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-28'
+priority: medium
+parent: T-0321
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/_daemon_proxy.py
+- src/frob/app/
+- tests/test_app_daemon_proxy.py
+- docs/modules/serve.md
+acceptance:
+- text: given each query-shaped CLI command from T-0321's integration map (outline,
+    map, xref, graph, exports, stats, ...), when the daemon runs, then the command
+    serves from the daemon with a differential-parity test proving daemon-served output
+    identical to in-process
+  evidence: []
+threat: null
+component: null
+```
+Refile of T-1093's dead draft T-1106 (lost in the 10b restore). T-1093 wired frob perf hot --json only (the one command with a field-identical payload to diff); this extends the proxy across the integration map, each command gaining its own parity test.

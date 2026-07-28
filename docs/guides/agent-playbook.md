@@ -600,7 +600,13 @@ hand-edit of `tickets.md`, no `git stash`):
 5. Verify `git diff main -- tickets.md` now shows ONLY your ticket's own
    block. If ANY other ticket id appears in that diff, stop -- do not
    report done, and do not hand-patch it; tell the coordinator.
-6. First-ticket edge case (T-1022 hit this): if YOUR ticket's
+6. Draft-ticket edge case (T-1093 hit this): step 1's restore WIPES any
+   draft ticket you filed into the worktree ledger BEFORE this recipe ran
+   -- land then has no block to renumber, and your Done report's draft
+   citation becomes a TICK006 phantom on main. File follow-up drafts
+   AFTER step 1's restore (or re-run `frob ticket new` for any draft the
+   restore ate before writing the Done report that cites it).
+7. First-ticket edge case (T-1022 hit this): if YOUR ticket's
    `state: in-progress` transition was only ever written in this
    worktree's branch (never landed to main -- true for the first ticket
    a worktree works), step 1's restore silently reverts it to `queued`,
