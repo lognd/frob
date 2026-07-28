@@ -1263,6 +1263,41 @@ def _is_gate_rule_builder_family(ret: str) -> bool:
     return ret in _GATE_RULE_BUILDER_RETURN_TYPES
 
 
+#: `frob.process`/`frob.check`'s own check-stage-runner return-type
+#: convention (T-1144, filed from T-1124 as the mirror of T-1112's
+#: `check_*` registry exclusion and T-1141's gate/rule-builder
+#: exclusion): every check-stage runner/tool-result builder across
+#: `src/frob/check/**`, `src/frob/process/parsers/**`, and the
+#: individual arch/cycle/dup CLI runners returns `ToolResult` or
+#: `ToolResult | None`, because `ToolResult` is `frob.process`'s own
+#: domain type -- nothing outside the check/process stack constructs
+#: one. T-1144's own investigation confirmed the genuine body-level
+#: duplication in this area (`_opt_in_deploy_stage_result`,
+#: `_missing_tool_result` forwarding to `tool_unavailable_result`) was
+#: already extracted by T-1124; what remained across all 4 ToolResult-
+#: shaped groups (24 members measured) was purely this same
+#: convention-shape false positive, not a further extraction
+#: opportunity -- a lone unrelated member like `parse_junit_xml`
+#: (real XML-parsing logic that happens to share `(str, str) ->
+#: ToolResult` with three trivial synthetic-result builders purely
+#: because its `tool` parameter has a default) makes that especially
+#: clear: there is no one coherent family to extract here, only the
+#: shared return type.
+_TOOL_RESULT_BUILDER_RETURN_TYPES = frozenset({"ToolResult", "ToolResult | None"})
+
+
+def _is_tool_result_builder_family(ret: str) -> bool:
+    """Whether a shared-signature group's return type `ret` (T-1144) is
+    `frob.process`/`frob.check`'s own check-stage-runner convention
+    rather than an accidental duplication: `ret` is one of `_TOOL_RESULT_
+    BUILDER_RETURN_TYPES`. Structural, not name-based -- see
+    `_TOOL_RESULT_BUILDER_RETURN_TYPES`'s docstring for why a return-type
+    check is the right discriminator for this family specifically,
+    mirroring `_is_gate_rule_builder_family`'s identical shape for
+    `frob.gates`'s own `Violation` convention."""
+    return ret in _TOOL_RESULT_BUILDER_RETURN_TYPES
+
+
 # T-0370: types so ubiquitous that sharing one carries no abstraction
 # signal on its own -- `(str) -> str`, `(AppConfig) -> None`, and similar
 # shapes collide across dozens of semantically-unrelated functions purely
@@ -1471,9 +1506,11 @@ def _check_abstraction_opportunities(
     `_cpp_*` walker families sharing a signature by design, not by
     accident) -- and groups whose members are all `frob.arch`'s own
     `check_*` detector-registry functions (`_is_check_registry_family`,
-    T-1112, filed from T-1084), or all `frob.gates`'s own gate/rule-
+    T-1112, filed from T-1084), all `frob.gates`'s own gate/rule-
     builder return-type convention (`_is_gate_rule_builder_family`,
-    T-1141, filed from T-1114)."""
+    T-1141, filed from T-1114), or all `frob.process`/`frob.check`'s own
+    check-stage-runner return-type convention
+    (`_is_tool_result_builder_family`, T-1144, filed from T-1124)."""
     groups: dict[tuple[tuple[str, ...], str], list[tuple[str, str, str]]] = defaultdict(
         list
     )
@@ -1493,6 +1530,8 @@ def _check_abstraction_opportunities(
         if _is_check_registry_family(members):
             continue
         if _is_gate_rule_builder_family(ret):
+            continue
+        if _is_tool_result_builder_family(ret):
             continue
         flagged = _abstraction_group_evidence(ptypes, ret, members_with_body)
         if len(flagged) < 2:

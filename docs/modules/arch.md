@@ -203,8 +203,55 @@ families: the 39-member `(AppConfig) -> None` and 31-member `(str) ->
 str` groups vanished entirely (no near-duplicate bodies among their
 members), while e.g. a literal-duplicate `_has_done_report` defined twice
 still flags (found via body-similarity despite its generic `(str) ->
-bool` signature) and specific-signature families like the `(Path) ->
-tuple[Violation, ...]` gate group still flag in full.
+bool` signature). Specific-signature families sharing a project-wide
+domain-type return convention (see the check-registry/gate-rule-builder/
+tool-result-builder exclusions below) are excluded from this path
+entirely, regardless of body similarity -- the signature-specificity
+check alone would otherwise re-flag them every time.
+
+### `abstraction-opportunity` excludes intentional detector/gate/check-stage registries by return-type or name convention (T-1112/T-1141/T-1144)
+
+Three more same-signature groups are excluded even when signature-
+specificity (above) would otherwise flag them in full, because the
+package's own established interface convention -- not a coincidence --
+is what put them there:
+
+- **`frob.arch`'s own `check_*`/`run_*_checks` detector registry**
+  (`_is_check_registry_family`, T-1112, filed from T-1084): every
+  detector across `_python.py`/`_rust.py`/`_typescript.py`/
+  `_async_hazards.py` and siblings implements the SAME
+  `(NormalizedModule) -> list[ArchSuggestion]` registry contract, plus
+  each family's own `run_*_checks` aggregator. NAME-based (`_CHECK_
+  REGISTRY_NAME_RE`): every member's bare name must match `check_*` or
+  `run_*_checks`.
+- **`frob.gates`'s own gate/rule-builder convention**
+  (`_is_gate_rule_builder_family`, T-1141, filed from T-1114): every
+  gate function (`*_gate`) and the rule-builder helpers it dispatches to
+  return one of `Violation`/`list[Violation]`/`tuple[Violation, ...]` --
+  `Violation` is `frob.gates`'s own domain type, so any function
+  returning one of these shapes participates in the same contract by
+  construction. RETURN-TYPE-based (`_GATE_RULE_BUILDER_RETURN_TYPES`),
+  not name-based, since gate/rule-builder names share no fixed
+  prefix/suffix the way `check_*`/`run_*_checks` do.
+- **`frob.process`/`frob.check`'s own check-stage-runner convention**
+  (`_is_tool_result_builder_family`, T-1144, filed from T-1124): every
+  check-stage runner and tool-result builder across `src/frob/check/**`
+  and `src/frob/process/parsers/**` returns `ToolResult` or `ToolResult |
+  None`, the same shape of argument as the gate/rule-builder exclusion
+  above, applied to `frob.process`'s own domain type. T-1144's
+  investigation confirmed the genuine body-level duplication in this
+  area (`_opt_in_deploy_stage_result`, `_missing_tool_result` forwarding
+  to `tool_unavailable_result`) was already extracted by T-1124 -- the
+  4 remaining ToolResult-shaped groups (24 members) were purely this
+  convention-shape false positive, evidenced by `parse_junit_xml` (real
+  XML-parsing logic) sharing a signature with three trivial synthetic-
+  result builders purely because its `tool` parameter has a default.
+
+All three are structural/name discriminators over the shared signature
+(mirroring `_is_dispatch_family`/`_is_language_parity_family` above),
+never raw text proximity, and are checked after the T-0360 dispatch-
+family exclusion and before the signature-specificity/body-similarity
+checks -- a group excluded here never reaches that path at all.
 
 ### Design-pattern recommender: `pattern-recommendation` / `anti-pattern-escape` (T-0332/T-0605)
 
