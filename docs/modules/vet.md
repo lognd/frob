@@ -346,6 +346,35 @@ rule is a natural follow-up, not yet built).
   vet_runner.py`/`__main__.py` is a follow-up (out of T-0110's declared
   scope, which is `src/frob/vet/**` only).
 
+## Project-tree-wide supply-chain structural checks (T-1088)
+
+`_supplychain.py::supply_chain_tree_violations` folds four detectors into
+`scan_tree`, run once per call (not per dependency, not per lockfile) --
+each is a purely structural property of the scanned PROJECT's own tracked
+manifests/CI workflows/file tree, not a fetched or resolved dependency
+source, mirroring the "statically-detectable" checkability tag
+`docs/design/registry/supply-chain.yaml` gives each entry:
+
+- **VET007** (`SC-ATTACK-UNPINNED-DEPENDENCIES`): a `pyproject.toml`/
+  `package.json`/`Cargo.toml` dependency spec with no exact pin (a caret,
+  tilde, wildcard, or comparison-operator range instead of `==`/`=`).
+- **VET008** (`SC-DETECTION-PYTHON-INSTALL-ARTIFACTS`): a `setup.py`/
+  `setup.cfg` `data_files` destination that is absolute or escapes the
+  package via `../` traversal -- an installed artifact landing somewhere
+  unexpected on the target filesystem.
+- **VET009** (`SC-DETECTION-UNPINNED-CI-ACTION`): a
+  `.github/workflows/*.yaml` `uses: owner/action@ref` where `ref` is a
+  mutable branch/tag rather than a full 40-hex-char commit SHA.
+- **VET010** (`SC-DETECTION-OPAQUE-BINARY-ARTIFACT`): a tracked binary
+  blob (`.whl`/`.so`/`.node`/`.wasm` and similar) with no build recipe
+  (`Cargo.toml`/`CMakeLists.txt`/`setup.py`/`Makefile`/etc.) in its own
+  directory or any ancestor up to the project root.
+
+`SC-DETECTION-NPM-NON-REGISTRY-SOURCE` needed no new detector -- it was
+already covered by the existing `_ecosystem.py::_npm_non_registry_rule`
+(VET-JS004), just missing its `frob:enforces` edge and registry
+disposition (both T-1088 residue from earlier per-dependency work).
+
 ## External tool adapters
 
 frob.vet is a conformance layer, not a rewrite of the scanning ecosystem.
@@ -982,6 +1011,9 @@ def scan_directory_capabilities(source_dir: Path, *, max_files: int = 500) -> tu
 
 # frob/vet/_scan.py
 def scan_tree(root: Path, *, fetch: bool = True) -> Result[VetReport, VetError]
+
+# frob/vet/_supplychain.py (T-1088)
+def supply_chain_tree_violations(project_root: Path) -> list[Violation]
 
 # frob/vet/_lifecycle.py
 def scan_lifecycle_scripts(root: Path) -> dict[str, tuple[str, ...]]

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.230.0] - unreleased
+
+- T-1088: implement 5 statically-detectable-only SC-* supply-chain detectors with no enforcing check today
+
 ## [0.229.0] - unreleased
 
 - T-1027: sequential-independent-awaits should suggest asyncio.gather (T-0698 disclosed cut)

@@ -301,6 +301,13 @@ _KNOWN_GATE_RULES = frozenset(
         "VET004",
         "VET005",
         "VET006",
+        # T-1088: four project-tree-wide supply-chain structural detectors
+        # (src/frob/vet/_supplychain.py), same hand-maintained class as the
+        # rest of this VET block.
+        "VET007",
+        "VET008",
+        "VET009",
+        "VET010",
         "VET011",
         "VET-JS",
         "VET-JS003",

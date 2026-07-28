@@ -95,7 +95,7 @@ entries:
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-1088"
+    disposition: "handled_by:VET007"
     cross_refs: []
   - id: "SC-ATTACK-TRANSITIVE-BLINDNESS"
     class: ['attack']
@@ -270,28 +270,28 @@ entries:
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-1088"
+    disposition: "handled_by:VET008"
     cross_refs: []
   - id: "SC-DETECTION-NPM-NON-REGISTRY-SOURCE"
     class: ['detection']
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-1088"
+    disposition: "handled_by:VET-JS004"
     cross_refs: []
   - id: "SC-DETECTION-UNPINNED-CI-ACTION"
     class: ['detection']
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-1088"
+    disposition: "handled_by:VET009"
     cross_refs: []
   - id: "SC-DETECTION-OPAQUE-BINARY-ARTIFACT"
     class: ['detection']
     checkability: ['statically-detectable']
     sourcing: "verified"
     source_doc: "docs/design/supply-chain-corpus.md"
-    disposition: "deferred:T-1088"
+    disposition: "handled_by:VET010"
     cross_refs: []
   - id: "SC-DETECTION-OSV-ADVISORY-MATCH"
     class: ['detection']

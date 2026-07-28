@@ -19,7 +19,7 @@
 #     fabricated ticket. As T-0397's children close a concern down to
 #     a real gate rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 250
+gate_rule_total: 254
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     name: "COV001 is a live, enforced gate rule"
@@ -1001,6 +1001,22 @@ gate_rule_entries:
   - id: "CHK-GATE-VET006"
     name: "VET006 is a live, enforced gate rule"
     disposition: "handled_by:VET006"
+    cross_refs: []
+  - id: "CHK-GATE-VET007"
+    name: "VET007 is a live, enforced gate rule"
+    disposition: "handled_by:VET007"
+    cross_refs: []
+  - id: "CHK-GATE-VET008"
+    name: "VET008 is a live, enforced gate rule"
+    disposition: "handled_by:VET008"
+    cross_refs: []
+  - id: "CHK-GATE-VET009"
+    name: "VET009 is a live, enforced gate rule"
+    disposition: "handled_by:VET009"
+    cross_refs: []
+  - id: "CHK-GATE-VET010"
+    name: "VET010 is a live, enforced gate rule"
+    disposition: "handled_by:VET010"
     cross_refs: []
   - id: "CHK-GATE-VET011"
     name: "VET011 is a live, enforced gate rule"
