@@ -3180,7 +3180,7 @@ query's own Ok(daemon)/Err(fallback) shape.
 id: T-1121
 title: 'test: test_every_deferred_entry_targets_an_open_ticket fails, zero deferred
   entries exist in weaknesses.yaml'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -3216,6 +3216,8 @@ out_of_scope-reason substantive-disclosure, already independently fixed
 by T-1019 before this wave started -- confirmed zero REG011 violations
 and the ticket's own named regression test passing on current main).
 
+## Drop reason
+- 2026-07-28: fixed by T-1116 (landed e2a3d047): zero-deferred-entries is now the test's goal state; fourth independent filing of the same find
 <!-- ticket:T-1123 -->
 ```yaml
 id: T-1123
