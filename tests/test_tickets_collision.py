@@ -358,13 +358,14 @@ class TestRenumberRewritesLedgerProse:
         assert draft_id not in rewritten_body
 
 
+# frob:ticket T-1140
 class TestTick002GateUnwaivable:
     """A draft id that survives onto the default branch must fail `frob
     check` loudly and be unwaivable -- the finalize step exists precisely to
     prevent this, so silence here means the invariant quietly broke."""
 
     def test_draft_id_on_default_branch_is_a_violation(self, monkeypatch) -> None:
-        # frob:tests src/frob/gates/__init__.py::tickets_gate kind="unit"
+        # frob:tests src/frob/gates/_tickets_gate.py::tickets_gate kind="unit"
         monkeypatch.setattr("frob.gates.on_default_branch", lambda root: True)
         draft = Ticket(
             id=mint_draft_id(),
@@ -382,14 +383,14 @@ class TestTick002GateUnwaivable:
         assert tick002.severity == Severity.ERROR
 
     def test_tick002_is_unwaivable(self) -> None:
-        # frob:tests src/frob/gates/__init__.py::tickets_gate kind="unit"
+        # frob:tests src/frob/gates/_tickets_gate.py::tickets_gate kind="unit"
         from frob.gates import _UNWAIVABLE_RULES
 
         assert "TICK002" in _UNWAIVABLE_RULES
         assert "TICK001" in _UNWAIVABLE_RULES
 
     def test_no_violation_off_default_branch(self, monkeypatch, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/__init__.py::tickets_gate kind="unit"
+        # frob:tests src/frob/gates/_tickets_gate.py::tickets_gate kind="unit"
         # frob:tests src/frob/tickets/_provisional.py::mint_draft_id kind="unit"
         # T-0409: `tmp_path`, not `Path(".")` -- an empty checkout, so the new
         # TICK003 ledger-hygiene check (which counts THIS repo's own

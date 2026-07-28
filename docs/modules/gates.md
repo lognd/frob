@@ -967,7 +967,7 @@ advisory count in `frob check`'s printed summary honest.
 
 ### TICK006 (T-0726)
 
-<!-- frob:describes src/frob/gates/__init__.py::_tick006_phantom_filing -->
+<!-- frob:describes src/frob/gates/_tickets_gate.py::_tick006_phantom_filing -->
 
 Two occurrences in one session of a Done report claiming a follow-up was
 filed when no ledger block actually exists: T-0707 (an invented
@@ -1042,7 +1042,7 @@ unaffected.
 
 ### TICK007 (T-0820)
 
-<!-- frob:describes src/frob/gates/__init__.py::_tick007_undispatched_stale -->
+<!-- frob:describes src/frob/gates/_tickets_gate.py::_tick007_undispatched_stale -->
 
 T-0752 built the pure staleness-alarm computation
 (`frob.tickets.undispatched_stale`/`dispatch_stale_hours`/
@@ -1072,7 +1072,7 @@ blocker that has not been formally recorded yet).
 
 ### TICK008 (T-0842)
 
-<!-- frob:describes src/frob/gates/__init__.py::_tick008_unknown_ledger_fields -->
+<!-- frob:describes src/frob/gates/_tickets_gate.py::_tick008_unknown_ledger_fields -->
 
 T-0838 made `Ticket` `extra="allow"` (not `extra="forbid"`) so a ledger
 written by a NEWER `frob` binary -- one that has added a field this
@@ -1133,8 +1133,8 @@ across a short review window) can be dispositioned with a reasoned
 
 ### TICK009/TICK010 (T-0714)
 
-<!-- frob:describes src/frob/gates/__init__.py::_tick009_scope_breadth_nudges -->
-<!-- frob:describes src/frob/gates/__init__.py::_tick010_stale_lease_report -->
+<!-- frob:describes src/frob/gates/_tickets_gate.py::_tick009_scope_breadth_nudges -->
+<!-- frob:describes src/frob/gates/_tickets_gate.py::_tick010_stale_lease_report -->
 
 Before T-0714, `frob ticket doable` printed two kinds of diagnostic
 directly into the queue listing on EVERY invocation: a `WARNING:` line

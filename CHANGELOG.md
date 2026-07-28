@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.252.0] - unreleased
+
+- T-1140: arch: split remaining ~13 gate families out of src/frob/gates/__init__.py (T-1115 residue after DEBT/DEPR)
+
 ## [0.251.0] - unreleased
 
 - T-1061: wire SYS205 mode-conformance into CLI dispatch + waiver channel + docs
