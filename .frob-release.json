@@ -1034,6 +1034,18 @@
     "src/frob/scaffold/project.py::render_project": "52b97a1c65f54a849c5c1be221fc46bfae1955c3d7335797c26e17c0596b2cfe",
     "src/frob/serve/_daemon.py::DEFAULT_POLL_INTERVAL_S": "8579485494cc2b16ccb48f20819408671b768b9d516f82557da88f1f08dc8775",
     "src/frob/serve/_daemon.py::daemon_status": "1f8c65c19d55191d692e6f0b3b3885fddefdd78479dd464e78b868fed347c323",
+    "src/frob/serve/_socketd.py::DEFAULT_IDLE_TIMEOUT_S": "bcbeade66ec2958246af784abab7ca5fd072ad04e8a31d51c20f71bbc4e60a0d",
+    "src/frob/serve/_socketd.py::DaemonError": "4848956460da9a5106a58be43ec56763cb2de2e1c2a18684ea30f69fd8bc873f",
+    "src/frob/serve/_socketd.py::SocketDaemonConfig": "c30b49b4d3e6186404fbbdd1eda9fb61ddf5381f4120d15626573c40d4352acf",
+    "src/frob/serve/_socketd.py::_IdleTracker.idle_for_s": "b57275bf9369bb1cf453a38f2afdd72e7957d554ecc5345553a0825f6bbccdd9",
+    "src/frob/serve/_socketd.py::_IdleTracker.touch": "79cca59cefbf553e462cad0b86a68cd3858cf03866a210919a7851b25d0bac0b",
+    "src/frob/serve/_socketd.py::_RequestHandler.handle": "c5e2e1df87d1c246a913146c3f43bdad7835b5db3bfb6953e2b5acb7f644bbac",
+    "src/frob/serve/_socketd.py::acquire_singleton_lock": "028758279cdb8c8b91ae63d115bfe642337e022d2c46041a5ab6e108a94707c2",
+    "src/frob/serve/_socketd.py::dispatch_request": "544287e25c78e4fb16a9f53842f00d9fe612acfeccdc20a8efb81749cec14006",
+    "src/frob/serve/_socketd.py::lock_path": "4d392269559e2f947ed44623abf4e416671761fe6da0bae85321aba304b193ef",
+    "src/frob/serve/_socketd.py::run_socket_daemon": "31a1f3f67e0404bf1b9f1648fd62c544bfd6ebf02e20cdbf804e3a0cefc15f46",
+    "src/frob/serve/_socketd.py::send_request": "77133a30d3358cfdabbf04d6c4ebcdf37f2cb7210314656e9370ad362ca6547a",
+    "src/frob/serve/_socketd.py::socket_path": "f890b19c3b3169ed42b176e49096b55b08124f3422b8baebe49b1564a5db3aba",
     "src/frob/serve/_tools.py::ServeError": "184d51765fabf2ad9f75e99b16015414e45d25ebc312789bc2864f5f204b0df0",
     "src/frob/serve/_tools.py::frob_affects": "38c2960fc8c08d8c6a01bd41deff2778f46e836b41b5da63c10c4933c89e1fa9",
     "src/frob/serve/_tools.py::frob_check_delta": "7c5e6b894d74b3d11ed150ce0bda9d2ca87e5137810547e9f7a4eaa2872dc93a",
@@ -1781,5 +1793,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.220.0"
+  "version": "0.221.0"
 }

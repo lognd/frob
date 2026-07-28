@@ -139,6 +139,13 @@ search-shaped model (batch index pipelines with freshness lag).
   earlier `gates/_pii_structural` split) -- the `cli` node's `code=` glob
   in `design/frob.strata` was updated to own the new package too, so the
   model still matches the real tree.
+- T-1092 (daemon epic T-0321's first child) gave the `serve` node its
+  first genuine `may` capabilities: `fs` (the standalone socket daemon's
+  `.frob/daemon.lock`/`.frob/daemon.sock` create/write/unlink) and `net`
+  (the unix-domain-socket JSON-RPC transport itself,
+  `frob.serve._socketd`). `serve` was previously modeled as a genuinely
+  zero-`may` node -- see `design/frob.strata`'s own comment on that node
+  for the full capability-by-capability accounting.
 
 ## Ticket map
 

@@ -508,28 +508,39 @@ node natives : trusted {
 // (`server.py`'s stdio `FastMCP` transport, `run_stdio`) -- a real,
 // previously-undeclared boundary the coarse hub framing hid entirely, no
 // different in kind from `registry` being the network boundary `vet`
-// crosses. The transport itself is stdio only (no listening socket, no
-// `net` capability observed or plausible: `server.py`/`_tools.py`/
-// `_warm.py`/`_daemon.py`'s own bound code, per `frob.vet._capability.
-// _scan_directory_capabilities` and `frob.strata._effects._line_effects`
-// against `src/frob/serve/**` (T-0440 Done report), observe ZERO net/fs/
-// exec/eval effects of their own -- every filesystem read
-// (`.frob/cache.db`), git subprocess call (`_daemon.py`'s
-// `poll_rebase_bot`), and gate/graph/ticket read this component performs
-// is delegated to `frob.graph`/`frob.gates`/`frob.gitio`/`frob.testing`/
-// `frob.tickets` code that lives on OTHER nodes -- modeled below as real
-// flow edges into `core`/`gates`/`graphlang`/`tickets_ledger`, not as
-// `serve`'s own capabilities (the same "code owns the effect, not its
-// caller" discipline `core`'s `f_core_tickets` comment already
-// documents). This is a genuinely zero-`may` node: no declared
-// capability at all, same shape as the `registry` boundary node above
-// (minus the `foreign` clearance -- `serve` is trusted, internal code,
-// just with no risky effect of its own to declare).
+// crosses. Every filesystem read (`.frob/cache.db`), git subprocess call
+// (`_daemon.py`'s `poll_rebase_bot`), and gate/graph/ticket read this
+// component performs beyond the two capabilities below is delegated to
+// `frob.graph`/`frob.gates`/`frob.gitio`/`frob.testing`/`frob.tickets`
+// code that lives on OTHER nodes -- modeled below as real flow edges into
+// `core`/`gates`/`graphlang`/`tickets_ledger`, not as `serve`'s own
+// capabilities (the same "code owns the effect, not its caller"
+// discipline `core`'s `f_core_tickets` comment already documents).
+// T-1092: `serve` is no longer a zero-`may` node. `frob.serve._socketd`
+// (T-1092, docs/modules/serve.md#socket-daemon-t-1092) adds the module's own
+// first genuine effects, both bound to `src/frob/serve/**` itself, not
+// delegated to another node: (1) `fs` -- `acquire_singleton_lock`/
+// `run_socket_daemon` create/write `.frob/daemon.lock` and bind/unlink
+// `.frob/daemon.sock` directly (`_socketd.py`'s `open`/`Path.unlink`/
+// socket-bind calls); (2) `net` -- the unix-domain-socket transport
+// itself (`_DaemonServer`'s `ThreadingUnixStreamServer` bind/accept loop
+// and `send_request`'s client `socket.socket(AF_UNIX, ...)` connect) is a
+// listening/connecting socket capability, `net.connect`/`net.listen` in
+// `frob.vet._capability`'s vocabulary, even though `AF_UNIX` never leaves
+// the local filesystem namespace -- no kill switch is wired for either
+// (unlike `vet`'s `frob_vet_net_kill_switch` below): a project-local unix
+// socket used only for `frob.serve._tools`'s own read-only enforcement
+// queries carries none of `vet`'s external-network-egress risk profile
+// that motivated that switch.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+// frob:doc docs/modules/serve.md#socket-daemon-t-1092
 // frob:ticket T-0956
+// frob:ticket T-1092
 node serve : trusted {
     clearance Internal;
     code "src/frob/serve/**";
+    may "fs";
+    may "net";
 
     // T-0756: same SYS203/tickets_ledger disposition as `cli`/`gates`/
     // `fleet`/`core` above (T-0724) -- `serve` also has a Flow into

@@ -15,6 +15,16 @@ requires it, imported lazily at call time.
 
 from __future__ import annotations
 
+from frob.serve._socketd import (
+    DaemonError,
+    SocketDaemonConfig,
+    acquire_singleton_lock,
+    dispatch_request,
+    lock_path,
+    run_socket_daemon,
+    send_request,
+    socket_path,
+)
 from frob.serve._tools import (
     ServeError,
     frob_affects,
@@ -46,9 +56,13 @@ def __getattr__(name: str):  # noqa: ANN201
 
 
 __all__ = [
+    "DaemonError",
     "McpUnavailable",
     "ServeError",
+    "SocketDaemonConfig",
+    "acquire_singleton_lock",
     "build_server",
+    "dispatch_request",
     "frob_affects",
     "frob_check_delta",
     "frob_check_scope",
@@ -59,5 +73,9 @@ __all__ = [
     "frob_perf_hot",
     "frob_run_touched_tests",
     "frob_stale_docs",
+    "lock_path",
+    "run_socket_daemon",
     "run_stdio",
+    "send_request",
+    "socket_path",
 ]

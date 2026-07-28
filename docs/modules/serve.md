@@ -251,6 +251,92 @@ single-cycle assertion; only `_start_daemon`'s loop actually sleeps between
 cycles, via a `threading.Event.wait` that `run_stdio` sets on shutdown so
 the thread does not outlive the stdio transport.
 
+## Socket daemon (T-1092)
+
+<!-- frob:describes src/frob/serve/_socketd.py::DaemonError -->
+<!-- frob:describes src/frob/serve/_socketd.py::SocketDaemonConfig -->
+<!-- frob:describes src/frob/serve/_socketd.py::lock_path -->
+<!-- frob:describes src/frob/serve/_socketd.py::socket_path -->
+<!-- frob:describes src/frob/serve/_socketd.py::acquire_singleton_lock -->
+<!-- frob:describes src/frob/serve/_socketd.py::dispatch_request -->
+<!-- frob:describes src/frob/serve/_socketd.py::run_socket_daemon -->
+<!-- frob:describes src/frob/serve/_socketd.py::send_request -->
+
+`frob.serve._socketd` (T-1092, splitting off T-0321's daemon epic) stands up
+a SECOND frontend over the exact same `frob.serve._tools` core the MCP stdio
+transport already uses -- a standalone OS process reachable outside any MCP
+client session, over a per-project-root unix domain socket, instead of only
+as a background thread inside a live `frob serve` stdio process (the T-0733
+daemon documented above). There is no logic fork: `_socketd._TOOL_DISPATCH`
+maps each exposed JSON-RPC method name directly onto the SAME `frob.serve.
+_tools` function `server.py`'s `@server.tool()` registrations call, so MCP
+and the socket daemon answer identically because they call the identical
+warm-state-backed (`frob.serve._warm`) query logic -- neither transport
+re-implements a query, only how the call arrives and how the result is
+serialized back out.
+
+This ticket stands the process + protocol up and proves it answers
+correctly; it does NOT wire the CLI to talk to the socket (a follow-on
+child) and does NOT add FS-watch invalidation or cross-worktree
+single-flight (both separate children of the same epic).
+
+### Single-instance guard
+
+`acquire_singleton_lock(root)` holds an `flock(LOCK_EX | LOCK_NB)` on
+`<root>/.frob/daemon.lock` (`lock_path`) for the daemon process's entire
+lifetime. `flock` contention is resolved by the kernel, not by any
+check-then-act sequence in this process: of any number of processes racing
+to acquire it concurrently for the same root, exactly one receives `Ok`
+(the file handle to keep open) and every other one receives
+`Err(DaemonError.AlreadyRunning)` immediately -- there is no window where
+two callers can both believe they hold it, and a losing racer is expected
+behavior (someone else is already the daemon for this root), not a
+user-facing failure to surface. Releasing the lock (`_release_singleton_
+lock`, called on every `run_socket_daemon` exit path -- clean idle
+shutdown, bind failure, or an exception) unlocks then closes the handle, so
+the next caller finds a clean slate.
+
+### Protocol
+
+One JSON object per newline-delimited line over the unix socket at
+`<root>/.frob/daemon.sock` (`socket_path`):
+
+```
+--> {"id": 1, "method": "frob_doable_tickets", "params": {}}
+<-- {"id": 1, "result": [...]}
+
+--> {"id": 2, "method": "frob_graph_query", "params": {"symref": "..."}}
+<-- {"id": 2, "error": {"code": "unknown_method", "message": "..."}}
+```
+
+`dispatch_request(root, request)` looks `request.method` up in
+`_TOOL_DISPATCH`, calls it as `fn(root, **request.params)`, and never
+raises: an unknown method, a bad-`params` `TypeError`, or a tool-level
+`Err` all become a JSON-RPC error object (`unknown_method`, `bad_params`,
+`tool_error`) instead of an exception escaping the connection handler.
+`run_socket_daemon` serves connections on a `socketserver.
+ThreadingUnixStreamServer` (one thread per connection, a connection may
+carry many sequential request lines). `send_request(root, method, params)`
+is a minimal synchronous client used by `tests/test_serve_socket.py` to
+exercise the daemon end-to-end over a real socket, and the shape a future
+CLI-side client (the next child ticket) will build on.
+
+### Idle timeout
+
+`SocketDaemonConfig(root=..., idle_timeout_s=DEFAULT_IDLE_TIMEOUT_S)`
+(default 600s) configures how long the daemon waits with no dispatched
+request before exiting. An `_IdleTracker` records the monotonic time of the
+last request; a background monitor thread polls it (at an interval scaled
+to `idle_timeout_s`, capped at 5s, so a short test-configured timeout is
+still observed promptly) and calls `server.shutdown()` once the deadline
+passes. `run_socket_daemon`'s `finally` block always removes the socket
+file and releases the single-instance lock on the way out -- a clean idle
+exit leaves no orphaned process and no stale socket file, and a stale
+socket file left over from a prior crash (`_remove_stale_socket`) is
+unlinked unconditionally the next time a caller wins the lock (safe: no
+other live daemon can be bound to it once this process holds the
+exclusive lock).
+
 ## CLI
 
 ```
