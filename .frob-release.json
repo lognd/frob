@@ -609,6 +609,7 @@
     "src/frob/gates/_secrets.py::secrets_gate": "b20f329f107939ac130179a60ec33ecae5d0e43c976114918b5bc1c821a5b06a",
     "src/frob/gates/_taint_gate.py::taint_gate": "8eb1266f83ddfad99829c392afa9d623ce2365e1f607a0b4c004dac2543204c8",
     "src/frob/gates/_todo_fmt.py::fmt_gate": "aec42d9d7eee011aa4c46caf371d6ab09dcbbb6aac70815a9b7c7722c1878ca3",
+    "src/frob/gates/_tracked_files.py::tracked_files": "a841d05ec934e8ad48b91c71faaaf5aa844d3c77c8db282e25969ec5b5d928a3",
     "src/frob/gates/_waive.py::SCOPED_RUN_FLAKY_RULE_IDS": "eccec9442287c94baf320554cbed12c317246e8b8907dea1ab52876f8f606c97",
     "src/frob/gates/_waive.py::known_gate_rule_ids": "42f8d0e0fce2c36e6d63ac8a4ef7d47b03825d5fe90f41cb75474f71fac17491",
     "src/frob/gates/_waive_comments.py::waive006_gate": "6c3a6f2aca83dbda0c48f75695a94faec32a9fa9fcbdb667d293cf92ff507bbb",
@@ -1821,5 +1822,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.233.0"
+  "version": "0.234.0"
 }

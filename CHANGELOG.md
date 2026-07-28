@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.234.0] - unreleased
+
+- T-1082: arch: abstraction-opportunity gates package extraction (T-0393/T-1067 remainder, 29 findings)
+
 ## [0.233.0] - unreleased
 
 - T-1095: daemon: cross-worktree single-flight coverage/collection keyed by source digest
