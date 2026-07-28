@@ -269,18 +269,71 @@ def _render_affects_lines(aff) -> list[str]:  # noqa: ANN001
     return lines
 
 
+def _affects_payload_from_daemon(payload: dict) -> dict:
+    """Reshape the `frob_affects` RPC's dict (`frob.serve._tools.
+    frob_affects`, key `ref`) into `_affects_json_payload`'s exact CLI
+    shape (key `root`) -- both carry the identical `AffectedSet` fields
+    otherwise (`dependents`/`docs`/`tests`/`truncated`); this key rename
+    is the one CLI-side adaptation needed to make a daemon hit
+    byte-for-byte identical to `_affects_json_payload`'s own output
+    (T-1106's #1 safety invariant, same as T-1093's precedent)."""
+    return {
+        "root": payload["ref"],
+        "dependents": list(payload["dependents"]),
+        "docs": list(payload["docs"]),
+        "tests": list(payload["tests"]),
+        "truncated": payload["truncated"],
+    }
+
+
+# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_affects_json_daemon_matches_in_process kind="unit"  # noqa: E501
+def _try_affects_via_daemon(root: Path, cfg: AppConfig) -> bool:
+    """T-1106: for `frob graph affects --json`, try the T-1092 daemon's own
+    `frob_affects` RPC (already exposed by `_socketd._TOOL_DISPATCH` since
+    T-1092, just never wired to this CLI command) via `frob.app.
+    _daemon_proxy.query` before falling back to a local graph load/resolve/
+    walk. Returns `True` (already rendered, caller returns immediately) on
+    a daemon hit; `False` means "no daemon answer, compute it in-process" --
+    disabled, unreachable, and a JSON-RPC error all fall through here
+    exactly the way `query`'s own contract promises every other proxied
+    command."""
+    if cfg.graph_ref is None or not cfg.graph_json:
+        return False
+    from frob.app._daemon_proxy import query
+
+    params: dict = {"symref": cfg.graph_ref}
+    if cfg.graph_max_depth is not None:
+        params["max_depth"] = cfg.graph_max_depth
+    if cfg.graph_max_nodes is not None:
+        params["max_nodes"] = cfg.graph_max_nodes
+    proxied = query(root, "frob_affects", params)
+    if proxied.is_err:
+        return False
+    import json
+
+    _log.info(json.dumps(_affects_payload_from_daemon(proxied.danger_ok), indent=2))
+    return True
+
+
 # frob:ticket T-0628
 # frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_human_mode_reports_dependents_docs_tests  # noqa: E501
 # frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_json_mode_payload  # noqa: E501
 # frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_truncated_closure_flagged  # noqa: E501
-# frob:waive ARCH103 reason="T-0977: `frob graph affects` CLI entrypoint -- same \
-# runner shape as `_run_query`/`_run_why` in this module: resolve, render \
-# text-or-json, exit"
+# frob:waive ARCH103 reason="T-0977/T-1106: `frob graph affects` CLI entrypoint -- \
+# same runner shape as `_run_query`/`_run_why` in this module: try the daemon \
+# proxy, resolve, render text-or-json, exit"
 def _run_affects(root: Path, cache: Path, cfg: AppConfig) -> None:
     """`frob graph affects <ref>`: the CLI counterpart T-0325 deliberately
     cut (docs/modules/graph.md#affects) -- prints the same `AffectedSet`
     (dependents/docs/tests, truncation flagged) the `frob_affects` MCP tool
-    already answers, so the north-star query is usable outside MCP."""
+    already answers, so the north-star query is usable outside MCP. T-1106:
+    `_try_affects_via_daemon` is tried first; a hit renders and returns with
+    ZERO local graph load/resolve/walk, and anything else falls straight
+    through to the exact in-process path below, unchanged from before this
+    ticket."""
+    if _try_affects_via_daemon(root, cfg):
+        return
+
     from frob.graph import resolve
     from frob.graph.affects import affects
 

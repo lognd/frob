@@ -115,7 +115,9 @@ class TestEnsureDaemon:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_noop_when_version_matches
         monkeypatch.setattr(
-            _daemon_proxy, "_query_daemon_version", lambda r: _daemon_proxy._client_version()
+            _daemon_proxy,
+            "_query_daemon_version",
+            lambda r: _daemon_proxy._client_version(),
         )
         spawned = []
         monkeypatch.setattr(_daemon_proxy, "_spawn_daemon", lambda r: spawned.append(r))
@@ -200,15 +202,65 @@ class TestDifferentialParity:
         # identical, not the diagnostic narration around it.
         assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
 
+    def test_graph_affects_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_affects_json_daemon_matches_in_process
+        pytest.importorskip("frob_core")
+        project = tmp_path
+        (project / ".frob").mkdir()
+        (project / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.0.0"\n'
+        )
+        (project / "helper.py").write_text(
+            "def helper():\n    return 1\n", encoding="utf-8"
+        )
+        subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+
+        # FROB_NO_DAEMON=1 in-process reference run.
+        in_process = subprocess.run(
+            ["uv", "run", "frob", "graph", "affects", "helper.py::helper", "--json"],
+            cwd=project,
+            env={**_env(), "FROB_NO_DAEMON": "1"},
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert in_process.returncode == 0, in_process.stderr
+
+        thread = _start_daemon(project)
+        try:
+            daemon_served = subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "frob",
+                    "graph",
+                    "affects",
+                    "helper.py::helper",
+                    "--json",
+                ],
+                cwd=project,
+                env=_env(),
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        finally:
+            _shutdown(project, thread)
+        assert daemon_served.returncode == 0, daemon_served.stderr
+        assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
+
 
 def _json_tail(stdout: str) -> str:
-    """The final JSON-array payload `frob perf hot --json` writes -- log
-    lines precede it, so find the line starting the JSON block (`[` or `[]`)
-    and return everything from there, verbatim (byte-for-byte, not
-    re-parsed -- re-parsing would hide a real formatting divergence)."""
+    """The final JSON payload a proxied `--json` command writes -- log
+    lines precede it, so find the line starting the JSON block (a bare
+    array `frob perf hot --json` prints, or a bare object `frob graph
+    affects --json` prints, T-1106) and return everything from there,
+    verbatim (byte-for-byte, not re-parsed -- re-parsing would hide a
+    real formatting divergence)."""
     lines = stdout.splitlines()
     for i, line in enumerate(lines):
-        if line.strip().startswith("["):
+        if line.strip().startswith(("[", "{")):
             return "\n".join(lines[i:])
     raise AssertionError(f"no JSON payload found in stdout: {stdout!r}")
 

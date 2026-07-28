@@ -666,26 +666,48 @@ the follow-on T-1093 disclosed (T-draft-8a56400c).
   `tests/test_app_daemon_proxy.py::TestDifferentialParity`, a real
   subprocess-vs-subprocess (`FROB_NO_DAEMON=1` in-process vs a live daemon)
   diff of the rendered payload.
+- `frob graph affects <ref> --json` -> `frob_affects` (T-1106): the ONE
+  reconciliation needed was a key rename -- the RPC's dict uses `ref`,
+  the CLI's own `_affects_json_payload` uses `root`, for the identical
+  `AffectedSet` fields otherwise (`dependents`/`docs`/`tests`/
+  `truncated`). `graph_runner._affects_payload_from_daemon` does that one
+  rename; every other field is passed through verbatim. Proven the same
+  way as `frob perf hot --json` above --
+  `tests/test_app_daemon_proxy.py::TestDifferentialParity::
+  test_graph_affects_json_daemon_matches_in_process`, a real
+  subprocess-vs-subprocess diff.
 
 ### Scope cut (disclosed)
 
 T-0321's integration map names `outline`/`map`/`xref`/`parse`/`graph`/
 `exports`/`bind`/`docs`/`stats` as eventual proxy targets alongside `check
 --delta`-style reads. `_socketd._TOOL_DISPATCH` (T-1092) only exposes ten
-methods today, most of which have no field-for-field-identical CLI JSON
-payload to diff against yet (e.g. `frob_graph_query`'s dict omits `span`/
-`digests` that `frob graph query --json` prints). This ticket ships the
-proxy MECHANISM (`ensure_daemon`/`query`, spawn, version-skew self-heal,
-`FROB_NO_DAEMON=1` bypass) plus one fully-wired, differentially-proven
-command (`frob perf hot --json`) rather than force a shape mismatch onto
-the remaining commands just to claim broader coverage. Wiring
-`frob_graph_query`/`frob_check_delta`/`frob_run_touched_tests` /
-`frob_doable_tickets` through the same `query()` seam is straightforward
-follow-on work once each CLI payload is reconciled field-for-field with its
-`_tools` counterpart (or the counterpart is extended to match) -- tracked as
-T-draft-296d0d77. `frob ticket doable` specifically cannot be wired from this
-ticket's own scope: `src/frob/app/ticket_runner.py` is a sibling ticket's
-file this wave.
+methods today; most STILL have no field-for-field-identical CLI JSON
+payload to diff against (e.g. `frob_graph_query`'s dict omits `span`/
+`digests` that `frob graph query --json` prints) -- `frob_affects` (T-1106,
+just above) was the one exception needing only a single key rename to
+reconcile, not a deeper shape mismatch. This ticket wires that one
+additional command (on top of T-1093's `frob perf hot --json`) rather
+than force a shape mismatch onto the remaining commands just to claim
+broader coverage. Wiring `frob_graph_query`/`frob_check_delta`/
+`frob_run_touched_tests`/`frob_doable_tickets` through the same `query()`
+seam is straightforward follow-on work once each CLI payload is
+reconciled field-for-field with its `_tools` counterpart (or the
+counterpart is extended to match) -- tracked as T-draft-296d0d77. `frob
+ticket doable` specifically was left unwired again this ticket:
+`src/frob/app/ticket_runner.py` was a CONTENDED file this wave (a
+sibling ticket's own scope), and T-1106's own scope was deliberately
+narrowed to files with no such collision (`_daemon_proxy.py`,
+`graph_runner.py`, their tests) rather than risk a merge collision over
+a single additional wired command.
+- `outline`/`map`/`xref`/`exports`/`stats` are a separate, larger
+  disclosed gap from `frob_graph_query`'s: none of the five has ANY
+  `frob.serve._tools` RPC method exposing them at all yet (`_TOOL_
+  DISPATCH` has no `frob_outline`/`frob_map`/`frob_xref`/`frob_exports`/
+  `frob_stats` entry) -- wiring these needs new server-side tool functions
+  first (`src/frob/serve/_tools.py`, out of this ticket's `src/frob/app/`
+  scope entirely, not just a CLI-side reconciliation), tracked alongside
+  T-draft-296d0d77 as the same follow-on epic tail.
 
 ## CLI
 
