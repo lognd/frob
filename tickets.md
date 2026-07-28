@@ -3142,7 +3142,7 @@ and the ticket's own named regression test passing on current main).
 ```yaml
 id: T-1118
 title: 'daemon: wire run_coverage_wait through the T-1097 daemon-owned coverage lease'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -3175,6 +3175,8 @@ daemon RPC when a daemon is reachable, falling back to the existing
 file-lock layers when it is not -- mirroring frob.app._daemon_proxy.
 query's own Ok(daemon)/Err(fallback) shape.
 
+## Drop reason
+- 2026-07-28: done by T-1126 (landed 9d606789): run_coverage_wait tries the daemon lease first with file-lock fallback; independent filing of the same follow-up
 <!-- ticket:T-1121 -->
 ```yaml
 id: T-1121
