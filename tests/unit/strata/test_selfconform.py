@@ -1123,16 +1123,18 @@ class TestRealGateGreen:
     # kind="integration"
     def test_repo_design_and_declarations_are_self_conformant(self):
         """`design/frob.strata`'s real `code`/`may` declarations, run
-        against the REAL `src/frob/` tree, produce zero SYS100/SYS101/
-        SYS102/SYS103 violations -- the T-0150 gate-green assertion, UNCHANGED
-        and still strict (T-0667: SYS103/SYS-COV joins it at zero too --
-        `_coverage_totality_scan_prefix` restricts SYS103 to `_PACKAGE_ROOT`
-        on frob's own tree specifically, docs/modules/strata.md#sys-cov-
-        coverage-totality-sys103-t-0667, so it does not fire on `tests/**`/
-        `scripts/**`/`frob-core/src/**`/`strata-core/src/**`, which
-        `design/frob.strata` does not model). Skips (does not xfail) when
-        the native strata_core extension isn't installed, matching every
-        other `.strata`-parsing test's guard in this suite."""
+        against the REAL repo tree (T-1091: the WHOLE tree, not just
+        `src/frob/`), produce zero SYS100/SYS101/SYS102/SYS103/SYS104
+        violations -- the T-0150 gate-green assertion, UNCHANGED and
+        still strict (T-0667: SYS103/SYS-COV joins it at zero too --
+        `_coverage_totality_scan_prefix` is now UNRESTRICTED as of
+        T-1091, docs/modules/strata.md#sys-cov-coverage-totality-sys103-
+        t-0667, so it DOES scan `tests/**`/`scripts/**`/
+        `frob-core/src/**`/`strata-core/src/**` now, and stays zero
+        there because T-1079 modeled all four as real nodes). Skips
+        (does not xfail) when the native strata_core extension isn't
+        installed, matching every other `.strata`-parsing test's guard in
+        this suite."""
         pytest.importorskip("strata_core")
         from frob.strata._design_load import load_design_ids
         from frob.strata._sysdoc import merge_models
@@ -1343,23 +1345,24 @@ class TestCoverageTotality:
 
     # frob:tests src/frob/strata/_selfconform.py::_coverage_totality_violations kind="unit"  # noqa: E501
     def test_repo_unrestricted_scan_is_clean(self, monkeypatch: pytest.MonkeyPatch):
-        """T-1079 (SYS103's 264-finding follow-up): `design/frob.strata`
-        now models `tests/**`/`scripts/**`/`frob-core/src/**`/
-        `strata-core/src/**` (the `testsuite`/`scripts_ops`/
-        `strata_core_native`/`frob_core_native` nodes,
+        """T-1079 (SYS103's 264-finding follow-up), STILL GREEN post-T-1091:
+        `design/frob.strata` models `tests/**`/`scripts/**`/
+        `frob-core/src/**`/`strata-core/src/**` (the `testsuite`/
+        `scripts_ops`/`strata_core_native`/`frob_core_native` nodes,
         docs/modules/strata.md's "Modeled: `_PACKAGE_ROOT` restriction's
-        264-finding follow-up" section) -- this proves it directly by
-        bypassing `_coverage_totality_scan_prefix`'s `_PACKAGE_ROOT`
-        restriction (monkeypatched to always return `None`, i.e. the
-        SAME unrestricted whole-`root` scan T-0667 measured 264 findings
-        under before this ticket) and asserting `check_self_conformance`
-        against the REAL, merged `design/` model and the REAL repo tree
-        still returns zero SYS100/SYS101/SYS102/SYS103 violations. The
-        production `SELFAUDIT001` gate still runs the `_PACKAGE_ROOT`-
-        restricted scan (`_coverage_totality_scan_prefix` itself is
-        unchanged, out of this ticket's scope) -- this test proves the
-        MODEL has caught up, independent of whether the live gate has
-        been widened to consult it yet (follow-up ticket, Done report)."""
+        264-finding follow-up" section). `_coverage_totality_scan_prefix`
+        is now UNCONDITIONALLY unrestricted (T-1091 dropped the
+        `_PACKAGE_ROOT` carve-out entirely, closing the gap this test
+        used to prove existed only in the model, not yet in the live
+        gate) -- the `monkeypatch.setattr` below is now a no-op (it sets
+        the function to the SAME `lambda r: None` behavior it already
+        has) but is kept so this test still independently pins "an
+        unrestricted scan against the real design/real tree is clean"
+        even if `_coverage_totality_scan_prefix` is ever re-restricted in
+        the future, without depending on that function's current
+        default. `TestRealGateGreen` covers the same zero-violations
+        claim through the now-unrestricted PRODUCTION path (no
+        monkeypatch needed there since T-1091)."""
         pytest.importorskip("strata_core")
         from frob.strata import _selfconform as sc
         from frob.strata._design_load import load_design_ids

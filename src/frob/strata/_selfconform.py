@@ -126,15 +126,18 @@ SYS106 (T-0670) binding totality / laundering -- code laundered into an
 unbound (`FOREIGN`) file that is nonetheless *reachable* (via resolved
 local python imports, `_code_binding.py::resolve_local_import`, followed
 transitively) from a bound node's own files. SYS103 already flags any
-`FOREIGN` file with an observed capability, but only within its scan
-prefix (`_coverage_totality_scan_prefix`, `_PACKAGE_ROOT`-restricted on
-frob's own tree); SYS106 closes the specific evasion the design doc names
-("binding need not be total, so logic can be laundered into an unbound
-file") by following the REACHABILITY edge itself, prefix-independent --
-a helper file reached by import from a bound node is checked regardless
-of where it lives, since the laundering threat is precisely that such a
-file might sit outside whatever prefix a coverage scan restricts itself
-to. Cycle-safe (visited-set BFS over resolved import targets).
+`FOREIGN` file with an observed capability over its own scan (whole
+root, unconditionally, as of T-1091 -- `_coverage_totality_scan_prefix`'s
+own docstring has the T-0667-restricted-then-dropped history); SYS106
+closes the specific evasion the design doc names ("binding need not be
+total, so logic can be laundered into an unbound file") by following the
+REACHABILITY edge itself, which stays independently useful even now that
+SYS103 itself is unrestricted: SYS103 only fires when it actually WALKS
+to a capable FOREIGN file, whereas SYS106 fires from the opposite
+direction (starting at a bound node and following its real import
+edges), so a file some future exclude-glob or walk boundary hides from
+SYS103's own walk but that a bound node still imports at runtime is
+still caught. Cycle-safe (visited-set BFS over resolved import targets).
 """
 
 from __future__ import annotations
@@ -720,49 +723,48 @@ def _stale_design_violations(
 # frob:doc docs/modules/strata.md#sys-cov-coverage-totality-sys103-t-0667
 # frob:tests tests/unit/strata/test_selfconform.py::TestCoverageTotality.test_foreign_file_with_capability_fires_sys103  # noqa: E501
 def _coverage_totality_scan_prefix(root: Path) -> str | None:
-    """The `root`-relative path prefix SYS103 restricts its scan to
-    (`_PACKAGE_ROOT + "/"`) when that directory exists under `root`
-    (frob's own tree), else `None` (any other repo -- no restriction,
-    module docstring's SYS103 gap statement: there is no `_PACKAGE_ROOT`-
-    vs-rest split to make there, so the general case IS the whole root).
-    Returns a PREFIX rather than a different scan root so `_sorted_
-    capability_files`/`load_exclude_globs` keep reading `root`'s own
-    `frob.toml` (a `root / _PACKAGE_ROOT` scan root would instead look
-    for a nonexistent `src/frob/frob.toml` and silently lose every
-    `[graph] exclude` entry).
+    """UNRESTRICTED as of T-1091: always returns `None` -- SYS103 scans
+    `root` in full on every tree, frob's own included, with no
+    `_PACKAGE_ROOT` carve-out. Kept as a named function (rather than
+    inlining `None` at its one call site) so its docstring stays the
+    single place this history lives, and so a future re-restriction (if
+    one is ever needed) has an obvious hook to land on.
 
-    T-0667 REAL-GATE FINDING: an unrestricted `root`-wide walk on frob's
-    OWN tree surfaces 264 real, currently-unmodeled findings under
-    `tests/**`, `scripts/**`, `frob-core/src/**`, `strata-core/src/**` --
+    HISTORY (why this used to restrict, and why that is now safe to
+    drop): T-0667 shipped SYS103 scoped to `_PACKAGE_ROOT` ("src/frob")
+    on frob's own tree specifically, because an unrestricted `root`-wide
+    walk surfaced 264 real, then-unmodeled findings under `tests/**`,
+    `scripts/**`, `frob-core/src/**`, `strata-core/src/**` --
     `design/frob.strata` only ever declared `code=`/`may` for `src/frob/`
-    (same T-0211 fact SYS102 already lives with), so those trees have
-    always been outside what the self-model claims to cover. Wiring
-    SYS103 into `check_self_conformance` unrestricted would regress the
-    live `SELFAUDIT001` gate (`src/frob/gates/__init__.py`, out of this
-    ticket's scope to edit) from green to 264 errors on this repo's own
-    `frob check --only sys` -- shipping that breakage is not acceptable
-    just to make the detector maximally broad on day one. Scoping to
-    `_PACKAGE_ROOT` when present keeps SYS103 exactly as strict as SYS102
-    already is for frob's own tree (zero regression) while staying
-    STRICTLY MORE general than SYS102 everywhere else (a repo with no
-    `src/frob/` gets a real, non-vacuous whole-root scan here, instead of
-    SYS102's silent `_top_level_dirs` no-op). Generalizing SYS103 past
-    `_PACKAGE_ROOT` for frob's own tree specifically is real, disclosed,
-    follow-up work -- once `design/frob.strata` (or `check_self_
-    conformance`'s own caller) actually models those trees -- filed
-    rather than forced (see this ticket's Done report)."""
-    scoped = root / _PACKAGE_ROOT
-    return f"{_PACKAGE_ROOT}/" if scoped.is_dir() else None
+    at that point (same T-0211 fact SYS102 already lived with), so
+    wiring SYS103 unrestricted then would have regressed the live
+    `SELFAUDIT001` gate from green to 264 errors. T-1079 closed that gap
+    directly: `design/frob.strata` now models `tests/**` (`testsuite`),
+    `scripts/**` (`scripts_ops`), `frob-core/src/**`
+    (`frob_core_native`), and `strata-core/src/**` (`strata_core_native`)
+    as real nodes with real `code=` bindings, so those 264 files are no
+    longer `FOREIGN` at all -- `TestCoverageTotality::
+    test_repo_unrestricted_scan_is_clean` (T-1079) already proved a
+    prefix-bypassed scan against the live repo returns zero findings.
+    T-1091 makes that the LIVE gate's own behavior, not just a test
+    harness's: dropping the `_PACKAGE_ROOT` carve-out here means
+    `SELFAUDIT001` now checks exactly what `design/frob.strata` claims to
+    cover (the WHOLE repo), closing the gap for real. If a genuinely new,
+    still-unmodeled tree is ever added back to this repo, SYS103 will
+    correctly regress to non-zero on that tree -- that is the point of
+    the rule, not a bug in this change."""
+    return None
 
 
 def _coverage_totality_violations(
     capability_binding: CodeBinding, root: Path
 ) -> list[SelfConformViolation]:
-    """SYS103 (SYS-COV, T-0667): every `FOREIGN` file under `root` whose
-    `root`-relative path starts with `_coverage_totality_scan_prefix(root)`
-    (any generic repo's WHOLE root; frob's own tree is restricted to
-    `_PACKAGE_ROOT` -- see that function's docstring for why) that
-    `scan_file_capabilities` observes ANY capability in.
+    """SYS103 (SYS-COV, T-0667, unrestricted as of T-1091): every
+    `FOREIGN` file under `root` whose `root`-relative path starts with
+    `_coverage_totality_scan_prefix(root)` (ALWAYS the whole root now --
+    see that function's docstring for the T-0667-restricted-then-T-1091-
+    dropped history) that `scan_file_capabilities` observes ANY
+    capability in.
     `is_self_pattern_path` files are skipped
     (T-0201, same self-match exclusion every other observed-side join in
     this module already applies) -- a pattern-catalog data file's needle

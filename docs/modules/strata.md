@@ -31,9 +31,10 @@ lacks `src/frob/`, so SYS102 is permanently, silently vacuous there --
 exactly the evasion the T-0341 epic exists to close. SYS103 is the
 repo-general form: it runs over the SAME `_capability_binding` superset
 (`bind_code` + the T-0169 non-Python extension) on WHATEVER root is
-audited, with no `src/frob/`-specific path assumption -- EXCEPT on frob's
-own tree, where `_coverage_totality_scan_prefix` restricts it to
-`_PACKAGE_ROOT`, same as SYS102 (see "Known gap" below for why).
+audited, with no `src/frob/`-specific path assumption -- INCLUDING frob's
+own tree, as of T-1091 (`_coverage_totality_scan_prefix` used to restrict
+it to `_PACKAGE_ROOT` there, same as SYS102; see "Restriction dropped for
+real" below).
 
 ### Rule
 
@@ -104,6 +105,27 @@ what the LIVE gate itself checks on every `frob check` run; wiring the
 gate to drop the restriction now that the model has zero findings
 either way is real, disclosed follow-up work (see T-1079's Done report
 for the filed ticket id), not done by this ticket.
+
+### Restriction dropped for real (T-1091)
+
+T-1091 closes the follow-up the previous section named:
+`_coverage_totality_scan_prefix` now ALWAYS returns `None` -- the
+`_PACKAGE_ROOT` carve-out is gone, not just modeled around. The live
+`SELFAUDIT001` gate (`frob sys audit`, `frob check --only sys`) now
+scans the WHOLE repo tree on every run, frob's own included, exactly
+like the general (non-frob) case always did. This is safe precisely
+because of what the previous section modeled: `design/frob.strata`
+already declares real `code=`/`may` for `tests/**`, `scripts/**`,
+`frob-core/src/**`, and `strata-core/src/**`, so dropping the
+restriction produces zero NEW findings on this repo's own `frob check`
+-- `TestRealGateGreen::test_repo_design_and_declarations_are_self_
+conformant` now exercises this directly (no monkeypatch needed), and
+`TestCoverageTotality::test_repo_unrestricted_scan_is_clean` keeps
+independently pinning the same zero-violations claim against a forced
+`None` prefix in case `_coverage_totality_scan_prefix` is ever
+re-restricted later. If a genuinely new, still-unmodeled tree is added
+to this repo in the future, SYS103 will correctly go non-zero on it --
+that is the detector doing its job, not a regression to patch around.
 
 <a id="sys104-interface-conformance-t-0668"></a>
 ## SYS104 exact interface conformance (T-0668)
