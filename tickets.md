@@ -2514,6 +2514,7 @@ created: '2026-07-26'
 priority: medium
 blocked_by:
 - T-1070
+- T-1069
 parent: T-0715
 tier: ticket
 sprint: null
