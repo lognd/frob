@@ -82,6 +82,8 @@ def _vet011_violation(
     )
 
 
+# frob:enforces SC-DETECTION-QUARANTINE-WINDOW
+# frob:enforces CHK-GATE-VET011
 def _quarantine_violation(
     dep: Dependency, root: Path, cfg: VetConfig, cache_path: Path
 ) -> Violation | None:
@@ -117,6 +119,7 @@ def _quarantine_violation(
     return None
 
 
+# frob:enforces CHK-GATE-VET001
 def _vet001_violation(
     dep: Dependency, cfg: VetConfig, lockfile_name: str
 ) -> Violation | None:
@@ -137,6 +140,11 @@ def _vet001_violation(
 
 # frob:invariant INV-025
 # frob:tests tests/test_vet.py::TestObfuscationEnsemble.test_high_entropy_string_flagged
+# frob:enforces SC-DETECTION-OBFUSCATED-SOURCE
+# frob:enforces SC-DETECTION-ENTROPY-BLOB
+# frob:enforces SC-DETECTION-TROJAN-SOURCE
+# frob:enforces SC-DETECTION-HEX-IDENTIFIER-RATIO
+# frob:enforces CHK-GATE-VET004
 def _vet004_violation(
     dep: Dependency, lockfile_name: str, signals: list[str]
 ) -> Violation:
@@ -152,6 +160,7 @@ def _vet004_violation(
     )
 
 
+# frob:enforces CHK-GATE-VET006
 def _vet006_violation(
     dep: Dependency, lockfile_name: str, matches: tuple[CveFingerprint, ...]
 ) -> Violation:
@@ -170,6 +179,9 @@ def _vet006_violation(
     )
 
 
+# frob:enforces SC-ATTACK-INSTALL-SCRIPT-ABUSE
+# frob:enforces SC-DETECTION-MAINTAINER-INSTALLHOOK-NET
+# frob:enforces CHK-GATE-VET002
 def _vet002_violation(
     dep: Dependency, cfg: VetConfig, lockfile_name: str, capabilities: set[str]
 ) -> Violation | None:
@@ -192,6 +204,7 @@ def _vet002_violation(
     )
 
 
+# frob:enforces CHK-GATE-VET003
 def _vet003_violation(
     dep: Dependency,
     cache_path: Path,
@@ -321,6 +334,7 @@ def _store_verdict_if_hashed(
     )
 
 
+# frob:enforces CHK-GATE-VET-JS003
 def _prehook_violations(
     dep: Dependency, root: Path, cfg: VetConfig, cache_path: Path, lockfile_name: str
 ) -> tuple[list[Violation], list[str]]:
@@ -410,6 +424,7 @@ def _apply_npm_and_prehook_checks(
         signals.extend(pre_signals)
 
 
+# frob:enforces CHK-GATE-VET-SOURCE-UNAVAILABLE
 def _source_unavailable_violation(dep: Dependency, lockfile_name: str) -> Violation:
     """T-0400 audit finding #1: a dependency `frob vet` never read must
     never be indistinguishable from one it read and found clean -- an
@@ -464,6 +479,7 @@ def _scan_located_source(
     violations.extend(src_violations)
 
 
+# frob:enforces CHK-GATE-VET-TIMEOUT
 def _timeout_verdict(
     dep: Dependency, lockfile_name: str
 ) -> tuple[Violation, PackageVerdict]:
@@ -696,6 +712,7 @@ def _run_with_timeout(
     )
 
 
+# frob:enforces CHK-GATE-VET-JS
 def _lifecycle_violations(
     root: Path, cfg: VetConfig
 ) -> tuple[list[Violation], list[str]]:
@@ -724,6 +741,8 @@ def _lifecycle_violations(
     return violations, skipped
 
 
+# frob:enforces SC-DETECTION-OSV-ADVISORY-MATCH
+# frob:enforces CHK-GATE-VET005
 def _osv_violations(
     lockfile: Path, cfg: VetConfig
 ) -> tuple[list[Violation], list[str]]:

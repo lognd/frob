@@ -74,6 +74,7 @@ def _is_available() -> bool:
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:enforces SC-DEFENSE-OSV
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"

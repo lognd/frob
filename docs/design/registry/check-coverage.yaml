@@ -19,7 +19,7 @@
 #     fabricated ticket. As T-0397's children close a concern down to
 #     a real gate rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 239
+gate_rule_total: 250
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     name: "COV001 is a live, enforced gate rule"
@@ -977,6 +977,50 @@ gate_rule_entries:
   - id: "CHK-GATE-SEC005"
     name: "SEC005 is a live, enforced gate rule"
     disposition: "handled_by:SEC005"
+    cross_refs: []
+  - id: "CHK-GATE-VET001"
+    name: "VET001 is a live, enforced gate rule"
+    disposition: "handled_by:VET001"
+    cross_refs: []
+  - id: "CHK-GATE-VET002"
+    name: "VET002 is a live, enforced gate rule"
+    disposition: "handled_by:VET002"
+    cross_refs: []
+  - id: "CHK-GATE-VET003"
+    name: "VET003 is a live, enforced gate rule"
+    disposition: "handled_by:VET003"
+    cross_refs: []
+  - id: "CHK-GATE-VET004"
+    name: "VET004 is a live, enforced gate rule"
+    disposition: "handled_by:VET004"
+    cross_refs: []
+  - id: "CHK-GATE-VET005"
+    name: "VET005 is a live, enforced gate rule"
+    disposition: "handled_by:VET005"
+    cross_refs: []
+  - id: "CHK-GATE-VET006"
+    name: "VET006 is a live, enforced gate rule"
+    disposition: "handled_by:VET006"
+    cross_refs: []
+  - id: "CHK-GATE-VET011"
+    name: "VET011 is a live, enforced gate rule"
+    disposition: "handled_by:VET011"
+    cross_refs: []
+  - id: "CHK-GATE-VET-JS"
+    name: "VET-JS is a live, enforced gate rule"
+    disposition: "handled_by:VET-JS"
+    cross_refs: []
+  - id: "CHK-GATE-VET-JS003"
+    name: "VET-JS003 is a live, enforced gate rule"
+    disposition: "handled_by:VET-JS003"
+    cross_refs: []
+  - id: "CHK-GATE-VET-SOURCE-UNAVAILABLE"
+    name: "VET-SOURCE-UNAVAILABLE is a live, enforced gate rule"
+    disposition: "handled_by:VET-SOURCE-UNAVAILABLE"
+    cross_refs: []
+  - id: "CHK-GATE-VET-TIMEOUT"
+    name: "VET-TIMEOUT is a live, enforced gate rule"
+    disposition: "handled_by:VET-TIMEOUT"
     cross_refs: []
 concern_family_total: 13
 concern_family_entries:
