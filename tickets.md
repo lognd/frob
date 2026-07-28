@@ -1680,3 +1680,163 @@ threat: null
 component: null
 ```
 T-1106 wired frob graph affects and disclosed this residual: frob_graph_query/frob_check_delta/frob_run_touched_tests/frob_doable_tickets RPC methods EXIST server-side but each CLI payload needs field-for-field shape reconciliation with its _tools counterpart before proxying (docs/modules/serve.md Scope cut section). Coordinator refile: the original draft died to a 10b ledger restore.
+
+<!-- ticket:T-1129 -->
+```yaml
+id: T-1129
+title: 'gates: TICK-family check for disclosed-cut-without-ticket in done reports'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- src/frob/tickets/**
+- tests/test_gates.py
+acceptance:
+- text: GIVEN a done report whose prose discloses deferred work (left for a follow-up,
+    not yet ticketed, deferred, residue, cut) WHEN frob check runs THEN a TICK-family
+    finding fires unless the same report cites an open ticket id (or an explicit no-ticket-needed
+    reason) within the disclosure's vicinity
+  evidence: []
+threat: null
+component: null
+```
+Coordinator hand-screen made mandatory-by-tooling: wave 17 had two incidents in one wave -- T-1085 disclosed 'deliberately left for a follow-up' with no ticket (coordinator hand-filed T-1124), and T-0321's close disclosed the serve RPC gap as 'not yet ticketed as its own item' (coordinator hand-filed T-1127). TICK006 covers phantom citations; nothing covers disclosed-but-unticketed cuts. Detector should be conservative (disclosure phrases + absence of any T-#### in the same bullet/paragraph) and WARN-tier first turn-on with frob's own ledger findings fixed in the same land.
+
+<!-- ticket:T-1130 -->
+```yaml
+id: T-1130
+title: 'tickets: ticket new/drop/fail auto-commit their ledger transition on main
+  (parity with T-1054 start)'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- tests/test_tickets.py
+acceptance:
+- text: GIVEN a coordinator files, drops, or fails a ticket on main WHEN the verb
+    completes THEN the ledger change is committed automatically (with an opt-out flag),
+    so a subsequent agent dispatch or land preflight can never hit uncommitted coordinator
+    ledger state
+  evidence: []
+threat: null
+component: null
+```
+T-1054 made ticket start auto-commit its transition after DirtyMain incidents; new/drop/fail still leave tickets.md dirty and 'commit before dispatching' is coordinator memory (bit the T-1018 agent once; the playbook carries it as a must-remember). Same pattern, remaining verbs. Worktree-side behavior unchanged (worktree ledger edits reconcile at land).
+
+<!-- ticket:T-1131 -->
+```yaml
+id: T-1131
+title: 'tickets: fail/retire releases leases; doctor flags leases on nonexistent worktrees'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- src/frob/app/**
+- tests/test_tickets.py
+acceptance:
+- text: GIVEN frob ticket fail records a dead end from a worktree WHEN the worktree
+    is subsequently removed THEN the ticket does not stay in-progress holding a stale
+    lease; frob doctor reports any lease whose worktree path no longer exists and
+    offers requeue
+  evidence: []
+threat: null
+component: null
+```
+T-1050 today: agent fail-logged a superseded ticket, removed its worktree, and the ticket sat in-progress with a lease on a nonexistent path until the coordinator hand-dropped it. Historical siblings: T-0906 stale lease investigation, wave-9 dead-agent requeues. The lease lifecycle should not depend on a coordinator remembering to sweep.
+
+<!-- ticket:T-1132 -->
+```yaml
+id: T-1132
+title: 'tickets: validate blocked_by/parent ids at write time; doctor scans for malformed
+  edges'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- tests/test_tickets.py
+acceptance:
+- text: GIVEN a ticket write with an empty-string or non-T-#### blocked_by/parent
+    entry WHEN the verb runs THEN it refuses with a clear error; frob doctor flags
+    existing malformed edges in the ledger
+  evidence: []
+threat: null
+component: null
+```
+T-0380 sat silently undoable for days because blocked_by contained an empty string alongside three real (done) blockers -- doable() treated it as an unresolvable blocker and nothing surfaced why. Schema validation at write time plus a doctor scan for the existing ledger.
+
+<!-- ticket:T-1133 -->
+```yaml
+id: T-1133
+title: 'gates: suppress WAIVE004 staleness advisories on scoped/--only runs entirely'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- tests/test_gates.py
+acceptance:
+- text: GIVEN frob check --only <stage> or any diff-scoped run WHEN a waiver matches
+    0 findings because its gate did not run THEN no WAIVE004 advisory is emitted (the
+    rule only fires on full unscoped runs where match-absence is meaningful)
+  evidence: []
+threat: null
+component: null
+```
+Every scoped run this session printed ~400-447 WAIVE004 warnings with a 'known-flaky, trust only full runs' caveat baked into the message text. A rule that prints its own do-not-trust-me disclaimer on scoped runs should not fire there at all; the caveat is tribal knowledge encoded as noise every coordinator and agent must mentally filter. Keep full-run behavior unchanged (T-1021's sweep depends on it).
+
+<!-- ticket:T-1134 -->
+```yaml
+id: T-1134
+title: 'gates: INV006 split-assist -- detect verbatim-moved claim prose and carry/suggest
+  the source file''s waiver'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- src/frob/dup/**
+- tests/test_gates.py
+acceptance:
+- text: GIVEN a module split moves docstring/comment prose containing exclusivity
+    vocabulary from a file with an INV006 waiver or invariant binding WHEN frob check
+    runs on the result THEN the INV006 finding names the source file's existing waiver/binding
+    and offers the carried-waiver text as a fix-it (or auto-carries under a flag)
+  evidence: []
+threat: null
+component: null
+```
+Every split this drive (T-1103, T-1107, T-1072, T-1077, T-1081, T-1082) required hand-carrying INV006 calibration-batch waivers to the new modules -- 3 more by the coordinator today (0abc4e3a) after the gates splits redded main. The clone/dup machinery can already detect verbatim-moved prose; INV006 should use it to stop making 'remember the carried waiver' a human step. Also applies to PII012's (file,token)-keyed allowlist entries which have the same code-moves-need-new-entries failure mode (T-1076 precedent).
