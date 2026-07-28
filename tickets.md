@@ -549,6 +549,9 @@ created: '2026-07-20'
 priority: medium
 blocked_by:
 - T-0373
+- T-1072
+- T-1076
+- T-1074
 parent: T-0376
 tier: ticket
 sprint: null
@@ -561,7 +564,6 @@ After T-0373 re-thresholds frob-arch large-file to 800 lines / 60 (function), ad
 
 ## Failure log
 - 2026-07-28 attempt 1: 31 in-scope large-file findings after T-0373 calibration (43 total minus 12 strata/vet sibling-owned), up to 12047 lines (gates/__init__.py); large-file is unwaivable per docs/modules/gates.md, real splits needed -- too large for one pass, decomposition tickets filed
-
 <!-- ticket:T-0397 -->
 ```yaml
 id: T-0397
