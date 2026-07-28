@@ -37,6 +37,7 @@ from frob.strata import (
     NoFlow,
     Quantity,
     Rung,
+    Waiver,
 )
 from frob.strata._audit import (
     DEFAULT_QUALITY_VIEWS,
@@ -90,6 +91,7 @@ def _assumed_claim(claim_id: str, *, src: str, dst: str) -> Claim:
 
 
 class TestExhaustiveness:
+    # frob:ticket T-1157
     # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
     def test_clean_proved(self):
         model = KernelModel(nodes=(Node(id="api", trust="trusted"),))
@@ -102,6 +104,34 @@ class TestExhaustiveness:
         assert "security:owasp-top-10" in report.views_checked
         assert "quality:web-quality-security-baseline" in report.views_checked
         assert "compliance:all-regulations" in report.views_checked
+
+    # frob:ticket T-1157
+    # frob:tests src/frob/strata/_audit.py::_gap_rule_in_scope kind="unit"
+    def test_sys205_waiver_is_not_reported_stale_by_exhaustiveness_pass(self):
+        """T-1157: `check_mode_conformance` owns SYS205's own `apply_waivers`
+        call (same as SYS200-203/REL200-201 already did before it) -- a
+        `waive "SYS205:..."` clause must not ALSO be re-judged (and found
+        stale) by this exhaustiveness pass's own `apply_waivers` call,
+        since `gaps` here never contains a SYS205 finding at all (SYS205
+        findings live entirely in `check_mode_conformance`'s own report).
+        Regression for the bug filed by the w18-strata3 agent: the
+        exhaustiveness pass's `_gap_rule_in_scope` predicate did not
+        exclude SYS205, so every declared SYS205 waiver was unconditionally
+        reported SYSWAIVE002-stale here regardless of whether the real
+        SYS205 evaluator matched and waived it."""
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="api",
+                    trust="trusted",
+                    waives=(Waiver(rule="SYS205:some-resource", reason="test"),),
+                ),
+            )
+        )
+        result = evaluate_exhaustiveness(model, known_rule_ids=_KNOWN_RULE_IDS)
+        assert result.is_ok
+        report = result.danger_ok
+        assert not any(gap.rule == "SYSWAIVE002" for gap in report.gaps)
 
     # frob:ticket T-0512
     # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"

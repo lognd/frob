@@ -62,6 +62,7 @@ from ._errors import StrataError
 from ._host import host_manifest_for
 from ._host_isolation import HostIsolationViolation, evaluate_host_isolation_waived
 from ._lint import LintViolation, evaluate_lint
+from ._mode_conformance import SYS_MODE_NONCONFORMANCE
 from ._models import KernelModel, Verdict
 from ._pii import PiiViolation, evaluate_pii
 from ._reliability import RELIABILITY_RULES
@@ -961,16 +962,20 @@ def _apply_gap_waivers(
     )
 
 
+# frob:ticket T-1157
+# frob:tests tests/unit/strata/test_audit.py::TestExhaustiveness.test_sys205_waiver_is_not_reported_stale_by_exhaustiveness_pass  # noqa: E501
 def _gap_rule_in_scope(rule: str) -> bool:
     """Excludes rule ids that own their own waiver channel
-    (SYS100-102, HOST001/HOST002, SYS200-203, REL200/REL201/REL210/
-    REL211)."""
+    (SYS100-102, HOST001/HOST002, SYS200-203, SYS205, REL200/REL201/
+    REL210/REL211)."""
     # T-0174: this predicate sees every THREAT/LINT/PII/compliance/
     # CVE-fingerprint finding -- everything EXCEPT SYS100-102 (owned by
     # `check_self_conformance`), HOST001/HOST002 (owned by
     # `evaluate_host_isolation_waived`, T-0280), SYS200-203 (T-0724:
     # owned by `check_resource_contention`'s own `apply_waivers` call,
-    # `_contention.py::_apply_contention_waivers`), and REL200/REL201/
+    # `_contention.py::_apply_contention_waivers`), SYS205 (T-1061/T-1157:
+    # owned by `check_mode_conformance`'s own `apply_waivers` call,
+    # `_mode_conformance.py::check_mode_conformance`), and REL200/REL201/
     # REL210/REL211 (T-0640/T-0644: owned by `check_reliability_timeouts`/
     # `check_reliability_health`'s shared `apply_waivers` call,
     # `_reliability.py::_apply_reliability_waivers`) -- each of
@@ -982,15 +987,18 @@ def _gap_rule_in_scope(rule: str) -> bool:
     # its own pass -- a real cross-family collision, not a hypothetical
     # one (T-0724 review round surfaced it for SYS20X on frob's own
     # design/frob.strata; T-0640 hit the identical collision for REL200
-    # on the SAME file's cache-fill waivers). Excluding those rule ids
-    # here (rather than enumerating every rule this call DOES own) keeps
-    # this predicate correct as new gap-producing rule families are
-    # added -- a new rule id is in scope here by default, exactly like
-    # `gaps` itself already is.
+    # on the SAME file's cache-fill waivers; T-1157 hit the identical
+    # collision for SYS205 mode-conformance waivers on the SAME file's
+    # `tickets_ledger` resource). Excluding those rule ids here (rather
+    # than enumerating every rule this call DOES own) keeps this
+    # predicate correct as new gap-producing rule families are added --
+    # a new rule id is in scope here by default, exactly like `gaps`
+    # itself already is.
     return rule not in (
         SYS_UNDECLARED_INTERFACE,
         SYS_STALE_DESIGN,
         SYS_UNMODELED_CODE,
+        SYS_MODE_NONCONFORMANCE,
         *_HOST_RULE_IDS,
         *RESOURCE_CONTENTION_RULES,
         *RELIABILITY_RULES,
