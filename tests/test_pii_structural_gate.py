@@ -603,7 +603,8 @@ class TestSelfMatchExclusion:
             rel_paths.append(f"src/frob/gates/_pii_structural/{module_path.name}")
         _commit(tmp_path)
         violations = pii_structural_gate(tmp_path)
-        assert not any(v.file in rel_paths for v in violations)
+        rel_path_set = set(rel_paths)
+        assert not any(v.file in rel_path_set for v in violations)
 
 
 class TestGateIsGreenOnItself:

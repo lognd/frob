@@ -6,6 +6,13 @@ identifier-text) allowlist keyed by OTHER modules' paths, not this
 package's own -- when a symref in that table moves to a new file (a
 split like this one), its (file, token) entry must move with it, per the
 same discipline this table's own header comment documents."""
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/gates/_pii_structural/_keywords.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim -- carried from the \
+# pre-T-1076-split monolith's identical file-level waiver"
 
 from __future__ import annotations
 
