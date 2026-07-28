@@ -797,7 +797,7 @@ class TestTrackedFilesGitFailure:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
         from typani import Err
 
-        from frob.gates import _secrets
+        from frob.gates import _tracked_files
         from frob.gitio import GitError
 
         repo = tmp_path / "repo"
@@ -808,7 +808,7 @@ class TestTrackedFilesGitFailure:
         def _fake_run_argv(argv: object, **kwargs: object) -> object:
             return Err(GitError.GitFailed)
 
-        monkeypatch.setattr(_secrets, "run_argv", _fake_run_argv)
+        monkeypatch.setattr(_tracked_files, "run_argv", _fake_run_argv)
 
         violations = secrets_gate(repo)
         assert violations == ()
@@ -819,7 +819,7 @@ class TestTrackedFilesGitFailure:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
         from typani import Ok
 
-        from frob.gates import _secrets
+        from frob.gates import _tracked_files
         from frob.gitio import ProcResult
 
         repo = tmp_path / "repo"
@@ -837,7 +837,7 @@ class TestTrackedFilesGitFailure:
                 )
             )
 
-        monkeypatch.setattr(_secrets, "run_argv", _fake_run_argv)
+        monkeypatch.setattr(_tracked_files, "run_argv", _fake_run_argv)
 
         violations = secrets_gate(repo)
         assert violations == ()

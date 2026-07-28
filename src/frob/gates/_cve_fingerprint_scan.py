@@ -43,7 +43,7 @@ from typing import TYPE_CHECKING
 from frob.excludes import is_excluded, load_exclude_globs
 from frob.gates._models import Severity, Violation
 from frob.gates._parse_failures import local_parse001_violation
-from frob.gitio import run_argv
+from frob.gates._tracked_files import tracked_files as _shared_tracked_files
 from frob.logging import get_logger
 
 if TYPE_CHECKING:
@@ -94,23 +94,6 @@ def _language_for(rel_path: str) -> str | None:
     return _EXT_LANGUAGE.get(suffix)
 
 
-def _tracked_files(root: Path) -> tuple[str, ...]:
-    """`git ls-files` under `root`, root-relative POSIX paths, `()` on any
-    git failure -- mirrors `frob.gates._secrets._tracked_files`'s
-    degrade-don't-crash posture (same `run_argv` seam)."""
-    spawned = run_argv(("git", "-C", str(root), "ls-files"))
-    if spawned.is_err:
-        _log.error(
-            "cve_fingerprint_scan_gate: git ls-files failed: %s", spawned.danger_err
-        )
-        return ()
-    result = spawned.danger_ok
-    if result.returncode != 0:
-        _log.error(
-            "cve_fingerprint_scan_gate: git ls-files exited %d", result.returncode
-        )
-        return ()
-    return tuple(line for line in result.stdout.splitlines() if line.strip())
 
 
 # frob:ticket T-0897
@@ -200,7 +183,7 @@ def cve_fingerprint_scan_gate(root: Path) -> tuple[Violation, ...]:
     exclude_globs = load_exclude_globs(root)
     violations: list[Violation] = []
     scanned = 0
-    for rel_path in _tracked_files(root):
+    for rel_path in _shared_tracked_files(root, caller="cve_fingerprint_scan_gate"):
         if rel_path in _SELF_EXCLUDED_FILES:
             _log.debug("cve_fingerprint_scan_gate: skipping self-excluded %s", rel_path)
             continue

@@ -101,7 +101,7 @@ from typing import NamedTuple
 
 from frob.excludes import is_excluded, load_exclude_globs
 from frob.gates._models import Severity, Violation
-from frob.gitio import run_argv
+from frob.gates._tracked_files import tracked_files as _shared_tracked_files
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -182,23 +182,6 @@ def _is_collectible_test_filename(rel_path: str) -> bool:
         or ".test" in pure.name
         or "_test." in pure.name
     )
-
-
-def _tracked_files(root: Path) -> tuple[str, ...]:
-    """Every git-tracked file under `root`, repo-relative POSIX paths.
-
-    Degrades to `()` (no candidates, no violations) rather than raising on
-    a git failure -- consistent with every other gate's "missing state
-    skips the gate, never crashes `frob check`" posture."""
-    spawned = run_argv(("git", "-C", str(root), "ls-files"))
-    if spawned.is_err:
-        _log.warning("ref_gate: git ls-files failed: %s", spawned.danger_err)
-        return ()
-    result = spawned.danger_ok
-    if result.returncode != 0:
-        _log.warning("ref_gate: git ls-files exited %d", result.returncode)
-        return ()
-    return tuple(line for line in result.stdout.splitlines() if line)
 
 
 def _load_allowlist(root: Path) -> dict[str, str]:
@@ -779,7 +762,7 @@ def ref_gate(root: Path) -> tuple[Violation, ...]:
     WARN-only (never blocks a build): every orphan must eventually be
     waived-with-reason or fixed, but this gate itself never fails `frob
     check`'s exit code."""
-    tracked = _tracked_files(root)
+    tracked = _shared_tracked_files(root, caller="ref_gate")
     if not tracked:
         _log.info("ref_gate: no tracked files found, skipping")
         return ()
