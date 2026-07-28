@@ -2508,7 +2508,7 @@ Verification run in this worktree (post-merge of T-0893's landed main):
 ```yaml
 id: T-0936
 title: migrate existing EPIC-titled tickets to tier=epic
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-07-26'
@@ -2537,7 +2537,6 @@ whether that requires a human judgment call per ticket.
 Acceptance: GIVEN the ledger as it stood at T-0715 land WHEN this
 migration runs THEN every ticket whose title matched the EPIC convention
 carries `tier: epic` afterward, and no other ticket's tier changed.
-
 <!-- ticket:T-0938 -->
 ```yaml
 id: T-0938
