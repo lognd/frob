@@ -50,35 +50,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from frob.gates._models import Severity, Violation
-from frob.gitio import run_argv
+from frob.gates._tracked_files import tracked_files as _shared_tracked_files
 from frob.lang import supported_extensions
 from frob.logging import get_logger
 from frob.vet._capability import _opaque_indirection_findings
 
 _log = get_logger(__name__)
-
-
-# frob:ticket T-0665
-# frob:waive PII012 reason="'_cve_fingerprint_scan' in the DUP001 waiver comment above \
-# is a module name (frob.gates._cve_fingerprint_scan), not a biometric-fingerprint \
-# reference -- PII012's keyword match is a naming coincidence"
-def _tracked_files(root: Path) -> tuple[str, ...]:
-    """`git ls-files` under `root`, root-relative POSIX paths, `()` on any
-    git failure -- mirrors every other gate module's own private copy of
-    this exact shape (`frob.gates._secrets`/`_refs`/`_exclude_hazard`/
-    `_cve_fingerprint_scan`), the established parallel-gate-scaffolding
-    pattern this repo already accepts as a DUP001 false pair."""
-    spawned = run_argv(("git", "-C", str(root), "ls-files"))
-    if spawned.is_err:
-        _log.warning("opaque_gate: git ls-files failed: %s", spawned.danger_err)
-        return ()
-    result = spawned.danger_ok
-    if result.returncode != 0:
-        _log.warning("opaque_gate: git ls-files exited %d", result.returncode)
-        return ()
-    files = tuple(line for line in result.stdout.splitlines() if line.strip())
-    _log.debug("opaque_gate: %d tracked file(s)", len(files))
-    return files
 
 
 # frob:doc docs/modules/gates.md#public-api
@@ -110,7 +87,7 @@ def opaque_gate(root: Path) -> tuple[Violation, ...]:
     exts = set(supported_extensions())
     violations: list[Violation] = []
     scanned = 0
-    for rel_path in _tracked_files(root):
+    for rel_path in _shared_tracked_files(root, caller="opaque_gate"):
         if Path(rel_path).suffix not in exts:
             continue
         abs_path = root / rel_path

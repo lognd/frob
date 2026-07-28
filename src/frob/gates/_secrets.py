@@ -104,7 +104,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from frob.gates._models import Severity, Violation
-from frob.gitio import run_argv
+from frob.gates._tracked_files import tracked_files as _shared_tracked_files
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -919,7 +919,7 @@ def fake_marker_staleness_gate(root: Path) -> tuple[Violation, ...]:
     exactly (git-tracked files only, unreadable/binary files skipped)."""
     root = Path(root)
     violations: list[Violation] = []
-    for rel_path in _tracked_files(root):
+    for rel_path in _shared_tracked_files(root, caller="secrets_gate"):
         try:
             text = (root / rel_path).read_text(encoding="utf-8", errors="strict")
         except (OSError, UnicodeDecodeError):
@@ -1041,29 +1041,6 @@ def _is_env_file(rel_path: str) -> bool:
     return name == ".env" or name.startswith(".env.")
 
 
-def _tracked_files(root: Path) -> tuple[str, ...]:
-    """`git ls-files` under `root`, root-relative POSIX paths, `()` on any
-    git failure (no repo, git missing) -- mirrors `frob.gitio`'s
-    degrade-don't-crash posture for git subprocess calls (same `run_argv`
-    seam `frob.gates` already uses elsewhere, e.g. `_changelog_mentions`).
-
-    Logs at WARNING (T-0705), not ERROR: a git-less target (no `.git`,
-    or `git` itself unavailable) is a supported, silently-empty scan --
-    the same posture `ref_gate`/`doc004` already use for the identical
-    condition (docs/modules/gates.md#git-less-target-contract-t-0705)."""
-    spawned = run_argv(("git", "-C", str(root), "ls-files"))
-    if spawned.is_err:
-        _log.warning("secrets_gate: git ls-files failed: %s", spawned.danger_err)
-        return ()
-    result = spawned.danger_ok
-    if result.returncode != 0:
-        _log.warning("secrets_gate: git ls-files exited %d", result.returncode)
-        return ()
-    files = tuple(line for line in result.stdout.splitlines() if line.strip())
-    _log.debug("secrets_gate: %d tracked file(s)", len(files))
-    return files
-
-
 # frob:doc docs/modules/gates.md#public-api
 # frob:tests tests/test_secrets_gate.py::TestFindsTokens.test_stripe_live_key_sec003
 # frob:tests tests/test_secrets_gate.py::TestFakeMarking.test_fake_marker_same_line
@@ -1083,7 +1060,7 @@ def secrets_gate(root: Path) -> tuple[Violation, ...]:
     root = Path(root)
     violations: list[Violation] = []
     scanned = 0
-    for rel_path in _tracked_files(root):
+    for rel_path in _shared_tracked_files(root, caller="secrets_gate"):
         if _is_env_file(rel_path):
             violations.append(_env002_violation(rel_path))
         try:

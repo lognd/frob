@@ -36,7 +36,7 @@ from pathlib import Path
 
 from frob import gitio
 from frob.gates._models import Severity, Violation
-from frob.gitio import run_argv
+from frob.gates._tracked_files import tracked_files as _shared_tracked_files
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -97,21 +97,6 @@ def _pattern_prefix(pattern: str) -> str:
     return prefix.rstrip("/")
 
 
-def _tracked_files(root: Path) -> tuple[str, ...]:
-    """`git ls-files` under `root`, root-relative POSIX paths, `()` on any
-    git failure -- same degrade-don't-crash seam `frob.gates._secrets`
-    uses (`run_argv`)."""
-    spawned = run_argv(("git", "-C", str(root), "ls-files"))
-    if spawned.is_err:
-        _log.error("exclude_hazard: git ls-files failed: %s", spawned.danger_err)
-        return ()
-    result = spawned.danger_ok
-    if result.returncode != 0:
-        _log.error("exclude_hazard: git ls-files exited %d", result.returncode)
-        return ()
-    return tuple(line for line in result.stdout.splitlines() if line.strip())
-
-
 def _shadows_tracked_path(prefix: str, tracked: tuple[str, ...]) -> bool:
     """True if `prefix` names an exact tracked file, or a directory prefix
     under which at least one tracked file lives -- either shape means the
@@ -145,7 +130,7 @@ def exclude_hazard_gate(root: Path) -> tuple[Violation, ...]:
     entries = _exclude_entries(exclude_path)
     if not entries:
         return ()
-    tracked = _tracked_files(root)
+    tracked = _shared_tracked_files(root, caller="exclude_hazard")
     if not tracked:
         return ()
     violations: list[Violation] = []
