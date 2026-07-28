@@ -1415,6 +1415,17 @@ def check_catalog_completeness(
 
 
 # frob:enforces CHK-GATE-THREAT002
+# frob:enforces CWE-78
+# frob:enforces CWE-79
+# frob:enforces CWE-89
+# frob:enforces CWE-94
+# frob:enforces CWE-502
+# frob:enforces CWE-639
+# frob:enforces CWE-918
+# frob:enforces CWE-922
+# T-0684: the 8 weaknesses.yaml CWE entries this function's deny-by-default
+# capability-kind check actually enforces, cross-checked against CWE_CATALOG/
+# CWE_TOP_25_CATALOG's real (non-None) capability_kind rows above.
 def _capability_violation(kind: str, node_id: str) -> ThreatViolation:
     """THREAT002 violation helper: deny-by-default unclassified capability
     kind (docs/strata/threat.md#phasing item B)."""

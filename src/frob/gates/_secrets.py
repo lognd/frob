@@ -969,6 +969,9 @@ def _scan_line(
     return hits
 
 
+# frob:enforces CWE-798
+# T-0684: weaknesses.yaml's CWE-798 (Use of Hard-coded Credentials) is
+# handled_by:SEC001 -- this is the emitting site.
 def _secret_violation(
     pattern: _SecretPattern, token: str, rel_path: str, index: int
 ) -> Violation:

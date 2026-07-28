@@ -81,7 +81,7 @@ cwe_entries:
   abstraction: Class
   parents: '707'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- improper input validation names no structural precondition of its own, it is the generic parent of the specific sink-typed injection ids already cataloged (frob.strata._threat.CWE_TOP_25_OUT_OF_SCOPE's CWE-20 row, T-0143/T-0345); caught_by the specific sink-typed injection CWEs already in CWE_CATALOG (CWE-79/CWE-89/CWE-78, handled_by:THREAT002)"
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-22
@@ -89,7 +89,7 @@ cwe_entries:
   abstraction: Base
   parents: '706'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- path traversal is cataloged in frob.strata._threat.CWE_CATALOG (T-0143) as a citation-only precondition (capability_kind=None, mitigation=path_confinement): THREAT001 can cite it for a hand-written precondition claim, but no auto-instantiated capability kind exists for a generic filesystem-path sink yet, so it does not auto-fire the way CWE-79/89/78 do -- phase B/C sink-taxonomy territory, docs/strata/threat.md#capabilities-drag-in-obligations"
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-23
@@ -440,7 +440,7 @@ cwe_entries:
   abstraction: Class
   parents: '74'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- generic command injection is the parent category of CWE-78's already-cataloged OS-command instance, firing on the SAME exec-capability precondition with no kernel-detectable distinction (frob.strata._threat.CWE_TOP_25_OUT_OF_SCOPE's CWE-77 row, T-0143/T-0345); caught_by CWE-78 in CWE_CATALOG (handled_by:THREAT002)"
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-78
@@ -448,7 +448,7 @@ cwe_entries:
   abstraction: Base
   parents: '77'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: handled_by:THREAT002
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-79
@@ -456,7 +456,7 @@ cwe_entries:
   abstraction: Base
   parents: '74'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: handled_by:THREAT002
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-80
@@ -527,7 +527,7 @@ cwe_entries:
   abstraction: Base
   parents: '943'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: handled_by:THREAT002
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-90
@@ -556,7 +556,7 @@ cwe_entries:
   abstraction: Base
   parents: 74,913
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: handled_by:THREAT002
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-95
@@ -718,7 +718,7 @@ cwe_entries:
   abstraction: Class
   parents: '118'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- improper restriction of operations within buffer bounds needs the same buffer/allocation/bounds model CWE-787/125 need and the kernel does not carry (same documented gap as frob.strata._threat.CWE_TOP_25_OUT_OF_SCOPE's CWE-787/CWE-125 rows); it models data flow and trust, not memory layout"
   cross_refs: []
 # T-0674 adjudication: AFFIRMED. RECONCILIATION.md finding (e) tension
 # (security-corpus.md's Top-25 "advisory/checkable" framing vs this
@@ -774,7 +774,7 @@ cwe_entries:
   abstraction: Base
   parents: '119'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- out-of-bounds read needs the same buffer/bounds model CWE-787 needs and the kernel does not carry (frob.strata._threat.CWE_TOP_25_OUT_OF_SCOPE's CWE-125 row, T-0143/T-0345)"
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-126
@@ -1174,7 +1174,7 @@ cwe_entries:
   abstraction: Base
   parents: '682'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- integer overflow/wraparound needs a numeric-range/wordsize model the kernel does not carry -- it has no concept of a typed integer's representable range or an arithmetic operation that can wrap, the same class of missing-numeric-model gap as the memory-layout gap CWE-787/125/119 already disclose"
   cross_refs: []
 - id: CWE-191
   name: Integer Underflow (Wrap or Wraparound)
@@ -1643,7 +1643,7 @@ cwe_entries:
   abstraction: Class
   parents: '284'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- improper privilege management needs an endpoint/route + privilege-level concept the kernel model has no field for, the same gap frob.strata._threat.CWE_TOP_25_OUT_OF_SCOPE's CWE-862/863 rows already name for authorization; not compensated elsewhere"
   cross_refs: []
 - id: CWE-270
   name: Privilege Context Switching Error
@@ -1686,7 +1686,7 @@ cwe_entries:
   abstraction: Base
   parents: '732'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- incorrect default permissions names a deployment/filesystem-ACL configuration weakness (what mode a created file or directory ends up with at runtime), not a property visible in a project's own source text the way a syntactic pattern is; a configuration/infrastructure-as-code scanner or deployment audit is the layer that could catch this, not frob's source-level checks"
   cross_refs: []
 - id: CWE-277
   name: Insecure Inherited Permissions
@@ -1767,7 +1767,7 @@ cwe_entries:
   abstraction: Class
   parents: '284'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- improper authentication needs an endpoint/route + authn-boundary concept the kernel model has no field for, the same gap frob.strata._threat.CWE_TOP_25_OUT_OF_SCOPE's CWE-306/862 rows already name; not compensated elsewhere"
   cross_refs: []
 - id: CWE-288
   name: Authentication Bypass Using an Alternate Path or Channel
@@ -1893,7 +1893,7 @@ cwe_entries:
   abstraction: Base
   parents: '287'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- missing authentication for a critical function needs the same endpoint/route + authn-boundary concept CWE-862 needs and the kernel does not carry (frob.strata._threat.CWE_TOP_25_OUT_OF_SCOPE's CWE-306 row, T-0143/T-0345)"
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-307
@@ -2202,7 +2202,7 @@ cwe_entries:
   abstraction: Compound
   parents: '345'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- CSRF is cataloged in frob.strata._threat.CWE_CATALOG (T-0143) as a citation-only precondition (capability_kind=None, mitigation=anti_csrf_token): a state-changing-endpoint concept the kernel model has no auto-instantiate join for yet, so it does not auto-fire the way CWE-79/89/78 do -- phase B/C sink-taxonomy territory"
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-353
@@ -2259,7 +2259,7 @@ cwe_entries:
   abstraction: Class
   parents: '662'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- a race condition needs a concurrent-execution/interleaving model (which operations can genuinely run concurrently, and whether a shared resource's access is synchronized) the kernel does not carry -- it models data flow and trust, not a scheduler's interleavings; not compensated elsewhere"
   cross_refs: []
 - id: CWE-363
   name: Race Condition Enabling Link Following
@@ -2553,7 +2553,7 @@ cwe_entries:
   abstraction: Variant
   parents: '825'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- use-after-free needs an allocator/object-lifetime model the kernel does not carry (frob.strata._threat.CWE_TOP_25_OUT_OF_SCOPE's CWE-416 row, T-0143/T-0345); no node/flow concept of allocation or deallocation exists"
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-419
@@ -2652,7 +2652,7 @@ cwe_entries:
   abstraction: Base
   parents: '669'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- unrestricted dangerous file upload needs a file-upload sink and a content-type-validation boundary predicate the kernel model has no field for (frob.strata._threat.CWE_TOP_25_OUT_OF_SCOPE's CWE-434 row, T-0143/T-0345)"
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-435
@@ -2891,7 +2891,7 @@ cwe_entries:
   abstraction: Base
   parents: 710,754
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- NULL pointer dereference needs a pointer/nullability model the kernel does not carry (frob.strata._threat.CWE_TOP_25_OUT_OF_SCOPE's CWE-476 row, T-0143/T-0345); it has no concept of a dereferenceable reference at all"
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-477
@@ -3060,7 +3060,7 @@ cwe_entries:
   abstraction: Base
   parents: '913'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: handled_by:THREAT002
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-506
@@ -3847,7 +3847,7 @@ cwe_entries:
   abstraction: Base
   parents: '863'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: handled_by:THREAT002
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-640
@@ -4520,7 +4520,7 @@ cwe_entries:
   abstraction: Base
   parents: '119'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- out-of-bounds write needs a buffer/allocation/bounds model the kernel has no vocabulary for (frob.strata._threat.CWE_TOP_25_OUT_OF_SCOPE's CWE-787 row, T-0143/T-0345); it models data flow and trust, not memory layout"
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-788
@@ -4598,7 +4598,7 @@ cwe_entries:
   abstraction: Base
   parents: 1391,344,671
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: handled_by:SEC001
   cross_refs: []
 - id: CWE-799
   name: Improper Control of Interaction Frequency
@@ -4801,7 +4801,7 @@ cwe_entries:
   abstraction: Class
   parents: '285'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- missing authorization needs an endpoint/route concept and an authz-boundary predicate the kernel model has no field for (frob.strata._threat.CWE_TOP_25_OUT_OF_SCOPE's CWE-862 row, T-0143/T-0345, same gap SEC-ROUTE-AUTHZ-001 names); not compensated elsewhere"
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-863
@@ -4809,7 +4809,7 @@ cwe_entries:
   abstraction: Class
   parents: '285'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: "out-of-scope:none -- incorrect authorization needs the same endpoint/route + authz-boundary concept CWE-862 needs and the kernel does not carry (frob.strata._threat.CWE_TOP_25_OUT_OF_SCOPE's CWE-863 row, T-0143/T-0345)"
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-908
@@ -4888,7 +4888,7 @@ cwe_entries:
   abstraction: Base
   parents: '441'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: handled_by:THREAT002
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-920
@@ -4910,7 +4910,7 @@ cwe_entries:
   abstraction: Class
   parents: '664'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0684
+  disposition: handled_by:THREAT002
   cross_refs: []
 - id: CWE-923
   name: Improper Restriction of Communication Channel to Intended Endpoints
