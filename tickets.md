@@ -1858,7 +1858,8 @@ frob:enforces/frob:doc/frob:waive directives intact.
 
 src/frob/gates/__init__.py: 10164 -> ~9802 lines (chunked -- part of the
 larger T-1077 remainder, does not by itself clear the large-file
-threshold; residue filed as T-draft-a418305e for the rest).
+threshold; residue refiled by the coordinator as T-1115 for the rest
+after the original draft died at land).
 New: src/frob/gates/_todo_fmt.py: 396 lines.
 
 Three call sites (_todo002_edges's _site_from_edge_origin/_OPEN_STATES,
@@ -1898,7 +1899,8 @@ warnings + 232 suggestions, none introduced by this change -- confirmed
 none reference src/frob/gates/_todo_fmt.py's own new abstraction shape
 beyond the pattern-recommendation noise already present repo-wide).
 
-Filed: T-draft-a418305e (remaining gate families: DEBT/DEPR, SCOPE/
+Filed: T-1115, a coordinator refile after the draft died at land
+(remaining gate families: DEBT/DEPR, SCOPE/
 PREWORK, INV00x, TEST00x, DECISIONS, TICK00x, COMPLIANCE00x, SYS00x/
 DOC00x, DUP00x, REL00x, FUZZ00x, DOCLINK/DOCANCHOR, PERF, run_gates
 spine, and COV00x which T-1077 also left untouched) -- this ticket's
@@ -2398,8 +2400,8 @@ No code was changed in `src/frob/arch/`; this ticket's actual output is
 the triage itself (so the next agent working this package does not
 re-derive it) plus one follow-up ticket proposing the actual code fix for
 class 1 above (the only class that is a genuine detector-precision gap
-rather than already-correct-as-designed): T-draft-372a1425 (renumbers at
-land), adding a `_is_check_registry_family`-style exclusion to
+rather than already-correct-as-designed): T-1112 (final id after
+renumbering at land), adding a `_is_check_registry_family`-style exclusion to
 `frob.arch._python._check_abstraction_opportunities` for a same-signature
 group where every member's bare name matches `^check_[a-z_]+$`.
 
@@ -2426,10 +2428,10 @@ touched).
 - error-findings: none (measured, zero errors)
 
 ## Failure log
-- 2026-07-28 attempt 1: triage of all 27 groups found none safely extractable in src/frob/arch/ scope without reversing prior reviewed design decisions (T-0686) or fragmenting deliberate check-registry/per-language-mirror conventions; filed T-draft-372a1425 for the one genuine detector-precision gap found
+- 2026-07-28 attempt 1: triage of all 27 groups found none safely extractable in src/frob/arch/ scope without reversing prior reviewed design decisions (T-0686) or fragmenting deliberate check-registry/per-language-mirror conventions; filed T-1112 for the one genuine detector-precision gap found
 
 ## Drop reason
-- 2026-07-28: triage of all 27 groups (read every member body) found none safely extractable in src/frob/arch/ scope without reversing a prior reviewed design decision (T-0686) or fragmenting the deliberate check-registry/per-language-mirror conventions; the one genuine detector-precision gap found is filed separately, not this ticket's own extraction plan (absorbed by T-draft-372a1425)
+- 2026-07-28: triage of all 27 groups (read every member body) found none safely extractable in src/frob/arch/ scope without reversing a prior reviewed design decision (T-0686) or fragmenting the deliberate check-registry/per-language-mirror conventions; the one genuine detector-precision gap found is filed separately, not this ticket's own extraction plan (absorbed by T-1112)
 
 <!-- ticket:T-1085 -->
 ```yaml
@@ -2818,11 +2820,12 @@ strict (cmd, cwd, check) signature that only anticipated the coverage
 command itself; widened both fakes to pass unrelated commands through to
 the real subprocess.run rather than TypeError-ing on the new spawn.
 
-Pre-existing, unrelated: `frob check` reports two TICK006 phantom-draft
-errors (T-1077/T-1084 citing dropped drafts T-draft-a418305e/
-T-draft-372a1425) and one INV006 (src/frob/gates/_todo_fmt.py) that
-predate this ticket and are outside its scope -- filed as
-T-draft-afde6fb3 rather than fixed here. ruff-format also flags
+Pre-existing, unrelated: `frob check` reported two TICK006 phantom-draft
+errors (T-1077/T-1084 done reports citing draft ids that died at land)
+and INV006 hits on the freshly split gates modules, all predating this
+ticket and outside its scope -- repaired inline by the coordinator
+(prose repointed at the refiled real ids T-1115/T-1112, split-carried
+INV006 waivers added) rather than fixed here. ruff-format also flags
 src/frob/gates/__init__.py and tests/test_app_daemon_proxy.py as
 needing reformatting; confirmed pre-existing on main (verified against
 the root checkout directly), not introduced by this change.
@@ -3553,3 +3556,33 @@ Out of T-1037's declared scope (that ticket is specifically about REG011
 out_of_scope-reason substantive-disclosure, already independently fixed
 by T-1019 before this wave started -- confirmed zero REG011 violations
 and the ticket's own named regression test passing on current main).
+
+<!-- ticket:T-1115 -->
+```yaml
+id: T-1115
+title: 'arch: split remaining ~14 gate families out of src/frob/gates/__init__.py
+  (~9802 lines) -- T-1077 residue refile'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- docs/modules/gates.md
+- tests/test_gates.py
+acceptance:
+- text: GIVEN src/frob/gates/__init__.py WHEN the remaining gate families (DEBT/DEPR,
+    SCOPE/PREWORK, INV00x, TEST00x, DECISIONS, TICK00x, COMPLIANCE00x, SYS00x/DOC00x,
+    DUP00x, REL00x, FUZZ00x, DOCLINK/DOCANCHOR, PERF, run_gates spine, COV00x) are
+    extracted one cohesive family per land THEN gates/__init__.py drops below the
+    800-line large-file threshold with no public API change and all existing tests
+    pass
+  evidence: []
+threat: null
+component: null
+```
+Refile of T-1077's residue draft, which died at land (TICK006 phantom repaired by the coordinator). T-1077 extracted the TODO00x/FMT001 family (gates/__init__.py 10164 -> ~9802); the remaining families follow T-1072/T-1077's one-family-per-land discipline: verbatim moves with directives intact, lazy call-time imports back to frob.gates where init-time circularity threatens, re-export only externally-called names, split-carried INV006 waivers where prose moves.

@@ -6,6 +6,14 @@ Kept together because both are diff/comment-scanning gates over the same
 `frob.lang`-parsed comment surface, distinct from the ticket-graph-shaped
 gates (COV/TICK/SCOPE) and the invariant/decision gates that stayed behind.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/gates/_todo_fmt.py's \
+# exclusivity-vocabulary hits are source-level design-rationale prose \
+# (docstrings and comments describing already-implemented internal \
+# behavior, verifiable by reading the code they annotate) rather than a \
+# separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim -- module prose \
+# split verbatim from the pre-T-1077 gates/__init__.py monolith"
 
 from __future__ import annotations
 
