@@ -35,6 +35,10 @@ real.
   narrowing a `.strata` `may` declaration to the precise `family.mode`
   capability spelling (`fs.read`/`fs.write`, `net.connect`/`net.listen`),
   plus the T-1071 fleet-routed ticket record for the sibling estate.
+- `docs/guides/estate-natives-build-rollout.md` -- the per-repo recipe for
+  converting a sibling's hand-rolled `maturin develop` Makefile step to
+  the one-line `frob natives build` shim, plus the T-1031 fleet-routed
+  ticket record for the sibling estate.
 
 ## Extending frob
 
