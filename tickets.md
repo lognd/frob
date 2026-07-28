@@ -542,7 +542,7 @@ existing test surface, all passing (see Evidence); `git diff main
 ```yaml
 id: T-0395
 title: 'advisories: large-file residue after calibrated thresholds (T-0373)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -558,6 +558,9 @@ threat: null
 component: null
 ```
 After T-0373 re-thresholds frob-arch large-file to 800 lines / 60 (function), address the residue that still exceeds 800 lines among the 34 large-file advisories: real module splits, or accepted-with-reason for files that don't decompose cleanly. Acceptance: frob check arch large-file advisories at the calibrated threshold reduced to zero unresolved.
+
+## Failure log
+- 2026-07-28 attempt 1: 31 in-scope large-file findings after T-0373 calibration (43 total minus 12 strata/vet sibling-owned), up to 12047 lines (gates/__init__.py); large-file is unwaivable per docs/modules/gates.md, real splits needed -- too large for one pass, decomposition tickets filed
 
 <!-- ticket:T-0397 -->
 ```yaml
@@ -5185,3 +5188,110 @@ in src/frob/app/ticket_runner.py. Keep the existing structural rules
 (epic/story parent-child conventions from T-0715) intact -- this ticket
 only adds the missing mutate-in-place verb, it does not change tier
 semantics.
+
+<!-- ticket:T-draft-1cbceecc -->
+```yaml
+id: T-draft-1cbceecc
+title: 'arch: split src/frob/gates/__init__.py (12047 lines, T-0395 remainder tier
+  1)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+threat: null
+component: null
+```
+Filed from T-0395 (failed as too large for one pass). Split
+src/frob/gates/__init__.py (12047 lines, the single largest offender by
+a wide margin) into per-gate-family submodules under src/frob/gates/
+(mirroring the existing _pii_structural.py/_docblocks.py/_secrets.py/
+_registry_exhaustiveness.py/_protocol_summary.py/_refs.py/_docptr.py
+sibling-module pattern already established in this package) -- e.g. one
+module per gate cluster (COV00x, WAIVE00x, TICK00x, DOC00x, TEST00x,
+etc.), re-exported from __init__.py so `frob.gates.<gate_fn>` call sites
+elsewhere keep working unchanged. This is a large, high-risk refactor
+(thousands of lines, dozens of gate functions with cross-references) --
+plan the split boundaries carefully before moving code, verify with the
+full gates test suite (tests/test_gates.py) after each chunk, and land
+incrementally rather than as one giant diff. large-file is unwaivable
+(docs/modules/gates.md); real decomposition is the only path to zero.
+
+<!-- ticket:T-draft-4d7f8c9c -->
+```yaml
+id: T-draft-4d7f8c9c
+title: 'arch: triage 800-2000 line file residue (T-0395 remainder tier 3)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/
+threat: null
+component: null
+```
+Filed from T-0395 (failed as too large for one pass). Remaining in-scope
+large-file residue under 2000 lines (frob-core/src/lib.rs 2277 --
+excluded, native crate, separate toolchain/ownership from the python
+gates split above; list the rest as of 2026-07-28):
+src/frob/tickets/_models.py (1658), src/frob/arch/_patterns.py (1486),
+src/frob/app/check_runner.py (1468), src/frob/gates/_docblocks.py (1460),
+src/frob/arch/_python.py (1267), src/frob/testing/_collect.py (1267),
+src/frob/gates/_protocol_summary.py (1244), src/frob/tickets/_leases.py
+(1191), src/frob/app/config.py (1118), src/frob/gates/_secrets.py (1108),
+src/frob/graph/dsl.py (1033), src/frob/gates/_docptr.py (1000),
+src/frob/gates/_registry_exhaustiveness.py (993), src/frob/check/__init__.py
+(958), src/frob/check/_python.py (936), src/frob/graph/__init__.py (869),
+strata-core/src/lib.rs (869, native crate -- confirm with the strata
+sibling ticket owner before touching), src/frob/app/sys_runner.py (851),
+src/frob/perf/_rules.py (845), src/frob/arch/_rust.py (838),
+src/frob/graph/callgraph.py (830), src/frob/perf/_effect_summaries.py
+(823), src/frob/gates/_refs.py (818). Triage into real splits vs.
+files that genuinely do not decompose cleanly (record the specific
+reason per file, per this ticket's acceptance framing) -- do not attempt
+all ~20 in one diff; group by subsystem and land incrementally, full
+suite verification per group.
+
+<!-- ticket:T-draft-9365e0df -->
+```yaml
+id: T-draft-9365e0df
+title: 'arch: split 2000-5000 line files (T-0395 remainder tier 2)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- src/frob/app/ticket_runner.py
+- src/frob/dup/_pipeline.py
+- src/frob/__main__.py
+- src/frob/gates/_pii_structural.py
+threat: null
+component: null
+```
+Filed from T-0395 (failed as too large for one pass). Second tier of the
+large-file residue (2000-5000 lines, in-scope after excluding
+src/frob/strata/**/vet/**): src/frob/tickets/_land.py (4658),
+src/frob/tickets/__init__.py (4048), src/frob/app/ticket_runner.py
+(3923), src/frob/dup/_pipeline.py (2628), src/frob/__main__.py (2593),
+src/frob/gates/_pii_structural.py (2170). Each needs its own module-split
+plan (real decomposition into cohesive sibling files, mirroring each
+package's existing pattern where one exists) and full-suite
+verification per file -- do not batch all six into one diff; land
+incrementally. large-file is unwaivable (docs/modules/gates.md); a file
+that genuinely does not decompose cleanly still needs the ticket to say
+so explicitly with the specific reason (not a silent skip), per this
+ticket's own acceptance framing.
