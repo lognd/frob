@@ -8545,11 +8545,11 @@ evidence:
 - strata-core/src/parse/mod.rs::tests::bare_ident_claim_id_still_parses
 - strata-core/src/parse/mod.rs::tests::error_unterminated_string_claim_id
 - strata-core/src/parse/mod.rs::tests::error_malformed_claim_id_neither_ident_nor_string
-- strata-core/src/parse/mod.rs::tests::parses_string_quoted_claim_id
-- strata-core/src/parse/mod.rs::tests::parses_string_quoted_claim_id_on_assume
-- strata-core/src/parse/mod.rs::tests::bare_ident_claim_id_still_parses
-- strata-core/src/parse/mod.rs::tests::error_unterminated_string_claim_id
-- strata-core/src/parse/mod.rs::tests::error_malformed_claim_id_neither_ident_nor_string
+- strata-core/src/parse.rs::tests::parses_string_quoted_claim_id
+- strata-core/src/parse.rs::tests::parses_string_quoted_claim_id_on_assume
+- strata-core/src/parse.rs::tests::bare_ident_claim_id_still_parses
+- strata-core/src/parse.rs::tests::error_unterminated_string_claim_id
+- strata-core/src/parse.rs::tests::error_malformed_claim_id_neither_ident_nor_string
 threat: null
 component: null
 ```
@@ -19328,7 +19328,7 @@ evidence:
 - tests/unit/strata/test_litmus_utility_hub.py::TestUtilityHubVulnLitmus::test_unmarked_hub_edge_refutes_the_noflow_claim
 - tests/unit/strata/test_litmus_utility_hub.py::TestUtilityHubHardenedLitmus::test_marked_utility_hub_edge_lets_the_noflow_claim_prove
 - strata-core/src/parse/mod.rs::tests::parses_flow_utility
-- strata-core/src/parse/mod.rs::tests::parses_flow_utility
+- strata-core/src/parse.rs::tests::parses_flow_utility
 threat: null
 component: null
 ```
@@ -66334,9 +66334,9 @@ evidence:
 - tests/unit/deploy/test_generate_windows.py::TestInstall::test_service_not_present_notes_missing_bin_path
 - tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_when_bin_path_declared
 - tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_without_args
-- strata-core/src/parse/mod.rs::tests::parses_node_bin_path_clause
-- strata-core/src/parse/mod.rs::tests::parses_node_bin_path_clause_without_args
-- strata-core/src/parse/mod.rs::tests::parses_store_bin_path_clause
+- strata-core/src/parse.rs::tests::parses_node_bin_path_clause
+- strata-core/src/parse.rs::tests::parses_node_bin_path_clause_without_args
+- strata-core/src/parse.rs::tests::parses_store_bin_path_clause
 acceptance:
 - text: GIVEN a windows node declaring service with a binPath WHEN install.ps1 is
     generated THEN it idempotently creates the SCM service with that image path before
@@ -66351,9 +66351,9 @@ acceptance:
   - tests/unit/deploy/test_generate_windows.py::TestInstall::test_service_not_present_notes_missing_bin_path
   - tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_when_bin_path_declared
   - tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_without_args
-  - strata-core/src/parse/mod.rs::tests::parses_node_bin_path_clause
-  - strata-core/src/parse/mod.rs::tests::parses_node_bin_path_clause_without_args
-  - strata-core/src/parse/mod.rs::tests::parses_store_bin_path_clause
+  - strata-core/src/parse.rs::tests::parses_node_bin_path_clause
+  - strata-core/src/parse.rs::tests::parses_node_bin_path_clause_without_args
+  - strata-core/src/parse.rs::tests::parses_store_bin_path_clause
 threat: null
 component: null
 ```
@@ -74965,15 +74965,15 @@ evidence:
 - tests/unit/strata/test_access.py::TestResourceContentionViolations::test_unrelated_resources_do_not_cross_conflict
 - tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
 - tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
-- strata-core/src/parse/mod.rs::tests::parses_node_access_clause
-- strata-core/src/parse/mod.rs::tests::parses_store_access_clause
-- strata-core/src/parse/mod.rs::tests::parses_all_access_modes
-- strata-core/src/parse/mod.rs::tests::error_access_rejects_unknown_mode
-- strata-core/src/parse/mod.rs::tests::error_access_requires_mode_keyword
-- strata-core/src/parse/mod.rs::tests::parses_resource_with_arbitrated_by
-- strata-core/src/parse/mod.rs::tests::parses_resource_with_lock
-- strata-core/src/parse/mod.rs::tests::parses_bare_resource_with_no_arbiter
-- strata-core/src/parse/mod.rs::tests::error_resource_rejects_both_arbitrated_by_and_lock
+- strata-core/src/parse.rs::tests::parses_node_access_clause
+- strata-core/src/parse.rs::tests::parses_store_access_clause
+- strata-core/src/parse.rs::tests::parses_all_access_modes
+- strata-core/src/parse.rs::tests::error_access_rejects_unknown_mode
+- strata-core/src/parse.rs::tests::error_access_requires_mode_keyword
+- strata-core/src/parse.rs::tests::parses_resource_with_arbitrated_by
+- strata-core/src/parse.rs::tests::parses_resource_with_lock
+- strata-core/src/parse.rs::tests::parses_bare_resource_with_no_arbiter
+- strata-core/src/parse.rs::tests::error_resource_rejects_both_arbitrated_by_and_lock
 acceptance:
 - text: GIVEN two nodes with write-mode access to one resource and no arbiter WHEN
     sys checks run THEN a fail-closed error; GIVEN the same with a declared arbiter
@@ -75006,15 +75006,15 @@ acceptance:
   - tests/unit/strata/test_access.py::TestResourceContentionViolations::test_unrelated_resources_do_not_cross_conflict
   - tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
   - tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
-  - strata-core/src/parse/mod.rs::tests::parses_node_access_clause
-  - strata-core/src/parse/mod.rs::tests::parses_store_access_clause
-  - strata-core/src/parse/mod.rs::tests::parses_all_access_modes
-  - strata-core/src/parse/mod.rs::tests::error_access_rejects_unknown_mode
-  - strata-core/src/parse/mod.rs::tests::error_access_requires_mode_keyword
-  - strata-core/src/parse/mod.rs::tests::parses_resource_with_arbitrated_by
-  - strata-core/src/parse/mod.rs::tests::parses_resource_with_lock
-  - strata-core/src/parse/mod.rs::tests::parses_bare_resource_with_no_arbiter
-  - strata-core/src/parse/mod.rs::tests::error_resource_rejects_both_arbitrated_by_and_lock
+  - strata-core/src/parse.rs::tests::parses_node_access_clause
+  - strata-core/src/parse.rs::tests::parses_store_access_clause
+  - strata-core/src/parse.rs::tests::parses_all_access_modes
+  - strata-core/src/parse.rs::tests::error_access_rejects_unknown_mode
+  - strata-core/src/parse.rs::tests::error_access_requires_mode_keyword
+  - strata-core/src/parse.rs::tests::parses_resource_with_arbitrated_by
+  - strata-core/src/parse.rs::tests::parses_resource_with_lock
+  - strata-core/src/parse.rs::tests::parses_bare_resource_with_no_arbiter
+  - strata-core/src/parse.rs::tests::error_resource_rejects_both_arbitrated_by_and_lock
 threat: null
 component: null
 ```
@@ -75261,11 +75261,11 @@ evidence:
 - tests/unit/strata/test_demand.py::test_store_users_and_rate_elaborate_same_as_node
 - tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
 - tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
-- strata-core/src/parse/mod.rs::tests::parses_node_users_and_rate
-- strata-core/src/parse/mod.rs::tests::parses_node_without_users_or_rate_defaults_null
-- strata-core/src/parse/mod.rs::tests::parses_node_users_only_no_rate
-- strata-core/src/parse/mod.rs::tests::parses_store_users_and_rate
-- strata-core/src/parse/mod.rs::tests::parses_node_rate_does_not_collide_with_capacity_rate
+- strata-core/src/parse.rs::tests::parses_node_users_and_rate
+- strata-core/src/parse.rs::tests::parses_node_without_users_or_rate_defaults_null
+- strata-core/src/parse.rs::tests::parses_node_users_only_no_rate
+- strata-core/src/parse.rs::tests::parses_store_users_and_rate
+- strata-core/src/parse.rs::tests::parses_node_rate_does_not_collide_with_capacity_rate
 acceptance:
 - text: GIVEN two entry nodes declaring users 300k and 200k both flowing into one
     db resource WHEN elaboration runs THEN the db's aggregate demand is 500k and queryable;
@@ -75287,11 +75287,11 @@ acceptance:
   - tests/unit/strata/test_demand.py::test_store_users_and_rate_elaborate_same_as_node
   - tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
   - tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
-  - strata-core/src/parse/mod.rs::tests::parses_node_users_and_rate
-  - strata-core/src/parse/mod.rs::tests::parses_node_without_users_or_rate_defaults_null
-  - strata-core/src/parse/mod.rs::tests::parses_node_users_only_no_rate
-  - strata-core/src/parse/mod.rs::tests::parses_store_users_and_rate
-  - strata-core/src/parse/mod.rs::tests::parses_node_rate_does_not_collide_with_capacity_rate
+  - strata-core/src/parse.rs::tests::parses_node_users_and_rate
+  - strata-core/src/parse.rs::tests::parses_node_without_users_or_rate_defaults_null
+  - strata-core/src/parse.rs::tests::parses_node_users_only_no_rate
+  - strata-core/src/parse.rs::tests::parses_store_users_and_rate
+  - strata-core/src/parse.rs::tests::parses_node_rate_does_not_collide_with_capacity_rate
 threat: null
 component: null
 ```

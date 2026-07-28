@@ -242,6 +242,10 @@ capability may-analysis (T-0339), and conformance totality (T-0341):
 - `docs/design/language-adapter-tier-decision.md` -- T-0691's decision on
   the next language-adapter tier (Go/Java/C#): none for now, demand-driven
   per the 9-repo estate's actual language mix, with a reopen criterion.
+- `docs/design/tickets-package-scope-precedent.md` -- T-1145's decision on
+  when a ticket may legitimately declare the broad `src/frob/tickets/**`
+  scope glob (package-wide redesign/residue work) vs. when SCOPE002's
+  nudge means narrow it to the specific module(s) touched.
 - `docs/design/registry/` -- the UNIFIED design-knowledge registry: the
   single machine-readable source of truth (per-domain YAML, canonical
   namespaced ids, cross-refs, per-entry disposition) that all the corpus
