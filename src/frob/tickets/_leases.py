@@ -545,7 +545,8 @@ def _without_agent_commit_guard() -> Iterator[None]:
         yield
     finally:
         if prior is not None:
-            # frob:waive SEC110 reason="restoring a dispatch-context marker, not a secret"
+            # frob:waive SEC110 reason="restoring a dispatch-context \
+            # marker, not a secret"
             os.environ["FROB_AGENT"] = prior
 
 
