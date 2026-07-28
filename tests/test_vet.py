@@ -2149,7 +2149,7 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         pkg.write_text(
             "use std::process::Command as C;\n"
             'macro_rules! run { ($x:expr) => { C::new("sh").arg($x).spawn() } }\n'
-            "fn f() { run!(\"x\"); }\n"
+            'fn f() { run!("x"); }\n'
         )
         assert "exec" not in scan_file_capabilities(pkg)
 
@@ -2365,9 +2365,7 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    def test_class_field_holding_bound_reference_detected(
-        self, tmp_path: Path
-    ) -> None:
+    def test_class_field_holding_bound_reference_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         # T-0666: taxonomy "class field/method holding a bound reference"
         # row (`class C { run = cp.exec; }`). `_capability.py` documents
@@ -3414,7 +3412,7 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
         pkg = tmp_path / "pkg.cpp"
         pkg.write_text(
             "namespace ns { struct Tag {}; void system(Tag, const char*); }\n"
-            "void g(ns::Tag t) { system(t, \"sh\"); }\n"
+            'void g(ns::Tag t) { system(t, "sh"); }\n'
         )
         assert "exec" in scan_file_capabilities(pkg)
 
@@ -3691,14 +3689,10 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         from frob.vet._capability import scan_file_capabilities
 
         pkg = tmp_path / "pkg.kt"
-        pkg.write_text(
-            "val (a, b) = Pair(::ProcessBuilder, 0)\nfun g() { a(\"sh\") }\n"
-        )
+        pkg.write_text('val (a, b) = Pair(::ProcessBuilder, 0)\nfun g() { a("sh") }\n')
         assert "exec" not in scan_file_capabilities(pkg)
 
-    def test_lambda_closure_capturing_bound_name_detected(
-        self, tmp_path: Path
-    ) -> None:
+    def test_lambda_closure_capturing_bound_name_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         # T-0666: taxonomy "lambda/closure capturing a bound name" row:
         # `val f = ::runCmd; val g = { x: String -> f(x) }; g(x)`. The
@@ -3731,7 +3725,7 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
 
         pkg = tmp_path / "pkg.kt"
         pkg.write_text(
-            "fun call(cb: (String) -> Unit = ::ProcessBuilder) { cb(\"sh\") }\n"
+            'fun call(cb: (String) -> Unit = ::ProcessBuilder) { cb("sh") }\n'
         )
         assert "exec" not in scan_file_capabilities(pkg)
 
@@ -3774,7 +3768,7 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
             "import java.lang.Runtime\n"
             "class Handler { operator fun invoke(x: String) { "
             "Runtime.getRuntime() } }\n"
-            "fun g() { val h = Handler(); h(\"sh\") }\n"
+            'fun g() { val h = Handler(); h("sh") }\n'
         )
         assert scan_file_capabilities(pkg) == frozenset()
 
@@ -5753,9 +5747,7 @@ class TestOpaqueIndirectionGate:
         findings = _opaque_indirection_findings(pkg)
         assert any(f.construct_name == "setattr" for f in findings)
 
-    def test_python_container_dynamic_key_not_addressed(
-        self, tmp_path: Path
-    ) -> None:
+    def test_python_container_dynamic_key_not_addressed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "callable in a container, dynamic key" row: `handlers
         # [key](x)`. No `RUNTIME_OPAQUE_CONSTRUCTS` entry exists for this
@@ -5763,31 +5755,30 @@ class TestOpaqueIndirectionGate:
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
-        pkg.write_text(
-            'handlers = {"a": subprocess.run}\nhandlers[key](x)\n'
-        )
+        pkg.write_text('handlers = {"a": subprocess.run}\nhandlers[key](x)\n')
         findings = _opaque_indirection_findings(pkg)
         assert findings == ()
 
-    def test_python_functools_partial_dynamic_target_not_addressed(
+    def test_python_functools_partial_dynamic_target_fires(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`functools.partial`/decorator indirection with dynamic
-        # target" row -- genuine gap, see T-1047.
+        # target" row -- closed by T-1047 (RUNTIME_OPAQUE_CONSTRUCTS now
+        # registers a `functools.partial(` needle).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("functools.partial(resolve_target())(x)\n")
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(f.construct_name == "functools.partial" for f in findings)
 
-    def test_python_dunder_getattr_class_interception_not_addressed(
+    def test_python_dunder_getattr_class_interception_fires(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "class `__getattr__`/`__getattribute__` interception"
-        # row -- genuine gap, see T-1047.
+        # row -- closed by T-1047 (a `def __getattr__(` needle).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
@@ -5797,14 +5788,13 @@ class TestOpaqueIndirectionGate:
             "        return subprocess.run\nobj = Proxy()\nobj.run(x)\n"
         )
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(f.construct_name == "__getattr__ interception" for f in findings)
 
-    def test_python_sys_modules_replacement_not_addressed(
-        self, tmp_path: Path
-    ) -> None:
+    def test_python_sys_modules_replacement_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "direct `sys.modules` replacement" row (added in the
-        # taxonomy doc's Phase 2 pass) -- genuine gap, see T-1047.
+        # taxonomy doc's Phase 2 pass) -- closed by T-1047 (a
+        # `sys.modules[` needle).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
@@ -5813,7 +5803,7 @@ class TestOpaqueIndirectionGate:
             "import subprocess\nsubprocess.run(x)\n"
         )
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(f.construct_name == "sys.modules replacement" for f in findings)
 
     def test_typescript_computed_member_non_constant_key_not_addressed(
         self, tmp_path: Path
@@ -5833,45 +5823,42 @@ class TestOpaqueIndirectionGate:
         findings = _opaque_indirection_findings(pkg)
         assert findings == ()
 
-    def test_typescript_global_this_bracket_not_addressed(
-        self, tmp_path: Path
-    ) -> None:
+    def test_typescript_global_this_bracket_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
-        # taxonomy "`globalThis[name]`" row -- genuine gap, see T-1047.
+        # taxonomy "`globalThis[name]`" row -- closed by T-1047 (a
+        # `globalThis[` needle).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("globalThis[name](x);\n")
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(f.construct_name == "globalThis[name]" for f in findings)
 
-    def test_typescript_reflect_apply_dynamic_target_not_addressed(
+    def test_typescript_reflect_apply_dynamic_target_fires(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`Reflect.get`/`Reflect.apply` with dynamic target" row
-        # -- genuine gap, see T-1047.
+        # -- closed by T-1047 (`Reflect.get(`/`Reflect.apply(` needles).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("Reflect.apply(Reflect.get(cp, key), null, [x]);\n")
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        names = {f.construct_name for f in findings}
+        assert "Reflect.get" in names
+        assert "Reflect.apply" in names
 
-    def test_typescript_proxy_interception_not_addressed(
-        self, tmp_path: Path
-    ) -> None:
+    def test_typescript_proxy_interception_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`Proxy` interception (`get`/`apply` traps)" row --
-        # genuine gap, see T-1047.
+        # closed by T-1047 (a `new Proxy(` needle).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
-        pkg.write_text(
-            "new Proxy(cp, { get(){ return cp.exec; } }).run(x);\n"
-        )
+        pkg.write_text("new Proxy(cp, { get(){ return cp.exec; } }).run(x);\n")
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(f.construct_name == "Proxy interception" for f in findings)
 
     def test_typescript_container_dynamic_key_not_addressed(
         self, tmp_path: Path
@@ -5886,18 +5873,18 @@ class TestOpaqueIndirectionGate:
         findings = _opaque_indirection_findings(pkg)
         assert findings == ()
 
-    def test_typescript_monkeypatch_module_namespace_not_addressed(
+    def test_typescript_monkeypatch_module_namespace_fires(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "monkeypatch / property mutation on module namespace
-        # object" row -- genuine gap, see T-1047.
+        # object" row -- closed by T-1047 (a `require.cache[` needle).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("require.cache[id].exports.exec = realExec;\n")
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(f.construct_name == "monkeypatch module namespace" for f in findings)
 
     def test_c_array_nonconstant_index_not_addressed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
@@ -5912,7 +5899,7 @@ class TestOpaqueIndirectionGate:
         pkg = tmp_path / "pkg.c"
         pkg.write_text(
             "void (*tbl[])(const char*) = { system };\n"
-            "void g(int user_selected_index) { tbl[user_selected_index](\"sh\"); }\n"
+            'void g(int user_selected_index) { tbl[user_selected_index]("sh"); }\n'
         )
         findings = _opaque_indirection_findings(pkg)
         assert findings == ()
@@ -5926,9 +5913,7 @@ class TestOpaqueIndirectionGate:
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.c"
-        pkg.write_text(
-            "void g(long addr) { ((void(*)(const char*))addr)(\"sh\"); }\n"
-        )
+        pkg.write_text('void g(long addr) { ((void(*)(const char*))addr)("sh"); }\n')
         findings = _opaque_indirection_findings(pkg)
         assert findings == ()
 
@@ -5941,7 +5926,7 @@ class TestOpaqueIndirectionGate:
         pkg = tmp_path / "pkg.c"
         pkg.write_text(
             "typedef void (*Handler)(const char*);\n"
-            "void g() { void *p = get_handler(); ((Handler)p)(\"sh\"); }\n"
+            'void g() { void *p = get_handler(); ((Handler)p)("sh"); }\n'
         )
         findings = _opaque_indirection_findings(pkg)
         assert findings == ()
@@ -5962,12 +5947,12 @@ class TestOpaqueIndirectionGate:
         findings = _opaque_indirection_findings(pkg)
         assert findings == ()
 
-    def test_cpp_reinterpret_cast_to_function_pointer_not_addressed(
+    def test_cpp_reinterpret_cast_to_function_pointer_fires(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`reinterpret_cast` from an integer/opaque handle" row
-        # -- genuine gap, see T-1047.
+        # -- closed by T-1047 (a `reinterpret_cast<` needle).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.cpp"
@@ -5976,22 +5961,24 @@ class TestOpaqueIndirectionGate:
             'void g(long addr) { reinterpret_cast<Handler>(addr)("sh"); }\n'
         )
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(
+            f.construct_name == "reinterpret_cast to function pointer" for f in findings
+        )
 
-    def test_cpp_rtti_driven_dispatch_not_addressed(self, tmp_path: Path) -> None:
+    def test_cpp_rtti_driven_dispatch_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "RTTI-driven dispatch (`typeid`/`dynamic_cast`)" row --
-        # genuine gap, see T-1047.
+        # closed by T-1047 (a `typeid(` needle).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.cpp"
         pkg.write_text(
             "void g(Base *obj) {\n"
-            "    if (typeid(*obj) == typeid(Derived)) { system(\"sh\"); }\n"
+            '    if (typeid(*obj) == typeid(Derived)) { system("sh"); }\n'
             "}\n"
         )
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(f.construct_name == "RTTI-driven dispatch" for f in findings)
 
     def test_rust_trait_object_dynamic_dispatch_not_addressed(
         self, tmp_path: Path
@@ -6016,15 +6003,19 @@ class TestOpaqueIndirectionGate:
         findings = _opaque_indirection_findings(pkg)
         assert findings == ()
 
-    def test_rust_extern_ffi_symbol_not_addressed(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+    def test_rust_extern_ffi_symbol_excused_source_invisible(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability_registry.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
         # taxonomy "`extern` block FFI symbol binding resolved by the
         # dynamic linker" row. Same source-invisible shape as the C
         # weak-symbol row `OPAQUE_SOURCE_INVISIBLE` already excuses (T-0665)
-        # -- but no rust `extern`-block entry exists in that registry
-        # (only a rust vtable-patch entry does) -- genuine excuse-
-        # registration gap, see T-1047.
+        # -- closed by T-1047: a dedicated rust `extern`-block excuse entry
+        # now exists (distinct from the vtable-patch entry). No finding
+        # fires (source-invisible, category-3 per T-0665 doctrine) but the
+        # accountability record is asserted, not silent non-detection.
         from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_registry import OPAQUE_SOURCE_INVISIBLE
 
         pkg = tmp_path / "pkg.rs"
         pkg.write_text(
@@ -6033,29 +6024,29 @@ class TestOpaqueIndirectionGate:
         )
         findings = _opaque_indirection_findings(pkg)
         assert findings == ()
+        rust_excuses = [e for e in OPAQUE_SOURCE_INVISIBLE if e.language == "rust"]
+        assert any("extern" in e.reason for e in rust_excuses)
 
-    def test_rust_function_pointer_in_container_not_addressed(
-        self, tmp_path: Path
-    ) -> None:
+    def test_rust_function_pointer_in_container_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "function pointer stored in and read from a container"
-        # row -- genuine gap, see T-1047.
+        # row -- closed by T-1047 (a `Vec<fn(` needle).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.rs"
         pkg.write_text(
             "use std::process::Command as C;\n"
-            "fn g(i: usize, v: Vec<fn(&str)>) { v[i](\"sh\"); }\n"
+            'fn g(i: usize, v: Vec<fn(&str)>) { v[i]("sh"); }\n'
         )
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(
+            f.construct_name == "function pointer in container" for f in findings
+        )
 
-    def test_rust_boxed_dyn_fn_runtime_selected_not_addressed(
-        self, tmp_path: Path
-    ) -> None:
+    def test_rust_boxed_dyn_fn_runtime_selected_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`Box<dyn Fn>` built from a runtime-selected source" row
-        # -- genuine gap, see T-1047.
+        # -- closed by T-1047 (a `Box<dyn Fn` needle).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.rs"
@@ -6066,63 +6057,62 @@ class TestOpaqueIndirectionGate:
             "}\n"
         )
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(f.construct_name == "Box<dyn Fn> runtime-selected" for f in findings)
 
-    def test_rust_proc_macro_synthesized_call_not_addressed(
+    def test_rust_proc_macro_synthesized_call_excused_source_invisible(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_registry.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
         # taxonomy "procedural / derive macros synthesizing a call from
-        # external input" row -- genuine gap, see T-1047 (mirrors the
-        # `macro_rules!` resolver gap `test_macro_rules_expansion_emitting_
-        # fixed_call_not_detected` already locks for the ordinary resolver;
-        # this is the fail-closed-obligation-gate sibling finding: proc-
-        # macro expansion is invisible to this source-text scanner too).
+        # external input" row -- mirrors the `macro_rules!` resolver gap
+        # `test_macro_rules_expansion_emitting_fixed_call_not_detected`
+        # already locks for the ordinary resolver (that resolver-level
+        # gap remains open, tracked separately). This is the fail-closed-
+        # obligation-gate sibling: closed by T-1047 with a dedicated rust
+        # proc-macro excuse entry (category-3, source-invisible -- the
+        # expansion never appears in this file's text at all).
         from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_registry import OPAQUE_SOURCE_INVISIBLE
 
         pkg = tmp_path / "pkg.rs"
         pkg.write_text("#[derive(RunFromAttribute)]\nstruct Job;\n")
         findings = _opaque_indirection_findings(pkg)
         assert findings == ()
+        rust_excuses = [e for e in OPAQUE_SOURCE_INVISIBLE if e.language == "rust"]
+        assert any("proc" in e.reason or "macro" in e.reason for e in rust_excuses)
 
-    def test_kotlin_function_value_in_container_not_addressed(
-        self, tmp_path: Path
-    ) -> None:
+    def test_kotlin_function_value_in_container_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "function value stored in and read from a container" row
-        # -- genuine gap, see T-1047.
+        # -- closed by T-1047 (a `]!!(` needle).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.kt"
         pkg.write_text(
-            "val handlers: Map<String, (String) -> Unit> = mapOf(\"a\" to ::ProcessBuilder)\n"
-            "fun g(key: String) { handlers[key]!!(\"sh\") }\n"
+            'val handlers: Map<String, (String) -> Unit> = mapOf("a" to ::ProcessBuilder)\n'
+            'fun g(key: String) { handlers[key]!!("sh") }\n'
         )
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(f.construct_name == "function value in container" for f in findings)
 
-    def test_kotlin_delegated_property_by_not_addressed(
-        self, tmp_path: Path
-    ) -> None:
+    def test_kotlin_delegated_property_by_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "delegated property / `by` indirection resolving at
-        # runtime" row -- genuine gap, see T-1047.
+        # runtime" row -- closed by T-1047 (a `by lazy {` needle).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.kt"
         pkg.write_text(
             "val f: (String) -> Unit by lazy { ::ProcessBuilder }\n"
-            "fun g() { f(\"sh\") }\n"
+            'fun g() { f("sh") }\n'
         )
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(f.construct_name == "delegated property by" for f in findings)
 
-    def test_kotlin_dynamic_classloading_not_addressed(
-        self, tmp_path: Path
-    ) -> None:
+    def test_kotlin_dynamic_classloading_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "dynamic classloading (`URLClassLoader` etc.)" row --
-        # genuine gap, see T-1047.
+        # closed by T-1047 (a `URLClassLoader(` needle).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.kt"
@@ -6132,7 +6122,7 @@ class TestOpaqueIndirectionGate:
             "}\n"
         )
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(f.construct_name == "dynamic classloading" for f in findings)
 
     def test_kotlin_kcallable_call_always_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
@@ -6168,9 +6158,7 @@ class TestOpaqueIndirectionGate:
         findings = _opaque_indirection_findings(pkg)
         assert any(f.construct_name == "eval" for f in findings)
 
-    def test_typescript_function_constructor_always_fires(
-        self, tmp_path: Path
-    ) -> None:
+    def test_typescript_function_constructor_always_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`new Function(...)`" row.
         from frob.vet._capability import _opaque_indirection_findings
@@ -6200,17 +6188,21 @@ class TestOpaqueIndirectionGate:
 
     def test_rust_runtime_vtable_patch_excused_source_invisible(self) -> None:
         # frob:tests src/frob/vet/_capability_registry.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
-        # Rust's own `OPAQUE_SOURCE_INVISIBLE` entry is for a runtime
-        # vtable patch (unsafe raw-pointer rewrite of a trait object's
-        # vtable slot) -- a distinct construct from the taxonomy's own
-        # `extern` FFI symbol row (T-1047 tracks adding an
-        # excuse for THAT row specifically; this litmus only locks the
-        # vtable-patch excuse that already exists so a future edit cannot
-        # silently drop it).
+        # Rust's own `OPAQUE_SOURCE_INVISIBLE` entries: a runtime vtable
+        # patch (unsafe raw-pointer rewrite of a trait object's vtable
+        # slot), plus, as of T-1047, a dedicated `extern` FFI symbol
+        # excuse and a proc-macro-expansion excuse (each its own entry,
+        # each its own reason -- REG011 per-entry accountability, not a
+        # shared blanket rust exemption). This litmus locks that the
+        # vtable-patch excuse specifically still exists among however
+        # many rust entries there are, so a future edit cannot silently
+        # drop it.
         from frob.vet._capability_registry import OPAQUE_SOURCE_INVISIBLE
 
         rust_excuses = [e for e in OPAQUE_SOURCE_INVISIBLE if e.language == "rust"]
-        assert len(rust_excuses) == 1
+        assert len(rust_excuses) == 3
+        vtable_excuses = [e for e in rust_excuses if "vtable" in e.reason]
+        assert len(vtable_excuses) == 1
         assert "vtable" in rust_excuses[0].reason
 
     def test_cpp_virtual_dispatch_bounded_polymorphism_no_finding(

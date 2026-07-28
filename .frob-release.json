@@ -1708,8 +1708,8 @@
     "src/frob/vet/_capability_registry.py::DANGEROUS_OPERATIONS": "a9036db9cde50e3631d046c1bfcfa31e62d1495fa643daaaa51a0826a9dec457",
     "src/frob/vet/_capability_registry.py::LANGUAGES": "bae7f28f4eaab757fde26a3937c7a3ff6b9391f5d6bfbb8200c915096fd72bf8",
     "src/frob/vet/_capability_registry.py::NO_CAPABILITY_MODULES": "b93b45d24b5739b682a3dfc3dbc9a6dc711125180679c498aefc64fd5df28b9f",
-    "src/frob/vet/_capability_registry.py::OPAQUE_SOURCE_INVISIBLE": "878c9b6c083ec73e1f32de0f5b5ca4e2dad7a84d5b1112d4b363532c0232dd15",
-    "src/frob/vet/_capability_registry.py::RUNTIME_OPAQUE_CONSTRUCTS": "3610c864038f33ec33c5e8b93201fa214d73e8cf7af447c3c6853b550b0af6ac",
+    "src/frob/vet/_capability_registry.py::OPAQUE_SOURCE_INVISIBLE": "b5c9de88cd944bdad86cd8eb66704e904e01618f5cd2314385b14d4a4efc2d03",
+    "src/frob/vet/_capability_registry.py::RUNTIME_OPAQUE_CONSTRUCTS": "f46dc6224389971c0bab25ffb666d2bd8369b06f3ce676477508c10f99e4b3fa",
     "src/frob/vet/_capability_registry.py::capability_matrix": "d0244e8f83ed43ed86ca3aa06f44b035eaab10dfca158e091469eb7eb97224ec",
     "src/frob/vet/_closedworld.py::closed_world_accounting": "4f4e292275fad229c973d8a6ae8ccd3192896959af8b414d491c5f697386e1db",
     "src/frob/vet/_closedworld.py::resolve_import": "60061bcc7bd2e64abf598bcb72f58eb97ebde4891918ce7f0a99ed67647800a3",
@@ -1771,5 +1771,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.198.0"
+  "version": "0.199.0"
 }

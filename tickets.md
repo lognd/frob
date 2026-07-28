@@ -8163,7 +8163,7 @@ id: T-1047
 title: 'vet/opaque: extend RUNTIME_OPAQUE_CONSTRUCTS + OPAQUE_SOURCE_INVISIBLE for
   ~25 taxonomy runtime-opaque rows found unaddressed by T-0666, plus Rust struct-field
   / C++ pointer-to-member alias tracking'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-27'
@@ -8176,6 +8176,15 @@ scope:
 - src/frob/gates/_opaque.py
 - docs/design/registry/evasion.yaml
 - tests/test_vet.py
+evidence:
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_c_weak_symbol_override_excused_source_invisible
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_extern_ffi_symbol_excused_source_invisible
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_proc_macro_synthesized_call_excused_source_invisible
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_runtime_vtable_patch_excused_source_invisible
+- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator
+- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_litmus_path_resolves_to_a_real_test
+- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
+- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_map_has_no_orphaned_language_category_pairs
 threat: null
 component: null
 ```
@@ -8211,6 +8220,63 @@ tracking.
 Filed alongside T-0666's Done report (2026-07-27); see that report's
 coverage table for the exact fixture -> taxonomy-row mapping this gap
 list was built from.
+
+## Done report
+
+Resumed a dead predecessor session in the same worktree/lease. All code
+changes (17-of-25 taxonomy gap closure, commit 18abd5a3) and the
+predecessor's own done-report write to tickets.md were already correct
+and complete; my work was to verify, land-prep, and land:
+
+- Confirmed 18abd5a3 was already committed and unmodified.
+- Ran tests/test_vet.py foreground (238 tests) after a from-scratch
+  make core rebuild: all pass, including the 19 flipped
+  TestOpaqueIndirectionGate/_fires and _excused_source_invisible tests.
+- Ran frob check --ticket T-1047 foreground: no new unwaived errors in
+  the 3 touched files (src/frob/vet/_capability_registry.py,
+  src/frob/vet/_evasion_coverage.py, tests/test_vet.py); the reported
+  DEPR005/COV001/INV006/PERF003/PERF004 baseline errors match the
+  predecessor's own captured claims exactly (pre-existing debt, not
+  introduced here).
+- Committed the predecessor's uncommitted done-report write to
+  tickets.md (eb37d4a8).
+- Merged main (00e741cc), clean merge, no conflicts.
+- Rebuilt natives (make core) and re-ran tests/test_vet.py + frob test
+  --base main against the merged tree: both pass.
+
+Disclosed residue (13 rows, not addressed here, per predecessor's
+done-report): python/typescript container-dynamic-key and
+computed-member shapes, C/C++ array-index/integer-cast/void*-backcast
+shapes need a generalized subscript-or-cast detector the current
+needle architecture cannot express safely; rust struct-field,
+macro_rules! expansion, cpp pointer-to-member, kotlin destructuring/
+default-param/operator-invoke need real alias tracking in the ordinary
+resolvers, not a registry entry. T-0339's epic acceptance criterion
+therefore does not fully hold yet; a residual ticket names this gap.
+
+### Changed
+```
+ src/frob/vet/_capability_registry.py | 213 ++++++++++++++++++++++++++++++++++
+ src/frob/vet/_evasion_coverage.py    |  32 ++---
+ tests/test_vet.py                    | 218 +++++++++++++++++------------------
+ tickets.md                           | 173 +++++++++++++++++++++++++++
+ 4 files changed, 507 insertions(+), 129 deletions(-)
+```
+
+### Evidence
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_c_weak_symbol_override_excused_source_invisible` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_extern_ffi_symbol_excused_source_invisible` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_proc_macro_synthesized_call_excused_source_invisible` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_runtime_vtable_patch_excused_source_invisible` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_litmus_path_resolves_to_a_real_test` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_map_has_no_orphaned_language_category_pairs` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 8 passed (from 8 evidence id(s))
+- gates: 14 error(s), 1826 warning(s), 362 waived
+- error-findings: ARCH001@src/frob/graph/callgraph.py, ARCH001@src/frob/testing/_collect.py, COV001@src/frob/arch/_models.py, COV001@src/frob/gitlog/__init__.py, COV001@src/frob/process/parsers/common.py, COV001@src/frob/render/_color.py, COV001@src/frob/render/_elements.py, DEPR005@tests/system/test_cli_ticket_worktree_root.py, DEPR005@tests/test_gates.py, DEPR005@tests/test_ticket_land.py, DEPR005@tests/test_vet.py, PERF003@src/frob/arch/_cpp_mayraise.py, PERF004@src/frob/arch/_cpp_mayraise.py, PRE001@tickets/T-1047
 
 <!-- ticket:T-1048 -->
 ```yaml
@@ -8350,3 +8416,78 @@ itself drops under the ARCH001 threshold. Out of T-0602's scope
 (src/frob/gates/**, src/frob/serve/**, tests/test_gate_cache.py,
 docs/modules/{serve,gates}.md) -- this refactor would touch the entire
 existing gate-job assembly, not the T-0602 feature itself.
+
+<!-- ticket:T-1050 -->
+```yaml
+id: T-1050
+title: 'vet/opaque: generalized container-subscript-call detector + rust/cpp/kotlin
+  points-to alias tracking (T-1047 residual)'
+state: queued
+kind: security
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/vet/**
+- src/frob/gates/_opaque.py
+- tests/test_vet.py
+threat: null
+component: null
+```
+T-1047 closed 17 of the ~25 taxonomy runtime-opaque gaps T-0666 found (15
+new RUNTIME_OPAQUE_CONSTRUCTS needle-based detector entries across
+python/typescript/c-cpp/rust/kotlin, plus 2 new rust OPAQUE_SOURCE_INVISIBLE
+excuse entries for the extern-FFI-symbol and proc-macro-expansion rows).
+The remaining gaps genuinely need MORE than a fixed-substring needle match
+-- a generic "container subscript followed by a call" shape
+(`handlers[key](x)`, `cp[key](x)`), or a real cast-expression / points-to
+analysis (C integer-to-function-pointer cast, C void*-backcast,
+C/C++ array-index-into-function-pointer-table with a runtime index) --
+which `_opaque_indirection_findings`'s current architecture (a byte-level
+needle scan with an optional single-literal-argument check, T-0665) cannot
+express without either a full expression grammar or an unacceptable false
+positive rate on ordinary bracket/call syntax. Extending that architecture
+is real design work, not a registry-entry addition, so it is scoped
+separately here rather than forced into T-1047's needle-table shape.
+
+Remaining runtime-opaque taxonomy rows still with NO detector/excuse
+(litmus fixtures already lock the current honest non-firing behavior in
+tests/test_vet.py::TestOpaqueIndirectionGate, `_not_addressed` suffix):
+- python: container-dynamic-key (`handlers[key](x)`)
+- typescript: computed-member-non-constant-key (`cp[key](x)`),
+  container-dynamic-key (`handlers[key](x)`)
+- c: array-nonconstant-index, integer-cast-to-function-pointer,
+  void-star-backcast
+- cpp: array-runtime-index
+
+Also carried forward from T-0666/T-1047, structural resolver gaps in the
+ORDINARY (non-opaque-gate) resolver, `frob.vet._capability.scan_file_
+capabilities` and friends -- litmus fixtures already lock these too:
+- rust: struct-field points-to (struct-update field rebinding never
+  resolves through a later call) --
+  `test_struct_update_field_rebind_not_detected`
+- rust: `macro_rules!` expansion (no macro-expansion-aware resolution
+  exists for rust at all) --
+  `test_macro_rules_expansion_emitting_fixed_call_not_detected`
+- cpp: pointer-to-member alias tracking (`&Ops::run` / `.*`/`->*`
+  dereference has no alias tracking) --
+  `test_member_function_pointer_bound_to_named_member_not_detected`
+- kotlin: destructuring-declaration alias tracking --
+  `test_destructuring_declaration_not_detected`
+- kotlin: default-parameter-forwarding alias tracking --
+  `test_default_parameter_forwarding_callable_not_detected`
+- kotlin: operator `fun invoke` / receiver-instance points-to --
+  `test_operator_fun_invoke_making_object_directly_callable_not_detected`
+
+Each needs either: (a) a generalized "subscript-then-call" detector shape
+added to `_opaque_indirection_findings` (a new construct kind beyond the
+current needle+literal-arg-index model), or (b) real points-to/alias
+tracking added to the per-language ordinary resolvers (mirrors C's
+existing `_record_c_field_alias` for the rust/cpp/kotlin cases). Until
+closed, T-0339's acceptance criterion [1] ("given any RUNTIME-resolved
+indirection... FAILS CLOSED") does not fully hold -- these 7 opaque-gate
+rows and 6 structural-resolver rows are the reason T-0339 was NOT closed
+alongside T-1047.
