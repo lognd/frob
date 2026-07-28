@@ -250,6 +250,140 @@ class TestDifferentialParity:
         assert daemon_served.returncode == 0, daemon_served.stderr
         assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
 
+    def test_graph_query_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_query_json_daemon_matches_in_process
+        pytest.importorskip("frob_core")
+        project = tmp_path
+        (project / ".frob").mkdir()
+        (project / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.0.0"\n'
+        )
+        (project / "helper.py").write_text(
+            "def helper():\n    return 1\n", encoding="utf-8"
+        )
+        subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+
+        in_process = subprocess.run(
+            ["uv", "run", "frob", "graph", "query", "helper.py::helper", "--json"],
+            cwd=project,
+            env={**_env(), "FROB_NO_DAEMON": "1"},
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert in_process.returncode == 0, in_process.stderr
+
+        thread = _start_daemon(project)
+        try:
+            daemon_served = subprocess.run(
+                ["uv", "run", "frob", "graph", "query", "helper.py::helper", "--json"],
+                cwd=project,
+                env=_env(),
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        finally:
+            _shutdown(project, thread)
+        assert daemon_served.returncode == 0, daemon_served.stderr
+        assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
+
+    def test_doable_tickets_json_daemon_matches_in_process(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_doable_tickets_json_daemon_matches_in_process
+        pytest.importorskip("frob_core")
+        project = tmp_path
+        (project / ".frob").mkdir()
+        (project / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.0.0"\n'
+        )
+        subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+
+        in_process = subprocess.run(
+            ["uv", "run", "frob", "ticket", "doable", "--json"],
+            cwd=project,
+            env={**_env(), "FROB_NO_DAEMON": "1"},
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert in_process.returncode == 0, in_process.stderr
+
+        thread = _start_daemon(project)
+        try:
+            daemon_served = subprocess.run(
+                ["uv", "run", "frob", "ticket", "doable", "--json"],
+                cwd=project,
+                env=_env(),
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        finally:
+            _shutdown(project, thread)
+        assert daemon_served.returncode == 0, daemon_served.stderr
+        assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
+
+    def test_touched_tests_json_daemon_matches_in_process(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_touched_tests_json_daemon_matches_in_process
+        pytest.importorskip("frob_core")
+        project = tmp_path
+        (project / ".frob").mkdir()
+        (project / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.0.0"\n'
+        )
+        # .frob/ must be gitignored -- otherwise the daemon's own untracked
+        # runtime files (daemon.lock, cache.db, ...) show up as "touched"
+        # in the daemon-served run but not the earlier in-process
+        # reference run (which never started a daemon), a spurious
+        # environmental divergence, not a real payload-shape mismatch.
+        (project / ".gitignore").write_text(".frob/\n")
+        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=project, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "t@example.com"], cwd=project, check=True
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "t"], cwd=project, check=True
+        )
+        subprocess.run(["git", "add", "-A"], cwd=project, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "init"], cwd=project, check=True
+        )
+
+        # Nothing touched (no diff against main after the initial commit) --
+        # the parity-sensitive empty-selection branch both the CLI and
+        # `_try_touched_via_daemon` special-case identically (T-1128).
+        in_process = subprocess.run(
+            ["uv", "run", "frob", "test", "--json"],
+            cwd=project,
+            env={**_env(), "FROB_NO_DAEMON": "1"},
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert in_process.returncode == 0, in_process.stderr
+
+        thread = _start_daemon(project)
+        try:
+            daemon_served = subprocess.run(
+                ["uv", "run", "frob", "test", "--json"],
+                cwd=project,
+                env=_env(),
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        finally:
+            _shutdown(project, thread)
+        assert daemon_served.returncode == 0, daemon_served.stderr
+        assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
+
 
 def _json_tail(stdout: str) -> str:
     """The final JSON payload a proxied `--json` command writes -- log

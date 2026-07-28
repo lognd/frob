@@ -168,13 +168,15 @@ class TestServeRunner:
 class TestDoableTickets:
     def test_lists_queued_ticket(self, tmp_path: Path) -> None:
         # frob:tests src/frob/serve/_tools.py::frob_doable_tickets kind="unit"
-        write_ticket(tmp_path, _ticket("T-0001"))
+        ticket = _ticket("T-0001")
+        write_ticket(tmp_path, ticket)
         result = frob_doable_tickets(tmp_path)
         assert result.is_ok
         tickets = result.danger_ok
-        assert tickets == [
-            {"id": "T-0001", "title": "Sample ticket", "kind": "feature"}
-        ]
+        # T-1128: the RPC now returns each ticket's FULL model_dump(mode=
+        # "json"), field-for-field identical to `frob ticket doable
+        # --json`'s own per-row shape, not an id/title/kind-only subset.
+        assert tickets == [ticket.model_dump(mode="json")]
 
     def test_empty_queue_is_empty_list(self, tmp_path: Path) -> None:
         result = frob_doable_tickets(tmp_path)
@@ -630,7 +632,11 @@ class TestRunTouchedTests:
         result = frob_run_touched_tests(tmp_path)
         assert result.is_ok
         payload = result.danger_ok
-        assert payload["touched"] == []
+        # T-1128: the RPC now returns `test_run.model_dump(mode="json")`
+        # verbatim (a `TestRunReport`: `selection`/`outcomes`/`ok`), field-
+        # for-field identical to `frob test --json`'s own output, not the
+        # earlier flat `base`/`touched`/`ok`/`outcomes` subset.
+        assert payload["selection"]["touched"] == []
         assert payload["ok"] is True
         assert payload["outcomes"] == []
 

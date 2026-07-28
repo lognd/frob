@@ -337,6 +337,48 @@ def _refresh_collection(root: Path) -> None:
         )
 
 
+# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_touched_tests_json_daemon_matches_in_process kind="unit"  # noqa: E501
+def _try_touched_via_daemon(root: Path, cfg: AppConfig) -> bool:
+    """T-1128: for a plain `frob test --json` touched-set run (no `--all`,
+    no `--lang`, no `--fallback` override -- the RPC's own fixed
+    `SelectConfig()`/full-runner-set contract, `frob.serve._tools.
+    frob_run_touched_tests`, has no parameters for any of those), try the
+    daemon's RPC via `frob.app._daemon_proxy.query` before doing any local
+    graph load/select/run. Returns `True` on a daemon hit (already
+    rendered); `False` falls through to the in-process path unchanged,
+    same contract `_try_affects_via_daemon` (T-1106) established. The RPC
+    now returns `test_run.model_dump(mode='json')` verbatim (T-1128),
+    field-for-field identical to this CLI's own `--json` output."""
+    if (
+        not cfg.test_json
+        or cfg.test_all
+        or cfg.test_lang
+        or cfg.test_fallback is not None
+    ):
+        return False
+    from frob.app._daemon_proxy import query
+
+    proxied = query(root, "frob_run_touched_tests", {"base": cfg.test_base or "main"})
+    if proxied.is_err:
+        return False
+    import json
+
+    payload = proxied.danger_ok
+    selection = payload["selection"]
+    if not any(selection["selected"].values()):
+        # T-1128: mirrors this CLI's own "nothing touched selects any
+        # test" early return above, which prints the bare `SelectionReport`
+        # (never runs `run_selected` at all) -- the RPC always runs it
+        # regardless of emptiness (cheaply, zero subprocess spawns), so
+        # this branch reprints just the `selection` sub-payload to keep
+        # both shapes byte-for-byte identical for the empty case too.
+        _log.info("nothing touched selects any test")
+        _log.info(json.dumps(selection, indent=2))
+        return True
+    _log.info(json.dumps(payload, indent=2))
+    return True
+
+
 # frob:ticket T-0322
 # frob:tests tests/test_app.py::TestWaitCoverage.test_wait_coverage_flag_dispatches_and_exits_zero_on_success  # noqa: E501
 # frob:tests tests/test_app.py::TestWaitCoverage.test_wait_coverage_flag_exits_1_on_failure  # noqa: E501
@@ -354,6 +396,9 @@ def run(cfg: AppConfig) -> None:
 
     if cfg.test_fuzz:
         _run_fuzz(root)
+        return
+
+    if _try_touched_via_daemon(root, cfg):
         return
 
     runners = _loaded_runners(cfg, root)

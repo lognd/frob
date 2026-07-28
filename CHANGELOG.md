@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.245.0] - unreleased
+
+- T-1128: daemon: reconcile CLI payload shapes to proxy graph-query/check-delta/touched-tests/doable (T-1106 residual)
+
 ## [0.244.0] - unreleased
 
 - T-1025: strata SYS203: make shared-store-write contention consult a resource's declared arbiter, drop tickets_ledger waivers

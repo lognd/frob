@@ -676,26 +676,68 @@ the follow-on T-1093 disclosed (T-draft-8a56400c).
   `tests/test_app_daemon_proxy.py::TestDifferentialParity::
   test_graph_affects_json_daemon_matches_in_process`, a real
   subprocess-vs-subprocess diff.
+- `frob graph query <ref> --json` -> `frob_graph_query` (T-1128): the
+  RPC's dict was missing `span`/`digests` and trimmed each edge to two
+  fields (`kind`/`target` or `src`/`kind`) instead of the full `Edge`
+  model -- extended `frob_graph_query` to return `span`/`digests` plus
+  each edge's own `model_dump()`, field-for-field identical to
+  `graph_runner._query_json_payload`'s own shape; no CLI-side reshape
+  needed at all beyond calling `query()`. Proven by
+  `tests/test_app_daemon_proxy.py::TestDifferentialParity::
+  test_graph_query_json_daemon_matches_in_process`.
+- `frob ticket doable --json` -> `frob_doable_tickets` (T-1128): the RPC
+  returned only `id`/`title`/`kind` per ticket; the CLI's own `--json`
+  dumps `t.model_dump(mode="json")` per row -- the FULL ticket model.
+  Extended `frob_doable_tickets` to return the full `model_dump`, and to
+  pass `root` through to `doable()` (the CLI already does, for the
+  lease-collision-demotion behavior `root` enables) so an over-broad
+  holder lease demotes to warn-only exactly the same way in both paths.
+  Only wired for the plain (no `--show-blocked`/`--ignore-lease`/
+  `--sprint`) invocation -- the RPC has no parameter for any of those, so
+  `_try_doable_via_daemon` falls through to the in-process path whenever
+  one is set. Proven by `tests/test_app_daemon_proxy.py::
+  TestDifferentialParity::test_doable_tickets_json_daemon_matches_in_process`.
+- `frob test --json` (touched-set, no `--all`/`--lang`/`--fallback`) ->
+  `frob_run_touched_tests` (T-1128): the RPC returned a flat
+  `base`/`touched`/`ok`/`outcomes` dict (each outcome missing `argv`); the
+  CLI's own `--json` dumps `test_run.model_dump_json()` -- the full
+  `TestRunReport` (`selection`/`outcomes`/`ok`). Extended `frob_run_
+  touched_tests` to return `test_run.model_dump(mode="json")` verbatim.
+  The CLI's own "nothing touched selects any test" early-return path
+  never calls `run_selected` at all and prints just the bare
+  `SelectionReport`; `_try_touched_via_daemon` detects the same empty-
+  selection case from the RPC's nested `selection` key and reprints just
+  that sub-payload, keeping both branches byte-for-byte identical, not
+  just the non-empty one. Proven by `tests/test_app_daemon_proxy.py::
+  TestDifferentialParity::test_touched_tests_json_daemon_matches_in_process`.
 
 ### Scope cut (disclosed)
 
 T-0321's integration map names `outline`/`map`/`xref`/`parse`/`graph`/
 `exports`/`bind`/`docs`/`stats` as eventual proxy targets alongside `check
---delta`-style reads. `_socketd._TOOL_DISPATCH` (T-1092) only exposes ten
-methods today; most STILL have no field-for-field-identical CLI JSON
-payload to diff against (e.g. `frob_graph_query`'s dict omits `span`/
-`digests` that `frob graph query --json` prints) -- `frob_affects` (T-1106,
-just above) was the one exception needing only a single key rename to
-reconcile, not a deeper shape mismatch. This ticket wires that one
-additional command (on top of T-1093's `frob perf hot --json`) rather
-than force a shape mismatch onto the remaining commands just to claim
-broader coverage. Wiring `frob_graph_query`/`frob_check_delta`/
-`frob_run_touched_tests`/`frob_doable_tickets` through the same `query()`
-seam is straightforward follow-on work once each CLI payload is
-reconciled field-for-field with its `_tools` counterpart (or the
-counterpart is extended to match) -- tracked as T-draft-296d0d77. `frob
-ticket doable` specifically was left unwired again this ticket:
-`src/frob/app/ticket_runner.py` was a CONTENDED file this wave (a
+--delta`-style reads. T-1128 wired `frob_graph_query`/`frob_doable_tickets`/
+`frob_run_touched_tests` through `query()` (just above), each needing its
+`_tools` counterpart EXTENDED to match the CLI's own `--json` shape rather
+than a pure CLI-side reshape (T-1106's `frob_affects` precedent was the one
+exception needing only a rename). `frob_check_delta` was investigated and
+NOT wired this ticket: `frob check --delta`'s CLI JSON payload is
+`_run_all_stages`'s full multi-tool `CheckResult` (ruff/ty/arch/cycle/dup/
+bind/exports/deploy-stage `ToolResult`s, gates among them) -- `--delta`
+itself only filters the ONE `gates` `ToolResult` inside that larger
+payload (`_dispatch_check_python`'s `delta=cfg.check_delta` kwarg threads
+into `run_check`, not into ruff/ty/arch/etc). `frob_check_delta`'s RPC
+answers only the gates-violations-delta question in isolation -- a
+genuinely different, narrower shape than what `frob check --delta --json`
+prints, not a key-rename or a missing-fields gap the way the other three
+were. Reconciling it would mean either running the ENTIRE check pipeline
+inside the RPC (a much larger change than a payload-shape fix) or
+detecting, CLI-side, the narrow case where every non-gate stage is
+skipped (`--skip-ruff --skip-ty --skip-arch --skip-cycle --skip-dup
+--skip-bind --skip-exports`, an all-gates-only invocation) and proxying
+only then -- neither judged a "straightforward" CLI-payload reconciliation
+in this ticket's own scope; tracked as a follow-up (draft filed this
+ticket). `frob ticket doable` specifically was left unwired again in
+T-1106: `src/frob/app/ticket_runner.py` was a CONTENDED file that wave (a
 sibling ticket's own scope), and T-1106's own scope was deliberately
 narrowed to files with no such collision (`_daemon_proxy.py`,
 `graph_runner.py`, their tests) rather than risk a merge collision over

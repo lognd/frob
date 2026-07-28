@@ -127,6 +127,36 @@ def _render_acceptance(ticket) -> str:  # noqa: ANN001
     return "\n".join(lines)
 
 
+# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_doable_tickets_json_daemon_matches_in_process kind="unit"  # noqa: E501
+def _try_doable_via_daemon(root: Path, cfg: AppConfig) -> bool:
+    """T-1128: for a plain `frob ticket doable --json` (no `--show-blocked`,
+    `--ignore-lease`, or `--sprint` -- the RPC's own fixed-arity `frob.
+    serve._tools.frob_doable_tickets(root)` contract has no parameter for
+    any of those), try the daemon's RPC via `frob.app._daemon_proxy.query`
+    before doing any local queue load/filter. Returns `True` on a daemon
+    hit (already rendered); `False` falls through to the in-process path
+    unchanged, same contract `_try_affects_via_daemon` (T-1106)
+    established. The RPC now returns each ticket's full `model_dump(mode=
+    'json')` (T-1128), field-for-field identical to this CLI's own
+    `--json` per-row shape."""
+    if (
+        not cfg.ticket_json
+        or cfg.ticket_show_blocked
+        or cfg.ticket_ignore_lease
+        or cfg.ticket_doable_sprint is not None
+    ):
+        return False
+    from frob.app._daemon_proxy import query
+
+    proxied = query(root, "frob_doable_tickets", {})
+    if proxied.is_err:
+        return False
+    import json
+
+    _log.info(json.dumps(proxied.danger_ok, indent=2))
+    return True
+
+
 # frob:ticket T-0453
 def _doable(root: Path, cfg: AppConfig) -> None:
     """Render `frob ticket doable`: the default collision-safe list, or
@@ -145,6 +175,9 @@ def _doable(root: Path, cfg: AppConfig) -> None:
     prior raw/undecorated shape -- the split and alarm are a display-layer
     concern for the human-facing listing only, not a change to what
     `doable()` itself returns."""
+    if _try_doable_via_daemon(root, cfg):
+        return
+
     from frob.tickets import (
         doable,
         has_live_lease,

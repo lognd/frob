@@ -1221,7 +1221,7 @@
     "src/frob/strata/_contention.py::SYS_OVERLAPPING_PATH": "73ee4c4b557808f4ef2350347620c0f3a9cebc3c3570b07c5b4b4c7639339b12",
     "src/frob/strata/_contention.py::SYS_SHARED_PIPE": "a587196189ba44dfd4e1d9bca33febe726a6043963521c61703853ebf17f56ca",
     "src/frob/strata/_contention.py::SYS_SHARED_STORE_WRITE": "82b33c476c5fc2e0af557c20a327c7312cb6ee8a3924dc594ae8d60771fc98c2",
-    "src/frob/strata/_contention.py::check_resource_contention": "85d786dbcfd4c045ac2ac95bf3043ba124f6d5d6d6155813bec9f631da94bd6b",
+    "src/frob/strata/_contention.py::check_resource_contention": "286902f9b17d450da8ad80490d0c24efb5266cd29d740e04a6d9c6ab1b255cf1",
     "src/frob/strata/_crash.py::CrashContractReport": "6c9c8747435f85448380445025c63928b40558a30472c7b743537dbfefb92a8a",
     "src/frob/strata/_crash.py::evaluate_crash_contracts": "04377ca7c4e0b3f24305f3424333f33c760a8871b0af4bc3cc101998c5492f23",
     "src/frob/strata/_cve_fingerprint.py::CVE_FINGERPRINTS": "2c0d6197672a4f2b934f1cf97cbb63ccf8f36725b6010283139ce5ac2fa3b4f4",
@@ -1837,5 +1837,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.244.0"
+  "version": "0.245.0"
 }

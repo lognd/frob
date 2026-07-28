@@ -92,6 +92,28 @@ def _render_query_lines(ref: str, record, outgoing, incoming) -> list[str]:  # n
     return lines
 
 
+# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_query_json_daemon_matches_in_process kind="unit"  # noqa: E501
+def _try_query_via_daemon(root: Path, cfg: AppConfig) -> bool:
+    """T-1128: for `frob graph query --json`, try the daemon's own
+    `frob_graph_query` RPC (`frob.serve._tools.frob_graph_query`, field-
+    for-field identical to `_query_json_payload`'s own shape since T-1128)
+    via `frob.app._daemon_proxy.query` before falling back to a local
+    snapshot load/resolve. Returns `True` on a daemon hit (already
+    rendered); `False` means fall through to the in-process path, same
+    contract `_try_affects_via_daemon` (T-1106) established."""
+    if cfg.graph_ref is None or not cfg.graph_json:
+        return False
+    from frob.app._daemon_proxy import query
+
+    proxied = query(root, "frob_graph_query", {"symref": cfg.graph_ref})
+    if proxied.is_err:
+        return False
+    import json
+
+    _log.info(json.dumps(proxied.danger_ok, indent=2))
+    return True
+
+
 # frob:waive ARCH103 reason="T-0977: `frob graph query` CLI entrypoint -- resolves the \
 # ref against the loaded snapshot and renders it text-or-json; same runner shape as \
 # every other `_run_*` in this module"
@@ -101,6 +123,9 @@ def _run_query(root: Path, cache: Path, cfg: AppConfig) -> None:
     if cfg.graph_ref is None:
         _log.error("frob graph query requires <ref>")
         sys.exit(1)
+
+    if _try_query_via_daemon(root, cfg):
+        return
 
     loaded = _load_snapshot(root, cache)
     if loaded.is_err:

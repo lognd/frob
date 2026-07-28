@@ -62,15 +62,23 @@ def _load_snapshot(root: Path):  # noqa: ANN202
 
 
 # frob:doc docs/modules/serve.md#tools
+# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_doable_tickets_json_daemon_matches_in_process kind="unit"  # noqa: E501
 def frob_doable_tickets(root: Path) -> Result[list[dict], ServeError]:
-    """Doable tickets (id/title/kind), oldest-first, as JSON-able dicts."""
+    """Doable tickets, oldest-first, as JSON-able dicts.
+
+    T-1128: each entry is `ticket.model_dump(mode="json")` -- the FULL
+    ticket model, field-for-field identical to `frob ticket doable --json`'s
+    own `t.model_dump(mode="json")` per row (`frob.app.ticket_runner.
+    _query._doable`) -- not the earlier id/title/kind-only subset, which
+    could never reach byte-for-byte parity with the CLI's `--json` output.
+    """
     queue_result = load_queue(root)
     if queue_result.is_err:
         _log.error("serve: frob_doable_tickets: %s", queue_result.danger_err)
         return Err(ServeError.QueueUnavailable)
-    tickets = doable(queue_result.danger_ok)
+    tickets = doable(queue_result.danger_ok, root)
     _log.info("serve: frob_doable_tickets: %d doable", len(tickets))
-    return Ok([{"id": t.id, "title": t.title, "kind": t.kind.value} for t in tickets])
+    return Ok([t.model_dump(mode="json") for t in tickets])
 
 
 def _stale_entries_as_dicts(report) -> list[dict]:  # noqa: ANN001
@@ -166,8 +174,16 @@ def _resolve_symref(
 
 
 # frob:doc docs/modules/serve.md#tools
+# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_query_json_daemon_matches_in_process kind="unit"  # noqa: E501
 def frob_graph_query(root: Path, symref: str) -> Result[dict, ServeError]:
-    """Resolve `symref`; list outgoing/incoming edges, like `frob graph query`."""
+    """Resolve `symref`; list outgoing/incoming edges, like `frob graph query`.
+
+    T-1128: the payload shape is field-for-field identical to
+    `frob.app.graph_runner._query_json_payload` (the CLI's own `frob graph
+    query --json` output) -- `span`/`digests` and each edge's full
+    `model_dump()` (not a trimmed subset), so a proxied CLI hit needs zero
+    reshaping beyond `edges_from`/`edges_to` already being plain dicts.
+    """
     snapshot_result = _load_snapshot(root)
     if snapshot_result.is_err:
         _log.error("serve: frob_graph_query: graph: %s", snapshot_result.danger_err)
@@ -191,10 +207,10 @@ def frob_graph_query(root: Path, symref: str) -> Result[dict, ServeError]:
             "ref": record.symref,
             "kind": record.kind.value,
             "public": record.public,
-            "edges_from": [
-                {"kind": e.kind.value, "target": e.target} for e in outgoing
-            ],
-            "edges_to": [{"src": e.src, "kind": e.kind.value} for e in incoming],
+            "span": list(record.span),
+            "digests": record.digests.model_dump(),
+            "edges_from": [e.model_dump() for e in outgoing],
+            "edges_to": [e.model_dump() for e in incoming],
         }
     )
 
@@ -444,23 +460,7 @@ def frob_run_touched_tests(root: Path, base: str = "main") -> Result[dict, Serve
         test_run.ok,
         len(test_run.outcomes),
     )
-    return Ok(
-        {
-            "base": base,
-            "touched": list(selection.touched),
-            "ok": test_run.ok,
-            "outcomes": [
-                {
-                    "language": o.language,
-                    "exit_code": o.exit_code,
-                    "duration_s": o.duration_s,
-                    "stdout_tail": o.stdout_tail,
-                    "stderr_tail": o.stderr_tail,
-                }
-                for o in test_run.outcomes
-            ],
-        }
-    )
+    return Ok(test_run.model_dump(mode="json"))
 
 
 # frob:ticket T-0917
