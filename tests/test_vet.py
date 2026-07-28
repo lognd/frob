@@ -5503,6 +5503,11 @@ class TestOpaqueIndirectionGate:
         assert findings == ()
 
     def test_opaque_structural_construct_is_frozen(self) -> None:
+        # frob:waive COV006 reason="confirmed exercised: the test mutates \
+        # RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS[0], an instance of the bound \
+        # class -- the best-effort callgraph only sees name( call tokens, \
+        # not indexed-constant attribute mutation; same disposition as the \
+        # evasion-taxonomy meta-test COV006 waivers"
         # frob:tests src/frob/vet/_capability_registry.py::_OpaqueStructuralConstruct kind="unit"  # noqa: E501
         # T-1051: `_OpaqueStructuralConstruct.model_config = ConfigDict(
         # frozen=True)` (same immutability posture as `_OpaqueConstruct`
