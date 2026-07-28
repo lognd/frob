@@ -1404,7 +1404,7 @@ bugs. Scope was deliberately not widened to fix these under T-0997.
 id: T-1007
 title: land REL001 bump callback derives baseline from worktree-carried manifest (guard
   fires each time; fix the producer)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -1415,14 +1415,63 @@ sprint: null
 scope:
 - src/frob/app/ticket_runner.py
 - tests/**
+evidence:
+- tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_no_manifest_is_noop
+- tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_class_none_is_noop
+- tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_applies_writes_and_stamps
+- tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_unreadable_graph_fails
+- tests/unit/test_ticket_runner_land_release.py::TestRootReleaseManifestReadsRootHead::test_reads_head_manifest_not_worktree_disk_copy
+- tests/unit/test_ticket_runner_land_release.py::TestRootReleaseManifestReadsRootHead::test_no_manifest_at_head_returns_none
 acceptance:
 - text: given a worktree carrying a stale version, when its ticket lands, then the
     bump computes main+1 on the first attempt with no guard refusal
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_runner_land_release.py::TestRootReleaseManifestReadsRootHead::test_reads_head_manifest_not_worktree_disk_copy
 threat: null
 component: null
 ```
 T-0992 added the land-side monotonicity backstop and it has now correctly REFUSED a third stale-bump attempt (T-0997 land computed 0.183.0 vs main 0.184.0). But the producer bug remains: _apply_release_bump_for_land derives its baseline from the worktree-carried release manifest/pyproject that rode the squash. Fix the callback to read the baseline from ROOT current state (same git-show technique as the guard) so the guard becomes a never-fires invariant instead of a per-land speed bump requiring a manual worktree merge. Churn-epic member: each guard refusal costs a merge+reland round trip.
+
+## Done report
+
+T-1007's fix was already landed as a side effect of T-1009 (single-source
+version work): the same commit (71c12667, "land T-1009 single-source
+version") introduced `_root_release_manifest`, `_required_release_bump`,
+and rewrote `_apply_release_bump_for_land` in
+src/frob/app/ticket_runner.py to derive the REL001 bump baseline from
+ROOT's own git HEAD (`git show HEAD:.frob-release.json`) rather than the
+worktree-carried on-disk manifest/pyproject that rides the squash-apply --
+exactly the fix this ticket describes, including matching `frob:ticket
+T-1007` directives and docstrings already citing this ticket by id. The
+commit also landed the regression coverage
+(tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand
+and ::TestRootReleaseManifestReadsRootHead) proving the callback reads
+through git-show at HEAD and ignores a stale worktree-disk copy.
+
+No further code change was needed in this ticket's scope
+(src/frob/app/ticket_runner.py, tests/**): re-ran the existing suite fresh
+in this worktree to confirm it is real, passing, and covers the exact
+behavior this ticket's acceptance criterion asks for (bump computed from
+root's true pre-land manifest, not the worktree's), then bound this
+ticket's evidence to that existing coverage and closed it as already
+satisfied rather than leaving it queued against work that had already
+landed under a sibling ticket.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_no_manifest_is_noop` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_class_none_is_noop` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_applies_writes_and_stamps` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_unreadable_graph_fails` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestRootReleaseManifestReadsRootHead::test_reads_head_manifest_not_worktree_disk_copy` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestRootReleaseManifestReadsRootHead::test_no_manifest_at_head_returns_none` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 1 error(s), 6251 warning(s), 377 waived
+- error-findings: INV006@src/frob/gates/_opaque.py
 
 <!-- ticket:T-1012 -->
 ```yaml
@@ -2484,7 +2533,7 @@ process/parsers/common.py/check/_native.py), or a reasoned frob:waive.
 id: T-1057
 title: 'frob ticket land: resolve --worktree to an absolute path before building the
   worktree venv python path'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -2495,15 +2544,154 @@ sprint: null
 scope:
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
+- src/frob/app/config.py
+- docs/modules/app.md
+scope_changes:
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'The ticket''s own acceptance criterion and plan name the actual fix as
+
+    Path(worktree).resolve() "at argument-parse time" -- that point is
+
+    src/frob/app/config.py''s generic CLI-args-to-AppConfig path-field
+
+    conversion loop (`d[path_field] = Path(val)`, no resolve), fed from
+
+    src/frob/__main__.py''s `--worktree` argparse registration
+
+    (`_add_ticket_land_parser`). Neither file is under src/frob/tickets/_land.py.
+
+    Tracing the actual bug confirms this: `frob.tickets._land.land()` already
+
+    resolves both `root`/`worktree` internally at its own top (`root, worktree
+
+    = root.resolve(), worktree.resolve()`), so a relative --worktree path is
+
+    NOT what breaks land() itself. The break is one layer up, in
+
+    src/frob/app/ticket_runner.py''s `_land()` CLI wrapper: it reads
+
+    `cfg.ticket_worktree` (still relative, since config.py never resolved it)
+
+    and passes that UNRESOLVED value into `_shared_check_spawn_fn(worktree,
+
+    cfg.ticket_id)` BEFORE `land()` is ever called -- that closure spawns
+
+    `_python_for_tree(root)` (`root / ".venv" / "bin" / "python"`, root=the
+
+    unresolved relative worktree path) via `subprocess.run(..., cwd=root)`,
+
+    which is exactly the `[Errno 2]` reproduction: the child''s argv[0]
+
+    executable path is resolved relative to the CALLING process''s cwd, not
+
+    the `cwd=` target, so a relative worktree path breaks the spawn while an
+
+    absolute one does not.
+
+
+    Widening scope to include src/frob/app/config.py (the argument-parse-time
+
+    conversion the ticket''s own plan names) so the fix lands exactly where
+
+    the ticket describes it, rather than working around the real cause by
+
+    patching ticket_runner.py''s derived local instead.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: docs/modules/app.md
+  reason: AFFECT001 doc-drift closure for AppConfig/from_external edits required to
+    fix the config.py bug per this ticket's own plan
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse::test_relative_worktree_arg_resolves_to_absolute
+- tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse::test_absolute_worktree_arg_unchanged
 acceptance:
 - text: given frob ticket land invoked with a RELATIVE --worktree path from the repo
     root, when land runs worktree-venv subprocesses, then the venv python resolves
     correctly and the land proceeds identically to the absolute-path invocation
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse::test_relative_worktree_arg_resolves_to_absolute
+  - tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse::test_absolute_worktree_arg_unchanged
 threat: null
 component: null
 ```
 Observed 2026-07-27: 'uv run frob ticket land T-0861 --worktree .claude/worktrees/agent-...' failed with [Errno 2] No such file or directory: '.claude/worktrees/agent-.../.venv/bin/python' while the identical command with an absolute --worktree path succeeded. Something in the land pipeline joins the worktree arg verbatim with .venv/bin/python and executes it from a cwd other than the invocation cwd. Fix: Path(worktree).resolve() at argument-parse time; regression test covering a relative invocation.
+
+## Done report
+
+Traced the [Errno 2] failure to its real origin before touching anything:
+`frob.tickets._land.land()` already resolves both `root`/`worktree`
+internally at its own top (`root, worktree = root.resolve(),
+worktree.resolve()`), so a relative --worktree path is NOT what breaks
+land() itself. The break is one layer up, in
+src/frob/app/ticket_runner.py's `_land()` CLI wrapper: it reads
+`cfg.ticket_worktree` (still relative, since nothing had resolved it yet)
+and passes that UNRESOLVED value into `_shared_check_spawn_fn(worktree,
+cfg.ticket_id)` BEFORE `land()` is ever called. That closure spawns
+`_python_for_tree(root)` (`root / ".venv" / "bin" / "python"`, root=the
+still-relative worktree path) via `subprocess.run(..., cwd=root)` --
+exactly the observed reproduction, since a relative executable argument
+is resolved against the CALLING process's cwd, not the subprocess's
+target `cwd=`, so it only worked when the invocation cwd happened to
+match.
+
+The ticket's own acceptance text names the fix location as "argument-
+parse time". That point is src/frob/app/config.py's
+`AppConfig.from_external`, the single place every `Path`-typed CLI arg
+(including `ticket_worktree`, fed from `--worktree` in `__main__.py`) is
+converted from raw argparse strings -- not `src/frob/tickets/_land.py`,
+whose own resolve was already correct. Widened this ticket's scope to
+add src/frob/app/config.py (and, once AFFECT001 fired on the edited
+`AppConfig`/`from_external` symbols, docs/modules/app.md) via `frob
+ticket scope T-1057 --add ... --reason ...`/`--reason-file`, recorded in
+the ticket's scope_changes audit trail, rather than silently touching
+files the ticket did not declare.
+
+Fix: after the existing generic Path-field loop in `from_external`,
+`ticket_worktree` is resolved to an absolute path unconditionally
+(`d["ticket_worktree"] = d["ticket_worktree"].resolve()`), so
+`_shared_check_spawn_fn`, `land()`'s own internal resolve, and every
+other consumer of `cfg.ticket_worktree` see an absolute path regardless
+of how `--worktree` was spelled on the command line.
+
+Added a regression test class,
+TestLandWorktreeResolvedAtArgParse, covering both a relative --worktree
+(asserting `cfg.ticket_worktree` comes back absolute and equal to the
+resolved directory) and an absolute --worktree (asserting no behavior
+change) by parsing real argparse args through `AppConfig.from_external`,
+matching this file's existing `TestLandPushCliWiring` pattern.
+
+Verification: reverted the fix locally and confirmed
+tests/test_ticket_land.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace,
+::TestMergeConflictOutsideLedger::test_real_conflict_outside_tickets_md_aborts,
+and ::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
+fail identically on the pre-fix baseline (stray `.frob/derived.lock`
+untracked-file assertion, unrelated to this ticket) before restoring the
+fix -- these 3 are pre-existing failures, not caused or fixed by this
+change. With the fix applied, the rest of tests/test_ticket_land.py (all
+but those 3) passes clean, tests/unit/test_config.py passes clean, and
+`frob check --ticket T-1057` is fully green (0 errors) after the
+AFFECT001 doc-drift fix above.
+
+### Changed
+```
+ tickets.md | 50 +++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 49 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse::test_relative_worktree_arg_resolves_to_absolute` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse::test_absolute_worktree_arg_unchanged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 2221 warning(s), 377 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1058 -->
 ```yaml

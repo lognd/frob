@@ -5275,6 +5275,74 @@ class TestLandPushCliWiring:
         assert cfg.ticket_land_push is False
 
 
+# frob:ticket T-1057
+class TestLandWorktreeResolvedAtArgParse:
+    """T-1057: `frob ticket land <id> --worktree <RELATIVE path>` used to
+    fail with `[Errno 2] No such file or directory: '<relative>/.venv/
+    bin/python'` -- `ticket_runner._land`'s pre-`land()` spawn joined the
+    still-relative `cfg.ticket_worktree` with `.venv/bin/python` and ran
+    it with `cwd=` set to that same relative path, which the OS resolves
+    against the CALLING process's cwd, not the target `cwd=`.
+    `AppConfig.from_external` now resolves `ticket_worktree` to an
+    absolute path at argument-parse time (the single place every `Path`-
+    typed CLI arg is built), so a relative `--worktree` behaves
+    identically to an absolute one from here on -- this test guards that
+    `cfg.ticket_worktree` is always absolute regardless of how `--worktree`
+    was spelled on the command line."""
+
+    def test_relative_worktree_arg_resolves_to_absolute(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse.test_relative_worktree_arg_resolves_to_absolute  # noqa: E501
+        import os
+
+        from frob.__main__ import _build_parser
+        from frob.app.config import AppConfig
+
+        worktree_dir = tmp_path / "worktree"
+        worktree_dir.mkdir()
+        old_cwd = Path.cwd()
+        os.chdir(tmp_path)
+        try:
+            parser = _build_parser()
+            args = parser.parse_args(
+                [
+                    "ticket",
+                    "land",
+                    "T-0001",
+                    "--worktree",
+                    "worktree",
+                    "--path",
+                    str(tmp_path),
+                ]
+            )
+            cfg = AppConfig.from_external(args, tmp_path / "pyproject.toml")
+        finally:
+            os.chdir(old_cwd)
+
+        assert cfg.ticket_worktree is not None
+        assert cfg.ticket_worktree.is_absolute()
+        assert cfg.ticket_worktree == worktree_dir.resolve()
+
+    def test_absolute_worktree_arg_unchanged(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse.test_absolute_worktree_arg_unchanged  # noqa: E501
+        from frob.__main__ import _build_parser
+        from frob.app.config import AppConfig
+
+        parser = _build_parser()
+        args = parser.parse_args(
+            [
+                "ticket",
+                "land",
+                "T-0001",
+                "--worktree",
+                str(tmp_path),
+                "--path",
+                str(tmp_path),
+            ]
+        )
+        cfg = AppConfig.from_external(args, tmp_path / "pyproject.toml")
+        assert cfg.ticket_worktree == tmp_path.resolve()
+
+
 # frob:ticket T-0631
 class TestPushAfterLand:
     """`_push_after_land` -- pushes root's current branch after a real

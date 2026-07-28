@@ -88,6 +88,20 @@ T-1011: `docs_sync_commands` (`bool`, default `False`) is `frob docs
 cli.md`'s generated command-table block instead of the ordinary extract/
 search/overview dispatch (`docs_path` is not required in this mode).
 
+T-1057: `ticket_worktree` (`Path | None`, default `None`) is resolved to
+an absolute path right after the ordinary `Path`-typed-field loop in
+`from_external`, not left as whatever `--worktree` was spelled on the
+command line. `frob ticket land <id> --worktree <RELATIVE path>` used to
+fail with `[Errno 2]`: `ticket_runner._land`'s pre-`land()` spawn
+(`_shared_check_spawn_fn`/`_python_for_tree`) joins `cfg.ticket_worktree`
+with `.venv/bin/python` and runs it with `cwd=` set to that same path --
+the OS resolves a relative executable argument against the CALLING
+process's cwd, not the target `cwd=`, so a relative `--worktree` broke
+before `frob.tickets._land.land()`'s own internal `worktree.resolve()`
+ever ran. Resolving once here, at argument-parse time, makes every
+downstream consumer of `cfg.ticket_worktree` see an absolute path
+unconditionally.
+
 ## Runners
 
 Each runner exposes exactly one public function, `run(cfg: AppConfig) -> None`,

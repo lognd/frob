@@ -737,6 +737,25 @@ class AppConfig(BaseModel):
             if val is not None:
                 d[path_field] = Path(val)
 
+        # frob:ticket T-1057
+        # `frob ticket land <id> --worktree <RELATIVE path>` broke: land's
+        # CLI wrapper (`ticket_runner._land`) spawns a `frob check`
+        # subprocess against `cfg.ticket_worktree` (via
+        # `_shared_check_spawn_fn`/`_python_for_tree`) BEFORE
+        # `frob.tickets._land.land()` ever runs its own internal
+        # `worktree.resolve()` -- that spawn joins the still-relative path
+        # with `.venv/bin/python` and passes it as BOTH the subprocess
+        # executable and `cwd=`, which fails with `[Errno 2]` because a
+        # relative executable path is resolved against the CALLING
+        # process's cwd, not the target `cwd=`. Resolving here, at
+        # argument-parse time -- the single place every `Path`-typed CLI
+        # arg is built -- makes `cfg.ticket_worktree` (and its
+        # `.venv/bin/python` join) absolute for every downstream consumer,
+        # so a relative `--worktree` behaves identically to an absolute
+        # one everywhere, not just inside `land()` itself.
+        if d.get("ticket_worktree") is not None:
+            d["ticket_worktree"] = d["ticket_worktree"].resolve()
+
         # Int fields
         for int_field in (
             "map_depth",
