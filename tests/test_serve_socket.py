@@ -106,6 +106,51 @@ class TestDispatchRequest:
         assert response["id"] == 2
         assert response["error"]["code"] == "unknown_method"
 
+    def test_frob_version_reports_daemon_version(self, root: Path) -> None:
+        # frob:tests \
+        # tests/test_serve_socket.py::TestDispatchRequest.test_frob_version_reports_daemon_version
+        # T-1105: `frob_version` is handled specially by `_RequestHandler`
+        # (like `subscribe`), not routed through `dispatch_request`'s
+        # `_TOOL_DISPATCH` table -- exercise it over a real running daemon.
+        cfg = SocketDaemonConfig(root=root, idle_timeout_s=5.0)
+        thread = threading.Thread(target=lambda: run_socket_daemon(cfg), daemon=True)
+        thread.start()
+        deadline = time.monotonic() + 5
+        while not socket_path(root).exists() and time.monotonic() < deadline:
+            time.sleep(0.02)
+        assert socket_path(root).exists()
+        try:
+            response = send_request(root, "frob_version")
+            assert response.is_ok
+            assert response.danger_ok["version"] == _socketd.daemon_version()
+        finally:
+            shutdown = send_request(root, "frob_shutdown")
+            assert shutdown.is_ok
+            thread.join(timeout=5)
+
+    def test_frob_shutdown_stops_the_server(self, root: Path) -> None:
+        # frob:tests \
+        # tests/test_serve_socket.py::TestDispatchRequest.test_frob_shutdown_stops_the_server
+        cfg = SocketDaemonConfig(root=root, idle_timeout_s=5.0)
+        results: list = []
+        thread = threading.Thread(
+            target=lambda: results.append(run_socket_daemon(cfg)), daemon=True
+        )
+        thread.start()
+        deadline = time.monotonic() + 5
+        while not socket_path(root).exists() and time.monotonic() < deadline:
+            time.sleep(0.02)
+        assert socket_path(root).exists()
+
+        response = send_request(root, "frob_shutdown")
+        assert response.is_ok
+        assert response.danger_ok["shutting_down"] is True
+
+        thread.join(timeout=5)
+        assert not thread.is_alive()
+        assert results[0].is_ok
+        assert not socket_path(root).exists()
+
 
 class TestRunSocketDaemon:
     def test_serves_one_request_then_idle_exits(self, root: Path) -> None:

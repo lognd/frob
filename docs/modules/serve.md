@@ -261,6 +261,7 @@ the thread does not outlive the stdio transport.
 <!-- frob:describes src/frob/serve/_socketd.py::dispatch_request -->
 <!-- frob:describes src/frob/serve/_socketd.py::run_socket_daemon -->
 <!-- frob:describes src/frob/serve/_socketd.py::send_request -->
+<!-- frob:describes src/frob/serve/_socketd.py::daemon_version -->
 
 `frob.serve._socketd` (T-1092, splitting off T-0321's daemon epic) stands up
 a SECOND frontend over the exact same `frob.serve._tools` core the MCP stdio
@@ -336,6 +337,41 @@ socket file left over from a prior crash (`_remove_stale_socket`) is
 unlinked unconditionally the next time a caller wins the lock (safe: no
 other live daemon can be bound to it once this process holds the
 exclusive lock).
+
+## Version handshake (T-1105)
+
+<!-- frob:describes src/frob/serve/_socketd.py::daemon_version -->
+
+Two extra JSON-RPC methods, special-cased in `_RequestHandler.handle`
+alongside `subscribe` (not routed through `_TOOL_DISPATCH`, since they
+answer about the daemon process itself rather than calling into
+`frob.serve._tools`):
+
+```
+--> {"id": 1, "method": "frob_version", "params": {}}
+<-- {"id": 1, "result": {"version": "0.4.2"}}
+
+--> {"id": 2, "method": "frob_shutdown", "params": {}}
+<-- {"id": 2, "result": {"shutting_down": true}}
+```
+
+`frob_version` answers with `daemon_version()` -- this daemon PROCESS's own
+installed `frob` version (`importlib.metadata.version("frob")`, "unknown"
+from a raw source checkout with no registered distribution). `frob_shutdown`
+starts a short-lived helper thread that calls `server.shutdown()`
+(asynchronously -- calling it inline on the connection-handling thread
+would deadlock that thread against the very `serve_forever()` loop it is
+asking to stop) and immediately acknowledges; the caller sees the socket
+and lock file disappear shortly after, the same clean-exit path an idle
+timeout takes.
+
+This is the real, protocol-level replacement for T-1093's original
+`.frob/daemon.meta.json` sidecar file: a CLI client can now ask a
+POTENTIALLY-ALREADY-RUNNING daemon directly what version it is, and tell it
+to step aside gracefully, instead of trusting a client-written file that
+could go stale relative to whichever process actually happens to be
+running the daemon. See "CLI daemon proxy (T-1093)" below, "Version-skew
+self-heal", for the client side of this handshake.
 
 ## FS-watch push invalidation (T-1094)
 
@@ -509,14 +545,15 @@ query(root, method, params)
   +-- FROB_NO_DAEMON=1 set? --------------------------> Err(Disabled)
   |
   +-- ensure_daemon(root):
-  |     read .frob/daemon.meta.json (version, pid this
-  |     module last spawned, if any)
+  |     send_request(root, "frob_version") to whatever
+  |     may already be listening (T-1105)
   |       |
-  |       +-- no meta recorded ----------------------> spawn a fresh daemon
-  |       +-- meta.version != this client's version --> SIGTERM the stale
-  |       |                                              pid, then spawn a
-  |       |                                              fresh daemon
-  |       +-- meta.version matches -------------------> no-op, trust the
+  |       +-- no daemon answered ---------------------> spawn a fresh daemon
+  |       +-- daemon version != this client's version -> frob_shutdown RPC
+  |       |                                              the stale daemon,
+  |       |                                              then spawn a fresh
+  |       |                                              one
+  |       +-- daemon version matches ------------------> no-op, trust the
   |                                                       existing daemon
   |
   +-- send_request(root, method, params) over the socket
@@ -538,19 +575,21 @@ reference answer to diff a daemon-served one against.
 
 ### Version-skew self-heal
 
-`_socketd`'s JSON-RPC protocol carries no version field of its own (that
-module is a sibling ticket's scope this wave, not touched here). Instead,
-`_daemon_proxy` tags the daemon IT spawns with a sidecar
-`<root>/.frob/daemon.meta.json` (`{"version": ..., "pid": ...}`, written at
-spawn time from `importlib.metadata.version("frob")`) and compares that
-recorded version against the CURRENT client's own version before trusting
-an already-running daemon. A mismatch (most likely: a daemon spawned before
-a `frob` upgrade, still idling) gets `SIGTERM`'d and replaced, never
-consulted -- this is `_socketd.acquire_singleton_lock`'s `flock` doing the
-real exclusivity guarantee underneath; the sidecar file only decides WHEN
-to ask a live daemon to step aside. A real version-handshake RPC method on
-`_socketd` itself (so any client, not just one sharing this module's own
-meta file, can detect skew) is filed as a follow-on -- T-draft-8a56400c.
+As of T-1105, `_daemon_proxy._query_daemon_version` asks whatever daemon
+may already be running for `root` directly, over the socket, via the
+`frob_version` RPC ("Version handshake (T-1105)" above) -- there is no
+sidecar meta file to go stale relative to whichever process actually
+happens to be running the daemon. A mismatch between the daemon's
+self-reported version and the CURRENT client's own version (most likely: a
+daemon spawned before a `frob` upgrade, still idling) is asked to step
+aside via the `frob_shutdown` RPC (`_shutdown_stale_daemon`, replacing
+T-1093's original `SIGTERM`-by-recorded-pid dance) before a fresh daemon
+is spawned in its place. `_socketd.acquire_singleton_lock`'s `flock` is
+still what actually guarantees exclusivity underneath; the version RPC
+only decides WHEN to ask a live daemon to step aside gracefully rather
+than relying on `flock` contention alone (which would just make the fresh
+spawn silently lose to the stale one it should be replacing). This closes
+the follow-on T-1093 disclosed (T-draft-8a56400c).
 
 ### Proxied commands
 

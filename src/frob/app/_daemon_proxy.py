@@ -21,20 +21,18 @@ one of two outcomes, transparently:
    this module's logger and swallowed here.
 
 Self-healing version skew (T-1093 acceptance [1] / T-0321 HARD requirement
-6): `_socketd`'s JSON-RPC protocol carries no version field of its own (out
-of THIS ticket's scope -- `src/frob/serve/**` belongs to a sibling ticket
-this wave), so this module tags the daemon it spawns with a sidecar
-`.frob/daemon.meta.json` `{"version", "pid"}` written at spawn time. Before
-trusting a socket that already exists, `ensure_daemon` compares that
-recorded version against this process's own installed `frob` version
-(`importlib.metadata.version("frob")`); a mismatch means the daemon predates
-(or postdates) this client's own frob install, most likely a stale daemon
-left running across a `frob` upgrade -- it is SIGTERM'd and a fresh one is
-spawned in its place before the query proceeds. This is an honest, disclosed
-residual: a follow-on ticket giving `_socketd` its own `frob_version` RPC
-method (or embedding the version in the JSON-RPC handshake itself) would let
-the daemon self-report rather than relying on this sidecar file staying in
-sync with whichever process last spawned it; filed as T-draft-8a56400c.
+6, T-1105): `ensure_daemon` asks the daemon itself, over the socket, via
+the `frob_version` RPC (T-1105, `frob.serve._socketd.daemon_version`) --
+there is no sidecar meta-file to fall out of sync with whichever process
+last spawned the daemon. A mismatch between the daemon's self-reported
+version and this client's own (`_client_version`) means the daemon predates
+(or postdates) this client's own `frob` install, most likely a stale daemon
+left running across a `frob` upgrade -- it is asked to gracefully stop via
+the `frob_shutdown` RPC and a fresh one is spawned in its place before the
+query proceeds. This replaces T-1093's original `.frob/daemon.meta.json`
+sidecar-file approach (a client-written `{"version", "pid"}` file compared
+against, and a `SIGTERM`-by-recorded-pid teardown) with a real protocol-
+level handshake, per the residual T-1093 disclosed (T-draft-8a56400c).
 
 `FROB_NO_DAEMON=1` is an unconditional bypass (T-1093 acceptance [2]): with
 it set, `query()` returns `Err(ProxyReason.Disabled)` immediately, before
@@ -52,7 +50,6 @@ one against.
 
 from __future__ import annotations
 
-import json
 import os
 import subprocess
 import sys
@@ -67,19 +64,19 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
-_META_REL = Path(".frob") / "daemon.meta.json"
 # How long a fresh spawn is given to bind its socket before this call gives
 # up and falls back for THIS query -- kept short (this runs on the CLI's hot
 # path) since the payoff is warm state on the NEXT call, not necessarily
 # this one.
 _SPAWN_GRACE_S = 1.5
 _SPAWN_POLL_INTERVAL_S = 0.05
-# frob:waive DUP001 reason="T-1093: this SIGTERM grace window mirrors \
+# frob:waive DUP001 reason="T-1093/T-1105: this shutdown grace window mirrors \
 # _SPAWN_GRACE_S's shape (a short bounded poll loop) but measures a distinct \
-# thing -- an old process releasing its flock, not a new one binding a \
-# socket -- and the two callers (ensure_daemon's skew path vs query's fresh- \
-# spawn path) would still need two constants even if the values matched"
-_KILL_GRACE_S = 1.0
+# thing -- an old daemon releasing its flock after a graceful frob_shutdown \
+# RPC, not a new one binding a socket -- and the two callers (ensure_daemon's \
+# skew path vs query's fresh-spawn path) would still need two constants even \
+# if the values matched"
+_SHUTDOWN_GRACE_S = 1.0
 
 
 # frob:doc docs/modules/serve.md#cli-daemon-proxy-t-1093
@@ -109,39 +106,14 @@ def _client_version() -> str:
         return "unknown"
 
 
-def _meta_path(root: Path) -> Path:
-    """Sidecar file this module writes at spawn time to tag a daemon with
-    the client version that spawned it -- `<root>/.frob/daemon.meta.json`."""
-    return root / _META_REL
-
-
-def _read_meta(root: Path) -> dict[str, Any] | None:
-    """The last-spawned daemon's recorded `{"version", "pid"}`, or `None` if
-    no daemon has ever been spawned for `root` by this module (a missing or
-    malformed file is treated as "nothing recorded", not an error)."""
-    try:
-        return json.loads(_meta_path(root).read_text())
-    except (FileNotFoundError, ValueError, OSError):
-        return None
-
-
-def _write_meta(root: Path, pid: int) -> None:
-    """Record the spawning client's version + the daemon's pid, for the
-    next caller's version-skew check."""
-    path = _meta_path(root)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"version": _client_version(), "pid": pid}))
-
-
 def _spawn_daemon(root: Path) -> None:
     """Best-effort, fire-and-forget spawn of the T-1092 socket daemon
     (`frob.serve.run_socket_daemon`) as a detached subprocess of the
     CURRENTLY RUNNING interpreter (`sys.executable`, so it inherits this
     exact `frob` install rather than whatever a bare `frob` on PATH would
-    resolve to), tagged with this process's version via `_write_meta`.
-    Never raises: a spawn failure just means the next query stays
-    `Unreachable` and falls back in-process, same as any other daemon-down
-    case."""
+    resolve to). Never raises: a spawn failure just means the next query
+    stays `Unreachable` and falls back in-process, same as any other
+    daemon-down case."""
     code = (
         "from pathlib import Path\n"
         "from frob.serve import SocketDaemonConfig, run_socket_daemon\n"
@@ -158,71 +130,85 @@ def _spawn_daemon(root: Path) -> None:
     except OSError as exc:
         _log.info("daemon_proxy: spawn failed for %s: %s", root, exc)
         return
-    _write_meta(root, proc.pid)
     _log.info(
-        "daemon_proxy: spawned daemon pid=%d for %s (version=%s)",
+        "daemon_proxy: spawned daemon pid=%d for %s (client version=%s)",
         proc.pid,
         root,
         _client_version(),
     )
 
 
-def _kill_stale_daemon(root: Path, meta: dict[str, Any]) -> None:
-    """SIGTERM the daemon `meta` describes and wait (briefly, bounded by
-    `_KILL_GRACE_S`) for its pid to disappear, so a follow-up spawn does not
-    race it for the still-held `flock`. A pid that is already gone
-    (`ProcessLookupError`) or that outlives the grace window is not an
+def _query_daemon_version(root: Path) -> str | None:
+    """Ask a daemon that may already be running for `root` to self-report
+    its version via the `frob_version` RPC (T-1105), or `None` if none
+    answered (no daemon up, or an unreachable/malformed response) -- the
+    real protocol-level replacement for reading a sidecar meta file."""
+    from frob.serve import send_request
+
+    result = send_request(root, "frob_version")
+    if result.is_err:
+        return None
+    payload = result.danger_ok
+    if not isinstance(payload, dict):
+        return None
+    version = payload.get("version")
+    return version if isinstance(version, str) else None
+
+
+def _shutdown_stale_daemon(root: Path) -> None:
+    """Ask the daemon already running for `root` to stop gracefully via the
+    `frob_shutdown` RPC (T-1105) and wait (briefly, bounded by
+    `_SHUTDOWN_GRACE_S`) for its lock file to be released, so a follow-up
+    spawn does not race it for the still-held `flock`. The RPC itself
+    failing (daemon gone between the version check and now) is not an
     error here -- either way the caller proceeds to spawn a replacement;
     `acquire_singleton_lock` is what actually guarantees exclusivity."""
-    pid = meta.get("pid")
-    if not isinstance(pid, int):
-        return
-    try:
-        os.kill(pid, 15)  # SIGTERM
+    from frob.serve import send_request
+    from frob.serve._socketd import lock_path
+
+    result = send_request(root, "frob_shutdown")
+    if result.is_err:
         _log.info(
-            "daemon_proxy: version skew, SIGTERM stale daemon pid=%d "
-            "(spawned by version=%s) for %s",
-            pid,
-            meta.get("version"),
+            "daemon_proxy: version skew, frob_shutdown RPC failed for %s: %s",
             root,
+            result.danger_err,
         )
-    except ProcessLookupError:
-        _log.info("daemon_proxy: stale daemon pid=%d already gone for %s", pid, root)
         return
-    except OSError as exc:
-        _log.info("daemon_proxy: could not signal stale daemon pid=%d: %s", pid, exc)
-        return
-    deadline = time.monotonic() + _KILL_GRACE_S
+    _log.info("daemon_proxy: version skew, frob_shutdown accepted for %s", root)
+    path = lock_path(root)
+    deadline = time.monotonic() + _SHUTDOWN_GRACE_S
     while time.monotonic() < deadline:
-        try:
-            os.kill(pid, 0)
-        except OSError:
+        if not path.exists():
             return
         time.sleep(_SPAWN_POLL_INTERVAL_S)
 
 
 # frob:doc docs/modules/serve.md#cli-daemon-proxy-t-1093
 # frob:tests tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_spawns_when_nothing_recorded kind="unit"  # noqa: E501
+# frob:tests tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_version_handshake_end_to_end kind="unit"  # noqa: E501
 # frob:tests tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_restarts_on_version_skew kind="unit"  # noqa: E501
 # frob:tests tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_noop_when_version_matches kind="unit"  # noqa: E501
 def ensure_daemon(root: Path) -> None:
     """Ensure a live, version-matched daemon is running (or freshly
     starting) for `root`, self-healing a version-skewed one first (T-1093
-    acceptance [1]). Best-effort only and never raises: a caller that
-    cannot get a daemon up simply finds no socket to connect to on the next
-    `query()` call and falls back in-process, same as any other
-    `Unreachable` case."""
-    meta = _read_meta(root)
-    if meta is not None and meta.get("version") != _client_version():
+    acceptance [1], T-1105). Version skew is detected via the daemon's own
+    `frob_version` RPC response (`_query_daemon_version`), not a sidecar
+    meta file -- there is nothing here to go stale relative to whichever
+    process actually happens to be running the daemon. Best-effort only
+    and never raises: a caller that cannot get a daemon up simply finds no
+    socket to connect to on the next `query()` call and falls back
+    in-process, same as any other `Unreachable` case."""
+    daemon_version = _query_daemon_version(root)
+    if daemon_version is not None and daemon_version != _client_version():
         _log.info(
             "daemon_proxy: version skew detected (daemon=%s, client=%s) for %s",
-            meta.get("version"),
+            daemon_version,
             _client_version(),
             root,
         )
-        _kill_stale_daemon(root, meta)
-        meta = None
-    if meta is None:
+        _shutdown_stale_daemon(root)
+        daemon_version = None
+    if daemon_version is None:
         _spawn_daemon(root)
 
 
