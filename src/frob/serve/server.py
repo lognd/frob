@@ -156,10 +156,10 @@ def run_stdio(root: Path) -> None:
     """Build the server, start the T-0733 background daemon (post-land
     re-verify + rebase-bot), and block serving tool calls over stdio
     transport; stops the daemon thread on the way out."""
-    from frob.serve._daemon import start_daemon
+    from frob.serve._daemon import _start_daemon
 
     server = build_server(root)
-    stop_daemon = start_daemon(root)
+    stop_daemon = _start_daemon(root)
     _log.info("serve: starting stdio transport, root=%s", root)
     try:
         server.run(transport="stdio")

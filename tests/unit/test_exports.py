@@ -157,3 +157,51 @@ class TestExportsConsumers:
         js = result.danger_ok.as_json()
         assert "widget" in js
         assert "consumer.py" in js
+
+
+class TestFrobExportsPolicyResidue:
+    """T-0871: real-repo proof that `frob-exports` reports zero missing
+    public symbols for the 9 packages this ticket's scope covers -- every
+    remaining missing symbol was resolved as a deliberate export
+    (`__init__.py` import + `__all__` entry) or a demotion to private
+    (leading underscore, referrers fixed), never a blanket waiver."""
+
+    _PACKAGES = (
+        "src/frob",
+        "src/frob/arch",
+        "src/frob/lang",
+        "src/frob/mutate",
+        "src/frob/perf",
+        "src/frob/scaffold",
+        "src/frob/serve",
+        "src/frob/testing",
+        "src/frob/vet",
+    )
+
+    def _missing(self, pkg_dir: Path) -> list[str]:
+        """Every `module.symbol` in `pkg_dir` not textually referenced in
+        its own `__init__.py` -- the same substring check `frob check`'s
+        `frob-exports` tool uses (`frob.check._python._missing_exports`)."""
+        result = exports_package(pkg_dir, include_private=False)
+        assert result.is_ok, result.err
+        er = result.danger_ok
+        init_src = (pkg_dir / "__init__.py").read_text(encoding="utf-8")
+        missing = []
+        for mod in er.modules:
+            for sym in mod.symbols:
+                if sym not in init_src:
+                    missing.append(f"{mod.module}.{sym}")
+        return missing
+
+    # frob:tests tests/unit/test_exports.py::TestFrobExportsPolicyResidue.test_all_nine_packages_report_zero_missing_symbols kind="unit"  # noqa: E501
+    def test_all_nine_packages_report_zero_missing_symbols(self):
+        repo_root = Path(__file__).resolve().parents[2]
+        offenders: dict[str, list[str]] = {}
+        for rel in self._PACKAGES:
+            pkg_dir = repo_root / rel
+            missing = self._missing(pkg_dir)
+            if missing:
+                offenders[rel] = missing
+        assert offenders == {}, (
+            f"frob-exports still reports missing symbols: {offenders}"
+        )

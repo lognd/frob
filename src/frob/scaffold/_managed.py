@@ -206,8 +206,18 @@ def _digest(content: str) -> str:
 
 
 # frob:doc docs/commands/scaffold.md#managed-blocks-t-0736
+# frob:waive AFFECT001 reason="T-0871: ManagedTextBlock -> _ManagedTextBlock \
+# rename only (frob-exports privatize: zero real consumers outside this \
+# module) -- the managed-blocks CONTRACT docs/commands/scaffold.md#managed-\
+# blocks-t-0736 describes is unchanged, this type was never part of it"
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
+# docs/commands/scaffold.md#managed-blocks-t-0736 documents this managed- \
+# block row shape; demoted to private in this ticket (frob-exports: zero \
+# real consumers outside this module) but remains the thing the doc \
+# section describes"
+# frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 @dataclass(frozen=True)
-class ManagedTextBlock:
+class _ManagedTextBlock:
     """One frob-owned marked region: `block_id` identifies it, `target` is
     the repo-relative file it lives in, `content` is the exact text
     installed between its markers (T-0736)."""
@@ -293,13 +303,17 @@ FROBLEMS.md
 """
 
 # frob:doc docs/commands/scaffold.md#managed-blocks-t-0736
+# frob:waive AFFECT001 reason="T-0871: only the ManagedTextBlock -> \
+# _ManagedTextBlock type-annotation rename touched this constant's own \
+# line (frob-exports privatize, zero real consumers outside this module) -- \
+# its contents/order are unchanged"
 #: All text-kind managed blocks. Order matters only for `apply`'s report
 #: ordering, not for correctness (each targets a distinct file/marker id).
-MANAGED_TEXT_BLOCKS: tuple[ManagedTextBlock, ...] = (
-    ManagedTextBlock(
+MANAGED_TEXT_BLOCKS: tuple[_ManagedTextBlock, ...] = (
+    _ManagedTextBlock(
         block_id="makefile-core-shim", target="Makefile", content=_MAKEFILE_CORE_SHIM
     ),
-    ManagedTextBlock(
+    _ManagedTextBlock(
         block_id="gitignore-standard",
         target=".gitignore",
         content=_GITIGNORE_STANDARD_ENTRIES,
@@ -362,8 +376,8 @@ def _has_legacy_core_cache_logic(text: str) -> bool:
     return any(marker in text for marker in _LEGACY_CARGO_CACHE_MARKERS)
 
 
-def _text_block_status(root: Path, block: ManagedTextBlock) -> ManagedBlockStatus:
-    """`ManagedBlockStatus` for one `ManagedTextBlock` under `root`: absent
+def _text_block_status(root: Path, block: _ManagedTextBlock) -> ManagedBlockStatus:
+    """`ManagedBlockStatus` for one `_ManagedTextBlock` under `root`: absent
     file or absent marker pair is `present=False`; a present region whose
     digest differs from the canonical content's is `stale=True`.
 
@@ -607,8 +621,8 @@ def _apply_stash_guard(root: Path) -> str:
     return f"hook {_STASH_GUARD_HOOK_NAME}: {verb}"
 
 
-def _apply_text_block(root: Path, block: ManagedTextBlock) -> str:
-    """Idempotently install/update one `ManagedTextBlock` under `root`:
+def _apply_text_block(root: Path, block: _ManagedTextBlock) -> str:
+    """Idempotently install/update one `_ManagedTextBlock` under `root`:
     no-op if already present and matching, in-place replace of the marked
     region if present and different, else append a fresh marked region
     (creating the file/parent dirs if needed). Returns a one-line
@@ -704,7 +718,7 @@ __all__ = [
     "MANAGED_TEXT_BLOCKS",
     "STASH_GUARD_HOOK_NAMES",
     "ManagedBlockStatus",
-    "ManagedTextBlock",
+    "_ManagedTextBlock",
     "apply_managed_blocks",
     "scaffold_conformance_status",
 ]

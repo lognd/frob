@@ -77,13 +77,13 @@ installed" message, exiting 1, instead of letting the import error propagate.
 
 ## Warm state
 
-<!-- frob:describes src/frob/serve/_warm.py::WarmState -->
-<!-- frob:describes src/frob/serve/_warm.py::repo_dirty_key -->
-<!-- frob:describes src/frob/serve/_warm.py::warm_state -->
-<!-- frob:describes src/frob/serve/_warm.py::invalidate -->
+<!-- frob:describes src/frob/serve/_warm.py::_WarmState -->
+<!-- frob:describes src/frob/serve/_warm.py::_repo_dirty_key -->
+<!-- frob:describes src/frob/serve/_warm.py::_warm_state -->
+<!-- frob:describes src/frob/serve/_warm.py::_invalidate -->
 
 `frob serve` runs as one long-lived stdio process for the life of the MCP
-client session, not one process per tool call. `frob.serve._warm.WarmState`
+client session, not one process per tool call. `frob.serve._warm._WarmState`
 holds, per repo root, in process memory:
 
 1. the built `GraphSnapshot` (`frob.graph.build_graph`);
@@ -91,13 +91,13 @@ holds, per repo root, in process memory:
    never stamped);
 3. collected python pytest node ids (`frob.testing.collect_python_tests`).
 
-`warm_state(root)` is the single entry point every tool above uses instead
-of loading any of the three cold. It is keyed by `repo_dirty_key(root)`: a
+`_warm_state(root)` is the single entry point every tool above uses instead
+of loading any of the three cold. It is keyed by `_repo_dirty_key(root)`: a
 `git rev-parse HEAD` + `git status --porcelain=v1 --untracked-files=all`
 signature (excluding `.frob/` itself via a pathspec -- `build_graph`/
 `collect_python_tests` write `.frob/cache.db` and the collection cache as a
 side effect of the very build this key gates, so including it would make
-every build self-invalidate on the very next call), PLUS an
+every build self-_invalidate on the very next call), PLUS an
 `(mtime_ns, size)` tag per path the status output names (closing a real
 gap: porcelain status alone only reports THAT a path is untracked or
 modified, never its content, so editing an already-untracked file's bytes
@@ -113,8 +113,8 @@ without staging it would otherwise be invisible to the key).
   incremental via the `.frob` sqlite cache -- only files whose content hash
   moved get reparsed) and `collect_python_tests` (itself cached on its own
   content key, T-0333) run again; the result replaces the cached state.
-- `invalidate(root)` drops the cached state unconditionally, forcing the
-  next `warm_state` call to rebuild cold -- used by `frob_check_delta`'s
+- `_invalidate(root)` drops the cached state unconditionally, forcing the
+  next `_warm_state` call to rebuild cold -- used by `frob_check_delta`'s
   `verify=True` path and by tests.
 
 ### Staleness/correctness contract
@@ -122,7 +122,7 @@ without staging it would otherwise be invisible to the key).
 **What incremental reuse covers**: the graph snapshot, the baseline
 document, and the collected test id set -- each is either reused verbatim
 on a proven-unchanged tree, or rebuilt via its own already-incremental
-on-disk mechanism otherwise. `repo_dirty_key`'s invalidation logic has a
+on-disk mechanism otherwise. `_repo_dirty_key`'s invalidation logic has a
 direct correctness test (`tests/test_serve.py::TestWarmState`) plus a
 property test (`test_warm_state_rebuilds_iff_tree_changed`) asserting the
 vacuous-pass invariant: a rebuild happens on EVERY call that followed a
@@ -197,24 +197,24 @@ knob to skip in normal use.
 
 ## Daemon jobs
 
-<!-- frob:describes src/frob/serve/_daemon.py::PostLandVerdict -->
-<!-- frob:describes src/frob/serve/_daemon.py::RebaseWarning -->
-<!-- frob:describes src/frob/serve/_daemon.py::DaemonStatus -->
-<!-- frob:describes src/frob/serve/_daemon.py::poll_post_land -->
-<!-- frob:describes src/frob/serve/_daemon.py::poll_rebase_bot -->
+<!-- frob:describes src/frob/serve/_daemon.py::_PostLandVerdict -->
+<!-- frob:describes src/frob/serve/_daemon.py::_RebaseWarning -->
+<!-- frob:describes src/frob/serve/_daemon.py::_DaemonStatus -->
+<!-- frob:describes src/frob/serve/_daemon.py::_poll_post_land -->
+<!-- frob:describes src/frob/serve/_daemon.py::_poll_rebase_bot -->
 <!-- frob:describes src/frob/serve/_daemon.py::daemon_status -->
-<!-- frob:describes src/frob/serve/_daemon.py::run_daemon_cycle -->
-<!-- frob:describes src/frob/serve/_daemon.py::start_daemon -->
+<!-- frob:describes src/frob/serve/_daemon.py::_run_daemon_cycle -->
+<!-- frob:describes src/frob/serve/_daemon.py::_start_daemon -->
 <!-- frob:describes src/frob/serve/_tools.py::frob_daemon_status -->
 
 (T-0733) `run_stdio` starts a background daemon thread (`frob.serve.
-_daemon.start_daemon`) alongside the MCP transport, running one cycle
-(`run_daemon_cycle`) every `DEFAULT_POLL_INTERVAL_S` (20s) for the life of
+_daemon._start_daemon`) alongside the MCP transport, running one cycle
+(`_run_daemon_cycle`) every `DEFAULT_POLL_INTERVAL_S` (20s) for the life of
 the `frob serve` process. Two jobs per cycle:
 
-1. **Post-land re-verify** (`poll_post_land`) -- watches `main`'s resolved
+1. **Post-land re-verify** (`_poll_post_land`) -- watches `main`'s resolved
    HEAD (`git rev-parse main`). If it has not moved since the last cycle,
-   the cached `PostLandVerdict` is returned untouched (no re-work). If it
+   the cached `_PostLandVerdict` is returned untouched (no re-work). If it
    moved (a land happened), the warm cache (`frob.serve._warm`) is
    invalidated and one fresh `frob_check_delta`-equivalent pass runs
    (plus, by default, the touched-set tests against `main`), and the new
@@ -222,7 +222,7 @@ the `frob serve` process. Two jobs per cycle:
    fresh delta verdict is available via `frob_daemon_status` within
    `DEFAULT_POLL_INTERVAL_S` of any land -- comfortably inside a minute --
    without any agent or coordinator invoking `frob check` themselves.
-2. **Rebase-bot** (`poll_rebase_bot`) -- for every in-flight worktree
+2. **Rebase-bot** (`_poll_rebase_bot`) -- for every in-flight worktree
    branch (`frob.tickets._leases.read_all_leases`, the same T-0473
    liveness signal `doable` already trusts), simulates merging current
    `main` into that branch with old-style `git merge-tree <merge-base>
@@ -231,12 +231,12 @@ the `frob serve` process. Two jobs per cycle:
    is detected by the presence of `<<<<<<<` markers in that command's
    stdout (this repo's git baseline, 2.34, predates the `--write-tree`
    form whose exit code reports conflicts directly). Every branch whose
-   simulated merge would conflict gets a `RebaseWarning`, replacing the
+   simulated merge would conflict gets a `_RebaseWarning`, replacing the
    full warning set for the repo root each cycle (a branch that
    resolved clean, or that landed and dropped its lease, does not linger
    as a stale warning).
 
-Both jobs write into one `DaemonStatus` cache per repo root (mirroring
+Both jobs write into one `_DaemonStatus` cache per repo root (mirroring
 `frob.serve._warm`'s per-root cache shape); `frob_daemon_status()` -- the
 new MCP tool -- reads it back verbatim as JSON (`post_land`,
 `rebase_warnings`, `last_poll_at`), never triggering a poll itself. A
@@ -244,10 +244,10 @@ new MCP tool -- reads it back verbatim as JSON (`post_land`,
 has not completed a cycle yet (or, for `post_land`, that `main` could not
 be resolved), not that nothing needs attention.
 
-`run_daemon_cycle(root)` is the same single-cycle unit both the
+`_run_daemon_cycle(root)` is the same single-cycle unit both the
 background loop and tests call -- tests call it (or the two `poll_*`
 functions directly) with no real sleep and no thread, for a deterministic
-single-cycle assertion; only `start_daemon`'s loop actually sleeps between
+single-cycle assertion; only `_start_daemon`'s loop actually sleeps between
 cycles, via a `threading.Event.wait` that `run_stdio` sets on shutdown so
 the thread does not outlive the stdio transport.
 
@@ -280,11 +280,11 @@ of independently pinning a second `mcp` version via a bare `--with` (T-0177
   spawns subprocesses (test runners) -- it still mutates nothing frob-owned
   (no ticket/lock/graph-cache write beyond the normal incremental build a
   read tool already performs).
-- The T-0733 daemon (`_daemon.start_daemon`) is likewise read-only against
-  frob-owned state: `poll_post_land`'s delta/touched-tests pass and
-  `poll_rebase_bot`'s `git merge-tree` simulation both only ever read (no
+- The T-0733 daemon (`_daemon._start_daemon`) is likewise read-only against
+  frob-owned state: `_poll_post_land`'s delta/touched-tests pass and
+  `_poll_rebase_bot`'s `git merge-tree` simulation both only ever read (no
   ticket/lock/ledger write, no worktree checkout, no branch switch); the
-  only thing they mutate is the in-process `DaemonStatus` cache and,
+  only thing they mutate is the in-process `_DaemonStatus` cache and,
   transitively through the warm-state rebuild, the same on-disk
   `.frob/cache.db` graph/test-collection cache a normal read tool call
   already writes.

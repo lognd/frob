@@ -12,10 +12,10 @@ from tree_sitter import Node
 
 from frob.lang._common import (
     _canonical_tokens,
+    _child_text,
     _leading_doc_comment,
     _leaf_tokens,
     _span_of,
-    child_text,
 )
 from frob.lang._models import RawSymbol, SymbolKind
 
@@ -62,7 +62,7 @@ def _rust_pyo3_export(node: Node) -> bool:
         "block_comment",
     ):
         if sib.type == "attribute_item" and any(
-            marker in child_text(sib) for marker in _PYO3_EXPORT_ATTRS
+            marker in _child_text(sib) for marker in _PYO3_EXPORT_ATTRS
         ):
             return True
         sib = sib.prev_sibling
@@ -111,7 +111,7 @@ def _function_symbol(
     node: Node, stack: tuple[str, ...], in_impl: bool, in_pyo3_impl: bool, doc: str
 ) -> RawSymbol:
     """A function/method `RawSymbol` (method when inside an impl/trait)."""
-    name = child_text(node.child_by_field_name("name"))
+    name = _child_text(node.child_by_field_name("name"))
     body = node.child_by_field_name("body")
     skip = ((body.start_byte, body.end_byte),) if body else ()
     return RawSymbol(
@@ -130,7 +130,7 @@ def _named_symbol(
     node: Node, stack: tuple[str, ...], kind: SymbolKind, doc: str
 ) -> RawSymbol:
     """A struct/trait/enum/type/const `RawSymbol` (no body tokens)."""
-    name = child_text(node.child_by_field_name("name"))
+    name = _child_text(node.child_by_field_name("name"))
     return RawSymbol(
         qualname=".".join((*stack, name)),
         kind=kind,
@@ -147,7 +147,7 @@ def _rust_test_macro_name(node: Node) -> str | None:
     recognized test-generating macro (`_TEST_MACRO_NAMES`), else None."""
     if node.type != "macro_invocation":
         return None
-    name = child_text(node.child_by_field_name("macro"))
+    name = _child_text(node.child_by_field_name("macro"))
     return name if name in _TEST_MACRO_NAMES else None
 
 
@@ -205,14 +205,14 @@ def _recurse_trait(
         return
     body = node.child_by_field_name("body")
     if body is not None:
-        name = child_text(node.child_by_field_name("name"))
+        name = _child_text(node.child_by_field_name("name"))
         # frob:invariant terminates reason="body is node's own 'body' field child, and node is a child of the container passed to the caller's _visit, so body is a proper descendant of that container in the finite tree-sitter parse tree" measure="container's subtree depth strictly decreases"  # noqa: E501
         _visit(body, (*stack, name), symbols, in_impl=True)
 
 
 def _recurse_impl(node: Node, stack: tuple[str, ...], symbols: list[RawSymbol]) -> None:
     """Descend into an impl block, propagating `#[pymethods]` export status."""
-    name = child_text(node.child_by_field_name("type"))
+    name = _child_text(node.child_by_field_name("type"))
     body = node.child_by_field_name("body")
     if body is not None:
         # frob:invariant terminates reason="body is node's own 'body' field child, and node is a child of the container passed to the caller's _visit, so body is a proper descendant of that container in the finite tree-sitter parse tree" measure="container's subtree depth strictly decreases"  # noqa: E501
@@ -229,7 +229,7 @@ def _recurse_mod(
     node: Node, stack: tuple[str, ...], symbols: list[RawSymbol], in_impl: bool
 ) -> None:
     """Descend into a module body."""
-    name = child_text(node.child_by_field_name("name"))
+    name = _child_text(node.child_by_field_name("name"))
     body = node.child_by_field_name("body")
     if body is not None:
         # frob:invariant terminates reason="body is node's own 'body' field child, and node is a child of the container passed to the caller's _visit, so body is a proper descendant of that container in the finite tree-sitter parse tree" measure="container's subtree depth strictly decreases"  # noqa: E501

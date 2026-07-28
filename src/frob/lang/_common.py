@@ -16,6 +16,13 @@ explicitly forbids.
 # already-implemented internal behavior, verifiable by reading the code it annotates) \
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
+# frob:waive ARCH102 reason="T-0871 demoted child_text/iter_cpp_functions to \
+# _child_text/_iter_cpp_functions (frob-exports: genuinely private, used only \
+# within frob.lang's own walkers, never a cross-package import) -- the reduced \
+# public surface crossed the clustering heuristic's report threshold as a side \
+# effect of the demotion, not a new design problem; remaining exports \
+# (child_by_field/export_tree/flatten_tree) are the same shared tree-sitter \
+# primitives this module's docstring already scopes it to"
 
 from __future__ import annotations
 
@@ -362,7 +369,7 @@ def _leading_doc_comment(
             break
         if sib.end_point[0] + 1 < expected_end_row:
             break
-        collected.append(_strip_comment_delims(child_text(sib)))
+        collected.append(_strip_comment_delims(_child_text(sib)))
         expected_end_row = sib.start_point[0]
         i -= 1
     collected.reverse()
@@ -397,7 +404,13 @@ def child_by_field(node: Node, field: str) -> Node | None:
 
 
 # frob:doc docs/modules/lang.md#primitives
-def child_text(node: Node | None) -> str:
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
+# docs/modules/lang.md#primitives documents the shared tree-sitter \
+# primitives this file exists to centralize, including this one; demoted \
+# to private in this ticket (frob-exports: used only by frob.lang's own \
+# walkers, never a cross-package import) but remains the thing the doc \
+# section describes, and the doc text/directive were updated to the new name"
+def _child_text(node: Node | None) -> str:
     """Decode a node's own text, or '' if the node is absent -- a programmer
     convenience for optional field lookups (missing name is a grammar bug,
     not a runtime error worth a Result)."""
@@ -558,8 +571,8 @@ def _cpp_declarator_name(node: Node) -> str:
     """Innermost name of a C/C++ declarator, unwrapping `function_declarator`."""
     if node.type == "function_declarator":
         name_node = node.child_by_field_name("declarator")
-        return child_text(name_node) if name_node else child_text(node)
-    return child_text(node)
+        return _child_text(name_node) if name_node else _child_text(node)
+    return _child_text(node)
 
 
 def _cpp_free_function(node: Node) -> tuple[Node, str] | None:
@@ -575,7 +588,7 @@ def _cpp_free_function(node: Node) -> tuple[Node, str] | None:
 def _cpp_class_methods(node: Node) -> list[tuple[Node, str]]:
     """`(node, ClassName::method)` for every method in a class/struct `node`."""
     name_node = node.child_by_field_name("name")
-    class_name = child_text(name_node) if name_node else child_text(node)
+    class_name = _child_text(name_node) if name_node else _child_text(node)
     body = node.child_by_field_name("body")
     if body is None:
         return []
@@ -588,7 +601,13 @@ def _cpp_class_methods(node: Node) -> list[tuple[Node, str]]:
 
 
 # frob:doc docs/modules/lang.md#primitives
-def iter_cpp_functions(root: Node) -> tuple[tuple[Node, str], ...]:
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
+# docs/modules/lang.md#primitives documents the shared tree-sitter \
+# primitives this file exists to centralize, including this one; demoted \
+# to private in this ticket (frob-exports: used only by frob.lang's own \
+# walkers, never a cross-package import) but remains the thing the doc \
+# section describes, and the doc text/directive were updated to the new name"
+def _iter_cpp_functions(root: Node) -> tuple[tuple[Node, str], ...]:
     """(node, qualified_name) for every C/C++ function under `root`.
 
     Shared by `frob.arch` (long-function/god-class checks) and `frob.dup`

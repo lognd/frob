@@ -89,7 +89,7 @@ mutant run re-enters the harness and the suite forks without bound.
 <!-- frob:describes src/frob/mutate/_journal.py::list_stale_journals -->
 <!-- frob:describes src/frob/mutate/_journal.py::remove_journal -->
 <!-- frob:describes src/frob/mutate/_journal.py::JournalError -->
-<!-- frob:describes src/frob/mutate/_journal.py::MutationJournalEntry -->
+<!-- frob:describes src/frob/mutate/_journal.py::_MutationJournalEntry -->
 <!-- frob:describes src/frob/mutate/_journal.py::StaleJournal -->
 
 The `finally`-based restore above does not survive a KILLED process --
@@ -105,7 +105,7 @@ T-0857 closes that gap with a journal:
 ```python
 from frob.mutate._journal import (
     JournalError,
-    MutationJournalEntry,
+    _MutationJournalEntry,
     StaleJournal,
     write_journal,
     remove_journal,
@@ -115,7 +115,7 @@ from frob.mutate._journal import (
 ```
 
 - `JournalError` -- fallible outcomes: `Collision`.
-- `MutationJournalEntry` -- one target's pre-mutation bytes, persisted.
+- `_MutationJournalEntry` -- one target's pre-mutation bytes, persisted.
 - `StaleJournal` -- a journal found on disk, needing restore.
 - `write_journal` -- journal `original` bytes before mutating.
 - `remove_journal` -- drop the journal after a successful restore.

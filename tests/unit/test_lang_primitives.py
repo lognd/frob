@@ -27,15 +27,15 @@ from frob.lang import (
 )
 from frob.lang._common import (
     _canonical_tokens,
+    _child_text,
     _collapse_ws,
+    _iter_cpp_functions,
     _leading_doc_comment,
     _leaf_tokens,
     _span_of,
     _strip_comment_delims,
-    child_text,
     export_tree,
     flatten_tree,
-    iter_cpp_functions,
 )
 from frob.lang._extract import COMMENT_TYPES
 from frob.lang._extract import extract_imports as extract_imports_tree
@@ -153,11 +153,11 @@ def test_span_of_is_one_based_inclusive(tmp_path: Path):
 
 
 def test_child_text_decodes_and_tolerates_none(tmp_path: Path):
-    # frob:tests src/frob/lang/_common.py::child_text kind="unit"
+    # frob:tests src/frob/lang/_common.py::_child_text kind="unit"
     tree, _src, _lang = _py_tree(tmp_path)
     fn = next(n for n in tree.root_node.children if n.type == "function_definition")
-    assert child_text(fn.child_by_field_name("name")) == "greet"
-    assert child_text(None) == ""
+    assert _child_text(fn.child_by_field_name("name")) == "greet"
+    assert _child_text(None) == ""
 
 
 def test_child_by_field_and_node_text_public_wrappers(tmp_path: Path):
@@ -211,9 +211,9 @@ def test_export_tree_and_flatten_tree_round_trip(tmp_path: Path):
 
 
 def test_iter_cpp_functions_finds_free_and_member(tmp_path: Path):
-    # frob:tests src/frob/lang/_common.py::iter_cpp_functions kind="unit"
+    # frob:tests src/frob/lang/_common.py::_iter_cpp_functions kind="unit"
     tree, _src, _lang = _cpp_tree(tmp_path)
-    names = {name for _node, name in iter_cpp_functions(tree.root_node)}
+    names = {name for _node, name in _iter_cpp_functions(tree.root_node)}
     assert "add" in names
     assert "Widget::render" in names
 

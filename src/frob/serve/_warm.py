@@ -4,11 +4,11 @@
 `frob serve` runs as one long-lived stdio process; before this module every
 MCP tool call re-loaded the graph snapshot, the stamped violation baseline,
 and the collected python test ids from disk on every single call, even
-across two calls with nothing changed on disk between them. `WarmState`
+across two calls with nothing changed on disk between them. `_WarmState`
 keeps the last-built copy of all three in process memory per repo root,
-keyed by `repo_dirty_key` -- a cheap `git rev-parse HEAD` + `git status
+keyed by `_repo_dirty_key` -- a cheap `git rev-parse HEAD` + `git status
 --porcelain` signature. An unchanged key means the working tree has not
-moved since the last build, so `warm_state` returns the cached copy with
+moved since the last build, so `_warm_state` returns the cached copy with
 zero re-walk/re-parse/subprocess cost; a changed key falls through to a
 fresh `build_graph`/`load_baseline`/`collect_python_tests` pass, each of
 which is itself already incremental on disk (`build_graph` only reparses
@@ -47,18 +47,20 @@ from frob.testing import CollectedTests, collect_python_tests
 _log = get_logger(__name__)
 
 _CACHE_REL = Path(".frob") / "cache.db"
-# Sentinel `repo_dirty_key` for a root `git` cannot answer for (not a repo,
-# or git itself unavailable) -- never matches a cached key, so `warm_state`
+# Sentinel `_repo_dirty_key` for a root `git` cannot answer for (not a repo,
+# or git itself unavailable) -- never matches a cached key, so `_warm_state`
 # always takes the cold path there. Correct (never serves a stale answer),
 # merely uncached.
 _ALWAYS_DIRTY = "frob-serve-no-git-signal"
 
 
 # frob:doc docs/modules/serve.md#warm-state
-class WarmState(BaseModel):
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
+# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
+class _WarmState(BaseModel):
     """One repo root's cached graph snapshot, stamped baseline, and
-    collected python test ids, tagged with the `repo_dirty_key` they were
-    built at -- `warm_state` reuses this verbatim while the key still
+    collected python test ids, tagged with the `_repo_dirty_key` they were
+    built at -- `_warm_state` reuses this verbatim while the key still
     matches the live tree."""
 
     model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
@@ -70,7 +72,7 @@ class WarmState(BaseModel):
     tests: CollectedTests | None
 
 
-_STATES: dict[str, WarmState] = {}
+_STATES: dict[str, _WarmState] = {}
 
 
 def _dirty_path_from_porcelain_line(line: str) -> str | None:
@@ -88,7 +90,7 @@ def _dirty_path_from_porcelain_line(line: str) -> str | None:
 def _stat_tag(root: Path, rel_path: str) -> str:
     """`"path:mtime_ns:size"` for `rel_path` under `root`, or `"path:gone"`
     if it no longer exists (deleted since `git status` was run) -- folded
-    into `repo_dirty_key` so an UNTRACKED file's own CONTENT edit is
+    into `_repo_dirty_key` so an UNTRACKED file's own CONTENT edit is
     observable. `git status --porcelain` alone only reports "this path is
     untracked" (`?? path`), never a content signal, so editing an
     already-untracked file's bytes without staging/committing would
@@ -103,19 +105,21 @@ def _stat_tag(root: Path, rel_path: str) -> str:
 
 # frob:doc docs/modules/serve.md#warm-state
 # frob:tests tests/test_serve.py::TestRepoDirtyKey.test_non_git_root_is_always_dirty kind="unit"  # noqa: E501
-def repo_dirty_key(root: Path) -> str:
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
+# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
+def _repo_dirty_key(root: Path) -> str:
     """`git rev-parse HEAD` + `git status --porcelain=v1 --untracked-files=all`
     (excluding `.frob/`, via the `:!.frob` pathspec, not `.gitignore` --
     `build_graph`/`collect_python_tests` write `.frob/cache.db` and friends
     as a SIDE EFFECT of the very warm-build this key gates, so including it
-    would make every build self-invalidate on the next call regardless of
+    would make every build self-_invalidate on the next call regardless of
     whether the tracked tree actually moved), PLUS an `(mtime_ns, size)` tag
     per path the status output names (`_stat_tag` -- porcelain status alone
     only reports THAT a path is untracked/modified, never its content, so
     editing an already-untracked file's bytes without staging it would
     otherwise be invisible to this key). Unchanged across two calls means
     nothing that matters has moved since the first, so the tree is provably
-    identical for `warm_state`'s purposes. Returns the `_ALWAYS_DIRTY`
+    identical for `_warm_state`'s purposes. Returns the `_ALWAYS_DIRTY`
     sentinel (never cacheable) for a non-git `root` or if either git
     invocation fails."""
     head = run_argv(("git", "-C", str(root), "rev-parse", "HEAD"))
@@ -154,8 +158,8 @@ def _collect_tests_or_none(root: Path) -> CollectedTests | None:
     return collected.danger_ok
 
 
-def _build_cold(root: Path, dirty_key: str) -> Result[WarmState, BuildError]:
-    """Cold-build a fresh `WarmState` at `dirty_key`: graph snapshot
+def _build_cold(root: Path, dirty_key: str) -> Result[_WarmState, BuildError]:
+    """Cold-build a fresh `_WarmState` at `dirty_key`: graph snapshot
     (`build_graph`, itself incremental via the `.frob` sqlite cache), the
     stamped baseline (`None` if never stamped), and collected python test
     ids (best-effort, `None` on failure) -- then cache it for `root`."""
@@ -169,7 +173,7 @@ def _build_cold(root: Path, dirty_key: str) -> Result[WarmState, BuildError]:
         )
         return Err(snapshot_result.danger_err)
 
-    state = WarmState(
+    state = _WarmState(
         root=str(root),
         dirty_key=dirty_key,
         snapshot=snapshot_result.danger_ok,
@@ -186,8 +190,10 @@ def _build_cold(root: Path, dirty_key: str) -> Result[WarmState, BuildError]:
 # frob:doc docs/modules/serve.md#warm-state
 # frob:tests tests/test_serve.py::TestWarmState.test_second_call_is_cache_hit kind="unit"  # noqa: E501
 # frob:tests tests/test_serve.py::TestWarmState.test_file_change_forces_rebuild kind="unit"  # noqa: E501
-def warm_state(root: Path) -> Result[WarmState, BuildError]:
-    """The cached `WarmState` for `root` if its `repo_dirty_key` still
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
+# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
+def _warm_state(root: Path) -> Result[_WarmState, BuildError]:
+    """The cached `_WarmState` for `root` if its `_repo_dirty_key` still
     matches the live tree (a pure memory hit for the graph snapshot and
     collected tests -- the two genuinely expensive parts); otherwise a
     fresh `_build_cold` pass, cached for the next call. The single entry
@@ -196,12 +202,12 @@ def warm_state(root: Path) -> Result[WarmState, BuildError]:
 
     The baseline is always re-read fresh even on a cache hit
     (`load_baseline` is a plain json read, not worth gating behind
-    `repo_dirty_key`) -- `.frob/baseline` is itself under `.frob/`, which
-    `repo_dirty_key` deliberately excludes (it is the write-target of the
+    `_repo_dirty_key`) -- `.frob/baseline` is itself under `.frob/`, which
+    `_repo_dirty_key` deliberately excludes (it is the write-target of the
     very build this key gates), so a stamp written between two calls with
     no OTHER tree change would otherwise never be observed."""
     root = root.resolve()
-    dirty_key = repo_dirty_key(root)
+    dirty_key = _repo_dirty_key(root)
     cached = _STATES.get(str(root))
     if cached is not None and cached.dirty_key == dirty_key:
         _log.debug(
@@ -216,16 +222,18 @@ def warm_state(root: Path) -> Result[WarmState, BuildError]:
 
 
 # frob:doc docs/modules/serve.md#warm-state
-def invalidate(root: Path) -> None:
-    """Drop `root`'s cached `WarmState` so the next `warm_state` call is
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
+# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#warm-state documents this warm-cache internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
+def _invalidate(root: Path) -> None:
+    """Drop `root`'s cached `_WarmState` so the next `_warm_state` call is
     guaranteed to rebuild cold -- used by the `frob_check_delta` verify
     mode and by tests; a no-op if nothing was cached."""
     _STATES.pop(str(root.resolve()), None)
 
 
 __all__ = [
-    "WarmState",
-    "invalidate",
-    "repo_dirty_key",
-    "warm_state",
+    "_WarmState",
+    "_invalidate",
+    "_repo_dirty_key",
+    "_warm_state",
 ]

@@ -67,10 +67,10 @@ class TestPollPostLand:
     def test_head_unchanged_is_noop(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestPollPostLand.test_head_unchanged_is_noop
-        _warm.invalidate(repo)
-        first = _daemon.poll_post_land(repo, run_tests=False)
+        _warm._invalidate(repo)
+        first = _daemon._poll_post_land(repo, run_tests=False)
         assert first is not None
-        second = _daemon.poll_post_land(repo, run_tests=False)
+        second = _daemon._poll_post_land(repo, run_tests=False)
         assert second is not None
         assert second.checked_at == first.checked_at
         assert second.head == first.head
@@ -78,14 +78,14 @@ class TestPollPostLand:
     def test_head_moved_refreshes_verdict(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestPollPostLand.test_head_moved_refreshes_verdict
-        _warm.invalidate(repo)
-        first = _daemon.poll_post_land(repo, run_tests=False)
+        _warm._invalidate(repo)
+        first = _daemon._poll_post_land(repo, run_tests=False)
         assert first is not None
 
         _write(repo, "src/pkg/b.py", '"""Second module."""\n')
         _commit_all(repo, "second commit")
 
-        second = _daemon.poll_post_land(repo, run_tests=False)
+        second = _daemon._poll_post_land(repo, run_tests=False)
         assert second is not None
         assert second.head != first.head
 
@@ -95,7 +95,7 @@ class TestPollRebaseBot:
     def test_no_leases_is_no_warnings(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestPollRebaseBot.test_no_leases_is_no_warnings
-        warnings = _daemon.poll_rebase_bot(repo)
+        warnings = _daemon._poll_rebase_bot(repo)
         assert warnings == ()
 
     def test_conflicting_branch_warns(self, repo: Path) -> None:
@@ -111,7 +111,7 @@ class TestPollRebaseBot:
         _write(repo, "src/pkg/a.py", '"""Module."""\nx = "from-main"\n')
         _commit_all(repo, "main edit")
 
-        warnings = _daemon.poll_rebase_bot(repo)
+        warnings = _daemon._poll_rebase_bot(repo)
         assert len(warnings) == 1
         assert warnings[0].ticket_id == "T-0900"
         assert warnings[0].branch == "feature-conflict"
@@ -132,7 +132,7 @@ class TestPollRebaseBot:
         _write(repo, "src/pkg/a.py", '"""Module."""\n# main-only change\n')
         _commit_all(repo, "main edit")
 
-        warnings = _daemon.poll_rebase_bot(repo)
+        warnings = _daemon._poll_rebase_bot(repo)
         assert warnings == ()
 
     # frob:ticket T-0782
@@ -178,8 +178,8 @@ class TestPollRebaseBot:
 
         caplog.set_level(logging.INFO, logger="frob.serve._daemon")
 
-        first = _daemon.poll_rebase_bot(repo)
-        second = _daemon.poll_rebase_bot(repo)
+        first = _daemon._poll_rebase_bot(repo)
+        second = _daemon._poll_rebase_bot(repo)
 
         assert first == ()
         assert second == ()
@@ -237,7 +237,7 @@ class TestPollRebaseBotLeaseInjectionGuard:
         monkeypatch.setattr(_daemon, "run_argv", _spy)
         caplog.set_level(logging.WARNING, logger="frob.tickets._leases")
 
-        warnings = _daemon.poll_rebase_bot(repo)
+        warnings = _daemon._poll_rebase_bot(repo)
 
         assert warnings == ()
         for argv in calls:
@@ -253,8 +253,8 @@ class TestRunDaemonCycle:
         # frob:tests \
         # tests/test_serve_daemon.py::TestRunDaemonCycle.test_runs_both_jobs_and_return\
         # s_status
-        _warm.invalidate(repo)
-        status = _daemon.run_daemon_cycle(repo, run_tests=False)
+        _warm._invalidate(repo)
+        status = _daemon._run_daemon_cycle(repo, run_tests=False)
         assert status.post_land is not None
         assert status.rebase_warnings == ()
         assert status.last_poll_at
@@ -269,18 +269,18 @@ class TestStartDaemon:
         # _then_stops
         import threading
 
-        _warm.invalidate(repo)
+        _warm._invalidate(repo)
         ran = threading.Event()
-        real_cycle = _daemon.run_daemon_cycle
+        real_cycle = _daemon._run_daemon_cycle
 
         def _spy(root: Path, *, run_tests: bool = True):
             result = real_cycle(root, run_tests=run_tests)
             ran.set()
             return result
 
-        monkeypatch.setattr(_daemon, "run_daemon_cycle", _spy)
+        monkeypatch.setattr(_daemon, "_run_daemon_cycle", _spy)
 
-        stop = _daemon.start_daemon(repo, interval_s=0.05, run_tests=False)
+        stop = _daemon._start_daemon(repo, interval_s=0.05, run_tests=False)
         try:
             # Generous timeout (a fast local cycle takes well under a
             # second): under heavy parallel test-suite load (many xdist
@@ -297,8 +297,8 @@ class TestFrobDaemonStatus:
     def test_reads_current_status(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestFrobDaemonStatus.test_reads_current_status
-        _warm.invalidate(repo)
-        _daemon.poll_post_land(repo, run_tests=False)
+        _warm._invalidate(repo)
+        _daemon._poll_post_land(repo, run_tests=False)
 
         result = frob_daemon_status(repo)
         assert result.is_ok

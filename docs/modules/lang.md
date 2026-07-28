@@ -175,10 +175,10 @@ already-parsed tree.
 <!-- frob:describes src/frob/lang/_common.py::_strip_comment_delims -->
 <!-- frob:describes src/frob/lang/_common.py::_leading_doc_comment -->
 <!-- frob:describes src/frob/lang/_common.py::_span_of -->
-<!-- frob:describes src/frob/lang/_common.py::child_text -->
+<!-- frob:describes src/frob/lang/_common.py::_child_text -->
 <!-- frob:describes src/frob/lang/_common.py::export_tree -->
 <!-- frob:describes src/frob/lang/_common.py::flatten_tree -->
-<!-- frob:describes src/frob/lang/_common.py::iter_cpp_functions -->
+<!-- frob:describes src/frob/lang/_common.py::_iter_cpp_functions -->
 
 The shared, language-agnostic tree-sitter helpers the five walkers are
 built on -- kept in one place so the leaf-token/comment-delimiter/span
@@ -193,7 +193,7 @@ logic is never re-derived per grammar.
   node, as doc text.
 - `span_of` -- 1-based inclusive `(start_line, end_line)`, folding the
   trailing-newline lexer artifact back onto the content line.
-- `child_text` -- decode a node's text, `""` if absent.
+- `_child_text` -- decode a node's text, `""` if absent.
 - `export_tree` -- a comment-stripped `TreeNode` snapshot of a subtree (for
   R4's tree-edit kernel), truncated past a node budget rather than dropped.
   Each node's `field` (T-0495) is its own tree-sitter field name as seen
@@ -203,7 +203,7 @@ logic is never re-derived per grammar.
   (rust/c/cpp) mark only by field name, never by a wrapping node label.
 - `flatten_tree` -- `(labels, parents)` preorder arrays in the shape
   `frob_core.apted_similarity` expects.
-- `iter_cpp_functions` -- `(node, qualified_name)` for every C/C++ function
+- `_iter_cpp_functions` -- `(node, qualified_name)` for every C/C++ function
   under a root, shared by `frob.arch` and `frob.dup`.
 
 ## Error types

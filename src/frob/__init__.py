@@ -43,6 +43,7 @@ from frob.gitio import (
     spawn_recorder,
     working_diff,
 )
+from frob.tomlio import read_toml_lenient
 
 __all__ = [
     "DerivedArtifactStatus",
@@ -61,6 +62,7 @@ __all__ = [
     "is_test_file",
     "iter_files",
     "load_exclude_globs",
+    "read_toml_lenient",
     "repo_root",
     "reset_common_dir_cache",
     "run_argv",

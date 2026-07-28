@@ -20,10 +20,10 @@ from tree_sitter import Node
 from frob.lang._common import (
     _body_skip,
     _canonical_tokens,
+    _child_text,
     _leading_doc_comment,
     _leaf_tokens,
     _span_of,
-    child_text,
 )
 from frob.lang._models import RawSymbol, SymbolKind
 
@@ -48,14 +48,14 @@ def _find_declarator_name(node: Node) -> str:
     cur = node
     while cur is not None:
         if cur.type == "qualified_identifier":
-            return child_text(cur)
+            return _child_text(cur)
         if cur.type in ("identifier", "field_identifier", "type_identifier"):
-            return child_text(cur)
+            return _child_text(cur)
         inner = cur.child_by_field_name("declarator")
         if inner is None:
             for c in cur.children:
                 if c.type in ("identifier", "field_identifier"):
-                    return child_text(c)
+                    return _child_text(c)
             return ""
         cur = inner
     return ""
@@ -64,7 +64,7 @@ def _find_declarator_name(node: Node) -> str:
 def _has_static(node: Node) -> bool:
     """True if `node` carries a file-scope `static` storage-class specifier."""
     return any(
-        c.type == "storage_class_specifier" and child_text(c) == "static"
+        c.type == "storage_class_specifier" and _child_text(c) == "static"
         for c in node.children
     )
 
@@ -97,7 +97,7 @@ def _class_symbol(
     body = node.child_by_field_name("body")
     if body is None:
         return None
-    name = child_text(node.child_by_field_name("name"))
+    name = _child_text(node.child_by_field_name("name"))
     if not name:
         return None
     symbol = RawSymbol(
@@ -119,7 +119,7 @@ def _enum_symbol(
     """An enum `RawSymbol`, or None if the enum is anonymous."""
     if node.child_by_field_name("name") is None:
         return None
-    name = child_text(node.child_by_field_name("name"))
+    name = _child_text(node.child_by_field_name("name"))
     return RawSymbol(
         qualname=".".join((*stack, name)),
         kind=SymbolKind.TYPE,
@@ -134,12 +134,12 @@ def _enum_symbol(
 def _typedef_name(node: Node) -> str:
     """The declared name of a `type_definition`/`alias_declaration` node."""
     name_node = node.child_by_field_name("name") or node.child_by_field_name("type")
-    name = _find_declarator_name(node) if name_node is None else child_text(name_node)
+    name = _find_declarator_name(node) if name_node is None else _child_text(name_node)
     if name:
         return name
     for c in node.children:
         if c.type == "type_identifier":
-            name = child_text(c)
+            name = _child_text(c)
     return name
 
 
@@ -162,7 +162,7 @@ def _type_symbol(ctx: _Ctx, node: Node, doc: str) -> RawSymbol | None:
 def _has_const_qualifier(node: Node) -> bool:
     """True if `node` carries a `const` type qualifier."""
     return any(
-        c.type == "type_qualifier" and child_text(c) == "const" for c in node.children
+        c.type == "type_qualifier" and _child_text(c) == "const" for c in node.children
     )
 
 
@@ -198,7 +198,7 @@ def _dispatch(ctx: _Ctx, node: Node, stack: tuple[str, ...], cur_access: str) ->
         if built is not None:
             symbol, body, default_access = built
             ctx.symbols.append(symbol)
-            name = child_text(node.child_by_field_name("name"))
+            name = _child_text(node.child_by_field_name("name"))
             # frob:invariant terminates reason="body is node's own 'body' field child, and node is itself a proper descendant of the container passed to the caller's _visit; both mutually recurse only by descending into a field/child of the finite tree-sitter parse tree" measure="container's subtree depth strictly decreases"  # noqa: E501
             _visit(ctx, body, (*stack, name), default_access)
     elif node.type == "enum_specifier":
@@ -213,7 +213,7 @@ def _dispatch(ctx: _Ctx, node: Node, stack: tuple[str, ...], cur_access: str) ->
 
 def _recurse_namespace(ctx: _Ctx, node: Node, stack: tuple[str, ...]) -> None:
     """Descend into a namespace body, extending the qualname stack if named."""
-    name = child_text(node.child_by_field_name("name"))
+    name = _child_text(node.child_by_field_name("name"))
     body = node.child_by_field_name("body")
     if body is not None:
         # frob:invariant terminates reason="body is node's own 'body' field child, and node is itself a proper descendant of the container passed to the caller's _visit" measure="container's subtree depth strictly decreases"  # noqa: E501
@@ -231,7 +231,7 @@ def _visit(ctx: _Ctx, container: Node, stack: tuple[str, ...], access: str) -> N
     cur_access = access
     for node in container.children:
         if node.type == "access_specifier":
-            cur_access = child_text(node)
+            cur_access = _child_text(node)
             continue
         _dispatch(ctx, node, stack, cur_access)
 

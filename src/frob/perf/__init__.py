@@ -56,6 +56,8 @@ from frob.perf._collectors import (
     parse_perf_script,
     parse_v8_cpuprofile,
 )
+from frob.perf._dup_spawn import duplicate_spawn_violations
+from frob.perf._effect_summaries import EffectGraph, Unknown
 from frob.perf._heat import heat, join_smells, render_bar
 from frob.perf._hotgraph import (
     UNATTRIBUTED_SECTION_ID,
@@ -114,6 +116,7 @@ __all__ = [
     "UNATTRIBUTED_SECTION_ID",
     "CollectorError",
     "EdgeHit",
+    "EffectGraph",
     "HeatEntry",
     "HeatReport",
     "HitStream",
@@ -131,11 +134,13 @@ __all__ = [
     "SketchStoreConfig",
     "StackSampler",
     "StoredSketch",
+    "Unknown",
     "build_class_to_file",
     "build_index_for_files",
     "build_section_index",
     "check_ratchet",
     "detect_collector_format",
+    "duplicate_spawn_violations",
     "external_call_advisories",
     "get_sketch",
     "heat",

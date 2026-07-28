@@ -13,7 +13,7 @@ Design (mandate points, verbatim intent):
    T-0701's shared-resource-lease concepts, not capability modes, and are
    deliberately absent from `CAPABILITY_MODES` -- no forked mode enum,
    just a shared spelling). Capability families get `family.mode` ids
-   (`mode_qualified`): `fs.read`/`fs.write`, `net.connect`/`net.listen`,
+   (`_mode_qualified`): `fs.read`/`fs.write`, `net.connect`/`net.listen`,
    `env.read`/`env.write`, `proc.spawn`, `ffi.call`. Not every family has
    every mode -- `FAMILY_MODES` defines each family's valid set
    explicitly, never inferred.
@@ -22,7 +22,7 @@ Design (mandate points, verbatim intent):
    forever and are interpreted fail-closed as the UNION of that family's
    modes for OBLIGATION purposes (`expand_declared_kind`): a coarse
    declarer answers for everything the family can do. An OBSERVED effect
-   always maps to its most precise mode (`normalize_observed_kind`).
+   always maps to its most precise mode (`_normalize_observed_kind`).
    Conformance is "observed is a subset of declared" -- precision is
    REWARDED (a node that only ever reads and declares `fs.read` discharges
    a narrower SYS101 obligation and fails conformance the moment a write
@@ -99,7 +99,7 @@ CAPABILITY_MODES: Final[tuple[str, ...]] = (
 #: point 1: "not every family has every mode -- define each family's
 #: valid mode set explicitly"). A family absent from this dict (e.g.
 #: `exec`, `eval`, `env` before its own mode split lands) has no modes
-#: defined yet -- `expand_declared_kind`/`normalize_observed_kind` leave
+#: defined yet -- `expand_declared_kind`/`_normalize_observed_kind` leave
 #: such a kind unchanged rather than guessing at a split this module has
 #: not been told exists.
 FAMILY_MODES: Final[dict[str, tuple[str, ...]]] = {
@@ -126,7 +126,10 @@ WIRED_MODE_FAMILIES: Final[frozenset[str]] = frozenset({"fs"})
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
 # frob:tests tests/unit/vet/test_capability_modes.py::TestModeQualified.test_joins_family_and_mode kind="unit"  # noqa: E501
-def mode_qualified(family: str, mode: str) -> str:
+# frob:waive AFFECT001 reason="T-0871: privatize-only rename (frob-exports: zero real consumers outside this module) -- the shared T-0700 capability-mode vocabulary docs/strata/selfconform.md#fs-read-fs-write describes is unchanged in shape/values, only this symbol's own name changed"  # noqa: E501
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/strata/selfconform.md#fs-read-fs-write documents the shared T-0700 capability-mode vocabulary; demoted to private in this ticket (frob-exports: zero real consumers outside this module) but remains the thing the doc section describes"  # noqa: E501
+# frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
+def _mode_qualified(family: str, mode: str) -> str:
     """The ONE `"family.mode"` construction site -- every caller that
     needs a mode-qualified capability id goes through this, never a
     hand-formatted f-string, so the separator cannot drift."""
@@ -137,15 +140,19 @@ def mode_qualified(family: str, mode: str) -> str:
 #: Every `family.mode` id this vocabulary defines, GENERATED from
 #: `FAMILY_MODES` (never hand-duplicated) so the two structures cannot
 #: diverge.
+# frob:waive AFFECT001 reason="T-0871: privatize-only rename (frob-exports: zero real consumers outside this module) -- the shared T-0700 capability-mode vocabulary docs/strata/selfconform.md#fs-read-fs-write describes is unchanged in shape/values, only this symbol's own name changed"  # noqa: E501
 CAPABILITY_MODE_KINDS: Final[tuple[str, ...]] = tuple(
-    mode_qualified(family, mode)
+    _mode_qualified(family, mode)
     for family, modes in sorted(FAMILY_MODES.items())
     for mode in modes
 )
 
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
-class DeprecatedCapabilityAlias(BaseModel):
+# frob:waive AFFECT001 reason="T-0871: privatize-only rename (frob-exports: zero real consumers outside this module) -- the shared T-0700 capability-mode vocabulary docs/strata/selfconform.md#fs-read-fs-write describes is unchanged in shape/values, only this symbol's own name changed"  # noqa: E501
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/strata/selfconform.md#fs-read-fs-write documents the shared T-0700 capability-mode vocabulary; demoted to private in this ticket (frob-exports: zero real consumers outside this module) but remains the thing the doc section describes"  # noqa: E501
+# frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
+class _DeprecatedCapabilityAlias(BaseModel):
     """One legacy capability spelling's migration record: the precise
     `family.mode` id it now means, the `since`/`sunset` window, and the
     tracking ticket -- the T-0576 `frob:deprecated` shape (since/sunset/
@@ -168,8 +175,9 @@ class DeprecatedCapabilityAlias(BaseModel):
 #: are DELIBERATELY absent -- mandate point 2 keeps them legal, coarse
 #: declarations forever; only spellings that were themselves an attempt at
 #: mode-precision (`fs-write`, `fs-read`) are deprecated aliases here.
-LEGACY_CAPABILITY_ALIASES: Final[dict[str, DeprecatedCapabilityAlias]] = {
-    "fs-write": DeprecatedCapabilityAlias(
+# frob:waive AFFECT001 reason="T-0871: privatize-only rename (frob-exports: zero real consumers outside this module) -- the shared T-0700 capability-mode vocabulary docs/strata/selfconform.md#fs-read-fs-write describes is unchanged in shape/values, only this symbol's own name changed"  # noqa: E501
+LEGACY_CAPABILITY_ALIASES: Final[dict[str, _DeprecatedCapabilityAlias]] = {
+    "fs-write": _DeprecatedCapabilityAlias(
         alias="fs-write",
         target="fs.write",
         since="2026-07-22",
@@ -180,7 +188,7 @@ LEGACY_CAPABILITY_ALIASES: Final[dict[str, DeprecatedCapabilityAlias]] = {
         "compatibly satisfied bare 'fs' with either observed kind); "
         "fs.write is the precise, mode-qualified replacement",
     ),
-    "fs-read": DeprecatedCapabilityAlias(
+    "fs-read": _DeprecatedCapabilityAlias(
         alias="fs-read",
         target="fs.read",
         since="2026-07-22",
@@ -272,6 +280,12 @@ def canonical_declared_kind(raw: str) -> str:
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
 # frob:tests tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind.test_coarse_fs_covers_union_of_modes kind="unit"  # noqa: E501
+# frob:waive AFFECT001 reason="T-0871: this symbol's own signature/body is \
+# unchanged -- flagged only because a sibling private helper elsewhere in \
+# this file was renamed for frob-exports (T-0871's export decision made \
+# expand_declared_kind itself newly package-exported, no behavior change); \
+# the shared T-0700 capability-mode vocabulary docs/strata/selfconform.md \
+# #fs-read-fs-write is unchanged in shape/values"
 def expand_declared_kind(kind: str) -> frozenset[str]:
     """Every precise `family.mode` id a DECLARED capability kind covers
     for conformance-join purposes (mandate point 2): a precise
@@ -287,12 +301,15 @@ def expand_declared_kind(kind: str) -> frozenset[str]:
     if kind not in WIRED_MODE_FAMILIES:
         return frozenset({kind})
     modes = FAMILY_MODES.get(kind, ())
-    return frozenset(mode_qualified(kind, mode) for mode in modes)
+    return frozenset(_mode_qualified(kind, mode) for mode in modes)
 
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
 # frob:tests tests/unit/vet/test_capability_modes.py::TestCanonicalAndNormalize.test_normalize_observed_kind_matches_canonical kind="unit"  # noqa: E501
-def normalize_observed_kind(raw: str) -> str:
+# frob:waive AFFECT001 reason="T-0871: privatize-only rename (frob-exports: zero real consumers outside this module) -- the shared T-0700 capability-mode vocabulary docs/strata/selfconform.md#fs-read-fs-write describes is unchanged in shape/values, only this symbol's own name changed"  # noqa: E501
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- docs/strata/selfconform.md#fs-read-fs-write documents the shared T-0700 capability-mode vocabulary; demoted to private in this ticket (frob-exports: zero real consumers outside this module) but remains the thing the doc section describes"  # noqa: E501
+# frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
+def _normalize_observed_kind(raw: str) -> str:
     """The precise canonical kind a scanner-OBSERVED capability spelling
     maps to: a legacy alias resolves to its target with no deprecation
     warning (an observation is not a declaration choice -- there is
@@ -308,10 +325,10 @@ __all__ = [
     "LEGACY_CAPABILITY_ALIASES",
     "WIRED_MODE_FAMILIES",
     "CapabilityModeError",
-    "DeprecatedCapabilityAlias",
+    "_DeprecatedCapabilityAlias",
     "canonical_declared_kind",
     "expand_declared_kind",
-    "mode_qualified",
-    "normalize_observed_kind",
+    "_mode_qualified",
+    "_normalize_observed_kind",
     "resolve_capability_kind",
 ]

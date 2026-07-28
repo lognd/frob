@@ -180,7 +180,14 @@ _NOT_A_CALL = frozenset(
 
 # frob:doc docs/modules/arch.md#cpp-may-throw-analysis-t-0687
 # frob:ticket T-0687
-class CppFunctionRaises(BaseModel):
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
+# docs/modules/arch.md#cpp-may-throw-analysis-t-0687 documents this whole \
+# feature's internals (scan/model shape) as well as its public entry point \
+# check_cpp_noexcept_violations (own separate frob:doc below); this type \
+# was demoted to private in this ticket (frob-exports: zero real consumers \
+# outside this module) but remains the thing the doc section describes"
+# frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
+class _CppFunctionRaises(BaseModel):
     """One C++ function's computed may-throw set (T-0687): its name, the
     source line its signature starts on, whether it is `noexcept`,
     whether it has an encompassing `catch (...)` anywhere in its body
@@ -286,7 +293,15 @@ def _scan_body_raises(
 # frob:ticket T-0687
 # frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_noexcept_calling_throwing_function_fires_error  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_noexcept_calling_vector_at_fires_curated_thrower  # noqa: E501
-def scan_cpp_functions(source: str) -> tuple[CppFunctionRaises, ...]:
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
+# docs/modules/arch.md#cpp-may-throw-analysis-t-0687 documents this whole \
+# feature's internals (scan/model shape) as well as its public entry point \
+# check_cpp_noexcept_violations (own separate frob:doc below); this \
+# function was demoted to private in this ticket (frob-exports: zero real \
+# consumers outside this module) but remains the thing the doc section \
+# describes"
+# frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
+def _scan_cpp_functions(source: str) -> tuple[_CppFunctionRaises, ...]:
     """Every function DEFINITION (a signature followed by `{`, not a bare
     declaration ending in `;`) in `source` (T-0687, C++ source text) with
     its computed may-throw set: `_scan_body_raises` per function, then an
@@ -310,7 +325,7 @@ def scan_cpp_functions(source: str) -> tuple[CppFunctionRaises, ...]:
     resolved = _propagate_callee_raises(per_func)
 
     return tuple(
-        CppFunctionRaises(
+        _CppFunctionRaises(
             name=name,
             line=info.line,
             is_noexcept=info.is_noexcept,
@@ -323,7 +338,7 @@ def scan_cpp_functions(source: str) -> tuple[CppFunctionRaises, ...]:
 
 class _PerFunctionScan(BaseModel):
     """One function's own scan result BEFORE callee-graph fixpoint
-    propagation (T-1034, split out of `scan_cpp_functions` to clear
+    propagation (T-1034, split out of `_scan_cpp_functions` to clear
     ARCH001's 60-line threshold) -- `_scan_each_function`'s per-name
     output, consumed by `_propagate_callee_raises`."""
 
@@ -338,7 +353,7 @@ class _PerFunctionScan(BaseModel):
 
 def _find_signature_lines(lines: list[str]) -> list[tuple[int, str, str]]:
     """Every `_FN_SIG_RE`-matching signature line in `lines` (T-1034,
-    split out of `scan_cpp_functions`), as `(line_idx, name, qualifiers)`
+    split out of `_scan_cpp_functions`), as `(line_idx, name, qualifiers)`
     triples in source order."""
     sig_lines: list[tuple[int, str, str]] = []
     for idx, line in enumerate(lines):
@@ -355,7 +370,7 @@ def _scan_each_function(
     name_to_line: dict[str, int],
 ) -> dict[str, _PerFunctionScan]:
     """Every function's own `_PerFunctionScan` (T-1034, split out of
-    `scan_cpp_functions`): body span, own raise set, catch-all presence,
+    `_scan_cpp_functions`): body span, own raise set, catch-all presence,
     `noexcept`-ness, and the same-file callee names its body references
     (deferred to `_propagate_callee_raises`'s fixpoint, not recursed into
     here)."""
@@ -384,7 +399,7 @@ def _propagate_callee_raises(
     per_func: dict[str, _PerFunctionScan],
 ) -> dict[str, set[str]]:
     """The same-file callee-graph fixpoint (T-1034, split out of
-    `scan_cpp_functions`): each function starts at its own raise set and
+    `_scan_cpp_functions`): each function starts at its own raise set and
     inherits every callee's raise set, repeating until nothing grows --
     mirrors `frob.arch._mayraise.compute_may_raise`'s own fixpoint shape."""
     resolved: dict[str, set[str]] = {
@@ -412,7 +427,7 @@ def check_cpp_noexcept_violations(
 ) -> None:
     """Appends an `ArchSuggestion` (category `cpp-noexcept-throws`,
     severity `"error"`) to `suggestions` for every `noexcept` function in
-    `source` whose computed may-throw set (`scan_cpp_functions`) is
+    `source` whose computed may-throw set (`_scan_cpp_functions`) is
     non-empty and not discharged by its own `has_catch_all` (T-0687's
     hard-boundary obligation -- see this module's docstring). The escaping
     type(s) are named in the message (the parent ticket's own acceptance:
@@ -427,7 +442,7 @@ def check_cpp_noexcept_violations(
     `tests/unit/test_arch.py` only); see this module's own docstring for
     the disclosed follow-up, same T-0728/T-0688 scope-carve-out
     precedent."""
-    for func in scan_cpp_functions(source):
+    for func in _scan_cpp_functions(source):
         if not func.is_noexcept:
             continue
         if not func.raises:
@@ -457,7 +472,7 @@ def check_cpp_noexcept_violations(
 
 __all__ = [
     "UNKNOWN",
-    "CppFunctionRaises",
+    "_CppFunctionRaises",
     "check_cpp_noexcept_violations",
-    "scan_cpp_functions",
+    "_scan_cpp_functions",
 ]

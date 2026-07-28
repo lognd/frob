@@ -16,11 +16,11 @@ from frob.lang._common import (
     ByteRange,
     _body_skip,
     _canonical_tokens,
+    _child_text,
     _collapse_ws,
     _find_enclosing_symbol,
     _leaf_tokens,
     _span_of,
-    child_text,
 )
 from frob.lang._models import RawComment, RawSymbol, SymbolKind
 
@@ -52,7 +52,7 @@ def _python_docstring(body: Node) -> tuple[str, ByteRange | None]:
     if string_node is None:
         return "", None
     content = "".join(
-        child_text(c) for c in string_node.children if c.type == "string_content"
+        _child_text(c) for c in string_node.children if c.type == "string_content"
     )
     return _collapse_ws(content), (string_node.start_byte, string_node.end_byte)
 
@@ -71,7 +71,7 @@ def _function_symbol(
     node: Node, sig_node: Node, stack: tuple[str, ...], body: Node
 ) -> RawSymbol:
     """A function/method `RawSymbol` (method when nested inside a class)."""
-    name = child_text(node.child_by_field_name("name"))
+    name = _child_text(node.child_by_field_name("name"))
     doc, doc_range = _python_docstring(body)
     sig_tokens = _leaf_tokens(sig_node, _COMMENT_TYPES, _body_skip(body))
     body_skip_range = (doc_range,) if doc_range else ()
@@ -171,7 +171,7 @@ def _type_alias_symbol(node: Node) -> RawSymbol | None:
     left = assign.child_by_field_name("left")
     if left is None or left.type != "identifier":
         return None
-    name = child_text(left)
+    name = _child_text(left)
     if not name:
         return None
     annotation = assign.child_by_field_name("type")
@@ -192,14 +192,14 @@ def _type_alias_statement_name(node: Node) -> str | None:
     if left is None:
         return None
     ident = next((c for c in left.children if c.type == "identifier"), None)
-    return child_text(ident) if ident is not None else None
+    return _child_text(ident) if ident is not None else None
 
 
 # frob:ticket T-1028
 def _is_type_alias_annotation(annotation: Node) -> bool:
     """True if an assignment's `type` (annotation) field is `TypeAlias` or
     `typing.TypeAlias` -- PEP 613's explicit alias marker."""
-    text = child_text(annotation)
+    text = _child_text(annotation)
     return text == "TypeAlias" or text.endswith(".TypeAlias")
 
 
@@ -214,7 +214,7 @@ def _is_literal_alias_rhs(right: Node) -> bool:
     value = right.child_by_field_name("value")
     if value is None:
         return False
-    text = child_text(value)
+    text = _child_text(value)
     return text == "Literal" or text.endswith(".Literal")
 
 
@@ -235,6 +235,11 @@ def _make_type_symbol(node: Node, name: str) -> RawSymbol:
 
 
 # frob:ticket T-0565
+# frob:waive DUP001 reason="T-0871: pre-existing similarity surfaced by an \
+# unrelated import-rename touching this file (child_text -> _child_text, \
+# a frob-exports privatize decision); this function's own body/logic is \
+# unchanged -- not a duplication introduced by this ticket, out of this \
+# ticket's __init__.py-only scope to extract"
 def _const_assignment_name(node: Node) -> str | None:
     """The SCREAMING_CASE target name of a module-level constant assignment
     `node`, or None if it doesn't match that shape.
@@ -262,7 +267,7 @@ def _const_assignment_name(node: Node) -> str | None:
     left = assign.child_by_field_name("left")
     if left is None or left.type != "identifier":
         return None
-    name = child_text(left)
+    name = _child_text(left)
     bare = name.lstrip("_") if name else ""
     if not (name and bare and (name.isupper() or "_" in name) and bare[0].isalpha()):
         return None
@@ -287,7 +292,7 @@ def _visit(container: Node, stack: tuple[str, ...], symbols: list[RawSymbol]) ->
             body = node.child_by_field_name("body")
             if body is None:
                 continue
-            name = child_text(node.child_by_field_name("name"))
+            name = _child_text(node.child_by_field_name("name"))
             symbols.append(_class_symbol(node, sig_node, stack, name, body))
             # frob:invariant terminates reason="body is node's own 'body' field child, and node is a child of container, so body is a proper descendant of container in the finite tree-sitter parse tree" measure="container's subtree depth strictly decreases"  # noqa: E501
             _visit(body, (*stack, name), symbols)
@@ -362,7 +367,7 @@ def _walk_python_docstring_comments(
     comments: list[RawComment] = []
     for node in _docstring_nodes(root):
         content = "".join(
-            child_text(c) for c in node.children if c.type == "string_content"
+            _child_text(c) for c in node.children if c.type == "string_content"
         )
         span = _span_of(node)
         enclosing = _find_enclosing_symbol(span, symbols)

@@ -200,8 +200,14 @@ _MIN_MANUAL_DECORATOR_WRAPS = 3
 
 # frob:doc docs/modules/arch.md#design-pattern-registry
 # frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_isinstance_chain_recommends_strategy  # noqa: E501
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
+# docs/modules/arch.md#design-pattern-registry documents this registry's row \
+# shape; this type was demoted to private in this ticket (frob-exports: \
+# zero real consumers outside this module) but remains the thing the doc \
+# section describes"
 @dataclass(frozen=True)
-class PatternRuleSpec:
+# frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
+class _PatternRuleSpec:
     """One row of the T-0332 hallmark<->pattern / anti-pattern<->escape
     registry: a stable id, the direction, the human-facing hallmark/
     response names, the FORCE it resolves, a concrete refactor sketch, and
@@ -221,8 +227,8 @@ class PatternRuleSpec:
 
 
 # frob:doc docs/modules/arch.md#design-pattern-registry
-PATTERN_REGISTRY: tuple[PatternRuleSpec, ...] = (
-    PatternRuleSpec(
+PATTERN_REGISTRY: tuple[_PatternRuleSpec, ...] = (
+    _PatternRuleSpec(
         rule_id="type-switch",
         direction="pattern",
         hallmark="an elif chain of isinstance() checks on the same variable",
@@ -236,7 +242,7 @@ PATTERN_REGISTRY: tuple[PatternRuleSpec, ...] = (
         ),
         languages=("python",),
     ),
-    PatternRuleSpec(
+    _PatternRuleSpec(
         rule_id="state-field-chain",
         direction="pattern",
         hallmark="a growing elif chain keyed on one state-like attribute",
@@ -251,7 +257,7 @@ PATTERN_REGISTRY: tuple[PatternRuleSpec, ...] = (
         ),
         languages=("python",),
     ),
-    PatternRuleSpec(
+    _PatternRuleSpec(
         rule_id="telescoping-ctor",
         direction="pattern",
         hallmark="a constructor with many optional/defaulted parameters",
@@ -265,7 +271,7 @@ PATTERN_REGISTRY: tuple[PatternRuleSpec, ...] = (
         ),
         languages=("python",),
     ),
-    PatternRuleSpec(
+    _PatternRuleSpec(
         rule_id="scattered-construction",
         direction="pattern",
         hallmark=("the same concrete class constructed directly across many files"),
@@ -281,7 +287,7 @@ PATTERN_REGISTRY: tuple[PatternRuleSpec, ...] = (
         ),
         languages=("python",),
     ),
-    PatternRuleSpec(
+    _PatternRuleSpec(
         rule_id="wrap-delegate",
         direction="pattern",
         hallmark=(
@@ -300,7 +306,7 @@ PATTERN_REGISTRY: tuple[PatternRuleSpec, ...] = (
         ),
         languages=("python",),
     ),
-    PatternRuleSpec(
+    _PatternRuleSpec(
         rule_id="god-object",
         direction="escape",
         hallmark="a class with far more methods than any single responsibility needs",
@@ -315,7 +321,7 @@ PATTERN_REGISTRY: tuple[PatternRuleSpec, ...] = (
         ),
         languages=("python", "cpp"),
     ),
-    PatternRuleSpec(
+    _PatternRuleSpec(
         rule_id="stringly-typed",
         direction="escape",
         hallmark=(
@@ -331,7 +337,7 @@ PATTERN_REGISTRY: tuple[PatternRuleSpec, ...] = (
         ),
         languages=("python",),
     ),
-    PatternRuleSpec(
+    _PatternRuleSpec(
         rule_id="interface-translate",
         direction="pattern",
         hallmark=(
@@ -350,7 +356,7 @@ PATTERN_REGISTRY: tuple[PatternRuleSpec, ...] = (
         ),
         languages=("python",),
     ),
-    PatternRuleSpec(
+    _PatternRuleSpec(
         rule_id="manual-callback-list",
         direction="pattern",
         hallmark=(
@@ -369,7 +375,7 @@ PATTERN_REGISTRY: tuple[PatternRuleSpec, ...] = (
         ),
         languages=("python",),
     ),
-    PatternRuleSpec(
+    _PatternRuleSpec(
         rule_id="anemic-accessors",
         direction="escape",
         hallmark=(
@@ -388,7 +394,7 @@ PATTERN_REGISTRY: tuple[PatternRuleSpec, ...] = (
         ),
         languages=("python",),
     ),
-    PatternRuleSpec(
+    _PatternRuleSpec(
         rule_id="dataclass-boilerplate",
         direction="pattern",
         hallmark=(
@@ -407,7 +413,7 @@ PATTERN_REGISTRY: tuple[PatternRuleSpec, ...] = (
         ),
         languages=("python",),
     ),
-    PatternRuleSpec(
+    _PatternRuleSpec(
         rule_id="manual-decorator-wrap",
         direction="pattern",
         hallmark=(
@@ -429,7 +435,7 @@ PATTERN_REGISTRY: tuple[PatternRuleSpec, ...] = (
 )
 
 
-def _pattern_rule(rule_id: str) -> PatternRuleSpec:
+def _pattern_rule(rule_id: str) -> _PatternRuleSpec:
     """Look up `rule_id`'s registry row (T-0332); raises `KeyError` on a
     typo'd id -- a detector referencing an unregistered rule is a
     programmer bug, not a recoverable condition."""

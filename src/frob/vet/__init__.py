@@ -14,7 +14,14 @@ from __future__ import annotations
 from frob.vet._capability import (
     is_self_pattern_path,
     language_for,
+    non_executable_line_numbers,
     scan_file_capabilities,
+)
+from frob.vet._capability_modes import (
+    CapabilityModeError,
+    canonical_declared_kind,
+    expand_declared_kind,
+    resolve_capability_kind,
 )
 from frob.vet._capability_registry import capability_matrix
 from frob.vet._closedworld import (
@@ -63,6 +70,7 @@ __all__ = [
     "LIVE",
     "UNMODELED",
     "UNVERIFIED",
+    "CapabilityModeError",
     "ClosedWorldAccounting",
     "ContainmentFinding",
     "ContainmentReport",
@@ -81,19 +89,23 @@ __all__ = [
     "VetReport",
     "Violation",
     "build_containment_report",
+    "canonical_declared_kind",
     "capability_diff",
     "capability_matrix",
     "check_package",
     "closed_world_accounting",
     "cve_ids",
+    "expand_declared_kind",
     "fetch_cwe_for_cve",
     "find_importing_nodes",
     "is_self_pattern_path",
     "language_for",
     "link_cwe_ids",
     "match_dependencies_against_mirror",
+    "non_executable_line_numbers",
     "parse_hook_command",
     "render_containment_report",
+    "resolve_capability_kind",
     "resolve_import",
     "scan_file_capabilities",
     "scan_tree",

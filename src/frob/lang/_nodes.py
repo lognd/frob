@@ -16,16 +16,22 @@ from pathlib import Path
 
 from tree_sitter import Node, Tree
 
+from frob.lang._common import _child_text as _child_text
+from frob.lang._common import _iter_cpp_functions as _iter_cpp_functions
 from frob.lang._common import child_by_field as _child_by_field
-from frob.lang._common import child_text as _child_text
-from frob.lang._common import iter_cpp_functions as _iter_cpp_functions
 
 
 # frob:doc docs/modules/graph.md#public-api
+# frob:waive AFFECT001 reason="T-0871: a docstring cross-reference update to \
+# the private \
+# cross-reference name (child_text -> _child_text, an unrelated frob-exports \
+# privatize decision) -- this function's own public signature/behavior is \
+# unchanged, docs/modules/graph.md#public-api describes the public contract, \
+# not the private helper it happens to delegate to"
 def cpp_function_nodes(tree: Tree) -> tuple[tuple[Node, str], ...]:
     """(node, qualified_name) for every C/C++ function in `tree` (one level
     of class/struct nesting). Thin public wrapper around
-    `frob.lang._common.iter_cpp_functions` -- see its docstring for the
+    `frob.lang._common._iter_cpp_functions` -- see its docstring for the
     exact walk semantics `frob.arch` and `frob.dup._legacy` share."""
     return _iter_cpp_functions(tree.root_node)
 
@@ -39,9 +45,15 @@ def child_by_field(node: Node, field: str) -> Node | None:
 
 
 # frob:doc docs/modules/graph.md#public-api
+# frob:waive AFFECT001 reason="T-0871: a docstring cross-reference update to \
+# the private \
+# cross-reference name (child_text -> _child_text, an unrelated frob-exports \
+# privatize decision) -- this function's own public signature/behavior is \
+# unchanged, docs/modules/graph.md#public-api describes the public contract, \
+# not the private helper it happens to delegate to"
 def node_text(node: Node | None) -> str:
     """Decode `node`'s own text, or '' if absent. Public alias of
-    `frob.lang._common.child_text` for callers doing raw node traversal
+    `frob.lang._common._child_text` for callers doing raw node traversal
     outside the extraction pipeline (`frob.arch`, `frob.dup._legacy`)."""
     return _child_text(node)
 

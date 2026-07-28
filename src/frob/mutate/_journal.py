@@ -119,7 +119,14 @@ class JournalError(ErrorSet):
 
 
 # frob:doc docs/modules/mutate.md#crash-safe-backup-journal-t-0857
-class MutationJournalEntry(BaseModel):
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
+# docs/modules/mutate.md#crash-safe-backup-journal-t-0857 documents this \
+# journal entry's persisted shape; demoted to private in this ticket \
+# (frob-exports: zero real consumers outside this module) but remains the \
+# thing the doc section describes, and the doc's own code sample was \
+# updated to the new name"
+# frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
+class _MutationJournalEntry(BaseModel):
     """One target file's pre-mutation bytes, persisted so `run_mutations`
     can recover it after a crash (T-0857). `target` is `target`'s path
     relative to the run's `root` when possible (absolute otherwise, e.g.
@@ -220,7 +227,7 @@ def _pid_starttime(pid: int) -> str | None:
         return None
 
 
-def _is_stale(entry: MutationJournalEntry) -> bool:
+def _is_stale(entry: _MutationJournalEntry) -> bool:
     """Whether `entry`'s journal is eligible for crash-recovery restore
     (T-0857): its writing PID is dead, OR the PID is alive but its CURRENT
     `/proc` starttime no longer matches `entry.starttime` -- the PID-reuse
@@ -249,15 +256,15 @@ def _is_stale(entry: MutationJournalEntry) -> bool:
     return current != entry.starttime
 
 
-def _entry_target_path(root: Path, entry: MutationJournalEntry) -> Path:
-    """Resolve a persisted `MutationJournalEntry.target` back to a real
+def _entry_target_path(root: Path, entry: _MutationJournalEntry) -> Path:
+    """Resolve a persisted `_MutationJournalEntry.target` back to a real
     `Path`: relative entries are joined onto `root` (mirroring
     `_target_display`'s relative branch), absolute entries are used as-is."""
     recorded = Path(entry.target)
     return recorded if recorded.is_absolute() else root / recorded
 
 
-def _read_journal_file(path: Path) -> MutationJournalEntry | None:
+def _read_journal_file(path: Path) -> _MutationJournalEntry | None:
     """Best-effort load of a journal file -- `None` if absent, unreadable,
     or malformed (treated as "no journal", never raised): the journal is
     disposable crash-recovery bookkeeping, not a source of truth worth
@@ -266,7 +273,7 @@ def _read_journal_file(path: Path) -> MutationJournalEntry | None:
         return None
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-        return MutationJournalEntry.model_validate(data)
+        return _MutationJournalEntry.model_validate(data)
     except (OSError, UnicodeDecodeError, ValueError) as exc:
         _log.warning("mutate: journal at %s unreadable/malformed: %s", path, exc)
         return None
@@ -324,7 +331,7 @@ def write_journal(
         resolved_starttime = _pid_starttime(resolved_pid)
     else:
         resolved_starttime = starttime
-    entry = MutationJournalEntry(
+    entry = _MutationJournalEntry(
         target=_target_display(root, target),
         sha256=sha256,
         content_b64=base64.b64encode(original).decode("ascii"),
@@ -452,7 +459,6 @@ def restore_stale_journals(root: Path) -> tuple[str, ...]:
 __all__ = [
     "JOURNAL_DIR",
     "JournalError",
-    "MutationJournalEntry",
     "StaleJournal",
     "list_stale_journals",
     "remove_journal",

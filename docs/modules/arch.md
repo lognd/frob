@@ -209,7 +209,7 @@ tuple[Violation, ...]` gate group still flag in full.
 ### Design-pattern recommender: `pattern-recommendation` / `anti-pattern-escape` (T-0332/T-0605)
 
 <a id="design-pattern-registry"></a>
-<!-- frob:describes src/frob/arch/_patterns.py::PatternRuleSpec -->
+<!-- frob:describes src/frob/arch/_patterns.py::_PatternRuleSpec -->
 <!-- frob:describes src/frob/arch/_patterns.py::PATTERN_REGISTRY -->
 <!-- frob:describes src/frob/arch/_patterns.py::new_construction_accumulator -->
 
@@ -238,7 +238,7 @@ Design constraints, in force for every registry row:
 - **Names the FORCE and a concrete sketch.** Every finding's `message`
   states the tension the pattern resolves; `detail` gives a one-line
   refactor sketch -- never a bare "use Strategy".
-- **`PatternRuleSpec`** (a frozen dataclass) is the registry's row shape:
+- **`_PatternRuleSpec`** (a frozen dataclass) is the registry's row shape:
   `rule_id`, `direction` (`"pattern"` or `"escape"`), `hallmark`,
   `response`, `force`, `sketch`, `languages`. `PATTERN_REGISTRY` is the
   full tuple of rows, independent of the detector code that matches each
@@ -1047,10 +1047,10 @@ does not compute.
   per-function; only a boundary catch-all (bare `except:`) discharges
   them, which is a caller's concern (T-0688), not this resolver's.
 
-### C++ may-throw analysis: `scan_cpp_functions` / `check_cpp_noexcept_violations` / `cpp-noexcept-throws` (T-0687)
+### C++ may-throw analysis: `_scan_cpp_functions` / `check_cpp_noexcept_violations` / `cpp-noexcept-throws` (T-0687)
 
 <a id="cpp-may-throw-analysis-t-0687"></a>
-<!-- frob:describes src/frob/arch/_cpp_mayraise.py::scan_cpp_functions -->
+<!-- frob:describes src/frob/arch/_cpp_mayraise.py::_scan_cpp_functions -->
 <!-- frob:describes src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations -->
 
 Child 2 of T-0685's exception may-raise umbrella, the SAME may-set shape

@@ -21,9 +21,9 @@ from __future__ import annotations
 
 from tree_sitter import Node, Tree
 
+from frob.lang._common import _child_text, _span_of, _strip_comment_delims
 from frob.lang._common import _find_enclosing_symbol as _find_enclosing
 from frob.lang._common import _find_following_symbol as _find_following
-from frob.lang._common import _span_of, _strip_comment_delims, child_text
 from frob.lang._models import RawComment, RawSymbol
 from frob.lang._walk_c import _walk_c_family
 from frob.lang._walk_kotlin import _walk_kotlin
@@ -153,7 +153,7 @@ def _bind_comments(
     out: list[RawComment] = []
     for node, end in zip(raw_nodes, block_end, strict=True):
         span = _span_of(node)
-        text = _strip_comment_delims(child_text(node))
+        text = _strip_comment_delims(_child_text(node))
         enclosing = _find_enclosing(span, symbols)
         following = _find_following((span[0], end), symbols)
         out.append(
@@ -237,10 +237,10 @@ def _block_ends(sorted_nodes: list[Node]) -> list[int]:
 def _python_import_specifiers(n: Node) -> list[str]:
     """Import specifiers declared by one python `import`/`from` statement node."""
     if n.type == "import_statement":
-        return [child_text(child) for child in n.named_children]
+        return [_child_text(child) for child in n.named_children]
     if n.type == "import_from_statement":
         mod = n.child_by_field_name("module_name")
-        return [child_text(mod)] if mod is not None else []
+        return [_child_text(mod)] if mod is not None else []
     return []
 
 
@@ -270,7 +270,7 @@ def _imports_c_family(root: Node) -> tuple[str, ...]:
         if n.type == "preproc_include":
             path_node = n.named_children[0] if n.named_children else None
             if path_node is not None:
-                results.append(child_text(path_node).strip('"<>'))
+                results.append(_child_text(path_node).strip('"<>'))
         for child in n.children:
             visit(child)
 
@@ -318,7 +318,7 @@ def iter_identifiers(tree: Tree, language: str) -> tuple[tuple[str, int], ...]:
 
     def visit(n: Node) -> None:
         if n.type in types:
-            txt = child_text(n)
+            txt = _child_text(n)
             if txt:
                 out.append((txt, _span_of(n)[0]))
             return

@@ -11,17 +11,17 @@ from frob.vet._capability_modes import (
     CAPABILITY_MODE_KINDS,
     LEGACY_CAPABILITY_ALIASES,
     CapabilityModeError,
+    _mode_qualified,
+    _normalize_observed_kind,
     canonical_declared_kind,
     expand_declared_kind,
-    mode_qualified,
-    normalize_observed_kind,
     resolve_capability_kind,
 )
 
 
 class TestModeQualified:
     def test_joins_family_and_mode(self):
-        assert mode_qualified("fs", "read") == "fs.read"
+        assert _mode_qualified("fs", "read") == "fs.read"
 
     def test_capability_mode_kinds_includes_fs_read_write(self):
         assert "fs.read" in CAPABILITY_MODE_KINDS
@@ -101,5 +101,5 @@ class TestCanonicalAndNormalize:
         assert canonical_declared_kind("fs") == "fs"
 
     def test_normalize_observed_kind_matches_canonical(self):
-        assert normalize_observed_kind("fs-write") == "fs.write"
-        assert normalize_observed_kind("net") == "net"
+        assert _normalize_observed_kind("fs-write") == "fs.write"
+        assert _normalize_observed_kind("net") == "net"

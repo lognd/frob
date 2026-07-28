@@ -31,10 +31,10 @@ from tree_sitter_language_pack import get_parser
 
 from frob.lang._common import (
     _canonical_tokens,
+    _child_text,
     _leading_doc_comment,
     _leaf_tokens,
     _span_of,
-    child_text,
     export_tree,
 )
 from frob.lang._models import RawSymbol, SymbolKind, TreeNode
@@ -98,7 +98,7 @@ def _kt_has_visibility_modifier(node: Node, *names: str) -> bool:
     if modifiers is None:
         return False
     return any(
-        c.type == "visibility_modifier" and child_text(c) in names
+        c.type == "visibility_modifier" and _child_text(c) in names
         for c in modifiers.children
     )
 
@@ -116,7 +116,7 @@ def _kt_function_symbol(
     """A `function_declaration` `RawSymbol` (method when inside a class/
     interface body, else a top-level function)."""
     name_node = _kt_child_of_type(node, "simple_identifier")
-    name = child_text(name_node)
+    name = _child_text(name_node)
     body = _kt_child_of_type(node, "function_body")
     doc = _leading_doc_comment(node, COMMENT_TYPES)
     skip = ((body.start_byte, body.end_byte),) if body else ()
@@ -132,11 +132,17 @@ def _kt_function_symbol(
     )
 
 
+# frob:waive DUP002 reason="T-0871: pre-existing similarity surfaced by an \
+# unrelated import-rename touching this file (child_text -> _child_text, \
+# a frob-exports privatize decision) -- both functions' own bodies/logic are \
+# unchanged, and DUP002's 'both new in this diff' flag is an artifact of the \
+# same line being touched in each, not new duplication; out of this ticket's \
+# __init__.py-only scope to extract"
 def _kt_class_symbol(node: Node, stack: tuple[str, ...]) -> RawSymbol:
     """A `class_declaration` `RawSymbol` (kotlin's grammar uses this same
     node type for both `class` and `interface` -- see module docstring)."""
     name_node = _kt_child_of_type(node, "type_identifier")
-    name = child_text(name_node)
+    name = _child_text(name_node)
     doc = _leading_doc_comment(node, COMMENT_TYPES)
     return RawSymbol(
         qualname=".".join((*stack, name)),
@@ -154,7 +160,7 @@ def _kt_property_symbol(node: Node, stack: tuple[str, ...]) -> RawSymbol:
     kotlin's analogue of rust's `const_item`/`static_item`."""
     var_decl = _kt_child_of_type(node, "variable_declaration")
     name_node = _kt_child_of_type(var_decl, "simple_identifier") if var_decl else None
-    name = child_text(name_node)
+    name = _child_text(name_node)
     doc = _leading_doc_comment(node, COMMENT_TYPES)
     return RawSymbol(
         qualname=".".join((*stack, name)),
@@ -170,7 +176,7 @@ def _kt_property_symbol(node: Node, stack: tuple[str, ...]) -> RawSymbol:
 def _kt_typealias_symbol(node: Node, stack: tuple[str, ...]) -> RawSymbol:
     """A `type_alias` `RawSymbol` -- kotlin's analogue of rust's `type_item`."""
     name_node = _kt_child_of_type(node, "type_identifier")
-    name = child_text(name_node)
+    name = _child_text(name_node)
     doc = _leading_doc_comment(node, COMMENT_TYPES)
     return RawSymbol(
         qualname=".".join((*stack, name)),
@@ -188,7 +194,7 @@ def _kt_recurse_class(
 ) -> None:
     """Descend into a `class_declaration`'s `class_body` (its methods are members)."""
     name_node = _kt_child_of_type(node, "type_identifier")
-    name = child_text(name_node)
+    name = _child_text(name_node)
     body = _kt_child_of_type(node, "class_body")
     if body is None:
         return

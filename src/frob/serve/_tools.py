@@ -244,6 +244,9 @@ def frob_doc_for(root: Path, symref: str) -> Result[dict, ServeError]:
 
 # frob:doc docs/modules/graph.md#affects
 # frob:doc docs/modules/serve.md#tools
+# frob:waive AFFECT001 reason="T-0871: docstring-only update to the private \
+# cross-reference name (warm_state -> _warm_state, an unrelated frob-exports \
+# privatize decision) -- this tool's own public contract/behavior is unchanged"
 # frob:tests tests/test_serve.py::TestAffects.test_direct_symbol_no_dependents kind="unit"  # noqa: E501
 # frob:tests tests/test_serve.py::TestAffects.test_transitive_dependent_docs_included kind="unit"  # noqa: E501
 # frob:tests tests/test_serve.py::TestAffects.test_unknown_symbol_is_err kind="unit"
@@ -258,9 +261,9 @@ def frob_affects(
     obligation graph (`frob.graph.affects`) for every doc anchor, test, and
     transitively-dependent symbol (`frob:uses-contract` chain) that must be
     reviewed/updated because `symref` changed -- reuses the warm snapshot
-    `frob.serve._warm.warm_state` already built, no cold graph reload and no
+    `frob.serve._warm._warm_state` already built, no cold graph reload and no
     test run."""
-    state_result = _warm.warm_state(root)
+    state_result = _warm._warm_state(root)
     if state_result.is_err:
         _log.error("serve: frob_affects: graph: %s", state_result.danger_err)
         return Err(ServeError.GraphUnavailable)
@@ -313,7 +316,7 @@ def _run_verify_pass(root: Path, cfg, warm_violations: tuple) -> dict:
     so a real mismatch means the warm path served a stale answer."""
     from frob.gates import run_gates, violation_fingerprint
 
-    _warm.invalidate(root)
+    _warm._invalidate(root)
     cold_result = run_gates(cfg)
     if cold_result.is_err:
         _log.error("serve: frob_check_delta: verify: %s", cold_result.danger_err)
@@ -358,7 +361,7 @@ def frob_check_delta(
     whether the two violation sets agree."""
     from frob.gates import GateConfig, delta_violations, is_baseline_stale, run_gates
 
-    state_result = _warm.warm_state(root)
+    state_result = _warm._warm_state(root)
     if state_result.is_err:
         _log.error("serve: frob_check_delta: graph: %s", state_result.danger_err)
         return Err(ServeError.GraphUnavailable)
@@ -417,7 +420,7 @@ def frob_run_touched_tests(root: Path, base: str = "main") -> Result[dict, Serve
     from frob.gitio import working_diff
     from frob.testing import SelectConfig, load_runners, run_selected, select_tests
 
-    state_result = _warm.warm_state(root)
+    state_result = _warm._warm_state(root)
     if state_result.is_err:
         _log.error("serve: frob_run_touched_tests: graph: %s", state_result.danger_err)
         return Err(ServeError.GraphUnavailable)
@@ -518,7 +521,7 @@ def frob_daemon_status(root: Path) -> Result[dict, ServeError]:
     """(T-0733) The background daemon's latest post-land verdict and
     outstanding rebase warnings for `root`, as JSON-able dicts -- a pure
     read of `frob.serve._daemon.daemon_status`, never triggers a poll
-    itself; the daemon's own background thread (`_daemon.start_daemon`)
+    itself; the daemon's own background thread (`_daemon._start_daemon`)
     keeps this fresh."""
     from frob.serve import _daemon
 

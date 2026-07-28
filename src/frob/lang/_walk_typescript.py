@@ -14,10 +14,10 @@ from tree_sitter import Node
 from frob.lang._common import (
     _body_skip,
     _canonical_tokens,
+    _child_text,
     _leading_doc_comment,
     _leaf_tokens,
     _span_of,
-    child_text,
 )
 from frob.lang._models import RawSymbol, SymbolKind
 
@@ -47,7 +47,7 @@ def _function_symbol(
     body = node.child_by_field_name("body")
     if body is None:
         return None
-    name = child_text(node.child_by_field_name("name"))
+    name = _child_text(node.child_by_field_name("name"))
     return RawSymbol(
         qualname=".".join((*stack, name)),
         kind=SymbolKind.METHOD if stack else SymbolKind.FUNCTION,
@@ -67,7 +67,7 @@ def _class_symbol(
     body = node.child_by_field_name("body")
     if body is None:
         return None
-    name = child_text(node.child_by_field_name("name"))
+    name = _child_text(node.child_by_field_name("name"))
     symbol = RawSymbol(
         qualname=".".join((*stack, name)),
         kind=SymbolKind.CLASS,
@@ -87,9 +87,9 @@ def _method_symbol(
     body = node.child_by_field_name("body")
     if body is None:
         return None
-    name = child_text(node.child_by_field_name("name"))
+    name = _child_text(node.child_by_field_name("name"))
     access = next(
-        (child_text(c) for c in node.children if c.type == "accessibility_modifier"),
+        (_child_text(c) for c in node.children if c.type == "accessibility_modifier"),
         "public",
     )
     return RawSymbol(
@@ -104,6 +104,11 @@ def _method_symbol(
     )
 
 
+# frob:waive DUP001 reason="T-0871: pre-existing similarity surfaced by an \
+# unrelated import-rename touching this file (child_text -> _child_text, \
+# a frob-exports privatize decision); this function's own body/logic is \
+# unchanged -- not a duplication introduced by this ticket, out of this \
+# ticket's __init__.py-only scope to extract"
 def _const_symbol(
     node: Node, raw_child: Node, exported: bool, doc: str
 ) -> RawSymbol | None:
@@ -114,7 +119,7 @@ def _const_symbol(
     )
     if declarator is None:
         return None
-    name = child_text(declarator.child_by_field_name("name"))
+    name = _child_text(declarator.child_by_field_name("name"))
     if not name:
         return None
     return RawSymbol(
@@ -132,7 +137,7 @@ def _type_symbol(
     node: Node, raw_child: Node, exported: bool, doc: str
 ) -> RawSymbol | None:
     """An interface/type-alias/enum `RawSymbol`, or None if unnamed."""
-    name = child_text(node.child_by_field_name("name"))
+    name = _child_text(node.child_by_field_name("name"))
     if not name:
         return None
     return RawSymbol(

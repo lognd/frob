@@ -23,7 +23,13 @@ from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
-from frob.mutate._journal import remove_journal, restore_stale_journals, write_journal
+from frob.mutate._journal import (
+    JournalError,
+    StaleJournal,
+    remove_journal,
+    restore_stale_journals,
+    write_journal,
+)
 from frob.process._lock import derived_state_lock
 
 _log = get_logger(__name__)
@@ -498,10 +504,12 @@ def _run_mutants(
 
 
 __all__ = [
+    "JournalError",
     "MUTATION_RUN_ENV",
     "Mutant",
     "MutateError",
     "MutationResult",
+    "StaleJournal",
     "generate_mutants",
     "run_mutations",
 ]

@@ -37,7 +37,7 @@ ticket -- see T-0570's Done report for the follow-up ticket filed for that
 T-0604: `run_diagnosis` also persists a `{artifact name: fingerprint}`
 manifest under `.frob/derived-state-manifest.json` after every run and
 compares against the manifest the PREVIOUS run left behind
-(`detect_derived_state_drift`), so a valid-format artifact that was
+(`_detect_derived_state_drift`), so a valid-format artifact that was
 silently REWRITTEN out-of-band between two `frob doctor` invocations (not
 just one that is malformed right now, T-0570's check) shows up as named
 content drift with both fingerprints. This is deliberately informational
@@ -154,7 +154,13 @@ class DerivedArtifactStatus(BaseModel):
 
 
 # frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
-class DerivedArtifactDrift(BaseModel):
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
+# docs/guides/install.md#derived-state-integrity-manifest-t-0570 documents \
+# this internal drift-detection shape; this type was demoted to private in \
+# this ticket (frob-exports: zero real consumers outside this module) but \
+# remains the thing the doc section describes"
+# frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
+class _DerivedArtifactDrift(BaseModel):
     """Content drift detected for one derived artifact ACROSS TWO `frob
     doctor` runs (T-0604): its fingerprint from the manifest the previous
     run persisted no longer matches this run's live fingerprint, meaning
@@ -307,9 +313,15 @@ def _write_drift_manifest(root: Path, fingerprints: dict[str, str]) -> None:
 # frob:tests \
 # tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift.test_rewritten_artifact_\
 # between_two_runs_reports_drift kind="unit"  # noqa: E501
-def detect_derived_state_drift(
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
+# docs/guides/install.md#derived-state-integrity-manifest-t-0570 documents \
+# this internal drift-detection function; it was demoted to private in \
+# this ticket (frob-exports: zero real consumers outside this module) but \
+# remains the thing the doc section describes"
+# frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
+def _detect_derived_state_drift(
     root: Path, current: tuple[DerivedArtifactStatus, ...]
-) -> tuple[DerivedArtifactDrift, ...]:
+) -> tuple[_DerivedArtifactDrift, ...]:
     """Compare `current`'s fingerprints against the manifest the PREVIOUS
     `frob doctor` run persisted (T-0604) and report every artifact whose
     content changed since then -- content drift, distinct from
@@ -330,14 +342,14 @@ def detect_derived_state_drift(
     anything touch my caches while I wasn't looking" check) read this
     return value or `DoctorReport.drift` directly."""
     previous = _load_drift_manifest(root)
-    drift: list[DerivedArtifactDrift] = []
+    drift: list[_DerivedArtifactDrift] = []
     for d in current:
         if d.fingerprint is None:
             continue
         prev_fingerprint = previous.get(d.name)
         if prev_fingerprint is not None and prev_fingerprint != d.fingerprint:
             drift.append(
-                DerivedArtifactDrift(
+                _DerivedArtifactDrift(
                     name=d.name,
                     path=d.path,
                     previous_fingerprint=prev_fingerprint,
@@ -394,7 +406,7 @@ class DoctorReport(BaseModel):
     journals needing restore (T-0857), the overall verdict, and
     remediation hint (empty when everything is healthy).
 
-    `drift` is informational only -- see `detect_derived_state_drift`'s
+    `drift` is informational only -- see `_detect_derived_state_drift`'s
     docstring for why it does not feed into `healthy`/`remediation` the
     way a corrupt (`derived_state`) artifact does. `mutate_journals` is
     the opposite: any entry DOES make `healthy` False -- it names a real
@@ -406,7 +418,7 @@ class DoctorReport(BaseModel):
     frob_version: str
     extensions: list[NativeExtensionStatus]
     derived_state: list[DerivedArtifactStatus] = []
-    drift: list[DerivedArtifactDrift] = []
+    drift: list[_DerivedArtifactDrift] = []
     scaffold_blocks: list[ManagedBlockStatus] = []
     mutate_journals: list[StaleJournal] = []
     healthy: bool
@@ -471,7 +483,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     for tests and non-CLI callers.
 
     T-0604: also compares this run's fingerprints against the manifest the
-    PREVIOUS `frob doctor` run persisted (`detect_derived_state_drift`)
+    PREVIOUS `frob doctor` run persisted (`_detect_derived_state_drift`)
     and stamps a fresh manifest for the NEXT run before returning --
     `report.drift` is informational only and does not affect `healthy`,
     see that function's docstring for why.
@@ -498,7 +510,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     with derived_state_lock(resolved_root, exclusive=True):
         derived_state = verify_derived_state(resolved_root)
         corrupt = tuple(d for d in derived_state if d.present and not d.healthy)
-        drift = detect_derived_state_drift(resolved_root, derived_state)
+        drift = _detect_derived_state_drift(resolved_root, derived_state)
         _write_drift_manifest(
             resolved_root,
             {d.name: d.fingerprint for d in derived_state if d.fingerprint is not None},

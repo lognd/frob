@@ -5378,7 +5378,17 @@ def _aggregate_fingerprints(
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0665
-class OpaqueFinding(BaseModel):
+# frob:waive AFFECT001 reason="T-0871: _OpaqueFinding -> _OpaqueFinding rename \
+# only (frob-exports privatize: zero real consumers outside this module) -- \
+# the vet public-api contract docs/modules/vet.md#public-api describes is \
+# unchanged, this type was never part of it"
+# frob:waive COV005 reason="T-0871: intentional, not a rename-rode-along -- \
+# docs/modules/vet.md#public-api documents this finding's shape as part of \
+# the vet capability-scan feature; demoted to private in this ticket \
+# (frob-exports: zero real consumers outside this module) but remains the \
+# thing the doc section describes"
+# frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
+class _OpaqueFinding(BaseModel):
     """One `RUNTIME_OPAQUE_CONSTRUCTS` site (T-0665) found in a file's raw
     text outside a comment span, with the 1-indexed line number
     `frob.gates._opaque`'s `opaque_gate` reports the `OPAQUE001` violation
@@ -5533,7 +5543,7 @@ def _structural_opaque_findings(
     raw: bytes,
     language: str,
     comment_spans: tuple[tuple[int, int], ...],
-) -> list[OpaqueFinding]:
+) -> list[_OpaqueFinding]:
     """`RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS` sites in `raw` (T-1051) --
     the generalized SHAPE-based sibling of `_opaque_indirection_findings`'s
     fixed-needle scan, for taxonomy rows a single literal needle cannot
@@ -5545,7 +5555,7 @@ def _structural_opaque_findings(
     looks_literal` so a LITERAL-keyed subscript call (already the ordinary
     resolver's job, T-0665's own literal/non-literal split) does not
     double-fire this obligation."""
-    findings: list[OpaqueFinding] = []
+    findings: list[_OpaqueFinding] = []
     for construct in RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS:
         if construct.language != language:
             continue
@@ -5569,7 +5579,7 @@ def _structural_opaque_findings(
                 continue
             line = raw.count(b"\n", 0, start) + 1
             findings.append(
-                OpaqueFinding(
+                _OpaqueFinding(
                     construct_name=construct.construct_name,
                     taxonomy_row=construct.taxonomy_row,
                     rationale=construct.rationale,
@@ -5580,7 +5590,7 @@ def _structural_opaque_findings(
 
 
 # frob:waive DEAD001 reason="T-1024: genuinely called from frob.gates._opaque.opaque_gate, a sibling package under src/frob/gates/ -- DEAD001's intra-package reference graph is built per-directory (dead_symbol_gate's docstring) so a cross-package caller in a different directory is invisible to it; directly unit-tested via the frob:tests directives in tests/test_vet.py"  # noqa: E501
-def _opaque_indirection_findings(path: Path) -> tuple[OpaqueFinding, ...]:
+def _opaque_indirection_findings(path: Path) -> tuple[_OpaqueFinding, ...]:
     """`RUNTIME_OPAQUE_CONSTRUCTS` sites in `path` (T-0665, coordinator-
     signed category 1: "evasion-indicative dynamic lookup") -- the
     fail-closed sibling of `scan_file_capabilities`'s ordinary resolver
@@ -5606,7 +5616,7 @@ def _opaque_indirection_findings(path: Path) -> tuple[OpaqueFinding, ...]:
 
     comment_spans = _non_executable_byte_spans(path)
     uses_libloading = language == "rust" and b"libloading" in raw
-    findings: list[OpaqueFinding] = []
+    findings: list[_OpaqueFinding] = []
     for construct in RUNTIME_OPAQUE_CONSTRUCTS:
         if construct.language != language:
             continue
@@ -5623,12 +5633,12 @@ def _needle_construct_findings(
     construct,  # noqa: ANN001 -- frob.vet._capability_registry._OpaqueConstruct
     raw: bytes,
     comment_spans: tuple[tuple[int, int], ...],
-) -> list[OpaqueFinding]:
+) -> list[_OpaqueFinding]:
     """Every site of one `RUNTIME_OPAQUE_CONSTRUCTS` needle in `raw` (T-1051,
     extracted from `_opaque_indirection_findings` to keep it under
     `ARCH001`'s line-count threshold) -- same literal-arg fail-closed logic
     that function always ran inline, unchanged in behavior."""
-    findings: list[OpaqueFinding] = []
+    findings: list[_OpaqueFinding] = []
     needle = construct.needle.encode("utf-8")
     start = 0
     while True:
@@ -5649,7 +5659,7 @@ def _needle_construct_findings(
         if fires:
             line = raw.count(b"\n", 0, idx) + 1
             findings.append(
-                OpaqueFinding(
+                _OpaqueFinding(
                     construct_name=construct.construct_name,
                     taxonomy_row=construct.taxonomy_row,
                     rationale=construct.rationale,
@@ -5661,7 +5671,7 @@ def _needle_construct_findings(
 
 __all__ = [
     "SCANNED_LANGUAGES",
-    "OpaqueFinding",
+    "_OpaqueFinding",
     "_decode_to_exec_signal",
     "is_self_pattern_path",
     "language_for",

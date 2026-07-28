@@ -349,7 +349,7 @@ for the enforcement side.
 
 ### Cross-run content drift (T-0604)
 
-<!-- frob:describes src/frob/doctor.py::detect_derived_state_drift -->
+<!-- frob:describes src/frob/doctor.py::_detect_derived_state_drift -->
 
 T-0570's fingerprint check above is per-run: it catches an artifact that
 is malformed RIGHT NOW, but says nothing about an artifact that is still
@@ -359,7 +359,7 @@ between two invocations). T-0604 closes that gap: `run_diagnosis`
 persists a `{artifact name: fingerprint}` manifest under
 `.frob/derived-state-manifest.json` after every run, and compares this
 run's fingerprints against the manifest the PREVIOUS run left behind
-(`detect_derived_state_drift`). Any artifact present in both, with a
+(`_detect_derived_state_drift`). Any artifact present in both, with a
 fingerprint mismatch, is reported as a `DerivedArtifactDrift` entry
 (`name`, `path`, `previous_fingerprint`, `current_fingerprint`) in the
 new `DoctorReport.drift` list -- surfaced automatically via `frob doctor
@@ -379,7 +379,7 @@ rewrite as a hard failure would make a session's second `frob doctor`
 call cry wolf on completely normal churn. Callers that want the raw
 signal (an audit trail, "did anything touch my caches while I wasn't
 looking") read `DoctorReport.drift` or call
-`detect_derived_state_drift` directly.
+`_detect_derived_state_drift` directly.
 
 ## `frob mutate` backup journal: needs-restore state (T-0857)
 
