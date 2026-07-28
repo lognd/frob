@@ -18,7 +18,42 @@ caution.
    or an ancestor merge of it -- not the worktree's stale creation base.
    Worktrees here have been created from a stale base before; skipping
    this step has silently reverted already-landed features (see the
-   T-0167 round-1 incident below).
+   T-0167 round-1 incident below). **This is a hard MUST, not a
+   nice-to-have -- run these two commands before touching anything else:**
+   ```
+   git merge main
+   git log --oneline -1   # confirm this IS (or descends from) main's tip
+   ```
+
+   **Root cause (T-1030, confirmed by direct investigation):** the
+   dispatch harness's worktree-creation tool defaults to cutting a new
+   worktree from `origin/<default-branch>` (its `worktree.baseRef=fresh`
+   default), NOT from the local checkout's current `HEAD`. In this repo,
+   `origin/main` lags local `main` -- local `main` accumulates hundreds of
+   commits across a dispatch session that are never pushed upstream, so
+   `origin/main` can sit dozens to hundreds of commits behind. Three
+   separate incidents (fa606fe8, b3589c3e) cut worktrees from exactly the
+   stale `origin/main` tip, confirming this mechanism directly (verified:
+   `git log --oneline -1 origin/main` reproduced `fa606fe8` byte-for-byte
+   during the T-1030 investigation, with local `main` 81 commits ahead
+   and unpushed at that time). This is harness-side behavior outside
+   frob's own codebase -- frob cannot patch the tool that creates the
+   worktree, only detect and warn once inside one. Plain `git worktree
+   add <path> -b <branch> main` (no origin fetch involved) does NOT
+   exhibit this bug -- it correctly cuts from local `main`'s tip -- which
+   further isolates the defect to the dispatch tool's own default, not to
+   git or frob.
+
+   Two concrete mitigations exist but are NOT applied automatically --
+   see T-1058 (filed by T-1030) for the coordinator-level
+   decision on which to adopt:
+   - Set `worktree.baseRef: "head"` in `.claude/settings.json` so the
+     dispatch tool branches from local `HEAD` instead of `origin`.
+   - Push local `main` to `origin` before dispatching a wave, so even the
+     `fresh`/origin-based default lands close to the real tip.
+   Until one of those lands, step 1's `git merge main` + tip verification
+   above is the ONLY reliable per-worktree fix -- treat it as mandatory,
+   every single time, not just when something looks wrong.
 2. `make core` to build the native extensions (`frob-core`, `strata-core`)
    into the worktree's own `.venv`. Fresh worktrees do not inherit a
    sibling worktree's build -- `strata_core`/`frob_core` come up missing
