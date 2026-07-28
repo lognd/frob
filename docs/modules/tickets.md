@@ -610,6 +610,37 @@ existence) that keeps a dead worktree's forgotten lease from wedging
 (dead in-progress ticket -> requeue, live worktree with no in-progress
 ticket -> flag/clean) is T-0476's job, not this one's.
 
+## Start-transition auto-commit (T-1054)
+
+`frob.tickets.transition` writes `tickets.md` straight to `root`'s working
+tree but never commits it -- `frob ticket start` used to return with `root`
+DIRTY (an uncommitted `queued -> in-progress` line) the instant it
+succeeded. Because `frob ticket land` refuses with `DirtyMain` on ANY
+uncommitted change in the checkout it lands against, the very next land --
+by any agent, often in a different worktree entirely -- refused until a
+human noticed the stray line and hand-committed it (the recurring
+2026-07-27 incident this fixes; a coordinator hand-committing
+`chore(tickets): record T-1047 start transition` was the last time this
+had to be done manually).
+
+`frob.tickets._leases.commit_start_transition(root, ticket_id)` closes this
+the same way `frob.tickets._land._commit_finalize_writes` already owns
+land's own working-tree commits: called from `ticket_runner._start`
+immediately after `transition(root, ticket_id, IN_PROGRESS)` succeeds, it
+
+1. No-ops (`Ok(None)`) if `root`'s `tickets.md` is not actually dirty (not
+   a git work tree, or nothing to commit) -- never manufactures an empty
+   commit.
+2. Otherwise stages and commits exactly `tickets.md` with the message
+   `chore(tickets): record <ticket_id> start transition`, mirroring the
+   coordinator's own hand-written recovery commits' message form.
+3. On a commit-step failure (`git add`/`git commit` itself erroring),
+   returns `Err(LeaseError.CommitFailed)` and LOGS AN ERROR naming the
+   exact recovery command (`git -C <root> add tickets.md && git -C <root>
+   commit -m "..."`) -- `ticket_runner._start` treats this as a hard
+   `sys.exit(1)`, never a silently-swallowed warning, since a failure here
+   IS the DirtyMain-at-next-land bug reproducing itself.
+
 ## `frob ticket reconcile` (T-0476)
 
 The fuller two-way healing the T-0473 section above defers to. Reuses the

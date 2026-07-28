@@ -1752,6 +1752,22 @@ def _start(root: Path, cfg: AppConfig) -> None:
     if transitioned.is_err:
         _log.error("ticket start failed: %s", transitioned.danger_err)
         sys.exit(1)
+
+    # frob:ticket T-1054
+    # `transition` above wrote the queued/planned -> in-progress line into
+    # `root`'s tickets.md but never committed it -- commit it NOW, the same
+    # way `land` already owns its own ledger commits, so `root` never sits
+    # dirty between this `start` returning and the next `frob ticket land`
+    # (any worktree) running its DirtyMain check. A commit failure is a
+    # hard stop, loudly reported with the exact recovery command, not a
+    # silently-swallowed warning -- see `commit_start_transition`'s
+    # docstring for the recurring incident this closes.
+    from frob.tickets._leases import commit_start_transition
+
+    committed = commit_start_transition(root, cfg.ticket_id)
+    if committed.is_err:
+        sys.exit(1)
+
     # frob:ticket T-0178
     from frob.app.telemetry import record_ticket_event
 

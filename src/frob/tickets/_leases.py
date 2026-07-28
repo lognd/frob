@@ -34,6 +34,8 @@ import json
 import os
 import re
 import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -197,6 +199,7 @@ def _log_rejected_lease_once(path: Path, record: _LeaseRecord) -> None:
 
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
+# frob:ticket T-1054
 class LeaseError(ErrorSet):
     """Fallible outcomes of the cross-worktree lease side-channel (T-0473)."""
 
@@ -204,6 +207,7 @@ class LeaseError(ErrorSet):
     WriteFailed = "writing the lease file failed"
     NoLeaseForTicket = "the ticket has no recorded lease at all"
     LeaseWorktreeMismatch = "the ticket's recorded lease belongs to another worktree"
+    CommitFailed = "committing the start transition into root's ledger failed"
 
 
 # frob:ticket T-0601
@@ -443,6 +447,145 @@ def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     # needed, the next `read_all_leases` call (this process or a sibling
     # one) sees the path missing from the current directory listing and
     # drops it from `_lease_file_cache` on its own.
+    return Ok(None)
+
+
+# frob:ticket T-1054
+# frob:doc docs/modules/tickets.md#start-transition-auto-commit-t-1054
+# frob:tests tests/test_ticket_leases.py::TestCommitStartTransition.test_commits_dirty_ledger_with_expected_message kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestCommitStartTransition.test_no_op_when_ledger_already_clean kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestCommitStartTransition.test_reports_exact_recovery_command_on_commit_failure kind="unit"  # noqa: E501
+def commit_start_transition(root: Path, ticket_id: str) -> Result[None, LeaseError]:
+    """Commit `root`'s just-written `queued -> in-progress` (or
+    `planned -> in-progress`) ledger line, the way `land`'s own
+    `_commit_finalize_writes` commits its working-tree writes (T-1054).
+
+    `frob.tickets.transition` writes `tickets.md` straight to `root`'s
+    working tree but never commits it -- before this fix, that left `root`
+    dirty the moment `frob ticket start` returned, and the FIRST subsequent
+    `frob ticket land` (by any agent, often a different worktree entirely)
+    refused with `DirtyMain` until a human noticed and hand-committed the
+    stray line (the recurring 2026-07-27 incident this ticket exists to
+    close -- diagnosed explicitly during the T-1023 land, worked around by
+    the coordinator hand-committing 52419399). `start` now owns this commit
+    itself, the same way `land` already owns its own ledger commits.
+
+    No-ops (`Ok(None)`) if `root`'s `tickets.md` is not actually dirty --
+    a `root` that is not a git work tree, or one where `transition`'s write
+    happened to be a no-op byte-for-byte (never observed in practice, but
+    not assumed impossible), must not manufacture an empty commit or a
+    spurious failure. `Err(LeaseError.CommitFailed)` is returned (and
+    LOUDLY logged with the exact recovery command) only when `tickets.md`
+    IS dirty and either `git add` or `git commit` itself fails -- the
+    caller (`ticket_runner._start`) is expected to surface this as a hard
+    `sys.exit(1)`, never a silently-swallowed warning, since a failure here
+    is exactly the DirtyMain-at-next-land bug reproducing itself."""
+    if not _tickets_md_dirty(root, ticket_id):
+        return Ok(None)
+    return _add_and_commit_tickets_md(root, ticket_id)
+
+
+# frob:ticket T-1054
+def _tickets_md_dirty(root: Path, ticket_id: str) -> bool:
+    """Whether `root`'s `tickets.md` has an uncommitted change (T-1054) --
+    `False` (best-effort, logged) whenever `root` is not a git work tree,
+    so a caller degrades to a no-op instead of erroring on a non-git
+    fixture root."""
+    status = gitio.run_argv(
+        ["git", "-C", str(root), "status", "--porcelain", "--", "tickets.md"]
+    )
+    if status.is_err:
+        _log.warning(
+            "tickets: %s start-transition commit skipped (git status failed "
+            "under %s, likely not a git work tree)",
+            ticket_id,
+            root,
+        )
+        return False
+    if not status.danger_ok.stdout.strip():
+        _log.debug(
+            "tickets: %s start-transition commit skipped (tickets.md already "
+            "clean under %s)",
+            ticket_id,
+            root,
+        )
+        return False
+    return True
+
+
+# frob:ticket T-1054
+@contextmanager
+def _without_agent_commit_guard() -> Iterator[None]:
+    """Suspend `FROB_AGENT` for the duration of ONE internal `git commit`
+    spawn (T-1054), restoring it (or its absence) on exit.
+
+    The scaffolded `pre-commit` hook (T-0431, `frob.scaffold.project`)
+    unconditionally refuses any commit made while `FROB_AGENT` is set in
+    the environment `git commit` inherits -- a guard against a dispatched
+    agent's shell accidentally running a RAW `git commit` against the
+    wrong checkout. `commit_start_transition`'s own commit is not that: it
+    is `start`'s own internal ledger-commit machinery, the exact same
+    "frob verb owns its own git plumbing" shape `land`'s
+    `_commit_finalize_writes` already gets via `FROB_LAND_INTERNAL=1` for
+    the T-0731 land-owned-files half of the same hook -- but the hook's
+    `FROB_AGENT` block has no override flag at all (unconditional,
+    unlike the land-owned-files block below it), so the only way for this
+    module's OWN commit to not collide with it is to not carry `FROB_AGENT`
+    into the `git commit` child process in the first place. Scoped to just
+    the commit spawn (not `git add`, which the hook does not gate) so a
+    concurrent thread's own `FROB_AGENT` read is never affected for longer
+    than necessary."""
+    # frob:waive SEC110 reason="FROB_AGENT is a dispatch-context marker (T-0574), not a secret"
+    prior = os.environ.get("FROB_AGENT")
+    if prior is not None:
+        # frob:waive SEC110 reason="removing a dispatch-context marker, not a secret"
+        del os.environ["FROB_AGENT"]
+    try:
+        yield
+    finally:
+        if prior is not None:
+            # frob:waive SEC110 reason="restoring a dispatch-context marker, not a secret"
+            os.environ["FROB_AGENT"] = prior
+
+
+# frob:ticket T-1054
+def _add_and_commit_tickets_md(root: Path, ticket_id: str) -> Result[None, LeaseError]:
+    """`git add tickets.md && git commit -m "chore(tickets): record
+    <ticket_id> start transition"` in `root` (T-1054); `Err(CommitFailed)`,
+    loudly logged with the exact recovery command, if either step fails."""
+    message = f"chore(tickets): record {ticket_id} start transition"
+    added = gitio.run_argv(["git", "-C", str(root), "add", "tickets.md"])
+    if added.is_ok and added.danger_ok.returncode == 0:
+        with _without_agent_commit_guard():
+            committed = gitio.run_argv(
+                ["git", "-C", str(root), "commit", "-m", message]
+            )
+    else:
+        committed = added
+    if (
+        added.is_err
+        or added.danger_ok.returncode != 0
+        or committed.is_err
+        or committed.danger_ok.returncode != 0
+    ):
+        _log.error(
+            "tickets: %s start transition left %s DIRTY -- the commit step "
+            "failed. Run this by hand before anything else lands: "
+            'git -C %s add tickets.md && git -C %s commit -m "%s"',
+            ticket_id,
+            root,
+            root,
+            root,
+            message,
+        )
+        return Err(LeaseError.CommitFailed)
+
+    _log.info(
+        "tickets: %s start transition committed in %s (%s)",
+        ticket_id,
+        root,
+        message,
+    )
     return Ok(None)
 
 

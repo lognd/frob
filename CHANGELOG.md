@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.203.0] - unreleased
+
+- T-1054: frob ticket start from a worktree leaves the root ledger state transition uncommitted -- DirtyMain then blocks every land until a human commits it
+
 ## [0.202.0] - unreleased
 
 - T-0701: strata mode-conformance enforcement: prove each node's code OBEYS its declared access mode (read/append/write/exclusive)

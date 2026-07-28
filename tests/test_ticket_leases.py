@@ -20,6 +20,7 @@ own style for exercising the shared-common-dir side channel."""
 
 from __future__ import annotations
 
+import os
 import subprocess
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -464,3 +465,103 @@ class TestWorktreeSweepCli:
         out = capsys.readouterr().out
         assert "removed" in out
         assert "swept 1 worktree(s)" in out
+
+
+# frob:ticket T-1054
+class TestCommitStartTransition:
+    """T-1054: `frob ticket start` must commit its own `queued/planned ->
+    in-progress` ledger write into `root`, not leave `root` dirty for the
+    next `frob ticket land` (any worktree) to trip DirtyMain on."""
+
+    def test_commits_dirty_ledger_with_expected_message(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitStartTransition.test_commits_dirty_ledger_with_expected_message  # noqa: E501
+        ticket_run(
+            AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
+        )
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert status.stdout.strip() == ""
+
+        log = _run(["git", "log", "-1", "--pretty=%s"], repo)
+        assert log.stdout.strip() == "chore(tickets): record T-0001 start transition"
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0001"].state == TicketState.IN_PROGRESS
+
+    def test_no_op_when_ledger_already_clean(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitStartTransition.test_no_op_when_ledger_already_clean  # noqa: E501
+        from frob.tickets._leases import commit_start_transition
+
+        result = commit_start_transition(repo, "T-0001")
+        assert result.is_ok
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert status.stdout.strip() == ""
+
+    def test_reports_exact_recovery_command_on_commit_failure(
+        self, repo: Path, caplog
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitStartTransition.test_reports_exact_recovery_command_on_commit_failure  # noqa: E501
+        from frob.tickets import transition
+        from frob.tickets._leases import LeaseError, commit_start_transition
+
+        planned = transition(repo, "T-0001", TicketState.PLANNED)
+        assert planned.is_ok
+        transitioned = transition(repo, "T-0001", TicketState.IN_PROGRESS)
+        assert transitioned.is_ok
+        # A stale `index.lock` makes `git add` itself fail even though
+        # `tickets.md` is genuinely dirty -- the simplest reliable way to
+        # force the commit step to fail without depending on whether this
+        # machine has a global git identity fallback configured.
+        (repo / ".git" / "index.lock").write_text("")
+
+        with caplog.at_level("ERROR"):
+            result = commit_start_transition(repo, "T-0001")
+        assert result.is_err
+        assert result.danger_err == LeaseError.CommitFailed
+        assert "DIRTY" in caplog.text
+        assert (
+            f"git -C {repo} add tickets.md && git -C {repo} commit -m "
+            '"chore(tickets): record T-0001 start transition"'
+        ) in caplog.text
+
+    def test_commits_cleanly_even_when_caller_shell_has_frob_agent_set(
+        self, repo: Path, monkeypatch
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitStartTransition.test_commits_cleanly_even_when_caller_shell_has_frob_agent_set  # noqa: E501
+        """T-1054 regression: a real dispatched-agent shell exports
+        `FROB_AGENT=1` for the whole session (T-0574). The scaffolded T-0431
+        `pre-commit` hook unconditionally refuses any commit made while
+        `FROB_AGENT` is set, to catch an agent accidentally running a raw
+        `git commit` by hand -- but `commit_start_transition`'s own commit
+        is `start`'s legitimate internal ledger machinery, not that, and
+        must not collide with the guard it is not the target of."""
+        from frob.tickets import transition
+        from frob.tickets._leases import commit_start_transition
+
+        hooks_dir = repo / ".git" / "hooks"
+        hooks_dir.mkdir(parents=True, exist_ok=True)
+        (hooks_dir / "pre-commit").write_text(
+            "#!/bin/sh\n"
+            'if [ -n "$FROB_AGENT" ]; then\n'
+            '    echo "frob: refusing commit -- FROB_AGENT is set" >&2\n'
+            "    exit 1\n"
+            "fi\n"
+            "exit 0\n"
+        )
+        (hooks_dir / "pre-commit").chmod(0o755)
+
+        planned = transition(repo, "T-0001", TicketState.PLANNED)
+        assert planned.is_ok
+        transitioned = transition(repo, "T-0001", TicketState.IN_PROGRESS)
+        assert transitioned.is_ok
+
+        monkeypatch.setenv("FROB_AGENT", "1")
+        result = commit_start_transition(repo, "T-0001")
+        assert result.is_ok
+        # frob:waive SEC110 reason="asserting a test-set dispatch-context marker restored, not a secret"
+        assert os.environ.get("FROB_AGENT") == "1"
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert status.stdout.strip() == ""
