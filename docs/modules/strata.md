@@ -104,3 +104,81 @@ what the LIVE gate itself checks on every `frob check` run; wiring the
 gate to drop the restriction now that the model has zero findings
 either way is real, disclosed follow-up work (see T-1079's Done report
 for the filed ticket id), not done by this ticket.
+
+<a id="sys104-interface-conformance-t-0668"></a>
+## SYS104 exact interface conformance (T-0668)
+
+`docs/design/structural-linter-adversarial-hardening.md`'s "undeclared
+public surface" evasion row -- T-0341's acceptance criterion [1]. A node
+declares its public interface with one `interface=<symbol>` attr per
+symbol (`Node.attrs`, same opaque-string convention `code=`/`managed`
+already use, T-0078/T-0172; no `.strata` grammar change). SYS104 requires
+the declared set to EQUAL the real public surface of the node's own
+`code=`-bound `.py` files: a real export missing from `interface=` fires,
+and an `interface=` entry with no matching real export fires. The real
+surface is `__all__`'s literal contents if the module declares one, else
+every non-underscore-prefixed top-level `def`/`class`/assignment target.
+
+### Scope cut (disclosed)
+
+SYS104 only evaluates a node that has ALREADY declared at least one
+`interface=` attr -- it does not yet mandate every node declare one,
+since making that mandatory would require adding `interface=`
+declarations to `design/frob.strata` itself, which sits outside this
+ticket's `scope` (`src/frob/strata/**`, `src/frob/graph/**`,
+`docs/modules/strata.md`, `tests/unit/strata/**` -- not
+`design/frob.strata`). Same disclosed-scope-cut shape as SYS103's
+`_PACKAGE_ROOT` restriction above; promoting SYS104 to "every node must
+declare" is real, filed follow-up work, not forced through an
+out-of-scope file edit. Python-only, the same boundary `bind_code`
+itself already draws.
+
+<a id="sys105-purpose-contract-t-0669"></a>
+## SYS105 purpose contract (T-0669)
+
+The design doc's "purpose drift" row (a "logging" module that opens
+sockets) -- T-0341's acceptance criterion [2]. A node declares
+`purpose=<profile>` (at most one, same opaque-attr convention); the
+profile names a fixed, closed allowed-effect vocabulary
+(`_PURPOSE_PROFILES` in `src/frob/strata/_selfconform.py`: `pure`,
+`read-only`, `logging`, `network`, `full`). Any observed effect kind
+outside the declared profile's allowed set fires (the SAME normalized
+observed-kind union SYS101 already computes, reused not duplicated). An
+unrecognized profile name is itself a finding -- a typo is never treated
+as the permissive `full` profile.
+
+Same disclosed scope cut as SYS104: only a node that has declared
+`purpose=` is checked; mandating it repo-wide is filed follow-up work,
+for the same `design/frob.strata`-is-out-of-scope reason.
+
+<a id="sys106-binding-totality-t-0670"></a>
+## SYS106 binding totality / laundering (T-0670)
+
+The design doc's "binding laundering" row: "node binds to file X, real
+logic sits in unbound file Y" -- T-0341's acceptance criterion [3].
+SYS103 already flags any `FOREIGN` file with an observed capability, but
+only within its scan prefix (`_coverage_totality_scan_prefix`,
+`_PACKAGE_ROOT`-restricted on frob's own tree). SYS106 closes the
+specific reachability-laundering evasion prefix-independently: starting
+from every bound node's own `.py` files, it follows resolved local
+python imports (`frob.lang.resolve_local_import`, cycle-safe BFS) to
+build the full reachable-file closure, then fires once per reachable
+`FOREIGN` file that `scan_file_capabilities` observes any capability in
+-- regardless of whether that file falls inside SYS103's own scan
+prefix. A capable file only SYS103's blanket (prefix-restricted) pass
+would catch, but that is NOT reachable from any bound node, does not
+fire SYS106 (it is not the specific "laundered from a bound node" threat
+SYS106 targets, even though it may still be a genuine SYS103 finding on
+its own).
+
+### Verification against the live repo
+
+`tests/unit/strata/test_selfconform.py::TestRealGateGreen::
+test_repo_design_and_declarations_are_self_conformant` runs SYS106 (via
+`check_self_conformance`) against `design/frob.strata`'s real
+declarations and the real `src/frob/` tree and asserts zero violations
+-- measured directly, not assumed: since SYS103's own unrestricted-scan
+regression test (`TestCoverageTotality::
+test_repo_unrestricted_scan_is_clean`) already proves zero FOREIGN-and-
+capable files exist anywhere in the repo (prefix bypassed), SYS106's
+reachable subset of that same empty set is necessarily also empty.

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.228.0] - unreleased
+
+- T-0668: strata: exact interface-conformance check - declared node interface == real public code surface
+
 ## [0.227.0] - unreleased
 
 - T-1105: daemon: real version-handshake RPC on the socket daemon (replace sidecar meta-file skew detection)
