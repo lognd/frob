@@ -64,7 +64,7 @@ _log = get_logger(__name__)
 # _cve_fingerprint_scan/_opaque (T-0861)"
 # frob:waive PII012 reason="'_cve_fingerprint_scan' in the DUP001 waiver comment above \
 # is a module name (frob.gates._cve_fingerprint_scan), not a biometric-fingerprint \
-# reference -- PII012's keyword match is a name-only coincidence"
+# reference -- PII012's keyword match is a naming coincidence"
 def _tracked_files(root: Path) -> tuple[str, ...]:
     """`git ls-files` under `root`, root-relative POSIX paths, `()` on any
     git failure -- mirrors every other gate module's own private copy of

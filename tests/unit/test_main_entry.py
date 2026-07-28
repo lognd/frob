@@ -71,9 +71,7 @@ class TestMainUnhandledException:
         assert "frob: boom" in captured.err
         assert "Traceback" not in captured.err
 
-    def test_unhandled_exception_logs_with_exc_info(
-        self, monkeypatch, capsys
-    ) -> None:
+    def test_unhandled_exception_logs_with_exc_info(self, monkeypatch, capsys) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestMainUnhandledException.test_unhandled_exception_logs_with_exc_info  # noqa: E501
         def _raise(argv: list[str]) -> None:
             raise ValueError("boom")

@@ -8529,9 +8529,7 @@ class TestCppSourceAccurateCollection:
         _write(
             tmp_path,
             "build/CTestTestfile.cmake",
-            'add_test(widget_adds "'
-            + str(tmp_path / "build" / "widget_test")
-            + '")\n',
+            'add_test(widget_adds "' + str(tmp_path / "build" / "widget_test") + '")\n',
         )
         _write(
             tmp_path,
@@ -8575,9 +8573,7 @@ class TestCppSourceAccurateCollection:
         _write(
             tmp_path,
             "build/CTestTestfile.cmake",
-            'add_test(widget_adds "'
-            + str(tmp_path / "build" / "widget_test")
-            + '")\n',
+            'add_test(widget_adds "' + str(tmp_path / "build" / "widget_test") + '")\n',
         )
         entries = [
             {
@@ -8615,9 +8611,7 @@ class TestCppSourceAccurateCollection:
         _write(
             tmp_path,
             "build/CTestTestfile.cmake",
-            'add_test(widget_adds "'
-            + str(tmp_path / "build" / "widget_test")
-            + '")\n',
+            'add_test(widget_adds "' + str(tmp_path / "build" / "widget_test") + '")\n',
         )
         self._mock_ctest(monkeypatch, tmp_path, ["widget_adds"])
 

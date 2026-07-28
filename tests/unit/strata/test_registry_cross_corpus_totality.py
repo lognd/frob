@@ -57,6 +57,7 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parents[3]
 REGISTRY_DIR = REPO_ROOT / "docs" / "design" / "registry"
 
+
 #: `cross_refs` carries TWO distinct id namespaces (discovered scanning the
 #: real data for this module): most entries point at ANOTHER registry
 #: entry's own `id` (the T-0673 dedup-linkage case this module locks), but
@@ -178,7 +179,8 @@ class TestProseOnlyRetrofitIntegrity:
             matching = {
                 entry_id: entry
                 for entry_id, entry in entries.items()
-                if entry_id.startswith(prefix) and entry["_source_file"] == registry_file
+                if entry_id.startswith(prefix)
+                and entry["_source_file"] == registry_file
             }
             # frob:waive PERF004 reason="matching is this prefix's own small (<=112) distinct entry set, formatted only for a failing assertion message; not a shared re-sort across the 3-item outer loop"  # noqa: E501
             matching_ids = sorted(matching)

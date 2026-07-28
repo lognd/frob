@@ -1170,8 +1170,6 @@ class TestComplianceReg008BurnDown:
         )
 
         reg008_compliance = [
-            v
-            for v in violations
-            if v.rule == "REG008" and "compliance.yaml" in v.file
+            v for v in violations if v.rule == "REG008" and "compliance.yaml" in v.file
         ]
         assert reg008_compliance == []

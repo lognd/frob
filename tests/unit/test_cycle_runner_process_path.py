@@ -177,9 +177,7 @@ class TestProcessPathGating:
         assert set(graph.nodes) == {"mod.py"}
         assert calls == [("mod.py", "python")]
 
-    def test_unrelated_extension_is_a_node_with_no_edges(
-        self, tmp_path: Path
-    ) -> None:
+    def test_unrelated_extension_is_a_node_with_no_edges(self, tmp_path: Path) -> None:
         # frob:tests src/frob/app/cycle_runner.py::_process_path kind="unit"
         f = tmp_path / "notes.strata"
         f.write_text("x\n")
