@@ -3493,7 +3493,7 @@ entirely in src/frob/vet/**, outside this ticket's declared scope
 (src/frob/gates/**, docs/design/registry/supply-chain.yaml) -- unlike
 OPAQUE001/taint, no src/frob/gates/** wrapper module re-emits VET-family
 violations, so there is no honest in-scope site for those 11
-`frob:enforces` directives. Filed T-draft-32756c54 (scope
+`frob:enforces` directives. Filed T-1101 (scope
 src/frob/vet/_typosquat.py, src/frob/vet/_scan.py, src/frob/vet/_osv.py,
 docs/design/registry/check-coverage.yaml) to add them; that same ticket
 also covers the 17-entry REG010 gap (VET-family rule ids missing a
@@ -4175,7 +4175,7 @@ land, 52212cdb) reports:
   disposition `deferred:T-1087`, but T-1087 is itself DONE -- a deferral
   to a closed ticket is not a real deferral (needs re-dispositioning to
   an open ticket or `implemented`).
-- TICK006 x1: T-1087's own Done report claims T-draft-32756c54 was
+- TICK006 x1: T-1087's own Done report claims T-1101 was
   filed, but that draft resolves to no block in tickets.md or
   tickets-archive.md -- a phantom filing trail (T-0707/T-0615 incident
   class).
@@ -4207,7 +4207,7 @@ acceptance:
 threat: null
 component: null
 ```
-parse.rs accreted the whole strata grammar across T-0629/T-0700/T-0702 and siblings (4346 lines). Split by grammar family per the T-1072/T-1086 discipline translated to Rust module conventions (mod files, pub(crate) surfaces re-exported from parse.rs or lib.rs so the python bindings and goldens stay byte-identical). Discovered alongside the large-file gate gap (sibling ticket filed the same day); the split makes the Rust tree pass the ceiling that gate will enforce.
+parse.rs accreted the whole strata grammar across T-0629/T-0700/T-0702 and siblings (4346 lines). Split by grammar family per the T-1072/T-1086 discipline translated to Rust module conventions (mod files, pub(crate) surfaces re-exported from parse.rs or lib.rs so the python bindings and goldens stay byte-identical). Discovered alongside the large-file gate gap (T-1102); the split makes the Rust tree pass the ceiling that gate will enforce.
 
 <!-- ticket:T-1100 -->
 ```yaml
@@ -4237,3 +4237,62 @@ threat: null
 component: null
 ```
 User request 2026-07-28: a simple ticket data-analysis command showing the rate tickets grow vs the rate they complete. Reuse sprint_velocity's git-history transition mining (T-0938) for the landed side and the created: fields for the filed side; plain render-layer table, no new storage. Keep it genuinely simple -- one table plus one ETA line.
+
+<!-- ticket:T-1101 -->
+```yaml
+id: T-1101
+title: 'vet: add 11 frob:enforces SC-* edges at the VET emitting sites + close the
+  17-entry REG010 VET-family check-coverage gap (T-1087 follow-up)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/vet/_typosquat.py
+- src/frob/vet/_scan.py
+- src/frob/vet/_osv.py
+- docs/design/registry/check-coverage.yaml
+acceptance:
+- text: given the 11 SC-* entries T-1087 flipped to handled_by VET-family rules, when
+    REG008 runs, then every one carries a frob:enforces edge at the real emitting
+    site and REG010 reports zero missing VET-family CHK-GATE entries
+  evidence: []
+threat: null
+component: null
+```
+Refile of T-1087's dead draft T-1101 (splice-race casualty, pre-T-1090). No src/frob/gates wrapper re-emits VET-family violations, so the enforces edges belong at the vet emitters themselves; also files the 17 missing CHK-GATE-VET* check-coverage entries (REG010).
+
+<!-- ticket:T-1102 -->
+```yaml
+id: T-1102
+title: 'gates/arch: wire large-file category into the GATE (LARGE001 WARN first-turn-on)
+  + single-file-mode parity'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_arch.py
+- src/frob/arch/__init__.py
+- tests/test_arch_gate.py
+- docs/modules/gates.md
+acceptance:
+- text: given a production source file over max_file_lines in any language in the
+    obligation surface, when frob check runs, then a registered LARGE001 violation
+    surfaces at WARN first-turn-on tier with the turn-on count disclosed
+  evidence: []
+- text: given frob arch invoked on a single file over the threshold, when it runs,
+    then the large-file finding prints exactly as the directory walk prints it
+  evidence: []
+threat: null
+component: null
+```
+Refile: the original filing (f40dbd27) was eaten by the 4th pre-T-1090 id collision -- the id T-1098 now holds T-1087's land-debt ticket instead. Content: strata-core/src/parse.rs (4346 lines) is invisible to frob check because _ARCH_CATEGORY_TO_RULE maps only long-function/ARCH101-103/cpp-noexcept-throws; large-file is advisory-only and single-file mode skips the file-level check ('no architectural issues found' on a 4346-line file). Wire LARGE001, register + enforces edge, litmus-first tests, keep test-file/fixtures exemptions. Known offenders at filing: parse.rs 4346 (split = T-1099), frob-core/lib.rs 2277, tickets/_land.py 4762 (split = T-1089 in flight).
