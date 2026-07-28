@@ -1101,6 +1101,7 @@ pre-existing DRIFT001/TEST003 waived entries unrelated to this change.
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-1050 -->
 ```yaml
 id: T-1050
