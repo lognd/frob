@@ -1344,6 +1344,18 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/**
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_todo002_unbound_directive
+- tests/test_gates.py::TestCoverageGate::test_todo001_bare_comment_in_touched_file
+- tests/test_gates.py::TestCoverageGate::test_todo002_edge_to_closed_ticket
+- tests/test_gates.py::TestCoverageGate::test_todo003_fires_after_version_bump_since_deferral_landed
+- tests/test_gates.py::TestCoverageGate::test_todo003_silent_when_no_version_bump_since_deferral
+- tests/test_gates.py::TestCoverageGate::test_todo003_silent_when_ticket_closes
+- tests/test_gates.py::TestFmt001Gate::test_directive_run_over_limit_flagged
+- tests/test_gates.py::TestFmt001Gate::test_ordinary_long_comment_not_flagged
+- tests/test_gates.py::TestFmt001Gate::test_long_code_line_not_flagged
+- tests/test_gates.py::TestFmt001Gate::test_untouched_line_not_flagged
+- tests/test_gates.py::TestFmt001Gate::test_short_directive_not_flagged
 threat: null
 component: null
 ```
@@ -1985,3 +1997,63 @@ threat: null
 component: null
 ```
 T-1103 extracted archive + new/renumber families (tickets/__init__.py 4287->3489) and stopped on budget; per its done report the remaining ~8 families are doable/leases/scope-breadth, scope mutation, field setters/sprint, evidence/transition, done-report/review/drop/attach, and _land.py (4762 lines) was not touched. Continue the same extraction pattern: per-family private modules re-exported from __init__, zero behavior change, existing tests as the safety net. Beware the load-time circular import noted in T-1103's report (evidence family).
+
+<!-- ticket:T-draft-a418305e -->
+```yaml
+id: T-draft-a418305e
+title: 'arch: split remaining gate families out of src/frob/gates/__init__.py (T-1077
+  remainder)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- tests/test_gates.py
+- docs/modules/gates.md
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: future gate-family moves will need frob:tests/frob:doc path fixups in these
+    carrier files, same pattern as T-1072/T-1077
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: docs/modules/gates.md
+  reason: future gate-family moves will need frob:tests/frob:doc path fixups in these
+    carrier files, same pattern as T-1072/T-1077
+  actor: logan
+  at: '2026-07-28'
+threat: null
+component: null
+```
+Filed from T-1077's partial land: this pass extracted only the TODO00x/
+FMT001 family (src/frob/gates/_todo_fmt.py) out of
+src/frob/gates/__init__.py, taking it from 10164 to ~9802 lines --
+still far above the 800-line large-file threshold. This ticket covers
+the remaining gate families originally listed in T-1077:
+
+- DEBT00x / DEPR00x (deprecated_gate)
+- SCOPE00x / PREWORK (prework_gate)
+- INV00x (invariant_gate, inv003_gate)
+- TEST00x family (test_gate + _test004.._test013 helpers) -- large
+- DECISIONS (decisions_gate)
+- TICK00x (tickets_gate)
+- COMPLIANCE00x (compliance_gate)
+- SYS00x / DOC00x (sys_gate, selfaudit)
+- DUP00x (dup_gate)
+- REL00x (release_gate)
+- FUZZ00x (fuzz_gate)
+- DOCLINK/DOCANCHOR (doclink_gate, docanchor_gate)
+- PERF (perf_gate)
+- the run_gates orchestration spine (_GateInputs, _build_jobs,
+  _run_combined_jobs, etc.)
+
+Note COV00x (coverage_gate) was NOT extracted in T-1077 either; still
+resident in __init__.py alongside the above. Plan carefully, verify
+with the full gates test suite after each chunk, land incrementally,
+same discipline T-1072/T-1077 used.
