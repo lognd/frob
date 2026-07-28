@@ -147,6 +147,7 @@ from frob.logging import get_logger
 from ._capability_registry import (
     DANGEROUS_OPERATIONS,
     RUNTIME_OPAQUE_CONSTRUCTS,
+    RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS,
     _DangerousOperation,
 )
 
@@ -5497,6 +5498,87 @@ def _byte_offset_inside_string_literal(raw: bytes, idx: int) -> bool:
     return (dq % 2 == 1) or (sq % 2 == 1)
 
 
+# frob:ticket T-1051
+_SUBSCRIPT_CALL_RE = re.compile(rb"[A-Za-z_][A-Za-z0-9_.]*\[([^\[\]\n]{1,200})\]\s*\(")
+
+# frob:ticket T-1051
+_EXPLICIT_FNPTR_CAST_CALL_RE = re.compile(
+    rb"\(\([A-Za-z_][A-Za-z0-9_ ]*\(\*\)\([^()]*\)\)\s*[A-Za-z_][A-Za-z0-9_]*\)\s*\("
+)
+
+# frob:ticket T-1051
+_NAMED_TYPE_CAST_CALL_RE = re.compile(
+    rb"\(\([A-Za-z_][A-Za-z0-9_]*\)\s*[A-Za-z_][A-Za-z0-9_]*\)\s*\("
+)
+
+
+def _subscript_key_looks_literal(content: bytes) -> bool:
+    """True if `content` (a `_SUBSCRIPT_CALL_RE` bracket-interior slice,
+    T-1051) is a plain integer or string literal -- these resolve
+    statically the same way `_arg_looks_literal` treats a literal call
+    argument, so a subscript-then-call site keyed by one is NOT the
+    runtime-opaque construct (the ordinary resolver's job); anything else
+    (an identifier, an attribute chain, an expression) is non-literal and
+    the structural finding fires, fail-closed."""
+    stripped = content.strip()
+    if not stripped:
+        return False
+    if stripped.lstrip(b"-").isdigit():
+        return True
+    return _arg_looks_literal(stripped)
+
+
+# frob:ticket T-1051
+def _structural_opaque_findings(
+    raw: bytes,
+    language: str,
+    comment_spans: tuple[tuple[int, int], ...],
+) -> list[OpaqueFinding]:
+    """`RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS` sites in `raw` (T-1051) --
+    the generalized SHAPE-based sibling of `_opaque_indirection_findings`'s
+    fixed-needle scan, for taxonomy rows a single literal needle cannot
+    express (subscript-then-call with a non-constant key, cast-then-call
+    to a function-pointer type) without either missing every real site or
+    firing on every ordinary subscript/cast in the file. Each construct's
+    `kind` selects one of three structural regexes; `subscript_call`
+    additionally re-checks the bracket content against `_subscript_key_
+    looks_literal` so a LITERAL-keyed subscript call (already the ordinary
+    resolver's job, T-0665's own literal/non-literal split) does not
+    double-fire this obligation."""
+    findings: list[OpaqueFinding] = []
+    for construct in RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS:
+        if construct.language != language:
+            continue
+        if construct.kind == "subscript_call":
+            pattern = _SUBSCRIPT_CALL_RE
+        elif construct.kind == "explicit_fnptr_cast_call":
+            pattern = _EXPLICIT_FNPTR_CAST_CALL_RE
+        elif construct.kind == "named_type_cast_call":
+            pattern = _NAMED_TYPE_CAST_CALL_RE
+        else:  # pragma: no cover -- registry invariant, never hit in practice
+            continue
+        for match in pattern.finditer(raw):
+            if construct.kind == "subscript_call" and _subscript_key_looks_literal(
+                match.group(1)
+            ):
+                continue
+            start, end = match.span()
+            if _fully_in_any_span(start, end, comment_spans):
+                continue
+            if _byte_offset_inside_string_literal(raw, start):
+                continue
+            line = raw.count(b"\n", 0, start) + 1
+            findings.append(
+                OpaqueFinding(
+                    construct_name=construct.construct_name,
+                    taxonomy_row=construct.taxonomy_row,
+                    rationale=construct.rationale,
+                    line=line,
+                )
+            )
+    return findings
+
+
 # frob:waive DEAD001 reason="T-1024: genuinely called from frob.gates._opaque.opaque_gate, a sibling package under src/frob/gates/ -- DEAD001's intra-package reference graph is built per-directory (dead_symbol_gate's docstring) so a cross-package caller in a different directory is invisible to it; directly unit-tested via the frob:tests directives in tests/test_vet.py"  # noqa: E501
 def _opaque_indirection_findings(path: Path) -> tuple[OpaqueFinding, ...]:
     """`RUNTIME_OPAQUE_CONSTRUCTS` sites in `path` (T-0665, coordinator-
@@ -5531,34 +5613,50 @@ def _opaque_indirection_findings(path: Path) -> tuple[OpaqueFinding, ...]:
         is_libloading_needle = construct.construct_name == "libloading symbol lookup"
         if is_libloading_needle and not uses_libloading:
             continue
-        needle = construct.needle.encode("utf-8")
-        start = 0
-        while True:
-            idx = raw.find(needle, start)
-            if idx == -1:
-                break
-            match_end = idx + len(needle)
-            start = match_end
-            if _fully_in_any_span(idx, match_end, comment_spans):
-                continue
-            if _byte_offset_inside_string_literal(raw, idx):
-                continue
-            fires = True
-            if construct.literal_arg_index is not None:
-                args = _split_top_level_args(raw, match_end)
-                if args is not None and construct.literal_arg_index < len(args):
-                    fires = not _arg_looks_literal(args[construct.literal_arg_index])
-            if fires:
-                line = raw.count(b"\n", 0, idx) + 1
-                findings.append(
-                    OpaqueFinding(
-                        construct_name=construct.construct_name,
-                        taxonomy_row=construct.taxonomy_row,
-                        rationale=construct.rationale,
-                        line=line,
-                    )
-                )
+        findings.extend(_needle_construct_findings(construct, raw, comment_spans))
+    findings.extend(_structural_opaque_findings(raw, language, comment_spans))
     return tuple(findings)
+
+
+# frob:ticket T-1051
+def _needle_construct_findings(
+    construct,  # noqa: ANN001 -- frob.vet._capability_registry._OpaqueConstruct
+    raw: bytes,
+    comment_spans: tuple[tuple[int, int], ...],
+) -> list[OpaqueFinding]:
+    """Every site of one `RUNTIME_OPAQUE_CONSTRUCTS` needle in `raw` (T-1051,
+    extracted from `_opaque_indirection_findings` to keep it under
+    `ARCH001`'s line-count threshold) -- same literal-arg fail-closed logic
+    that function always ran inline, unchanged in behavior."""
+    findings: list[OpaqueFinding] = []
+    needle = construct.needle.encode("utf-8")
+    start = 0
+    while True:
+        idx = raw.find(needle, start)
+        if idx == -1:
+            break
+        match_end = idx + len(needle)
+        start = match_end
+        if _fully_in_any_span(idx, match_end, comment_spans):
+            continue
+        if _byte_offset_inside_string_literal(raw, idx):
+            continue
+        fires = True
+        if construct.literal_arg_index is not None:
+            args = _split_top_level_args(raw, match_end)
+            if args is not None and construct.literal_arg_index < len(args):
+                fires = not _arg_looks_literal(args[construct.literal_arg_index])
+        if fires:
+            line = raw.count(b"\n", 0, idx) + 1
+            findings.append(
+                OpaqueFinding(
+                    construct_name=construct.construct_name,
+                    taxonomy_row=construct.taxonomy_row,
+                    rationale=construct.rationale,
+                    line=line,
+                )
+            )
+    return findings
 
 
 __all__ = [
@@ -5569,10 +5667,13 @@ __all__ = [
     "language_for",
     "_arg_looks_literal",
     "_byte_offset_inside_string_literal",
+    "_needle_construct_findings",
     "_opaque_indirection_findings",
     "_scan_directory_capabilities",
     "_scan_directory_fingerprints",
     "_split_top_level_args",
+    "_structural_opaque_findings",
+    "_subscript_key_looks_literal",
     "scan_file_capabilities",
     "_scan_file_fingerprints",
     "_scan_file_operations",

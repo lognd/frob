@@ -2283,7 +2283,7 @@ alongside T-1047.
 id: T-1051
 title: 'vet/opaque: close remaining 13 taxonomy runtime-opaque rows (generalized subscript/cast
   detector + rust/cpp/kotlin alias tracking)'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-27'
@@ -2296,6 +2296,17 @@ scope:
 - src/frob/gates/_opaque.py
 - docs/design/registry/evasion.yaml
 - tests/test_vet.py
+evidence:
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_python_container_dynamic_key_not_addressed
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_python_container_literal_key_call_not_addressed_by_structural_gate
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_typescript_computed_member_non_constant_key_not_addressed
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_typescript_container_dynamic_key_not_addressed
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_c_array_nonconstant_index_not_addressed
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_c_integer_cast_to_function_pointer_not_addressed
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_c_void_star_backcast_not_addressed
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_cpp_array_runtime_index_not_addressed
+- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_structural_construct_is_frozen
 threat: null
 component: null
 ```
@@ -2337,6 +2348,88 @@ does not fully hold. T-0339 remains open until this closes (or until each
 remaining row gets a reasoned OPAQUE_SOURCE_INVISIBLE excuse instead, if
 investigation shows any of them are genuinely source-invisible per T-0665
 doctrine rather than needing a detector/resolver).
+
+## Done report
+
+Closed the 7 "needle-architecture-blocked" taxonomy rows T-1047 could not
+express with a fixed needle+literal-arg-position construct: python/
+typescript container-dynamic-key call and computed-member access with a
+non-constant key (identical `container[expr](...)` source shape in both
+languages, one detector covers both rows per language), c/c++ array-index
+function-pointer dispatch, c/c++ integer-cast-to-function-pointer, and c/c++
+void*-backcast-to-function-pointer.
+
+Added a NEW, separate registry (`RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS` in
+src/frob/vet/_capability_registry.py) and a new SHAPE-based scanner
+(`_structural_opaque_findings`/`_needle_construct_findings` in
+src/frob/vet/_capability.py) wired into `_opaque_indirection_findings`
+alongside the existing needle scan -- a second, disclosed-over-approximation
+detector class (subscript_call / explicit_fnptr_cast_call /
+named_type_cast_call) rather than trying to force the fixed-needle
+architecture to express a non-literal SHAPE. `_subscript_key_looks_literal`
+keeps a literal-keyed subscript call (the ordinary resolver's job per
+T-0665's own literal/non-literal split) from double-firing.
+
+Each closed row's litmus fixture in tests/test_vet.py::
+TestOpaqueIndirectionGate kept its ORIGINAL name (test function names are
+referenced as evidence by T-0666's own archived Done report and by
+src/frob/vet/_evasion_coverage.py's _EVASION_LITMUS_MAP -- renaming them
+first broke COV003 against T-0666's archived evidence, caught and reverted
+during verification) but the body now asserts the finding FIRES instead of
+asserting an empty result. Added one new no-regression fixture,
+test_python_container_literal_key_call_not_addressed_by_structural_gate,
+locking that a literal-keyed subscript call does NOT trip the new
+structural gate.
+
+The 6 structural resolver-level points-to rows (rust struct-update field
+rebinding, rust macro_rules! expansion, c++ pointer-to-member, kotlin
+destructuring declarations, kotlin default-parameter-bound callables,
+kotlin operator-invoke) are LEFT HONESTLY OPEN, not force-closed. Direct
+investigation during this ticket confirmed each needs real resolver
+rearchitecture, not just an alias-table extension: e.g. even adding a
+Rust struct-field alias table (mirroring C's _record_c_field_alias) would
+not close the struct-update row on its own, because
+_collect_rust_candidates only resolves a call_expression whose function is
+a bare identifier/scoped_identifier -- (h.run)(...)'s function is a
+parenthesized field_expression, a call-target SHAPE the candidate
+collector does not walk at all. Filed T-1063 (renumbered at
+land) tracking these 6 rows with the specific gap found for each; their
+existing litmus fixtures in tests/test_vet.py are untouched (still lock
+the honest non-resolution).
+
+Verification: `frob check --ticket T-1051` across gates-fast/gates-native/
+gates-security/lint/static is clean (0 errors) after two fix-forward passes
+-- first pass caught a COV003 break from the test-rename mistake (reverted)
+and an ARCH001 line-count violation on _opaque_indirection_findings
+(fixed by extracting _needle_construct_findings). The 2 remaining PII012
+findings in gates-security (src/frob/tickets/_leases.py:539,549) are
+pre-existing, outside this ticket's scope (src/frob/vet/**,
+src/frob/gates/_opaque.py, docs/design/registry/evasion.yaml,
+tests/test_vet.py) -- that file is not touched by this ticket.
+
+### Changed
+```
+ src/frob/vet/_capability.py          | 155 ++++++++++++---
+ src/frob/vet/_capability_registry.py | 103 ++++++++++
+ tests/test_vet.py                    | 361 +++++++++++++++++++----------------
+ 3 files changed, 428 insertions(+), 191 deletions(-)
+```
+
+### Evidence
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_python_container_dynamic_key_not_addressed` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_python_container_literal_key_call_not_addressed_by_structural_gate` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_typescript_computed_member_non_constant_key_not_addressed` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_typescript_container_dynamic_key_not_addressed` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_c_array_nonconstant_index_not_addressed` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_c_integer_cast_to_function_pointer_not_addressed` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_c_void_star_backcast_not_addressed` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_cpp_array_runtime_index_not_addressed` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: 1 error(s), 1938 warning(s), 384 waived
+- error-findings: PII012@src/frob/tickets/_leases.py
 
 <!-- ticket:T-1052 -->
 ```yaml
@@ -3551,3 +3644,70 @@ try/except matching the function's own documented degrade contract), or a
 reasoned frob:waive -- never a blanket suppression. Re-run
 `frob check --only exhaustive_handling --json` at the start to get a live
 count before starting (T-1056's counts will have drifted).
+
+<!-- ticket:T-1063 -->
+```yaml
+id: T-1063
+title: 'vet/resolvers: close 6 structural points-to gaps (rust struct-update+macro_rules,
+  cpp ptr-to-member, kotlin destructure/default-param/invoke)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/vet/**
+- tests/test_vet.py
+threat: null
+component: null
+```
+T-1051 closed the 7 needle-architecture-blocked taxonomy rows via a new
+generalized structural detector (RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS,
+_structural_opaque_findings in src/frob/vet/_capability.py) matching
+subscript-then-call and cast-then-call SHAPES rather than fixed needles.
+
+The 6 structural resolver-level points-to rows remain genuinely open,
+confirmed by direct investigation during T-1051 (not just re-asserted):
+
+- rust: struct-update field rebinding (`let h = Handlers { run: C::new,
+  ..default }; (h.run)("sh");`). Even adding a field-alias table mirroring
+  C's `_record_c_field_alias` would NOT close this row on its own: Rust's
+  `_collect_rust_candidates` only resolves a `call_expression` whose
+  `function` is an `identifier` or `scoped_identifier` -- `(h.run)(...)`'s
+  function is a parenthesized `field_expression`, a call-target SHAPE the
+  candidate collector does not walk at all. Closing this row needs BOTH a
+  struct-field alias table AND field-expression call-target resolution in
+  the collector -- confirmed as two separate gaps, not one.
+- rust: `macro_rules!` expansion emitting a fixed call. No macro-expansion
+  handling exists anywhere in the Rust resolver (no `macro_rule`/
+  `macro_invocation` node is ever matched); closing this means expanding a
+  macro body's tokens as if inlined at the invocation site, an AST
+  transformation this resolver's plain-walk architecture does not support.
+- c++: pointer-to-member (`auto p = &Ops::run; (obj.*p)(x);` / `->*`).
+  Same two-gap shape as the rust struct-update row: no pointer-to-member
+  alias tracking exists AND the C/C++ candidate collector has no handling
+  for a `.*`/`->*` dereference as a call target.
+- kotlin: destructuring declarations (`val (a, b) = Pair(::runCmd, 0)`).
+  `_kt_property_name_and_value` only matches a single-name
+  `variable_declaration` node; kotlin's `multi_variable_declaration` grammar
+  shape is never visited.
+- kotlin: default-parameter-bound callables (`fun call(cb: (String) -> Unit
+  = ::runCmd)`). No default-value-of-a-parameter alias recording exists
+  (unlike C++'s `_record_c_default_param_alias`); `_kt_build_var_alias_table`
+  only walks `variable_declaration` nodes.
+- kotlin: operator-invoke (`class Handler { operator fun invoke(x) = ... };
+  val h = Handler(); h(x)`). Needs receiver-INSTANCE points-to (`val h =
+  Handler()` -> a later bare `h(x)` call resolving through the class's
+  `invoke` operator) -- no instance points-to of any kind exists in the
+  kotlin resolver today.
+
+Each row is still locked by its own honest non-firing/non-resolving litmus
+fixture in tests/test_vet.py (unchanged by T-1051) -- see T-1051's own
+scope for the exact test names. This ticket tracks the real resolver
+rearchitecture (candidate-collector call-target-shape extension plus the
+per-language alias/points-to table growth) each row needs; T-0339 stays
+open against these 6 rows until this closes or each gets a reasoned
+OPAQUE_SOURCE_INVISIBLE excuse instead, per T-1051's own Done report.

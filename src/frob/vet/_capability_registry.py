@@ -2364,6 +2364,107 @@ OPAQUE_SOURCE_INVISIBLE: tuple[_MatrixExcuse, ...] = (
 )
 
 
+# frob:ticket T-1051
+class _OpaqueStructuralConstruct(BaseModel):
+    """One T-1051 "needle-architecture-blocked" taxonomy row that the
+    fixed-needle-plus-literal-arg shape `_OpaqueConstruct` implements
+    cannot express without an unacceptable false-positive rate: a
+    SHAPE (subscript-then-call, or cast-then-call) rather than a fixed
+    substring. `kind` selects which structural scanner in
+    `frob.vet._capability` (`_structural_opaque_findings`) applies:
+    `"subscript_call"` for `container[non_literal_key](...)` (python/
+    typescript container-dynamic-key and computed-member rows, C/C++
+    array-index function-pointer dispatch), `"explicit_fnptr_cast_call"`
+    for `((RET(*)(ARGS))expr)(...)` (C/C++ integer-cast-to-function-
+    pointer), and `"named_type_cast_call"` for `((TypeName)expr)(...)`
+    (C/C++ void*-backcast-to-function-pointer through a typedef'd
+    function-pointer type). Same disclosed-over-approximation posture as
+    `_OpaqueConstruct`'s needles -- these scanners cannot confirm the
+    subscript index or cast target TYPE without full type inference, so
+    they fire on the STRUCTURAL SHAPE alone; false positives are
+    waivable (category-1 doctrine, T-0665), consistent with the
+    `libloading`/`.call(` entries' own precedent."""
+
+    model_config = ConfigDict(frozen=True)
+
+    language: str
+    construct_name: str
+    kind: str
+    rationale: str
+    taxonomy_row: str
+
+
+# frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-1051
+# frob:waive AFFECT001 reason="T-1051 adds this new tuple (same shape as \
+# RUNTIME_OPAQUE_CONSTRUCTS above); docs/modules/vet.md is outside T-1051's \
+# declared scope (src/frob/vet/**, src/frob/gates/_opaque.py, \
+# docs/design/registry/evasion.yaml, tests/test_vet.py) -- matches T-0665's \
+# own precedent for the identical situation on RUNTIME_OPAQUE_CONSTRUCTS"
+RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS: tuple[_OpaqueStructuralConstruct, ...] = (
+    _OpaqueStructuralConstruct(
+        language="python",
+        construct_name="container dynamic-key call",
+        kind="subscript_call",
+        rationale="a callable read out of a container (dict/list) through a "
+        "NON-LITERAL subscript key/index and immediately called -- the "
+        "bound target depends on the container's runtime contents at the "
+        "computed key, invisible to the ordinary resolver's bounded "
+        "single-literal-binding dataflow. Covers both the taxonomy's "
+        "'callable in a container, dynamic key' row and its 'computed "
+        "member access, non-constant key' row -- identical source shape, "
+        "`container[expr](...)`",
+        taxonomy_row="python:runtime:container-dynamic-key-call",
+    ),
+    _OpaqueStructuralConstruct(
+        language="typescript",
+        construct_name="container dynamic-key call",
+        kind="subscript_call",
+        rationale="same shape as the python row: `handlers[key](x)`/"
+        "`cp[key](x)` reads a callable out of an object/array through a "
+        "runtime-computed key and calls it immediately. Covers both the "
+        "'callable in container, dynamic key' row and the 'computed "
+        "member access, non-constant key' row",
+        taxonomy_row="typescript:runtime:container-dynamic-key-call",
+    ),
+    _OpaqueStructuralConstruct(
+        language="c-cpp",
+        construct_name="array-index function-pointer dispatch",
+        kind="subscript_call",
+        rationale="a function-pointer TABLE indexed by a non-constant "
+        "expression and immediately called (`tbl[user_selected_index]"
+        '("sh")`) -- the ordinary resolver already proves this stays '
+        "unresolved as a static binding (`test_array_fn_ptr_nonconstant_"
+        "index_not_detected`); this is the fail-closed obligation's own "
+        "sibling catch",
+        taxonomy_row="c:runtime:array-index-fnptr-dispatch",
+    ),
+    _OpaqueStructuralConstruct(
+        language="c-cpp",
+        construct_name="integer-cast to function pointer",
+        kind="explicit_fnptr_cast_call",
+        rationale="an explicit function-pointer TYPE cast "
+        "(`((void(*)(const char*))addr)(...)`) of an arbitrary expression "
+        "(commonly an integer/opaque handle) immediately called -- the "
+        "cast type is visible in source, but the VALUE being cast is not "
+        "provably a valid function address by any static check",
+        taxonomy_row="c:runtime:integer-cast-to-function-pointer",
+    ),
+    _OpaqueStructuralConstruct(
+        language="c-cpp",
+        construct_name="void* back-cast to function pointer",
+        kind="named_type_cast_call",
+        rationale="a `void*` value cast through a named (often typedef'd) "
+        "type and immediately called (`((Handler)p)(...)`) -- the cast "
+        "TARGET TYPE cannot be confirmed as a real function-pointer "
+        "typedef without full type inference, so this fires on the "
+        "structural shape alone (a parenthesized single-identifier cast "
+        "immediately called), a disclosed over-approximation",
+        taxonomy_row="c:runtime:void-star-backcast-to-function-pointer",
+    ),
+)
+
+
 __all__ = [
     "CAPABILITY_KINDS",
     "CAPABILITY_MATRIX_EXCUSES",
@@ -2372,10 +2473,12 @@ __all__ = [
     "NO_CAPABILITY_MODULES",
     "OPAQUE_SOURCE_INVISIBLE",
     "RUNTIME_OPAQUE_CONSTRUCTS",
+    "RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS",
     "_DangerousOperation",
     "_MatrixCell",
     "_MatrixExcuse",
     "_OpaqueConstruct",
+    "_OpaqueStructuralConstruct",
     "capability_matrix",
     "_unexcused_empty_cells",
     "_validate_registry_kinds",

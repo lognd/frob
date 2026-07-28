@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.206.0] - unreleased
+
+- T-1051: vet/opaque: close remaining 13 taxonomy runtime-opaque rows (generalized subscript/cast detector + rust/cpp/kotlin alias tracking)
+
 ## [0.205.0] - unreleased
 
 - T-1053: perf detectors: kill three recurring FP classes -- bare-method-name coincidence (str.count/.index on the loop's own element), receiver conflation, and lru_cache blindness

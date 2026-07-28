@@ -463,8 +463,8 @@ class TestCapabilityScan:
         assert "exec" in capabilities
         assert "net" in capabilities
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_rust_exec_detected(self, tmp_path: Path) -> None:
         from frob.vet._capability import scan_file_capabilities
@@ -535,8 +535,8 @@ class TestCapabilityScan:
         c_file.write_text('int main() { system("ls"); return 0; }\n')
         assert "exec" in scan_file_capabilities(c_file)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_c_source_fs_write_detected(self, tmp_path: Path) -> None:
         # T-0400 audit finding #4: fopen/fwrite is the actual fs-write
@@ -554,8 +554,8 @@ class TestCapabilityScan:
         )
         assert "fs-write" in scan_file_capabilities(c_file)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_c_source_raw_fd_read_detected(self, tmp_path: Path) -> None:
         # T-0400 audit finding #4: open()/read() are the actual POSIX read
@@ -572,8 +572,8 @@ class TestCapabilityScan:
         )
         assert "fs-read" in scan_file_capabilities(c_file)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_c_source_windows_exec_detected(self, tmp_path: Path) -> None:
         # T-0400 audit finding #4: the exec table was POSIX-only; a
@@ -589,8 +589,8 @@ class TestCapabilityScan:
         )
         assert "exec" in scan_file_capabilities(c_file)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_c_source_net_recv_detected(self, tmp_path: Path) -> None:
         # T-0400 audit finding #4: send/recv/getaddrinfo were entirely
@@ -880,8 +880,8 @@ class TestCapabilityScanBindingResolution:
         assert "exec" in capabilities
         assert "eval" not in capabilities
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (4 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_import_as_alias_operation_names_registry_entry(
         self, tmp_path: Path
@@ -1116,8 +1116,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         pkg.write_text("import subprocess\na = b = subprocess.run\nb(['x'])\n")
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_tuple_unpack_destructuring_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1131,8 +1131,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_tuple_unpack_second_element_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1187,8 +1187,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         pkg.write_text("import subprocess\ndef h(cb=subprocess.run):\n    cb(['x'])\n")
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_attribute_target_rebind_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1230,8 +1230,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         pkg.write_text("from some_untracked_pkg import *\nrun(['x'])\n")
         assert "exec" not in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_conditional_import_fallback_dangerous_first_detected(
         self, tmp_path: Path
@@ -1253,8 +1253,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_conditional_import_fallback_dangerous_second_detected(
         self, tmp_path: Path
@@ -1275,8 +1275,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_conditional_import_fallback_both_safe_not_detected(
         self, tmp_path: Path
@@ -1296,8 +1296,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         )
         assert "exec" not in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (46 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (46 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_closure_capture_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1428,8 +1428,8 @@ class TestCapabilityScanTsBindingResolution:
         pkg.write_text("import ax = require('axios');\nax.get(url);\n")
         assert "net" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (4 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_operation_names_registry_entry_for_aliased_import(
         self, tmp_path: Path
@@ -1538,8 +1538,8 @@ class TestCapabilityScanTsBindingResolution:
         pkg.write_text("import('axios').then(ax => ax.get(url));\n")
         assert "net" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_await_dynamic_import_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1630,8 +1630,8 @@ class TestCapabilityScanTsBindingResolution:
         pkg.write_text("const ax = require('axios');\nax[`${dynamicKey}`](url);\n")
         assert "net" not in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_local_const_string_subscript_detected(self, tmp_path: Path) -> None:
         # T-0432: the trivial indirection the audit called out --
@@ -1647,8 +1647,8 @@ class TestCapabilityScanTsBindingResolution:
         )
         assert "net" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_local_const_template_substitution_subscript_detected(
         self, tmp_path: Path
@@ -1665,8 +1665,8 @@ class TestCapabilityScanTsBindingResolution:
         )
         assert "net" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_reassigned_const_string_subscript_not_detected(
         self, tmp_path: Path
@@ -1689,8 +1689,8 @@ class TestCapabilityScanTsBindingResolution:
         )
         assert "net" not in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_non_literal_bound_subscript_not_detected(self, tmp_path: Path) -> None:
         # Honest limit (T-0432, NOT closed by this ticket, out of scope):
@@ -1710,8 +1710,8 @@ class TestCapabilityScanTsBindingResolution:
         )
         assert "net" not in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_multi_substitution_template_subscript_not_detected(
         self, tmp_path: Path
@@ -1756,8 +1756,8 @@ class TestCapabilityScanRustBindingResolution:
         pkg.write_text('use std::process::Command as C;\nfn f() { C::new("sh"); }\n')
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (4 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_operation_names_registry_entry_for_use_alias(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_scan_file_operations kind="unit"
@@ -1784,8 +1784,8 @@ class TestCapabilityScanRustBindingResolution:
         pkg.write_text('use std::process::Command;\nfn f() { Command::new("sh"); }\n')
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_param_shadowing_use_alias_not_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1801,8 +1801,8 @@ class TestCapabilityScanRustBindingResolution:
         )
         assert "exec" not in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_let_shadowing_use_alias_not_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1826,8 +1826,8 @@ class TestCapabilityScanRustBindingResolution:
         pkg.write_text('fn f() { C::new("sh"); }\n')
         assert "exec" not in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_call_before_rebinding_still_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1851,8 +1851,8 @@ class TestCapabilityScanRustBindingResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_call_after_rebinding_still_not_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1890,8 +1890,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
     `"Command::new("` needle -- same isolation rationale as
     `TestCapabilityScanRustBindingResolution`."""
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_grouped_use_alias_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1906,8 +1906,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_nested_grouped_use_alias_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1920,8 +1920,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_pub_use_reexport_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1935,8 +1935,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_glob_use_let_alias_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1951,8 +1951,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_let_binding_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1966,8 +1966,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_chained_shadowed_let_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1981,8 +1981,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_tuple_destructure_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1997,8 +1997,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_closure_capture_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2024,8 +2024,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         pkg.write_text('use my_own_crate::*;\nfn f() { helper("sh"); }\n')
         assert "exec" not in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_closure_param_shadowing_let_alias_not_detected(
         self, tmp_path: Path
@@ -2177,8 +2177,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         pkg.write_text("const f = require('axios').get;\nf(url);\n")
         assert "net" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_chained_assignment_outer_target_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2192,8 +2192,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         )
         assert "net" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_chained_assignment_inner_target_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2216,8 +2216,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         pkg.write_text("const ax = require('axios');\nconst [f] = [ax.get];\nf(url);\n")
         assert "net" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_default_param_forwarding_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2231,8 +2231,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         )
         assert "net" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_member_rebind_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2248,8 +2248,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         )
         assert "net" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_closure_capture_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2287,8 +2287,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         pkg.write_text("const obj = {};\nobj.run = doSomethingSafe;\nobj.run(url);\n")
         assert "net" not in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_reassigned_alias_call_via_chained_target_still_detected(
         self, tmp_path: Path
@@ -2577,8 +2577,8 @@ class TestCapabilityScanTsAliasTablePredicates:
         _record_ts_default_param_aliases(func, {}, {}, {}, alias_table)
         assert alias_table.get(func.id, {}) == {}
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_destructure_alias_tolerates_length_mismatch(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_record_ts_destructure_alias \
@@ -2605,8 +2605,8 @@ class TestCapabilityScanTsAliasTablePredicates:
         )
         assert scope_aliases["f"] == "axios.get"
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_destructure_alias_binds_only_identifier_elements(
         self, tmp_path: Path
@@ -2655,8 +2655,8 @@ class TestCapabilityScanCBindingResolution:
         pkg.write_text('#define SYS system\nvoid f() { SYS("sh"); }\n')
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (4 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (4 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_operation_names_registry_entry_for_macro_alias(
         self, tmp_path: Path
@@ -2716,8 +2716,8 @@ class TestCapabilityScanCBindingResolution:
         pkg.write_text('#define SYS system\nvoid f() { int SYS; SYS("sh"); }\n')
         assert "exec" not in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_call_before_local_shadow_still_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2770,8 +2770,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
         pkg.write_text('void (*f)(const char*) = system;\nvoid g() { f("sh"); }\n')
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_typedef_fn_ptr_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2806,8 +2806,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
         pkg.write_text('void (*f)(const char*);\nvoid g() { f = system; f("sh"); }\n')
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_struct_field_static_init_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2822,8 +2822,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_array_fn_ptr_constant_index_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2836,8 +2836,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (12 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_array_fn_ptr_nonconstant_index_not_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2853,8 +2853,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
         )
         assert "exec" not in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_chained_var_alias_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2870,8 +2870,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_param_shadowing_var_alias_not_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2937,8 +2937,8 @@ class TestCapabilityScanCAliasTablePredicates:
         assert ident is not None
         assert _c_declared_name(ident) == "x"
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_declared_name_walks_declarator_field_to_identifier(
         self, tmp_path: Path
@@ -2958,8 +2958,8 @@ class TestCapabilityScanCAliasTablePredicates:
         assert pd is not None
         assert _c_declared_name(pd) == "p"
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (3 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_declared_name_parenthesized_declarator_fallback(
         self, tmp_path: Path
@@ -3015,8 +3015,8 @@ class TestCapabilityScanCAliasTablePredicates:
         _c_collect_declaration_names(decl, 0, bound)
         assert bound == {"x": 0, "y": 0}
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_collect_declaration_names_init_declarator(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_c_collect_declaration_names kind="unit"  # noqa: E501
@@ -3033,8 +3033,8 @@ class TestCapabilityScanCAliasTablePredicates:
         _c_collect_declaration_names(decl, 7, bound)
         assert bound == {"x": 7}
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_collect_declaration_names_uninitialized_fn_ptr(
         self, tmp_path: Path
@@ -3088,8 +3088,8 @@ class TestCapabilityScanCAliasTablePredicates:
         assert pointer_expr is not None
         assert _resolve_c_alias_source(pointer_expr, {}, {}, {}) is None
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_resolve_alias_source_rejects_non_identifier_non_pointer(
         self, tmp_path: Path
@@ -3229,8 +3229,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
         pkg.write_text('void (*f)(const char*) = system;\nvoid g() { f("sh"); }\n')
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_using_alias_declaration_fn_ptr_typedef_detected(
         self, tmp_path: Path
@@ -3251,8 +3251,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_std_function_init_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -3274,8 +3274,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
         pkg.write_text('void call(void(*cb)(const char*) = system) { cb("sh"); }\n')
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_default_arg_param_shadowing_call_site_not_detected(
         self, tmp_path: Path
@@ -3320,8 +3320,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
         pkg.write_text('auto [a, b] = some_pair_var;\nvoid g() { a("sh"); }\n')
         assert "exec" not in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_lambda_capturing_fn_ptr_var_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -3545,8 +3545,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
     no import/alias-aware resolution pass for the language until this
     ticket -- only the pre-existing raw-text needle scan)."""
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_plain_import_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -3559,8 +3559,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_import_as_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -3593,8 +3593,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         pkg.write_text('val f = ::ProcessBuilder\nfun g() { f("sh") }\n')
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_typed_callable_reference_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -3610,8 +3610,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         )
         assert "client_storage" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (43 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_typealias_for_function_type_needs_no_special_resolution(
         self, tmp_path: Path
@@ -4053,8 +4053,8 @@ class TestFingerprintScan:
         pkg.write_text("def add(a, b):\n    return a + b\n")
         assert _scan_file_fingerprints(pkg) == ()
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (6 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (6 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_whitespace_reformatted_needle_still_matches(self, tmp_path: Path) -> None:
         # T-0400 audit finding #3: `shell=True` reformatted with spaces
@@ -4068,8 +4068,8 @@ class TestFingerprintScan:
         matches = _scan_file_fingerprints(pkg)
         assert any(m.id == "FP-EXEC-SHELL-001" for m in matches)
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (6 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (6 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_whitespace_tolerant_match_still_respects_comment_spans(
         self, tmp_path: Path
@@ -4371,8 +4371,8 @@ class TestFingerprintScan:
         assert not is_self_pattern_path(unrelated, unrelated_root)
 
     # frob:ticket T-0910
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_self_pattern_exclusion_covers_logging_checks_needle_tuples(
         self,
@@ -4412,8 +4412,8 @@ class TestFingerprintScan:
         assert _line_effects(logging_checks_path, repo_root) == []
 
     # frob:ticket T-0915
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_self_pattern_exclusion_covers_async_hazards_needle_tuples(
         self,
@@ -4587,8 +4587,8 @@ class TestObfuscationEnsemble:
         signals = _scan_directory_obfuscation(tmp_path)
         assert "high-entropy-string" in signals
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_bidi_override_detected_in_c_file(self, tmp_path: Path) -> None:
         # T-0400 audit finding #5: C/C++/Kotlin were entirely excluded from
@@ -4604,8 +4604,8 @@ class TestObfuscationEnsemble:
         signals = _scan_directory_obfuscation(tmp_path)
         assert "invisible-text" in signals
 
-    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) sharing an \
-    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_bidi_override_detected_in_kotlin_file(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_obfuscation.py::_scan_directory_obfuscation \
@@ -5750,15 +5750,50 @@ class TestOpaqueIndirectionGate:
 
     def test_python_container_dynamic_key_not_addressed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
-        # taxonomy "callable in a container, dynamic key" row: `handlers
-        # [key](x)`. No `RUNTIME_OPAQUE_CONSTRUCTS` entry exists for this
-        # shape in any language -- genuine gap, see T-1047.
+        # taxonomy "callable in a container, dynamic key" row (also covers
+        # the sibling "computed member access, non-constant key" row --
+        # identical `container[expr](...)` shape): `handlers[key](x)`.
+        # Closed by T-1051's `RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS`
+        # generalized `subscript_call` detector (`_structural_opaque_
+        # findings`) -- T-1047 left this unaddressed since the fixed-
+        # needle+literal-arg architecture cannot express a non-constant
+        # SUBSCRIPT shape, only a fixed call-name substring.
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text('handlers = {"a": subprocess.run}\nhandlers[key](x)\n')
         findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "container dynamic-key call" for f in findings)
+
+    def test_python_container_literal_key_call_not_addressed_by_structural_gate(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_subscript_key_looks_literal kind="unit"  # noqa: E501
+        # No-regression guard for the new structural detector: a LITERAL-
+        # keyed subscript call (`handlers["a"](x)`) is the ORDINARY
+        # resolver's job per T-0665's literal/non-literal split, not this
+        # fail-closed obligation -- must not double-fire.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text('handlers = {"a": subprocess.run}\nhandlers["a"](x)\n')
+        findings = _opaque_indirection_findings(pkg)
         assert findings == ()
+
+    def test_opaque_structural_construct_is_frozen(self) -> None:
+        # frob:tests src/frob/vet/_capability_registry.py::_OpaqueStructuralConstruct kind="unit"  # noqa: E501
+        # T-1051: `_OpaqueStructuralConstruct.model_config = ConfigDict(
+        # frozen=True)` (same immutability posture as `_OpaqueConstruct`
+        # above it) must actually reject a post-construction mutation --
+        # kills the `frozen=True` -> `frozen=False` mutant TEST016 flagged
+        # with zero coverage.
+        import pydantic
+
+        from frob.vet._capability_registry import RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS
+
+        entry = RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS[0]
+        with pytest.raises(pydantic.ValidationError):
+            entry.construct_name = "mutated"
 
     def test_python_functools_partial_dynamic_target_fires(
         self, tmp_path: Path
@@ -5810,19 +5845,16 @@ class TestOpaqueIndirectionGate:
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
-        # taxonomy "computed member access, non-constant key" row -- this
-        # shape is handled by the ORDINARY resolver's bounded single-
-        # literal-binding dataflow (`scan_file_capabilities`, T-0432), not
-        # this fail-closed obligation gate; no `RUNTIME_OPAQUE_CONSTRUCTS`
-        # entry exists for it here, genuine gap against acceptance [1]
-        # specifically (fail-CLOSED, not just "resolver stays silent") --
-        # see T-1047.
+        # taxonomy "computed member access, non-constant key" row -- closed
+        # by T-1051's generalized `subscript_call` structural detector
+        # (`_structural_opaque_findings`), the same shape T-1047 could not
+        # express with a fixed needle.
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("cp[key](x);\n")
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(f.construct_name == "container dynamic-key call" for f in findings)
 
     def test_typescript_global_this_bracket_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
@@ -5865,14 +5897,14 @@ class TestOpaqueIndirectionGate:
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
-        # taxonomy "callable in container, dynamic key" row -- genuine gap,
-        # see T-1047.
+        # taxonomy "callable in container, dynamic key" row -- closed by
+        # T-1051's generalized `subscript_call` structural detector.
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("handlers[key](x);\n")
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(f.construct_name == "container dynamic-key call" for f in findings)
 
     def test_typescript_monkeypatch_module_namespace_fires(
         self, tmp_path: Path
@@ -5890,11 +5922,13 @@ class TestOpaqueIndirectionGate:
     def test_c_array_nonconstant_index_not_addressed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "function pointer read via array/struct with non-
-        # constant index/selector" row. The ORDINARY resolver already
-        # proves this stays UNDETECTED as a resolution
-        # (`test_array_fn_ptr_nonconstant_index_not_detected`); this
-        # fixture additionally proves it also does not trip the fail-
-        # closed OBLIGATION gate either -- genuine gap, see T-1047.
+        # constant index/selector" row. The ORDINARY resolver still proves
+        # this stays UNDETECTED as a resolution
+        # (`test_array_fn_ptr_nonconstant_index_not_detected`, unchanged --
+        # that is a SEPARATE, still-open gap in the ordinary resolver's own
+        # points-to); this fixture proves the fail-closed OBLIGATION gate
+        # now catches it via T-1051's generalized `subscript_call`
+        # structural detector, closing THIS row.
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.c"
@@ -5903,25 +5937,32 @@ class TestOpaqueIndirectionGate:
             'void g(int user_selected_index) { tbl[user_selected_index]("sh"); }\n'
         )
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(
+            f.construct_name == "array-index function-pointer dispatch"
+            for f in findings
+        )
 
     def test_c_integer_cast_to_function_pointer_not_addressed(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "function pointer cast from an integer/opaque value" row
-        # -- genuine gap, see T-1047.
+        # -- closed by T-1051's `explicit_fnptr_cast_call` structural
+        # detector (`((RET(*)(ARGS))expr)(...)`).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text('void g(long addr) { ((void(*)(const char*))addr)("sh"); }\n')
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(
+            f.construct_name == "integer-cast to function pointer" for f in findings
+        )
 
     def test_c_void_star_backcast_not_addressed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "function pointer through `void*` indirection and
-        # back-cast" row -- genuine gap, see T-1047.
+        # back-cast" row -- closed by T-1051's `named_type_cast_call`
+        # structural detector (`((TypeName)expr)(...)`).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.c"
@@ -5930,12 +5971,16 @@ class TestOpaqueIndirectionGate:
             'void g() { void *p = get_handler(); ((Handler)p)("sh"); }\n'
         )
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(
+            f.construct_name == "void* back-cast to function pointer" for f in findings
+        )
 
     def test_cpp_array_runtime_index_not_addressed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "function pointer through array/vector with runtime
-        # index" row -- genuine gap, see T-1047.
+        # index" row -- closed by T-1051's `subscript_call` structural
+        # detector (same shape as the sibling C row above, `.cpp`
+        # extension exercises the identical `language="c-cpp"` bucket).
         from frob.vet._capability import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.cpp"
@@ -5946,7 +5991,10 @@ class TestOpaqueIndirectionGate:
             "}\n"
         )
         findings = _opaque_indirection_findings(pkg)
-        assert findings == ()
+        assert any(
+            f.construct_name == "array-index function-pointer dispatch"
+            for f in findings
+        )
 
     def test_cpp_reinterpret_cast_to_function_pointer_fires(
         self, tmp_path: Path
