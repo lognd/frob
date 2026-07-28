@@ -518,6 +518,11 @@ _KNOWN_GATE_RULES = frozenset(
         "PII012",
         # SYSWAIVE002 (frob.strata._contention).
         "SYSWAIVE002",
+        # frob:ticket T-1139
+        # SYSWAIVE003 (frob.strata._selfconform, T-0671's staleness-gated
+        # waiver mechanism) -- T-0671 registration gap, found while
+        # verifying T-1115's gates/__init__.py family split.
+        "SYSWAIVE003",
         # THREAT006 (frob.strata._threat).
         "THREAT006",
         # frob:ticket T-0923

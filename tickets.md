@@ -4781,7 +4781,7 @@ First concrete slice of the T-1137 fix engine, restricted to the three fix class
 ```yaml
 id: T-1139
 title: 'gates: register SYSWAIVE003 in _KNOWN_GATE_RULES (T-0671 registration gap)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -4791,6 +4791,27 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/_rule_id_scan.py
+- src/frob/gates/_waive.py
+scope_changes:
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: '_KNOWN_GATE_RULES (the registry T-1139 asks to add SYSWAIVE003 to) has
+
+    since moved out of gates/__init__.py into gates/_waive.py (a prior split
+
+    land, before this ticket was filed) -- the ticket''s original scope
+
+    (_rule_id_scan.py, the scanner/authority module) does not include the
+
+    file the registry literal itself now lives in. Adding
+
+    src/frob/gates/_waive.py so the actual fix can land.
+
+    '
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 threat: null
 component: null
 ```
@@ -4803,6 +4824,38 @@ verifying T-1115's gates/__init__.py family split (DEBT/DEPR extraction)
 appear anywhere in gates/__init__.py or the new _debt_deprecated.py; the
 rule id is constructed entirely in src/frob/strata/_selfconform.py).
 Add the missing _KNOWN_GATE_RULES entry.
+
+## Done report
+
+Added SYSWAIVE003 (src/frob/strata/_selfconform.py, T-0671's staleness-
+gated waiver mechanism) to the `_KNOWN_GATE_RULES` frozenset -- the
+registry literal has since moved from gates/__init__.py into
+gates/_waive.py (a prior split land that predates this ticket's
+filing), so scope was expanded to include that file (reasoned, `frob
+ticket scope T-1139 --add`) alongside the ticket's originally-declared
+_rule_id_scan.py.
+
+tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+now passes (was failing on main per the ticket's own repro).
+
+Verification: ruff check clean (both `ruff` and `uv run ruff`) on
+src/frob/gates/_waive.py. Targeted test passes.
+
+Filed: none.
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 27 error(s), 569 warning(s), 431 waived
+- error-findings: ARCH001@src/frob/app/ticket_runner/_close_cmd.py, ARCH001@src/frob/doctor.py, ARCH001@src/frob/tickets/__init__.py, COV001@src/frob/gates/_tracked_files.py, COV003@tickets/T-0138, COV003@tickets/T-0226, COV003@tickets/T-0629, COV003@tickets/T-0700, COV003@tickets/T-0702, E501@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/doctor.py:243, E501@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/vet/_capability.py:5338, E501@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/vet/_supplychain.py:154, E501@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/vet/_supplychain.py:168, E501@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/vet/_supplychain.py:209, E501@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/vet/_supplychain.py:267, E501@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/vet/_supplychain.py:295, F401@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/tickets/__init__.py:111, F401@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/tickets/__init__.py:22, F401@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/tickets/__init__.py:23, F401@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/tickets/__init__.py:35, F401@/home/logan/projects/frob/.claude/worktrees/w18-gates3/src/frob/tickets/__init__.py:46, INV006@src/frob/app/stats_runner.py, INV006@src/frob/gates/_tickets_gate.py, PII012@src/frob/gates/_tickets_gate.py, PII012@tests/system/test_cli_doctor.py, PRE001@tickets/T-1139, SELFAUDIT001@design
 
 <!-- ticket:T-1140 -->
 ```yaml
