@@ -1,0 +1,36 @@
+// contention_path_arbitered.strata -- T-1149 SYS201 litmus: the SAME
+// overlapping-path shape as contention_path_vuln.strata (api_a owns
+// `/var/lib/api`, api_b owns `/var/lib/api/data`, a subtree overlap),
+// but both nodes ALSO declare `access "shared_api" mode write;` to a
+// resource that itself declares a real arbiter (`resource shared_api {
+// lock "shared_api.lock"; }`) -- SYS201 must now discharge this pair
+// entirely (`_contention.py`'s "ARBITER-AWARE, SYS201 TOO (T-1149)"
+// section), the same way SYS203/T-1025 already discharges an arbitered
+// store's shared-write finding.
+//
+// tested end to end by tests/unit/strata/test_contention.py (loaded via
+// `parse_module`+`elaborate`; `module.resources` is read directly, same
+// "not a KernelModel-level fact" limitation `contention_store_
+// arbitered.strata`'s own header comment documents).
+//
+// frob:ticket T-1149
+
+module contention_path_arbitered
+
+node api_a : trusted {
+    clearance Internal;
+    owns "/var/lib/api" "0750";
+    access "shared_api" mode write;
+}
+
+node api_b : trusted {
+    clearance Internal;
+    owns "/var/lib/api/data" "0644";
+    access "shared_api" mode write;
+}
+
+resource shared_api {
+    lock "shared_api.lock";
+}
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0699/T-1025/T-1149 litmus suites); a second consumer would not be genuine"

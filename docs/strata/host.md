@@ -625,6 +625,41 @@ tested (`tests/unit/strata/test_contention.py::TestSharedStoreWrite`,
 including `contention_store_arbitered.strata`'s dedicated litmus fixture)
 -- only the last-mile CLI wiring remains.
 
+### SYS201 arbiter-awareness (T-1149)
+
+SYS201 had the exact same blind spot SYS203 used to before T-1025: two
+nodes legitimately sharing one arbitered resource (e.g. tickets_ledger's
+five writers, all serialized through the SAME `.frob/tickets.lock`
+flock) would fire a FALSE overlapping-path conflict the moment either
+declared an `owns`/`acl` path claim scoping its access -- discovered when
+T-1061 wired SYS205's WRITE mode path-scoping live and a synthetic
+`owns="tickets.md"` declaration (tried to discharge SYS205) was measured
+to create 20 new SYS201 findings across the five writers.
+`_overlapping_path_violations` now also accepts the SAME `module: Module
+| None` parameter SYS203 already takes (threaded through
+`check_resource_contention`, `_arbitered_access_by_node`): if the two
+nodes in an overlapping-path pair both declare `access "RESOURCE" mode
+MODE` (below) to a COMMON resource id that itself declares an arbiter,
+the pair is skipped entirely -- the model already proves those two nodes
+coordinate through that arbiter, so the raw path overlap is no longer an
+undeclared conflict. `module=None` keeps every pre-T-1149 caller's
+behavior byte-for-byte unchanged.
+
+**Same disclosed gap as SYS203/T-1025, not re-derived:** the LIVE
+`SELFAUDIT001` gate and `frob sys audit` CLI still call
+`check_resource_contention` without a `module=` argument (T-1025's
+"Disclosed gap" paragraph above explains exactly why -- neither caller,
+nor `DesignIds`, is in this ticket's declared `scope` either). The five
+`SYS205:tickets_ledger` waivers in `design/frob.strata` therefore also
+stay in place: SYS201 gaining the CAPABILITY to discharge a common-
+arbiter pair does not by itself let anyone actually drop a synthetic
+`owns=` declaration and lean on it live, until that same `module=`
+wiring lands for both SYS203 and SYS201 together. The capability itself
+is fully built and tested
+(`tests/unit/strata/test_contention.py::TestOverlappingPath`, including
+`contention_path_arbitered.strata`'s dedicated litmus fixture) -- only
+the last-mile CLI wiring remains, same as SYS203's own disclosed cut.
+
 ## Resource access modes (T-0700)
 
 `_access.py` adds a MODE-aware contention proof (SYS204) alongside

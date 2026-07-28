@@ -96,6 +96,44 @@ class TestOverlappingPath:
         assert {v.node for v in findings} == {"svc_a", "svc_b"}
         assert all(not v.write_capable for v in findings)
 
+    # frob:tests tests/unit/strata/test_contention.py::TestOverlappingPath.test_common_arbitered_resource_discharges  # noqa: E501
+    def test_common_arbitered_resource_discharges(self):
+        """T-1149: the SAME overlapping-path shape as
+        contention_path_vuln.strata, but both nodes also `access` a
+        common resource that declares a real arbiter
+        (contention_path_arbitered.strata) -- passing `module=` now
+        discharges SYS201 entirely for that pair, since the model already
+        proves they coordinate through that arbiter (`_contention.py`'s
+        "ARBITER-AWARE, SYS201 TOO (T-1149)" section)."""
+        module, model = _load("contention_path_arbitered.strata")
+        report = check_resource_contention(model, module=module)
+        assert not [v for v in report.violations if v.rule == SYS_OVERLAPPING_PATH]
+
+    # frob:tests tests/unit/strata/test_contention.py::TestOverlappingPath.test_common_arbitered_resource_still_fires_without_module  # noqa: E501
+    def test_common_arbitered_resource_still_fires_without_module(self):
+        """The SAME arbitered-pair fixture, called the OLD way (no
+        `module=` argument) -- SYS201 must still fire, exactly as it did
+        before T-1149, since `module=None` has no way to look up either
+        node's `access` declarations or the resource's arbiter. Mirrors
+        `TestSharedStoreWrite.test_arbitered_store_still_fires_without_
+        module`'s exact "additive, not a signature break" guarantee."""
+        _module, model = _load("contention_path_arbitered.strata")
+        report = check_resource_contention(model)
+        findings = [v for v in report.violations if v.rule == SYS_OVERLAPPING_PATH]
+        assert {v.node for v in findings} == {"api_a", "api_b"}
+
+    # frob:tests tests/unit/strata/test_contention.py::TestOverlappingPath.test_unarbitered_overlap_still_fires_with_module  # noqa: E501
+    def test_unarbitered_overlap_still_fires_with_module(self):
+        """Passing `module=` does not blanket-discharge every overlapping
+        pair -- contention_path_vuln.strata's api_a/api_b declare no
+        `access` to anything at all, so SYS201 still fires for them even
+        when `module` is supplied (only a pair sharing a common ARBITERED
+        resource is skipped)."""
+        module, model = _load("contention_path_vuln.strata")
+        report = check_resource_contention(model, module=module)
+        findings = [v for v in report.violations if v.rule == SYS_OVERLAPPING_PATH]
+        assert {v.node for v in findings} == {"api_a", "api_b"}
+
 
 class TestSharedPipe:
     # frob:tests \

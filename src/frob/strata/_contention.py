@@ -65,6 +65,23 @@ default) keeps every existing caller's behavior byte-for-byte unchanged
 (no arbiter lookup possible without it, same fail-closed posture as an
 empty `store_ids`) -- this is additive, not a signature break.
 
+ARBITER-AWARE, SYS201 TOO (T-1149): SYS201 (overlapping path claim) had
+the exact same blind spot SYS203 used to -- two nodes legitimately
+sharing one arbitered resource (e.g. tickets_ledger's five writers, all
+serialized through the SAME `.frob/tickets.lock` flock) would fire a
+FALSE overlapping-path conflict the moment either declared an `owns`/
+`acl` path claim scoping its access, with no way to discharge it short of
+a standing waiver (T-1061's discovery, filed as this ticket). SYS201 now
+also consults `module` (the SAME argument SYS203 already takes,
+`_arbitered_access_by_node`): if the two nodes in an overlapping-path
+pair both declare `access "RESOURCE" mode MODE` (`_access.py::
+node_access_declarations`) to a COMMON resource id that itself declares
+an arbiter, the pair is skipped entirely -- they are already known,
+model-provably coordinated through that arbiter, so the raw path overlap
+is no longer an undeclared conflict. `module=None` keeps every pre-T-1149
+caller's behavior unchanged, same "additive, not a signature break"
+guarantee.
+
 Waiver channel: all four rules can fire more than once per node (a node
 can declare several ports/paths/pipes, or write several stores), so each
 is registered in `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES` and a
@@ -91,6 +108,7 @@ from pydantic import BaseModel, ConfigDict
 
 from frob.logging import get_logger
 
+from ._access import node_access_declarations
 from ._ast import Module
 from ._host import HostManifest, manifests_by_node
 from ._models import KernelModel
@@ -276,50 +294,108 @@ def _path_claims(
     return sorted(claims)
 
 
+def _share_common_arbiter(
+    node_a: str,
+    node_b: str,
+    arbitered_access_by_node: dict[str, frozenset[str]],
+) -> bool:
+    """T-1149: `True` iff `node_a`/`node_b` both declare `access` to at
+    least one common ARBITERED resource id -- `_overlapping_path_
+    violations`'s ARBITER-AWARE discharge condition, split out purely to
+    keep that function under ARCH001's line threshold."""
+    return bool(
+        arbitered_access_by_node.get(node_a, frozenset())
+        & arbitered_access_by_node.get(node_b, frozenset())
+    )
+
+
+def _overlapping_path_violation_pair(
+    node_a: str,
+    path_a: str,
+    write_a: bool,
+    node_b: str,
+    path_b: str,
+    write_b: bool,
+) -> list[ResourceContentionViolation]:
+    """The two `ResourceContentionViolation`s (one per participating node)
+    for one overlapping-path pair -- `_overlapping_path_violations`'s
+    per-pair emission, split out purely to keep that function under
+    ARCH001's line threshold."""
+    write_capable = write_a or write_b
+    _log.warning(
+        "contention: SYS201 path %r on %s overlaps %s's %r (write_capable=%s)",
+        path_a,
+        node_a,
+        node_b,
+        path_b,
+        write_capable,
+    )
+    return [
+        ResourceContentionViolation(
+            rule=SYS_OVERLAPPING_PATH,
+            node=node_a,
+            sub_target=path_a,
+            detail=(
+                f"path {path_a!r} overlaps {node_b}'s {path_b!r}"
+                + (" (write-capable)" if write_capable else "")
+            ),
+            write_capable=write_capable,
+        ),
+        ResourceContentionViolation(
+            rule=SYS_OVERLAPPING_PATH,
+            node=node_b,
+            sub_target=path_b,
+            detail=(
+                f"path {path_b!r} overlaps {node_a}'s {path_a!r}"
+                + (" (write-capable)" if write_capable else "")
+            ),
+            write_capable=write_capable,
+        ),
+    ]
+
+
 def _overlapping_path_violations(
     manifests: dict[str, HostManifest],
+    arbitered_access_by_node: dict[str, frozenset[str]] | None = None,
 ) -> list[ResourceContentionViolation]:
     """SYS201: every pairwise-overlapping `(node, path)` claim across
     DISTINCT nodes, reported once per participating node (module
     docstring's `ResourceContentionViolation` shape) with `write_capable`
-    set when either side's claim expresses a write-capable grant."""
+    set when either side's claim expresses a write-capable grant.
+
+    T-1149 (ARBITER-AWARE, mirroring SYS203/T-1025's exact discharge
+    condition): `arbitered_access_by_node` (default `None`, i.e. no
+    discharge -- fail-closed, same posture `_shared_store_write_
+    violations`'s `module=None` establishes) maps a node id to the
+    ARBITERED resource ids (`_arbitered_resource_ids`) it declares
+    `access` to (`_access.py::node_access_declarations`). A pair whose two
+    nodes share at least one common arbitered resource id
+    (`_share_common_arbiter`) is SKIPPED entirely -- the model already
+    proves those two nodes coordinate their access to something both
+    consider the same shared thing, so an overlapping filesystem path
+    claim between them is no longer an undeclared conflict (module
+    docstring's "ARBITER-AWARE" framing, same reasoning SYS203 already
+    applies to store writers)."""
+    arbitered_access_by_node = arbitered_access_by_node or {}
     violations: list[ResourceContentionViolation] = []
     for (node_a, path_a, write_a), (node_b, path_b, write_b) in combinations(
         _path_claims(manifests), 2
     ):
         if node_a == node_b or not _paths_overlap(path_a, path_b):
             continue
-        write_capable = write_a or write_b
-        _log.warning(
-            "contention: SYS201 path %r on %s overlaps %s's %r (write_capable=%s)",
-            path_a,
-            node_a,
-            node_b,
-            path_b,
-            write_capable,
-        )
-        violations.append(
-            ResourceContentionViolation(
-                rule=SYS_OVERLAPPING_PATH,
-                node=node_a,
-                sub_target=path_a,
-                detail=(
-                    f"path {path_a!r} overlaps {node_b}'s {path_b!r}"
-                    + (" (write-capable)" if write_capable else "")
-                ),
-                write_capable=write_capable,
+        if _share_common_arbiter(node_a, node_b, arbitered_access_by_node):
+            _log.debug(
+                "contention: SYS201 path %r on %s overlaps %s's %r but both "
+                "share a common arbitered resource, skipped",
+                path_a,
+                node_a,
+                node_b,
+                path_b,
             )
-        )
-        violations.append(
-            ResourceContentionViolation(
-                rule=SYS_OVERLAPPING_PATH,
-                node=node_b,
-                sub_target=path_b,
-                detail=(
-                    f"path {path_b!r} overlaps {node_a}'s {path_a!r}"
-                    + (" (write-capable)" if write_capable else "")
-                ),
-                write_capable=write_capable,
+            continue
+        violations.extend(
+            _overlapping_path_violation_pair(
+                node_a, path_a, write_a, node_b, path_b, write_b
             )
         )
     return violations
@@ -376,6 +452,32 @@ def _arbitered_resource_ids(module: Module | None) -> frozenset[str]:
         for resource in module.resources
         if resource.arbitrated_by is not None or resource.lock is not None
     )
+
+
+def _arbitered_access_by_node(
+    model: KernelModel, module: Module | None
+) -> dict[str, frozenset[str]]:
+    """T-1149: every node id -> the set of ARBITERED resource ids
+    (`_arbitered_resource_ids`) it declares `access "RESOURCE" mode MODE`
+    to (`_access.py::node_access_declarations`) -- SYS201's join key for
+    "these two nodes are already coordinating through a common declared
+    arbiter" (module docstring's T-1149 section on
+    `_overlapping_path_violations`). `module=None` yields an empty dict,
+    i.e. no discharge for any node -- same fail-closed posture
+    `_arbitered_resource_ids` itself establishes."""
+    arbitered = _arbitered_resource_ids(module)
+    if not arbitered:
+        return {}
+    by_node: dict[str, frozenset[str]] = {}
+    for node in model.nodes:
+        resources = frozenset(
+            declaration.resource
+            for declaration in node_access_declarations(node)
+            if declaration.resource in arbitered
+        )
+        if resources:
+            by_node[node.id] = resources
+    return by_node
 
 
 # frob:ticket T-0972
@@ -482,11 +584,15 @@ def check_resource_contention(
     violations` already takes, threaded through so SYS203 can consult a
     store's declared arbiter (`_arbitered_resource_ids`) the same way
     SYS204 does -- `module=None` keeps every pre-T-1025 caller's
-    behavior unchanged."""
+    behavior unchanged. T-1149: the SAME `module` argument now also makes
+    SYS201 arbiter-aware (`_arbitered_access_by_node`) -- two nodes whose
+    overlapping `owns`/`acl` paths would otherwise fire SYS201 are skipped
+    if they share a common `access`-declared, arbitered resource id."""
     manifests = manifests_by_node(model)
+    arbitered_access = _arbitered_access_by_node(model, module)
     violations: list[ResourceContentionViolation] = []
     violations.extend(_duplicate_port_violations(manifests))
-    violations.extend(_overlapping_path_violations(manifests))
+    violations.extend(_overlapping_path_violations(manifests, arbitered_access))
     violations.extend(_shared_pipe_violations(manifests))
     violations.extend(_shared_store_write_violations(model, store_ids, module))
     applied = _apply_contention_waivers(model, violations)
