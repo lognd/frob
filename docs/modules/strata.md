@@ -119,18 +119,24 @@ and an `interface=` entry with no matching real export fires. The real
 surface is `__all__`'s literal contents if the module declares one, else
 every non-underscore-prefixed top-level `def`/`class`/assignment target.
 
-### Scope cut (disclosed)
+### Mandatory as of T-1113 (closes the original scope cut)
 
-SYS104 only evaluates a node that has ALREADY declared at least one
-`interface=` attr -- it does not yet mandate every node declare one,
-since making that mandatory would require adding `interface=`
-declarations to `design/frob.strata` itself, which sits outside this
-ticket's `scope` (`src/frob/strata/**`, `src/frob/graph/**`,
-`docs/modules/strata.md`, `tests/unit/strata/**` -- not
-`design/frob.strata`). Same disclosed-scope-cut shape as SYS103's
-`_PACKAGE_ROOT` restriction above; promoting SYS104 to "every node must
-declare" is real, filed follow-up work, not forced through an
-out-of-scope file edit. Python-only, the same boundary `bind_code`
+SYS104 used to evaluate only a node that had ALREADY declared at least
+one `interface=` attr -- an opt-in scope cut disclosed at T-0668, because
+making it mandatory required adding real `interface=` declarations to
+`design/frob.strata` itself, out of T-0668's own `scope`. T-1113 closes
+that gap directly: `design/frob.strata` now carries a real, measured
+`interface=<symbol>` attr for every node whose bound code has a non-empty
+public surface (one attr per real symbol, generated from the same
+`_module_public_symbols`/`_node_real_public_surface` the check itself
+uses, so declared and real start out in agreement), and SYS104 now
+evaluates ANY node whose real surface is non-empty, whether or not it has
+declared anything -- a node with nothing declared and a non-empty real
+surface fires (every real symbol reports as missing), exactly like a
+node that declares some but not all of its surface. A node with an EMPTY
+real surface (no bound `.py` files, or files exporting nothing) stays
+exempt either way -- there is no obligation to declare an interface for
+code with nothing to declare. Python-only, the same boundary `bind_code`
 itself already draws.
 
 <a id="sys105-purpose-contract-t-0669"></a>
@@ -147,9 +153,11 @@ observed-kind union SYS101 already computes, reused not duplicated). An
 unrecognized profile name is itself a finding -- a typo is never treated
 as the permissive `full` profile.
 
-Same disclosed scope cut as SYS104: only a node that has declared
-`purpose=` is checked; mandating it repo-wide is filed follow-up work,
-for the same `design/frob.strata`-is-out-of-scope reason.
+Disclosed scope cut, UNCHANGED by T-1113 (which flipped only SYS104, per
+that ticket's own declared follow-up -- see T-1113's Done report for why
+SYS105/SYS106 stayed opt-in): only a node that has declared `purpose=` is
+checked; mandating it repo-wide is filed follow-up work, for the same
+`design/frob.strata`-declaration-effort reason SYS104 used to carry.
 
 <a id="sys106-binding-totality-t-0670"></a>
 ## SYS106 binding totality / laundering (T-0670)

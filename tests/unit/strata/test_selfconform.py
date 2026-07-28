@@ -641,8 +641,11 @@ class TestUnmodeledCodeMissingPackageRoot:
     ):
         """A repo with no `src/frob/` directory at all gets zero SYS102
         violations and zero WARNING-level selfconform log records --
-        frob's package-root assumption must not leak into generic repos."""
-        _write(tmp_path, "src/other/_io.py", "x = 1\n")
+        frob's package-root assumption must not leak into generic repos.
+        Uses a PRIVATE assignment target (`_x`, not `x`) so T-1113's now-
+        mandatory SYS104 has no real public surface to fire on here --
+        this test is about SYS102/the package-root leak, not SYS104."""
+        _write(tmp_path, "src/other/_io.py", "_x = 1\n")
         model = KernelModel(
             nodes=(Node(id="other", trust="trusted", attrs=("code=src/other/**",)),)
         )
@@ -1455,11 +1458,35 @@ class TestInterfaceConformance:
         )
 
     # frob:tests src/frob/strata/_selfconform.py::_interface_conformance_violations kind="unit"  # noqa: E501
+    # frob:waive DUP001 reason="shares the standard one-node/one-file check_self_conformance test scaffold with TestUndeclaredInterfaceCore.test_core_undeclared_interface_fires (SYS100), but asserts a DIFFERENT rule (SYS104) on a DIFFERENT observation (a real public symbol, not a net-effect capability) -- extracting a shared helper would only hide that these are two independent rules' own regression tests, each following this suite's established _write/Node/check_self_conformance idiom (T-1113)"  # noqa: E501
     def test_node_with_no_interface_attr_is_never_checked(self, tmp_path: Path):
-        """A node declaring no `interface=` attr at all is silently
-        skipped (opt-in scope cut) even though its real surface has an
-        undeclared public symbol."""
+        """T-1113: a node declaring no `interface=` attr at all is NO
+        LONGER silently skipped -- SYS104 is mandatory now, so a real
+        public symbol with nothing declared fires as missing (the old
+        opt-in scope cut this test used to assert is gone)."""
         _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+        model = KernelModel(
+            nodes=(
+                Node(id="widget", trust="trusted", attrs=("code=src/frob/widget/**",)),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        matches = [
+            v
+            for v in result.danger_ok.violations
+            if v.rule == SYS_INTERFACE_CONFORMANCE
+        ]
+        assert len(matches) == 1
+        assert matches[0].capability == "public_fn"
+
+    # frob:tests src/frob/strata/_selfconform.py::_interface_conformance_violations kind="unit"  # noqa: E501
+    def test_node_with_empty_real_surface_stays_exempt(self, tmp_path: Path):
+        """T-1113: a node whose bound code has ZERO real public symbols
+        (nothing to declare) stays silent even with no `interface=` attr
+        -- the mandatory rule only fires when the real surface is
+        non-empty."""
+        _write(tmp_path, "src/frob/widget/_io.py", "_private = 1\n")
         model = KernelModel(
             nodes=(
                 Node(id="widget", trust="trusted", attrs=("code=src/frob/widget/**",)),

@@ -97,19 +97,18 @@ module-level `def`/`class`/assignment target) across the node's own
 the real surface (`docs/design/structural-linter-adversarial-hardening.md`
 "declared-but-absent declaration" row), and a real public symbol the node
 never declared (the same doc's "undeclared public surface" row --
-`secret_backdoor` example). SCOPE CUT (T-0668, disclosed rather than
-silently applied): this rule only evaluates a node that has declared AT
-LEAST ONE `interface=` attr already -- it does not (yet) mandate that
-EVERY node declare an interface, since making that mandatory would
-require adding `interface=` declarations to `design/frob.strata` itself,
-which sits outside this ticket's `scope` (`src/frob/strata/**`,
-`src/frob/graph/**`, `docs/modules/strata.md`, `tests/unit/strata/**` --
-not `design/frob.strata`). This mirrors the SYS103/T-1079 precedent above
-(`_coverage_totality_scan_prefix`'s own disclosed scope cut): the rule
-ships real, opt-in, zero-regression conformance now; making it total
-(every node must declare) is filed as an explicit follow-up rather than
-forced through an out-of-scope file edit. Python-only, same boundary
-`bind_code` itself already draws (module docstring above).
+`secret_backdoor` example). MANDATORY as of T-1113 (closes the T-0668
+disclosed opt-in scope cut): every node whose bound code has a non-empty
+real public surface is now evaluated, whether or not it has declared any
+`interface=` attr yet -- `design/frob.strata` itself now carries a real,
+measured `interface=` declaration for every node with a non-empty surface
+(one `attr interface=<symbol>;` per real public name, generated from the
+same `_module_public_symbols`/`_node_real_public_surface` this check
+uses, so declared and real agree by construction at the point they were
+added). A node with an EMPTY real surface (no bound `.py` files, or files
+with nothing public) stays exempt either way -- there is no obligation to
+declare an interface for code that exports nothing. Python-only, same
+boundary `bind_code` itself already draws (module docstring above).
 
 SYS105 (T-0669) purpose contract -- a node's declared `purpose=<profile>`
 attr (same opaque-attr convention, at most one per node) names a fixed,
@@ -117,9 +116,11 @@ closed vocabulary of allowed-effect profiles (`_PURPOSE_PROFILES`); any
 observed effect kind (the SAME `_observed_raw_kinds_by_node`/
 `_all_kinds_view` union SYS101 already computes) outside the declared
 profile's allowed set fires. An unrecognized profile name is itself a
-finding (a typo'd purpose is not silently permissive). Same SYS104 scope
-cut: only a node that HAS declared a `purpose=` attr is checked; making
-every node declare one is a disclosed follow-up, not forced here.
+finding (a typo'd purpose is not silently permissive). Disclosed scope
+cut, UNCHANGED by T-1113 (which flipped only SYS104 to mandatory, per its
+own declared follow-up): only a node that HAS declared a `purpose=` attr
+is checked; making every node declare one is a disclosed follow-up, not
+forced here.
 
 SYS106 (T-0670) binding totality / laundering -- code laundered into an
 unbound (`FOREIGN`) file that is nonetheless *reachable* (via resolved
@@ -939,16 +940,25 @@ def _node_real_public_surface(
 def _interface_conformance_violations(
     model: KernelModel, binding: CodeBinding, root: Path
 ) -> list[SelfConformViolation]:
-    """SYS104 (T-0668): for every node declaring at least one
-    `interface=` attr, the declared symbol set must equal the real public
-    surface of its `code=`-bound `.py` files (module docstring's SYS104
-    section, including its disclosed opt-in scope cut)."""
+    """SYS104 (T-0668, mandatory as of T-1113): for every node whose
+    `code=`-bound `.py` files expose at least one real public symbol, the
+    declared `interface=` set must equal that real public surface (module
+    docstring's SYS104 section). T-1113 closes the original opt-in scope
+    cut (T-0668's disclosed follow-up): a node is now evaluated whenever
+    its REAL surface is non-empty, not only when it has already declared
+    at least one `interface=` attr -- a node with zero declared attrs and
+    a non-empty real surface now fires (every real symbol reports as
+    missing), same as before for any node that already declares some but
+    not all of its surface. A node with an empty real surface (no bound
+    `.py` files, or files with nothing public) stays silent either way --
+    there is no obligation to declare an interface for code that exports
+    nothing."""
     found: list[SelfConformViolation] = []
     for node in model.nodes:
         declared = frozenset(_node_attr_values(node, _INTERFACE_PREFIX))
-        if not declared:
-            continue  # SYS104 scope cut: opt-in only, see module docstring
         real = _node_real_public_surface(binding, root, node.id)
+        if not declared and not real:
+            continue  # nothing declared, nothing real to declare
         for missing in sorted(real - declared):
             _log.warning(
                 "selfconform: SYS104 undeclared public symbol %s on %s",
@@ -1297,6 +1307,12 @@ def _unmodeled_violations(
 # entry existed and SYS103 registered in the live rule set (the follow-up
 # T-0667's Done report deferred).
 # frob:enforces CHK-GATE-SYS103
+# T-1113: CHK-GATE-SYS104/105/106 registry entries added alongside the
+# SYS104 opt-in-to-mandatory flip, mirroring the CHK-GATE-SYS103
+# precedent above.
+# frob:enforces CHK-GATE-SYS104
+# frob:enforces CHK-GATE-SYS105
+# frob:enforces CHK-GATE-SYS106
 # T-0672: SLH-SYS-EVA-* edges bind this function directly to the
 # structural-linter-adversarial-hardening.md denominator rows T-0668/
 # T-0669/T-0670 close (docs/design/registry/arch-checks.yaml's
