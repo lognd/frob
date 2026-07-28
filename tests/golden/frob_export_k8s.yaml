@@ -219,6 +219,20 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: frob-strata-frob_core_native
+spec:
+  egress: []
+  ingress: []
+  podSelector:
+    matchLabels:
+      app: frob_core_native
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: frob-strata-gates
 spec:
   egress:
@@ -425,6 +439,20 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: frob-strata-scripts_ops
+spec:
+  egress: []
+  ingress: []
+  podSelector:
+    matchLabels:
+      app: scripts_ops
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: frob-strata-serve
 spec:
   egress:
@@ -459,6 +487,20 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: frob-strata-strata_core_native
+spec:
+  egress: []
+  ingress: []
+  podSelector:
+    matchLabels:
+      app: strata_core_native
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: frob-strata-stratamod
 spec:
   egress:
@@ -486,6 +528,20 @@ spec:
   podSelector:
     matchLabels:
       app: stratamod
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frob-strata-testsuite
+spec:
+  egress: []
+  ingress: []
+  podSelector:
+    matchLabels:
+      app: testsuite
   policyTypes:
   - Ingress
   - Egress

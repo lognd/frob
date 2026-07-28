@@ -119,6 +119,25 @@
       }
     ]
   },
+  "frob_core_native": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
   "gates": {
     "defaultAction": "SCMP_ACT_ERRNO",
     "syscalls": [
@@ -262,7 +281,45 @@
       }
     ]
   },
+  "scripts_ops": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
   "serve": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
+  "strata_core_native": {
     "defaultAction": "SCMP_ACT_ERRNO",
     "syscalls": [
       {
@@ -295,6 +352,37 @@
           "munmap",
           "read",
           "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
+  "testsuite": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "accept",
+          "bind",
+          "brk",
+          "clone",
+          "close",
+          "connect",
+          "execve",
+          "execveat",
+          "exit",
+          "exit_group",
+          "fork",
+          "listen",
+          "mmap",
+          "munmap",
+          "read",
+          "recvfrom",
+          "rt_sigreturn",
+          "sendto",
+          "socket",
+          "vfork",
           "write"
         ]
       }

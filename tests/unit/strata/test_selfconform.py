@@ -1334,3 +1334,39 @@ class TestCoverageTotality:
             v.rule == SYS_COVERAGE_TOTALITY for v in result.danger_ok.violations
         )
         assert any(v.rule == SYS_COVERAGE_TOTALITY for v in result.danger_ok.waived)
+
+    # frob:tests src/frob/strata/_selfconform.py::_coverage_totality_violations kind="unit"  # noqa: E501
+    def test_repo_unrestricted_scan_is_clean(self, monkeypatch: pytest.MonkeyPatch):
+        """T-1079 (SYS103's 264-finding follow-up): `design/frob.strata`
+        now models `tests/**`/`scripts/**`/`frob-core/src/**`/
+        `strata-core/src/**` (the `testsuite`/`scripts_ops`/
+        `strata_core_native`/`frob_core_native` nodes,
+        docs/modules/strata.md's "Modeled: `_PACKAGE_ROOT` restriction's
+        264-finding follow-up" section) -- this proves it directly by
+        bypassing `_coverage_totality_scan_prefix`'s `_PACKAGE_ROOT`
+        restriction (monkeypatched to always return `None`, i.e. the
+        SAME unrestricted whole-`root` scan T-0667 measured 264 findings
+        under before this ticket) and asserting `check_self_conformance`
+        against the REAL, merged `design/` model and the REAL repo tree
+        still returns zero SYS100/SYS101/SYS102/SYS103 violations. The
+        production `SELFAUDIT001` gate still runs the `_PACKAGE_ROOT`-
+        restricted scan (`_coverage_totality_scan_prefix` itself is
+        unchanged, out of this ticket's scope) -- this test proves the
+        MODEL has caught up, independent of whether the live gate has
+        been widened to consult it yet (follow-up ticket, Done report)."""
+        pytest.importorskip("strata_core")
+        from frob.strata import _selfconform as sc
+        from frob.strata._design_load import load_design_ids
+        from frob.strata._sysdoc import merge_models
+
+        root = Path(__file__).resolve().parents[3]
+        ids = load_design_ids(root, "design")
+        assert not ids.errors, f"design load failed: {ids.errors}"
+        model = merge_models(ids.models)
+
+        monkeypatch.setattr(sc, "_coverage_totality_scan_prefix", lambda r: None)
+
+        result = sc.check_self_conformance(model, root)
+        assert result.is_ok, result.err
+        violations = result.danger_ok.violations
+        assert violations == (), [(v.rule, v.node, v.detail) for v in violations]

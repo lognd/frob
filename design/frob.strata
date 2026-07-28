@@ -731,6 +731,102 @@ cache graph_cache of graphlang {
     invalidate_on f_parse;
 }
 
+// -- support trees (T-1079, SYS103's 264-finding follow-up) -------------
+//
+// T-0667 shipped SYS103 (SYS-COV, "every capable file has an owning
+// node") but scoped its live gate wiring to `_PACKAGE_ROOT` ("src/frob")
+// specifically so it would not regress `SELFAUDIT001` from green to 264
+// errors on day one (docs/modules/strata.md's SYS103 "Known gap" -- the
+// unrestricted, repo-wide scan surfaces 264 real unbound-but-capable
+// findings under `tests/**`, `scripts/**`, `frob-core/src/**`, and
+// `strata-core/src/**`, none of which this model ever declared `code=`
+// for). This ticket closes that gap honestly by binding all four trees
+// to real nodes below -- every one of them genuinely exercises real
+// capabilities (test fixtures spawn subprocesses and write files; the
+// release script edits pyproject.toml; the two Rust crates cross the
+// FFI boundary into the Python interpreter), so "reasoned exclusion"
+// would be dishonest here -- these are not inert data, they are capable
+// code with no prior owner. `may` measured directly against
+// `frob.vet._capability.scan_file_capabilities`'s own per-file output
+// for the unrestricted SYS103 scan (T-1079 Done report has the exact
+// counts): each kind below is a kind this ticket's own scan actually
+// observed under the tree, never a guessed/aspirational one, and
+// hyphenated scanner-only aliases (`fs-write`, `env-read`/`env-write`,
+// `net-connect`) fold to the SAME bare kind (`fs`, `env`, `net`) every
+// other node in this file already declares (`fs-read` is kept split,
+// matching every existing node's own `fs`/`fs-read` convention above).
+
+// The test suite itself: `tests/**`. By far the largest of the four
+// trees (262 of 264 findings) and, by construction, the one exercising
+// the widest capability surface in this whole model -- it is the only
+// code whose entire job is to prove every OTHER node's capability
+// claims, so it legitimately touches nearly every kind SYS100/SYS101
+// know about: `env`/`eval`/`exec` (subprocess-spawning CLI-dispatch
+// tests, `os.environ` monkeypatching), `fetch_url`/`net` (httpx/network
+// mock tests for `vet`'s registry client), `ffi` (native-extension
+// tests against `strata_core`/`frob_core`), `fs`/`fs-read` (fixture
+// files, tmp_path-based ledger/config round-trips), `install-hook` (git
+// hook scaffolding tests), `sql` (cache/db tests), `deserialize`
+// (pickle/CVE-fixture parsing tests in `tests/unit/cve/**`). Declaring
+// all of them here is the honest statement that this tree's job REQUIRES
+// touching every capability the product itself has, not an
+// under-specified catch-all.
+// frob:doc docs/modules/strata.md#modeled-_package_root-restrictions-264-finding-follow-up-t-1079-closed
+node testsuite : trusted {
+    clearance Internal;
+    code "tests/**";
+    may "env";
+    may "eval";
+    may "exec";
+    may "fetch_url";
+    may "ffi";
+    may "fs";
+    may "fs-read";
+    may "install-hook";
+    may "net";
+    may "sql";
+    may "deserialize";
+}
+
+// Repo maintenance scripts run by a human/CI outside the installed CLI
+// (`scripts/bump_version.py` -- edits `pyproject.toml`'s version line and
+// `CHANGELOG.md` as part of a release; `scripts/frob-telemetry-hook`, a
+// non-Python hook script the scanner observes no capability in). `may`
+// measured directly: `fs`/`fs-read` (`bump_version.py`'s
+// read-then-rewrite of `pyproject.toml`/`CHANGELOG.md`).
+// frob:doc docs/modules/strata.md#modeled-_package_root-restrictions-264-finding-follow-up-t-1079-closed
+node scripts_ops : trusted {
+    clearance Internal;
+    code "scripts/**";
+    may "fs";
+    may "fs-read";
+}
+
+// The `strata_core` native extension's Rust source (`strata-core/src/**`
+// -- `.strata` lexer/parser, PyO3 bindings `natives`/T-0175 loads). `may
+// "ffi"`: the crate's whole purpose is exposing Rust-parsed structures
+// back across the PyO3 boundary into `src/frob/natives/**`'s Python
+// callers -- the scanner's `ffi` needle fires on `lib.rs`'s `#[pymodule]`/
+// `#[pyfunction]` surface, same kind `vet`/`graphlang`/`natives` already
+// declare for their own PyO3-adjacent code above.
+// frob:doc docs/modules/strata.md#modeled-_package_root-restrictions-264-finding-follow-up-t-1079-closed
+node strata_core_native : trusted {
+    clearance Internal;
+    code "strata-core/src/**";
+    may "ffi";
+}
+
+// The `frob_core` native extension's Rust source (`frob-core/src/**` --
+// performance-critical dup/graph primitives, PyO3 bindings). Same `ffi`
+// disposition as `strata_core_native` immediately above, for the same
+// reason (`lib.rs`'s `#[pymodule]` surface).
+// frob:doc docs/modules/strata.md#modeled-_package_root-restrictions-264-finding-follow-up-t-1079-closed
+node frob_core_native : trusted {
+    clearance Internal;
+    code "frob-core/src/**";
+    may "ffi";
+}
+
 // -- flows ---------------------------------------------------------------
 
 // vet's one network-facing edge (src/frob/vet/_registry.py::
@@ -1160,3 +1256,27 @@ assume "weakness:CWE-639:vet" noflow registry -> vet owner logan review "2026-10
 assume "weakness:CWE-918:vet" noflow registry -> vet owner logan review "2026-10-15"
 // frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
 assume "weakness:CWE-502:vet" noflow registry -> vet owner logan review "2026-10-15"
+
+// T-1079: `testsuite` (`code "tests/**"`) declares `exec`/`eval`/`sql`/
+// `fetch_url`/`net`/`deserialize` -- the widest capability set any node
+// in this model carries, by construction (module docstring's
+// "support trees" comment above): it is the code that PROVES every
+// other node's capability claims, so it legitimately exercises
+// subprocess spawns, sqlite round-trips, mocked network fetches, native
+// FFI calls, and pickle/CVE-fixture deserialization as part of its own
+// job. All of it runs against test fixtures and mocked/local endpoints
+// under `tests/**` -- never against a live `registry` response byte for
+// byte the way a real production code path would -- so `noflow registry
+// -> testsuite`, same discharge shape `vet`'s own CWE-89/CWE-918/
+// CWE-502 claims above already use, is an honest statement here too:
+// verified by direct grep, no test file under `tests/**` feeds a
+// `requests`/`httpx` response body directly into `subprocess`/`eval`/
+// `sql`/`pickle.load` without an intervening fixture/mock boundary.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:testsuite" noflow registry -> testsuite owner logan review "2026-10-15"
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-89:testsuite" noflow registry -> testsuite owner logan review "2026-10-15"
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-918:testsuite" noflow registry -> testsuite owner logan review "2026-10-15"
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-502:testsuite" noflow registry -> testsuite owner logan review "2026-10-15"

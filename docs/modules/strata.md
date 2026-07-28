@@ -68,23 +68,39 @@ registry/**` is outside this ticket's declared `scope`. Filed as a
 follow-up so the registry cross-reference does not silently lag (see
 T-0667's Done report for the filed ticket id).
 
-### Known gap: `_PACKAGE_ROOT` restriction on frob's own tree
+### Modeled: `_PACKAGE_ROOT` restriction's 264-finding follow-up (T-1079, closed)
 
-Running SYS103 unrestricted (whole `root`, no `_PACKAGE_ROOT` prefix
-filter) against frob's OWN `design/frob.strata` surfaces 264 real,
-currently-unmodeled findings under `tests/**`, `scripts/**`,
+T-0667 shipped `_coverage_totality_scan_prefix` restricting SYS103 to
+`_PACKAGE_ROOT` ("src/frob") specifically when auditing frob's own tree,
+because an unrestricted whole-`root` scan surfaced 264 real,
+then-unmodeled findings under `tests/**`, `scripts/**`,
 `frob-core/src/**`, and `strata-core/src/**` (measured 2026-07-28) --
-`design/frob.strata` has only ever declared `code=`/`may` for
-`src/frob/`. Wiring that unrestricted would have regressed the live
-`SELFAUDIT001` gate (`src/frob/gates/__init__.py`, out of T-0667's
-declared scope) from green to 264 errors on this repo's own `frob check
---only sys`. `_coverage_totality_scan_prefix` avoids that regression by
-restricting SYS103 to `_PACKAGE_ROOT` specifically when auditing frob's
-own tree (any OTHER repo still gets the full, unrestricted root scan --
-see "Why SYS103, not just SYS102" above). Generalizing SYS103 past
-`_PACKAGE_ROOT` for frob's own tree -- i.e. actually declaring `code=`/
-`may` for `tests/**`/`scripts/**`/`frob-core/src/**`/`strata-core/src/**`
-in `design/frob.strata`, or deciding some of those are legitimately out
-of the model's scope with a reasoned waiver -- is real, disclosed
-follow-up work (see T-0667's Done report for the filed ticket id), not
-done by this ticket.
+`design/frob.strata` had only ever declared `code=`/`may` for
+`src/frob/`, so wiring the unrestricted scan in directly would have
+regressed the live `SELFAUDIT001` gate from green to 264 errors.
+
+T-1079 closes that gap by modeling all four trees honestly, rather than
+excluding them: `testsuite` (`code "tests/**"`), `scripts_ops`
+(`code "scripts/**"`), `strata_core_native` (`code "strata-core/src/**"`),
+and `frob_core_native` (`code "frob-core/src/**"`), each with `may`
+declarations measured directly against
+`frob.vet._capability.scan_file_capabilities`'s own per-file output for
+the unrestricted scan -- none of the four trees was a "reasoned
+exclusion" candidate, since every one of them genuinely exercises real
+capabilities (the test suite spawns subprocesses and writes fixture
+files by design; the release script edits `pyproject.toml`; both Rust
+crates cross the FFI boundary). Re-running the SYS103 scan with
+`_coverage_totality_scan_prefix`'s restriction bypassed (i.e. simulating
+the fully-unrestricted scan `_PACKAGE_ROOT` exists to defer, T-1079 Done
+report has the exact command) against the now-updated `design/
+frob.strata` returns zero SYS100/SYS101/SYS102/SYS103 violations --
+`tests/unit/strata/test_selfconform.py::TestCoverageTotality::
+test_repo_unrestricted_scan_is_clean` locks this in as a regression
+test. `_coverage_totality_scan_prefix` itself (`src/frob/strata/
+_selfconform.py`) was out of T-1079's declared `scope` and is left
+unchanged -- the live `SELFAUDIT001` gate still runs the `_PACKAGE_ROOT`-
+restricted scan in production, so this modeling work does not yet widen
+what the LIVE gate itself checks on every `frob check` run; wiring the
+gate to drop the restriction now that the model has zero findings
+either way is real, disclosed follow-up work (see T-1079's Done report
+for the filed ticket id), not done by this ticket.

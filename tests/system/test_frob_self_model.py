@@ -43,6 +43,7 @@ def _model():
     return elaborated.danger_ok
 
 
+# frob:ticket T-1079
 class TestFrobSelfModel:
     # frob:tests design kind="integration"
     # frob:tests \
@@ -104,6 +105,7 @@ class TestFrobSelfModel:
     # frob:tests design/frob.strata::frob.b_vet_endorse kind="unit"
     # frob:tests strata-core/src/lib.rs kind="integration"
     # frob:tests strata-core/src/parse.rs kind="integration"
+    # frob:ticket T-1079
     def test_parses_and_elaborates(self, _model) -> None:
         """Sanity: the model declares a nonzero component/flow/boundary/claim surface.
 
@@ -132,8 +134,23 @@ class TestFrobSelfModel:
         `f_cli_natives`/`f_natives_core`), and +1 THREAT003 discharge
         claim (26 -> 27: `weakness:CWE-78:natives`, `natives` declares
         `may "exec"` with no `may "eval"`, so it drags in no CWE-94 pair).
+
+        T-1079 (SYS103's 264-finding follow-up, docs/modules/strata.md's
+        "Modeled: `_PACKAGE_ROOT` restriction's 264-finding follow-up"):
+        +4 nodes (16 -> 20: `testsuite`/`scripts_ops`/
+        `strata_core_native`/`frob_core_native`, binding `tests/**`/
+        `scripts/**`/`strata-core/src/**`/`frob-core/src/**` -- none had
+        an owning node before), +0 hand-declared flows (44 -> 44: none
+        of the four is on the cli-dispatch/component-import graph the
+        `f_*` flows model, so none gets one), and +4 THREAT003 discharge
+        claims (27 -> 31: `weakness:CWE-78:testsuite`/`weakness:
+        CWE-89:testsuite`/`weakness:CWE-918:testsuite`/`weakness:
+        CWE-502:testsuite` -- `testsuite` is the only one of the four new
+        nodes whose declared `may` set drags in an owasp-top-10
+        obligation; `scripts_ops`'s `fs`/`fs-read` and
+        `strata_core_native`/`frob_core_native`'s `ffi` do not).
         """
-        assert len(_model.nodes) == 16
+        assert len(_model.nodes) == 20
         assert len(_model.flows) == 44
         assert len(_model.boundaries) == 1
         # T-0150: 3 original PROVED architecture claims + 3 `assume
@@ -169,12 +186,21 @@ class TestFrobSelfModel:
         # same shape as T-0707's `fleet` gap above): `natives` newly
         # declares `may "exec"` (`build_natives`'s maturin/cargo subprocess
         # calls, docs/modules/cli.md#frob-natives-build-t-0864), dragging
-        # in its own `weakness:CWE-78:natives` discharge = 27.
-        assert len(_model.claims) == 27
+        # in its own `weakness:CWE-78:natives` discharge = 27. T-1079
+        # (SYS103's 264-finding follow-up, see module docstring above):
+        # `testsuite` (`code "tests/**"`) newly declares `exec`/`eval`/
+        # `sql`/`fetch_url`/`net`/`deserialize`, dragging in 4 discharge
+        # claims (owasp-top-10 view: CWE-78, CWE-89, CWE-918, CWE-502 --
+        # CWE-94/CWE-639 are not in that view, same reasoning `cli`'s own
+        # T-0401 comment above already documents) = 31. `scripts_ops`
+        # (`fs`/`fs-read`) and `strata_core_native`/`frob_core_native`
+        # (`ffi`) drag in none.
+        assert len(_model.claims) == 31
 
     # frob:tests \
     # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_every_claim_proves \
     # kind="e2e"
+    # frob:ticket T-1079
     def test_every_claim_proves(self, _model) -> None:
         """Every architecture claim this model draws holds today, and every
         T-0150 capability-discharge claim is a deliberately human-owned
@@ -209,11 +235,17 @@ class TestFrobSelfModel:
         pre-existing model-vs-test drift this ticket root-caused and
         fixed, not a real prover regression (no claim REFUTEs; the model
         itself already carried the correct assume).
+
+        T-1079: `testsuite`'s 4 new discharge claims (CWE-78/89/918/502,
+        see test_parses_and_elaborates' docstring above) are added to
+        `assumed_ids` below -- genuine model growth, not drift, since
+        `testsuite` (`code "tests/**"`) did not exist in the model before
+        this ticket.
         """
         outcome = evaluate_claims(_model)
         assert outcome.is_ok, f"evaluate_claims failed: {outcome.err}"
         claim_results = outcome.danger_ok
-        assert len(claim_results) == 27
+        assert len(claim_results) == 31
         proved_ids = {
             "c_no_registry_ledger",
             "c_cache_derivable",
@@ -261,6 +293,16 @@ class TestFrobSelfModel:
             # T-0967's own pass surfaced it, same shape as T-0707's
             # `fleet` gap above): `natives` declares `may "exec"`.
             "weakness:CWE-78:natives",
+            # T-1079 (SYS103's 264-finding follow-up): `testsuite`
+            # (`code "tests/**"`) declares `exec`/`eval`/`sql`/
+            # `fetch_url`/`net`/`deserialize`, dragging in the
+            # owasp-top-10 view's CWE-78/CWE-89/CWE-918/CWE-502
+            # obligations (see design/frob.strata's own `assume`
+            # directives for the per-obligation reasoning).
+            "weakness:CWE-78:testsuite",
+            "weakness:CWE-89:testsuite",
+            "weakness:CWE-918:testsuite",
+            "weakness:CWE-502:testsuite",
         }
         seen_ids: set[str] = set()
         for claim_result in claim_results:

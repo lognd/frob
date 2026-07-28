@@ -52,6 +52,7 @@
     "design/frob.strata::frob.f_vet_gates": "d80c9ee3c524d210d06b6f79e55afbb0f9161279d19c666d6be0079785397794",
     "design/frob.strata::frob.f_vet_graphlang": "9514642128608f4c0519b6b22c13cb27ea58b765ee12ab36666ce406af1e5a82",
     "design/frob.strata::frob.fleet": "d1267d9cd0ea4667b7575a8255898690b562683b3b632030fe6a634ccf8a5921",
+    "design/frob.strata::frob.frob_core_native": "2f31a8ee415e43bf124499a251a7ec7f1995d19c9af77d840d4e13aeb6b5d492",
     "design/frob.strata::frob.gates": "da0c129c8326906de54fd11a58facd11d33f17ccd855a574786246c927fbd9b8",
     "design/frob.strata::frob.graph_cache": "efa31ca931137423c79ba50f8889440087e14b7d0c73b8c7dc0a20673c83d28d",
     "design/frob.strata::frob.graphlang": "32f5366005c3a26165bf29056fced09015800f4d13928d60c4cf4ae7ccdb4313",
@@ -59,8 +60,11 @@
     "design/frob.strata::frob.natives": "6fe789d5a9684eac54a4a7651a94d2e18960900cb42aefaa6a6b2b25508c7ac2",
     "design/frob.strata::frob.registry": "166e6f12f0ad803671395456b63d15a433165c6e677b5fd41da64a1a88a1aa3f",
     "design/frob.strata::frob.registry_model": "b4e0f9d96b53ebb3d60602fd9523c8bd09fef5297eb156722f150457933529d6",
+    "design/frob.strata::frob.scripts_ops": "2d8ade490d7dbb8a9e73ddc570fa7988c62579722c1711d7deba2568847bfae0",
     "design/frob.strata::frob.serve": "2622a27fad3cbe17f75cc6a2ce3d48de91b6895013d7f5b372cd8313a8482ab0",
+    "design/frob.strata::frob.strata_core_native": "8945ef21024fec57629967e628bc003cbca22a14c9c8b8319283448e50c75416",
     "design/frob.strata::frob.stratamod": "718f95fa5d51e66ab4efd81e473db052984fad1d05feeffa0857af3df8ec964c",
+    "design/frob.strata::frob.testsuite": "5fcbe350934a2bc074f7334b3ce69f9c9e602ea98aa5abe0d8e3200a42485145",
     "design/frob.strata::frob.tickets_ledger": "f2dc39549ec5c2c88afb3478af4236e290c909afde5658eb143d6353590c3b3e",
     "design/frob.strata::frob.vet": "8fbee6718ef9bc758edf072acd16ca686515454c4236bda210ffb6fc9314a49a",
     "frob-core/src/lib.rs::anti_unify": "250c316f1e354ccfa7eb2c15b7c81887390ceba0c0267eda767d1414b0fb2436",
@@ -1774,5 +1778,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.218.0"
+  "version": "0.219.0"
 }
