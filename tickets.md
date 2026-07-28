@@ -8670,3 +8670,72 @@ Until this lands, DEPR005 is demoted to warn in frob.toml
 [gates.severity] (comment cites this ticket) -- three coordinator
 re-stamps in 90 minutes is hand-maintenance of a broken signal, not
 enforcement.
+
+<!-- ticket:T-1053 -->
+```yaml
+id: T-1053
+title: 'perf detectors: kill three recurring FP classes -- bare-method-name coincidence
+  (str.count/.index on the loop''s own element), receiver conflation, and lru_cache
+  blindness'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/perf/_loop_effects.py
+- src/frob/perf/_dup_spawn.py
+- tests/test_perf.py
+- docs/modules/perf.md
+acceptance:
+- text: 'given a loop ''for line in lines: line.count(x)'', when PERF002 evaluates,
+    then no finding fires because the receiver is the loop''s own per-iteration element,
+    not a repeated collection scan'
+  evidence: []
+- text: given a loop calling an lru_cache-decorated function with loop-invariant args,
+    when PERF008 evaluates, then the finding is suppressed or downgraded because the
+    call is memoized
+  evidence: []
+- text: given two different receivers sharing a method short name inside a loop, when
+    any PERF rule matches by method name, then the finding binds only to the receiver
+    whose type/effect actually matches the rule
+  evidence: []
+threat: null
+component: null
+```
+Three FP classes observed across the 2026-07 drive: (1) bare-method-name coincidence -- PERF002 flagged str.count on the loop's own per-iteration line in src/frob/arch/_cpp_mayraise.py (waived e69fd22d); same class produced the original PERF008 FP body lost twice to draft-renumber clobbers (see commits c00a8c1a / d9e51579 for the full catalogue: bare-method-name coincidence, receiver conflation, lru_cache blindness). (2) receiver conflation -- a rule keyed on method name attributes effects of one receiver's method to a different receiver. (3) lru_cache blindness -- repeated calls to a memoized function are flagged as repeated work. Each class should get a litmus fixture that locks current behavior before the fix, per the T-0666 pattern.
+
+<!-- ticket:T-1054 -->
+```yaml
+id: T-1054
+title: frob ticket start from a worktree leaves the root ledger state transition uncommitted
+  -- DirtyMain then blocks every land until a human commits it
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_lease.py
+- src/frob/app/ticket_runner.py
+- tests/test_ticket_lease.py
+- docs/modules/tickets.md
+acceptance:
+- text: 'given a worktree, when frob ticket start transitions a ticket to in-progress,
+    then the root tickets.md change is committed by the verb itself (message form:
+    chore(tickets): record <id> start transition) and root git status stays clean'
+  evidence: []
+- text: given a start whose commit step fails, when the verb exits, then it reports
+    the dirty root loudly with the exact commit command to run, instead of leaving
+    silent dirt
+  evidence: []
+threat: null
+component: null
+```
+Recurring all through the 2026-07-27 drive: an agent's ticket start in a worktree writes the queued->in-progress line into ROOT tickets.md but never commits it; the next land (any agent) refuses with DirtyMain. Diagnosed explicitly during the T-1023 land (coordinator committed 52419399 by hand to unblock). land already owns its ledger commits; start should own its transition commit the same way.
