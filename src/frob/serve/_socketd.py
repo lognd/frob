@@ -204,6 +204,8 @@ _TOOL_DISPATCH: dict[str, Callable[..., Result[Any, _tools.ServeError]]] = {
     "frob_run_touched_tests": _tools.frob_run_touched_tests,
     "frob_perf_hot": _tools.frob_perf_hot,
     "frob_daemon_status": _tools.frob_daemon_status,
+    "frob_exports": _tools.frob_exports,
+    "frob_stats": _tools.frob_stats,
 }
 
 

@@ -33,10 +33,12 @@ from frob.serve._tools import (
     frob_daemon_status,
     frob_doable_tickets,
     frob_doc_for,
+    frob_exports,
     frob_graph_query,
     frob_perf_hot,
     frob_run_touched_tests,
     frob_stale_docs,
+    frob_stats,
 )
 
 
@@ -69,10 +71,12 @@ __all__ = [
     "frob_daemon_status",
     "frob_doable_tickets",
     "frob_doc_for",
+    "frob_exports",
     "frob_graph_query",
     "frob_perf_hot",
     "frob_run_touched_tests",
     "frob_stale_docs",
+    "frob_stats",
     "lock_path",
     "run_socket_daemon",
     "run_stdio",

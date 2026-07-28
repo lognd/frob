@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.249.0] - unreleased
+
+- T-1127: serve: RPC surface for exports/stats proxying (T-1106 residual; outline/map/xref moot pending T-0802 sunset)
+
 ## [0.248.0] - unreleased
 
 - T-1131: tickets: fail/retire releases leases; doctor flags leases on nonexistent worktrees

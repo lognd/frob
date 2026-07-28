@@ -103,14 +103,6 @@ def _run_agentic(cfg: AppConfig) -> None:
     Renderer.for_stream(sys.stdout).line("\n".join(lines))
 
 
-# frob:ticket T-0009
-# frob:ticket T-0562
-# frob:doc docs/modules/app.md#runners
-# frob:ticket T-0588
-# frob:tests tests/unit/test_app_style.py::test_stats_plain_stdout_has_no_ansi
-# frob:waive ARCH103 reason="T-0977: `frob stats` CLI entrypoint -- routes between the \
-# agentic and gated report modes and renders each; the mode-branch-then-render shape \
-# IS the runner's job, same as this module's sibling `frob.app.*_runner`s"
 # frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_stats_json_daemon_matches_in_process kind="unit"  # noqa: E501
 def _try_stats_via_daemon(root: Path, cfg: AppConfig) -> bool:
     """T-1127: for a plain `frob stats --json` (non-`--agentic` -- the RPC
@@ -136,6 +128,14 @@ def _try_stats_via_daemon(root: Path, cfg: AppConfig) -> bool:
     return True
 
 
+# frob:ticket T-0009
+# frob:ticket T-0562
+# frob:doc docs/modules/app.md#runners
+# frob:ticket T-0588
+# frob:tests tests/unit/test_app_style.py::test_stats_plain_stdout_has_no_ansi
+# frob:waive ARCH103 reason="T-0977: `frob stats` CLI entrypoint -- routes between the \
+# agentic and gated report modes and renders each; the mode-branch-then-render shape \
+# IS the runner's job, same as this module's sibling `frob.app.*_runner`s"
 def run(cfg: AppConfig) -> None:
     """Render the delivery snapshot (queue health + commit cadence), or
     the non-gated agentic time/token breakdown when `FROB_STATS_AGENTIC`

@@ -742,14 +742,51 @@ sibling ticket's own scope), and T-1106's own scope was deliberately
 narrowed to files with no such collision (`_daemon_proxy.py`,
 `graph_runner.py`, their tests) rather than risk a merge collision over
 a single additional wired command.
-- `outline`/`map`/`xref`/`exports`/`stats` are a separate, larger
-  disclosed gap from `frob_graph_query`'s: none of the five has ANY
-  `frob.serve._tools` RPC method exposing them at all yet (`_TOOL_
-  DISPATCH` has no `frob_outline`/`frob_map`/`frob_xref`/`frob_exports`/
-  `frob_stats` entry) -- wiring these needs new server-side tool functions
-  first (`src/frob/serve/_tools.py`, out of this ticket's `src/frob/app/`
-  scope entirely, not just a CLI-side reconciliation), tracked alongside
-  T-draft-296d0d77 as the same follow-on epic tail.
+- `outline`/`map`/`xref` are scheduled for REMOVAL by T-0802's 2026-10-01
+  navigation-command sunset -- no RPC was built for these three; building
+  one for a command already scheduled to disappear would be waste.
+  `exports`/`stats` got real RPCs (T-1127, just below) since they are not
+  part of that sunset.
+
+### `frob exports <path> --json` / `frob stats --json` (T-1127)
+
+`frob_exports`/`frob_stats` are the two commands T-1106's own disclosure
+named as having NO `frob.serve._tools` RPC surface at all (`_TOOL_
+DISPATCH` had no `frob_exports`/`frob_stats` entry). Both now do:
+
+- `frob_stats(root, *, window_days=30)` -- the DEFAULT (non-`--agentic`)
+  `frob stats --json` render only; returns `StatsReport.model_dump(mode=
+  "json")` verbatim, field-for-field identical since both sides dump the
+  identical pydantic model. `--agentic` (env-var-triggered via
+  `FROB_STATS_AGENTIC`) reads a completely different report shape
+  (`frob.stats.agentic_report`'s `AgenticReport`) and is out of this RPC's
+  scope entirely -- `_try_stats_via_daemon` never calls `frob_stats` for
+  that mode.
+- `frob_exports(root, pkg_dir, *, include_private=False, exclude_modules=
+  ())` -- the DEFAULT (non-`--consumers`, non-`--write`) `frob exports
+  <path> --json` render only; returns `ExportsResult.model_dump(mode=
+  "json")` verbatim. Unlike every other proxied RPC (which all answer for
+  the whole `root` the daemon itself was spawned for), `frob exports`
+  answers for one SUBDIRECTORY of that root -- `pkg_dir` is a separate,
+  explicit RPC param (the client's own `<path>` argument, sent verbatim)
+  rather than assumed to equal `root`, since the daemon connected to via
+  `root` (found via `frob.gitio.repo_root(pkg_dir)`, not `pkg_dir` itself)
+  lives at the repo root, not the subdirectory. `pkg_dir` is resolved
+  relative to the DAEMON PROCESS's own cwd server-side (`exports_package
+  (Path(pkg_dir), ...)`'s own `.is_dir()`/`.glob()` calls) -- true for a
+  freshly-spawned daemon (`ensure_daemon`'s spawn inherits the calling
+  process's cwd) but a KNOWN, disclosed edge for a long-lived daemon
+  queried later from a different cwd than it was spawned from; the
+  fixed-arity, whole-repo RPCs above do not share this caveat since they
+  never resolve a client-relative path server-side at all.
+
+Both proxied the same way as every other command:
+`_try_stats_via_daemon`/`_try_exports_via_daemon` in `frob.app.
+stats_runner`/`frob.app.exports_runner` try `query()` first, falling
+through to the in-process path on any `Err`. Proven by real
+subprocess-vs-subprocess diffs: `tests/test_app_daemon_proxy.py::
+TestDifferentialParity::test_stats_json_daemon_matches_in_process` /
+`::test_exports_json_daemon_matches_in_process`.
 
 ## CLI
 

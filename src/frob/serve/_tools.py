@@ -88,25 +88,31 @@ def frob_doable_tickets(root: Path) -> Result[list[dict], ServeError]:
 # frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_exports_json_daemon_matches_in_process kind="unit"  # noqa: E501
 def frob_exports(
     root: Path,
+    pkg_dir: str,
     *,
     include_private: bool = False,
     exclude_modules: tuple[str, ...] = (),
 ) -> Result[dict, ServeError]:
-    """`ExportsResult.model_dump(mode="json")` for `root`'s package -- the
-    default (non-`--consumers`, non-`--write`) `frob exports <path> --json`
-    render mode (`frob.app.exports_runner.run`), field-for-field identical
-    since both sides dump the identical `ExportsResult` pydantic model
-    (T-1127)."""
+    """`ExportsResult.model_dump(mode="json")` for `pkg_dir` -- the default
+    (non-`--consumers`, non-`--write`) `frob exports <path> --json` render
+    mode (`frob.app.exports_runner.run`). `pkg_dir` (not `root` -- unlike
+    every other proxied RPC, this one answers for a SUBDIRECTORY of the
+    daemon's own root, sent verbatim from the client so it echoes back
+    identically as `ExportsResult.package_dir`) is resolved relative to
+    THIS PROCESS's cwd, exactly as `exports_package`'s own `Path.is_dir()`/
+    `.glob()` calls resolve any relative path (T-1127)."""
     from frob.exports import exports_package
 
     result = exports_package(
-        root, include_private=include_private, exclude_modules=list(exclude_modules)
+        Path(pkg_dir),
+        include_private=include_private,
+        exclude_modules=list(exclude_modules),
     )
     if result.is_err:
         _log.error("serve: frob_exports: %s", result.danger_err)
         return Err(ServeError.ExportsFailed)
     er = result.danger_ok
-    _log.info("serve: frob_exports: %s: %d module(s)", root, len(er.modules))
+    _log.info("serve: frob_exports: %s: %d module(s)", pkg_dir, len(er.modules))
     return Ok(er.model_dump(mode="json"))
 
 

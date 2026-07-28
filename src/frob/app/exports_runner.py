@@ -36,24 +36,45 @@ def _run_consumers(cfg: AppConfig) -> None:
 
 
 # frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_exports_json_daemon_matches_in_process kind="unit"  # noqa: E501
-def _try_exports_via_daemon(root: Path, cfg: AppConfig) -> bool:
+# frob:tests tests/unit/test_app_runners.py::TestExportsRunner.test_json_mode_logs_result kind="unit"  # noqa: E501
+def _try_exports_via_daemon(pkg_dir: Path, cfg: AppConfig) -> bool:
     """T-1127: for a plain `frob exports <path> --json` render (no
     `--consumers`, no `--write` -- the RPC's `frob_exports` has no
     parameter for either), try the daemon's RPC via `frob.app.
     _daemon_proxy.query` before computing it in-process. Returns `True`
     on a daemon hit (already rendered); `False` falls through unchanged,
-    same contract every other `_try_*_via_daemon` helper uses. The RPC
-    returns `ExportsResult.model_dump(mode='json')` verbatim (T-1127),
-    field-for-field identical to this CLI's own `--json` output (both
-    sides dump the identical pydantic model)."""
+    same contract every other `_try_*_via_daemon` helper uses.
+
+    Unlike the other proxied commands (which all answer for the whole
+    repo `root`), `frob exports <path>` answers for one SUBDIRECTORY, and
+    the daemon a given `root` connects to lives at the REPO root, not
+    `pkg_dir` -- `frob.gitio.repo_root(pkg_dir)` finds it, and `pkg_dir`
+    itself (verbatim, as typed) is sent as an explicit RPC param so the
+    server resolves the identical directory rather than assuming it
+    equals its own root. The RPC echoes `str(Path(pkg_dir))` straight back
+    as `package_dir` (`ExportsResult.model_dump(mode='json')` otherwise
+    verbatim, T-1127) -- byte-for-byte identical to this CLI's own
+    `--json` output PROVIDED the daemon's own process cwd agrees with this
+    call's cwd on what `pkg_dir`'s relative string resolves to (true for
+    a freshly-spawned daemon, since `ensure_daemon`'s spawn inherits this
+    process's cwd; a long-lived daemon queried from a DIFFERENT cwd than
+    it was spawned from is a known, disclosed edge the fixed-arity
+    per-repo RPCs do not share -- see docs/modules/serve.md)."""
     if not cfg.exports_json or cfg.exports_write:
         return False
+    from frob.gitio import repo_root
+
+    root_result = repo_root(pkg_dir)
+    if root_result.is_err:
+        return False
+
     from frob.app._daemon_proxy import query
 
     proxied = query(
-        root,
+        root_result.danger_ok,
         "frob_exports",
         {
+            "pkg_dir": str(pkg_dir),
             "include_private": cfg.exports_all,
             "exclude_modules": cfg.exports_exclude or [],
         },
