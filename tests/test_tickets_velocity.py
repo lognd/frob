@@ -47,6 +47,7 @@ def _commit(tmp_path: Path, message: str) -> None:
 
 
 # frob:ticket T-1100
+# frob:ticket T-1151
 def _commit_on(tmp_path: Path, message: str, day: date) -> None:
     """Same as `_commit`, but pins both author/committer date to `day`
     (midday UTC) via `GIT_AUTHOR_DATE`/`GIT_COMMITTER_DATE` -- `ticket_flow`
@@ -78,6 +79,7 @@ def _commit_on(tmp_path: Path, message: str, day: date) -> None:
 
 
 # frob:ticket T-0938
+# frob:ticket T-1151
 class TestModelsAreFrozen:
     """`SprintTransition`/`SprintVelocityReport` are `frozen=True` (T-0938,
     same immutability contract as every other report model in this
@@ -87,6 +89,7 @@ class TestModelsAreFrozen:
     construction)."""
 
     # frob:ticket T-0938
+    # frob:ticket T-1151
     def test_sprint_transition_rejects_field_assignment(self) -> None:
         # frob:tests src/frob/tickets/_models.py::SprintTransition kind="unit"
         transition = SprintTransition(
@@ -100,6 +103,7 @@ class TestModelsAreFrozen:
             transition.to_state = "queued"  # type: ignore[misc]
 
     # frob:ticket T-0938
+    # frob:ticket T-1151
     def test_sprint_velocity_report_rejects_field_assignment(self) -> None:
         # frob:tests src/frob/tickets/_models.py::SprintVelocityReport kind="unit"
         report = SprintVelocityReport(sprint="sprint-1")
@@ -108,14 +112,16 @@ class TestModelsAreFrozen:
 
 
 # frob:ticket T-0938
+# frob:ticket T-1151
 class TestSprintVelocity:
     """`sprint_velocity` mines `done` transitions from `tickets.md`'s git
     history for whichever tickets currently carry a given `sprint` label
     -- distinct from `sprint_view.closed`'s current-state snapshot."""
 
     # frob:ticket T-0938
+    # frob:ticket T-1151
     def test_transitions_mined_from_history(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::sprint_velocity kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::sprint_velocity kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -149,8 +155,9 @@ class TestSprintVelocity:
         assert transition.to_state == "done"
 
     # frob:ticket T-0938
+    # frob:ticket T-1151
     def test_reopen_and_reclose_both_counted(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::sprint_velocity kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::sprint_velocity kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -181,8 +188,9 @@ class TestSprintVelocity:
         assert report.closed == 2
 
     # frob:ticket T-0938
+    # frob:ticket T-1151
     def test_no_tickets_in_sprint_is_empty_not_a_crash(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::sprint_velocity kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::sprint_velocity kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         queue = TicketQueue(tickets={})
         report = sprint_velocity(tmp_path, queue, "sprint-none")
@@ -192,8 +200,9 @@ class TestSprintVelocity:
         assert report.remaining == 0
 
     # frob:ticket T-0938
+    # frob:ticket T-1151
     def test_non_git_root_returns_empty_transitions(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::sprint_velocity kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::sprint_velocity kind="unit"
         ticket: Ticket = _ticket(
             ticket_id="T-0003", state=TicketState.DONE, sprint="sprint-3"
         )
@@ -206,6 +215,7 @@ class TestSprintVelocity:
 
 
 # frob:ticket T-1100
+# frob:ticket T-1151
 class TestTicketFlow:
     """`ticket_flow` (T-1100): filed/day (from `created`) vs landed/day
     (mined the same way `sprint_velocity` is, over the WHOLE queue) vs
@@ -216,8 +226,9 @@ class TestTicketFlow:
     `sprint_velocity` which only counts transitions."""
 
     # frob:ticket T-1100
+    # frob:ticket T-1151
     def test_filed_and_landed_counted_per_day(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::ticket_flow kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::ticket_flow kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -247,8 +258,9 @@ class TestTicketFlow:
         assert row.net == 0
 
     # frob:ticket T-1100
+    # frob:ticket T-1151
     def test_zero_activity_days_are_filled_not_sparse(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::ticket_flow kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::ticket_flow kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -274,8 +286,9 @@ class TestTicketFlow:
         assert report.rows[1].landed == 0
 
     # frob:ticket T-1100
+    # frob:ticket T-1151
     def test_eta_none_when_queue_not_shrinking(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::ticket_flow kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::ticket_flow kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
 
         ticket = _ticket(
@@ -290,8 +303,9 @@ class TestTicketFlow:
         assert report.eta_days is None
 
     # frob:ticket T-1100
+    # frob:ticket T-1151
     def test_eta_computed_when_queue_shrinking(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::ticket_flow kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::ticket_flow kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True

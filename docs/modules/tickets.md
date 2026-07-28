@@ -118,10 +118,10 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::base_ref_resolvable -->
 <!-- frob:describes src/frob/tickets/_store.py::ledger_lock -->
 <!-- frob:describes src/frob/tickets/_scope.py::mutate_scope -->
-<!-- frob:describes src/frob/tickets/__init__.py::set_priority -->
+<!-- frob:describes src/frob/tickets/_setters.py::set_priority -->
 <!-- frob:describes src/frob/tickets/__init__.py::_doable_sort_key -->
-<!-- frob:describes src/frob/tickets/__init__.py::set_component -->
-<!-- frob:describes src/frob/tickets/__init__.py::set_tier -->
+<!-- frob:describes src/frob/tickets/_setters.py::set_component -->
+<!-- frob:describes src/frob/tickets/_setters.py::set_tier -->
 <!-- frob:describes src/frob/tickets/__init__.py::mutate_labels -->
 <!-- frob:describes src/frob/tickets/__init__.py::board_view -->
 <!-- frob:describes src/frob/tickets/__init__.py::epic_rollup -->

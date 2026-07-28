@@ -203,6 +203,7 @@ class TestCloseOpenDescendantGuard:
 
 
 # frob:ticket T-1069
+# frob:ticket T-1151
 class TestSetTier:
     """`set_tier` (T-1069), the `frob ticket tier <id> <value>` primitive --
     same single-writer, ledger-locked shape as `set_priority`/`set_kind`/
@@ -210,8 +211,9 @@ class TestSetTier:
     `new --tier` never got."""
 
     # frob:ticket T-1069
+    # frob:ticket T-1151
     def test_updates_tier_field(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::set_tier kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::set_tier kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -233,8 +235,9 @@ class TestSetTier:
         assert loaded.danger_ok[ticket_id].tier is TicketTier.EPIC
 
     # frob:ticket T-1069
+    # frob:ticket T-1151
     def test_unknown_ticket_id_is_err(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::set_tier kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::set_tier kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -243,6 +246,7 @@ class TestSetTier:
         assert result.is_err
 
     # frob:ticket T-1069
+    # frob:ticket T-1151
     def test_structural_rules_apply_to_new_tier_on_next_read(
         self, tmp_path: Path
     ) -> None:
@@ -250,7 +254,7 @@ class TestSetTier:
         picks up the open-descendant close guard on its very next read --
         the rule keys off the CURRENT tier field, not how the ticket was
         originally created."""
-        # frob:tests src/frob/tickets/__init__.py::set_tier kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::set_tier kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -275,12 +279,14 @@ class TestSetTier:
         assert result.danger_err == TicketError.OpenDescendant
 
 
+# frob:ticket T-1151
 class TestSprintAssign:
     """`set_sprint` (T-0715), the `frob ticket sprint assign` primitive --
     same single-writer, ledger-locked shape as `set_component`."""
 
+    # frob:ticket T-1151
     def test_updates_sprint_field(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::set_sprint kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::set_sprint kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -294,8 +300,9 @@ class TestSprintAssign:
         assert result.is_ok
         assert result.danger_ok.sprint == "sprint-14"
 
+    # frob:ticket T-1151
     def test_clears_to_none(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::set_sprint kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::set_sprint kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -315,13 +322,15 @@ class TestSprintAssign:
         assert result.danger_ok.sprint is None
 
 
+# frob:ticket T-1151
 class TestSprintShow:
     """`sprint_view` (T-0715), the `frob ticket sprint show` primitive:
     every ticket committed to a sprint label plus a state rollup and
     closed-count velocity."""
 
+    # frob:ticket T-1151
     def test_state_rollup_and_velocity(self) -> None:
-        # frob:tests src/frob/tickets/__init__.py::sprint_view kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::sprint_view kind="unit"
         done = _ticket(ticket_id="T-0001", sprint="sprint-1", state=TicketState.DONE)
         queued = _ticket(
             ticket_id="T-0002", sprint="sprint-1", state=TicketState.QUEUED
@@ -333,8 +342,9 @@ class TestSprintShow:
         assert report.rollup == {TicketState.DONE: 1, TicketState.QUEUED: 1}
         assert report.closed == 1
 
+    # frob:ticket T-1151
     def test_no_tickets_in_sprint_is_empty_not_a_crash(self) -> None:
-        # frob:tests src/frob/tickets/__init__.py::sprint_view kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::sprint_view kind="unit"
         queue = TicketQueue(tickets={})
         report = sprint_view(queue, "sprint-nonexistent")
         assert report.tickets == ()

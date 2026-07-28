@@ -115,9 +115,11 @@ class TestFieldRoundTrip:
         assert created.danger_ok.labels == ("x", "y")
 
 
+# frob:ticket T-1151
 class TestSetComponent:
+    # frob:ticket T-1151
     def test_updates_component_field(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::set_component kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::set_component kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -131,8 +133,9 @@ class TestSetComponent:
         assert result.is_ok
         assert result.danger_ok.component == "vet"
 
+    # frob:ticket T-1151
     def test_clears_to_none(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::set_component kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::set_component kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True

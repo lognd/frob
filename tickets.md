@@ -5788,7 +5788,7 @@ T-1113 made SYS104 mandatory, which makes design/frob.strata's interface= attrs 
 id: T-1151
 title: 'arch: extract remaining tickets/__init__.py families (setters/evidence/done-report)
   + split _land.py -- T-1123 residue'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -5800,6 +5800,15 @@ scope:
 - src/frob/tickets/**
 - docs/modules/tickets.md
 - tests/test_tickets.py
+evidence:
+- tests/test_tickets_priority.py::TestSetPriority::test_updates_priority_field
+- tests/test_ticket_evidence.py::TestSetKind::test_updates_kind_field
+- tests/test_tickets_tiers.py::TestSetTier::test_updates_tier_field
+- tests/test_tickets_tiers.py::TestSprintAssign::test_updates_sprint_field
+- tests/test_tickets_tiers.py::TestSprintShow::test_state_rollup_and_velocity
+- tests/test_tickets_velocity.py::TestSprintVelocity::test_transitions_mined_from_history
+- tests/test_tickets_velocity.py::TestTicketFlow::test_filed_and_landed_counted_per_day
+- tests/test_tickets_organization.py::TestSetComponent::test_updates_component_field
 threat: null
 component: null
 ```
@@ -5835,3 +5844,143 @@ safety net, watch for tests that monkeypatch a moved function via the
 PACKAGE attribute (tickets_mod.<name>) -- those need a late `from
 frob.tickets import <name>` inside the moved function body instead of a
 module-top-level binding.
+
+## Done report
+
+Extracted the field-setter/sprint-rollup family out of
+src/frob/tickets/__init__.py into a new src/frob/tickets/_setters.py
+module, per T-1123's per-family extraction pattern: verbatim moves,
+directives (frob:ticket/frob:doc/frob:tests) carried intact, zero
+caller-visible behavior change.
+
+Moved (verbatim): _set_ticket_field, set_priority, set_kind, set_tier,
+set_sprint, _tickets_committed_to, sprint_view, _STATE_LINE_RE,
+_ticket_state_in_blob, _ledger_commit_history, _blob_at,
+_mine_done_transitions, sprint_velocity, _FLOW_TRAILING_DAYS,
+ticket_flow, set_component. __init__.py: 2740 -> ~2065 lines.
+
+_load_ticket_and_queue and _OPEN_STATES intentionally stay in
+frob.tickets.__init__ (shared by transition/add_evidence/
+_open_descendant_ids); _setters.py late-imports both from the package
+at call time, same load-order-safe indirection _doable.py already uses
+(precedent for this split).
+
+INV006 (exclusivity-vocabulary "only" hits, all inherited verbatim from
+the moved docstrings) carried forward as a frob:waive INV006 on the new
+module, same calibration-batch disposition as 0abc4e3a.
+
+DRIFT002 fallout fixed: docs/modules/tickets.md's frob:describes anchors
+for set_priority/set_component/set_tier repointed at _setters.py; the
+frob:tests directives in tests/test_tickets_organization.py,
+tests/test_tickets_tiers.py, tests/test_tickets_velocity.py repointed at
+_setters.py for set_component/set_tier/set_sprint/sprint_view/
+sprint_velocity/ticket_flow.
+
+COV002 fallout fixed: added frob:ticket T-1151 edges to every test
+class/method the above directive edits touched (TestSetComponent,
+TestSetTier + its 3 methods, TestSprintAssign, TestSprintShow,
+TestSprintVelocity + its 4 methods, TestTicketFlow + its 4 methods,
+_commit_on helper) so COV002 (changed-with-no-open-ticket-edge) is
+satisfied alongside each symbol's pre-existing T-1069/T-0938/T-1100
+ticket tag.
+
+_land.py (4762 lines) not touched this round -- still needs its own
+split per the ticket's own note; requeuing as residue (see below).
+
+Verification:
+- `uv run python -c "import frob.tickets"` -- clean import.
+- `uv run ruff check src/frob/tickets/__init__.py src/frob/tickets/_setters.py`
+  -- 5 pre-existing F401s (verified identical on main's original
+  __init__.py placed at the same package path; unrelated to this
+  change), _setters.py itself: all checks passed.
+- `uv run pytest tests/test_tickets_priority.py tests/test_ticket_evidence.py::TestSetKind
+  tests/test_tickets_tiers.py tests/test_tickets_organization.py
+  tests/test_tickets_velocity.py -p no:cacheprovider -q` -- 52 passed.
+- `uv run pytest tests/test_tickets.py -p no:cacheprovider -q` -- 134 passed.
+- `uv run frob check --ticket T-1151 --only coverage --only drift --only
+  invariant --only prework --only registry`: DRIFT/INV/PRE all clean for
+  this ticket's scope after the fixes above; remaining COV (24, all
+  pre-existing strata-core/tickets.md debt unrelated to this move,
+  verified by grep -- none reference _setters.py or the __init__.py
+  lines this ticket touched) and REG (registry/gate-rule debt, also
+  pre-existing and unrelated) are NOT new; left as-is (out of this
+  ticket's scope, not silently introduced by this change).
+
+Residue: this ticket's remaining families (evidence/transition,
+done-report/review/drop/attach) and _land.py's own split are NOT done
+this round -- filed as a follow-up ticket, T-1152 (verify the
+real id on main after land renumbers this draft), so the queue does not
+silently lose them.
+
+### Changed
+```
+ tickets.md | 64 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 63 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/test_tickets_priority.py::TestSetPriority::test_updates_priority_field` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_evidence.py::TestSetKind::test_updates_kind_field` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_tiers.py::TestSetTier::test_updates_tier_field` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_tiers.py::TestSprintAssign::test_updates_sprint_field` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_tiers.py::TestSprintShow::test_state_rollup_and_velocity` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_velocity.py::TestSprintVelocity::test_transitions_mined_from_history` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_velocity.py::TestTicketFlow::test_filed_and_landed_counted_per_day` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_organization.py::TestSetComponent::test_updates_component_field` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 8 passed (from 8 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
+<!-- ticket:T-1152 -->
+```yaml
+id: T-1152
+title: 'arch: extract tickets/__init__.py evidence/transition + done-report/review/drop/attach
+  families + split _land.py -- T-1151 residue'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- docs/modules/tickets.md
+- tests/test_tickets.py
+threat: null
+component: null
+```
+T-1151 extracted ONE family (field setters/sprint: set_priority/set_kind/
+set_tier/set_sprint/set_component, sprint_view/sprint_velocity,
+ticket_flow) into src/frob/tickets/_setters.py, following T-1103/T-1123's
+per-family extraction pattern. tickets/__init__.py: 2740 -> ~2065 lines
+(carved further, still likely above the <2000 acceptance target from
+T-1108's own scope note -- verify exact line count at pickup).
+
+Remaining families (per T-1151's own body, none touched by this pass):
+- evidence/transition (transition, add_evidence, the _done_transition_*
+  guard family) -- BEWARE the load-time circular import T-1103's Done
+  report flagged for this exact family (new_ticket/finalize_draft already
+  late-import from the package to work around it)
+- done-report/review/drop/attach (brief_ticket, mutate_labels,
+  record_review, attach, drop helpers, compose_done_report/
+  set_done_report)
+
+_land.py (4762 lines) still untouched across T-1108/T-1123/T-1151 --
+still needs its own split (preflight/splice/verify/sweep families per
+T-1108's original plan) before LARGE001 stops flagging it.
+
+Follow the same pattern each time: one cohesive family per dispatch,
+private module re-exported from __init__ via explicit imports (never
+`import *`), zero caller-visible behavior change, existing tests as the
+safety net, carry frob:ticket/frob:doc/frob:tests directives verbatim,
+repoint docs/modules/tickets.md's frob:describes anchors and any
+tests/*.py frob:tests directives at the new module path, add frob:ticket
+edges to any test class/method a directive-repoint touches (COV002),
+carry an INV006 split-module waiver per 0abc4e3a's precedent if the
+moved prose trips it, watch for tests that monkeypatch a moved function
+via the PACKAGE attribute (tickets_mod.<name>) -- those need a late
+`from frob.tickets import <name>` inside the moved function body instead
+of a module-top-level binding.
