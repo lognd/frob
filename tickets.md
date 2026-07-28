@@ -244,15 +244,18 @@ follow-on ticket, not silently dropped):
 - outline/map/xref/exports/stats need NEW `frob.serve._tools` RPC
   methods before they can be proxied at all (no existing RPC surface),
   a materially bigger gap than a reconciliation -- documented in
-  docs/modules/serve.md's "Scope cut (disclosed)" section, not yet
-  ticketed as its own item.
-- T-draft-549f9a4a: wire `run_coverage_wait`'s own subprocess flow
-  through T-1097's daemon-owned coverage lease RPC instead of its
-  current file-lock layers (touches src/frob/app/_daemon_proxy.py,
-  contended with T-1106's own wave).
-- T-draft-57385d73: gate:TICK006 phantom-draft-citation cleanup
-  (T-1077/T-1084/T-1095's own Done reports), an unrelated pre-existing
-  ledger-hygiene issue found while landing this wave's tickets.
+  docs/modules/serve.md's "Scope cut (disclosed)" section; ticketed by
+  the coordinator as T-1127 (exports/stats only -- outline/map/xref are
+  moot pending T-0802's navigation-command sunset).
+- T-1126 (coordinator refile; the original draft died to a 10b ledger
+  restore): wire `run_coverage_wait`'s own subprocess flow through
+  T-1097's daemon-owned coverage lease RPC instead of its current
+  file-lock layers (touches src/frob/app/_daemon_proxy.py, contended
+  with T-1106's own wave).
+- gate:TICK006 phantom-draft-citation cleanup (T-1077/T-1084/T-1095's
+  own Done reports), an unrelated pre-existing ledger-hygiene issue
+  found while landing this wave's tickets: already repaired inline by
+  the coordinator (commit 0abc4e3a), no ticket needed.
 
 `frob check --ticket T-0321` was run per this session's own gates-fast/
 gates-native/gates-security/lint/static chunked passes across T-1105,
@@ -5205,3 +5208,89 @@ threat: null
 component: null
 ```
 T-1085 extracted the genuine _load_snapshot/_CACHE_REL duplicate into frob.app._snapshot and deliberately cut the rest to limit app/ contention during wave 17: check_runner.py's two ToolResult-builder groups (the skip/unavailable/disabled constructors look like a genuine extraction), deploy_runner.py's repeated-name (Path) -> str group, and perf_runner.py's _heat/_collect pair. Per T-1085's body: check the repeated-name groups FIRST for a literal same-file shadowing duplicate (possibly dead code) before assuming distinct functions. Re-measure counts before starting; T-1112's detector exclusion may change them.
+
+<!-- ticket:T-1125 -->
+```yaml
+id: T-1125
+title: 'land/renumber: rewrite draft-id references in ledger prose during renumbering'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- tests/test_tickets.py
+acceptance:
+- text: GIVEN a worktree ledger whose done-report prose cites T-draft-X WHEN frob
+    ticket land renumbers T-draft-X to T-#### THEN every prose reference to T-draft-X
+    in tickets.md is rewritten to the final id in the same splice, and a post-land
+    full check reports zero TICK006 for it
+  evidence: []
+- text: GIVEN frob ticket renumber OLD NEW WHEN prose elsewhere in the ledger references
+    OLD THEN those references are rewritten too (or the command errors listing them),
+    never silently left stale
+  evidence: []
+threat: null
+component: null
+```
+The dominant wave-17 fallout class (4 incidents in one wave): land renumbers draft BLOCKS but never rewrites prose citing them, so done reports either go TICK006-phantom (T-1077/T-1084/T-1095 reports citing drafts that died) or -- worse and invisible to TICK006 -- cite a WRONG real id (T-0668's agent wrote T-1109 guessing its draft's final id; real id was T-1113; 8 prose sites hand-repaired by the coordinator). renumber already computes the old->new mapping; apply it to prose occurrences of the draft id across tickets.md/tickets-archive.md in the same transaction. Coordinators should never hand-grep real ids again; agents should be free to cite draft ids in prose and have land fix them.
+
+<!-- ticket:T-1126 -->
+```yaml
+id: T-1126
+title: 'daemon: wire run_coverage_wait through the daemon-owned coverage lease RPC
+  (T-1097 follow-up)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/testing/_coverage_wait.py
+- src/frob/app/_daemon_proxy.py
+- tests/test_coverage_wait_shared.py
+- docs/modules/testing.md
+acceptance:
+- text: GIVEN a running daemon WHEN run_coverage_wait needs the coverage writer THEN
+    it acquires via the frob_lease_acquire RPC (crash-released per T-1097) instead
+    of its own file-lock layers, with the file-lock path kept only as the daemonless
+    fallback
+  evidence: []
+threat: null
+component: null
+```
+T-0321 epic close disclosed this cut: run_coverage_wait still uses its T-0322/T-1095 file-lock + shared-state layers directly; T-1097 shipped the daemon lease primitive (ResourceLeaseManager, frob_lease_acquire/release, connection-liveness release). Converge the two so coverage arbitration has ONE owner when a daemon is up.
+
+<!-- ticket:T-1127 -->
+```yaml
+id: T-1127
+title: 'serve: RPC surface for exports/stats proxying (T-1106 residual; outline/map/xref
+  moot pending T-0802 sunset)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-28'
+priority: low
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/serve/_tools.py
+- src/frob/app/**
+- docs/modules/serve.md
+acceptance:
+- text: GIVEN a running daemon WHEN frob exports or frob stats runs THEN it is served
+    warm through the proxy with differential parity against in-process execution,
+    matching the T-1093/T-1106 pattern
+  evidence: []
+threat: null
+component: null
+```
+T-0321's close disclosed: outline/map/xref/exports/stats have no frob.serve._tools RPC surface at all, so T-1106 could not proxy them. outline/map/xref (and docs-search) are scheduled for REMOVAL by T-0802's 2026-10-01 navigation-command sunset -- do NOT build RPC for those; only exports and stats warrant a surface. If T-0802 executes first, re-scope to exports/stats only (already assumed here).
