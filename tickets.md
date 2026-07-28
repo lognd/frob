@@ -4066,3 +4066,32 @@ threat: null
 component: null
 ```
 parse.rs accreted the whole strata grammar across T-0629/T-0700/T-0702 and siblings (4346 lines). Split by grammar family per the T-1072/T-1086 discipline translated to Rust module conventions (mod files, pub(crate) surfaces re-exported from parse.rs or lib.rs so the python bindings and goldens stay byte-identical). Discovered alongside the large-file gate gap (sibling ticket filed the same day); the split makes the Rust tree pass the ceiling that gate will enforce.
+
+<!-- ticket:T-1100 -->
+```yaml
+id: T-1100
+title: 'frob ticket flow: created/day vs landed/day vs net + naive burn-down ETA (one
+  table, builds on T-0938 velocity mining)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: low
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/__init__.py
+- src/frob/app/ticket_runner.py
+- tests/test_tickets_velocity.py
+- docs/modules/tickets.md
+acceptance:
+- text: 'given a frob-enabled repo, when frob ticket flow runs, then it prints per-day
+    filed/landed/net counts (created: fields + ledger git history via the T-0938 transition
+    miner), current open count, the trailing-3-day net rate, and a naive ETA line
+    (open / trailing net rate) clearly labeled as extrapolation'
+  evidence: []
+threat: null
+component: null
+```
+User request 2026-07-28: a simple ticket data-analysis command showing the rate tickets grow vs the rate they complete. Reuse sprint_velocity's git-history transition mining (T-0938) for the landed side and the created: fields for the filed side; plain render-layer table, no new storage. Keep it genuinely simple -- one table plus one ETA line.
