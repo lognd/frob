@@ -221,12 +221,10 @@ def _function_body_span(lines: list[str], sig_line_idx: int) -> tuple[int, int]:
     k = sig_line_idx
     n = len(lines)
     while k < n:
-        for ch in lines[k]:
-            if ch == "{":
-                depth += 1
-                started = True
-            elif ch == "}":
-                depth -= 1
+        opens = lines[k].count("{")
+        depth += opens - lines[k].count("}")
+        if opens:
+            started = True
         if started and depth <= 0:
             return (sig_line_idx, k + 1)
         k += 1
@@ -439,6 +437,9 @@ def check_cpp_noexcept_violations(
                 line=func.line,
                 category="cpp-noexcept-throws",
                 severity="error",
+                # frob:waive PERF004 reason="each iteration sorts its own \
+                # per-function raise set for a deterministic message; not a \
+                # shared re-sort, nothing loop-invariant to hoist"
                 message=(
                     f"cpp-noexcept-throws: `{func.name}` is noexcept but may "
                     f"throw {sorted(func.raises)} -- an escaping exception "
