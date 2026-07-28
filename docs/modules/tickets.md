@@ -73,7 +73,7 @@ attachments:
 
 <!-- frob:describes src/frob/tickets/_archive.py::load_queue -->
 <!-- frob:describes src/frob/tickets/_new_renumber.py::new_ticket -->
-<!-- frob:describes src/frob/tickets/__init__.py::doable -->
+<!-- frob:describes src/frob/tickets/_doable.py::doable -->
 <!-- frob:describes src/frob/tickets/__init__.py::transition -->
 <!-- frob:describes src/frob/tickets/__init__.py::record_failure -->
 <!-- frob:describes src/frob/tickets/__init__.py::attach -->
@@ -91,9 +91,9 @@ attachments:
 <!-- frob:describes src/frob/tickets/_archive.py::load_active -->
 <!-- frob:describes src/frob/tickets/_provisional.py::on_default_branch -->
 <!-- frob:describes src/frob/tickets/_provisional.py::mint_draft_id -->
-<!-- frob:describes src/frob/tickets/__init__.py::doable_blocked -->
-<!-- frob:describes src/frob/tickets/__init__.py::leased_by -->
-<!-- frob:describes src/frob/tickets/__init__.py::large_glob_warnings -->
+<!-- frob:describes src/frob/tickets/_doable.py::doable_blocked -->
+<!-- frob:describes src/frob/tickets/_doable.py::leased_by -->
+<!-- frob:describes src/frob/tickets/_doable.py::large_glob_warnings -->
 <!-- frob:describes src/frob/tickets/_models.py::scope_overlap -->
 <!-- frob:describes src/frob/tickets/_models.py::scope_overlap_globs -->
 <!-- frob:describes src/frob/tickets/__init__.py::set_done_report -->
@@ -114,9 +114,9 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::mutate_labels -->
 <!-- frob:describes src/frob/tickets/__init__.py::board_view -->
 <!-- frob:describes src/frob/tickets/__init__.py::epic_rollup -->
-<!-- frob:describes src/frob/tickets/__init__.py::has_live_lease -->
-<!-- frob:describes src/frob/tickets/__init__.py::dispatch_stale_hours -->
-<!-- frob:describes src/frob/tickets/__init__.py::undispatched_stale -->
+<!-- frob:describes src/frob/tickets/_doable.py::has_live_lease -->
+<!-- frob:describes src/frob/tickets/_doable.py::dispatch_stale_hours -->
+<!-- frob:describes src/frob/tickets/_doable.py::undispatched_stale -->
 
 ```python
 # frob/tickets/__init__.py

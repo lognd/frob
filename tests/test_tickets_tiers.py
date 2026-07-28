@@ -115,13 +115,15 @@ class TestTierField:
         assert created.danger_ok.sprint == "sprint-14"
 
 
+# frob:ticket T-1108
 class TestDoableLeafOnly:
     """`doable` only ever surfaces tier=TICKET tickets (T-0715): an
     epic/story with no blockers of its own must never be dispatchable
     work."""
 
+    # frob:ticket T-1108
     def test_epic_and_story_never_surface(self) -> None:
-        # frob:tests src/frob/tickets/__init__.py::doable kind="unit"
+        # frob:tests src/frob/tickets/_doable.py::doable kind="unit"
         epic = _ticket(ticket_id="T-0001", tier=TicketTier.EPIC)
         story = _ticket(ticket_id="T-0002", tier=TicketTier.STORY, parent="T-0001")
         leaf = _ticket(ticket_id="T-0003", tier=TicketTier.TICKET, parent="T-0002")

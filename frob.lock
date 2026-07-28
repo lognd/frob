@@ -401,7 +401,7 @@
       "ref": "src/frob/tickets/__init__.py::_recover_missing_evidence_for_done"
     },
     {
-      "digest": "4dae59acb88a88350b285680b99c7c88fe755175ff18aba4fe164a02c7299b94",
+      "digest": "69f630b117dd63bafd995736de3e39330d8c59a992f987f8ffad53750348cf32",
       "facet": "sig",
       "ref": "src/frob/tickets/__init__.py::_recover_missing_evidence_for_done"
     },

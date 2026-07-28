@@ -1774,6 +1774,7 @@ alongside T-1047.
 
 ## Drop reason
 - 2026-07-28: superseded before start: T-1051 (done) implemented the exact generalized container-subscript-call/cast-then-call structural detector this ticket describes, and T-1063 (done) closed the rust/cpp/kotlin points-to residual it names; verified by the wave-17 vet agent, fail-logged 9526c858
+
 <!-- ticket:T-1059 -->
 ```yaml
 id: T-1059
@@ -3651,6 +3652,67 @@ scope:
 - src/frob/tickets/**
 - docs/modules/tickets.md
 - tests/test_tickets.py
+- tests/test_tickets_tiers.py
+- tests/test_tickets_lease.py
+- tests/test_tickets_lease_overlay.py
+- tests/test_tickets_dispatch_stale.py
+- frob.lock
+scope_changes:
+- op: add
+  glob: tests/test_tickets_tiers.py
+  reason: doable/leases/scope-breadth family split moved frob:tests-carrying functions
+    across files owned by these test modules
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: tests/test_tickets_lease.py
+  reason: doable/leases/scope-breadth family split moved frob:tests-carrying functions
+    across files owned by these test modules
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: tests/test_tickets_lease_overlay.py
+  reason: doable/leases/scope-breadth family split moved frob:tests-carrying functions
+    across files owned by these test modules
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: tests/test_tickets_dispatch_stale.py
+  reason: doable/leases/scope-breadth family split moved frob:tests-carrying functions
+    across files owned by these test modules
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: frob.lock
+  reason: frob ack re-acknowledges tickets/__init__.py::_recover_missing_evidence_for_done
+    digest shift caused by this split
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/test_tickets.py::TestDoable::test_blocked_excluded
+- tests/test_tickets_tiers.py::TestDoableLeafOnly::test_epic_and_story_never_surface
+- tests/test_tickets_lease.py::TestDoable::test_ignore_lease_returns_raw_list
+- tests/test_tickets_lease.py::TestShowBlocked::test_show_blocked_lists_reasons
+- tests/test_tickets_lease.py::TestLeasedBy::test_precise_in_progress_does_not_hide_disjoint
+- tests/test_tickets_lease.py::TestLeasedBy::test_real_source_scope_collision_is_hidden
+- tests/test_tickets_lease.py::TestLeasedBy::test_over_broad_lease_demotes_to_warn_only
+- tests/test_tickets_lease.py::TestLargeGlobWarnings::test_fires_on_broad_tests_glob
+- tests/test_tickets_lease.py::TestLargeGlobWarnings::test_silent_on_precise_test_file
+- tests/test_tickets_lease.py::TestBreadthPerf::test_computed_once_per_doable_call
+- tests/test_tickets_lease.py::TestBreadthPerf::test_doable_blocked_also_shares_one_breadth_walk
+- tests/test_tickets_lease.py::TestBreadthPerf::test_repo_files_git_kill_switch_refuses_without_spawning
+- tests/test_tickets_lease_overlay.py::TestDisplayState::test_queued_with_live_lease_decorated
+- tests/test_tickets_lease_overlay.py::TestDisplayState::test_queued_with_stale_lease_undecorated
+- tests/test_tickets_lease_overlay.py::TestDisplayState::test_ledger_in_progress_undecorated
+- tests/test_tickets_lease_overlay.py::TestDisplayState::test_no_root_never_decorates
+- tests/test_tickets_dispatch_stale.py::TestHasLiveLease::test_queued_with_live_lease_is_in_flight
+- tests/test_tickets_dispatch_stale.py::TestHasLiveLease::test_queued_with_no_lease_is_not_in_flight
+- tests/test_tickets_dispatch_stale.py::TestHasLiveLease::test_no_root_never_in_flight
+- tests/test_tickets_dispatch_stale.py::TestDispatchStaleHours::test_same_day_is_zero_hours
+- tests/test_tickets_dispatch_stale.py::TestDispatchStaleHours::test_one_day_old_is_24_hours
+- tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_critical_past_threshold_alarms
+- tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_critical_under_threshold_no_alarm
+- tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_medium_priority_never_alarms
 acceptance:
 - text: GIVEN the tickets package WHEN the remaining verb families (doable/leases/scope-breadth,
     scope mutation, field setters/sprint, evidence/transition, done-report/review/drop/attach)
@@ -3665,6 +3727,110 @@ threat: null
 component: null
 ```
 T-1103 extracted archive + new/renumber families (tickets/__init__.py 4287->3489) and stopped on budget; per its done report the remaining ~8 families are doable/leases/scope-breadth, scope mutation, field setters/sprint, evidence/transition, done-report/review/drop/attach, and _land.py (4762 lines) was not touched. Continue the same extraction pattern: per-family private modules re-exported from __init__, zero behavior change, existing tests as the safety net. Beware the load-time circular import noted in T-1103's report (evidence family).
+
+## Done report
+
+Extracted the "doable/leases/scope-breadth" family named in T-1108's own
+scope note out of tickets/__init__.py into a new src/frob/tickets/_doable.py
+module, following T-1103's exact split pattern (private module re-exported
+from __init__ via explicit imports, zero caller-visible behavior change).
+
+Moved: _doable_candidates, _in_progress_leases, _cross_worktree_leases,
+_all_leases, _is_excluded_breadth_path, _repo_files_git,
+_repo_files_walk_fallback, _repo_files, scope_breadth_context,
+_entry_to_glob, _over_broad_scope_entries, large_glob_warnings, leased_by,
+display_state, has_live_lease, _DISPATCH_STALE_DEFAULT_HOURS,
+_dispatch_stale_thresholds, dispatch_stale_hours, undispatched_stale,
+doable, doable_blocked, _open_blockers.
+
+tickets/__init__.py: 3489 -> 2918 lines (571 carved). Below the acceptance
+criterion's <2000 target -- this is a PARTIAL land (T-1089 precedent):
+one cohesive family this dispatch, remaining ~7 families (scope mutation,
+field setters/sprint, evidence/transition, done-report/review/drop/attach)
+plus the untouched _land.py (4762 lines) split are filed as residue
+(T-1123, real id assigned at land-time renumber).
+
+Hit two of T-1103's own flagged hazard classes directly:
+1. `_doable_sort_key` (board_view's sort key too) and `_OPEN_STATES`
+   (a module-wide constant) stay in __init__.py; the moved `doable`/
+   `doable_blocked`/`_open_blockers` late-import both from the package at
+   call time rather than binding them at module load, since __init__
+   imports _doable.py before either name exists at __init__'s own module
+   scope -- the exact load-order hazard T-1103's Done report named for
+   `renumber_one`.
+2. Monkeypatch indirection: `tests/test_tickets_lease.py::TestBreadthPerf`
+   and `tests/test_tickets_dispatch_stale.py::TestHasLiveLease` /
+   `tests/test_tickets_lease_overlay.py::TestDisplayState` monkeypatch
+   `frob.tickets._repo_files` / `frob.tickets.read_all_leases` (the PACKAGE
+   attribute) -- a plain module-top-level `import` binding in _doable.py
+   would not see that patch. `scope_breadth_context` and `display_state`
+   both late-import these from the package instead, same fix T-1103 applied
+   for `renumber_one`/`finalize_draft`. Caught this by running the full
+   affected test suite BEFORE committing, not by inspection alone -- 4
+   tests failed on the first pass with exactly this symptom.
+
+Also: re-ran `frob ack src/frob/tickets/__init__.py::_recover_missing_evidence_for_done`
+-- moving ~570 lines out of the same file shifted this unrelated function's
+digest, invalidating its pre-existing DRIFT001 ack (the same "reviewer
+re-acks at land" pattern T-1103's Done report already named for this exact
+symbol).
+
+Confirmed via `git diff main -- <file>` that the two INV006 findings
+(src/frob/gates/_todo_fmt.py, src/frob/gates/_waive_comments.py) and the
+three TICK006 phantom-draft findings (T-1077/T-1084/T-1095's historical
+Done reports) `frob check --ticket T-1108` still reports are unrelated,
+pre-existing, and untouched by this diff.
+
+One pre-existing, unrelated test failure noted for visibility, NOT part of
+this ticket's scope (tests/test_tickets_review.py is untouched by this
+diff, confirmed via `git diff main`): TestCloseStrictMode's 4 tests fail
+because `frob ticket close`'s evidence re-validation spawns `uv run pytest
+--collect-only` inside an isolated tmp_path fixture with no real project
+layout, collecting 0 tests -- an environment/infra issue in the
+evidence/close family, not the doable family this ticket touched.
+
+### Changed
+```
+ docs/modules/tickets.md      |  14 +-
+ frob.lock                    |   2 +-
+ src/frob/tickets/__init__.py | 616 ++-------------------------------------
+ src/frob/tickets/_doable.py  | 671 +++++++++++++++++++++++++++++++++++++++++++
+ tests/test_tickets.py        |   2 +-
+ tests/test_tickets_tiers.py  |   4 +-
+ tickets.md                   |  39 ++-
+ 7 files changed, 738 insertions(+), 610 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets.py::TestDoable::test_blocked_excluded` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_tiers.py::TestDoableLeafOnly::test_epic_and_story_never_surface` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestDoable::test_ignore_lease_returns_raw_list` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestShowBlocked::test_show_blocked_lists_reasons` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestLeasedBy::test_precise_in_progress_does_not_hide_disjoint` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestLeasedBy::test_real_source_scope_collision_is_hidden` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestLeasedBy::test_over_broad_lease_demotes_to_warn_only` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestLargeGlobWarnings::test_fires_on_broad_tests_glob` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestLargeGlobWarnings::test_silent_on_precise_test_file` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestBreadthPerf::test_computed_once_per_doable_call` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestBreadthPerf::test_doable_blocked_also_shares_one_breadth_walk` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestBreadthPerf::test_repo_files_git_kill_switch_refuses_without_spawning` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease_overlay.py::TestDisplayState::test_queued_with_live_lease_decorated` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease_overlay.py::TestDisplayState::test_queued_with_stale_lease_undecorated` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease_overlay.py::TestDisplayState::test_ledger_in_progress_undecorated` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease_overlay.py::TestDisplayState::test_no_root_never_decorates` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestHasLiveLease::test_queued_with_live_lease_is_in_flight` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestHasLiveLease::test_queued_with_no_lease_is_not_in_flight` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestHasLiveLease::test_no_root_never_in_flight` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestDispatchStaleHours::test_same_day_is_zero_hours` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestDispatchStaleHours::test_one_day_old_is_24_hours` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_critical_past_threshold_alarms` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_critical_under_threshold_no_alarm` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_medium_priority_never_alarms` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 24 passed (from 24 evidence id(s))
+- gates: 8 error(s), 878 warning(s), 425 waived
+- error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w17-tickets/src/frob/vet/_supplychain.py:154, E501@/home/logan/projects/frob/.claude/worktrees/w17-tickets/src/frob/vet/_supplychain.py:168, E501@/home/logan/projects/frob/.claude/worktrees/w17-tickets/src/frob/vet/_supplychain.py:209, E501@/home/logan/projects/frob/.claude/worktrees/w17-tickets/src/frob/vet/_supplychain.py:267, E501@/home/logan/projects/frob/.claude/worktrees/w17-tickets/src/frob/vet/_supplychain.py:295, INV006@src/frob/gates/_todo_fmt.py, INV006@src/frob/gates/_waive_comments.py, TICK006@tickets.md
 
 <!-- ticket:T-1109 -->
 ```yaml
@@ -4213,3 +4379,221 @@ Out of T-1037's declared scope (that ticket is specifically about REG011
 out_of_scope-reason substantive-disclosure, already independently fixed
 by T-1019 before this wave started -- confirmed zero REG011 violations
 and the ticket's own named regression test passing on current main).
+
+<!-- ticket:T-1122 -->
+```yaml
+id: T-1122
+title: 'arch: extract doable/leases/scope-breadth family from tickets/__init__.py
+  (T-1108 partial)'
+state: done
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/__init__.py
+- src/frob/tickets/_doable.py
+- docs/modules/tickets.md
+- tests/test_tickets.py
+- tests/test_tickets_tiers.py
+- tests/test_tickets_lease.py
+- tests/test_tickets_lease_overlay.py
+- tests/test_tickets_dispatch_stale.py
+- frob.lock
+evidence:
+- tests/test_tickets.py::TestDoable::test_blocked_excluded
+- tests/test_tickets_tiers.py::TestDoableLeafOnly::test_epic_and_story_never_surface
+- tests/test_tickets_lease.py::TestDoable::test_ignore_lease_returns_raw_list
+- tests/test_tickets_lease.py::TestShowBlocked::test_show_blocked_lists_reasons
+- tests/test_tickets_lease.py::TestLeasedBy::test_precise_in_progress_does_not_hide_disjoint
+- tests/test_tickets_lease.py::TestLeasedBy::test_real_source_scope_collision_is_hidden
+- tests/test_tickets_lease.py::TestLeasedBy::test_over_broad_lease_demotes_to_warn_only
+- tests/test_tickets_lease.py::TestLargeGlobWarnings::test_fires_on_broad_tests_glob
+- tests/test_tickets_lease.py::TestLargeGlobWarnings::test_silent_on_precise_test_file
+- tests/test_tickets_lease.py::TestBreadthPerf::test_computed_once_per_doable_call
+- tests/test_tickets_lease.py::TestBreadthPerf::test_doable_blocked_also_shares_one_breadth_walk
+- tests/test_tickets_lease.py::TestBreadthPerf::test_repo_files_git_kill_switch_refuses_without_spawning
+- tests/test_tickets_lease_overlay.py::TestDisplayState::test_queued_with_live_lease_decorated
+- tests/test_tickets_lease_overlay.py::TestDisplayState::test_queued_with_stale_lease_undecorated
+- tests/test_tickets_lease_overlay.py::TestDisplayState::test_ledger_in_progress_undecorated
+- tests/test_tickets_lease_overlay.py::TestDisplayState::test_no_root_never_decorates
+- tests/test_tickets_dispatch_stale.py::TestHasLiveLease::test_queued_with_live_lease_is_in_flight
+- tests/test_tickets_dispatch_stale.py::TestHasLiveLease::test_queued_with_no_lease_is_not_in_flight
+- tests/test_tickets_dispatch_stale.py::TestHasLiveLease::test_no_root_never_in_flight
+- tests/test_tickets_dispatch_stale.py::TestDispatchStaleHours::test_same_day_is_zero_hours
+- tests/test_tickets_dispatch_stale.py::TestDispatchStaleHours::test_one_day_old_is_24_hours
+- tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_critical_past_threshold_alarms
+- tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_critical_under_threshold_no_alarm
+- tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_medium_priority_never_alarms
+threat: null
+component: null
+```
+T-1108 asked for the FULL remaining ~8-family extraction (tickets/__init__.py
+below 2000 lines) plus a full _land.py split, with acceptance criteria
+describing that entire migration. This dispatch only had budget for ONE
+cohesive family, so acceptance could not be bound and T-1108 itself is
+requeued rather than closed against unmet acceptance.
+
+This ticket exists to close out and land exactly the family that WAS
+completed this dispatch: doable/leases/scope-breadth extracted from
+tickets/__init__.py into src/frob/tickets/_doable.py (T-1103's split
+pattern, zero public-API change). See Done report for the full list of
+moved symbols and the two monkeypatch/load-order hazards hit and fixed
+along the way.
+
+## Done report
+
+Extracted the "doable/leases/scope-breadth" family named in T-1108's own
+scope note out of tickets/__init__.py into a new src/frob/tickets/_doable.py
+module, following T-1103's exact split pattern (private module re-exported
+from __init__ via explicit imports, zero caller-visible behavior change).
+
+Moved: _doable_candidates, _in_progress_leases, _cross_worktree_leases,
+_all_leases, _is_excluded_breadth_path, _repo_files_git,
+_repo_files_walk_fallback, _repo_files, scope_breadth_context,
+_entry_to_glob, _over_broad_scope_entries, large_glob_warnings, leased_by,
+display_state, has_live_lease, _DISPATCH_STALE_DEFAULT_HOURS,
+_dispatch_stale_thresholds, dispatch_stale_hours, undispatched_stale,
+doable, doable_blocked, _open_blockers.
+
+tickets/__init__.py: 3489 -> 2918 lines (571 carved). Below the acceptance
+criterion's <2000 target -- this is a PARTIAL land (T-1089 precedent):
+one cohesive family this dispatch, remaining ~7 families (scope mutation,
+field setters/sprint, evidence/transition, done-report/review/drop/attach)
+plus the untouched _land.py (4762 lines) split are filed as residue
+(T-1123, real id assigned at land-time renumber).
+
+Hit two of T-1103's own flagged hazard classes directly:
+1. `_doable_sort_key` (board_view's sort key too) and `_OPEN_STATES`
+   (a module-wide constant) stay in __init__.py; the moved `doable`/
+   `doable_blocked`/`_open_blockers` late-import both from the package at
+   call time rather than binding them at module load, since __init__
+   imports _doable.py before either name exists at __init__'s own module
+   scope -- the exact load-order hazard T-1103's Done report named for
+   `renumber_one`.
+2. Monkeypatch indirection: `tests/test_tickets_lease.py::TestBreadthPerf`
+   and `tests/test_tickets_dispatch_stale.py::TestHasLiveLease` /
+   `tests/test_tickets_lease_overlay.py::TestDisplayState` monkeypatch
+   `frob.tickets._repo_files` / `frob.tickets.read_all_leases` (the PACKAGE
+   attribute) -- a plain module-top-level `import` binding in _doable.py
+   would not see that patch. `scope_breadth_context` and `display_state`
+   both late-import these from the package instead, same fix T-1103 applied
+   for `renumber_one`/`finalize_draft`. Caught this by running the full
+   affected test suite BEFORE committing, not by inspection alone -- 4
+   tests failed on the first pass with exactly this symptom.
+
+Also: re-ran `frob ack src/frob/tickets/__init__.py::_recover_missing_evidence_for_done`
+-- moving ~570 lines out of the same file shifted this unrelated function's
+digest, invalidating its pre-existing DRIFT001 ack (the same "reviewer
+re-acks at land" pattern T-1103's Done report already named for this exact
+symbol).
+
+Confirmed via `git diff main -- <file>` that the two INV006 findings
+(src/frob/gates/_todo_fmt.py, src/frob/gates/_waive_comments.py) and the
+three TICK006 phantom-draft findings (T-1077/T-1084/T-1095's historical
+Done reports) `frob check --ticket T-1108` still reports are unrelated,
+pre-existing, and untouched by this diff.
+
+One pre-existing, unrelated test failure noted for visibility, NOT part of
+this ticket's scope (tests/test_tickets_review.py is untouched by this
+diff, confirmed via `git diff main`): TestCloseStrictMode's 4 tests fail
+because `frob ticket close`'s evidence re-validation spawns `uv run pytest
+--collect-only` inside an isolated tmp_path fixture with no real project
+layout, collecting 0 tests -- an environment/infra issue in the
+evidence/close family, not the doable family this ticket touched.
+
+### Changed
+```
+ docs/modules/tickets.md      |  14 +-
+ frob.lock                    |   2 +-
+ src/frob/tickets/__init__.py | 616 ++-------------------------------------
+ src/frob/tickets/_doable.py  | 671 +++++++++++++++++++++++++++++++++++++++++++
+ tests/test_tickets.py        |   2 +-
+ tests/test_tickets_tiers.py  |   4 +-
+ tickets.md                   | 256 ++++++++++++++++-
+ 7 files changed, 956 insertions(+), 609 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets.py::TestDoable::test_blocked_excluded` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_tiers.py::TestDoableLeafOnly::test_epic_and_story_never_surface` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestDoable::test_ignore_lease_returns_raw_list` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestShowBlocked::test_show_blocked_lists_reasons` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestLeasedBy::test_precise_in_progress_does_not_hide_disjoint` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestLeasedBy::test_real_source_scope_collision_is_hidden` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestLeasedBy::test_over_broad_lease_demotes_to_warn_only` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestLargeGlobWarnings::test_fires_on_broad_tests_glob` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestLargeGlobWarnings::test_silent_on_precise_test_file` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestBreadthPerf::test_computed_once_per_doable_call` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestBreadthPerf::test_doable_blocked_also_shares_one_breadth_walk` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestBreadthPerf::test_repo_files_git_kill_switch_refuses_without_spawning` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease_overlay.py::TestDisplayState::test_queued_with_live_lease_decorated` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease_overlay.py::TestDisplayState::test_queued_with_stale_lease_undecorated` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease_overlay.py::TestDisplayState::test_ledger_in_progress_undecorated` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease_overlay.py::TestDisplayState::test_no_root_never_decorates` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestHasLiveLease::test_queued_with_live_lease_is_in_flight` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestHasLiveLease::test_queued_with_no_lease_is_not_in_flight` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestHasLiveLease::test_no_root_never_in_flight` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestDispatchStaleHours::test_same_day_is_zero_hours` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestDispatchStaleHours::test_one_day_old_is_24_hours` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_critical_past_threshold_alarms` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_critical_under_threshold_no_alarm` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_medium_priority_never_alarms` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 24 passed (from 24 evidence id(s))
+- gates: 6 error(s), 807 warning(s), 424 waived
+- error-findings: COV001@src/frob/gates/_tracked_files.py, E501@/home/logan/projects/frob/.claude/worktrees/w17-tickets/src/frob/vet/_supplychain.py:154, E501@/home/logan/projects/frob/.claude/worktrees/w17-tickets/src/frob/vet/_supplychain.py:168, E501@/home/logan/projects/frob/.claude/worktrees/w17-tickets/src/frob/vet/_supplychain.py:209, E501@/home/logan/projects/frob/.claude/worktrees/w17-tickets/src/frob/vet/_supplychain.py:267, E501@/home/logan/projects/frob/.claude/worktrees/w17-tickets/src/frob/vet/_supplychain.py:295
+
+<!-- ticket:T-1123 -->
+```yaml
+id: T-1123
+title: 'arch: extract remaining tickets/__init__.py families + split _land.py -- T-1108
+  residue'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- docs/modules/tickets.md
+- tests/test_tickets.py
+threat: null
+component: null
+```
+T-1108 extracted ONE family (doable/leases/scope-breadth: doable, doable_blocked,
+leased_by, large_glob_warnings, has_live_lease, dispatch_stale_hours,
+undispatched_stale, display_state, scope_breadth_context, and their private
+helpers) into src/frob/tickets/_doable.py. tickets/__init__.py dropped from
+3489 to 2918 lines (571 carved) -- still above the acceptance criterion's
+<2000 target.
+
+Remaining per T-1108's own scope note (~7 families now, one done):
+- scope mutation (mutate_scope and its private helpers)
+- field setters/sprint (set_priority/set_kind/set_tier/set_sprint/set_component,
+  sprint_view/sprint_velocity)
+- evidence/transition (transition, add_evidence, the _done_transition_* guard
+  family) -- BEWARE the load-time circular import T-1103's Done report flagged
+  for this exact family (new_ticket/finalize_draft already late-import from
+  the package to work around it)
+- done-report/review/drop/attach (brief_ticket, mutate_labels, record_review,
+  attach, drop helpers)
+
+_land.py (4762 lines) was not touched at all -- still needs its own split
+(preflight/splice/verify/sweep families per T-1108's plan) before LARGE001
+stops flagging it.
+
+Follow the same pattern T-1103/T-1108 established: one cohesive family per
+dispatch, private module re-exported from __init__ via explicit imports
+(never `import *`), zero caller-visible behavior change, existing tests as
+the safety net, watch for tests that monkeypatch a moved function via the
+PACKAGE attribute (`tickets_mod.<name>`) -- those need a late
+`from frob.tickets import <name>` inside the moved function body instead of
+a module-top-level binding, or the monkeypatch silently stops taking effect.

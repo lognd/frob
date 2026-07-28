@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.237.0] - unreleased
+
+- T-1122: arch: extract doable/leases/scope-breadth family from tickets/__init__.py (T-1108 partial)
+
 ## [0.236.0] - unreleased
 
 - T-0671: strata: bounded/staleness-gated assume+waiver mechanism - un-droppable floor view for conformance obligations

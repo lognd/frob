@@ -490,7 +490,7 @@ class TestStateMachine:
 
 class TestDoable:
     def test_ordering_by_created_then_id(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::doable
+        # frob:tests src/frob/tickets/_doable.py::doable
         _write(
             tmp_path,
             _ticket(ticket_id="T-0002", created=date(2026, 1, 1), title="B"),
