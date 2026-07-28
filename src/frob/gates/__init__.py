@@ -8838,9 +8838,48 @@ def _build_jobs(
     `run_gates` call site) is byte-for-byte the pre-T-0602 behavior -- this
     flag opts a caller IN, it never changes behavior for a caller that does
     not pass it."""
+    thread_jobs = _build_thread_jobs(st)
+    process_jobs = _build_process_jobs(st)
+    selected_thread = {
+        name: job for name, job in thread_jobs.items() if name in selected
+    }
+    selected_process = {
+        name: job for name, job in process_jobs.items() if name in selected
+    }
+    # T-0265: `drift` (DRIFT001/DRIFT002) always runs, even when a caller
+    # narrows `selected` to a small subset (e.g. a ticket-scoped
+    # `gates={"scope"}` pre-flight check) -- `st.snapshot`/`st.lock` are
+    # already unconditionally loaded by `_load_required_state` for every
+    # gate run regardless of `selected`, so this costs nothing extra to
+    # evaluate. Before this, a narrowly-scoped check could report clean
+    # while a full `frob check` on the identical tree reported DRIFT002 for
+    # the same dangling edge (a self-referential `frob:tests` directive was
+    # the reproducing case) -- two evaluation paths giving two different
+    # answers to the same question. DRIFT002 is the documented, authoritative
+    # answer for "does this edge endpoint resolve" (docs/modules/gates.md,
+    # `test_gate`'s own docstring: "DRIFT002 already covers TESTS edges"),
+    # so every gate run now gets that same answer, never a filtered-out one.
+    if "drift" not in selected_thread:
+        selected_thread["drift"] = thread_jobs["drift"]
+    ticket_jobs, skipped = _build_ticket_scoped_jobs(selected, st)
+    selected_thread.update(ticket_jobs)
+    if use_cache:
+        _substitute_cacheable_jobs(selected_thread, st)
+    return selected_thread, selected_process, skipped
+
+
+# frob:ticket T-1049
+def _build_thread_jobs(
+    st: _GateInputs,
+) -> dict[str, Callable[[], tuple[Violation, ...]]]:
+    """The thread-pool half of `_build_jobs`'s gate-job registry (I/O-bound/
+    cheap gates), split out to keep `_build_jobs` itself under ARCH001's
+    line threshold (T-1049 -- the dict-literal assembly, not the
+    selection/force-drift/cache-substitution logic around it, was the
+    bulk of the function's length)."""
     from frob.policy import policy_gate
 
-    thread_jobs: dict[str, Callable[[], tuple[Violation, ...]]] = {
+    return {
         "drift": lambda: drift_gate(st.snapshot, st.lock),
         "coverage": lambda: coverage_gate(
             st.repo_root,
@@ -8962,7 +9001,14 @@ def _build_jobs(
         # st.diff/st.snapshot by _build_jobs' shared helpers.
         "affect_drift": lambda: affect_drift_gate(st.snapshot, st.diff),
     }
-    process_jobs: dict[str, _ProcessJob] = {
+
+
+# frob:ticket T-1049
+def _build_process_jobs(st: _GateInputs) -> dict[str, _ProcessJob]:
+    """The process-pool half of `_build_jobs`'s gate-job registry (the
+    CPU-bound giants in `_PROCESS_POOL_GATES`), split out alongside
+    `_build_thread_jobs` for the same ARCH001 reason."""
+    return {
         "perf": _ProcessJob(perf_gate, (st.root, st.snapshot)),
         "clones": _ProcessJob(dup_gate, (st.root, st.snapshot, st.diff)),
         "sys": _ProcessJob(sys_gate, (st.root, st.snapshot)),
@@ -9012,32 +9058,6 @@ def _build_jobs(
         # protocol-tagged symbols.
         "protocol_summary": _ProcessJob(protocol_summary_gate, (st.root, st.snapshot)),
     }
-    selected_thread = {
-        name: job for name, job in thread_jobs.items() if name in selected
-    }
-    selected_process = {
-        name: job for name, job in process_jobs.items() if name in selected
-    }
-    # T-0265: `drift` (DRIFT001/DRIFT002) always runs, even when a caller
-    # narrows `selected` to a small subset (e.g. a ticket-scoped
-    # `gates={"scope"}` pre-flight check) -- `st.snapshot`/`st.lock` are
-    # already unconditionally loaded by `_load_required_state` for every
-    # gate run regardless of `selected`, so this costs nothing extra to
-    # evaluate. Before this, a narrowly-scoped check could report clean
-    # while a full `frob check` on the identical tree reported DRIFT002 for
-    # the same dangling edge (a self-referential `frob:tests` directive was
-    # the reproducing case) -- two evaluation paths giving two different
-    # answers to the same question. DRIFT002 is the documented, authoritative
-    # answer for "does this edge endpoint resolve" (docs/modules/gates.md,
-    # `test_gate`'s own docstring: "DRIFT002 already covers TESTS edges"),
-    # so every gate run now gets that same answer, never a filtered-out one.
-    if "drift" not in selected_thread:
-        selected_thread["drift"] = thread_jobs["drift"]
-    ticket_jobs, skipped = _build_ticket_scoped_jobs(selected, st)
-    selected_thread.update(ticket_jobs)
-    if use_cache:
-        _substitute_cacheable_jobs(selected_thread, st)
-    return selected_thread, selected_process, skipped
 
 
 # frob:ticket T-0602

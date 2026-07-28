@@ -1030,6 +1030,8 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/__init__.py
+evidence:
+- tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
 threat: null
 component: null
 ```
