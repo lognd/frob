@@ -9494,6 +9494,32 @@ class TestSelfAuditGate:
         assert _by_rule(violations, "SELFAUDIT001") == []
         assert _by_rule(violations, "SYS004") != []
 
+    # frob:tests src/frob/gates/__init__.py::sys_gate kind="unit"
+    def test_selfaudit001_folds_mode_conformance_violation(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1061: GIVEN a node declaring `access "RESOURCE" mode read`
+        whose bound code performs a write-capable operation WHEN
+        `sys_gate` (the production `frob check` entry point) runs THEN it
+        FAILS with an unwaived SELFAUDIT001 ERROR naming the underlying
+        SYS205 finding -- proving `check_mode_conformance` is actually
+        wired into `frob check`, not just reachable via `frob sys audit`
+        directly."""
+        design = (
+            "module m\n"
+            'node widget : trusted { code "src/frob/widget/**"; '
+            'access "cfg" mode read; }\n'
+        )
+        _write(tmp_path, "design/m.strata", design)
+        _write(tmp_path, "src/frob/widget/_io.py", 'open("cfg.json", "w").write("x")\n')
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        selfaudit = _by_rule(violations, "SELFAUDIT001")
+        matches = [v for v in selfaudit if "SYS205" in v.message]
+        assert len(matches) >= 1
+        assert matches[0].severity == Severity.ERROR
+        assert "widget" in matches[0].message
+
 
 def _complex_function_source(fn_name: str) -> str:
     """A python module with one function long enough to trip the 30-line

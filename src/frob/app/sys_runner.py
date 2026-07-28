@@ -54,10 +54,14 @@ from frob.strata import (
     MARKER_PREFIX,
     AuditReport,
     KernelModel,
+    ModeConformanceReport,
+    Module,
     PlannedTicket,
     ReliabilityReport,
     ResourceContentionReport,
     SelfConformReport,
+    bind_code,
+    check_mode_conformance,
     check_reliability_health,
     check_reliability_timeouts,
     check_resource_contention,
@@ -640,6 +644,53 @@ def _print_contention_report(report: ResourceContentionReport) -> None:
     _log_contention_violations(report)
 
 
+# frob:ticket T-1061
+def _log_waived_mode_conformance(report: ModeConformanceReport) -> None:
+    """Log every waived SYS205 mode-conformance finding (T-0174: ALWAYS
+    printed, matching `_log_waived_contention`'s "loud in output" WAIVED
+    line -- `check_mode_conformance` gained real waiver application
+    alongside this ticket's CLI wiring, `_mode_conformance.py`'s
+    `_apply_mode_conformance_waivers`)."""
+    _log_sys_waived_findings(report.waived)
+
+
+# frob:ticket T-1061
+def _log_mode_conformance_proved(report: ModeConformanceReport) -> None:
+    """Log the SYS205 mode-conformance PROVED summary line, carrying the
+    waived count inline (same honesty convention as `_log_contention_
+    proved`)."""
+    _log_sys_proved(report.waived, label="mode-conformance", gap_kind="SYS205 gaps")
+
+
+# frob:ticket T-1061
+def _log_mode_conformance_violations(report: ModeConformanceReport) -> None:
+    """Log every SYS205 mode-conformance violation, one per line, matching
+    `_log_contention_violations`'s CI-parseable style."""
+    for v in report.violations:
+        _log.error(
+            "sys audit: GAP mode-conformance (SYS205): node=%s resource=%s "
+            "mode=%s category=%s detail=%s",
+            v.node,
+            v.resource,
+            v.mode.value,
+            v.category,
+            v.detail,
+        )
+
+
+# frob:ticket T-1061
+def _print_mode_conformance_report(report: ModeConformanceReport) -> None:
+    """Print `frob sys audit`'s SYS205 mode-conformance summary (T-1061
+    wiring the T-0701/T-1060 `check_mode_conformance` check into
+    production): every SYS205 violation, one per line, matching
+    `_print_contention_report`'s CI-parseable style."""
+    _log_waived_mode_conformance(report)
+    if not report.violations:
+        _log_mode_conformance_proved(report)
+        return
+    _log_mode_conformance_violations(report)
+
+
 # frob:ticket T-0640
 def _log_waived_reliability(report: ReliabilityReport) -> None:
     """Log every waived REL2xx reliability finding (T-0174: ALWAYS
@@ -715,14 +766,23 @@ def _print_capability_matrix_report() -> bool:
 # frob:ticket T-0115
 # frob:ticket T-0150
 # frob:ticket T-0724
-def _load_audit_model(root: Path) -> tuple[KernelModel, frozenset[str]] | None:
+def _load_audit_model(
+    root: Path,
+) -> tuple[KernelModel, frozenset[str], Module] | None:
     """Load+merge every `.strata` design file under `root`'s design dir for
     `frob sys audit`, or `None` (already logged) when there are none. Exits
     1 on any load error -- `sys audit` cannot proceed on a partial model.
-    Returns `(model, store_ids)` -- `store_ids` (T-0724) is `DesignIds.
-    store_ids`, the pre-elaboration `Module.stores` id set every loaded
-    file declared, threaded through so `check_resource_contention`'s SYS203
-    (shared store write) can actually fire."""
+    Returns `(model, store_ids, resource_module)` -- `store_ids` (T-0724)
+    is `DesignIds.store_ids`, the pre-elaboration `Module.stores` id set
+    every loaded file declared, threaded through so `check_resource_
+    contention`'s SYS203 (shared store write) can actually fire.
+    `resource_module` (T-1061) is a throwaway `Module` carrying only
+    `DesignIds.resources` (every loaded file's pre-elaboration
+    `Module.resources`, merged) -- `check_mode_conformance`'s (and
+    `check_resource_contention`'s own optional `module=`) ONLY use for a
+    `Module` argument is `.resources`, so a full re-parse/merge of every
+    OTHER `Module` field is unnecessary; `Module`'s other fields all
+    default to empty."""
     design_dir = _design_dir(root)
     ids = load_design_ids(root, design_dir)
     if ids.errors:
@@ -732,7 +792,8 @@ def _load_audit_model(root: Path) -> tuple[KernelModel, frozenset[str]] | None:
     if not ids.models:
         _log.info("sys audit: no design models under %s/%s", root, design_dir)
         return None
-    return merge_models(ids.models), ids.store_ids
+    resource_module = Module(name="sys-audit-resources", resources=ids.resources)
+    return merge_models(ids.models), ids.store_ids, resource_module
 
 
 def _evaluate_audit(model: KernelModel, root: Path):  # noqa: ANN201
@@ -783,18 +844,32 @@ def _evaluate_audit(model: KernelModel, root: Path):  # noqa: ANN201
 # frob:ticket T-0644
 def _run_audit(cfg: AppConfig) -> None:
     """`frob sys audit`: run the full exhaustiveness + self-conformance +
-    SYS2xx resource-contention + REL2xx reliability check (see the comment
-    above; T-0724 added the resource-contention leg, T-0640 added the
-    REL200/REL201 timeout leg, T-0644 added the REL210/REL211 health leg)
-    and exit nonzero with a named-gap summary when any part fails."""
+    SYS2xx resource-contention + SYS205 mode-conformance + REL2xx
+    reliability check (see the comment above; T-0724 added the
+    resource-contention leg, T-0640 added the REL200/REL201 timeout leg,
+    T-0644 added the REL210/REL211 health leg, T-1061 added the SYS205
+    mode-conformance leg) and exit nonzero with a named-gap summary when
+    any part fails."""
     root = _resolve_design_root(cfg, "audit")
     loaded = _load_audit_model(root)
     if loaded is None:
         return
-    model, store_ids = loaded
+    model, store_ids, resource_module = loaded
 
     report, selfconform = _evaluate_audit(model, root)
+    # NOTE (T-1061 scope note): check_resource_contention's own optional
+    # module= param (T-1025) is deliberately NOT threaded here -- wiring
+    # that (and dropping the design/frob.strata SYS203:tickets_ledger
+    # waivers it would let go clean) is T-1146's own declared scope, not
+    # this ticket's; `resource_module` below exists for SYS205 only.
     contention = check_resource_contention(model, store_ids=store_ids)
+    binding = bind_code(model, root)
+    if binding.is_err:
+        _log.error("sys audit: mode-conformance: %s", binding.danger_err)
+        sys.exit(1)
+    mode_conformance = check_mode_conformance(
+        model, resource_module, binding.danger_ok, root
+    )
     reliability = check_reliability_timeouts(model, root)
     if reliability.is_err:
         _log.error("sys audit: reliability: %s", reliability.danger_err)
@@ -810,12 +885,14 @@ def _run_audit(cfg: AppConfig) -> None:
     _print_audit_report(report)
     _print_selfconform_report(selfconform)
     _print_contention_report(contention)
+    _print_mode_conformance_report(mode_conformance)
     _print_reliability_report(combined_reliability)
     matrix_proved = _print_capability_matrix_report()
     if (
         not report.proved
         or selfconform.violations
         or contention.violations
+        or mode_conformance.violations
         or combined_reliability.violations
         or not matrix_proved
     ):

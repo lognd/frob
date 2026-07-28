@@ -273,6 +273,14 @@ detail=...` line per violation, `PROVED` on a clean run.
 <!-- frob:describes src/frob/app/sys_runner.py::_run_audit -->
 <!-- frob:describes src/frob/app/sys_runner.py::_print_audit_report -->
 
+T-1061: `_run_audit` also runs SYS205 mode-conformance
+(`frob.strata.check_mode_conformance`) alongside SYS100-103/SYS2xx/
+REL2xx, printing a `_print_mode_conformance_report` PROVED/GAP summary
+and folding SYS205 findings into the exit-code check -- see
+docs/strata/host.md#cli-dispatch--waiver-channel-t-1061 for the full
+wiring writeup (`DesignIds.resources` -> a throwaway `Module` ->
+`check_mode_conformance`'s `module=` argument).
+
 ### The vuln-litmus pair
 
 `design/litmus/audit_vuln.strata` is a deliberately-vulnerable model whose

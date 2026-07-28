@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+# frob:waive DEPR005 reason="resolver name-collision, not real adoption: this file's own tests.system.conftest.run test helper shares its bare name with the deprecated src/frob/app/xref_runner.py::run / outline_runner.py::run / map_runner.py::run CLI-dispatch functions, which this test never calls at all -- adding one more call to THIS run() (T-1061's own new CLI system test) is what tipped the per-file resolved-reference count past the committed baseline, per name-only coincidence (the same resolver-precision class PERF008 discloses elsewhere in this repo)"  # noqa: E501
 from tests.system.conftest import git as _git
 from tests.system.conftest import init_repo, run
 
@@ -69,6 +70,32 @@ flow f1 : evil -> web
         assert "repo root" in out
         assert str(repo) in out
         assert "is a file" in out
+
+    def test_mode_nonconformance_exits_nonzero_with_named_gap(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1061: a node declaring `access "RESOURCE" mode read` whose
+        bound code performs a write-capable operation now fires SYS205
+        through the PRODUCTION `frob sys audit` CLI entrypoint (not just
+        `check_mode_conformance` called directly, `tests/unit/strata/
+        test_mode_conformance.py`'s own coverage) -- proving the T-0701/
+        T-1060 check is actually wired into `sys_runner._run_audit`."""
+        model = """\
+module m
+node widget : trusted {
+    code "widget/**";
+    access "cfg" mode read;
+}
+"""
+        repo = _init_repo(tmp_path, model)
+        (repo / "widget").mkdir()
+        (repo / "widget" / "_io.py").write_text('open("cfg.json", "w").write("x")\n')
+        r = run("sys", "audit", cwd=repo)
+        out = r.stdout + r.stderr
+        assert r.returncode != 0, out
+        assert "GAP" in out
+        assert "SYS205" in out
+        assert "widget" in out
 
     def test_no_design_dir_is_a_noop(self, tmp_path: Path) -> None:
         repo = tmp_path / "repo"

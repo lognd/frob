@@ -742,6 +742,59 @@ not adopt):
    resolution (constant-folding, f-strings) is the same class of "needs
    real static analysis" cut the other two v1 joins above accept.
 
+#### CLI dispatch + waiver channel (T-1061)
+
+`check_mode_conformance` was a pure, fully-tested function with no
+production caller until T-1061 -- the same disclosed cut `_access.py`'s
+own SYS204 module docstring names for CLI dispatch and the waiver
+channel. T-1061 closes it on both fronts:
+
+- **`frob sys audit`** (`src/frob/app/sys_runner.py::_run_audit`) now
+  runs SYS205 alongside SYS100-103/SYS2xx/REL2xx and prints a
+  `_print_mode_conformance_report` summary (PROVED/GAP lines matching
+  the other families' CI-parseable style, waived count carried inline
+  same as `_print_contention_report`); a SYS205 finding makes the whole
+  audit exit nonzero, same as any other family.
+- **`frob check`'s SELFAUDIT001 gate**
+  (`src/frob/gates/__init__.py::_selfaudit_violations`) now folds SYS205
+  findings into the SAME wrapped `Violation` stream SYS100-103/SYS2xx/
+  REL2xx already use -- suppressible the ordinary GATES-layer way too
+  (`frob:waive SELFAUDIT001:<node> reason="..."`), same as any other
+  SELFAUDIT001-wrapped finding.
+- **`.strata`-level `waive "SYS205:<resource>"`** (the actual "waiver
+  channel" T-1061's title names): `check_mode_conformance` gained a REAL
+  internal waiver-application pass, `_apply_mode_conformance_waivers`,
+  mirroring `_contention.py::_apply_contention_waivers`'s exact pattern
+  -- `ModeConformanceReport` now carries both `violations` (unwaived) and
+  `waived` (T-0174: suppressed, never silently dropped). `SYS205` joined
+  `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES` (it can fire more than once
+  per node, once per resource, `ModeConformanceViolation.resource`
+  already tracks which), so a `waive` clause naming it MUST carry a
+  `RULE:SUBTARGET` sub-target (`waive "SYS205:tickets_ledger" ...`), same
+  discipline SYS100/SYS101/SYS200-203 already established. This piece
+  was NOT originally planned in T-1061's declared scope
+  (`_mode_conformance.py`/`_waive.py` were added mid-ticket) -- wiring
+  SYS205 live against frob's OWN design/frob.strata surfaced a genuinely
+  new SYS205 finding on the five `tickets_ledger` write-mode accessors
+  (no `owns`/`acl` path declared for any of them), and the only clean
+  discharge path that did not ALSO regress SYS201 (declaring a synthetic
+  `owns="tickets.md"` on all five creates 20 new overlapping-path
+  findings, verified directly -- SYS201 has no arbiter-awareness, unlike
+  SYS203/T-1025) was giving SYS205 a real waiver channel and waiving
+  those five findings by name, with an honest reason recorded in
+  `design/frob.strata` itself.
+
+Both callers need a `Module` carrying `.resources` (the `lock`/
+`arbitrated_by` arbiter lookup ALPHA/EXCLUSIVE's T-1060 widening reads)
+that `DesignIds` did not previously expose -- `_design_load.py::
+DesignIds` gained a new `resources: tuple[ResourceDecl, ...]` field
+(T-1061, collected the SAME way `store_ids` already is: off each file's
+PARSED, pre-elaboration `Module.resources`, before `elaborate` drops
+that field entirely). Both `sys_runner.py` and `gates/__init__.py`
+build a throwaway `Module(name=..., resources=ids.resources)` to pass
+in, since `.resources` is the only field either check reads off a
+`Module` argument.
+
 ## See also
 
 - `docs/commands/deploy.md` -- `frob deploy generate`, DEPLOY001, and the

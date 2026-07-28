@@ -176,6 +176,14 @@ MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
         "REL381",
         "REL382",
         "REL383",
+        # T-1061: SYS205 (mode-conformance) can fire more than once per
+        # node -- once per resource/observation-site combination
+        # (`_mode_conformance.py::check_mode_conformance` already sets
+        # `ModeConformanceViolation.resource` to the specific resource
+        # id), so a `waive` clause naming it must carry a `RULE:SUBTARGET`
+        # sub-target, same discipline every other per-node/per-instance
+        # family here already follows.
+        "SYS205",
     }
 )
 

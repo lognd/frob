@@ -161,6 +161,7 @@ from ._ast import Module, ResourceDecl
 from ._code_binding import FOREIGN, CodeBinding
 from ._host import host_manifest_for
 from ._models import KernelModel, Node
+from ._waive import apply_waivers
 
 _log = get_logger(__name__)
 
@@ -266,11 +267,17 @@ class ModeConformanceViolation(BaseModel):
 
 # frob:doc docs/strata/host.md#resource-access-modes-t-0700
 class ModeConformanceReport(BaseModel):
-    """Every SYS205 finding across a model."""
+    """Every UNWAIVED SYS205 finding, plus `waived` (T-1061: findings a
+    matching `waive "SYS205:<resource>"` clause suppressed, kept here for
+    report visibility, never silently dropped -- `_waive.py` module
+    docstring's "waived, never silently dropped" posture every other SYS
+    family already follows). Mirrors `_contention.py::
+    ResourceContentionReport`'s shape."""
 
     model_config = ConfigDict(frozen=True)
 
     violations: tuple[ModeConformanceViolation, ...] = ()
+    waived: tuple[ModeConformanceViolation, ...] = ()
 
 
 # frob:doc docs/strata/host.md#resource-access-modes-t-0700
@@ -766,6 +773,26 @@ def _write_violations(
     return violations
 
 
+def _apply_mode_conformance_waivers(
+    model: KernelModel, violations: list[ModeConformanceViolation]
+):  # noqa: ANN201
+    """T-1061: apply every node's `waive` clause to `violations`, exactly
+    `_contention.py::_apply_contention_waivers`'s pattern reused for
+    SYS205 -- `sub_target_of` returns `ModeConformanceViolation.resource`
+    (SYS205 is now registered in `_waive.py::MULTI_INSTANCE_WAIVER_
+    FAMILIES`, so a `waive` clause naming it must carry a
+    `RULE:SUBTARGET`). `in_scope` restricts staleness judgment to SYS205
+    alone, matching `apply_waivers`'s own `in_scope` docstring."""
+    return apply_waivers(
+        model,
+        violations,
+        rule_of=lambda v: v.rule,
+        target_of=lambda v: v.node,
+        sub_target_of=lambda v: v.resource,
+        in_scope=lambda rule: rule == SYS_MODE_NONCONFORMANCE,
+    )
+
+
 # frob:doc docs/strata/host.md#resource-access-modes-t-0700
 # frob:enforces CHK-GATE-SYS205
 # frob:tests tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance.test_read_mode_fails_on_a_write_open  # noqa: E501
@@ -815,12 +842,16 @@ def check_mode_conformance(
                 violations.extend(
                     _write_violations(node, resource_id, mode, write_capable)
                 )
+    applied = _apply_mode_conformance_waivers(model, violations)
+    kept = tuple(applied.kept)
+    waived = tuple(wf.finding for wf in applied.waived)
     _log.info(
-        "strata mode-conformance: %d SYS205 violation(s) across %d node(s)",
-        len(violations),
+        "strata mode-conformance: %d SYS205 violation(s), %d waived, across %d node(s)",
+        len(kept),
+        len(waived),
         len(model.nodes),
     )
-    return ModeConformanceReport(violations=tuple(violations))
+    return ModeConformanceReport(violations=kept, waived=waived)
 
 
 __all__ = [

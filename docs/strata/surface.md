@@ -502,6 +502,19 @@ T-0972: `unbound_constructs`'s own per-kind `sorted(ids_by_kind.get(kind,
 ...))` call picked up a reasoned `frob:waive PERF004` (the id set
 differs per kind, nothing to hoist) -- no behavior change.
 
+T-1061: `DesignIds` gained a `resources: tuple[ResourceDecl, ...]` field,
+collected the SAME way `store_ids` already is (T-0724) -- off each
+file's PARSED, pre-elaboration `Module.resources`, before `elaborate`
+drops that field entirely (a `resource` block has no accessor of its
+own to desugar into a node/attr, `_access.py` module docstring). This is
+NOT a new directive-bound construct id surface (SYS001/SYS002 above are
+unaffected) -- it exists purely so a caller (`sys_runner.py`'s `frob sys
+audit`, `gates/__init__.py`'s SELFAUDIT001) can build the `Module`
+argument `frob.strata.check_mode_conformance`/`check_resource_
+contention`'s optional `module=` need to resolve a `lock`/
+`arbitrated_by` arbiter, without re-parsing every design file a second
+time (docs/strata/host.md#cli-dispatch--waiver-channel-t-1061).
+
 `frob.gates.sys_gate` (opt-in: runs only when a `design/`, or
 `[strata].design_dir`, directory of `.strata` files exists, same posture
 as `decisions_gate`) loads every non-excluded file under that directory

@@ -6598,9 +6598,11 @@ def _selfaudit_violations(
     """SELFAUDIT001 (T-0756 SELF-AUDIT AT LAND): fold frob's OWN self-
     conformance (SYS100 undeclared interface / SYS101 stale design / SYS102
     unmodeled code, `frob.strata.check_self_conformance`) plus the SYS2xx
-    resource-contention (`check_resource_contention`) and REL2xx
-    reliability (`check_reliability_timeouts`/`check_reliability_health`)
-    audit families -- until this ticket only reachable via the separate
+    resource-contention (`check_resource_contention`), SYS205 mode-
+    conformance (`check_mode_conformance`, T-1061 wiring the T-0701/T-1060
+    check into this gate), and REL2xx reliability
+    (`check_reliability_timeouts`/`check_reliability_health`) audit
+    families -- until this ticket only reachable via the separate
     `frob sys audit` CLI verb (`frob.app.sys_runner._run_audit`) -- into
     `frob check`'s own gate pipeline (this function's caller, `sys_gate`).
 
@@ -6618,9 +6620,12 @@ def _selfaudit_violations(
     all, not adding a second preflight call site.
 
     One SELFAUDIT001 `Violation` per underlying finding (never coalesced),
-    each carrying the ORIGINAL rule id (SYS100/SYS101/SYS102/SYS2xx/REL2xx)
-    and node in its message/symref, so a reader can tell exactly which
-    family fired without re-running `frob sys audit` separately. Suppressed
+    each carrying the ORIGINAL rule id (SYS100/SYS101/SYS102/SYS2xx/SYS205/
+    REL2xx) and node in its message/symref, so a reader can tell exactly
+    which family fired without re-running `frob sys audit` separately.
+    SYS205's own evaluation failure (`bind_code`'s `Err`) is skipped the
+    SAME way `check_self_conformance`'s is above -- one sub-family's
+    binding failure must not silently blank the whole gate. Suppressed
     (matching DOC003/SYS001-004's posture) whenever any design file failed
     to load -- self-audit cannot be honestly evaluated against a partial
     model."""
@@ -6632,6 +6637,9 @@ def _selfaudit_violations(
         return []
 
     from frob.strata import (
+        Module,
+        bind_code,
+        check_mode_conformance,
         check_reliability_health,
         check_reliability_timeouts,
         check_resource_contention,
@@ -6660,6 +6668,28 @@ def _selfaudit_violations(
         _selfaudit_violation(v.rule, v.node, v.detail, design_dir)
         for v in contention.violations
     )
+
+    # T-1061: SYS205 mode-conformance -- `resource_module` is a throwaway
+    # `Module` carrying only `design_ids.resources` (T-1061's own
+    # `DesignIds` field), since `check_mode_conformance`'s only use for a
+    # `Module` argument is `.resources` (the `lock`/`arbitrated_by`
+    # arbiter lookup, `_mode_conformance.py` module docstring).
+    resource_module = Module(name="selfaudit-resources", resources=design_ids.resources)
+    binding = bind_code(model, root)
+    if binding.is_err:
+        _log.warning(
+            "SELFAUDIT001: mode-conformance evaluation failed (%s), skipping "
+            "that sub-family",
+            binding.danger_err,
+        )
+    else:
+        mode_conformance = check_mode_conformance(
+            model, resource_module, binding.danger_ok, root
+        )
+        violations.extend(
+            _selfaudit_violation(v.rule, v.node, v.detail, design_dir)
+            for v in mode_conformance.violations
+        )
 
     timeouts = check_reliability_timeouts(model, root)
     if timeouts.is_err:

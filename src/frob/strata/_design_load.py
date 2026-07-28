@@ -36,6 +36,7 @@ from frob.excludes import is_excluded, iter_files, load_exclude_globs
 from frob.graph import EdgeKind, GraphSnapshot
 from frob.logging import get_logger
 
+from ._ast import ResourceDecl
 from ._elaborate import elaborate
 from ._errors import StrataError
 from ._models import KernelModel
@@ -101,6 +102,18 @@ class DesignIds:
     #: answer which of its nodes were stores.
     # frob:doc docs/strata/host.md#resource-contention-sys2xx-t-0699
     store_ids: frozenset[str] = frozenset()
+    #: T-1061: every `resource ID { arbitrated_by NODE | lock "NAME" }`
+    #: declaration (`_ast.py::ResourceDecl`) any loaded `.strata` file's
+    #: parsed `Module.resources` declared, pre-elaboration, merged across
+    #: every file -- same "not a KernelModel-level fact" limitation
+    #: `store_ids` above already documents (a resource has no accessor of
+    #: its own to desugar into a node/attr, `_access.py` module
+    #: docstring). This is the `module` argument `frob.strata.
+    #: check_mode_conformance`/`check_resource_contention` need to
+    #: resolve a `lock`/`arbitrated_by` arbiter -- callers build a
+    #: throwaway `Module(name=..., resources=ids.resources)` to pass in,
+    #: since neither check needs any OTHER `Module` field.
+    resources: tuple[ResourceDecl, ...] = ()
 
 
 def _strata_files(
@@ -128,7 +141,13 @@ def _strata_files(
 def _load_all_design_files(
     root: Path, paths: list[Path]
 ) -> tuple[
-    set[str], set[str], set[str], set[str], list[DesignLoadError], list[KernelModel]
+    set[str],
+    set[str],
+    set[str],
+    set[str],
+    list[ResourceDecl],
+    list[DesignLoadError],
+    list[KernelModel],
 ]:
     """Load+merge every `.strata` file in `paths`; per-file failures collect
     into the returned errors list rather than aborting the whole load."""
@@ -136,10 +155,11 @@ def _load_all_design_files(
     boundaries: set[str] = set()
     secrets: set[str] = set()
     store_ids: set[str] = set()
+    resources: list[ResourceDecl] = []
     errors: list[DesignLoadError] = []
     models: list[KernelModel] = []
     for path in paths:
-        model, file_store_ids, error = _load_one_design_file(root, path)
+        model, file_store_ids, file_resources, error = _load_one_design_file(root, path)
         if error is not None:
             errors.append(error)
             continue
@@ -149,21 +169,25 @@ def _load_all_design_files(
         boundaries.update(boundary.id for boundary in model.boundaries)
         secrets.update(node.id for node in model.nodes if node.clearance == "Secret")
         store_ids.update(file_store_ids)
-    return channels, boundaries, secrets, store_ids, errors, models
+        resources.extend(file_resources)
+    return channels, boundaries, secrets, store_ids, resources, errors, models
 
 
 def _load_one_design_file(
     root: Path, path: Path
 ) -> (
-    tuple[KernelModel, frozenset[str], None]
-    | tuple[None, frozenset[str], DesignLoadError]
+    tuple[KernelModel, frozenset[str], tuple[ResourceDecl, ...], None]
+    | tuple[None, frozenset[str], tuple[ResourceDecl, ...], DesignLoadError]
 ):
     """Read+parse+elaborate one `.strata` file; returns `(model, store_ids,
-    None)` on success or `(None, frozenset(), error)` on any failure, never
-    raising. `store_ids` (T-0724) is read off the PARSED `Module.stores`
-    before `elaborate` folds each store into a plain `Node` -- the only
-    point at which "this node id came from a `store` construct" is still a
-    reconstructible fact (`_contention.py` module docstring)."""
+    resources, None)` on success or `(None, frozenset(), (), error)` on any
+    failure, never raising. `store_ids` (T-0724) and `resources` (T-1061)
+    are both read off the PARSED `Module` before `elaborate` folds each
+    store into a plain `Node` (and drops `Module.resources` entirely,
+    since a resource has no accessor of its own to desugar into a node/
+    attr, `_access.py` module docstring) -- the only point at which either
+    fact is still reconstructible (`_contention.py`/`_access.py` module
+    docstrings)."""
     rel = path.relative_to(root).as_posix()
     try:
         text = path.read_text(encoding="utf-8")
@@ -172,13 +196,15 @@ def _load_one_design_file(
         return (
             None,
             frozenset(),
+            (),
             DesignLoadError(path=rel, error=StrataError.ParseFailed),
         )
     parsed = parse_module(text)
     if parsed.is_err:
         _log.warning("load_design_ids: %s failed to parse: %s", rel, parsed.danger_err)
-        return None, frozenset(), DesignLoadError(path=rel, error=parsed.danger_err)
+        return None, frozenset(), (), DesignLoadError(path=rel, error=parsed.danger_err)
     store_ids = frozenset(store.id for store in parsed.danger_ok.stores)
+    resources = parsed.danger_ok.resources
     elaborated = elaborate(parsed.danger_ok)
     if elaborated.is_err:
         _log.warning(
@@ -186,8 +212,13 @@ def _load_one_design_file(
             rel,
             elaborated.danger_err,
         )
-        return None, store_ids, DesignLoadError(path=rel, error=elaborated.danger_err)
-    return elaborated.danger_ok, store_ids, None
+        return (
+            None,
+            store_ids,
+            resources,
+            DesignLoadError(path=rel, error=elaborated.danger_err),
+        )
+    return elaborated.danger_ok, store_ids, resources, None
 
 
 # frob:doc docs/strata/surface.md#directives-t-0080
@@ -207,17 +238,18 @@ def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignI
     root = Path(root)
     exclude_globs = load_exclude_globs(root)
     paths = _strata_files(root, root / design_dir, exclude_globs)
-    channels, boundaries, secrets, store_ids, errors, models = _load_all_design_files(
-        root, paths
+    channels, boundaries, secrets, store_ids, resources, errors, models = (
+        _load_all_design_files(root, paths)
     )
 
     _log.info(
         "load_design_ids: %d channel(s), %d boundary(ies), %d secret(s), "
-        "%d store(s), %d error(s)",
+        "%d store(s), %d resource(s), %d error(s)",
         len(channels),
         len(boundaries),
         len(secrets),
         len(store_ids),
+        len(resources),
         len(errors),
     )
     return DesignIds(
@@ -227,6 +259,7 @@ def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignI
         errors=tuple(errors),
         models=tuple(models),
         store_ids=frozenset(store_ids),
+        resources=tuple(resources),
     )
 
 

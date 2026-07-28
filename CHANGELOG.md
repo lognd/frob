@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.251.0] - unreleased
+
+- T-1061: wire SYS205 mode-conformance into CLI dispatch + waiver channel + docs
+
 ## [0.250.0] - unreleased
 
 - T-1130: tickets: ticket new/drop/fail auto-commit their ledger transition on main (parity with T-1054 start)

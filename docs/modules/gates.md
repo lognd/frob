@@ -68,7 +68,7 @@ declaration).
 | SYS002 | sys | a `Boundary` or Secret-clearance `Node` in the design model has no `frob:boundary`/`frob:secret` code binding anywhere |
 | SYS003 | sys | (warn) tier-2 code binding (`frob.strata.bind_code`/`check_import_conformance`) finds an undeclared cross-component import between two design-bound files; warn-first on landing, intended to flip to error via `[gates.severity]` once proven |
 | SYS004 | sys | a `.strata` design file failed to parse/elaborate; the message names a stale native build (`make core`) as the likely remedy when one is detected (T-0347, T-0248's `frob.strata.stale_natives`), per the T-0166 incident where a grammar-ahead-of-native mismatch masqueraded as a `.strata` syntax error |
-| SELFAUDIT001 | sys | (T-0756) frob's own self-conformance (SYS100/SYS101/SYS102), resource-contention (SYS2xx), and reliability (REL2xx) audit surface, folded into the ordinary `frob check` gate pipeline -- see "Self-audit at land (SELFAUDIT001, T-0756)" below |
+| SELFAUDIT001 | sys | (T-0756, SYS205 leg T-1061) frob's own self-conformance (SYS100/SYS101/SYS102), resource-contention (SYS2xx), mode-conformance (SYS205), and reliability (REL2xx) audit surface, folded into the ordinary `frob check` gate pipeline -- see "Self-audit at land (SELFAUDIT001, T-0756)" below |
 | SEC001 | secrets | a git-tracked file contains text matching a provider's real-looking credential shape (waivable with reason) |
 | SEC002 | secrets | a git-tracked `.env`/`.env.*` file exists (`.env.example`/`.env.sample`/`.env.template` excepted) |
 | SEC003 | secrets | a git-tracked file contains a live Stripe secret key (`sk_live_...`) or a private-key PEM header -- unwaivable, see `_UNWAIVABLE_RULES` |
@@ -569,11 +569,19 @@ finding from all four families into the ordinary `Violation` pipeline under
 one rule id, **SELFAUDIT001** (ERROR, `_KNOWN_GATE_RULES`-registered so
 `frob:waive SELFAUDIT001 reason="..."` matches like any other rule). Each
 `Violation.message` embeds the ORIGINAL underlying rule id (SYS100/SYS101/
-SYS102/SYS200-203/REL200/REL201/REL210/REL211) and node so a reader never
-has to re-run `frob sys audit` separately to see which family fired.
+SYS102/SYS200-203/SYS205/REL200/REL201/REL210/REL211) and node so a reader
+never has to re-run `frob sys audit` separately to see which family fired.
 Suppressed whenever any `.strata` design file failed to load (matches
 DOC003/SYS001-004's posture -- a partial model cannot be honestly
 self-audited).
+
+T-1061 added the SYS205 (mode-conformance, `frob.strata.
+check_mode_conformance`) leg alongside the original four, closing the SAME
+"only reachable via a hand-run CLI verb" gap `_access.py`'s own module
+docstring disclosed for SYS205 specifically -- `check_mode_conformance`
+needs a `Module` argument (the `lock`/`arbitrated_by` arbiter lookup, see
+docs/strata/host.md#cli-dispatch--waiver-channel-t-1061 for the
+`DesignIds.resources` plumbing this required).
 
 **Why this closes both halves of the ticket's mandate with ZERO new land
 wiring**: `frob ticket land`'s existing `check_gates`/`check_gate_findings`

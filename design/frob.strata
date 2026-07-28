@@ -132,6 +132,7 @@ node cli : trusted {
     // this docs-only ticket's scope).
     waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1146";
     access "tickets_ledger" mode write;
+    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. Discharging this by declaring owns=tickets.md would create 20 new SYS201 overlapping-path findings across the five tickets_ledger writers (SYS201 has no arbiter-awareness, unlike SYS203/T-1025) -- an equally undischarged, unrelated regression. Waived pending a real fix (either SYS201 gaining arbiter-awareness like SYS203 did, or a first-class multi-writer path-claim concept)." ticket "T-1149";
     attr interface=ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS;
     attr interface=ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS;
     attr interface=ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS;
@@ -412,6 +413,11 @@ node cli : trusted {
     attr interface=xref_runner_run;
     attr interface=_accept;
     attr interface=_flow;
+    attr interface=MalformedTicketEdge;
+    attr interface=scan_malformed_ticket_edges;
+    attr interface=release_daemon_lease;
+    attr interface=scan_stale_ticket_leases;
+    attr interface=try_daemon_lease;
 }
 
 // graph+lang: src/frob/graph/**, src/frob/lang/**, src/frob/arch/**. Owns
@@ -697,6 +703,7 @@ node gates : trusted {
     // comment above for the reasoning).
     waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1146";
     access "tickets_ledger" mode write;
+    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. Discharging this by declaring owns=tickets.md would create 20 new SYS201 overlapping-path findings across the five tickets_ledger writers (SYS201 has no arbiter-awareness, unlike SYS203/T-1025) -- an equally undischarged, unrelated regression. Waived pending a real fix (either SYS201 gaining arbiter-awareness like SYS203 did, or a first-class multi-writer path-claim concept)." ticket "T-1149";
     attr interface=ALL_PROVIDERS;
     attr interface=BASELINE_REL;
     attr interface=CRITICAL_PROVIDERS;
@@ -1457,6 +1464,7 @@ node fleet : trusted {
     // comment above for the reasoning).
     waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1146";
     access "tickets_ledger" mode write;
+    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. Discharging this by declaring owns=tickets.md would create 20 new SYS201 overlapping-path findings across the five tickets_ledger writers (SYS201 has no arbiter-awareness, unlike SYS203/T-1025) -- an equally undischarged, unrelated regression. Waived pending a real fix (either SYS201 gaining arbiter-awareness like SYS203 did, or a first-class multi-writer path-claim concept)." ticket "T-1149";
     attr interface=DEFAULT_MANIFEST_PATH;
     attr interface=FleetError;
     attr interface=FleetManifest;
@@ -1552,6 +1560,7 @@ node core : trusted {
     // comment above for the reasoning).
     waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1146";
     access "tickets_ledger" mode write;
+    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. Discharging this by declaring owns=tickets.md would create 20 new SYS201 overlapping-path findings across the five tickets_ledger writers (SYS201 has no arbiter-awareness, unlike SYS203/T-1025) -- an equally undischarged, unrelated regression. Waived pending a real fix (either SYS201 gaining arbiter-awareness like SYS203 did, or a first-class multi-writer path-claim concept)." ticket "T-1149";
     attr interface=ACCENT;
     attr interface=ALL_SENTINEL;
     attr interface=AdpContainer;
@@ -2111,6 +2120,7 @@ node serve : trusted {
     // comment above for the reasoning).
     waive "SYS203:tickets_ledger" reason "SYS203 (_contention.py) is mode-blind by design and has no path to consult the resource/access grammar; the real arbiter (.frob/tickets.lock, T-0458/T-0633) is now modeled at T-0956 via resource tickets_ledger { lock ... } + access mode write, and SYS204's resource_contention_violations confirms it discharges cleanly -- SYS203's own blindness to that fact is a separate, undischarged code-level gap, not covered by this waiver's reasoning" ticket "T-1146";
     access "tickets_ledger" mode write;
+    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. Discharging this by declaring owns=tickets.md would create 20 new SYS201 overlapping-path findings across the five tickets_ledger writers (SYS201 has no arbiter-awareness, unlike SYS203/T-1025) -- an equally undischarged, unrelated regression. Waived pending a real fix (either SYS201 gaining arbiter-awareness like SYS203 did, or a first-class multi-writer path-claim concept)." ticket "T-1149";
     attr interface=CoverageWatcher;
     attr interface=DEFAULT_COVERAGE_POLL_INTERVAL_S;
     attr interface=DEFAULT_IDLE_TIMEOUT_S;
@@ -2158,6 +2168,8 @@ node serve : trusted {
     attr interface=socket_path;
     attr interface=subscribe_and_wait;
     attr interface=watch_tick;
+    attr interface=frob_exports;
+    attr interface=frob_stats;
 }
 
 // T-0440: `frob deploy` -- compiles `std.host` manifests into idempotent
@@ -2616,6 +2628,9 @@ store tickets_ledger : trusted {
     attr interface=TicketFlowReport;
     attr interface=TicketFlowRow;
     attr interface=ticket_flow;
+    attr interface=is_valid_ticket_ref;
+    attr interface=iter_raw_ledger_frontmatter;
+    attr interface=commit_ticket_ledger_change;
 }
 
 // T-0956: names the SAME single-writer arbiter the five SYS203/
@@ -4959,6 +4974,18 @@ node testsuite : trusted {
     attr interface=xref_project;
     attr interface=TestAddAcceptance;
     attr interface=TestTicketFlow;
+    attr interface=TestBlockCliValidatesBy;
+    attr interface=TestCheckRegistryExclusion;
+    attr interface=TestDoctorMalformedTicketEdges;
+    attr interface=TestIsValidTicketRef;
+    attr interface=TestIterRawLedgerFrontmatter;
+    attr interface=TestRenumberRewritesLedgerProse;
+    attr interface=TestTicketSpecValidatesBlockedByAndParent;
+    attr interface=TestCommitTicketLedgerChange;
+    attr interface=TestDoctorStaleTicketLeases;
+    attr interface=TestFailCliRequeues;
+    attr interface=TestNewDropFailAutoCommit;
+    attr interface=TestWorktreeLock;
 }
 
 // Repo maintenance scripts run by a human/CI outside the installed CLI

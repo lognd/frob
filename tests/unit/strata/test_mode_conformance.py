@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from frob.strata import KernelModel, Node, bind_code, check_mode_conformance
+from frob.strata import KernelModel, Node, Waiver, bind_code, check_mode_conformance
 from frob.strata._ast import Module, ResourceDecl
 from frob.strata._mode_conformance import SYS_MODE_NONCONFORMANCE
 
@@ -436,3 +436,32 @@ class TestCheckModeConformance:
         module = Module(name="m")
         report = check_mode_conformance(model, module, binding, tmp_path)
         assert report.violations == ()
+
+    # frob:tests \
+    # tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance.test_a_waive\
+    # d_sys205_finding_is_discharged_and_reported_waived
+    def test_a_waived_sys205_finding_is_discharged_and_reported_waived(
+        self, tmp_path: Path
+    ):
+        """T-1061: check_mode_conformance now applies waivers -- a node
+        declaring `waive "SYS205:<resource>" reason="..."` moves the
+        matching finding out of `violations` and into `waived` (T-0174:
+        never silently dropped), the SAME shape `_contention.py`'s own
+        `ResourceContentionReport` already establishes."""
+        _write(tmp_path, "writer/main.py", 'open("f.txt", "w").write("x")\n')
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="Writer",
+                    trust="trusted",
+                    attrs=("code=writer/**", "access=f:write"),
+                    waives=(Waiver(rule="SYS205:f", reason="test waiver"),),
+                ),
+            )
+        )
+        binding = bind_code(model, tmp_path).danger_ok
+        module = Module(name="m")
+        report = check_mode_conformance(model, module, binding, tmp_path)
+        assert report.violations == ()
+        assert len(report.waived) == 1
+        assert report.waived[0].category == "no_declared_path"
