@@ -3884,3 +3884,60 @@ threat: null
 component: null
 ```
 Child (f) of T-0321. Today T-0322's coverage.lock is a plain per-worktree fcntl.flock with no arbitration beyond OS-level blocking, no visibility into who holds it, and no daemon-mediated release-on-crash semantics. Once T-1095 makes coverage single-flight CROSS-worktree (arbitrated by the T-1092 daemon rather than a per-worktree file lock), formalize it as a general named-resource lease/semaphore primitive the daemon owns (starting with coverage=1 writer, per T-0321's body), so other future contended resources (e.g. a future write-serializing need) can register the same way instead of each inventing its own flock convention. Lease release must be tied to socket connection liveness (a crashed/killed client's lease is freed by the daemon detecting the closed connection), not just an explicit release call, to satisfy T-0321's requirement 3 (killing a client loses nothing, nothing to clean up).
+
+<!-- ticket:T-1098 -->
+```yaml
+id: T-1098
+title: wire large-file (and single-file-mode parity) into the arch GATE -- 4346-line
+  parse.rs was invisible to frob check
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_arch.py
+- src/frob/arch/__init__.py
+- tests/test_arch_gate.py
+- docs/modules/gates.md
+acceptance:
+- text: given a production source file over max_file_lines in ANY language anywhere
+    in the obligation surface, when frob check runs, then a LARGE001 (or ARCH-family)
+    violation surfaces at WARN first-turn-on tier, promotable per the T-0688/T-0973
+    precedent
+  evidence: []
+- text: given frob arch invoked on a single FILE, when that file exceeds the threshold,
+    then the large-file finding prints exactly as the directory walk would print it
+  evidence: []
+threat: null
+component: null
+```
+Found 2026-07-28 via strata-core/src/parse.rs (4346 lines, 800-line repo ceiling): the arch linter reports large-file at info tier in directory mode, but _ARCH_CATEGORY_TO_RULE maps only long-function/ARCH101-103/cpp-noexcept-throws to gate rules, so large-file findings never become frob check violations in any language; and single-file invocation skips the file-level check entirely (misleading 'no architectural issues found'). Catalogued-is-not-enforced class. Wire the category to a registered rule id at WARN, fix single-file parity, register in check-coverage.yaml with enforces edge.
+
+<!-- ticket:T-1099 -->
+```yaml
+id: T-1099
+title: 'strata-core: split parse.rs (4346 lines) into grammar-family modules'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- strata-core/src/
+- tests/unit/strata/
+acceptance:
+- text: given the strata-core crate, when the split lands, then parse.rs holds only
+    the parser spine, grammar families live in their own modules, no file exceeds
+    2000 lines, and cargo test plus the full strata litmus suite pass unchanged
+  evidence: []
+threat: null
+component: null
+```
+parse.rs accreted the whole strata grammar across T-0629/T-0700/T-0702 and siblings (4346 lines). Split by grammar family per the T-1072/T-1086 discipline translated to Rust module conventions (mod files, pub(crate) surfaces re-exported from parse.rs or lib.rs so the python bindings and goldens stay byte-identical). Discovered alongside the large-file gate gap (sibling ticket filed the same day); the split makes the Rust tree pass the ceiling that gate will enforce.
