@@ -227,6 +227,10 @@ reason = "CVE vet-mirror fixture consumed by a single dedicated test module by d
 # coverage-level obligations) and warn until that campaign lands.
 COV001 = "error"
 TEST001 = "error"
+# DEPR005 demoted until T-1052 lands: bare-name reference matching plus
+# file:line baseline keys red-main on nearly every land (three coordinator
+# re-baselines on 2026-07-27 alone). Restore to error with the redesign.
+DEPR005 = "warn"
 TEST002 = "warn"
 TEST003 = "warn"
 TEST005 = "warn"
