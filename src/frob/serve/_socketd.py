@@ -53,6 +53,7 @@ import errno
 import fcntl
 import json
 import os
+import queue
 import socket
 import socketserver
 import threading
@@ -66,6 +67,7 @@ from typani.result import Result
 
 from frob.logging import get_logger
 from frob.serve import _tools
+from frob.serve._watch import WatchThread
 
 _log = get_logger(__name__)
 
@@ -92,6 +94,8 @@ class DaemonError(ErrorSet):
     MalformedRequest = "request line was not valid JSON-RPC-shaped JSON"
     RemoteError = "the daemon returned a JSON-RPC error response"
     Unreachable = "the daemon socket could not be connected to"
+    # frob:doc docs/modules/serve.md#subscribepush-events-t-1096
+    Timeout = "no matching event arrived within the requested timeout"
 
 
 # frob:doc docs/modules/serve.md#socket-daemon-t-1092
@@ -260,9 +264,30 @@ class _IdleTracker:
 class _RequestHandler(socketserver.StreamRequestHandler):
     """One unix-socket connection: read newline-delimited JSON-RPC request
     lines until the client closes, dispatching each through `dispatch_
-    request` and writing back one JSON response line per request."""
+    request` and writing back one JSON response line per request. A
+    `subscribe` request (T-1096) additionally starts a per-connection
+    writer thread that pumps push event frames from the server's
+    `event_bus` onto this same connection for as long as it stays open."""
 
     server: _DaemonServer
+
+    # T-1096: guards self.wfile between the main handle() loop's own
+    # response writes and _pump_events' async event writes on the same
+    # connection -- two threads can otherwise interleave partial JSON
+    # lines onto the wire.
+    _write_lock: threading.Lock
+    _sub_id: int | None
+    _events_thread: threading.Thread | None
+
+    # frob:doc docs/modules/serve.md#subscribepush-events-t-1096
+    def setup(self) -> None:  # noqa: ANN201
+        """Per-connection state `handle()` needs -- `StreamRequestHandler`
+        constructs a fresh handler instance per connection, so this is the
+        correct place to initialize instance state, not `__init__`."""
+        super().setup()
+        self._write_lock = threading.Lock()
+        self._sub_id = None
+        self._events_thread = None
 
     # frob:doc docs/modules/serve.md#protocol
     # frob:tests tests/test_serve_socket.py::TestRunSocketDaemon.test_serves_one_request_then_idle_exits kind="unit"  # noqa: E501
@@ -274,27 +299,82 @@ class _RequestHandler(socketserver.StreamRequestHandler):
     def handle(self) -> None:  # noqa: ANN201
         """Serve every request line on this connection until EOF or a
         malformed line -- one connection may carry many sequential
-        requests (a persistent client), not just one."""
-        for raw_line in self.rfile:
-            line = raw_line.decode("utf-8", errors="replace").strip()
-            if not line:
-                continue
-            self.server.idle_tracker.touch()
+        requests (a persistent client), not just one. Always unsubscribes
+        (T-1096) on the way out, even on an abrupt disconnect."""
+        try:
+            for raw_line in self.rfile:
+                line = raw_line.decode("utf-8", errors="replace").strip()
+                if not line:
+                    continue
+                self.server.idle_tracker.touch()
+                try:
+                    payload = json.loads(line)
+                    request = _JsonRpcRequest.model_validate(payload)
+                except Exception as exc:  # noqa: BLE001
+                    _log.warning("serve: socketd: malformed request line: %s", exc)
+                    response = {
+                        "id": None,
+                        "error": {
+                            "code": "malformed_request",
+                            "message": str(exc),
+                        },
+                    }
+                else:
+                    if request.method == "subscribe":
+                        response = self._handle_subscribe(request)
+                    else:
+                        response = dispatch_request(self.server.root, request)
+                self._write_line(response)
+        finally:
+            if self._sub_id is not None:
+                self.server.event_bus.unsubscribe(self._sub_id)
+
+    # frob:doc docs/modules/serve.md#subscribepush-events-t-1096
+    # frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_receives_graph_changed_after_edit kind="unit"  # noqa: E501
+    def _handle_subscribe(self, request: _JsonRpcRequest) -> dict[str, Any]:
+        """Register this connection with `server.event_bus` and start its
+        dedicated event-pump thread -- called once per `subscribe`
+        request; a second `subscribe` on the same connection just
+        re-subscribes (drops the old subscription id, starts a new one)
+        rather than erroring, since nothing about this protocol forbids a
+        client subscribing more than once."""
+        if self._sub_id is not None:
+            self.server.event_bus.unsubscribe(self._sub_id)
+        sid, q = self.server.event_bus.subscribe()
+        self._sub_id = sid
+        thread = threading.Thread(
+            target=self._pump_events, args=(q,), daemon=True, name="frob-socketd-pump"
+        )
+        self._events_thread = thread
+        thread.start()
+        _log.info("serve: socketd: connection subscribed (sub_id=%d)", sid)
+        return {"id": request.id, "result": {"subscribed": True}}
+
+    def _pump_events(self, q: queue.Queue[dict[str, Any] | None]) -> None:
+        """Event-pump thread body: block on `q.get()` and write each frame
+        out to this connection until a `None` sentinel (unsubscribed) or a
+        write failure (the client went away) ends it. Both `OSError`
+        (a broken pipe/reset connection) and `ValueError` (stdlib's
+        `BufferedWriter` raises this, not `OSError`, for a write against
+        an already-`close()`d file -- the race between this thread waking
+        for a queued frame and `handle()`'s own connection teardown
+        finishing first) are expected end-of-connection signals here, not
+        bugs to propagate."""
+        while True:
+            frame = q.get()
+            if frame is None:
+                return
             try:
-                payload = json.loads(line)
-                request = _JsonRpcRequest.model_validate(payload)
-            except Exception as exc:  # noqa: BLE001
-                _log.warning("serve: socketd: malformed request line: %s", exc)
-                response = {
-                    "id": None,
-                    "error": {
-                        "code": "malformed_request",
-                        "message": str(exc),
-                    },
-                }
-            else:
-                response = dispatch_request(self.server.root, request)
-            self.wfile.write((json.dumps(response) + "\n").encode("utf-8"))
+                self._write_line(frame)
+            except (OSError, ValueError):
+                return
+
+    def _write_line(self, payload: dict[str, Any]) -> None:
+        """Write one JSON line to `self.wfile`, serialized against
+        concurrent writers on this same connection (the main handler
+        thread and, once subscribed, the event-pump thread)."""
+        with self._write_lock:
+            self.wfile.write((json.dumps(payload) + "\n").encode("utf-8"))
             self.wfile.flush()
 
 
@@ -311,9 +391,16 @@ class _DaemonServer(socketserver.ThreadingUnixStreamServer):
 
     def __init__(self, root: Path, sock_path: Path) -> None:
         """Bind the unix socket at `sock_path` and stash `root` for
-        `_RequestHandler.handle` to dispatch against."""
+        `_RequestHandler.handle` to dispatch against. `event_bus` (T-1096)
+        is imported locally, not at module level, to avoid a
+        `_socketd`<->`_events` import cycle -- `_events.subscribe_and_wait`
+        itself imports `DaemonError`/`socket_path` FROM this module, so
+        this module cannot also import `_events` at module scope."""
+        from frob.serve._events import _EventBus
+
         self.root = root
         self.idle_tracker = _IdleTracker()
+        self.event_bus = _EventBus()
         super().__init__(str(sock_path), _RequestHandler, bind_and_activate=True)
 
 
@@ -392,6 +479,26 @@ def run_socket_daemon(cfg: SocketDaemonConfig) -> Result[None, DaemonError]:
     )
     monitor.start()
 
+    # T-1094: push-invalidate the warm state during idle time instead of
+    # leaving every rebuild to whichever client query happens to arrive
+    # next. `on_change` (T-1096) publishes a `graph-changed` event to any
+    # subscribed client the moment a real on-disk change is observed.
+    from frob.serve._events import CoverageWatcher
+
+    watcher = WatchThread(
+        root, on_change=lambda: server.event_bus.publish("graph-changed")
+    )
+    watcher.start()
+
+    # T-1096: the `coverage-fresh` event source -- any write to
+    # `.frob/coverage-stamp` (by run_coverage_wait, a bare `make coverage`,
+    # or a future cross-worktree single-flight run, T-1095) is republished
+    # as a push event so a subscribed client never has to poll for it.
+    coverage_watcher = CoverageWatcher(
+        root, on_fresh=lambda: server.event_bus.publish("coverage-fresh")
+    )
+    coverage_watcher.start()
+
     _log.info(
         "serve: socketd: listening at %s (pid=%d, idle_timeout=%gs)",
         sock_path,
@@ -402,6 +509,8 @@ def run_socket_daemon(cfg: SocketDaemonConfig) -> Result[None, DaemonError]:
         server.serve_forever()
     finally:
         stop.set()
+        watcher.stop()
+        coverage_watcher.stop()
         server.server_close()
         _remove_stale_socket(sock_path)
         _release_singleton_lock(lock_handle)

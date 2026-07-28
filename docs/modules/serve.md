@@ -337,6 +337,145 @@ unlinked unconditionally the next time a caller wins the lock (safe: no
 other live daemon can be bound to it once this process holds the
 exclusive lock).
 
+## FS-watch push invalidation (T-1094)
+
+<!-- frob:describes src/frob/serve/_watch.py::DEFAULT_WATCH_POLL_INTERVAL_S -->
+<!-- frob:describes src/frob/serve/_watch.py::watch_tick -->
+<!-- frob:describes src/frob/serve/_watch.py::WatchThread -->
+
+`frob.serve._watch` (T-1094, child (a) of T-0321) adds a PUSH layer over
+the warm state's existing PULL-based invalidation
+(`frob.serve._warm._repo_dirty_key`/`_warm_state`, "Warm state" above): a
+background thread inside `run_socket_daemon` (T-1092) re-checks
+`_repo_dirty_key` on a short interval (`DEFAULT_WATCH_POLL_INTERVAL_S`,
+1s) and, the moment it changes, invalidates and eagerly rebuilds the warm
+state during the daemon's own idle time -- so the FIRST client query after
+an on-disk edit hits an already-warm cache instead of paying the rebuild
+inline.
+
+**This is a fast poller reusing `_repo_dirty_key` itself, not a kernel
+inotify/watchdog-library subscription** -- a deliberate, disclosed design
+choice (`frob.serve._watch`'s module docstring has the full rationale):
+reusing the exact signal the pull path already trusts means a watch tick
+structurally cannot disagree with what a client's own next query would
+have computed, sidesteps the inotify-under-WSL-bind-mount watch-miss class
+this repo has already hit once (T-0245), and adds no new dependency. The
+tradeoff is polling overhead/latency instead of true event-driven push;
+`WatchThread`'s tick loop is a drop-in swap for a real inotify listener
+later if that tradeoff needs revisiting -- the push contract (`on_change`
+firing on invalidation) and the correctness contract (below) are
+unaffected either way.
+
+### Staleness/correctness contract (T-1094 addendum)
+
+T-0321 requirement 4 (daemon-answer == cold-answer, always) is unaffected
+by this module: `_warm_state`'s pull-path recheck against
+`_repo_dirty_key` still runs, unconditionally, on every tool call,
+regardless of whether the background watcher already pre-warmed the cache
+or not. A missed/delayed watch tick (the poll thread hasn't run yet, or
+this daemon process isn't running at all -- e.g. the MCP stdio path, which
+does not use `_watch` at all) never risks a stale answer -- it only means
+the query pays the rebuild cost the pull path always paid before this
+ticket, i.e. a forgone optimization, never a correctness gap. This is the
+proof shape `tests/test_serve_watch.py::TestWatchTick.
+test_watch_tick_never_disagrees_with_pull_signal` exercises over
+randomized edit sequences: for every sequence, the watch-tick-observed
+`changed` decision agrees with directly comparing two independent
+`_repo_dirty_key` calls bracketing the same edit -- true by construction
+here (same function, same call), but proven on the actual code path rather
+than merely argued in prose.
+
+`run_socket_daemon` starts one `WatchThread` per daemon process (root
+`Path`, no config surface beyond `poll_interval_s`/`on_change`) alongside
+the existing idle-monitor thread, and stops it in the same `finally` block
+that releases the lock and removes the socket file -- a watcher never
+outlives its daemon process. `on_change` is wired to publish a
+`graph-changed` event (see "Subscribe/push events" below, T-1096) to any
+subscribed client; `_watch` itself has no dependency on `_events` at all
+(the callback is `None` if unset) and stays a pure optimization layer on
+its own.
+
+## Subscribe/push events (T-1096)
+
+<!-- frob:describes src/frob/serve/_events.py::DEFAULT_SUBSCRIBE_TIMEOUT_S -->
+<!-- frob:describes src/frob/serve/_events.py::DEFAULT_COVERAGE_POLL_INTERVAL_S -->
+<!-- frob:describes src/frob/serve/_events.py::_EventBus -->
+<!-- frob:describes src/frob/serve/_events.py::CoverageWatcher -->
+<!-- frob:describes src/frob/serve/_events.py::subscribe_and_wait -->
+<!-- frob:describes src/frob/serve/_socketd.py::DaemonError -->
+
+`frob.serve._events` (T-1096, child (e) of T-0321, this epic's named
+"stall-killer") extends the T-1092 socket protocol with a `subscribe`
+verb: instead of a client re-polling `frob_daemon_status` on its own
+schedule (T-0733's post-land/rebase-bot jobs are still PULL-only), a
+client sends `{"method": "subscribe"}` and then blocks reading
+newline-delimited PUSH frames off the same connection --
+`{"event": "graph-changed", "data": {}}` or
+`{"event": "coverage-fresh", "data": {}}` -- the moment the daemon's own
+state changes.
+
+### Event sources
+
+Two background threads, both started/stopped by `run_socket_daemon`
+alongside the existing idle-monitor and (T-1094) `WatchThread`:
+
+- **`graph-changed`** -- `WatchThread`'s `on_change` callback (T-1094)
+  publishes this event every time a watch tick observes and pre-warms a
+  real on-disk change.
+- **`coverage-fresh`** -- `CoverageWatcher` polls
+  `<root>/.frob/coverage-stamp`'s mtime (`DEFAULT_COVERAGE_POLL_INTERVAL_S`,
+  1s) and publishes the moment it changes. Deliberately source-agnostic:
+  it does not import `frob.testing` or care WHO wrote the stamp (`frob.
+  testing.run_coverage_wait`'s single-flight lock, a bare `make coverage`,
+  or a future cross-worktree cache hit, T-1095) -- any write to the stamp
+  file is treated as a legitimate freshness signal.
+
+### Protocol and connection handling
+
+`_RequestHandler._handle_subscribe` registers the connection with the
+per-process `_DaemonServer.event_bus` (an `_EventBus`, constructed once
+per daemon in `_DaemonServer.__init__`) and starts a dedicated per-
+connection event-pump thread (`_pump_events`) that blocks on the
+subscriber's `queue.Queue` and writes each frame out as it arrives. A
+`threading.Lock` (`_write_lock`) serializes writes to the connection's
+`wfile` between the main `handle()` loop (still serving ordinary
+request/response pairs on the SAME connection -- subscribing does not
+stop a client from issuing other requests) and the event-pump thread, so
+the two never interleave a partial JSON line onto the wire.
+`_EventBus.unsubscribe` pushes a `None` sentinel into the subscriber's
+queue so the pump thread wakes up and exits promptly instead of blocking
+forever once the connection closes (`handle()`'s `finally` block always
+unsubscribes, including on an abrupt disconnect).
+
+### Client helper
+
+`subscribe_and_wait(root, event, timeout_s=DEFAULT_SUBSCRIBE_TIMEOUT_S)`
+is the client-side counterpart: connect, send `subscribe`, then block
+reading frames until one whose `"event"` matches arrives (returning its
+`"data"`), or `Err(DaemonError.Timeout)` if `timeout_s` elapses, or
+`Err(DaemonError.Unreachable)` if the daemon cannot be reached at all.
+This is the shape an agent that today backgrounds `make coverage` and
+stalls waiting on a notification it cannot act on
+(`docs/guides/agent-playbook.md` 6b/3b) uses instead: ONE blocking
+foreground call, in-band on a single connection, that resolves the moment
+ANY caller's coverage run finishes writing the stamp -- including a
+DIFFERENT process's single-flight run (T-1095), not just one this client
+itself triggered.
+
+### Staleness/correctness contract (T-1096 addendum)
+
+**An event frame is a wake-up signal, never a data channel** -- this is
+what keeps T-0321's #1 safety invariant (daemon-answer == cold-answer,
+always) intact for this ticket too. `coverage-fresh`/`graph-changed`
+frames carry an empty `data` payload today; a client that receives one
+still calls `frob_check_delta`/`frob_run_touched_tests`/
+`frob_daemon_status` afterward exactly as it would from a cold start,
+through the same warm-state-backed, git-status-verified query path every
+other client uses (the "Staleness/correctness contract" section above).
+Subscribing only replaces the "when do I bother asking" polling loop; it
+never substitutes for, or bypasses, the "is this answer correct" check
+any query tool still performs on every call.
+
 ## CLI daemon proxy (T-1093)
 
 <!-- frob:describes src/frob/app/_daemon_proxy.py::ProxyReason -->
