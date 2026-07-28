@@ -6,6 +6,14 @@ docstring's "R6's purity heuristic" deviation note (now on
 `frob.dup._pipeline`'s `__init__.py`). Opt-in, never called from
 `find_clones`/the DUP gate path.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/dup/_pipeline/_probe.py's \
+# exclusivity-vocabulary hit is source-level design-rationale prose (a \
+# docstring or comment describing already-implemented internal behavior, \
+# verifiable by reading the code it annotates) rather than a separate \
+# cross-module contract needing its own tracked invariant; disposed as a \
+# calibration batch, not claim-by-claim -- module prose split from \
+# the pre-T-1086 monolith"
 
 from __future__ import annotations
 

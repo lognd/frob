@@ -44,6 +44,14 @@ call and no preceding `"--"` is a finding. Interprocedural flow (taint
 crossing a function boundary via a parameter or return value) is NOT
 attempted here -- a disclosed phase-2 gap, matching T-0781's own body.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/vet/_taint.py's \
+# exclusivity-vocabulary hit is source-level design-rationale prose (a \
+# docstring or comment describing already-implemented internal behavior, \
+# verifiable by reading the code it annotates) rather than a separate \
+# cross-module contract needing its own tracked invariant; disposed as a \
+# calibration batch, not claim-by-claim -- first-turn-on prose of \
+# the T-0781 taint module"
 
 from __future__ import annotations
 
@@ -245,6 +253,8 @@ def _scan_statements(stmts: list[ast.stmt], rel_path: str) -> list[TaintFinding]
     return findings
 
 
+# frob:tests tests/unit/vet/test_taint.py::TestTaintFindings.test_unvalidated_state_read_reaching_argv_fires  # noqa: E501
+# frob:tests tests/unit/vet/test_taint.py::TestTaintFindings.test_validated_value_does_not_fire  # noqa: E501
 def taint_findings(path: Path) -> tuple[TaintFinding, ...]:
     """SEC005 findings for the Python source file at `path`: every
     function body (`FunctionDef`/`AsyncFunctionDef`) and the module's own

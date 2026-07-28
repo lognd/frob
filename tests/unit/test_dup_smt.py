@@ -28,7 +28,7 @@ def _empty_snapshot() -> GraphSnapshot:
     return GraphSnapshot(root=".", symbols={}, edges=())
 
 
-# frob:tests src/frob/dup/_pipeline.py::_probe_smt_equivalence kind="unit"
+# frob:tests src/frob/dup/_pipeline/_smt.py::_probe_smt_equivalence kind="unit"
 def test_degrades_to_smt_unavailable_without_z3(monkeypatch: pytest.MonkeyPatch):
     if HAS_Z3:
         pytest.skip("z3-solver is installed; this exercises the absent-dep path")

@@ -140,6 +140,14 @@ Implements docs/modules/dup.md's `find_clones` across the full rung ladder:
   same class of approximation as R2/R3's identifier-shaped-token
   normalization above.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/dup/_pipeline/__init__.py's \
+# exclusivity-vocabulary hit is source-level design-rationale prose (a \
+# docstring or comment describing already-implemented internal behavior, \
+# verifiable by reading the code it annotates) rather than a separate \
+# cross-module contract needing its own tracked invariant; disposed as a \
+# calibration batch, not claim-by-claim -- module prose split from \
+# the pre-T-1086 monolith"
 
 from __future__ import annotations
 
