@@ -487,7 +487,6 @@
     "src/frob/gates/__init__.py::drift_gate": "5c212d52c12a13920ee34ad607ff4d2367a47d7d7f940927aae71563b733a8e4",
     "src/frob/gates/__init__.py::dup_gate": "348767371865b24a22fb12108de3ce79757bb30707c3302772a503838fc78d65",
     "src/frob/gates/__init__.py::evidence_covers_scope": "0b51203d0ff4e37830ddea56708947cf909cde9d9d8b64cba872defa996266f0",
-    "src/frob/gates/__init__.py::fmt_gate": "aec42d9d7eee011aa4c46caf371d6ab09dcbbb6aac70815a9b7c7722c1878ca3",
     "src/frob/gates/__init__.py::fuzz_gate": "ffa8533c057bcee13876df5c547fab8eda00ee601fc2a8d12d1464a107abf0b8",
     "src/frob/gates/__init__.py::inv003_gate": "14e00b0157ebcb219f147e711a416d35ba3b0254063a0ffc701485776ae30b71",
     "src/frob/gates/__init__.py::inv004_gate": "3fcdb93435385b377a7e1f26befa99635c613f179c8dd8698f9c41269dc96902",
@@ -609,6 +608,7 @@
     "src/frob/gates/_secrets.py::fake_marker_staleness_gate": "1c7d11e0ac38df968c5cee385afe2c969586e739dd3c362751057efd1e67b7a8",
     "src/frob/gates/_secrets.py::secrets_gate": "b20f329f107939ac130179a60ec33ecae5d0e43c976114918b5bc1c821a5b06a",
     "src/frob/gates/_taint_gate.py::taint_gate": "8eb1266f83ddfad99829c392afa9d623ce2365e1f607a0b4c004dac2543204c8",
+    "src/frob/gates/_todo_fmt.py::fmt_gate": "aec42d9d7eee011aa4c46caf371d6ab09dcbbb6aac70815a9b7c7722c1878ca3",
     "src/frob/gates/_waive.py::SCOPED_RUN_FLAKY_RULE_IDS": "eccec9442287c94baf320554cbed12c317246e8b8907dea1ab52876f8f606c97",
     "src/frob/gates/_waive.py::active_ticket": "a3ec91100e15e9216e6c754b0ba623ee6e8c45468ee86805045ad43623853c7b",
     "src/frob/gates/_waive.py::known_gate_rule_ids": "42f8d0e0fce2c36e6d63ac8a4ef7d47b03825d5fe90f41cb75474f71fac17491",
@@ -1811,5 +1811,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.225.0"
+  "version": "0.226.0"
 }

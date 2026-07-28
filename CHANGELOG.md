@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.226.0] - unreleased
+
+- T-1077: arch: split remaining gate families out of src/frob/gates/__init__.py (T-0395/T-1072 remainder)
+
 ## [0.225.0] - unreleased
 
 - T-1094: daemon: FS-watch push invalidation replaces git-status-poll warm-state key
