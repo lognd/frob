@@ -296,7 +296,6 @@ origin: human
 created: '2026-07-20'
 priority: medium
 blocked_by:
-- ''
 - T-0377
 - T-0378
 - T-0379
@@ -1955,3 +1954,35 @@ threat: null
 component: null
 ```
 frob check --only invariant fails with 1 error: src/frob/tickets/_new_renumber.py makes an exclusivity/normative claim (\bonly\b, e.g. line 68/140/148/150/152) with no frob:invariant INV-### edge anchored anywhere in the file. Confirmed pre-existing on main (verified via a plain 'uv run frob check --only invariant' against main's own checkout, unrelated to any T-1094/T-1096 change) -- this file was introduced by T-1103's tickets/__init__.py split and never got an invariant binding or waiver. Bind a real invariant covering the claim, waive with a reason, or reword to drop the exclusivity language.
+
+<!-- ticket:T-1108 -->
+```yaml
+id: T-1108
+title: 'arch: extract remaining ~8 verb families from tickets/__init__.py (3489) and
+  split tickets/_land.py (4762) -- T-1103 residue'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- docs/modules/tickets.md
+- tests/test_tickets.py
+acceptance:
+- text: GIVEN the tickets package WHEN the remaining verb families (doable/leases/scope-breadth,
+    scope mutation, field setters/sprint, evidence/transition, done-report/review/drop/attach)
+    are extracted into per-family modules THEN tickets/__init__.py drops below 2000
+    lines with no public API change and all existing tests pass
+  evidence: []
+- text: GIVEN tickets/_land.py at 4762 lines WHEN split into cohesive submodules (preflight,
+    splice, verify, sweep families) THEN no single tickets/ module exceeds 2500 lines
+    and LARGE001 no longer flags _land.py
+  evidence: []
+threat: null
+component: null
+```
+T-1103 extracted archive + new/renumber families (tickets/__init__.py 4287->3489) and stopped on budget; per its done report the remaining ~8 families are doable/leases/scope-breadth, scope mutation, field setters/sprint, evidence/transition, done-report/review/drop/attach, and _land.py (4762 lines) was not touched. Continue the same extraction pattern: per-family private modules re-exported from __init__, zero behavior change, existing tests as the safety net. Beware the load-time circular import noted in T-1103's report (evidence family).
