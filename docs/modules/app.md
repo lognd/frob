@@ -220,6 +220,54 @@ freshness posture for `heat`, not an overlooked fourth duplicate.
   `log_context` (`"debt"`/`"deprecated"`/`"release"`) so each caller's own
   identity survives the shared code path.
 
+## T-1124: abstraction-opportunity remainder disposition
+
+T-1085 filed the arch package's `src/frob/app/**`-scoped
+abstraction-opportunity remainder as T-1124: `check_runner.py`'s two
+`ToolResult`-builder groups, `deploy_runner.py`'s repeated-`_design_dir`-
+name group, and `perf_runner.py`'s `_heat`/`_collect` pair. Each was
+checked on its own merits rather than extracted uniformly:
+
+- **`perf_runner.py` -- genuine extraction.** `_heat`/`_collect` carried
+  byte-identical `--json`-implies-quiet-stdout-logs wrapper bodies
+  (`import contextlib; ctx = quiet_stdout_logs() if cfg.perf_json else
+  contextlib.nullcontext(); with ctx: <body>(cfg)`). Extracted into
+  `_run_quiet_if_json(cfg, body)`; both callers now pass their own body
+  function through it.
+- **`check_runner.py` -- genuine extraction for the two in-file
+  members.** Of the 7-member `(Path) -> ToolResult | None` group, only
+  `_deploy_drift_result`/`_deploy_conformance_result` live in
+  `check_runner.py` itself (the other 5 -- `_derived_state_integrity_result`,
+  `_run_clang_format`, `_run_cargo_fmt_check`, `_run_cargo_valgrind`,
+  `_run_bind` -- live in `src/frob/check/**`, outside this ticket's
+  `scope`). The two in-file members shared an identical "opt-in on
+  `deploy/` existing, call a violations function, wrap the result" shape;
+  extracted into `_opt_in_deploy_stage_result(root, violations_fn,
+  wrap_fn)`. The 5-member `(str, str) -> ToolResult` group has only ONE
+  member in `check_runner.py` (`_skip_note_result`) -- the rest
+  (`_missing_tool_result`, `tool_unavailable_result`,
+  `tool_disabled_result`, `parse_junit_xml`) live in `src/frob/check/_ts.py`
+  and `src/frob/process/parsers/**`, also outside `scope`; nothing to
+  extract within one file for this group. Both groups keep firing from
+  `frob check --only arch` (unwaivable, `abstraction-opportunity` is
+  never `frob:waive`-able per docs/modules/arch.md) because the shared
+  signature carries a specific domain type (`ToolResult`) -- the finding
+  is not resolvable without a cross-subsystem consolidation reaching into
+  `src/frob/check/**`/`src/frob/process/parsers/**`, out of this ticket's
+  `scope`; filed as a follow-up.
+- **`deploy_runner.py` -- grounded disposition, not extracted.**
+  `_design_dir`'s repeated-name pair is `deploy_runner.py`'s own copy and
+  `sys_runner.py`'s own copy (leased by a concurrent ticket this wave,
+  out of `scope` either way) -- both already carry docstrings citing each
+  other and `frob.gates`'s own third copy as a deliberate,
+  previously-reviewed duplication (a two-line `frob.toml` read judged not
+  worth a cross-module import, T-0084). The group's other 4 members
+  (`_read_ledger_text_or_empty`/`_read_archive_text_or_empty` in
+  `src/frob/tickets/_land.py`, `_read_text_or_empty` x2 in
+  `src/frob/vet/_ecosystem.py`/`_supplychain.py`) do not exist in
+  `deploy_runner.py` at all -- a coincidental cross-subsystem signature
+  collision, not a `deploy_runner.py` duplicate.
+
 ## Shared styling helper (T-0179)
 
 `frob.app._style` centralizes ANSI-color decisions for every runner's

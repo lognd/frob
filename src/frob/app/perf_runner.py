@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 from frob.app.config import AppConfig
@@ -96,10 +97,14 @@ def _load_snapshot(root: Path):  # noqa: ANN201
     return result.danger_ok
 
 
-# frob:ticket T-0021
-# frob:ticket T-0125
-def _heat(cfg: AppConfig) -> None:
-    """`frob perf heat [--json] [--smells] [--top N] [--annotate FILE]`."""
+# frob:ticket T-1124
+# frob:tests tests/unit/test_app_runners_batch6.py::TestPerfRunner.test_heat_json_mode kind="unit"  # noqa: E501
+# frob:tests tests/unit/perf/test_persist_run_cli.py::TestPersistRunDefaultPath.test_missing_perf_path_resolves_to_cwd kind="unit"  # noqa: E501
+def _run_quiet_if_json(cfg: AppConfig, body: Callable[[AppConfig], None]) -> None:
+    """Run `body(cfg)` under `quiet_stdout_logs()` when `cfg.perf_json` is
+    set (T-1124: extracted from `_heat`/`_collect`'s identical
+    `--json`-implies-quiet-stdout-logs wrapper -- both commands need their
+    own log lines suppressed so `--json`'s stdout stays pure JSON)."""
     import contextlib
 
     if cfg.perf_json:
@@ -110,7 +115,14 @@ def _heat(cfg: AppConfig) -> None:
         ctx = contextlib.nullcontext()
 
     with ctx:
-        _heat_body(cfg)
+        body(cfg)
+
+
+# frob:ticket T-0021
+# frob:ticket T-0125
+def _heat(cfg: AppConfig) -> None:
+    """`frob perf heat [--json] [--smells] [--top N] [--annotate FILE]`."""
+    _run_quiet_if_json(cfg, _heat_body)
 
 
 # frob:ticket T-0021
@@ -362,21 +374,12 @@ def _print_decile_rows(rows) -> None:  # noqa: ANN001
 # frob:ticket T-0765
 def _collect(cfg: AppConfig) -> None:
     """`frob perf collect --file PATH [--format ...] | --sampler [-- argv]
-    [--top N] [--json]`: dispatch to `_collect_body`, under the same
-    `--json`-implies-quiet-stdout-logs discipline `_heat` uses, so
-    `--json`'s own log lines (parse/resolve progress) never pollute the
-    payload the CLI's stdout must stay pure JSON for."""
-    import contextlib
-
-    if cfg.perf_json:
-        from frob.logging import quiet_stdout_logs
-
-        ctx = quiet_stdout_logs()
-    else:
-        ctx = contextlib.nullcontext()
-
-    with ctx:
-        _collect_body(cfg)
+    [--top N] [--json]`: dispatch to `_collect_body` via
+    `_run_quiet_if_json`, the same `--json`-implies-quiet-stdout-logs
+    discipline `_heat` uses, so `--json`'s own log lines (parse/resolve
+    progress) never pollute the payload the CLI's stdout must stay pure
+    JSON for."""
+    _run_quiet_if_json(cfg, _collect_body)
 
 
 # frob:ticket T-0765

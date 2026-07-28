@@ -10,6 +10,7 @@ import contextlib
 import logging
 import os
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 from frob.app._style import style_fail, style_warn
@@ -407,6 +408,25 @@ def _run_all_detected(
     return CheckResult(path=str(root), results=results)
 
 
+# frob:ticket T-1124
+# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_deploy_stages_appended_when_deploy_dir_present kind="unit"  # noqa: E501
+def _opt_in_deploy_stage_result(
+    root: Path,
+    violations_fn: Callable[[Path], object],
+    wrap_fn: Callable[[object], ToolResult],
+) -> ToolResult | None:
+    """Shared `(Path) -> ToolResult | None` shape both deploy-epic stages
+    use (T-1124: extracted from `_deploy_drift_result`/
+    `_deploy_conformance_result`, which were identical bar which
+    violations-function/wrap-function pair they called): opt-in on
+    `deploy/` existing, `None` (no stage at all) when it is absent, else
+    `violations_fn(root)` wrapped via `wrap_fn`."""
+    if not (root / "deploy").is_dir():
+        return None
+    violations = violations_fn(root)
+    return wrap_fn(violations)
+
+
 def _deploy_drift_result(root: Path) -> ToolResult | None:
     """DEPLOY001: `deploy/{install,status,uninstall}.sh` vs. regeneration
     from the current design model (`frob.deploy.deploy_drift_violations`,
@@ -418,12 +438,11 @@ def _deploy_drift_result(root: Path) -> ToolResult | None:
     docstring's posture); returns `None` (no stage at all, not merely a
     clean one) when `deploy/` is absent, so a repo that has never opted
     into the deploy epic sees no `deploy-drift` line at all."""
-    if not (root / "deploy").is_dir():
-        return None
     from frob.deploy import deploy_drift_violations
 
-    violations = deploy_drift_violations(root)
-    return _deploy_drift_tool_result(violations)
+    return _opt_in_deploy_stage_result(
+        root, deploy_drift_violations, _deploy_drift_tool_result
+    )
 
 
 def _deploy_drift_tool_result(violations) -> ToolResult:  # noqa: ANN001
@@ -457,14 +476,14 @@ def _deploy_conformance_result(root: Path) -> ToolResult | None:
     (`frob.deploy.deploy_conformance_violations`, T-0258). Same "extra
     stage beyond `frob.gates`'s job table" shape `_deploy_drift_result`
     already uses (`src/frob/gates/**` stays out of this ticket's `scope`
-    too). Opt-in on `deploy/` existing; returns `None` (no stage) when the
-    directory is absent."""
-    if not (root / "deploy").is_dir():
-        return None
+    too), via the shared `_opt_in_deploy_stage_result` (T-1124). Opt-in on
+    `deploy/` existing; returns `None` (no stage) when the directory is
+    absent."""
     from frob.deploy import deploy_conformance_violations
 
-    violations = deploy_conformance_violations(root)
-    return _deploy_conformance_tool_result(violations)
+    return _opt_in_deploy_stage_result(
+        root, deploy_conformance_violations, _deploy_conformance_tool_result
+    )
 
 
 def _deploy_conformance_tool_result(violations) -> ToolResult:  # noqa: ANN001
