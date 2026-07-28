@@ -221,6 +221,9 @@ def _function_body_span(lines: list[str], sig_line_idx: int) -> tuple[int, int]:
     k = sig_line_idx
     n = len(lines)
     while k < n:
+        # frob:waive PERF002 reason="str.count on the loop's own \
+        # per-iteration line, a single per-line scan -- not a repeated \
+        # collection count with a pre-buildable index"
         opens = lines[k].count("{")
         depth += opens - lines[k].count("}")
         if opens:
