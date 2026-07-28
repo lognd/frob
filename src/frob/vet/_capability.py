@@ -5254,6 +5254,65 @@ def _operation_entry_matches(
     return False
 
 
+# T-0380: `_resolved_candidates_for_language` dispatches to whichever
+# language's `_python_resolved_candidates`/`_ts_resolved_candidates`/
+# `_rust_resolved_candidates`/`_c_resolved_candidates` binding table was
+# already built for capability resolution (T-0328/T-0377/T-0378/T-0379) --
+# one shared dispatch point so fingerprint scanning reuses the SAME
+# resolver tables rather than growing its own copy (charter: no
+# duplication). Kotlin is deliberately excluded: no `CVE_FINGERPRINTS`
+# entry is tagged `language="kotlin"` today, so there is nothing for a
+# `_kt_resolved_candidates` branch here to resolve against.
+def _resolved_candidates_for_language(
+    path: Path, language: str
+) -> tuple[tuple[str, int, int], ...]:
+    """The binding-resolved `(resolved_dotted_target, start, end)` triples
+    for `path`, using whichever language's resolver table
+    `_scan_file_fingerprints` needs -- empty for a language with no
+    binding-aware resolver (returns () safely, degrading that language to
+    lexical-only matching)."""
+    if language == "python":
+        return _python_resolved_candidates(path)
+    if language == "typescript":
+        return _ts_resolved_candidates(path)
+    if language == "rust":
+        return _rust_resolved_candidates(path)
+    if language == "c-cpp":
+        return _c_resolved_candidates(path)
+    return ()
+
+
+def _binding_fingerprints(
+    path: Path,
+    language: str,
+    comment_spans: tuple[ByteSpan, ...],
+    fingerprints: tuple[CveFingerprint, ...],
+) -> tuple[CveFingerprint, ...]:
+    """T-0380: `fingerprints` entries observed via import/binding-aware
+    resolution only -- an aliased import (`import pickle as p; p.loads(...)`)
+    resolves to `pickle.loads` through the SAME binding table capability
+    scanning already built, so it still matches `FP-DESERIALIZE-PICKLE-001`
+    even though the literal text `pickle.loads(` never appears. Mirrors
+    `_python_binding_operations`'s shape exactly, against `CVE_FINGERPRINTS`
+    instead of `DANGEROUS_OPERATIONS`."""
+    candidates = _resolved_candidates_for_language(path, language)
+    if not candidates:
+        return ()
+    matched: list[CveFingerprint] = []
+    for entry in fingerprints:
+        if entry.language != language:
+            continue
+        for resolved, start, end in candidates:
+            if _fully_in_any_span(start, end, comment_spans):
+                continue
+            if any(
+                _needle_matches_resolved(needle, resolved) for needle in entry.needles
+            ):
+                matched.append(entry)
+                break
+    return tuple(matched)
+
+
 # The CVE-fingerprint sibling of `_scan_file_operations` (T-0153): a
 # fingerprint's `language` must match `path`'s scanned language bucket AND
 # at least one of its `needles` must appear in the file's text, the SAME
@@ -5263,14 +5322,25 @@ def _operation_entry_matches(
 # `_PATTERNS`/`language_for` join, so a top-level `frob.strata` import
 # here would be a genuine import cycle -- deferred until call time, when
 # both packages have finished initializing.
+#
+# T-0380: lexical needle-matching alone lets an aliased import evade a
+# fingerprint (`import pickle as p; p.loads(...)` never contains the
+# literal text `pickle.loads(`) even where capability scanning is already
+# binding-aware for the same module. `_binding_fingerprints` folds in
+# every fingerprint the file's binding tables resolve to, unioned with the
+# existing lexical result by `id` (a fingerprint caught either way is
+# reported once, not twice).
 # frob:doc docs/modules/vet.md#public-api
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
 # frob:ticket T-0153
+# frob:tests tests/test_vet.py::TestFingerprintBindingResolution.test_python_aliased_pickle_loads_still_matches
 def _scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
     """The `frob.strata.CVE_FINGERPRINTS` entries whose needle(s) matched in
-    `path`'s raw text."""
+    `path`'s raw text, OR whose needle(s) match a binding-resolved
+    call/attribute target (T-0380) -- catches an aliased import a lexical
+    scan alone would miss."""
     from frob.strata import CVE_FINGERPRINTS
 
     language = language_for(path)
@@ -5283,7 +5353,7 @@ def _scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
         return ()
 
     comment_spans = _non_executable_byte_spans(path)
-    matched = tuple(
+    lexical = tuple(
         entry
         for entry in CVE_FINGERPRINTS
         if entry.language == language
@@ -5292,6 +5362,11 @@ def _scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
             for needle in entry.needles
         )
     )
+    binding = _binding_fingerprints(path, language, comment_spans, CVE_FINGERPRINTS)
+    by_id: dict[str, CveFingerprint] = {}
+    for entry in (*lexical, *binding):
+        by_id[entry.id] = entry
+    matched = tuple(by_id.values())
     if matched:
         _log.info(
             "vet: %s: cve fingerprints matched: %s",

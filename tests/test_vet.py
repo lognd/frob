@@ -7,6 +7,7 @@ import json
 import shutil
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from unittest import mock
 
 import pytest
 
@@ -4252,6 +4253,167 @@ class TestFingerprintScan:
         fake_repo = _make_fake_frob_repo_root(tmp_path / "self-scan")
         matched = _scan_directory_fingerprints(fake_repo, max_files=2000)
         assert not any(m.id == "FP-DESERIALIZE-YAML-001" for m in matched)
+
+
+# frob:ticket T-0380
+class TestFingerprintBindingResolution:
+    """T-0380: `_scan_file_fingerprints` reuses the SAME binding tables
+    capability scanning built (T-0328/T-0377/T-0378/T-0379) so an aliased
+    import that would evade a lexical needle match is still caught --
+    adversarial test per language."""
+
+    def test_python_aliased_pickle_loads_still_matches(self, tmp_path: Path) -> None:
+        # `import pickle as p; p.loads(...)` never contains the literal
+        # text "pickle.loads(" the lexical scan needs -- a real fingerprint
+        # (FP-DESERIALIZE-PICKLE-001) resolved through the alias table.
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import pickle as p\ndata = p.loads(raw_bytes)\n")
+        matches = _scan_file_fingerprints(pkg)
+        assert any(m.id == "FP-DESERIALIZE-PICKLE-001" for m in matches)
+
+    def test_python_unaliased_control_still_matches_lexically(
+        self, tmp_path: Path
+    ) -> None:
+        # Control: the un-aliased form still matches via the pre-existing
+        # lexical path (this ticket adds recall, never removes it).
+        from frob.vet._capability import _scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import pickle\ndata = pickle.loads(raw_bytes)\n")
+        matches = _scan_file_fingerprints(pkg)
+        assert any(m.id == "FP-DESERIALIZE-PICKLE-001" for m in matches)
+
+    def test_typescript_aliased_require_still_matches(self, tmp_path: Path) -> None:
+        # `const ax = require('axios'); ax.get(url)` resolves to
+        # "axios.get" through _ts_resolved_candidates -- a synthetic
+        # axios-shaped fingerprint proves _binding_fingerprints' TS path
+        # independent of whether the real CVE_FINGERPRINTS catalog happens
+        # to carry a module.member-shaped typescript needle today.
+        # frob:tests src/frob/vet/_capability.py::_binding_fingerprints kind="unit"
+        from frob.strata._cve_fingerprint import CveFingerprint
+        from frob.vet._capability import _scan_file_fingerprints
+
+        fp = CveFingerprint(
+            id="FP-TEST-AXIOS-001",
+            title="test-only axios.get() fingerprint",
+            cve=("CVE-0000-00000",),
+            cwe_id="CWE-918",
+            language="typescript",
+            needles=("axios.get(",),
+            remediation="test fixture only",
+        )
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("const ax = require('axios');\nax.get(url);\n")
+        with mock.patch("frob.strata.CVE_FINGERPRINTS", (fp,)):
+            matches = _scan_file_fingerprints(pkg)
+        assert any(m.id == "FP-TEST-AXIOS-001" for m in matches)
+
+    def test_typescript_clean_source_does_not_match(self, tmp_path: Path) -> None:
+        from frob.strata._cve_fingerprint import CveFingerprint
+        from frob.vet._capability import _scan_file_fingerprints
+
+        fp = CveFingerprint(
+            id="FP-TEST-AXIOS-001",
+            title="test-only axios.get() fingerprint",
+            cve=("CVE-0000-00000",),
+            cwe_id="CWE-918",
+            language="typescript",
+            needles=("axios.get(",),
+            remediation="test fixture only",
+        )
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("const x = 1 + 2;\n")
+        with mock.patch("frob.strata.CVE_FINGERPRINTS", (fp,)):
+            matches = _scan_file_fingerprints(pkg)
+        assert not any(m.id == "FP-TEST-AXIOS-001" for m in matches)
+
+    def test_rust_aliased_use_still_matches(self, tmp_path: Path) -> None:
+        # `use std::process::Command as C; C::new("sh")` never contains the
+        # literal text "Command::new(" -- resolved via the rust `use`
+        # binding table (T-0378) to "std::process::Command::new".
+        # frob:tests src/frob/vet/_capability.py::_binding_fingerprints kind="unit"
+        from frob.strata._cve_fingerprint import CveFingerprint
+        from frob.vet._capability import _scan_file_fingerprints
+
+        fp = CveFingerprint(
+            id="FP-TEST-COMMAND-001",
+            title="test-only Command::new() fingerprint",
+            cve=("CVE-0000-00000",),
+            cwe_id="CWE-78",
+            language="rust",
+            needles=("Command::new(",),
+            remediation="test fixture only",
+        )
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            'use std::process::Command as C;\nfn f() { C::new("sh"); }\n'
+        )
+        with mock.patch("frob.strata.CVE_FINGERPRINTS", (fp,)):
+            matches = _scan_file_fingerprints(pkg)
+        assert any(m.id == "FP-TEST-COMMAND-001" for m in matches)
+
+    def test_rust_clean_source_does_not_match(self, tmp_path: Path) -> None:
+        from frob.strata._cve_fingerprint import CveFingerprint
+        from frob.vet._capability import _scan_file_fingerprints
+
+        fp = CveFingerprint(
+            id="FP-TEST-COMMAND-001",
+            title="test-only Command::new() fingerprint",
+            cve=("CVE-0000-00000",),
+            cwe_id="CWE-78",
+            language="rust",
+            needles=("Command::new(",),
+            remediation="test fixture only",
+        )
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text("fn add(a: i32, b: i32) -> i32 { a + b }\n")
+        with mock.patch("frob.strata.CVE_FINGERPRINTS", (fp,)):
+            matches = _scan_file_fingerprints(pkg)
+        assert not any(m.id == "FP-TEST-COMMAND-001" for m in matches)
+
+    def test_c_aliased_macro_still_matches(self, tmp_path: Path) -> None:
+        # `#define SYS system; SYS(cmd)` never contains the literal text
+        # "system(" -- resolved via the C macro-alias table (T-0379).
+        # frob:tests src/frob/vet/_capability.py::_binding_fingerprints kind="unit"
+        from frob.strata._cve_fingerprint import CveFingerprint
+        from frob.vet._capability import _scan_file_fingerprints
+
+        fp = CveFingerprint(
+            id="FP-TEST-SYSTEM-001",
+            title="test-only system() fingerprint",
+            cve=("CVE-0000-00000",),
+            cwe_id="CWE-78",
+            language="c-cpp",
+            needles=("system(",),
+            remediation="test fixture only",
+        )
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text("#define SYS system\nvoid f(char *cmd) { SYS(cmd); }\n")
+        with mock.patch("frob.strata.CVE_FINGERPRINTS", (fp,)):
+            matches = _scan_file_fingerprints(pkg)
+        assert any(m.id == "FP-TEST-SYSTEM-001" for m in matches)
+
+    def test_c_clean_source_does_not_match(self, tmp_path: Path) -> None:
+        from frob.strata._cve_fingerprint import CveFingerprint
+        from frob.vet._capability import _scan_file_fingerprints
+
+        fp = CveFingerprint(
+            id="FP-TEST-SYSTEM-001",
+            title="test-only system() fingerprint",
+            cve=("CVE-0000-00000",),
+            cwe_id="CWE-78",
+            language="c-cpp",
+            needles=("system(",),
+            remediation="test fixture only",
+        )
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text("int add(int a, int b) { return a + b; }\n")
+        with mock.patch("frob.strata.CVE_FINGERPRINTS", (fp,)):
+            matches = _scan_file_fingerprints(pkg)
+        assert not any(m.id == "FP-TEST-SYSTEM-001" for m in matches)
 
 
 class TestObfuscationEnsemble:

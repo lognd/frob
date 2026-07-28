@@ -839,7 +839,16 @@ uses table `nvd_cache` and a 7d TTL; `_registry.py` still uses table
 - `scan_file_fingerprints` -- T-0153: `frob.strata.CVE_FINGERPRINTS` entries
   whose needle(s) matched in one source file's raw text (the CVE-fingerprint
   sibling of `scan_file_operations`, docs/strata/threat.md#cve-fingerprints-
-  code-level-pattern-catalog-t-0153).
+  code-level-pattern-catalog-t-0153), UNIONED (T-0380) with every
+  fingerprint reached via the same python/typescript/rust/c-cpp binding
+  tables capability resolution already built (T-0328/T-0377/T-0378/
+  T-0379) -- an aliased import that evades the lexical needle scan (`import
+  pickle as p; p.loads(...)` never contains the literal text
+  `"pickle.loads("`) is still caught through the resolved call/attribute
+  target.
+- `_binding_fingerprints` -- T-0380: the resolver-backed half of
+  `scan_file_fingerprints`, mirroring `_python_binding_operations`'s shape
+  exactly against `CVE_FINGERPRINTS` instead of `DANGEROUS_OPERATIONS`.
 - `decode_to_exec_signal` -- true when a decode-ish and an exec-ish token
   co-occur in the SAME function body (the highest-precision obfuscation
   signal).
