@@ -2154,7 +2154,7 @@ flagged as likely undercounted, nor the small new cluster this
 consolidation itself surfaced (the new shared `tracked_files` now shares
 a `(Path, str) -> tuple[str, ...]` signature with 4 unrelated functions
 in src/frob/dup/_pipeline/_callgraph.py -- out of gates/ scope). Filed:
-T-draft-de569649 (remeasure before starting -- other tickets may have
+T-1114 (remeasure before starting -- other tickets may have
 moved the count).
 
 git diff main --diff-filter=D --stat: empty (no unintended deletions;
@@ -2194,6 +2194,7 @@ frob check --ticket T-1082 --only drift/--only test: 0 errors both runs.
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-1083 -->
 ```yaml
 id: T-1083
@@ -3466,9 +3467,9 @@ deferred work):
    reference`) -- `docs/design/registry/**` was outside T-0668/T-0669/
    T-0670's declared scope.
 
-<!-- ticket:T-draft-de569649 -->
+<!-- ticket:T-1114 -->
 ```yaml
-id: T-draft-de569649
+id: T-1114
 title: 'arch: abstraction-opportunity gates package extraction (T-1082 remainder)'
 state: queued
 kind: feature
