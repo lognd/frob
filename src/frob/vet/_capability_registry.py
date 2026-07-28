@@ -66,6 +66,31 @@ CAPABILITY_KINDS: tuple[str, ...] = (
     "exec",
     "eval",
     "net",
+    #: T-0771 (T-0717 follow-up): precise connect-vs-listen scanner-
+    #: observed kinds, the `net` sibling of `fs-write`/`fs-read` below --
+    #: same shape, same reason (a coarse `may "net"` declaration stays
+    #: legal and backward-compatibly satisfied by either observed kind via
+    #: `frob.vet._capability_modes.expand_declared_kind`, now that `net` is
+    #: in `WIRED_MODE_FAMILIES`). A handful of legacy "net" entries with no
+    #: clean connect/listen distinction (none remain in this registry as of
+    #: T-0771 -- every `net`-kind `_DangerousOperation` was reclassified)
+    #: would stay coarse "net" rather than force a guess.
+    "net-connect",
+    "net-listen",
+    #: T-0771: `frob.strata._threat.DEFAULT_BENIGN_CAPABILITIES` excuses
+    #: THREAT005 against the tier-2 `_effects.py::_KIND_MAP`-NORMALIZED
+    #: observed kind (`net.connect`/`net.listen`, mode-qualified, the same
+    #: spelling `may` declarations resolve to) -- a DIFFERENT string from
+    #: the raw vet-scanner kind just above (`net-connect`/`net-listen`,
+    #: hyphenated). Both live here: `_validate_registry_kinds` treats
+    #: "every kind used anywhere" as one flat vocabulary, so the
+    #: mode-qualified spelling needs its own registration too (mirrors
+    #: `frob.vet._capability_modes.CAPABILITY_MODE_KINDS`, generated
+    #: separately from `FAMILY_MODES` for the SAME two strings -- kept
+    #: as literals here rather than importing that tuple to avoid a
+    #: registry -> capability_modes import for two constant strings).
+    "net.connect",
+    "net.listen",
     "fs-write",
     #: `frob.strata._effects._KIND_MAP` normalizes the scanner's `fs-write`
     #: spelling to `fs` for the tier-2 `may`-declaration vocabulary (net/
@@ -87,6 +112,17 @@ CAPABILITY_KINDS: tuple[str, ...] = (
     #: narrower signal (docs/strata/selfconform.md#fs-read-fs-write).
     "fs-read",
     "env",
+    #: T-0771: precise read-vs-write scanner-observed kinds for `env`, the
+    #: same shape as `net-connect`/`net-listen` above -- NOT added to
+    #: `frob.vet._capability_modes.WIRED_MODE_FAMILIES` yet, unlike `net`:
+    #: `env` still has no tier-2 (`frob.strata._effects._KIND_MAP`) `may`-
+    #: declaration join at all (module docstring there), so there is no
+    #: live conformance join for the precise kinds to feed. The needle-
+    #: level split exists now (this registry) so that follow-up join work
+    #: does not have to redo the needle research; wiring the join itself
+    #: is filed as separate follow-up (T-0771 Done report).
+    "env-read",
+    "env-write",
     "ffi",
     "install-hook",
     "html_render",
@@ -395,7 +431,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "socket",
         "socket.socket/create_connection",
-        "net",
+        "net-connect",
         "opens a raw network socket",
         "prefer a higher-level client with TLS verification enabled",
         "medium",
@@ -406,7 +442,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "http.client",
         "http.client.HTTPConnection",
-        "net",
+        "net-connect",
         "issues raw HTTP requests, stdlib low-level client",
         "prefer httpx/requests with a pinned timeout and cert verification",
         "low",
@@ -434,7 +470,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "ftplib",
         "ftplib.FTP",
-        "net",
+        "net-connect",
         "opens a plaintext FTP control/data connection",
         "prefer SFTP/FTPS with certificate verification",
         "low",
@@ -445,7 +481,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "smtplib",
         "smtplib.SMTP",
-        "net",
+        "net-connect",
         "opens an outbound SMTP connection, potential mail-relay abuse surface",
         "restrict SMTP host/credentials to a trusted, configured relay",
         "low",
@@ -456,7 +492,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "requests",
         "requests.get/post/...",
-        "net",
+        "net-connect",
         "third-party HTTP client issuing outbound requests",
         "pin a timeout and verify=True; validate SSRF-sensitive URLs",
         "medium",
@@ -467,7 +503,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "aiohttp",
         "aiohttp.ClientSession",
-        "net",
+        "net-connect",
         "third-party async HTTP client issuing outbound requests",
         "pin a timeout and verify SSL; validate SSRF-sensitive URLs",
         "medium",
@@ -478,7 +514,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "httpx",
         "httpx.Client/get/post",
-        "net",
+        "net-connect",
         "third-party HTTP client issuing outbound requests",
         "pin a timeout and verify=True; validate SSRF-sensitive URLs",
         "medium",
@@ -511,12 +547,27 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
     _op(
         "python",
         "asyncio",
-        "asyncio.open_connection/start_server",
-        "net",
-        "opens an async network socket",
+        "asyncio.open_connection",
+        "net-connect",
+        "opens an async network socket as a client",
         "prefer a higher-level client with TLS verification enabled",
         "medium",
-        ("asyncio.open_connection(", "asyncio.start_server("),
+        ("asyncio.open_connection(",),
+        (),
+    ),
+    # T-0771: asyncio.start_server is the listen-side counterpart, split
+    # out of the combined open_connection/start_server entry above so the
+    # connect/listen mode split (frob.vet._capability_modes.FAMILY_MODES
+    # "net") has a real per-needle distinction to normalize against.
+    _op(
+        "python",
+        "asyncio",
+        "asyncio.start_server",
+        "net-listen",
+        "binds and accepts inbound async network connections",
+        "bind only to a trusted interface and pin host/port explicitly",
+        "medium",
+        ("asyncio.start_server(",),
         (),
     ),
     # -- python: fs-write --------------------------------------------------
@@ -616,11 +667,26 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "os",
         "os.environ / os.getenv",
-        "env",
+        "env-read",
         "reads process environment variables, which may carry secrets",
         "scope secret access through a config loader with an explicit allowlist",
         "low",
         ("os.environ", "os.getenv("),
+        (),
+    ),
+    # T-0771: write-side counterpart of os.environ/os.getenv above --
+    # os.putenv and an os.environ[...] assignment mutate the process's own
+    # environment for any child process spawned afterward.
+    _op(
+        "python",
+        "os",
+        "os.environ[...] = / os.putenv",
+        "env-write",
+        "mutates process environment variables, inherited by any child "
+        "process spawned afterward",
+        "scope environment mutation through a config loader with an explicit allowlist",
+        "low",
+        ("os.putenv(", "os.environ["),
         (),
     ),
     _op(
@@ -806,7 +872,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "typescript",
         "ws",
         "WebSocket",
-        "net",
+        "net-connect",
         "opens a persistent socket to an attacker-influenceable host",
         "validate/allowlist the target host before connecting",
         "medium",
@@ -817,7 +883,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "typescript",
         "http",
         "http.request/https.request",
-        "net",
+        "net-connect",
         "issues a raw HTTP(S) request, node's low-level client",
         "prefer a vetted HTTP client with a pinned timeout",
         "low",
@@ -828,7 +894,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "typescript",
         "axios",
         "axios.get/post/...",
-        "net",
+        "net-connect",
         "third-party HTTP client issuing outbound requests",
         "pin a timeout; validate SSRF-sensitive URLs",
         "medium",
@@ -839,11 +905,24 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "typescript",
         "net",
         "net.connect",
-        "net",
+        "net-connect",
         "opens a raw TCP socket",
         "prefer a higher-level client with TLS verification",
         "medium",
         ("net.connect(",),
+        (),
+    ),
+    # T-0771: listen-side counterpart of the raw `net`/`http` client
+    # entries above -- node's own low-level server-bind idioms.
+    _op(
+        "typescript",
+        "net",
+        "net.createServer/http.createServer",
+        "net-listen",
+        "binds and accepts inbound network connections",
+        "bind only to a trusted interface and pin host/port explicitly",
+        "medium",
+        ("net.createServer(", "http.createServer(", "https.createServer("),
         (),
     ),
     # -- typescript/js: env / ffi / fs-write / install-hook -------------------
@@ -851,11 +930,26 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "typescript",
         "process",
         "process.env",
-        "env",
+        "env-read",
         "reads process environment variables, which may carry secrets",
         "scope secret access through a config loader with an explicit allowlist",
         "low",
         ("process.env",),
+        (),
+    ),
+    # T-0771: write-side counterpart of process.env read above -- assigning
+    # into process.env mutates the process's own environment for any child
+    # process it later spawns.
+    _op(
+        "typescript",
+        "process",
+        "process.env.X = ...",
+        "env-write",
+        "mutates process environment variables, inherited by any child "
+        "process spawned afterward",
+        "scope environment mutation through a config loader with an explicit allowlist",
+        "low",
+        ("process.env.",),
         (),
     ),
     _op(
@@ -965,7 +1059,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "rust",
         "std::net",
         "TcpStream/std::net::*",
-        "net",
+        "net-connect",
         "opens a raw network socket",
         "prefer a higher-level client with TLS verification",
         "medium",
@@ -976,7 +1070,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "rust",
         "reqwest",
         "reqwest::Client/get/post",
-        "net",
+        "net-connect",
         "third-party HTTP client issuing outbound requests",
         "pin a timeout; validate SSRF-sensitive URLs",
         "medium",
@@ -987,11 +1081,23 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "rust",
         "hyper",
         "hyper::Client",
-        "net",
+        "net-connect",
         "third-party low-level HTTP client issuing outbound requests",
         "pin a timeout; validate SSRF-sensitive URLs",
         "medium",
         ("hyper::",),
+        (),
+    ),
+    # T-0771: listen-side counterpart of TcpStream/reqwest/hyper above.
+    _op(
+        "rust",
+        "std::net",
+        "TcpListener::bind",
+        "net-listen",
+        "binds a socket to a local address and accepts inbound connections",
+        "bind only to a trusted interface",
+        "medium",
+        ("TcpListener",),
         (),
     ),
     # -- rust: fs-write ------------------------------------------------------
@@ -1023,11 +1129,24 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "rust",
         "std::env",
         "env::var/env::vars",
-        "env",
+        "env-read",
         "reads process environment variables, which may carry secrets",
         "scope secret access through a config loader with an explicit allowlist",
         "low",
         ("std::env::var(", "std::env::vars("),
+        (),
+    ),
+    # T-0771: write-side counterpart of env::var/env::vars above.
+    _op(
+        "rust",
+        "std::env",
+        "env::set_var/env::remove_var",
+        "env-write",
+        "mutates process environment variables, inherited by any child "
+        "process spawned afterward",
+        "scope environment mutation through a config loader with an explicit allowlist",
+        "low",
+        ("env::set_var(", "env::remove_var("),
         (),
     ),
     # -- kotlin: net (T-0170, Android node capability-scan column) -------------
@@ -1035,7 +1154,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "kotlin",
         "okhttp3",
         "OkHttpClient/Retrofit",
-        "net",
+        "net-connect",
         "the dominant Android HTTP client (and Retrofit, built on top of it) "
         "issuing outbound requests",
         "pin a timeout; validate SSRF-sensitive URLs; enable certificate pinning",
@@ -1047,11 +1166,42 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "kotlin",
         "java.net",
         "HttpURLConnection",
-        "net",
+        "net-connect",
         "the JDK's built-in HTTP client, opening an outbound connection",
         "prefer a higher-level client with TLS verification (OkHttp)",
         "medium",
         ("HttpURLConnection",),
+        (),
+    ),
+    # T-0771: listen-side counterpart of okhttp3/HttpURLConnection above --
+    # the JDK's own server-socket bind primitive.
+    _op(
+        "kotlin",
+        "java.net",
+        "ServerSocket",
+        "net-listen",
+        "binds a socket to a local address and accepts inbound connections",
+        "bind only to a trusted interface",
+        "medium",
+        ("ServerSocket(",),
+        (),
+    ),
+    # T-0771: kotlin/JVM env read/write -- System.getenv is the dominant
+    # JDK idiom; the JVM has no supported process-environment MUTATION API
+    # (System.getenv() returns an unmodifiable view; setting an env var for
+    # a child process instead goes through ProcessBuilder.environment(),
+    # which mutates the CHILD's environment map, not the calling process's
+    # own -- so kotlin/env-write is excused below (CAPABILITY_MATRIX_
+    # EXCUSES), not patterned with a misleading needle).
+    _op(
+        "kotlin",
+        "java.lang",
+        "System.getenv",
+        "env-read",
+        "reads process environment variables, which may carry secrets",
+        "scope secret access through a config loader with an explicit allowlist",
+        "low",
+        ("System.getenv(",),
         (),
     ),
     # -- kotlin: exec ------------------------------------------------------
@@ -1246,22 +1396,41 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
     _op(
         "c-cpp",
         "sys/socket.h",
-        "socket()/connect()/bind()",
-        "net",
-        "opens a raw network socket via the BSD sockets API",
+        "socket()/connect()",
+        "net-connect",
+        "opens a raw network socket and connects out via the BSD sockets API",
         "prefer a higher-level client with TLS verification",
         "medium",
-        ("socket(", "connect(", "bind("),
+        ("socket(", "connect("),
+        (),
+    ),
+    # T-0771: bind()/listen() is the listen-side counterpart of the BSD
+    # sockets API, split out of the old combined socket()/connect()/bind()
+    # entry so net's connect/listen mode split has a real needle
+    # distinction to normalize against (mirrors the asyncio split above).
+    _op(
+        "c-cpp",
+        "sys/socket.h",
+        "bind()/listen()",
+        "net-listen",
+        "binds a socket to a local address and accepts inbound connections "
+        "via the BSD sockets API",
+        "bind only to a trusted interface",
+        "medium",
+        ("bind(", "listen("),
         (),
     ),
     # T-0400 audit finding #4: send/recv/sendto/recvfrom/getaddrinfo were
     # entirely absent -- a dependency that connects via a helper but does
     # its actual I/O through these calls scanned as net-capability-free.
+    # Classified net-connect (not a separate mode): these operate on an
+    # already-established or already-bound socket and carry no listen/
+    # accept semantics of their own.
     _op(
         "c-cpp",
         "sys/socket.h",
         "send()/recv()/sendto()/recvfrom()/getaddrinfo()",
-        "net",
+        "net-connect",
         "sends/receives data or resolves a hostname over a network socket",
         "prefer a higher-level client with TLS verification",
         "medium",
@@ -1317,7 +1486,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "python-dotenv",
         "dotenv.load_dotenv",
-        "env",
+        "env-write",
         "loads environment variables from a .env file into the process environment",
         "keep .env out of version control and out of any untrusted-writable path",
         "low",
@@ -1328,7 +1497,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "uvicorn",
         "uvicorn.run",
-        "net",
+        "net-listen",
         "binds and serves an ASGI application on a network socket",
         "bind only to a trusted interface and pin host/port explicitly",
         "medium",
@@ -1352,7 +1521,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "asyncpg",
         "asyncpg.connect",
-        "net",
+        "net-connect",
         "opens an async PostgreSQL network connection using supplied credentials/host",
         "validate the connection target and load credentials from a vetted "
         "secret store",
@@ -1364,7 +1533,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "boto3",
         "boto3.client()/boto3.resource()",
-        "net",
+        "net-connect",
         "creates an AWS SDK client/resource using ambient or supplied cloud "
         "credentials -- an outbound net + cloud-credential surface",
         "scope credentials via IAM least privilege; never accept an "
@@ -1377,7 +1546,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "stripe",
         "stripe.api_key / stripe.Charge.create",
-        "net",
+        "net-connect",
         "issues authenticated payment-processing API calls carrying a live secret key",
         "load stripe.api_key from a vetted secret store; never accept "
         "attacker-controlled amounts/params unvalidated",
@@ -1389,7 +1558,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "anthropic",
         "anthropic.Anthropic()/client.messages.create",
-        "net",
+        "net-connect",
         "issues authenticated outbound API calls to the Anthropic API "
         "carrying an API key",
         "load the API key from a vetted secret store; validate/bound any "
@@ -1402,7 +1571,7 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "aiosmtpd",
         "aiosmtpd.controller.Controller",
-        "net",
+        "net-listen",
         "runs an SMTP server accepting inbound network connections",
         "bind only to a trusted interface; validate/sanitize all inbound "
         "message handling",
@@ -1532,12 +1701,47 @@ CAPABILITY_MATRIX_EXCUSES: tuple[_MatrixExcuse, ...] = (
         "substring scanner) -- tracked as a real gap, not silently dropped; "
         "see docs/modules/vet.md 'Honest limits'",
     ),
+    # T-0771 (net/env mode split): the coarse "env" excuse above is a
+    # collision problem inherent to the bare identifier `getenv`/`setenv`,
+    # not something a mode split fixes -- both the read side (getenv) and
+    # the write side (setenv/putenv) share the exact same unprefixed-
+    # identifier hazard, so each precise mode gets its own excuse citing
+    # the same root cause rather than silently inheriting the old one.
+    _MatrixExcuse(
+        capability_kind="env-read",
+        language="c-cpp",
+        reason="getenv() is a pervasive, unprefixed C identifier (collides "
+        "with countless unrelated tokens under a plain-substring scanner) "
+        "-- tracked as a real gap, not silently dropped; see "
+        "docs/modules/vet.md 'Honest limits'",
+    ),
+    _MatrixExcuse(
+        capability_kind="env-write",
+        language="c-cpp",
+        reason="setenv()/putenv() are pervasive, unprefixed C identifiers "
+        "(collide with countless unrelated tokens under a plain-substring "
+        "scanner) -- tracked as a real gap, not silently dropped; see "
+        "docs/modules/vet.md 'Honest limits'",
+    ),
     _MatrixExcuse(
         capability_kind="install-hook",
         language="c-cpp",
         reason="no C/C++ packaging-install-hook idiom analogous to setuptools "
         "cmdclass; native builds hook via Makefile/CMake, outside this "
         "scanner's per-source-file text model",
+    ),
+    # T-0771: the JVM/kotlin System.getenv() view is unmodifiable -- there
+    # is no supported API that mutates the CALLING process's own
+    # environment (ProcessBuilder.environment() mutates a not-yet-spawned
+    # CHILD's environment map, a distinct exec-adjacent concept, not a
+    # self-mutation), so kotlin has no dominant env-write idiom to pattern.
+    _MatrixExcuse(
+        capability_kind="env-write",
+        language="kotlin",
+        reason="System.getenv() returns an unmodifiable view; the JVM has "
+        "no supported API to mutate the calling process's own environment "
+        "(ProcessBuilder.environment() mutates a child process's "
+        "environment map instead, a distinct exec-adjacent concept)",
     ),
     _MatrixExcuse(
         capability_kind="html_render",
@@ -1656,6 +1860,138 @@ CAPABILITY_MATRIX_EXCUSES: tuple[_MatrixExcuse, ...] = (
         "normalized to net/fs/exec for `may` declarations); every actual "
         "detection pattern lives under `fs-write`, this is the same "
         "cell under its normalized name, not a separate detection surface",
+    ),
+    # T-0771: the bare `net` kind is fully retired from scanner output --
+    # every `_DangerousOperation` that used to carry it now carries the
+    # precise `net-connect`/`net-listen` split (this ticket's needle work,
+    # mirroring `fs`'s own bare-kind retirement above). `net` stays in
+    # `CAPABILITY_KINDS` ONLY because it is still a legal coarse `may
+    # "net"` declaration spelling (frob.vet._capability_modes mandate
+    # point 2) -- these five excuses are the `net`-language cell's
+    # equivalent of the `fs`-language excuses just above, same reasoning.
+    _MatrixExcuse(
+        capability_kind="net",
+        language="python",
+        reason="`net` has no scanner detection pattern of its own any "
+        "more -- every prior python/net entry was reclassified to the "
+        "precise net-connect/net-listen split (T-0771); `net` survives "
+        'only as a legal coarse `may "net"` declaration spelling',
+    ),
+    _MatrixExcuse(
+        capability_kind="net",
+        language="typescript",
+        reason="see the python/net excuse above -- same T-0771 reclassify, "
+        "no separate detection surface",
+    ),
+    _MatrixExcuse(
+        capability_kind="net",
+        language="rust",
+        reason="see the python/net excuse above -- same T-0771 reclassify, "
+        "no separate detection surface",
+    ),
+    _MatrixExcuse(
+        capability_kind="net",
+        language="c-cpp",
+        reason="see the python/net excuse above -- same T-0771 reclassify, "
+        "no separate detection surface",
+    ),
+    _MatrixExcuse(
+        capability_kind="net",
+        language="kotlin",
+        reason="see the python/net excuse above -- same T-0771 reclassify, "
+        "no separate detection surface",
+    ),
+    # T-0771: `net.connect`/`net.listen` (dotted, the tier-2 `_KIND_MAP`-
+    # normalized spelling `frob.strata._threat.DEFAULT_BENIGN_CAPABILITIES`
+    # excuses THREAT005 against) are a DIFFERENT registered kind from the
+    # raw scanner's `net-connect`/`net-listen` (hyphenated, patterned
+    # above) -- see the `CAPABILITY_KINDS` comment for why both exist.
+    # Nothing in `DANGEROUS_OPERATIONS` ever emits the dotted spelling
+    # directly (only `_effects.py::_KIND_MAP` produces it, downstream of
+    # the scanner), so every language cell for both dotted kinds is
+    # excused, not patterned -- there is no needle to write.
+    _MatrixExcuse(
+        capability_kind="net.connect",
+        language="python",
+        reason="dotted mode-qualified spelling, never emitted directly by "
+        "the scanner (only frob.strata._effects.py::_KIND_MAP produces "
+        "it from the raw net-connect scanner kind, already patterned "
+        "above) -- registered only so THREAT005's BenignCapability excuse "
+        "kind is a known kind, not a separate detection surface",
+    ),
+    _MatrixExcuse(
+        capability_kind="net.connect",
+        language="typescript",
+        reason="see the python/net.connect excuse above",
+    ),
+    _MatrixExcuse(
+        capability_kind="net.connect",
+        language="rust",
+        reason="see the python/net.connect excuse above",
+    ),
+    _MatrixExcuse(
+        capability_kind="net.connect",
+        language="c-cpp",
+        reason="see the python/net.connect excuse above",
+    ),
+    _MatrixExcuse(
+        capability_kind="net.connect",
+        language="kotlin",
+        reason="see the python/net.connect excuse above",
+    ),
+    _MatrixExcuse(
+        capability_kind="net.listen",
+        language="python",
+        reason="see the python/net.connect excuse above, listen-side",
+    ),
+    _MatrixExcuse(
+        capability_kind="net.listen",
+        language="typescript",
+        reason="see the python/net.connect excuse above, listen-side",
+    ),
+    _MatrixExcuse(
+        capability_kind="net.listen",
+        language="rust",
+        reason="see the python/net.connect excuse above, listen-side",
+    ),
+    _MatrixExcuse(
+        capability_kind="net.listen",
+        language="c-cpp",
+        reason="see the python/net.connect excuse above, listen-side",
+    ),
+    _MatrixExcuse(
+        capability_kind="net.listen",
+        language="kotlin",
+        reason="see the python/net.connect excuse above, listen-side",
+    ),
+    # T-0771: the bare `env` kind keeps ONE real remaining python entry
+    # (sys.exit/os._exit and signal.signal are pre-existing bare-`env`
+    # process-control entries this ticket left untouched -- they are not
+    # actually about reading/writing an environment variable, a pre-
+    # existing kind-naming mismatch out of this ticket's scope, filed as
+    # follow-up in the Done report) but every OTHER language's env entries
+    # were fully reclassified to env-read/env-write, same as net above.
+    _MatrixExcuse(
+        capability_kind="env",
+        language="typescript",
+        reason="every prior typescript/env entry (process.env) was "
+        "reclassified to the precise env-read/env-write split (T-0771); "
+        '`env` survives only as a legal coarse `may "env"` declaration '
+        "spelling",
+    ),
+    _MatrixExcuse(
+        capability_kind="env",
+        language="rust",
+        reason="see the typescript/env excuse above -- same T-0771 "
+        "reclassify, no separate detection surface",
+    ),
+    _MatrixExcuse(
+        capability_kind="env",
+        language="kotlin",
+        reason="no bare-env entry was ever patterned for kotlin; the new "
+        "System.getenv() entry (T-0771) is precise env-read from the "
+        "start, so this cell was never a reclassification, just never "
+        "patterned coarse",
     ),
     _MatrixExcuse(
         capability_kind="fs",

@@ -46,17 +46,38 @@ Design (mandate points, verbatim intent):
    discharged the moment ANY of those modes is observed, with no
    fs-specific code left anywhere in the caller.
 
-Wiring status (honest scope cut, not silently promised): `fs` alone is
-wired into a LIVE join in this pass (`_effects.py::_KIND_MAP`/
-`_declared_kinds`, `_selfconform.py`'s SYS100/SYS101) -- the acceptance
-tests this ticket ships against exercise `fs.read`/`fs.write` specifically
-(net has no scanner-level connect/listen distinction to normalize
-against, `env`/`proc`/`ffi` likewise). `FAMILY_MODES` still defines every
-family's mode set so the vocabulary is genuinely single-source from day
-one; extending net/env/proc's scanner needles to a real per-mode split
-and sweeping this repo's own `.strata` models plus the 8 sibling repos'
-declarations (mandate point 3's "ESTATE" migration) is explicitly follow-
-up work, filed rather than forced into this pass.
+Wiring status (honest scope cut, not silently promised; T-0771 update):
+`fs` and now `net` are wired into a LIVE join (`_effects.py::_KIND_MAP`/
+`_declared_kinds`, `_selfconform.py`'s SYS100/SYS101) -- T-0771 gave the
+vet scanner a real connect-vs-listen needle distinction for `net`
+(`frob.vet._capability_registry`'s `net-connect`/`net-listen` entries,
+one per language) mirroring T-0717's own `fs-write`/`fs-read` split, so a
+bare `may "net"` declaration now expands to `{net.connect, net.listen}`
+the same way `may "fs"` expands to `{fs.read, fs.write}`.
+
+`env` ALSO got a real read-vs-write needle split in T-0771 (`env-read`/
+`env-write` registry entries, per language, `env-write` excused rather
+than patterned for c-cpp/kotlin where no clean single-process-mutation
+idiom exists) -- but `env` is deliberately NOT in `WIRED_MODE_FAMILIES`
+yet: unlike `net`/`fs`, `env` has no tier-2 (`_effects.py::_KIND_MAP`)
+`may`-declaration join at all today (`env` is one of the vet-only kinds
+`_effects.py`'s own module comment calls out as having "no `may`-
+capability analog yet") -- there is no live conformance join for
+`env.read`/`env.write` to feed, so exploding a coarse `may "env"`
+declaration into modes now would be inert, not wrong, and is deferred to
+the ticket that actually builds that join (T-0771 Done report files it).
+
+`proc`/`ffi` remain unwired for a DIFFERENT reason, found during T-0771:
+the vet registry has no `capability_kind="proc"` entries at all -- process-
+spawn signals are registered under the pre-existing, unrelated `"exec"`
+kind, not `"proc"` (`ffi` IS a real registry kind, `ctypes`/`cffi`/
+`ExtensionFileLoader` entries, but again has no tier-2 join). `FAMILY_MODES`
+still defines every family's mode set so the vocabulary is genuinely
+single-source from day one; reconciling the `proc`/`exec` naming mismatch,
+building the `env`/`proc`/`ffi` tier-2 joins, and sweeping this repo's own
+`.strata` models plus the 8 sibling repos' declarations (mandate point 3's
+"ESTATE" migration) are explicitly follow-up work, filed rather than
+forced into this pass (T-0771 Done report).
 """
 # frob:waive INV006 reason="T-1023 INV006 burn-down: this file's \
 # exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
@@ -121,7 +142,7 @@ FAMILY_MODES: Final[dict[str, tuple[str, ...]]] = {
 #: that no scanner-observed kind could ever match, which would make every
 #: existing bare `may "net"` declaration spuriously go SYS101-stale).
 #: Extending this set is the sibling ticket's job (module docstring).
-WIRED_MODE_FAMILIES: Final[frozenset[str]] = frozenset({"fs"})
+WIRED_MODE_FAMILIES: Final[frozenset[str]] = frozenset({"fs", "net"})
 
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write

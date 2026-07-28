@@ -182,7 +182,16 @@ sets, each decidable:
 2. **Precondition/capability completeness** (THREAT002): every capability
    and every extracted code sink is classified against the catalog; an
    unclassified sink is an error (it might hide an unmatched weakness).
-   This is the "never forget" mechanism.
+   This is the "never forget" mechanism. **T-0771:** THREAT004/5's sink
+   kind is now the precise `net.connect`/`net.listen` spelling for an
+   observed net effect (`net` joined `frob.vet._capability_modes.
+   WIRED_MODE_FAMILIES`, mirroring `fs.write`/`fs.read`) instead of the
+   coarse bare `net` this section used to see -- `DEFAULT_BENIGN_
+   CAPABILITIES` gained matching `net.connect`/`net.listen` entries
+   (same "no CWE_CATALOG sink for a bare network call on its own"
+   reasoning as the retained bare `net` entry) so an outbound/inbound
+   network effect with no dedicated sink classification still clears
+   THREAT005 exactly as it did before the split.
 3. **Discharge completeness** (THREAT003): every FIRED weakness obligation
    is PROVED / EVIDENCED / ASSUMED at or above its required rung; a
    dangling or under-evidenced obligation is an error; assumptions carry

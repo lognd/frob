@@ -154,6 +154,22 @@ _EXTENDED_KINDS = frozenset(
     {
         "eval",
         "env",
+        #: T-0771: the vet registry now emits the precise `env-read`/
+        #: `env-write` split (`frob.vet._capability_registry`, mirroring
+        #: `net`'s own `net-connect`/`net-listen` split) instead of only
+        #: ever emitting bare `env` -- both new raw kinds must be listed
+        #: here too or the `TestExtendedKindsDriftLock` union check below
+        #: fails (every `_PATTERNS`-emitted kind must be accounted for by
+        #: EITHER `_EXTENDED_KINDS` or `_KIND_MAP`, never neither). Unlike
+        #: `net`, `env` is NOT in `WIRED_MODE_FAMILIES` yet (module
+        #: docstring's own wiring-status note in `_capability_modes.py`),
+        #: so `_UNWIRED_ENV_MODE_ALIASES` below folds both back down to
+        #: bare `env` before either view is built -- an existing `may
+        #: "env"` declaration must keep matching an env-read/env-write
+        #: observation exactly as it matched bare `env` before this split,
+        #: until a follow-up ticket does env's own precise tier-2 wiring.
+        "env-read",
+        "env-write",
         "ffi",
         "install-hook",
         "sql",
@@ -357,6 +373,28 @@ def _observed_raw_kinds_by_node(
     return {node_id: frozenset(kinds) for node_id, kinds in per_node.items()}
 
 
+#: T-0771: `env` is NOT in `frob.vet._capability_modes.WIRED_MODE_FAMILIES`
+#: (unlike `net`, module docstring there) -- there is no `expand_declared_
+#: kind`/tier-2 join that would let a bare `may "env"` declaration cover
+#: precise `env.read`/`env.write` observations yet. Folding the vet
+#: registry's new `env-read`/`env-write` raw kinds back down to bare `env`
+#: HERE (this module's own SYS100/SYS101 join, the only place that
+#: compares them against a `may "env"` declaration) keeps an existing
+#: coarse `env` declaration matching an env-read/env-write observation
+#: exactly as it matched bare `env` before the split -- fail-closed
+#: symmetry with the module docstring's own "exploding the declaration
+#: side without a matching observation side" warning, applied in the
+#: opposite direction (precision-izing the OBSERVATION side without a
+#: matching DECLARATION side would otherwise make every existing bare
+#: `may "env"` declaration spuriously go SYS101-stale). Removing this
+#: alias is part of wiring `env`'s own tier-2 join (T-0771 Done report
+#: follow-up), not a permanent fixture.
+_UNWIRED_ENV_MODE_ALIASES: dict[str, str] = {
+    "env-read": "env",
+    "env-write": "env",
+}
+
+
 def _extended_kinds_view(
     raw_by_node: dict[str, frozenset[str]],
 ) -> dict[str, frozenset[str]]:
@@ -364,11 +402,19 @@ def _extended_kinds_view(
     observed-kinds map (T-0830): derives SYS100-extended's vocabulary from
     `_observed_raw_kinds_by_node`'s single scan instead of re-scanning
     every owned file. Only includes a node when its filtered set is
-    non-empty, matching the original per-file `if found:` guard."""
+    non-empty, matching the original per-file `if found:` guard. T-0771:
+    `_UNWIRED_ENV_MODE_ALIASES` folds env-read/env-write back to bare
+    `env` first (see that dict's docstring) so this view's env coverage
+    matches a coarse `may "env"` declaration exactly as it always has."""
     return {
         node_id: extended
-        for node_id, kinds in raw_by_node.items()
-        if (extended := kinds & _EXTENDED_KINDS)
+        for node_id, raw_kinds in raw_by_node.items()
+        if (
+            extended := frozenset(
+                _UNWIRED_ENV_MODE_ALIASES.get(kind, kind) for kind in raw_kinds
+            )
+            & _EXTENDED_KINDS
+        )
     }
 
 
@@ -382,9 +428,17 @@ def _all_kinds_view(
     `_observed_raw_kinds_by_node`'s single scan instead of re-scanning
     every owned file. Only includes a node with a non-empty raw set,
     matching the original per-file `if normalized:` guard (normalizing
-    elementwise never turns a non-empty set empty)."""
+    elementwise never turns a non-empty set empty). T-0771:
+    `_UNWIRED_ENV_MODE_ALIASES` runs FIRST so env-read/env-write fold back
+    to bare `env` before `_KIND_MAP` gets a look (env is not a `_KIND_MAP`
+    key, so without this it would pass through unchanged -- see that
+    dict's docstring for why)."""
     return {
-        node_id: frozenset(_KIND_MAP.get(kind, kind) for kind in kinds)
+        node_id: frozenset(
+            _KIND_MAP.get(folded, folded)
+            for kind in kinds
+            for folded in (_UNWIRED_ENV_MODE_ALIASES.get(kind, kind),)
+        )
         for node_id, kinds in raw_by_node.items()
         if kinds
     }

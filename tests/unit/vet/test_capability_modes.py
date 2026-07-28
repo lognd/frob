@@ -37,12 +37,23 @@ class TestExpandDeclaredKind:
         fs's modes -- "a coarse declarer answers for everything"."""
         assert expand_declared_kind("fs") == frozenset({"fs.read", "fs.write"})
 
+    # frob:tests tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind.test_coarse_net_covers_union_of_modes kind="unit"  # noqa: E501
+    def test_coarse_net_covers_union_of_modes(self):
+        """T-0771: `net` joined `WIRED_MODE_FAMILIES` once the vet scanner
+        got a real connect-vs-listen needle split -- a coarse `may "net"`
+        declaration is now the UNION of net's modes, same shape as `fs`
+        above."""
+        assert expand_declared_kind("net") == frozenset({"net.connect", "net.listen"})
+
     def test_unwired_family_stays_coarse(self):
-        """`net` has a defined mode set (`FAMILY_MODES`) but is not in
-        `WIRED_MODE_FAMILIES` this pass -- a bare `may "net"` must stay
-        exactly `{"net"}`, never silently explode into modes no scanner
-        can observe yet (module docstring's "wiring status")."""
-        assert expand_declared_kind("net") == frozenset({"net"})
+        """`env` has a defined mode set (`FAMILY_MODES`) but is not in
+        `WIRED_MODE_FAMILIES` (T-0771: `net` moved INTO the wired set once
+        its own connect/listen needle split landed, so this test now
+        exercises `env` -- still unwired, since `env` has no tier-2 `may`-
+        declaration join yet) -- a bare `may "env"` must stay exactly
+        `{"env"}`, never silently explode into modes no scanner can
+        observe yet (module docstring's "wiring status")."""
+        assert expand_declared_kind("env") == frozenset({"env"})
 
     def test_kind_with_no_modes_defined_stays_itself(self):
         assert expand_declared_kind("exec") == frozenset({"exec"})

@@ -193,20 +193,27 @@ class TestUndeclaredInterfaceCrossPassDedup:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):
         """End-to-end via `check_self_conformance`: widen `_EXTENDED_KINDS`
-        to also cover `net` (simulating the kind-vocabulary drift the
+        to also cover `exec` (simulating the kind-vocabulary drift the
         helper's docstring warns about -- `_KIND_MAP`/`_EXTENDED_KINDS`
-        are not today statically enforced disjoint) so ONE real `requests.
-        get` site is genuinely observed by BOTH `_core_undeclared_
-        violations` (THREAT004 delegate) and `_extended_kind_violations`
-        for the SAME `(node, capability)`. Asserts exactly one SYS100
-        finding survives, not two."""
+        are not today statically enforced disjoint) so ONE real
+        `subprocess.run` site is genuinely observed by BOTH
+        `_core_undeclared_violations` (THREAT004 delegate) and
+        `_extended_kind_violations` for the SAME `(node, capability)`.
+        `exec` (unlike T-0771's `net-connect`/`net-listen`, which
+        `_KIND_MAP` renormalizes to the dotted `net.connect`/`net.listen`
+        spelling) is the one `_KIND_MAP` entry that maps to itself, so it
+        is still the kind whose raw and THREAT004-normalized spellings are
+        identical -- the exact collision this test needs to reproduce.
+        Asserts exactly one SYS100 finding survives, not two."""
         import frob.strata._selfconform as selfconform_mod
 
         monkeypatch.setattr(
-            selfconform_mod, "_EXTENDED_KINDS", frozenset({"net", *_EXTENDED_KINDS})
+            selfconform_mod, "_EXTENDED_KINDS", frozenset({"exec", *_EXTENDED_KINDS})
         )
         _write(
-            tmp_path, "src/frob/widget/_io.py", "import requests\nrequests.get('x')\n"
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "import subprocess\nsubprocess.run(['ls'])\n",
         )
         model = KernelModel(
             nodes=(
@@ -220,7 +227,7 @@ class TestUndeclaredInterfaceCrossPassDedup:
             for v in result.danger_ok.violations
             if v.rule == SYS_UNDECLARED_INTERFACE
             and v.node == "widget"
-            and v.capability == "net"
+            and v.capability == "exec"
         ]
         assert len(hits) == 1
 
@@ -993,10 +1000,11 @@ class TestWaiverChannel:
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     def test_matching_waiver_moves_violation_to_waived(self, tmp_path: Path):
         """SYS100 is multi-instance-per-node (T-0174 REJECT round), so the
-        waiver must name the exact capability kind (`net`, matching
-        `requests.get`'s observed effect) as a `SYS100:net` sub-target --
-        a bare `SYS100` waiver would be an elaborate-adjacent-invalid
-        value this test does not construct."""
+        waiver must name the exact capability kind (`net.connect`, T-0771's
+        precise spelling now that `net` is wired -- matching
+        `requests.get`'s observed effect) as a `SYS100:net.connect` sub-
+        target -- a bare `SYS100` waiver would be an elaborate-adjacent-
+        invalid value this test does not construct."""
         _write(
             tmp_path, "src/frob/widget/_io.py", "import requests\nrequests.get('x')\n"
         )
@@ -1008,7 +1016,7 @@ class TestWaiverChannel:
                     attrs=("code=src/frob/widget/**",),
                     waives=(
                         Waiver(
-                            rule=f"{SYS_UNDECLARED_INTERFACE}:net",
+                            rule=f"{SYS_UNDECLARED_INTERFACE}:net.connect",
                             reason="pilot fixture, tracked in T-0174",
                         ),
                     ),
@@ -1028,7 +1036,7 @@ class TestWaiverChannel:
         assert len(waived) == 1
         assert "WAIVED" in waived[0].detail
         assert "pilot fixture, tracked in T-0174" in waived[0].detail
-        assert "SYS100:net" in waived[0].detail
+        assert "SYS100:net.connect" in waived[0].detail
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     def test_stale(self, tmp_path: Path):
@@ -1060,10 +1068,11 @@ class TestWaiverChannel:
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     def test_sub_target_waiver_does_not_suppress_a_different_kind(self, tmp_path: Path):
         """T-0174 REJECT round, the critical fixture at the
-        `check_self_conformance` layer: `widget` observes BOTH `net`
-        (`requests.get`) and `exec` (`subprocess.run`) undeclared -- two
-        SYS100 findings on the same node. Waiving only `SYS100:net` must
-        NOT suppress the `SYS100:exec` finding."""
+        `check_self_conformance` layer: `widget` observes BOTH `net.connect`
+        (`requests.get`, T-0771's precise spelling) and `exec`
+        (`subprocess.run`) undeclared -- two SYS100 findings on the same
+        node. Waiving only `SYS100:net.connect` must NOT suppress the
+        `SYS100:exec` finding."""
         _write(
             tmp_path,
             "src/frob/widget/_io.py",
@@ -1078,7 +1087,7 @@ class TestWaiverChannel:
                     attrs=("code=src/frob/widget/**",),
                     waives=(
                         Waiver(
-                            rule=f"{SYS_UNDECLARED_INTERFACE}:net",
+                            rule=f"{SYS_UNDECLARED_INTERFACE}:net.connect",
                             reason="net leg tracked separately, litmus fixture",
                         ),
                     ),
@@ -1096,7 +1105,7 @@ class TestWaiverChannel:
             v for v in result.danger_ok.waived if v.rule == SYS_UNDECLARED_INTERFACE
         ]
         assert len(waived) == 1
-        assert waived[0].capability == "net"
+        assert waived[0].capability == "net.connect"
 
 
 class TestRealGateGreen:

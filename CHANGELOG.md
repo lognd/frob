@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.210.0] - unreleased
+
+- T-0771: capability taxonomy: wire net/env/proc/ffi mode split + sibling-repo migration (T-0717 follow-up)
+
 ## [0.209.0] - unreleased
 
 - T-0938: sprint velocity/burndown derived from ledger state-transition history

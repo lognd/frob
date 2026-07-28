@@ -461,7 +461,7 @@ class TestCapabilityScan:
         )
         capabilities = scan_file_capabilities(pkg)
         assert "exec" in capabilities
-        assert "net" in capabilities
+        assert "net-connect" in capabilities
 
     def test_rust_exec_detected(self, tmp_path: Path) -> None:
         from frob.vet._capability import scan_file_capabilities
@@ -481,7 +481,7 @@ class TestCapabilityScan:
         kt.write_text(
             "import okhttp3.OkHttpClient\nfun makeClient() = OkHttpClient()\n"
         )
-        assert "net" in scan_file_capabilities(kt)
+        assert "net-connect" in scan_file_capabilities(kt)
 
     def test_kotlin_exec_runtime_exec_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -583,7 +583,7 @@ class TestCapabilityScan:
             "    recv(fd, buf, sizeof(buf), 0);\n"
             "}\n"
         )
-        assert "net" in scan_file_capabilities(c_file)
+        assert "net-connect" in scan_file_capabilities(c_file)
 
     def test_decode_to_exec_same_function(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_decode_to_exec_signal kind="unit"
@@ -636,7 +636,7 @@ class TestCapabilityScan:
         (tmp_path / "b.py").write_text("import requests\nrequests.get('x')\n")
         capabilities, decode_to_exec_hit = _scan_directory_capabilities(tmp_path)
         assert "exec" in capabilities
-        assert "net" in capabilities
+        assert "net-connect" in capabilities
         assert decode_to_exec_hit is False
 
     def test_re_compile_alone_does_not_report_eval(self, tmp_path: Path) -> None:
@@ -702,7 +702,7 @@ class TestCapabilityScan:
             "import requests\n"
             "requests.get('http://example.com')\n"
         )
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_string_literal_needle_still_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -714,7 +714,7 @@ class TestCapabilityScan:
 
         pkg = tmp_path / "stringy.py"
         pkg.write_text("cmd = 'requests.get(\"http://x\")'\n")
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_capability_module_self_scan_documented_false_positive(self) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -934,7 +934,7 @@ class TestCapabilityScanBindingResolution:
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("import os as o\nx = o.environ\n")
-        assert "env" in scan_file_capabilities(pkg)
+        assert "env-read" in scan_file_capabilities(pkg)
 
 
 class TestCapabilityScanLocalRebindResolution:
@@ -1327,7 +1327,7 @@ class TestCapabilityScanTsBindingResolution:
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("import ax from 'axios';\nax.get(url);\n")
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_require_bare_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1337,7 +1337,7 @@ class TestCapabilityScanTsBindingResolution:
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("const ax = require('axios');\nax.get(url);\n")
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_require_destructure_rename_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1349,7 +1349,7 @@ class TestCapabilityScanTsBindingResolution:
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("const {get: g} = require('axios');\ng(url);\n")
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_namespace_import_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1359,7 +1359,7 @@ class TestCapabilityScanTsBindingResolution:
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("import * as ax from 'axios';\nax.get(url);\n")
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_ts_import_require_clause_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1369,7 +1369,7 @@ class TestCapabilityScanTsBindingResolution:
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("import ax = require('axios');\nax.get(url);\n")
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_operation_names_registry_entry_for_aliased_import(
         self, tmp_path: Path
@@ -1383,7 +1383,9 @@ class TestCapabilityScanTsBindingResolution:
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("import ax from 'axios';\nax.get(url);\n")
         ops = _scan_file_operations(pkg)
-        assert any(op.capability_kind == "net" and op.library == "axios" for op in ops)
+        assert any(
+            op.capability_kind == "net-connect" and op.library == "axios" for op in ops
+        )
 
     def test_param_named_get_not_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1452,7 +1454,7 @@ class TestCapabilityScanTsBindingResolution:
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("require('axios')['get'](url);\n")
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_bracket_access_aliased_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1463,7 +1465,7 @@ class TestCapabilityScanTsBindingResolution:
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("const ax = require('axios');\nax['get'](url);\n")
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_dynamic_import_then_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1476,7 +1478,7 @@ class TestCapabilityScanTsBindingResolution:
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("import('axios').then(ax => ax.get(url));\n")
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_await_dynamic_import_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1491,7 +1493,7 @@ class TestCapabilityScanTsBindingResolution:
             "  ax.get(url);\n"
             "}\n"
         )
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_child_process_bracket_and_dynamic_import_caught(
         self, tmp_path: Path
@@ -1546,7 +1548,7 @@ class TestCapabilityScanTsBindingResolution:
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("const ax = require('axios');\nax[`get`](url);\n")
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_interpolated_template_subscript_not_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -1579,7 +1581,7 @@ class TestCapabilityScanTsBindingResolution:
         pkg.write_text(
             "const ax = require('axios');\nconst key = 'get';\nax[key](url);\n"
         )
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_local_const_template_substitution_subscript_detected(
         self, tmp_path: Path
@@ -1594,7 +1596,7 @@ class TestCapabilityScanTsBindingResolution:
         pkg.write_text(
             "const ax = require('axios');\nconst key = 'get';\nax[`${key}`](url);\n"
         )
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_reassigned_const_string_subscript_not_detected(
         self, tmp_path: Path
@@ -2055,7 +2057,7 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("const f = require('axios').get;\nf(url);\n")
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_chained_assignment_outer_target_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2067,7 +2069,7 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         pkg.write_text(
             "const ax = require('axios');\nlet a, b;\na = b = ax.get;\na(url);\n"
         )
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_chained_assignment_inner_target_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2078,7 +2080,7 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         pkg.write_text(
             "const ax = require('axios');\nlet a, b;\na = b = ax.get;\nb(url);\n"
         )
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_array_destructure_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2088,7 +2090,7 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("const ax = require('axios');\nconst [f] = [ax.get];\nf(url);\n")
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_default_param_forwarding_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2100,7 +2102,7 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         pkg.write_text(
             "const ax = require('axios');\nfunction h(cb = ax.get) {\n  cb(url);\n}\n"
         )
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_member_rebind_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2114,7 +2116,7 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
             "obj.run = ax.get;\n"
             "obj.run(url);\n"
         )
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_closure_capture_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2130,7 +2132,7 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
             "  return function() { r(url); };\n"
             "}\n"
         )
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_default_param_benign_not_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -2168,7 +2170,7 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         pkg.write_text(
             "const ax = require('axios');\nconst f = ax.get;\nconst g = f;\ng(url);\n"
         )
-        assert "net" in scan_file_capabilities(pkg)
+        assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_named_import_with_alias_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"

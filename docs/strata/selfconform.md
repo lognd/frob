@@ -112,16 +112,33 @@ detection THREAT004 already runs.
 
 ## Kind-space drift-lock
 
-The net/fs-write/exec vs. eval/env/ffi/install-hook/fs-read split
-(`_selfconform.py::_EXTENDED_KINDS`) is the one fact this module hardcodes
-that could silently rot if `_effects.py::_KIND_MAP` ever grows a fourth
-key. `tests/unit/strata/test_selfconform.py::
+The net-connect/net-listen/fs-write/fs-read/exec vs. eval/env-read/
+env-write/ffi/install-hook/sql/deserialize/html_render/fetch_url/
+client_storage split (`_selfconform.py::_EXTENDED_KINDS`) is the one fact
+this module hardcodes that could silently rot if `_effects.py::_KIND_MAP`
+ever grows a new key. `tests/unit/strata/test_selfconform.py::
 TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map`
 asserts `_EXTENDED_KINDS` and `_KIND_MAP`'s keys are disjoint and their
 union covers every kind `vet._capability._PATTERNS` actually defines --
 if `_KIND_MAP` (THREAT004's scope) ever grows, or `_PATTERNS` grows a
 kind neither set accounts for, that test fails first, loudly, in
 review.
+
+T-0771 gave `net` its own precise `net-connect`/`net-listen` scanner
+split (the `fs-write`/`fs-read` shape below, applied to `net`) and moved
+it OUT of `_EXTENDED_KINDS` into `_KIND_MAP` (`net-connect: net.connect`,
+`net-listen: net.listen`) -- `net` is now THREAT004-delegated exactly
+like `fs-write`/`fs-read`/`exec`, not a SYS100-extended kind any more.
+The same ticket gave `env` a matching `env-read`/`env-write` scanner
+split, but LEFT `env` in `_EXTENDED_KINDS` (env-read and env-write both
+added there) rather than moving it to `_KIND_MAP` -- env has no tier-2
+(THREAT004) `may`-declaration join at all yet, so there is nothing for a
+`_KIND_MAP` entry to feed. `_selfconform.py::_UNWIRED_ENV_MODE_ALIASES`
+folds `env-read`/`env-write` back to bare `env` before either SYS100 or
+SYS101 evaluates them, so an existing `may "env"` declaration keeps
+matching an env-read/env-write observation exactly as it matched bare
+`env` before the split -- a transitional shim, removed once env gets its
+own real tier-2 wiring (a follow-up ticket, not built in T-0771).
 
 <a id="fs-read-fs-write"></a>
 ## `fs-read`/`fs-write`: the read-only filesystem signal (T-0018, graphite adoption)

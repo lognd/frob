@@ -28,8 +28,13 @@ def _write(root: Path, rel: str, source: str) -> None:
 class TestNodeMayKinds:
     # frob:tests src/frob/strata/_effects.py::node_may_kinds kind="unit"
     def test_kinds(self):
+        # T-0771: "net.out" is not a recognized `net.mode` id (connect/
+        # listen are the only defined modes) -- `_may_kind` resolves its
+        # kind segment to the coarse family "net", which (now that `net`
+        # is in `WIRED_MODE_FAMILIES`) expands to the union of net's
+        # modes, same shape as a bare `may "net"` would.
         node = Node(id="n", trust="trusted", may=("net.out:stripe.com", "exec:*"))
-        assert node_may_kinds(node) == frozenset({"net", "exec"})
+        assert node_may_kinds(node) == frozenset({"net.connect", "net.listen", "exec"})
 
     # frob:tests src/frob/strata/_effects.py::node_may_kinds kind="unit"
     def test_no_may_atoms_is_empty(self):
@@ -58,7 +63,7 @@ class TestExtractEffects:
         # T-0717: fs-write observations are now the precise, mode-qualified
         # "fs.write" spelling (frob.vet._capability_modes) rather than the
         # old ambiguous bare "fs".
-        assert kinds == {"net", "fs.write", "exec"}
+        assert kinds == {"net.connect", "fs.write", "exec"}
 
     # frob:tests src/frob/strata/_effects.py::extract_effects kind="unit"
     def test_foreign_files_are_not_scanned(self, tmp_path: Path):
@@ -99,7 +104,7 @@ class TestCheckCapabilityConformance:
         v = report.violations[0]
         assert v.file == "api/handler.py"
         assert v.line == 2
-        assert v.kind == "net"
+        assert v.kind == "net.connect"
         assert v.component == "Api"
         assert v.needle == "requests."
 

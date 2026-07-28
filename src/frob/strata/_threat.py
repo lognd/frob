@@ -235,6 +235,43 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
             "calls as a sink on their own; not compensated elsewhere"
         ),
     ),
+    # T-0771: `net` joined `frob.vet._capability_modes.WIRED_MODE_FAMILIES`
+    # -- `_effects.py::_KIND_MAP` now normalizes an observed net effect to
+    # the precise `net.connect`/`net.listen` spelling (T-0717's own
+    # `fs.write`/`fs.read` precedent) instead of the coarse bare `net`
+    # THREAT005's `check_effect_completeness` used to see, so the bare
+    # `net` excuse above no longer matches a real observed effect's
+    # `.kind` -- mandate point 2 ("BenignCapability entries... would be
+    # needed... once a family is wired") applied for real, not deferred.
+    # `net.listen` has no code exercising it in this repo's own `src/`
+    # tree (frob is a CLI/library, not a server) but is excused
+    # unconditionally anyway -- unreachable today is not the same claim as
+    # "can never happen", and an excuse that only fires when hit is not
+    # weaker for firing rarely.
+    BenignCapability(
+        kind="net.connect",
+        reason=(
+            "same reasoning as the bare 'net' excuse above, T-0771's "
+            "precise spelling: no CWE_CATALOG entry targets an outbound "
+            "network connection as a sink on its own"
+        ),
+        caught_by=(
+            "none -- no CWE_CATALOG entry targets bare outbound network "
+            "calls as a sink on their own; not compensated elsewhere"
+        ),
+    ),
+    BenignCapability(
+        kind="net.listen",
+        reason=(
+            "same reasoning as the bare 'net' excuse above, T-0771's "
+            "precise spelling: no CWE_CATALOG entry targets binding/"
+            "accepting inbound network connections as a sink on its own"
+        ),
+        caught_by=(
+            "none -- no CWE_CATALOG entry targets an inbound network bind/"
+            "accept as a sink on their own; not compensated elsewhere"
+        ),
+    ),
     BenignCapability(
         kind="fs",
         reason=(
