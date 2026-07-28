@@ -1,6 +1,6 @@
 # Strata surface grammar keywords
 
-<!-- frob:describes strata-core/src/parse.rs::Parser.parse_program -->
+<!-- frob:describes strata-core/src/parse/grammar_policy.rs::Parser.parse_program -->
 
 ## What it is and where it lives
 

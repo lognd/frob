@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.243.0] - unreleased
+
+- T-1099: strata-core: split parse.rs (4346 lines) into grammar-family modules
+
 ## [0.242.0] - unreleased
 
 - T-1100: frob ticket flow: created/day vs landed/day vs net + naive burn-down ETA (one table, builds on T-0938 velocity mining)
