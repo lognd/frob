@@ -176,6 +176,18 @@ _IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 #: Node types marking a `*args`/`**kwargs` splat/spread argument (T-1018).
 _SPLAT_KINDS = frozenset({"list_splat", "dictionary_splat"})
 
+#: Decorator short names (T-1053) marking a memoizing wrapper -- same needle
+#: set `frob.graph.callgraph._WRAPPER_MARKER_NAMES` already trusts for its
+#: own "this call is really a reach-through to its wrapped target" reasoning
+#: (T-0583), reused here for the opposite question: "is repeatedly CALLING
+#: this symbol actually cheap because its own decorator already memoizes
+#: it?" A symbol decorated `@lru_cache`/`@functools.lru_cache`/`@cache`
+#: pays its real cost once per distinct argument tuple, not once per call
+#: site or per loop iteration -- PERF008/PERF012 both need this to stop
+#: mistaking a memoized repeat call for real repeated work (the "lru_cache
+#: blindness" FP class).
+_MEMOIZE_DECORATOR_NAMES = frozenset({"lru_cache", "cache"})
+
 
 def _contains_splat(node: Node) -> bool:
     """T-1018 calibration: True if `node` (an `arguments`/`argument_list`
@@ -251,6 +263,62 @@ def _direct_effect(node: Node) -> str | None:
     return None
 
 
+def _is_memoized_sig(sig_tokens: tuple[str, ...]) -> bool:
+    """True if `sig_tokens` (a `RawSymbol.sig_tokens` stream, which carries
+    a decorated python `def`'s decorator tokens ahead of its header -- see
+    `frob.lang._walk_python._effective_node`, which returns the enclosing
+    `decorated_definition` as `sig_node`) shows an `@lru_cache`/`@cache`/
+    `@functools.lru_cache`/`@functools.cache` decorator immediately
+    preceding the `def`. Requires the `@` marker directly before the
+    name -- walking forward through any `module.` dotted-attribute prefix
+    (`@functools.lru_cache(...)`'s real, common spelling, not just the
+    bare `@lru_cache` a `from functools import lru_cache` gives) to the
+    FINAL identifier before the next non-identifier/non-`.` token, then
+    checking THAT against the marker set -- rather than just the bare
+    word `cache` anywhere in the signature, e.g. a parameter literally
+    named `cache`, same "actually used as a decorator, not a name
+    coincidence" discipline this ticket's other two fixes apply."""
+    n = len(sig_tokens)
+    for i, tok in enumerate(sig_tokens[:-1]):
+        if tok != "@":
+            continue
+        j = i + 1
+        last = sig_tokens[j] if j < n else None
+        while j + 1 < n and sig_tokens[j + 1] == "." and j + 2 < n:
+            last = sig_tokens[j + 2]
+            j += 2
+        if last in _MEMOIZE_DECORATOR_NAMES:
+            return True
+    return False
+
+
+def _infer_receiver_class(source: str | bytes, receiver: str) -> str | None:
+    """T-1053 receiver-conflation fix: a cheap, textual, best-effort guess
+    at the CLASS a simple local `receiver` identifier holds, from a nearby
+    `receiver = ClassName(...)` constructor-call assignment anywhere in
+    `source` -- same "textual scan, not real dataflow" posture as this
+    package's other heuristics (e.g. `_loop_effects._assigned_in_body`).
+    Returns `None` (no preference, caller falls back to its original
+    unfiltered/best-effort resolution -- fail OPEN, never fail closed) when
+    `receiver` is `self`/`cls` (handled separately by same-file/same-class
+    bias elsewhere), is not a plain identifier, or no such assignment is
+    found. Deliberately conservative: this can only ever NARROW an
+    already-ambiguous by-name resolution toward the one receiver whose
+    constructed type actually matches -- it never adds a candidate that
+    `_by_name` did not already have."""
+    if receiver in ("self", "cls") or not _IDENT_RE.fullmatch(receiver):
+        return None
+    text = (
+        source.decode("utf-8", errors="replace")
+        if isinstance(source, bytes)
+        else source
+    )
+    match = re.search(
+        rf"\b{re.escape(receiver)}\s*=\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(", text
+    )
+    return match.group(1) if match else None
+
+
 def _callee_short_name(node: Node) -> str | None:
     """The callee's own short name for by-name graph resolution: the bare
     name for an unqualified call, or the attribute name for a dotted one
@@ -300,6 +368,14 @@ class EffectGraph:
         self._path_of: dict[str, str] = {}
         self._called: dict[str, frozenset[str]] = {}
         self._memo: dict[str, str | None] = {}
+        #: symref -> enclosing class name (T-1053 receiver-conflation
+        #: fix), `None` for a plain top-level function -- `qualname`'s
+        #: dotted prefix, matching how a METHOD's qualname is built
+        #: everywhere else in this codebase (`Class.method`).
+        self._owner_of: dict[str, str | None] = {}
+        #: symrefs decorated `@lru_cache`/`@cache` (T-1053 lru_cache-
+        #: blindness fix) -- see `_is_memoized_sig`.
+        self._memoized: set[str] = set()
         #: file path -> {short_name -> (kind, arg_text_or_None, line,
         #: callee_name), ...} -- one AST re-parse per FILE
         #: (`_index_file_occurrences`), not per symbol.
@@ -317,6 +393,11 @@ class EffectGraph:
                     symref
                 )
                 self._path_of[symref] = file.path
+                self._owner_of[symref] = (
+                    sym.qualname.rsplit(".", 1)[0] if "." in sym.qualname else None
+                )
+                if _is_memoized_sig(sym.sig_tokens):
+                    self._memoized.add(symref)
                 effect = _direct_effect_from_tokens(sym.body_tokens)
                 if effect is not None:
                     self._direct[symref] = effect
@@ -325,7 +406,9 @@ class EffectGraph:
     # frob:doc docs/modules/perf.md#loop-invariant-effectful-call-detector-perf008-t-0775  # noqa: E501
     # frob:tests tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect.test_loop_invariant_spawn_call_three_hops_deep_is_flagged  # noqa: E501
     # frob:ticket T-0922
-    def reachable_effect(self, callee_name: str) -> tuple[str, str] | None:
+    def reachable_effect(
+        self, callee_name: str, receiver_class: str | None = None
+    ) -> tuple[str, str] | None:
         """`(effect_kind, symref)` for the first directly-effectful function
         transitively reachable by calling ANY symbol named `callee_name`
         (best-effort, ambiguous names all tried), or `None` if nothing
@@ -333,12 +416,49 @@ class EffectGraph:
         policy: an unresolvable name simply yields `None` here (this is
         the cheap yes/no question PERF008 asks; see that module's own
         Unknown-policy note -- the richer `summary()` is where `Unknown`
-        becomes an explicit, visible member)."""
-        for symref in self._by_name.get(callee_name, ()):
+        becomes an explicit, visible member).
+
+        `receiver_class` (T-1053 receiver-conflation fix): when given (a
+        dotted call's inferred receiver type, `_infer_receiver_class`),
+        candidates whose OWN enclosing class matches it are tried FIRST and
+        EXCLUSIVELY if any exist -- a `b.run()` call whose receiver is
+        known to be a `B` no longer risks binding to an unrelated `A.run`
+        that merely shares the bare name `run`. Falls back to the
+        unfiltered candidate set when no candidate matches (fail OPEN,
+        never fail closed -- an unmatched hint never suppresses a real
+        finding, it only ever narrows an otherwise-ambiguous one)."""
+        candidates = self._by_name.get(callee_name, ())
+        if receiver_class is not None:
+            scoped = [c for c in candidates if self._owner_of.get(c) == receiver_class]
+            if scoped:
+                candidates = scoped
+        for symref in candidates:
             hit = self._reachable(symref)
             if hit is not None:
                 return hit
         return None
+
+    # frob:doc docs/modules/perf.md#three-false-positive-classes-closed-t-1053
+    # frob:tests tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_lru_cache_decorated_symbol_is_memoized  # noqa: E501
+    # frob:ticket T-1053
+    def is_memoized(self, symref: str) -> bool:
+        """True if `symref` (T-1053) is itself decorated `@lru_cache`/
+        `@cache` -- a repeated call to it pays its real cost at most once
+        per distinct argument tuple, not once per call site."""
+        return symref in self._memoized
+
+    # frob:doc docs/modules/perf.md#three-false-positive-classes-closed-t-1053
+    # frob:tests tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect.test_loop_invariant_call_to_lru_cached_helper_is_not_flagged  # noqa: E501
+    # frob:ticket T-1053
+    def callee_is_memoized(self, callee_name: str) -> bool:
+        """True (T-1053) if EVERY symbol named `callee_name` this graph
+        knows about is memoized -- the conservative "safe to suppress"
+        check `_loop_effects` uses before dropping a PERF008 finding: an
+        ambiguous name where only SOME candidates are memoized is left
+        alone (fail open) rather than risk suppressing a real repeated-work
+        finding for the unmemoized candidate."""
+        candidates = self._by_name.get(callee_name, ())
+        return bool(candidates) and all(c in self._memoized for c in candidates)
 
     def _reachable(self, start: str) -> tuple[str, str] | None:
         """Bounded BFS from `start` (inclusive) over `_called`, returning the
@@ -379,7 +499,12 @@ class EffectGraph:
     # frob:doc docs/modules/perf.md#duplicate-identical-subprocess-spawn-detector-perf012-t-0919  # noqa: E501
     # frob:tests tests/unit/perf/test_effect_summaries.py::TestEffectGraphSummaryUnknownDegradation.test_ambiguous_cross_file_callee_yields_an_explicit_unknown_member  # noqa: E501
     # frob:ticket T-0922
-    def resolve_scoped(self, short_name: str, from_path: str | None) -> list[str]:
+    def resolve_scoped(
+        self,
+        short_name: str,
+        from_path: str | None,
+        receiver_class: str | None = None,
+    ) -> list[str]:
         """By-name resolution SCOPED to same-file candidates first -- the
         safe default for MULTISET/duplicate-detection propagation
         (`summary`), unlike the unfiltered by-name union
@@ -399,8 +524,18 @@ class EffectGraph:
         scope. `[]` (genuinely ambiguous, no same-file candidate) is the
         caller's cue to record an explicit `Unknown` rather than silently
         contributing nothing (T-0922) -- see `summary`/`_dup_spawn.
-        _entry_occurrences`."""
+        _entry_occurrences`.
+
+        `receiver_class` (T-1053 receiver-conflation fix): same posture as
+        `reachable_effect`'s own -- when given and at least one candidate's
+        owner class matches, narrow to just those FIRST, before the same-
+        file/unambiguous fallback below runs; an unmatched hint changes
+        nothing (fail open)."""
         candidates = self._by_name.get(short_name, ())
+        if receiver_class is not None:
+            scoped = [c for c in candidates if self._owner_of.get(c) == receiver_class]
+            if scoped:
+                candidates = scoped
         if from_path is not None:
             same_file = [c for c in candidates if self._path_of.get(c) == from_path]
             if same_file:

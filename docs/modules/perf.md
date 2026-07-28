@@ -238,6 +238,68 @@ wanting real cross-python-call-graph evidence (rather than a token-regex
 proxy) is the natural place to wire the two together; noted here rather
 than wired, since `src/frob/strata/**` is out of this ticket's scope.
 
+## Three false-positive classes closed (T-1053)
+
+A 2026-07 drive surfaced three recurring, waiver-heavy false-positive
+classes across PERF002/PERF008/PERF012, catalogued in T-1041's Done
+report as a resolver-precision follow-up. T-1053 closes the two that are
+mechanically fixable without real type inference:
+
+1. **Bare-method-name coincidence**: a rule that keys on a bare method
+   NAME (`.count(`/`.index(` for PERF002; `EffectGraph`'s by-short-name
+   resolution for PERF008/PERF012) fires on a receiver that could never
+   plausibly be the project-defined symbol the name coincidentally
+   matches -- the sharpest case being the loop's OWN per-iteration
+   element (`for line in lines: line.count(x)`; the real specimen: the
+   waived PERF002 in `src/frob/arch/_cpp_mayraise.py::_function_body_span`).
+   PERF002's python detector (`frob.perf._rules._perf002_python`) now
+   skips a `.count(`/`.index(` hit whose own receiver token is exactly
+   the nearest enclosing `for` loop's bound variable
+   (`_nearest_for_loop_var`) -- a cheap positional heuristic, same
+   documented gap as `_loop_gate`'s own approximation: a `while`-loop
+   subscript receiver (`lines[k].count("{")`, the real
+   `_cpp_mayraise.py` specimen) is NOT covered by this fix (no bound
+   identifier to compare against) and keeps its existing waiver.
+
+2. **lru_cache blindness**: a loop-invariant/duplicate-call finding
+   (PERF008/PERF012) fires on a call to a callee that is ITSELF decorated
+   `@lru_cache`/`@cache`/`@functools.lru_cache` -- the decorator already
+   memoizes the real cost to at most one call per distinct argument
+   tuple, so the "hoist/memoize" advice is already satisfied.
+   `EffectGraph.is_memoized(symref)`/`callee_is_memoized(name)` (built
+   from `RawSymbol.sig_tokens`, which carries a decorated python `def`'s
+   decorator tokens ahead of its header -- see
+   `frob.lang._walk_python._effective_node`) answer this; PERF008 skips a
+   finding whose callee resolves ONLY to memoized candidates, and PERF012
+   contributes no occurrence at all for a call site whose resolved
+   candidates are ALL memoized (an ambiguous mix of memoized/unmemoized
+   candidates is left alone -- fail open, never suppress a real finding).
+
+3. **Receiver conflation**: a dotted call `obj.attr(...)` resolved by
+   bare attribute name alone can bind to an unrelated same-named method
+   on a completely different class. `EffectGraph.reachable_effect`/
+   `resolve_scoped` now accept an optional `receiver_class` hint
+   (`_infer_receiver_class`: a cheap textual scan for a nearby `obj =
+   ClassName(...)` constructor assignment) and narrow candidates to that
+   class FIRST when at least one matches -- fail open (falls back to the
+   original unfiltered candidate set) whenever the hint cannot be
+   determined, so this can only ever narrow an already-ambiguous
+   resolution, never suppress a genuine finding. This does NOT generalize
+   to a receiver typed as a stdlib object (`re.Pattern`, `pathlib.Path`)
+   -- there is no `ClassName(...)` construction to textually match
+   against a stdlib type's own name, so the pre-existing `.search`/
+   `.rglob`-on-a-stdlib-receiver waivers (7 of the 11 T-1041 waivers)
+   remain necessary; real type inference is the only fix for that
+   sub-class and is out of this ticket's scope.
+
+Litmus fixtures locking each class's now-correct behavior:
+`tests/test_perf.py::test_perf002_does_not_fire_on_the_loops_own_per_iteration_element`,
+`tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect.test_loop_invariant_call_to_lru_cached_helper_is_not_flagged`,
+`tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect.test_receiver_conflation_binds_only_to_the_matching_receivers_class`,
+`tests/unit/perf/test_dup_spawn.py::TestPerf012T1053FalsePositiveClasses.test_two_call_sites_to_an_lru_cached_helper_are_not_flagged`,
+`tests/unit/perf/test_dup_spawn.py::TestPerf012T1053FalsePositiveClasses.test_receiver_conflation_binds_only_to_the_matching_receivers_class`,
+`tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection`.
+
 ## Loop-invariant effectful call detector (PERF008, T-0775)
 
 Motivated by the 2026-07-22 rev-parse incident (T-0773): `frob ticket

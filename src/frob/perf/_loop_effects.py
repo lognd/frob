@@ -88,7 +88,12 @@ from frob.lang import raw_tree as _raw_tree
 from frob.lang._models import ParsedFile
 from frob.logging import get_logger
 from frob.perf._effect_summaries import EffectGraph as _EffectGraph
-from frob.perf._effect_summaries import _callee_short_name, _direct_effect
+from frob.perf._effect_summaries import (
+    _callee_dotted,
+    _callee_short_name,
+    _direct_effect,
+    _infer_receiver_class,
+)
 
 _log = get_logger(__name__)
 
@@ -182,7 +187,7 @@ def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
     result = _raw_tree(Path(path))
     if result.is_err:
         return []
-    tree, _source, language = result.danger_ok
+    tree, source, language = result.danger_ok
     if language != "python":
         return []
     violations: list[Violation] = []
@@ -195,7 +200,22 @@ def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
         else:
             short_name = _callee_short_name(call_node)
             if short_name is not None:
-                hit = graph.reachable_effect(short_name)
+                # T-1053: lru_cache blindness -- a call to a callee that is
+                # itself decorated `@lru_cache`/`@cache` pays its real cost
+                # at most once per distinct argument tuple, not once per
+                # loop-invariant call site; hoisting/memoizing advice is a
+                # false positive here since the callee already memoizes.
+                if graph.callee_is_memoized(short_name):
+                    continue
+                # T-1053: receiver-conflation -- narrow an ambiguous dotted
+                # call's by-name resolution to the receiver's actually-
+                # inferred class when a cheap textual `receiver =
+                # ClassName(...)` constructor assignment is found nearby.
+                dotted = _callee_dotted(call_node)
+                receiver_class = (
+                    _infer_receiver_class(source, dotted[0]) if dotted else None
+                )
+                hit = graph.reachable_effect(short_name, receiver_class)
                 if hit is not None:
                     effect, effect_name = hit[0], hit[1]
         if effect is None:

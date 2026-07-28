@@ -834,8 +834,10 @@
     "src/frob/perf/_collectors.py::parse_v8_cpuprofile": "649455a2f0d9b6ee1aa045170c369579f5e37503722b81ddc648ced337947899",
     "src/frob/perf/_dup_spawn.py::duplicate_spawn_violations": "51353672ef6286328f93af7bdf787bf7e5bb4894db4c15e1319a5bfa9ecc51c3",
     "src/frob/perf/_effect_summaries.py::EffectGraph": "41d96c81b35d32673ba46bcede4c0a3293fbd5327644edd551c2cfb2845ab4e6",
-    "src/frob/perf/_effect_summaries.py::EffectGraph.reachable_effect": "31c827c80cad8d338be38127f98ab2ee20d4597dc164b4224de4f8e772f7e5d1",
-    "src/frob/perf/_effect_summaries.py::EffectGraph.resolve_scoped": "684ddbf174ba6f73c06ce1bd01f93f6a3cd0da91613f981f5a29c454e814045f",
+    "src/frob/perf/_effect_summaries.py::EffectGraph.callee_is_memoized": "2d2f555ab06b4a9764ac94857a8116c06c84deb5cb2e2c44d96e033da555a617",
+    "src/frob/perf/_effect_summaries.py::EffectGraph.is_memoized": "c983340482efdc7c796ed206ba9b36fa2eab4b3a1f319c74931ad7905d049448",
+    "src/frob/perf/_effect_summaries.py::EffectGraph.reachable_effect": "0745d4a8d55749376fd5d59718eb76c0213cc01b8b64e8b2a96cdd6279d3e10c",
+    "src/frob/perf/_effect_summaries.py::EffectGraph.resolve_scoped": "3ad2ba6d98309ec4f172adf3b143c1c0e672c8e7299bdfbb8670a13123dc5999",
     "src/frob/perf/_effect_summaries.py::EffectGraph.summary": "d8f7af1e433c323ff6262bd2304a477456355d633855e0107afd11e3a8a9b45f",
     "src/frob/perf/_effect_summaries.py::UNKNOWN_KIND": "a44d09f1eb6459e8a17a6780c0dcf8aaf25d4edf21811cf3a8304cba51f1f309",
     "src/frob/perf/_effect_summaries.py::Unknown": "b0c5ead85576b4a3b01de64c5b647589af98a5c8b34b044eb304b3521303f9ea",
@@ -1785,5 +1787,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.204.0"
+  "version": "0.205.0"
 }

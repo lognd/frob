@@ -271,18 +271,61 @@ def _perf001_python(tokens: tuple[str, ...], depths: tuple[int, ...]) -> bool:
     return False
 
 
+# frob:ticket T-1053
+def _nearest_for_loop_var(
+    tokens: tuple[str, ...], depths: tuple[int, ...], upto: int
+) -> str | None:
+    """T-1053 bare-method-name-coincidence fix: the bound variable of the
+    most recent statement-level (`depths[i] == 0`) `for X in ...:` header
+    appearing before index `upto`, or `None` if no such header precedes it
+    or the header's target is not a single plain identifier (tuple-
+    unpacking targets are intentionally NOT covered by this cheap
+    positional heuristic -- same accepted-gap posture `_loop_bound_names`
+    in `_loop_effects.py` documents for its own AST-based equivalent, just
+    applied here to `_rules.py`'s position-free token stream instead)."""
+    var: str | None = None
+    for i in range(upto):
+        if tokens[i] != "for" or depths[i] != 0:
+            continue
+        var = (
+            tokens[i + 1]
+            if i + 1 < len(tokens) and tokens[i + 1].isidentifier()
+            else None
+        )
+    return var
+
+
 # frob:ticket T-0021
 # frob:ticket T-0161
 def _perf002_python(tokens: tuple[str, ...], depths: tuple[int, ...]) -> bool:
-    """PERF002 (python): `.index(` or `.count(` call inside a loop."""
+    """PERF002 (python): `.index(` or `.count(` call inside a loop.
+
+    T-1053: does NOT fire when the call's own receiver (the token
+    immediately before the `.`) is exactly the nearest enclosing `for`
+    loop's OWN bound variable (`_nearest_for_loop_var`) -- e.g. `for line
+    in lines: line.count(x)`. That shape is a single per-iteration scan of
+    the loop's own current element, not a repeated linear scan of some
+    OTHER collection that a pre-built index could avoid; the bare method
+    name (`count`/`index`) coincidentally matching this rule's needle set
+    is the false-positive class this guards against (the specimen: a
+    waived hit on `lines[k].count("{")` inside a `while` loop -- note that
+    shape, receiver `lines[k]` rather than the loop's own bound
+    identifier, is NOT covered by this positional heuristic and is a
+    documented remaining gap, see docs/modules/perf.md)."""
     n = len(tokens)
     for i in range(n - 2):
         if tokens[i] != "." or tokens[i + 2] != "(":
             continue
         if tokens[i + 1] not in ("index", "count"):
             continue
-        if _loop_gate(tokens, depths, i):
-            return True
+        if not _loop_gate(tokens, depths, i):
+            continue
+        receiver = tokens[i - 1] if i - 1 >= 0 else None
+        if receiver is not None and receiver == _nearest_for_loop_var(
+            tokens, depths, i
+        ):
+            continue
+        return True
     return False
 
 

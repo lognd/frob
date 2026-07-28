@@ -131,6 +131,32 @@ def test_perf002_does_not_fire_outside_a_loop(tmp_path):
 # frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
 # fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
 # assertion per case); extracting would obscure per-case intent"
+def test_perf002_does_not_fire_on_the_loops_own_per_iteration_element(tmp_path):
+    """T-1053 bare-method-name-coincidence fix: `for line in lines:
+    line.count(x)` is a single per-iteration scan of the loop's OWN
+    current element -- not a repeated linear scan of some OTHER
+    collection a pre-built index could avoid. The bare method name
+    (`count`) coincidentally matching PERF002's needle set is exactly the
+    false-positive class this locks (the real specimen:
+    src/frob/arch/_cpp_mayraise.py's waived `lines[k].count("{")`)."""
+    # frob:ticket T-1053
+    src = (
+        "def scan(lines, needle):\n"
+        "    hits = 0\n"
+        "    for line in lines:\n"
+        "        hits += line.count(needle)\n"
+        "    return hits\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert not any(v.rule == "PERF002" for v in violations)
+
+
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf003_fires_on_nested_loop_equality_join(tmp_path):
     """PERF003 fires: nested loops comparing items with `==`."""
     # frob:ticket T-0021

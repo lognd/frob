@@ -115,9 +115,11 @@ from frob.perf._effect_summaries import (
     UNKNOWN_KIND,
     EffectOccurrence,
     Unknown,
+    _callee_dotted,
     _callee_short_name,
     _contains_splat,
     _direct_effect,
+    _infer_receiver_class,
     _normalize_arg_text,
 )
 from frob.perf._effect_summaries import EffectGraph as _EffectGraph
@@ -184,7 +186,7 @@ def _iter_top_level_calls(body: Node) -> list[Node]:
 
 
 def _entry_occurrences(
-    call: Node, graph: _EffectGraph, from_path: str
+    call: Node, graph: _EffectGraph, from_path: str, source: str | bytes
 ) -> frozenset[EffectOccurrence]:
     """T-0919/T-0922: the occurrence set attributed to one call site
     `call` -- itself directly, if `call` is a spawn/fs-walk call, else
@@ -239,7 +241,9 @@ def _entry_occurrences(
                 )
             }
         )
-    candidates = graph.resolve_scoped(short, from_path)
+    dotted = _callee_dotted(call)
+    receiver_class = _infer_receiver_class(source, dotted[0]) if dotted else None
+    candidates = graph.resolve_scoped(short, from_path, receiver_class)
     if not candidates:
         return frozenset(
             {
@@ -252,6 +256,15 @@ def _entry_occurrences(
                 )
             }
         )
+    # T-1053: lru_cache blindness -- if EVERY resolved candidate is itself
+    # decorated `@lru_cache`/`@cache`, repeated calls to it from distinct
+    # call sites are cache hits after the first, not a real duplicate cost
+    # paid twice; contribute no occurrence at all so this call site can
+    # never pair up with another as a PERF012 duplicate. An AMBIGUOUS
+    # resolution where only some candidates are memoized is left alone
+    # (fail open), same posture as `EffectGraph.callee_is_memoized`.
+    if all(graph.is_memoized(c) for c in candidates):
+        return frozenset()
     acc: set[EffectOccurrence] = set()
     for candidate in candidates:
         acc |= graph.summary(candidate)
@@ -301,7 +314,9 @@ def _split_clean_runs(
     return runs
 
 
-def _def_violations(path: str, func_def: Node, graph: _EffectGraph) -> list[Violation]:
+def _def_violations(
+    path: str, func_def: Node, graph: _EffectGraph, source: str | bytes
+) -> list[Violation]:
     """PERF012 hits for one `def` node: every direct call site's own
     occurrence set (`_entry_occurrences`), grouped by `(kind, arg)`; any
     occurrence shared by 2+ DISTINCT call-site LINES, with nothing
@@ -321,7 +336,7 @@ def _def_violations(path: str, func_def: Node, graph: _EffectGraph) -> list[Viol
     # silently extend it.
     occurrences_by_line: dict[int, set[EffectOccurrence]] = {}
     for call in _iter_top_level_calls(body):
-        occs = _entry_occurrences(call, graph, path)
+        occs = _entry_occurrences(call, graph, path, source)
         line = call.start_point[0] + 1
         if occs:
             occurrences_by_line.setdefault(line, set()).update(occs)
@@ -368,7 +383,7 @@ def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
     result = _raw_tree(Path(path))
     if result.is_err:
         return []
-    tree, _source, language = result.danger_ok
+    tree, source, language = result.danger_ok
     if language != "python":
         return []
     violations: list[Violation] = []
@@ -376,7 +391,7 @@ def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
     while stack:
         node = stack.pop()
         if node.type == "function_definition":
-            violations.extend(_def_violations(path, node, graph))
+            violations.extend(_def_violations(path, node, graph, source))
         stack.extend(node.children)
     return violations
 

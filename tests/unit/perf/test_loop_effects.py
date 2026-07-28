@@ -237,3 +237,54 @@ class TestPerf008LoopInvariantEffect:
 
         violations = loop_invariant_effect_violations([parsed])
         assert violations == ()
+
+    def test_loop_invariant_call_to_lru_cached_helper_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1053 lru_cache-blindness fix: a loop-invariant call to a
+        helper decorated `@lru_cache` that itself spawns a subprocess is
+        NOT flagged -- the decorator already memoizes the real cost to at
+        most one call per distinct argument tuple, so the "hoist/memoize"
+        advice PERF008 would otherwise give is already satisfied."""
+        src = (
+            "import subprocess\n"
+            "from functools import lru_cache\n\n\n"
+            "@lru_cache\n"
+            "def run_argv(argv):\n"
+            "    return subprocess.run(argv, capture_output=True)\n\n\n"
+            "def scan(items, fixed_argv):\n"
+            "    for _item in items:\n"
+            "        run_argv(fixed_argv)\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+
+        violations = loop_invariant_effect_violations([parsed])
+        assert not any(v.rule == "PERF008" for v in violations)
+
+    def test_receiver_conflation_binds_only_to_the_matching_receivers_class(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1053 receiver-conflation fix: two classes, `Quiet` and `Loud`,
+        each define a method named `run` -- only `Loud.run` spawns a
+        subprocess. A loop-invariant call through a `Quiet`-typed receiver
+        (`quiet_runner.run(fixed)`) must NOT be attributed `Loud.run`'s
+        effect just because the bare method NAME `run` coincides."""
+        src = (
+            "import subprocess\n\n\n"
+            "class Quiet:\n"
+            "    def run(self, argv):\n"
+            "        return len(argv)\n\n\n"
+            "class Loud:\n"
+            "    def run(self, argv):\n"
+            "        return subprocess.run(argv, capture_output=True)\n\n\n"
+            "def scan(items, fixed_argv):\n"
+            "    quiet_runner = Quiet()\n"
+            "    for _item in items:\n"
+            "        quiet_runner.run(fixed_argv)\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+
+        violations = loop_invariant_effect_violations([parsed])
+        assert not any(v.rule == "PERF008" for v in violations)

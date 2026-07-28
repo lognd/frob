@@ -376,3 +376,71 @@ class TestPerf012CalibrationT1018:
         assert not any(
             v.rule == "PERF012" and "caller" in v.message for v in violations
         )
+
+
+# frob:doc docs/modules/perf.md#three-false-positive-classes-closed-t-1053
+# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012T1053FalsePositiveClasses.test_two_call_sites_to_an_lru_cached_helper_are_not_flagged  # noqa: E501
+# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012T1053FalsePositiveClasses.test_receiver_conflation_binds_only_to_the_matching_receivers_class  # noqa: E501
+# frob:ticket T-1053
+class TestPerf012T1053FalsePositiveClasses:
+    """T-1053: the lru_cache-blindness and receiver-conflation false-
+    positive classes fixed in `frob.perf._effect_summaries.EffectGraph`
+    (see docs/modules/perf.md's "Three false-positive classes closed"
+    section), exercised through PERF012's own duplicate-detection path."""
+
+    def test_two_call_sites_to_an_lru_cached_helper_are_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1053 lru_cache-blindness fix: `caller` calls an `@lru_cache`-
+        decorated helper from two distinct call sites with the SAME
+        argument shape -- the second call is a cache hit, not a real
+        duplicate cost paid twice, so PERF012 must not fire."""
+        src = (
+            "import subprocess\n"
+            "from functools import lru_cache\n\n\n"
+            "@lru_cache\n"
+            "def run_argv(argv):\n"
+            "    return subprocess.run(argv, capture_output=True)\n\n\n"
+            "def caller(fixed_argv):\n"
+            "    before = run_argv(fixed_argv)\n"
+            "    after = run_argv(fixed_argv)\n"
+            "    return before, after\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+
+        violations = duplicate_spawn_violations([parsed])
+        assert not any(
+            v.rule == "PERF012" and "caller" in v.message for v in violations
+        )
+
+    def test_receiver_conflation_binds_only_to_the_matching_receivers_class(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1053 receiver-conflation fix: two classes, `Quiet` and `Loud`,
+        each define a method named `run` -- only `Loud.run` spawns a
+        subprocess. `caller` calls a `Quiet`-typed receiver's `.run(...)`
+        twice with the same argument shape; this must NOT be attributed
+        `Loud.run`'s effect (and therefore must NOT be flagged as a
+        PERF012 duplicate) just because the bare method NAME coincides."""
+        src = (
+            "import subprocess\n\n\n"
+            "class Quiet:\n"
+            "    def run(self, argv):\n"
+            "        return len(argv)\n\n\n"
+            "class Loud:\n"
+            "    def run(self, argv):\n"
+            "        return subprocess.run(argv, capture_output=True)\n\n\n"
+            "def caller(fixed_argv):\n"
+            "    quiet_runner = Quiet()\n"
+            "    before = quiet_runner.run(fixed_argv)\n"
+            "    after = quiet_runner.run(fixed_argv)\n"
+            "    return before, after\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+
+        violations = duplicate_spawn_violations([parsed])
+        assert not any(
+            v.rule == "PERF012" and "caller" in v.message for v in violations
+        )

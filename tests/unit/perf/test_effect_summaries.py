@@ -154,3 +154,78 @@ class TestSplatArgumentDegradesToUnknown:
         summary = graph.summary(f"{path}::caller")
         assert not any(kind == UNKNOWN_KIND for kind, _arg in summary)
         assert any(kind == "spawn" for kind, _arg in summary)
+
+
+# frob:doc docs/modules/perf.md#shared-interprocedural-effect-summary-substrate-effectgraph-t-0922
+# frob:tests tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_lru_cache_decorated_symbol_is_memoized
+# frob:tests tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_undecorated_symbol_is_not_memoized
+# frob:tests tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_bare_cache_named_parameter_is_not_mistaken_for_a_decorator
+# frob:ticket T-1053
+class TestMemoizedCalleeDetection:
+    """T-1053 lru_cache-blindness fix: `EffectGraph.is_memoized`/
+    `callee_is_memoized` must recognize an actual `@lru_cache`/`@cache`
+    decorator, never a bare-name coincidence like a parameter called
+    `cache`."""
+
+    def test_lru_cache_decorated_symbol_is_memoized(self, tmp_path: Path) -> None:
+        """A `@lru_cache`-decorated function is memoized by both
+        `is_memoized` (by symref) and `callee_is_memoized` (by short
+        name)."""
+        src = (
+            "from functools import lru_cache\n\n\n"
+            "@lru_cache\n"
+            "def run_argv(argv):\n"
+            "    return len(argv)\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+        graph = EffectGraph([parsed])
+
+        assert graph.is_memoized(f"{path}::run_argv")
+        assert graph.callee_is_memoized("run_argv")
+
+    def test_undecorated_symbol_is_not_memoized(self, tmp_path: Path) -> None:
+        """A plain, undecorated function is never memoized."""
+        src = "def run_argv(argv):\n    return len(argv)\n"
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+        graph = EffectGraph([parsed])
+
+        assert not graph.is_memoized(f"{path}::run_argv")
+        assert not graph.callee_is_memoized("run_argv")
+
+    def test_bare_cache_named_parameter_is_not_mistaken_for_a_decorator(
+        self, tmp_path: Path
+    ) -> None:
+        """A parameter literally named `cache` (no `@` decorator marker
+        before it) must not be mistaken for `@cache` memoization -- the
+        same bare-name-coincidence discipline this ticket's other two
+        fixes apply."""
+        src = "def run_argv(argv, cache):\n    return len(argv) + len(cache)\n"
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+        graph = EffectGraph([parsed])
+
+        assert not graph.is_memoized(f"{path}::run_argv")
+        assert not graph.callee_is_memoized("run_argv")
+
+    def test_functools_dotted_lru_cache_decorator_is_memoized(
+        self, tmp_path: Path
+    ) -> None:
+        """The common real spelling `@functools.lru_cache(maxsize=32)`
+        (`import functools`, not `from functools import lru_cache`) is
+        recognized too, not just the bare `@lru_cache` form -- the exact
+        spelling `frob.gates.__init__._ledger_states_at_base` uses (the
+        real specimen behind one of the waivers this ticket retires)."""
+        src = (
+            "import functools\n\n\n"
+            "@functools.lru_cache(maxsize=32)\n"
+            "def run_argv(argv):\n"
+            "    return len(argv)\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+        graph = EffectGraph([parsed])
+
+        assert graph.is_memoized(f"{path}::run_argv")
+        assert graph.callee_is_memoized("run_argv")

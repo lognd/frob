@@ -3361,13 +3361,10 @@ def _bound_to_open_ticket(
             continue
         if ticket.state in _OPEN_STATES:
             return True
-        # frob:waive PERF008 reason="_ledger_states_at_base is decorated with \
-        # @functools.lru_cache(maxsize=32) (its own docstring: 'Cached per (root, \
-        # base)') -- every repeated call across this loop's iterations with the same \
-        # (snapshot.root, diff.base) pair after the first hits the cache and spawns \
-        # no subprocess. PERF008's resolver does not see through the lru_cache \
-        # decorator to know this. Tracked as a resolver precision follow-up \
-        # (T-1041's Done report)"  # noqa: E501
+        # T-1053: PERF008's waiver here was retired -- `EffectGraph.
+        # callee_is_memoized` now recognizes `_ledger_states_at_base`'s own
+        # `@functools.lru_cache(maxsize=32)` decorator and suppresses this
+        # finding at the source instead of requiring a waiver.
         if (
             diff is not None
             and ticket.state == TicketState.DONE
