@@ -231,28 +231,76 @@ def _is_contiguous(ordered: list[Ticket], mapping: dict[str, str]) -> bool:
     return all(t.id == mapping[t.id] for t in ordered)
 
 
+# frob:ticket T-1125
+def _rewrite_body_prose_references(
+    body: str, mapping: dict[str, str]
+) -> tuple[str, int]:
+    """Rewrite every whole-word PROSE occurrence of a renumbered id in
+    `body` to its new id, for every `old != new` pair in `mapping` -- the
+    Done-report/description-prose analog of `_apply_renumber`'s structural
+    `blocked_by`/`parent` rewrite.
+
+    T-1125: `_apply_renumber` used to rewrite only the structured id/
+    blocked_by/parent fields, leaving free-text prose (a Done report citing
+    a draft id like "T-1109", or a description referencing a now-renumbered
+    ticket) permanently stale after `renumber_one`/`finalize_draft` --
+    either a dead-id TICK006 phantom once the draft id no longer resolves,
+    or worse (invisible to any gate) a citation of the WRONG real ticket if
+    a hand-guessed final id happened to already exist. Four wave-17
+    incidents (T-1077/T-1084/T-1095's phantom citations, T-0668's 8-site
+    wrong-id citation) motivated this. Skips any pair where `old_id ==
+    new_id` (nothing moved) or `old_id` is not even present in `body`
+    (the common case -- most tickets' bodies reference nothing that moved),
+    so a ticket whose prose mentions no renumbered id is left byte-for-byte
+    unchanged."""
+    hits = 0
+    for old_id, new_id in mapping.items():
+        if old_id == new_id or old_id not in body:
+            continue
+        id_re = re.compile(rf"\b{re.escape(old_id)}\b")
+        body, n = id_re.subn(new_id, body)
+        hits += n
+    return body, hits
+
+
 def _apply_renumber(
     ordered: list[Ticket], mapping: dict[str, str]
-) -> tuple[dict[str, Ticket], int]:
-    """Rewrite each ticket's id plus blocked_by/parent refs via `mapping`."""
+) -> tuple[dict[str, Ticket], int, int]:
+    """Rewrite each ticket's id, blocked_by/parent refs, AND body prose
+    citations of any renumbered id, via `mapping` (T-1125: body prose used
+    to be left stale -- see `_rewrite_body_prose_references`).
+
+    Returns `(new_map, touched, prose_hits)`: `touched` is "tickets touched"
+    (id changed OR body prose rewritten), not "ids changed" alone -- a
+    ticket whose own id is stable but whose Done-report prose cited a
+    SIBLING id that moved must still be persisted, so `_persist_renumber`'s
+    write-trigger (built from this count) has to see it as a change too.
+    `prose_hits` is the total count of individual prose substitutions made
+    across every ticket's body, folded into `RenumberReport.occurrences`
+    alongside code-reference hits."""
 
     def remap(tid: str) -> str:
         return mapping.get(tid, tid)
 
     new_map: dict[str, Ticket] = {}
-    renumbered = 0
+    touched = 0
+    prose_hits_total = 0
     for ticket in ordered:
         new_id = mapping[ticket.id]
-        if new_id != ticket.id:
-            renumbered += 1
+        id_changed = new_id != ticket.id
+        new_body, prose_hits = _rewrite_body_prose_references(ticket.body, mapping)
+        prose_hits_total += prose_hits
+        if id_changed or prose_hits:
+            touched += 1
         new_map[new_id] = ticket.model_copy(
             update={
                 "id": new_id,
                 "blocked_by": tuple(remap(b) for b in ticket.blocked_by),
                 "parent": remap(ticket.parent) if ticket.parent else None,
+                "body": new_body,
             }
         )
-    return new_map, renumbered
+    return new_map, touched, prose_hits_total
 
 
 # frob:doc docs/modules/tickets.md#public-api
@@ -284,7 +332,7 @@ def renumber(root: Path) -> Result[int, TicketError]:
         if _is_contiguous(ordered, mapping):
             _log.info("tickets: renumber -- already contiguous, nothing to do")
             return Ok(0)
-        new_map, renumbered = _apply_renumber(ordered, mapping)
+        new_map, renumbered, _prose_hits = _apply_renumber(ordered, mapping)
         result = write_all(root, new_map, expected_digest=digest)
         if result.is_err:
             return Err(result.danger_err)
@@ -462,20 +510,31 @@ def _apply_renumber_mapping(
     archive_map: dict[str, Ticket],
     old_id: str,
     new_id: str,
-) -> tuple[dict[str, Ticket], int, dict[str, Ticket], int]:
+) -> tuple[dict[str, Ticket], int, dict[str, Ticket], int, int]:
     """Build the id-rename mapping (`old_id -> new_id`, every other id
-    fixed) and apply it to both the active and archive ticket maps."""
+    fixed) and apply it to both the active and archive ticket maps.
+
+    Returns `(new_active_map, active_changed, new_archive_map,
+    archive_changed, prose_hits)` -- `prose_hits` (T-1125) is the combined
+    count of Done-report/description-prose substitutions across BOTH maps,
+    folded into the eventual `RenumberReport.occurrences`."""
     all_ids = set(active_map) | set(archive_map)
     full_mapping = {tid: tid for tid in all_ids}
     full_mapping[old_id] = new_id
 
-    new_active_map, active_changed = _apply_renumber(
+    new_active_map, active_changed, active_prose_hits = _apply_renumber(
         list(active_map.values()), full_mapping
     )
-    new_archive_map, archive_changed = _apply_renumber(
+    new_archive_map, archive_changed, archive_prose_hits = _apply_renumber(
         list(archive_map.values()), full_mapping
     )
-    return new_active_map, active_changed, new_archive_map, archive_changed
+    return (
+        new_active_map,
+        active_changed,
+        new_archive_map,
+        archive_changed,
+        active_prose_hits + archive_prose_hits,
+    )
 
 
 def _build_renumber_report(
@@ -486,15 +545,23 @@ def _build_renumber_report(
     archive_changed: int,
     code_changes: dict[Path, tuple[str, int]],
     dry_run: bool,
+    ledger_prose_hits: int = 0,
 ) -> RenumberReport:
     """Assemble the `RenumberReport` for a rename, from the computed
-    ledger-changed flags and code-reference scan results."""
+    ledger-changed flags and code-reference scan results.
+
+    `ledger_prose_hits` (T-1125) folds Done-report/description-prose
+    substitutions made directly in tickets.md/tickets-archive.md into
+    `occurrences` alongside code-reference hits, so a caller inspecting the
+    report sees the full picture of what got rewritten, not just the code
+    side."""
     return RenumberReport(
         old_id=old_id,
         new_id=new_id,
         ledger_changed=bool(active_changed or archive_changed),
         files_changed=tuple(sorted(str(p.relative_to(root)) for p in code_changes)),
-        occurrences=sum(hits for _text, hits in code_changes.values()),
+        occurrences=sum(hits for _text, hits in code_changes.values())
+        + ledger_prose_hits,
         dry_run=dry_run,
     )
 
@@ -528,9 +595,11 @@ def renumber_one(
 ) -> Result[RenumberReport, TicketError]:
     """Atomically rewrite ONE ticket's id everywhere: its ledger section
     (active or archive, id + every blocked_by/parent reference across BOTH
-    stores) and every `frob:ticket`/`frob:waive`/`frob:todo`/`frob:tests`/
-    `frob:invariant`/`frob:doc` directive line across the tracked tree that
-    names it.
+    stores), every OTHER ticket's Done-report/description PROSE citation of
+    it in tickets.md/tickets-archive.md (T-1125, see
+    `_rewrite_body_prose_references`), and every `frob:ticket`/`frob:waive`/
+    `frob:todo`/`frob:tests`/`frob:invariant`/`frob:doc` directive line
+    across the tracked tree that names it.
 
     T-0633: the load (`_load_and_validate_renumber_ids`) and the eventual
     persist (`_persist_renumber`, which calls `write_all`/`write_archive`)
@@ -549,12 +618,23 @@ def renumber_one(
         if loaded.is_err:
             return Err(loaded.danger_err)
         active_map, archive_map, active_digest, archive_digest = loaded.danger_ok
-        new_active_map, active_changed, new_archive_map, archive_changed = (
-            _apply_renumber_mapping(active_map, archive_map, old_id, new_id)
-        )
+        (
+            new_active_map,
+            active_changed,
+            new_archive_map,
+            archive_changed,
+            ledger_prose_hits,
+        ) = _apply_renumber_mapping(active_map, archive_map, old_id, new_id)
         code_changes = _scan_code_references(root, old_id, new_id)
         report = _build_renumber_report(
-            root, old_id, new_id, active_changed, archive_changed, code_changes, dry_run
+            root,
+            old_id,
+            new_id,
+            active_changed,
+            archive_changed,
+            code_changes,
+            dry_run,
+            ledger_prose_hits=ledger_prose_hits,
         )
         if dry_run:
             _log_renumber_dry_run(old_id, new_id, report)

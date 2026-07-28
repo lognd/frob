@@ -238,6 +238,10 @@ def migrate(root: Path) -> Result[int, TicketError]
 def renumber(root: Path) -> Result[int, TicketError]
     # Reassigns EVERY ticket id to a contiguous T-0001.. sequence (whole-
     # ledger cleanup); superseded for the single-id case by renumber_one.
+    # T-1125: also rewrites body PROSE citations of any renumbered id (a
+    # Done report or description mentioning a sibling ticket that moved),
+    # not just the structural id/blocked_by/parent fields -- see
+    # renumber_one's note below, same mechanism.
 def renumber_one(root: Path, old_id: str, new_id: str, *,
                   dry_run: bool = False) -> Result[RenumberReport, TicketError]
     # Rewrites ONE ticket's id everywhere: its ledger section (active or
@@ -246,6 +250,16 @@ def renumber_one(root: Path, old_id: str, new_id: str, *,
     # frob:doc directive line across the tracked tree that names it.
     # `frob ticket renumber <old> <new>`'s implementation; --dry-run reports
     # the same plan without writing. See "Provisional ids" below.
+    # T-1125: ALSO rewrites every OTHER ticket's Done-report/description
+    # body PROSE that cites old_id (whole-word, e.g. "Filed: T-draft-xxxx"
+    # or a description naming a sibling ticket) to new_id, in the same
+    # ledger_lock transaction -- previously only the structural fields
+    # were rewritten, leaving prose citations permanently stale: either a
+    # TICK006 phantom once a dead draft id no longer resolves, or (worse,
+    # invisible to any gate) a citation of the WRONG real id if a hand-
+    # guessed final id happened to already be taken. `RenumberReport.
+    # occurrences` folds these prose-hit counts in alongside code-reference
+    # hits. See `frob.tickets._new_renumber._rewrite_body_prose_references`.
 def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]
     # Assigns draft_id its final T-#### id against the CURRENT merged view
     # and rewrites everything via renumber_one; a no-op returning draft_id

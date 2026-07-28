@@ -259,6 +259,105 @@ class TestSweepWorktreeCollisionIncident:
         assert old_id in queue.danger_ok.tickets
 
 
+class TestRenumberRewritesLedgerProse:
+    # frob:ticket T-1125
+    """T-1125: the dominant wave-17 fallout class -- land/renumber rewrote
+    a draft/renumbered id's structural fields (ledger id, blocked_by,
+    parent, code directives) but left free-text PROSE citations of it (a
+    Done report's "Filed: T-draft-xxxx", a description mentioning a
+    sibling ticket) permanently stale, either a TICK006 phantom once the
+    dead id no longer resolves, or -- worse and invisible to any gate -- a
+    citation of the WRONG real id if a hand-guessed final id happened to
+    already be taken by something else."""
+
+    # frob:ticket T-1125
+    def test_renumber_one_rewrites_a_sibling_ticket_done_report_prose(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_new_renumber.py::renumber_one kind="unit"
+        cited = new_ticket(tmp_path, _spec("Ticket being renumbered"))
+        assert cited.is_ok
+        old_id = cited.danger_ok.id
+
+        citing = new_ticket(tmp_path, _spec("Ticket whose Done report cites it"))
+        assert citing.is_ok
+        citing_id = citing.danger_ok.id
+
+        from frob.tickets._store import load_all, write_ticket
+
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        citing_ticket = loaded.danger_ok[citing_id]
+        prose_body = (
+            "## Done report\n\n"
+            f"Changed: nothing\nEvidence: none\nFiled: {old_id}\n"
+        )
+        write_result = write_ticket(
+            tmp_path, citing_ticket.model_copy(update={"body": prose_body})
+        )
+        assert write_result.is_ok
+
+        new_id = "T-9999"
+        report = renumber_one(tmp_path, old_id, new_id)
+        assert report.is_ok
+        assert report.danger_ok.ledger_changed is True
+        # the prose hit is folded into occurrences alongside code hits
+        assert report.danger_ok.occurrences >= 1
+
+        reloaded = load_all(tmp_path)
+        assert reloaded.is_ok
+        rewritten_body = reloaded.danger_ok[citing_id].body
+        assert new_id in rewritten_body
+        assert old_id not in rewritten_body
+
+    # frob:ticket T-1125
+    def test_finalize_draft_rewrites_a_sibling_ticket_done_report_prose(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_new_renumber.py::finalize_draft kind="unit"
+        main_repo = tmp_path / "main"
+        _git_init(main_repo)
+        atomic_write(ledger_path(main_repo), "# Tickets\n\n")
+        _commit_all(main_repo, "init")
+
+        wt = tmp_path / "wt"
+        _run(["git", "worktree", "add", "-b", "feature", str(wt)], main_repo)
+        assert on_default_branch(wt) is False
+
+        draft = new_ticket(wt, _spec("Draft residue"))
+        assert draft.is_ok
+        draft_id = draft.danger_ok.id
+        assert is_draft_id(draft_id)
+
+        citing = new_ticket(wt, _spec("Reporter citing the draft"))
+        assert citing.is_ok
+        citing_id = citing.danger_ok.id
+
+        from frob.tickets._store import load_all, write_ticket
+
+        loaded = load_all(wt)
+        assert loaded.is_ok
+        citing_ticket = loaded.danger_ok[citing_id]
+        prose_body = f"## Done report\n\nFiled: {draft_id}\n"
+        write_result = write_ticket(
+            wt, citing_ticket.model_copy(update={"body": prose_body})
+        )
+        assert write_result.is_ok
+        _commit_all(wt, "file draft + citing ticket")
+        _run(["git", "merge", "-q", "feature"], main_repo)
+
+        final = finalize_draft(main_repo, draft_id)
+        assert final.is_ok
+        final_id = final.danger_ok
+        assert final_id != draft_id
+
+        reloaded = load_all(main_repo)
+        assert reloaded.is_ok
+        rewritten_body = reloaded.danger_ok[citing_id].body
+        assert final_id in rewritten_body
+        assert draft_id not in rewritten_body
+
+
 class TestTick002GateUnwaivable:
     """A draft id that survives onto the default branch must fail `frob
     check` loudly and be unwaivable -- the finalize step exists precisely to

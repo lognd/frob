@@ -2662,7 +2662,7 @@ check_runner.py/deploy_runner.py/perf_runner.py/docs/modules/app.md.
 ```yaml
 id: T-1125
 title: 'land/renumber: rewrite draft-id references in ledger prose during renumbering'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -2673,20 +2673,124 @@ sprint: null
 scope:
 - src/frob/tickets/**
 - tests/test_tickets.py
+- docs/modules/tickets.md
+- tests/test_tickets_collision.py
+scope_changes:
+- op: add
+  glob: tests/test_tickets_tiers.py
+  reason: T-1125 scope's src/frob/tickets/** glob pulls in __init__.py::transition,
+    whose frob:tests target lives in test_tickets_tiers.py -- SCOPE002 flags it as
+    outside declared scope
+  actor: logan
+  at: '2026-07-28'
+- op: remove
+  glob: tests/test_tickets_tiers.py
+  reason: 'revert: scope closure debt across src/frob/tickets/** is pre-existing (548
+    SCOPE002 warnings unrelated to T-1125''s diff), not something this ticket should
+    chase; filed as follow-up instead'
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: docs/modules/tickets.md carries the public-api doc anchor renumber/renumber_one
+    affects() closes over (T-1125's fix must update it, per playbook section 6); tests/test_tickets_collision.py
+    is where T-1125's own new coverage (TestRenumberRewritesLedgerProse) lives, alongside
+    the pre-existing renumber_one incident-reproduction tests it belongs next to
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: tests/test_tickets_collision.py
+  reason: docs/modules/tickets.md carries the public-api doc anchor renumber/renumber_one
+    affects() closes over (T-1125's fix must update it, per playbook section 6); tests/test_tickets_collision.py
+    is where T-1125's own new coverage (TestRenumberRewritesLedgerProse) lives, alongside
+    the pre-existing renumber_one incident-reproduction tests it belongs next to
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/test_tickets_collision.py::TestRenumberRewritesLedgerProse::test_renumber_one_rewrites_a_sibling_ticket_done_report_prose
+- tests/test_tickets_collision.py::TestRenumberRewritesLedgerProse::test_finalize_draft_rewrites_a_sibling_ticket_done_report_prose
 acceptance:
 - text: GIVEN a worktree ledger whose done-report prose cites T-draft-X WHEN frob
     ticket land renumbers T-draft-X to T-#### THEN every prose reference to T-draft-X
     in tickets.md is rewritten to the final id in the same splice, and a post-land
     full check reports zero TICK006 for it
-  evidence: []
+  evidence:
+  - tests/test_tickets_collision.py::TestRenumberRewritesLedgerProse::test_finalize_draft_rewrites_a_sibling_ticket_done_report_prose
 - text: GIVEN frob ticket renumber OLD NEW WHEN prose elsewhere in the ledger references
     OLD THEN those references are rewritten too (or the command errors listing them),
     never silently left stale
-  evidence: []
+  evidence:
+  - tests/test_tickets_collision.py::TestRenumberRewritesLedgerProse::test_renumber_one_rewrites_a_sibling_ticket_done_report_prose
 threat: null
 component: null
 ```
 The dominant wave-17 fallout class (4 incidents in one wave): land renumbers draft BLOCKS but never rewrites prose citing them, so done reports either go TICK006-phantom (T-1077/T-1084/T-1095 reports citing drafts that died) or -- worse and invisible to TICK006 -- cite a WRONG real id (T-0668's agent wrote T-1109 guessing its draft's final id; real id was T-1113; 8 prose sites hand-repaired by the coordinator). renumber already computes the old->new mapping; apply it to prose occurrences of the draft id across tickets.md/tickets-archive.md in the same transaction. Coordinators should never hand-grep real ids again; agents should be free to cite draft ids in prose and have land fix them.
+
+## Done report
+
+Fixed the wave-17 dominant fallout class: renumber_one (and its two
+callers, finalize_draft / frob ticket land, and the bare `frob ticket
+renumber OLD NEW` CLI) rewrote only structural ledger fields (a ticket's
+own id, blocked_by, parent) plus code directive lines -- never free-text
+Done-report/description PROSE citing a renumbered id elsewhere in
+tickets.md/tickets-archive.md. A sibling ticket's "Filed: T-draft-xxxx"
+or a description naming another ticket went permanently stale the moment
+that id was renumbered: either a TICK006 phantom once a dead draft id no
+longer resolved, or (worse, invisible to any gate) a citation of the WRONG
+real id if a hand-guessed final id happened to already be taken by
+something else (the T-0668 8-site incident cited in the ticket body).
+
+Added `_rewrite_body_prose_references` (whole-word regex substitution,
+scoped to the renumber mapping's actual old->new pairs) and wired it into
+`_apply_renumber` (used by both `renumber()`'s bulk contiguous remap and
+`renumber_one`'s single-id remap via `_apply_renumber_mapping`), so every
+ticket's body prose is rewritten in the SAME ledger_lock transaction as
+the structural id fields -- for both the active and archive stores.
+`_apply_renumber`'s "touched" count now includes a ticket whose body was
+rewritten even if its own id did not change, so `_persist_renumber`'s
+write-trigger actually persists it. `RenumberReport.occurrences` now
+folds prose-hit counts in alongside code-reference hits.
+
+This closes both of T-1125's acceptance criteria: a draft id finalized at
+land time (finalize_draft -> renumber_one) rewrites a sibling ticket's
+prose citation of it, and the standalone `frob ticket renumber OLD NEW`
+CLI path does the same.
+
+Updated docs/modules/tickets.md's public-api section for `renumber`/
+`renumber_one` to document the new prose-rewrite behavior (closes the
+AFFECT001 doc-drift finding this diff otherwise triggers).
+
+Out of scope, not touched: the pre-existing SCOPE002 scope-closure debt
+across T-1125's broad `src/frob/tickets/**` scope glob (~548 warnings,
+one promoted to error until scope was extended to cover the two files
+this ticket's own diff actually touches -- docs/modules/tickets.md and
+tests/test_tickets_collision.py; both added via `frob ticket scope
+--add`). That debt is unrelated to this diff and pre-exists across the
+whole ticket family (see TICK009's "chronically over-broad glob" findings
+for many other tickets in this same package) -- filed as a follow-up
+draft ticket rather than chased down here.
+
+Filed: T-1145 (scope-closure debt across src/frob/tickets/**
+ticket-scope globs; a draft id, renumbers at land -- cite the real id
+once landed).
+
+### Changed
+```
+ docs/modules/tickets.md           |  14 +++++
+ src/frob/tickets/_new_renumber.py | 122 +++++++++++++++++++++++++++++++-------
+ tests/test_tickets_collision.py   |  99 +++++++++++++++++++++++++++++++
+ tickets.md                        |  75 ++++++++++++++++++++++-
+ 4 files changed, 288 insertions(+), 22 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_collision.py::TestRenumberRewritesLedgerProse::test_renumber_one_rewrites_a_sibling_ticket_done_report_prose` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestRenumberRewritesLedgerProse::test_finalize_draft_rewrites_a_sibling_ticket_done_report_prose` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 15 error(s), 944 warning(s), 424 waived
+- error-findings: COV001@src/frob/gates/_tracked_files.py, COV003@tickets/T-0138, COV003@tickets/T-0226, COV003@tickets/T-0629, COV003@tickets/T-0700, COV003@tickets/T-0702, E501@/home/logan/projects/frob/.claude/worktrees/w18-tickets/src/frob/vet/_capability.py:5338, E501@/home/logan/projects/frob/.claude/worktrees/w18-tickets/src/frob/vet/_supplychain.py:154, E501@/home/logan/projects/frob/.claude/worktrees/w18-tickets/src/frob/vet/_supplychain.py:168, E501@/home/logan/projects/frob/.claude/worktrees/w18-tickets/src/frob/vet/_supplychain.py:209, E501@/home/logan/projects/frob/.claude/worktrees/w18-tickets/src/frob/vet/_supplychain.py:267, E501@/home/logan/projects/frob/.claude/worktrees/w18-tickets/src/frob/vet/_supplychain.py:295, INV006@src/frob/app/ticket_runner/_mutate.py, SELFAUDIT001@design, TICK006@tickets.md
 
 <!-- ticket:T-1126 -->
 ```yaml
@@ -3316,3 +3420,43 @@ detector's specificity heuristic (docs/modules/arch.md) should learn to
 exclude. Scope: src/frob/check/**, src/frob/process/parsers/**,
 docs/modules/arch.md (if the detector itself needs an exclusion) or the
 consuming files (if a real shared helper is extractable).
+
+<!-- ticket:T-1145 -->
+```yaml
+id: T-1145
+title: 'scope: SCOPE002 closure debt across src/frob/tickets/** ticket-scope globs'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/design/**
+- tickets.md
+threat: null
+component: null
+```
+frob check --ticket T-1125's gates-fast pass surfaces ~548 SCOPE002
+"scope closure" warnings (plus one promoted to ERROR) purely from T-1125's
+declared scope glob `src/frob/tickets/**` -- every symbol under that whole
+package whose bound frob:tests target lives in a test file outside the
+ticket's own scope trips it, unrelated to what any single ticket in this
+family actually touches. Confirmed pre-existing (not introduced by
+T-1125's diff): the same finding count reproduces against tickets/**-scoped
+work generally, not just T-1125's specific renumber/prose change.
+
+This is systemic scope-declaration debt for the tickets package (broad
+`src/frob/tickets/**` scope globs are common across this ticket family --
+see TICK009's own "chronically over-broad glob" findings for T-1109/
+T-1110/T-1111/T-1135/etc naming the same package). Investigate either:
+(a) a project-level scope-closure precedent/waiver for this package (its
+    test suite is intentionally split across many tests/test_tickets_*.py
+    files, not 1:1 with source files), or
+(b) actually narrowing every ticket's scope in this family to specific
+    files+the one or two test files it truly touches, instead of the
+    broad glob.
+
+Filed while working T-1125; out of that ticket's own scope to fix.
