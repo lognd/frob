@@ -2584,3 +2584,30 @@ exclusion mechanism (already proposed for the check_* registry family
 in T-1112) to also recognize a package's own established gate/rule-
 builder return-type convention, so this class of finding does not need
 re-triaging by hand every time a gates/ split ticket re-measures.
+
+<!-- ticket:T-1142 -->
+```yaml
+id: T-1142
+title: 'tickets: flow report undercounts landed/day -- mine archive + git history,
+  not just the live ledger'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- tests/test_tickets_velocity.py
+acceptance:
+- text: GIVEN days on which archived tickets landed (e.g. 2026-07-26/27 with ~50 lands
+    each) WHEN frob ticket flow runs THEN the landed column reflects them (sourced
+    from tickets-archive.md and/or git history per T-0938's mining) and the ETA extrapolation
+    uses the corrected net rate
+  evidence: []
+threat: null
+component: null
+```
+First real run of T-1100's flow verb (2026-07-28) showed landed=0 for 2026-07-26 and 2026-07-27 when the zero-drive record shows roughly fifty lands each day -- archived tickets fall out of the landed count, so the trailing net rate and ETA are wrong in exactly the situations the verb was built for (heavy landing waves followed by archive sweeps).
