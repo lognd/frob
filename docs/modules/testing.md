@@ -242,6 +242,9 @@ count).
 <!-- frob:describes src/frob/testing/_coverage_wait.py::coverage_lock_path -->
 <!-- frob:describes src/frob/testing/_coverage_wait.py::CoverageWaitOutcome -->
 <!-- frob:describes src/frob/testing/_coverage_wait.py::CoverageWaitError -->
+<!-- frob:describes src/frob/testing/_coverage_wait.py::tree_digest -->
+<!-- frob:describes src/frob/testing/_coverage_wait.py::shared_state_dir -->
+<!-- frob:describes src/frob/testing/_coverage_wait.py::SharedCoverageResult -->
 
 ```python
 # frob/gitio.py -- the ONE git subprocess seam (shared with frob.gates)
@@ -319,7 +322,7 @@ def python_coverage_targets(root: Path, snapshot: GraphSnapshot,
     # --cov-append coverage run instead of a full-suite re-run per change.
     # () on a diff/selection failure or an empty selection; never raises.
 
-# frob/testing/_coverage_wait.py (T-0322)
+# frob/testing/_coverage_wait.py (T-0322, cross-worktree layer T-1095)
 def run_coverage_wait(root: Path, *, command: tuple[str, ...] = ("make", "coverage-fast")
                       ) -> Result[CoverageWaitOutcome, CoverageWaitError]
     # Blocks in the foreground under a single-flight file lock
@@ -327,17 +330,53 @@ def run_coverage_wait(root: Path, *, command: tuple[str, ...] = ("make", "covera
     # `command` if it is not already -- the definitive-result alternative
     # to backgrounding `make coverage` and stalling on a notification a
     # dispatched sub-agent can never receive.
+    #
+    # T-1095: before the per-worktree lock/run above, checks a CROSS-
+    # worktree layer first -- a shared, content-addressed cache keyed by
+    # tree_digest(snapshot) under shared_state_dir(root). A cache hit (any
+    # OTHER worktree of the same clone whose tracked source hashed
+    # identically already settled this digest) adopts that result and
+    # returns immediately with ZERO subprocess spawned; a miss acquires a
+    # shared per-digest lock (serializing every worktree sharing the
+    # digest onto ONE real run, not one per worktree), runs `command`, and
+    # records the outcome for every other worktree sharing that digest to
+    # find. Worktrees whose tracked content DIFFERS resolve to different
+    # digests and so never contend or share a result with each other.
 def coverage_lock_path(root: Path) -> Path
     # The single-flight lock path (.frob/coverage.lock) run_coverage_wait
-    # guards concurrent callers with.
+    # guards concurrent callers WITHIN one worktree with (the ORIGINAL,
+    # per-worktree layer; unchanged by T-1095's outer, cross-worktree one).
+def tree_digest(snapshot: GraphSnapshot) -> str
+    # T-1095: sha256 hex over `snapshot.file_hashes`' tracked *.py/*.rs/
+    # *.ts/*.tsx entries, sorted by path -- identical tracked source (any
+    # worktree, any path) produces the identical digest; any differing
+    # file produces a different one.
+def shared_state_dir(root: Path) -> Path
+    # T-1095: <git-common-dir>/frob-coverage-shared/ -- ONE location per
+    # CLONE (via frob.gitio.git_common_dir), not per worktree, so every
+    # worktree of the same clone resolves to the same shared directory
+    # regardless of its own path. Falls back to
+    # <root>/.frob/frob-coverage-shared (worktree-local) when `root` is
+    # not inside a git repository at all.
 
 class CoverageWaitOutcome(BaseModel):    # frozen fields, not a frozen model
-    ran: bool           # False: an already-fresh stamp was found, nothing ran.
-    duration_s: float   # 0.0 when ran is False.
+    ran: bool           # False: an already-fresh stamp (local OR shared) was
+                         # found, nothing ran.
+    duration_s: float   # 0.0 when ran is False and the hit was purely local;
+                         # the ORIGINAL run's duration when adopted from the
+                         # T-1095 shared cache.
 
 class CoverageWaitError(ErrorSet):
     RunFailed = "the coverage subprocess exited non-zero"
     SnapshotUnavailable = "the obligation graph snapshot could not be built"
+
+class SharedCoverageResult(BaseModel):    # T-1095
+    ok: bool                    # whether the settled run succeeded.
+    ran: bool                   # always True for a freshly-recorded entry.
+    duration_s: float           # the ORIGINAL run's wall time.
+    file_hashes: dict[str, str] # the settling worktree's tracked file hashes,
+                                # so a later cache-hit caller can adopt them
+                                # into its OWN local .frob/coverage-stamp.
 ```
 
 **Deviation**: `frob.testing`'s `suite` fallback mode is threaded through the

@@ -1529,6 +1529,33 @@ class TestPurposeContract:
         assert any(v.capability == "net.connect" for v in hits)
 
     # frob:tests src/frob/strata/_selfconform.py::_purpose_contract_violations kind="unit"  # noqa: E501
+    def test_read_only_purpose_with_write_effect_fires(self, tmp_path: Path):
+        """T-0669's own acceptance wording, verbatim: a node whose
+        `purpose=read-only` profile declares a read-only effect profile
+        but whose bound code performs a WRITE fires SYS105."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "from pathlib import Path\nPath('x').write_text('y')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    may=("fs.write",),
+                    attrs=("code=src/frob/widget/**", "purpose=read-only"),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hits = [
+            v for v in result.danger_ok.violations if v.rule == SYS_PURPOSE_CONTRACT
+        ]
+        assert any(v.capability == "fs.write" for v in hits)
+
+    # frob:tests src/frob/strata/_selfconform.py::_purpose_contract_violations kind="unit"  # noqa: E501
     def test_unrecognized_profile_fires(self, tmp_path: Path):
         """A typo'd `purpose=` profile name is itself a finding -- never
         silently treated as permissive."""

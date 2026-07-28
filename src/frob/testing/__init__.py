@@ -20,8 +20,11 @@ from frob.testing._collect import (
 from frob.testing._coverage_wait import (
     CoverageWaitError,
     CoverageWaitOutcome,
+    SharedCoverageResult,
     coverage_lock_path,
     run_coverage_wait,
+    shared_state_dir,
+    tree_digest,
 )
 from frob.testing._incremental_coverage import python_coverage_targets
 from frob.testing._models import (
@@ -70,6 +73,7 @@ __all__ = [
     "RunnerSpec",
     "SelectConfig",
     "SelectionReport",
+    "SharedCoverageResult",
     "StabilityEntry",
     "TestRunReport",
     "TestingError",
@@ -98,5 +102,7 @@ __all__ = [
     "run_coverage_wait",
     "run_selected",
     "select_tests",
+    "shared_state_dir",
     "track_python_stability",
+    "tree_digest",
 ]

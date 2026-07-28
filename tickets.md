@@ -477,7 +477,7 @@ against the real repo).
 id: T-0669
 title: 'strata: PURPOSE contract - node purpose carries an allowed-effect profile
   checked against code'
-state: queued
+state: done
 kind: security
 origin: agent
 created: '2026-07-22'
@@ -492,21 +492,104 @@ scope:
 - src/frob/graph/**
 - docs/modules/strata.md
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_selfconform.py::TestPurposeContract::test_read_only_purpose_with_write_effect_fires
+- tests/unit/strata/test_selfconform.py::TestPurposeContract::test_effect_outside_profile_fires
+- tests/unit/strata/test_selfconform.py::TestPurposeContract::test_unrecognized_profile_fires
+- tests/unit/strata/test_selfconform.py::TestPurposeContract::test_effect_inside_profile_is_silent
+- tests/unit/strata/test_selfconform.py::TestPurposeContract::test_node_with_no_purpose_attr_is_never_checked
 acceptance:
 - text: Given a node whose purpose declares a read-only effect profile but whose bound
     code performs a write, when checked, then the obligation fires
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_selfconform.py::TestPurposeContract::test_read_only_purpose_with_write_effect_fires
 threat: null
 component: null
 ```
 Each node's declared purpose must carry an allowed-effect profile (e.g. 'read-only query' cannot emit writes); real observed effects outside that profile fail via _effects.py::check_capability_conformance -- closes acceptance-criterion (3).
+
+## Done report
+
+Changed:
+- src/frob/strata/_selfconform.py::SYS_PURPOSE_CONTRACT
+- src/frob/strata/_selfconform.py::_purpose_contract_violations
+- src/frob/strata/_selfconform.py::_PURPOSE_PROFILES
+- src/frob/strata/_selfconform.py::check_self_conformance (wired SYS105 into _collect_sys_violations/_apply_sys_waivers)
+- src/frob/strata/__init__.py (re-export SYS_PURPOSE_CONTRACT)
+- docs/modules/strata.md (SYS105 section)
+- tests/unit/strata/test_selfconform.py (TestPurposeContract, 6 tests including one added this ticket matching the acceptance criterion's exact wording)
+
+Note on landing order: this module (`_selfconform.py`) implements SYS104/
+SYS105/SYS106 together (T-0668/T-0669/T-0670 share one file and one
+`check_self_conformance` wiring pass, built in one editing pass before
+landing each ticket in series order per this wave's dispatch plan). The
+SYS105 code itself was committed as part of T-0668's land (both live in
+the same file, T-0668 landed first in series order) -- this ticket's own
+diff on top of that is the ONE new test
+(`test_read_only_purpose_with_write_effect_fires`, matching the
+acceptance criterion's literal wording: `purpose=read-only` + an
+observed `fs.write` effect) plus this evidence binding and Done report.
+
+SYS105 implements the purpose contract: a node's declared `purpose=`
+attr (new opaque `Node.attrs` convention, same shape as `code=`/
+`interface=`, no `.strata` grammar change) names a fixed, closed
+allowed-effect profile (`_PURPOSE_PROFILES`: `pure`, `read-only`,
+`logging`, `network`, `full`); any observed effect outside the declared
+profile fires, and an unrecognized profile name is itself a finding
+(never silently treated as permissive).
+
+SCOPE CUT (disclosed, same shape as T-0668's): SYS105 only evaluates a
+node that has already declared a `purpose=` attr -- mandating every node
+declare one requires editing `design/frob.strata`, outside this ticket's
+declared scope. Filed as part of T-1109 (same follow-up ticket T-0668
+filed, which bundles both SYS104 and SYS105's identical scope-cut
+follow-up).
+
+Evidence:
+- tests/unit/strata/test_selfconform.py::TestPurposeContract::test_read_only_purpose_with_write_effect_fires
+- tests/unit/strata/test_selfconform.py::TestPurposeContract::test_effect_outside_profile_fires
+- tests/unit/strata/test_selfconform.py::TestPurposeContract::test_unrecognized_profile_fires
+- tests/unit/strata/test_selfconform.py::TestPurposeContract::test_effect_inside_profile_is_silent
+- tests/unit/strata/test_selfconform.py::TestPurposeContract::test_node_with_no_purpose_attr_is_never_checked
+
+Filed: none new (T-1109, filed by T-0668, already covers this ticket's
+scope-cut follow-up)
+
+Gates: `uv run frob check --ticket T-0669` clean across prework/static/
+gates-native/gates-security/test/coverage/doc*/tickets (chunked per
+playbook 3b; the 2 gate:TICK TICK006 errors seen in the `tickets` group
+are pre-existing repo-wide debt (T-1077/T-1084 phantom draft
+references), confirmed present identically on a bare unscoped `frob
+check --only tickets` against `main` before this ticket's work,
+unrelated to this change). `ruff-format` warns on
+`src/frob/gates/__init__.py`/`tests/test_app_daemon_proxy.py`
+(pre-existing bare-ruff-vs-uv-run-ruff drift, playbook section 12, out
+of this ticket's scope, not touched).
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_selfconform.py::TestPurposeContract::test_read_only_purpose_with_write_effect_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestPurposeContract::test_effect_outside_profile_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestPurposeContract::test_unrecognized_profile_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestPurposeContract::test_effect_inside_profile_is_silent` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestPurposeContract::test_node_with_no_purpose_attr_is_never_checked` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 3 error(s), 1309 warning(s), 428 waived
+- error-findings: INV006@src/frob/gates/_todo_fmt.py, PRE001@tickets/T-0669, TICK006@tickets.md
 
 <!-- ticket:T-0670 -->
 ```yaml
 id: T-0670
 title: 'strata: binding-totality + effect-conformance - reject logic laundered into
   an unbound file'
-state: queued
+state: done
 kind: security
 origin: agent
 created: '2026-07-22'
@@ -521,15 +604,85 @@ scope:
 - src/frob/graph/**
 - docs/modules/strata.md
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_selfconform.py::TestBindingTotality::test_laundered_capable_file_fires
+- tests/unit/strata/test_selfconform.py::TestBindingTotality::test_unreachable_foreign_file_does_not_fire_sys106
+- tests/unit/strata/test_selfconform.py::TestBindingTotality::test_bound_reachable_file_does_not_fire_sys106
 acceptance:
 - text: Given dangerous logic moved into a helper module not directly bound to any
     node but reachable from a bound node, when checked, then the effect is still attributed
     and conformance-checked, not silently dropped
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_selfconform.py::TestBindingTotality::test_laundered_capable_file_fires
 threat: null
 component: null
 ```
 Extend SYS100/SYS101/SYS102 so the bound-set is provably total against the capability graph: a module reachable via import/call from a bound node but itself unbound must not silently escape effect-conformance checking -- closes acceptance-criterion (4) 'binding need not be total, so logic can be laundered into an unbound file'.
+
+## Done report
+
+Changed:
+- src/frob/strata/_selfconform.py::SYS_BINDING_TOTALITY
+- src/frob/strata/_selfconform.py::_binding_totality_violations
+- src/frob/strata/_selfconform.py::_reachable_local_files
+- src/frob/strata/_selfconform.py::_python_imports_with_lines_module
+- src/frob/strata/_selfconform.py::check_self_conformance (wired SYS106 into _collect_sys_violations/_apply_sys_waivers)
+- src/frob/strata/__init__.py (re-export SYS_BINDING_TOTALITY)
+- docs/modules/strata.md (SYS106 section)
+- tests/unit/strata/test_selfconform.py (TestBindingTotality, 3 tests)
+
+Same landing-order note as T-0668/T-0669: this module's SYS106 code was
+committed as part of T-0668's land (all three checks share one file,
+built together, landed in series order) -- this ticket's own remaining
+work is evidence binding + Done report.
+
+SYS106 implements binding totality / anti-laundering: starting from every
+bound node's own `.py` files, it follows resolved local python imports
+(cycle-safe BFS, `frob.lang.resolve_local_import`) to build the full
+reachable-file closure, then fires once per reachable `FOREIGN` file
+`scan_file_capabilities` observes a capability in -- "dangerous logic
+moved into a helper module not directly bound to any node but reachable
+from a bound node" (T-0670's acceptance criterion, verbatim), regardless
+of SYS103's own scan-prefix restriction (prefix-independent by
+construction, since the reachability edge itself is the join, not a
+directory prefix).
+
+Evidence:
+- tests/unit/strata/test_selfconform.py::TestBindingTotality::test_laundered_capable_file_fires (the acceptance criterion's own scenario: a bound node imports an unbound helper that performs a network effect)
+- tests/unit/strata/test_selfconform.py::TestBindingTotality::test_unreachable_foreign_file_does_not_fire_sys106
+- tests/unit/strata/test_selfconform.py::TestBindingTotality::test_bound_reachable_file_does_not_fire_sys106
+
+Filed: none new (this check has no `design/frob.strata` opt-in scope cut
+-- unlike SYS104/SYS105, it always runs once any node is bound at all,
+so there is no analogous "make it mandatory" follow-up; T-1109 already
+covers the CHK-GATE-SYS104/105/106 registry cross-reference for all
+three).
+
+Gates: `uv run frob check --ticket T-0670` clean across prework/static/
+gates-native/gates-security/test/coverage/tickets (chunked per playbook
+3b). `lint` shows 5 pre-existing E501 errors in
+`src/frob/vet/_supplychain.py` (outside this ticket's declared scope,
+landed by a concurrent wave/ticket, confirmed unrelated to this diff --
+not touched). `tickets` group's 2 gate:TICK TICK006 errors are the same
+pre-existing T-1077/T-1084 phantom-draft debt noted in T-0669's Done
+report, confirmed present on a bare unscoped `frob check --only tickets`
+against `main` independent of this work.
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_selfconform.py::TestBindingTotality::test_laundered_capable_file_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestBindingTotality::test_unreachable_foreign_file_does_not_fire_sys106` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestBindingTotality::test_bound_reachable_file_does_not_fire_sys106` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 8 error(s), 1312 warning(s), 427 waived
+- error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w17-strata/src/frob/vet/_supplychain.py:154, E501@/home/logan/projects/frob/.claude/worktrees/w17-strata/src/frob/vet/_supplychain.py:168, E501@/home/logan/projects/frob/.claude/worktrees/w17-strata/src/frob/vet/_supplychain.py:209, E501@/home/logan/projects/frob/.claude/worktrees/w17-strata/src/frob/vet/_supplychain.py:267, E501@/home/logan/projects/frob/.claude/worktrees/w17-strata/src/frob/vet/_supplychain.py:295, INV006@src/frob/gates/_todo_fmt.py, INV006@src/frob/gates/_waive_comments.py, TICK006@tickets.md
 
 <!-- ticket:T-0671 -->
 ```yaml
@@ -1345,7 +1498,7 @@ alongside T-1047.
 id: T-1059
 title: 'detector: frob ticket start warns when worktree is N+ commits behind main
   tip'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-27'
@@ -1355,6 +1508,28 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/tickets/**
+- tests/test_ticket_leases.py
+- docs/modules/tickets.md
+scope_changes:
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: wiring warn_if_worktree_stale needs a test file and doc anchor outside src/frob/tickets/**
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: wiring warn_if_worktree_stale needs a test file and doc anchor outside src/frob/tickets/**
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/test_ticket_leases.py::TestWarnIfWorktreeStale::test_warns_when_behind_threshold
+- tests/test_ticket_leases.py::TestWarnIfWorktreeStale::test_silent_when_within_threshold
+- tests/test_ticket_leases.py::TestWarnIfWorktreeStale::test_silent_on_non_git_root
+- tests/test_ticket_leases.py::TestWarnIfWorktreeStale::test_respects_configured_threshold
+- tests/test_ticket_leases.py::TestLoadPositiveIntConfig::test_returns_default_when_frob_toml_absent
+- tests/test_ticket_leases.py::TestLoadPositiveIntConfig::test_reads_configured_value
+- tests/test_ticket_leases.py::TestLoadPositiveIntConfig::test_non_positive_value_falls_back_to_default
+- tests/test_ticket_leases.py::TestLoadPositiveIntConfig::test_malformed_toml_falls_back_to_default
 threat: null
 component: null
 ```
@@ -1372,6 +1547,62 @@ commits behind main's current tip, pointing at the playbook's warm-up
 section (docs/guides/agent-playbook.md#1-worktree-warm-up). This does not
 prevent the stale cut but catches it immediately at the start of a
 ticket instead of silently carrying it through a whole session.
+
+## Done report
+
+Added a stale-worktree detector (T-1030's root cause) wired into the existing
+`commit_start_transition` call every `frob ticket start` already makes:
+`warn_if_worktree_stale(root, ticket_id, main_ref="main")` in
+src/frob/tickets/_leases.py measures how many commits `main`'s tip is ahead of
+`git merge-base HEAD main` and logs a loud warning (naming the ticket id, the
+commit count, and the playbook's warm-up anchor) once that count reaches the
+configurable `[tickets] stale_worktree_warn_commits` threshold (frob.toml,
+default 20). Best-effort/non-fatal throughout -- any git failure degrades to a
+silent no-op, matching this module's other optional-signal helpers.
+
+Extracted a shared `load_positive_int_config(root, key, default)` helper in
+_leases.py (DUP001: my new stale-commits reader was 95% similar to the
+existing `_load_large_glob_max_files` in tickets/__init__.py) and refactored
+both to delegate to it.
+
+Verified via a real multi-commit git-worktree fixture
+(tests/test_ticket_leases.py::TestWarnIfWorktreeStale, 4 tests: warns past
+threshold, silent within threshold, silent on a non-git root, respects a
+configured threshold) plus TestLoadPositiveIntConfig (4 tests) for the shared
+reader. docs/modules/tickets.md gained a "Stale-worktree-cut warning (T-1059)"
+section.
+
+`frob check --ticket T-1059` is clean except two pre-existing, unrelated
+findings verified via `git diff main -- <file>` to be empty (not touched by
+this ticket): an INV006 finding in src/frob/gates/_todo_fmt.py, and two
+TICK006 phantom-draft findings from T-1077/T-1084's historical Done reports.
+Also confirmed one pre-existing ruff-format finding in src/frob/gates/
+__init__.py is untouched by this diff.
+
+### Changed
+```
+ docs/modules/tickets.md      |  36 +++++++++++
+ src/frob/tickets/__init__.py |  24 +++-----
+ src/frob/tickets/_leases.py  | 113 +++++++++++++++++++++++++++++++++-
+ tests/test_ticket_leases.py  | 142 +++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                   |  16 ++++-
+ 5 files changed, 314 insertions(+), 17 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_leases.py::TestWarnIfWorktreeStale::test_warns_when_behind_threshold` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestWarnIfWorktreeStale::test_silent_when_within_threshold` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestWarnIfWorktreeStale::test_silent_on_non_git_root` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestWarnIfWorktreeStale::test_respects_configured_threshold` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestLoadPositiveIntConfig::test_returns_default_when_frob_toml_absent` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestLoadPositiveIntConfig::test_reads_configured_value` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestLoadPositiveIntConfig::test_non_positive_value_falls_back_to_default` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestLoadPositiveIntConfig::test_malformed_toml_falls_back_to_default` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 8 passed (from 8 evidence id(s))
+- gates: 2 error(s), 941 warning(s), 425 waived
+- error-findings: INV006@src/frob/gates/_todo_fmt.py, TICK006@tickets.md
 
 <!-- ticket:T-1060 -->
 ```yaml
@@ -1874,6 +2105,7 @@ duplication) is fine, with the remainder re-filed with exact counts.
 Re-measure `uv run frob check --only arch --json`, filter to
 abstraction-opportunity + `src/frob/gates/`, before starting -- other
 tickets may land in the interim and change the count.
+
 <!-- ticket:T-1083 -->
 ```yaml
 id: T-1083
@@ -2386,7 +2618,7 @@ rather than just in a test harness.
 ```yaml
 id: T-1095
 title: 'daemon: cross-worktree single-flight coverage/collection keyed by source digest'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -2403,20 +2635,129 @@ scope:
 - docs/modules/serve.md
 - tickets.md
 - tests/test_coverage_wait_shared.py
+- tests/test_app.py
+scope_changes:
+- op: add
+  glob: tests/test_app.py
+  reason: run_coverage_wait now also calls git_common_dir (a subprocess spawn) on
+    every invocation for the T-1095 shared-state-dir resolution; two pre-existing
+    tests here monkeypatch subprocess.run with a strict (cmd,cwd,check) signature
+    that only anticipated the coverage command itself, so they now TypeError on the
+    new git rev-parse spawn -- widen the fakes to pass through non-matching commands
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/test_coverage_wait_shared.py::TestTreeDigest::test_identical_hashes_produce_identical_digest
+- tests/test_coverage_wait_shared.py::TestTreeDigest::test_differing_hashes_produce_differing_digest
+- tests/test_coverage_wait_shared.py::TestSharedStateDir::test_two_worktrees_of_same_clone_share_one_dir
+- tests/test_coverage_wait_shared.py::TestSharedStateDir::test_no_git_falls_back_to_worktree_local
+- tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight::test_identical_digest_worktrees_share_one_run
+- tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight::test_differing_digest_worktrees_each_run_independently
 acceptance:
 - text: GIVEN two worktrees checked out to commits whose tracked source content hashes
     identically WHEN both concurrently request coverage via run_coverage_wait THEN
     only one real coverage subprocess runs across BOTH worktrees and the second gets
     the shared fresh-or-failed result instead of independently re-running the suite
-  evidence: []
+  evidence:
+  - tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight::test_identical_digest_worktrees_share_one_run
 - text: GIVEN two worktrees whose source content differs WHEN both request coverage
     concurrently THEN each runs its own independent coverage pass (no cross-contamination
     of results across differing digests)
-  evidence: []
+  evidence:
+  - tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight::test_differing_digest_worktrees_each_run_independently
 threat: null
 component: null
 ```
 Child (b) of T-0321. T-0322 shipped run_coverage_wait with a PER-WORKTREE single-flight lock (.frob/coverage.lock, a path inside that worktree's own .frob/ -- confirmed 2026-07-28 via src/frob/testing/_coverage_wait.py) and a staleness check against that worktree's own coverage stamp. It does not share across worktrees: N agents on N git worktrees of the same commit (the common parallel-dispatch shape, per docs/guides/agent-playbook.md) each still pay their own full coverage run because each has its own .frob/coverage.lock and .frob/ cache. Move the single-flight lock and the content-addressed result cache to a location keyed by TREE DIGEST (source content hash, not worktree path) rather than worktree-local path -- e.g. a shared cache under the daemon's project-root-independent state dir (or the T-1092 daemon arbitrating across worktrees it can see via .claude/worktrees enumeration, matching T-0733's existing lease-enumeration pattern). A worktree with identical source content to one that already has a fresh coverage result gets that result immediately with zero subprocess spawned.
+
+## Done report
+
+Added a cross-worktree single-flight/result-cache layer on top of
+T-0322's original per-worktree `run_coverage_wait`, keyed by SOURCE TREE
+DIGEST rather than worktree path.
+
+src/frob/testing/_coverage_wait.py:
+- `tree_digest(snapshot)`: sha256 hex over the snapshot's tracked
+  *.py/*.rs/*.ts/*.tsx file hashes, sorted by path. Two worktrees with
+  byte-for-byte identical tracked source produce the identical digest
+  regardless of path; any differing file changes it.
+- `shared_state_dir(root)`: `<git-common-dir>/frob-coverage-shared/`,
+  resolved via the existing `frob.gitio.git_common_dir` primitive -- ONE
+  location per clone, shared by every linked worktree, not per worktree.
+  Falls back to `<root>/.frob/frob-coverage-shared` outside a git repo.
+- `SharedCoverageResult`: the content-addressed cached outcome
+  (`ok`/`ran`/`duration_s`/`file_hashes`) one worktree records for a
+  digest; `_read_shared_result`/`_write_shared_result` are the cache
+  accessors, `_shared_coverage_lock` the per-digest flock serializing
+  concurrent worktrees sharing that digest.
+- `run_coverage_wait` now checks a digest cache hit before AND after
+  acquiring the shared per-digest lock (the second check catches a
+  worktree that raced this one and finished while it was blocked),
+  adopting a hit via `_adopt_shared_result` (copies the cached
+  `file_hashes` into this worktree's OWN local `.frob/coverage-stamp` so
+  local staleness checks/gates see it as fresh too) with zero subprocess
+  spawned. A miss runs `command` exactly as before
+  (`_run_and_settle_shared`, extracted to keep `run_coverage_wait` under
+  ARCH001's 60-line threshold) and records the result (success or
+  failure -- acceptance [0] promises a shared fresh-OR-FAILED result, not
+  success-only) for every other worktree sharing the digest.
+- The ORIGINAL per-worktree `.frob/coverage.lock` (`_coverage_lock`,
+  `coverage_lock_path`) is unchanged and still wraps the whole call --
+  the shared layer composes with it, does not replace it.
+
+Real two-worktree concurrency test (tests/test_coverage_wait_shared.py):
+`_two_real_worktrees` creates an actual `git worktree add` pair off one
+origin clone. `TestCrossWorktreeSingleFlight.
+test_identical_digest_worktrees_share_one_run` runs `run_coverage_wait`
+on both worktrees concurrently (two threads, a barrier, a faked but
+slow-ish coverage command) and asserts exactly ONE real spawn happened
+across both -- acceptance [0]. `test_differing_digest_worktrees_each_
+run_independently` mutates one worktree's tracked file first and asserts
+BOTH spawn independently -- acceptance [1]. `TestTreeDigest`/
+`TestSharedStateDir` cover the two primitives directly.
+
+Extended scope: had to add tests/test_app.py (T-1093/T-0803's own
+pre-existing coverage-wait tests) -- run_coverage_wait now also spawns a
+`git rev-parse --git-common-dir` subprocess via git_common_dir on every
+call, and two of that file's tests monkeypatch subprocess.run with a
+strict (cmd, cwd, check) signature that only anticipated the coverage
+command itself; widened both fakes to pass unrelated commands through to
+the real subprocess.run rather than TypeError-ing on the new spawn.
+
+Pre-existing, unrelated: `frob check` reports two TICK006 phantom-draft
+errors (T-1077/T-1084 citing dropped drafts T-draft-a418305e/
+T-draft-372a1425) and one INV006 (src/frob/gates/_todo_fmt.py) that
+predate this ticket and are outside its scope -- filed as
+T-draft-afde6fb3 rather than fixed here. ruff-format also flags
+src/frob/gates/__init__.py and tests/test_app_daemon_proxy.py as
+needing reformatting; confirmed pre-existing on main (verified against
+the root checkout directly), not introduced by this change.
+
+Cut: none against acceptance [0]/[1] -- both are proven by a real
+two-worktree test, not a simulated stand-in.
+
+### Changed
+```
+ docs/modules/testing.md            |  47 +++++-
+ src/frob/testing/__init__.py       |   6 +
+ src/frob/testing/_coverage_wait.py | 327 ++++++++++++++++++++++++++++++++++---
+ tests/test_app.py                  |  22 ++-
+ tests/test_coverage_wait_shared.py | 231 ++++++++++++++++++++++++++
+ tickets.md                         |   3 +-
+ 6 files changed, 605 insertions(+), 31 deletions(-)
+```
+
+### Evidence
+- `tests/test_coverage_wait_shared.py::TestTreeDigest::test_identical_hashes_produce_identical_digest` (pytest node id, verified passing when recorded)
+- `tests/test_coverage_wait_shared.py::TestTreeDigest::test_differing_hashes_produce_differing_digest` (pytest node id, verified passing when recorded)
+- `tests/test_coverage_wait_shared.py::TestSharedStateDir::test_two_worktrees_of_same_clone_share_one_dir` (pytest node id, verified passing when recorded)
+- `tests/test_coverage_wait_shared.py::TestSharedStateDir::test_no_git_falls_back_to_worktree_local` (pytest node id, verified passing when recorded)
+- `tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight::test_identical_digest_worktrees_share_one_run` (pytest node id, verified passing when recorded)
+- `tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight::test_differing_digest_worktrees_each_run_independently` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1097 -->
 ```yaml
@@ -2515,7 +2856,7 @@ User request 2026-07-28: a simple ticket data-analysis command showing the rate 
 id: T-1104
 title: 'docs: document T-1102 single-file-mode parity + LARGE001 in docs/modules/arch.md
   (analyze_project anchors)'
-state: queued
+state: done
 kind: docs
 origin: agent
 created: '2026-07-28'
@@ -2526,16 +2867,100 @@ sprint: null
 scope:
 - docs/modules/arch.md
 - src/frob/arch/__init__.py
+- tests/unit/test_memo.py
+- tests/test_arch_gate.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_memo.py
+  reason: 'docs-kind ticket: bind evidence test files in scope before landing (playbook
+    recurring-refusal note)'
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: tests/test_arch_gate.py
+  reason: 'docs-kind ticket: bind evidence test files in scope before landing (playbook
+    recurring-refusal note)'
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit
+- tests/test_arch_gate.py::TestArchGateLargeFile::test_single_file_mode_matches_directory_walk
 acceptance:
 - text: given docs/modules/arch.md, when the section lands, then analyze_project's
     single-file behavior and the LARGE001 channel are documented at the anchors its
     frob:doc directives cite, and the AFFECT001 waiver T-1102 placed at the touched
     symbol is retired
-  evidence: []
+  evidence:
+  - tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit
+  - tests/test_arch_gate.py::TestArchGateLargeFile::test_single_file_mode_matches_directory_walk
 threat: null
 component: null
 ```
 Refile of T-1102's dead draft T-1104 (post-close renumber loss). docs/modules/arch.md was outside T-1102's declared scope; this carries the doc debt plus retiring the disclosed AFFECT001 waiver.
+
+## Done report
+
+Documented T-1102's disclosed doc debt at the exact anchors
+`analyze_project`'s own `frob:doc` directives cite: added two new
+paragraphs to docs/modules/arch.md's `#public-api` section (the
+`analyze_project` block) --
+
+1. Single-file-mode parity (T-1102): what changed (`root.is_file()` ->
+   resolve to `root.parent` + a one-file candidate list instead of
+   `_collect_files`), why the old behavior silently produced zero
+   findings for a plain file (`.git`/`os.walk` both no-op on a file), and
+   the byte-identical-shape guarantee `_analyze_one_file` gives, citing
+   the real proving test.
+2. `large-file`/`LARGE001` (T-0368/T-0372 advisory, T-1102 gate wiring):
+   the advisory category's own threshold/exemption rule plus the gate-
+   side WARN first-turn-on wiring, cross-referencing docs/modules/gates.md's
+   existing rule-catalog entry rather than duplicating its turn-on-count
+   detail.
+
+Retired the disclosed `frob:waive AFFECT001` directive T-1102 left on
+`analyze_project` (citing this ticket's pre-renumber draft id) -- the doc
+debt it was waiving is now paid, so the waiver is dead weight, not a live
+disclosure; replaced with a plain `frob:ticket T-1104` marker matching
+this module's existing per-ticket marker convention. Confirmed no
+AFFECT001 refire: `frob check --ticket T-1104 --only affect_drift` is
+clean (0 errors).
+
+Verified the anchor exists and resolves: `<a id="public-api"></a>` is
+the same anchor `# frob:doc docs/modules/arch.md#public-api` on
+`analyze_project` already cited (docanchor/doclink gates both clean, see
+below) -- no new anchor was invented, the existing one now carries more
+content.
+
+Docs-kind ticket, no code behavior changed -- scope-added the two tests
+that actually prove the documented behavior
+(`tests/unit/test_memo.py`, `tests/test_arch_gate.py`) before recording
+evidence, per the playbook's docs-kind land-refusal note, and bound both
+to the ticket's single acceptance criterion (`--accepts 0`).
+
+Gates (manual `--only` loop, `--ticket T-1104`): prework/coverage/
+docanchor/doclink/scope/affect_drift/drift all 0 errors (measured after a
+fresh `frob ticket sweep T-1104`, since PRE001 went stale after the
+mid-ticket `frob ticket scope --add`).
+
+Tests: both cited evidence node ids re-run individually and pass
+(`tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit`,
+`tests/test_arch_gate.py::TestArchGateLargeFile::
+test_single_file_mode_matches_directory_walk` -- 1 passed each, measured).
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit` (pytest node id, verified passing when recorded)
+- `tests/test_arch_gate.py::TestArchGateLargeFile::test_single_file_mode_matches_directory_walk` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 2 error(s), 752 warning(s), 428 waived
+- error-findings: INV006@src/frob/gates/_todo_fmt.py, TICK006@tickets.md
 
 <!-- ticket:T-1105 -->
 ```yaml

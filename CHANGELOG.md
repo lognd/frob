@@ -17,6 +17,14 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.233.0] - unreleased
+
+- T-1095: daemon: cross-worktree single-flight coverage/collection keyed by source digest
+
+## [0.232.0] - unreleased
+
+- T-1059: detector: frob ticket start warns when worktree is N+ commits behind main tip
+
 ## [0.231.0] - unreleased
 
 - T-1081: arch: ARCH102 fires on newly-split src/frob/gates/_waive.py (35 exports, 4 clusters)

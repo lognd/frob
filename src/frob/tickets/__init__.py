@@ -51,6 +51,7 @@ from frob.tickets._leases import (
     read_all_leases,
     resolve_lease,
     sweep_worktrees,
+    warn_if_worktree_stale,
 )
 from frob.tickets._live_tracker import live_tracker_citations
 from frob.tickets._models import (
@@ -264,20 +265,14 @@ def _load_large_glob_max_files(root: Path) -> int:
     file, or a non-positive value all fall back to
     `_LARGE_GLOB_DEFAULT_MAX_FILES` rather than erroring, matching
     `frob.excludes.load_exclude_globs`'s degrade-quietly posture for
-    optional config."""
-    toml_path = root / "frob.toml"
-    if not toml_path.exists():
-        return _LARGE_GLOB_DEFAULT_MAX_FILES
-    try:
-        with toml_path.open("rb") as handle:
-            doc = tomllib.load(handle)
-    except (OSError, tomllib.TOMLDecodeError) as exc:
-        _log.warning("tickets: could not parse %s: %s", toml_path, exc)
-        return _LARGE_GLOB_DEFAULT_MAX_FILES
-    value = doc.get("tickets", {}).get("large_glob_max_files")
-    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
-        return _LARGE_GLOB_DEFAULT_MAX_FILES
-    return value
+    optional config. Thin wrapper over `_leases.load_positive_int_config`
+    (T-1059, DUP001: extracted the shared parse/fallback chain this and
+    `_leases._load_stale_worktree_warn_commits` both needed)."""
+    from frob.tickets._leases import load_positive_int_config
+
+    return load_positive_int_config(
+        root, "large_glob_max_files", _LARGE_GLOB_DEFAULT_MAX_FILES
+    )
 
 
 # frob:ticket T-0571
@@ -3482,6 +3477,7 @@ __all__ = [
     "read_all_leases",
     "resolve_lease",
     "sweep_worktrees",
+    "warn_if_worktree_stale",
     "ConfirmatoryFinding",
     "MutationEvidenceError",
     "check_ticket_mutation_evidence",

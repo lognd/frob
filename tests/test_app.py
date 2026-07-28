@@ -66,8 +66,18 @@ class TestRunCoverageWait:
         # _ran  # noqa: E501
         root = _make_repo(tmp_path)
         calls: list[list[str]] = []
+        import frob.process._guard as _guard
 
-        def _fake_run(cmd, cwd, check):  # noqa: ANN001
+        real_run = _guard.subprocess.run
+
+        def _fake_run(cmd, *args, **kwargs):  # noqa: ANN001
+            if list(cmd) != ["true"]:
+                # T-1095: run_coverage_wait also resolves a shared,
+                # worktree-path-independent state dir via a `git`
+                # subprocess spawn (frob.gitio.git_common_dir) -- let
+                # that (and any other non-coverage-command spawn) through
+                # untouched; only the coverage command itself is faked.
+                return real_run(cmd, *args, **kwargs)
             calls.append(list(cmd))
 
             class _Result:
@@ -116,8 +126,14 @@ class TestRunCoverageWait:
         # frob:tests tests/test_app.py::TestRunCoverageWait.test_failed_command_is_err  \
         # # noqa: E501
         root = _make_repo(tmp_path)
+        import frob.process._guard as _guard
 
-        def _fake_run(cmd, cwd, check):  # noqa: ANN001
+        real_run = _guard.subprocess.run
+
+        def _fake_run(cmd, *args, **kwargs):  # noqa: ANN001
+            if list(cmd) != ["false"]:
+                return real_run(cmd, *args, **kwargs)
+
             class _Result:
                 returncode = 1
 
