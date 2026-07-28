@@ -1103,6 +1103,84 @@ class TestCheckRegistryExclusion:
         )
 
 
+# frob:ticket T-1141
+class TestGateRuleBuilderExclusion:
+    """`_is_gate_rule_builder_family` (T-1141, mirroring T-1112's
+    `_is_check_registry_family`): a shared-signature group whose return
+    type is `Violation`/`list[Violation]`/`tuple[Violation, ...]` is
+    `frob.gates`'s own gate/rule-builder convention, not an accidental
+    duplication -- structural (return-type-based), unlike the
+    check-registry exclusion's name-based discriminator, since gate/rule-
+    builder names do not share one fixed prefix/suffix the way
+    `check_*`/`run_*_checks` do."""
+
+    def test_violation_returning_group_not_flagged(self, tmp_path) -> None:
+        # frob:tests src/frob/arch/_python.py::_is_gate_rule_builder_family
+        # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
+        # Three same-signature functions returning `tuple[Violation, ...]`
+        # with arbitrary, non-convention-matching names -- verified: with
+        # the gate-rule-builder exclusion removed, this exact fixture
+        # flags (a specific `Path` param type alone would satisfy
+        # `_signature_is_specific`).
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "gates.py").write_text(
+            "from __future__ import annotations\n"
+            "\n"
+            "class Violation:\n"
+            "    pass\n"
+            "\n"
+            "def alpha_check(root) -> tuple[Violation, ...]:\n"
+            "    return ()\n"
+            "\n"
+            "def bravo_check(root) -> tuple[Violation, ...]:\n"
+            "    return ()\n"
+            "\n"
+            "def charlie_check(root) -> tuple[Violation, ...]:\n"
+            "    return ()\n"
+        )
+        result = analyze_project(src_dir)
+        categories = {s.category for s in result.suggestions}
+        assert "abstraction-opportunity" not in categories
+
+    def test_non_violation_returning_group_still_flagged(self, tmp_path) -> None:
+        # frob:tests src/frob/arch/_python.py::_is_gate_rule_builder_family
+        # A same-signature group over a specific (non-generic) type that
+        # does NOT return a Violation shape has no gate/rule-builder
+        # convention to exclude, so it falls through to the normal
+        # signature/body checks and still flags.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "gates.py").write_text(
+            "from __future__ import annotations\n"
+            "\n"
+            "class TicketQueue:\n"
+            "    pass\n"
+            "\n"
+            "def alpha_lookup(queue: TicketQueue) -> str:\n"
+            "    return ''\n"
+            "\n"
+            "def bravo_lookup(queue: TicketQueue) -> str:\n"
+            "    return ''\n"
+            "\n"
+            "def charlie_lookup(queue: TicketQueue) -> str:\n"
+            "    return ''\n"
+        )
+        result = analyze_project(src_dir)
+        categories = {s.category for s in result.suggestions}
+        assert "abstraction-opportunity" in categories
+
+    def test_return_type_membership_matches_all_three_shapes(self) -> None:
+        # frob:tests src/frob/arch/_python.py::_is_gate_rule_builder_family
+        from frob.arch._python import _is_gate_rule_builder_family
+
+        assert _is_gate_rule_builder_family("Violation")
+        assert _is_gate_rule_builder_family("list[Violation]")
+        assert _is_gate_rule_builder_family("tuple[Violation, ...]")
+        assert not _is_gate_rule_builder_family("str")
+        assert not _is_gate_rule_builder_family("tuple[Edge, ...]")
+
+
 # ---------------------------------------------------------------------------
 # design-pattern recommender (T-0332): HALLMARK->PATTERN and
 # ANTI-PATTERN->ESCAPE advisory suggestions.

@@ -1229,6 +1229,40 @@ def _is_check_registry_family(members: list[tuple[str, str]]) -> bool:
     return all(_CHECK_REGISTRY_NAME_RE.match(fname) for _, fname in members)
 
 
+#: `frob.gates`'s own gate/rule-builder return-type convention (T-1141,
+#: filed from T-1114 as the mirror of T-1112's `check_*` registry
+#: exclusion): every gate function (`*_gate`) and every rule-builder
+#: helper it dispatches to (`_tick001_duplicate_ids`, `_cov001`,
+#: `_test006`, `_inv005`, and dozens of siblings across gates/__init__.py
+#: and its `_*.py` split modules) returns one of these three shapes --
+#: `Violation`, `list[Violation]`, or `tuple[Violation, ...]` -- because
+#: `Violation` is `frob.gates`'s own domain type: nothing outside the
+#: gates package constructs one. A shared return type built entirely from
+#: `Violation`/collections of it is therefore the intentional common gate/
+#: rule-builder contract this package registers every check through, the
+#: same shape `_is_check_registry_family` already carves out for
+#: `frob.arch`'s own `check_*`/`run_*_checks` convention -- not duplicate
+#: logic, regardless of how many members happen to share it or what they
+#: are individually named (a structural discriminator, mirroring
+#: `_is_language_parity_family`'s per-language tag check, rather than a
+#: name-pattern one like `_is_check_registry_family`'s, since gate/rule-
+#: builder names do not share one fixed prefix/suffix convention the way
+#: `check_*`/`run_*_checks` do).
+_GATE_RULE_BUILDER_RETURN_TYPES = frozenset(
+    {"Violation", "list[Violation]", "tuple[Violation, ...]"}
+)
+
+
+def _is_gate_rule_builder_family(ret: str) -> bool:
+    """Whether a shared-signature group's return type `ret` (T-1141) is
+    `frob.gates`'s own gate/rule-builder convention rather than an
+    accidental duplication: `ret` is one of `_GATE_RULE_BUILDER_RETURN_
+    TYPES`. Structural, not name-based -- see `_GATE_RULE_BUILDER_RETURN_
+    TYPES`'s docstring for why a return-type check is the right
+    discriminator for this family specifically."""
+    return ret in _GATE_RULE_BUILDER_RETURN_TYPES
+
+
 # T-0370: types so ubiquitous that sharing one carries no abstraction
 # signal on its own -- `(str) -> str`, `(AppConfig) -> None`, and similar
 # shapes collide across dozens of semantically-unrelated functions purely
@@ -1437,7 +1471,9 @@ def _check_abstraction_opportunities(
     `_cpp_*` walker families sharing a signature by design, not by
     accident) -- and groups whose members are all `frob.arch`'s own
     `check_*` detector-registry functions (`_is_check_registry_family`,
-    T-1112, filed from T-1084)."""
+    T-1112, filed from T-1084), or all `frob.gates`'s own gate/rule-
+    builder return-type convention (`_is_gate_rule_builder_family`,
+    T-1141, filed from T-1114)."""
     groups: dict[tuple[tuple[str, ...], str], list[tuple[str, str, str]]] = defaultdict(
         list
     )
@@ -1455,6 +1491,8 @@ def _check_abstraction_opportunities(
         if _is_language_parity_family(members):
             continue
         if _is_check_registry_family(members):
+            continue
+        if _is_gate_rule_builder_family(ret):
             continue
         flagged = _abstraction_group_evidence(ptypes, ret, members_with_body)
         if len(flagged) < 2:
