@@ -1192,6 +1192,43 @@ def _is_language_parity_family(members: list[tuple[str, str]]) -> bool:
     return len(set(tags)) == len(tags)
 
 
+#: `frob.arch`'s own detector-registry naming convention (T-1112, filed
+#: from T-1084): every `check_*` function across the package (`_python.py`,
+#: `_rust.py`, `_typescript.py`, `_async_hazards.py`, and siblings) is a
+#: detector plugged into the SAME `(NormalizedModule) -> list[ArchSuggestion]`
+#: registry contract -- the arity mismatch is why a signature-shape check
+#: alone cannot tell these apart from a real duplication (a handful of
+#: `check_*` detectors take an extra param), so this is name-based, like
+#: `_is_dispatch_family`/`_is_language_parity_family`'s own checks, never
+#: raw text proximity. Measured empirically (T-1112) to also need each
+#: family's own top-level `run_*_checks` aggregator (e.g. `_smells.py`'s
+#: `run_smell_checks`, `_srp.py`'s `run_srp_checks`) alongside the bare
+#: `check_*` detectors themselves -- an aggregator has the exact same
+#: `(NormalizedModule) -> list[ArchSuggestion]` shape as the detectors it
+#: calls (it just concatenates their results), so the same 27-member group
+#: this ticket was filed to exclude is ~20 `check_*` detectors plus 7
+#: `run_*_checks` aggregators, not `check_*` alone.
+_CHECK_REGISTRY_NAME_RE = re.compile(r"^(check_[a-z_]+|run_[a-z_]+_checks)$")
+
+
+def _is_check_registry_family(members: list[tuple[str, str]]) -> bool:
+    """Whether a shared-signature `members` group (T-1112) is `frob.arch`'s
+    own check-function registry rather than an accidental duplication:
+    every member's bare name matches the package's `check_*` detector (or
+    `run_*_checks` family-aggregator) convention (`_CHECK_REGISTRY_NAME_RE`).
+    Structurally identical to `_is_dispatch_family`/`_is_language_parity_family`
+    -- name/structure only, no raw text proximity -- but the discriminator
+    here is a fixed project-wide naming convention rather than a
+    dispatch-site lookup or a per-language tag set: `frob.arch`'s 27-member
+    `(NormalizedModule) -> list[ArchSuggestion]` group (T-1084's triage) IS
+    literally every `check_*` detector in the package plus each family's
+    `run_*_checks` aggregator, the intentional common interface every
+    detector module registers through, not duplicate logic to extract."""
+    if len(members) < 2:
+        return False
+    return all(_CHECK_REGISTRY_NAME_RE.match(fname) for _, fname in members)
+
+
 # T-0370: types so ubiquitous that sharing one carries no abstraction
 # signal on its own -- `(str) -> str`, `(AppConfig) -> None`, and similar
 # shapes collide across dozens of semantically-unrelated functions purely
@@ -1398,7 +1435,9 @@ def _check_abstraction_opportunities(
     (`_is_language_parity_family`, T-1068) -- the same false-positive
     class filed from T-0393 (arch's own `_py_*`/`_rust_*`/`_kt_*`/`_ts_*`/
     `_cpp_*` walker families sharing a signature by design, not by
-    accident)."""
+    accident) -- and groups whose members are all `frob.arch`'s own
+    `check_*` detector-registry functions (`_is_check_registry_family`,
+    T-1112, filed from T-1084)."""
     groups: dict[tuple[tuple[str, ...], str], list[tuple[str, str, str]]] = defaultdict(
         list
     )
@@ -1414,6 +1453,8 @@ def _check_abstraction_opportunities(
         if _is_dispatch_family(members, all_dispatch_refs):
             continue
         if _is_language_parity_family(members):
+            continue
+        if _is_check_registry_family(members):
             continue
         flagged = _abstraction_group_evidence(ptypes, ret, members_with_body)
         if len(flagged) < 2:

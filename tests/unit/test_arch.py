@@ -1031,6 +1031,78 @@ class TestLanguageParityExclusion:
         assert _language_tag("_kt_build_module") == "kt"
 
 
+class TestCheckRegistryExclusion:
+    def test_check_and_run_checks_names_not_flagged(self, tmp_path):
+        # frob:tests src/frob/arch/_python.py::_is_check_registry_family
+        # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
+        # Three same-signature functions named per `frob.arch`'s own
+        # detector-registry convention (`check_*` detectors plus a family's
+        # `run_*_checks` aggregator, T-1112) -- `_signature_is_specific`
+        # alone would flag this group (verified: with the check-registry
+        # exclusion removed, this exact fixture flags), so the exclusion is
+        # the only thing suppressing it.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "checks.py").write_text(
+            "from __future__ import annotations\n"
+            "\n"
+            "class ArchSuggestion:\n"
+            "    pass\n"
+            "\n"
+            "def check_no_di_construction(module: object) -> list[ArchSuggestion]:\n"
+            "    return []\n"
+            "\n"
+            "def check_boolean_flag_param(module: object) -> list[ArchSuggestion]:\n"
+            "    out = []\n"
+            "    return out\n"
+            "\n"
+            "def run_smell_checks(module: object) -> list[ArchSuggestion]:\n"
+            "    return []\n"
+        )
+        result = analyze_project(src_dir)
+        categories = {s.category for s in result.suggestions}
+        assert "abstraction-opportunity" not in categories
+
+    def test_non_registry_named_group_still_flagged(self, tmp_path):
+        # frob:tests src/frob/arch/_python.py::_is_check_registry_family
+        # `_validate_no_di` does not match the `check_*`/`run_*_checks`
+        # naming convention -- the group has no such registry shape to
+        # exclude, so it falls through to the normal signature/body checks
+        # and still flags.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "checks.py").write_text(
+            "from __future__ import annotations\n"
+            "\n"
+            "class ArchSuggestion:\n"
+            "    pass\n"
+            "\n"
+            "def _validate_no_di(module: object) -> list[ArchSuggestion]:\n"
+            "    return []\n"
+            "\n"
+            "def check_boolean_flag_param(module: object) -> list[ArchSuggestion]:\n"
+            "    out = []\n"
+            "    return out\n"
+            "\n"
+            "def run_smell_checks(module: object) -> list[ArchSuggestion]:\n"
+            "    return []\n"
+        )
+        result = analyze_project(src_dir)
+        categories = {s.category for s in result.suggestions}
+        assert "abstraction-opportunity" in categories
+
+    def test_check_registry_regex_matches_both_shapes(self) -> None:
+        # frob:tests src/frob/arch/_python.py::_is_check_registry_family
+        from frob.arch._python import _is_check_registry_family
+
+        assert _is_check_registry_family(
+            [("a.py", "check_boolean_flag_param"), ("b.py", "run_smell_checks")]
+        )
+        assert not _is_check_registry_family(
+            [("a.py", "check_boolean_flag_param"), ("b.py", "_validate_no_di")]
+        )
+
+
 # ---------------------------------------------------------------------------
 # design-pattern recommender (T-0332): HALLMARK->PATTERN and
 # ANTI-PATTERN->ESCAPE advisory suggestions.
