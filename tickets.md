@@ -2100,3 +2100,29 @@ what's declared), a real errors-as-values refactor (ToolResult/typani
 Result at the fallible boundary, matching the tool_crash_result()
 precedent this ticket's pass landed in
 process/parsers/common.py/check/_native.py), or a reasoned frob:waive.
+
+<!-- ticket:T-1057 -->
+```yaml
+id: T-1057
+title: 'frob ticket land: resolve --worktree to an absolute path before building the
+  worktree venv python path'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: low
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- tests/test_ticket_land.py
+acceptance:
+- text: given frob ticket land invoked with a RELATIVE --worktree path from the repo
+    root, when land runs worktree-venv subprocesses, then the venv python resolves
+    correctly and the land proceeds identically to the absolute-path invocation
+  evidence: []
+threat: null
+component: null
+```
+Observed 2026-07-27: 'uv run frob ticket land T-0861 --worktree .claude/worktrees/agent-...' failed with [Errno 2] No such file or directory: '.claude/worktrees/agent-.../.venv/bin/python' while the identical command with an absolute --worktree path succeeded. Something in the land pipeline joins the worktree arg verbatim with .venv/bin/python and executes it from a cwd other than the invocation cwd. Fix: Path(worktree).resolve() at argument-parse time; regression test covering a relative invocation.
