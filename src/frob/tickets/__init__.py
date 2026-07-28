@@ -143,6 +143,7 @@ from frob.tickets._store import (
     attachments_dir,
     ledger_lock,
     load_all,
+    load_archive,
     slugify,
     tickets_dir,
     write_ticket,
@@ -877,11 +878,14 @@ _FLOW_TRAILING_DAYS = 3
 
 
 # frob:ticket T-1100
+# frob:ticket T-1142
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_filed_and_landed_counted_per_day  # noqa: E501
 # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_zero_activity_days_are_filled_not_sparse  # noqa: E501
 # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_eta_none_when_queue_not_shrinking  # noqa: E501
 # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_eta_computed_when_queue_shrinking  # noqa: E501
+# frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_archived_ticket_still_counts_toward_landed  # noqa: E501
+# frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_archived_ticket_still_counts_toward_filed  # noqa: E501
 def ticket_flow(
     root: Path, queue: TicketQueue, *, today: date | None = None
 ) -> TicketFlowReport:
@@ -891,6 +895,29 @@ def ticket_flow(
     sprint) and each ticket's `created` field for the filed side; no new
     storage, same "no new storage" mandate T-0938 already established.
 
+    T-1142: `queue` alone (whatever the caller passed -- the CLI's own
+    `_flow` handler passes `load_active`'s active-only view) UNDERCOUNTS
+    both sides for any ticket that has since been archived out of
+    `tickets.md` into `tickets-archive.md` by `frob ticket archive`: its
+    id is simply absent from `queue.tickets`, so `_mine_done_transitions`
+    is never even ASKED to look for its done-transition commit (which
+    still exists, readably, in `tickets.md`'s own git history from BEFORE
+    the archive-sweep commit removed it -- `_mine_done_transitions`/
+    `_ledger_commit_history` walk `tickets.md`'s FULL history, not just
+    its current tip, so no separate `tickets-archive.md` mining is even
+    needed for the landed side), and its `created` date is missing from
+    the filed side the same way. This was T-1100's first real-world run
+    (2026-07-28): landed=0 for two days the zero-drive record shows ~50
+    lands each, both days followed by an archive sweep. Fixed by merging
+    `tickets-archive.md`'s own tickets (`load_archive`, best-effort --
+    degrades to `{}` on any load failure rather than blocking the whole
+    report) into BOTH the filed-by-day source and the landed-mining id
+    set, unconditionally, regardless of what view of the ACTIVE queue the
+    caller happened to pass in. `open_count` still only ever counts
+    `queue`'s own (active) tickets -- an archived ticket is always
+    done/dropped, never a member of `_OPEN_STATES`, so merging the
+    archive in cannot change that count either way.
+
     Builds one `TicketFlowRow` per calendar day from the EARLIEST observed
     filing/landing event through `today` (defaults to `date.today()`,
     injectable for deterministic tests), zero-filled -- a day with no
@@ -899,11 +926,22 @@ def ticket_flow(
     days. Returns an all-zero, single-`today`-row report (no crash, no
     `NotFound`) for an empty queue, same no-error-case contract
     `sprint_velocity` already keeps."""
+    archived = load_archive(root)
+    archive_tickets = archived.danger_ok if archived.is_ok else {}
+    if archived.is_err:
+        _log.warning(
+            "tickets: ticket_flow could not load tickets-archive.md (%s) -- "
+            "landed/filed counts for already-archived tickets are omitted "
+            "this run",
+            archived.danger_err,
+        )
+    all_tickets = {**archive_tickets, **queue.tickets}
+
     filed_by_day: dict[date, int] = {}
-    for ticket in queue.tickets.values():
+    for ticket in all_tickets.values():
         filed_by_day[ticket.created] = filed_by_day.get(ticket.created, 0) + 1
 
-    transitions = _mine_done_transitions(root, tuple(queue.tickets.keys()))
+    transitions = _mine_done_transitions(root, tuple(all_tickets.keys()))
     landed_by_day: dict[date, int] = {}
     for transition in transitions:
         day = transition.committed_at.date()

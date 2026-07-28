@@ -2032,6 +2032,27 @@ guarantee of completeness), since it reuses the exact same
 `_mine_done_transitions` mining, just unfiltered by sprint and bucketed
 by day instead of listed as a flat transition sequence.
 
+**T-1142 fix (archived tickets undercounted both sides):** the ACTIVE-
+only `queue` `_flow` passes in (`load_active`) undercounted `landed` AND
+`filed` for any ticket already moved out of `tickets.md` into `tickets-
+archive.md` by `frob ticket archive` -- its id was simply absent from
+`queue.tickets`, so `_mine_done_transitions` was never even asked to look
+for its done-transition commit (which is still readable in `tickets.md`'s
+own FULL git history, from before the archive-sweep commit removed the
+ticket -- no separate `tickets-archive.md` mining is needed for the
+landed side), and its `created` date was missing from the filed side the
+same way. First real run (2026-07-28) showed `landed=0` for two days the
+zero-drive record shows ~50 lands each, both followed by an archive
+sweep. `ticket_flow` now unconditionally merges `tickets-archive.md`'s
+own tickets (`load_archive`, best-effort -- a load failure degrades to
+an empty archive view rather than blocking the whole report) into BOTH
+the filed-by-day source and the landed-mining id set, regardless of what
+view of the active queue the caller passed in -- so the CLI's
+`load_active` call site needed no change at all. `open_count` still only
+ever counts the caller's own `queue` (an archived ticket is always
+done/dropped, never a member of `_OPEN_STATES`, so merging the archive in
+cannot change that count either way).
+
 ### `--body-file`/`--acceptance-file` (T-0737)
 
 `frob ticket new --body-file PATH` and `frob ticket new --acceptance-file

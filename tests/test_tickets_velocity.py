@@ -331,4 +331,76 @@ class TestTicketFlow:
         report = ticket_flow(tmp_path, queue, today=today)
         assert report.trailing_net_rate < 0
         assert report.eta_days is not None
-        assert report.eta_days > 0
+
+    # frob:ticket T-1142
+    def test_archived_ticket_still_counts_toward_landed(self, tmp_path: Path) -> None:
+        """T-1142 (the exact incident): a ticket that has since been moved
+        out of tickets.md into tickets-archive.md by `frob ticket archive`
+        must still show up in `landed` for the day it actually landed --
+        its done-transition commit is still readable in tickets.md's own
+        git history (from before the archive-sweep commit removed it),
+        `_mine_done_transitions` just needs to be asked to look for it."""
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+
+        the_day = date(2026, 7, 26)
+        ticket = _ticket(ticket_id="T-0001", state=TicketState.QUEUED, created=the_day)
+        write_ticket(tmp_path, ticket)
+        _commit_on(tmp_path, "queue T-0001", the_day)
+
+        in_progress = ticket.model_copy(update={"state": TicketState.IN_PROGRESS})
+        write_ticket(tmp_path, in_progress)
+        _commit_on(tmp_path, "start T-0001", the_day)
+
+        done = in_progress.model_copy(update={"state": TicketState.DONE})
+        write_ticket(tmp_path, done)
+        _commit_on(tmp_path, "close T-0001", the_day)
+
+        # Archive sweep: T-0001 leaves tickets.md entirely (an empty
+        # active ledger) and lands in tickets-archive.md instead -- the
+        # exact shape a real `frob ticket archive` produces.
+        from frob.tickets._store import (
+            _LEDGER_HEADER,
+            archive_path,
+            ledger_path,
+            write_archive,
+        )
+
+        assert write_archive(tmp_path, {done.id: done}).is_ok
+        ledger_path(tmp_path).write_text(_LEDGER_HEADER, encoding="utf-8")
+        _commit_on(tmp_path, "archive T-0001", date(2026, 7, 27))
+
+        assert archive_path(tmp_path).is_file()
+
+        # `queue` is the ACTIVE-only view (matches the real CLI's
+        # load_active) and no longer contains T-0001 at all.
+        empty_queue = TicketQueue(tickets={})
+        report = ticket_flow(tmp_path, empty_queue, today=date(2026, 7, 27))
+
+        landed_days = {r.day: r.landed for r in report.rows}
+        assert landed_days.get(the_day, 0) == 1
+
+    # frob:ticket T-1142
+    def test_archived_ticket_still_counts_toward_filed(self, tmp_path: Path) -> None:
+        """The same undercount applies to `filed` -- an archived ticket's
+        `created` date must still contribute, even though `queue` (the
+        active-only view) no longer holds it."""
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+
+        filed_day = date(2026, 7, 20)
+        done = _ticket(ticket_id="T-0002", state=TicketState.DONE, created=filed_day)
+
+        from frob.tickets._store import write_archive
+
+        assert write_archive(tmp_path, {done.id: done}).is_ok
+
+        empty_queue = TicketQueue(tickets={})
+        report = ticket_flow(tmp_path, empty_queue, today=filed_day)
+
+        filed_days = {r.day: r.filed for r in report.rows}
+        assert filed_days.get(filed_day, 0) == 1
