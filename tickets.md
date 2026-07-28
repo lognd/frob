@@ -6386,8 +6386,8 @@ of a module-top-level binding.
 id: T-1153
 title: 'tickets-archive.md: T-1145''s land reverted T-1143''s parse.rs->parse/mod.rs
   evidence fix (40 occurrences back)'
-state: queued
-kind: bug
+state: in-progress
+kind: docs
 origin: human
 created: '2026-07-28'
 priority: medium
@@ -6424,7 +6424,6 @@ afterward, and (if feasible) look at whether the tickets-archive.md
 merge/land path needs a splice-guard the way tickets.md already has
 (frob ticket merge-driver) to prevent this class of regression from
 recurring for any future ledger-adjacent file.
-
 <!-- ticket:T-1154 -->
 ```yaml
 id: T-1154
