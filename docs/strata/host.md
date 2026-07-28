@@ -686,6 +686,62 @@ shared surfaces a concurrent sibling ticket's obligation batch may be
 touching -- `resource_contention_violations` is a pure, fully-tested
 function; wiring it into the CLI/waiver channel is a follow-up ticket.
 
+### SYS205 mode conformance (T-0701, v1 T-1060)
+
+`_mode_conformance.py::check_mode_conformance` proves the CODE-level
+half SYS204 defers: a node's OWN bound python code must actually behave
+the way its declared `access ... mode MODE` clause claims (the
+catalogued-is-not-enforced trap, T-0343 doctrine). A v0 textual join
+(T-0701) scans a node's bound `.py` files for a small curated set of
+write-capable operation shapes and checks them against each declared
+mode's semantics (READ: zero write-capable ops anywhere; APPEND: only
+`open(path, "a"...)`-shaped opens; ALPHA/EXCLUSIVE: every write-capable
+op must sit inside a `with <lock>:` block naming the resource's declared
+`lock`; WRITE: unrestricted). T-0701 disclosed three v0 cuts; T-1060
+closes all three, each as a narrow textual approximation (deliberately
+NOT tree-sitter-based like `frob.arch._lock_ordering`'s own T-0694 lock-
+identity mechanism -- a heavier, differently-scoped tool this ticket does
+not adopt):
+
+1. **ALPHA/EXCLUSIVE upgrade-deadlock anti-pattern** -- a write-capable
+   op nested inside TWO `with <lock>:` blocks naming the SAME lock (a
+   non-reentrant lock reacquired by the same holder) now fires a NEW
+   `alpha_reacquire_deadlock` category, alongside (not instead of) the
+   existing unguarded-write check -- the write IS lexically inside a
+   block naming the lock (so the old check alone would call it
+   conformant), but the reacquisition itself is the specific deadlock
+   shape `alpha`/`exclusive` exist to prevent. Telling two DIFFERENT
+   lock OBJECTS with the same NAME apart (T-0694's harder lock-identity
+   problem) is still out of scope -- this only catches literal name
+   reuse.
+2. **`arbitrated_by NODE` code-identity** -- a resource's arbiter is no
+   longer required to be a `lock`: an `arbitrated_by NODE` arbiter is
+   now code-checkable too, via a cheap textual convention (the write-
+   capable line must mention the arbiter node's id as a dotted-call
+   prefix, `"{node_id}."`) rather than real cross-node call-graph
+   resolution -- a write routed through the arbiter via an alias,
+   returned callable, or injected dependency is still invisible to this
+   join and fails closed as unguarded. A resource declaring NEITHER
+   `lock` nor `arbitrated_by` still fails closed exactly as before.
+3. **WRITE path-scoping** -- WRITE is no longer unconditionally
+   unrestricted: it now reuses the SAME per-node `owns`/`acl` "declared
+   path" fact SYS201 (`_contention.py`) already reads off
+   `_host.py::host_manifest_for`. A node declaring NO `owns`/`acl` at
+   all now fails closed (`no_declared_path`) -- the same "nothing
+   code-checkable was declared" posture ALPHA/EXCLUSIVE's `no_arbiter`
+   category already establishes. When paths ARE declared, a
+   write-capable line whose call shape carries a literal string path
+   argument (`open()`/`os.remove`/`os.rename`/`os.unlink`/
+   `shutil.rmtree`/`shutil.move` -- the shapes with an explicit PATH
+   argument; `.write_text(`/`.write_bytes(`/`.unlink(`/`.send(`/SQL DML
+   have none) is checked for directory-segment-prefix overlap against
+   the declared paths; no overlap fires `write_outside_declared_path`.
+   A write with no extractable literal (a dynamic path, or a category
+   with no path argument at all) cannot be judged by this v1 pass and
+   stays silent -- disclosed, not a false pass: real path-literal
+   resolution (constant-folding, f-strings) is the same class of "needs
+   real static analysis" cut the other two v1 joins above accept.
+
 ## See also
 
 - `docs/commands/deploy.md` -- `frob deploy generate`, DEPLOY001, and the

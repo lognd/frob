@@ -70,15 +70,75 @@ MODE SEMANTICS (mandate, `_access.py::AccessMode`):
   is unrestricted in v0, so EXCLUSIVE's own obligation IS the lock-context
   join, not an additional restriction beyond it in this pass).
 
-DISCLOSED CUT, not silently dropped: the mandate's ALPHA "upgrade-deadlock
-ANTI-PATTERN" (a node acquiring a write while ALSO holding a plain `read`
-lock context on the SAME resource, the shape `alpha` exists to prevent) is
-NOT detected in this pass -- doing so soundly needs per-lock-variable
-identity across nested `with` blocks (which lock guards which resource),
-the same "lock IDENTITY" modeling problem `_lock_ordering.py`'s own
-T-0694 `_collect_module_locks` solves for `frob.arch`'s cyclic-order
-check, out of this ticket's textual-join scope. Filed as a follow-up
-ticket at close (see Done report) rather than approximated unreliably.
+V1 (T-1060) closes all three v0 cuts named above, each as a NARROW,
+TEXTUAL approximation in this module's own established idiom (cheap
+indentation/string-based scanning, same posture as `_enclosing_with_
+headers` -- deliberately NOT tree-sitter-based like `frob.arch.
+_lock_ordering`'s own T-0694 lock-identity solution, since that is a
+heavier, differently-scoped mechanism this ticket does not adopt):
+
+1. ALPHA/EXCLUSIVE upgrade-deadlock ANTI-PATTERN (the mandate's "a node
+   acquiring a write while ALSO holding a plain lock context on the SAME
+   resource" shape): `_enclosing_with_headers` already returns every
+   `with` header lexically enclosing a write-capable line, ancestor-chain
+   order. `_lock_reacquired` fires when the SAME lock name appears MORE
+   THAN ONCE in that chain -- i.e., a `with lock:` block nested inside
+   ANOTHER `with lock:` block naming the identical lock is exactly the
+   non-reentrant-lock self-deadlock shape `alpha`/`exclusive` exist to
+   prevent, textually detectable without real lock-VARIABLE identity
+   (T-0694's harder problem: telling two DIFFERENT lock objects with the
+   same NAME apart is still out of this v1's scope, same as before -- this
+   only catches literal name reuse, the shape the mandate's own example
+   describes). New violation category `"alpha_reacquire_deadlock"`, fires
+   ALONGSIDE (not instead of) the existing unguarded-write check -- a
+   nested-reacquisition write IS lexically "inside a with-block naming the
+   lock" (so the old check alone would call it conformant), but it is
+   simultaneously the specific anti-pattern this new check exists to
+   catch, so both may fire on the same site for different reasons.
+
+2. `arbitrated_by NODE` code-checkable identity: `_arbiter_identity_for`
+   now resolves BOTH `lock` (unchanged, matched against `with`-header
+   text) and `arbitrated_by` (NEW) -- for a NODE arbiter, "code-checkable"
+   means the write-capable line's own TEXT mentions the arbiter node's id
+   as a dotted-call prefix (`"{node_id}."`), the same "cheap textual
+   identifier match" convention `_access.py`/`_starvation.py`'s resource-id
+   string matching and this module's own lock-name matching already use --
+   NOT a real cross-node call-graph resolution (still out of scope,
+   disclosed): a write genuinely routed through the arbiter via an
+   indirection (a local alias, a returned callable, an injected
+   dependency) is invisible to this textual join and will still fail
+   closed as unguarded. This narrows, but does not eliminate, the
+   `_no_arbiter_violation` fail-closed default: a resource with NEITHER
+   `lock` NOR `arbitrated_by` still fails closed exactly as before.
+
+3. WRITE mode path-scoping: `_declared_write_paths` reads a node's own
+   `owns` (POSIX; `acl`'s Windows paths join the same list) claims off
+   `_host.py::host_manifest_for` -- the SAME "declared path" fact SYS201
+   (`_contention.py`) already uses for path-overlap contention, reused
+   here as the "only on declared paths" identity WRITE's mandate needs.
+   A node declaring NO `owns`/`acl` at all now fails closed for WRITE
+   (`"no_declared_path"`, the SAME fail-closed-when-nothing-code-
+   checkable posture ALPHA/EXCLUSIVE's `_no_arbiter_violation` already
+   establishes) -- WRITE is no longer silently unrestricted just because
+   nothing was declared to scope it. When paths ARE declared,
+   `_extract_path_literal` pulls a literal string path argument out of
+   the categories that carry one (`open()`/`os.remove`/`os.rename`/
+   `os.unlink`/`shutil.rmtree`/`shutil.move` -- the ones with an explicit
+   PATH argument; `.write_text(`/`.write_bytes(`/`.unlink(`/`.send(`/SQL
+   DML have no path ARGUMENT to extract at all, module docstring's own
+   category list, so this join is silent for them, same as v0) and
+   checks directory-segment-prefix overlap (`_path_segments`/`_paths_
+   overlap`, a small local port of `_contention.py`'s identical logic --
+   duplicated rather than imported since that module is out of this
+   ticket's scope and the join is genuinely tiny) against the node's
+   declared claims; a literal path with NO overlap fires
+   `"write_outside_declared_path"`. A write-capable line with NO
+   extractable literal (a dynamic path, or a category with no path
+   argument at all) cannot be judged by this v1 pass and stays silent --
+   disclosed, not a silent false-negative dressed as a pass: real
+   path-literal resolution (constant-folding a variable, following an
+   f-string) is the same class of "needs real static analysis" cut this
+   module's other two v1 joins above accept.
 """
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's 'only'/ \
 # 'never' hits are source-level design-rationale/scope-cut prose (the module \
@@ -99,6 +159,7 @@ from frob.vet._capability import is_self_pattern_path, language_for
 from ._access import AccessMode, node_access_declarations
 from ._ast import Module, ResourceDecl
 from ._code_binding import FOREIGN, CodeBinding
+from ._host import host_manifest_for
 from ._models import KernelModel, Node
 
 _log = get_logger(__name__)
@@ -144,6 +205,20 @@ _SEND_NEEDLES: tuple[str, ...] = (".send(", ".sendall(", "sendto(")
 #: standalone needle (mirrors `_capability.py`'s own T-0151 "avoid a needle
 #: wrong by construction" lesson).
 _DML_RE = re.compile(r"\b(INSERT|UPDATE|DELETE|DROP|TRUNCATE)\b", re.IGNORECASE)
+
+#: T-1060: literal string PATH argument extraction for the categories
+#: that carry one -- `open(PATH, ...)` and the `os.*`/`shutil.*` calls
+#: whose first argument IS the path (module docstring's WRITE
+#: path-scoping section). `.write_text(`/`.write_bytes(`/`.unlink(`/
+#: `.send(`/SQL DML have no path ARGUMENT to extract (the receiver is an
+#: arbitrary expression, not a literal), so they are deliberately absent
+#: here -- `_extract_path_literal` returns `None` for them, same as for
+#: any dynamic (non-literal) path argument.
+_PATH_LITERAL_RE = re.compile(
+    r"""(?:open|os\.(?:remove|rename|unlink)|shutil\.(?:rmtree|move))\(\s*
+        ["']([^"']+)["']""",
+    re.VERBOSE,
+)
 
 #: The four write-capable classification categories `_classify_line` can
 #: return; `"append_open"` is the only one APPEND mode discharges.
@@ -298,33 +373,75 @@ def _enclosing_with_headers(lines: list[str], line_no: int) -> list[str]:
     return headers
 
 
-def _lock_name_for(resource: ResourceDecl | None) -> str | None:
-    """The code-checkable arbiter name for `resource` (module docstring:
-    v0 only supports `lock`, never `arbitrated_by`) -- `None` when
-    `resource` is absent or declares no `lock`, the "no code-checkable
-    context" fail-closed case both ALPHA and EXCLUSIVE share."""
+#: T-1060: an `_arbiter_identity_for` result -- `kind` is `"lock"` (match
+#: against enclosing `with`-header text, the v0 mechanism unchanged) or
+#: `"node"` (match against a dotted-call textual mention of the arbiter
+#: node's id, module docstring's "arbitrated_by code-identity" section).
+class _ArbiterIdentity(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    kind: str
+    name: str
+
+
+def _arbiter_identity_for(resource: ResourceDecl | None) -> _ArbiterIdentity | None:
+    """The code-checkable arbiter identity for `resource` (T-1060: BOTH
+    `lock` and `arbitrated_by` now resolve to something code-checkable,
+    module docstring's "arbitrated_by code-identity" section) -- `None`
+    when `resource` is absent or declares NEITHER, the "no code-checkable
+    context" fail-closed case both ALPHA and EXCLUSIVE still share (a
+    resource declaring neither is exactly as unresolvable as before)."""
     if resource is None:
         return None
-    return resource.lock
+    if resource.lock is not None:
+        return _ArbiterIdentity(kind="lock", name=resource.lock)
+    if resource.arbitrated_by is not None:
+        return _ArbiterIdentity(kind="node", name=resource.arbitrated_by)
+    return None
 
 
-def _observation_guarded_by_lock(
-    observation: ModeObservation, root: Path, lock_name: str
+def _observation_guarded_by_arbiter(
+    observation: ModeObservation, root: Path, arbiter: _ArbiterIdentity
 ) -> bool:
-    """Whether `observation`'s site sits inside a `with` block naming
-    `lock_name` (`_enclosing_with_headers`) -- re-reads the file's lines
-    once per call rather than threading a cache through, matching this
-    module's other read-through-`Path` calls; call sites are bounded by
-    the number of write-capable observations, not file size."""
+    """Whether `observation`'s site is textually guarded by `arbiter`:
+    for a `"lock"` identity, inside a `with` block naming it
+    (`_enclosing_with_headers`, unchanged v0 mechanism); for a `"node"`
+    identity (T-1060), the observation's OWN line textually calls through
+    the arbiter node's id (`"{node_id}."` dotted-call prefix -- module
+    docstring's disclosed textual-match limitation, not real call-graph
+    resolution). Re-reads the file's lines once per call rather than
+    threading a cache through, matching this module's other
+    read-through-`Path` calls; call sites are bounded by the number of
+    write-capable observations, not file size."""
+    if arbiter.kind == "node":
+        return f"{arbiter.name}." in observation.text
     path = root / observation.file
     try:
         lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError:
         return False
     return any(
-        lock_name in header
+        arbiter.name in header
         for header in _enclosing_with_headers(lines, observation.line)
     )
+
+
+def _lock_reacquired(observation: ModeObservation, root: Path, lock_name: str) -> bool:
+    """T-1060: whether `lock_name` appears MORE THAN ONCE in
+    `observation`'s enclosing `with`-header ancestor chain -- a `with
+    lock_name:` block nested inside ANOTHER `with lock_name:` block naming
+    the identical lock, the textually-detectable shape of the mandate's
+    ALPHA/EXCLUSIVE "upgrade-deadlock ANTI-PATTERN" (module docstring's
+    point 1). Only applicable to a `"lock"` arbiter identity -- a `"node"`
+    arbiter has no `with`-block context to nest at all (module docstring's
+    point 2 uses a different textual convention entirely)."""
+    path = root / observation.file
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return False
+    headers = _enclosing_with_headers(lines, observation.line)
+    return sum(1 for header in headers if lock_name in header) > 1
 
 
 def _read_violation(
@@ -372,8 +489,8 @@ def _no_arbiter_violation(
     node: Node, resource: str, mode: AccessMode
 ) -> ModeConformanceViolation:
     """One ALPHA/EXCLUSIVE violation: the resource has no code-checkable
-    `lock` arbiter at all (module docstring: `arbitrated_by`-only or bare
-    resources fail closed for these two modes)."""
+    arbiter at all (T-1060: neither `lock` nor `arbitrated_by` -- a bare
+    resource is unresolvable at the code level for either mode)."""
     return ModeConformanceViolation(
         rule=SYS_MODE_NONCONFORMANCE,
         node=node.id,
@@ -384,9 +501,9 @@ def _no_arbiter_violation(
         category="no_arbiter",
         detail=(
             f"node {node.id!r} declares mode={mode.value} on resource "
-            f"{resource!r} but no code-checkable `lock` arbiter is declared "
-            f"for it (a bare resource or `arbitrated_by`-only arbiter is "
-            f"unresolvable at the code level in this v0 pass)"
+            f"{resource!r} but the resource declares neither `lock` nor "
+            f"`arbitrated_by` -- no code-checkable arbiter identity exists "
+            f"for it"
         ),
     )
 
@@ -396,10 +513,17 @@ def _unguarded_violation(
     resource: str,
     mode: AccessMode,
     observation: ModeObservation,
-    lock_name: str,
+    arbiter: _ArbiterIdentity,
 ) -> ModeConformanceViolation:
-    """One ALPHA/EXCLUSIVE violation: a write-capable observation outside
-    every `with <lock_name>:`-shaped enclosing block."""
+    """One ALPHA/EXCLUSIVE violation: a write-capable observation not
+    textually guarded by `arbiter` (`_observation_guarded_by_arbiter`) --
+    outside every `with <lock>:` block naming it (lock identity) or never
+    calling through it (node identity, T-1060)."""
+    where = (
+        f"outside every `with` block naming lock {arbiter.name!r}"
+        if arbiter.kind == "lock"
+        else f"never textually calls through arbiter node {arbiter.name!r}"
+    )
     return ModeConformanceViolation(
         rule=SYS_MODE_NONCONFORMANCE,
         node=node.id,
@@ -410,11 +534,236 @@ def _unguarded_violation(
         category=observation.category,
         detail=(
             f"node {node.id!r} declares mode={mode.value} on resource "
-            f"{resource!r} (lock {lock_name!r}) but "
-            f"{observation.file}:{observation.line} ({observation.category}) "
-            f"is outside every `with` block naming that lock"
+            f"{resource!r} but {observation.file}:{observation.line} "
+            f"({observation.category}) is {where}"
         ),
     )
+
+
+def _alpha_reacquire_violation(
+    node: Node,
+    resource: str,
+    mode: AccessMode,
+    observation: ModeObservation,
+    lock_name: str,
+) -> ModeConformanceViolation:
+    """T-1060: one ALPHA/EXCLUSIVE "upgrade-deadlock anti-pattern"
+    violation -- `observation` sits inside a `with lock_name:` block
+    that is ITSELF nested inside another `with lock_name:` block naming
+    the SAME lock (`_lock_reacquired`), the non-reentrant-lock
+    self-deadlock shape the mandate's ALPHA mode exists to prevent."""
+    return ModeConformanceViolation(
+        rule=SYS_MODE_NONCONFORMANCE,
+        node=node.id,
+        resource=resource,
+        mode=mode,
+        file=observation.file,
+        line=observation.line,
+        category="alpha_reacquire_deadlock",
+        detail=(
+            f"node {node.id!r} declares mode={mode.value} on resource "
+            f"{resource!r} but {observation.file}:{observation.line} "
+            f"({observation.category}) sits inside a nested `with "
+            f"{lock_name}:` block already holding the SAME lock -- the "
+            f"upgrade-deadlock anti-pattern {mode.value} exists to prevent"
+        ),
+    )
+
+
+#: T-1060 WRITE path-scoping: split a POSIX/Windows PATH into non-empty
+#: segments for directory-prefix comparison -- a small local port of
+#: `_contention.py::_path_segments`'s identical logic (that module is out
+#: of this ticket's scope; the join here is small enough that duplicating
+#: it is cheaper and more honest than reaching across module boundaries
+#: for a private helper).
+_PATH_SEP_RE = re.compile(r"[\\/]+")
+
+
+def _path_segments(path: str) -> tuple[str, ...]:
+    """Split `path` into non-empty POSIX/Windows segments (module
+    docstring's WRITE path-scoping section)."""
+    return tuple(segment for segment in _PATH_SEP_RE.split(path) if segment)
+
+
+def _path_within_declared(candidate: str, declared_paths: tuple[str, ...]) -> bool:
+    """Whether `candidate`'s segments are a prefix-or-equal match of ANY
+    of `declared_paths`' segments (or vice versa) -- the same directory-
+    subtree-overlap semantics `_contention.py::_paths_overlap` uses for
+    SYS201, reused (duplicated, see `_path_segments`) here for WRITE mode's
+    "only on declared paths" join."""
+    candidate_segments = _path_segments(candidate)
+    if not candidate_segments:
+        return False
+    for declared in declared_paths:
+        declared_segments = _path_segments(declared)
+        if not declared_segments:
+            continue
+        shorter, longer = (
+            (candidate_segments, declared_segments)
+            if len(candidate_segments) <= len(declared_segments)
+            else (declared_segments, candidate_segments)
+        )
+        if longer[: len(shorter)] == shorter:
+            return True
+    return False
+
+
+def _extract_path_literal(line: str) -> str | None:
+    """The literal string PATH argument `line` passes to one of the
+    path-carrying write-capable call shapes (`_PATH_LITERAL_RE`), or
+    `None` if the line matches none of them or the argument is not a
+    plain string literal (module docstring's WRITE path-scoping
+    section)."""
+    match = _PATH_LITERAL_RE.search(line)
+    return match.group(1) if match else None
+
+
+def _declared_write_paths(node: Node) -> tuple[str, ...]:
+    """Every `owns` (POSIX) and `acl` (Windows) path `node` declares, via
+    `_host.py::host_manifest_for` -- the SAME per-node "declared path"
+    fact `_contention.py`'s SYS201 already reads, reused here as WRITE
+    mode's path-scoping identity (module docstring). Empty when `node`
+    has no host manifest at all, or declares no owns/acl paths -- the
+    "nothing declared to scope WRITE against" fail-closed case."""
+    manifest = host_manifest_for(node)
+    if manifest is None:
+        return ()
+    return tuple(owns.path for owns in manifest.owns) + tuple(
+        acl.path for acl in manifest.acl
+    )
+
+
+def _no_declared_path_violation(
+    node: Node, resource: str, mode: AccessMode
+) -> ModeConformanceViolation:
+    """T-1060: one WRITE-mode violation: `node` declares NO `owns`/`acl`
+    path claim at all, so WRITE's "only on declared paths" mandate has
+    nothing to scope against -- fails closed, the same posture ALPHA/
+    EXCLUSIVE's `_no_arbiter_violation` already establishes for "nothing
+    code-checkable was declared"."""
+    return ModeConformanceViolation(
+        rule=SYS_MODE_NONCONFORMANCE,
+        node=node.id,
+        resource=resource,
+        mode=mode,
+        file="",
+        line=0,
+        category="no_declared_path",
+        detail=(
+            f"node {node.id!r} declares mode={mode.value} on resource "
+            f"{resource!r} but declares no `owns`/`acl` path claim at all "
+            f"-- WRITE has no declared path to scope its writes against"
+        ),
+    )
+
+
+def _write_outside_path_violation(
+    node: Node,
+    resource: str,
+    mode: AccessMode,
+    observation: ModeObservation,
+    literal_path: str,
+) -> ModeConformanceViolation:
+    """T-1060: one WRITE-mode violation: `observation`'s extracted literal
+    path (`_extract_path_literal`) does not overlap ANY of `node`'s
+    declared `owns`/`acl` paths (`_path_within_declared`)."""
+    return ModeConformanceViolation(
+        rule=SYS_MODE_NONCONFORMANCE,
+        node=node.id,
+        resource=resource,
+        mode=mode,
+        file=observation.file,
+        line=observation.line,
+        category="write_outside_declared_path",
+        detail=(
+            f"node {node.id!r} declares mode={mode.value} on resource "
+            f"{resource!r} but {observation.file}:{observation.line} "
+            f"writes to {literal_path!r}, outside every path {node.id!r} "
+            f"declares via `owns`/`acl`"
+        ),
+    )
+
+
+def _read_append_violations(
+    node: Node,
+    resource_id: str,
+    mode: AccessMode,
+    write_capable: list[ModeObservation],
+) -> list[ModeConformanceViolation]:
+    """READ/APPEND's join (module docstring's per-mode semantics): every
+    write-capable observation fires for READ; every non-append-open
+    write-capable observation fires for APPEND. Split out of `check_mode_
+    conformance` purely to keep it under ARCH001's line threshold."""
+    if mode is AccessMode.READ:
+        return [
+            _read_violation(node, resource_id, mode, observation)
+            for observation in write_capable
+        ]
+    return [
+        _append_violation(node, resource_id, mode, observation)
+        for observation in write_capable
+        if observation.category != _APPEND_OPEN
+    ]
+
+
+def _alpha_exclusive_violations(
+    node: Node,
+    resource_id: str,
+    mode: AccessMode,
+    write_capable: list[ModeObservation],
+    resource: ResourceDecl | None,
+    root: Path,
+) -> list[ModeConformanceViolation]:
+    """ALPHA/EXCLUSIVE's join (module docstring's per-mode semantics,
+    T-1060's arbiter-identity + reacquire-deadlock widening). Split out
+    of `check_mode_conformance` purely to keep it under ARCH001's line
+    threshold."""
+    arbiter = _arbiter_identity_for(resource)
+    if arbiter is None:
+        return [_no_arbiter_violation(node, resource_id, mode)]
+    violations: list[ModeConformanceViolation] = []
+    for observation in write_capable:
+        if _observation_guarded_by_arbiter(observation, root, arbiter):
+            if arbiter.kind == "lock" and _lock_reacquired(
+                observation, root, arbiter.name
+            ):
+                violations.append(
+                    _alpha_reacquire_violation(
+                        node, resource_id, mode, observation, arbiter.name
+                    )
+                )
+            continue
+        violations.append(
+            _unguarded_violation(node, resource_id, mode, observation, arbiter)
+        )
+    return violations
+
+
+def _write_violations(
+    node: Node,
+    resource_id: str,
+    mode: AccessMode,
+    write_capable: list[ModeObservation],
+) -> list[ModeConformanceViolation]:
+    """WRITE's join (T-1060 path-scoping, module docstring's WRITE
+    path-scoping section). Split out of `check_mode_conformance` purely
+    to keep it under ARCH001's line threshold."""
+    declared_paths = _declared_write_paths(node)
+    if not declared_paths:
+        return [_no_declared_path_violation(node, resource_id, mode)]
+    violations: list[ModeConformanceViolation] = []
+    for observation in write_capable:
+        literal_path = _extract_path_literal(observation.text)
+        if literal_path is None:
+            continue  # no extractable literal, disclosed cut
+        if _path_within_declared(literal_path, declared_paths):
+            continue
+        violations.append(
+            _write_outside_path_violation(
+                node, resource_id, mode, observation, literal_path
+            )
+        )
+    return violations
 
 
 # frob:doc docs/strata/host.md#resource-access-modes-t-0700
@@ -423,14 +772,17 @@ def _unguarded_violation(
 def check_mode_conformance(
     model: KernelModel, module: Module, binding: CodeBinding, root: Path
 ) -> ModeConformanceReport:
-    """The SYS205 mode-conformance entrypoint (T-0701): for every node
-    declaring `access "RESOURCE" mode MODE` (`node_access_declarations`),
-    join the declared MODE against `node`'s own observed write-capable
-    operations (`_node_mode_observations`) per the module docstring's
-    per-mode semantics. `module` supplies `Module.resources` (the `lock`
-    arbiter lookup ALPHA/EXCLUSIVE need) the same way `_access.py::
-    resource_contention_violations` already takes it in, for the same
-    reason (`KernelModel` has no reconstructible `resource` block)."""
+    """The SYS205 mode-conformance entrypoint (T-0701, v1 T-1060): for
+    every node declaring `access "RESOURCE" mode MODE`
+    (`node_access_declarations`), join the declared MODE against `node`'s
+    own observed write-capable operations (`_node_mode_observations`) per
+    the module docstring's per-mode semantics (`_read_append_violations`/
+    `_alpha_exclusive_violations`/`_write_violations`). `module` supplies
+    `Module.resources` (the `lock`/`arbitrated_by` arbiter lookup
+    ALPHA/EXCLUSIVE need, T-1060 widened from `lock`-only) the same way
+    `_access.py::resource_contention_violations` already takes it in, for
+    the same reason (`KernelModel` has no reconstructible `resource`
+    block)."""
     resources: dict[str, ResourceDecl] = {r.id: r for r in module.resources}
     violations: list[ModeConformanceViolation] = []
     for node in model.nodes:
@@ -444,33 +796,25 @@ def check_mode_conformance(
         for declaration in declarations:
             resource_id = declaration.resource
             mode = declaration.mode
-            if mode is AccessMode.READ:
-                for observation in write_capable:
-                    violations.append(
-                        _read_violation(node, resource_id, mode, observation)
-                    )
-            elif mode is AccessMode.APPEND:
-                for observation in write_capable:
-                    if observation.category == _APPEND_OPEN:
-                        continue
-                    violations.append(
-                        _append_violation(node, resource_id, mode, observation)
-                    )
+            if mode in (AccessMode.READ, AccessMode.APPEND):
+                violations.extend(
+                    _read_append_violations(node, resource_id, mode, write_capable)
+                )
             elif mode in (AccessMode.ALPHA, AccessMode.EXCLUSIVE):
-                lock_name = _lock_name_for(resources.get(resource_id))
-                if lock_name is None:
-                    violations.append(_no_arbiter_violation(node, resource_id, mode))
-                    continue
-                for observation in write_capable:
-                    if _observation_guarded_by_lock(observation, root, lock_name):
-                        continue
-                    violations.append(
-                        _unguarded_violation(
-                            node, resource_id, mode, observation, lock_name
-                        )
+                violations.extend(
+                    _alpha_exclusive_violations(
+                        node,
+                        resource_id,
+                        mode,
+                        write_capable,
+                        resources.get(resource_id),
+                        root,
                     )
-            # AccessMode.WRITE: unrestricted in v0, module docstring's
-            # disclosed cut -- no violation possible from this join.
+                )
+            elif mode is AccessMode.WRITE:
+                violations.extend(
+                    _write_violations(node, resource_id, mode, write_capable)
+                )
     _log.info(
         "strata mode-conformance: %d SYS205 violation(s) across %d node(s)",
         len(violations),
