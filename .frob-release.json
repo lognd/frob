@@ -605,6 +605,7 @@
     "src/frob/gates/_secrets.py::CRITICAL_PROVIDERS": "988703fc743613c358ba60ffebe24e7ff68de9243434742d52037aa92be1ca22",
     "src/frob/gates/_secrets.py::fake_marker_staleness_gate": "1c7d11e0ac38df968c5cee385afe2c969586e739dd3c362751057efd1e67b7a8",
     "src/frob/gates/_secrets.py::secrets_gate": "b20f329f107939ac130179a60ec33ecae5d0e43c976114918b5bc1c821a5b06a",
+    "src/frob/gates/_taint_gate.py::taint_gate": "8eb1266f83ddfad99829c392afa9d623ce2365e1f607a0b4c004dac2543204c8",
     "src/frob/gates/_waive.py::SCOPED_RUN_FLAKY_RULE_IDS": "eccec9442287c94baf320554cbed12c317246e8b8907dea1ab52876f8f606c97",
     "src/frob/gates/_waive.py::active_ticket": "a3ec91100e15e9216e6c754b0ba623ee6e8c45468ee86805045ad43623853c7b",
     "src/frob/gates/_waive.py::known_gate_rule_ids": "42f8d0e0fce2c36e6d63ac8a4ef7d47b03825d5fe90f41cb75474f71fac17491",
@@ -1763,6 +1764,8 @@
     "src/frob/vet/_popular_pypi.py::PYPI_TOP": "26bc14b63ddd6288e826ae6dcccca61d8cd656c510c2c468a09425ae584c244a",
     "src/frob/vet/_registry.py::LATEST_VERSION": "b30849b555e1d18f02cc27a0778a96f5741ba52158ece29cd2474365c6470cc3",
     "src/frob/vet/_scan.py::scan_tree": "e1fb6c8b8c52d313570588f6cf80452cc5a8d93c3ec29341067d0654b248ec45",
+    "src/frob/vet/_taint.py::TaintFinding": "61c91cf545af4ce25088a4c611fc0193e455620d354091b373c0ce91ea61cb96",
+    "src/frob/vet/_taint.py::taint_findings": "395efe7b6e65093ea03edf7e1747a465f24b9f7083fca1b3dad69b2c4241ca16",
     "src/frob/xref/__init__.py::Definition": "6b34e8c54cd2ffba1e122f7b12c5e9d4c403c7d1543a95e7713dcf0c858a01a6",
     "src/frob/xref/__init__.py::Usage": "b14170559d26cbc41126960eb79fc53a5692b3080376932018d4b434ee8310cf",
     "src/frob/xref/__init__.py::XrefError": "c3dffdc5295e7062f34586cf1173b7d313b47328706d3b47ae8956481c86a639",
@@ -1778,5 +1781,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.219.0"
+  "version": "0.220.0"
 }

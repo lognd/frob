@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.220.0] - unreleased
+
+- T-0781: vet/gates: taint rule -- repo-writable state (.git/.frob JSON or text) reaching subprocess argv requires validation or '--'
+
 ## [0.219.0] - unreleased
 
 - T-1079: strata: model tests/**, scripts/**, frob-core, strata-core in design/frob.strata or adopt reasoned exclusions (SYS103 264-finding follow-up)

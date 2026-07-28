@@ -137,6 +137,7 @@ from frob.gates._refs import ref_gate
 from frob.gates._registry_exhaustiveness import registry_gate
 from frob.gates._render_lint import render_lint_gate
 from frob.gates._secrets import fake_marker_staleness_gate, secrets_gate
+from frob.gates._taint_gate import taint_gate
 from frob.gates._waive import (
     _KNOWN_GATE_RULES,
     _UNWAIVABLE_RULES,
@@ -9328,6 +9329,10 @@ def _build_jobs(
         "clones": _ProcessJob(dup_gate, (st.root, st.snapshot, st.diff)),
         "sys": _ProcessJob(sys_gate, (st.root, st.snapshot)),
         "secrets": _ProcessJob(secrets_gate, (st.root,)),
+        # T-0781: SEC005, WARN-tier at first turn-on (same opaque_gate/
+        # T-0688 promotion posture) -- repo-writable .git/.frob state
+        # reaching a subprocess argv sink with no validator hop or `--`.
+        "taint": _ProcessJob(taint_gate, (st.root,)),
         # T-0665: OPAQUE001, WARN-tier at first turn-on (see opaque_gate's
         # own docstring for the T-0688/T-0973 promotion precedent this
         # follows) -- same repo-wide tracked-file scan shape as secrets.

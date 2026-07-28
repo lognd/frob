@@ -367,6 +367,11 @@ _KNOWN_GATE_RULES = frozenset(
         # obligation (frob.gates._opaque.opaque_gate). WARN-tier at first
         # turn-on -- see that module's own docstring.
         "OPAQUE001",
+        # T-0781: repo-writable-state (.git/.frob JSON or text) reaching a
+        # subprocess argv position with no validator hop or `--`
+        # terminator (frob.gates._taint_gate.taint_gate). WARN-tier at
+        # first turn-on -- same opaque_gate/T-0688 promotion posture.
+        "SEC005",
         # T-0289: long-function is the one frob-arch category channeled into
         # a real gate Violation (see frob.gates._arch's module docstring for
         # why only this one, not the whole ArchCategory surface).
