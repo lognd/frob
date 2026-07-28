@@ -327,6 +327,65 @@ class TestDifferentialParity:
         assert daemon_served.returncode == 0, daemon_served.stderr
         assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
 
+    def test_check_delta_gates_only_json_daemon_matches_in_process(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_check_delta_gates_only_json_daemon_matches_in_process
+        # T-1147: the one narrow `frob check --only gates --delta --json`
+        # shape `_try_check_delta_via_daemon` proxies -- everything else
+        # (a mixed --only, no --delta, a non-python/polyglot project) must
+        # keep falling through to the in-process path unchanged, which is
+        # exactly the narrowness this parity test (not a broader one) is
+        # meant to prove.
+        pytest.importorskip("frob_core")
+        project = tmp_path
+        (project / ".frob").mkdir()
+        (project / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.0.0"\n'
+        )
+        subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+
+        in_process = subprocess.run(
+            ["uv", "run", "frob", "check", "--only", "gates", "--delta", "--json"],
+            cwd=project,
+            env={**_env(), "FROB_NO_DAEMON": "1"},
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+        thread = _start_daemon(project)
+        try:
+            daemon_served = subprocess.run(
+                ["uv", "run", "frob", "check", "--only", "gates", "--delta", "--json"],
+                cwd=project,
+                env=_env(),
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        finally:
+            _shutdown(project, thread)
+        # A fresh project's own `--only gates` run may exit 1 (real
+        # ERROR-severity findings against a bare `pyproject.toml` project)
+        # -- the parity invariant under test is that daemon-served and
+        # in-process agree on BOTH the exit code and the rendered payload,
+        # not that the run is clean.
+        assert daemon_served.returncode == in_process.returncode
+        # T-1147: the `gate-summary` `ToolResult`'s own `summary` carries a
+        # real per-gate wall/cpu timing blob (`_gate_summary_result`'s
+        # trailing `[gate=0.02s, ...]`) that is GENUINELY non-reproducible
+        # between two independent process runs (one warm-cache via the
+        # daemon, one cold in-process) -- this is the one field this
+        # parity test normalizes away, not a formatting divergence being
+        # papered over; every other field (every violation, diagnostic,
+        # per-family `ToolResult`, exit code, and the summary's own error/
+        # warning/waived counts) is still compared byte-for-byte.
+        assert _normalize_gate_timing(
+            _json_tail(daemon_served.stdout)
+        ) == _normalize_gate_timing(_json_tail(in_process.stdout))
+
     def test_touched_tests_json_daemon_matches_in_process(
         self, tmp_path: Path
     ) -> None:
@@ -468,6 +527,18 @@ class TestDifferentialParity:
             _shutdown(project, thread)
         assert daemon_served.returncode == 0, daemon_served.stderr
         assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
+
+
+def _normalize_gate_timing(payload_text: str) -> str:
+    """Blank out `_gate_summary_result`'s trailing `[gate=0.02s, ...]`
+    timing blob wherever it appears in a rendered `gate-summary` `ToolResult`
+    -- real elapsed-time measurements that legitimately differ between two
+    independent process runs (T-1147's differential-parity test is the one
+    caller of this; every other field in the payload stays a strict,
+    unnormalized byte comparison)."""
+    import re
+
+    return re.sub(r"\[[a-z_]+=[0-9.]+s(?:, [a-z_]+=[0-9.]+s)*\]", "[...]", payload_text)
 
 
 def _json_tail(stdout: str) -> str:

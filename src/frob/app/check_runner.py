@@ -1479,9 +1479,86 @@ def run(cfg: AppConfig) -> None:
         return
 
     if cfg.check_json:
+        if _try_check_delta_via_daemon(root, cfg):
+            return
         result = _run_all_stages(cfg, root)
     else:
         renderer = Renderer.for_stream(sys.stdout)
         with renderer.write.progress("frob check") as progress:
             result = _run_all_stages(cfg, root, progress=progress)
     _report_check_result(cfg, result)
+
+
+# frob:ticket T-1147
+# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_check_delta_gates_only_json_daemon_matches_in_process kind="unit"  # noqa: E501
+def _try_check_delta_via_daemon(root: Path, cfg: AppConfig) -> bool:
+    """T-1147: for the one narrow `frob check --only gates --delta --json`
+    invocation shape -- exactly `--only gates` (no other tool stage or
+    individual gate id mixed in), a single detected project language
+    (python only, no polyglot SKIPPED-line siblings), no `deploy/` stage
+    to append, and `--delta` itself set -- try `frob_check_delta`'s RPC
+    (`frob.serve._tools.frob_check_delta`, T-1147's widened `check_result`
+    key) via the daemon proxy before doing any local `run_gates` call.
+
+    T-1128 wired `frob_graph_query`/`frob_doable_tickets`/
+    `frob_run_touched_tests` this same way but investigated and explicitly
+    did NOT wire `frob_check_delta`: that RPC answered only the
+    gates-violations-delta question, a genuinely narrower shape than
+    `frob check --delta --json`'s full multi-tool `CheckResult` (ruff/ty/
+    arch/cycle/dup/bind/exports/gates). Reconciling the WHOLE shape would
+    mean either running every non-gate tool inside the RPC too (a much
+    bigger change, and a second copy of `check_runner.py`'s own dispatch
+    logic living server-side) or detecting, CLI-side, the ONE invocation
+    shape where the RPC's narrower gates-only answer already IS the
+    complete answer -- this function is that detection, the second
+    direction T-1147 investigated and chose.
+
+    Returns `True` on a daemon hit (already rendered); `False` falls
+    through to the normal in-process `_run_all_stages` path unchanged,
+    same contract every other `_try_*_via_daemon` function in this
+    codebase follows (T-1106/T-1128)."""
+    if cfg.check_only != ["gates"] or not cfg.check_delta:
+        return False
+    if (root / "deploy").is_dir():
+        return False
+    detected = _detected_types(root) or [detect_project_type(root)]
+    if detected != ["python"]:
+        return False
+
+    from frob.app._daemon_proxy import query
+
+    proxied = query(
+        root,
+        "frob_check_delta",
+        {"ticket_id": cfg.check_ticket, "base": cfg.check_base or "main"},
+    )
+    if proxied.is_err:
+        return False
+    payload = proxied.danger_ok
+    check_result = payload.get("check_result")
+    if check_result is None:
+        # T-1147: an older daemon (pre-widened RPC, version-skew window
+        # before `ensure_daemon`'s self-heal restarts it) answers the
+        # narrower pre-T-1147 shape with no `check_result` key at all --
+        # fall through to the in-process path rather than render a
+        # payload this invocation's `--json` caller never asked for.
+        return False
+
+    # T-1147: the RPC always echoes its OWN (daemon-resolved, absolute)
+    # `root` back as `check_result["path"]` -- the CLI's own in-process
+    # `CheckResult.path` is whatever `cfg.check_path` literally was
+    # (usually the relative `"."` this function's own `root` argument
+    # carries), so the two differ by resolution alone even when the
+    # underlying gate run is identical. Overwrite with this call's own
+    # `root` (never the RPC's echo) to keep the two paths byte-identical.
+    check_result = {**check_result, "path": str(root)}
+
+    import json
+
+    _log.info(json.dumps(check_result, indent=2))
+    if any(
+        any(d.get("severity") == "error" for d in r.get("diagnostics", []))
+        for r in check_result["results"]
+    ):
+        sys.exit(1)
+    return True

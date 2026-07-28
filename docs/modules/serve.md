@@ -59,7 +59,11 @@ installed" message, exiting 1, instead of letting the import error propagate.
   using the warm graph/baseline cache described below instead of a cold
   reload per call. `verify=True` additionally forces a fully cold rebuild
   and cross-checks the two violation sets -- see "Staleness/correctness
-  contract" below.
+  contract" below. Also returns `check_result` (T-1147): the SAME
+  per-gate-family `ToolResult` list `frob check --only gates --delta
+  --json` renders (`frob.check._python._gates_success_result`), wrapped
+  as `{"path": ..., "results": [...]}` -- see "CLI-payload daemon proxy"
+  below for which one narrow invocation shape this lets the CLI proxy.
 - `frob_run_touched_tests(base="main")` -- (T-0177) selects AND runs the
   touched-set tests for `base` (`frob.testing.select_tests` +
   `run_selected`), the MCP counterpart of `frob test --base <base>`,
@@ -710,6 +714,28 @@ the follow-on T-1093 disclosed (T-draft-8a56400c).
   that sub-payload, keeping both branches byte-for-byte identical, not
   just the non-empty one. Proven by `tests/test_app_daemon_proxy.py::
   TestDifferentialParity::test_touched_tests_json_daemon_matches_in_process`.
+- `frob check --only gates --delta --json` -> `frob_check_delta`'s
+  `check_result` key (T-1147): the ONE narrow `frob check --json`
+  invocation shape this RPC can fully answer -- `--only gates` alone (no
+  other tool stage or individual gate id mixed in), a single detected
+  language (python, no polyglot `SKIPPED` siblings), no `deploy/` stage
+  to append, and `--delta` itself set. `_try_check_delta_via_daemon`
+  (`check_runner.py`) detects exactly this shape before dispatch and
+  proxies; anything else (a plain `frob check --json` full multi-tool
+  run, a mixed `--only`, no `--delta`, a polyglot/deploy project) falls
+  through to the in-process path unchanged, same contract every other
+  `_try_*_via_daemon` function here follows. See "Scope cut (disclosed)"
+  below for why the FULL multi-tool `--json` shape stays out of scope.
+  Proven by `tests/test_app_daemon_proxy.py::TestDifferentialParity::
+  test_check_delta_gates_only_json_daemon_matches_in_process` -- one
+  caveat disclosed there and not elsewhere in this doc: the rendered
+  `gate-summary` `ToolResult`'s own per-gate wall/cpu timing blob is
+  GENUINELY non-reproducible between two independent process runs (one
+  warm-cache via the daemon, one cold in-process), so that one test
+  normalizes just the timing segment out before comparing -- every other
+  field (every violation, diagnostic, per-family `ToolResult`, and the
+  summary's own error/warning/waived counts) is still asserted
+  byte-for-byte.
 
 ### Scope cut (disclosed)
 
@@ -719,25 +745,38 @@ T-0321's integration map names `outline`/`map`/`xref`/`parse`/`graph`/
 `frob_run_touched_tests` through `query()` (just above), each needing its
 `_tools` counterpart EXTENDED to match the CLI's own `--json` shape rather
 than a pure CLI-side reshape (T-1106's `frob_affects` precedent was the one
-exception needing only a rename). `frob_check_delta` was investigated and
-NOT wired this ticket: `frob check --delta`'s CLI JSON payload is
-`_run_all_stages`'s full multi-tool `CheckResult` (ruff/ty/arch/cycle/dup/
-bind/exports/deploy-stage `ToolResult`s, gates among them) -- `--delta`
+exception needing only a rename). `frob_check_delta` was investigated by
+T-1128 and NOT wired that ticket: `frob check --delta`'s CLI JSON payload
+is `_run_all_stages`'s full multi-tool `CheckResult` (ruff/ty/arch/cycle/
+dup/bind/exports/deploy-stage `ToolResult`s, gates among them) -- `--delta`
 itself only filters the ONE `gates` `ToolResult` inside that larger
 payload (`_dispatch_check_python`'s `delta=cfg.check_delta` kwarg threads
-into `run_check`, not into ruff/ty/arch/etc). `frob_check_delta`'s RPC
-answers only the gates-violations-delta question in isolation -- a
-genuinely different, narrower shape than what `frob check --delta --json`
-prints, not a key-rename or a missing-fields gap the way the other three
-were. Reconciling it would mean either running the ENTIRE check pipeline
-inside the RPC (a much larger change than a payload-shape fix) or
-detecting, CLI-side, the narrow case where every non-gate stage is
-skipped (`--skip-ruff --skip-ty --skip-arch --skip-cycle --skip-dup
---skip-bind --skip-exports`, an all-gates-only invocation) and proxying
-only then -- neither judged a "straightforward" CLI-payload reconciliation
-in this ticket's own scope; tracked as a follow-up (draft filed this
-ticket). `frob ticket doable` specifically was left unwired again in
-T-1106: `src/frob/app/ticket_runner.py` was a CONTENDED file that wave (a
+into `run_check`, not into ruff/ty/arch/etc). `frob_check_delta`'s
+PRE-T-1147 RPC answered only the gates-violations-delta question in
+isolation -- a genuinely different, narrower shape than what `frob check
+--delta --json` prints, not a key-rename or a missing-fields gap the way
+the other three were.
+
+T-1147 chose the second of T-1128's two candidate directions rather than
+running the entire non-gate tool pipeline inside the RPC (still judged
+too large -- it would duplicate `check_runner.py`'s own multi-tool
+dispatch logic server-side for no real gain, since ruff/ty/arch/etc never
+touch the daemon's warm graph/baseline cache the way gates does): widen
+`frob_check_delta` to render the exact SAME per-gate-family `ToolResult`
+list the CLI's own `--only gates --delta --json` path builds (reusing
+`frob.check._python._gates_success_result` directly, not a second
+hand-built summary), then detect, CLI-side, the ONE invocation shape
+where that narrower answer already IS the complete answer -- see
+"Proxied commands" above (`_try_check_delta_via_daemon`). The FULL
+multi-tool `frob check --json` (no `--only gates`) shape stays
+genuinely out of scope for the same reason it was before: reconciling it
+would still mean either running ruff/ty/arch/cycle/dup/bind/exports
+inside the RPC too, or reshaping a DIFFERENT payload per possible
+`--only` combination -- neither is what this ticket's "reconcile the
+CLI payload with the RPC" mandate asked for, and no invocation shape
+touching a non-gate tool is proxied by this change. `frob ticket doable`
+specifically was left unwired again in T-1106: `src/frob/app/
+ticket_runner.py` was a CONTENDED file that wave (a
 sibling ticket's own scope), and T-1106's own scope was deliberately
 narrowed to files with no such collision (`_daemon_proxy.py`,
 `graph_runner.py`, their tests) rather than risk a merge collision over

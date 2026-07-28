@@ -617,6 +617,32 @@ class TestCheckDelta:
         assert payload["verified"] is True
         assert payload["verify_mismatch_count"] == 0
 
+    def test_check_result_matches_only_gates_delta_cli_shape(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/serve/_tools.py::frob_check_delta kind="unit"
+        # T-1147: `check_result` reuses `frob.check._python.
+        # _gates_success_result` directly, so its per-family `ToolResult`
+        # list is field-for-field what `frob check --only gates --delta
+        # --json` renders -- this unit test asserts the SHAPE (keys,
+        # violation-to-diagnostic mapping) without spawning the real
+        # subprocess-vs-subprocess daemon comparison
+        # `tests/test_app_daemon_proxy.py::TestDifferentialParity::
+        # test_check_delta_gates_only_json_daemon_matches_in_process`
+        # covers end to end.
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
+        _git_init(tmp_path)
+        _warm._invalidate(tmp_path)
+
+        result = frob_check_delta(tmp_path)
+        assert result.is_ok
+        payload = result.danger_ok
+        check_result = payload["check_result"]
+        assert check_result["path"] == str(tmp_path)
+        tools = [r["tool"] for r in check_result["results"]]
+        assert "gate-summary" in tools
+        assert all(t.startswith("gate:") or t == "gate-summary" for t in tools)
+
 
 class TestRunTouchedTests:
     def test_no_diff_selects_nothing(self, tmp_path: Path) -> None:

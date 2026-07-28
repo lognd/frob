@@ -406,11 +406,14 @@ def _run_verify_pass(root: Path, cfg, warm_violations: tuple) -> dict:
 
 # frob:doc docs/modules/serve.md#tools
 # frob:doc docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602  # noqa: E501
+# frob:doc docs/modules/serve.md#frob-check---delta-cli-parity-t-1147
 # frob:ticket T-0602
+# frob:ticket T-1147
 # frob:tests tests/test_serve.py::TestCheckDelta.test_delta_against_fresh_baseline_is_empty kind="unit"  # noqa: E501
 # frob:tests tests/test_serve.py::TestCheckDelta.test_delta_reports_new_violation kind="unit"  # noqa: E501
 # frob:tests tests/test_serve.py::TestCheckDelta.test_missing_baseline_is_full_set kind="unit"  # noqa: E501
 # frob:tests tests/test_serve.py::TestCheckDelta.test_verify_true_matches_when_no_drift kind="unit"  # noqa: E501
+# frob:tests tests/test_serve.py::TestCheckDelta.test_check_result_matches_only_gates_delta_cli_shape kind="unit"  # noqa: E501
 def frob_check_delta(
     root: Path,
     ticket_id: str | None = None,
@@ -423,8 +426,20 @@ def frob_check_delta(
     contract) -- reuses the warm graph/baseline cache (`frob.serve._warm`)
     instead of a cold reload per call. `verify=True` additionally re-runs
     the check fully cold (dropping the warm cache first) and reports
-    whether the two violation sets agree."""
+    whether the two violation sets agree.
+
+    T-1147: also renders `check_result`, the SAME per-gate-family
+    `ToolResult` list (`frob.check._python._gates_success_result`) `frob
+    check --only gates --delta --json`'s CLI path builds, wrapped in a
+    `CheckResult(path, results)`-shaped dict -- byte-for-byte what that one
+    narrow CLI invocation shape prints, reusing the identical rendering
+    code rather than a second hand-built summary. The flatter `delta`/
+    `violation_count`/`baseline_stale` keys above are UNCHANGED (kept for
+    any existing narrower caller of this RPC) -- `check_result` is new,
+    additive structure, not a replacement."""
+    from frob.check._python import _gates_success_result
     from frob.gates import GateConfig, delta_violations, is_baseline_stale, run_gates
+    from frob.process.parsers.common import ToolResult
 
     state_result = _warm._warm_state(root)
     if state_result.is_err:
@@ -453,12 +468,27 @@ def frob_check_delta(
         else delta_violations(report.violations, baseline)
     )
 
+    # T-1147: `_gates_success_result` re-derives its own delta-filtering
+    # via `load_baseline`/`is_baseline_stale` (a fresh, cold read, same as
+    # the CLI's own `_apply_delta` does) rather than reusing this
+    # function's own warm-cache `baseline`/`baseline_stale` above -- this
+    # is what makes `check_result` byte-identical to the CLI path instead
+    # of merely equivalent; the two delta computations are independent by
+    # design, not a duplicated call the way they might look.
+    check_results: list[ToolResult] = _gates_success_result(
+        report, root=root, delta=True
+    )
+
     payload: dict = {
         "ticket": ticket_id,
         "baseline_stale": baseline_stale,
         "violation_count": len(report.violations),
         "delta_count": len(delta),
         "delta": _violations_as_dicts(delta),
+        "check_result": {
+            "path": str(root),
+            "results": [r.model_dump(mode="json") for r in check_results],
+        },
     }
     if verify:
         payload.update(_run_verify_pass(root, cfg, report.violations))
