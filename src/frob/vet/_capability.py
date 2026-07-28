@@ -3763,29 +3763,100 @@ def _build_rust_alias_table(
     return alias_table
 
 
+def _record_rust_field_alias(
+    node,  # noqa: ANN001 -- tree_sitter.Node (struct_expression)
+    use_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    alias_table: dict[int, dict[str, str]],
+    field_alias_table: dict[str, str],
+) -> None:
+    """Bind every `field: target` entry inside a `struct_expression`'s
+    `field_initializer_list` to `field_alias_table` (T-1063, taxonomy
+    "field rebinding via struct update" row: `let h = Handlers { run:
+    C::new, ..default }; (h.run)("sh");`) -- keyed by FIELD NAME only, same
+    best-effort object-identity-BY-NAME posture as C's `_record_c_field_
+    alias` (two different struct variables with a same-named function-
+    pointer field are not distinguished). The `..default`/`base_field_
+    initializer` spread entry itself carries no resolvable target and is
+    simply skipped -- it contributes no new binding, only a fallback for
+    fields this literal does not mention."""
+    field_list = node.child_by_field_name("body")
+    if field_list is None:
+        return
+    for element in field_list.children:
+        if element.type != "field_initializer":
+            continue
+        field_id = element.child_by_field_name("field")
+        value = element.child_by_field_name("value")
+        if field_id is None or field_id.type != "field_identifier":
+            continue
+        if value is None:
+            continue
+        resolved = _resolve_rust_expr(value, use_table, scope_cache, alias_table)
+        if resolved is not None:
+            field_alias_table.setdefault(node_text(field_id), resolved)
+
+
+def _build_rust_field_alias_table(
+    root_node,  # noqa: ANN001 -- tree_sitter.Node
+    use_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    alias_table: dict[int, dict[str, str]],
+) -> dict[str, str]:
+    """File-wide `field_name -> resolved_dangerous_target` table (T-1063)
+    built from every `struct_expression`'s field initializers -- the Rust
+    sibling of C's `_record_c_field_alias`/`_c_field_alias_table`."""
+    field_alias_table: dict[str, str] = {}
+
+    def visit(node) -> None:  # noqa: ANN001
+        if node.type == "struct_expression":
+            _record_rust_field_alias(
+                node, use_table, scope_cache, alias_table, field_alias_table
+            )
+        for child in node.children:
+            visit(child)
+
+    visit(root_node)
+    return field_alias_table
+
+
 def _collect_rust_candidates(
     node,
     use_table: dict[str, str],
     scope_cache: dict[int, dict[str, int]],
     candidates: list[tuple[str, int, int]],
     alias_table: dict[int, dict[str, str]] | None = None,
+    field_alias_table: dict[str, str] | None = None,
 ) -> None:  # noqa: ANN001
     """Recursively walk `node`, appending `(resolved, start_byte, end_byte)`
     to `candidates` for every `call_expression` whose `function` resolves
-    through `use_table` (T-0378) or, when locally shadowed, through
-    `alias_table`'s scope-local copy-propagation (T-0661) -- mirrors
-    `_collect_py_candidates`/`_collect_ts_candidates`'s job. Only the call
-    site's function target is a resolvable "path" here (a bare `Command::
-    new` field/method-style resolution beyond a plain scoped call is not
-    attempted, matching this pass's narrower acceptance criteria)."""
+    through `use_table` (T-0378), when locally shadowed through `alias_
+    table`'s scope-local copy-propagation (T-0661), or (T-1063) a
+    parenthesized field-expression call target (`(h.run)("sh")`) through
+    `field_alias_table` -- mirrors `_collect_py_candidates`/`_collect_ts_
+    candidates`'s job. Only the call site's function target is a
+    resolvable "path" here (a bare `Command::new` field/method-style
+    resolution beyond a plain scoped call, or a parenthesized field
+    access, is not attempted, matching this pass's narrower acceptance
+    criteria)."""
     if node.type == "call_expression":
         func = node.child_by_field_name("function")
         if func is not None and func.type in ("identifier", "scoped_identifier"):
             resolved = _resolve_rust_expr(func, use_table, scope_cache, alias_table)
             if resolved is not None:
                 candidates.append((resolved, node.start_byte, node.end_byte))
+        elif func is not None and func.type == "parenthesized_expression":
+            inner = [c for c in func.children if c.is_named]
+            if len(inner) == 1 and inner[0].type == "field_expression":
+                field = inner[0].child_by_field_name("field")
+                if field is not None and field.type == "field_identifier":
+                    resolved = (field_alias_table or {}).get(node_text(field))
+                    if resolved is not None:
+                        candidates.append((resolved, node.start_byte, node.end_byte))
     for child in node.children:
-        _collect_rust_candidates(child, use_table, scope_cache, candidates, alias_table)
+        _collect_rust_candidates(
+            child, use_table, scope_cache, candidates, alias_table, field_alias_table
+        )
 
 
 def _rust_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
@@ -3793,8 +3864,11 @@ def _rust_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
     sites resolve to through its `use` binding table (extended T-0661 for
     grouped/nested `use` lists and glob-import wildcard fallback), POSITION-
     aware enclosing-scope shadow check (T-0378, round 2 fixes an order-
-    insensitivity soundness hole -- see `_rust_scope_bound_names`), and
-    (T-0661) scope-local `let`-alias copy-propagation table. Empty for a
+    insensitivity soundness hole -- see `_rust_scope_bound_names`),
+    (T-0661) scope-local `let`-alias copy-propagation table, and (T-1063) a
+    file-wide struct-field alias table for a parenthesized field-expression
+    call target (`(h.run)("sh")` after `let h = Handlers { run: C::new,
+    ..default };`). Empty for a
     non-rust file, an unparseable file, or one `frob.lang` has no grammar
     for -- degrades to the pre-existing lexical-only scan, never raises."""
     parsed = raw_tree(path)
@@ -3807,9 +3881,17 @@ def _rust_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
     use_table = _rust_use_table(tree.root_node)
     scope_cache: dict[int, dict[str, int]] = {}
     alias_table = _build_rust_alias_table(tree.root_node, use_table, scope_cache)
+    field_alias_table = _build_rust_field_alias_table(
+        tree.root_node, use_table, scope_cache, alias_table
+    )
     candidates: list[tuple[str, int, int]] = []
     _collect_rust_candidates(
-        tree.root_node, use_table, scope_cache, candidates, alias_table
+        tree.root_node,
+        use_table,
+        scope_cache,
+        candidates,
+        alias_table,
+        field_alias_table,
     )
     return tuple(candidates)
 
@@ -4817,6 +4899,101 @@ def _kt_call_callee(node):  # noqa: ANN001, ANN201
     return callee
 
 
+def _kt_destructure_value_elements(value):  # noqa: ANN001, ANN201
+    """The positional argument-expression list of a destructuring
+    declaration's RHS `call_expression` (T-1063, taxonomy "destructuring
+    declaration" row: `val (a, b) = Pair(::runCmd, 0)`) -- each `value_
+    argument`'s one child, unwrapped, in source order. Empty for any other
+    RHS shape (no positional elements to walk, fail-closed same as the
+    rust/C++ destructure-alias tables)."""
+    if value.type != "call_expression":
+        return []
+    suffix = _kt_cap_child_of_type(value, "call_suffix")
+    if suffix is None:
+        return []
+    args = _kt_cap_child_of_type(suffix, "value_arguments")
+    if args is None:
+        return []
+    elements = []
+    for arg in args.children:
+        if arg.type != "value_argument":
+            continue
+        named = [c for c in arg.children if c.is_named]
+        if named:
+            elements.append(named[0])
+    return elements
+
+
+def _record_kt_destructure_alias(
+    multi_decl,  # noqa: ANN001 -- tree_sitter.Node (multi_variable_declaration)
+    value,  # noqa: ANN001 -- tree_sitter.Node
+    import_table: dict[str, str],
+    var_alias_table: dict[str, str],
+) -> None:
+    """Bind each `variable_declaration` element of `multi_decl` to its
+    POSITIONALLY corresponding element of `value`'s call-argument list
+    (T-1063, taxonomy "destructuring declaration" row) -- mirrors rust's
+    `_record_rust_destructure_alias`/C++'s `_record_c_structured_binding_
+    alias`. A non-identifier binding target (kotlin destructuring targets
+    are always a single `simple_identifier` per slot, unlike rust/C++'s
+    richer nested patterns) or an unresolvable positional element is
+    simply skipped."""
+    left_elements = [
+        _kt_cap_child_of_type(c, "simple_identifier")
+        for c in multi_decl.children
+        if c.type == "variable_declaration"
+    ]
+    right_elements = _kt_destructure_value_elements(value)
+    for left_el, right_el in zip(left_elements, right_elements, strict=False):
+        if left_el is None:
+            continue
+        resolved = None
+        if right_el.type == "callable_reference":
+            resolved = _kt_resolve_callable_reference(right_el, import_table)
+        elif right_el.type == "simple_identifier":
+            resolved = _kt_resolve_expr_text(right_el, import_table, var_alias_table)
+        if resolved is not None:
+            var_alias_table.setdefault(node_text(left_el), resolved)
+
+
+def _record_kt_param_default_aliases(
+    node,  # noqa: ANN001 -- tree_sitter.Node (function_value_parameters)
+    import_table: dict[str, str],
+    var_alias_table: dict[str, str],
+) -> None:
+    """Bind every `parameter` child of `node` (a `function_value_
+    parameters` list) that is IMMEDIATELY followed by a `= default_value`
+    pair to `var_alias_table` (T-1063, taxonomy "default parameter
+    forwarding a callable" row: `fun call(cb: (String) -> Unit = ::runCmd)
+    { cb(x) }`) -- mirrors C++'s `_record_c_default_param_alias`. Kotlin's
+    grammar hangs a parameter's default value as a SIBLING of the
+    `parameter` node (the `=` and its value sit directly inside `function_
+    value_parameters`, not inside `parameter` itself, unlike C++'s
+    `optional_parameter_declaration`), so this walks siblings positionally
+    rather than a single node's own children. Kotlin's var-alias table is
+    already file-wide, no per-function scope split (T-0664's documented
+    posture), so this needs no scope-node lookup unlike the C++ sibling."""
+    children = node.children
+    for i, child in enumerate(children):
+        if child.type != "parameter":
+            continue
+        name_node = _kt_cap_child_of_type(child, "simple_identifier")
+        if name_node is None:
+            continue
+        if i + 2 >= len(children) or children[i + 1].type != "=":
+            continue
+        default_value = children[i + 2]
+        resolved = None
+        if default_value.type == "callable_reference":
+            resolved = _kt_resolve_callable_reference(default_value, import_table)
+        elif default_value.type == "simple_identifier":
+            resolved = _kt_resolve_expr_text(
+                default_value, import_table, var_alias_table
+            )
+        if resolved is not None:
+            var_alias_table.setdefault(node_text(name_node), resolved)
+
+
 def _kt_build_var_alias_table(root, import_table: dict[str, str]) -> dict[str, str]:  # noqa: ANN001
     """File-wide `name -> resolved_target` table (T-0664, taxonomy "val/var
     assignment"/"typealias for a function type"/":: callable reference"
@@ -4833,17 +5010,35 @@ def _kt_build_var_alias_table(root, import_table: dict[str, str]) -> dict[str, s
 
     def visit(node) -> None:  # noqa: ANN001
         if node.type == "property_declaration":
-            name_node, value = _kt_property_name_and_value(node)
-            if name_node is not None and value is not None:
-                resolved = None
-                if value.type == "callable_reference":
-                    resolved = _kt_resolve_callable_reference(value, import_table)
-                elif value.type == "simple_identifier":
-                    resolved = _kt_resolve_expr_text(
-                        value, import_table, var_alias_table
+            multi_decl = _kt_cap_child_of_type(node, "multi_variable_declaration")
+            if multi_decl is not None:
+                value = None
+                seen_eq = False
+                for c in node.children:
+                    if c.type == "=":
+                        seen_eq = True
+                        continue
+                    if seen_eq:
+                        value = c
+                        break
+                if value is not None:
+                    _record_kt_destructure_alias(
+                        multi_decl, value, import_table, var_alias_table
                     )
-                if resolved is not None:
-                    var_alias_table.setdefault(node_text(name_node), resolved)
+            else:
+                name_node, value = _kt_property_name_and_value(node)
+                if name_node is not None and value is not None:
+                    resolved = None
+                    if value.type == "callable_reference":
+                        resolved = _kt_resolve_callable_reference(value, import_table)
+                    elif value.type == "simple_identifier":
+                        resolved = _kt_resolve_expr_text(
+                            value, import_table, var_alias_table
+                        )
+                    if resolved is not None:
+                        var_alias_table.setdefault(node_text(name_node), resolved)
+        elif node.type == "function_value_parameters":
+            _record_kt_param_default_aliases(node, import_table, var_alias_table)
         for child in node.children:
             visit(child)
 

@@ -1982,20 +1982,15 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    def test_struct_update_field_rebind_not_detected(self, tmp_path: Path) -> None:
+    def test_struct_update_field_rebind_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
-        # T-0666: taxonomy "field rebinding via struct update" row: `let h =
-        # Handlers { run: Command::new, ..default }; (h.run)("sh");`. The
-        # taxonomy doc itself flags this row "static-resolvable (needs
-        # points-to on struct field)" -- a genuine, currently UNRESOLVED gap
-        # in the Rust resolver (no struct-field alias table exists for a
-        # LATER `(h.run)(...)` call through a constructed struct instance,
-        # unlike C's `_record_c_field_alias`/`_c_field_alias_table`, which
-        # closes the analogous C row via a designated-initializer alias
-        # table T-0662 built). This fixture locks the CURRENT honest
-        # under-detection rather than silently having no fixture for the
-        # row; T-1047 tracks adding Rust struct-field points-to
-        # to close it.
+        # T-0666/T-1063: taxonomy "field rebinding via struct update" row:
+        # `let h = Handlers { run: Command::new, ..default }; (h.run)
+        # ("sh");`. Closed by T-1063's `_record_rust_field_alias`/`_build_
+        # rust_field_alias_table` (file-wide field-name-keyed table, mirrors
+        # C's `_record_c_field_alias`/`_c_field_alias_table`) plus a new
+        # parenthesized-field-expression call-target shape in `_collect_
+        # rust_candidates`.
         from frob.vet._capability import scan_file_capabilities
 
         pkg = tmp_path / "pkg.rs"
@@ -2007,7 +2002,7 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
             '    (h.run)("sh");\n'
             "}\n"
         )
-        assert "exec" not in scan_file_capabilities(pkg)
+        assert "exec" in scan_file_capabilities(pkg)
 
     def test_macro_rules_expansion_emitting_fixed_call_not_detected(
         self, tmp_path: Path
@@ -3464,22 +3459,18 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         pkg.write_text('val f = 5\nfun g() { println("sh") }\n')
         assert scan_file_capabilities(pkg) == frozenset()
 
-    def test_destructuring_declaration_not_detected(self, tmp_path: Path) -> None:
+    def test_destructuring_declaration_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
-        # T-0666: taxonomy "destructuring declaration" row: `val (a, b) =
-        # Pair(::runCmd, 0); a(x)`. Genuine, currently UNRESOLVED gap:
-        # `_kt_property_name_and_value` only matches a single-name
-        # `variable_declaration` node -- kotlin's `multi_variable_
-        # declaration` (destructuring) grammar shape is never visited, so
-        # no alias entry is recorded for either bound name. This fixture
-        # locks the CURRENT honest under-detection rather than silently
-        # having no fixture for the row; T-1047 tracks adding kotlin
-        # destructuring-declaration alias tracking to close it.
+        # T-0666/T-1063: taxonomy "destructuring declaration" row: `val (a,
+        # b) = Pair(::runCmd, 0); a(x)`. Closed by T-1063's `_record_kt_
+        # destructure_alias`/`_kt_destructure_value_elements` (positional
+        # binding of each `multi_variable_declaration` element to its RHS
+        # call-argument, mirrors rust's tuple-destructure alias table).
         from frob.vet._capability import scan_file_capabilities
 
         pkg = tmp_path / "pkg.kt"
         pkg.write_text('val (a, b) = Pair(::ProcessBuilder, 0)\nfun g() { a("sh") }\n')
-        assert "exec" not in scan_file_capabilities(pkg)
+        assert "exec" in scan_file_capabilities(pkg)
 
     def test_lambda_closure_capturing_bound_name_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -3497,26 +3488,25 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    def test_default_parameter_forwarding_callable_not_detected(
+    def test_default_parameter_forwarding_callable_detected(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
-        # T-0666: taxonomy "default parameter forwarding a callable" row:
-        # `fun call(cb: (String) -> Unit = ::runCmd) { cb(x) }`. Genuine,
-        # currently UNRESOLVED gap: unlike C/C++'s `_record_c_param_default_
-        # alias` (T-0663), the kotlin resolver has no analogous default-
-        # value-of-a-parameter alias recording -- `_kt_build_var_alias_
-        # table` only walks `variable_declaration` nodes, never a
-        # `function_value_parameter`'s default. This fixture locks the
-        # CURRENT honest under-detection; T-1047 tracks adding kotlin
-        # parameter-default alias tracking to close it.
+        # T-0666/T-1063: taxonomy "default parameter forwarding a callable"
+        # row: `fun call(cb: (String) -> Unit = ::runCmd) { cb(x) }`. Closed
+        # by T-1063's `_record_kt_param_default_aliases` -- kotlin's grammar
+        # hangs a parameter's default value as a SIBLING of the `parameter`
+        # node inside `function_value_parameters` (not a child of
+        # `parameter` itself), so this walks the sibling list positionally
+        # rather than mirroring C++'s single-node `_record_c_default_param_
+        # alias` shape directly.
         from frob.vet._capability import scan_file_capabilities
 
         pkg = tmp_path / "pkg.kt"
         pkg.write_text(
             'fun call(cb: (String) -> Unit = ::ProcessBuilder) { cb("sh") }\n'
         )
-        assert "exec" not in scan_file_capabilities(pkg)
+        assert "exec" in scan_file_capabilities(pkg)
 
     def test_extension_function_reference_bound_via_import_detected(
         self, tmp_path: Path
