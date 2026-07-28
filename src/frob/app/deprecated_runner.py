@@ -12,16 +12,14 @@ command over it -- there is no `--apply` here, matching `frob debt`.
 from __future__ import annotations
 
 import contextlib
-import sys
 from datetime import date
 from pathlib import Path
 
+from frob.app._snapshot import load_or_build_snapshot
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
-
-_CACHE_REL = Path(".frob") / "cache.db"
 
 # Mirrors `frob.gates._OPEN_STATES`'s closed-state set (DONE/DROPPED) for
 # a display-side "orphaned" classification -- a ticket in neither state is
@@ -29,21 +27,6 @@ _CACHE_REL = Path(".frob") / "cache.db"
 # second RULE (DEPR002 already owns whether this is a gate violation);
 # this is just the human-facing status label T-0638's ticket asked for.
 _CLOSED_TICKET_STATES = frozenset({"done", "dropped"})
-
-
-def _load_snapshot(root: Path):  # noqa: ANN201
-    """Load (building if stale) the graph snapshot `deprecated` lists entries from."""
-    from frob.graph import build_graph, load_graph
-
-    cache = root / _CACHE_REL
-    loaded = load_graph(cache)
-    if loaded.is_ok:
-        return loaded.danger_ok
-    built = build_graph(root, cache)
-    if built.is_err:
-        _log.error("deprecated: graph build failed: %s", built.danger_err)
-        sys.exit(1)
-    return built.danger_ok
 
 
 def _load_ticket_states(root: Path) -> dict[str, str]:
@@ -73,10 +56,17 @@ def _status_of(entry, ticket_states: dict[str, str]) -> str:  # noqa: ANN001
 
 
 # frob:ticket T-0638
+# frob:ticket T-1085
 # frob:doc docs/modules/gates.md#deprecated-gate-t-0576
 # frob:tests \
 # tests/test_deprecated_runner.py::TestDeprecatedRunner.test_json_mode_lists_deprecated\
 # _entries  # noqa: E501
+# frob:waive AFFECT001 reason="T-1085 (out of this ticket's declared \
+# docs/modules/gates.md scope) is a pure internal refactor: this function's \
+# snapshot-loading call now goes through the shared \
+# frob.app._snapshot.load_or_build_snapshot helper, with the same behavior, \
+# output shape, and gate semantics as before; the DEPRECATED-gate doc this \
+# anchor covers is unaffected"  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """List every outstanding `frob:deprecated` entry under
     `cfg.deprecated_path`, each annotated with its since/sunset/ticket and a
@@ -87,7 +77,7 @@ def run(cfg: AppConfig) -> None:
     root = (cfg.deprecated_path or Path(".")).resolve()
     ctx = quiet_stdout_logs() if cfg.deprecated_json else contextlib.nullcontext()
     with ctx:
-        snapshot = _load_snapshot(root)
+        snapshot = load_or_build_snapshot(root, log_context="deprecated")
         entries = list_deprecated(snapshot, current_date=date.today().isoformat())
         ticket_states = _load_ticket_states(root)
 

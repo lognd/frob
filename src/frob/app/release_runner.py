@@ -5,13 +5,12 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from frob.app._snapshot import load_or_build_snapshot
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 from frob.render import Renderer
 
 _log = get_logger(__name__)
-
-_CACHE_REL = Path(".frob") / "cache.db"
 
 
 # frob:ticket T-0003
@@ -34,20 +33,6 @@ def run(cfg: AppConfig) -> None:
             sys.exit(1)
 
 
-def _snapshot(root: Path):  # noqa: ANN202
-    from frob.graph import build_graph, load_graph
-
-    cache = root / _CACHE_REL
-    loaded = load_graph(cache)
-    if loaded.is_ok:
-        return loaded.danger_ok
-    built = build_graph(root, cache)
-    if built.is_err:
-        _log.error("release: graph build failed: %s", built.danger_err)
-        sys.exit(1)
-    return built.danger_ok
-
-
 def _version(root: Path) -> str:
     import tomllib
 
@@ -68,7 +53,7 @@ def _stamp(root: Path) -> None:
     from frob.release import stamp
 
     version = _version(root)
-    result = stamp(root, _snapshot(root), version)
+    result = stamp(root, load_or_build_snapshot(root, log_context="release"), version)
     if result.is_err:
         _log.error("release stamp failed: %s", result.danger_err)
         sys.exit(1)
@@ -87,7 +72,7 @@ def _check(root: Path) -> None:
         sys.exit(1)
     manifest = manifest_result.danger_ok
     version = _version(root)
-    bump = diff_class(manifest, _snapshot(root))
+    bump = diff_class(manifest, load_or_build_snapshot(root, log_context="release"))
     need = required_version(manifest.version, bump)
     ok = need.is_ok and satisfies(version, need.danger_ok)
     target = need.danger_ok if need.is_ok else "?"

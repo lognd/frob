@@ -13,17 +13,15 @@ command over it.
 from __future__ import annotations
 
 import contextlib
-import sys
 import tomllib
 from datetime import date
 from pathlib import Path
 
+from frob.app._snapshot import load_or_build_snapshot
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
-
-_CACHE_REL = Path(".frob") / "cache.db"
 
 
 def _current_version(root: Path) -> str:
@@ -45,21 +43,6 @@ def _current_version(root: Path) -> str:
     return version if isinstance(version, str) else "0.0.0"
 
 
-def _load_snapshot(root: Path):  # noqa: ANN201
-    """Load (building if stale) the graph snapshot `debt` lists entries from."""
-    from frob.graph import build_graph, load_graph
-
-    cache = root / _CACHE_REL
-    loaded = load_graph(cache)
-    if loaded.is_ok:
-        return loaded.danger_ok
-    built = build_graph(root, cache)
-    if built.is_err:
-        _log.error("debt: graph build failed: %s", built.danger_err)
-        sys.exit(1)
-    return built.danger_ok
-
-
 # frob:ticket T-0563
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
@@ -76,7 +59,7 @@ def run(cfg: AppConfig) -> None:
     # `_log.info` channel now that both go through the logger.
     ctx = quiet_stdout_logs() if cfg.debt_json else contextlib.nullcontext()
     with ctx:
-        snapshot = _load_snapshot(root)
+        snapshot = load_or_build_snapshot(root, log_context="debt")
         entries = list_debt(
             snapshot,
             current_date=date.today().isoformat(),

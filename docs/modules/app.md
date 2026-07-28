@@ -189,6 +189,29 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
   rather than taking `AppConfig`, dispatched the same way `bind_runner`
   is.
 
+## Shared graph-snapshot helper (T-1085)
+
+`frob.app._snapshot` centralizes the "load `root`'s cached graph snapshot,
+building it fresh on a missing/stale cache, exit(1) on a hard build
+failure" shape three runners (`debt_runner`, `deprecated_runner`,
+`release_runner`) each carried as a byte-identical private copy before
+T-1085's extraction (an `abstraction-opportunity` finding from the arch
+package's own self-scan, T-0393/T-1067). `perf_runner`'s own
+`_load_snapshot` deliberately stays separate -- it always rebuilds
+unconditionally rather than trying the cache first, a genuinely different
+freshness posture for `heat`, not an overlooked fourth duplicate.
+
+<!-- frob:describes src/frob/app/_snapshot.py::load_or_build_snapshot -->
+<!-- frob:describes src/frob/app/_snapshot.py::CACHE_REL -->
+
+- `CACHE_REL` -- the shared `.frob/cache.db` relative path every
+  graph-backed runner resolves its snapshot cache against.
+- `load_or_build_snapshot(root, *, log_context)` -- try `frob.graph.
+  load_graph(root / CACHE_REL)` first; on a miss/stale cache, `frob.graph.
+  build_graph` fresh; `sys.exit(1)` on a hard build error, logging
+  `log_context` (`"debt"`/`"deprecated"`/`"release"`) so each caller's own
+  identity survives the shared code path.
+
 ## Shared styling helper (T-0179)
 
 `frob.app._style` centralizes ANSI-color decisions for every runner's

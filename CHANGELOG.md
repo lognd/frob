@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.238.0] - unreleased
+
+- T-1085: arch: abstraction-opportunity app package extraction (T-0393/T-1067 remainder, 5 findings)
+
 ## [0.237.0] - unreleased
 
 - T-1122: arch: extract doable/leases/scope-breadth family from tickets/__init__.py (T-1108 partial)
