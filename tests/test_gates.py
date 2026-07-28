@@ -7577,7 +7577,8 @@ class TestFixEngineTierA:
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/gates/_fix_engine.py::fix_doc007_dotted_form kind="unit"
-        # frob:tests src/frob/gates/_docptr.py::_tests_target_shape_violations kind="unit"
+        # frob:tests src/frob/gates/_docptr.py::_tests_target_shape_violations \
+        # kind="unit"
         from frob.gates import apply_tier_a_fixes, doc006_gate
         from frob.tickets import TicketQueue
 
@@ -7611,7 +7612,9 @@ class TestFixEngineTierA:
 
         root = tmp_path / "repo"
         (root / "src" / "pkg").mkdir(parents=True)
-        content = "# frob:tests tests/test_mod.py::TestX.test_y\ndef real():\n    pass\n"
+        content = (
+            "# frob:tests tests/test_mod.py::TestX.test_y\ndef real():\n    pass\n"
+        )
         (root / "src" / "pkg" / "mod.py").write_text(content, encoding="utf-8")
         snapshot = self._snap(root)
         applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
@@ -7631,7 +7634,9 @@ class TestFixEngineTierA:
         root = tmp_path / "repo"
         (root / "docs").mkdir(parents=True)
         (root / "src").mkdir()
-        (root / "docs" / "m.md").write_text("# Title\n\n## Real Heading\n", encoding="utf-8")
+        (root / "docs" / "m.md").write_text(
+            "# Title\n\n## Real Heading\n", encoding="utf-8"
+        )
         (root / "src" / "m.py").write_text(
             "# frob:doc docs/m.md#real-headin\ndef f():\n    return 1\n",
             encoding="utf-8",
@@ -7690,7 +7695,9 @@ class TestFixEngineTierA:
         root = tmp_path / "repo"
         (root / "docs").mkdir(parents=True)
         (root / "src").mkdir()
-        (root / "docs" / "m.md").write_text("# Title\n\n## Real Heading\n", encoding="utf-8")
+        (root / "docs" / "m.md").write_text(
+            "# Title\n\n## Real Heading\n", encoding="utf-8"
+        )
         (root / "src" / "m.py").write_text(
             "# frob:doc docs/m.md#totally-unrelated-slug\ndef f():\n    return 1\n",
             encoding="utf-8",
@@ -7703,11 +7710,10 @@ class TestFixEngineTierA:
 
     # -- acceptance [2]: TICK002 draft renumber -----------------------------
 
-    def test_tick002_renumbers_draft_and_reverifies_clean(
-        self, tmp_path: Path
-    ) -> None:
+    def test_tick002_renumbers_draft_and_reverifies_clean(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_fix_engine.py::fix_tick002_renumber kind="unit"
-        # frob:tests src/frob/gates/_tickets_gate.py::_tick002_draft_on_default kind="unit"
+        # frob:tests src/frob/gates/_tickets_gate.py::_tick002_draft_on_default \
+        # kind="unit"
         import subprocess
 
         from frob.gates import tickets_gate
@@ -11372,8 +11378,7 @@ class TestFfiBoundaryGate:
     `# frob:callee-raises` declaration on every call made through a
     ctypes-loaded library handle."""
 
-    # frob:tests \
-    # tests/test_gates.py::TestFfiBoundaryGate.test_pyo3_drift_fires_ffi001
+    # frob:tests tests/test_gates.py::TestFfiBoundaryGate.test_pyo3_drift_fires_ffi001
     def test_pyo3_drift_fires_ffi001(self, tmp_path: Path) -> None:
         """The Rust side constructs PyValueError but the `.pyi` stub's
         `frob:raises` omits it -- FFI001 names both sides."""
@@ -11615,3 +11620,101 @@ class TestErrorsAsValuesAdvisory:
         assert not any(
             s.category == "errors-as-values-recommended" for s in suggestions
         )
+
+
+# frob:ticket T-1155
+class TestNewGateRuleDynamicResolution:
+    """T-1155: `_new_gate_rule_acceptance.new_gate_rule_ids` must locate
+    `_KNOWN_GATE_RULES` dynamically among `src/frob/gates/*.py` (any file,
+    not a hard-coded path) and raise loudly -- never warn-and-skip -- when
+    the literal cannot be resolved to exactly one candidate. Regression
+    fixture for the T-1153 incident: the preflight silently going dark
+    after T-1139 moved the literal from `gates/__init__.py` to
+    `gates/_waive.py`."""
+
+    def _git(self, root: Path, *args: str) -> None:
+        subprocess.run(["git", *args], cwd=root, check=True, capture_output=True)
+
+    def _init_repo(self, root: Path) -> None:
+        root.mkdir(parents=True, exist_ok=True)
+        self._git(root, "init", "-q", "-b", "main")
+        self._git(root, "config", "user.email", "test@example.com")
+        self._git(root, "config", "user.name", "Test")
+
+    # frob:tests tests/test_gates.py::TestNewGateRuleDynamicResolution.test_resolves_when_literal_lives_in_a_different_file  # noqa: E501
+    def test_resolves_when_literal_lives_in_a_different_file(
+        self, tmp_path: Path
+    ) -> None:
+        """The literal starts life in `__init__.py`, then moves to
+        `_waive.py` (mirroring the real T-1139 move) -- new-rule detection
+        must keep working across that boundary revision with no code
+        change of its own, proving resolution is dynamic, not tied to
+        either specific filename."""
+        from frob.tickets._new_gate_rule_acceptance import new_gate_rule_ids
+
+        self._init_repo(tmp_path)
+        gates_dir = tmp_path / "src" / "frob" / "gates"
+        gates_dir.mkdir(parents=True)
+        base_source = (
+            "_KNOWN_GATE_RULES = frozenset(\n"
+            "    {\n"
+            '        "COV001",\n'
+            '        "TEST001",\n'
+            "    }\n"
+            ")\n"
+        )
+        (gates_dir / "__init__.py").write_text(base_source, encoding="utf-8")
+        self._git(tmp_path, "add", "-A")
+        self._git(tmp_path, "commit", "-q", "-m", "base: literal lives in __init__.py")
+
+        # Move the literal to _waive.py, exactly like T-1139, and add a
+        # new rule id at the same time.
+        (gates_dir / "__init__.py").write_text(
+            "from frob.gates._waive import _KNOWN_GATE_RULES\n", encoding="utf-8"
+        )
+        (gates_dir / "_waive.py").write_text(
+            base_source.replace(
+                '        "TEST001",\n', '        "TEST001",\n        "NEWRULE001",\n'
+            ),
+            encoding="utf-8",
+        )
+
+        found = new_gate_rule_ids(tmp_path, base_ref="main")
+        assert found == ("NEWRULE001",)
+
+    # frob:tests tests/test_gates.py::TestNewGateRuleDynamicResolution.test_raises_when_literal_missing_from_every_candidate  # noqa: E501
+    def test_raises_when_literal_missing_from_every_candidate(
+        self, tmp_path: Path
+    ) -> None:
+        """No `src/frob/gates/*.py` file carries the `_KNOWN_GATE_RULES`
+        literal at all -- a structural resolution failure that must raise
+        `GateRuleRegistryUnresolvable` loudly, never warn-and-skip the
+        way the pre-T-1155 hard-coded-path version did."""
+        from frob.tickets._new_gate_rule_acceptance import (
+            GateRuleRegistryUnresolvable,
+            new_gate_rule_ids,
+        )
+
+        self._init_repo(tmp_path)
+        gates_dir = tmp_path / "src" / "frob" / "gates"
+        gates_dir.mkdir(parents=True)
+        (gates_dir / "__init__.py").write_text("# nothing here\n", encoding="utf-8")
+        self._git(tmp_path, "add", "-A")
+        self._git(tmp_path, "commit", "-q", "-m", "base: no registry literal anywhere")
+
+        with pytest.raises(GateRuleRegistryUnresolvable):
+            new_gate_rule_ids(tmp_path, base_ref="main")
+
+    def test_no_gates_package_at_all_is_empty_not_a_raise(self, tmp_path: Path) -> None:
+        """A checkout with no `src/frob/gates/` package at all (not a
+        frob-gates repo) is the pre-existing "nothing to detect" case,
+        distinct from a package that HAS the directory but lost the
+        literal -- must stay `()`, never raise."""
+        from frob.tickets._new_gate_rule_acceptance import new_gate_rule_ids
+
+        self._init_repo(tmp_path)
+        (tmp_path / "README.md").write_text("hi\n", encoding="utf-8")
+        self._git(tmp_path, "add", "-A")
+        self._git(tmp_path, "commit", "-q", "-m", "init")
+
+        assert new_gate_rule_ids(tmp_path, base_ref="main") == ()

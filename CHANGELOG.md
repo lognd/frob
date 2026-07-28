@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.257.0] - unreleased
+
+- T-1155: gates: new-gate-rule-acceptance preflight lost _KNOWN_GATE_RULES after the _waive.py move -- resolve dynamically, fail loudly on miss
+
 ## [0.256.0] - unreleased
 
 - T-1150: strata: frob sys sync-interface -- measure and update interface= attrs mechanically (SYS104-mandatory upkeep)

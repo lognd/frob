@@ -658,10 +658,23 @@ whether recorded evidence is adversarial against the diff, never whether
 the diff is reachable from production at all.
 
 `frob.tickets._new_gate_rule_acceptance.new_gate_rule_ids` detects, via a
-diff-aware scan of `src/frob/gates/__init__.py`'s `_KNOWN_GATE_RULES`
-frozenset literal (the one registry every gate rule id must be listed in),
-any rule id present in the CURRENT working tree that was not present at
-`base_ref`'s tip. `frob.tickets._done_transition_guard` runs this check
+diff-aware scan of `_KNOWN_GATE_RULES`'s frozenset literal (the one
+registry every gate rule id must be listed in), any rule id present in the
+CURRENT working tree that was not present at `base_ref`'s tip. **T-1155**:
+the literal's home file within `src/frob/gates/` is resolved DYNAMICALLY --
+every direct `*.py` child of that directory is a candidate, and whichever
+one actually carries the literal is used (`_locate_known_rules_in_tree`),
+so a future move within the package (as happened once already, T-1139:
+`gates/__init__.py` -> `gates/_waive.py`) needs no matching change here. If
+the literal cannot be resolved to exactly one candidate in the CURRENT
+tree, `new_gate_rule_ids` raises `GateRuleRegistryUnresolvable` rather than
+degrading to a silent skip -- the T-1153 incident this closes: the
+pre-T-1155 hard-coded single-file path went stale after the T-1139 move and
+the preflight warned-and-skipped forever after, a detection check silently
+disabling itself. An unresolvable `base_ref` (or an ambiguous match AT that
+revision specifically) still degrades to `None`/skip, unchanged -- that
+remains a git-side "cannot tell" condition, not a registry-structure
+failure. `frob.tickets._done_transition_guard` runs this check
 UNCONDITIONALLY on every `DONE` transition (both direct `frob ticket close`
 and `frob ticket land`'s finalize-and-close step, which calls the same
 `transition(..., DONE)` internally -- no separate land-time wiring needed,
@@ -673,6 +686,10 @@ and a PASS marker, case-insensitive) -- proving the rule fires through the
 PRODUCTION invocation, not merely a pure-function unit test. A ticket
 missing this is refused with `TicketError.NewGateRuleUnaccepted` /
 `LandError` (via the same `transition` call land's finalize step makes).
+
+`GateRuleRegistryUnresolvable` (frob.tickets._new_gate_rule_acceptance) is
+the exception this structural-corruption case raises; it is meant to be
+seen -- do not catch and re-degrade it to a skip.
 
 **v1 scope, disclosed**: the detector is scoped to `_KNOWN_GATE_RULES`
 specifically (the one registry file every `Violation`-producing gate rule

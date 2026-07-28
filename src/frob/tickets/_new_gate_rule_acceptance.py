@@ -22,16 +22,25 @@ close/land-time preflight (wired into `_done_transition_guard`, same site
 acceptance criterion reads as a before-fails/after-passes fixture proof.
 
 Deliberately narrow in v1 (disclosed, not silently dropped): the check is
-FILE-SCOPED to `src/frob/gates/__init__.py`'s `_KNOWN_GATE_RULES` frozenset
-literal (the one registry every gate rule id must be listed in, `frob.gates`
-module comment: "Every rule id any Violation-producing gate can emit") --
-a rule introduced entirely outside that frozenset (e.g. a bare `frob sys
-audit` SYS1xx/SYS2xx/REL2xx id that never gets folded into
-`_KNOWN_GATE_RULES`) is not detected by this pass alone. T-0756's own
-SELFAUDIT001 rule (`frob.gates.sys_gate`) folds exactly those families INTO
-`_KNOWN_GATE_RULES` for this reason, closing that gap for the families this
-ticket's own scope covers; a rule family added some OTHER way in the future
-is a known residual gap, not silently assumed covered."""
+scoped to `_KNOWN_GATE_RULES`, the one frozenset literal every gate rule id
+must be listed in (`frob.gates` module comment: "Every rule id any
+Violation-producing gate can emit") -- a rule introduced entirely outside
+that frozenset (e.g. a bare `frob sys audit` SYS1xx/SYS2xx/REL2xx id that
+never gets folded into `_KNOWN_GATE_RULES`) is not detected by this pass
+alone. T-0756's own SELFAUDIT001 rule (`frob.gates.sys_gate`) folds exactly
+those families INTO `_KNOWN_GATE_RULES` for this reason, closing that gap
+for the families this ticket's own scope covers; a rule family added some
+OTHER way in the future is a known residual gap, not silently assumed
+covered.
+
+T-1155: the literal's HOME FILE within `src/frob/gates/` used to be
+hard-coded (`gates/__init__.py`) and went silently stale the moment T-1139
+moved it to `gates/_waive.py` -- the preflight kept running, found nothing
+at the stale path, and warned-and-skipped forever after, a detection check
+silently disabling itself. Resolution is now dynamic across every direct
+`*.py` child of `src/frob/gates/` (`_locate_known_rules_in_tree`), and a
+registry that cannot be found in exactly one candidate raises
+`GateRuleRegistryUnresolvable` rather than degrading to a silent skip."""
 # frob:waive INV006 reason="module-docstring exclusivity-vocabulary hit is \
 # source-level design-rationale prose describing already-implemented entry-point \
 # behavior, verifiable by reading the code it annotates and the T-0756 close/land \
@@ -50,11 +59,16 @@ from frob.tickets._models import Ticket
 
 _log = get_logger(__name__)
 
-#: The one file every gate rule id must be registered in
-#: (`src/frob/gates/__init__.py`'s `_KNOWN_GATE_RULES` frozenset) -- the
-#: scan target this module's diff-aware detection is scoped to (module
-#: docstring's v1 GAP STATEMENT).
-_GATES_REL_PATH = "src/frob/gates/__init__.py"
+#: The package every gate rule id must be registered somewhere inside
+#: (`_KNOWN_GATE_RULES`'s frozenset literal) -- T-1155: this used to be a
+#: single hard-coded file path (`src/frob/gates/__init__.py`) and went
+#: silently stale the moment T-1139 moved the literal to `gates/_waive.py`
+#: (the preflight warned-and-skipped forever after, a detection check
+#: silently disabling itself). Resolution is now DYNAMIC: every direct
+#: `*.py` child of this directory is a candidate, and whichever one
+#: actually carries the literal (`_locate_known_rules_in_tree`) is used,
+#: so a future move within the package needs no matching change here.
+_GATES_DIR_REL = "src/frob/gates"
 
 #: Matches the `_KNOWN_GATE_RULES = frozenset({ ... })` literal block,
 #: non-greedily up to its own closing `}` -- the block contains only
@@ -81,6 +95,89 @@ _FAIL_MARKER = "fail"
 _PASS_MARKER = "pass"
 
 
+# frob:doc docs/modules/gates.md#new-gate-rule-acceptance-policy-t-0756
+class GateRuleRegistryUnresolvable(RuntimeError):
+    """Raised when `_KNOWN_GATE_RULES` cannot be located in exactly one
+    `*.py` file directly under `src/frob/gates/` in the CURRENT working
+    tree -- zero candidates (the registry vanished from the whole
+    package) or more than one (an ambiguous duplicate literal). T-1155:
+    this is a structural corruption of the gate-rule registry every rule
+    id must be enumerable through, never a routine "cannot tell, skip"
+    condition the way an unresolvable `base_ref` is -- callers must let
+    it propagate as a loud failure, not catch it and silently disable
+    new-rule detection the way the pre-T-1155 hard-coded-path version
+    did (observed going dark for real after the T-1139 gates split,
+    T-1155's own Description)."""
+
+
+def _gates_candidate_files(root: Path) -> tuple[Path, ...]:
+    """Every direct `*.py` child of `src/frob/gates/` under `root`,
+    sorted for a deterministic scan order -- the full candidate set
+    `_locate_known_rules_in_tree` searches for the `_KNOWN_GATE_RULES`
+    literal; empty if the package directory itself does not exist
+    (a non-frob-gates checkout, distinct from the literal missing from an
+    existing package -- see `new_gate_rule_ids`)."""
+    gates_dir = root / _GATES_DIR_REL
+    if not gates_dir.is_dir():
+        return ()
+    return tuple(sorted(p for p in gates_dir.glob("*.py") if p.is_file()))
+
+
+def _locate_known_rules_in_tree(root: Path) -> tuple[Path, frozenset[str]] | None:
+    """The single `src/frob/gates/*.py` file (relative to `root`) whose
+    text contains the `_KNOWN_GATE_RULES` literal, paired with the rule
+    ids it resolves to -- `None` if zero or more than one candidate
+    file matches (either is a structural resolution failure; see
+    `GateRuleRegistryUnresolvable`'s docstring for why both collapse to
+    the same "cannot resolve" outcome rather than picking one
+    arbitrarily)."""
+    matches: list[tuple[Path, frozenset[str]]] = []
+    for candidate in _gates_candidate_files(root):
+        try:
+            text = candidate.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        rules = _extract_known_rules(text)
+        if rules is not None:
+            matches.append((candidate, rules))
+    if len(matches) != 1:
+        return None
+    return matches[0]
+
+
+def _known_rules_at_revision(root: Path, revision: str) -> frozenset[str] | None:
+    """The `_KNOWN_GATE_RULES` frozenset as it read at `revision`, found
+    by trying `git show <revision>:<candidate>` for EVERY current-tree
+    `src/frob/gates/*.py` candidate name, not just the one file it
+    currently lives in -- this is what lets a rename/move (T-1139:
+    `__init__.py` -> `_waive.py`) resolve correctly across the boundary
+    revision instead of reading "file did not exist yet" and treating
+    every existing rule as spuriously new. `None` if zero or more than
+    one candidate resolves --
+    matches the pre-T-1155 single-file behavior exactly: an unresolvable
+    `revision`, a path that did not exist there yet, and an ambiguous
+    multi-file match all degrade to the same fail-open "cannot tell, skip
+    the obligation" outcome (`new_gate_rule_ids`'s docstring), never a
+    silently-assumed-empty registry."""
+    matches: list[frozenset[str]] = []
+    for candidate in _gates_candidate_files(root):
+        rel = candidate.relative_to(root).as_posix()
+        spawned = run_argv(
+            ("git", "-C", str(root), "show", f"{revision}:{rel}"), timeout_s=15
+        )
+        if spawned.is_err:
+            continue
+        result = spawned.danger_ok
+        if result.returncode != 0:
+            continue
+        rules = _extract_known_rules(result.stdout)
+        if rules is not None:
+            matches.append(rules)
+    if len(matches) != 1:
+        return None
+    return matches[0]
+
+
 def _extract_known_rules(text: str) -> frozenset[str] | None:
     """Every rule id quoted inside `text`'s `_KNOWN_GATE_RULES` frozenset
     literal, or `None` if the literal itself cannot be found (a malformed
@@ -96,50 +193,22 @@ def _extract_known_rules(text: str) -> frozenset[str] | None:
     return frozenset(_QUOTED_RE.findall("\n".join(lines)))
 
 
-def _read_gates_file_at_revision(root: Path, revision: str) -> str | None:
-    """`git show <revision>:src/frob/gates/__init__.py` under `root`, or
-    `None` on any git failure (not a git work tree, `revision` unresolvable,
-    the path did not exist at that revision -- all collapsed to the same
-    "cannot read" outcome; `new_gate_rule_ids` treats that as unknown, not
-    as 'the file was empty there', so a brand-new gates module is not
-    silently misread as having zero pre-existing rules by accident)."""
-    spawned = run_argv(
-        ("git", "-C", str(root), "show", f"{revision}:{_GATES_REL_PATH}"), timeout_s=15
-    )
-    if spawned.is_err:
-        _log.warning(
-            "new-gate-rule-acceptance: git show %s:%s failed to spawn, "
-            "skipping new-rule detection",
-            revision,
-            _GATES_REL_PATH,
-        )
-        return None
-    result = spawned.danger_ok
-    if result.returncode != 0:
-        _log.debug(
-            "new-gate-rule-acceptance: %s did not exist at %s (exit %d) -- "
-            "treating as a brand-new file with no prior rules",
-            _GATES_REL_PATH,
-            revision,
-            result.returncode,
-        )
-        return ""
-    return result.stdout
-
-
 # frob:doc docs/modules/gates.md#new-gate-rule-acceptance-policy-t-0756
 # frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds.test_detects_freshly_added_rule_id  # noqa: E501
 # frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds.test_no_new_rules_is_empty  # noqa: E501
 # frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds.test_unresolvable_base_ref_degrades_to_none  # noqa: E501
+# frob:tests tests/test_gates.py::TestNewGateRuleDynamicResolution.test_resolves_when_literal_lives_in_a_different_file  # noqa: E501
+# frob:tests tests/test_gates.py::TestNewGateRuleDynamicResolution.test_raises_when_literal_missing_from_every_candidate  # noqa: E501
 def new_gate_rule_ids(root: Path, base_ref: str = "main") -> tuple[str, ...] | None:
     """Rule ids present in the CURRENT working tree's `_KNOWN_GATE_RULES`
-    (`src/frob/gates/__init__.py` under `root`) that were NOT present in
+    (dynamically located among `src/frob/gates/*.py` under `root`,
+    T-1155 -- see `_locate_known_rules_in_tree`) that were NOT present in
     that same frozenset at `base_ref`'s tip -- the T-0756 new-rule
     detector.
 
-    `None` (never an empty tuple) means "cannot tell" -- either revision's
-    frozenset literal could not be read/parsed at all (missing file,
-    unresolvable `base_ref`, a malformed gates module). Callers must treat
+    `None` (never an empty tuple) means "cannot tell, from `base_ref`'s
+    side only" -- `base_ref` itself is unresolvable, or its own revision
+    of the registry is ambiguous across candidates. Callers must treat
     `None` as fail-OPEN (skip the acceptance obligation entirely) rather
     than fail-closed: unlike `frob.tickets._live_tracker`'s citation scan
     (which only ever narrows an already-nonempty finding set), this
@@ -148,36 +217,40 @@ def new_gate_rule_ids(root: Path, base_ref: str = "main") -> tuple[str, ...] | N
     hiccup silently blocks unrelated ticket closes repo-wide, which is a
     worse failure mode than occasionally missing a genuinely new rule id
     (T-0756's own Done report discloses this as a deliberate v1
-    trade-off, not an oversight)."""
-    gates_path = root / _GATES_REL_PATH
-    if not gates_path.is_file():
-        return ()
-    try:
-        current_text = gates_path.read_text(encoding="utf-8")
-    except OSError:
-        _log.warning(
-            "new-gate-rule-acceptance: could not read %s, skipping new-rule detection",
-            gates_path,
+    trade-off, not an oversight).
+
+    T-1155: this is now the ONLY "cannot tell" outcome left -- a registry
+    that cannot be found anywhere in the CURRENT tree is a different,
+    structural failure mode (the whole package lost the literal, not a
+    git-side ambiguity) and raises `GateRuleRegistryUnresolvable` instead
+    of returning `None`, so the caller sees a loud failure rather than a
+    silently-skipped check (the exact incident this ticket closes -- see
+    the module docstring's T-1153 observation)."""
+    located = _locate_known_rules_in_tree(root)
+    if located is None:
+        if not _gates_candidate_files(root):
+            # No src/frob/gates/ package here at all -- not a frob-gates
+            # checkout, nothing to detect (distinct from the package
+            # existing but having lost the literal, which raises below).
+            return ()
+        _log.error(
+            "new-gate-rule-acceptance: _KNOWN_GATE_RULES literal could not "
+            "be resolved to exactly one file under %s/ -- registry is "
+            "missing or ambiguous, refusing to silently skip detection",
+            _GATES_DIR_REL,
         )
-        return None
-    current = _extract_known_rules(current_text)
-    if current is None:
-        _log.warning(
-            "new-gate-rule-acceptance: _KNOWN_GATE_RULES literal not found "
-            "in %s, skipping new-rule detection",
-            gates_path,
+        raise GateRuleRegistryUnresolvable(
+            f"_KNOWN_GATE_RULES not found in exactly one *.py file under "
+            f"{root / _GATES_DIR_REL} -- fix the registry before closing "
+            f"any ticket"
         )
-        return None
-    base_text = _read_gates_file_at_revision(root, base_ref)
-    if base_text is None:
-        return None
-    base = _extract_known_rules(base_text)
+    _, current = located
+    base = _known_rules_at_revision(root, base_ref)
     if base is None:
         _log.warning(
-            "new-gate-rule-acceptance: _KNOWN_GATE_RULES literal not found "
-            "at %s:%s, skipping new-rule detection",
+            "new-gate-rule-acceptance: _KNOWN_GATE_RULES ambiguous across "
+            "candidates at %s, skipping new-rule detection",
             base_ref,
-            _GATES_REL_PATH,
         )
         return None
     return tuple(sorted(current - base))
@@ -217,4 +290,8 @@ def missing_acceptance_for_new_rules(
     return new_rule_ids
 
 
-__all__ = ["missing_acceptance_for_new_rules", "new_gate_rule_ids"]
+__all__ = [
+    "GateRuleRegistryUnresolvable",
+    "missing_acceptance_for_new_rules",
+    "new_gate_rule_ids",
+]

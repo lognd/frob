@@ -2500,6 +2500,7 @@ store tickets_ledger : trusted {
     attr interface=FROB_AGENT_ENV;
     attr interface=FROB_WORKTREE_ENV;
     attr interface=FailureEntry;
+    attr interface=GateRuleRegistryUnresolvable;
     attr interface=JOURNAL_DIRNAME;
     attr interface=LEASES_DIRNAME;
     attr interface=LEASE_TTL_SECONDS;
@@ -3646,6 +3647,7 @@ node testsuite : trusted {
     attr interface=TestNewBodyFile;
     attr interface=TestNewDropFailAutoCommit;
     attr interface=TestNewFileCarveOut;
+    attr interface=TestNewGateRuleDynamicResolution;
     attr interface=TestNewGateRuleIds;
     attr interface=TestNewTicket;
     attr interface=TestNewerWinnerQualifiedPreferenceProperty;

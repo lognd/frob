@@ -1728,6 +1728,7 @@
     "src/frob/tickets/_mutation_evidence.py::ConfirmatoryFinding": "0f64c6bade28b890f53af1313630fd0699d22f43d27b257b4b9487fa7f5d8010",
     "src/frob/tickets/_mutation_evidence.py::MutationEvidenceError": "4a83146dd58fbec5716d49ec92a9b52e4cb098768765a9e0bd475dad508cde81",
     "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence": "4eb7d825600c3b257f34abf39502e99f15049e9190adb04f9b9fa2c08bad0304",
+    "src/frob/tickets/_new_gate_rule_acceptance.py::GateRuleRegistryUnresolvable": "201cb518e8a73a7d8a5156214bd3341950f64115f15d5d977df771d2fc2ea2a3",
     "src/frob/tickets/_new_gate_rule_acceptance.py::missing_acceptance_for_new_rules": "cb259847521c252e7f378e97e5cb9a7f7f7a409ca05362bc852f0819a5524547",
     "src/frob/tickets/_new_gate_rule_acceptance.py::new_gate_rule_ids": "b9b2cf216486574b4fa8492c748ee79f27aeb16cafe6341621cedccaffd7667d",
     "src/frob/tickets/_new_renumber.py::finalize_draft": "fabc7d8cd6074c7a259202ce067e9bc56427516fddf119086d379eea9bab5a61",
@@ -1861,5 +1862,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.256.0"
+  "version": "0.257.0"
 }
