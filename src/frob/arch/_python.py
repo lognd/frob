@@ -1129,6 +1129,69 @@ def _is_dispatch_family(
     return len(linked) == len(names)
 
 
+# T-1068: the fixed, small set of per-language-adapter name tags a same-
+# signature abstraction-opportunity group's members can carry -- mirrors
+# frob.arch's own per-language walker convention (`_py_*`/`_rust_*`/
+# `_kt_*`/`_ts_*`/`_cpp_*`, e.g. `arch/_rust.py`'s `_rust_build_module`/
+# `_kt_build_module`/`_ts_build_module` trio) rather than any project-wide
+# naming scheme, so this stays a narrow, reviewable allowlist, not a
+# guess at what "looks like a language tag".
+_LANGUAGE_TAGS = ("py", "rust", "kt", "ts", "cpp")
+
+#: Matches a language tag as an underscore-delimited token anywhere in a
+#: function name (`_LANGUAGE_TAG_RE.search("_kt_this_field_name")` ->
+#: `"kt"`) -- underscore-delimited on BOTH sides so `_ts_...`/`..._ts_...`
+#: match but an incidental substring like `results_summary` (no
+#: underscore before `ts`) does not. This is the STRUCTURAL rigor T-0360's
+#: own `_is_dispatch_family` docstring calls out (no raw text proximity):
+#: the tag must occupy a real name-segment boundary, not just appear
+#: somewhere in the string.
+_LANGUAGE_TAG_RE = re.compile(
+    r"(?:^|_)(?P<tag>" + "|".join(_LANGUAGE_TAGS) + r")(?:_|$)"
+)
+
+
+def _language_tag(fname: str) -> str | None:
+    """The single language tag (T-1068, `_LANGUAGE_TAGS`) `fname` carries as
+    an underscore-delimited prefix/infix segment, or `None` when it carries
+    none. `_LANGUAGE_TAG_RE.search` finds the FIRST such segment only --
+    good enough here since every real per-language walker name in this
+    codebase carries exactly one tag (`_kt_build_module`, never a name
+    combining two)."""
+    m = _LANGUAGE_TAG_RE.search(fname)
+    return m.group("tag") if m else None
+
+
+def _is_language_parity_family(members: list[tuple[str, str]]) -> bool:
+    """Whether a shared-signature `members` group (T-1068, filed from
+    T-0393) is an intentional per-language-parity family rather than an
+    accidental duplication: every member's name carries a language tag
+    (`_language_tag`) AND every member carries a DIFFERENT tag from the
+    fixed `_LANGUAGE_TAGS` set -- e.g. `_rust_build_module`/
+    `_kt_build_module`/`_ts_build_module` each independently walking one
+    language's own tree-sitter grammar to build the same
+    `NormalizedModule` shape. This is NOT the T-0360 dispatch-table shape
+    (`_is_dispatch_family`, no common call site is required here) but the
+    same false-positive class: the shared signature is the point --
+    `frob.lang.LanguageAdapter`'s per-language contract -- not a missing
+    abstraction to extract.
+
+    Distinctness is the load-bearing check: a group of 3 all-`_py_`-tagged
+    helpers sharing a signature is NOT parity (three python functions
+    happen to collide, exactly the accidental-duplication case this
+    detector exists to catch) -- only genuine one-member-per-language
+    spread is excluded. A group with even one untagged member (no
+    recognized language segment at all) is never excluded either: with no
+    tag to compare, "parity" cannot be established structurally, so the
+    group falls through to the normal signature/body-similarity checks."""
+    if len(members) < 2:
+        return False
+    tags = [_language_tag(fname) for _, fname in members]
+    if any(tag is None for tag in tags):
+        return False
+    return len(set(tags)) == len(tags)
+
+
 # T-0370: types so ubiquitous that sharing one carries no abstraction
 # signal on its own -- `(str) -> str`, `(AppConfig) -> None`, and similar
 # shapes collide across dozens of semantically-unrelated functions purely
@@ -1330,7 +1393,12 @@ def _check_abstraction_opportunities(
     unrelated functions into one helper just because they happen to take
     the same primitive types. Groups whose members are all reachable from
     one common caller/registry (`_is_dispatch_family`, T-0360) are
-    intentional dispatch families and are still skipped first."""
+    intentional dispatch families and are still skipped first, as are
+    groups whose members are each a distinctly-tagged per-language walker
+    (`_is_language_parity_family`, T-1068) -- the same false-positive
+    class filed from T-0393 (arch's own `_py_*`/`_rust_*`/`_kt_*`/`_ts_*`/
+    `_cpp_*` walker families sharing a signature by design, not by
+    accident)."""
     groups: dict[tuple[tuple[str, ...], str], list[tuple[str, str, str]]] = defaultdict(
         list
     )
@@ -1344,6 +1412,8 @@ def _check_abstraction_opportunities(
             continue
         members = [(rel, fname) for rel, fname, _ in members_with_body]
         if _is_dispatch_family(members, all_dispatch_refs):
+            continue
+        if _is_language_parity_family(members):
             continue
         flagged = _abstraction_group_evidence(ptypes, ret, members_with_body)
         if len(flagged) < 2:

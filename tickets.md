@@ -1576,7 +1576,7 @@ its own right (see T-0395's sibling ticket).
 ```yaml
 id: T-1068
 title: 'arch: abstraction-opportunity language-parity exclusion (detector precision)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -1593,6 +1593,11 @@ scope_changes:
   reason: language-parity exclusion needs its detector tests updated in the same file
   actor: logan
   at: '2026-07-28'
+evidence:
+- tests/unit/test_arch.py::TestLanguageParityExclusion::test_one_member_per_language_not_flagged
+- tests/unit/test_arch.py::TestLanguageParityExclusion::test_duplicate_tag_within_group_still_flagged
+- tests/unit/test_arch.py::TestLanguageParityExclusion::test_untagged_member_within_group_still_flagged
+- tests/unit/test_arch.py::TestLanguageParityExclusion::test_tag_requires_underscore_boundary
 threat: null
 component: null
 ```
@@ -1610,6 +1615,71 @@ across a fixed small set of language modules, mirroring T-0360's
 structural-detection rigor (no raw text proximity). Re-measure
 abstraction-opportunity count after landing; the remaining non-language-
 family findings become the scope of a further per-file ticket.
+
+## Done report
+
+Filed from T-0393 (failed as too large for one pass): frob.arch's abstraction-opportunity
+detector (frob.arch._python._check_abstraction_opportunities) flags same-signature-3+ groups
+as missing abstractions unless T-0360's _is_dispatch_family exclusion applies. Re-measured this
+repo's own src/ before any change: 91 abstraction-opportunity findings via
+analyze_project(Path("src")). The remaining false-positive class the ticket names -- parallel
+per-language tree-sitter walkers (frob.arch's own _py_*/_rust_*/_kt_*/_ts_*/_cpp_* adapter
+functions independently implementing the same structural operation for each language, e.g.
+src/frob/arch/_rust.py's _rust_build_module/_kt_build_module/_ts_build_module trio) -- is a
+distinct false-positive shape from T-0360's dispatch-table case (no common call site links
+them; each is called only from its own language's PythonAdapter/RustAdapter/etc, never from
+one shared registry), so a new, narrow exclusion was added alongside it, not folded into it.
+
+Litmus-first: before implementing, confirmed the target false-positive groups genuinely fire
+under current code by direct measurement (analyze_project(Path("src")), grep over the returned
+suggestions for src/frob/arch/_rust.py) -- 91 total findings, including
+"_rust_build_module, _kt_build_module, _ts_build_module" and 4 other exact one-per-language
+groups.
+
+Added `_language_tag`/`_LANGUAGE_TAG_RE` (underscore-delimited `_py_`/`_rust_`/`_kt_`/`_ts_`/
+`_cpp_` segment match -- structural, not raw substring proximity, mirroring T-0360's own
+`_is_dispatch_family` rigor) and `_is_language_parity_family` (true only when EVERY member of
+a same-signature group carries a language tag AND every member's tag is DISTINCT from every
+other member's -- a same-tag duplicate, e.g. two `_rust_*` members, still flags as a genuine
+same-language collision, not parity) to `src/frob/arch/_python.py`, wired into
+`_check_abstraction_opportunities` right after the existing `_is_dispatch_family` check.
+
+Re-measured after: analyze_project(Path("src")) now reports 86 abstraction-opportunity findings
+(down from 91, 5 groups suppressed) -- confirmed the suppressed groups are exactly the clean
+one-per-language cases (e.g. the _rust_build_module/_kt_build_module/_ts_build_module trio no
+longer appears). Groups with a duplicate tag within them (e.g.
+_rust_err_call_type/_rust_type_text/_kt_type_text/_kt_throw_exception_type/_ts_annotation_text,
+two _rust_ and two _kt_ members) or an untagged member (e.g. lang/_extract.py's
+_effective_end_row alongside tagged siblings) correctly still fire -- these are the genuinely
+residual findings the ticket's own body already anticipates ("the remaining non-language-family
+findings become the scope of a further per-file ticket"), not something this ticket's narrower
+exclusion should have suppressed.
+
+Found while working, filed (out of scope, not fixed here):
+- T-1080: T-0666's archived evidence in tickets-archive.md names three
+  tests/test_vet.py node ids with a stale "_not_detected" suffix; the live tests are named
+  "_detected" (opposite) -- pre-existing on main, tickets-archive.md is outside T-1068's scope.
+- T-1081: gate:ARCH reports an unwaived ARCH102 on src/frob/gates/_waive.py (the
+  recent gates split's 35-export module) -- pre-existing on main, src/frob/gates/** is
+  explicitly out of scope for this ticket.
+
+No file under src/frob/gates/** was touched.
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_one_member_per_language_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_duplicate_tag_within_group_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_untagged_member_within_group_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_tag_requires_underscore_boundary` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1071 -->
 ```yaml
@@ -1815,3 +1885,43 @@ threat: null
 component: null
 ```
 Refile of T-0667's dead draft (T-0667 Done report cited a draft id that did not survive its land -- TICK006). SYS103's first full-tree measurement found 264 real unbound-module findings concentrated in tests/**, scripts/**, frob-core and strata-core sources; T-0667 scoped its shipped check to SYS102's existing footprint and documented the gap in docs/modules/strata.md 'Known gap'. This ticket closes it honestly: model those trees in design/frob.strata, or record reasoned exclusions -- never a silent scan-narrowing.
+
+<!-- ticket:T-1080 -->
+```yaml
+id: T-1080
+title: 'tickets: T-0666 evidence names stale _not_detected variants that were renamed
+  to _detected in tests/test_vet.py'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tickets-archive.md
+threat: null
+component: null
+```
+COV003 fires on main (independent of any in-progress worktree): T-0666's archived evidence in tickets-archive.md names tests/test_vet.py::TestCapabilityScanRustTaxonomyClosureResolution::test_struct_update_field_rebind_not_detected, TestCapabilityScanKotlinTaxonomyClosureResolution::test_destructuring_declaration_not_detected, and ::test_default_parameter_forwarding_callable_not_detected -- none of these resolve; the live tests are named test_struct_update_field_rebind_detected, test_destructuring_declaration_detected, and test_default_parameter_forwarding_callable_detected (opposite suffix). Fix the archived evidence ids to match the live test names, or waive COV003 with an honest reason if this is intentional historical drift.
+
+<!-- ticket:T-1081 -->
+```yaml
+id: T-1081
+title: 'arch: ARCH102 fires on newly-split src/frob/gates/_waive.py (35 exports, 4
+  clusters)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_waive.py
+threat: null
+component: null
+```
+Post-gates-split (the recent frob.gates.__init__ -> frob.gates._waive extraction), gates-native's archgate stage reports an unwaived ARCH102 on src/frob/gates/_waive.py: 35 top-level exports split across 4 unrelated naming/usage clusters. Out of scope for T-1066/T-1068 (both explicitly excluded from touching src/frob/gates/**); needs either a genuine further split of _waive.py or a reasoned frob:waive ARCH102 the way sibling gates modules already carry (see src/frob/gates/__init__.py's own ARCH102 waiver for the pattern).

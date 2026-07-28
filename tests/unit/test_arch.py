@@ -927,6 +927,111 @@ class TestAbstractionOpportunityDiscriminators:
 
 
 # ---------------------------------------------------------------------------
+# T-1068: language-parity groups (filed from T-0393) are not
+# abstraction-opportunities -- the same false-positive class T-0360's
+# dispatch-family exclusion covers, but for parallel per-language
+# tree-sitter walkers (_py_/_rust_/_kt_/_ts_/_cpp_) instead of a shared
+# call/registry site.
+# ---------------------------------------------------------------------------
+
+
+class TestLanguageParityExclusion:
+    def test_one_member_per_language_not_flagged(self, tmp_path):
+        # frob:tests src/frob/arch/_python.py::_is_language_parity_family
+        # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
+        # Three distinctly-tagged per-language walkers sharing a SPECIFIC
+        # (domain-typed) signature -- `_signature_is_specific` alone would
+        # flag this group (verified: with the language-parity check
+        # removed, this exact fixture flags), so language-parity exclusion
+        # is the only thing suppressing it.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "walkers.py").write_text(
+            "from __future__ import annotations\n"
+            "\n"
+            "class RawSymbol:\n"
+            "    pass\n"
+            "\n"
+            "def _py_build_symbol(node: object) -> RawSymbol:\n"
+            "    return RawSymbol()\n"
+            "\n"
+            "def _rust_build_symbol(node: object) -> RawSymbol:\n"
+            "    sym = RawSymbol()\n"
+            "    return sym\n"
+            "\n"
+            "def _kt_build_symbol(node: object) -> RawSymbol:\n"
+            "    return RawSymbol()\n"
+        )
+        result = analyze_project(src_dir)
+        categories = {s.category for s in result.suggestions}
+        assert "abstraction-opportunity" not in categories
+
+    def test_duplicate_tag_within_group_still_flagged(self, tmp_path):
+        # frob:tests src/frob/arch/_python.py::_is_language_parity_family
+        # Two `_rust_*` members share the "rust" tag -- not genuine
+        # one-per-language parity (a real accidental collision within the
+        # same language), so this must still flag.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "walkers.py").write_text(
+            "from __future__ import annotations\n"
+            "\n"
+            "class RawSymbol:\n"
+            "    pass\n"
+            "\n"
+            "def _rust_build_symbol(node: object) -> RawSymbol:\n"
+            "    return RawSymbol()\n"
+            "\n"
+            "def _rust_build_alias(node: object) -> RawSymbol:\n"
+            "    return RawSymbol()\n"
+            "\n"
+            "def _kt_build_symbol(node: object) -> RawSymbol:\n"
+            "    return RawSymbol()\n"
+        )
+        result = analyze_project(src_dir)
+        categories = {s.category for s in result.suggestions}
+        assert "abstraction-opportunity" in categories
+
+    def test_untagged_member_within_group_still_flagged(self, tmp_path):
+        # frob:tests src/frob/arch/_python.py::_is_language_parity_family
+        # `_read_symbol` carries no recognized language tag -- with no tag
+        # to compare, parity cannot be established, so the group falls
+        # through to the normal signature/body checks and still flags.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "walkers.py").write_text(
+            "from __future__ import annotations\n"
+            "\n"
+            "class RawSymbol:\n"
+            "    pass\n"
+            "\n"
+            "def _read_symbol(node: object) -> RawSymbol:\n"
+            "    return RawSymbol()\n"
+            "\n"
+            "def _rust_build_symbol(node: object) -> RawSymbol:\n"
+            "    return RawSymbol()\n"
+            "\n"
+            "def _kt_build_symbol(node: object) -> RawSymbol:\n"
+            "    return RawSymbol()\n"
+        )
+        result = analyze_project(src_dir)
+        categories = {s.category for s in result.suggestions}
+        assert "abstraction-opportunity" in categories
+
+    def test_tag_requires_underscore_boundary(self, tmp_path):
+        # frob:tests src/frob/arch/_python.py::_language_tag
+        # "results_summary" contains "ts" as a bare substring with no
+        # underscore before it -- must NOT be mistaken for a `_ts_` tag
+        # (the T-0360-style structural rigor this detector requires, no
+        # raw text proximity).
+        from frob.arch._python import _language_tag
+
+        assert _language_tag("results_summary") is None
+        assert _language_tag("_ts_build_module") == "ts"
+        assert _language_tag("_kt_build_module") == "kt"
+
+
+# ---------------------------------------------------------------------------
 # design-pattern recommender (T-0332): HALLMARK->PATTERN and
 # ANTI-PATTERN->ESCAPE advisory suggestions.
 # ---------------------------------------------------------------------------
