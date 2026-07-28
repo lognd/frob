@@ -133,6 +133,7 @@ def _const_symbol(node: Node) -> RawSymbol | None:
 
 
 # frob:ticket T-1028
+# frob:ticket T-1033
 def _type_alias_symbol(node: Node) -> RawSymbol | None:
     """A module-level python TYPE-alias `RawSymbol` (T-1028), or `None` if
     `node` doesn't match one of the three recognized shapes:
@@ -142,15 +143,20 @@ def _type_alias_symbol(node: Node) -> RawSymbol | None:
     - `X: TypeAlias = ...` (PEP 613 explicit annotation, bare `TypeAlias`
       or dotted `typing.TypeAlias`) -- unambiguous, matched by the
       assignment's own `type` (annotation) field.
-    - bare `X = Literal[...]` (this repo's own idiom, e.g.
-      `frob.arch._models.ArchCategory`) -- narrower: only fires when the
-      right-hand side is textually a `Literal[...]`/`typing.Literal[...]`
-      subscript, the one construct T-1028 was filed against. A bare
-      `X = SomeOtherCall(...)` assignment is deliberately NOT swept in
-      here (that would silently re-scope `_const_symbol`'s existing
-      SCREAMING_CASE constant population); widening to `Union[...]`/
-      `Optional[...]`/`TypeVar(...)` RHS shapes is a separate, deliberate
-      follow-up (T-1033), not bundled into this fix.
+    - bare `X = Literal[...]`/`X = Union[...]`/`X = Optional[...]`/
+      `X = TypeVar(...)` (this repo's own idiom, e.g.
+      `frob.arch._models.ArchCategory`, plus T-1033's widened PEP
+      613-adjacent shapes) -- narrower than the two cases above: only
+      fires when the right-hand side is textually one of these four
+      curated typing constructs (`_is_bare_alias_rhs`), bare or
+      `typing.`-qualified. A bare `X = SomeOtherCall(...)` assignment is
+      deliberately NOT swept in here (that would silently re-scope
+      `_const_symbol`'s existing SCREAMING_CASE constant population); any
+      OTHER typing construct RHS (`Callable[...]`, `Generic[...]`, a bare
+      `X | Y` union, ...) stays unindexed too -- a curated table, not a
+      general "looks like typing" heuristic, matching this repo's own
+      `frob.arch._async_hazards`-style curated-table precedent for advisory
+      classifiers.
 
     Mirrors `_const_symbol`'s own idiom (module-level only, `node` may be
     either a bare `assignment` or an `expression_statement` wrapping one,
@@ -176,7 +182,7 @@ def _type_alias_symbol(node: Node) -> RawSymbol | None:
     if annotation is not None and _is_type_alias_annotation(annotation):
         return _make_type_symbol(node, name)
     right = assign.child_by_field_name("right")
-    if right is not None and _is_literal_alias_rhs(right):
+    if right is not None and _is_bare_alias_rhs(right):
         return _make_type_symbol(node, name)
     return None
 
@@ -201,19 +207,62 @@ def _is_type_alias_annotation(annotation: Node) -> bool:
     return text == "TypeAlias" or text.endswith(".TypeAlias")
 
 
-# frob:ticket T-1028
-def _is_literal_alias_rhs(right: Node) -> bool:
-    """True if an assignment's right-hand side is a `Literal[...]`/
-    `typing.Literal[...]` subscript -- see `_type_alias_symbol`'s own
-    docstring for why this stays narrow to `Literal` rather than sweeping
-    in every typing-construct RHS."""
-    if right.type != "subscript":
-        return False
-    value = right.child_by_field_name("value")
-    if value is None:
-        return False
+# frob:ticket T-1033
+#: The curated bare-RHS subscript names T-1028/T-1033 recognize as a
+#: type-alias shape -- `Literal`/`Union`/`Optional`, bare or
+#: `typing.`-qualified (matched via `.endswith(f".{name}")` the same way
+#: `_is_type_alias_annotation` already matches `.TypeAlias`).
+_BARE_ALIAS_SUBSCRIPT_NAMES = frozenset({"Literal", "Union", "Optional"})
+# frob:ticket T-1033
+#: T-1033: `TypeVar(...)` is a CALL, not a subscript (`TypeVar("T")`, not
+#: `TypeVar["T"]`) -- checked separately in `_is_bare_alias_rhs`.
+_BARE_ALIAS_CALL_NAMES = frozenset({"TypeVar"})
+
+
+# frob:ticket T-1033
+def _bare_alias_head_name(value: Node) -> str | None:
+    """The dotted-or-bare head name of a subscript/call's `value`/
+    `function` field (`Literal`, `typing.Literal`, ...) as plain text, or
+    `None` if unreadable -- shared by the subscript and call branches of
+    `_is_bare_alias_rhs` so the "bare or `typing.`-qualified" match rule
+    lives in exactly one place."""
     text = _child_text(value)
-    return text == "Literal" or text.endswith(".Literal")
+    return text or None
+
+
+# frob:ticket T-1033
+def _matches_curated_name(text: str, names: frozenset[str]) -> bool:
+    """True if `text` (a dotted-or-bare head name) is exactly one of
+    `names`, or `typing.`-qualified as one of them (`text.endswith(f".{n}")`
+    for some `n` in `names`) -- the same bare-or-qualified match shape
+    `_is_type_alias_annotation` already uses for `TypeAlias`."""
+    return text in names or any(text.endswith(f".{n}") for n in names)
+
+
+# frob:ticket T-1028
+# frob:ticket T-1033
+def _is_bare_alias_rhs(right: Node) -> bool:
+    """True if an assignment's right-hand side is one of T-1028/T-1033's
+    curated bare type-alias shapes: a `Literal[...]`/`Union[...]`/
+    `Optional[...]` subscript, or a `TypeVar(...)` call -- bare or
+    `typing.`-qualified either way. See `_type_alias_symbol`'s own
+    docstring for why this stays a curated table rather than sweeping in
+    every typing-construct RHS."""
+    if right.type == "subscript":
+        value = right.child_by_field_name("value")
+        if value is None:
+            return False
+        text = _bare_alias_head_name(value)
+        return text is not None and _matches_curated_name(
+            text, _BARE_ALIAS_SUBSCRIPT_NAMES
+        )
+    if right.type == "call":
+        func = right.child_by_field_name("function")
+        if func is None:
+            return False
+        text = _bare_alias_head_name(func)
+        return text is not None and _matches_curated_name(text, _BARE_ALIAS_CALL_NAMES)
+    return False
 
 
 # frob:ticket T-1028

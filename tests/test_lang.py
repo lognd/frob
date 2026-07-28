@@ -30,6 +30,7 @@ def _symbol(pf, qualname: str):
 
 
 # frob:ticket T-1028
+# frob:ticket T-1033
 class TestParsePython:
     def test_symbols_and_nesting(self) -> None:
         # frob:tests src/frob/lang/__init__.py::parse_file
@@ -127,6 +128,61 @@ class TestParsePython:
         alias = _symbol(pf, "ArchCategory")
         assert alias.kind == SymbolKind.TYPE
         assert alias.public is True
+
+    # frob:ticket T-1033
+    @pytest.mark.parametrize(
+        ("rhs_source", "name"),
+        [
+            pytest.param(
+                "from typing import Union\n\nIntOrStr = Union[int, str]\n",
+                "IntOrStr",
+                id="union-subscript",
+            ),
+            pytest.param(
+                "import typing\n\nMaybeInt = typing.Optional[int]\n",
+                "MaybeInt",
+                id="qualified-optional-subscript",
+            ),
+            pytest.param(
+                "from typing import TypeVar\n\nT = TypeVar('T')\n",
+                "T",
+                id="typevar-call",
+            ),
+        ],
+    )
+    def test_bare_widened_alias_rhs_extracted_as_type_symbol(
+        self, tmp_path: Path, rhs_source: str, name: str
+    ) -> None:
+        # frob:tests tests/test_lang.py::TestParsePython.test_bare_widened_alias_rhs_extracted_as_type_symbol  # noqa: E501
+        """T-1033: a bare module-level assignment widening T-1028's
+        `Literal[...]`-only bare-RHS detection -- `Union[...]`/qualified
+        `typing.Optional[...]` (both subscripts) and `TypeVar(...)` (a
+        CALL rhs, checked via a separate branch) are all `SymbolKind.TYPE`
+        symbols. One parametrized test rather than three near-identical
+        ones (DUP001) -- each case differs only in the curated RHS shape
+        under test, not in the assertions made."""
+        source = f'"""mod docstring."""\n{rhs_source}'
+        pf = parse_file(_write(tmp_path, "alias.py", source)).danger_ok
+        alias = _symbol(pf, name)
+        assert alias.kind == SymbolKind.TYPE
+        assert alias.public is True
+
+    # frob:ticket T-1033
+    def test_bare_unrelated_call_still_unindexed(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_lang.py::TestParsePython.test_bare_unrelated_call_still_unindexed  # noqa: E501
+        """T-1033's guard test: T-1028/T-1033's curated bare-RHS table is
+        NOT a general "looks like typing" heuristic -- a bare lowercase
+        assignment to an unrelated call (even one that superficially looks
+        like it could be a generic-ish construct) stays unindexed, same as
+        before this widening."""
+        source = (
+            '"""mod docstring."""\n'
+            "def SomeCall(x):\n    return x\n\n\n"
+            "not_an_alias = SomeCall(1)\n"
+        )
+        pf = parse_file(_write(tmp_path, "alias.py", source)).danger_ok
+        names = {s.qualname for s in pf.symbols}
+        assert "not_an_alias" not in names
 
     # frob:ticket T-1028
     def test_annotated_type_alias_extracted_as_type_symbol(
