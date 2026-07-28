@@ -1539,7 +1539,7 @@ silently declaring the whole remainder done.
 id: T-1081
 title: 'arch: ARCH102 fires on newly-split src/frob/gates/_waive.py (35 exports, 4
   clusters)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -1553,7 +1553,6 @@ threat: null
 component: null
 ```
 Post-gates-split (the recent frob.gates.__init__ -> frob.gates._waive extraction), gates-native's archgate stage reports an unwaived ARCH102 on src/frob/gates/_waive.py: 35 top-level exports split across 4 unrelated naming/usage clusters. Out of scope for T-1066/T-1068 (both explicitly excluded from touching src/frob/gates/**); needs either a genuine further split of _waive.py or a reasoned frob:waive ARCH102 the way sibling gates modules already carry (see src/frob/gates/__init__.py's own ARCH102 waiver for the pattern).
-
 <!-- ticket:T-1082 -->
 ```yaml
 id: T-1082
