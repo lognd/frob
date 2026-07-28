@@ -1095,3 +1095,33 @@ threat: null
 component: null
 ```
 2026-07-28 incident: worktree uv operations rewrote the ROOT venv's pytest shim shebang to point at .claude/worktrees/w18-tickets/.venv/bin/python; after that worktree was removed, uv run pytest broke, collect_python_tests returned CollectFailed, and the coverage gate emitted 6219 COV003 errors (one per archived evidence id) with a misleading refresh-the-cache hint. Two misattribution layers: (1) doctor has no venv-shim integrity check; (2) the coverage gate degrades a total-collection failure into per-evidence noise. Sibling of T-1148 (natives staleness honest-failure); same design: detect the environment fault once, loudly, with the repair command.
+
+<!-- ticket:T-1162 -->
+```yaml
+id: T-1162
+title: 'arch: wave-18 fallout long-function extractions (check_runner delta-proxy,
+  close _fail, doctor run_diagnosis, setters ticket_flow)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/check_runner.py
+- src/frob/app/ticket_runner/_close_cmd.py
+- src/frob/doctor.py
+- src/frob/tickets/_setters.py
+- tests/**
+acceptance:
+- text: GIVEN frob check --only arch THEN zero ARCH001/ARCH103 errors remain at the
+    four wave-18 sites (_try_check_delta_via_daemon 70 lines + mixed concerns, _fail
+    73, run_diagnosis 99, ticket_flow 86), each decomposed into cohesive helpers with
+    existing tests still passing
+  evidence: []
+threat: null
+component: null
+```
+The only remaining errors on main after the wave-18 fallout pass: four functions grew past the 60-line threshold in this wave's lands (T-1147, T-1131/T-1132, T-1142/T-1151). Standard extraction discipline; ARCH103 on _try_check_delta_via_daemon wants the I/O vs formatting vs decision split, not just a length cut.
