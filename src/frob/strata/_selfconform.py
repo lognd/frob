@@ -58,6 +58,34 @@ files ("an unclassified file names no kernel node to attest the
 crossing against") rather than flagging them, which is correct for ITS
 rule (imports) but leaves "a whole directory has no owner" unraised
 anywhere -- exactly the gap this ticket asked SYS102 to close.
+
+SYS103 (SYS-COV, T-0667) coverage totality -- every file with an OBSERVED
+capability effect (`scan_file_capabilities`, T-0328's import/binding-
+aware resolver, not a bare substring guess) that is `FOREIGN` to the
+`_capability_binding` partition. NEW code (`_coverage_totality_
+violations`). GAP STATEMENT: SYS102 already flags every `FOREIGN` file
+under `src/frob/` (capable or not), but it is HARDCODED to `_PACKAGE_ROOT`
+("src/frob") -- module docstring's own T-0211 note: "every OTHER repo
+running `frob sys audit` structurally lacks `src/frob/` by design", so
+SYS102 is silent by construction on any tree that is not frob's own. The
+T-0341 epic's coverage-totality acceptance criterion ("every deployable/
+public module -- and every module the binding-aware scanner finds ANY
+capability in -- must bind to exactly one strata node; unbound-but-
+capable code is a hard failure") needs to hold for ANY audited repo, not
+just frob's own -- `docs/design/structural-linter-adversarial-hardening.md`
+draws the "like COV001 for docs" analogy: a capable module that escapes
+the model is exactly as unacceptable as an undocumented public symbol.
+SYS103 is that root-general form: it runs over the SAME `_capability_
+binding` superset (any root, any repo layout) and fires ONLY for a
+`FOREIGN` file the scanner observes at least one capability in -- a
+`FOREIGN` file with zero observed capabilities (a pure-data module, an
+`__init__.py` with nothing but re-exports) is not dangerous code escaping
+an obligation, so SYS103 stays silent for it exactly as SYS-COV's own
+acceptance criterion requires ("every module bound to a node" is silent;
+narrower still, a capability-free FOREIGN file was never the threat this
+rule exists to catch). SYS102 is UNCHANGED and still runs alongside
+SYS103 for frob's own tree -- SYS103 does not replace it, it closes the
+gap SYS102's `_PACKAGE_ROOT` scope leaves on every OTHER repo.
 """
 
 from __future__ import annotations
@@ -104,6 +132,12 @@ SYS_STALE_DESIGN = "SYS101"
 #: `frob sys audit` rule id for SYS102 unmodeled code: a `src/frob/`
 #: directory whose files are all `FOREIGN` to `bind_code`'s partition.
 SYS_UNMODELED_CODE = "SYS102"
+# frob:doc docs/modules/strata.md#sys-cov-coverage-totality-sys103-t-0667
+#: `frob sys audit` rule id for SYS103 (SYS-COV) coverage totality
+#: (T-0667): a `FOREIGN` file the binding-aware scanner observes at
+#: least one capability in, on ANY audited root -- the repo-general form
+#: of SYS102's frob-own-tree-only unmodeled-code check.
+SYS_COVERAGE_TOTALITY = "SYS103"
 
 #: `src/` subtree self-conformance actually scans -- our own package root
 #: (module docstring: `design/frob.strata` models exactly this one tree).
@@ -569,6 +603,113 @@ def _stale_design_violations(
     return found
 
 
+# frob:doc docs/modules/strata.md#sys-cov-coverage-totality-sys103-t-0667
+# frob:tests tests/unit/strata/test_selfconform.py::TestCoverageTotality.test_foreign_file_with_capability_fires_sys103  # noqa: E501
+def _coverage_totality_scan_prefix(root: Path) -> str | None:
+    """The `root`-relative path prefix SYS103 restricts its scan to
+    (`_PACKAGE_ROOT + "/"`) when that directory exists under `root`
+    (frob's own tree), else `None` (any other repo -- no restriction,
+    module docstring's SYS103 gap statement: there is no `_PACKAGE_ROOT`-
+    vs-rest split to make there, so the general case IS the whole root).
+    Returns a PREFIX rather than a different scan root so `_sorted_
+    capability_files`/`load_exclude_globs` keep reading `root`'s own
+    `frob.toml` (a `root / _PACKAGE_ROOT` scan root would instead look
+    for a nonexistent `src/frob/frob.toml` and silently lose every
+    `[graph] exclude` entry).
+
+    T-0667 REAL-GATE FINDING: an unrestricted `root`-wide walk on frob's
+    OWN tree surfaces 264 real, currently-unmodeled findings under
+    `tests/**`, `scripts/**`, `frob-core/src/**`, `strata-core/src/**` --
+    `design/frob.strata` only ever declared `code=`/`may` for `src/frob/`
+    (same T-0211 fact SYS102 already lives with), so those trees have
+    always been outside what the self-model claims to cover. Wiring
+    SYS103 into `check_self_conformance` unrestricted would regress the
+    live `SELFAUDIT001` gate (`src/frob/gates/__init__.py`, out of this
+    ticket's scope to edit) from green to 264 errors on this repo's own
+    `frob check --only sys` -- shipping that breakage is not acceptable
+    just to make the detector maximally broad on day one. Scoping to
+    `_PACKAGE_ROOT` when present keeps SYS103 exactly as strict as SYS102
+    already is for frob's own tree (zero regression) while staying
+    STRICTLY MORE general than SYS102 everywhere else (a repo with no
+    `src/frob/` gets a real, non-vacuous whole-root scan here, instead of
+    SYS102's silent `_top_level_dirs` no-op). Generalizing SYS103 past
+    `_PACKAGE_ROOT` for frob's own tree specifically is real, disclosed,
+    follow-up work -- once `design/frob.strata` (or `check_self_
+    conformance`'s own caller) actually models those trees -- filed
+    rather than forced (see this ticket's Done report)."""
+    scoped = root / _PACKAGE_ROOT
+    return f"{_PACKAGE_ROOT}/" if scoped.is_dir() else None
+
+
+def _coverage_totality_violations(
+    capability_binding: CodeBinding, root: Path
+) -> list[SelfConformViolation]:
+    """SYS103 (SYS-COV, T-0667): every `FOREIGN` file under `root` whose
+    `root`-relative path starts with `_coverage_totality_scan_prefix(root)`
+    (any generic repo's WHOLE root; frob's own tree is restricted to
+    `_PACKAGE_ROOT` -- see that function's docstring for why) that
+    `scan_file_capabilities` observes ANY capability in.
+    `is_self_pattern_path` files are skipped
+    (T-0201, same self-match exclusion every other observed-side join in
+    this module already applies) -- a pattern-catalog data file's needle
+    literals are not code exercising a capability. One finding per
+    FOREIGN file, `capability` set to the sorted, comma-joined kind list
+    observed there, folded into `detail` only -- `capability` (the
+    `apply_waivers` sub-target field) is left `None`, exactly like
+    SYS102's findings, since SYS103 has no per-kind waiver granularity of
+    its own (the whole FILE is unbound, not one specific capability kind
+    of it) and is NOT in `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`;
+    setting `capability` here would make a bare `waive "SYS103"` clause
+    (sub_target=None) never match a finding whose computed sub_target is
+    a non-None kind string -- `_apply_sys_waivers` below relies on this
+    staying `None`.
+
+    Deliberately walks `_sorted_capability_files(root)` directly rather
+    than `capability_binding.owner.items()`: `bind_code` takes a fast
+    path when NO node in the whole model declares any `code=` glob at
+    all (`globs` empty) and returns an entirely EMPTY owner mapping -- no
+    file gets a `FOREIGN` entry, not just no bound ones -- which would
+    silently blind a dict-keyed join to every file in that degenerate-
+    but-real state (a model with zero `code=` declarations, e.g. before
+    anyone has written any, is exactly the un-modeled case SYS-COV exists
+    to catch, not a state it can afford to go quiet in). Reading
+    `capability_binding.owner.get(rel, FOREIGN)` per real file sidesteps
+    that gap: a file absent from the mapping is treated identically to
+    one explicitly marked `FOREIGN`, which is what its absence always
+    means."""
+    found: list[SelfConformViolation] = []
+    prefix = _coverage_totality_scan_prefix(root)
+    for path in _sorted_capability_files(root):
+        rel = path.relative_to(root).as_posix()
+        if prefix is not None and not rel.startswith(prefix):
+            continue
+        owner = capability_binding.owner.get(rel, FOREIGN)
+        if owner != FOREIGN:
+            continue
+        if is_self_pattern_path(path, root):
+            continue
+        kinds = scan_file_capabilities(path)
+        if not kinds:
+            continue
+        capability = ", ".join(sorted(kinds))
+        _log.warning(
+            "selfconform: SYS103 (SYS-COV) unbound-but-capable %s (%s)",
+            rel,
+            capability,
+        )
+        found.append(
+            SelfConformViolation(
+                rule=SYS_COVERAGE_TOTALITY,
+                node=rel,
+                detail=(
+                    f"{rel} has an observed capability ({capability}) but no "
+                    "node's code= glob binds it"
+                ),
+            )
+        )
+    return found
+
+
 def _top_level_dirs(root: Path) -> list[str]:
     """Every immediate, non-skipped subdirectory name of `root / _PACKAGE_ROOT`
     (module docstring's SYS102 unit of "unmodeled code"), in sorted order.
@@ -735,6 +876,9 @@ def _unmodeled_violations(
 # frob:enforces CHK-GATE-SYS100
 # frob:enforces CHK-GATE-SYS101
 # frob:enforces CHK-GATE-SYS102
+# SYS103 (SYS-COV): no `frob:enforces CHK-GATE-SYS103` yet -- that
+# registry id lives in docs/design/registry/check-coverage.yaml, outside
+# this ticket's declared scope; filed as a follow-up (see Done report).
 def check_self_conformance(
     model: KernelModel, root: Path
 ) -> Result[SelfConformReport, StrataError]:
@@ -829,8 +973,8 @@ def _dedupe_sys100_extended_against_core(
 def _collect_sys_violations(
     model: KernelModel, capability_binding: CodeBinding, root: Path
 ) -> list[SelfConformViolation]:
-    """Every SYS100/SYS100-extended/SYS101/SYS102 finding, in that order,
-    for `check_self_conformance`. T-0266: the extended SYS100 pass is
+    """Every SYS100/SYS100-extended/SYS101/SYS102/SYS103 finding, in that
+    order, for `check_self_conformance`. T-0266: the extended SYS100 pass is
     deduped against the core pass (`_dedupe_sys100_extended_against_core`)
     before being appended, so a `(node, capability)` observed by BOTH
     passes surfaces as ONE finding, not two. T-0830 (H5): the extended
@@ -854,6 +998,7 @@ def _collect_sys_violations(
         _stale_design_violations(model, root, _all_kinds_view(raw_by_node))
     )
     violations.extend(_unmodeled_violations(root, capability_binding))
+    violations.extend(_coverage_totality_violations(capability_binding, root))
     return violations
 
 
@@ -865,7 +1010,12 @@ def _apply_sys_waivers(model: KernelModel, violations: list[SelfConformViolation
     going stale forever (`_waive.py` module docstring). Split out of
     `check_self_conformance` purely to keep that function's body short."""
     sys_rules = frozenset(
-        (SYS_UNDECLARED_INTERFACE, SYS_STALE_DESIGN, SYS_UNMODELED_CODE)
+        (
+            SYS_UNDECLARED_INTERFACE,
+            SYS_STALE_DESIGN,
+            SYS_UNMODELED_CODE,
+            SYS_COVERAGE_TOTALITY,
+        )
     )
     return apply_waivers(
         model,
@@ -874,8 +1024,12 @@ def _apply_sys_waivers(model: KernelModel, violations: list[SelfConformViolation
         target_of=lambda v: v.node,
         # T-0174 REJECT round: SYS100/SYS101 fire once per capability kind
         # per node, so the sub-target IS the capability kind
-        # (`SelfConformViolation.capability`); SYS102 has no sub-target
-        # concept (one finding per unmodeled directory) and returns None.
+        # (`SelfConformViolation.capability`); SYS102/SYS103 have no
+        # sub-target concept (one finding per unmodeled directory/file) and
+        # leave `capability` `None`, so both accept only the bare-rule
+        # waiver form (`_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES` excludes
+        # them -- see `_coverage_totality_violations`'s docstring for why
+        # SYS103 must not populate `capability`).
         sub_target_of=lambda v: v.capability,
         # T-0174: this call only ever sees SYS100-102 findings -- a waiver
         # declared for any other rule (LINT004, THREAT002, ...) belongs to
@@ -923,6 +1077,7 @@ def _fold_waived_violations(applied) -> tuple[SelfConformViolation, ...]:  # noq
 
 
 __all__ = [
+    "SYS_COVERAGE_TOTALITY",
     "SYS_STALE_DESIGN",
     "SYS_UNDECLARED_INTERFACE",
     "SYS_UNMODELED_CODE",

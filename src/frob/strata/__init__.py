@@ -399,6 +399,7 @@ from frob.strata._secrets import (
     elaborate_secret,
 )
 from frob.strata._selfconform import (
+    SYS_COVERAGE_TOTALITY,
     SYS_STALE_DESIGN,
     SYS_UNDECLARED_INTERFACE,
     SYS_UNMODELED_CODE,
@@ -527,6 +528,7 @@ __all__ = [
     "DEFAULT_COMPLIANCE_VIEWS",
     "DEFAULT_QUALITY_VIEWS",
     "DEFAULT_SECURITY_VIEWS",
+    "SYS_COVERAGE_TOTALITY",
     "SYS_STALE_DESIGN",
     "SYS_UNDECLARED_INTERFACE",
     "SYS_UNMODELED_CODE",

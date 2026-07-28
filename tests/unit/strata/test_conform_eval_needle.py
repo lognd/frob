@@ -140,4 +140,10 @@ class TestEvalNeedleSelfMatch:
         model = merge_models(ids.models)
         result = check_self_conformance(model, repo_root)
         assert result.is_ok
+        # T-0667: SYS103 (SYS-COV) joins SYS100-102 at zero here too --
+        # `_coverage_totality_scan_prefix` restricts it to `_PACKAGE_ROOT`
+        # on frob's own tree (docs/modules/strata.md#sys-cov-coverage-
+        # totality-sys103-t-0667), so it does not see tests/**/scripts/**/
+        # frob-core/src/**/strata-core/src/**, which design/frob.strata
+        # does not model.
         assert result.danger_ok.violations == ()

@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 
 from frob.strata import (
+    SYS_COVERAGE_TOTALITY,
     SYS_STALE_DESIGN,
     SYS_UNDECLARED_INTERFACE,
     SYS_UNMODELED_CODE,
@@ -1104,9 +1105,15 @@ class TestRealGateGreen:
     def test_repo_design_and_declarations_are_self_conformant(self):
         """`design/frob.strata`'s real `code`/`may` declarations, run
         against the REAL `src/frob/` tree, produce zero SYS100/SYS101/
-        SYS102 violations -- the T-0150 gate-green assertion. Skips (does
-        not xfail) when the native strata_core extension isn't installed,
-        matching every other `.strata`-parsing test's guard in this suite."""
+        SYS102/SYS103 violations -- the T-0150 gate-green assertion, UNCHANGED
+        and still strict (T-0667: SYS103/SYS-COV joins it at zero too --
+        `_coverage_totality_scan_prefix` restricts SYS103 to `_PACKAGE_ROOT`
+        on frob's own tree specifically, docs/modules/strata.md#sys-cov-
+        coverage-totality-sys103-t-0667, so it does not fire on `tests/**`/
+        `scripts/**`/`frob-core/src/**`/`strata-core/src/**`, which
+        `design/frob.strata` does not model). Skips (does not xfail) when
+        the native strata_core extension isn't installed, matching every
+        other `.strata`-parsing test's guard in this suite."""
         pytest.importorskip("strata_core")
         from frob.strata._design_load import load_design_ids
         from frob.strata._sysdoc import merge_models
@@ -1195,3 +1202,122 @@ class TestModeQualifiedFsStaleDesign:
         assert result.is_ok
         hit = [v for v in result.danger_ok.violations if v.rule == SYS_STALE_DESIGN]
         assert any(v.node == "widget" and v.capability == "fs.read" for v in hit)
+
+
+class TestCoverageTotality:
+    """SYS103 (SYS-COV, T-0667): a `FOREIGN` file the binding-aware
+    scanner observes ANY capability in fires, on any root -- not just
+    `src/frob/` (docs/modules/strata.md#sys-cov-coverage-totality-sys103-t-0667)."""
+
+    # frob:tests src/frob/strata/_selfconform.py::_coverage_totality_violations kind="unit"  # noqa: E501
+    def test_foreign_file_with_capability_fires_sys103(self, tmp_path: Path):
+        """A file with an observed `net` effect and no node's `code=`
+        glob binding it fires SYS103, even though SYS100/SYS101 (which
+        only reconcile BOUND files) have nothing to say about it."""
+        _write(
+            tmp_path,
+            "src/frob/orphan/_io.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        model = KernelModel(nodes=())
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hit = [
+            v for v in result.danger_ok.violations if v.rule == SYS_COVERAGE_TOTALITY
+        ]
+        assert any(
+            v.node == "src/frob/orphan/_io.py" and "net" in v.detail for v in hit
+        )
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_bound_file_discharges_sys103(self, tmp_path: Path):
+        """The same capable file, once a node's `code=` glob binds it,
+        produces no SYS103 -- 'every module bound to a node' is silent --
+        REGARDLESS of whether that node declares `may` for the observed
+        kind. SYS103's only question is binding, never conformance
+        (module docstring); the node here declares NO `may` at all, so
+        SYS100 fires for the SAME site while SYS103 stays silent,
+        proving the two rules are answering genuinely different
+        questions rather than one masking the other."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "import subprocess\nsubprocess.run(['ls'])\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(id="widget", trust="trusted", attrs=("code=src/frob/widget/**",)),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_COVERAGE_TOTALITY for v in result.danger_ok.violations
+        )
+        assert any(
+            v.rule == SYS_UNDECLARED_INTERFACE for v in result.danger_ok.violations
+        )
+
+    # frob:tests src/frob/strata/_selfconform.py::_coverage_totality_violations kind="unit"  # noqa: E501
+    def test_foreign_capability_free_file_does_not_fire_sys103(self, tmp_path: Path):
+        """A `FOREIGN` file with zero observed capabilities (plain data)
+        does not fire SYS103 -- only capable-but-unbound code is the
+        failure mode SYS-COV catches (SYS102 still catches this same file
+        under its own, frob-tree-only rule -- unaffected here)."""
+        _write(tmp_path, "src/frob/orphan/_io.py", "x = 1\n")
+        model = KernelModel(nodes=())
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_COVERAGE_TOTALITY for v in result.danger_ok.violations
+        )
+
+    # frob:tests src/frob/strata/_selfconform.py::_coverage_totality_violations kind="unit"  # noqa: E501
+    def test_fires_outside_src_frob_layout(self, tmp_path: Path):
+        """SYS103 is repo-general, unlike SYS102's `_PACKAGE_ROOT`
+        hardcoding: a capable, unbound file OUTSIDE `src/frob/` entirely
+        still fires."""
+        _write(
+            tmp_path,
+            "app/widget/_io.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        model = KernelModel(nodes=())
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hit = [
+            v for v in result.danger_ok.violations if v.rule == SYS_COVERAGE_TOTALITY
+        ]
+        assert any(v.node == "app/widget/_io.py" for v in hit)
+
+    # frob:tests src/frob/strata/_selfconform.py::_coverage_totality_violations kind="unit"  # noqa: E501
+    def test_sys103_waivable_as_bare_rule(self, tmp_path: Path):
+        """A bare `waive "SYS103"` clause suppresses the finding -- SYS103
+        is NOT in `MULTI_INSTANCE_WAIVER_FAMILIES`, so it must not require
+        a sub-target, unlike SYS100/SYS101 (docs/strata/selfconform.md's
+        SYS102 waiver precedent: `apply_waivers` reads `Node.waives`
+        keyed by `node.id`, and a SYS102/SYS103 finding's `node` field is
+        the unbound file's OWN path, matching SYS102's `waive "SYS102"`
+        convention -- a `Node` entry with id == the file path, `code=`-
+        free, exists purely to carry the waiver, same shape a `.strata`
+        author would declare)."""
+        _write(
+            tmp_path,
+            "src/frob/orphan/_io.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="src/frob/orphan/_io.py",
+                    trust="trusted",
+                    waives=(Waiver(rule=SYS_COVERAGE_TOTALITY, reason="test waiver"),),
+                ),
+            ),
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_COVERAGE_TOTALITY for v in result.danger_ok.violations
+        )
+        assert any(v.rule == SYS_COVERAGE_TOTALITY for v in result.danger_ok.waived)
