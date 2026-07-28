@@ -713,6 +713,14 @@ _KNOWN_GATE_RULES = frozenset(
         "SYS101",
         "SYS102",
         "SYS103",
+        # T-0668 (post-merge, T-1081): SYS104/105/106 (exact interface-
+        # conformance -- src/frob/strata/_selfconform.py) landed on main
+        # after this ticket's own _waive.py split diverged; picked up here
+        # via the same "generated_gate_rule_ids reports it, paste it in"
+        # discipline this literal's own comment documents.
+        "SYS104",
+        "SYS105",
+        "SYS106",
         "SYS200",
         "SYS201",
         "SYS202",
