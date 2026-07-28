@@ -6,6 +6,8 @@ on, tested in isolation from either caller."""
 
 from __future__ import annotations
 
+from datetime import date
+
 from frob.strata._errors import StrataError
 from frob.strata._waive import (
     MULTI_INSTANCE_WAIVER_FAMILIES,
@@ -13,6 +15,7 @@ from frob.strata._waive import (
     _split_waiver_rule,
     _stale_detail,
     _validate_waiver_fields,
+    parse_waiver_expiry,
 )
 
 
@@ -85,3 +88,22 @@ class TestValidateWaiverFields:
             assert result.is_err, f"{family} should require a sub-target"
             result_qualified = _validate_waiver_fields(f"{family}:x", "a real reason")
             assert result_qualified.is_ok, f"{family}:x should elaborate cleanly"
+
+
+class TestConformanceWaiverExpiry:
+    """T-0671: `parse_waiver_expiry` extracts an `expires:YYYY-MM-DD`
+    marker embedded in a waiver's `reason` string."""
+
+    # frob:tests src/frob/strata/_waive.py::parse_waiver_expiry kind="unit"
+    def test_parses_embedded_expiry_date(self):
+        assert parse_waiver_expiry("a real reason, expires:2026-12-31") == date(
+            2026, 12, 31
+        )
+
+    # frob:tests src/frob/strata/_waive.py::parse_waiver_expiry kind="unit"
+    def test_no_marker_returns_none(self):
+        assert parse_waiver_expiry("a real reason with no date") is None
+
+    # frob:tests src/frob/strata/_waive.py::parse_waiver_expiry kind="unit"
+    def test_malformed_date_returns_none(self):
+        assert parse_waiver_expiry("a real reason, expires:2026-13-40") is None

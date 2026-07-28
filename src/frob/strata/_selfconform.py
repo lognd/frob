@@ -141,6 +141,7 @@ from __future__ import annotations
 import ast
 import fnmatch
 import os
+from datetime import date
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
@@ -173,7 +174,15 @@ from ._effects import (
 )
 from ._errors import StrataError
 from ._models import KernelModel
-from ._waive import STALE_WAIVER_RULE, _stale_detail, apply_waivers
+from ._waive import (
+    CONFORMANCE_WAIVER_EXPIRED_RULE,
+    STALE_WAIVER_RULE,
+    WaiverApplication,
+    _split_waiver_rule,
+    _stale_detail,
+    apply_waivers,
+    parse_waiver_expiry,
+)
 
 _log = get_logger(__name__)
 
@@ -1318,7 +1327,82 @@ def check_self_conformance(
 
     violations = _collect_sys_violations(model, capability_binding, root)
     applied = _apply_sys_waivers(model, violations)
+    applied = _apply_conformance_waiver_staleness(applied)
     return Ok(_finalize_self_conform_report(applied, root))
+
+
+#: SYS104/SYS105/SYS106 -- the conformance-obligation waiver families
+#: T-0671's staleness gate applies to (module docstring's T-0671
+#: section). SYS100-103 are UNCHANGED: their own bounded-escape-hatch
+#: treatment is out of this ticket's scope (T-0341's acceptance
+#: criterion [4] names "interface/purpose/binding waivers" specifically,
+#: the three conformance checks T-0668/T-0669/T-0670 just built).
+_CONFORMANCE_WAIVER_RULES: frozenset[str] = frozenset(
+    {SYS_INTERFACE_CONFORMANCE, SYS_PURPOSE_CONTRACT, SYS_BINDING_TOTALITY}
+)
+
+
+# frob:tests tests/unit/strata/test_selfconform.py::TestConformanceWaiverStaleness.test_expired_waiver_refires_and_is_flagged  # noqa: E501
+# frob:tests tests/unit/strata/test_selfconform.py::TestConformanceWaiverStaleness.test_missing_expiry_marker_treated_as_expired  # noqa: E501
+def _apply_conformance_waiver_staleness(
+    applied: WaiverApplication[SelfConformViolation],
+    today: date | None = None,
+) -> WaiverApplication[SelfConformViolation]:
+    """T-0671 acceptance criterion [0]: a SYS104/SYS105/SYS106 waiver
+    older than its `expires:YYYY-MM-DD` staleness bound (module
+    docstring's T-0671 section, `_waive.py::parse_waiver_expiry`) is
+    EXPIRED -- its finding moves back into `kept` (the underlying
+    obligation re-fires, unchanged from what it would have been with no
+    waiver at all) and a new `CONFORMANCE_WAIVER_EXPIRED_RULE`
+    (SYSWAIVE003) finding names the expired waiver. A conformance waiver
+    with NO `expires:` marker at all is treated identically to one whose
+    date has passed (fail closed -- staleness-dating is mandatory for
+    these three families, not optional). Every OTHER family's waiver
+    (SYS100-103, THREAT002/003, LINT004, ...) passes through `waived`
+    unchanged -- this gate is scoped to `_CONFORMANCE_WAIVER_RULES` only.
+    `today` is injectable for deterministic tests; `None` (the production
+    default) resolves to the real wall-clock date at call time."""
+    today = today if today is not None else date.today()
+    still_valid: list = []
+    reopened: list[SelfConformViolation] = []
+    for wf in applied.waived:
+        family, _sub_target = _split_waiver_rule(wf.waiver.rule)
+        if family not in _CONFORMANCE_WAIVER_RULES:
+            still_valid.append(wf)
+            continue
+        expiry = parse_waiver_expiry(wf.waiver.reason)
+        if expiry is not None and expiry >= today:
+            still_valid.append(wf)
+            continue
+        _log.warning(
+            "selfconform: SYSWAIVE003 expired conformance waiver %s on %s "
+            "(expiry=%s) -- underlying obligation re-fires",
+            wf.waiver.rule,
+            wf.waiver.node,
+            expiry,
+        )
+        reopened.append(wf.finding)
+        reopened.append(
+            SelfConformViolation(
+                rule=CONFORMANCE_WAIVER_EXPIRED_RULE,
+                node=wf.waiver.node,
+                detail=(
+                    f"waive {wf.waiver.rule!r} on node {wf.waiver.node} is "
+                    f"expired (reason={wf.waiver.reason!r}, "
+                    + (
+                        f"declared expiry {expiry.isoformat()}"
+                        if expiry is not None
+                        else "no expires:YYYY-MM-DD marker"
+                    )
+                    + ") -- underlying obligation re-fires"
+                ),
+            )
+        )
+    return WaiverApplication(
+        kept=tuple(applied.kept) + tuple(reopened),
+        waived=tuple(still_valid),
+        stale=applied.stale,
+    )
 
 
 def _finalize_self_conform_report(applied, root: Path) -> SelfConformReport:  # noqa: ANN001

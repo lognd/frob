@@ -499,11 +499,13 @@ from frob.strata._txn import (
     check_txn_boundary_obligations,
 )
 from frob.strata._waive import (
+    CONFORMANCE_WAIVER_EXPIRED_RULE,
     STALE_WAIVER_RULE,
     WaivedFinding,
     WaiverApplication,
     WaiverMatch,
     apply_waivers,
+    parse_waiver_expiry,
 )
 
 __all__ = [
@@ -793,7 +795,9 @@ __all__ = [
     "WaivedFinding",
     "WaiverApplication",
     "WaiverMatch",
+    "CONFORMANCE_WAIVER_EXPIRED_RULE",
     "STALE_WAIVER_RULE",
+    "parse_waiver_expiry",
     "WeaknessEntry",
     "apply_waivers",
     "audit_claim",

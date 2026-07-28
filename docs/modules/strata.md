@@ -182,3 +182,51 @@ regression test (`TestCoverageTotality::
 test_repo_unrestricted_scan_is_clean`) already proves zero FOREIGN-and-
 capable files exist anywhere in the repo (prefix bypassed), SYS106's
 reachable subset of that same empty set is necessarily also empty.
+
+<a id="bounded-escape-hatches-t-0671"></a>
+## Bounded escape hatches for conformance obligations (T-0671)
+
+T-0341's fifth acceptance criterion: every conformance waiver
+(SYS104/SYS105/SYS106) must be reason-required (already true, T-0174's
+grammar-mandatory `reason`), staleness-dated, and visible in an
+un-droppable floor view -- never a permanent silent exemption.
+
+### Staleness dating: `expires:YYYY-MM-DD`
+
+The `.strata` `waive` clause's grammar has no expiry field (adding one is
+a grammar change, out of this ticket's scope). `_waive.py::
+parse_waiver_expiry` is the in-scope substitute: an `expires:YYYY-MM-DD`
+substring embedded anywhere in the already-mandatory `reason` string,
+e.g. `waive "SYS105:net.connect" reason "tracked debt, expires:2026-12-
+31" ticket "T-1234";`. A SYS104/SYS105/SYS106 waiver with NO `expires:`
+marker, or one whose date has passed, is EXPIRED:
+`_selfconform.py::_apply_conformance_waiver_staleness` moves its finding
+back into `violations` (the underlying obligation re-fires, unchanged
+from having no waiver at all) and adds a new `SYSWAIVE003`
+(`CONFORMANCE_WAIVER_EXPIRED_RULE`) finding naming the expired waiver.
+Every OTHER waiver family (SYS100-103, THREAT002/003, LINT004, ...) is
+untouched by this gate -- it applies only to the three conformance
+checks T-0668/T-0669/T-0670 built.
+
+### SYS104/SYS105 join `MULTI_INSTANCE_WAIVER_FAMILIES`
+
+Both can fire more than once per node (once per undeclared/missing
+interface symbol, once per observed effect kind outside the purpose
+profile), so a `waive` clause on either MUST carry a `RULE:SUBTARGET`
+sub-target (`waive "SYS104:secret_backdoor" ...`, `waive
+"SYS105:net.connect" ...`) -- a bare `waive "SYS104"`/`waive "SYS105"`
+is an elaborate-time `MalformedWaiver` error, same discipline SYS100/
+SYS101/THREAT002/THREAT003 already established. SYS106 is NOT in this
+set -- it fires once per unbound FILE (like SYS103), not once per node,
+so it keeps the bare-rule form.
+
+### Floor view: un-droppable by construction
+
+`report.waived` already carries every currently-active (unexpired)
+conformance waiver with its reason folded in (`_fold_waived_violations`,
+the same "waived, never silently dropped" mechanism every other SYS
+family already uses) and `sys_runner.py` prints it UNCONDITIONALLY on
+every `frob sys audit` run, never behind a flag -- so an active
+conformance waiver cannot be hidden from default output without editing
+the printing code itself, which is exactly the "cannot be hidden from
+default output" acceptance criterion.

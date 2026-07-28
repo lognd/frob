@@ -1537,12 +1537,14 @@
     "src/frob/strata/_txn.py::TxnBoundaryReport": "2474069f4fc19e92cc432c4984eb23ee726fd5a4d07739216a1f4dc09d377493",
     "src/frob/strata/_txn.py::TxnBoundaryViolation": "800958df576872b395a2a164ea01853fbdca3bbd872d04cf9bbf7ac3b25959d8",
     "src/frob/strata/_txn.py::check_txn_boundary_obligations": "521716c3949717b6651f660c80f0cc9b96ae7f8d23961504e242ffd14d2e9c78",
-    "src/frob/strata/_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES": "5e2d6e36d1bff8de31fda98aafb7538247d23c168f654aed810f7e780345cf50",
+    "src/frob/strata/_waive.py::CONFORMANCE_WAIVER_EXPIRED_RULE": "82b10f444f68fbb3f2fe14b5bd4b28efffa9a1e372222bcc106248b63636dcbe",
+    "src/frob/strata/_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES": "a40e10c3f877b4e6661d4f373fa8bdfa3cf294ada8b7d111383de50fa955456d",
     "src/frob/strata/_waive.py::STALE_WAIVER_RULE": "8eb5c11b20d9bd7912b8cddab61e5dff7c5dfd9cbae725dbae6c8bac1c2178bf",
     "src/frob/strata/_waive.py::WaivedFinding": "777a9214370415e42e0d0174af52291dd0606d11d46313472536f74f57326ac6",
     "src/frob/strata/_waive.py::WaiverApplication": "cdc1de9113927de38909521b910b9793d0666b463a5bf8496ef8bcd598bd0c2e",
     "src/frob/strata/_waive.py::WaiverMatch": "e6cd4f3e472f311d17493afda39cd039f6e3efcc271b832852ab561250de0169",
     "src/frob/strata/_waive.py::apply_waivers": "d6bb683875c3e41b4692b43b1ae788856bf0950aa9f070ae57585ff1d1c0d376",
+    "src/frob/strata/_waive.py::parse_waiver_expiry": "b7c60cd82759066fb7b67ba0121592e9713314c1779cfbf34302df3f20de0621",
     "src/frob/testing/_collect.py::collect_cpp_tests": "dacc7dea2a3260f68ac9a16d3a6c7acc0d232e9bbf0a7d7817da74c0da9278c4",
     "src/frob/testing/_collect.py::collect_python_tests": "e1173036256e0cb104e4294d327d0b4d2427ce9df329b19e775cc048cd0172ac",
     "src/frob/testing/_collect.py::collect_rust_tests": "b909adb58a2b450858645929fba4f4a51849b41b594decb77fe6c3f3f39872c2",
@@ -1827,5 +1829,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.235.0"
+  "version": "0.236.0"
 }

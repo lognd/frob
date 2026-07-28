@@ -38,7 +38,7 @@ from frob.strata._selfconform import (
     _sorted_capability_files,
 )
 from frob.strata._selfconform import SelfConformViolation as _SCV
-from frob.strata._waive import STALE_WAIVER_RULE
+from frob.strata._waive import CONFORMANCE_WAIVER_EXPIRED_RULE, STALE_WAIVER_RULE
 from frob.vet._capability import _PATTERNS, SCANNED_LANGUAGES, language_for
 from frob.vet._capability_registry import LANGUAGES
 
@@ -1721,3 +1721,112 @@ class TestBindingTotality:
         assert not any(
             v.rule == SYS_BINDING_TOTALITY for v in result.danger_ok.violations
         )
+
+
+class TestConformanceWaiverStaleness:
+    """T-0671: a SYS104/SYS105/SYS106 waiver older than its
+    `expires:YYYY-MM-DD` staleness bound is treated as EXPIRED -- the
+    underlying obligation re-fires and a SYSWAIVE003 finding names the
+    expired waiver (acceptance criterion [0]). A conformance waiver's
+    valid (unexpired) state still surfaces in `report.waived`, which
+    `sys_runner.py` prints unconditionally every run -- the floor view
+    acceptance criterion [1]."""
+
+    # frob:tests src/frob/strata/_selfconform.py::_apply_conformance_waiver_staleness kind="unit"  # noqa: E501
+    def test_expired_waiver_refires_and_is_flagged(self, tmp_path: Path):
+        """A `purpose=logging` waiver with a PAST `expires:` date does
+        NOT suppress the SYS105 finding -- it re-fires, plus a
+        SYSWAIVE003 finding names the expired waiver."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    may=("net",),
+                    attrs=("code=src/frob/widget/**", "purpose=logging"),
+                    waives=(
+                        Waiver(
+                            rule="SYS105:net.connect",
+                            reason="stale debt, expires:2020-01-01",
+                        ),
+                    ),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        violations = result.danger_ok.violations
+        assert any(v.rule == SYS_PURPOSE_CONTRACT for v in violations)
+        assert any(v.rule == CONFORMANCE_WAIVER_EXPIRED_RULE for v in violations)
+        assert not any(v.rule == SYS_PURPOSE_CONTRACT for v in result.danger_ok.waived)
+
+    # frob:tests src/frob/strata/_selfconform.py::_apply_conformance_waiver_staleness kind="unit"  # noqa: E501
+    def test_missing_expiry_marker_treated_as_expired(self, tmp_path: Path):
+        """A SYS105 waiver with NO `expires:` marker at all is treated
+        identically to an expired one -- staleness-dating is mandatory
+        for the conformance families, not optional."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    may=("net",),
+                    attrs=("code=src/frob/widget/**", "purpose=logging"),
+                    waives=(Waiver(rule="SYS105:net.connect", reason="undated debt"),),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        violations = result.danger_ok.violations
+        assert any(v.rule == SYS_PURPOSE_CONTRACT for v in violations)
+        assert any(v.rule == CONFORMANCE_WAIVER_EXPIRED_RULE for v in violations)
+
+    # frob:tests src/frob/strata/_selfconform.py::_apply_conformance_waiver_staleness kind="unit"  # noqa: E501
+    def test_unexpired_waiver_still_visible_in_floor_view(self, tmp_path: Path):
+        """A conformance waiver with a FUTURE `expires:` date suppresses
+        the finding as normal, but the waiver stays fully visible in
+        `report.waived` -- the un-droppable floor view T-0671's
+        acceptance criterion [1] requires."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    may=("net",),
+                    attrs=("code=src/frob/widget/**", "purpose=logging"),
+                    waives=(
+                        Waiver(
+                            rule="SYS105:net.connect",
+                            reason="tracked debt, expires:2099-01-01",
+                            ticket="T-0671",
+                        ),
+                    ),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_PURPOSE_CONTRACT for v in result.danger_ok.violations
+        )
+        assert not any(
+            v.rule == CONFORMANCE_WAIVER_EXPIRED_RULE
+            for v in result.danger_ok.violations
+        )
+        assert any(v.rule == SYS_PURPOSE_CONTRACT for v in result.danger_ok.waived)

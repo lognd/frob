@@ -65,11 +65,39 @@ PII/compliance/CVE-fingerprint) share no common base class but both
 resolve to a (rule, node, sub-target-or-None, detail) shape via caller-
 supplied extractor callables, so ONE apply/stale algorithm serves every
 family -- no per-rule-family duplicate (charter: no duplication).
+
+## Bounded/staleness-gated waivers for conformance obligations (T-0671)
+
+T-0341's fifth acceptance criterion ("bounded escape hatches") requires
+every conformance waiver (SYS104/SYS105/SYS106, the interface/purpose/
+binding-totality checks T-0668/T-0669/T-0670 built) to be staleness-
+dated, not a permanent silent exemption. The `.strata` `waive` clause's
+grammar (`strata-core/src/parse.rs`) has no expiry FIELD -- adding one is
+a grammar change, out of this ticket's scope (`src/frob/strata/**`,
+`docs/modules/strata.md`, `tests/unit/strata/**`, not `strata-core/**`).
+`parse_waiver_expiry` is the in-scope substitute: an `expires:YYYY-MM-DD`
+substring embedded in the already-mandatory `reason` string (the same
+"encode structure into an already-parsed string, don't touch the
+grammar" move `_split_waiver_rule`'s `RULE:SUBTARGET` convention already
+makes for sub-targets). `_selfconform.py::_apply_conformance_waiver_
+staleness` is the caller: a conformance-family waiver with no `expires:`
+marker, or one whose date has passed, is treated as EXPIRED -- its
+finding is moved back into `kept` (the underlying obligation re-fires,
+acceptance criterion [0]) and a new `SYSWAIVE003` finding names the
+expired waiver. A conformance waiver whose declared date has NOT yet
+passed stays in `report.waived`, which `sys_runner.py` already prints
+unconditionally on every run (never behind a flag) -- satisfying
+acceptance criterion [1] ("any active waiver appears in the floor view
+and cannot be hidden from default output") with the SAME existing
+"waived, never silently dropped" mechanism this module's docstring
+already establishes, not a new one.
 """
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Sequence
+from datetime import date
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict
@@ -112,10 +140,21 @@ _log = get_logger(__name__)
 #: ASSUMPTIONS-obligation family) join this set for the identical reason
 #: -- a node can originate several clock-dependent flows, so each fires
 #: per-flow.
+#: T-0668/T-0669: SYS104 (interface conformance) and SYS105 (purpose
+#: contract) join this set too -- a node can have several undeclared/
+#: missing interface symbols, or several observed effect kinds outside
+#: its purpose profile, so each fires per-symbol/per-kind
+#: (`_selfconform.py::_interface_conformance_violations`/
+#: `_purpose_contract_violations`, both already set `capability` to the
+#: specific symbol/kind). SYS106 is DELIBERATELY excluded: it fires once
+#: per unbound FILE (like SYS103), not once per node, so it keeps the
+#: bare-rule form.
 MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
     {
         "SYS100",
         "SYS101",
+        "SYS104",
+        "SYS105",
         "THREAT002",
         "THREAT003",
         "SYS200",
@@ -176,6 +215,41 @@ def _validate_waiver_fields(rule: str, reason: str) -> Result[None, StrataError]
 #: run -- the drift-lock analog of the gate system's WAIVE002 (an
 #: ineffective waiver is reported, never a silent no-op).
 STALE_WAIVER_RULE = "SYSWAIVE002"
+
+# frob:doc docs/modules/strata.md#bounded-escape-hatches-t-0671
+#: `frob sys audit` rule id for an EXPIRED conformance waiver (T-0671):
+#: a SYS104/SYS105/SYS106 waiver with no `expires:YYYY-MM-DD` marker in
+#: its `reason` (mandatory for these families, module docstring's T-0671
+#: section), or one whose declared date has passed. Distinct from
+#: `STALE_WAIVER_RULE` (SYSWAIVE002, "matched zero findings this run") --
+#: an expired waiver DID match a real, still-firing finding; it is simply
+#: too old to keep suppressing it.
+CONFORMANCE_WAIVER_EXPIRED_RULE = "SYSWAIVE003"
+
+#: `expires:YYYY-MM-DD` embedded anywhere in a waiver's `reason` string
+#: (module docstring's T-0671 section) -- the in-scope substitute for a
+#: grammar-level expiry field.
+_EXPIRES_RE = re.compile(r"expires:(\d{4}-\d{2}-\d{2})")
+
+
+# frob:doc docs/modules/strata.md#bounded-escape-hatches-t-0671
+# frob:tests tests/unit/strata/test_waive.py::TestConformanceWaiverExpiry.test_parses_embedded_expiry_date  # noqa: E501
+# frob:tests tests/unit/strata/test_waive.py::TestConformanceWaiverExpiry.test_no_marker_returns_none  # noqa: E501
+def parse_waiver_expiry(reason: str) -> date | None:
+    """The `expires:YYYY-MM-DD` date embedded in `reason`, or `None` if no
+    such marker is present (T-0671's grammar-free expiry convention,
+    module docstring). A malformed date string (real regex match, invalid
+    calendar date, e.g. `expires:2026-13-40`) also returns `None` -- fail
+    closed, the same posture `_selfconform.py::_apply_conformance_waiver_
+    staleness` treats identically to "no marker at all" (never a crash)."""
+    match = _EXPIRES_RE.search(reason)
+    if match is None:
+        return None
+    try:
+        return date.fromisoformat(match.group(1))
+    except ValueError:
+        return None
+
 
 #: The finding type `apply_waivers`/`WaivedFinding`/`WaiverApplication` are
 #: generic over (`SelfConformViolation`, `FamilyGap`, ...) -- private
@@ -411,12 +485,14 @@ def _stale_waivers(
 
 
 __all__ = [
+    "CONFORMANCE_WAIVER_EXPIRED_RULE",
     "MULTI_INSTANCE_WAIVER_FAMILIES",
     "STALE_WAIVER_RULE",
     "WaivedFinding",
     "WaiverApplication",
     "WaiverMatch",
     "apply_waivers",
+    "parse_waiver_expiry",
     "_split_waiver_rule",
     "_stale_detail",
     "_validate_waiver_fields",

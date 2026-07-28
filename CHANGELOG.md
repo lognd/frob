@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.236.0] - unreleased
+
+- T-0671: strata: bounded/staleness-gated assume+waiver mechanism - un-droppable floor view for conformance obligations
+
 ## [0.235.0] - unreleased
 
 - T-1097: daemon: resource leases/semaphores (coverage=1 writer) arbitrated by the socket daemon
