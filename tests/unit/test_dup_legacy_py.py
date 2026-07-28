@@ -74,13 +74,16 @@ def _funcs(tmp_path: Path) -> dict[str, Node]:
 # tests/unit/test_dup_legacy_py.py::test_iter_functions_py_yields_qualified_names
 def test_iter_functions_py_yields_qualified_names(tmp_path: Path) -> None:
     """Top-level, method, and nested-function symbols are all yielded, with
-    the method qualified by its enclosing class."""
+    the method qualified by its enclosing class, and a nested closure
+    qualified by the FULL enclosing class/function chain (T-1035: was
+    class-only, so this would have read "C.nested" -- indistinguishable
+    from a same-named closure nested in any OTHER method of C)."""
     funcs = _funcs(tmp_path)
     assert "f" in funcs
     assert "C.method" in funcs
     assert "C.outer" in funcs
-    # nested function inside C.outer -- no enclosing class of its own
-    assert "C.nested" in funcs
+    # nested function inside C.outer -- qualified by both C and outer
+    assert "C.outer.nested" in funcs
 
 
 # frob:tests \
@@ -163,7 +166,7 @@ def test_collect_locals_py_empty_for_body_with_no_bindings(tmp_path: Path) -> No
     """A function whose body only defines a nested function has no locals
     of its own (the nested def is not itself an assignment binding)."""
     funcs = _funcs(tmp_path)
-    assert _collect_locals_py(funcs["C.nested"]) == set()
+    assert _collect_locals_py(funcs["C.outer.nested"]) == set()
 
 
 # frob:tests \

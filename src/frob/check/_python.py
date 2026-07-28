@@ -323,10 +323,44 @@ def _dup_waived_symrefs(waivers) -> set[str]:  # noqa: ANN001
     return {w.src for w in waivers}
 
 
+# frob:ticket T-1035
+def _dup_symref_covered(symref: str, waived_symrefs: set[str]) -> bool:
+    """True if `symref` (`path::a.b.c`) is directly waived, or waived via
+    any ANCESTOR qualname prefix (`path::a.b`, `path::a`).
+
+    T-1035: `frob.dup._legacy_py._iter_functions_py` qualifies a nested
+    Python closure by its FULL enclosing class/function chain (e.g.
+    `path::TestFoo.test_bar._run_new`), but `frob.graph.dsl`'s comment-
+    binding never tracks a nested closure as its own addressable symbol --
+    a `frob:waive` comment placed directly above the nested `def` binds to
+    the nearest OUTER symbol the graph DOES track (here,
+    `path::TestFoo.test_bar`, per `_enclosing_src`'s enclosing-symbol
+    fallback). Requiring an exact symref match would make such a fragment
+    permanently unwaivable no matter where the comment is placed. Walking
+    up the dotted qualname one segment at a time and accepting the first
+    ancestor found in `waived_symrefs` matches what a human intuitively
+    expects (the waiver they wrote directly above the closure does cover
+    it) while changing nothing for a symref that already resolves exactly
+    (an ordinary top-level function or method, one dot at most, has no
+    ancestor prefix to fall back to)."""
+    if symref in waived_symrefs:
+        return True
+    path, sep, symbol = symref.partition("::")
+    if not sep:
+        return False
+    parts = symbol.split(".")
+    while len(parts) > 1:
+        parts = parts[:-1]
+        if f"{path}::{'.'.join(parts)}" in waived_symrefs:
+            return True
+    return False
+
+
 # frob:ticket T-0375
 def _dup_group_covering_waivers(group, waived_symrefs: set[str]) -> tuple[str, ...]:  # noqa: ANN001
     """The sorted waiver symrefs covering `group`, or `()` unless EVERY
-    fragment's symref is covered.
+    fragment's symref is covered (directly or via `_dup_symref_covered`'s
+    ancestor-prefix fallback, T-1035).
 
     T-0375 review fix: `frob.dup._legacy`'s `_exact_groups`/`_renamed_groups`
     deliberately let one symbol sit in BOTH an exact-clone group and a
@@ -340,7 +374,7 @@ def _dup_group_covering_waivers(group, waived_symrefs: set[str]) -> tuple[str, .
     was written about: partial overlap leaves the group counted, and its
     diagnostic lists every fragment still unaccounted for."""
     symrefs = _dup_group_symrefs(group)
-    if not symrefs or not symrefs <= waived_symrefs:
+    if not symrefs or not all(_dup_symref_covered(s, waived_symrefs) for s in symrefs):
         return ()
     return tuple(sorted(symrefs))
 

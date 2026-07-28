@@ -196,7 +196,17 @@ def _leaf_token(n: Node, locals_: set[str], mapping: dict[str, str]) -> str:
 
 
 def _enclosing_class_py(func_node: Node) -> str | None:
-    """Return the enclosing class name for a function node, or None."""
+    """Return the enclosing class name for a function node, or None.
+
+    Kept for its own narrow contract (nearest enclosing CLASS only, still
+    exercised directly by `tests/unit/test_dup_legacy_py.py`) -- NOT used by
+    `_iter_functions_py` below, which needs the full enclosing chain (T-1035:
+    walking straight to the nearest class and skipping any intervening
+    enclosing FUNCTION collapsed two same-named nested closures in different
+    methods of one class to a single symref, and could never match
+    `frob.lang`'s own enclosing-symbol qualname for a `frob:waive` directive
+    to bind to).
+    """
     parent = func_node.parent
     while parent is not None:
         if parent.type == "block":
@@ -212,14 +222,33 @@ def _enclosing_class_py(func_node: Node) -> str | None:
 _PY_FUNC_TYPES = frozenset({"function_definition", "async_function_definition"})
 
 
-def _iter_functions_py(root_node: Node) -> Iterator[tuple[Node, str]]:
+def _iter_functions_py(
+    root_node: Node, _stack: tuple[str, ...] = ()
+) -> Iterator[tuple[Node, str]]:
     """Yield `(func_node, symbol)` for all function/async_function nodes,
-    including nested ones, `symbol` qualified by enclosing class where any."""
+    including nested ones, `symbol` qualified by the FULL enclosing
+    class/function chain (T-1035: was nearest-CLASS-only via
+    `_enclosing_class_py`, which silently collapsed two same-named nested
+    closures in different methods of the same class to one symref, e.g. two
+    `_run_new` closures in two different test methods both reporting as
+    `TestArchiveRaceWithConcurrentNew._run_new`). Qualifying by the full
+    chain -- `Class.method.closure`, not just `Class.closure` -- also makes a
+    nested fragment's symref an actual descendant qualname of the enclosing
+    METHOD symbol `frob.lang`'s own graph tracks, which is what lets
+    `frob.check._python._dup_group_covering_waivers`'s prefix-match rule
+    (T-1035) treat a `frob:waive` bound to that enclosing method as covering
+    the nested fragment too."""
     if root_node.type in _PY_FUNC_TYPES:
         name_node = _child(root_node, "name")
         func_name = _node_text(name_node) if name_node else "<unknown>"
-        class_name = _enclosing_class_py(root_node)
-        symbol = f"{class_name}.{func_name}" if class_name else func_name
+        symbol = ".".join((*_stack, func_name)) if _stack else func_name
         yield root_node, symbol
+        child_stack = (*_stack, func_name)
+    elif root_node.type == "class_definition":
+        name_node = _child(root_node, "name")
+        class_name = _node_text(name_node) if name_node else "<unknown>"
+        child_stack = (*_stack, class_name)
+    else:
+        child_stack = _stack
     for c in root_node.children:
-        yield from _iter_functions_py(c)
+        yield from _iter_functions_py(c, child_stack)

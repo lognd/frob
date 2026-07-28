@@ -669,6 +669,28 @@ reuse that broader file-scoped rule -- it would make one waiver anywhere in
 a file silently absorb every duplicate group the file participates in, the
 same class of over-exclusion this section exists to rule out.
 
+**Nested-closure fragments: ancestor-prefix coverage (T-1035).**
+`frob.dup._legacy_py._iter_functions_py` qualifies a Python function's
+symbol by its FULL enclosing class/function chain (e.g. `Class.method.
+closure` for a helper closure nested inside a method) -- this itself was a
+T-1035 fix: qualifying only by the nearest enclosing CLASS (ignoring any
+enclosing FUNCTION in between) silently collapsed two same-named nested
+closures in different methods of one class to a single, ambiguous symref.
+But `frob.lang`'s declared-symbol graph -- what a `frob:waive` comment's
+`following`/`enclosing` binding (`frob.graph.dsl._enclosing_src`) actually
+resolves against -- never tracks a nested closure as its own addressable
+symbol; only top-level defs and class methods are declared symbols. A
+`frob:waive DUP001` comment placed directly above the nested `def` therefore
+cannot bind to the closure itself -- it binds to the nearest OUTER symbol
+the graph DOES track (the enclosing method, one dotted segment short of the
+fragment's own full symref). `_dup_group_covering_waivers` accounts for this
+via `_dup_symref_covered`: a fragment's symref is covered either by an EXACT
+match, or by any ANCESTOR qualname prefix (walking `a.b.c` -> `a.b` -> `a`)
+found in the waived-symref set. This only ever changes behavior for a
+symref with more than one dot (i.e. a nested-closure fragment); an ordinary
+top-level function or method's symref has no ancestor prefix to fall back
+to, so its exact-match requirement is unaffected.
+
 ## Dependencies and integration points
 
 - `frob.lang` (normalized tokens/trees), `frob.graph` (digests, purity

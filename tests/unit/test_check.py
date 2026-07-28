@@ -768,6 +768,69 @@ class TestDupArchWaiverAwareSummaries:
         assert any(d.severity == "warning" for d in result.diagnostics)
         assert not any(d.severity == "note" for d in result.diagnostics)
 
+    def test_dup001_waiver_above_nested_closure_covers_it_via_enclosing_method(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_dup_group_covering_waivers kind="unit"
+        # T-1035: a nested closure's `frob.dup` symref is qualified by its
+        # FULL enclosing chain (`TestFoo.test_a._run_new`), but a
+        # `frob:waive` comment placed directly above the nested `def` binds
+        # (via `frob.graph.dsl`'s enclosing-symbol fallback) to the nearest
+        # OUTER tracked symbol, `TestFoo.test_a` -- one dotted segment
+        # short of an exact symref match. Before the T-1035 fix this made
+        # the fragment permanently unwaivable no matter where the comment
+        # was placed; `_dup_symref_covered`'s ancestor-prefix walk now
+        # accepts the enclosing method's waiver as covering it. Both
+        # fragments' enclosing methods are waived here (full-group
+        # coverage, T-0375's rule unchanged) so the group is excluded from
+        # the headline but still listed as a `note`.
+        nested_body = (
+            "            total = 0\n"
+            "            for item in items:\n"
+            "                total = total + item\n"
+            "                if total > 100:\n"
+            "                    total = 100\n"
+            "            return total\n"
+        )
+        source = (
+            "class TestFoo:\n"
+            f"    {self._WAIVER}"
+            "    def test_a(self, items):\n"
+            "        def _run_new():\n"
+            f"{nested_body}"
+            "        return _run_new()\n"
+            "\n"
+            f"    {self._WAIVER}"
+            "    def test_b(self, items):\n"
+            "        def _run_new():\n"
+            f"{nested_body}"
+            "        return _run_new()\n"
+        )
+        (tmp_path / "a.py").write_text(source)
+
+        from frob.check._python import _run_dup
+
+        result = _run_dup(tmp_path)
+
+        # Two clone groups appear here: the nested `_run_new` closures
+        # themselves (the T-1035 case under test), and the two enclosing
+        # `test_a`/`test_b` method bodies (near-identical since each is
+        # just the nested def + a return) -- both are fully covered by the
+        # same two waivers, so both are excluded from the headline.
+        assert result.summary == "0 duplicate groups (2 waived)", result.summary
+        assert not any(d.severity == "warning" for d in result.diagnostics)
+        nested_closure_note = next(
+            (
+                d
+                for d in result.diagnostics
+                if d.severity == "note" and "_run_new" in d.message
+            ),
+            None,
+        )
+        assert nested_closure_note is not None, result.diagnostics
+        assert "TestFoo.test_a" in nested_closure_note.message
+        assert "TestFoo.test_b" in nested_closure_note.message
+
     def _arch_source(self, *, waiver: str = "") -> str:
         """A long AND structurally complex function (fires ARCH001's
         long-function rule), optionally preceded by a `frob:waive`."""
