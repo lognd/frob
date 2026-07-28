@@ -1165,6 +1165,42 @@ def _run_ctest_list(build_dir: Path) -> Result[list[str], TestingError]:
     return _parse_ctest_json(result.stdout, build_dir)
 
 
+def _collect_cpp_build_dir(
+    root: Path, build_dir: Path
+) -> Result[set[str], TestingError]:
+    """One configured build dir's ctest node ids -- source-mapped where
+    `_cpp_test_source` resolves an unambiguous compiled source, loudly
+    build-dir-anchored otherwise (T-0886; see `collect_cpp_tests`)."""
+    listed = _run_ctest_list(build_dir)
+    if listed.is_err:
+        return Err(listed.danger_err)
+    rel_build = build_dir.relative_to(root).as_posix()
+    command_map = _parse_ctest_command_map(build_dir)
+    target_sources = _cpp_target_sources(root, build_dir)
+    node_ids: set[str] = set()
+    mapped = 0
+    fell_back = 0
+    for name in listed.danger_ok:
+        source = _cpp_test_source(name, command_map, target_sources)
+        if source is not None:
+            node_ids.add(_cpp_node_id(source, name))
+            mapped += 1
+        else:
+            node_ids.add(f"{rel_build}::{name}")
+            fell_back += 1
+    if fell_back:
+        _log.warning(
+            "collect_cpp_tests: FALLBACK -- %d/%d test(s) in %s could not "
+            "be source-mapped (no unambiguous compiled source found via "
+            "compile_commands.json), anchored to the build dir instead of "
+            "a real source file",
+            fell_back,
+            mapped + fell_back,
+            build_dir,
+        )
+    return Ok(node_ids)
+
+
 # frob:doc docs/modules/testing.md#public-api
 # frob:ticket T-0587
 def collect_cpp_tests(root: Path) -> Result[CollectedTests, TestingError]:
@@ -1213,32 +1249,10 @@ def collect_cpp_tests(root: Path) -> Result[CollectedTests, TestingError]:
 
     node_ids: set[str] = set()
     for build_dir in build_dirs:
-        listed = _run_ctest_list(build_dir)
-        if listed.is_err:
-            return Err(listed.danger_err)
-        rel_build = build_dir.relative_to(root).as_posix()
-        command_map = _parse_ctest_command_map(build_dir)
-        target_sources = _cpp_target_sources(root, build_dir)
-        mapped = 0
-        fell_back = 0
-        for name in listed.danger_ok:
-            source = _cpp_test_source(name, command_map, target_sources)
-            if source is not None:
-                node_ids.add(_cpp_node_id(source, name))
-                mapped += 1
-            else:
-                node_ids.add(f"{rel_build}::{name}")
-                fell_back += 1
-        if fell_back:
-            _log.warning(
-                "collect_cpp_tests: FALLBACK -- %d/%d test(s) in %s could not "
-                "be source-mapped (no unambiguous compiled source found via "
-                "compile_commands.json), anchored to the build dir instead of "
-                "a real source file",
-                fell_back,
-                mapped + fell_back,
-                build_dir,
-            )
+        collected = _collect_cpp_build_dir(root, build_dir)
+        if collected.is_err:
+            return Err(collected.danger_err)
+        node_ids |= collected.danger_ok
 
     frozen = frozenset(node_ids)
     _store_cache(cache_path, key, frozen)
