@@ -28,6 +28,7 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
+# frob:doc docs/modules/gates.md#git-less-target-contract-t-0705
 def tracked_files(root: Path, *, caller: str) -> tuple[str, ...]:
     """`git ls-files` under `root`, root-relative POSIX paths, `()` on any
     git failure (no repo, git missing) -- the degrade-don't-crash posture
