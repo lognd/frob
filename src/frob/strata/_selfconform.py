@@ -905,9 +905,10 @@ def _unmodeled_violations(
 # frob:enforces CHK-GATE-SYS100
 # frob:enforces CHK-GATE-SYS101
 # frob:enforces CHK-GATE-SYS102
-# SYS103 (SYS-COV): no `frob:enforces CHK-GATE-SYS103` yet -- that
-# registry id lives in docs/design/registry/check-coverage.yaml, outside
-# this ticket's declared scope; filed as a follow-up (see Done report).
+# SYS103 edge added at T-0667's coordinator close-out, once the registry
+# entry existed and SYS103 registered in the live rule set (the follow-up
+# T-0667's Done report deferred).
+# frob:enforces CHK-GATE-SYS103
 def check_self_conformance(
     model: KernelModel, root: Path
 ) -> Result[SelfConformReport, StrataError]:

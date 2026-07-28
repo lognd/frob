@@ -1104,6 +1104,13 @@ _PII012_REVIEWED_NON_PII: frozenset[tuple[str, str]] = frozenset(
         ("src/frob/dup/_pipeline.py", "TOKEN"),
         ("src/frob/dup/_pipeline.py", "token"),
         ("src/frob/gates/__init__.py", "token"),
+        # T-1072's split moved the waiver machinery (and its SEC110/secret-
+        # fake vocabulary, the same reviewed non-PII homonyms below) from
+        # gates/__init__.py into gates/_waive.py -- same tokens, new home.
+        ("src/frob/gates/_waive.py", "token"),
+        ("src/frob/gates/_waive.py", "SECRET"),
+        ("src/frob/gates/_waive.py", "secret"),
+        ("src/frob/gates/_waive.py", "_cve_fingerprint_scan"),
         ("src/frob/gates/_docblocks.py", "token"),
         ("src/frob/gates/_refs.py", "token"),
         ("src/frob/gates/_registry_exhaustiveness.py", "token"),

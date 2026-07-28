@@ -37,6 +37,7 @@ from frob.tickets import TicketQueue, TicketState
 
 _log = get_logger(__name__)
 
+
 def _waive_edges(snapshot: GraphSnapshot) -> tuple[Edge, ...]:
     """Every valid `frob:waive` edge in the snapshot (dsl.py already rejects a
     waive directive missing `reason=...` as a MalformedDirective, so every
@@ -656,6 +657,7 @@ _KNOWN_GATE_RULES = frozenset(
         "REL382",
         "REL383",
         "SYS204",
+        "SYS205",
         # frob:ticket T-0960
         # T-0960: the REL39x KERNEL-INTERFACE-CLASSIFICATION +
         # PROCESS-RESOURCE-BOUND obligation family (frob.strata.
@@ -692,6 +694,7 @@ _KNOWN_GATE_RULES = frozenset(
         "SYS100",
         "SYS101",
         "SYS102",
+        "SYS103",
         "SYS200",
         "SYS201",
         "SYS202",
@@ -1968,5 +1971,3 @@ def ticket_lease_pin(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     if lease_result.is_err:
         return Err(lease_result.danger_err)
     return Ok(None)
-
-

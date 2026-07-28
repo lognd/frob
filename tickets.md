@@ -662,12 +662,12 @@ restricts itself to _PACKAGE_ROOT specifically when auditing frob's own
 tree (matching SYS102's existing footprint there, zero regression,
 confirmed: `frob check --only sys` now 0 errors both before and after),
 while staying the full, unrestricted whole-root scan for every OTHER repo.
-Filed T-draft-aaf01744 (model tests/**, scripts/**, frob-core, strata-core
+Filed T-1079 (model tests/**, scripts/**, frob-core, strata-core
 in design/frob.strata to close the 264 real findings, or adopt a reasoned
 exclusion) as the honest follow-up, referenced from docs/modules/strata.md's
 "Known gap" section rather than silently narrowing SYS103's design.
 
-Also filed T-draft-80b44cb3: docs/design/registry/check-coverage.yaml's
+Also flagged (resolved directly at coordinator close-out -- SYS103/SYS205 registered in the live rule set and the frob:enforces CHK-GATE-SYS103 edge added on check_self_conformance): docs/design/registry/check-coverage.yaml's
 CHK-GATE-SYS100/101/102 registry cross-reference has no CHK-GATE-SYS103
 sibling entry yet (docs/design/registry/** is out of scope) -- the
 `frob:enforces CHK-GATE-SYS103` directive was likewise deliberately
@@ -6291,3 +6291,30 @@ threat: null
 component: null
 ```
 Observed 2026-07-28 ~04:30: T-1073's land bumped pyproject/CHANGELOG to 0.211.0 but left .frob-release.json's version at 0.210.0. Every subsequent land then derived baseline 0.210.0 -> computed 0.211.0 -> refused on the T-0992 monotonicity guard against pyproject's 0.211.0 -- three lands (T-1075/T-1069/T-1072) blocked until the coordinator hand-reconciled the manifest (commit b7fa63d9) and ran frob release sync. T-1007 fixed the baseline DERIVATION side; this is the WRITE side: the bump callback (or land's finalize) must write the manifest version in the same atomic step as pyproject/CHANGELOG, and land's refusal diagnostics should detect an incoherent quartet and prescribe the sync.
+
+<!-- ticket:T-1079 -->
+```yaml
+id: T-1079
+title: 'strata: model tests/**, scripts/**, frob-core, strata-core in design/frob.strata
+  or adopt reasoned exclusions (SYS103 264-finding follow-up)'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- design/frob.strata
+- docs/modules/strata.md
+- tests/unit/strata/test_selfconform.py
+acceptance:
+- text: given the SYS103 coverage-totality check runs repo-wide, when the modeled-or-excluded
+    disposition lands, then SYS103 reports zero unbound capable modules without narrowing
+    its own scan design
+  evidence: []
+threat: null
+component: null
+```
+Refile of T-0667's dead draft (T-0667 Done report cited a draft id that did not survive its land -- TICK006). SYS103's first full-tree measurement found 264 real unbound-module findings concentrated in tests/**, scripts/**, frob-core and strata-core sources; T-0667 scoped its shipped check to SYS102's existing footprint and documented the gap in docs/modules/strata.md 'Known gap'. This ticket closes it honestly: model those trees in design/frob.strata, or record reasoned exclusions -- never a silent scan-narrowing.
