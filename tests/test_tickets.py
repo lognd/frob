@@ -18,7 +18,9 @@ from frob.tickets import (
     Ticket,
     TicketError,
     TicketKind,
+    TicketSpec,
     TicketState,
+    add_acceptance,
     add_evidence,
     archive,
     attach,
@@ -1553,3 +1555,56 @@ class TestUnknownFieldForwardCompat:
         result = load_active(tmp_path)
         assert result.is_err
         assert result.danger_err is TicketError.MalformedFrontmatter
+
+
+# frob:ticket T-1029
+class TestAddAcceptance:
+    """T-1029: `add_acceptance` appends criteria to an EXISTING ticket --
+    before this, `frob ticket new --acceptance` was the only CLI path, so a
+    ticket that needed a criterion added after filing had to be hand-edited
+    (the T-0894 incident this closes)."""
+
+    # frob:ticket T-1029
+    def test_appends_criteria_to_existing_ticket(self, tmp_path: Path) -> None:
+        spec = TicketSpec(
+            title="a ticket",
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            # T-0572: `_coerce_acceptance_field` accepts a plain string and
+            # wraps it into an unbound AcceptanceCriterion.
+            acceptance=("first criterion",),  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]  # noqa: E501
+        )
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        result = add_acceptance(tmp_path, ticket_id, ["second criterion", "third"])
+        assert result.is_ok
+        texts = [c.text for c in result.danger_ok.acceptance]
+        assert texts == ["first criterion", "second criterion", "third"]
+        assert all(c.evidence == () for c in result.danger_ok.acceptance)
+
+        reloaded = load_active(tmp_path).danger_ok.tickets[ticket_id]
+        assert [c.text for c in reloaded.acceptance] == texts
+
+    # frob:ticket T-1029
+    def test_empty_criteria_is_rejected(self, tmp_path: Path) -> None:
+        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        result = add_acceptance(tmp_path, ticket_id, [])
+        assert result.is_err
+        assert result.danger_err == TicketError.AcceptanceChangeEmpty
+
+    # frob:ticket T-1029
+    def test_blank_criteria_are_dropped(self, tmp_path: Path) -> None:
+        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        result = add_acceptance(tmp_path, ticket_id, ["  ", "", "real one"])
+        assert result.is_ok
+        assert [c.text for c in result.danger_ok.acceptance] == ["real one"]

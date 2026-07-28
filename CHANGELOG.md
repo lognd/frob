@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.239.0] - unreleased
+
+- T-1029: ticket CLI: add acceptance criteria to an existing ticket (only ticket new supports --acceptance)
+
 ## [0.238.0] - unreleased
 
 - T-1085: arch: abstraction-opportunity app package extraction (T-0393/T-1067 remainder, 5 findings)

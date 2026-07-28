@@ -109,6 +109,14 @@ ever ran. Resolving once here, at argument-parse time, makes every
 downstream consumer of `cfg.ticket_worktree` see an absolute path
 unconditionally.
 
+T-1029: `ticket_accept_criterion` (`list[str]`, default `[]`, repeatable
+`--criterion TEXT`) and `ticket_accept_criterion_file` (`Path | None`,
+default `None`, `--criterion-file PATH`) are `frob ticket accept <id>`'s
+fields -- collected via the ordinary multi-value-list-field / Path-field
+loops in `from_external`, same shape as `ticket_label_add`/
+`ticket_scope_reason_file`'s precedents. See docs/modules/tickets.md#frob-
+ticket-accept-t-1029 for the command itself.
+
 ## Runners
 
 Each runner exposes exactly one public function, `run(cfg: AppConfig) -> None`,

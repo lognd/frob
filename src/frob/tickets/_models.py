@@ -1431,6 +1431,11 @@ class TicketError(ErrorSet):
     # modes, and the close-time gate they exist to feed.
     AcceptanceIndexOutOfRange = "--accepts index does not name an acceptance item"
     AcceptanceUnbound = "one or more acceptance criteria have no resolving evidence id"
+    # T-1029: `frob ticket accept <id> --criterion TEXT` (append acceptance
+    # criteria to an EXISTING ticket) failure mode -- mirrors
+    # ScopeChangeEmpty/LabelChangeEmpty's "don't call this for nothing"
+    # discipline.
+    AcceptanceChangeEmpty = "accept requires at least one non-blank --criterion"
     # T-0844: `close` (not just `land`) refuses a security/bug-kind ticket
     # whose bound evidence killed zero mutants (TEST016 at ERROR severity),
     # mirroring LandError.EvidenceConfirmatoryOnly -- see

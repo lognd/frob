@@ -931,6 +931,60 @@ def mutate_labels(
     return Ok(updated)
 
 
+# frob:ticket T-1029
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets.py::TestAddAcceptance.test_appends_criteria_to_existing_ticket  # noqa: E501
+# frob:tests tests/test_tickets.py::TestAddAcceptance.test_empty_criteria_is_rejected  # noqa: E501
+# frob:tests tests/test_tickets.py::TestAddAcceptance.test_blank_criteria_are_dropped  # noqa: E501
+def add_acceptance(
+    root: Path, ticket_id: str, criteria: Sequence[str]
+) -> Result[Ticket, TicketError]:
+    """Append one or more acceptance criteria to an EXISTING ticket (T-1029)
+    -- before this, `frob ticket new --acceptance` was the ONLY way to
+    attach a criterion at all, so a ticket that needed one added after
+    filing (T-0894's agent hit this closing a new-gate-rule ticket) had no
+    CLI path and had to hand-edit `tickets.md`, exactly the single-writer
+    violation `frob.tickets` otherwise structurally prevents.
+
+    Each of `criteria` becomes a fresh, UNBOUND `AcceptanceCriterion`
+    (`evidence=()`) appended to the ticket's existing `acceptance` tuple --
+    it does not touch or reorder anything already there, only adds. Blank
+    entries (empty after `.strip()`) are silently dropped, matching
+    `mutate_labels`'s comma-split normalization posture; if NOTHING
+    survives that filter, this is an error (`AcceptanceChangeEmpty`) rather
+    than a silent no-op write, the same "don't call this for nothing"
+    discipline `mutate_scope`/`mutate_labels` already enforce.
+
+    Held under `ledger_lock` end to end (load, write) so this can never
+    interleave with a concurrent ledger mutation (T-0458 single-writer
+    invariant) -- no hand-edit of `tickets.md` is ever involved."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    texts = [c.strip() for c in criteria if c.strip()]
+    if not texts:
+        return Err(TicketError.AcceptanceChangeEmpty)
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        new_items = tuple(AcceptanceCriterion(text=t) for t in texts)
+        updated = ticket.model_copy(
+            update={"acceptance": ticket.acceptance + new_items}
+        )
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s acceptance +%d criteria, now %d total",
+        ticket_id,
+        len(new_items),
+        len(updated.acceptance),
+    )
+    return Ok(updated)
+
+
 # frob:ticket T-0409
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_returns_done_and_dropped_only  # noqa: E501
@@ -2828,6 +2882,7 @@ __all__ = [
     "TicketSpec",
     "TicketState",
     "TicketTier",
+    "add_acceptance",
     "add_cmd_evidence",
     "add_evidence",
     "archive",

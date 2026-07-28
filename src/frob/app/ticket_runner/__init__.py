@@ -86,6 +86,7 @@ from ._lifecycle import (
     _sweep_cmd,
 )
 from ._mutate import (
+    _accept,
     _board,
     _brief,
     _component,
@@ -159,6 +160,7 @@ _CACHE_REL = Path(".frob") / "cache.db"
 # zero caller edits, per the T-1072/T-1076/T-1086 precedent).
 __all__ = [
     "guarded_subprocess_run",
+    "_accept",
     "_active_large_glob_warnings",
     "_apply_close_time_evidence",
     "_apply_cmd_evidence",
@@ -301,6 +303,8 @@ def _ticket_dispatch_table() -> dict:
         "kind": _kind,
         "component": _component,
         "label": _label,
+        # frob:ticket T-1029
+        "accept": _accept,
         "board": _board,
         "epic": _epic,
         "brief": _brief,
@@ -317,6 +321,12 @@ def _ticket_dispatch_table() -> dict:
 # frob:doc docs/modules/tickets.md#frob-ticket-land
 # frob:doc docs/modules/tickets.md#structured-review-channel-t-0571
 # frob:ticket T-0588
+# frob:ticket T-1029
+# frob:waive AFFECT001 reason="T-1029 added a new SUBCOMMAND (accept) to the \
+# dispatch table -- REG010-gate-rule-staleness-t-0560 is about a live GATE \
+# RULE id drifting out of the registry's own count, an orthogonal concern \
+# this change never touches; docs/modules/app.md#runners and #config (the \
+# docs this change IS actually about) were updated in the same diff"
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Dispatch to the ticket subcommand named by `cfg.ticket_command`."""
@@ -328,7 +338,7 @@ def run(cfg: AppConfig) -> None:
             "usage: frob ticket <new|list|show|doable|board|epic|brief|plan|"
             "start|requeue|sweep|reconcile|land|merge-driver|attach|block|"
             "close|fail|drop|evidence|done-report|scope|priority|kind|"
-            "component|label|archive|review|sprint|tier> ..."
+            "component|label|accept|archive|review|sprint|tier> ..."
         )
         sys.exit(1)
     with _diagnostic_log_ctx(cfg):

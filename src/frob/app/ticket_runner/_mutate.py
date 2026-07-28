@@ -1,6 +1,6 @@
 """frob.app.ticket_runner._mutate -- the `scope`/`priority`/`kind`/
-`component`/`label`/`board`/`epic`/`tier`/`sprint`/`brief` mutation
-command family.
+`component`/`label`/`accept`/`board`/`epic`/`tier`/`sprint`/`brief`
+mutation command family.
 
 Extracted from `frob.app.ticket_runner` (T-1089, T-0395 tier-2 split
 residue). Re-exported from `frob.app.ticket_runner`'s package `__init__`
@@ -193,6 +193,69 @@ def _label(root: Path, cfg: AppConfig) -> None:
         list(ticket.labels),
         len(cfg.ticket_label_add),
         len(cfg.ticket_label_remove),
+    )
+
+
+# frob:ticket T-1029
+def _resolve_accept_criteria(cfg: AppConfig) -> list[str]:
+    """Resolve `frob ticket accept`'s criteria: `--criterion-file` wins if
+    given (parsed via `_new._parse_acceptance_file`, T-0737's blank-line-
+    separated-block convention, reused verbatim rather than duplicated),
+    else the repeated `--criterion TEXT` flags. Exits 1 if both are given
+    (ambiguous which the caller meant) or the file cannot be read -- same
+    shape as `_new._resolve_new_acceptance`."""
+    from ._new import _parse_acceptance_file
+
+    if cfg.ticket_accept_criterion_file is not None and cfg.ticket_accept_criterion:
+        _log.error(
+            "frob ticket accept: --criterion and --criterion-file are "
+            "mutually exclusive"
+        )
+        sys.exit(1)
+    if cfg.ticket_accept_criterion_file is not None:
+        try:
+            text = cfg.ticket_accept_criterion_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "ticket accept: could not read --criterion-file %s: %s",
+                cfg.ticket_accept_criterion_file,
+                exc,
+            )
+            sys.exit(1)
+        return _parse_acceptance_file(text)
+    return list(cfg.ticket_accept_criterion)
+
+
+# frob:ticket T-1029
+def _accept(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket accept <id> --criterion TEXT... | --criterion-file
+    PATH`: the ONLY thing this command does is resolve the criteria
+    (`_resolve_accept_criteria`) and forward to `frob.tickets.
+    add_acceptance` -- all validation lives there (T-1029, same "this
+    command does nothing but forward" pattern as `_scope`/`_label`)."""
+    from frob.tickets import add_acceptance
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket accept requires <id>")
+        sys.exit(1)
+
+    criteria = _resolve_accept_criteria(cfg)
+    if not criteria:
+        _log.error(
+            "frob ticket accept requires --criterion TEXT or --criterion-file PATH"
+        )
+        sys.exit(1)
+
+    result = add_acceptance(root, cfg.ticket_id, criteria)
+    if result.is_err:
+        _log.error("accept failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info(
+        "%s: acceptance now %d criterion/criteria (+%d this change)",
+        cfg.ticket_id,
+        len(ticket.acceptance),
+        len(criteria),
     )
 
 

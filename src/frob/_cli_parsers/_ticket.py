@@ -831,6 +831,42 @@ def _add_ticket_label_parser(ticket_sub):
     return ticket_label_p
 
 
+# frob:ticket T-1029
+def _add_ticket_accept_parser(ticket_sub):
+    """Register `frob ticket accept <id> --criterion TEXT... |
+    --criterion-file PATH` -- append one or more acceptance criteria to an
+    EXISTING ticket (T-1029). Before this, `frob ticket new --acceptance`
+    was the only CLI path to attach a criterion at all, so a ticket that
+    needed one added after filing (T-0894's agent hit this closing a
+    new-gate-rule ticket) had to be hand-edited. `--criterion-file` reads
+    blank-line-separated blocks the same way `frob ticket new
+    --acceptance-file` does (T-0737's `_parse_acceptance_file`); the two
+    are mutually exclusive, same as every other `--x`/`--x-file` pair in
+    this module."""
+    ticket_accept_p = ticket_sub.add_parser(
+        "accept",
+        help="append acceptance criteria to an existing ticket (T-1029)",
+    )
+    ticket_accept_p.add_argument("ticket_id", metavar="id")
+    ticket_accept_p.add_argument(
+        "--criterion",
+        dest="ticket_accept_criterion",
+        action="append",
+        default=[],
+        metavar="TEXT",
+        help="acceptance criterion text (repeatable)",
+    )
+    ticket_accept_p.add_argument(
+        "--criterion-file",
+        dest="ticket_accept_criterion_file",
+        metavar="PATH",
+        help="read criteria verbatim from PATH, one per blank-line-separated "
+        "block (T-0737's --acceptance-file convention); mutually exclusive "
+        "with --criterion",
+    )
+    return ticket_accept_p
+
+
 # frob:ticket T-1069
 def _add_ticket_tier_parser(ticket_sub):
     """Register `frob ticket tier <id> <epic|story|ticket>` -- reclassify an
@@ -885,7 +921,7 @@ def _add_ticket_sprint_parser(ticket_sub):
 def _add_ticket_closeout_parsers(ticket_sub) -> list:
     """Register the ticket closeout subcommands: attach/block/close/
     reverify/fail/evidence/done-report/scope/priority/kind/component/
-    label/review/sprint/tier."""
+    label/accept/review/sprint/tier."""
     return (
         _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub)
         + _add_ticket_fail_evidence_archive_parsers(ticket_sub)
@@ -898,6 +934,8 @@ def _add_ticket_closeout_parsers(ticket_sub) -> list:
             _add_ticket_kind_parser(ticket_sub),
             _add_ticket_component_parser(ticket_sub),
             _add_ticket_label_parser(ticket_sub),
+            # frob:ticket T-1029
+            _add_ticket_accept_parser(ticket_sub),
             _add_ticket_review_parser(ticket_sub),
             # frob:ticket T-0715
             _add_ticket_sprint_parser(ticket_sub),

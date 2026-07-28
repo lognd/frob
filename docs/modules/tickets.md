@@ -1931,6 +1931,36 @@ partial command substitution before frob ever sees it.
   `_resolve_new_acceptance` / `_parse_acceptance_file` -- pure CLI-layer
   resolution, no change to `TicketSpec` or `new_ticket` itself.
 
+### `frob ticket accept` (T-1029)
+
+`frob ticket new --acceptance` was, until this ticket, the ONLY way to
+attach an acceptance criterion to a ticket at all -- a ticket that needed
+one added AFTER filing (T-0894's agent hit exactly this closing a
+new-gate-rule ticket, per the before-fails/after-passes criterion that
+gate's close check demands) had no CLI path and had to hand-edit
+`tickets.md`, the single-writer violation `frob.tickets` otherwise
+structurally prevents everywhere else.
+
+`frob.tickets.add_acceptance(root, ticket_id, criteria)` appends each of
+`criteria` as a fresh, UNBOUND `AcceptanceCriterion` (`evidence=()`) to the
+ticket's EXISTING `acceptance` tuple -- it never touches or reorders what
+is already there, only adds. Blank entries are dropped after `.strip()`
+(matching `mutate_labels`'s comma-split posture); if nothing survives that
+filter, `Err(TicketError.AcceptanceChangeEmpty)` -- the same "don't call
+this for nothing" discipline `mutate_scope`/`mutate_labels` already
+enforce, never a silent no-op write. Held under `ledger_lock` end to end
+(T-0458 single-writer invariant), same as every other mutation here.
+
+`frob ticket accept <id> --criterion TEXT... | --criterion-file PATH`
+forwards to `add_acceptance` with nothing else re-derived at the CLI layer
+(`frob.app.ticket_runner._mutate._accept`, same "this command does
+nothing but forward" pattern as `_scope`/`_label`).
+`--criterion-file PATH` reads criteria verbatim from a file using the
+EXACT same blank-line-separated-block parser `--acceptance-file` already
+uses (`_new._parse_acceptance_file`, T-0737, reused rather than
+duplicated) -- mutually exclusive with repeated `--criterion TEXT` flags,
+giving both exits 1.
+
 ```python
 
 class AttachmentSource(BaseModel):

@@ -415,6 +415,12 @@ class AppConfig(BaseModel):
     ticket_labels: list[str] = []
     ticket_label_add: list[str] = []
     ticket_label_remove: list[str] = []
+    # frob:ticket T-1029
+    # `frob ticket accept <id> --criterion TEXT... | --criterion-file PATH`
+    # -- append acceptance criteria to an EXISTING ticket (only `ticket new
+    # --acceptance` supported this before).
+    ticket_accept_criterion: list[str] = []
+    ticket_accept_criterion_file: Path | None = None
     # frob:ticket T-0454
     # `frob ticket board [--component NAME] [--label TAG] [--json]`.
     ticket_board_component: str | None = None
@@ -710,6 +716,8 @@ class AppConfig(BaseModel):
             "ticket_body_file",
             "ticket_acceptance_file",
             "ticket_scope_reason_file",
+            # frob:ticket T-1029
+            "ticket_accept_criterion_file",
             "test_path",
             "vet_path",
             "vet_cve_mirror",
@@ -816,6 +824,8 @@ class AppConfig(BaseModel):
             "ticket_labels",
             "ticket_label_add",
             "ticket_label_remove",
+            # frob:ticket T-1029
+            "ticket_accept_criterion",
             "test_lang",
             "perf_argv",
             "mutate_argv",
