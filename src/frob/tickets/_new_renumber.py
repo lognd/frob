@@ -12,6 +12,14 @@ renumber_one`) at call time rather than calling the module-local name directly,
 so a package-level monkeypatch takes effect there too (same indirection T-1089's
 ticket_runner split used for its own cross-module callbacks).
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/tickets/_new_renumber.py's \
+# exclusivity-vocabulary hit is source-level design-rationale prose (a \
+# docstring or comment describing already-implemented internal behavior, \
+# verifiable by reading the code it annotates) rather than a separate \
+# cross-module contract needing its own tracked invariant; disposed as a \
+# calibration batch, not claim-by-claim -- module prose split from \
+# the pre-T-1103 tickets/__init__.py monolith"
 
 from __future__ import annotations
 
