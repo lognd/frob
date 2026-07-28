@@ -1020,7 +1020,7 @@ ERROR in src/frob/gates/_opaque.py.
 ```yaml
 id: T-1049
 title: 'refactor: decompose oversized _build_jobs gate-job registry (ARCH001)'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -1030,8 +1030,6 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/__init__.py
-evidence:
-- tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
 threat: null
 component: null
 ```
