@@ -114,7 +114,6 @@ _ERROR_SEVERITY_CATEGORIES = frozenset({"cpp-noexcept-throws"})
 # binds here with its ARCH siblings.
 # frob:enforces CHK-GATE-CPPTHROW001
 # frob:enforces CHK-GATE-ARCH103
-# frob:enforces CHK-GATE-CPPTHROW001
 # T-1102: large-file channels through this same category-to-rule map.
 # frob:enforces CHK-GATE-LARGE001
 # frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_two_cluster_class_fires_arch101  # noqa: E501
