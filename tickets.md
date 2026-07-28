@@ -1699,7 +1699,7 @@ pre-existing DRIFT001/TEST003 waived entries unrelated to this change.
 id: T-1050
 title: 'vet/opaque: generalized container-subscript-call detector + rust/cpp/kotlin
   points-to alias tracking (T-1047 residual)'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-27'
@@ -1769,6 +1769,8 @@ indirection... FAILS CLOSED") does not fully hold -- these 7 opaque-gate
 rows and 6 structural-resolver rows are the reason T-0339 was NOT closed
 alongside T-1047.
 
+## Failure log
+- 2026-07-28 attempt 1: duplicate/superseded: T-1051 (done) already implemented the generalized container-subscript-call + cast-then-call structural detector this ticket describes, and T-1063 (done) already closed the rust/cpp/kotlin points-to alias-tracking residual T-1050 also names; no undone work remains under this ticket's scope
 <!-- ticket:T-1059 -->
 ```yaml
 id: T-1059
