@@ -668,9 +668,9 @@ class TestSizeCapAndTimeout:
         assert result.is_err
         assert result.danger_err == LangError.FileTooLarge
         messages = [record.message for record in caplog.records]
-        assert any(
-            "PARSE" in m and str(big) in m and "16" in m for m in messages
-        ), messages
+        assert any("PARSE" in m and str(big) in m and "16" in m for m in messages), (
+            messages
+        )
 
     # frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_parse_timeout_returns_err_not_hang  # noqa: E501
     def test_parse_timeout_returns_err_not_hang(

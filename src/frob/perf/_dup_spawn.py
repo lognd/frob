@@ -185,6 +185,13 @@ def _iter_top_level_calls(body: Node) -> list[Node]:
     return hits
 
 
+def _unknown_occurrence(reason: str) -> frozenset[EffectOccurrence]:
+    """The single explicit `(UNKNOWN_KIND, Unknown(reason))` occurrence
+    every unresolvable branch of `_entry_occurrences` returns (T-0922) --
+    one home so the three unresolvable shapes cannot drift apart."""
+    return frozenset({(UNKNOWN_KIND, Unknown(reason))})
+
+
 def _entry_occurrences(
     call: Node, graph: _EffectGraph, from_path: str, source: str | bytes
 ) -> frozenset[EffectOccurrence]:
@@ -216,45 +223,23 @@ def _entry_occurrences(
                 else "a *args/**kwargs splat argument whose real content is "
                 "caller-dependent (T-1018)"
             )
-            return frozenset(
-                {
-                    (
-                        UNKNOWN_KIND,
-                        Unknown(
-                            f"{reason} for a {effect} call "
-                            f"at {from_path}:{call.start_point[0] + 1}"
-                        ),
-                    )
-                }
+            return _unknown_occurrence(
+                f"{reason} for a {effect} call at {from_path}:{call.start_point[0] + 1}"
             )
         return frozenset({(effect, _normalize_arg_text(_node_text(args)))})
     short = _callee_short_name(call)
     if short is None:
-        return frozenset(
-            {
-                (
-                    UNKNOWN_KIND,
-                    Unknown(
-                        f"call at {from_path}:{call.start_point[0] + 1} has no "
-                        f"simple bare/dotted callee name to resolve"
-                    ),
-                )
-            }
+        return _unknown_occurrence(
+            f"call at {from_path}:{call.start_point[0] + 1} has no "
+            f"simple bare/dotted callee name to resolve"
         )
     dotted = _callee_dotted(call)
     receiver_class = _infer_receiver_class(source, dotted[0]) if dotted else None
     candidates = graph.resolve_scoped(short, from_path, receiver_class)
     if not candidates:
-        return frozenset(
-            {
-                (
-                    UNKNOWN_KIND,
-                    Unknown(
-                        f"unresolvable/ambiguous callee {short!r} at "
-                        f"{from_path}:{call.start_point[0] + 1}"
-                    ),
-                )
-            }
+        return _unknown_occurrence(
+            f"unresolvable/ambiguous callee {short!r} at "
+            f"{from_path}:{call.start_point[0] + 1}"
         )
     # T-1053: lru_cache blindness -- if EVERY resolved candidate is itself
     # decorated `@lru_cache`/`@cache`, repeated calls to it from distinct

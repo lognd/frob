@@ -536,17 +536,18 @@ def _without_agent_commit_guard() -> Iterator[None]:
     concurrent thread's own `FROB_AGENT` read is never affected for longer
     than necessary."""
     # frob:waive SEC110 reason="FROB_AGENT is a dispatch-context marker \
-    # (T-0574), not a secret"
+    # (T-0574), carries no sensitive value"
     prior = os.environ.get("FROB_AGENT")
     if prior is not None:
-        # frob:waive SEC110 reason="removing a dispatch-context marker, not a secret"
+        # frob:waive SEC110 reason="removing a dispatch-context marker, \
+        # carries no sensitive value"
         del os.environ["FROB_AGENT"]
     try:
         yield
     finally:
         if prior is not None:
             # frob:waive SEC110 reason="restoring a dispatch-context \
-            # marker, not a secret"
+            # marker, carries no sensitive value"
             os.environ["FROB_AGENT"] = prior
 
 

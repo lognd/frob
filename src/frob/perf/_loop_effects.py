@@ -177,6 +177,39 @@ def _iter_loop_call_sites(root: Node) -> list[tuple[Node, Node]]:
     return hits
 
 
+def _call_site_effect(
+    call_node: Node, source: str | bytes, graph: _EffectGraph
+) -> tuple[str, str] | None:
+    """One loop call site's `(effect, effect_name)` -- a direct
+    spawn/fs-walk effect first, else one resolved through the effect graph
+    with the T-1053 memoized-callee skip and receiver-class narrowing;
+    `None` when no effect is reachable from this call site."""
+    effect = _direct_effect(call_node)
+    if effect is not None:
+        func = _child_by_field(call_node, "function")
+        return effect, (_node_text(func) if func is not None else "?")
+    short_name = _callee_short_name(call_node)
+    if short_name is None:
+        return None
+    # T-1053: lru_cache blindness -- a call to a callee that is itself
+    # decorated `@lru_cache`/`@cache` pays its real cost at most once per
+    # distinct argument tuple, not once per loop-invariant call site;
+    # hoisting/memoizing advice is a false positive here since the callee
+    # already memoizes.
+    if graph.callee_is_memoized(short_name):
+        return None
+    # T-1053: receiver-conflation -- narrow an ambiguous dotted call's
+    # by-name resolution to the receiver's actually-inferred class when a
+    # cheap textual `receiver = ClassName(...)` constructor assignment is
+    # found nearby.
+    dotted = _callee_dotted(call_node)
+    receiver_class = _infer_receiver_class(source, dotted[0]) if dotted else None
+    hit = graph.reachable_effect(short_name, receiver_class)
+    if hit is None:
+        return None
+    return hit[0], hit[1]
+
+
 def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
     """Every PERF008 hit in one python source file, re-parsed via
     `frob.lang.raw_tree` (not reused from `ParsedFile.symbols`, which
@@ -192,34 +225,10 @@ def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
         return []
     violations: list[Violation] = []
     for call_node, loop in _iter_loop_call_sites(tree.root_node):
-        effect = _direct_effect(call_node)
-        effect_name = None
-        if effect is not None:
-            func = _child_by_field(call_node, "function")
-            effect_name = _node_text(func) if func is not None else "?"
-        else:
-            short_name = _callee_short_name(call_node)
-            if short_name is not None:
-                # T-1053: lru_cache blindness -- a call to a callee that is
-                # itself decorated `@lru_cache`/`@cache` pays its real cost
-                # at most once per distinct argument tuple, not once per
-                # loop-invariant call site; hoisting/memoizing advice is a
-                # false positive here since the callee already memoizes.
-                if graph.callee_is_memoized(short_name):
-                    continue
-                # T-1053: receiver-conflation -- narrow an ambiguous dotted
-                # call's by-name resolution to the receiver's actually-
-                # inferred class when a cheap textual `receiver =
-                # ClassName(...)` constructor assignment is found nearby.
-                dotted = _callee_dotted(call_node)
-                receiver_class = (
-                    _infer_receiver_class(source, dotted[0]) if dotted else None
-                )
-                hit = graph.reachable_effect(short_name, receiver_class)
-                if hit is not None:
-                    effect, effect_name = hit[0], hit[1]
-        if effect is None:
+        resolved = _call_site_effect(call_node, source, graph)
+        if resolved is None:
             continue
+        effect, effect_name = resolved
         body = _child_by_field(loop, "body")
         body_text = _node_text(body) if body is not None else ""
         loop_vars = _loop_bound_names(loop)
