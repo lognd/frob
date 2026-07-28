@@ -432,7 +432,7 @@ Triage the 37 frob-arch abstraction-opportunity advisories: for each genuine nea
 ```yaml
 id: T-0394
 title: 'advisories: deep-nesting refactor (2 findings)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -458,6 +458,12 @@ evidence:
 - tests/test_gates.py::TestPiiStructuralCrossLanguage::test_rust_struct_ssn_field_fires
 - tests/unit/perf/test_effect_summaries.py::TestEffectGraphSummaryUnknownDegradation::test_fully_resolvable_call_path_has_no_unknown_member
 - tests/unit/test_cycle.py::test_long_chain_no_recursion_error
+- tests/unit/test_arch.py::TestCollectDispatchRefs::test_call_callee_identifier_counted
+- tests/unit/test_arch.py::TestCollectDispatchRefs::test_call_positional_argument_identifier_counted
+- tests/unit/test_arch.py::TestCollectDispatchRefs::test_call_keyword_argument_identifier_counted
+- tests/unit/test_arch.py::TestCollectDispatchRefs::test_call_keyword_argument_non_identifier_not_counted
+- tests/unit/test_arch.py::TestCollectDispatchRefs::test_call_string_argument_not_counted
+- tests/unit/test_arch.py::TestPythonAdapter::test_adapt_imports
 threat: null
 component: null
 ```
