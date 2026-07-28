@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.200.0] - unreleased
+
+- T-1022: EXHAUST001/002 turn-on debt burn-down: 190 escape-hatch sites (135 unknown-escape, 55 named-escape)
+
 ## [0.199.0] - unreleased
 
 - T-1047: vet/opaque: extend RUNTIME_OPAQUE_CONSTRUCTS + OPAQUE_SOURCE_INVISIBLE for ~25 taxonomy runtime-opaque rows found unaddressed by T-0666, plus Rust struct-field / C++ pointer-to-member alias tracking

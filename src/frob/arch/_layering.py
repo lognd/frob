@@ -50,6 +50,9 @@ from pydantic import BaseModel
 
 from frob.arch._models import ArchSuggestion
 from frob.arch._normalized import NormalizedModule
+from frob.logging import get_logger
+
+_log = get_logger(__name__)
 
 #: Substrings (T-0620) whose presence in a layered file's raw source marks
 #: it as containing dynamic/reflective import indirection this scan cannot
@@ -159,6 +162,8 @@ def _has_dynamic_import(path: Path) -> bool:
         text = path.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return False
+    except Exception:  # noqa: BLE001 -- best-effort scan, never fatal
+        return False
     return any(marker in text for marker in _DYNAMIC_IMPORT_MARKERS)
 
 
@@ -198,15 +203,19 @@ def check_layering_violations(
             rel_path = path.relative_to(root)
         except ValueError:
             continue
-        if any(is_skipped_dir(part) for part in rel_path.parts):
+        try:
+            if any(is_skipped_dir(part) for part in rel_path.parts):
+                continue
+            rel = rel_path.as_posix()
+            if exclude_globs and is_excluded(rel, exclude_globs):
+                continue
+            source_layer = config.layer_for(rel)
+            if source_layer is None:
+                continue
+            _layering_violations_for_file(path, rel, root, source_layer, config, out)
+        except Exception as exc:  # noqa: BLE001 -- one bad file must not abort the scan
+            _log.debug("check_layering_violations: %s failed: %s", rel_path, exc)
             continue
-        rel = rel_path.as_posix()
-        if exclude_globs and is_excluded(rel, exclude_globs):
-            continue
-        source_layer = config.layer_for(rel)
-        if source_layer is None:
-            continue
-        _layering_violations_for_file(path, rel, root, source_layer, config, out)
     return out
 
 

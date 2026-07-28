@@ -16,6 +16,9 @@ from typing import NoReturn
 
 from frob.app import App, AppConfig
 from frob.app.config import stale_install_warning
+from frob.logging import get_logger
+
+_log = get_logger(__name__)
 
 # frob:ticket T-0578
 _INVALID_CHOICE_RE = re.compile(
@@ -2439,6 +2442,9 @@ def _frob_version() -> str:
         return version("frob")
     except PackageNotFoundError:
         return "unknown"
+    except Exception as exc:  # noqa: BLE001 -- best-effort version probe, never fatal
+        _log.debug("_frob_version: unresolvable metadata lookup failed: %s", exc)
+        return "unknown"
 
 
 # frob:ticket T-0578
@@ -2546,6 +2552,10 @@ def main() -> None:
     except KeyboardInterrupt:
         print("frob: interrupted", file=_sys.stderr)
         _sys.exit(130)
+    except Exception as exc:  # noqa: BLE001 -- top-level CLI boundary must not crash raw
+        _log.error("main: unhandled exception during dispatch: %s", exc, exc_info=True)
+        print(f"frob: {exc}", file=_sys.stderr)
+        _sys.exit(1)
 
 
 # frob:ticket T-0355

@@ -918,6 +918,7 @@
     "src/frob/process/parsers/common.py::ToolResult.passed": "aa32a55e62df9be3d807f1c174015f99ddea48ce394239f3d0515b940ba63f77",
     "src/frob/process/parsers/common.py::ToolResult.warning_count": "50256ebe385babda146ba3dbf2d5be2561f097852d999a5c05afb7ca46fb1119",
     "src/frob/process/parsers/common.py::summarize_severity": "951833f69577d1b449fb06d369ecc612ad6c66e7087b03036f9f40e8ebb5d84e",
+    "src/frob/process/parsers/common.py::tool_crash_result": "4c0a3e96900a8124ea245b3105339a1bf4a9e0a67aa20a7d87c2fc2e8a35b710",
     "src/frob/process/parsers/common.py::tool_disabled_result": "5e6ed2f4508e779c80daece7102399ad1e14fa4c893e9d081750dd7748aad14b",
     "src/frob/process/parsers/common.py::tool_unavailable_result": "51be403c595707e2c93771a1c507d7288aa6cd10ad15687521bc1e24fe6724d0",
     "src/frob/process/parsers/eslint.py::parse_eslint": "48f27432f7a6f7a5417ee2e29cd3538f82c2390609e76763ef501e5781b10aa2",
@@ -1771,5 +1772,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.199.0"
+  "version": "0.200.0"
 }

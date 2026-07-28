@@ -56,6 +56,9 @@ from frob.arch._normalized import (
     NormalizedFunction,
     NormalizedModule,
 )
+from frob.logging import get_logger
+
+_log = get_logger(__name__)
 
 if TYPE_CHECKING:
     from frob.cycle.graph import DependencyGraph
@@ -606,21 +609,25 @@ def _build_project_import_graph(root: Path) -> "DependencyGraph":
             rel_path = path.relative_to(root)
         except ValueError:
             continue
-        if any(is_skipped_dir(part) for part in rel_path.parts):
+        try:
+            if any(is_skipped_dir(part) for part in rel_path.parts):
+                continue
+            rel = rel_path.as_posix()
+            if exclude_globs and is_excluded(rel, exclude_globs):
+                continue
+            graph.add_node(rel)
+            result = extract_imports(path)
+            if result.is_err:
+                continue
+            for spec in result.danger_ok:
+                resolved = resolve_local_import(
+                    spec, "python", file_dir=path.parent, root=root
+                )
+                if resolved is not None:
+                    graph.add_edge(rel, resolved)
+        except Exception as exc:  # noqa: BLE001 -- one bad file must not abort the scan
+            _log.debug("_build_project_import_graph: %s failed: %s", rel_path, exc)
             continue
-        rel = rel_path.as_posix()
-        if exclude_globs and is_excluded(rel, exclude_globs):
-            continue
-        graph.add_node(rel)
-        result = extract_imports(path)
-        if result.is_err:
-            continue
-        for spec in result.danger_ok:
-            resolved = resolve_local_import(
-                spec, "python", file_dir=path.parent, root=root
-            )
-            if resolved is not None:
-                graph.add_edge(rel, resolved)
     return graph
 
 

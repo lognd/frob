@@ -31,12 +31,15 @@ def _current_version(root: Path) -> str:
     unresolvable -- mirrors `frob.gates`' own `_current_version` degrade so
     a repo with no declared version still gets the date-based expiry check."""
     toml_path = root / "pyproject.toml"
-    if not toml_path.exists():
-        return "0.0.0"
     try:
+        if not toml_path.exists():
+            return "0.0.0"
         with toml_path.open("rb") as fh:
             data = tomllib.load(fh)
     except (OSError, tomllib.TOMLDecodeError):
+        return "0.0.0"
+    except Exception as exc:  # noqa: BLE001 -- best-effort version probe, never fatal
+        _log.debug("_current_version: unresolvable pyproject read failed: %s", exc)
         return "0.0.0"
     version = data.get("project", {}).get("version")
     return version if isinstance(version, str) else "0.0.0"

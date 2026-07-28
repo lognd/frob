@@ -32,6 +32,7 @@ case a tool by name.
 <!-- frob:describes src/frob/process/parsers/common.py::ToolResult.as_json -->
 <!-- frob:describes src/frob/process/parsers/common.py::tool_unavailable_result -->
 <!-- frob:describes src/frob/process/parsers/common.py::tool_disabled_result -->
+<!-- frob:describes src/frob/process/parsers/common.py::tool_crash_result -->
 <!-- frob:describes src/frob/process/_guard.py::EXEC_KILL_SWITCH_ENV -->
 <!-- frob:describes src/frob/process/_guard.py::NET_KILL_SWITCH_ENV -->
 <!-- frob:describes src/frob/process/_guard.py::ProcessGuardError -->
@@ -109,6 +110,8 @@ def tool_unavailable_result(tool: str, binary: str) -> ToolResult
     # A missing tool binary as a failing ToolResult (T-0142 vacuous-pass doctrine).
 def tool_disabled_result(tool: str, flag_env: str) -> ToolResult
     # An exec-kill-switch refusal as a failing ToolResult (T-0200), naming the env var.
+def tool_crash_result(tool: str, exc: BaseException) -> ToolResult
+    # An unexpected exception (T-1022 EXHAUST001/002) as a failing ToolResult, naming the exception.
 ```
 
 ## Kill switch (T-0200)

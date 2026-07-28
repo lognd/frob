@@ -18,13 +18,17 @@ import subprocess
 from pathlib import Path
 
 from frob.excludes import iter_files
+from frob.logging import get_logger
 from frob.process._guard import EXEC_KILL_SWITCH_ENV, guarded_subprocess_run
 from frob.process.parsers.common import (
     Diagnostic,
     ToolResult,
+    tool_crash_result,
     tool_disabled_result,
     tool_unavailable_result,
 )
+
+_log = get_logger(__name__)
 
 _CPP_EXCLUDED_DIRS = {"build", ".venv", "third_party", "extern"}
 
@@ -56,6 +60,9 @@ def _cmake_configure(root: Path, build_dir: Path) -> ToolResult | None:
         )
     except FileNotFoundError:
         return tool_unavailable_result("cmake-configure", "cmake")
+    except Exception as exc:  # noqa: BLE001 -- unexpected crash is a typed ToolResult
+        _log.debug("_cmake_configure: unexpected failure: %s", exc)
+        return tool_crash_result("cmake-configure", exc)
     if run_result.is_err:
         return tool_disabled_result("cmake-configure", EXEC_KILL_SWITCH_ENV)
     cfg = run_result.danger_ok
@@ -91,6 +98,9 @@ def _run_cmake_build(root: Path, build_dir: Path) -> ToolResult:
         )
     except FileNotFoundError:
         return tool_unavailable_result("cmake-build", "cmake")
+    except Exception as exc:  # noqa: BLE001 -- unexpected crash is a typed ToolResult
+        _log.debug("_run_cmake_build: unexpected failure: %s", exc)
+        return tool_crash_result("cmake-build", exc)
     if run_result.is_err:
         return tool_disabled_result("cmake-build", EXEC_KILL_SWITCH_ENV)
     proc = run_result.danger_ok
@@ -129,10 +139,17 @@ def _run_clang_tidy_cmake(root: Path, build_dir: Path) -> ToolResult | None:
         )
     except FileNotFoundError:
         return tool_unavailable_result("clang-tidy", "clang-tidy")
+    except Exception as exc:  # noqa: BLE001 -- unexpected crash is a typed ToolResult
+        _log.debug("_run_clang_tidy_cmake: unexpected failure: %s", exc)
+        return tool_crash_result("clang-tidy", exc)
     if run_result.is_err:
         return tool_disabled_result("clang-tidy", EXEC_KILL_SWITCH_ENV)
     proc = run_result.danger_ok
-    return parse_clang_tidy(proc.stdout + proc.stderr, exit_code=proc.returncode)
+    try:
+        return parse_clang_tidy(proc.stdout + proc.stderr, exit_code=proc.returncode)
+    except (KeyError, ValueError) as exc:  # malformed tool output, not fatal
+        _log.debug("_run_clang_tidy_cmake: parse failure: %s", exc)
+        return tool_crash_result("clang-tidy", exc)
 
 
 def _run_clang_format(root: Path) -> ToolResult | None:
@@ -182,6 +199,9 @@ def _spawn_clang_format(src_files: list[Path]):  # noqa: ANN201
         )
     except FileNotFoundError:
         return None
+    except Exception as exc:  # noqa: BLE001 -- caller treats this as unavailable
+        _log.debug("_spawn_clang_format: unexpected failure: %s", exc)
+        return None
 
 
 def _clang_format_diagnostics(needs_format: list[str]) -> list[Diagnostic]:
@@ -214,6 +234,9 @@ def _run_ctest(build_dir: Path, *, valgrind: bool = False) -> ToolResult | None:
         )
     except FileNotFoundError:
         return tool_unavailable_result("ctest", "ctest")
+    except Exception as exc:  # noqa: BLE001 -- unexpected crash is a typed ToolResult
+        _log.debug("_run_ctest: unexpected failure: %s", exc)
+        return tool_crash_result("ctest", exc)
     if run_result.is_err:
         return tool_disabled_result("ctest", EXEC_KILL_SWITCH_ENV)
 
@@ -222,22 +245,30 @@ def _run_ctest(build_dir: Path, *, valgrind: bool = False) -> ToolResult | None:
 
 def _ctest_result(build_dir: Path, proc: subprocess.CompletedProcess) -> ToolResult:
     """Parse a finished ctest invocation's report, preferring the JUnit
-    file it wrote and falling back to parsing its text output."""
+    file it wrote and falling back to parsing its text output. A malformed
+    JUnit report or unreadable artifact is a typed failing ToolResult, not
+    an escaped exception."""
     junit_file = build_dir / "results.xml"
-    if junit_file.exists():
-        from frob.process.parsers import parse_junit_xml
+    try:
+        if junit_file.exists():
+            from frob.process.parsers import parse_junit_xml
 
-        r = parse_junit_xml(junit_file.read_text(), tool="ctest")
+            r = parse_junit_xml(junit_file.read_text(), tool="ctest")
+            r.tool = "ctest"
+            return r
+
+        from frob.process.parsers import parse_clang
+
+        r = parse_clang(
+            proc.stdout + proc.stderr, exit_code=proc.returncode, tool="ctest"
+        )
         r.tool = "ctest"
+        if not r.diagnostics:
+            r.summary = "tests passed" if proc.returncode == 0 else "tests failed"
         return r
-
-    from frob.process.parsers import parse_clang
-
-    r = parse_clang(proc.stdout + proc.stderr, exit_code=proc.returncode, tool="ctest")
-    r.tool = "ctest"
-    if not r.diagnostics:
-        r.summary = "tests passed" if proc.returncode == 0 else "tests failed"
-    return r
+    except Exception as exc:  # noqa: BLE001 -- malformed report is a typed ToolResult
+        _log.debug("_ctest_result: unexpected failure: %s", exc)
+        return tool_crash_result("ctest", exc)
 
 
 # ---------------------------------------------------------------------------
@@ -261,6 +292,9 @@ def _run_cargo(
         )
     except FileNotFoundError:
         return tool_unavailable_result(f"cargo-{subcmd}", "cargo")
+    except Exception as exc:  # noqa: BLE001 -- unexpected crash is a typed ToolResult
+        _log.debug("_run_cargo: unexpected failure: %s", exc)
+        return tool_crash_result(f"cargo-{subcmd}", exc)
     if run_result.is_err:
         return tool_disabled_result(f"cargo-{subcmd}", EXEC_KILL_SWITCH_ENV)
     proc = run_result.danger_ok
@@ -281,6 +315,9 @@ def _run_cargo_fmt_check(root: Path) -> ToolResult | None:
         )
     except FileNotFoundError:
         return tool_unavailable_result("cargo-fmt", "cargo")
+    except Exception as exc:  # noqa: BLE001 -- unexpected crash is a typed ToolResult
+        _log.debug("_run_cargo_fmt_check: unexpected failure: %s", exc)
+        return tool_crash_result("cargo-fmt", exc)
     if run_result.is_err:
         return tool_disabled_result("cargo-fmt", EXEC_KILL_SWITCH_ENV)
     proc = run_result.danger_ok
@@ -333,6 +370,9 @@ def _run_cargo_valgrind(root: Path) -> ToolResult | None:
         )
     except FileNotFoundError:
         return tool_unavailable_result("cargo-test(valgrind)", "cargo")
+    except Exception as exc:  # noqa: BLE001 -- unexpected crash is a typed ToolResult
+        _log.debug("_run_cargo_valgrind: build failure: %s", exc)
+        return tool_crash_result("cargo-test(valgrind)", exc)
     if build_result.is_err:
         return tool_disabled_result("cargo-test(valgrind)", EXEC_KILL_SWITCH_ENV)
     build_proc = build_result.danger_ok
@@ -348,6 +388,9 @@ def _run_cargo_valgrind(root: Path) -> ToolResult | None:
         )
     except FileNotFoundError:
         return tool_unavailable_result("cargo-test(valgrind)", "valgrind")
+    except Exception as exc:  # noqa: BLE001 -- unexpected crash is a typed ToolResult
+        _log.debug("_run_cargo_valgrind: run failure: %s", exc)
+        return tool_crash_result("cargo-test(valgrind)", exc)
     if run_result.is_err:
         return tool_disabled_result("cargo-test(valgrind)", EXEC_KILL_SWITCH_ENV)
     proc = run_result.danger_ok
@@ -374,6 +417,9 @@ def _run_cargo_test(root: Path, *, valgrind: bool = False) -> ToolResult | None:
         )
     except FileNotFoundError:
         return tool_unavailable_result("cargo-test", "cargo")
+    except Exception as exc:  # noqa: BLE001 -- unexpected crash is a typed ToolResult
+        _log.debug("_run_cargo_test: unexpected failure: %s", exc)
+        return tool_crash_result("cargo-test", exc)
     if run_result.is_err:
         return tool_disabled_result("cargo-test", EXEC_KILL_SWITCH_ENV)
     proc = run_result.danger_ok

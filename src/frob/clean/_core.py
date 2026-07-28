@@ -48,12 +48,18 @@ def _dir_size(path: Path) -> int:
     contribute 0 rather than raising)."""
     total = 0
     # frob:waive WALK001 reason="sizes one already-matched artifact dir; excludes would prune the dirs this module exists to find"  # noqa: E501
-    for p in path.rglob("*"):
-        if p.is_file() and not p.is_symlink():
-            try:
-                total += p.stat().st_size
-            except OSError:
-                continue
+    try:
+        for p in path.rglob("*"):
+            if p.is_file() and not p.is_symlink():
+                try:
+                    total += p.stat().st_size
+                except OSError:
+                    continue
+    except OSError:
+        return total
+    except Exception as exc:  # noqa: BLE001 -- best-effort size, never fatal
+        _log.debug("_dir_size: %s failed: %s", path, exc)
+        return total
     return total
 
 

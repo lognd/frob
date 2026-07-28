@@ -46,6 +46,53 @@ class TestMainSigint:
         assert calls == [["outline", "x.py"]]
 
 
+# frob:ticket T-1022
+class TestMainUnhandledException:
+    """An unhandled exception during dispatch must be logged (with a real
+    traceback, `exc_info=True`) and reported as a clean one-line `frob:
+    <exc>` message with exit 1 -- never a raw traceback crossing the CLI
+    boundary (EXHAUST002 burn-down, T-1022)."""
+
+    def test_unhandled_exception_prints_clean_message_and_exits_1(
+        self, monkeypatch, capsys
+    ) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestMainUnhandledException.test_unhandled_exception_prints_clean_message_and_exits_1  # noqa: E501
+        def _raise(argv: list[str]) -> None:
+            raise ValueError("boom")
+
+        monkeypatch.setattr(main_module, "_dispatch", _raise)
+        monkeypatch.setattr("sys.argv", ["frob", "check"])
+
+        with pytest.raises(SystemExit) as exc_info:
+            main_module.main()
+
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "frob: boom" in captured.err
+        assert "Traceback" not in captured.err
+
+    def test_unhandled_exception_logs_with_exc_info(
+        self, monkeypatch, capsys
+    ) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestMainUnhandledException.test_unhandled_exception_logs_with_exc_info  # noqa: E501
+        def _raise(argv: list[str]) -> None:
+            raise ValueError("boom")
+
+        logged: list[dict] = []
+
+        def _fake_error(msg, *args, **kwargs) -> None:  # noqa: ANN001, ANN002, ANN003
+            logged.append(kwargs)
+
+        monkeypatch.setattr(main_module, "_dispatch", _raise)
+        monkeypatch.setattr("sys.argv", ["frob", "check"])
+        monkeypatch.setattr(main_module._log, "error", _fake_error)
+
+        with pytest.raises(SystemExit):
+            main_module.main()
+
+        assert logged == [{"exc_info": True}]
+
+
 # frob:ticket T-0578
 class TestDidYouMean:
     """`_build_parser`'s `_SuggestingArgumentParser` appends a "did you

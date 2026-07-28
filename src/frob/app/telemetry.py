@@ -199,6 +199,7 @@ def record_ticket_event(
 
 
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
+# frob:raises Exception
 def timed_call(
     root: Path, *, subcommand: str, args_head: str, fn: Callable[[], T]
 ) -> T:

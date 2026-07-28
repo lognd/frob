@@ -126,7 +126,16 @@ _INFER_PAIRS: tuple[tuple[str, str], ...] = (
 #:   symbol/EdgeKind model since a `frob:used-by` target is a whole FILE,
 #:   not a symbol, and every non-source tracked type (yaml/md/toml/...)
 #:   must carry it too, most of which `frob.lang` never parses at all.
-_RESERVED_MARKER_VERBS = frozenset({"secret-fake", "used-by"})
+#: - "raises": owned by `frob.gates._exhaustive_handling` (T-0688/T-1022) --
+#:   the declared-propagation directive (`# frob:raises <ExceptionType>`,
+#:   one type per directive line, stacked above a `def`) that marks a
+#:   function's intentional uncaught exception escape for EXHAUST002. Its
+#:   own module scans directive text directly (`_DIRECTIVE_PREFIX`), never
+#:   a graph edge; the call-site sibling form `frob:callee-raises` (T-0931)
+#:   is a same-line trailing comment the DSL's line-based scan never
+#:   matches in the first place, so only the standalone-line `raises` verb
+#:   needs listing here.
+_RESERVED_MARKER_VERBS = frozenset({"secret-fake", "used-by", "raises"})
 
 _DESCRIBES_RE = re.compile(
     r"<!--\s*frob:describes\s+(?P<symref>\S+)(?:\s+(?P<facet>sig|body|doc))?\s*-->"

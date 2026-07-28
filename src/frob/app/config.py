@@ -1024,6 +1024,27 @@ def load_arch_config(root: Path) -> dict[str, int]:
         return defaults
 
 
+def _declared_frob_version(repo_root: Path) -> str | None:
+    """This checkout's own declared `[project] version`, or `None` when
+    `repo_root` has no `pyproject.toml`, it is unparseable, or the project
+    it declares is not `frob` at all -- `stale_install_warning`'s
+    pyproject-read step, split out to keep that function under ARCH001's
+    line threshold (T-1022)."""
+    pyproject = repo_root / "pyproject.toml"
+    if not pyproject.exists():
+        return None
+    try:
+        with pyproject.open("rb") as fh:
+            data = tomllib.load(fh)
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+    project = data.get("project", {})
+    if project.get("name") != "frob":
+        return None
+    version = project.get("version")
+    return version if isinstance(version, str) else None
+
+
 # frob:ticket T-0358
 # frob:doc docs/modules/app.md#entry-point
 # frob:tests tests/unit/test_config.py::test_stale_install_warning_flags_version_mismatch  # noqa: E501
@@ -1051,18 +1072,7 @@ def stale_install_warning(repo_root: Path) -> str | None:
     import importlib.metadata
     import importlib.util
 
-    pyproject = repo_root / "pyproject.toml"
-    if not pyproject.exists():
-        return None
-    try:
-        with pyproject.open("rb") as fh:
-            data = tomllib.load(fh)
-    except (OSError, tomllib.TOMLDecodeError):
-        return None
-    project = data.get("project", {})
-    if project.get("name") != "frob":
-        return None
-    repo_version = project.get("version")
+    repo_version = _declared_frob_version(repo_root)
     if not repo_version:
         return None
 
@@ -1077,6 +1087,11 @@ def stale_install_warning(repo_root: Path) -> str | None:
     try:
         installed_version = importlib.metadata.version("frob")
     except importlib.metadata.PackageNotFoundError:
+        return None
+    except Exception as exc:  # noqa: BLE001 -- best-effort probe, never fatal
+        _log.debug(
+            "stale_install_warning: unresolvable metadata lookup failed: %s", exc
+        )
         return None
     if installed_version == repo_version:
         return None

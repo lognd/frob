@@ -694,7 +694,10 @@ other project-wide walk in this codebase uses), resolves its imports via
 `frob.app.cycle_runner._build_graph` already calls for cycle detection,
 reused rather than re-derived -- plus `_resolve_reexports`, and flags
 every resolved edge landing in a declared layer not present in the
-source layer's `allow` list.
+source layer's `allow` list. Per-file scan errors (T-1022) are caught at
+each file rather than aborting the whole walk: an unresolvable path is
+logged at debug level and skipped, so one bad file cannot hide layering
+findings in every other file under `root`.
 
 ### No-DI construction smell: `no-di-construction` (T-0620)
 

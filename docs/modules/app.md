@@ -27,7 +27,9 @@ for the full flag catalog per subcommand.
 # frob/__main__.py
 def main() -> None
     # Builds AppConfig from argv + pyproject.toml and runs App(cfg)();
-    # this is the `frob` console-script entry point.
+    # this is the `frob` console-script entry point. An unhandled exception
+    # from dispatch (T-1022) is logged and printed as `frob: <exc>` with
+    # exit 1, never a raw traceback crossing the CLI boundary.
 
 # frob/app/app.py
 class App

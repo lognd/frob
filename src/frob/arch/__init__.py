@@ -93,7 +93,11 @@ def _collect_files(root: Path) -> list[Path]:
             rel = p.relative_to(root)
         except ValueError:
             continue
-        if exclude_globs and is_excluded(rel.as_posix(), exclude_globs):
+        try:
+            if exclude_globs and is_excluded(rel.as_posix(), exclude_globs):
+                continue
+        except Exception as exc:  # noqa: BLE001 -- one bad path must not abort the walk
+            _log.debug("_collect_files: is_excluded failed for %s: %s", rel, exc)
             continue
         result.append(p)
     return result

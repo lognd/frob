@@ -90,21 +90,25 @@ def _process_path(
         rel_path = path.relative_to(scan_root)
     except ValueError:
         return None
-    if any(is_skipped_dir(part) for part in rel_path.parts):
-        return None
-    if exclude_globs and is_excluded(rel_path.as_posix(), exclude_globs):
-        return None
-    rel = str(rel_path)
+    try:
+        if any(is_skipped_dir(part) for part in rel_path.parts):
+            return None
+        if exclude_globs and is_excluded(rel_path.as_posix(), exclude_globs):
+            return None
+        rel = str(rel_path)
 
-    graph.add_node(rel)
+        graph.add_node(rel)
 
-    want_python = ext in _PY_EXTS and lang in (None, "python")
-    want_cpp = ext in _CPP_EXTS and lang in (None, "cpp", "c")
-    if not (want_python or want_cpp):
-        return None
-    language = "python" if want_python else "cpp"
+        want_python = ext in _PY_EXTS and lang in (None, "python")
+        want_cpp = ext in _CPP_EXTS and lang in (None, "cpp", "c")
+        if not (want_python or want_cpp):
+            return None
+        language = "python" if want_python else "cpp"
 
-    return _add_file_edges(graph, path, rel, language, scan_root)
+        return _add_file_edges(graph, path, rel, language, scan_root)
+    except Exception as exc:  # noqa: BLE001 -- per-file scan step must not abort the walk
+        _log.debug("_process_path: %s failed: %s", path, exc)
+        return f"error processing {path}: {exc}"
 
 
 def _build_graph(root: Path, lang: str | None) -> tuple[DependencyGraph, list[str]]:

@@ -250,3 +250,25 @@ def tool_disabled_result(tool: str, flag_env: str) -> ToolResult:
         ],
         summary=f"exec disabled via {flag_env}",
     )
+
+
+# frob:doc docs/modules/process.md#public-api
+def tool_crash_result(tool: str, exc: BaseException) -> ToolResult:
+    """An unexpected exception while running or parsing `tool`'s output is a
+    FAILING `ToolResult` naming the exception, mirroring
+    `tool_unavailable_result`'s loud-not-silent doctrine (T-0142): a
+    check-stage helper that hits a genuinely unresolvable/unexpected error
+    (a malformed tool report, an unreadable artifact) should report it as a
+    visible failing stage instead of letting the exception cross the
+    `frob check` gate boundary uncaught (EXHAUST001/EXHAUST002, T-1022)."""
+    return ToolResult(
+        tool=tool,
+        exit_code=1,
+        diagnostics=[
+            Diagnostic(
+                severity="error",
+                message=f"{tool} crashed: {type(exc).__name__}: {exc}",
+            )
+        ],
+        summary=f"{tool} crashed: {type(exc).__name__}",
+    )

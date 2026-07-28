@@ -220,3 +220,53 @@ class TestCheckResultRendersUnavailableTool:
         result = CheckResult(path=str(tmp_path), results=[r])
         text = result.as_text()
         assert "tool unavailable: ty" in text
+
+
+# frob:ticket T-1022
+class TestToolCrashResult:
+    def test_shape_is_a_failing_diagnostic(self) -> None:
+        # frob:tests src/frob/process/parsers/common.py::tool_crash_result \
+        # kind="unit"
+        from frob.process.parsers.common import tool_crash_result
+
+        r = tool_crash_result("cargo-test", ValueError("boom"))
+        assert not r.passed
+        assert r.exit_code == 1
+        assert r.tool == "cargo-test"
+        assert "ValueError" in r.summary
+        assert len(r.diagnostics) == 1
+        assert r.diagnostics[0].severity == "error"
+        assert "boom" in r.diagnostics[0].message
+
+
+# frob:ticket T-1022
+class TestNativeCrashIsTypedResult:
+    """T-1022: an unexpected exception from a native check-stage runner (not
+    a missing binary, not a kill-switch refusal) must surface as a typed
+    failing ToolResult too -- EXHAUST001/002 burn-down."""
+
+    def test_run_cargo_unexpected_crash_returns_failing_result(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_native.py::_run_cargo kind="unit"
+        def _boom(*args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+            raise ValueError("unexpected native crash")
+
+        monkeypatch.setattr(subprocess, "run", _boom)
+        r = _run_cargo("check", tmp_path)
+        assert r is not None
+        assert not r.passed
+        assert "cargo-check crashed" in r.summary
+
+    def test_run_cargo_test_unexpected_crash_returns_failing_result(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_native.py::_run_cargo_test kind="unit"
+        def _boom(*args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+            raise ValueError("unexpected native crash")
+
+        monkeypatch.setattr(subprocess, "run", _boom)
+        r = _run_cargo_test(tmp_path)
+        assert r is not None
+        assert not r.passed
+        assert "cargo-test crashed" in r.summary
