@@ -1020,7 +1020,7 @@ ERROR in src/frob/gates/_opaque.py.
 ```yaml
 id: T-1049
 title: 'refactor: decompose oversized _build_jobs gate-job registry (ARCH001)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -1091,14 +1091,15 @@ pre-existing DRIFT001/TEST003 waived entries unrelated to this change.
 ### Changed
 ```
  src/frob/gates/__init__.py | 76 +++++++++++++++++++++++++++++-----------------
- 1 file changed, 48 insertions(+), 28 deletions(-)
+ tickets.md                 | 52 ++++++++++++++++++++++++++++++-
+ 2 files changed, 99 insertions(+), 29 deletions(-)
 ```
 
 ### Evidence
-(no evidence recorded)
+- `tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
+- tests: 1 passed (from 1 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
 <!-- ticket:T-1050 -->
 ```yaml
