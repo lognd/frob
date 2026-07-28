@@ -11,6 +11,7 @@ it is WAIVE002's own "every rule id that can ever appear" source of
 truth). Re-exported from `frob.gates.__init__` unchanged so every existing
 `frob.gates.<name>` call site keeps working.
 """
+
 # frob:waive ARCH102 reason="fresh T-1072 tier-1 extraction: this module \
 # deliberately carries the whole waiver-matching family PLUS the rule-id \
 # literal and lease helpers that rode along with it in gates/__init__, so \
@@ -947,6 +948,50 @@ def _waive003_violations(
 # A ratchet-to-error path via the T-0569/T-0594 waivable-warning pool is a
 # natural follow-up once the known-flaky set is characterized empirically,
 # not built in this pass (T-0753's mandate: WARNING-tier first).
+#
+# T-1064: two structurally-distinct rule classes can read as "0 findings
+# this run" in `all_violations` even while the waiver they carry is
+# genuinely still live and still doing its job -- neither is a matching
+# bug in `_match_waiver` itself (rule-id-exact matching stays untouched;
+# a file-level waiver still cannot swallow a line-scoped finding of some
+# OTHER rule), both are about `all_violations` never containing the
+# finding to begin with:
+#
+# - SELF-SUPPRESSING rules: the rule's own gate function checks for a
+#   covering `frob:waive` edge INTERNALLY, before ever constructing the
+#   `Violation` (INV006's `_inv006_waived` in `frob.gates.__init__` is
+#   the confirmed case -- `_inv006_src_violations` returns `()` the
+#   moment a covering waiver exists, so the finding never reaches
+#   `all_violations` for `_apply_waivers`/WAIVE004 to see, waived or
+#   not). Empirically this was ~209 of ~216 WAIVE004 findings in this
+#   repo's own full run (T-1064): every one of INV006's per-file
+#   "first-turn-on pool" waivers (T-0585-style) read as permanently
+#   zero-match, even though deleting them resurfaces the exact INV006
+#   errors they were suppressing (confirmed by direct before/after
+#   deletion in T-0874's investigation). WAIVE004 cannot see through
+#   this from `all_violations` alone -- the finding was never generated,
+#   not merely filtered downstream -- so these rules are exempted here
+#   rather than mis-flagged every run.
+# - TOUCHED/DIFF-SCOPED rules: the underlying gate only ever emits a
+#   finding for symbols in the diff's OWN touched-ref set (DUP001/DUP002
+#   via `frob.dup.touched_refs`, AFFECT001/AFFECT002 via the same
+#   diff-scoped closure walk -- see their own "diff-scoped like
+#   coverage/fmt" gate comments in `frob.gates.__init__`). A full,
+#   unscoped `frob check` run's `diff` is whatever this invocation's
+#   base/head resolve to, essentially never the exact diff that
+#   originally triggered the waived finding -- so these rules read as
+#   "0 findings" on nearly every run regardless of whether the waiver
+#   is still earning its keep, for the same reason the existing
+#   SCOPE001/COV002/TODO001 `SCOPED_RUN_FLAKY_RULE_IDS` class does.
+#
+# Neither exemption weakens WAIVE004 for any OTHER rule -- a waiver on a
+# rule NOT in this set still needs a real, live, rule-id-exact match in
+# `all_violations` or it is reported exactly as before.
+_WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES = frozenset(
+    {"INV006", "DUP001", "DUP002", "AFFECT001", "AFFECT002"}
+)
+
+
 # frob:enforces CHK-GATE-WAIVE004
 def _waive004_violations(
     all_violations: tuple[Violation, ...],
@@ -963,8 +1008,12 @@ def _waive004_violations(
     artifact of the waiver itself suppressing its own evidence. Skips edges
     WAIVE002 already flagged (an unrecognized rule id has no findings to
     compare against by construction, and WAIVE002 is the more actionable
-    finding for that edge) and the `_UNWAIVABLE_RULES`/arch-category cases
-    `_match_waiver`/`_waive002_violation_for` already special-case.
+    finding for that edge), the `_UNWAIVABLE_RULES`/arch-category cases
+    `_match_waiver`/`_waive002_violation_for` already special-case, and
+    (T-1064) rules in `_WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES` whose own
+    gate self-suppresses or diff-scopes findings out of `all_violations`
+    before this check ever runs, making a "0 findings" read permanently
+    false regardless of whether the waiver is still needed.
     """
     known = _KNOWN_GATE_RULES | rule_ids
     arch_categories = _unwaivable_channel_rules()
@@ -974,8 +1023,12 @@ def _waive004_violations(
     out: list[Violation] = []
     for edge in _waive_edges(snapshot):
         rule = edge.target
-        if rule not in known or rule in arch_categories:
-            continue  # WAIVE002's territory, not WAIVE004's
+        if (
+            rule not in known
+            or rule in arch_categories
+            or rule in _WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES
+        ):
+            continue  # WAIVE002's territory, or structurally unverifiable
         candidates = violations_by_rule.get(rule, [])
         matched = any(_match_waiver(v, {rule: [edge]}) is edge for v in candidates)
         if matched:

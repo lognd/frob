@@ -874,6 +874,36 @@ zero-match result does not always mean the waiver is stale --
   to a diff base) can vary run to run for reasons unrelated to the waiver's
   own site.
 
+**Structurally-unverifiable rules (T-1064).** A third class cannot be fixed
+by "run it unscoped" at all: the rule's own gate never lets the finding
+reach `all_violations` in the first place, waiver or not, so WAIVE004's
+zero-match check is permanently, not just occasionally, wrong for it.
+`frob.gates._waive._WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES` names the
+confirmed cases and is skipped entirely by `_waive004_violations`
+(`_match_waiver`'s own rule-id-exact matching is untouched -- a waiver
+still cannot swallow a different rule's finding):
+
+- **`INV006`** self-suppresses: `_inv006_waived` checks for a covering
+  `frob:waive INV006` edge INSIDE `_inv006_src_violations`, before a
+  `Violation` is ever built, so a genuinely-live INV006 waiver's finding
+  never exists for WAIVE004 to see matched or not. Confirmed empirically
+  (T-0874/T-1064): deleting one of these waivers resurfaces the exact
+  INV006 error it was suppressing; restoring it verbatim makes the error
+  disappear again, while WAIVE004 reported "matches 0" both before and
+  after. This was ~209 of ~216 WAIVE004 findings in this repo's own full
+  run before the fix -- effectively every per-file INV006 "first-turn-on
+  pool" waiver (T-0585-style), permanently misreported.
+- **`DUP001`/`DUP002`/`AFFECT001`/`AFFECT002`** only ever emit a finding
+  for a symbol in the current diff's own touched-ref set (see each gate's
+  own "diff-scoped like coverage/fmt" comment in `frob.gates.__init__`).
+  A full, unscoped `frob check` run's diff is essentially never the exact
+  diff that originally triggered the waived finding, so these read as
+  "0 findings" on nearly every run for reasons that have nothing to do
+  with the waiver being stale -- the same unreliability class as the
+  `SCOPE001`/`COV002`/`TODO001` `SCOPED_RUN_FLAKY_RULE_IDS` set already
+  documents, just triggered by diff content rather than `--ticket` base
+  drift.
+
 A ratchet-to-error path via the T-0569/T-0594 waivable-warning pool is a
 natural follow-up once the known-flaky set above is characterized
 empirically across full runs -- not built in this pass; T-0753's mandate

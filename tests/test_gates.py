@@ -5989,6 +5989,55 @@ class TestTestGate:
         found = _waive004_violations((), snap, frozenset())
         assert found == ()
 
+    # frob:ticket T-1064
+    def test_waive004_exempts_a_structurally_unverifiable_rule(self) -> None:
+        """T-1064: INV006 self-suppresses (`_inv006_waived` short-circuits
+        `_inv006_src_violations` before a `Violation` is ever built) so a
+        genuinely-live INV006 waiver's finding can never reach
+        `all_violations` -- WAIVE004 must not misreport it as stale just
+        because it structurally never sees the finding it covers."""
+        # frob:tests src/frob/gates/_waive.py::_waive004_violations
+        from frob.gates import _waive004_violations
+        from frob.graph import Edge, EdgeKind, GraphSnapshot
+
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/a.py",
+            target="INV006",
+            origin="src/a.py:1",
+            attrs={"reason": "x"},
+        )
+        snap = GraphSnapshot(root=".", symbols={}, edges=(waiver,))
+        # No INV006 violation in `all_violations` -- by construction, since
+        # the gate suppresses it before this point -- yet WAIVE004 must
+        # stay silent rather than call the waiver stale.
+        found = _waive004_violations((), snap, frozenset())
+        assert found == ()
+
+    # frob:ticket T-1064
+    def test_waive004_still_fires_for_a_non_exempt_rule_with_the_same_shape(
+        self,
+    ) -> None:
+        """T-1064: the structurally-unverifiable exemption is a narrow,
+        named allowlist, not a blanket "file-scoped waiver" carve-out --
+        a zero-match waiver on a rule NOT in that set must still fire
+        WAIVE004 exactly as before."""
+        from frob.gates import _waive004_violations
+        from frob.graph import Edge, EdgeKind, GraphSnapshot
+
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/a.py",
+            target="DOC001",
+            origin="src/a.py:1",
+            attrs={"reason": "x"},
+        )
+        snap = GraphSnapshot(root=".", symbols={}, edges=(waiver,))
+        found = _waive004_violations((), snap, frozenset())
+        assert len(found) == 1
+        assert found[0].rule == "WAIVE004"
+        assert "DOC001" in found[0].message
+
     def test_waive005_expired_until_is_error(self) -> None:
         """T-0753: `frob:waive`'s optional `until="YYYY-MM-DD"` boundary
         having passed forces a hard ERROR demanding re-review, mirroring
