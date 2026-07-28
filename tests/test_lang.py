@@ -641,6 +641,66 @@ class TestErrors:
         assert {"python", "typescript", "rust", "c", "cpp"} <= langs
 
 
+# frob:ticket T-0893
+# frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_oversized_file_is_skipped_loudly  # noqa: E501
+# frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_parse_timeout_returns_err_not_hang  # noqa: E501
+class TestSizeCapAndTimeout:
+    """DoS trust-boundary guard: an untrusted-repo file must never be able to
+    exhaust memory (oversized file) or hang a `frob check` run (pathological
+    parse) -- see `frob.lang._check_size_cap`/`_run_parse_with_timeout`."""
+
+    # frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_oversized_file_is_skipped_loudly  # noqa: E501
+    def test_oversized_file_is_skipped_loudly(
+        self, caplog: pytest.LogCaptureFixture, tmp_path: Path, monkeypatch
+    ) -> None:
+        """A file over the size cap must return `Err(FileTooLarge)` -- never
+        attempt a read/parse at all -- and log a WARNING naming both the
+        file and the exact limit hit (the loud-skip discipline this ticket
+        exists to enforce; never a silent drop, T-0897's anti-pattern)."""
+        import frob.lang as lang_mod
+
+        monkeypatch.setattr(lang_mod, "_MAX_PARSE_FILE_BYTES", 16)
+        reset_parse_cache()
+        big = _write(tmp_path, "big.py", "x = 1\n" * 10)
+        assert big.stat().st_size > 16
+        with caplog.at_level(logging.WARNING, logger="frob.lang"):
+            result = parse_file(big)
+        assert result.is_err
+        assert result.danger_err == LangError.FileTooLarge
+        messages = [record.message for record in caplog.records]
+        assert any(
+            "PARSE" in m and str(big) in m and "16" in m for m in messages
+        ), messages
+
+    # frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_parse_timeout_returns_err_not_hang  # noqa: E501
+    def test_parse_timeout_returns_err_not_hang(
+        self, caplog: pytest.LogCaptureFixture, tmp_path: Path
+    ) -> None:
+        """`_run_parse_with_timeout` must return `Err(ParseTimedOut)` within
+        the budget, never block the caller past it, when the wrapped parse
+        call itself hangs -- and must log a WARNING naming the file and the
+        budget hit."""
+        import time
+
+        from frob.lang import _run_parse_with_timeout
+
+        target = tmp_path / "slow.py"
+        target.write_text("x = 1\n")
+
+        def _hang() -> str:
+            time.sleep(5)
+            return "never"
+
+        with caplog.at_level(logging.WARNING, logger="frob.lang"):
+            result = _run_parse_with_timeout(_hang, target, budget=0.2)
+        assert result.is_err
+        assert result.danger_err == LangError.ParseTimedOut
+        messages = [record.message for record in caplog.records]
+        assert any(
+            "PARSE" in m and str(target) in m and "0.2" in m for m in messages
+        ), messages
+
+
 def test_lang_pipeline_integration(tmp_path: Path) -> None:
     # frob:tests src/frob/lang kind="integration"
     # Exercises the whole lang surface together: symbol/comment extraction

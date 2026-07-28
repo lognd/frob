@@ -216,6 +216,8 @@ class LangError(ErrorSet):
     ParseFailed              = "tree-sitter could not produce a usable tree"
     IoFailed                 = "File could not be read"
     NativeParserUnavailable  = "strata-core native extension unavailable in this install"
+    FileTooLarge             = "File exceeds the max parseable size"
+    ParseTimedOut            = "Parse did not finish inside the wall-clock budget"
 ```
 
 `NativeParserUnavailable` (T-0133) is `.strata`-only: it is what `parse_file`
@@ -235,6 +237,41 @@ every natives-less install.
 message string `walk_strata` returns for this case; `frob.lang.parse_file`
 matches on it to translate to `LangError.NativeParserUnavailable` rather than
 the generic `ParseFailed` a real strata syntax rejection gets.
+
+## Size cap and parse timeout (T-0893)
+
+<!-- frob:describes src/frob/lang/__init__.py::_check_size_cap -->
+<!-- frob:describes src/frob/lang/__init__.py::_run_parse_with_timeout -->
+
+`frob.lang` visits files from a caller-supplied tree that may be an
+untrusted, adopter-repo checkout, not just this repo's own source -- a
+single oversized or pathologically-structured file must not be able to DoS
+`frob check`. Both `_parse` (tree-sitter) and `_parse_strata_file`
+(strata-core) apply two guards, in this order, before the actual parse
+call:
+
+1. **Size cap** (`_check_size_cap`, `_MAX_PARSE_FILE_BYTES = 8 MiB`):
+   checked against `Path.stat().st_size` BEFORE `read_bytes()`, so an
+   oversized file is never even fully read into memory. A file over the
+   cap returns `Err(LangError.FileTooLarge)`.
+2. **Parse timeout** (`_run_parse_with_timeout`,
+   `_PARSE_TIMEOUT_SECONDS = 10.0`): the tree-sitter/strata-core parse call
+   runs on a single-use daemon-pool thread; if it has not finished within
+   the budget, the wrapper returns `Err(LangError.ParseTimedOut)`
+   immediately rather than blocking the caller. Neither tree-sitter nor
+   strata-core expose a cancellation hook, so the worker thread itself is
+   abandoned (never joined or killed) -- the timeout bounds how long the
+   CALLER waits, not how long the runaway parse actually keeps running in
+   the background.
+
+Both guards log a WARNING naming the file and the exact limit hit -- never
+a silent skip (the T-0897 silent-drop class this exists to avoid). Both
+error variants flow through the same path every other `LangError` does:
+`frob.graph._process_source_file` turns any `Err` from `parse_file` into a
+`ParseFailure` (`file`, `reason=str(err)`), which
+`frob.gates._parse_failures.parse_failure_gate` (PARSE001) reports as an
+ERROR-tier `frob check` violation -- so a skipped file is visible both as a
+log line and as a gate finding, not just one or the other.
 
 ## Parse cache
 

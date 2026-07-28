@@ -39,7 +39,10 @@ from __future__ import annotations
 import hashlib
 import threading
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from pathlib import Path
+from typing import TypeVar
 
 from tree_sitter import Tree
 from tree_sitter_language_pack import get_parser
@@ -72,6 +75,8 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
+_T = TypeVar("_T")
+
 
 # frob:doc docs/modules/lang.md#error-types
 class LangError(ErrorSet):
@@ -83,6 +88,8 @@ class LangError(ErrorSet):
     NativeParserUnavailable = (
         "strata-core native extension unavailable in this install (T-0133)"
     )
+    FileTooLarge = "File exceeds the max parseable size (T-0893)"
+    ParseTimedOut = "Parse did not finish inside the wall-clock budget (T-0893)"
 
 
 # extension -> (tree-sitter-language-pack grammar name, ParsedFile.language label)
@@ -213,6 +220,101 @@ def _display_path(path: Path) -> str:
         return path.as_posix()
 
 
+# frob:ticket T-0893
+#: Maximum source-file size `_parse`/`_parse_strata_file` will attempt to
+#: parse, in bytes. Both entry points visit files from a caller-supplied
+#: (potentially untrusted, adopter-repo) tree with no upper bound of their
+#: own before this -- an oversized file could exhaust memory just being
+#: read into `bytes`, well before it ever reaches tree-sitter/strata-core.
+#: Checked against `Path.stat().st_size` BEFORE `read_bytes()` so a file
+#: over the cap is never even fully read. 8 MiB comfortably covers every
+#: legitimate source file this repo's own graph walk has ever visited
+#: (docs/audits/perf.md's largest-file measurements are sub-1MiB) while
+#: staying small enough that a full read+parse attempt at the cap stays
+#: bounded in both memory and (combined with `_PARSE_TIMEOUT_SECONDS`
+#: below) wall-clock time.
+_MAX_PARSE_FILE_BYTES = 8 * 1024 * 1024  # 8 MiB
+
+# frob:ticket T-0893
+#: Wall-clock budget, in seconds, for a single tree-sitter/strata-core
+#: parse call (`_run_parse_with_timeout`). tree-sitter's error-recovery is
+#: generally fast but not immune to pathological input (deeply nested
+#: brackets/parens can drive quadratic-ish recovery); with no cap at all a
+#: single adversarial or merely enormous file could hang an entire `frob
+#: check` run. 10s is generous relative to the largest legitimate parse
+#: observed in this repo's own perf audits (sub-second per file, even for
+#: the largest source files) while still failing well within a single
+#: foreground command's patience (docs/guides/agent-playbook.md section
+#: 3b's ~120s auto-background cap).
+_PARSE_TIMEOUT_SECONDS = 10.0
+
+
+# frob:doc docs/modules/lang.md#size-cap-and-parse-timeout-t-0893
+# frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_oversized_file_is_skipped_loudly  # noqa: E501
+# frob:waive COV007 reason="docs/modules/lang.md's Size cap and parse timeout section \
+# (T-0893) is a deliberate, per-function architecture doc of this module's internal \
+# DoS guards, same convention as the Primitives section's private tree-sitter helpers"
+def _check_size_cap(path: Path, size: int) -> LangError | None:
+    """LOUD PARSE-family skip for a file over `_MAX_PARSE_FILE_BYTES` (T-0893).
+
+    Returns `LangError.FileTooLarge` to short-circuit the caller with, or
+    `None` if `size` is within the cap. Always logs at WARNING -- naming
+    both the file and the exact limit hit -- so a skip is visible in plain
+    `frob check` output, not just via `frob.graph.GraphSnapshot.
+    parse_failures` (PARSE001) for a caller that reads it; this is the
+    loud-skip discipline T-0897's silent-drop incident (a skip with no
+    diagnostic at all) exists to prevent from recurring here.
+    """
+    if size <= _MAX_PARSE_FILE_BYTES:
+        return None
+    _log.warning(
+        "PARSE: skipping %s -- %d bytes exceeds the %d byte max-parse-size "
+        "cap (T-0893); file too large to safely parse",
+        path,
+        size,
+        _MAX_PARSE_FILE_BYTES,
+    )
+    return LangError.FileTooLarge
+
+
+# frob:doc docs/modules/lang.md#size-cap-and-parse-timeout-t-0893
+# frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_parse_timeout_returns_err_not_hang  # noqa: E501
+# frob:waive COV007 reason="docs/modules/lang.md's Size cap and parse timeout section \
+# (T-0893) is a deliberate, per-function architecture doc of this module's internal \
+# DoS guards, same convention as the Primitives section's private tree-sitter helpers"
+def _run_parse_with_timeout(
+    fn: Callable[[], _T], path: Path, budget: float = _PARSE_TIMEOUT_SECONDS
+) -> Result[_T, LangError]:
+    """Run zero-arg `fn` (a tree-sitter/strata-core parse call) under a
+    `budget`-second wall-clock cap (T-0893).
+
+    Neither tree-sitter nor strata-core expose a cancellation hook, so a
+    call that blows the budget is left running on its own single-use
+    daemon-pool thread (abandoned, never joined or killed -- the same
+    bounded-wait shape `frob.vet._scan._run_with_timeout` already uses for
+    subprocess calls, minus the ability to actually terminate the worker)
+    while this returns `Err(LangError.ParseTimedOut)` immediately so the
+    caller is never blocked past `budget`. Always logs at WARNING naming
+    the file and the exact limit hit -- see `_check_size_cap`'s docstring
+    for why a skip must never be silent.
+    """
+    executor = ThreadPoolExecutor(max_workers=1)
+    future = executor.submit(fn)
+    try:
+        return Ok(future.result(timeout=budget))
+    except FutureTimeoutError:
+        _log.warning(
+            "PARSE: %s did not finish parsing within the %.1fs budget "
+            "(T-0893); skipping -- the worker thread is abandoned, not "
+            "killed (tree-sitter/strata-core expose no cancellation hook)",
+            path,
+            budget,
+        )
+        return Err(LangError.ParseTimedOut)
+    finally:
+        executor.shutdown(wait=False)
+
+
 # T-0414: process-lifetime, content-hash-keyed memo for `_parse` -- the
 # single read+tree-sitter-parse chokepoint every `frob.lang` entry point
 # funnels through (see docs/audits/perf.md H4). Before this cache, a 213-
@@ -335,6 +437,35 @@ def _warn_if_partial_tree(tree: Tree, path: Path) -> None:
             _partial_parse_files.add(_display_path(path))
 
 
+# frob:doc docs/modules/lang.md#size-cap-and-parse-timeout-t-0893
+# frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_oversized_file_is_skipped_loudly  # noqa: E501
+# frob:waive COV007 reason="docs/modules/lang.md's Size cap and parse timeout section \
+# (T-0893) is a deliberate, per-function architecture doc of this module's internal \
+# DoS guards, same convention as the Primitives section's private tree-sitter helpers"
+def _read_source_under_cap(path: Path) -> Result[bytes, LangError]:
+    """`stat` then `read_bytes` `path`, refusing anything over
+    `_MAX_PARSE_FILE_BYTES` (T-0893) before the read happens.
+
+    Split out of `_parse` purely to keep `_parse` under ARCH001's line
+    threshold once the size-cap/timeout guard was added -- the stat-check-
+    read sequence is one cohesive "safely obtain source bytes" step with no
+    internal branch either caller needs to see.
+    """
+    try:
+        file_size = path.stat().st_size
+    except OSError as exc:
+        _log.error("failed to stat %s: %s", path, exc)
+        return Err(LangError.IoFailed)
+    size_error = _check_size_cap(path, file_size)
+    if size_error is not None:
+        return Err(size_error)
+    try:
+        return Ok(path.read_bytes())
+    except OSError as exc:
+        _log.error("failed to read %s: %s", path, exc)
+        return Err(LangError.IoFailed)
+
+
 def _parse(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
     """Read and parse `path`, returning (tree, source, language_label).
 
@@ -355,11 +486,10 @@ def _parse(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
     grammar_name, language_label = entry
     _log.debug("dispatching path=%s to grammar=%s", path, grammar_name)
 
-    try:
-        source = path.read_bytes()
-    except OSError as exc:
-        _log.error("failed to read %s: %s", path, exc)
-        return Err(LangError.IoFailed)
+    source_result = _read_source_under_cap(path)
+    if source_result.is_err:
+        return Err(source_result.danger_err)
+    source = source_result.danger_ok
 
     cache_key = f"{path}:{hashlib.sha256(source).hexdigest()}"
     with _parse_cache_lock:
@@ -376,7 +506,13 @@ def _parse(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
         return result
 
     parser = get_parser(grammar_name)  # type: ignore[arg-type]
-    tree = parser.parse(source)
+    tree_result = _run_parse_with_timeout(lambda: parser.parse(source), path)
+    if tree_result.is_err:
+        result = Err(tree_result.danger_err)
+        with _parse_cache_lock:
+            _parse_cache[cache_key] = result
+        return result
+    tree = tree_result.danger_ok
     unusable = tree.root_node is None or (
         tree.root_node.has_error and tree.root_node.child_count == 0
     )
@@ -425,13 +561,17 @@ def _parse_strata_file(path: Path) -> Result[ParsedFile, LangError]:
     so both branches produce an identical contract for `frob.graph`, just
     with `frob.lang._walk_strata.walk_strata` standing in for `extract`.
     """
-    try:
-        source_bytes = path.read_bytes()
-    except OSError as exc:
-        _log.error("failed to read %s: %s", path, exc)
-        return Err(LangError.IoFailed)
+    source_result = _read_source_under_cap(path)
+    if source_result.is_err:
+        return Err(source_result.danger_err)
+    source_bytes = source_result.danger_ok
 
-    walked = _walk_strata(source_bytes.decode("utf-8", errors="replace"))
+    walk_result = _run_parse_with_timeout(
+        lambda: _walk_strata(source_bytes.decode("utf-8", errors="replace")), path
+    )
+    if walk_result.is_err:
+        return Err(walk_result.danger_err)
+    walked = walk_result.danger_ok
     if walked.is_err:
         message = walked.danger_err
         if message == _NATIVE_UNAVAIL_MSG:
