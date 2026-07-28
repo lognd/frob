@@ -411,7 +411,7 @@ _scan_file_fingerprints (CVE matching) is lexical needle-matching for EVERY lang
 ```yaml
 id: T-0393
 title: 'advisories: triage abstraction-opportunity near-dup families'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -425,7 +425,6 @@ threat: null
 component: null
 ```
 Triage the 37 frob-arch abstraction-opportunity advisories: for each genuine near-duplicate or specific-signature family, either extract the real shared code into one home, or add an explicit reason-note accepting the duplication. Acceptance: frob check arch advisories for abstraction-opportunity reduced to zero unresolved (each is either fixed or reason-noted).
-
 <!-- ticket:T-0394 -->
 ```yaml
 id: T-0394
