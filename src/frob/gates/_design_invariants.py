@@ -150,11 +150,17 @@ def inv007_violations(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, .
 
 
 def _establishes_claims(snapshot: GraphSnapshot) -> tuple[Edge, ...]:
-    """Every `frob:invariant ... establishes="..."` edge in `snapshot`."""
+    """Every `frob:invariant ... establishes="..."` edge in `snapshot` --
+    an `EdgeKind.INVARIANT` filter (shared via `_edges_of_kind`, T-1114)
+    narrowed further to only the subset that also carries an
+    `establishes=` attribute, distinct from `_debt_edges`/
+    `_deprecated_edges`/`_waive_edges`'s pure kind-only filters."""
+    from frob.gates import _edges_of_kind
+
     return tuple(
         e
-        for e in snapshot.edges
-        if e.kind == EdgeKind.INVARIANT and e.attrs.get("establishes")
+        for e in _edges_of_kind(snapshot, EdgeKind.INVARIANT)
+        if e.attrs.get("establishes")
     )
 
 

@@ -140,6 +140,11 @@ waiver is visible debt, never silence.
 
 ### DEBT gate (T-0412)
 
+Implemented in `frob.gates._debt_deprecated` (split out of
+`frob.gates.__init__` in T-1115, alongside the DEPRECATED gate below --
+re-exported unchanged from `frob.gates` so every external caller and
+`frob:doc`/`frob:tests` binding keeps its pre-split symref).
+
 `frob:debt <RULE> reason="..." ticket="T-####" [until="YYYY-MM-DD"|"X.Y.Z"]`
 is the TEMPORARY counterpart to `frob:waive`'s PERMANENT exception (full
 directive semantics: `docs/guides/extending/comment-dsl-directives.md`'s
@@ -173,6 +178,9 @@ well-formed/open/unexpired -- a listing tool, not a gate; DEBT001-003 are
 what actually fail the build.
 
 ### DEPRECATED gate (T-0576)
+
+Implemented in `frob.gates._debt_deprecated` (split out of
+`frob.gates.__init__` in T-1115, alongside the DEBT gate above).
 
 `frob:deprecated <since> sunset="YYYY-MM-DD" ticket="T-####" [reason="..."]`
 generalizes `frob:debt` to the API surface itself: a ticket-bound, dated

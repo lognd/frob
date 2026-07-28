@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.240.0] - unreleased
+
+- T-1115: arch: split remaining ~14 gate families out of src/frob/gates/__init__.py (~9802 lines) -- T-1077 residue refile
+
 ## [0.239.0] - unreleased
 
 - T-1029: ticket CLI: add acceptance criteria to an existing ticket (only ticket new supports --acceptance)

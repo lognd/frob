@@ -32,7 +32,9 @@ def _waive_edges(snapshot: GraphSnapshot) -> tuple[Edge, ...]:
     """Every valid `frob:waive` edge in the snapshot (dsl.py already rejects a
     waive directive missing `reason=...` as a MalformedDirective, so every
     surviving WAIVE edge here is guaranteed to carry a reason)."""
-    return tuple(e for e in snapshot.edges if e.kind == EdgeKind.WAIVE)
+    from frob.gates import _edges_of_kind
+
+    return _edges_of_kind(snapshot, EdgeKind.WAIVE)
 
 
 def _waivers_by_rule(snapshot: GraphSnapshot) -> dict[str, list[Edge]]:
@@ -1155,8 +1157,6 @@ def _waive005_violations(
     return tuple(violations)
 
 
-
-
 # _match_waiver has three matching modes, chosen by `violation.symref`/
 # `violation.rule` -- this comment (not the docstring) carries the
 # historical detail so frob-arch's long-function line count reflects
@@ -1377,5 +1377,3 @@ def _apply_severity_overrides(
         )
         for v in violations
     )
-
-
