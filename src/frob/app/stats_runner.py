@@ -111,6 +111,31 @@ def _run_agentic(cfg: AppConfig) -> None:
 # frob:waive ARCH103 reason="T-0977: `frob stats` CLI entrypoint -- routes between the \
 # agentic and gated report modes and renders each; the mode-branch-then-render shape \
 # IS the runner's job, same as this module's sibling `frob.app.*_runner`s"
+# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_stats_json_daemon_matches_in_process kind="unit"  # noqa: E501
+def _try_stats_via_daemon(root: Path, cfg: AppConfig) -> bool:
+    """T-1127: for a plain `frob stats --json` (non-`--agentic` -- the RPC
+    (`frob_stats`) answers the default `StatsReport` shape only, never
+    the separate `AgenticReport` `--agentic` reads), try the daemon's RPC
+    via `frob.app._daemon_proxy.query` before computing it in-process.
+    Returns `True` on a daemon hit (already rendered); `False` falls
+    through unchanged, same contract every other `_try_*_via_daemon`
+    helper uses. The RPC returns `StatsReport.model_dump(mode='json')`
+    verbatim (T-1127), field-for-field identical to this CLI's own
+    `--json` output (both sides dump the identical pydantic model)."""
+    if not cfg.stats_json:
+        return False
+    from frob.app._daemon_proxy import query
+
+    days = cfg.stats_days or 30
+    proxied = query(root, "frob_stats", {"window_days": days})
+    if proxied.is_err:
+        return False
+    import json
+
+    _log.info(json.dumps(proxied.danger_ok, indent=2))
+    return True
+
+
 def run(cfg: AppConfig) -> None:
     """Render the delivery snapshot (queue health + commit cadence), or
     the non-gated agentic time/token breakdown when `FROB_STATS_AGENTIC`
@@ -119,9 +144,13 @@ def run(cfg: AppConfig) -> None:
         _run_agentic(cfg)
         return
 
+    root = (cfg.stats_path or Path(".")).resolve()
+
+    if _try_stats_via_daemon(root, cfg):
+        return
+
     from frob.stats import collect
 
-    root = (cfg.stats_path or Path(".")).resolve()
     days = cfg.stats_days or 30
     result = collect(root, window_days=days)
     if result.is_err:

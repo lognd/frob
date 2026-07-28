@@ -379,6 +379,53 @@ class SharedCoverageResult(BaseModel):    # T-1095
                                 # into its OWN local .frob/coverage-stamp.
 ```
 
+### T-1126: daemon-owned coverage lease (`frob_lease_acquire`/`frob_lease_release`)
+
+`run_coverage_wait`'s OUTER single-flight lock (the one guarding THIS
+worktree, distinct from T-1095's cross-worktree layer above) now prefers
+the T-1097 daemon lease RPC over the original `_coverage_lock` file lock,
+converging coverage arbitration onto the daemon when one is reachable for
+`root` -- one owner, not two independent single-flight mechanisms that
+happen to agree by convention. `frob.testing._coverage_wait._worktree_
+lock` is the seam: it calls `frob.app._daemon_proxy.try_daemon_lease(root,
+"coverage")`, which opens a PERSISTENT JSON-RPC connection (unlike `query
+()`/`send_request`'s connect-send-recv-close-per-call shape) and sends
+`frob_lease_acquire`. A daemon hit holds the lease across the whole
+coverage run on that one connection; `release_daemon_lease` sends an
+explicit `frob_lease_release` before closing it, but the connection
+closing ALONE is also sufficient -- T-1097's server-side `finally` block
+frees every lease a disconnecting connection still held, so a crashed
+caller's lease is never stuck. `try_daemon_lease`'s `Err` (no daemon
+reachable, `FROB_NO_DAEMON=1`, or the lease request itself errored) falls
+back to `_coverage_lock` exactly as before this ticket -- the file lock
+is the daemonless fallback, not replaced. T-1095's cross-worktree shared-
+state layer (`shared_state_dir`/`tree_digest`) is untouched either way: a
+daemon serves one worktree's own socket, not every worktree of the clone,
+so it is not a substitute for that cross-CLONE primitive.
+
+```python
+# frob/app/_daemon_proxy.py (T-1126)
+class _LeaseConnection:
+    # A persistent raw JSON-RPC connection to root's daemon, used only for
+    # holding a lease across a long-running operation -- promoted from
+    # tests/test_serve_leases.py's own `_RawClient` test scaffold.
+    def call(self, method: str, params: dict | None = None) -> dict
+        # Send one request line, read one response line back.
+    def close(self) -> None
+        # Closing alone triggers the server's connection-liveness release.
+
+def try_daemon_lease(root: Path, resource: str, *, capacity: int = 1,
+                      timeout_s: float | None = None
+                      ) -> Result[_LeaseConnection, ProxyReason]
+    # Ok(conn): lease held on conn: caller does its work, then calls
+    # release_daemon_lease(conn, resource) (or just lets conn drop).
+    # Err(ProxyReason): no daemon reachable or the request errored --
+    # caller falls back to its own (e.g. file-lock) arbitration.
+
+def release_daemon_lease(conn: _LeaseConnection, resource: str) -> None
+    # Best-effort explicit release, then closes conn either way.
+```
+
 **Deviation**: `frob.testing`'s `suite` fallback mode is threaded through the
 same `selected: Mapping[str, tuple[str, ...]]` field `SelectionReport`
 already has, rather than a new field -- a language whose fallback fired in

@@ -78,6 +78,12 @@ _log = get_logger(__name__)
 
 _LOCK_REL = Path(".frob") / "coverage.lock"
 _CACHE_REL = Path(".frob") / "cache.db"
+# T-1126: the resource name every `run_coverage_wait` caller contends on
+# via the daemon's `frob_lease_acquire`/`frob_lease_release` RPC
+# (`ResourceLeaseManager`, T-1097) when a daemon is reachable for `root` --
+# arbitrary but must be the same literal every caller uses, the same way
+# `_LOCK_REL`'s path must be.
+_DAEMON_LEASE_RESOURCE = "coverage"
 
 # T-1095: extensions a tree digest is computed over -- identical to
 # `_is_stamp_fresh`'s own filter, so "same digest" and "would already read
@@ -139,6 +145,46 @@ def _coverage_lock(root: Path) -> Iterator[None]:
         fcntl.flock(fd, fcntl.LOCK_UN)
         os.close(fd)
         _log.debug("coverage_wait: lock released (%s)", path)
+
+
+# frob:tests tests/test_coverage_wait_shared.py::TestWorktreeLock.test_uses_daemon_lease_when_daemon_up kind="unit"  # noqa: E501
+# frob:tests tests/test_coverage_wait_shared.py::TestWorktreeLock.test_falls_back_to_file_lock_when_no_daemon kind="unit"  # noqa: E501
+@contextmanager
+def _worktree_lock(root: Path) -> Iterator[None]:
+    """T-1126: this worktree's single-flight coverage-run arbitration --
+    prefers the daemon-owned lease RPC (`frob_lease_acquire`/`frob_lease_
+    release`, T-1097's `ResourceLeaseManager`, connection-liveness release
+    on a crash) when a daemon is reachable for `root`, falling back to the
+    original `_coverage_lock` `fcntl` file lock when it is not (no daemon
+    running, `FROB_NO_DAEMON=1`, or the lease request itself failed --
+    `try_daemon_lease`'s `Err` covers all three identically). Either path
+    gives the same guarantee to every caller: only one proceeds past this
+    context manager at a time for this worktree. This replaces `_coverage_
+    lock` as `run_coverage_wait`'s own OUTER lock; T-1095's cross-worktree
+    shared-state layer (`_shared_coverage_lock`, keyed by `tree_digest`
+    under `shared_state_dir`) is untouched -- a genuinely different,
+    cross-CLONE primitive the per-connection daemon lease does not cover
+    (the daemon serves one worktree's own socket, not every worktree of
+    the clone)."""
+    from frob.app._daemon_proxy import release_daemon_lease, try_daemon_lease
+
+    lease_result = try_daemon_lease(root, _DAEMON_LEASE_RESOURCE)
+    if lease_result.is_ok:
+        conn = lease_result.danger_ok
+        _log.debug("coverage_wait: daemon lease acquired for %s", root)
+        try:
+            yield
+        finally:
+            release_daemon_lease(conn, _DAEMON_LEASE_RESOURCE)
+            _log.debug("coverage_wait: daemon lease released for %s", root)
+        return
+
+    _log.debug(
+        "coverage_wait: daemon lease unavailable (%s), falling back to file lock",
+        lease_result.danger_err,
+    )
+    with _coverage_lock(root):
+        yield
 
 
 # frob:doc docs/modules/testing.md#public-api
@@ -347,8 +393,11 @@ def run_coverage_wait(
     tracked source DIFFERS resolve to different digests -- different lock
     paths, different cache entries -- so they never contend or share a
     result with each other at all (acceptance [1]).
+
+    T-1126: the OUTER lock is now `_worktree_lock` (daemon lease when
+    reachable, else `_coverage_lock`); everything below is unchanged.
     """
-    with _coverage_lock(root):
+    with _worktree_lock(root):
         cache = root / _CACHE_REL
         loaded = load_graph(cache)
         if loaded.is_err:

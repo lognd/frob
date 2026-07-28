@@ -229,3 +229,132 @@ class TestCrossWorktreeSingleFlight:
         assert all(r.is_ok for r in results)
         outcomes: list[CoverageWaitOutcome] = [r.danger_ok for r in results]
         assert all(o.ran for o in outcomes)
+
+
+def _start_socket_daemon(root: Path, idle_timeout_s: float = 5.0) -> threading.Thread:
+    """Start a real `run_socket_daemon` in a background thread and block
+    until its socket file exists -- mirrors `tests/test_app_daemon_proxy.
+    py`'s own `_start_daemon` helper (T-1126: extracted here rather than
+    inlined per test method, which a bare `frob-arch` walk mis-paired as
+    nested loops across this class's two test methods)."""
+    from frob.serve import SocketDaemonConfig, run_socket_daemon
+    from frob.serve._socketd import socket_path
+
+    cfg = SocketDaemonConfig(root=root, idle_timeout_s=idle_timeout_s)
+    thread = threading.Thread(target=lambda: run_socket_daemon(cfg), daemon=True)
+    thread.start()
+    deadline = time.monotonic() + 5
+    while not socket_path(root).exists() and time.monotonic() < deadline:
+        time.sleep(0.02)
+    assert socket_path(root).exists()
+    return thread
+
+
+def _shutdown_socket_daemon(root: Path, thread: threading.Thread) -> None:
+    """Force the idle-timeout daemon down promptly rather than waiting out
+    its full `idle_timeout_s` at teardown -- mirrors `tests/test_app_
+    daemon_proxy.py`'s own `_shutdown` helper."""
+    from frob.serve._socketd import lock_path, socket_path
+
+    deadline = time.monotonic() + 5
+    while (
+        lock_path(root).exists() and time.monotonic() < deadline and thread.is_alive()
+    ):
+        time.sleep(0.05)
+        if not socket_path(root).exists():
+            break
+    thread.join(timeout=1)
+
+
+class TestWorktreeLock:
+    """T-1126: `run_coverage_wait`'s OUTER single-flight lock prefers the
+    T-1097 daemon lease RPC when a daemon is reachable for `root`, falling
+    back to the original `_coverage_lock` file lock otherwise -- a real
+    daemon (not a mock), per this file's own `TestCrossWorktreeSingleFlight`
+    precedent."""
+
+    def test_uses_daemon_lease_when_daemon_up(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_coverage_wait_shared.py::TestWorktreeLock.test_uses_daemon_lease_when_daemon_up
+        import frob.testing._coverage_wait as _cw
+
+        root = _make_repo(tmp_path, "proj")
+        (root / ".frob").mkdir()
+
+        thread = _start_socket_daemon(root)
+
+        file_lock_calls = []
+        real_coverage_lock = _cw._coverage_lock
+
+        def _spy_coverage_lock(r):  # noqa: ANN001, ANN202
+            file_lock_calls.append(r)
+            return real_coverage_lock(r)
+
+        monkeypatch.setattr(_cw, "_coverage_lock", _spy_coverage_lock)
+
+        real_run = _guard.subprocess.run
+
+        def _fake_run(cmd, *args, **kwargs):  # noqa: ANN001
+            if list(cmd) != ["true"]:
+                return real_run(cmd, *args, **kwargs)
+
+            class _Result:
+                returncode = 0
+
+            return _Result()
+
+        monkeypatch.setattr("frob.process._guard.subprocess.run", _fake_run)
+
+        try:
+            result = run_coverage_wait(root, command=("true",))
+        finally:
+            _shutdown_socket_daemon(root, thread)
+
+        assert result.is_ok
+        assert file_lock_calls == [], (
+            "a reachable daemon must arbitrate via the lease RPC, "
+            "never falling through to the file lock"
+        )
+
+    def test_falls_back_to_file_lock_when_no_daemon(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_coverage_wait_shared.py::TestWorktreeLock.test_falls_back_to_file_lock_when_no_daemon
+        import frob.testing._coverage_wait as _cw
+
+        root = _make_repo(tmp_path, "proj")
+        (root / ".frob").mkdir()
+        monkeypatch.setenv("FROB_NO_DAEMON", "1")
+
+        file_lock_calls = []
+        real_coverage_lock = _cw._coverage_lock
+
+        def _spy_coverage_lock(r):  # noqa: ANN001, ANN202
+            file_lock_calls.append(r)
+            return real_coverage_lock(r)
+
+        monkeypatch.setattr(_cw, "_coverage_lock", _spy_coverage_lock)
+
+        real_run = _guard.subprocess.run
+
+        def _fake_run(cmd, *args, **kwargs):  # noqa: ANN001
+            if list(cmd) != ["true"]:
+                return real_run(cmd, *args, **kwargs)
+
+            class _Result:
+                returncode = 0
+
+            return _Result()
+
+        monkeypatch.setattr("frob.process._guard.subprocess.run", _fake_run)
+
+        result = run_coverage_wait(root, command=("true",))
+
+        assert result.is_ok
+        assert file_lock_calls == [root], (
+            "no daemon reachable (FROB_NO_DAEMON=1) must fall back to the "
+            "file lock exactly as before T-1126"
+        )

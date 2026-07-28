@@ -47,6 +47,9 @@ class ServeError(ErrorSet):
     GitFailed = "git diff could not be computed"
     RunnersUnavailable = "test runner config could not be loaded"
     RunFailed = "touched-set test run failed"
+    # T-1127
+    ExportsFailed = "exports listing could not be built"
+    StatsFailed = "delivery stats could not be collected"
 
 
 def _load_snapshot(root: Path):  # noqa: ANN202
@@ -79,6 +82,54 @@ def frob_doable_tickets(root: Path) -> Result[list[dict], ServeError]:
     tickets = doable(queue_result.danger_ok, root)
     _log.info("serve: frob_doable_tickets: %d doable", len(tickets))
     return Ok([t.model_dump(mode="json") for t in tickets])
+
+
+# frob:doc docs/modules/serve.md#tools
+# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_exports_json_daemon_matches_in_process kind="unit"  # noqa: E501
+def frob_exports(
+    root: Path,
+    *,
+    include_private: bool = False,
+    exclude_modules: tuple[str, ...] = (),
+) -> Result[dict, ServeError]:
+    """`ExportsResult.model_dump(mode="json")` for `root`'s package -- the
+    default (non-`--consumers`, non-`--write`) `frob exports <path> --json`
+    render mode (`frob.app.exports_runner.run`), field-for-field identical
+    since both sides dump the identical `ExportsResult` pydantic model
+    (T-1127)."""
+    from frob.exports import exports_package
+
+    result = exports_package(
+        root, include_private=include_private, exclude_modules=list(exclude_modules)
+    )
+    if result.is_err:
+        _log.error("serve: frob_exports: %s", result.danger_err)
+        return Err(ServeError.ExportsFailed)
+    er = result.danger_ok
+    _log.info("serve: frob_exports: %s: %d module(s)", root, len(er.modules))
+    return Ok(er.model_dump(mode="json"))
+
+
+# frob:doc docs/modules/serve.md#tools
+# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_stats_json_daemon_matches_in_process kind="unit"  # noqa: E501
+def frob_stats(root: Path, *, window_days: int = 30) -> Result[dict, ServeError]:
+    """`StatsReport.model_dump(mode="json")` for `root` -- the default
+    (non-`--agentic`) `frob stats --json` render mode (`frob.app.
+    stats_runner.run`), field-for-field identical since both sides dump
+    the identical `StatsReport` pydantic model (T-1127). The `--agentic`
+    mode (env-var-triggered, `FROB_STATS_AGENTIC`) reads a different
+    report shape (`frob.stats.agentic_report`) entirely and is out of
+    this RPC's scope -- `_try_stats_via_daemon` never calls this RPC for
+    that mode."""
+    from frob.stats import collect
+
+    result = collect(root, window_days=window_days)
+    if result.is_err:
+        _log.error("serve: frob_stats: %s", result.danger_err)
+        return Err(ServeError.StatsFailed)
+    report = result.danger_ok
+    _log.info("serve: frob_stats: %s: %d ticket(s)", root, report.tickets.total)
+    return Ok(report.model_dump(mode="json"))
 
 
 def _stale_entries_as_dicts(report) -> list[dict]:  # noqa: ANN001
@@ -543,8 +594,10 @@ __all__ = [
     "frob_daemon_status",
     "frob_doable_tickets",
     "frob_doc_for",
+    "frob_exports",
     "frob_graph_query",
     "frob_perf_hot",
     "frob_run_touched_tests",
     "frob_stale_docs",
+    "frob_stats",
 ]

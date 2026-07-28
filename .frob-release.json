@@ -85,8 +85,12 @@
     "src/frob/__main__.py::_SuggestingArgumentParser.error": "53b25f4073b9c9cce74e1dbecd2fa27854cbfb9f06a7345555c38af52dc33fb3",
     "src/frob/__main__.py::main": "a87346f60f77c98d14a0c83f059fb1dbc7738bb54732a146f8793d55b5262976",
     "src/frob/app/_daemon_proxy.py::ProxyReason": "086cf4f3d1b1990991d064130300e802372b63556e3a4bc4b78461736ee3ab95",
+    "src/frob/app/_daemon_proxy.py::_LeaseConnection.call": "61371988b4bd37f5a4e840a484ce3c048cc98416bf8c35663e2c14934cdf1b2f",
+    "src/frob/app/_daemon_proxy.py::_LeaseConnection.close": "97ac0dbd874943e5d645e2dd0b604924a2cc234b0370499c835e25a51922fc00",
     "src/frob/app/_daemon_proxy.py::ensure_daemon": "ba420f72117bcd6db756c95503fc099661cacae76cc3b64068770b660b143ff8",
     "src/frob/app/_daemon_proxy.py::query": "c12ba23d9c19903308cd2fef2ad42b188420be459cf0287388a60cd09ccf1ca4",
+    "src/frob/app/_daemon_proxy.py::release_daemon_lease": "0dc5bcfc523a8545886dee0f89486551a763c1345408237c954ae9ce4bf99e69",
+    "src/frob/app/_daemon_proxy.py::try_daemon_lease": "3067c0323c04f8efb8058d7d5fe7e12f7602be29bf8226755fa77989085147f6",
     "src/frob/app/_snapshot.py::CACHE_REL": "4a08ebfa739f80ac5e4e6b02964af42021bed55fb59d6b716818bc849457bde6",
     "src/frob/app/_snapshot.py::load_or_build_snapshot": "d4b8873d6916febf90522189b768df74d04040d5891566257397014e27c88e2d",
     "src/frob/app/_style.py::STATE_STYLE": "2af4798352f364d9a8483f7a700e26b28cdedf7ab22b2f3358bc1a17b60cc2b5",
@@ -1077,10 +1081,12 @@
     "src/frob/serve/_tools.py::frob_daemon_status": "b2a957ad662183411f0b069bffff4a162986e4e097e3a33e850e978738aebf9d",
     "src/frob/serve/_tools.py::frob_doable_tickets": "0384a31cc7b9a67a38d9e474a748792765d8602f456405ea4d78fb00ba8aa4c6",
     "src/frob/serve/_tools.py::frob_doc_for": "c1be2d4bd28328bc07634d748433cb5012f53fbaf40f5fa3857d69122aeebd98",
+    "src/frob/serve/_tools.py::frob_exports": "61ccce51a859d74f115aed2eb5149fc829d159984324da19c4f2ff42553e9a25",
     "src/frob/serve/_tools.py::frob_graph_query": "121db816da552ab729c9c80e0b76be326a3c8bf831612ef7f12d9651863c55f7",
     "src/frob/serve/_tools.py::frob_perf_hot": "ba90fded8181e492bd30c4e6525b827b641c63f9141e3953f2205f290e6677bd",
     "src/frob/serve/_tools.py::frob_run_touched_tests": "c8e2431072bfb7ee67e0860035e213db5e8a0b8b3a3afd81d5a05fd6185ae09b",
     "src/frob/serve/_tools.py::frob_stale_docs": "1d553104bfcb72e439bd0ced69b9a9acc7385b8a30cc53cbb87027768f5006d0",
+    "src/frob/serve/_tools.py::frob_stats": "2b3a4dd232f1a2d3cc2cc83ac7f5cc4c3c36cb861256877331473c5b008c80fd",
     "src/frob/serve/_watch.py::DEFAULT_WATCH_POLL_INTERVAL_S": "4e3193349dcd6837774599441819f48e3868002dbe2b835e63f913d97faa7070",
     "src/frob/serve/_watch.py::WatchThread": "e2784ca4bd1af92b9ddae9ab0f25af193542aea24057d74f7b6f1a04c9f8ee68",
     "src/frob/serve/_watch.py::WatchThread.start": "4af1b69f4ec04021dcea13aa69b436fcba4ac1b1f4a2e319632d2b52ade0ab31",
@@ -1841,5 +1847,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.246.0"
+  "version": "0.247.0"
 }

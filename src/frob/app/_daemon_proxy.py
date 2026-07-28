@@ -261,4 +261,132 @@ def query(
     return Ok(result.danger_ok)
 
 
-__all__ = ["ProxyReason", "ensure_daemon", "query"]
+class _LeaseConnection:
+    """A persistent raw JSON-RPC connection to `root`'s daemon (T-1126),
+    used ONLY for holding a `frob_lease_acquire`/`frob_lease_release` pair
+    across a long-running operation -- unlike `query()`/`send_request`
+    (connect-send-recv-close every call), a lease must be acquired and
+    released on the SAME connection so the server's connection-liveness
+    release (T-1097: a crashed/killed client's leases are freed
+    unconditionally on disconnect) has a concrete connection to tear down
+    if this process dies mid-operation. Mirrors `tests/test_serve_leases.
+    py`'s own `_RawClient` test scaffold, promoted to production code
+    here since a real caller (`frob.testing.run_coverage_wait`) now needs
+    the same persistent-connection shape, not just a test."""
+
+    def __init__(self, root: Path, *, timeout_s: float = 10.0) -> None:
+        """Connect once; every `call()` reuses the same socket."""
+        import socket as _socket
+
+        from frob.serve import socket_path
+
+        self._sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+        self._sock.settimeout(timeout_s)
+        self._sock.connect(str(socket_path(root.resolve())))
+        self._buf = b""
+
+    # frob:doc docs/modules/testing.md#t-1126-daemon-owned-coverage-lease-frob_lease_acquirefrob_lease_release  # noqa: E501
+    def call(self, method: str, params: dict[str, Any] | None = None) -> dict:
+        """Send one JSON-RPC request line and read one response line back."""
+        import json
+
+        self._sock.sendall(
+            (
+                json.dumps({"id": 1, "method": method, "params": params or {}})
+                + "\n"
+            ).encode("utf-8")
+        )
+        while b"\n" not in self._buf:
+            chunk = self._sock.recv(65536)
+            if not chunk:
+                break
+            self._buf += chunk
+        line, _, self._buf = self._buf.partition(b"\n")
+        return json.loads(line.decode("utf-8"))
+
+    # frob:doc docs/modules/testing.md#t-1126-daemon-owned-coverage-lease-frob_lease_acquirefrob_lease_release  # noqa: E501
+    def close(self) -> None:
+        """Close the connection -- the server's connection-liveness
+        release (T-1097) frees any lease this connection still held,
+        whether or not `frob_lease_release` was sent first."""
+        self._sock.close()
+
+
+# frob:doc docs/modules/testing.md#frobtesting_coverage_waitpy-t-0322-cross-worktree-layer-t-1095  # noqa: E501
+# frob:tests tests/test_coverage_wait_shared.py::TestWorktreeLock.test_uses_daemon_lease_when_daemon_up kind="unit"  # noqa: E501
+# frob:tests tests/test_coverage_wait_shared.py::TestWorktreeLock.test_falls_back_to_file_lock_when_no_daemon kind="unit"  # noqa: E501
+def try_daemon_lease(
+    root: Path,
+    resource: str,
+    *,
+    capacity: int = 1,
+    timeout_s: float | None = None,
+) -> Result[_LeaseConnection, ProxyReason]:
+    """Try to acquire `resource` via the T-1097 daemon lease RPC (`frob_
+    lease_acquire`) over a fresh persistent connection. `Ok(conn)` means
+    the lease is held -- the caller does its work, then MUST call
+    `release_daemon_lease(conn, resource)` when done (or just let the
+    connection close: T-1097's connection-liveness release frees it
+    either way, the crash-safety backstop `try_daemon_lease`'s docstring
+    promises). `Err(ProxyReason)` means no daemon is reachable, or the
+    lease request itself errored -- the caller falls back to its own
+    (e.g. file-lock) arbitration, exactly `query()`'s existing fallback
+    contract."""
+    # frob:waive SEC110 reason="T-1126: FROB_NO_DAEMON is the same boolean \
+    # opt-out flag query() already carries this exact waiver for -- no \
+    # confidential value, just a bypass switch"
+    if os.environ.get("FROB_NO_DAEMON") == "1":
+        _log.info("daemon_proxy: FROB_NO_DAEMON=1, bypassing daemon lease")
+        return Err(ProxyReason.Disabled)
+
+    ensure_daemon(root)
+    try:
+        conn = _LeaseConnection(root)
+    except OSError as exc:
+        _log.info("daemon_proxy: lease connect failed for %s: %s", root, exc)
+        return Err(ProxyReason.Unreachable)
+
+    try:
+        response = conn.call(
+            "frob_lease_acquire",
+            {"resource": resource, "capacity": capacity, "timeout_s": timeout_s},
+        )
+    except OSError as exc:
+        conn.close()
+        _log.info("daemon_proxy: lease acquire failed for %s: %s", root, exc)
+        return Err(ProxyReason.Unreachable)
+
+    if "error" in response:
+        conn.close()
+        _log.info("daemon_proxy: lease acquire remote error: %s", response["error"])
+        return Err(ProxyReason.RemoteError)
+    if not response.get("result", {}).get("acquired"):
+        conn.close()
+        _log.info("daemon_proxy: lease acquire timed out for resource=%s", resource)
+        return Err(ProxyReason.Unreachable)
+
+    _log.info("daemon_proxy: lease acquired for resource=%s", resource)
+    return Ok(conn)
+
+
+# frob:doc docs/modules/testing.md#t-1126-daemon-owned-coverage-lease-frob_lease_acquirefrob_lease_release  # noqa: E501
+# frob:tests tests/test_coverage_wait_shared.py::TestWorktreeLock.test_uses_daemon_lease_when_daemon_up kind="unit"  # noqa: E501
+def release_daemon_lease(conn: _LeaseConnection, resource: str) -> None:
+    """Explicitly free `resource` on `conn` (best-effort: a failure here
+    is harmless -- `conn.close()`, always called right after by the
+    caller, triggers the same connection-liveness release T-1097's
+    server-side `finally` block guarantees), then close the connection."""
+    try:
+        conn.call("frob_lease_release", {"resource": resource})
+    except OSError as exc:
+        _log.info("daemon_proxy: explicit lease release failed (harmless): %s", exc)
+    conn.close()
+
+
+__all__ = [
+    "ProxyReason",
+    "ensure_daemon",
+    "query",
+    "release_daemon_lease",
+    "try_daemon_lease",
+]
