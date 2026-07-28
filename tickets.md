@@ -2533,7 +2533,7 @@ process/parsers/common.py/check/_native.py), or a reasoned frob:waive.
 id: T-1057
 title: 'frob ticket land: resolve --worktree to an absolute path before building the
   worktree venv python path'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-27'
