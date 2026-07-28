@@ -244,6 +244,48 @@ class TestTestFileExemption:
 # ---------------------------------------------------------------------------
 
 
+class TestCollectDispatchRefs:
+    """Direct unit coverage of `_collect_dispatch_refs`'s three dispatch-
+    like shapes (T-0394: the call-callee, call-argument, and keyword-
+    argument branches, extracted to `_collect_dispatch_refs_from_call`)."""
+
+    def _refs(self, tmp_path: Path, source: str) -> set[str]:
+        from frob.arch._python import _collect_dispatch_refs
+        from frob.lang import raw_tree
+
+        path = tmp_path / "mod.py"
+        path.write_text(source)
+        parsed = raw_tree(path)
+        assert parsed.is_ok
+        tree, _source, _language = parsed.danger_ok
+        out: set[str] = set()
+        _collect_dispatch_refs(tree.root_node, out)
+        return out
+
+    def test_call_callee_identifier_counted(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/arch/_python.py::_collect_dispatch_refs_from_call
+        assert self._refs(tmp_path, "handler()\n") == {"handler"}
+
+    def test_call_positional_argument_identifier_counted(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/arch/_python.py::_collect_dispatch_refs_from_call
+        assert "handler" in self._refs(tmp_path, "register(handler)\n")
+
+    def test_call_keyword_argument_identifier_counted(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/arch/_python.py::_collect_dispatch_refs_from_call
+        assert "handler" in self._refs(tmp_path, "dispatch(cmd, target=handler)\n")
+
+    def test_call_keyword_argument_non_identifier_not_counted(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/arch/_python.py::_collect_dispatch_refs_from_call
+        refs = self._refs(tmp_path, 'dispatch(cmd, target="literal")\n')
+        assert refs == {"dispatch", "cmd"}
+
+    def test_call_string_argument_not_counted(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/arch/_python.py::_collect_dispatch_refs_from_call
+        assert self._refs(tmp_path, 'register("not_a_name")\n') == {"register"}
+
+
 class TestDispatchFamilySuppression:
     def test_dispatch_family_no_abstraction_opportunity(self, tmp_path):
         # frob:tests src/frob/arch/_python.py::_is_dispatch_family
@@ -1694,6 +1736,36 @@ class TestPythonAdapter:
         assert {m.name for m in cls.methods} == {
             f"method_{i:02d}" for i in range(1, 17)
         }
+
+    def test_adapt_imports(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/arch/_python.py::_py_plain_import_statement_imports
+        # frob:tests src/frob/arch/_python.py::_py_build_module
+        from frob.arch._python import PythonAdapter
+        from frob.lang import raw_tree
+
+        path = tmp_path / "mod.py"
+        path.write_text(
+            "import os\n"
+            "import os.path as osp\n"
+            "from collections import OrderedDict\n"
+        )
+        parsed = raw_tree(path)
+        assert parsed.is_ok
+        tree, source, language = parsed.danger_ok
+        assert language == "python"
+
+        module = PythonAdapter().adapt(tree, source, "mod.py")
+        plain = [i for i in module.imports if i.module in ("os", "os.path")]
+        assert len(plain) == 2
+        bare = next(i for i in plain if i.module == "os")
+        assert bare.names == []
+        assert bare.line == 1
+        aliased = next(i for i in plain if i.module == "os.path")
+        assert aliased.names == []
+        assert aliased.line == 2
+        from_import = next(i for i in module.imports if i.module == "collections")
+        assert "OrderedDict" in from_import.names
+        assert from_import.line == 3
 
     def test_adapt_long_func_fixture_structural_events(self) -> None:
         from frob.arch._python import PythonAdapter

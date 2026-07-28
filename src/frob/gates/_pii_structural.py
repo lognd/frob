@@ -1828,40 +1828,50 @@ def _scan_ts_env_access(
     while stack:
         node = stack.pop()
         if node.type == "member_expression":
-            obj = node.child_by_field_name("object")
-            prop = node.child_by_field_name("property")
-            if obj is not None and prop is not None:
-                obj_dotted = _ts_dotted_prefix(obj)
-                if obj_dotted in _TS_ENV_PREFIXES:
-                    var_name = node_text(prop)
-                    if not _is_allowlisted_env_var(var_name):
-                        violations.append(
-                            _sec110_violation(
-                                rel_path,
-                                node.start_point[0] + 1,
-                                f"{obj_dotted}.{var_name}",
-                            )
-                        )
+            violations.extend(_ts_env_member_violation(node, rel_path))
         elif node.type == "subscript_expression":
-            obj = node.child_by_field_name("object")
-            index = node.child_by_field_name("index")
-            if obj is not None and index is not None:
-                obj_dotted = _ts_dotted_prefix(obj)
-                if obj_dotted in _TS_ENV_PREFIXES:
-                    var_name = _ts_string_literal_text(index)
-                    if var_name is not None and _is_allowlisted_env_var(var_name):
-                        stack.extend(node.children)
-                        continue
-                    site = (
-                        f"{obj_dotted}[{var_name!r}]"
-                        if var_name is not None
-                        else (f"{obj_dotted}[...]")
-                    )
-                    violations.append(
-                        _sec110_violation(rel_path, node.start_point[0] + 1, site)
-                    )
+            violations.extend(_ts_env_subscript_violation(node, rel_path))
         stack.extend(node.children)
     return tuple(violations)
+
+
+def _ts_env_member_violation(node: Node, rel_path: str) -> list[Violation]:
+    """`SEC110` violation, if any, for one `process.env.NAME`-shaped
+    `member_expression` node (extracted from `_scan_ts_env_access` to cut
+    nesting, T-0394)."""
+    obj = node.child_by_field_name("object")
+    prop = node.child_by_field_name("property")
+    if obj is None or prop is None:
+        return []
+    obj_dotted = _ts_dotted_prefix(obj)
+    if obj_dotted not in _TS_ENV_PREFIXES:
+        return []
+    var_name = node_text(prop)
+    if _is_allowlisted_env_var(var_name):
+        return []
+    return [
+        _sec110_violation(rel_path, node.start_point[0] + 1, f"{obj_dotted}.{var_name}")
+    ]
+
+
+def _ts_env_subscript_violation(node: Node, rel_path: str) -> list[Violation]:
+    """`SEC110` violation, if any, for one `process.env["NAME"]`-shaped
+    `subscript_expression` node (extracted from `_scan_ts_env_access` to
+    cut nesting, T-0394)."""
+    obj = node.child_by_field_name("object")
+    index = node.child_by_field_name("index")
+    if obj is None or index is None:
+        return []
+    obj_dotted = _ts_dotted_prefix(obj)
+    if obj_dotted not in _TS_ENV_PREFIXES:
+        return []
+    var_name = _ts_string_literal_text(index)
+    if var_name is not None and _is_allowlisted_env_var(var_name):
+        return []
+    site = (
+        f"{obj_dotted}[{var_name!r}]" if var_name is not None else f"{obj_dotted}[...]"
+    )
+    return [_sec110_violation(rel_path, node.start_point[0] + 1, site)]
 
 
 def _rust_struct_field_names(body: Node) -> list[tuple[str, int, Node | None]]:
@@ -1903,18 +1913,25 @@ def _scan_rust_fields(
     while stack:
         node = stack.pop()
         if node.type == "struct_item":
-            body = node.child_by_field_name("body")
-            if body is not None:
-                for name, lineno, type_node in _rust_struct_field_names(body):
-                    sig = _field_name_hit(name) or _rust_type_hit(type_node)
-                    if sig is not None and not declared._has_pii(
-                        rel_path, sig.category
-                    ):
-                        violations.append(
-                            _pii010_violation(rel_path, lineno, name, sig)
-                        )
+            violations.extend(_rust_struct_field_violations(node, rel_path, declared))
         stack.extend(node.children)
     return tuple(violations)
+
+
+def _rust_struct_field_violations(
+    struct_node: Node, rel_path: str, declared: _DeclaredSurface
+) -> list[Violation]:
+    """`PII010` violations for one Rust `struct_item`'s named fields
+    (extracted from `_scan_rust_fields` to cut nesting, T-0394)."""
+    body = struct_node.child_by_field_name("body")
+    if body is None:
+        return []
+    out: list[Violation] = []
+    for name, lineno, type_node in _rust_struct_field_names(body):
+        sig = _field_name_hit(name) or _rust_type_hit(type_node)
+        if sig is not None and not declared._has_pii(rel_path, sig.category):
+            out.append(_pii010_violation(rel_path, lineno, name, sig))
+    return out
 
 
 #: Rust env-access function-name fragment (corpus family 3: `std::env::var`/

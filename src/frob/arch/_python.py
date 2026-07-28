@@ -706,6 +706,22 @@ def _py_build_class(
     )
 
 
+def _py_plain_import_statement_imports(stmt: Node) -> list[NormalizedImport]:
+    """`NormalizedImport` entries for one bare `import x` / `import x as y`
+    statement node (extracted from `_py_build_module` to cut nesting,
+    T-0394)."""
+    line = stmt.start_point[0] + 1
+    out: list[NormalizedImport] = []
+    for name_node in stmt.named_children:
+        if name_node.type in ("dotted_name", "identifier"):
+            out.append(NormalizedImport(module=_node_text(name_node), line=line))
+        elif name_node.type == "aliased_import":
+            mod_node = _child(name_node, "name")
+            if mod_node is not None:
+                out.append(NormalizedImport(module=_node_text(mod_node), line=line))
+    return out
+
+
 def _py_build_module(
     tree: object, rel: str, source_lines: tuple[str, ...] = ()
 ) -> NormalizedModule:
@@ -728,22 +744,7 @@ def _py_build_module(
                 _py_build_function(c, is_method=False, source_lines=source_lines)
             )
         elif c.type == "import_statement":
-            for name_node in c.named_children:
-                if name_node.type in ("dotted_name", "identifier"):
-                    imports.append(
-                        NormalizedImport(
-                            module=_node_text(name_node), line=c.start_point[0] + 1
-                        )
-                    )
-                elif name_node.type == "aliased_import":
-                    mod_node = _child(name_node, "name")
-                    if mod_node is not None:
-                        imports.append(
-                            NormalizedImport(
-                                module=_node_text(mod_node),
-                                line=c.start_point[0] + 1,
-                            )
-                        )
+            imports.extend(_py_plain_import_statement_imports(c))
         elif c.type == "import_from_statement":
             mod_node = _child(c, "module_name")
             names = [
@@ -915,6 +916,26 @@ def _body_fingerprint(func: Node) -> str:
 _DISPATCH_CONTAINER_TYPES = frozenset({"list", "set", "tuple"})
 
 
+def _collect_dispatch_refs_from_call(call: Node, out: set[str]) -> None:
+    """Collect dispatch-like identifier refs from one `call` node's own
+    callee and argument list (extracted from `_collect_dispatch_refs` to
+    cut nesting, T-0394; see that function's docstring for the shapes that
+    count)."""
+    func = _child(call, "function")
+    if func is not None and func.type == "identifier":
+        out.add(_node_text(func))
+    args = _child(call, "arguments")
+    if args is None:
+        return
+    for a in args.named_children:
+        if a.type == "identifier":
+            out.add(_node_text(a))
+        elif a.type == "keyword_argument":
+            val = _child(a, "value")
+            if val is not None and val.type == "identifier":
+                out.add(_node_text(val))
+
+
 def _collect_dispatch_refs(node: Node, out: set[str]) -> None:
     """Collect every identifier used in a DISPATCH-LIKE syntactic position
     under `node`, into `out` (T-0360, reviewer-required fix).
@@ -943,29 +964,32 @@ def _collect_dispatch_refs(node: Node, out: set[str]) -> None:
     """
     for c in node.children:
         if c.type == "call":
-            func = _child(c, "function")
-            if func is not None and func.type == "identifier":
-                out.add(_node_text(func))
-            args = _child(c, "arguments")
-            if args is not None:
-                for a in args.named_children:
-                    if a.type == "identifier":
-                        out.add(_node_text(a))
-                    elif a.type == "keyword_argument":
-                        val = _child(a, "value")
-                        if val is not None and val.type == "identifier":
-                            out.add(_node_text(val))
+            _collect_dispatch_refs_from_call(c, out)
         elif c.type == "dictionary":
-            for pair in c.named_children:
-                if pair.type == "pair":
-                    val = _child(pair, "value")
-                    if val is not None and val.type == "identifier":
-                        out.add(_node_text(val))
+            _collect_dispatch_refs_from_dict(c, out)
         elif c.type in _DISPATCH_CONTAINER_TYPES:
-            for el in c.named_children:
-                if el.type == "identifier":
-                    out.add(_node_text(el))
+            _collect_dispatch_refs_from_container(c, out)
         _collect_dispatch_refs(c, out)
+
+
+def _collect_dispatch_refs_from_dict(dictionary: Node, out: set[str]) -> None:
+    """Collect dispatch-like identifier refs from one `dictionary`
+    literal's pair values (extracted from `_collect_dispatch_refs` to cut
+    nesting, T-0394)."""
+    for pair in dictionary.named_children:
+        if pair.type == "pair":
+            val = _child(pair, "value")
+            if val is not None and val.type == "identifier":
+                out.add(_node_text(val))
+
+
+def _collect_dispatch_refs_from_container(container: Node, out: set[str]) -> None:
+    """Collect dispatch-like identifier refs from one `list`/`set`/`tuple`
+    literal's elements (extracted from `_collect_dispatch_refs` to cut
+    nesting, T-0394)."""
+    for el in container.named_children:
+        if el.type == "identifier":
+            out.add(_node_text(el))
 
 
 def _collect_file_dispatch_refs(tree: object) -> set[str]:

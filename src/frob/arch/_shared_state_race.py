@@ -179,6 +179,56 @@ def _assignment_mutable_ctor(assign_node: Node) -> bool:
     return False
 
 
+def _module_level_shared_state_name(assign: Node) -> str | None:
+    """Canonical id for a module-level `name = <mutable-ctor>` shared-state
+    assignment, or `None` if `assign` does not match that shape (T-0697
+    step 1, extracted from `_collect_shared_state` to cut nesting,
+    T-0394)."""
+    left = _child(assign, "left")
+    if left is None or left.type != "identifier":
+        return None
+    if not _assignment_mutable_ctor(assign):
+        return None
+    return _node_text(left)
+
+
+def _class_attr_shared_state_name(assign: Node, cname: str) -> str | None:
+    """Canonical `ClassName.attr` id for a `self.<attr> = <mutable-ctor>`
+    shared-state assignment inside a class body, or `None` if `assign`
+    does not match that shape (T-0697 step 1, extracted from
+    `_collect_shared_state` to cut nesting, T-0394)."""
+    left = _child(assign, "left")
+    if left is None or left.type != "attribute":
+        return None
+    if not _assignment_mutable_ctor(assign):
+        return None
+    obj = _child(left, "object")
+    attr = _child(left, "attribute")
+    is_self = obj is not None and obj.type == "identifier" and _node_text(obj) == "self"
+    if not is_self or attr is None:
+        return None
+    return f"{cname}.{_node_text(attr)}"
+
+
+def _collect_class_shared_state(class_node: Node) -> dict[str, str]:
+    """Canonical shared-state entries for one class's `self.<attr> =
+    <mutable-ctor>` assignments (T-0697 step 1, extracted from
+    `_collect_shared_state` to cut nesting, T-0394)."""
+    name_node = _child(class_node, "name")
+    cname = _node_text(name_node) if name_node is not None else "?"
+    body = _child(class_node, "body")
+    if body is None:
+        return {}
+    state: dict[str, str] = {}
+    for assign in _iter_own_scope(body):
+        if assign.type != "assignment":
+            continue
+        canon = _class_attr_shared_state_name(assign, cname)
+        if canon is not None:
+            state[canon] = canon
+    return state
+
+
 def _collect_shared_state(root: Node) -> dict[str, str]:
     """Canonical shared-mutable-state identity table (T-0697, this module's
     docstring step 1): module-level `name = <mutable-ctor>` assignments map
@@ -190,39 +240,11 @@ def _collect_shared_state(root: Node) -> dict[str, str]:
     state: dict[str, str] = {}
     for c in root.children:
         if c.type == "assignment":
-            left = _child(c, "left")
-            if (
-                left is not None
-                and left.type == "identifier"
-                and _assignment_mutable_ctor(c)
-            ):
-                name = _node_text(left)
+            name = _module_level_shared_state_name(c)
+            if name is not None:
                 state[name] = name
         elif c.type == "class_definition":
-            name_node = _child(c, "name")
-            cname = _node_text(name_node) if name_node is not None else "?"
-            body = _child(c, "body")
-            if body is None:
-                continue
-            for assign in _iter_own_scope(body):
-                if assign.type != "assignment":
-                    continue
-                left = _child(assign, "left")
-                if (
-                    left is not None
-                    and left.type == "attribute"
-                    and _assignment_mutable_ctor(assign)
-                ):
-                    obj = _child(left, "object")
-                    attr = _child(left, "attribute")
-                    if (
-                        obj is not None
-                        and obj.type == "identifier"
-                        and _node_text(obj) == "self"
-                        and attr is not None
-                    ):
-                        canon = f"{cname}.{_node_text(attr)}"
-                        state[canon] = canon
+            state.update(_collect_class_shared_state(c))
     return state
 
 
@@ -294,6 +316,26 @@ class _FunctionScan:
         self.writes = writes
 
 
+def _with_clause_has_lock_item(
+    clause: Node, class_name: str, module_locks: dict[str, str]
+) -> bool:
+    """Whether one `with_clause`'s items resolve to a known lock, or merely
+    LOOK lock-shaped (T-0697 step 4, extracted from `_enclosing_lock_with`
+    to cut nesting, T-0394)."""
+    for item in clause.named_children:
+        if item.type != "with_item":
+            continue
+        child = item.named_children[0] if item.named_children else item
+        if child.type == "as_pattern":
+            child = child.named_children[0] if child.named_children else child
+        text = _node_text(child)
+        if _resolve_lock_expr(text, class_name, module_locks) is not None or (
+            _LOCK_NAME_HINT_RE.search(text)
+        ):
+            return True
+    return False
+
+
 def _enclosing_lock_with(
     node: Node, class_name: str, module_locks: dict[str, str]
 ) -> bool:
@@ -309,21 +351,10 @@ def _enclosing_lock_with(
         # frob:waive PERF003 reason="ancestor-chain walk (bounded by AST nesting depth) over each with_statement's own small with-item list (bounded by items in one `with` clause) -- not a cross join over two large collections"  # noqa: E501
         if cur.type == "with_statement":
             for wc in cur.named_children:
-                if wc.type != "with_clause":
-                    continue
-                for item in wc.named_children:
-                    if item.type != "with_item":
-                        continue
-                    child = item.named_children[0] if item.named_children else item
-                    if child.type == "as_pattern":
-                        child = (
-                            child.named_children[0] if child.named_children else child
-                        )
-                    text = _node_text(child)
-                    if _resolve_lock_expr(
-                        text, class_name, module_locks
-                    ) is not None or _LOCK_NAME_HINT_RE.search(text):
-                        return True
+                if wc.type == "with_clause" and _with_clause_has_lock_item(
+                    wc, class_name, module_locks
+                ):
+                    return True
         cur = cur.parent
     return False
 

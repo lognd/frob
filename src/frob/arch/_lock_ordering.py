@@ -155,6 +155,59 @@ def _assignment_ctor_callee(assign_node: Node) -> Node | None:
     return None
 
 
+def _module_level_lock_name(assign: Node) -> str | None:
+    """Canonical id for a module-level `name = <ctor>()` lock assignment,
+    or `None` if `assign` is not a bare-identifier lock-ctor assignment
+    (T-0694 step 1, extracted from `_collect_module_locks` to cut nesting,
+    T-0394)."""
+    left = _child(assign, "left")
+    call = _assignment_ctor_callee(assign)
+    if left is None or left.type != "identifier" or call is None:
+        return None
+    if not _LOCK_CTOR_RE.search(_py_call_callee_text(call)):
+        return None
+    return _node_text(left)
+
+
+def _class_attr_lock_name(assign: Node, cname: str) -> str | None:
+    """Canonical `ClassName.attr` id for a `self.<attr> = <ctor>()` lock
+    assignment inside a class body, or `None` if `assign` does not match
+    that shape (T-0694 step 1, extracted from `_collect_module_locks` to
+    cut nesting, T-0394)."""
+    left = _child(assign, "left")
+    call = _assignment_ctor_callee(assign)
+    if left is None or left.type != "attribute" or call is None:
+        return None
+    obj = _child(left, "object")
+    attr = _child(left, "attribute")
+    is_self = obj is not None and obj.type == "identifier" and _node_text(obj) == "self"
+    if not is_self or attr is None:
+        return None
+    if not _LOCK_CTOR_RE.search(_py_call_callee_text(call)):
+        return None
+    return f"{cname}.{_node_text(attr)}"
+
+
+def _collect_class_locks(class_node: Node) -> dict[str, str]:
+    """Canonical lock-identity entries for one class's `self.<attr> =
+    <ctor>()` assignments, keyed and valued by the same `ClassName.attr`
+    string (T-0694 step 1, extracted from `_collect_module_locks` to cut
+    nesting, T-0394)."""
+    name_node = _child(class_node, "name")
+    cname = _node_text(name_node) if name_node is not None else "?"
+    body = _child(class_node, "body")
+    if body is None:
+        return {}
+    locks: dict[str, str] = {}
+    for assign in _iter_own_scope(body):
+        if assign.type != "assignment":
+            continue
+        canon = _class_attr_lock_name(assign, cname)
+        if canon is not None:
+            locks[canon] = canon
+    return locks
+
+
 def _collect_module_locks(root: Node) -> dict[str, str]:
     """Canonical lock-identity table (T-0694, this module's docstring step
     1): module-level `name = <ctor>()` assignments map `name` -> `name`
@@ -165,37 +218,11 @@ def _collect_module_locks(root: Node) -> dict[str, str]:
     locks: dict[str, str] = {}
     for c in root.children:
         if c.type == "assignment":
-            left = _child(c, "left")
-            call = _assignment_ctor_callee(c)
-            if left is not None and left.type == "identifier" and call is not None:
-                callee = _py_call_callee_text(call)
-                if _LOCK_CTOR_RE.search(callee):
-                    name = _node_text(left)
-                    locks[name] = name
+            name = _module_level_lock_name(c)
+            if name is not None:
+                locks[name] = name
         elif c.type == "class_definition":
-            name_node = _child(c, "name")
-            cname = _node_text(name_node) if name_node is not None else "?"
-            body = _child(c, "body")
-            if body is None:
-                continue
-            for assign in _iter_own_scope(body):
-                if assign.type != "assignment":
-                    continue
-                left = _child(assign, "left")
-                call = _assignment_ctor_callee(assign)
-                if left is not None and left.type == "attribute" and call is not None:
-                    obj = _child(left, "object")
-                    attr = _child(left, "attribute")
-                    if (
-                        obj is not None
-                        and obj.type == "identifier"
-                        and _node_text(obj) == "self"
-                        and attr is not None
-                    ):
-                        callee = _py_call_callee_text(call)
-                        if _LOCK_CTOR_RE.search(callee):
-                            canon = f"{cname}.{_node_text(attr)}"
-                            locks[canon] = canon
+            locks.update(_collect_class_locks(c))
     return locks
 
 
@@ -340,6 +367,27 @@ class _OrderEdge:
         self.line = line
 
 
+def _lock_pool_for_function(
+    info: _FunctionLockInfo,
+    name_to_fid: dict[str, int],
+    reachable: dict[int, set[str]],
+    base: set[str],
+) -> set[str]:
+    """One fixpoint-step accumulation (T-0694 step 3, extracted from
+    `_reachable_locks` to cut nesting, T-0394): `base` grown by every own
+    lock event in `info` and every already-known `reachable` set of a
+    same-module callee it invokes."""
+    pool = set(base)
+    for ev in info.events:
+        if isinstance(ev, _LockEvent):
+            pool.add(ev.lock_id)
+        elif isinstance(ev, _CallEvent):
+            callee_fid = name_to_fid.get(ev.bare_name)
+            if callee_fid is not None:
+                pool |= reachable[callee_fid]
+    return pool
+
+
 def _reachable_locks(
     infos: dict[int, _FunctionLockInfo],
     name_to_fid: dict[str, int],
@@ -356,14 +404,8 @@ def _reachable_locks(
     while changed:
         changed = False
         for cur_fid, info in infos.items():
-            pool = set(reachable[cur_fid])
-            for ev in info.events:
-                if isinstance(ev, _LockEvent):
-                    pool.add(ev.lock_id)
-                elif isinstance(ev, _CallEvent):
-                    callee_fid = name_to_fid.get(ev.bare_name)
-                    if callee_fid is not None:
-                        pool |= reachable[callee_fid]
+            base = reachable[cur_fid]
+            pool = _lock_pool_for_function(info, name_to_fid, reachable, base)
             if pool != reachable[cur_fid]:
                 reachable[cur_fid] = pool
                 changed = True
