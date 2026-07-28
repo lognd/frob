@@ -425,11 +425,14 @@ threat: null
 component: null
 ```
 Triage the 37 frob-arch abstraction-opportunity advisories: for each genuine near-duplicate or specific-signature family, either extract the real shared code into one home, or add an explicit reason-note accepting the duplication. Acceptance: frob check arch advisories for abstraction-opportunity reduced to zero unresolved (each is either fixed or reason-noted).
+
+## Failure log
+- 2026-07-28 attempt 1: 84 in-scope abstraction-opportunity findings (re-measured, stale 37 count), unwaivable channel per docs/modules/arch.md T-0360 -- needs decomposition into per-family extraction/detector-precision tickets, not one dispatch-sized pass
 <!-- ticket:T-0394 -->
 ```yaml
 id: T-0394
 title: 'advisories: deep-nesting refactor (2 findings)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -443,7 +446,6 @@ threat: null
 component: null
 ```
 Address the 2 frob-arch deep-nesting advisories: refactor to reduce nesting depth, or add an explicit reason-note if the nesting is justified. Acceptance: both findings resolved (fixed or reason-noted).
-
 <!-- ticket:T-0395 -->
 ```yaml
 id: T-0395
@@ -4596,3 +4598,99 @@ needs an isolated repro (a minimal INV006-shaped file-level finding plus a
 header waiver) and a fix or a documented is-this-really-flaky
 determination -- WAIVE004's own gate:WAIVE never reaches zero while this
 class exists, since these waivers are demonstrably still required.
+
+<!-- ticket:T-draft-e6eef9c9 -->
+```yaml
+id: T-draft-e6eef9c9
+title: 'arch: abstraction-opportunity language-parity exclusion (detector precision)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/arch/**
+- tests/unit/test_arch.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: language-parity exclusion needs its detector tests updated in the same file
+  actor: logan
+  at: '2026-07-28'
+threat: null
+component: null
+```
+Filed from T-0393 (failed as too large for one pass). arch/_kotlin.py,
+arch/_async_hazards.py, arch/_concurrency_model.py, arch/_cpp.py contain
+~10 abstraction-opportunity groups that are parallel per-language
+tree-sitter walkers (python/kotlin/rust/typescript/cpp implementing the
+same structural operation) -- not the T-0360 dispatch-table shape the
+detector already excludes, but the same class of false positive
+(intentional per-language parity). Add a new exclusion family to
+frob.arch._python._check_abstraction_opportunities (or a sibling helper)
+recognizing a same-signature group where every member's name carries a
+distinct language-tag prefix/infix (_py_/_kt_/_rust_/_ts_/_cpp_) matched
+across a fixed small set of language modules, mirroring T-0360's
+structural-detection rigor (no raw text proximity). Re-measure
+abstraction-opportunity count after landing; the remaining non-language-
+family findings become the scope of a further per-file ticket.
+<!-- ticket:T-draft-0a8f8fe9 -->
+```yaml
+id: T-draft-0a8f8fe9
+title: x
+state: dropped
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- x
+threat: null
+component: null
+```
+x
+
+## Drop reason
+- 2026-07-28: accidental test ticket, superseded
+
+<!-- ticket:T-draft-8205bb39 -->
+```yaml
+id: T-draft-8205bb39
+title: 'arch: abstraction-opportunity per-package extraction pass (T-0393 remainder)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/
+threat: null
+component: null
+```
+Filed from T-0393 (failed as too large for one pass). After the sibling
+language-parity detector-precision ticket lands (arch/_kotlin.py,
+arch/_async_hazards.py, arch/_concurrency_model.py, arch/_cpp.py family),
+re-measure `uv run frob check --only arch --json` for abstraction-opportunity
+and split the remaining single-file groups (src/frob/app/**,
+src/frob/gates/__init__.py's several groups, src/frob/check/**,
+src/frob/lang/**, src/frob/tickets/__init__.py, src/frob/render/_renderer.py,
+src/frob/dup/**, src/frob/perf/**, src/frob/gitio.py,
+src/frob/process/parsers/cargo.py, src/frob/serve/_tools.py,
+src/frob/testing/_collect.py -- ~35-40 groups after the language-parity
+family is removed from the count) into per-package-sized follow-up tickets,
+each genuinely extracting shared code or accepting the coincidental-
+signature collision is correctly un-flaggable (raise as a T-0370-style
+detector refinement if a whole additional false-positive class turns up,
+same "teach the detector" path, not a code-comment waiver -- category is
+unwaivable). Do not attempt all ~40 in one ticket; src/frob/gates/__init__.py
+alone carries ~15 of these groups and is a large-file residue candidate in
+its own right (see T-0395's sibling ticket).
