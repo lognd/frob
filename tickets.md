@@ -1287,10 +1287,11 @@ Root cause: REG011 was added by T-0680, which landed after T-0384's reconciliati
 This is a real, live gate warning (not an error) affecting a file this session did not touch. Two possible fixes, for the reviewer to choose: (1) improve the ~798 flagged `out_of_scope` reason strings in weaknesses.yaml to satisfy REG011's substantive-disclosure bar (real remediation, likely large), or (2) if the reasons are already substantive and REG011's heuristic is simply too strict for this file's phrasing convention, adjust REG011 or file targeted waivers. Scope: docs/design/registry/weaknesses.yaml, tests/test_registry_reconciliation_weaknesses.py, possibly src/frob/gates/_registry_exhaustiveness.py (REG011 itself) depending on the reviewer's chosen direction.
 
 ## Failure log
-- 2026-07-28 attempt 1: already fixed by T-1019 before this wave (REG011 0 violations, ticket's own named regression test passes on current main); unrelated pre-existing test_every_deferred_entry_targets_an_open_ticket failure found and filed separately as T-draft-18e30847
+- 2026-07-28 attempt 1: already fixed by T-1019 before this wave (REG011 0 violations, ticket's own named regression test passes on current main); unrelated pre-existing test_every_deferred_entry_targets_an_open_ticket failure found and filed separately as T-1116
 
 ## Drop reason
-- 2026-07-28: already fixed by T-1019 before this wave started -- REG011 measures 0 violations repo-wide and the ticket's own named regression test (test_no_weaknesses_violations) passes on current main; unrelated pre-existing failure found while verifying and filed separately as T-draft-18e30847
+- 2026-07-28: already fixed by T-1019 before this wave started -- REG011 measures 0 violations repo-wide and the ticket's own named regression test (test_no_weaknesses_violations) passes on current main; unrelated pre-existing failure found while verifying and filed separately as T-1116
+
 <!-- ticket:T-1038 -->
 ```yaml
 id: T-1038
@@ -3516,9 +3517,39 @@ Re-measure `uv run frob check --only arch --json` scoped to
 interim and changed the count from the 29 this ticket, and its
 predecessor T-1082, were filed against.
 
-<!-- ticket:T-draft-18e30847 -->
+<!-- ticket:T-1115 -->
 ```yaml
-id: T-draft-18e30847
+id: T-1115
+title: 'arch: split remaining ~14 gate families out of src/frob/gates/__init__.py
+  (~9802 lines) -- T-1077 residue refile'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- docs/modules/gates.md
+- tests/test_gates.py
+acceptance:
+- text: GIVEN src/frob/gates/__init__.py WHEN the remaining gate families (DEBT/DEPR,
+    SCOPE/PREWORK, INV00x, TEST00x, DECISIONS, TICK00x, COMPLIANCE00x, SYS00x/DOC00x,
+    DUP00x, REL00x, FUZZ00x, DOCLINK/DOCANCHOR, PERF, run_gates spine, COV00x) are
+    extracted one cohesive family per land THEN gates/__init__.py drops below the
+    800-line large-file threshold with no public API change and all existing tests
+    pass
+  evidence: []
+threat: null
+component: null
+```
+Refile of T-1077's residue draft, which died at land (TICK006 phantom repaired by the coordinator). T-1077 extracted the TODO00x/FMT001 family (gates/__init__.py 10164 -> ~9802); the remaining families follow T-1072/T-1077's one-family-per-land discipline: verbatim moves with directives intact, lazy call-time imports back to frob.gates where init-time circularity threatens, re-export only externally-called names, split-carried INV006 waivers where prose moves.
+
+<!-- ticket:T-1116 -->
+```yaml
+id: T-1116
 title: 'test: test_every_deferred_entry_targets_an_open_ticket fails, zero deferred
   entries exist in weaknesses.yaml'
 state: queued
@@ -3556,33 +3587,3 @@ Out of T-1037's declared scope (that ticket is specifically about REG011
 out_of_scope-reason substantive-disclosure, already independently fixed
 by T-1019 before this wave started -- confirmed zero REG011 violations
 and the ticket's own named regression test passing on current main).
-
-<!-- ticket:T-1115 -->
-```yaml
-id: T-1115
-title: 'arch: split remaining ~14 gate families out of src/frob/gates/__init__.py
-  (~9802 lines) -- T-1077 residue refile'
-state: queued
-kind: feature
-origin: agent
-created: '2026-07-28'
-priority: medium
-parent: null
-tier: ticket
-sprint: null
-scope:
-- src/frob/gates/**
-- docs/modules/gates.md
-- tests/test_gates.py
-acceptance:
-- text: GIVEN src/frob/gates/__init__.py WHEN the remaining gate families (DEBT/DEPR,
-    SCOPE/PREWORK, INV00x, TEST00x, DECISIONS, TICK00x, COMPLIANCE00x, SYS00x/DOC00x,
-    DUP00x, REL00x, FUZZ00x, DOCLINK/DOCANCHOR, PERF, run_gates spine, COV00x) are
-    extracted one cohesive family per land THEN gates/__init__.py drops below the
-    800-line large-file threshold with no public API change and all existing tests
-    pass
-  evidence: []
-threat: null
-component: null
-```
-Refile of T-1077's residue draft, which died at land (TICK006 phantom repaired by the coordinator). T-1077 extracted the TODO00x/FMT001 family (gates/__init__.py 10164 -> ~9802); the remaining families follow T-1072/T-1077's one-family-per-land discipline: verbatim moves with directives intact, lazy call-time imports back to frob.gates where init-time circularity threatens, re-export only externally-called names, split-carried INV006 waivers where prose moves.
