@@ -1,0 +1,404 @@
+"""CLI wiring for `frob ticket new|list|show|doable|board|epic|brief|plan|
+start|requeue|sweep|reconcile|land|merge-driver|attach|block|close|fail|
+drop|evidence|done-report|scope|priority|kind|component|label|archive|
+review|sprint|tier` (docs/modules/tickets.md).
+
+T-1089 (T-0395 tier-2 split residue): the command families now live in
+private sibling modules (`_new`, `_query`, `_land_cmd`, `_lifecycle`,
+`_close_cmd`, `_verify`, `_mutate`, `_archive`) and are re-exported here
+unchanged -- every existing `frob.app.ticket_runner.<name>` call site (CLI
+dispatch, and tests that `monkeypatch.setattr(ticket_runner, ...)`) keeps
+working without edits. `_root_release_manifest` and `_graph_snapshot`
+stay defined HERE (not in the submodule that most often calls them) because
+tests monkeypatch them via `ticket_runner.<name>` and expect that patch to
+be visible to callers in OTHER split-out modules; those callers reach back
+through `from frob.app import ticket_runner as _ticket_runner` at their own
+call sites instead of a direct import, so the patched attribute on THIS
+module is what they actually observe (same reasoning for
+`guarded_subprocess_run`, re-exported below unchanged from
+`frob.process._guard`)."""
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/app/ticket_runner.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim -- carried from the \
+# pre-T-1089-split monolith's identical file-level waiver"
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+from frob.app.config import AppConfig
+from frob.logging import get_logger, logger_levels
+from frob.process._guard import guarded_subprocess_run
+
+from ._archive import _archive
+from ._close_cmd import (
+    _apply_close_time_evidence,
+    _close,
+    _close_failure_hint,
+    _close_guards_for_ticket,
+    _close_mutation_evidence_for_ticket,
+    _covers_review_for_ticket,
+    _covers_scope_for_ticket,
+    _current_commit,
+    _drop,
+    _fail,
+    _reverify,
+    _reverify_evidence_for_close,
+    _review,
+)
+from ._land_cmd import (
+    _apply_release_bump_for_land,
+    _land,
+    _land_bump_version_fn,
+    _land_collected_fn,
+    _land_covers_scope_fn,
+    _land_passed_fn,
+    _land_rebuild_natives_fn,
+    _land_sync_gate_rules_fn,
+    _merge_driver,
+    _push_after_land,
+    _report_land_result,
+    _require_land_args,
+    _require_merge_driver_args,
+    _required_release_bump,
+    _sync_gate_rules_for_land,
+    _write_release_bump,
+)
+from ._lifecycle import (
+    _attach,
+    _auto_plan_if_queued,
+    _block,
+    _find_landing_commit,
+    _load_ticket_or_exit,
+    _plan,
+    _reconcile_cmd,
+    _refuse_if_foreign_live_lease,
+    _refuse_if_terminal,
+    _requeue,
+    _run_sweep,
+    _spawn_background_sweep,
+    _start,
+    _sweep_cmd,
+)
+from ._mutate import (
+    _board,
+    _brief,
+    _component,
+    _epic,
+    _kind,
+    _label,
+    _priority,
+    _resolve_scope_reason,
+    _scope,
+    _sprint,
+    _sprint_assign,
+    _sprint_show,
+    _tier,
+)
+from ._new import (
+    _maybe_attach_clipboard_image,
+    _new,
+    _parse_acceptance_file,
+    _resolve_new_acceptance,
+    _resolve_new_body,
+    _scope_closure_warnings,
+    _ticket_spec_from_cfg,
+)
+from ._query import (
+    _active_large_glob_warnings,
+    _doable,
+    _doable_row,
+    _filter_by_state,
+    _list,
+    _migrate,
+    _order_dispatchable_with_alarms,
+    _render_acceptance,
+    _render_active_leases,
+    _render_doable_dispatchable,
+    _render_doable_in_flight,
+    _render_doable_show_blocked,
+    _render_scope_breadth_summary,
+    _renumber,
+    _renumber_one,
+    _show,
+)
+from ._verify import (
+    _apply_cmd_evidence,
+    _apply_evidence,
+    _check_gate_findings_fn,
+    _check_gates_summary_fn,
+    _collect_python_and_rust_ids,
+    _done_report,
+    _evidence,
+    _exclude_scoped_run_flaky,
+    _log_evidence_result,
+    _parse_error_findings_from_stdout,
+    _python_for_tree,
+    _resolve_done_report_why,
+    _reverify_direct_pytest_individually,
+    _reverify_failing_bucket_individually,
+    _run_pytest_directly,
+    _run_tests_count_fn,
+    _shared_check_spawn_fn,
+    _verify_ids_passing,
+    _verify_one_bucket_passing,
+)
+
+_log = get_logger(__name__)
+
+_CACHE_REL = Path(".frob") / "cache.db"
+
+
+# Re-exported for tests/callers that reach into ticket_runner internals
+# directly (pre-existing usage this split (T-1089) preserves unchanged --
+# zero caller edits, per the T-1072/T-1076/T-1086 precedent).
+__all__ = [
+    "guarded_subprocess_run",
+    "_active_large_glob_warnings",
+    "_apply_close_time_evidence",
+    "_apply_cmd_evidence",
+    "_apply_evidence",
+    "_apply_release_bump_for_land",
+    "_attach",
+    "_auto_plan_if_queued",
+    "_block",
+    "_board",
+    "_brief",
+    "_check_gate_findings_fn",
+    "_check_gates_summary_fn",
+    "_close",
+    "_close_failure_hint",
+    "_close_guards_for_ticket",
+    "_close_mutation_evidence_for_ticket",
+    "_collect_python_and_rust_ids",
+    "_component",
+    "_covers_review_for_ticket",
+    "_covers_scope_for_ticket",
+    "_current_commit",
+    "_doable",
+    "_doable_row",
+    "_done_report",
+    "_drop",
+    "_epic",
+    "_evidence",
+    "_exclude_scoped_run_flaky",
+    "_fail",
+    "_filter_by_state",
+    "_find_landing_commit",
+    "_kind",
+    "_label",
+    "_land",
+    "_land_bump_version_fn",
+    "_land_collected_fn",
+    "_land_covers_scope_fn",
+    "_land_passed_fn",
+    "_land_rebuild_natives_fn",
+    "_land_sync_gate_rules_fn",
+    "_list",
+    "_load_ticket_or_exit",
+    "_log_evidence_result",
+    "_maybe_attach_clipboard_image",
+    "_merge_driver",
+    "_migrate",
+    "_new",
+    "_order_dispatchable_with_alarms",
+    "_parse_acceptance_file",
+    "_parse_error_findings_from_stdout",
+    "_plan",
+    "_priority",
+    "_push_after_land",
+    "_python_for_tree",
+    "_reconcile_cmd",
+    "_refuse_if_foreign_live_lease",
+    "_refuse_if_terminal",
+    "_render_acceptance",
+    "_render_active_leases",
+    "_render_doable_dispatchable",
+    "_render_doable_in_flight",
+    "_render_doable_show_blocked",
+    "_render_scope_breadth_summary",
+    "_renumber",
+    "_renumber_one",
+    "_report_land_result",
+    "_requeue",
+    "_require_land_args",
+    "_require_merge_driver_args",
+    "_required_release_bump",
+    "_resolve_done_report_why",
+    "_resolve_new_acceptance",
+    "_resolve_new_body",
+    "_resolve_scope_reason",
+    "_reverify",
+    "_reverify_direct_pytest_individually",
+    "_reverify_evidence_for_close",
+    "_reverify_failing_bucket_individually",
+    "_review",
+    "_run_pytest_directly",
+    "_run_sweep",
+    "_run_tests_count_fn",
+    "_scope",
+    "_scope_closure_warnings",
+    "_shared_check_spawn_fn",
+    "_show",
+    "_spawn_background_sweep",
+    "_sprint",
+    "_sprint_assign",
+    "_sprint_show",
+    "_start",
+    "_sweep_cmd",
+    "_sync_gate_rules_for_land",
+    "_ticket_spec_from_cfg",
+    "_tier",
+    "_verify_ids_passing",
+    "_verify_one_bucket_passing",
+    "_write_release_bump",
+]
+
+
+def _stdout_color() -> bool:
+    """Whether ticket-listing lines (routed to stdout via `_log.info`,
+    `frob.logging.config.toml`'s below-WARNING handler) should carry ANSI
+    color -- T-0179's single should_color(stdout) check, evaluated once per
+    call site rather than duplicated per print."""
+    from frob.logging.color import should_color
+
+    return should_color(sys.stdout)
+
+
+def _ticket_dispatch_table() -> dict:
+    """Map each `frob ticket` subcommand name to its `(root, cfg)` handler."""
+    return {
+        "new": _new,
+        "list": _list,
+        "show": _show,
+        "doable": _doable,
+        "plan": _plan,
+        "start": _start,
+        "requeue": _requeue,
+        "sweep": _sweep_cmd,
+        "reconcile": _reconcile_cmd,
+        "migrate": lambda root, _cfg: _migrate(root),
+        "renumber": _renumber,
+        "land": _land,
+        "merge-driver": _merge_driver,
+        "attach": _attach,
+        "block": _block,
+        "close": _close,
+        # frob:ticket T-1005
+        "reverify": _reverify,
+        "fail": _fail,
+        "drop": _drop,
+        "evidence": _evidence,
+        "done-report": _done_report,
+        "review": _review,
+        "scope": _scope,
+        "priority": _priority,
+        "kind": _kind,
+        "component": _component,
+        "label": _label,
+        "board": _board,
+        "epic": _epic,
+        "brief": _brief,
+        # frob:ticket T-0715
+        "sprint": _sprint,
+        # frob:ticket T-1069
+        "tier": _tier,
+        "archive": lambda root, cfg: _archive(root, force=cfg.ticket_force),
+    }
+
+
+# frob:doc docs/modules/app.md#runners
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
+# frob:doc docs/modules/tickets.md#frob-ticket-land
+# frob:doc docs/modules/tickets.md#structured-review-channel-t-0571
+# frob:ticket T-0588
+# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
+def run(cfg: AppConfig) -> None:
+    """Dispatch to the ticket subcommand named by `cfg.ticket_command`."""
+    root = (cfg.ticket_path or Path(".")).resolve()
+
+    handler = _ticket_dispatch_table().get(cfg.ticket_command)
+    if handler is None:
+        _log.error(
+            "usage: frob ticket <new|list|show|doable|board|epic|brief|plan|"
+            "start|requeue|sweep|reconcile|land|merge-driver|attach|block|"
+            "close|fail|drop|evidence|done-report|scope|priority|kind|"
+            "component|label|archive|review|sprint|tier> ..."
+        )
+        sys.exit(1)
+    with _diagnostic_log_ctx(cfg):
+        handler(root, cfg)
+
+
+# frob:ticket T-0768
+def _diagnostic_log_ctx(cfg: AppConfig):  # noqa: ANN202
+    """The logger context `run` dispatches every subcommand under (T-0768).
+
+    At default verbosity the `frob` logger tree is clamped to WARNING so
+    library diagnostic chatter (`frob.gitio` spawn/returncode lines, the
+    `frob.tickets` loader's per-run INFO) stays out of the terminal, while
+    this module's own logger -- the ticket CLI's user-facing output channel
+    -- is pinned to INFO so listings still print. `-v` skips the clamp and
+    restores the full firehose. WARNING+ lines (stale leases, over-broad
+    scopes) always show either way.
+    """
+    import contextlib
+    import logging
+
+    if cfg.ticket_verbose > 0:
+        return contextlib.nullcontext()
+    return logger_levels({"frob": logging.WARNING, __name__: logging.INFO})
+
+
+# frob:ticket T-0737
+
+
+# frob:ticket T-0338
+# frob:ticket T-1007
+def _root_release_manifest(root: Path):  # noqa: ANN201
+    """Read `.frob-release.json` as it stood at `root`'s CURRENT git HEAD
+    (T-1007/T-1009) -- never the worktree-carried on-disk copy, which can
+    ride a `git merge --squash` straight into `root`'s working tree before
+    this callback ever runs (the exact corruption class T-0992's
+    `_read_root_pyproject_version` fixed for `pyproject.toml`; same git-show
+    technique, applied here to the manifest that is now the version
+    authority). `land()` invokes the bump callback AFTER the squash-apply
+    is staged but BEFORE any commit, so `root`'s `HEAD` here still names
+    main's true pre-land tip -- reading through git makes the monotonicity
+    guard in `frob.tickets._land._apply_release_bump` a never-fires
+    invariant instead of a per-land speed bump, since this callback can no
+    longer compute a bump baseline from anything but root's own state.
+    Returns `None` when no manifest exists at `HEAD` (repo never adopted
+    `frob release stamp`) or it fails to parse."""
+    from frob.gitio import run_argv
+    from frob.release import ReleaseManifest
+
+    shown = run_argv(["git", "-C", str(root), "show", "HEAD:.frob-release.json"])
+    if shown.is_err or shown.danger_ok.returncode != 0:
+        return None
+    try:
+        data = json.loads(shown.danger_ok.stdout)
+        return ReleaseManifest.model_validate(data)
+    except (ValueError, TypeError) as exc:
+        _log.error("land: HEAD:.frob-release.json at %s unparsable: %s", root, exc)
+        return None
+
+
+# frob:ticket T-0398
+def _graph_snapshot(root: Path):  # noqa: ANN201
+    """The current `GraphSnapshot`, loading the cache (or building it fresh
+    on a miss) -- same pattern as `_scope_digest_for_ticket`, factored so
+    D-02's `covers_scope` computation shares it rather than re-deriving
+    its own cache-then-build fallback."""
+    from frob.graph import build_graph, load_graph
+
+    cache = root / _CACHE_REL
+    loaded = load_graph(cache)
+    if loaded.is_err:
+        loaded = build_graph(root, cache)
+    return loaded

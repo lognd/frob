@@ -152,7 +152,7 @@
     "src/frob/app/telemetry.py::redact_command": "2d942d728c5cbf3e91275771ff12c3941553dd2423c811247433c6e1f4797a14",
     "src/frob/app/telemetry.py::timed_call": "f97f99a388f2e87da31714f3d6379fb3d008516582a6a449838786de8443aa3d",
     "src/frob/app/telemetry.py::tree_hash": "3159b478fcf403f744bd83292b5d2507533c3efb66b4c94de610234f936b2b4b",
-    "src/frob/app/ticket_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
+    "src/frob/app/ticket_runner/__init__.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/vet_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/worktree_runner.py::run": "92572764844d8b13ffb2ffb62e56a895e0d81ecd853be11fada4aa366856323b",
     "src/frob/app/xref_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
@@ -1793,5 +1793,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.221.0"
+  "version": "0.222.0"
 }

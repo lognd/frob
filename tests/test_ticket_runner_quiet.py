@@ -15,7 +15,7 @@ class TestDiagnosticLogCtx:
     """T-0768: `_diagnostic_log_ctx` gates the clamp on `ticket_verbose`."""
 
     def test_default_clamps_frob_tree_but_pins_runner_output(self) -> None:
-        # frob:tests src/frob/app/ticket_runner.py::_diagnostic_log_ctx kind="unit"
+        # frob:tests src/frob/app/ticket_runner/__init__.py::_diagnostic_log_ctx kind="unit"
         cfg = AppConfig(ticket_command="list", ticket_verbose=0)
         frob_logger = logging.getLogger("frob")
         runner_logger = logging.getLogger("frob.app.ticket_runner")
@@ -31,7 +31,7 @@ class TestDiagnosticLogCtx:
         assert runner_logger.level == before_runner
 
     def test_verbose_skips_the_clamp(self) -> None:
-        # frob:tests src/frob/app/ticket_runner.py::_diagnostic_log_ctx kind="unit"
+        # frob:tests src/frob/app/ticket_runner/__init__.py::_diagnostic_log_ctx kind="unit"
         cfg = AppConfig(ticket_command="list", ticket_verbose=1)
         ctx = _diagnostic_log_ctx(cfg)
         assert isinstance(ctx, contextlib.nullcontext)

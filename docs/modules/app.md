@@ -126,7 +126,7 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
 <!-- frob:describes src/frob/app/scaffold_runner.py::run -->
 <!-- frob:describes src/frob/app/check_runner.py::run -->
 <!-- frob:describes src/frob/app/ack_runner.py::run -->
-<!-- frob:describes src/frob/app/ticket_runner.py::run -->
+<!-- frob:describes src/frob/app/ticket_runner/__init__.py::run -->
 <!-- frob:describes src/frob/app/outline_runner.py::run -->
 <!-- frob:describes src/frob/app/mutate_runner.py::run -->
 <!-- frob:describes src/frob/app/exports_runner.py::run -->

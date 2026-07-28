@@ -30,7 +30,7 @@ class TestLandCLI:
     """`frob ticket land <id> --worktree <path> --dry-run` end to end."""
 
     def test_dry_run_reports_clean(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/app/ticket_runner.py::_land kind="unit"
+        # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land kind="unit"
         repo = tmp_path / "main"
         _init_repo(repo)
 

@@ -1094,10 +1094,10 @@ concurrent automation.
 <!-- frob:describes src/frob/tickets/_land.py::_worktree_full_changeset -->
 <!-- frob:describes src/frob/tickets/_land.py::_apply_release_bump -->
 <!-- frob:describes src/frob/tickets/_land.py::_maybe_rebuild_natives -->
-<!-- frob:describes src/frob/app/ticket_runner.py::_apply_release_bump_for_land -->
-<!-- frob:describes src/frob/app/ticket_runner.py::_write_release_bump -->
-<!-- frob:describes src/frob/app/ticket_runner.py::_root_release_manifest -->
-<!-- frob:describes src/frob/app/ticket_runner.py::_land_rebuild_natives_fn -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_apply_release_bump_for_land -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_write_release_bump -->
+<!-- frob:describes src/frob/app/ticket_runner/__init__.py::_root_release_manifest -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_land_rebuild_natives_fn -->
 
 The landing procedure used to be manual coordinator surgery repeated per
 ticket: wip-commit in the worktree, merge main into it, a deletion-filter
@@ -1604,7 +1604,7 @@ Three gaps found in one real landing session, closed together:
 
 ## Git merge driver
 
-<!-- frob:describes src/frob/app/ticket_runner.py::_merge_driver -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_merge_driver -->
 
 `frob ticket land` (above) is the one-command path; not every
 `tickets.md` conflict goes through it though -- a plain `git merge`/

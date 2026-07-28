@@ -91,7 +91,7 @@ def test_ticket_list_spawns_each_argv_at_most_once(tmp_path: Path) -> None:
 
 # frob:ticket T-0776
 def test_ticket_show_spawns_each_argv_at_most_once(tmp_path: Path) -> None:
-    # frob:tests src/frob/app/ticket_runner.py::_show kind="e2e"
+    # frob:tests src/frob/app/ticket_runner/_query.py::_show kind="e2e"
     ids = _make_repo_with_tickets(tmp_path, count=1)
 
     cfg = AppConfig(ticket_command="show", ticket_path=tmp_path, ticket_id=ids[0])
