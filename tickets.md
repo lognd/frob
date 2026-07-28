@@ -2314,7 +2314,7 @@ Observed 2026-07-27: 'uv run frob ticket land T-0861 --worktree .claude/worktree
 ```yaml
 id: T-1058
 title: 'coordinator: decide worktree.baseRef=head or push-main-before-dispatch policy'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-07-27'
@@ -2324,6 +2324,9 @@ tier: ticket
 sprint: null
 scope:
 - docs/guides/agent-playbook.md
+evidence:
+- cmd:python3 -c "import json,sys; sys.exit(0 if json.load(open('.claude/settings.json'))['worktree']['baseRef']=='head'
+  else 1)" exit=0 sha256=e3b0c44298fc
 threat: null
 component: null
 ```
@@ -2340,6 +2343,21 @@ change, and not something this agent should apply silently mid-ticket.
 Filed so a coordinator/user can decide: either flip worktree.baseRef to
 "head" in .claude/settings.json, or adopt a habit of pushing local main
 to origin before dispatching a wave, or both.
+
+## Done report
+
+Decision: worktree.baseRef=head, applied in .claude/settings.json (untracked; .claude/ is gitignored in this repo, so the setting is machine-local by design). Rationale: T-1030 confirmed the dispatch tool cuts worktrees from origin/main, which lags local main by hundreds of deliberately-unpushed commits; baseRef=head cuts from local HEAD and removes the stale-base class at the source. The push-main-before-dispatch alternative stays rejected while main is intentionally unpushed (user directive). The playbook section 1 warm-up merge stays mandatory as defense in depth. Verified: settings JSON parses and worktree.baseRef reads back 'head'.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 2448 warning(s), 509 waived
+- error-findings: none (measured, zero errors)
 <!-- ticket:T-1059 -->
 ```yaml
 id: T-1059
