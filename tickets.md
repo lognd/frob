@@ -6954,3 +6954,26 @@ threat: null
 component: null
 ```
 T-1140 extracted the TICK00x family (gates/__init__.py 9172 -> 8408) and disclosed the ~12 remaining families in its done report WITHOUT filing a residue ticket (fourth disclosed-cut-without-ticket incident -- T-1129's gate is the systemic fix; coordinator refiled this one). Same T-1072/T-1077/T-1140 discipline: verbatim moves, directives intact, lazy call-time imports, re-export only externally-called names, carried INV006 waivers, PII012 re-keys, and design/frob.strata interface= sync now via frob sys sync-interface (T-1150).
+
+<!-- ticket:T-1160 -->
+```yaml
+id: T-1160
+title: 'docs: document frob sys sync-interface in docs/commands/sys.md'
+state: queued
+kind: docs
+origin: agent
+created: '2026-07-28'
+priority: low
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/commands/sys.md
+acceptance:
+- text: GIVEN docs/commands/sys.md WHEN a reader looks up sys subcommands THEN sync-interface
+    (and its --check mode) is documented with the SYS104-mandatory upkeep rationale
+  evidence: []
+threat: null
+component: null
+```
+Refile of a T-1150 draft that died to ledger-restore cycles during its land (disclosed in the w18-strata3 done report): the new frob sys sync-interface subcommand landed (5103c0f1) but docs/commands/sys.md does not mention it.
