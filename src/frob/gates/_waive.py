@@ -289,6 +289,29 @@ _KNOWN_GATE_RULES = frozenset(
         "PERF007",
         "PERF008",
         "PERF009",
+        # T-1087: `frob vet`'s own rule ids (src/frob/vet/**) -- a
+        # different CLI surface (`frob vet`, not `frob check`'s gate
+        # family), outside `_rule_id_scan.SCANNED_BASES` entirely, same
+        # hand-maintained-outside-scan-basis class as DUP00x/PERF00x
+        # above. Widened so `docs/design/registry/*.yaml`'s
+        # `handled_by:VET*` dispositions resolve against REG002.
+        "VET001",
+        "VET002",
+        "VET003",
+        "VET004",
+        "VET005",
+        "VET006",
+        "VET011",
+        "VET-JS",
+        "VET-JS003",
+        "VET-JS004",
+        "VET-PY001",
+        "VET-PY002",
+        "VET-PY003",
+        "VET-RS001",
+        "VET-RS002",
+        "VET-SOURCE-UNAVAILABLE",
+        "VET-TIMEOUT",
         "SYS001",
         "SYS002",
         "SYS003",

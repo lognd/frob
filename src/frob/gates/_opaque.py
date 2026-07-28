@@ -87,6 +87,15 @@ def _tracked_files(root: Path) -> tuple[str, ...]:
 # frob:tests tests/test_vet.py::TestOpaqueIndirectionGate.test_opaque_gate_no_findings_on_empty_tracked_set  # noqa: E501
 # frob:tests tests/test_vet.py::TestOpaqueIndirectionGate.test_waived_finding_is_suppressed_and_reason_recorded  # noqa: E501
 # frob:enforces CHK-GATE-OPAQUE001
+# T-1087: two `docs/design/registry/supply-chain.yaml` entries whose
+# structural finding source is `frob.vet._capability_registry.
+# RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS` (native-extension import,
+# proc-macro/build.rs) but whose enforcing VIOLATION-emitting rule is
+# this gate's own OPAQUE001 -- the `frob:enforces` edge belongs at the
+# rule's emission site, not the out-of-this-ticket's-scope detection
+# module.
+# frob:enforces SC-ATTACK-NATIVE-EXTENSION-OPACITY
+# frob:enforces SC-DETECTION-PROC-MACRO-BUILDRS
 def opaque_gate(root: Path) -> tuple[Violation, ...]:
     """OPAQUE001: every git-tracked, language-recognized source file
     scanned for `RUNTIME_OPAQUE_CONSTRUCTS` sites (T-0665). WARN-tier
