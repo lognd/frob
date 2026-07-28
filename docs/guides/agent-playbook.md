@@ -565,6 +565,14 @@ hand-edit of `tickets.md`, no `git stash`):
 5. Verify `git diff main -- tickets.md` now shows ONLY your ticket's own
    block. If ANY other ticket id appears in that diff, stop -- do not
    report done, and do not hand-patch it; tell the coordinator.
+6. First-ticket edge case (T-1022 hit this): if YOUR ticket's
+   `state: in-progress` transition was only ever written in this
+   worktree's branch (never landed to main -- true for the first ticket
+   a worktree works), step 1's restore silently reverts it to `queued`,
+   and land later refuses the `queued -> done` close as an
+   InvalidTransition. After step 1, check your own block's `state:` and
+   re-run `uv run frob ticket start T-XXXX` if it regressed -- this is
+   self-repair, not corruption.
 
 ## 11. Ticket workflow
 
