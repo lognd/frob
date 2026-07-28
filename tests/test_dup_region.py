@@ -90,6 +90,11 @@ class TestRegionKernelFindsPartialClone:
         self, snapshot
     ):
         # frob:tests src/frob/dup/_pipeline/_fingerprint.py::_region_groups kind="unit"
+        # frob:waive COV006 reason="confirmed exercised: find_clones' R6 region \
+        # path reaches _core._exact_regions, but the best-effort callgraph \
+        # resolves same-directory privates only and the T-1086 split moved the \
+        # caller into the dup/_pipeline package -- cross-package edge, same \
+        # disposition as the evasion-taxonomy meta-test COV006 waivers"
         # frob:tests src/frob/dup/_core.py::_exact_regions kind="unit"
         report = find_clones(
             snapshot,
