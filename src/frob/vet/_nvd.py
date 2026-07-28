@@ -20,8 +20,6 @@ from __future__ import annotations
 
 import json
 import re
-import sqlite3
-import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -30,6 +28,13 @@ from pydantic import BaseModel, ConfigDict
 
 from frob.logging import get_logger
 from frob.process import NET_KILL_SWITCH_ENV, net_enabled
+from frob.vet._cache import ttl_cache_get, ttl_cache_set
+
+#: sqlite table name for this module's TTL cache (T-1067, shared helper
+#: home in `frob.vet._cache`; kept distinct from `_registry.py`'s `cache`
+#: table since the two key different id spaces and expire on different
+#: TTLs).
+_CACHE_TABLE = "nvd_cache"
 
 _log = get_logger(__name__)
 
@@ -64,58 +69,6 @@ class NvdResult(BaseModel):
 def _cache_key(cve_id: str) -> str:
     """The `.frob/vet.db` cache key for one CVE's NVD lookup."""
     return f"nvd:{cve_id}"
-
-
-# frob:waive ARCH103 reason="T-0977: sqlite cache-read helper -- open, query, \
-# expiry-check, return-or-None; the expiry decision IS the cache- read concern this \
-# function exists for, not a separate one"
-def _cache_get(db_path: Path, key: str) -> str | None:
-    """Cached JSON body for `key`, or `None` on miss/expiry/unreadable db
-    (same shape as `_registry.py::_cache_get`, kept separate since the two
-    caches key different id spaces and expire on different TTLs)."""
-    if not db_path.exists():
-        return None
-    try:
-        conn = sqlite3.connect(str(db_path))
-        try:
-            row = conn.execute(
-                "SELECT value, fetched_at FROM nvd_cache WHERE key = ?", (key,)
-            ).fetchone()
-        finally:
-            conn.close()
-    except sqlite3.Error as exc:
-        _log.warning("vet: nvd cache read failed for %s: %s", db_path, exc)
-        return None
-    if row is None:
-        return None
-    value, fetched_at = row
-    if time.time() - fetched_at > _CACHE_TTL_S:
-        _log.debug("vet: nvd cache entry for %s expired", key)
-        return None
-    _log.debug("vet: nvd cache hit for %s", key)
-    return value
-
-
-def _cache_set(db_path: Path, key: str, value: str) -> None:
-    """Best-effort cache write; failures are logged, never raised."""
-    try:
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        conn = sqlite3.connect(str(db_path))
-        try:
-            conn.execute(
-                "CREATE TABLE IF NOT EXISTS nvd_cache "
-                "(key TEXT PRIMARY KEY, value TEXT, fetched_at REAL)"
-            )
-            conn.execute(
-                "INSERT OR REPLACE INTO nvd_cache (key, value, fetched_at) "
-                "VALUES (?, ?, ?)",
-                (key, value, time.time()),
-            )
-            conn.commit()
-        finally:
-            conn.close()
-    except sqlite3.Error as exc:
-        _log.warning("vet: nvd cache write failed for %s: %s", db_path, exc)
 
 
 def _cwe_ids_from_body(body: str) -> tuple[str, ...]:
@@ -177,7 +130,7 @@ def _fetch_from_network(
 
     result = _result_from_body(cve_id, body)
     if result.ok:
-        _cache_set(cache_path, _cache_key(cve_id), body)
+        ttl_cache_set(cache_path, _CACHE_TABLE, _cache_key(cve_id), body)
     return result
 
 
@@ -197,7 +150,7 @@ def fetch_cwe_for_cve(
     `fetch` parameter), in which case a miss degrades to `ok=False` directly,
     never a silent network attempt and never a vacuous "no CWEs" pass."""
     key = _cache_key(cve_id)
-    cached = _cache_get(cache_path, key)
+    cached = ttl_cache_get(cache_path, _CACHE_TABLE, key, ttl_s=_CACHE_TTL_S)
     if cached is not None:
         return _result_from_body(cve_id, cached)
 

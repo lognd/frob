@@ -631,6 +631,7 @@
     "src/frob/gitio.py::SpawnRecorder.record": "293274f076eda334d177a42ddbea4cf11fe3d2e72b2dfe7bd7a07cdc169662aa",
     "src/frob/gitio.py::common_dir_and_branch": "ea5a178373a5861882a3d16930ddba34cc55e8981b8ad7535200b031d2f9d786",
     "src/frob/gitio.py::current_branch": "66e3ff92d2fc47068c3dd79599699c04a85b3d4696a423fed379ab6d43cbe295",
+    "src/frob/gitio.py::excerpt": "86c6a80e2376cfc946627fab92d13290ba9bd0ea315ef6e8d97401a1cf37f223",
     "src/frob/gitio.py::git_common_dir": "e083e425d4594a33ff74d9c782b1c3bce27e468fb6e20ee67f0c6c37e70960ec",
     "src/frob/gitio.py::repo_root": "a9401b65328fdaed09960fa5fa8f012c07b2da09830c74081230620a04d9ff2b",
     "src/frob/gitio.py::reset_common_dir_cache": "3a96015ab386cf2eb703685efd89c4319499d49c5dbccc49b084be388e6e6fba",
@@ -1687,6 +1688,8 @@
     "src/frob/tickets/clipboard.py::clipboard_has_image": "16dd69d6531a3f4a287d539fc5112ea94ee69be195a8f410bae001955953fd6a",
     "src/frob/tickets/clipboard.py::clipboard_image": "b1a83f11e01d1abc8e365d1c3369c57b882ef747d95e06bd5cfddc25f5ad3000",
     "src/frob/tomlio.py::read_toml_lenient": "3eba702c5fffe52bbf76cf1c7341b5a7433de1bc4b8f7f77cfaee661f1ceeae4",
+    "src/frob/vet/_cache.py::ttl_cache_get": "81cbfdc52ed86746d4d10e0028f991a06d8513acd5ef767267cda68cf6c28711",
+    "src/frob/vet/_cache.py::ttl_cache_set": "4876beb99abaa10752fc1f6dfe003281000950e12649f120153a299916c02f87",
     "src/frob/vet/_capability.py::SCANNED_LANGUAGES": "5aebd3fdc82504e34242f2ce9cb677f17c218c78396779690308a52ede0a6e08",
     "src/frob/vet/_capability.py::is_self_pattern_path": "1ea057d4683edc766482d7b467562480082d3ba80cea05970467ce44528102e1",
     "src/frob/vet/_capability.py::language_for": "b4e50c3603e4861cf8713c841dd270a813378269def2c43008711f53bf0bdf81",
@@ -1771,5 +1774,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.215.0"
+  "version": "0.216.0"
 }

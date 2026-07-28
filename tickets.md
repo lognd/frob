@@ -1596,7 +1596,7 @@ class exists, since these waivers are demonstrably still required.
 ```yaml
 id: T-1067
 title: 'arch: abstraction-opportunity per-package extraction pass (T-0393 remainder)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -1606,6 +1606,35 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/
+- tests/test_vet_containment.py
+- docs/modules/testing.md
+- docs/modules/vet.md
+scope_changes:
+- op: add
+  glob: tests/test_vet_containment.py
+  reason: T-1067 extracted a shared vet TTL-cache helper and gitio.excerpt; needed
+    to update this test fixture and these docs' Public API sections
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: docs/modules/testing.md
+  reason: T-1067 extracted a shared vet TTL-cache helper and gitio.excerpt; needed
+    to update this test fixture and these docs' Public API sections
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: docs/modules/vet.md
+  reason: T-1067 extracted a shared vet TTL-cache helper and gitio.excerpt; needed
+    to update this test fixture and these docs' Public API sections
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/test_gitio.py::TestWorkingDiff::test_bad_base_ref_is_git_failed
+- tests/test_gitio.py::TestWorkingDiff::test_diff_command_failure_propagates
+- tests/test_testing.py::TestRunners::test_exit_code_is_data
+- tests/test_vet_containment.py::TestFetchCweForCve::test_cached_body_parses_cwe_ids
+- tests/test_vet_containment.py::TestFetchCweForCve::test_malformed_cached_body_degrades_without_raising
+- tests/test_vet_containment.py::TestFetchCweForCve::test_expired_cache_entry_triggers_a_fresh_fetch
 threat: null
 component: null
 ```
@@ -1627,6 +1656,84 @@ same "teach the detector" path, not a code-comment waiver -- category is
 unwaivable). Do not attempt all ~40 in one ticket; src/frob/gates/__init__.py
 alone carries ~15 of these groups and is a large-file residue candidate in
 its own right (see T-0395's sibling ticket).
+
+## Done report
+
+Re-measured `frob check --only arch --json` first, per the dispatch
+instructions: after T-1068's language-parity detector-precision fix
+landed, abstraction-opportunity findings actually rose to 87 (not the
+84 T-0393's agent originally measured) -- T-1068 only excludes groups
+where EVERY member carries a DISTINCT per-language tag from a fixed set
+(py/rust/kt/ts/cpp); it correctly leaves mixed/coincidental groups and
+same-tag-collision groups flagged, and unrelated code changes elsewhere
+added a few more findings in the interim.
+
+Extracted two genuine near-duplicate families this pass:
+
+1. `frob.gitio.excerpt` (public) -- was a byte-identical private
+   `_excerpt` defined separately in `gitio.py` and
+   `testing/_runners.py`; the latter already imports from `gitio`, so
+   made the gitio copy public and deleted the duplicate, updating all
+   call sites.
+2. `frob.vet._cache.ttl_cache_get`/`ttl_cache_set` -- extracted from
+   near-identical private `_cache_get`/`_cache_set` sqlite TTL-cache
+   helpers duplicated in `vet/_nvd.py` and `vet/_registry.py` (already
+   flagged with a prior T-0977 ARCH103 waiver acknowledging the
+   duplication existed but treating it as acceptable at the time);
+   parametrized by table name and TTL so both callers keep their own
+   table/TTL values with no behavior change. Updated
+   `tests/test_vet_containment.py`'s fixtures (which called the old
+   private `_nvd._cache_set` directly) to use the new shared helper.
+
+This dropped abstraction-opportunity from 87 to 84 (net -3; the
+extraction removed the specific groups these functions were flagged in).
+The remaining 84 is genuinely too large for one pass -- filed four
+per-package follow-up tickets with exact counts and per-file breakdowns
+so a future pass can work them incrementally without re-triaging from
+scratch: T-1082 (gates/**, 29), T-1084 (arch/**, 27),
+T-1085 (app/**, 5), T-1083 (remaining single-file
+packages, 23). Each ticket's body flags where a genuine extraction looks
+likely vs. where the finding is probably a new detector-precision FP
+class (documented same-name forwarding wrappers in render/_renderer.py,
+a per-language-tag naming gap in testing/_collect.py that T-1068's
+`_LANGUAGE_TAGS` doesn't cover, and a suspected local-nested-closure
+false-positive pattern in vet/_capability.py) so the next agent does not
+have to re-derive that triage.
+
+Gates: `frob check --only lint/static/gates-fast/gates-native
+--ticket T-1067` all pass (post-merge-main; the one pre-existing
+gates-fast COV003 failure, T-0666's stale evidence ids, is unrelated
+pre-existing debt already tracked as T-1080, confirmed present on main
+before this ticket touched anything). Tests: full pass on
+tests/test_vet.py, tests/test_vet_containment.py, tests/test_gitio.py,
+tests/test_testing.py.
+
+### Changed
+```
+ docs/modules/testing.md       |   8 ++++
+ docs/modules/vet.md           |  11 +++++
+ src/frob/gitio.py             |  15 ++++--
+ src/frob/testing/_runners.py  |  17 ++-----
+ src/frob/vet/_cache.py        |  74 ++++++++++++++++++++++++++++-
+ src/frob/vet/_nvd.py          |  65 ++++---------------------
+ src/frob/vet/_registry.py     |  67 +++++---------------------
+ tests/test_vet_containment.py |  19 +++++---
+ tickets.md                    | 107 +++++++++++++++++++++++++++++++++++++++++-
+ 9 files changed, 248 insertions(+), 135 deletions(-)
+```
+
+### Evidence
+- `tests/test_gitio.py::TestWorkingDiff::test_bad_base_ref_is_git_failed` (pytest node id, verified passing when recorded)
+- `tests/test_gitio.py::TestWorkingDiff::test_diff_command_failure_propagates` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestRunners::test_exit_code_is_data` (pytest node id, verified passing when recorded)
+- `tests/test_vet_containment.py::TestFetchCweForCve::test_cached_body_parses_cwe_ids` (pytest node id, verified passing when recorded)
+- `tests/test_vet_containment.py::TestFetchCweForCve::test_malformed_cached_body_degrades_without_raising` (pytest node id, verified passing when recorded)
+- `tests/test_vet_containment.py::TestFetchCweForCve::test_expired_cache_entry_triggers_a_fresh_fetch` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 1 error(s), 6645 warning(s), 419 waived
+- error-findings: TICK006@tickets.md
 
 <!-- ticket:T-1068 -->
 ```yaml
@@ -2073,3 +2180,244 @@ threat: null
 component: null
 ```
 Post-gates-split (the recent frob.gates.__init__ -> frob.gates._waive extraction), gates-native's archgate stage reports an unwaived ARCH102 on src/frob/gates/_waive.py: 35 top-level exports split across 4 unrelated naming/usage clusters. Out of scope for T-1066/T-1068 (both explicitly excluded from touching src/frob/gates/**); needs either a genuine further split of _waive.py or a reasoned frob:waive ARCH102 the way sibling gates modules already carry (see src/frob/gates/__init__.py's own ARCH102 waiver for the pattern).
+
+<!-- ticket:T-1082 -->
+```yaml
+id: T-1082
+title: 'arch: abstraction-opportunity gates package extraction (T-0393/T-1067 remainder,
+  29 findings)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/
+threat: null
+component: null
+```
+Filed from T-1067 (T-0393's remainder, re-measured post T-1068). Of the
+84 abstraction-opportunity findings remaining after T-1067 extracted the
+gitio/testing._runners `_excerpt` duplicate and the vet package's
+`_cache_get`/`_cache_set` TTL-cache duplicate, `src/frob/gates/**` alone
+carries 29 (19 in `gates/__init__.py`, 1 each in `_baseline.py`,
+`_cve_fingerprint_scan.py`, `_docblocks.py`, `_fmt_directives.py`,
+`_gate_cache.py`, `_waive.py`, `invariants.py`, 3 in `_pii_structural.py`).
+
+A cross-cutting genuine duplication spans well beyond this finding count:
+at least 9 gates modules (`_cve_fingerprint_scan.py`, `_exclude_hazard.py`,
+`_opaque.py`, `_refs.py`, `_secrets.py`, `_docblocks.py`, `_docptr.py`,
+`_pii_structural.py`, `_walk_lint.py`) each define their own
+`_tracked_files`/`_tracked_all_files`/`_tracked_source_files`/
+`_tracked_files_by_pattern` -- a `git ls-files [pattern]` -> root-relative
+POSIX path tuple/frozenset helper, near-identical error handling
+(warn-and-empty-on-failure), reimplemented per gate instead of shared.
+Consolidating into one `frob.gates`-level helper (parametrized by
+pathspec, returning both tuple and frozenset call shapes as thin
+wrappers) would collapse most of `_docblocks.py`/`_docptr.py`'s
+`abstraction-opportunity` finding and a good chunk of the same
+"tracked-files helper" duplication pattern likely undercounted by the
+detector's per-file grouping (it does not always attribute a cross-file
+group to every member file, per T-1067's `gitio.py`/`testing/_runners.py`
+finding shape).
+
+`gates/__init__.py` is ALSO the T-0395 large-file-residue candidate
+(~15 of its own groups per T-1067's parent ticket T-0393) -- extracting
+shared abstractions from it is likely to interact with T-0395's own
+split plan; read T-0395 first and coordinate rather than duplicating
+file-restructuring work.
+
+Do not attempt all 29 (+ the wider tracked-files consolidation) in one
+pass if it does not fit; a coherent partial (e.g. the tracked-files
+helper consolidation alone, or just `_baseline.py`'s `_read_toml` x3
+duplication) is fine, with the remainder re-filed with exact counts.
+Re-measure `uv run frob check --only arch --json`, filter to
+abstraction-opportunity + `src/frob/gates/`, before starting -- other
+tickets may land in the interim and change the count.
+
+<!-- ticket:T-1083 -->
+```yaml
+id: T-1083
+title: 'arch: abstraction-opportunity remaining single-file packages extraction (T-0393/T-1067
+  remainder, 23 findings)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/check/
+- src/frob/dup/
+- src/frob/lang/
+- src/frob/perf/
+- src/frob/process/
+- src/frob/render/
+- src/frob/serve/
+- src/frob/strata/
+- src/frob/testing/
+- src/frob/tickets/
+- src/frob/vet/
+threat: null
+component: null
+```
+Filed from T-1067 (T-0393's remainder, re-measured post T-1068). The
+remainder of the 84 abstraction-opportunity findings not covered by this
+pass's sibling per-package tickets (gates/**, arch/**, app/**) is spread
+one-or-two-per-file across ~19 small/standalone modules, ~23 findings
+total: `check/_native.py` 1, `check/_python.py` 1, `dup/_pipeline.py` 2,
+`lang/__init__.py` 1, `lang/_extract.py` 1, `lang/_walk_kotlin.py` 1,
+`perf/_loop_effects.py` 1, `process/parsers/cargo.py` 1,
+`render/_renderer.py` 1, `serve/_tools.py` 1, `strata/_compliance.py` 1,
+`strata/_export.py` 1, `strata/_selfconform.py` 1, `testing/_collect.py` 1,
+`tickets/__init__.py` 3, `tickets/_journal.py` 1, `vet/_capability.py` 1,
+`vet/_ecosystem.py` 1, `vet/_lockfile.py` 1.
+
+Two of these are almost certainly detector-precision FP classes, not
+genuine dup -- triage these FIRST since they may be quick T-1068-style
+detector fixes rather than code changes:
+
+- `testing/_collect.py`: `collect_python_tests`/`collect_rust_tests`/
+  `collect_ts_tests`/`collect_cpp_tests` sharing `(Path) -> Result[...]`
+  is textbook per-language-parity shape, but T-1068's
+  `_is_language_parity_family`/`_LANGUAGE_TAGS` only recognizes the
+  segments `py`/`rust`/`kt`/`ts`/`cpp` -- `python` never matches `py` as
+  a whole underscore-delimited segment, so this family falls through
+  uncaught. Likely fix: extend `_LANGUAGE_TAGS` (or add a synonym map --
+  `python`->`py`, `typescript`->`ts`, `kotlin`->`kt`, `cplusplus`->`cpp`)
+  in `src/frob/arch/_python.py`, in scope src/frob/arch/ not this
+  ticket's scope -- file as its own small detector ticket instead of
+  fixing it here.
+- `render/_renderer.py`: `RenderWriter.heading`/`.subhead`/`.good`/
+  `.warn`/`.muted` are each ALREADY documented (existing `frob:invariant`
+  comments at each site) as deliberate same-name thin forwarders to the
+  identically-named module-level `frob.render._elements`/`_palette`
+  function -- a documented, load-bearing naming convention (the vocabulary
+  namespace pattern T-0448/T-0460 established), not an accidental
+  duplicate. Extracting a shared `_forward(name, fn, text)` wrapper would
+  likely make this WORSE (indirection with no real dedup, since each
+  forwards to a different target). Recommend accepting this as a new FP
+  class and filing a small T-1068-style detector ticket (recognize a
+  same-name call-through to an identically-named imported symbol as
+  non-actionable) in scope src/frob/arch/, not extracting here.
+
+The rest (`tickets/__init__.py`'s 3 groups, `vet/_capability.py`'s
+4-member `walk`/`walk`/`walk`/`walk` group -- likely local nested-closure
+tree-walk helpers with different captured free variables per T-1067's
+sibling arch-package ticket note, worth the same "read before extracting"
+caution -- and the remaining single-group files) are smaller, more
+plausible genuine-duplication candidates; read each before deciding.
+
+Re-measure `uv run frob check --only arch --json` (filter to
+abstraction-opportunity, excluding gates/**, arch/**, app/**) before
+starting; other tickets may land in the interim and change the count.
+
+<!-- ticket:T-1084 -->
+```yaml
+id: T-1084
+title: 'arch: abstraction-opportunity arch package extraction (T-0393/T-1067 remainder,
+  27 findings)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/arch/
+threat: null
+component: null
+```
+Filed from T-1067 (T-0393's remainder, re-measured post T-1068). After
+T-1067's extraction pass (gitio/testing._runners `_excerpt`, vet package
+TTL-cache helper), `src/frob/arch/**` itself carries 27 of the remaining
+84 abstraction-opportunity findings: `_async_hazards.py` 3, `_concurrency.py`
+1, `_concurrency_model.py` 2, `_cpp.py` 2, `_exceptions.py` 3,
+`_fallibility.py` 1, `_kotlin.py` 8, `_ocp.py` 1, `_patterns.py` 3,
+`_python.py` 1, `_solid.py` 1, `_typescript.py` 1.
+
+Most of these are NOT the T-1068 language-parity shape (every member
+carries a distinct language tag) -- `_is_language_parity_family` already
+excludes those. What remains splits into two real classes worth
+re-triaging file by file rather than assuming either uniformly:
+
+1. Genuine coincidental-signature collisions across UNRELATED functions
+   inside one file (e.g. `_async_hazards.py`'s 32-member `(Node) -> bool`
+   group mixes `_is_async_def`, `_kt_has_override_modifier`,
+   `_is_trivial_getter`, `_contains_splat`, and 28 others with no shared
+   concern) -- these are large groups where at most a handful of members
+   are truly duplicate logic; do NOT force a single extraction across an
+   entire group just because the detector grouped them by signature.
+2. Genuine per-language SHAPE duplication where the language tags are
+   NOT all distinct (so T-1068's exclusion correctly does not apply) --
+   e.g. `_kotlin.py`'s `_kt_build_class`/`_rust_build_class_shell`/
+   `_ts_build_class`/`_ts_build_interface`/`_ts_build_enum` group has two
+   `_ts_` members, meaning `_ts_build_class` and `_ts_build_interface`/
+   `_ts_build_enum` really are three separate concerns colliding by
+   signature only, not one language-parity family, and worth reading
+   individually.
+
+Read each group's actual member bodies before deciding extract vs.
+accept-as-FP; do not batch-waive (abstraction-opportunity is unwaivable
+by design). If a genuine new FP class turns up beyond what T-1068 already
+covers (e.g. local nested-closure helpers -- `def walk(node): ...` defined
+inside a larger function, recurring by trivial signature across
+unrelated tree-walks -- observed in `frob.vet._capability`, may recur
+here too), raise it as its own T-0370/T-1068-style detector-precision
+ticket rather than hand-waiving it here.
+
+Re-measure `uv run frob check --only arch --json` (filter to
+abstraction-opportunity + `src/frob/arch/`) before starting; other
+tickets may land in the interim and change the count.
+
+<!-- ticket:T-1085 -->
+```yaml
+id: T-1085
+title: 'arch: abstraction-opportunity app package extraction (T-0393/T-1067 remainder,
+  5 findings)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/
+threat: null
+component: null
+```
+Filed from T-1067 (T-0393's remainder, re-measured post T-1068). Of the
+84 remaining abstraction-opportunity findings, `src/frob/app/**` carries 5:
+`check_runner.py` 2 groups (`_skip_note_result`/`_missing_tool_result`/
+`tool_unavailable_result`/`tool_disabled_result`/`parse_junit_xml` sharing
+`(str, str) -> ToolResult`; `_deploy_drift_result`/`_deploy_conformance_result`/
+`_derived_state_integrity_result`/`_run_clang_format`/`_run_cargo_fmt_check`/
+`_run_cargo_valgrind`/`_run_bind` sharing `(Path) -> ToolResult | None`),
+`debt_runner.py` 1 (`_load_snapshot`/`_load_snapshot`/`_snapshot` sharing
+`(Path)` -- note the duplicate NAME within the group, worth checking for a
+literal same-file duplicate first), `deploy_runner.py` 1
+(`_design_dir`/`_design_dir`/`_read_ledger_text_or_empty`/
+`_read_archive_text_or_empty` sharing `(Path) -> str` -- again a repeated
+name), `perf_runner.py` 1 (`_heat`/`_collect` sharing `(AppConfig) -> None`).
+
+The `check_runner.py` `ToolResult`-builder groups look like the most
+promising genuine extraction (several near-identical "build a skip/
+unavailable/disabled ToolResult with this message" constructors); the
+`debt_runner.py`/`deploy_runner.py` groups with a repeated function name
+inside one group are worth checking FIRST for a literal same-file
+duplicate (two defs with the same name, one shadowing the other, possibly
+dead code) before assuming they're two genuinely distinct functions that
+happen to collide.
+
+Re-measure `uv run frob check --only arch --json` (filter to
+abstraction-opportunity + `src/frob/app/`) before starting; other tickets
+may land in the interim and change the count.

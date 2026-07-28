@@ -154,8 +154,16 @@ def spawn_recorder() -> Iterator[SpawnRecorder]:
         _active_recorder.reset(token)
 
 
-def _excerpt(text: str, *, lines: int = _EXCERPT_LINES) -> str:
-    """Bound a stdout/stderr blob to its last N lines -- the useful end."""
+# frob:ticket T-1067
+# frob:doc docs/modules/testing.md#public-api
+# frob:tests tests/test_gitio.py::TestWorkingDiff.test_bad_base_ref_is_git_failed
+# frob:tests tests/test_gitio.py::TestWorkingDiff.test_diff_command_failure_propagates
+# frob:tests tests/test_testing.py::TestRunners.test_exit_code_is_data
+def excerpt(text: str, *, lines: int = _EXCERPT_LINES) -> str:
+    """Bound a stdout/stderr blob to its last N lines -- the useful end.
+    Public (T-1067, extracted from a byte-identical private duplicate that
+    lived in `frob.testing._runners`) so any caller truncating captured
+    process output shares this one rule instead of re-deriving it."""
     parts = text.splitlines()
     if len(parts) <= lines:
         return text
@@ -225,7 +233,7 @@ def _run_git(
             "gitio: git %s failed (rc=%d): %s",
             " ".join(args),
             result.returncode,
-            _excerpt(result.stderr),
+            excerpt(result.stderr),
         )
         return Err(GitError.GitFailed)
     return Ok(result.stdout)
@@ -491,6 +499,7 @@ __all__ = [
     "SpawnRecorder",
     "common_dir_and_branch",
     "current_branch",
+    "excerpt",
     "git_common_dir",
     "repo_root",
     "reset_common_dir_cache",

@@ -665,6 +665,15 @@ picked up a reasoned `frob:waive PERF002` on its own per-span
 byte-count query over a different sub-range; not a repeated identical
 count to hoist) -- no behavior change.
 
+T-1067: `_nvd.py`'s and `_registry.py`'s previously near-identical private
+`_cache_get`/`_cache_set` sqlite TTL-cache helpers (differing only in
+table name and TTL) were extracted into one shared, table/TTL-parametrized
+home, `_cache.py::ttl_cache_get`/`ttl_cache_set`; both callers now pass
+their own table name and TTL in rather than re-deriving the open/query/
+expiry-check/return-or-None shape. No behavior change (`_nvd.py` still
+uses table `nvd_cache` and a 7d TTL; `_registry.py` still uses table
+`cache` and a 24h TTL).
+
 <!-- frob:describes src/frob/vet/_models.py::Dependency -->
 <!-- frob:describes src/frob/vet/_models.py::PackageVerdict -->
 <!-- frob:describes src/frob/vet/_models.py::VetReport -->
@@ -678,6 +687,8 @@ count to hoist) -- no behavior change.
 <!-- frob:describes src/frob/vet/_ecosystem.py::_npm_non_registry_rule -->
 <!-- frob:describes src/frob/vet/_cache.py::_store_verdict -->
 <!-- frob:describes src/frob/vet/_cache.py::_latest_verdict -->
+<!-- frob:describes src/frob/vet/_cache.py::ttl_cache_get -->
+<!-- frob:describes src/frob/vet/_cache.py::ttl_cache_set -->
 <!-- frob:describes src/frob/vet/_hook.py::parse_hook_command -->
 <!-- frob:describes src/frob/vet/_hook.py::check_package -->
 <!-- frob:describes src/frob/vet/_lockfile.py::_find_lockfile -->

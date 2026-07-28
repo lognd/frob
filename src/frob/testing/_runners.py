@@ -26,7 +26,7 @@ from pathlib import Path
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
-from frob.gitio import GitError, ProcResult, run_argv
+from frob.gitio import GitError, ProcResult, excerpt, run_argv
 from frob.logging import get_logger
 from frob.testing._models import (
     NativeSpec,
@@ -45,7 +45,6 @@ _STRATA_LANGUAGE = "strata"
 _log = get_logger(__name__)
 
 _PLACEHOLDERS = ("{ids}", "{files}", "{filters}", "{regex}")
-_EXCERPT_LINES = 40
 
 # T-0748: the `frob.perf._collectors` adapter names a `[[test.runner]]`
 # entry's `collector` field may declare; empty ("") means no hot-graph
@@ -89,14 +88,6 @@ class TestingError(ErrorSet):
         "The native strata sys-audit invocation for a touched .strata "
         "selection could not load or evaluate the design model (T-0242)"
     )
-
-
-def _excerpt(text: str, *, lines: int = _EXCERPT_LINES) -> str:
-    """Bound a stdout/stderr blob to its last N lines."""
-    parts = text.splitlines()
-    if len(parts) <= lines:
-        return text
-    return "\n".join(["...(truncated)...", *parts[-lines:]])
 
 
 def _validate_placeholder(command: tuple[str, ...]) -> str | None:
@@ -448,8 +439,8 @@ def _runner_outcome(
             argv=tuple(argv),
             exit_code=result.returncode,
             duration_s=duration,
-            stdout_tail=_excerpt(result.stdout),
-            stderr_tail=_excerpt(result.stderr),
+            stdout_tail=excerpt(result.stdout),
+            stderr_tail=excerpt(result.stderr),
         )
     )
 
@@ -571,7 +562,7 @@ def _run_strata_language(root: Path) -> Result[list[RunnerOutcome], TestingError
                 argv=("<native>", "frob", "sys", "audit"),
                 exit_code=0 if outcome.proved else 1,
                 duration_s=duration,
-                stdout_tail=_excerpt(outcome.summary),
+                stdout_tail=excerpt(outcome.summary),
                 stderr_tail="",
             )
         ]

@@ -128,4 +128,76 @@ def _latest_verdict(db_path: Path, ecosystem: str, name: str) -> PackageVerdict 
     )
 
 
-__all__ = ["_latest_verdict", "_store_verdict"]
+# frob:ticket T-1067
+# frob:doc docs/modules/vet.md#public-api
+# frob:tests \
+# tests/test_vet_containment.py::TestFetchCweForCve.test_cached_body_parses_cwe_ids
+# frob:tests \
+# tests/test_vet_containment.py::TestFetchCweForCve.\
+# test_expired_cache_entry_triggers_a_fresh_fetch
+# frob:waive ARCH103 reason="T-0977: sqlite cache-read helper -- open, query, \
+# expiry-check, return-or-None; the expiry decision IS the cache-read concern this \
+# function exists for, not a separate one. Extracted T-1067 from two byte-identical \
+# copies (_nvd.py, _registry.py) that used a fixed table name and TTL each -- same \
+# reasoning as the prior per-file waiver, now applying to the one shared home instead \
+# of two."
+def ttl_cache_get(db_path: Path, table: str, key: str, *, ttl_s: float) -> str | None:
+    """Cached JSON body for `key` in `table` of the sqlite db at `db_path`,
+    or `None` on miss/expiry/unreadable db (T-1067, extracted from
+    near-identical private copies in `frob.vet._nvd` and
+    `frob.vet._registry` that used a fixed table name and TTL apiece --
+    both now pass those in as parameters instead of re-deriving this
+    open/query/expiry-check/return-or-None shape per caller)."""
+    if not db_path.exists():
+        return None
+    try:
+        conn = sqlite3.connect(str(db_path))
+        try:
+            row = conn.execute(
+                f"SELECT value, fetched_at FROM {table} WHERE key = ?",  # noqa: S608
+                (key,),
+            ).fetchone()
+        finally:
+            conn.close()
+    except sqlite3.Error as exc:
+        _log.warning("vet: %s cache read failed for %s: %s", table, db_path, exc)
+        return None
+    if row is None:
+        return None
+    value, fetched_at = row
+    if time.time() - fetched_at > ttl_s:
+        _log.debug("vet: %s cache entry for %s expired", table, key)
+        return None
+    _log.debug("vet: %s cache hit for %s", table, key)
+    return value
+
+
+# frob:ticket T-1067
+# frob:doc docs/modules/vet.md#public-api
+# frob:tests \
+# tests/test_vet_containment.py::TestFetchCweForCve.test_cached_body_parses_cwe_ids
+def ttl_cache_set(db_path: Path, table: str, key: str, value: str) -> None:
+    """Best-effort TTL-cache write of `value` under `key` in `table` of the
+    sqlite db at `db_path`; failures are logged, never raised (T-1067, see
+    `ttl_cache_get`'s docstring for the duplication this replaces)."""
+    try:
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(db_path))
+        try:
+            conn.execute(
+                f"CREATE TABLE IF NOT EXISTS {table} "  # noqa: S608
+                "(key TEXT PRIMARY KEY, value TEXT, fetched_at REAL)"
+            )
+            conn.execute(
+                f"INSERT OR REPLACE INTO {table} (key, value, fetched_at) "  # noqa: S608
+                "VALUES (?, ?, ?)",
+                (key, value, time.time()),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except sqlite3.Error as exc:
+        _log.warning("vet: %s cache write failed for %s: %s", table, db_path, exc)
+
+
+__all__ = ["_latest_verdict", "_store_verdict", "ttl_cache_get", "ttl_cache_set"]

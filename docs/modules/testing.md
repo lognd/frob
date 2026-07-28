@@ -212,12 +212,20 @@ required for this one.
 
 ## Public API
 
+T-1067: `frob.gitio.excerpt` (stdout/stderr blob -> last-N-lines truncation)
+was made public and this module's own private duplicate of the same
+function deleted -- `_run_one_language_selection`'s spawn-outcome path
+(and `gitio._run_git`'s own failure logging) both import the one shared
+copy now. No behavior change (same truncation rule, same default line
+count).
+
 <!-- frob:describes src/frob/gitio.py::repo_root -->
 <!-- frob:describes src/frob/gitio.py::working_diff -->
 <!-- frob:describes src/frob/gitio.py::current_branch -->
 <!-- frob:describes src/frob/gitio.py::run_argv -->
 <!-- frob:describes src/frob/gitio.py::spawn_recorder -->
 <!-- frob:describes src/frob/gitio.py::SpawnRecorder -->
+<!-- frob:describes src/frob/gitio.py::excerpt -->
 <!-- frob:describes src/frob/testing/_select.py::extension_language -->
 <!-- frob:describes src/frob/testing/_select.py::select_tests -->
 <!-- frob:describes src/frob/testing/_select.py::ALL_SENTINEL -->

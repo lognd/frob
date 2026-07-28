@@ -27,6 +27,7 @@ from frob.strata import (
     bind_code,
 )
 from frob.vet import _nvd
+from frob.vet._cache import ttl_cache_set
 from frob.vet._containment import (
     CONTAINED,
     LIVE,
@@ -101,7 +102,7 @@ class TestFetchCweForCve:
             '{"vulnerabilities": [{"cve": {"weaknesses": [{"description": '
             '[{"lang": "en", "value": "CWE-89"}]}]}}]}'
         )
-        _nvd._cache_set(cache_path, _nvd._cache_key("CVE-2024-0003"), body)
+        ttl_cache_set(cache_path, "nvd_cache", _nvd._cache_key("CVE-2024-0003"), body)
         result = fetch_cwe_for_cve("CVE-2024-0003", cache_path=cache_path, fetch=False)
         assert result.ok is True
         assert result.cwe_ids == ("CWE-89",)
@@ -112,7 +113,7 @@ class TestFetchCweForCve:
             '{"vulnerabilities": [{"cve": {"weaknesses": [{"description": '
             '[{"lang": "en", "value": "NVD-CWE-Other"}]}]}}]}'
         )
-        _nvd._cache_set(cache_path, _nvd._cache_key("CVE-2024-0004"), body)
+        ttl_cache_set(cache_path, "nvd_cache", _nvd._cache_key("CVE-2024-0004"), body)
         result = fetch_cwe_for_cve("CVE-2024-0004", cache_path=cache_path, fetch=False)
         assert result.ok is True
         assert result.cwe_ids == ()
@@ -154,7 +155,9 @@ class TestFetchCweForCve:
         never silently read as `cwe_ids=()`."""
         cache_path = tmp_path / "vet.db"
         truncated = '{"vulnerabilities": [{"cve": {"weaknesses": [{"desc'
-        _nvd._cache_set(cache_path, _nvd._cache_key("CVE-2024-0006"), truncated)
+        ttl_cache_set(
+            cache_path, "nvd_cache", _nvd._cache_key("CVE-2024-0006"), truncated
+        )
         result = fetch_cwe_for_cve("CVE-2024-0006", cache_path=cache_path, fetch=False)
         assert result.ok is False
         assert result.cwe_ids == ()
@@ -171,7 +174,9 @@ class TestFetchCweForCve:
             '{"vulnerabilities": [{"cve": {"weaknesses": [{"description": '
             '[{"lang": "en", "value": "CWE-79"}]}]}}]}'
         )
-        _nvd._cache_set(cache_path, _nvd._cache_key("CVE-2024-0007"), stale_body)
+        ttl_cache_set(
+            cache_path, "nvd_cache", _nvd._cache_key("CVE-2024-0007"), stale_body
+        )
         # Back-date the just-written row past the TTL.
         conn = sqlite3.connect(str(cache_path))
         try:
@@ -288,7 +293,7 @@ class TestBuildContainmentReport:
             '{"vulnerabilities": [{"cve": {"weaknesses": [{"description": '
             '[{"lang": "en", "value": "CWE-89"}]}]}}]}'
         )
-        _nvd._cache_set(cache_path, _nvd._cache_key("CVE-2024-9001"), body)
+        ttl_cache_set(cache_path, "nvd_cache", _nvd._cache_key("CVE-2024-9001"), body)
 
         report = build_containment_report(
             (advisory,), model, binding, tmp_path, cache_path=cache_path, fetch=False
@@ -320,7 +325,7 @@ class TestBuildContainmentReport:
             '{"vulnerabilities": [{"cve": {"weaknesses": [{"description": '
             '[{"lang": "en", "value": "CWE-89"}]}]}}]}'
         )
-        _nvd._cache_set(cache_path, _nvd._cache_key("CVE-2024-9002"), body)
+        ttl_cache_set(cache_path, "nvd_cache", _nvd._cache_key("CVE-2024-9002"), body)
 
         report = build_containment_report(
             (advisory,), model, binding, tmp_path, cache_path=cache_path, fetch=False
@@ -345,7 +350,7 @@ class TestBuildContainmentReport:
             '{"vulnerabilities": [{"cve": {"weaknesses": [{"description": '
             '[{"lang": "en", "value": "CWE-89"}]}]}}]}'
         )
-        _nvd._cache_set(cache_path, _nvd._cache_key("CVE-2024-9003"), body)
+        ttl_cache_set(cache_path, "nvd_cache", _nvd._cache_key("CVE-2024-9003"), body)
 
         report = build_containment_report(
             (advisory,), model, binding, tmp_path, cache_path=cache_path, fetch=False

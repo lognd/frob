@@ -15,8 +15,6 @@ never raises and never blocks.
 from __future__ import annotations
 
 import json
-import sqlite3
-import time
 import urllib.error
 import urllib.request
 from datetime import datetime
@@ -26,6 +24,13 @@ from pydantic import BaseModel, ConfigDict
 
 from frob.logging import get_logger
 from frob.process import NET_KILL_SWITCH_ENV, net_enabled
+from frob.vet._cache import ttl_cache_get, ttl_cache_set
+
+#: sqlite table name for this module's TTL cache (T-1067, shared helper
+#: home in `frob.vet._cache`; kept distinct from `_nvd.py`'s `nvd_cache`
+#: table since the two key different id spaces and expire on different
+#: TTLs).
+_CACHE_TABLE = "cache"
 
 _log = get_logger(__name__)
 
@@ -54,56 +59,6 @@ class _RegistryResult(BaseModel):
 
 def _cache_key(ecosystem: str, name: str, version: str) -> str:
     return f"{ecosystem}:{name}:{version}"
-
-
-# frob:waive ARCH103 reason="T-0977: sqlite cache-read helper -- open, query, \
-# expiry-check, return-or-None; same shape and same reasoning as _nvd.py::_cache_get's \
-# ARCH103 waiver"
-def _cache_get(db_path: Path, key: str) -> str | None:
-    """Cached JSON body for `key`, or `None` on miss/expiry/unreadable db."""
-    if not db_path.exists():
-        return None
-    try:
-        conn = sqlite3.connect(str(db_path))
-        try:
-            row = conn.execute(
-                "SELECT value, fetched_at FROM cache WHERE key = ?", (key,)
-            ).fetchone()
-        finally:
-            conn.close()
-    except sqlite3.Error as exc:
-        _log.warning("vet: cache read failed for %s: %s", db_path, exc)
-        return None
-    if row is None:
-        return None
-    value, fetched_at = row
-    if time.time() - fetched_at > _CACHE_TTL_S:
-        _log.debug("vet: cache entry for %s expired", key)
-        return None
-    _log.debug("vet: cache hit for %s", key)
-    return value
-
-
-def _cache_set(db_path: Path, key: str, value: str) -> None:
-    """Best-effort cache write; failures are logged, never raised."""
-    try:
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        conn = sqlite3.connect(str(db_path))
-        try:
-            conn.execute(
-                "CREATE TABLE IF NOT EXISTS cache "
-                "(key TEXT PRIMARY KEY, value TEXT, fetched_at REAL)"
-            )
-            conn.execute(
-                "INSERT OR REPLACE INTO cache (key, value, fetched_at) "
-                "VALUES (?, ?, ?)",
-                (key, value, time.time()),
-            )
-            conn.commit()
-        finally:
-            conn.close()
-    except sqlite3.Error as exc:
-        _log.warning("vet: cache write failed for %s: %s", db_path, exc)
 
 
 _LATEST = "latest"
@@ -213,7 +168,7 @@ def _result_from_network(
         return _RegistryResult(ok=False, note="could not verify publish date")
 
     if version != _LATEST:
-        _cache_set(cache_path, key, body)
+        ttl_cache_set(cache_path, _CACHE_TABLE, key, body)
     _log.info("vet: %s publish date: %s (resolved=%s)", key, published, resolved)
     return _RegistryResult(ok=True, published_at=published, resolved_version=resolved)
 
@@ -233,7 +188,11 @@ def _fetch_publish_date(
 ) -> _RegistryResult:
     """The publish timestamp for `name@version`; `ok=False` on any lookup failure."""
     key = _cache_key(ecosystem, name, version)
-    cached = None if version == _LATEST else _cache_get(cache_path, key)
+    cached = (
+        None
+        if version == _LATEST
+        else ttl_cache_get(cache_path, _CACHE_TABLE, key, ttl_s=_CACHE_TTL_S)
+    )
     if cached is not None:
         return _result_from_cached(ecosystem, name, version, key, cached)
 
