@@ -2492,9 +2492,9 @@ Three faithfulness checks: no new external surface, no trust laundering, budget 
 ## Done report
 
 Changed:
-- strata-core/src/parse.rs::Parser::parse_refine
-- strata-core/src/parse.rs::ModuleAst (new `refines` field)
-- strata-core/src/parse.rs::Parser::parse_program (refine keyword wiring)
+- strata-core/src/parse/mod.rs::Parser::parse_refine
+- strata-core/src/parse/mod.rs::ModuleAst (new `refines` field)
+- strata-core/src/parse/mod.rs::Parser::parse_program (refine keyword wiring)
 - src/frob/strata/_ast.py::RefineDecl
 - src/frob/strata/_ast.py::Module (new `refines` field)
 - src/frob/strata/_errors.py::StrataError (new `RefinementViolation` member)
@@ -2666,13 +2666,13 @@ Caches are derived views: mandatory source-of-truth + invalidation edge + stalen
 ## Done report
 
 Changed:
-- strata-core/src/parse.rs::Parser::parse_store
-- strata-core/src/parse.rs::Parser::parse_cache
-- strata-core/src/parse.rs::Parser::parse_queue
-- strata-core/src/parse.rs::Parser::parse_cdn
-- strata-core/src/parse.rs::Parser::parse_balancer
-- strata-core/src/parse.rs::Parser::parse_percent
-- strata-core/src/parse.rs::ModuleAst (stores/caches/queues/cdns/balancers fields)
+- strata-core/src/parse/mod.rs::Parser::parse_store
+- strata-core/src/parse/mod.rs::Parser::parse_cache
+- strata-core/src/parse/mod.rs::Parser::parse_queue
+- strata-core/src/parse/mod.rs::Parser::parse_cdn
+- strata-core/src/parse/mod.rs::Parser::parse_balancer
+- strata-core/src/parse/mod.rs::Parser::parse_percent
+- strata-core/src/parse/mod.rs::ModuleAst (stores/caches/queues/cdns/balancers fields)
 - src/frob/strata/_ast.py::StoreDecl
 - src/frob/strata/_ast.py::CacheDecl
 - src/frob/strata/_ast.py::QueueDecl
@@ -2798,7 +2798,7 @@ Changed:
   target does)
 - strata-core/src/lib.rs::worst_age_visit
 - strata-core/src/lib.rs (new: find_positive_cycle, has_positive_cycle_reaching)
-- strata-core/src/parse.rs::parse_store (new `rpo QUANTITY` store_prop)
+- strata-core/src/parse/mod.rs::parse_store (new `rpo QUANTITY` store_prop)
 - src/frob/strata/_ast.py::StoreDecl (new `rpo: Quantity | None` field)
 - src/frob/strata/_infra.py::_elaborate_store (rpo dimension validation,
   `rpo=<seconds>` attr; now returns Result)
@@ -3318,7 +3318,7 @@ Scenario = counterfactual model rewrite; all claims re-checked under it; quorum/
 
 ## Done report
 
-Changed: strata-core/src/parse.rs::Parser.parse_scenario (grammar: `scenario
+Changed: strata-core/src/parse/mod.rs::Parser.parse_scenario (grammar: `scenario
 ID { rewrite* claim* }`, rewrite := remove/scale/trust, claim reuses
 assert/assume); src/frob/strata/_ast.py::RemoveDecl/ScaleDecl/TrustDecl/
 ScenarioDecl + Module.scenarios; src/frob/strata/_elaborate.py::
@@ -5312,7 +5312,7 @@ Reviewer finding during T-0059: strata-core/src/parse.rs carries 18 frob:tests d
 
 Root cause: not the DSL binding (`frob.graph.dsl.parse_directives` already resolves a `frob:tests` directive's target verbatim from the directive text, independent of which file the comment lives in -- verified by hand-building a graph snapshot from a two-file rust fixture and confirming the cross-file edge is created correctly). The actual gap is in `frob.gates._valid_edges`: it only accepts an edge as "valid" (collected) when `_symref_to_nodeid(edge.src)` is a member of `CollectedTests.node_ids`, and `CollectedTests` is populated exclusively by `frob.testing.collect_python_tests` (spawns `pytest --collect-only`). A `frob:tests` directive whose `src` is a rust/ts/c/cpp test symbol can therefore never be judged valid, same-file or cross-file, because its node id is never collected by anything -- there is no rust test runner wired into gates yet (that larger feature is already tracked separately as T-0092). TEST001/TEST002 for `strata-core/src/lib.rs::parse_source` degrade to 0 collected unit cases even though 18+ authoritative directives exist.
 
-Reviewer (first pass) correctly rejected an initial version of this fix: gating structural-evidence acceptance on file extension alone (`_is_native_test_src`) meant ANY `.rs/.ts/.c/.cpp` symbol carrying a `frob:tests` directive satisfied TEST001-004, including non-test files/symbols (e.g. `strata-core/src/lib.rs` itself). Fixed by adding `_is_native_test_symref`, which additionally requires the directive's `src` qualname to look like real test code: a `tests` module/namespace segment (rust's `#[cfg(test)] mod tests { ... }`, the real convention used throughout `strata-core/src/parse.rs`, confirmed by inspecting the actual qualnames the graph produces -- `strata-core/src/parse.rs::tests.parses_bare_module` etc.) or a `test_`/`_test` leaf name (C/C++/TS convention), mirroring the existing `_is_test_file`/`_is_test_path` conventions this module already trusts for python. Both extension AND symref convention are now required.
+Reviewer (first pass) correctly rejected an initial version of this fix: gating structural-evidence acceptance on file extension alone (`_is_native_test_src`) meant ANY `.rs/.ts/.c/.cpp` symbol carrying a `frob:tests` directive satisfied TEST001-004, including non-test files/symbols (e.g. `strata-core/src/lib.rs` itself). Fixed by adding `_is_native_test_symref`, which additionally requires the directive's `src` qualname to look like real test code: a `tests` module/namespace segment (rust's `#[cfg(test)] mod tests { ... }`, the real convention used throughout `strata-core/src/parse.rs`, confirmed by inspecting the actual qualnames the graph produces -- `strata-core/src/parse/mod.rs::tests.parses_bare_module` etc.) or a `test_`/`_test` leaf name (C/C++/TS convention), mirroring the existing `_is_test_file`/`_is_test_path` conventions this module already trusts for python. Both extension AND symref convention are now required.
 
 Changed:
 - src/frob/gates/__init__.py::_valid_edges -- now also accepts an edge whose `src` (a) has a file extension with no execution-based collector (`.rs/.ts/.tsx/.c/.h/.cpp/.hpp/.cc/.hh`, `_is_native_test_src`) AND (b) looks like real test code by convention (`_is_native_test_symref`: `tests` module segment or `test_`/`_test` leaf name) AND (c) resolves to a real bound symbol in the passed `GraphSnapshot` -- structural evidence in place of executed evidence, cross-referenced to T-0092 (the tracked follow-up for real cargo-test execution evidence) in the docstring.
@@ -5331,7 +5331,7 @@ Filed: none (T-0092 already tracks the fuller "run cargo test for real execution
 Gates: `uv run frob check` exits 0. `uv run frob check --json --only gates` diagnostic count: true baseline (native extensions built via `make core`, fresh pytest-collect cache) = 111; after fix = 106; delta = -5, all TEST002 (false positives cleared, confirmed all five are genuine rust unit-test evidence via `mod tests { #[test] ... }` in strata-core/src/lib.rs and strata-core/src/parse.rs):
 - strata-core/src/lib.rs::parse_source (cross-file directives from parse.rs's `mod tests`, now valid)
 - strata-core/src/lib.rs::reachable, ::propagated_demand, ::demand, ::strata_core -- same-file rust directives hitting the identical root cause, now correctly counted
-`strata-core/src/parse.rs::parse_source_impl` correctly STILL fires TEST002 (unlike the first pass, which wrongly cleared it): its only `frob:tests` directive is self-referential (placed on its own body, `src == target == parse_source_impl`, not a test function), so `_is_native_test_symref` correctly rejects it as evidence -- exposing that this directive was never real test evidence to begin with, independent of this fix. No other rule code's count changed (TEST003=13 before and after; PERF*/TEST006 all unchanged); nothing regressed back to the pre-fix state.
+`strata-core/src/parse/mod.rs::parse_source_impl` correctly STILL fires TEST002 (unlike the first pass, which wrongly cleared it): its only `frob:tests` directive is self-referential (placed on its own body, `src == target == parse_source_impl`, not a test function), so `_is_native_test_symref` correctly rejects it as evidence -- exposing that this directive was never real test evidence to begin with, independent of this fix. No other rule code's count changed (TEST003=13 before and after; PERF*/TEST006 all unchanged); nothing regressed back to the pre-fix state.
 Note: the "91" baseline figure quoted in the task did not match this tree -- a fresh `--only gates` run without the native rust extensions built (`make core` not yet run) produces spurious TEST001/TEST002/COV003 noise (640 diagnostics) because `pytest --collect-only` fails outright on `ModuleNotFoundError: strata_core` in every strata test file; the tool falls back to an empty `CollectedTests`, which manufactures unrelated false positives across the whole suite. After running `make core` to build `frob-core`/`strata-core`'s native extensions, the tree's true baseline is 111, and neither figure is 91 -- likely a stale/different measurement from another session.
 
 <!-- ticket:T-0091 -->
@@ -5457,8 +5457,8 @@ T-0064 discovery: std.infra's queue/balancer grammar has no TRUST clause (unlike
 ## Done report
 
 Changed:
-strata-core/src/parse.rs::Parser::parse_queue
-strata-core/src/parse.rs::Parser::parse_balancer
+strata-core/src/parse/mod.rs::Parser::parse_queue
+strata-core/src/parse/mod.rs::Parser::parse_balancer
 src/frob/strata/_ast.py::QueueDecl
 src/frob/strata/_ast.py::BalancerDecl
 src/frob/strata/_infra.py::_elaborate_queue
@@ -5484,7 +5484,7 @@ tests/unit/strata/test_infra.py::TestQueueDesugar::test_queue_explicit_trust_cla
 tests/unit/strata/test_infra.py::TestBalancerDesugar::test_balancer_explicit_trust_clause_wins_over_default
 (also added, not yet resolvable as ticket evidence -- rust runner has no
 [[test.runner]] entry, T-0092 libpython gap -- but present and reviewable
-in strata-core/src/parse.rs::tests: parses_queue_with_explicit_trust,
+in strata-core/src/parse/mod.rs::tests: parses_queue_with_explicit_trust,
 parses_queue_without_trust_defaults_to_null, parses_bare_queue_with_trust,
 parses_balancer_with_explicit_trust, parses_bare_balancer_with_trust, and
 the trust=None assertion added to parses_bare_balancer)
@@ -7127,7 +7127,7 @@ Litmus gaps exercised per family (`tests/unit/strata/test_audit.py::_vulnerable_
 
 Hardened twin (`_hardened_model`) discharges all three: ASSUMED `NoFlow` claims (owner+review) named `weakness:CWE-89:web` / `weakness:CWE-639:web`, plus an ENDORSE boundary on `f_collect` for COPPA -- `evaluate_exhaustiveness` returns `proved=True`, `gaps=()`.
 
-Scope-cut note (real, not silent): the hardened twin and the compliance-family litmus obligation are `KernelModel` Python fixtures, NOT a second `.strata` file, because of a genuine surface-grammar gap found while building this litmus: `_threat.py::_discharge_claim_id` / `_compliance.py`'s discharge-claim-id convention (`weakness:<cwe>:<node>`, `compliance:<reg>:<target>`) requires `:` (and any real CWE id like `CWE-89` also needs `-`), but `strata-core/src/parse.rs::parse_claim`'s claim id is a bare IDENT (`is_ident_cont` = ascii alnum + `_` only) -- no `.strata` source file can author a claim that discharges ANY THREAT00x/COMPLIANCE00x obligation today. Confirmed this isn't new: `design/litmus/payments*.strata` and `deploy_secret.strata` never exercise a `weakness:`/`compliance:`-shaped claim either, only plain `noflow`/`bound`/`reach` asserts -- and every existing `test_threat.py`/`test_compliance.py` obligation test already builds `KernelModel` fixtures directly for the same reason. `strata-core/**` is outside T-0115's scope, so this was filed as **T-0137** rather than patched around; `audit_vuln.strata` still exercises the ONE piece that DOES round-trip through the parser (the `may "sql"` capability declaration, T-0136), with its own permanent CI golden (`test_litmus_audit_vuln.py`).
+Scope-cut note (real, not silent): the hardened twin and the compliance-family litmus obligation are `KernelModel` Python fixtures, NOT a second `.strata` file, because of a genuine surface-grammar gap found while building this litmus: `_threat.py::_discharge_claim_id` / `_compliance.py`'s discharge-claim-id convention (`weakness:<cwe>:<node>`, `compliance:<reg>:<target>`) requires `:` (and any real CWE id like `CWE-89` also needs `-`), but `strata-core/src/parse/mod.rs::parse_claim`'s claim id is a bare IDENT (`is_ident_cont` = ascii alnum + `_` only) -- no `.strata` source file can author a claim that discharges ANY THREAT00x/COMPLIANCE00x obligation today. Confirmed this isn't new: `design/litmus/payments*.strata` and `deploy_secret.strata` never exercise a `weakness:`/`compliance:`-shaped claim either, only plain `noflow`/`bound`/`reach` asserts -- and every existing `test_threat.py`/`test_compliance.py` obligation test already builds `KernelModel` fixtures directly for the same reason. `strata-core/**` is outside T-0115's scope, so this was filed as **T-0137** rather than patched around; `audit_vuln.strata` still exercises the ONE piece that DOES round-trip through the parser (the `may "sql"` capability declaration, T-0136), with its own permanent CI golden (`test_litmus_audit_vuln.py`).
 
 Filed: T-0137 (surface grammar: claim ids cannot express `weakness:`/`compliance:` discharge convention; colon+hyphen disallowed in IDENT)
 
@@ -8437,7 +8437,7 @@ fixed `_collect_unbound`'s parallel direction-blindness
 `_looks_like_test_symbol` (a symref is a test if its file path is a
 conventional test file, OR its qualname's leading component is `tests`
 -- covering Rust's inline `mod tests { ... }` convention, e.g.
-`strata-core/src/parse.rs::tests.some_case`, which is neither a
+`strata-core/src/parse/mod.rs::tests.some_case`, which is neither a
 `tests/`-rooted file nor `test_`-prefixed) and `_edge_test_and_source`
 (picks whichever endpoint looks like a test as the thing to select, the
 other endpoint as what must be touched to trigger it; `None` -- logged
@@ -8545,11 +8545,11 @@ evidence:
 - strata-core/src/parse/mod.rs::tests::bare_ident_claim_id_still_parses
 - strata-core/src/parse/mod.rs::tests::error_unterminated_string_claim_id
 - strata-core/src/parse/mod.rs::tests::error_malformed_claim_id_neither_ident_nor_string
-- strata-core/src/parse.rs::tests::parses_string_quoted_claim_id
-- strata-core/src/parse.rs::tests::parses_string_quoted_claim_id_on_assume
-- strata-core/src/parse.rs::tests::bare_ident_claim_id_still_parses
-- strata-core/src/parse.rs::tests::error_unterminated_string_claim_id
-- strata-core/src/parse.rs::tests::error_malformed_claim_id_neither_ident_nor_string
+- strata-core/src/parse/mod.rs::tests::parses_string_quoted_claim_id
+- strata-core/src/parse/mod.rs::tests::parses_string_quoted_claim_id_on_assume
+- strata-core/src/parse/mod.rs::tests::bare_ident_claim_id_still_parses
+- strata-core/src/parse/mod.rs::tests::error_unterminated_string_claim_id
+- strata-core/src/parse/mod.rs::tests::error_malformed_claim_id_neither_ident_nor_string
 threat: null
 component: null
 ```
@@ -8562,8 +8562,8 @@ Every existing litmus golden byte-identical.
 ## Done report
 
 Changed:
-- strata-core/src/parse.rs::Parser::expect_ident_or_string (new helper)
-- strata-core/src/parse.rs::Parser::parse_claim (claim id now via expect_ident_or_string)
+- strata-core/src/parse/mod.rs::Parser::expect_ident_or_string (new helper)
+- strata-core/src/parse/mod.rs::Parser::parse_claim (claim id now via expect_ident_or_string)
 - design/litmus/audit_hardened.strata (new hardened-twin litmus fixture)
 - design/litmus/audit_vuln.strata (docstring updated: hardened twin now lives alongside it, T-0137 -> T-0138 resolved)
 - tests/unit/strata/test_litmus_audit_hardened.py (new)
@@ -9364,7 +9364,7 @@ T-0148` both report **gates 0 violation(s), 331 waived**, exit 0.
 | PERF002 (.index()/.count() in loop) | 8 | 0 | 8 | 0 | same heuristic; one-shot calls lexically nested in an outer loop, not per-iteration |
 | PERF003 (nested-loop join) | 104 raw hits / 52 unique lines | 0 | 52 | 0 | overwhelming majority: two sibling loops (setup + assertion) or small fixture-bounded comprehensions, not real joins |
 | PERF004 (sorted()/.sort() in loop) | 38 raw hits / 19 unique lines | 0 | 19 | 0 | one-shot sort of an already-collected small result list, lexically nested but not re-sorted per outer iteration |
-| TEST002 (unit case floor) | 1 (strata-core/src/parse.rs::parse_source_impl) | 1 | 0 | 0 | directive existed but sat inside the function body (never counted as bound); moved to the real `#[test]` (`parses_bare_module`) that calls it |
+| TEST002 (unit case floor) | 1 (strata-core/src/parse/mod.rs::parse_source_impl) | 1 | 0 | 0 | directive existed but sat inside the function body (never counted as bound); moved to the real `#[test]` (`parses_bare_module`) that calls it |
 | TEST003 (interface integration-test floor) | 12 (2 strata-core, 10 src/frob/**) | 12 | 0 | 0 | every one bound to a genuinely cross-boundary existing test (never fabricated): src/frob/exports, fuzz, bind, excludes.py, stats, mutate, release, gitio.py, logging, scaffold, and strata-core lib.rs/parse.rs via tests/system/test_frob_self_model.py |
 | TEST006 (coverage stamp missing/stale) | 1 | 1 | 0 | 0 | `make coverage` regenerates the stamp; re-run after every subsequent edit since the stamp keys off live file hashes |
 | TEST005 (module/symbol coverage floor) | 0 visible at baseline, 208 after TEST006 was fixed | 1 real bug fixed (see below) | ~320 file-level | 1 (T-0160) | see "TEST005 / coverage-path bug" below -- this was the largest and most consequential part of the sweep |
@@ -9682,7 +9682,7 @@ frob vet already introspects dependencies for capability use (scan_directory_cap
 ### POST-REJECT ADDENDUM (rework round)
 
 The reviewer's CRITICAL finding was correct: T-0132 landed the `code STRING+`/
-`may STRING` surface grammar (`strata-core/src/parse.rs::parse_node`) well
+`may STRING` surface grammar (`strata-core/src/parse/mod.rs::parse_node`) well
 before this ticket's merge-base, so `design/frob.strata`'s own header claim
 ("`code=`/`may` not reachable from `.strata` source text") was ALREADY
 STALE when I read and trusted it. The entire first-round mechanism (a
@@ -13021,7 +13021,7 @@ now mirror `node`'s handling exactly, and the T-0150 `tickets_ledger`/`core` wor
 un-folded.
 
 Changed:
-- strata-core/src/parse.rs::parse_store -- new `code`/`may` branches (same STRING+/STRING
+- strata-core/src/parse/mod.rs::parse_store -- new `code`/`may` branches (same STRING+/STRING
   shape T-0132 gave `node`), plus `code`/`may` fields in the stores JSON output.
 - src/frob/strata/_ast.py::StoreDecl -- new `code: tuple[str, ...] = ()` / `may: tuple[str, ...] = ()`
   fields.
@@ -13567,8 +13567,8 @@ logand.app pilot: docs/strata/surface.md names a planned managed marker for pure
 ## Done report
 
 Changed:
-- strata-core/src/parse.rs::Parser::parse_node (managed bare marker, node_prop)
-- strata-core/src/parse.rs::Parser::parse_store (managed bare marker, store_prop -- store is a node too per surface.md#key-construct-semantics)
+- strata-core/src/parse/mod.rs::Parser::parse_node (managed bare marker, node_prop)
+- strata-core/src/parse/mod.rs::Parser::parse_store (managed bare marker, store_prop -- store is a node too per surface.md#key-construct-semantics)
 - src/frob/strata/_ast.py::NodeDecl.is_managed
 - src/frob/strata/_ast.py::StoreDecl.is_managed
 - src/frob/strata/_elaborate.py::_elaborate_node (managed -> "managed" node attr, mirrors _ABSTRACT_ATTR)
@@ -13907,7 +13907,7 @@ rework, then T-0166 store `code`/`may` grammar). T-0166 gave
 `design/frob.strata`'s `tickets_ledger` store real `may "exec"` with no
 kill switch, which now fires a genuine NEW LINT004 finding `frob sys
 audit` cannot waive -- the `waive` clause was only ever added to
-`strata-core/src/parse.rs::parse_node`, not `parse_store` (T-0166 landed
+`strata-core/src/parse/mod.rs::parse_node`, not `parse_store` (T-0166 landed
 concurrently with, not before, this ticket's original round, so store
 support was never in scope). This is real, unrelated debt from a
 different ticket's concurrent landing, not something T-0174 introduced or
@@ -19328,7 +19328,7 @@ evidence:
 - tests/unit/strata/test_litmus_utility_hub.py::TestUtilityHubVulnLitmus::test_unmarked_hub_edge_refutes_the_noflow_claim
 - tests/unit/strata/test_litmus_utility_hub.py::TestUtilityHubHardenedLitmus::test_marked_utility_hub_edge_lets_the_noflow_claim_prove
 - strata-core/src/parse/mod.rs::tests::parses_flow_utility
-- strata-core/src/parse.rs::tests::parses_flow_utility
+- strata-core/src/parse/mod.rs::tests::parses_flow_utility
 threat: null
 component: null
 ```
@@ -19364,7 +19364,7 @@ transitive (only `f_tui_logs` is marked) while the same model's
 `noflow tui -> server` claim still PROVES.
 
 Changed:
-- `strata-core/src/parse.rs::Parser.parse_flow` -- new `utility;` bare
+- `strata-core/src/parse/mod.rs::Parser.parse_flow` -- new `utility;` bare
   flow property, desugars to attr `"utility"`.
 - `strata-core/src/parse.rs` test module -- `parses_flow_utility` unit
   test.
@@ -20301,13 +20301,13 @@ evidence:
 threat: null
 component: null
 ```
-Found while writing T-0159's extending guides. tests/unit/test_strata_tmlanguage.py:13 declares 'frob:tests strata-core/src/parse.rs::parse_program kind="drift"'. Two problems, neither caught by any gate: (1) the code-side endpoint parse.rs::parse_program does not resolve -- frob.lang's Rust walk qualnames the symbol Parser.parse_program -- yet no DRIFT002 fires; an identical dead endpoint on a frob:describes edge DOES fire DRIFT002 (observed during T-0159: a describes edge to parse.rs::parse_program produced 'DRIFT002 ... gone' until corrected to Parser.parse_program). frob:tests edges appear exempt from endpoint resolution, so a renamed/deleted code symbol silently orphans its test-evidence edge. (2) kind="drift" is not in graph.dsl._TESTS_KINDS (unit/integration/e2e) yet is not reported as a MalformedDirective. Either widen _TESTS_KINDS deliberately or reject unknown kinds loudly; and run frob:tests code-side endpoints through the same DRIFT002 resolution describes edges get. (Refiled: first draft was lost in a tickets.md ledger splice during T-0159's concurrent-agent merge.)
+Found while writing T-0159's extending guides. tests/unit/test_strata_tmlanguage.py:13 declares 'frob:tests strata-core/src/parse/mod.rs::parse_program kind="drift"'. Two problems, neither caught by any gate: (1) the code-side endpoint parse.rs::parse_program does not resolve -- frob.lang's Rust walk qualnames the symbol Parser.parse_program -- yet no DRIFT002 fires; an identical dead endpoint on a frob:describes edge DOES fire DRIFT002 (observed during T-0159: a describes edge to parse.rs::parse_program produced 'DRIFT002 ... gone' until corrected to Parser.parse_program). frob:tests edges appear exempt from endpoint resolution, so a renamed/deleted code symbol silently orphans its test-evidence edge. (2) kind="drift" is not in graph.dsl._TESTS_KINDS (unit/integration/e2e) yet is not reported as a MalformedDirective. Either widen _TESTS_KINDS deliberately or reject unknown kinds loudly; and run frob:tests code-side endpoints through the same DRIFT002 resolution describes edges get. (Refiled: first draft was lost in a tickets.md ledger splice during T-0159's concurrent-agent merge.)
 
 ## Done report
 
 Investigated both halves before writing any code, since the ticket names two distinct problems.
 
-Problem (1), the code-side endpoint: turned out to be ALREADY covered by the generic `DRIFT002` dangling-edge check (`frob.graph.lock._vanished_endpoint`, invoked from `drift_gate`) -- it inspects every edge's `src`/`target` for an unresolved `path::qualname`, not just `frob:describes`. I proved this empirically (both a same-package Python target and a cross-package `strata-core/src/parse.rs::parse_program`-shaped target with a dead symref both produce a real `DRIFT002` violation today) and pinned it down as a regression guard: `tests/test_gates.py::TestTest010KindValidation::test_dangling_tests_endpoint_still_caught_by_drift002`. No new resolver was written -- writing a TESTS-specific one would have duplicated `_vanished_endpoint`, which the ticket explicitly warned against ("reuse the resolver, don't duplicate"). Separately (out of scope for this ticket, `src/frob/lang/**`), I confirmed the *original* T-0159 repro (`tests/unit/test_strata_tmlanguage.py:13`) never produced an edge at all in the first place, dangling or otherwise -- `frob.lang`'s Python walker does not scan module-docstring text for `frob:` directives, only `#`/`//`-style comments, so that line was dead on arrival regardless of DRIFT002. That is a `frob.lang` gap, not a `frob.gates`/`frob.graph` one, and stays out of this ticket's declared scope; noting it here rather than silently fixing or silently dropping it.
+Problem (1), the code-side endpoint: turned out to be ALREADY covered by the generic `DRIFT002` dangling-edge check (`frob.graph.lock._vanished_endpoint`, invoked from `drift_gate`) -- it inspects every edge's `src`/`target` for an unresolved `path::qualname`, not just `frob:describes`. I proved this empirically (both a same-package Python target and a cross-package `strata-core/src/parse/mod.rs::parse_program`-shaped target with a dead symref both produce a real `DRIFT002` violation today) and pinned it down as a regression guard: `tests/test_gates.py::TestTest010KindValidation::test_dangling_tests_endpoint_still_caught_by_drift002`. No new resolver was written -- writing a TESTS-specific one would have duplicated `_vanished_endpoint`, which the ticket explicitly warned against ("reuse the resolver, don't duplicate"). Separately (out of scope for this ticket, `src/frob/lang/**`), I confirmed the *original* T-0159 repro (`tests/unit/test_strata_tmlanguage.py:13`) never produced an edge at all in the first place, dangling or otherwise -- `frob.lang`'s Python walker does not scan module-docstring text for `frob:` directives, only `#`/`//`-style comments, so that line was dead on arrival regardless of DRIFT002. That is a `frob.lang` gap, not a `frob.gates`/`frob.graph` one, and stays out of this ticket's declared scope; noting it here rather than silently fixing or silently dropping it.
 
 Problem (2), `kind=`: `frob.graph.dsl._parse_attrs` already rejected an invalid `kind=` (not unit/integration/e2e) by turning the line into a `MalformedDirective` rather than an `Edge` -- but nothing ever surfaced that `MalformedDirective` as a reported gate violation; it stayed a `_log.warning` only `WAIVE001` had this treatment (for `frob:waive`), and `frob:tests` had no equivalent. Fixed by: (a) `src/frob/graph/dsl.py::_parse_attrs` -- the invalid-kind reason string now literally contains `frob:tests` (`f"frob:tests invalid kind={attrs['kind']!r}; must be one of {sorted(_TESTS_KINDS)}"`), mirroring how `frob:waive requires reason="..."` already lets `WAIVE001` filter `GraphSnapshot.malformed` by substring; (b) new `src/frob/gates/__init__.py::_test010_violations` (rule `TEST010`, `Severity.ERROR`, wired into `test_gate`), directly modeled on `_waive001_violations`, filtering `snapshot.malformed` for `"frob:tests" in md.reason`; (c) `TEST010` added to `_KNOWN_GATE_RULES` so `frob:waive TEST010 reason="..."` is a real, matchable waiver channel, not a `WAIVE002` typo-trap.
 
@@ -21200,7 +21200,7 @@ Resolution: implemented `errors_total`/`panics_contained_by`/`observe`/`on deplo
 properties.
 
 Changed:
-- strata-core/src/parse.rs::parse_store -- four new branches (`errors_total` bare
+- strata-core/src/parse/mod.rs::parse_store -- four new branches (`errors_total` bare
   marker, `panics_contained_by IDENT`, `observe { log ...; to ... }`, `on deploy { ... }`
   via the existing `parse_on_deploy_block` helper), plus the four corresponding fields
   in the stores JSON output. Doc comment above `parse_store` updated to note the T-0247
@@ -21413,12 +21413,12 @@ evidence:
 threat: null
 component: null
 ```
-T-0166 (fix(tickets): land T-0166 store grammar rejects code/may despite surface.md implying support) added real code/may declarations to design/frob.strata's tickets_ledger store, including may "exec" with no kill switch -- this now fires a genuine LINT004 gap (frob sys audit exits 1) that T-0174's waive mechanism cannot suppress because the waive clause was only added to strata-core/src/parse.rs::parse_node, not parse_store (T-0174's declared scope did not include store grammar work). Extend waive to store the same way T-0166 extended code/may to store (parse_store, StoreDecl, _elaborate_store), then waive tickets_ledger's LINT004 with reason pointing at T-0200, mirroring checker/core/stratamod/vet's existing waivers. Until this lands, frob sys audit honestly reports this one named gap rather than silently or fictitiously passing.
+T-0166 (fix(tickets): land T-0166 store grammar rejects code/may despite surface.md implying support) added real code/may declarations to design/frob.strata's tickets_ledger store, including may "exec" with no kill switch -- this now fires a genuine LINT004 gap (frob sys audit exits 1) that T-0174's waive mechanism cannot suppress because the waive clause was only added to strata-core/src/parse/mod.rs::parse_node, not parse_store (T-0174's declared scope did not include store grammar work). Extend waive to store the same way T-0166 extended code/may to store (parse_store, StoreDecl, _elaborate_store), then waive tickets_ledger's LINT004 with reason pointing at T-0200, mirroring checker/core/stratamod/vet's existing waivers. Until this lands, frob sys audit honestly reports this one named gap rather than silently or fictitiously passing.
 
 ## Done report
 
 Changed:
-- strata-core/src/parse.rs::parse_store -- added the `waive RULE reason="..." [ticket="..."]` clause, byte-identical shape/behavior to `parse_node`'s T-0174 `waive` clause (mandatory `reason`, optional `ticket`, repeatable); `StoreAst`/`ast.stores` JSON now carries a `waives` array.
+- strata-core/src/parse/mod.rs::parse_store -- added the `waive RULE reason="..." [ticket="..."]` clause, byte-identical shape/behavior to `parse_node`'s T-0174 `waive` clause (mandatory `reason`, optional `ticket`, repeatable); `StoreAst`/`ast.stores` JSON now carries a `waives` array.
 - src/frob/strata/_ast.py::StoreDecl.waives -- new `tuple[WaiverDecl, ...] = ()` field, reusing the existing `WaiverDecl` model T-0174 added (no new model needed, `node`/`store` share the shape).
 - src/frob/strata/_infra.py::_elaborate_store -- desugars `decl.waives` straight to `Node.waives`, the same direct-mapping convention `_elaborate.py::_elaborate_node` uses; ALSO calls `_waive.py::validate_waiver_fields` per waiver and fails closed with `StrataError.MalformedWaiver` on a blank reason or a multi-instance family (SYS100/SYS101/THREAT002/THREAT003) with no sub-target.
 - design/frob.strata::tickets_ledger -- added `waive "LINT004" reason "no real kill switch around subprocess spawning yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";`, same reason text as `checker`/`core`'s existing exec waivers.
@@ -22719,12 +22719,12 @@ T-0254 auth pillar. Model the Kerberos/Active-Directory layer that sits between 
 ## Done report
 
 Changed:
-- `strata-core/src/parse.rs::parse_node` -- new node clauses `realm "NAME"`,
+- `strata-core/src/parse/mod.rs::parse_node` -- new node clauses `realm "NAME"`,
   `kdc`, `spn "SPN"`+, `delegation none|constrained|rbcd|unconstrained
   [target "SPN"]*`, `trusts IDENT [direction "one-way"|"two-way"]
   [transitive]`+, emitted as `krb_realm`/`krb_is_kdc`/`krb_spns`/
   `krb_delegation`/`krb_delegation_targets`/`krb_trusts` JSON fields.
-- `strata-core/src/parse.rs::parse_flow` -- new flow clause
+- `strata-core/src/parse/mod.rs::parse_flow` -- new flow clause
   `authenticates_via tgt|st`, desugars to a `krb_ticket=<kind>` attr.
 - `src/frob/strata/_ast.py::NodeDecl` -- new `krb_realm`/`krb_is_kdc`/
   `krb_spns`/`krb_delegation`/`krb_delegation_targets`/`krb_trusts` fields.
@@ -66334,9 +66334,9 @@ evidence:
 - tests/unit/deploy/test_generate_windows.py::TestInstall::test_service_not_present_notes_missing_bin_path
 - tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_when_bin_path_declared
 - tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_without_args
-- strata-core/src/parse.rs::tests::parses_node_bin_path_clause
-- strata-core/src/parse.rs::tests::parses_node_bin_path_clause_without_args
-- strata-core/src/parse.rs::tests::parses_store_bin_path_clause
+- strata-core/src/parse/mod.rs::tests::parses_node_bin_path_clause
+- strata-core/src/parse/mod.rs::tests::parses_node_bin_path_clause_without_args
+- strata-core/src/parse/mod.rs::tests::parses_store_bin_path_clause
 acceptance:
 - text: GIVEN a windows node declaring service with a binPath WHEN install.ps1 is
     generated THEN it idempotently creates the SCM service with that image path before
@@ -66351,9 +66351,9 @@ acceptance:
   - tests/unit/deploy/test_generate_windows.py::TestInstall::test_service_not_present_notes_missing_bin_path
   - tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_when_bin_path_declared
   - tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_without_args
-  - strata-core/src/parse.rs::tests::parses_node_bin_path_clause
-  - strata-core/src/parse.rs::tests::parses_node_bin_path_clause_without_args
-  - strata-core/src/parse.rs::tests::parses_store_bin_path_clause
+  - strata-core/src/parse/mod.rs::tests::parses_node_bin_path_clause
+  - strata-core/src/parse/mod.rs::tests::parses_node_bin_path_clause_without_args
+  - strata-core/src/parse/mod.rs::tests::parses_store_bin_path_clause
 threat: null
 component: null
 ```
@@ -66362,8 +66362,8 @@ T-0264's windows generator hardens an existing SCM service (SID type, privileges
 ## Done report
 
 Changed:
-strata-core/src/parse.rs::Parser::parse_node (bin_path clause)
-strata-core/src/parse.rs::Parser::parse_store (bin_path clause)
+strata-core/src/parse/mod.rs::Parser::parse_node (bin_path clause)
+strata-core/src/parse/mod.rs::Parser::parse_store (bin_path clause)
 src/frob/strata/_host.py::HostManifest.bin_path
 src/frob/strata/_host.py::HostManifest.bin_path_args
 src/frob/strata/_host.py::_host_attrs
@@ -74965,15 +74965,15 @@ evidence:
 - tests/unit/strata/test_access.py::TestResourceContentionViolations::test_unrelated_resources_do_not_cross_conflict
 - tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
 - tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
-- strata-core/src/parse.rs::tests::parses_node_access_clause
-- strata-core/src/parse.rs::tests::parses_store_access_clause
-- strata-core/src/parse.rs::tests::parses_all_access_modes
-- strata-core/src/parse.rs::tests::error_access_rejects_unknown_mode
-- strata-core/src/parse.rs::tests::error_access_requires_mode_keyword
-- strata-core/src/parse.rs::tests::parses_resource_with_arbitrated_by
-- strata-core/src/parse.rs::tests::parses_resource_with_lock
-- strata-core/src/parse.rs::tests::parses_bare_resource_with_no_arbiter
-- strata-core/src/parse.rs::tests::error_resource_rejects_both_arbitrated_by_and_lock
+- strata-core/src/parse/mod.rs::tests::parses_node_access_clause
+- strata-core/src/parse/mod.rs::tests::parses_store_access_clause
+- strata-core/src/parse/mod.rs::tests::parses_all_access_modes
+- strata-core/src/parse/mod.rs::tests::error_access_rejects_unknown_mode
+- strata-core/src/parse/mod.rs::tests::error_access_requires_mode_keyword
+- strata-core/src/parse/mod.rs::tests::parses_resource_with_arbitrated_by
+- strata-core/src/parse/mod.rs::tests::parses_resource_with_lock
+- strata-core/src/parse/mod.rs::tests::parses_bare_resource_with_no_arbiter
+- strata-core/src/parse/mod.rs::tests::error_resource_rejects_both_arbitrated_by_and_lock
 acceptance:
 - text: GIVEN two nodes with write-mode access to one resource and no arbiter WHEN
     sys checks run THEN a fail-closed error; GIVEN the same with a declared arbiter
@@ -75006,15 +75006,15 @@ acceptance:
   - tests/unit/strata/test_access.py::TestResourceContentionViolations::test_unrelated_resources_do_not_cross_conflict
   - tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
   - tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
-  - strata-core/src/parse.rs::tests::parses_node_access_clause
-  - strata-core/src/parse.rs::tests::parses_store_access_clause
-  - strata-core/src/parse.rs::tests::parses_all_access_modes
-  - strata-core/src/parse.rs::tests::error_access_rejects_unknown_mode
-  - strata-core/src/parse.rs::tests::error_access_requires_mode_keyword
-  - strata-core/src/parse.rs::tests::parses_resource_with_arbitrated_by
-  - strata-core/src/parse.rs::tests::parses_resource_with_lock
-  - strata-core/src/parse.rs::tests::parses_bare_resource_with_no_arbiter
-  - strata-core/src/parse.rs::tests::error_resource_rejects_both_arbitrated_by_and_lock
+  - strata-core/src/parse/mod.rs::tests::parses_node_access_clause
+  - strata-core/src/parse/mod.rs::tests::parses_store_access_clause
+  - strata-core/src/parse/mod.rs::tests::parses_all_access_modes
+  - strata-core/src/parse/mod.rs::tests::error_access_rejects_unknown_mode
+  - strata-core/src/parse/mod.rs::tests::error_access_requires_mode_keyword
+  - strata-core/src/parse/mod.rs::tests::parses_resource_with_arbitrated_by
+  - strata-core/src/parse/mod.rs::tests::parses_resource_with_lock
+  - strata-core/src/parse/mod.rs::tests::parses_bare_resource_with_no_arbiter
+  - strata-core/src/parse/mod.rs::tests::error_resource_rejects_both_arbitrated_by_and_lock
 threat: null
 component: null
 ```
@@ -75023,12 +75023,12 @@ Second half of the resource-contention mandate -- the grammar extension. Add: (1
 ## Done report
 
 Changed:
-strata-core/src/parse.rs::Parser.parse_access_attr (new)
-strata-core/src/parse.rs::Parser.parse_node (access clause wired in)
-strata-core/src/parse.rs::Parser.parse_store (access clause wired in)
-strata-core/src/parse.rs::Parser.parse_resource (new)
-strata-core/src/parse.rs::Parser.parse_program (resource keyword dispatch)
-strata-core/src/parse.rs::ModuleAst.resources (new field)
+strata-core/src/parse/mod.rs::Parser.parse_access_attr (new)
+strata-core/src/parse/mod.rs::Parser.parse_node (access clause wired in)
+strata-core/src/parse/mod.rs::Parser.parse_store (access clause wired in)
+strata-core/src/parse/mod.rs::Parser.parse_resource (new)
+strata-core/src/parse/mod.rs::Parser.parse_program (resource keyword dispatch)
+strata-core/src/parse/mod.rs::ModuleAst.resources (new field)
 src/frob/strata/_ast.py::ResourceDecl (new)
 src/frob/strata/_ast.py::Module.resources (new field)
 src/frob/strata/_access.py (new module): AccessMode, NodeAccess, ResourceContentionViolation, ResourceContentionReport, node_access_declarations, mode_conflict, resource_contention_violations, SYS_UNARBITRATED_MODE_CONFLICT
@@ -75051,7 +75051,7 @@ State: T-0700 acceptance criterion is met at the MODEL level (grammar + read-bac
 Found while working (both filed, out of my ticket's scope, not fixed here):
 - T-0955: pre-existing, unrelated golden/drift-lock drift in `tests/unit/strata/test_export_golden.py` (test_k8s/test_seccomp/test_iam) and `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates` (node count 16 vs hardcoded 15) -- both trace to frob's own self-modeled design gaining a `natives` node whose golden fixtures/hardcoded counts were never regenerated. Confirmed via `git status`/diff that none of my files touch these; scope of the draft ticket covers both files.
 
-Evidence: 27 ids recorded and bound to acceptance[0] via `frob ticket evidence T-0700 ... --accepts 0` (9 Rust `cargo test --release` node ids under `strata-core/src/parse.rs::tests`, 16 pytest node ids under `tests/unit/strata/test_access.py`, 2 under `tests/unit/test_strata_tmlanguage.py`). All 27 observed passing:
+Evidence: 27 ids recorded and bound to acceptance[0] via `frob ticket evidence T-0700 ... --accepts 0` (9 Rust `cargo test --release` node ids under `strata-core/src/parse/mod.rs::tests`, 16 pytest node ids under `tests/unit/strata/test_access.py`, 2 under `tests/unit/test_strata_tmlanguage.py`). All 27 observed passing:
 - `cargo test --release` (PYO3_PYTHON/LD_LIBRARY_PATH set to the worktree's own .venv python3.11): 132 passed, 0 failed (123 pre-existing + 9 new).
 - `uv run pytest tests/unit/strata/test_access.py tests/unit/test_strata_tmlanguage.py -p no:cacheprovider -q`: 28 passed (16 + 12; 2 of the tmlanguage tests are the drift-lock bidirectional checks, the rest are pre-existing tmlanguage coverage tests unaffected by this change).
 - `uv run pytest tests/unit/strata/ -p no:cacheprovider -q` (deselecting the 3 pre-existing unrelated golden failures above): all green.
@@ -75261,11 +75261,11 @@ evidence:
 - tests/unit/strata/test_demand.py::test_store_users_and_rate_elaborate_same_as_node
 - tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
 - tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
-- strata-core/src/parse.rs::tests::parses_node_users_and_rate
-- strata-core/src/parse.rs::tests::parses_node_without_users_or_rate_defaults_null
-- strata-core/src/parse.rs::tests::parses_node_users_only_no_rate
-- strata-core/src/parse.rs::tests::parses_store_users_and_rate
-- strata-core/src/parse.rs::tests::parses_node_rate_does_not_collide_with_capacity_rate
+- strata-core/src/parse/mod.rs::tests::parses_node_users_and_rate
+- strata-core/src/parse/mod.rs::tests::parses_node_without_users_or_rate_defaults_null
+- strata-core/src/parse/mod.rs::tests::parses_node_users_only_no_rate
+- strata-core/src/parse/mod.rs::tests::parses_store_users_and_rate
+- strata-core/src/parse/mod.rs::tests::parses_node_rate_does_not_collide_with_capacity_rate
 acceptance:
 - text: GIVEN two entry nodes declaring users 300k and 200k both flowing into one
     db resource WHEN elaboration runs THEN the db's aggregate demand is 500k and queryable;
@@ -75287,11 +75287,11 @@ acceptance:
   - tests/unit/strata/test_demand.py::test_store_users_and_rate_elaborate_same_as_node
   - tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
   - tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
-  - strata-core/src/parse.rs::tests::parses_node_users_and_rate
-  - strata-core/src/parse.rs::tests::parses_node_without_users_or_rate_defaults_null
-  - strata-core/src/parse.rs::tests::parses_node_users_only_no_rate
-  - strata-core/src/parse.rs::tests::parses_store_users_and_rate
-  - strata-core/src/parse.rs::tests::parses_node_rate_does_not_collide_with_capacity_rate
+  - strata-core/src/parse/mod.rs::tests::parses_node_users_and_rate
+  - strata-core/src/parse/mod.rs::tests::parses_node_without_users_or_rate_defaults_null
+  - strata-core/src/parse/mod.rs::tests::parses_node_users_only_no_rate
+  - strata-core/src/parse/mod.rs::tests::parses_store_users_and_rate
+  - strata-core/src/parse/mod.rs::tests::parses_node_rate_does_not_collide_with_capacity_rate
 threat: null
 component: null
 ```
@@ -75300,8 +75300,8 @@ User mandate 2026-07-22 (starvation semantics prerequisite): the model has no no
 ## Done report
 
 Changed:
-strata-core/src/parse.rs::Parser.parse_node (users/rate clauses wired in)
-strata-core/src/parse.rs::Parser.parse_store (users/rate clauses wired in)
+strata-core/src/parse/mod.rs::Parser.parse_node (users/rate clauses wired in)
+strata-core/src/parse/mod.rs::Parser.parse_store (users/rate clauses wired in)
 src/frob/strata/_ast.py::NodeDecl.users (new field)
 src/frob/strata/_ast.py::NodeDecl.rate (new field)
 src/frob/strata/_ast.py::StoreDecl.users (new field)
