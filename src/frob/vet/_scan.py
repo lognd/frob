@@ -32,6 +32,7 @@ from frob.vet import (
     _osv,
     _registry,
     _source,
+    _supplychain,
     _typosquat,
 )
 from frob.vet._allow import _load_vet_config
@@ -857,6 +858,11 @@ def scan_tree(
     violations: list[Violation] = []
     verdicts: list[PackageVerdict] = []
     skipped: list[str] = []
+    # T-1088: project-tree-wide structural checks run once per scan_tree
+    # call, independent of which/how-many lockfiles were found -- these are
+    # manifest/CI-workflow/tracked-file-tree properties, not per-dependency
+    # source scans.
+    violations.extend(_supplychain.supply_chain_tree_violations(project_root))
     for lockfile, deps in parsed_lockfiles:
         lf_violations, lf_verdicts = _scan_dependencies(
             deps,

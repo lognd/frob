@@ -1798,6 +1798,7 @@
     "src/frob/vet/_popular_pypi.py::PYPI_TOP": "26bc14b63ddd6288e826ae6dcccca61d8cd656c510c2c468a09425ae584c244a",
     "src/frob/vet/_registry.py::LATEST_VERSION": "b30849b555e1d18f02cc27a0778a96f5741ba52158ece29cd2474365c6470cc3",
     "src/frob/vet/_scan.py::scan_tree": "e1fb6c8b8c52d313570588f6cf80452cc5a8d93c3ec29341067d0654b248ec45",
+    "src/frob/vet/_supplychain.py::supply_chain_tree_violations": "d5950b0ba1bfa5b3191c22638e57c6cd582d0af13e89b7c3680c37b267de50b3",
     "src/frob/vet/_taint.py::TaintFinding": "61c91cf545af4ce25088a4c611fc0193e455620d354091b373c0ce91ea61cb96",
     "src/frob/vet/_taint.py::taint_findings": "395efe7b6e65093ea03edf7e1747a465f24b9f7083fca1b3dad69b2c4241ca16",
     "src/frob/xref/__init__.py::Definition": "6b34e8c54cd2ffba1e122f7b12c5e9d4c403c7d1543a95e7713dcf0c858a01a6",
@@ -1815,5 +1816,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.229.0"
+  "version": "0.230.0"
 }
