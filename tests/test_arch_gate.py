@@ -210,3 +210,74 @@ class TestArchGateCppThrow:
         report = run_gates(cfg).danger_ok
         assert any(v.rule == "CPPTHROW001" for v in report.waived)
         assert not any(v.rule == "CPPTHROW001" for v in report.violations)
+
+
+def _big_python_source(n_lines: int) -> str:
+    """A trivially-valid python module with at least `n_lines` lines --
+    only line count matters for the large-file check, not structure."""
+    lines = ['"""Synthetic large fixture for LARGE001 tests."""']
+    for i in range(n_lines):
+        lines.append(f"v{i} = {i}")
+    return "\n".join(lines) + "\n"
+
+
+# T-1102: frob.arch._check_large_file's language-agnostic large-file
+# category (previously advisory-only) channeled into a real LARGE001
+# Violation by the same frob.gates._arch.arch_gate as ARCH001/ARCH1xx/
+# CPPTHROW001 -- WARN first-turn-on, and single-file-mode parity with the
+# directory walk (frob.arch.analyze_project).
+class TestArchGateLargeFile:
+    # frob:tests \
+    # tests/test_arch_gate.py::TestArchGateLargeFile.test_large_file_fires_large001\
+    # _warn
+    def test_large_file_fires_large001_warn(self, tmp_path: Path) -> None:
+        """A production python file over max_file_lines fires LARGE001 at
+        Severity.WARN (first-turn-on posture, matching ARCH001/ARCH1xx)."""
+        from frob.gates._arch import arch_gate
+        from frob.gates._models import Severity
+
+        _write(tmp_path, "big.py", _big_python_source(900))
+        violations = arch_gate(tmp_path)
+        hits = [v for v in violations if v.rule == "LARGE001"]
+        assert hits
+        assert all(v.severity == Severity.WARN for v in hits)
+        assert any(v.file == "big.py" for v in hits)
+
+    # frob:tests \
+    # tests/test_arch_gate.py::TestArchGateLargeFile.test_test_file_exempt_from_lar\
+    # ge001
+    def test_test_file_exempt_from_large001(self, tmp_path: Path) -> None:
+        """A file under a `tests/` directory is exempt from LARGE001,
+        same as it is from the underlying advisory large-file category
+        (T-0368) -- many arrange-act-assert cases is expected growth."""
+        from frob.gates._arch import arch_gate
+
+        _write(tmp_path, "tests/test_big.py", _big_python_source(900))
+        violations = arch_gate(tmp_path)
+        assert not [v for v in violations if v.rule == "LARGE001"]
+
+    # frob:tests \
+    # tests/test_arch_gate.py::TestArchGateLargeFile.test_single_file_mode_matches_\
+    # directory_walk
+    def test_single_file_mode_matches_directory_walk(self, tmp_path: Path) -> None:
+        """T-1102 acceptance [1]: `analyze_project` invoked directly on a
+        single over-threshold file reports the exact same large-file
+        finding (category/message shape) as a directory walk over its
+        parent that happens to contain just this one file -- single-file
+        mode used to silently report zero findings instead."""
+        from frob.arch import analyze_project
+
+        big_path = _write(tmp_path, "big.py", _big_python_source(900))
+
+        dir_result = analyze_project(tmp_path)
+        dir_hits = [s for s in dir_result.suggestions if s.category == "large-file"]
+
+        single_result = analyze_project(big_path)
+        single_hits = [
+            s for s in single_result.suggestions if s.category == "large-file"
+        ]
+
+        assert dir_hits and single_hits
+        assert [(s.file, s.message) for s in dir_hits] == [
+            (s.file, s.message) for s in single_hits
+        ]

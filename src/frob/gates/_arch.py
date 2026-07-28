@@ -44,6 +44,17 @@ reaches a may-throw call) -- there is no pre-existing debt corpus an
 ERROR severity would instantly red, so ERROR ships directly, not deferred
 behind a WARN-first promotion the way EXHAUST001/002 (T-0688) needed for
 their own 176-finding first run.
+
+T-1102 wires one more pre-existing category into this same map:
+`large-file` (LARGE001, `frob.arch._check_large_file`, language-agnostic,
+already computed by `analyze_project` for every walk but previously
+advisory-only -- never channeled into a `Violation` a gate run or a
+waiver could see). This is a WARN-first-turn-on, not an ERROR: this
+repo's own source tree already carries known over-large production files
+at filing time (see `frob.arch.__init__`'s `_check_large_file` docstring
+and this ticket's Refile note in `tickets.md` for the disclosed count),
+same debt-corpus posture as ARCH101-103 and EXHAUST001/002 above, not the
+CPPTHROW001 zero-findings case just above it.
 """
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/gates/_arch.py's exclusivity-vocabulary hit is source-level \
@@ -74,6 +85,11 @@ _ARCH_CATEGORY_TO_RULE = {
     # see this module's own docstring for why this one category channels
     # at Severity.ERROR, not Severity.WARN like every category above.
     "cpp-noexcept-throws": "CPPTHROW001",
+    # T-1102: large-file (frob.arch._check_large_file) -- language-
+    # agnostic file-size check, already computed by `analyze_project` for
+    # every walk but previously advisory-only. WARN first-turn-on (see
+    # this module's own docstring for the disclosed turn-on count).
+    "large-file": "LARGE001",
 }
 
 #: Categories (T-1034) whose `Violation` uses `Severity.ERROR` instead of
@@ -99,6 +115,8 @@ _ERROR_SEVERITY_CATEGORIES = frozenset({"cpp-noexcept-throws"})
 # frob:enforces CHK-GATE-CPPTHROW001
 # frob:enforces CHK-GATE-ARCH103
 # frob:enforces CHK-GATE-CPPTHROW001
+# T-1102: large-file channels through this same category-to-rule map.
+# frob:enforces CHK-GATE-LARGE001
 # frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_two_cluster_class_fires_arch101  # noqa: E501
 # frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_cohesive_class_does_not_fire_arch101  # noqa: E501
 # frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_god_module_fires_arch102  # noqa: E501
@@ -106,6 +124,9 @@ _ERROR_SEVERITY_CATEGORIES = frozenset({"cpp-noexcept-throws"})
 # frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_arch101_respects_explicit_frob_toml_override  # noqa: E501
 # frob:tests tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_may_throw_fires_cppthrow001_error  # noqa: E501
 # frob:tests tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_with_catch_all_does_not_fire_cppthrow001  # noqa: E501
+# frob:tests tests/test_arch_gate.py::TestArchGateLargeFile.test_large_file_fires_large001_warn  # noqa: E501
+# frob:tests tests/test_arch_gate.py::TestArchGateLargeFile.test_test_file_exempt_from_large001  # noqa: E501
+# frob:tests tests/test_arch_gate.py::TestArchGateLargeFile.test_single_file_mode_matches_directory_walk  # noqa: E501
 def arch_gate(root: Path) -> tuple[Violation, ...]:
     """ARCH001: one `Violation` per long-AND-complex python/C++ function
     `frob.arch.analyze_project` still flags after its complexity filter
@@ -117,7 +138,12 @@ def arch_gate(root: Path) -> tuple[Violation, ...]:
     (`cpp-noexcept-throws`, T-0687's C++ may-throw analysis,
     `frob.arch._cpp_mayraise`) -- see this module's own docstring for why
     THIS rule channels at `Severity.ERROR`, every other rule here at
-    `Severity.WARN`. Every rule's `symref`/`metric` carried through so
+    `Severity.WARN`. T-1102 adds LARGE001 (`large-file`,
+    `frob.arch._check_large_file`) at `Severity.WARN`, same posture as
+    ARCH001/ARCH1xx -- a file-level finding has no function/class symbol
+    to bind a `symref` to, so its `Violation.symref` stays `None` and a
+    `frob:waive LARGE001 reason="..."` binds by file/line like any other
+    unsymref'd rule. Every rule's `symref`/`metric` carried through so
     `frob.gates._match_waiver` can bind a `frob:waive ARCHxxx
     reason="..." [ceiling=N]` to the exact symbol.
 

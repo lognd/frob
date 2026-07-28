@@ -243,7 +243,14 @@ def _collect_files(root: Path) -> list[Path]:
     (T-0026's original built-in-skip-dir/exclude-glob filtering, now routed
     through the shared `frob.excludes.iter_files` prune-aware walk (T-0471)
     instead of a raw `root.rglob("*")` that paid the full traversal cost of
-    `.git`/`.venv`/`.claude/worktrees` before any filter ran)."""
+    `.git`/`.venv`/`.claude/worktrees` before any filter ran).
+
+    Callers must pass a DIRECTORY -- `frob.excludes.iter_files` assumes
+    `root` is one (`(root / ".git").exists()` / `os.walk(root)` both
+    silently yield nothing for a plain file). `analyze_project` (T-1102)
+    resolves a single-file `root` to its parent directory plus a one-file
+    candidate list before this function ever runs, rather than teaching
+    this function two different root shapes."""
     exclude_globs = load_exclude_globs(root)
     result: list[Path] = []
     for p in iter_files(root):
@@ -591,6 +598,13 @@ def _run_srp_checks_python(
 # frob:doc docs/modules/arch.md#lock-ordering-hazards
 # frob:tests tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit
 # frob:ticket T-0423
+# frob:ticket T-1102
+# frob:waive AFFECT001 reason="T-1102's declared scope (src/frob/gates/_arch.py, \
+# src/frob/arch/__init__.py, tests/test_arch_gate.py, docs/modules/gates.md) does \
+# not include docs/modules/arch.md -- the single-file-mode parity fix here is \
+# documented in this function's own docstring plus docs/modules/gates.md's new \
+# LARGE001 entry instead. Follow-up filed: T-draft-46c68525 (docs: document \
+# T-1102 single-file-mode parity + LARGE001 in docs/modules/arch.md)."
 @memoize_per_run
 def analyze_project(
     root: Path,
@@ -617,6 +631,23 @@ def analyze_project(
     cache hit, not a re-walk -- this was the root cause of the T-0418 arch
     double-run (`analyze_project` invoked once by the advisory arch stage
     and once by the ARCH001 gate, over the same tree).
+
+    T-1102: single-file-mode parity -- `root` may be a single file (`frob
+    arch <file>`, or `frob.gates._arch.arch_gate` invoked narrowly), not
+    only a directory. `_collect_files`/`frob.excludes.iter_files` assume a
+    directory and silently produce zero candidates for a plain file
+    (`(root / ".git").exists()` and `os.walk(root)` both no-op on a file),
+    which used to make single-file mode print "no architectural issues
+    found" even for a multi-thousand-line file -- the large-file finding
+    (and every other check) was invisible outside a directory walk. When
+    `root` is a file, this resolves the walk root to `root.parent` (so
+    every relative path/exclude-glob computation below stays identical to
+    a directory walk that happened to contain only this one file) and
+    seeds the candidate list with just `root` itself, instead of calling
+    `_collect_files` at all -- the single-file finding is then computed by
+    the exact same `_analyze_one_file` path a directory walk uses, so it
+    prints identically (same category/message shape), not a parallel
+    single-file code path that could drift from the directory one.
     """
     from frob.logging.quiet import quiet_stdout_logs
 
@@ -637,13 +668,17 @@ def analyze_project(
     all_dispatch_refs: dict[str, set[str]] = {}
     all_constructions = _patterns.new_construction_accumulator()
 
+    # T-1102: single-file-mode parity -- see this function's own docstring.
+    scan_root = root.parent if root.is_file() else root
+    files = [root] if root.is_file() else _collect_files(root)
+
     # frob.lang logs at INFO/DEBUG per parse; CLI callers piping `--json`
     # need that off stdout, same reasoning as frob.logging.quiet's docstring.
     with quiet_stdout_logs():
-        for path in _collect_files(root):
+        for path in files:
             _analyze_one_file(
                 path,
-                root,
+                scan_root,
                 limits,
                 suggestions,
                 all_py_sigs,
