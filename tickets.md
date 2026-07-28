@@ -411,7 +411,7 @@ _scan_file_fingerprints (CVE matching) is lexical needle-matching for EVERY lang
 ```yaml
 id: T-0393
 title: 'advisories: triage abstraction-opportunity near-dup families'
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -426,8 +426,6 @@ component: null
 ```
 Triage the 37 frob-arch abstraction-opportunity advisories: for each genuine near-duplicate or specific-signature family, either extract the real shared code into one home, or add an explicit reason-note accepting the duplication. Acceptance: frob check arch advisories for abstraction-opportunity reduced to zero unresolved (each is either fixed or reason-noted).
 
-## Failure log
-- 2026-07-28 attempt 1: 84 in-scope abstraction-opportunity findings (re-measured, stale 37 count), unwaivable channel per docs/modules/arch.md T-0360 -- needs decomposition into per-family extraction/detector-precision tickets, not one dispatch-sized pass
 <!-- ticket:T-0394 -->
 ```yaml
 id: T-0394
@@ -537,7 +535,7 @@ existing test surface, all passing (see Evidence); `git diff main
 - `tests/unit/test_cycle.py::test_long_chain_no_recursion_error` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 15 passed (from 15 evidence id(s))
+- tests: 21 passed (from 21 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
 <!-- ticket:T-0395 -->
 ```yaml
@@ -912,7 +910,7 @@ T-1060.
 ```yaml
 id: T-0713
 title: Audit COV007 dedup passes (T-0524) for over-pruned extending-guide anchors
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-22'
@@ -922,10 +920,83 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/**
+- tests/unit/test_extending_guides_complete.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_extending_guides_complete.py
+  reason: audit-only ticket concluded honest-no-findings (T-0706 already fixed the
+    one real over-prune); this canary test is the audit's own evidence/instrument,
+    scope-bind it per the T-0398 source+test convention
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_row_has_a_guide_file
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_row_anchor_file_exists_and_mentions_guide
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_anchor_fragment_resolves_to_guide_h1
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_no_orphan_guides
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_probe_table_and_inventory_agree
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_probe_still_matches_source
 threat: null
 component: null
 ```
 found while working T-0706: 2642c5f3 (T-0524) removed the docs/guides/extending/capability-registry.md#capability-registry frob:doc anchor above DANGEROUS_OPERATIONS in src/frob/vet/_capability_registry.py as a supposed COV007 duplicate, but no other anchor in the file carried the extending-guide fragment -- broke tests/unit/test_extending_guides_complete.py silently until T-0706 caught and restored it (waived SCOPE001 there). Audit other T-0524 COV007 dedup commits for the same over-pruning pattern against docs/guides/extending/registry_of_registries.json rows.
+
+## Done report
+
+Audited all 5 T-0524 COV007 dedup commits (086499c6, 53f177ce, f9fd1fc6,
+2642c5f3, c96db341) for the over-pruning pattern the T-0706 incident
+found: an extending-guide anchor (docs/guides/extending/*.md#fragment)
+removed as a supposed COV007 duplicate when it was actually the only
+carrier of that anchor for its registry_of_registries.json row.
+
+Method:
+- Diffed each commit for removed `frob:doc` lines
+  (`git show <commit> | grep -E '^-.*frob:doc'`).
+- Cross-referenced every removed anchor against
+  docs/guides/extending/registry_of_registries.json's anchor_file/
+  anchor_symbol rows.
+- Ran tests/unit/test_extending_guides_complete.py (the canary) and
+  `frob check --only docanchor` (the DOC002 did-you-mean instrument) at
+  HEAD.
+
+Findings:
+- 086499c6 (tickets/__init__.py) and c96db341 (gates/__init__.py) removed
+  only docs/modules/*.md#public-api anchors (module docs, not extending
+  guides) -- not in scope for this concern.
+- f9fd1fc6 (dup/_core.py) and 53f177ce (lang/_common.py) removed no
+  frob:doc lines at all -- they added frob:waive COV007 directives, doc
+  anchors were left in place.
+- 2642c5f3 (vet/_capability_registry.py) is the ONE commit that removed
+  an extending-guide anchor
+  (docs/guides/extending/capability-registry.md#capability-registry) from
+  DANGEROUS_OPERATIONS as a supposed duplicate. This is the exact incident
+  already caught and fixed by T-0706 (waived SCOPE001 there, anchor
+  restored). No other T-0524 commit repeats this pattern.
+
+Conclusion: honest no-findings beyond the already-fixed T-0706 case. All
+5 anchor_file/anchor_symbol pairs in registry_of_registries.json that
+overlap T-0524's touched files still resolve correctly;
+test_extending_guides_complete.py passes (6/6); `frob check --only
+docanchor` at HEAD reports 0 errors. No further over-pruning found; no
+code changes made.
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_row_has_a_guide_file` (pytest node id, verified passing when recorded)
+- `tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_row_anchor_file_exists_and_mentions_guide` (pytest node id, verified passing when recorded)
+- `tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_anchor_fragment_resolves_to_guide_h1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_no_orphan_guides` (pytest node id, verified passing when recorded)
+- `tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_probe_table_and_inventory_agree` (pytest node id, verified passing when recorded)
+- `tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_probe_still_matches_source` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0720 -->
 ```yaml
@@ -4692,44 +4763,6 @@ header waiver) and a fix or a documented is-this-really-flaky
 determination -- WAIVE004's own gate:WAIVE never reaches zero while this
 class exists, since these waivers are demonstrably still required.
 
-<!-- ticket:T-draft-e6eef9c9 -->
-```yaml
-id: T-draft-e6eef9c9
-title: 'arch: abstraction-opportunity language-parity exclusion (detector precision)'
-state: queued
-kind: feature
-origin: human
-created: '2026-07-28'
-priority: medium
-parent: null
-tier: ticket
-sprint: null
-scope:
-- src/frob/arch/**
-- tests/unit/test_arch.py
-scope_changes:
-- op: add
-  glob: tests/unit/test_arch.py
-  reason: language-parity exclusion needs its detector tests updated in the same file
-  actor: logan
-  at: '2026-07-28'
-threat: null
-component: null
-```
-Filed from T-0393 (failed as too large for one pass). arch/_kotlin.py,
-arch/_async_hazards.py, arch/_concurrency_model.py, arch/_cpp.py contain
-~10 abstraction-opportunity groups that are parallel per-language
-tree-sitter walkers (python/kotlin/rust/typescript/cpp implementing the
-same structural operation) -- not the T-0360 dispatch-table shape the
-detector already excludes, but the same class of false positive
-(intentional per-language parity). Add a new exclusion family to
-frob.arch._python._check_abstraction_opportunities (or a sibling helper)
-recognizing a same-signature group where every member's name carries a
-distinct language-tag prefix/infix (_py_/_kt_/_rust_/_ts_/_cpp_) matched
-across a fixed small set of language modules, mirroring T-0360's
-structural-detection rigor (no raw text proximity). Re-measure
-abstraction-opportunity count after landing; the remaining non-language-
-family findings become the scope of a further per-file ticket.
 <!-- ticket:T-draft-0a8f8fe9 -->
 ```yaml
 id: T-draft-0a8f8fe9
@@ -4751,42 +4784,6 @@ x
 
 ## Drop reason
 - 2026-07-28: accidental test ticket, superseded
-
-<!-- ticket:T-draft-8205bb39 -->
-```yaml
-id: T-draft-8205bb39
-title: 'arch: abstraction-opportunity per-package extraction pass (T-0393 remainder)'
-state: queued
-kind: feature
-origin: human
-created: '2026-07-28'
-priority: medium
-parent: null
-tier: ticket
-sprint: null
-scope:
-- src/frob/
-threat: null
-component: null
-```
-Filed from T-0393 (failed as too large for one pass). After the sibling
-language-parity detector-precision ticket lands (arch/_kotlin.py,
-arch/_async_hazards.py, arch/_concurrency_model.py, arch/_cpp.py family),
-re-measure `uv run frob check --only arch --json` for abstraction-opportunity
-and split the remaining single-file groups (src/frob/app/**,
-src/frob/gates/__init__.py's several groups, src/frob/check/**,
-src/frob/lang/**, src/frob/tickets/__init__.py, src/frob/render/_renderer.py,
-src/frob/dup/**, src/frob/perf/**, src/frob/gitio.py,
-src/frob/process/parsers/cargo.py, src/frob/serve/_tools.py,
-src/frob/testing/_collect.py -- ~35-40 groups after the language-parity
-family is removed from the count) into per-package-sized follow-up tickets,
-each genuinely extracting shared code or accepting the coincidental-
-signature collision is correctly un-flaggable (raise as a T-0370-style
-detector refinement if a whole additional false-positive class turns up,
-same "teach the detector" path, not a code-comment waiver -- category is
-unwaivable). Do not attempt all ~40 in one ticket; src/frob/gates/__init__.py
-alone carries ~15 of these groups and is a large-file residue candidate in
-its own right (see T-0395's sibling ticket).
 
 <!-- ticket:T-draft-26c6346f -->
 ```yaml
@@ -4825,3 +4822,78 @@ scoped textbook-algorithm exemption added to the deep-nesting detector
 itself (mirroring how ARCH001 already carries a reasoned per-function
 override path) -- evaluate both options; do not force a split that
 contradicts the standing ARCH001 rationale on the same function.
+
+<!-- ticket:T-draft-8205bb39 -->
+```yaml
+id: T-draft-8205bb39
+title: 'arch: abstraction-opportunity per-package extraction pass (T-0393 remainder)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/
+threat: null
+component: null
+```
+Filed from T-0393 (failed as too large for one pass). After the sibling
+language-parity detector-precision ticket lands (arch/_kotlin.py,
+arch/_async_hazards.py, arch/_concurrency_model.py, arch/_cpp.py family),
+re-measure `uv run frob check --only arch --json` for abstraction-opportunity
+and split the remaining single-file groups (src/frob/app/**,
+src/frob/gates/__init__.py's several groups, src/frob/check/**,
+src/frob/lang/**, src/frob/tickets/__init__.py, src/frob/render/_renderer.py,
+src/frob/dup/**, src/frob/perf/**, src/frob/gitio.py,
+src/frob/process/parsers/cargo.py, src/frob/serve/_tools.py,
+src/frob/testing/_collect.py -- ~35-40 groups after the language-parity
+family is removed from the count) into per-package-sized follow-up tickets,
+each genuinely extracting shared code or accepting the coincidental-
+signature collision is correctly un-flaggable (raise as a T-0370-style
+detector refinement if a whole additional false-positive class turns up,
+same "teach the detector" path, not a code-comment waiver -- category is
+unwaivable). Do not attempt all ~40 in one ticket; src/frob/gates/__init__.py
+alone carries ~15 of these groups and is a large-file residue candidate in
+its own right (see T-0395's sibling ticket).
+
+<!-- ticket:T-draft-e6eef9c9 -->
+```yaml
+id: T-draft-e6eef9c9
+title: 'arch: abstraction-opportunity language-parity exclusion (detector precision)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/arch/**
+- tests/unit/test_arch.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: language-parity exclusion needs its detector tests updated in the same file
+  actor: logan
+  at: '2026-07-28'
+threat: null
+component: null
+```
+Filed from T-0393 (failed as too large for one pass). arch/_kotlin.py,
+arch/_async_hazards.py, arch/_concurrency_model.py, arch/_cpp.py contain
+~10 abstraction-opportunity groups that are parallel per-language
+tree-sitter walkers (python/kotlin/rust/typescript/cpp implementing the
+same structural operation) -- not the T-0360 dispatch-table shape the
+detector already excludes, but the same class of false positive
+(intentional per-language parity). Add a new exclusion family to
+frob.arch._python._check_abstraction_opportunities (or a sibling helper)
+recognizing a same-signature group where every member's name carries a
+distinct language-tag prefix/infix (_py_/_kt_/_rust_/_ts_/_cpp_) matched
+across a fixed small set of language modules, mirroring T-0360's
+structural-detection rigor (no raw text proximity). Re-measure
+abstraction-opportunity count after landing; the remaining non-language-
+family findings become the scope of a further per-file ticket.
