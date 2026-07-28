@@ -248,7 +248,8 @@ def _edge_files(edge: object) -> tuple[str, ...]:
     return tuple(files)
 
 
-# frob:doc docs/modules/serve.md#per-gate-cache-t-0602
+# frob:doc \
+# docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:ticket T-0602
 # frob:tests tests/test_gate_cache.py::TestTrackedSnapshot.test_symbol_iteration_records_file  # noqa: E501
 # frob:tests tests/test_gate_cache.py::TestTrackedSnapshot.test_getitem_records_only_accessed_key  # noqa: E501
@@ -268,7 +269,8 @@ class TrackedSnapshot:
         self._snapshot = snapshot
         self._touched = touched
 
-    # frob:doc docs/modules/serve.md#per-gate-cache-t-0602
+    # frob:doc \
+    # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
     # frob:ticket T-0602
     @property
     def root(self) -> str:
@@ -276,35 +278,40 @@ class TrackedSnapshot:
         file-dependent."""
         return self._snapshot.root
 
-    # frob:doc docs/modules/serve.md#per-gate-cache-t-0602
+    # frob:doc \
+    # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
     # frob:ticket T-0602
     @property
     def stats(self):  # noqa: ANN201
         """Pass-through: build stats are diagnostic, not gate input."""
         return self._snapshot.stats
 
-    # frob:doc docs/modules/serve.md#per-gate-cache-t-0602
+    # frob:doc \
+    # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
     # frob:ticket T-0602
     @property
     def symbols(self) -> _TrackedMapping:
         """Every symref resolved records its own file."""
         return _TrackedMapping(self._snapshot.symbols, self._touched, _symref_file)
 
-    # frob:doc docs/modules/serve.md#per-gate-cache-t-0602
+    # frob:doc \
+    # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
     # frob:ticket T-0602
     @property
     def edges(self) -> _TrackedSequence:
         """Every edge yielded records both its src and target file."""
         return _TrackedSequence(self._snapshot.edges, self._touched, _edge_files)
 
-    # frob:doc docs/modules/serve.md#per-gate-cache-t-0602
+    # frob:doc \
+    # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
     # frob:ticket T-0602
     @property
     def file_hashes(self) -> _TrackedMapping:
         """Every path looked up (or iterated) records itself directly."""
         return _TrackedMapping(self._snapshot.file_hashes, self._touched, str)
 
-    # frob:doc docs/modules/serve.md#per-gate-cache-t-0602
+    # frob:doc \
+    # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
     # frob:ticket T-0602
     @property
     def malformed(self) -> _TrackedSequence:
@@ -313,7 +320,8 @@ class TrackedSnapshot:
             self._snapshot.malformed, self._touched, lambda m: (m.file,)
         )
 
-    # frob:doc docs/modules/serve.md#per-gate-cache-t-0602
+    # frob:doc \
+    # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
     # frob:ticket T-0602
     @property
     def parse_failures(self) -> _TrackedSequence:
@@ -359,7 +367,8 @@ def _touched_key(file_hashes: Mapping[str, str], touched: Iterable[str]) -> str:
     )
 
 
-# frob:doc docs/modules/serve.md#per-gate-cache-t-0602
+# frob:doc \
+# docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:ticket T-0602
 def extra_key(values: Iterable[str]) -> str:
     """Fold a gate's non-file scalar inputs (a ticket id, `date.today()`,
@@ -466,7 +475,8 @@ def _store_entry(
     )
 
 
-# frob:doc docs/modules/serve.md#per-gate-cache-t-0602
+# frob:doc \
+# docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:ticket T-0602
 # frob:tests tests/test_gate_cache.py::TestEvaluateCacheableGate.test_invalidate_forces_next_call_to_miss  # noqa: E501
 def invalidate(root: Path) -> None:
@@ -484,7 +494,8 @@ def invalidate(root: Path) -> None:
 # --- Public entry point ----------------------------------------------------
 
 
-# frob:doc docs/modules/serve.md#per-gate-cache-t-0602
+# frob:doc \
+# docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:ticket T-0602
 # frob:tests tests/test_gate_cache.py::TestEvaluateCacheableGate.test_miss_then_hit_skips_second_call  # noqa: E501
 # frob:tests tests/test_gate_cache.py::TestEvaluateCacheableGate.test_edit_to_untouched_file_stays_a_hit  # noqa: E501
