@@ -6,13 +6,19 @@ log rather than a separate tracked counter (docs/modules/tickets.md#public-api).
 from __future__ import annotations
 
 import subprocess
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
 
-from frob.tickets import Ticket, TicketQueue, TicketState, sprint_velocity
+from frob.tickets import (
+    Ticket,
+    TicketQueue,
+    TicketState,
+    sprint_velocity,
+    ticket_flow,
+)
 from frob.tickets._models import SprintTransition, SprintVelocityReport
 from frob.tickets._store import write_ticket
 from tests.test_tickets_tiers import _ticket
@@ -37,6 +43,37 @@ def _commit(tmp_path: Path, message: str) -> None:
         ],
         cwd=tmp_path,
         check=True,
+    )
+
+
+# frob:ticket T-1100
+def _commit_on(tmp_path: Path, message: str, day: date) -> None:
+    """Same as `_commit`, but pins both author/committer date to `day`
+    (midday UTC) via `GIT_AUTHOR_DATE`/`GIT_COMMITTER_DATE` -- `ticket_flow`
+    date-buckets `_mine_done_transitions`'s REAL commit timestamps (unlike
+    `sprint_velocity`, which only counts transitions, never buckets them
+    by day), so a `ticket_flow` test needs deterministic commit dates, not
+    whatever the real wall-clock happens to be when the test runs."""
+    import os
+
+    iso = f"{day.isoformat()}T12:00:00+00:00"
+    env = {**os.environ, "GIT_AUTHOR_DATE": iso, "GIT_COMMITTER_DATE": iso}
+    subprocess.run(["git", "add", "tickets.md"], cwd=tmp_path, check=True)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.email=test@example.com",
+            "-c",
+            "user.name=Test",
+            "commit",
+            "-q",
+            "-m",
+            message,
+        ],
+        cwd=tmp_path,
+        check=True,
+        env=env,
     )
 
 
@@ -166,3 +203,132 @@ class TestSprintVelocity:
         assert report.closed == 0
         assert report.remaining == 0
         assert report.total == 1
+
+
+# frob:ticket T-1100
+class TestTicketFlow:
+    """`ticket_flow` (T-1100): filed/day (from `created`) vs landed/day
+    (mined the same way `sprint_velocity` is, over the WHOLE queue) vs
+    net, plus a naive burn-down ETA. Uses `_commit_on` (fixed
+    `GIT_AUTHOR_DATE`/`GIT_COMMITTER_DATE`) throughout, not the plain
+    `_commit` `TestSprintVelocity` uses -- `ticket_flow` date-buckets the
+    real commit timestamp, so a deterministic date is required, unlike
+    `sprint_velocity` which only counts transitions."""
+
+    # frob:ticket T-1100
+    def test_filed_and_landed_counted_per_day(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::ticket_flow kind="unit"
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+
+        the_day = date(2026, 6, 1)
+        ticket = _ticket(ticket_id="T-0001", state=TicketState.QUEUED, created=the_day)
+        write_ticket(tmp_path, ticket)
+        _commit_on(tmp_path, "queue T-0001", the_day)
+
+        in_progress = ticket.model_copy(update={"state": TicketState.IN_PROGRESS})
+        write_ticket(tmp_path, in_progress)
+        _commit_on(tmp_path, "start T-0001", the_day)
+
+        done = in_progress.model_copy(update={"state": TicketState.DONE})
+        write_ticket(tmp_path, done)
+        _commit_on(tmp_path, "close T-0001", the_day)
+
+        queue = TicketQueue(tickets={done.id: done})
+        report = ticket_flow(tmp_path, queue, today=the_day)
+
+        assert len(report.rows) == 1
+        row = report.rows[0]
+        assert row.day == the_day
+        assert row.filed == 1
+        assert row.landed == 1
+        assert row.net == 0
+
+    # frob:ticket T-1100
+    def test_zero_activity_days_are_filled_not_sparse(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::ticket_flow kind="unit"
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+
+        filed_day = date(2026, 6, 1)
+        ticket = _ticket(
+            ticket_id="T-0001", state=TicketState.QUEUED, created=filed_day
+        )
+        write_ticket(tmp_path, ticket)
+        _commit_on(tmp_path, "queue T-0001", filed_day)
+
+        queue = TicketQueue(tickets={ticket.id: ticket})
+        report = ticket_flow(tmp_path, queue, today=date(2026, 6, 4))
+
+        assert [r.day for r in report.rows] == [
+            date(2026, 6, 1),
+            date(2026, 6, 2),
+            date(2026, 6, 3),
+            date(2026, 6, 4),
+        ]
+        assert report.rows[1].filed == 0
+        assert report.rows[1].landed == 0
+
+    # frob:ticket T-1100
+    def test_eta_none_when_queue_not_shrinking(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::ticket_flow kind="unit"
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+
+        ticket = _ticket(
+            ticket_id="T-0001",
+            state=TicketState.QUEUED,
+            created=date(2026, 6, 1),
+        )
+        queue = TicketQueue(tickets={ticket.id: ticket})
+        report = ticket_flow(tmp_path, queue, today=date(2026, 6, 1))
+
+        assert report.trailing_net_rate >= 0
+        assert report.eta_days is None
+
+    # frob:ticket T-1100
+    def test_eta_computed_when_queue_shrinking(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::ticket_flow kind="unit"
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+
+        # Every ticket was FILED 5 days before `today` (so `today`'s own
+        # trailing window sees zero new filings) and LANDED exactly on
+        # `today` (3 done-transitions) -- a clean net=-3 on the one day
+        # that matters, unambiguously shrinking the queue.
+        filed_day = date(2026, 5, 27)
+        today = date(2026, 6, 1)
+        for i in range(3):
+            tid = f"T-000{i + 1}"
+            started = _ticket(
+                ticket_id=tid, state=TicketState.IN_PROGRESS, created=filed_day
+            )
+            write_ticket(tmp_path, started)
+            _commit_on(tmp_path, f"start {tid}", filed_day)
+            done = started.model_copy(update={"state": TicketState.DONE})
+            write_ticket(tmp_path, done)
+            _commit_on(tmp_path, f"close {tid}", today)
+
+        open_ticket = _ticket(
+            ticket_id="T-0099", state=TicketState.QUEUED, created=filed_day
+        )
+        write_ticket(tmp_path, open_ticket)
+        _commit_on(tmp_path, "queue T-0099", filed_day)
+
+        # Reload the queue from the ledger itself so every landed id is
+        # actually present with its real (now DONE) state, matching
+        # `ticket_flow`'s real caller (`frob ticket flow` loads the current
+        # ledger, not a hand-built snapshot).
+        from frob.tickets import load_active
+
+        queue = load_active(tmp_path).danger_ok
+
+        report = ticket_flow(tmp_path, queue, today=today)
+        assert report.trailing_net_rate < 0
+        assert report.eta_days is not None
+        assert report.eta_days > 0

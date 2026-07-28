@@ -1701,3 +1701,68 @@ class SprintVelocityReport(BaseModel):
     closed: int = 0
     remaining: int = 0
     total: int = 0
+
+
+# frob:ticket T-1100
+# frob:doc docs/modules/tickets.md#public-api
+class TicketFlowRow(BaseModel):
+    """One calendar day's `frob ticket flow` counts (T-1100): tickets FILED
+    that day (`Ticket.created` matching, the same field `sprint_view`/
+    `board_view` already read, no new storage), tickets LANDED that day
+    (mined the same way `sprint_velocity`'s `SprintTransition` is, via
+    `_mine_done_transitions` over the WHOLE queue rather than one sprint),
+    and `net = filed - landed` -- positive means the queue is growing that
+    day, negative means it is shrinking."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    day: date
+    filed: int = 0
+    landed: int = 0
+
+    @property
+    # frob:ticket T-1100
+    # frob:doc docs/modules/tickets.md#public-api
+    # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_filed_and_landed_counted_per_day kind="unit"  # noqa: E501
+    def net(self) -> int:
+        """`filed - landed` for this day; positive grows the queue,
+        negative shrinks it."""
+        return self.filed - self.landed
+
+
+# frob:ticket T-1100
+# frob:doc docs/modules/tickets.md#public-api
+class TicketFlowReport(BaseModel):
+    """`frob ticket flow`'s full report (T-1100): one `TicketFlowRow` per
+    calendar day from the earliest observed filing/landing event through
+    today (zero-filled, never sparse -- a day with no activity still gets
+    a row so `trailing_net_rate` always averages a real fixed-size window),
+    the CURRENT open-ticket count (a live snapshot, not mined history), the
+    trailing-3-day average net rate, and a naive burn-down ETA in days
+    (`open_count / trailing_net_rate` when the rate is actually shrinking
+    the queue; `None` when it is flat or growing, since dividing by a
+    non-positive rate would either raise or produce a nonsensical negative
+    ETA -- `frob ticket flow`'s render layer is expected to label a `None`
+    ETA as "cannot estimate: not shrinking", never silently omit the
+    line)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    rows: tuple[TicketFlowRow, ...] = ()
+    open_count: int = 0
+    trailing_net_rate: float = 0.0
+
+    @property
+    # frob:ticket T-1100
+    # frob:doc docs/modules/tickets.md#public-api
+    # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_eta_none_when_queue_not_shrinking kind="unit"  # noqa: E501
+    # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_eta_computed_when_queue_shrinking kind="unit"  # noqa: E501
+    def eta_days(self) -> float | None:
+        """`open_count / trailing_net_rate` (a naive, disclosed
+        extrapolation, not a forecast) when the trailing rate is actually
+        NEGATIVE (the queue is net-shrinking) -- `None` when the queue is
+        flat or growing, since burn-down has no meaningful ETA in that
+        case."""
+        if self.trailing_net_rate >= 0:
+            return None
+        return self.open_count / -self.trailing_net_rate

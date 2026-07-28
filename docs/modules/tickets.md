@@ -1905,6 +1905,37 @@ wiring in `src/frob/__main__.py`/`src/frob/app/ticket_runner.py`) is a
 separate child ticket of T-0938 -- this ticket's own scope
 (`src/frob/tickets/**`) is the derivation function and its models only.
 
+### `frob ticket flow` (T-1100)
+
+A simple queue-growth-vs-completion-rate report, reusing T-0938's mining
+rather than adding a second one: `frob.tickets.ticket_flow(root, queue,
+*, today=None)` builds one `TicketFlowRow` per calendar day from the
+EARLIEST observed filing (`Ticket.created`, across the WHOLE queue, not
+one sprint) or landing (`_mine_done_transitions` over every ticket id,
+not `sprint_velocity`'s sprint-filtered subset) event through `today`
+(defaults to `date.today()`, injectable for deterministic tests) --
+zero-filled, never sparse, so a trailing-window average always covers a
+real fixed-size span rather than silently skipping quiet days.
+
+Each row is `(day, filed, landed)` plus a `net = filed - landed` property
+(positive grows the queue, negative shrinks it). `TicketFlowReport` adds
+the CURRENT open-ticket count (a live snapshot, not mined), the
+trailing-3-day average net rate, and an `eta_days` property: `open_count
+/ -trailing_net_rate` when the rate is genuinely NEGATIVE (net-shrinking),
+`None` otherwise (a flat or growing queue has no meaningful burn-down
+ETA) -- `frob ticket flow`'s render layer labels a `None` ETA as "cannot
+estimate", never silently omits the line.
+
+`frob ticket flow [--json]` (`_flow` in `src/frob/app/ticket_runner/
+_mutate.py`) loads the active queue and prints exactly one table (day /
+filed / landed / net) plus the open count, trailing rate, and ETA line --
+"keep it genuinely simple" per the user request this closes. Shares
+every known, disclosed gap `sprint_velocity`'s own docstring already
+names (git history as a lower bound on real transitions, not a
+guarantee of completeness), since it reuses the exact same
+`_mine_done_transitions` mining, just unfiltered by sprint and bucketed
+by day instead of listed as a flat transition sequence.
+
 ### `--body-file`/`--acceptance-file` (T-0737)
 
 `frob ticket new --body-file PATH` and `frob ticket new --acceptance-file

@@ -27,7 +27,7 @@ import shlex
 import subprocess
 import tomllib
 from collections.abc import Callable, Sequence
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from typani.result import Err, Ok, Result
@@ -100,6 +100,8 @@ from frob.tickets._models import (
     Stride,
     Ticket,
     TicketError,
+    TicketFlowReport,
+    TicketFlowRow,
     TicketKind,
     TicketQueue,
     TicketSpec,
@@ -866,6 +868,71 @@ def sprint_velocity(
         closed=closed,
         remaining=remaining,
         total=len(tickets),
+    )
+
+
+# frob:ticket T-1100
+_FLOW_TRAILING_DAYS = 3
+
+
+# frob:ticket T-1100
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_filed_and_landed_counted_per_day  # noqa: E501
+# frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_zero_activity_days_are_filled_not_sparse  # noqa: E501
+# frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_eta_none_when_queue_not_shrinking  # noqa: E501
+# frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_eta_computed_when_queue_shrinking  # noqa: E501
+def ticket_flow(
+    root: Path, queue: TicketQueue, *, today: date | None = None
+) -> TicketFlowReport:
+    """`frob ticket flow` (T-1100): filed/day vs landed/day vs net, plus a
+    naive burn-down ETA -- reuses `sprint_velocity`'s T-0938 git-history
+    transition mining for the landed side (over the WHOLE queue, not one
+    sprint) and each ticket's `created` field for the filed side; no new
+    storage, same "no new storage" mandate T-0938 already established.
+
+    Builds one `TicketFlowRow` per calendar day from the EARLIEST observed
+    filing/landing event through `today` (defaults to `date.today()`,
+    injectable for deterministic tests), zero-filled -- a day with no
+    activity still gets a row, so the trailing-window average always
+    covers a real fixed-size span instead of skipping silently over quiet
+    days. Returns an all-zero, single-`today`-row report (no crash, no
+    `NotFound`) for an empty queue, same no-error-case contract
+    `sprint_velocity` already keeps."""
+    filed_by_day: dict[date, int] = {}
+    for ticket in queue.tickets.values():
+        filed_by_day[ticket.created] = filed_by_day.get(ticket.created, 0) + 1
+
+    transitions = _mine_done_transitions(root, tuple(queue.tickets.keys()))
+    landed_by_day: dict[date, int] = {}
+    for transition in transitions:
+        day = transition.committed_at.date()
+        landed_by_day[day] = landed_by_day.get(day, 0) + 1
+
+    today = today if today is not None else date.today()
+    observed_days = list(filed_by_day) + list(landed_by_day) + [today]
+    earliest = min(observed_days)
+
+    rows: list[TicketFlowRow] = []
+    day = earliest
+    while day <= today:
+        rows.append(
+            TicketFlowRow(
+                day=day,
+                filed=filed_by_day.get(day, 0),
+                landed=landed_by_day.get(day, 0),
+            )
+        )
+        day += timedelta(days=1)
+
+    trailing = rows[-_FLOW_TRAILING_DAYS:] if rows else []
+    trailing_net_rate = (
+        sum(r.net for r in trailing) / len(trailing) if trailing else 0.0
+    )
+    open_count = sum(1 for t in queue.tickets.values() if t.state in _OPEN_STATES)
+    return TicketFlowReport(
+        rows=tuple(rows),
+        open_count=open_count,
+        trailing_net_rate=trailing_net_rate,
     )
 
 
@@ -2877,6 +2944,8 @@ __all__ = [
     "SprintVelocityReport",
     "Ticket",
     "TicketError",
+    "TicketFlowReport",
+    "TicketFlowRow",
     "TicketKind",
     "TicketQueue",
     "TicketSpec",
@@ -2915,6 +2984,7 @@ __all__ = [
     "set_tier",
     "sprint_velocity",
     "sprint_view",
+    "ticket_flow",
     "Stride",
     "board_view",
     "brief_ticket",

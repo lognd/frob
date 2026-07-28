@@ -91,6 +91,7 @@ from ._mutate import (
     _brief,
     _component,
     _epic,
+    _flow,
     _kind,
     _label,
     _priority,
@@ -167,6 +168,7 @@ __all__ = [
     "_apply_evidence",
     "_apply_release_bump_for_land",
     "_attach",
+    "_flow",
     "_auto_plan_if_queued",
     "_block",
     "_board",
@@ -308,6 +310,8 @@ def _ticket_dispatch_table() -> dict:
         "board": _board,
         "epic": _epic,
         "brief": _brief,
+        # frob:ticket T-1100
+        "flow": _flow,
         # frob:ticket T-0715
         "sprint": _sprint,
         # frob:ticket T-1069
@@ -322,6 +326,7 @@ def _ticket_dispatch_table() -> dict:
 # frob:doc docs/modules/tickets.md#structured-review-channel-t-0571
 # frob:ticket T-0588
 # frob:ticket T-1029
+# frob:ticket T-1100
 # frob:waive AFFECT001 reason="T-1029 added a new SUBCOMMAND (accept) to the \
 # dispatch table -- REG010-gate-rule-staleness-t-0560 is about a live GATE \
 # RULE id drifting out of the registry's own count, an orthogonal concern \
@@ -338,7 +343,7 @@ def run(cfg: AppConfig) -> None:
             "usage: frob ticket <new|list|show|doable|board|epic|brief|plan|"
             "start|requeue|sweep|reconcile|land|merge-driver|attach|block|"
             "close|fail|drop|evidence|done-report|scope|priority|kind|"
-            "component|label|accept|archive|review|sprint|tier> ..."
+            "component|label|accept|flow|archive|review|sprint|tier> ..."
         )
         sys.exit(1)
     with _diagnostic_log_ctx(cfg):

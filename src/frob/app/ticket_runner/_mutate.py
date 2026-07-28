@@ -1,5 +1,5 @@
 """frob.app.ticket_runner._mutate -- the `scope`/`priority`/`kind`/
-`component`/`label`/`accept`/`board`/`epic`/`tier`/`sprint`/`brief`
+`component`/`label`/`accept`/`board`/`epic`/`tier`/`sprint`/`brief`/`flow`
 mutation command family.
 
 Extracted from `frob.app.ticket_runner` (T-1089, T-0395 tier-2 split
@@ -486,6 +486,66 @@ def _brief(root: Path, cfg: AppConfig) -> None:
         _log.error("ticket brief failed: %s", result.danger_err)
         sys.exit(1)
     _log.info("%s", result.danger_ok)
+
+
+# frob:ticket T-1100
+def _flow(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket flow [--json]` (T-1100): render `frob.tickets.
+    ticket_flow`'s filed/day vs landed/day vs net table, the current open
+    count, and a naive burn-down ETA -- one table, one ETA line, nothing
+    re-derived here that `ticket_flow` itself does not already compute."""
+    from frob.tickets import load_active, ticket_flow
+
+    result = load_active(root)
+    if result.is_err:
+        _log.error("ticket flow failed: %s", result.danger_err)
+        sys.exit(1)
+    queue = result.danger_ok
+    report = ticket_flow(root, queue)
+
+    if cfg.ticket_json:
+        import json
+
+        payload = {
+            "rows": [
+                {
+                    "day": r.day.isoformat(),
+                    "filed": r.filed,
+                    "landed": r.landed,
+                    "net": r.net,
+                }
+                for r in report.rows
+            ],
+            "open_count": report.open_count,
+            "trailing_net_rate": report.trailing_net_rate,
+            "eta_days": report.eta_days,
+        }
+        _log.info(json.dumps(payload, indent=2))
+        return
+
+    _log.info("%-12s  %6s  %6s  %6s", "day", "filed", "landed", "net")
+    for row in report.rows:
+        _log.info(
+            "%-12s  %6d  %6d  %+6d", row.day.isoformat(), row.filed, row.landed, row.net
+        )
+    # 3 matches frob.tickets._FLOW_TRAILING_DAYS (T-1100) -- a display-only
+    # literal, not re-derived: the actual window width is `ticket_flow`'s
+    # own concern, this only labels the number it already returned.
+    _log.info(
+        "open: %d  trailing-3-day net rate: %+.2f/day",
+        report.open_count,
+        report.trailing_net_rate,
+    )
+    if report.eta_days is None:
+        _log.info(
+            "ETA: cannot estimate (naive extrapolation) -- queue is not "
+            "net-shrinking over the trailing window"
+        )
+    else:
+        _log.info(
+            "ETA: ~%.1f days to zero-open (naive extrapolation, NOT a forecast)",
+            report.eta_days,
+        )
 
 
 # frob:ticket T-0398

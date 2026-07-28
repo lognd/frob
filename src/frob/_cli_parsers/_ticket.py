@@ -136,8 +136,16 @@ def _add_ticket_new_parser(ticket_sub) -> None:
 
 
 # frob:ticket T-0030
+# frob:ticket T-1100
+# frob:waive AFFECT001 reason="T-1100 added a new read-only SUBCOMMAND \
+# (flow) to this parser registration function -- the bound \
+# agentic-workflow.md #skills/next and #skills/plan doc anchors describe \
+# the dispatch-loop/planning skills' USE of frob ticket doable/plan, an \
+# orthogonal concern this addition never touches; docs/modules/tickets.md \
+# (the doc this change IS actually about) was updated in the same diff"
 def _add_ticket_query_parsers(ticket_sub) -> list:
-    """Register the read-only `list`/`show`/`doable` ticket subcommands."""
+    """Register the read-only `list`/`show`/`doable`/`board`/`epic`/
+    `brief`/`flow` ticket subcommands."""
     ticket_list_p = ticket_sub.add_parser("list", help="list tickets")
     # frob:ticket T-0578
     # `--status` is a deprecated back-compat alias for `--state` (the
@@ -228,6 +236,14 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
     )
     ticket_brief_p.add_argument("ticket_id", metavar="id")
 
+    # frob:ticket T-1100
+    ticket_flow_p = ticket_sub.add_parser(
+        "flow",
+        help="filed/day vs landed/day vs net table + naive burn-down ETA "
+        "(T-1100, builds on T-0938's git-history velocity mining)",
+    )
+    ticket_flow_p.add_argument("--json", dest="ticket_json", action="store_true")
+
     return [
         ticket_list_p,
         ticket_show_p,
@@ -235,6 +251,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         ticket_board_p,
         ticket_epic_p,
         ticket_brief_p,
+        ticket_flow_p,
     ]
 
 
