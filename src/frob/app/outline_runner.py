@@ -25,7 +25,7 @@ def _fall_back_to_map(cfg: AppConfig, target) -> None:  # noqa: ANN001
 
 
 # frob:doc docs/modules/app.md#runners
-# frob:deprecated 2026-07-23 sunset="2026-10-01" ticket="T-0802" reason="zero organic use; navigation owned by Serena/native tools"  # noqa: E501
+# frob:deprecated 2026-07-23 sunset="2026-10-01" ticket="T-1238" reason="sunset rescinded 2026-07-29: regroups under frob explore instead of removal"  # noqa: E501
 # frob:ticket T-0588
 # frob:tests tests/unit/test_app_runners.py::TestOutlineRunner.test_file_target_json_mode  # noqa: E501
 def run(cfg: AppConfig) -> None:

@@ -11,7 +11,7 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
-# frob:deprecated 2026-07-23 sunset="2026-10-01" ticket="T-0802" reason="zero organic use; navigation owned by Serena/native tools"  # noqa: E501
+# frob:deprecated 2026-07-23 sunset="2026-10-01" ticket="T-1238" reason="sunset rescinded 2026-07-29: regroups under frob explore instead of removal"  # noqa: E501
 def _run_search(cfg: AppConfig, path: Path) -> None:
     """Handle `frob docs --search`: print heading/excerpt matches or JSON.
     T-0580: DEPRECATED, sunset 2026-10-01 -- navigation is owned by
