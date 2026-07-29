@@ -4454,7 +4454,7 @@ User directive 2026-07-29: no hidden optional argument hell; intuitive and maxim
 ```yaml
 id: T-1272
 title: 'gates: waive COV006 dict-dispatch blind spot in TestWaivePresets'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-29'
@@ -4462,6 +4462,9 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+evidence:
+- tests/test_gates.py::TestWaivePresets::test_waive_preset_resolves_reason_and_matches_like_inline
+- tests/test_gates.py::TestWaivePresets::test_unknown_preset_is_malformed_directive
 threat: null
 component: null
 ```
