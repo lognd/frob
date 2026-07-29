@@ -1799,19 +1799,24 @@ verbatim: git spawns it with three temp file paths -- `%O` (merge base),
 COMMAND RETURNS as the merge result, regardless of exit status. The
 handler:
 
-1. reads `%A` and `%B`'s text,
+1. reads `%O`, `%A`, and `%B`'s text,
 2. calls the SAME `splice_ledger(ours_text, theirs_text,
-   archived_ids=...)` `frob ticket land` uses (never a separate
-   reimplementation -- one splice algorithm, two call sites),
+   archived_ids=..., base_text=...)` `frob ticket land` uses (never a
+   separate reimplementation -- one splice algorithm, two call sites),
 3. overwrites `%A` with the result and exits 0 (git records a clean,
    non-conflicted merge).
 
-`%O` (the merge base) is accepted, since git always supplies it, but
-unused: `splice_ledger` resolves same-id divergence via state-rank
-(done/dropped > in-progress/blocked > planned > queued) and Done-report
-presence over `ours`/`theirs` directly, not a 3-way base diff -- see
-`splice_ledger`'s own docs above for why a base-aware 3-way diff is not
-the right model for an append-mostly, id-keyed ledger.
+`%O` (the merge base) -- T-1165 (a T-1154 follow-up): git already resolves
+and hands us the true 3-way merge-base's ledger content as a ready-made
+temp file, no `git merge-base` shell-out needed the way `land`'s own
+internal splice call requires (`_true_merge_base`) -- is read and threaded
+through as `splice_ledger`'s `base_text` param, so a genuine same-id
+divergence prefers whichever side actually changed since `%O` (the T-1154
+wrong-side-merge fix) through a LIVE `git merge`, not just through `frob
+ticket land`'s own internal splice step. A `%O` file that is missing or
+unreadable degrades to the pre-T-1165 state-rank/Done-report tiebreak
+(`_newer`, no base awareness) rather than refusing the merge -- see
+`splice_ledger`'s own docs above for the full three-tier fallback.
 
 If `splice_ledger` itself fails (a genuinely malformed `%A`/`%B`, not just
 a same-id divergence -- that case always resolves), the driver leaves

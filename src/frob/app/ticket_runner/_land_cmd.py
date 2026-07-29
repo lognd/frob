@@ -652,27 +652,51 @@ def _merge_driver(root: Path, cfg: AppConfig) -> None:
     the SAME `splice_ledger` `frob ticket land` uses (never a duplicate
     reimplementation), and overwrites `ours` in place with the result --
     the merge-driver protocol's contract: `ours`'s final content on disk
-    IS the merge result git commits, regardless of exit status. `base`
-    (%O) is accepted (git always supplies it) but unused: `splice_ledger`
-    resolves per-ticket-id divergence via state-rank/Done-report tiebreaks
-    over `ours`/`theirs` alone, the same as `land`'s own splice call, not
-    a 3-way base diff. Exits 0 (git treats the auto-splice as a clean,
-    non-conflicted merge) unless `ours`/`theirs` fail to parse as a
-    ticket ledger, in which case it exits 1 and leaves `ours` untouched --
-    git then reports the usual conflict for a human to resolve by hand,
-    exactly as if no driver were registered."""
+    IS the merge result git commits, regardless of exit status.
+
+    T-1165 (T-1154 follow-up): `base` (%O) -- the true 3-way merge-base's
+    ledger content, which git itself resolves and hands us as a ready-made
+    temp file, no `git merge-base` shell-out needed the way `land`'s own
+    internal `_true_merge_base` requires -- is now read and threaded
+    through as `splice_ledger`'s `base_text` param, so a LIVE git merge
+    through this driver gets the exact same wrong-side-merge tiebreak
+    protection T-1154 gave `land`'s own internal splice call. Best-effort:
+    a `base` file that is missing, unreadable, or fails to parse as a
+    ledger degrades to `base_text=None` (the pre-T-1165 `_newer`-only
+    tiebreak) rather than refusing the merge -- git always supplies %O for
+    a registered 3-way merge driver, but a defensive read failure here
+    must never turn a splice-able merge into a false conflict. Exits 0
+    (git treats the auto-splice as a clean, non-conflicted merge) unless
+    `ours`/`theirs` fail to parse as a ticket ledger, in which case it
+    exits 1 and leaves `ours` untouched -- git then reports the usual
+    conflict for a human to resolve by hand, exactly as if no driver were
+    registered."""
     from frob.tickets import splice_ledger
     from frob.tickets._land import _archived_ids
 
     _require_merge_driver_args(cfg)
     assert cfg.ticket_merge_ours is not None  # narrows for the type checker
     assert cfg.ticket_merge_theirs is not None
+    assert cfg.ticket_merge_base is not None
     ours_path, theirs_path = cfg.ticket_merge_ours, cfg.ticket_merge_theirs
+    base_path = cfg.ticket_merge_base
 
     ours_text = ours_path.read_text(encoding="utf-8")
     theirs_text = theirs_path.read_text(encoding="utf-8")
+    try:
+        base_text: str | None = base_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.warning(
+            "ticket merge-driver: could not read base (%%O) file %s (%s) -- "
+            "falling back to the pre-T-1165 _newer-only tiebreak",
+            base_path,
+            exc,
+        )
+        base_text = None
 
-    spliced = splice_ledger(ours_text, theirs_text, archived_ids=_archived_ids(root))
+    spliced = splice_ledger(
+        ours_text, theirs_text, archived_ids=_archived_ids(root), base_text=base_text
+    )
     if spliced.is_err:
         _log.error(
             "ticket merge-driver: splice_ledger failed (%s) -- leaving %s "
