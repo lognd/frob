@@ -54,14 +54,15 @@ def _gmsa_model() -> KernelModel:
 
 
 class TestWindowsEntries:
-    # frob:tests tests/unit/deploy/test_generate_windows.py::TestWindowsEntries.test_filters_to_windows_only  # noqa: E501
+    # frob:tests src/frob/deploy/_generate_windows.py::windows_entries kind="unit"
     def test_filters_to_windows_only(self):
         entries = windows_entries(sorted_manifest_entries(_windows_model()))
         assert [e.node_id for e in entries] == ["winapi"]
 
 
 class TestInstall:
-    # frob:tests tests/unit/deploy/test_generate_windows.py::TestInstall.test_idempotent
+    # frob:tests src/frob/deploy/_generate_windows.py::generate_windows_install_script \
+    # kind="unit"
     def test_idempotent(self):
         """install.ps1 has ONE `New-LocalUser` per distinct service
         account, gated by `Get-LocalUser`, so a re-run against an
@@ -106,7 +107,8 @@ class TestInstall:
         script = generate_windows_install_script(_windows_model())
         assert "deny-logon rights" in script
 
-    # frob:tests tests/unit/deploy/test_generate_windows.py::TestInstall.test_creates_service_when_bin_path_declared  # noqa: E501
+    # frob:tests src/frob/deploy/_generate_windows.py::generate_windows_install_script \
+    # kind="unit"
     def test_creates_service_when_bin_path_declared(self):
         """T-0629: a `service`-marked node declaring `bin_path` gets an
         `sc.exe create` with that ImagePath, inside the same `sc.exe
@@ -136,7 +138,8 @@ class TestInstall:
         assert 'sc.exe sidtype "FrobDeploy-winapi" unrestricted' in script
         assert "no bin_path declared" not in script
 
-    # frob:tests tests/unit/deploy/test_generate_windows.py::TestInstall.test_creates_service_without_args  # noqa: E501
+    # frob:tests src/frob/deploy/_generate_windows.py::generate_windows_install_script \
+    # kind="unit"
     def test_creates_service_without_args(self):
         """T-0629: `bin_path_args` is optional -- the ImagePath is just
         the bare executable path when omitted."""
@@ -161,7 +164,8 @@ class TestInstall:
 
 
 class TestStatus:
-    # frob:tests tests/unit/deploy/test_generate_windows.py::TestStatus.test_one_line
+    # frob:tests src/frob/deploy/_generate_windows.py::generate_windows_status_script \
+    # kind="unit"
     def test_one_line(self):
         script = generate_windows_status_script(_windows_model())
         assert "service=FrobDeploy-winapi node=winapi state=$state" in script
@@ -183,7 +187,9 @@ class TestStatus:
 
 
 class TestUninstall:
-    # frob:tests tests/unit/deploy/test_generate_windows.py::TestUninstall.test_removes
+    # frob:tests \
+    # src/frob/deploy/_generate_windows.py::generate_windows_uninstall_script \
+    # kind="unit"
     def test_removes(self):
         script = generate_windows_uninstall_script(_windows_model())
         assert 'sc.exe delete "FrobDeploy-winapi"' in script

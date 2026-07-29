@@ -276,9 +276,12 @@ class TestPalette:
         assert "\x1b[" in accent("frob doctor", True)
 
 
+# frob:ticket T-1277
 class TestRenderer:
     # frob:tests src/frob/render/_renderer.py::Renderer
     # frob:tests src/frob/render/_renderer.py::RenderWriter.kv
+    # frob:tests src/frob/render/_renderer.py::RenderWriter.heading
+    # frob:tests src/frob/render/_renderer.py::Renderer.blank
     def test_write_methods_emit_one_line_each(self) -> None:
         """Every `Renderer.write.*` call appends exactly one line to the
         stream."""
@@ -297,6 +300,7 @@ class TestRenderer:
         ]
 
     # frob:tests src/frob/render/_renderer.py::Renderer
+    # frob:tests src/frob/render/_renderer.py::Renderer.for_stream
     def test_for_stream_resolves_color_once(self) -> None:
         """`Renderer.for_stream` resolves color via `resolve_color` and
         stores it, rather than re-deriving it per write call."""
@@ -304,6 +308,18 @@ class TestRenderer:
         assert r.color is True
         r2 = Renderer.for_stream(_FakeStream(tty=True), no_color_flag=True)
         assert r2.color is False
+
+    # frob:tests src/frob/render/_renderer.py::Renderer.line
+    # frob:ticket T-1277
+    def test_line_emits_text_verbatim(self) -> None:
+        """`Renderer.line` is the escape hatch that writes arbitrary
+        pre-formatted body text with no element markup applied at all."""
+        stream = _FakeStream(tty=False)
+        r = Renderer(stream, color=False)
+        r.line("already-formatted tree dump: foo -> bar")
+        assert stream.getvalue().splitlines() == [
+            "already-formatted tree dump: foo -> bar"
+        ]
 
     # frob:tests src/frob/render/_renderer.py::RenderWriter.status
     def test_write_status_propagates_invalid_status(self) -> None:
@@ -361,6 +377,7 @@ class TestRenderer:
         assert stream.getvalue() == ""
 
     # frob:tests src/frob/render/_renderer.py::RenderWriter.good
+    # frob:tests src/frob/render/_palette.py::good
     def test_write_good(self) -> None:
         """`write.good` emits the plain text (semantic color only, no
         markup in plain mode)."""
@@ -368,12 +385,35 @@ class TestRenderer:
         Renderer(stream, color=False).write.good("healthy")
         assert stream.getvalue().splitlines() == ["healthy"]
 
+    # frob:tests src/frob/render/_palette.py::good
+    # frob:ticket T-1277
+    def test_write_good_color_wraps_in_ansi(self) -> None:
+        """Color-mode `write.good` (and the underlying `_palette.good`)
+        wraps the text in the green SGR code, distinct from plain mode."""
+        stream = _FakeStream(tty=False)
+        Renderer(stream, color=True).write.good("healthy")
+        out = stream.getvalue().splitlines()[0]
+        assert "\x1b[" in out
+        assert "healthy" in out
+
     # frob:tests src/frob/render/_renderer.py::RenderWriter.warn
+    # frob:tests src/frob/render/_palette.py::warn
     def test_write_warn(self) -> None:
         """`write.warn` emits the plain text."""
         stream = _FakeStream(tty=False)
         Renderer(stream, color=False).write.warn("degraded")
         assert stream.getvalue().splitlines() == ["degraded"]
+
+    # frob:tests src/frob/render/_palette.py::warn
+    # frob:ticket T-1277
+    def test_write_warn_color_wraps_in_ansi(self) -> None:
+        """Color-mode `write.warn` (and the underlying `_palette.warn`)
+        wraps the text in the yellow SGR code, distinct from plain mode."""
+        stream = _FakeStream(tty=False)
+        Renderer(stream, color=True).write.warn("degraded")
+        out = stream.getvalue().splitlines()[0]
+        assert "\x1b[" in out
+        assert "degraded" in out
 
     # frob:tests src/frob/render/_renderer.py::RenderWriter.critical
     def test_write_critical(self) -> None:
@@ -428,6 +468,7 @@ class TestRenderIntegration:
         assert stripped == plain_text
 
 
+# frob:ticket T-1277
 class TestTableTreeCountDeltas:
     """Element-level tests for the T-0460 vocabulary follow-on: `table`,
     `tree`, `count_deltas`."""
@@ -508,6 +549,32 @@ class TestTableTreeCountDeltas:
         plain = count_deltas({"errors": (5, 2)}, color=False)
         colored = count_deltas({"errors": (5, 2)}, color=True)
         assert "\x1b[" in colored
+        assert re.sub(r"\x1b\[[0-9;]*m", "", colored) == plain
+
+    # frob:tests src/frob/render/_elements.py::count_deltas
+    # frob:ticket T-1277
+    def test_count_deltas_color_positive_delta_paints_critical(self) -> None:
+        """A regression (count went up) under color mode paints the
+        segment `critical` (bold red), the increasing-is-bad branch."""
+        import re
+
+        plain = count_deltas({"errors": (2, 5)}, color=False)
+        colored = count_deltas({"errors": (2, 5)}, color=True)
+        assert "\x1b[1;31m" in colored
+        assert re.sub(r"\x1b\[[0-9;]*m", "", colored) == plain
+
+    # frob:tests src/frob/render/_elements.py::count_deltas
+    # frob:ticket T-1277
+    def test_count_deltas_color_zero_delta_paints_muted(self) -> None:
+        """An unchanged count under color mode paints the segment `muted`,
+        the no-change branch -- distinct from both the `good` and
+        `critical` branches."""
+        import re
+
+        plain = count_deltas({"warnings": (1, 1)}, color=False)
+        colored = count_deltas({"warnings": (1, 1)}, color=True)
+        assert "\x1b[" in colored
+        assert "\x1b[1;31m" not in colored
         assert re.sub(r"\x1b\[[0-9;]*m", "", colored) == plain
 
 

@@ -109,7 +109,6 @@ class ManifestEntry(BaseModel):
 
 
 # frob:doc docs/strata/host.md#the-deploy-generator
-# frob:tests tests/unit/deploy/test_generate.py::TestSorted.test_sorted kind="unit"
 def sorted_manifest_entries(model: KernelModel) -> tuple[ManifestEntry, ...]:
     """Every node/store in `model` with a declared `std.host` manifest,
     sorted by node id -- the ONE deterministic walk `manifest_digest` and
@@ -172,7 +171,6 @@ def _node_capabilities(node: Node, manifest: HostManifest) -> frozenset[str]:
 
 
 # frob:doc docs/strata/host.md#the-deploy-generator
-# frob:tests tests/unit/deploy/test_generate.py::TestDigest.test_det kind="unit"
 def manifest_digest(model: KernelModel) -> str:
     """sha256 over a deterministic JSON serialization of every declared
     `HostManifest`, keyed by node id -- the DEPLOY001 drift lock's join
@@ -411,7 +409,6 @@ def _unit_enable_start_block(unit_name: str) -> str:
 
 
 # frob:doc docs/strata/host.md#the-deploy-generator
-# frob:tests tests/unit/deploy/test_generate.py::TestInstall.test_idempotent kind="unit"
 def generate_install_script(model: KernelModel) -> str:
     """Render `install.sh`: check-then-apply, one block per node in
     `sorted_manifest_entries` order -- user, then unit, then owned paths
@@ -474,7 +471,6 @@ def _status_unit_block(entry: ManifestEntry) -> str:
 
 
 # frob:doc docs/strata/host.md#the-deploy-generator
-# frob:tests tests/unit/deploy/test_generate.py::TestStatus.test_one_line kind="unit"
 def generate_status_script(model: KernelModel) -> str:
     """Render `status.sh`: per-unit active/enabled state plus a listen-
     port probe, one machine-parseable `key=value ...` line per fact
@@ -574,7 +570,6 @@ def _uninstall_user_block(name: str) -> str:
 
 
 # frob:doc docs/strata/host.md#the-deploy-generator
-# frob:tests tests/unit/deploy/test_generate.py::TestUninstall.test_removes kind="unit"
 def generate_uninstall_script(model: KernelModel) -> str:
     """Render `uninstall.sh`: units stopped+disabled+deleted, owned paths
     removed, service users deleted -- EXACTLY the manifest set, reverse
@@ -605,7 +600,6 @@ def _render_uninstall_script(
 
 
 # frob:doc docs/strata/host.md#the-deploy-generator
-# frob:tests tests/unit/deploy/test_generate.py::TestAll.test_returns_all kind="unit"
 def generate_all(model: KernelModel) -> dict[str, str]:
     """`{"install.sh": ..., "status.sh": ..., "uninstall.sh": ...}`, PLUS
     `{"install.ps1": ..., "status.ps1": ..., "uninstall.ps1": ...}` when

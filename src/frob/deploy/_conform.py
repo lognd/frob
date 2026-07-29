@@ -364,11 +364,6 @@ def _mutation_for_base(base: str, args: list[str]) -> set[MutationTarget]:
 
 
 # frob:doc docs/strata/host.md#deploy002deploy003-conformance
-# frob:tests tests/unit/deploy/test_conform.py::TestExtract.test_install kind="unit"
-# frob:tests tests/unit/deploy/test_conform.py::TestExtract.test_no_heredoc kind="unit"
-# frob:tests tests/unit/deploy/test_conform.py::TestEvasion.test_bare_word kind="unit"
-# frob:tests tests/unit/deploy/test_conform.py::TestEvasion.test_eval_wrap kind="unit"
-# frob:tests tests/unit/deploy/test_conform.py::TestEvasion.test_line_cont kind="unit"
 # frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _split_commands/ \
 # _resolve_command (reached via _mutation_for_command), plain list/str-token walks the \
 # resolver cannot see through; the one real raise path (_tokenize_line) is caught below"
@@ -401,7 +396,6 @@ def extract_mutation_surface(text: str) -> frozenset[MutationTarget]:
 
 
 # frob:doc docs/strata/host.md#deploy002deploy003-conformance
-# frob:tests tests/unit/deploy/test_conform.py::TestExpected.test_from_host kind="unit"
 def expected_mutation_surface(
     entries: tuple[ManifestEntry, ...],
 ) -> frozenset[MutationTarget]:
@@ -516,10 +510,6 @@ def _deploy003_misses(
 
 
 # frob:doc docs/strata/host.md#deploy002deploy003-conformance
-# frob:tests tests/unit/deploy/test_conform.py::TestConform.test_clean_pass kind="unit"
-# frob:tests tests/unit/deploy/test_conform.py::TestConform.test_no_dir kind="unit"
-# frob:tests tests/unit/deploy/test_conform.py::TestConform.test_extra_002 kind="unit"
-# frob:tests tests/unit/deploy/test_conform.py::TestConform.test_missing_003 kind="unit"
 def deploy_conformance_violations(root: Path) -> tuple[ConformanceViolation, ...]:
     """DEPLOY002/DEPLOY003: every committed `deploy/install.sh` and
     `deploy/uninstall.sh` mutation checked bidirectionally against the

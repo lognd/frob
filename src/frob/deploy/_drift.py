@@ -127,9 +127,6 @@ def _current_model_output(root: Path) -> dict[str, str] | None:
 
 
 # frob:doc docs/strata/host.md#the-deploy-generator
-# frob:tests tests/unit/deploy/test_drift.py::TestDrift.test_no_dir kind="unit"
-# frob:tests tests/unit/deploy/test_drift.py::TestDrift.test_clean kind="unit"
-# frob:tests tests/unit/deploy/test_drift.py::TestDrift.test_stale kind="unit"
 def deploy_drift_violations(root: Path) -> tuple[DeployDriftViolation, ...]:
     """DEPLOY001: every committed `deploy/<file>` that differs from
     regenerating `frob.deploy.generate_all` from the CURRENT model

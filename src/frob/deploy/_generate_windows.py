@@ -444,7 +444,6 @@ def _install_krb_block(entry: ManifestEntry, krb_by_node: dict) -> str:
 
 
 # frob:doc docs/modules/deploy.md#windows-generation
-# frob:tests tests/unit/deploy/test_generate_windows.py::TestInstall.test_idempotent kind="unit"  # noqa: E501
 def generate_windows_install_script(model: KernelModel) -> str:
     """Render `install.ps1`: check-then-apply, one block per windows entry
     in `windows_entries(sorted_manifest_entries(model))` order -- service
@@ -523,7 +522,6 @@ def _status_service_block(entry: ManifestEntry) -> str:
 
 
 # frob:doc docs/modules/deploy.md#windows-generation
-# frob:tests tests/unit/deploy/test_generate_windows.py::TestStatus.test_one_line kind="unit"  # noqa: E501
 def generate_windows_status_script(model: KernelModel) -> str:
     """Render `status.ps1`: per `service`-marked windows node, SCM state
     plus a listen-port firewall probe and a named-pipe probe (module
@@ -548,7 +546,6 @@ def _render_windows_status_script(
 
 
 # frob:doc docs/modules/deploy.md#windows-generation
-# frob:tests tests/unit/deploy/test_generate_windows.py::TestUninstall.test_removes kind="unit"  # noqa: E501
 def generate_windows_uninstall_script(model: KernelModel) -> str:
     """Render `uninstall.ps1`: services stopped+deleted, firewall rules
     removed, ACL grants removed, service accounts removed -- EXACTLY the
