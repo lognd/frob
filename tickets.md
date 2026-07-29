@@ -1016,3 +1016,30 @@ threat: null
 component: null
 ```
 Three consecutive coverage runs failed to produce a trustworthy coverage.xml on 2026-07-28/29: (1) corrupted coverage shim broke combine silently; (2+3) four load-sensitive tests (three strata self-model + serve-watch tick, all pass in isolation, verified twice) fail only under xdist+coverage parallelism and halt the recipe before combine; a manual combine then consumed 2 of 7 data files (stale-file skip). The TEST005 bucket (~600 warnings) cannot be honestly recounted until this pipeline is deterministic. Also route the notification-exit-code mismatch to the record: background make reported exit 0 twice while make actually failed -- do not trust bg exit codes for make pipelines, read the output tail.
+
+<!-- ticket:T-1181 -->
+```yaml
+id: T-1181
+title: 'arch: language-parity exclusion synonym map missing python/typescript/kotlin/cplusplus
+  spellings'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/arch/**
+- tests/unit/test_arch.py
+acceptance:
+- text: GIVEN same-signature groups whose member names differ only by language tag
+    WHEN the language-parity family exclusion runs THEN the synonym map recognizes
+    python/typescript/kotlin/cplusplus alongside the short forms, measured before/after
+    on the T-1083 finding set
+  evidence: []
+threat: null
+component: null
+```
+Refile from the w20-arch T-1083 disposition pass (draft died with the fail-log; full record on branch w20-arch commit a8085d7f): _is_language_parity_family's synonym map lacks the long-form language spellings, so genuinely-parity families with those tags escape the exclusion and pollute abstraction-opportunity counts.
