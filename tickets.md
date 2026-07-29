@@ -3508,3 +3508,151 @@ scan. Extend docs/design/registry/check-coverage.yaml's CHK-GATE-<rule>
 entries with a fixability: field, synthesized the same idempotent way
 sync_gate_rule_entries already synthesizes missing entries (reuse that
 function's shape, do not invent a second YAML-mutation pattern).
+
+<!-- ticket:T-draft-e6a24d23 -->
+```yaml
+id: T-draft-e6a24d23
+title: extend real ctest collector to retire c/cpp frob:tests structural fallback
+  (T-1193 successor)
+state: queued
+kind: security
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: T-1193
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/__init__.py
+- src/frob/testing/_collect.py
+- tests/test_gates.py
+acceptance:
+- text: GIVEN a CMake C/C++ project with CMAKE_EXPORT_COMPILE_COMMANDS enabled and
+    an unambiguous single-source build target, and a frob:tests directive naming a
+    real ctest case WHEN gates run THEN the edge resolves against a real collect_cpp_tests
+    node id (not the name/path structural fallback) the same way a TS frob:tests edge
+    now resolves against a real vitest node id.
+  evidence: []
+- text: GIVEN a C/C++ frob:tests edge that still cannot resolve against a real collected
+    node id (no configured build dir, or an ambiguous multi-source match) WHEN gates
+    run THEN TEST013's disclosed-unverified signal fires for that edge (per T-0552's
+    existing mechanism) rather than the edge silently satisfying TEST001-004 with
+    no execution evidence at all.
+  evidence: []
+threat: null
+component: null
+```
+Successor row from T-1193 (CHK-SUBSYS-GATES-ACCOUNTING, docs/design/registry/check-coverage.yaml).
+
+Verified real (2026-07-29): src/frob/gates/__init__.py's _NATIVE_TEST_EXTENSIONS
+still lists .c/.h/.cpp/.hpp/.cc/.hh (the C/C++ side of the audit finding
+B3/E3). T-0730 (already landed, tickets-archive.md) wired the real vitest
+collector into _load_tests and retired the TS structural fallback (.ts/.tsx
+removed from that set), but explicitly left C/C++ on the pre-existing
+name/path structural fallback (_is_native_test_symref plus snapshot
+resolution) rather than the real collect_cpp_tests collector T-0587 built
+-- per _NATIVE_TEST_EXTENSIONS' own comment, most C/C++ edges have no
+configured build directory (CMAKE_EXPORT_COMPILE_COMMANDS) or an ambiguous
+multi-source match at gate-check time, so retiring the fallback outright
+today would silently drop ALL TEST001-004 credit for C/C++ frob:tests
+edges rather than tighten it. Net effect: a C/C++ frob:tests edge whose
+target merely LOOKS like test code by name/path still gets full
+TEST001-004 execution credit even though ctest never actually ran it --
+an empty void test_foo(){} still satisfies TEST001-004 for C/C++ today,
+same class of false assurance the audit originally flagged, now narrowed
+from ts+c+cpp down to c+cpp only.
+
+Right-way fix direction: extend real ctest-collector coverage
+(collect_cpp_tests, src/frob/testing/_collect.py) to the common single-
+target/single-build-dir case so most C/C++ edges resolve against real
+collected node ids the same way TS now does, and only fall back to the
+disclosed-unverified structural credit (already surfaced via TEST013's
+_test013_native_unverified per T-0552) for the genuinely ambiguous
+multi-source/no-build-dir case -- never a silent full-credit pass for
+those. Do not simply delete the fallback without a collector upgrade: per
+T-0552's own Done report, that would regress real existing C/C++
+TEST001-004 coverage to zero rather than to a disclosed-degraded state.
+
+<!-- ticket:T-draft-e9ace461 -->
+```yaml
+id: T-draft-e9ace461
+title: CI cannot verify gitignored .frob coverage/stamp/baseline signal (T-1193 successor)
+state: queued
+kind: security
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: T-1193
+tier: ticket
+sprint: null
+scope:
+- .github/workflows/ci.yml
+- src/frob/gates/_coverage.py
+- src/frob/gates/_baseline.py
+- docs/modules/gates.md
+- tests/test_gates.py
+- src/frob/gates/_filehash.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: 'scope-closure warnings: coverage/baseline tests and shared filehash helper
+    are load-bearing for this ticket''s ci-verification fix'
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/gates/_filehash.py
+  reason: 'scope-closure warnings: coverage/baseline tests and shared filehash helper
+    are load-bearing for this ticket''s ci-verification fix'
+  actor: logan
+  at: '2026-07-29'
+acceptance:
+- text: GIVEN a PR that would locally fail TEST005/006 (stale/missing coverage-stamp)
+    or TEST012 (frob-coverage.lock.json drift) WHEN the same change runs through the
+    CI workflow THEN the CI job exit code reflects that failure (nonzero), not just
+    a printed warning -- i.e. ERROR-tier violations for at least TEST005/006/012 fail
+    the CI step outright.
+  evidence: []
+- text: GIVEN a fresh CI checkout with no prior .frob state (the gitignored derived
+    cache is never restored between runs) WHEN the CI workflow runs THEN either a
+    coverage-stamp/baseline gets produced fresh in that same job before the gate step
+    runs, or the workflow own comments/docs explicitly disclose which TEST00x checks
+    are structurally inert in CI and why, so a passing CI run is never silently read
+    as a full-strength guarantee it does not provide.
+  evidence: []
+threat: null
+component: null
+```
+Successor row from T-1193 (CHK-THEME-GITIGNORED-TRUST, docs/design/registry/check-coverage.yaml).
+
+Verified real (2026-07-29): .gitignore:21 and :72 both list .frob/ (derived
+cache, gitignored by design -- frob.lock/tickets.md/invariants/ are the
+tracked truth). .frob/coverage-stamp and .frob/baseline live ONLY there.
+.github/workflows/ci.yml self-gate step (line 44) runs the aggregate check
+with a warning-only fallback -- it cannot fail the build on ANY gate
+violation, including TEST005/006 (coverage-stamp staleness) or TEST012
+(frob-coverage.lock.json drift). CI never runs the stamp-coverage variant,
+so no fresh .frob/coverage-stamp or .frob/baseline exists in that job at
+all -- a contributor local claim of "I ran coverage" is unverifiable from
+the PR itself. T-0545 already landed frob-coverage.lock.json (committed,
+root-level, exempt from .gitignore) as a narrow SUMMARY channel that
+TEST012 diffs against a live CoverageData, but TEST012s own violation is
+currently swallowed by the same non-blocking CI step, so drift there is
+invisible to reviewers too.
+
+Right-way fix direction (pick one, or combine):
+1. Make the CI self-gate step fail the build on ERROR-tier gate
+   violations (drop the warning-only swallow, or gate it behind an
+   explicit allowlist of WARN-only families) so TEST012/DRIFT/COV
+   findings are enforced in CI, not just locally.
+2. Add a CI step that stamps coverage BEFORE the self-gate step, so the
+   coverage-stamp/baseline that TEST005/006 checks against is freshly
+   produced in-job rather than trusted from a gitignored local artifact
+   that never reaches the runner.
+3. At minimum, make the CI job explicitly assert (not warn) that
+   frob-coverage.lock.json (the one committed, non-gitignored channel) is
+   present and undrifted for any PR touching coverage-relevant source, so
+   the one artifact that CAN travel with the diff is actually checked.
+
+Do NOT weaken this to doc-only -- CHK-THEME-GITIGNORED-TRUST is a
+security-relevant trust-boundary finding (a locally-green check proves
+nothing to a reviewer or to CI), not a cosmetic one.
