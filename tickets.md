@@ -1126,3 +1126,66 @@ threat: null
 component: null
 ```
 Root cause: perf/_dup_spawn.py:195 _entry_occurrences is re-invoked per (def, entry) pair instead of building an index once per file. Fix: reuse the _index_file_occurrences pattern (perf/_effect_summaries.py:717) that already exists in this package -- build {entry -> [spans]} once, consume it in the def loop. No-duplication: this is the same indexing shape already implemented elsewhere in perf/, just not shared here.
+
+<!-- ticket:T-1213 -->
+```yaml
+id: T-1213
+title: 'natives: auto-rebuild stale frob_core/strata_core instead of NATIVE001 reminder'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/natives/**
+- src/frob/gates/**
+- src/frob/app/**
+- docs/**
+- tests/**
+acceptance:
+- text: GIVEN NATIVE001/StaleNative detects a source-newer-than-artifact native WHEN
+    any frob command that needs the native runs THEN the rebuild happens automatically
+    (T-0732 shared CARGO_TARGET_DIR makes warm builds ~11s) with the build disclosed
+    in output, and NATIVE001 remains only for the cannot-build case (missing toolchain),
+    which stays fail-closed
+  evidence: []
+- text: GIVEN a fresh worktree with no built natives THEN first frob invocation builds
+    them automatically rather than degrading -- the recurring worktree-natives false-failure
+    class disappears
+  evidence: []
+threat: null
+component: null
+```
+Derived-state auto-refresh sweep 2026-07-29 (user directive: nothing frob-managed is refreshed manually). Natives staleness is DETECTED (src/frob/strata/_native_staleness.py, mtime+content-hash discrimination) but the refresh is a manual make core / frob natives build; T-0248 automated only the reminder. Sibling of T-1205 (coverage). Guard: never auto-build when the toolchain is absent -- disclose and fail closed as today.
+
+<!-- ticket:T-1214 -->
+```yaml
+id: T-1214
+title: 'perf: graph/cache load_file_data issues 3 sqlite queries per file -- batch
+  whole-table SELECTs'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: T-1204
+tier: ticket
+sprint: null
+scope:
+- src/frob/graph/cache.py
+acceptance:
+- text: 'GIVEN load_file_data (graph/cache.py:560) issues 3 sqlite execute calls per
+    file (5595 execute calls per load_all across ~1865 files) plus json.loads on every
+    attrs value including the common attrs==''{}'' case WHEN load_all does 3 whole-table
+    SELECTs ordered by path and groups rows in Python (or batches an executemany-style
+    IN query per chunk), and skips json.loads for attrs==''{}'' THEN snapshot loading
+    drops ~1s native off every gate/CLI invocation that loads it (report candidate
+    #8)'
+  evidence: []
+threat: null
+component: null
+```
+Root cause: graph/cache.py:564-587 load_file_data does 3 queries per file instead of 3 queries total. Fix: in load_all, replace the per-file query loop with 3 whole-table SELECTs (or chunked IN-batched queries) ordered by path, group rows in Python; add a fast path skipping json.loads when attrs == '{}'.
