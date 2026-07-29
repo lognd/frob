@@ -19,7 +19,7 @@
 #     fabricated ticket. As T-0397's children close a concern down to
 #     a real gate rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 258
+gate_rule_total: 265
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     name: "COV001 is a live, enforced gate rule"
@@ -966,6 +966,10 @@ gate_rule_entries:
     name: "CPPTHROW001 is a live, enforced gate rule"
     disposition: "handled_by:CPPTHROW001"
     cross_refs: []
+  - id: "CHK-GATE-LARGE001"
+    name: "LARGE001 is a live, enforced gate rule"
+    disposition: "handled_by:LARGE001"
+    cross_refs: []
   - id: "CHK-GATE-SYS103"
     name: "SYS103 is a live, enforced gate rule"
     disposition: "handled_by:SYS103"
@@ -1053,6 +1057,30 @@ gate_rule_entries:
   - id: "CHK-GATE-SYSWAIVE003"
     name: "SYSWAIVE003 is a live, enforced gate rule"
     disposition: "handled_by:SYSWAIVE003"
+    cross_refs: []
+  - id: "CHK-GATE-VET-JS004"
+    name: "VET-JS004 is a live, enforced gate rule"
+    disposition: "handled_by:VET-JS004"
+    cross_refs: []
+  - id: "CHK-GATE-VET-PY001"
+    name: "VET-PY001 is a live, enforced gate rule"
+    disposition: "handled_by:VET-PY001"
+    cross_refs: []
+  - id: "CHK-GATE-VET-PY002"
+    name: "VET-PY002 is a live, enforced gate rule"
+    disposition: "handled_by:VET-PY002"
+    cross_refs: []
+  - id: "CHK-GATE-VET-PY003"
+    name: "VET-PY003 is a live, enforced gate rule"
+    disposition: "handled_by:VET-PY003"
+    cross_refs: []
+  - id: "CHK-GATE-VET-RS001"
+    name: "VET-RS001 is a live, enforced gate rule"
+    disposition: "handled_by:VET-RS001"
+    cross_refs: []
+  - id: "CHK-GATE-VET-RS002"
+    name: "VET-RS002 is a live, enforced gate rule"
+    disposition: "handled_by:VET-RS002"
     cross_refs: []
 concern_family_total: 13
 concern_family_entries:

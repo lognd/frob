@@ -404,6 +404,14 @@ _KNOWN_GATE_RULES = frozenset(
         # the one category that channels at Severity.ERROR, see that
         # module's own docstring.
         "CPPTHROW001",
+        # T-1102: LARGE001 (frob.arch._check_large_file's large-file
+        # category), channeled into a real gate Violation by the same
+        # frob.gates._arch.arch_gate as ARCH001/ARCH1xx/CPPTHROW001 --
+        # a dict-value rule id `_rule_id_scan.py`'s scanner cannot detect
+        # (same disclosed gap CPPTHROW001 above hits), hand-added here
+        # per that module's own docstring convention (T-1111 REG002 fix,
+        # same CHK-GATE-CPPTHROW001 auto-sync gap class noted at T-1042).
+        "LARGE001",
         # T-0396: anti-orphan file-reference gate (frob.gates._refs).
         "REF001",
         "REF002",

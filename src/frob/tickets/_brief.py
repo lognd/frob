@@ -118,6 +118,10 @@ def _infer_verify_commands(root: Path, ticket: Ticket) -> tuple[str, ...]:
             stem = Path(entry.rstrip("*/")).stem.lstrip("_")
             if not stem or stem in ("*", "**"):
                 continue
+            # frob:waive WALK001 reason="tests_dir (root/tests) is a small, \
+            # already-scoped test-source subtree with no nested .git/.venv/ \
+            # node_modules/build/dist/target to prune -- excludes.walk_pruned \
+            # would add a filter that never fires here, not change behavior"
             for test_file in tests_dir.rglob(f"*{stem}*.py"):
                 candidates.add(str(test_file.relative_to(root)))
     if candidates:

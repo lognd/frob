@@ -10,6 +10,8 @@ that page.
 <a id="sys-cov-coverage-totality-sys103-t-0667"></a>
 ## SYS-COV coverage totality (SYS103, T-0667)
 
+<!-- frob:invariant INV-048 -->
+
 `frob sys audit`'s self-conformance family (`src/frob/strata/_selfconform.py`)
 gains a fourth rule, SYS103, whose finding label is "SYS-COV" --
 `docs/design/structural-linter-adversarial-hardening.md`'s "un-modeled

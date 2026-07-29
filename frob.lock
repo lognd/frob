@@ -366,6 +366,16 @@
       "ref": "src/frob/process/_lock.py::derived_state_lock"
     },
     {
+      "digest": "041b76fdaefb8c1c1de5cfa5a9730a9ea4127695a8f0f1249647bae1673f0982",
+      "facet": "body",
+      "ref": "src/frob/strata/_selfconform.py::_coverage_totality_violations"
+    },
+    {
+      "digest": "f79bdfce60d4e3e205c51afe6a5f158e6858dd30379cebf981b9b6e0a368bff2",
+      "facet": "sig",
+      "ref": "src/frob/strata/_selfconform.py::_coverage_totality_violations"
+    },
+    {
       "digest": "e1173036256e0cb104e4294d327d0b4d2427ce9df329b19e775cc048cd0172ac",
       "facet": "sig",
       "ref": "src/frob/testing/_collect.py::collect_python_tests"

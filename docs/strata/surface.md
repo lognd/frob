@@ -487,7 +487,10 @@ consistent with third-party/stdlib specifiers.
 SYS104 (`_selfconform.py`'s "Key construct semantics" above) went
 MANDATORY at T-1113: every node whose bound code has a non-empty real
 public surface is evaluated whether or not it has declared any
-`interface=` attr yet. A mandatory check whose satisfying state
+`interface=` attr yet. (T-1111 touched `sync_interface_report`'s body
+only to add a `frob:waive WALK001` comment on its `design_root.rglob`
+call -- no behavior change; noted here to satisfy this section's
+affects()-closure obligation.) A mandatory check whose satisfying state
 (`design/frob.strata`'s own `interface=` attrs) is hand-maintained is a
 red-main generator, same shape as DEPR005's line-keyed baseline (T-1052)
 -- `design/frob.strata` went red twice within hours of T-1113 landing

@@ -130,13 +130,10 @@ def scan_emitted_rule_ids(repo_root: Path) -> dict[str, str]:
         # frob:waive PERF004 reason="sorts each SCANNED_BASES entry's own \
         # distinct file list for deterministic first-occurrence ordering, \
         # not a shared re-sort across iterations"
-        # frob:waive PERF008 reason="the PERF008 finding treats the literal '*.py' \
-        # argument as loop-invariant, but base_dir is freshly rebound from base on \
-        # every iteration of the enclosing for-loop over SCANNED_BASES -- each \
-        # rglob('*.py') walks a DIFFERENT directory (src/frob vs tests vs ...), not \
-        # a repeated identical walk. A resolver limit (argument-text equality does \
-        # not account for a differing receiver object), not a real redundant walk \
-        # to hoist"  # noqa: E501
+        # frob:waive PERF008 reason="base_dir is freshly rebound per SCANNED_BASES \
+        # iteration, so each rglob('*.py') walks a DIFFERENT directory, not a \
+        # repeated identical walk -- a resolver argument-text-equality limit"
+        # frob:waive WALK001 reason="SCANNED_BASES are small, no vendor dirs to prune"
         for path in sorted(base_dir.rglob("*.py")):
             if path.name == "_rule_id_scan.py":
                 # This module's own docstrings/comments describe the

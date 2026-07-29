@@ -756,6 +756,8 @@ def _coverage_totality_scan_prefix(root: Path) -> str | None:
     return None
 
 
+# frob:invariant INV-048
+# frob:tests tests/unit/strata/test_selfconform.py::TestCoverageTotality.test_foreign_file_with_capability_fires_sys103  # noqa: E501
 def _coverage_totality_violations(
     capability_binding: CodeBinding, root: Path
 ) -> list[SelfConformViolation]:
@@ -1369,6 +1371,7 @@ _CONFORMANCE_WAIVER_RULES: frozenset[str] = frozenset(
 )
 
 
+# frob:enforces CHK-GATE-SYSWAIVE003
 # frob:tests tests/unit/strata/test_selfconform.py::TestConformanceWaiverStaleness.test_expired_waiver_refires_and_is_flagged  # noqa: E501
 # frob:tests tests/unit/strata/test_selfconform.py::TestConformanceWaiverStaleness.test_missing_expiry_marker_treated_as_expired  # noqa: E501
 def _apply_conformance_waiver_staleness(

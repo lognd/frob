@@ -37,6 +37,7 @@ def _read_text_or_empty(path: Path) -> str:
         return ""
 
 
+# frob:enforces CHK-GATE-VET-PY001
 def _setup_py_violation(
     dep: Dependency, source_dir: Path, lockfile_name: str
 ) -> Violation | None:
@@ -56,6 +57,7 @@ def _setup_py_violation(
     )
 
 
+# frob:enforces CHK-GATE-VET-PY002
 def _pth_violation(
     dep: Dependency, source_dir: Path, lockfile_name: str
 ) -> Violation | None:
@@ -75,6 +77,7 @@ def _pth_violation(
     )
 
 
+# frob:enforces CHK-GATE-VET-PY003
 def _pickle_violation(
     dep: Dependency, source_dir: Path, lockfile_name: str
 ) -> Violation | None:
@@ -119,6 +122,7 @@ def _python_rules(
     return [v for v in candidates if v is not None]
 
 
+# frob:enforces CHK-GATE-VET-RS001
 def _build_rs_violation(
     dep: Dependency, source_dir: Path, lockfile_name: str
 ) -> Violation | None:
@@ -143,6 +147,7 @@ def _build_rs_violation(
     )
 
 
+# frob:enforces CHK-GATE-VET-RS002
 def _proc_macro_violation(
     dep: Dependency, source_dir: Path, lockfile_name: str
 ) -> Violation | None:
@@ -191,6 +196,7 @@ def _rust_rules(
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
 # frob:enforces SC-DETECTION-NPM-NON-REGISTRY-SOURCE
+# frob:enforces CHK-GATE-VET-JS004
 def _npm_non_registry_rule(dep: Dependency, lockfile_name: str) -> Violation | None:
     """VET-JS004: git/http/file dependency sources are declarable-only."""
     if not dep.resolved:
