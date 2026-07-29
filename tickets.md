@@ -4095,12 +4095,13 @@ chunk list. `frob sys sync-interface --check`: no drift.
 - tests: 7 passed (from 7 evidence id(s))
 - gates: 0 error(s), 761 warning(s), 498 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1166 -->
 ```yaml
 id: T-1166
 title: 'strata: serve daemon now exercises real net/fs effects directly -- capability-boundary
   disposition needed (T-0440 regression)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -4112,6 +4113,8 @@ scope:
 - src/frob/serve/**
 - src/frob/strata/**
 - tests/unit/strata/test_effects.py
+evidence:
+- tests/unit/strata/test_effects.py::TestDeployServeMutateNodeSplitConformance::test_serve_declares_zero_may_and_exercises_zero_effects
 threat: null
 component: null
 ```
@@ -4146,6 +4149,47 @@ other serve-side effect already does, preserving the zero-may
 invariant. Deliberately not decided under T-1006 -- this is a security-
 boundary call, not a stale-fixture fix, and out of T-1006's declared
 scope (tests/**, not src/frob/serve/** or the strata design model).
+
+## Done report
+
+Disposition for T-1166 (serve daemon capability-boundary creep, T-1094/
+T-1096): chose option (a) from the ticket body -- the daemon's own
+socket/watch-file effects (pidfile/lease-state open/write/unlink, its own
+event-bus socket write, its own idle-monitor self-wake socket connect)
+are the daemon's OWN process boundary, not a delegated call into another
+node's owned resource, so they are honestly declared rather than
+refactored away. design/frob.strata's `serve` node already declares
+`may "fs"; may "net";` for this reason (pre-existing, not touched here).
+
+Updated `TestDeployServeMutateNodeSplitConformance::
+test_serve_declares_zero_may_and_exercises_zero_effects`'s synthetic
+fixture to grant `may=("fs", "net")` (mirroring the real design node)
+instead of zero `may`, with a docstring explaining the T-1166 disposition
+and why the guard's original purpose (catching a FUTURE undeclared
+capability, e.g. `exec`) is still preserved. Kept the test's original
+method name unchanged -- T-0440's archived Done report (tickets-
+archive.md) cites this exact pytest node id as evidence, and renaming it
+would break that already-closed, out-of-scope ticket's evidence
+resolution (COV003).
+
+Verified: `pytest tests/unit/strata/test_effects.py::
+TestDeployServeMutateNodeSplitConformance` all 3 pass. `frob sys
+sync-interface --check`: no drift.
+
+### Changed
+```
+ tests/unit/strata/test_effects.py | 38 ++++++++++++++++++++++++++++----------
+ tickets.md                        |  5 +++--
+ 2 files changed, 31 insertions(+), 12 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_effects.py::TestDeployServeMutateNodeSplitConformance::test_serve_declares_zero_may_and_exercises_zero_effects` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 2099 warning(s), 497 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1167 -->
 ```yaml
@@ -4263,7 +4307,7 @@ and needs its own triage of each rule's real enforcement site.
 ```yaml
 id: T-1169
 title: 'vet/native: add missing frob:enforces CHK-GATE-NATIVE001 edge (REG008)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -4274,6 +4318,18 @@ sprint: null
 scope:
 - src/frob/strata/_native_staleness.py
 - docs/design/registry/check-coverage.yaml
+- tests/unit/strata/test_native_staleness.py
+scope_changes:
+- op: add
+  glob: tests/unit/strata/test_native_staleness.py
+  reason: real evidence covering native_unavailable_warning, the CHK-GATE-NATIVE001
+    enforcing site
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
+- tests/unit/strata/test_native_staleness.py::TestUnimportableNatives::test_warning_names_the_native_and_the_fix_command
+- tests/unit/strata/test_native_staleness.py::TestUnimportableNatives::test_warning_is_none_when_nothing_broken
 threat: null
 component: null
 ```
@@ -4300,6 +4356,48 @@ An earlier version of this ticket (T-1168, 11 different rules)
 was filed and then dropped as moot once main's own concurrent work
 resolved it -- this is a fresh, distinct finding (single rule,
 NATIVE001), not a re-file of the same one.
+
+## Done report
+
+Added the missing `frob:enforces CHK-GATE-NATIVE001` edge on `native_
+unavailable_warning` in src/frob/strata/_native_staleness.py -- the
+single-source-of-truth detection logic `gates/__init__.py::
+_native_unavailable_report` (T-1148) wraps into the actual `NATIVE001`
+Violation, mirroring the CHK-GATE-SYS103/104/105/106 precedent in
+_selfconform.py of binding the edge to the enforcing detection function
+rather than the thin GateReport-construction call site.
+
+docs/design/registry/check-coverage.yaml's `CHK-GATE-NATIVE001` entry
+already existed (synced via `frob registry audit --sync-gate-rules` per
+the ticket's own filing) -- no change needed there, the edge was the
+only missing half (REG008).
+
+Added tests/unit/strata/test_native_staleness.py to scope: `frob ticket
+land`'s D-02 preflight correctly refused the initial evidence bind (the
+registry-exhaustiveness test has no TESTS edge to `_native_staleness.py`
+and its own file is not in scope) -- rebound evidence to
+TestUnimportableNatives::test_warning_names_the_native_and_the_fix_
+command / test_warning_is_none_when_nothing_broken, the two tests
+that already carry `frob:tests src/frob/strata/_native_staleness.py::
+native_unavailable_warning` directives and directly exercise the
+enforcing function.
+
+### Changed
+```
+ src/frob/strata/_native_staleness.py |  9 ++++++++
+ tickets.md                           | 43 +++++++++++++++++++++++++++++++++++-
+ 2 files changed, 51 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_native_staleness.py::TestUnimportableNatives::test_warning_names_the_native_and_the_fix_command` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_native_staleness.py::TestUnimportableNatives::test_warning_is_none_when_nothing_broken` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 446 warning(s), 498 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1170 -->
 ```yaml

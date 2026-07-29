@@ -291,20 +291,38 @@ class TestDeployServeMutateNodeSplitConformance:
 
     # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
     def test_serve_declares_zero_may_and_exercises_zero_effects(self):
-        """T-0440: `serve` is the deliberately zero-`may` node -- every
-        net/fs/exec effect a `frob serve` request performs is delegated to
-        code bound on ANOTHER node (`core`/`gates`/`graphlang`/
-        `tickets_ledger`, modeled as flow edges, not `serve`'s own `may`).
-        A future change that starts calling `open`/`subprocess`/an HTTP
-        client DIRECTLY from `src/frob/serve/**` (rather than through one
-        of those other components) is exactly the drift this guards: it
-        would surface as a REAL, non-empty violation here, not a silent
-        capability creep.
+        """T-0440 established `serve` as a deliberately zero-`may` node --
+        every net/fs/exec effect a `frob serve` request performed was
+        delegated to code bound on ANOTHER node (`core`/`gates`/
+        `graphlang`/`tickets_ledger`), never called directly from
+        `src/frob/serve/**`.
+
+        T-1166 (capability-boundary disposition, T-1094's FS-watch push
+        invalidation + T-1096's subscribe/push event stream): the daemon
+        now legitimately OWNS its own socket and watch-file effects --
+        `_socketd.py` opens/writes/unlinks its own pidfile and lease-state
+        files and calls `socket.connect` for its own idle-monitor
+        self-wake, `_events.py` writes to and connects its own event-bus
+        socket -- these are the daemon's OWN process boundary, not a
+        delegated call into another node's owned resource, so widening
+        `serve`'s `may` to include `fs`/`net` (matching design/frob.
+        strata's own `serve` node, which already declares both) is the
+        honest disposition (option (a) from T-1166's ticket body), not a
+        silent capability creep: this fixture's `may=` now mirrors the
+        real design model exactly, so a FUTURE effect outside fs/net (an
+        `exec` call, for instance) still surfaces here as a real
+        violation, preserving the guard's original purpose for every
+        capability serve has NOT been granted.
         """
         root = Path(__file__).resolve().parents[3]
         model = KernelModel(
             nodes=(
-                Node(id="serve", trust="trusted", attrs=("code=src/frob/serve/**",)),
+                Node(
+                    id="serve",
+                    trust="trusted",
+                    attrs=("code=src/frob/serve/**",),
+                    may=("fs", "net"),
+                ),
             )
         )
         binding = bind_code(model, root).danger_ok

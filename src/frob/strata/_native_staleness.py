@@ -438,6 +438,15 @@ def unimportable_natives(root: Path) -> tuple[NativeSpec, ...]:
 
 
 # frob:doc docs/modules/gates.md#native001-t-1148
+# T-1169: NATIVE001's registry entry (docs/design/registry/check-
+# coverage.yaml) was synced via `frob registry audit --sync-gate-rules`
+# with no matching `frob:enforces` edge (REG008) -- this function is the
+# single-source-of-truth detection logic `gates/__init__.py::
+# _native_unavailable_report` (T-1148) wraps into the actual `NATIVE001`
+# `Violation`, mirroring the CHK-GATE-SYS103/104/105/106 precedent in
+# `_selfconform.py` of binding the edge to the enforcing detection
+# function rather than the thin `GateReport`-construction call site.
+# frob:enforces CHK-GATE-NATIVE001
 def native_unavailable_warning(root: Path) -> str | None:
     """One human-readable LOUD warning naming every declared native under
     `root` that fails to import right now (`unimportable_natives`) and the
