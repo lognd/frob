@@ -3988,6 +3988,21 @@ sprint: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - tests/test_ticket_land.py
+- tests/test_ticket_merge_driver.py
+- docs/modules/tickets.md
+scope_changes:
+- op: add
+  glob: tests/test_ticket_merge_driver.py
+  reason: T-1165's regression test for the merge-driver base_text fix lives in the
+    merge-driver's dedicated test file, not test_ticket_land.py
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: T-1165 changes _merge_driver's documented base(%O)-argument behavior; docs/modules/tickets.md#git-merge-driver
+    describes it and AFFECT001 requires the doc touched in the same diff
+  actor: logan
+  at: '2026-07-28'
 threat: null
 component: null
 ```
@@ -4308,3 +4323,24 @@ a moved function via the PACKAGE attribute (tickets_mod.<name>) -- those
 need a late `from frob.tickets import <name>` inside the moved function
 body instead of a module-top-level binding (two such hazards hit T-1152:
 write_ticket and the bare `subprocess` module object itself).
+
+<!-- ticket:T-draft-86650510 -->
+```yaml
+id: T-draft-86650510
+title: 'fix: tickets/__init__.py missing _run_evidence_command re-export after T-1152
+  evidence-family split'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/__init__.py
+- tests/test_tickets_evidence_cli.py
+threat: null
+component: null
+```
+T-1152's evidence-family split moved _run_evidence_command into src/frob/tickets/_evidence.py without re-exporting it from the package -- tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell imports it directly via 'from frob.tickets import _run_evidence_command', predating the split, and broke with ImportError. Found via a broad 'frob test --base main' touched-set run while landing T-1165 in the same worktree.
