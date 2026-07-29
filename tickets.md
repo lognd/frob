@@ -524,7 +524,7 @@ ruff clean on every touched file (both PATH ruff and `uv run ruff`).
 id: T-1083
 title: 'arch: abstraction-opportunity remaining single-file packages extraction (T-0393/T-1067
   remainder, 23 findings)'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -599,6 +599,8 @@ Re-measure `uv run frob check --only arch --json` (filter to
 abstraction-opportunity, excluding gates/**, arch/**, app/**) before
 starting; other tickets may land in the interim and change the count.
 
+## Drop reason
+- 2026-07-29: disposition-complete, no extraction warranted: the w20-arch pass re-measured and read every remaining in-scope abstraction-opportunity finding -- all coincidental same-signature dispatch/case-handler families, none genuine duplication (full per-family record preserved on branch w20-arch, commit a8085d7f, plus its fail-log). The two real detector-precision gaps it found are refiled as T-1181/T-1182. A feature-kind ticket structurally cannot close on a zero-code disposition (EvidenceScopeUnbound), and reclassifying kind to force a close would misrecord what happened -- drop-with-reason is the honest terminal state.
 <!-- ticket:T-1135 -->
 ```yaml
 id: T-1135
