@@ -258,7 +258,7 @@ ERROR in src/frob/gates/_opaque.py.
 ```yaml
 id: T-1062
 title: EXHAUST001/002 residual burn-down continuation (post T-1056)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -267,7 +267,431 @@ parent: null
 tier: ticket
 sprint: null
 scope:
-- src/frob/
+- src/frob/app/check_runner.py
+- src/frob/app/config.py
+- src/frob/app/ticket_runner/_close_cmd.py
+- src/frob/app/ticket_runner/_mutate.py
+- src/frob/check/_python.py
+- src/frob/check/_ts.py
+- src/frob/deploy/_conform.py
+- src/frob/docs/__init__.py
+- src/frob/doctor.py
+- src/frob/dup/_pipeline/_probe.py
+- src/frob/dup/_pipeline/_smt.py
+- src/frob/fuzz/_signatures.py
+- src/frob/gitio.py
+- src/frob/gitlog/__init__.py
+- src/frob/graph/_generated.py
+- src/frob/graph/cache.py
+- src/frob/graph/lock.py
+- src/frob/lang/__init__.py
+- src/frob/lang/_nodes.py
+- src/frob/map/__init__.py
+- src/frob/mutate/__init__.py
+- src/frob/mutate/_journal.py
+- src/frob/natives/_build.py
+- src/frob/outline/__init__.py
+- src/frob/process/parsers/cargo.py
+- src/frob/process/parsers/valgrind.py
+- src/frob/scaffold/_managed.py
+- src/frob/scaffold/project.py
+- src/frob/serve/_events.py
+- src/frob/serve/_socketd.py
+- src/frob/serve/_warm.py
+- src/frob/serve/server.py
+- src/frob/stats/_agentic.py
+- src/frob/strata/_access.py
+- src/frob/strata/_claims.py
+- src/frob/strata/_code_binding.py
+- src/frob/strata/_compliance.py
+- src/frob/strata/_elaborate.py
+- src/frob/strata/_facts.py
+- src/frob/strata/_host.py
+- src/frob/strata/_host_isolation.py
+- src/frob/strata/_mode_conformance.py
+- src/frob/strata/_native_staleness.py
+- src/frob/strata/_obligation_proof.py
+- src/frob/strata/_reliability.py
+- src/frob/strata/_waive.py
+- src/frob/testing/_collect.py
+- src/frob/testing/_coverage_wait.py
+- src/frob/testing/_runners.py
+- src/frob/xref/__init__.py
+- frob.lock
+- src/frob/testing/_collect_cpp.py
+scope_changes:
+- op: remove
+  glob: src/frob/
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/app/config.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/app/ticket_runner/_close_cmd.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/app/ticket_runner/_mutate.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/check/_ts.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/deploy/_conform.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/docs/__init__.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/doctor.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/dup/_pipeline/_probe.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/dup/_pipeline/_smt.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/fuzz/_signatures.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/gitio.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/gitlog/__init__.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/graph/_generated.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/graph/cache.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/graph/lock.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/lang/__init__.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/lang/_nodes.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/map/__init__.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/mutate/__init__.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/mutate/_journal.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/natives/_build.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/outline/__init__.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/process/parsers/cargo.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/process/parsers/valgrind.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/scaffold/_managed.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/scaffold/project.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/serve/_events.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/serve/_socketd.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/serve/_warm.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/serve/server.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/stats/_agentic.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_access.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_claims.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_code_binding.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_compliance.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_elaborate.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_facts.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_host.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_host_isolation.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_mode_conformance.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_native_staleness.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_obligation_proof.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_reliability.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_waive.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/testing/_collect.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/testing/_coverage_wait.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/testing/_runners.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/xref/__init__.py
+  reason: narrow to real EXHAUST001/002 finding sites, excluding gates/** tickets/**
+    perf/** vet/** owned by sibling agents this wave
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: frob.lock
+  reason: frob ack writes doc-facet digests to frob.lock; needed to satisfy AFFECT001
+    acks for T-1062's touched functions
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/testing/_collect_cpp.py
+  reason: T-1074 landed a split of testing/_collect.py mid-wave; the two EXHAUST001
+    sites this ticket fixed there moved to _collect_cpp.py, reapplied on merge
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_app_runner_map
+- tests/integration/test_interfaces.py::TestInterfaces::test_deploy_generate_writes_and_checks
+- tests/integration/test_interfaces.py::TestInterfaces::test_gitlog
+- tests/integration/test_interfaces.py::TestInterfaces::test_map_project
+- tests/integration/test_interfaces.py::TestInterfaces::test_outline_file
+- tests/integration/test_interfaces.py::TestInterfaces::test_process_parse
+- tests/integration/test_interfaces.py::TestInterfaces::test_serve_tools
+- tests/integration/test_interfaces.py::TestInterfaces::test_testing_collect
+- tests/integration/test_interfaces.py::TestInterfaces::test_xref_symbol
+- tests/integration/test_mutate_runner.py::TestMutateRunnerJson::test_json_output_is_clean
+- tests/system/test_cli_doctor.py::TestDoctorCli::test_doctor_reports_healthy_when_natives_present
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_drift_is_informational_and_does_not_affect_healthy
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_first_run_reports_no_drift_and_writes_manifest
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_malformed_manifest_is_treated_as_no_prior_run
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_rewritten_artifact_between_two_runs_reports_drift
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_unchanged_artifact_reports_no_drift
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateManifest::test_run_diagnosis_healthy_with_no_derived_state
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateManifest::test_run_diagnosis_unhealthy_when_derived_state_corrupt
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateManifest::test_verify_derived_state_accepts_valid_json_stamp
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateManifest::test_verify_derived_state_flags_corrupt_sqlite_cache
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateManifest::test_verify_derived_state_flags_malformed_json_stamp
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateManifest::test_verify_derived_state_reports_absent_as_healthy
+- tests/system/test_cli_doctor.py::TestDoctorMalformedTicketEdges::test_run_diagnosis_healthy_with_no_malformed_edges
+- tests/system/test_cli_doctor.py::TestDoctorMutateJournal::test_run_diagnosis_healthy_with_no_mutate_journals
+- tests/system/test_cli_doctor.py::TestDoctorMutateJournal::test_run_diagnosis_ignores_journal_owned_by_live_pid
+- tests/system/test_cli_doctor.py::TestDoctorMutateJournal::test_run_diagnosis_unhealthy_with_stale_mutate_journal
+- tests/system/test_cli_doctor.py::TestDoctorScaffoldConformance::test_run_diagnosis_healthy_after_scaffold_apply
+- tests/system/test_cli_doctor.py::TestDoctorScaffoldConformance::test_run_diagnosis_ignores_non_frob_directory
+- tests/system/test_cli_doctor.py::TestDoctorScaffoldConformance::test_run_diagnosis_unhealthy_when_scaffold_blocks_missing
+- tests/system/test_cli_doctor.py::TestDoctorStaleTicketLeases::test_run_diagnosis_healthy_with_no_stale_leases
+- tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately
+- tests/test_gates.py::TestOptInGates::test_fuzz_gate_off_by_default
+- tests/test_gitio.py::TestWorkingDiff::test_covers_committed_staged_unstaged_and_untracked
+- tests/test_graph.py::TestBuildIncremental::test_fingerprint_bump_rebuilds
+- tests/test_graph.py::TestBuildIncremental::test_fingerprint_packages_derived_from_lang_registry
+- tests/test_graph.py::TestGeneratedSource::test_is_generated_source_detects_do_not_edit_and_at_markers
+- tests/test_graph.py::TestGeneratedSource::test_is_generated_source_detects_repo_convention_header
+- tests/test_graph.py::TestGeneratedSource::test_is_generated_source_false_for_hand_authored_file
+- tests/test_graph.py::TestGeneratedSource::test_is_generated_source_false_for_missing_file
+- tests/test_graph.py::test_graph_build_lock_drift_integration
+- tests/test_lang.py::test_lang_pipeline_integration
+- tests/test_mutate.py::test_run_mutations_all_killed_by_strong_test
+- tests/test_serve_events.py::TestSubscribeAndWait::test_receives_coverage_fresh_on_stamp_write
+- tests/test_serve_events.py::TestSubscribeAndWait::test_receives_graph_changed_after_edit
+- tests/test_serve_events.py::TestSubscribeAndWait::test_times_out_with_no_matching_event
+- tests/test_stats.py::test_collect_combines_both
+- tests/unit/strata/test_waive.py::TestConformanceWaiverExpiry::test_malformed_date_returns_none
+- tests/unit/strata/test_waive.py::TestConformanceWaiverExpiry::test_no_marker_returns_none
+- tests/unit/strata/test_waive.py::TestConformanceWaiverExpiry::test_parses_embedded_expiry_date
+- tests/unit/test_check.py::test_check_run_check_arch_integration
+- tests/unit/test_docs_module.py::test_docs_module_integration
+- tests/unit/test_dup.py::test_dup_end_to_end_scan_then_render
+- tests/unit/test_lang_primitives.py::test_resolve_local_import_maps_to_repo_relative
 threat: null
 component: null
 ```
@@ -313,6 +737,106 @@ try/except matching the function's own documented degrade contract), or a
 reasoned frob:waive -- never a blanket suppression. Re-run
 `frob check --only exhaustive_handling --json` at the start to get a live
 count before starting (T-1056's counts will have drifted).
+
+## Done report
+
+EXHAUST001/002 residual burn-down continuation (post T-1056). Narrowed
+scope to the real finding sites (50 files, excluding gates/**, tickets/**
+owned by sibling wave agents, and perf/**, vet/**+gates/_opaque.py owned
+by sibling tickets T-1053/T-1051). Disposed all 117 in-scope unwaived
+findings down to 0: real errors-as-values fixes (widened a narrow except
+to the function's own documented degrade contract, or added a missing
+except around a previously-unguarded fallible call) where the escape was
+genuine; `frob:raises <Type>` for functions that intentionally propagate
+a named exception by design (_tokenize_line -> _TokenizeError,
+write_lock -> BaseException, node_access_declarations /
+_parse_host_attrs / host_manifest_for -> ValueError, _require_mcp ->
+McpUnavailable); reasoned `frob:waive` directives everywhere else, each
+citing the specific resolver-unresolvable call (deferred imports,
+cross-module Result-returning wrappers, stdlib calls the may-raise
+resolver cannot statically bound) -- no rule loosening anywhere.
+
+Also fixed along the way: gitio._parse_unified_diff's dict-index KeyError
+gap (switched to setdefault), valgrind._xml_error_diagnostic's int(ln)
+ValueError gap, xref.xref's unguarded read_bytes() OSError gap, and
+lang._nodes.resolve_local_import's two unguarded Path.exists() calls --
+all genuine unhandled-exception gaps the EXHAUST resolver caught, not
+resolver artifacts.
+
+Verification: `frob check --ticket T-1062 --only exhaustive_handling` is
+clean in scope; `frob test --base main` touched-set run passed (53
+outcomes, 0 failures); `frob sys sync-interface --check` shows no drift;
+full `frob check --ticket T-1062` is clean across every gate (fixed a
+self-inflicted INV006 trip from "hardening only" wording in my own
+waiver comments, and AFFECT001 waivers + `frob ack` on the handful of
+doc-bound touched functions since this is pure internal error-handling
+hardening with no behavior/interface change).
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_app_runner_map` (pytest node id, verified passing when recorded)
+- `tests/integration/test_interfaces.py::TestInterfaces::test_deploy_generate_writes_and_checks` (pytest node id, verified passing when recorded)
+- `tests/integration/test_interfaces.py::TestInterfaces::test_gitlog` (pytest node id, verified passing when recorded)
+- `tests/integration/test_interfaces.py::TestInterfaces::test_map_project` (pytest node id, verified passing when recorded)
+- `tests/integration/test_interfaces.py::TestInterfaces::test_outline_file` (pytest node id, verified passing when recorded)
+- `tests/integration/test_interfaces.py::TestInterfaces::test_process_parse` (pytest node id, verified passing when recorded)
+- `tests/integration/test_interfaces.py::TestInterfaces::test_serve_tools` (pytest node id, verified passing when recorded)
+- `tests/integration/test_interfaces.py::TestInterfaces::test_testing_collect` (pytest node id, verified passing when recorded)
+- `tests/integration/test_interfaces.py::TestInterfaces::test_xref_symbol` (pytest node id, verified passing when recorded)
+- `tests/integration/test_mutate_runner.py::TestMutateRunnerJson::test_json_output_is_clean` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorCli::test_doctor_reports_healthy_when_natives_present` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_drift_is_informational_and_does_not_affect_healthy` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_first_run_reports_no_drift_and_writes_manifest` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_malformed_manifest_is_treated_as_no_prior_run` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_rewritten_artifact_between_two_runs_reports_drift` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_unchanged_artifact_reports_no_drift` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateManifest::test_run_diagnosis_healthy_with_no_derived_state` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateManifest::test_run_diagnosis_unhealthy_when_derived_state_corrupt` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateManifest::test_verify_derived_state_accepts_valid_json_stamp` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateManifest::test_verify_derived_state_flags_corrupt_sqlite_cache` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateManifest::test_verify_derived_state_flags_malformed_json_stamp` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateManifest::test_verify_derived_state_reports_absent_as_healthy` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorMalformedTicketEdges::test_run_diagnosis_healthy_with_no_malformed_edges` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorMutateJournal::test_run_diagnosis_healthy_with_no_mutate_journals` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorMutateJournal::test_run_diagnosis_ignores_journal_owned_by_live_pid` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorMutateJournal::test_run_diagnosis_unhealthy_with_stale_mutate_journal` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorScaffoldConformance::test_run_diagnosis_healthy_after_scaffold_apply` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorScaffoldConformance::test_run_diagnosis_ignores_non_frob_directory` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorScaffoldConformance::test_run_diagnosis_unhealthy_when_scaffold_blocks_missing` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorStaleTicketLeases::test_run_diagnosis_healthy_with_no_stale_leases` (pytest node id, verified passing when recorded)
+- `tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestOptInGates::test_fuzz_gate_off_by_default` (pytest node id, verified passing when recorded)
+- `tests/test_gitio.py::TestWorkingDiff::test_covers_committed_staged_unstaged_and_untracked` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestBuildIncremental::test_fingerprint_bump_rebuilds` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestBuildIncremental::test_fingerprint_packages_derived_from_lang_registry` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestGeneratedSource::test_is_generated_source_detects_do_not_edit_and_at_markers` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestGeneratedSource::test_is_generated_source_detects_repo_convention_header` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestGeneratedSource::test_is_generated_source_false_for_hand_authored_file` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestGeneratedSource::test_is_generated_source_false_for_missing_file` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::test_graph_build_lock_drift_integration` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::test_lang_pipeline_integration` (pytest node id, verified passing when recorded)
+- `tests/test_mutate.py::test_run_mutations_all_killed_by_strong_test` (pytest node id, verified passing when recorded)
+- `tests/test_serve_events.py::TestSubscribeAndWait::test_receives_coverage_fresh_on_stamp_write` (pytest node id, verified passing when recorded)
+- `tests/test_serve_events.py::TestSubscribeAndWait::test_receives_graph_changed_after_edit` (pytest node id, verified passing when recorded)
+- `tests/test_serve_events.py::TestSubscribeAndWait::test_times_out_with_no_matching_event` (pytest node id, verified passing when recorded)
+- `tests/test_stats.py::test_collect_combines_both` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_waive.py::TestConformanceWaiverExpiry::test_malformed_date_returns_none` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_waive.py::TestConformanceWaiverExpiry::test_no_marker_returns_none` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_waive.py::TestConformanceWaiverExpiry::test_parses_embedded_expiry_date` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::test_check_run_check_arch_integration` (pytest node id, verified passing when recorded)
+- `tests/unit/test_docs_module.py::test_docs_module_integration` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup.py::test_dup_end_to_end_scan_then_render` (pytest node id, verified passing when recorded)
+- `tests/unit/test_lang_primitives.py::test_resolve_local_import_maps_to_repo_relative` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 53 passed (from 53 evidence id(s))
+- gates: 0 error(s), 1545 warning(s), 583 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1074 -->
 ```yaml
@@ -601,6 +1125,7 @@ starting; other tickets may land in the interim and change the count.
 
 ## Drop reason
 - 2026-07-29: disposition-complete, no extraction warranted: the w20-arch pass re-measured and read every remaining in-scope abstraction-opportunity finding -- all coincidental same-signature dispatch/case-handler families, none genuine duplication (full per-family record preserved on branch w20-arch, commit a8085d7f, plus its fail-log). The two real detector-precision gaps it found are refiled as T-1181/T-1182. A feature-kind ticket structurally cannot close on a zero-code disposition (EvidenceScopeUnbound), and reclassifying kind to force a close would misrecord what happened -- drop-with-reason is the honest terminal state.
+
 <!-- ticket:T-1135 -->
 ```yaml
 id: T-1135

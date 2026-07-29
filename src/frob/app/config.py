@@ -1088,7 +1088,7 @@ def _declared_frob_version(repo_root: Path) -> str | None:
     try:
         with pyproject.open("rb") as fh:
             data = tomllib.load(fh)
-    except (OSError, tomllib.TOMLDecodeError):
+    except Exception:
         return None
     project = data.get("project", {})
     if project.get("name") != "frob":

@@ -172,13 +172,16 @@ def _journal_file(root: Path, target: Path) -> Path:
 def _target_display(root: Path, target: Path) -> str:
     """`target` rendered relative to `root` when possible, absolute
     otherwise -- for a human-readable journal entry and restore lookup."""
-    resolved = target.resolve()
     try:
+        resolved = target.resolve()
         return str(resolved.relative_to(root.resolve()))
-    except ValueError:
-        return str(resolved)
+    except Exception:
+        return str(target)
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to os.kill itself; every \
+# exception os.kill can raise is an OSError subclass, and ProcessLookupError/ \
+# PermissionError/OSError together already cover the full hierarchy"
 def _pid_alive(pid: int) -> bool:
     """Whether `pid` names a currently-running process, via a signal-0
     probe (`os.kill(pid, 0)`, which sends no actual signal). A
@@ -212,12 +215,9 @@ def _pid_starttime(pid: int) -> str | None:
     consumed before the remainder starts)."""
     try:
         raw = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8", errors="replace")
-    except OSError:
-        return None
-    try:
         after_comm = raw.rsplit(")", 1)[1]
         return after_comm.split()[19]
-    except (IndexError, ValueError):
+    except Exception:
         return None
 
 

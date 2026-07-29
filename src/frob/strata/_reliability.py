@@ -313,6 +313,9 @@ def _node_has_bound_code(node_id: str, owner_by_node: dict[str, list[str]]) -> b
     return bool(owner_by_node.get(node_id))
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to \
+# _TIMEOUT_TOKEN_RE.search(text), a compiled-regex search over an already-decoded str \
+# produced by the caught read_text() call; a compiled pattern search cannot raise"
 def _files_evidence_timeout(paths: list[str], root: Path) -> bool:
     """Whether any of `paths` (root-relative) contains a real
     `timeout=`-shaped token (`_TIMEOUT_TOKEN_RE`) -- REL201's proof-
@@ -424,6 +427,9 @@ def _missing_health_violations(model: KernelModel) -> list[ReliabilityViolation]
     return violations
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to \
+# _HEALTH_TOKEN_RE.search(text), a compiled-regex search over an already-decoded str \
+# produced by the caught read_text() call; a compiled pattern search cannot raise"
 def _files_evidence_health(paths: list[str], root: Path) -> bool:
     """Whether any of `paths` (root-relative) contains a real health/
     liveness/readiness-probe-shaped token (`_HEALTH_TOKEN_RE`) -- REL211's

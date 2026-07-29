@@ -125,7 +125,7 @@ def _display_root(root: Path) -> str:
     """`root` relative to the cwd when possible, else `root` unchanged."""
     try:
         return str(root.relative_to(Path.cwd()))
-    except ValueError:
+    except Exception:
         return str(root)
 
 

@@ -307,6 +307,11 @@ def _route_items(
     return Ok({i: tuple(v) for i, v in buckets.items()})
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to run_argv, a \
+# cross-module Result-returning wrapper the resolver cannot see through, and \
+# spawned.danger_ok.stdout attribute access on its own return type; every locally \
+# fallible parse step below is caught"
+# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _python_version(python: str) -> tuple[int, int] | None:
     """`(major, minor)` for `python`'s interpreter, or `None` if it cannot run."""
     spawned = run_argv(
@@ -318,7 +323,7 @@ def _python_version(python: str) -> tuple[int, int] | None:
     try:
         major, minor = spawned.danger_ok.stdout.split()
         return int(major), int(minor)
-    except ValueError:
+    except (TypeError, ValueError):
         return None
 
 

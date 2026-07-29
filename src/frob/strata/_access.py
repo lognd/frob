@@ -164,6 +164,7 @@ class ResourceContentionReport(BaseModel):
 
 # frob:doc docs/strata/host.md#resource-access-modes-t-0700
 # frob:tests tests/unit/strata/test_access.py::TestNodeAccessDeclarations.test_reads_access_attrs  # noqa: E501
+# frob:raises ValueError
 def node_access_declarations(node: Node) -> tuple[NodeAccess, ...]:
     """Every `access "RESOURCE" mode MODE` clause `node` declares (i.e.
     every `access=<resource>:<mode>` attr, `_ACCESS_PREFIX` convention) --

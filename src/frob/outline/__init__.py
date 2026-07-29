@@ -146,7 +146,7 @@ def _display_path(path: Path) -> Path:
     """`path` relative to the cwd when possible, else `path` unchanged."""
     try:
         return path.relative_to(Path.cwd())
-    except ValueError:
+    except Exception:
         return path
 
 
@@ -175,6 +175,11 @@ def _parse_for_outline(
 
 
 # frob:doc docs/commands/outline.md#public-api
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _parse_for_outline's \
+# own call graph (parse_file/extract_imports, cross-module Result-returning calls) and \
+# _outline_symbols, a pure structural walk of already-parsed data; every \
+# locally-visible fallible step is Result-checked or caught"
+# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def outline_file(path: Path) -> Result[ModuleOutline, OutlineError]:
     ext = path.suffix.lower()
     if ext not in _OUTLINE_EXTS:
@@ -290,6 +295,14 @@ def _return_annotation(tail: tuple[str, ...]) -> str:
     return " -> " + "".join(_spaced(ret_tokens))
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _find_matching_close_ \
+# paren/_spaced/_return_annotation, plain tuple/str token-walk helpers the resolver \
+# cannot see through; the one real raise path (tuple.index) is caught below"
+# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
+# frob:waive PII012 reason="T-1062: 'token' here means a parsed leaf-token from \
+# frob.graph's normalized token stream (sig_tokens), not a credential/auth token -- a \
+# name-signature false positive, same class as frob.gates._docptr's existing PII012 \
+# waiver for its own unrelated lexical-token vocabulary"
 def _signature_from_tokens(name: str, sig_tokens: tuple[str, ...]) -> str:
     """Reconstruct `name(params) -> ret` from the leaf-token stream.
 

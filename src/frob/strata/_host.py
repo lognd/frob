@@ -433,6 +433,7 @@ class _ParsedHostAttrs:
         self.declared = False
 
 
+# frob:raises ValueError
 def _parse_host_attrs(node: Node) -> _ParsedHostAttrs:
     """Single pass over `node.attrs`, splitting each std.host-prefixed attr
     into `_ParsedHostAttrs` fields -- the parse step `host_manifest_for`
@@ -497,6 +498,7 @@ def _parse_host_attrs(node: Node) -> _ParsedHostAttrs:
 
 # frob:doc docs/strata/host.md#hostmanifest
 # frob:tests tests/unit/strata/test_host.py::TestHostManifest.test_reads kind="unit"
+# frob:raises ValueError
 def host_manifest_for(node: Node) -> HostManifest | None:
     """Read a `Node`'s std.host attrs back into a typed `HostManifest`.
 

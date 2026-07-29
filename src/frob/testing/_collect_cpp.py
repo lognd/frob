@@ -114,6 +114,9 @@ def _find_ctest_dirs(root: Path) -> list[Path]:
     return sorted(build_dirs)
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _INCLUDE_RE.findall/ \
+# _ADD_TEST_RE.findall, compiled-regex scans over already-caught read_text() output; \
+# regex operations over an already-decoded str cannot raise"
 def _parse_ctest_command_map(build_dir: Path) -> dict[str, str]:
     """`test name -> raw command path` for every `add_test()` ctest can see
     in `build_dir`, scanning `CTestTestfile.cmake` and any file it
@@ -155,7 +158,7 @@ def _cpp_target_sources(root: Path, build_dir: Path) -> dict[str, frozenset[str]
     cc_path = build_dir / "compile_commands.json"
     try:
         entries = json.loads(cc_path.read_text())
-    except (OSError, ValueError):
+    except Exception:
         return {}
     if not isinstance(entries, list):
         return {}

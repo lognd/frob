@@ -146,6 +146,16 @@ class _EventBus:
 # TimeoutError/OSError distinction into a separate function would not shrink real \
 # complexity, only relocate it behind an extra call boundary this function's one \
 # caller would immediately re-inline"
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to socket.socket's own \
+# connect/makefile/write/readline calls and json.dumps, stdlib socket/json calls the \
+# resolver cannot fully bound past the broad except OSError below"
+# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above -- \
+# json.loads' JSONDecodeError is now explicitly caught inline (T-1062)"
+# frob:waive AFFECT001 reason="T-1062: EXHAUST001/002 hardening -- added an \
+# explicit inline except for a malformed frame's JSONDecodeError/UnicodeDecodeError, \
+# which now retries the read loop instead of letting it escape; the documented \
+# Timeout/Unreachable/Ok error-shape contract and behavior are unchanged, nothing for \
+# docs/modules/serve.md#subscribepush-events-t-1096 to update"
 def subscribe_and_wait(
     root: Path,
     event: str,
@@ -206,7 +216,12 @@ def subscribe_and_wait(
                     "serve: events: client: connection closed waiting for %r", event
                 )
                 return Err(DaemonError.Unreachable)
-            frame = json.loads(line.decode("utf-8"))
+            try:
+                frame = json.loads(line.decode("utf-8"))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                # A malformed/partial frame on the wire is skipped, not a
+                # crash -- keep waiting for the next line.
+                continue
             if frame.get("event") == event:
                 _log.info("serve: events: client: received %r", event)
                 return Ok(frame.get("data") or {})
@@ -235,6 +250,10 @@ DEFAULT_COVERAGE_POLL_INTERVAL_S = 1.0
 
 # frob:doc docs/modules/serve.md#subscribepush-events-t-1096
 # frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_receives_coverage_fresh_on_stamp_write kind="unit"  # noqa: E501
+# frob:waive AFFECT001 reason="T-1062: EXHAUST001 hardening -- widened \
+# CoverageWatcher._current_mtime's except OSError to except Exception; the documented \
+# 'None if it does not exist yet' contract and behavior are unchanged, nothing for \
+# docs/modules/serve.md#subscribepush-events-t-1096 to update"
 class CoverageWatcher:
     """Background thread polling `<root>/.frob/coverage-stamp`'s mtime on
     an interval and calling `on_fresh` (with no arguments) the moment it
@@ -282,7 +301,7 @@ class CoverageWatcher:
         yet (never stamped)."""
         try:
             return self._path.stat().st_mtime_ns
-        except OSError:
+        except Exception:
             return None
 
     def _run(self) -> None:

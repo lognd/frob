@@ -617,7 +617,7 @@ def _load_baseline_chunks(root: Path) -> dict[str, list[str]]:
         return {}
     try:
         data = _json.loads(path.read_text())
-    except (OSError, ValueError):
+    except Exception:
         return {}
     if not isinstance(data, dict):
         return {}
@@ -813,7 +813,7 @@ def _load_budget_timing(root: Path) -> dict[str, float]:
         return {}
     try:
         data = _json.loads(path.read_text())
-    except (OSError, ValueError):
+    except Exception:
         return {}
     if not isinstance(data, dict):
         return {}
@@ -861,7 +861,7 @@ def _load_budget_remaining(root: Path) -> list[str] | None:
         return None
     try:
         data = _json.loads(path.read_text())
-    except (OSError, ValueError):
+    except Exception:
         return None
     if not isinstance(data, list) or not all(isinstance(x, str) for x in data):
         return None

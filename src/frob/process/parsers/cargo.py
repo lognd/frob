@@ -48,28 +48,30 @@ def _cargo_json_diagnostic(raw: str) -> Diagnostic | None:
     """A Diagnostic from one cargo `compiler-message` JSON line, or None."""
     try:
         msg = json.loads(raw)
-    except json.JSONDecodeError:
+        if msg.get("reason") != "compiler-message":
+            return None
+        m = msg.get("message", {})
+        level = m.get("level", "")
+        if level not in ("error", "warning"):
+            return None
+        spans = m.get("spans", [])
+        primary = next(
+            (s for s in spans if s.get("is_primary")), spans[0] if spans else None
+        )
+        code_obj = m.get("code")
+        text = m.get("rendered") or m.get("message", "")
+        return Diagnostic(
+            file=primary.get("file_name") if primary else None,
+            line=primary.get("line_start") if primary else None,
+            col=primary.get("column_start") if primary else None,
+            severity="error" if level == "error" else "warning",
+            code=code_obj.get("code") if code_obj else None,
+            message=text.splitlines()[0].strip() if text else m.get("message", ""),
+        )
+    except Exception:
+        # A malformed/unexpectedly-shaped cargo JSON line is not a
+        # Diagnostic, never a crash -- see this function's own docstring.
         return None
-    if msg.get("reason") != "compiler-message":
-        return None
-    m = msg.get("message", {})
-    level = m.get("level", "")
-    if level not in ("error", "warning"):
-        return None
-    spans = m.get("spans", [])
-    primary = next(
-        (s for s in spans if s.get("is_primary")), spans[0] if spans else None
-    )
-    code_obj = m.get("code")
-    text = m.get("rendered") or m.get("message", "")
-    return Diagnostic(
-        file=primary.get("file_name") if primary else None,
-        line=primary.get("line_start") if primary else None,
-        col=primary.get("column_start") if primary else None,
-        severity="error" if level == "error" else "warning",
-        code=code_obj.get("code") if code_obj else None,
-        message=text.splitlines()[0].strip() if text else m.get("message", ""),
-    )
 
 
 def _parse_cargo_json(json_lines: list[str], exit_code: int, tool: str) -> ToolResult:

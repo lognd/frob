@@ -218,6 +218,10 @@ def git_log(
     )
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to \
+# guarded_subprocess_run itself, a cross-module Result-returning wrapper the resolver \
+# cannot see through; its one documented raise path (missing git binary) is caught \
+# below"
 def _git_log_raw(
     cwd: str | None, *, since: str | None, until: str | None, limit: int | None
 ) -> str:

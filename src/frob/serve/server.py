@@ -21,6 +21,7 @@ class McpUnavailable(Exception):
     """Raised when the `mcp` SDK is not importable; an env/setup bug, not a Result."""
 
 
+# frob:raises McpUnavailable
 def _require_mcp():  # noqa: ANN202
     """Import `mcp.server.fastmcp.FastMCP`, or raise `McpUnavailable` with a remedy."""
     try:

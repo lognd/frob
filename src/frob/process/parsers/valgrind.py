@@ -102,6 +102,10 @@ def _parse_text(text: str, exit_code: int) -> ToolResult:
 
 
 # frob:ticket T-0045
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to ET.Element.findtext/ \
+# findall (stdlib ElementTree calls the resolver cannot bound) and Diagnostic \
+# construction (a pydantic model); the one real raise path (int(ln)) is caught above"
+# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _xml_error_diagnostic(error: ET.Element) -> Diagnostic:
     """A Diagnostic for one valgrind XML `<error>` element."""
     kind = (error.findtext("kind") or "").lower()
@@ -113,14 +117,23 @@ def _xml_error_diagnostic(error: ET.Element) -> Diagnostic:
         fn = frame.findtext("file")
         ln = frame.findtext("line")
         if fn and ln:
+            try:
+                lineno = int(ln)
+            except ValueError:
+                continue
             file_ref = fn
-            lineno = int(ln)
             break
     return Diagnostic(
         file=file_ref, line=lineno, severity=sev, message=(what or "")[:120]
     )
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _xml_error_diagnostic \
+# (an ElementTree walk the resolver cannot see through) and summarize_severity, a \
+# cross-module pure aggregation call; the one real raise path (ET.fromstring) is \
+# caught below"
+# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above -- \
+# _xml_error_diagnostic's own int(ln) conversion is now guarded (T-1062)"
 def _parse_xml(text: str, exit_code: int) -> ToolResult:
     try:
         root = ET.fromstring(text)

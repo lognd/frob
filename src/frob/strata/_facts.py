@@ -85,6 +85,10 @@ _NON_TRANSITIVE_ATTRS = frozenset({"krb_no_transit", "utility"})
 _NOFLOW_NON_TRANSITIVE_ATTRS = frozenset({"krb_no_transit"})
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to flow.attrs iteration \
+# and str.startswith, plain attribute/str calls the resolver cannot statically bound; \
+# the one real raise path (float() on a malformed fanout value) is caught below"
+# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _flow_fanout(flow: Flow) -> float:
     """A flow's demand-propagation multiplier: its `fanout=<float>` attr, or 1.0."""
     # frob:doc docs/strata/kernel.md#capacity-semantics

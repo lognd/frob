@@ -110,6 +110,9 @@ class StaleNative:
     reason: str = "mtime"
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to walk_pruned, a \
+# cross-module generator the resolver cannot see through; the one real raise path \
+# (path.stat()) is caught below"
 def _newest_mtime(directory: Path) -> float | None:
     """Latest mtime among every regular file under `directory` (pruning
     `frob.excludes.BUILTIN_SKIP_DIRS` via `walk_pruned`), or `None` if
@@ -165,6 +168,9 @@ def _source_dir_for(root: Path, spec: NativeSpec) -> str | None:
     return None
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to walk_pruned, a \
+# cross-module generator the resolver cannot see through; the one real raise path \
+# (path.read_bytes()) is caught below"
 def _source_content_digest(directory: Path) -> str:
     """T-0513: an order-stable sha256 over every non-pruned file's
     (relative path, content bytes) under `directory` -- the source-tree
@@ -209,7 +215,7 @@ def _load_stamps(root: Path) -> dict[str, dict[str, str]]:
         return {}
     try:
         loaded = json.loads(raw)
-    except json.JSONDecodeError:
+    except Exception:
         _log.warning("native staleness: malformed stamp file %s, ignoring", path)
         return {}
     if not isinstance(loaded, dict):

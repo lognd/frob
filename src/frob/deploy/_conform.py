@@ -176,6 +176,7 @@ class _TokenizeError(Exception):
     silently swallowed."""
 
 
+# frob:raises _TokenizeError
 def _tokenize_line(line: str) -> list[str]:
     """Real shell-word tokenization of one physical line via `shlex`
     (POSIX mode, `punctuation_chars` enabled so `;`/`&&`/`||`/`|`/`&`/
@@ -300,6 +301,13 @@ def _mutation_for_command(tokens: list[str]) -> set[MutationTarget]:
 # resolved 'eval' verb (index 0); a script line has finitely many tokens, so nesting \
 # 'eval eval ...' bottoms out" measure="len(tokens) at each recursive hop, strictly \
 # decreasing"
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _split_commands/ \
+# _resolve_command (reached via _mutation_for_command), plain list/str-token walks the \
+# resolver cannot see through; the one real raise path (_tokenize_line) is caught below"
+# frob:waive EXHAUST002 reason="T-1062: the resolver flags _LAST_POSITIONAL_KIND[base] \
+# in _mutation_for_base (reached via _mutation_for_command) as a KeyError site; it \
+# cannot correlate that indexing with the 'if base in _LAST_POSITIONAL_KIND' guard \
+# immediately above it -- the dict access is unreachable when the key is absent"
 def _mutation_for_eval(tokens: list[str], start: int) -> set[MutationTarget]:
     """`eval`'s remaining args, re-tokenized and re-resolved as a fresh
     command line (see `_mutation_for_command`'s eval docs)."""
@@ -354,6 +362,12 @@ def _mutation_for_base(base: str, args: list[str]) -> set[MutationTarget]:
 # frob:tests tests/unit/deploy/test_conform.py::TestEvasion.test_bare_word kind="unit"
 # frob:tests tests/unit/deploy/test_conform.py::TestEvasion.test_eval_wrap kind="unit"
 # frob:tests tests/unit/deploy/test_conform.py::TestEvasion.test_line_cont kind="unit"
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _split_commands/ \
+# _resolve_command (reached via _mutation_for_command), plain list/str-token walks the \
+# resolver cannot see through; the one real raise path (_tokenize_line) is caught below"
+# frob:waive EXHAUST002 reason="T-1062: same _LAST_POSITIONAL_KIND[base] resolver \
+# false-positive as _mutation_for_eval above, reached transitively via \
+# _mutation_for_command -> _mutation_for_base; the guarded dict access cannot raise"
 def extract_mutation_surface(text: str) -> frozenset[MutationTarget]:
     """Parse one script's text into its full `MutationTarget` set via
     GENUINE shell tokenization (module docstring, `_tokenize_line`/

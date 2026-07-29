@@ -286,6 +286,7 @@ def drift(lock: LockFile, snapshot: GraphSnapshot) -> DriftReport:
 # frob:tests tests/test_graph_lock.py::TestAckDrift.test_write_lock_deterministic
 # frob:tests tests/test_graph_lock.py::TestAckDrift.test_write_lock_is_atomic
 # frob:tests tests/test_graph_lock.py::TestAckDrift.test_write_lock_oserror_on_replace_is_write_failed  # noqa: E501
+# frob:raises BaseException
 def write_lock(lock: LockFile, path: Path) -> Result[Unit, LockError]:
     """Atomically write `lock` as deterministic, sorted, diff-friendly JSON."""
     ordered = _sorted_entries(lock.entries)

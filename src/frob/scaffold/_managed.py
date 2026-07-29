@@ -328,6 +328,11 @@ class ManagedBlockStatus(BaseModel):
     actual_digest: str | None = None
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _marker_begin/ \
+# _marker_end (plain str-formatting helpers) and str.strip on the sliced result, \
+# neither of which the resolver can statically bound; the one real raise path \
+# (str.index) is caught below"
+# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _extract_region(text: str, block_id: str) -> str | None:
     """The text strictly between `block_id`'s begin/end markers in `text`,
     or `None` if the marker pair is not present (malformed -- only one

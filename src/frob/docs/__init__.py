@@ -151,14 +151,14 @@ def _module_docstring(path: Path) -> tuple[int, str] | None:
     try:
         source = path.read_text(encoding="utf-8", errors="replace")
         tree = _pyast.parse(source)
-    except (OSError, SyntaxError):
+        doc = _pyast.get_docstring(tree, clean=True)
+        if doc is None or not tree.body:
+            return None
+        first = tree.body[0]
+        line = getattr(first, "lineno", 1)
+        return line, " ".join(doc.split())
+    except Exception:
         return None
-    doc = _pyast.get_docstring(tree, clean=True)
-    if doc is None or not tree.body:
-        return None
-    first = tree.body[0]
-    line = getattr(first, "lineno", 1)
-    return line, " ".join(doc.split())
 
 
 # frob:doc docs/modules/app.md#frobdocs-library

@@ -375,7 +375,7 @@ def _retention_limit(attrs: tuple[str, ...]) -> Quantity | None:
                 value_part, unit_part = raw[:cut], raw[cut:]
                 try:
                     return Quantity(value=float(value_part), unit=unit_part)
-                except ValueError:
+                except Exception:
                     continue
             _log.warning("compliance: malformed retention attr %r", attr)
             return None

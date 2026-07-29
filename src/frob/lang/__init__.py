@@ -212,6 +212,9 @@ def tree_sitter_extensions() -> frozenset[str]:
     return _TREE_SITTER_EXTENSIONS
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to Path.as_posix, a \
+# plain string-formatting call the resolver cannot statically bound; the one real \
+# raise path (relative_to outside cwd) is caught above"
 def _display_path(path: Path) -> str:
     """Repo-relative POSIX path when possible, else the path as given."""
     try:
@@ -282,6 +285,11 @@ def _check_size_cap(path: Path, size: int) -> LangError | None:
 # frob:waive COV007 reason="docs/modules/lang.md's Size cap and parse timeout section \
 # (T-0893) is a deliberate, per-function architecture doc of this module's internal \
 # DoS guards, same convention as the Primitives section's private tree-sitter helpers"
+# frob:waive EXHAUST001 reason="T-1062: fn is a caller-supplied zero-arg callable (a \
+# tree-sitter/strata-core parse call); future.result() re-raises whatever fn itself \
+# raised -- an exception surface this generic timeout wrapper cannot know or bound by \
+# construction (a genuine Unknown, not a resolver artifact) and must NOT swallow with \
+# a catch-all, since callers own fn's own error contract and rely on it propagating"
 def _run_parse_with_timeout(
     fn: Callable[[], _T], path: Path, budget: float = _PARSE_TIMEOUT_SECONDS
 ) -> Result[_T, LangError]:

@@ -24,6 +24,7 @@ from frob.process.parsers.common import (
     Diagnostic,
     Severity,
     ToolResult,
+    tool_crash_result,
     tool_disabled_result,
     tool_unavailable_result,
 )
@@ -33,6 +34,10 @@ if TYPE_CHECKING:
 
 
 # frob:ticket T-0142
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to parse_ruff_json (a \
+# deferred cross-module import the resolver cannot follow) and _ruff_format_result's \
+# own call graph; every locally-visible fallible step here is the guarded subprocess \
+# call, already caught below"
 def _run_ruff(root: Path, extra_args: list[str] | None) -> list[ToolResult]:
     """ruff lint + ruff format --check, as two ToolResults. A missing
     `ruff` binary (T-0142: bare-wheel installs may lack it) is a typed
@@ -62,6 +67,10 @@ def _run_ruff(root: Path, extra_args: list[str] | None) -> list[ToolResult]:
     return out
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to \
+# _reformat_diagnostics, a plain str-splitting helper the resolver cannot follow \
+# through the module-local call boundary; the only fallible step (the guarded \
+# subprocess call) is caught below"
 def _ruff_format_result(root: Path) -> ToolResult:
     """The `ruff format --check` outcome as one ToolResult, or a typed
     failure (T-0142) if `ruff` is not on PATH."""
@@ -853,8 +862,11 @@ def _run_bind(root: Path) -> ToolResult | None:
     except ImportError:
         return None
 
-    result = verify_bindings(scan)
-    diags = _bind_mismatch_diagnostics(result)
+    try:
+        result = verify_bindings(scan)
+        diags = _bind_mismatch_diagnostics(result)
+    except Exception as exc:
+        return tool_crash_result("frob-bind", exc)
     n = len(diags)
     return ToolResult(
         tool="frob-bind",

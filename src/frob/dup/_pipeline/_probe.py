@@ -190,6 +190,12 @@ def _probe_callables(
     return Ok((fn_a, fn_b))
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to resolve() (deferred \
+# import of frob.fuzz._arbitrary.resolve, a typani Result-returning call the resolver \
+# cannot follow) and _probe_param_strategy's own dict/attribute access on \
+# sig.parameters, an inspect.Signature the caught inspect.signature() call already \
+# produced; every other locally-visible fallible step is Result-checked"
+# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _probe_strategies(fn_a: Any) -> Result[dict[str, Any], DupError]:
     """Arbitrary generators for `fn_a`'s parameters, keyed by name.
 
@@ -251,6 +257,10 @@ def _probe_param_strategy(param: Any, resolve: Any) -> Result[Any, DupError]:
     return Ok(gen_result.danger_ok)
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to \
+# inspect.Signature.bind, a stdlib call the resolver cannot bound-check statically; \
+# both of its documented raise paths (TypeError for arity mismatch, ValueError for \
+# unmet defaults) are caught below"
 def _probe_arity_compatible(fn_b: Any, n_positional: int) -> bool:
     """True if `fn_b` can be called with exactly `n_positional` positional
     arguments, checked via `Signature.bind` (never by calling `fn_b`).

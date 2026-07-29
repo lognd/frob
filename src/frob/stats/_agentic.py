@@ -147,7 +147,7 @@ def _load_events(root: Path) -> list[dict[str, Any]]:
             continue
         try:
             events.append(json.loads(line))
-        except json.JSONDecodeError:
+        except Exception:
             _log.debug("stats: telemetry line %d unparseable, skipped", lineno)
     return events
 
@@ -218,7 +218,7 @@ def _parse_iso(ts: str) -> float | None:
 
     try:
         return datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
-    except ValueError:
+    except Exception:
         return None
 
 

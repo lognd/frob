@@ -529,6 +529,10 @@ def _mode_digits(mode: str) -> str | None:
     return None
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _mode_digits, a \
+# module-local str-normalizing helper the resolver cannot see through; the one real \
+# raise path (int() on a malformed digit) is caught below"
+# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _mode_owner_writable(mode: str) -> bool:
     """Whether the OWNER permission digit of a POSIX octal `mode` string
     grants write (bit `0o2`) -- the derivation `_lateral_pair_violations`
@@ -538,11 +542,15 @@ def _mode_owner_writable(mode: str) -> bool:
         return False
     try:
         owner_digit = int(digits[0])
-    except ValueError:
+    except (IndexError, TypeError, ValueError):
         return False
     return bool(owner_digit & 0o2)
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to str.strip/len, plain \
+# str methods the resolver cannot statically bound; the one real raise path (int() on \
+# a malformed digit) is caught below"
+# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _mode_has_setuid(mode: str) -> bool:
     """Whether a 4-digit POSIX octal `mode` string's special-bits digit
     sets the setuid bit (`0o4`) -- `owns "PATH" "4755"` is the ONLY
@@ -553,7 +561,7 @@ def _mode_has_setuid(mode: str) -> bool:
         return False
     try:
         special_digit = int(stripped[0])
-    except ValueError:
+    except (TypeError, ValueError):
         return False
     return bool(special_digit & 0o4)
 

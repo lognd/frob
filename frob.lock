@@ -251,6 +251,16 @@
       "ref": "src/frob/graph/__init__.py::resolve"
     },
     {
+      "digest": "f1f95b9c34de55d10f5a4862504e7699d26c63ad9a13207c90d34561d9d33923",
+      "facet": "body",
+      "ref": "src/frob/graph/_generated.py::is_generated_source"
+    },
+    {
+      "digest": "251148ddbbaf8a1664e06a7884b6004854aaac909bb8899ffbb1b5bcaeefdd96",
+      "facet": "sig",
+      "ref": "src/frob/graph/_generated.py::is_generated_source"
+    },
+    {
       "digest": "fa7492b15b796f86b6627da79468d2fcfa6926d24fbf6083e2f044e1f30fad50",
       "facet": "sig",
       "ref": "src/frob/graph/lock.py::acknowledge"
@@ -299,6 +309,16 @@
       "digest": "35747d2ab1aa11f396d1bc875f6eb25fe8460872a77fcc1733c9def5d414bf9a",
       "facet": "sig",
       "ref": "src/frob/lang/__init__.py::supported_languages"
+    },
+    {
+      "digest": "76f2a90701d1e3d70be9393283e4f54adac05fd16bde31105177ee06ed62ce45",
+      "facet": "body",
+      "ref": "src/frob/lang/_nodes.py::resolve_local_import"
+    },
+    {
+      "digest": "26fc40e7c586f26b3a596bc3bc12a5dbc4b291c33a46761aa41b062930e73454",
+      "facet": "sig",
+      "ref": "src/frob/lang/_nodes.py::resolve_local_import"
     },
     {
       "digest": "7e3b0f8b40eeef7d827dec7813e9ae6589728a619e99dcbc65fc27c351c0c488",
@@ -366,6 +386,21 @@
       "ref": "src/frob/process/_lock.py::derived_state_lock"
     },
     {
+      "digest": "0ea0832fd89957882d96cc76a4d833c8fe7f8e3b6da6d9e9004859d3df0111b3",
+      "facet": "sig",
+      "ref": "src/frob/serve/_events.py::CoverageWatcher"
+    },
+    {
+      "digest": "497e98c2f6e44fbc64aeb5d1d32bc22ae8d54c06104f85053416ec64fb247df0",
+      "facet": "body",
+      "ref": "src/frob/serve/_events.py::subscribe_and_wait"
+    },
+    {
+      "digest": "c0035bbd8e239d6de4ab9409e62e1211c816f3f8e1a4abea8c6e513fee2ad6d7",
+      "facet": "sig",
+      "ref": "src/frob/serve/_events.py::subscribe_and_wait"
+    },
+    {
       "digest": "041b76fdaefb8c1c1de5cfa5a9730a9ea4127695a8f0f1249647bae1673f0982",
       "facet": "body",
       "ref": "src/frob/strata/_selfconform.py::_coverage_totality_violations"
@@ -374,6 +409,16 @@
       "digest": "f79bdfce60d4e3e205c51afe6a5f158e6858dd30379cebf981b9b6e0a368bff2",
       "facet": "sig",
       "ref": "src/frob/strata/_selfconform.py::_coverage_totality_violations"
+    },
+    {
+      "digest": "a893850a01f0b7785260d02701afc1ee0a5116a009a0de7907f49348b90cf431",
+      "facet": "body",
+      "ref": "src/frob/strata/_waive.py::parse_waiver_expiry"
+    },
+    {
+      "digest": "b7c60cd82759066fb7b67ba0121592e9713314c1779cfbf34302df3f20de0621",
+      "facet": "sig",
+      "ref": "src/frob/strata/_waive.py::parse_waiver_expiry"
     },
     {
       "digest": "e1173036256e0cb104e4294d327d0b4d2427ce9df329b19e775cc048cd0172ac",
@@ -559,6 +604,16 @@
       "digest": "b1a83f11e01d1abc8e365d1c3369c57b882ef747d95e06bd5cfddc25f5ad3000",
       "facet": "sig",
       "ref": "src/frob/tickets/clipboard.py::clipboard_image"
+    },
+    {
+      "digest": "26b10e66c50a8a0654663f81127109c966e9048d9ff89fc725b10b004a904ed3",
+      "facet": "body",
+      "ref": "src/frob/xref/__init__.py::xref"
+    },
+    {
+      "digest": "3162432fa18da978a0c575e8728ca3e498a846f895cf8bb9abd29b008c550b2b",
+      "facet": "sig",
+      "ref": "src/frob/xref/__init__.py::xref"
     }
   ],
   "version": 1

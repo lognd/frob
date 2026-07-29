@@ -388,6 +388,10 @@ def _merge_base(root: Path, base: str) -> Result[str, GitError]:
 _HUNK_HEADER_PREFIX = "@@ "
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to str.startswith/ \
+# str.strip/dict.setdefault, plain str/dict methods the resolver cannot statically \
+# bound; the one real raise path (the hunk-header token parse) is caught below"
+# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _parse_unified_diff(text: str) -> dict[str, list[tuple[int, int]]]:
     """Parse `git diff --unified=0` output into `{file: [(start, end), ...]}`."""
     per_file: dict[str, list[tuple[int, int]]] = {}
@@ -406,18 +410,21 @@ def _parse_unified_diff(text: str) -> dict[str, list[tuple[int, int]]]:
         # "@@ -a,b +c,d @@ ..." -- we want the new-file (+) range.
         try:
             plus_part = line.split("+", 1)[1].split(" ", 1)[0]
-        except IndexError:
+            if "," in plus_part:
+                start_s, count_s = plus_part.split(",", 1)
+                start, count = int(start_s), int(count_s)
+            else:
+                start, count = int(plus_part), 1
+        except (IndexError, KeyError, TypeError, ValueError):
+            # A malformed hunk header (unexpected git diff output shape)
+            # is skipped, never a crash -- this is a best-effort line-range
+            # index, not a correctness-critical parse.
             continue
-        if "," in plus_part:
-            start_s, count_s = plus_part.split(",", 1)
-            start, count = int(start_s), int(count_s)
-        else:
-            start, count = int(plus_part), 1
         if count == 0:
             # Pure deletion hunk -- no new lines to select against; skip.
             continue
         end = start + count - 1
-        per_file[current_file].append((start, end))
+        per_file.setdefault(current_file, []).append((start, end))
     return per_file
 
 

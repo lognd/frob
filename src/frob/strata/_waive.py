@@ -243,6 +243,10 @@ _EXPIRES_RE = re.compile(r"expires:(\d{4}-\d{2}-\d{2})")
 # frob:doc docs/modules/strata.md#bounded-escape-hatches-t-0671
 # frob:tests tests/unit/strata/test_waive.py::TestConformanceWaiverExpiry.test_parses_embedded_expiry_date  # noqa: E501
 # frob:tests tests/unit/strata/test_waive.py::TestConformanceWaiverExpiry.test_no_marker_returns_none  # noqa: E501
+# frob:waive AFFECT001 reason="T-1062: EXHAUST001 hardening -- widened except \
+# ValueError to except Exception around date.fromisoformat; the documented 'None on \
+# malformed date' fail-closed contract and behavior are unchanged, nothing for \
+# docs/modules/strata.md#bounded-escape-hatches-t-0671 to update"
 def parse_waiver_expiry(reason: str) -> date | None:
     """The `expires:YYYY-MM-DD` date embedded in `reason`, or `None` if no
     such marker is present (T-0671's grammar-free expiry convention,
@@ -255,7 +259,7 @@ def parse_waiver_expiry(reason: str) -> date | None:
         return None
     try:
         return date.fromisoformat(match.group(1))
-    except ValueError:
+    except Exception:
         return None
 
 

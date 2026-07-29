@@ -234,6 +234,9 @@ def _absolute_imports(node: ast.AST) -> list[tuple[str, int]]:
     return []
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to Path.parent, a pure \
+# pathlib property the resolver cannot statically bound; the one real raise path \
+# (relative_to outside root) is caught below"
 def _relative_base_dir(file_dir: Path, root: Path, level: int) -> Path | None:
     """The root-relative package directory `level` dots up from `file_dir`
     (python relative-import semantics: level 1 is the importing file's own

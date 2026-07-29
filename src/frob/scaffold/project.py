@@ -4,7 +4,7 @@ import stat
 from dataclasses import dataclass
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound, TemplateSyntaxError
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
@@ -345,11 +345,10 @@ def _write_manifest_entries(
             return Err(ScaffoldError.TemplateNotFound)
         try:
             content = tmpl.render(ctx)
-        except TemplateSyntaxError:
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(content)
+        except Exception:
             return Err(ScaffoldError.RenderFailed)
-
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(content)
         written.append(out_path)
     return Ok(written)
 

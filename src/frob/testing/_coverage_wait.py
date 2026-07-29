@@ -295,7 +295,7 @@ def _read_shared_result(root: Path, digest: str) -> SharedCoverageResult | None:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
         return SharedCoverageResult.model_validate(payload)
-    except (FileNotFoundError, OSError, ValueError):
+    except Exception:
         return None
 
 

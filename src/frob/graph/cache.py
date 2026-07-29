@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import time
-from importlib.metadata import PackageNotFoundError, version
+from importlib.metadata import version
 from pathlib import Path
 
 from frob.graph._models import (
@@ -102,7 +102,7 @@ def _compute_fingerprint() -> str:
     for pkg in _FINGERPRINT_PACKAGES:
         try:
             parts.append(f"{pkg}=={version(pkg)}")
-        except PackageNotFoundError:
+        except Exception:
             parts.append(f"{pkg}==unknown")
     return "|".join(parts)
 

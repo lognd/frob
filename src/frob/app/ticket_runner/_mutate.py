@@ -123,6 +123,10 @@ def _priority(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0834
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to the deferred import \
+# of set_kind, a typani Result-returning call the resolver cannot follow through the \
+# function-local import boundary; the only locally-visible fallible step (TicketKind \
+# construction) is already caught below"
 def _kind(root: Path, cfg: AppConfig) -> None:
     """`frob ticket kind <id> <kind>`: the ONLY thing this command does is
     forward to `frob.tickets.set_kind` -- no validation is re-derived here
@@ -373,6 +377,10 @@ def _epic(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1069
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to the deferred import \
+# of set_tier, a typani Result-returning call the resolver cannot follow through the \
+# function-local import boundary; the only locally-visible fallible step (TicketTier \
+# construction) is already caught below"
 def _tier(root: Path, cfg: AppConfig) -> None:
     """`frob ticket tier <id> <epic|story|ticket>`: the ONLY thing this
     command does is forward to `frob.tickets.set_tier` -- no validation is

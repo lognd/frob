@@ -770,6 +770,10 @@ def _validate_observability(module: Module) -> Result[None, StrataError]:
     return Ok(None)
 
 
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to the `[k.value for k \
+# in KrbDelegationKind]` list-comprehension inside the log call, a pure enum-attribute \
+# walk the resolver cannot statically bound; the one real raise path \
+# (KrbDelegationKind construction) is caught above"
 def _validate_node_krb_delegation(decl: NodeDecl) -> Result[None, StrataError]:
     """`delegation` kind/target checks; see `_validate_node_krb`."""
     if decl.krb_delegation is not None:

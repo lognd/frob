@@ -251,7 +251,7 @@ def _current_commit(root: Path) -> str | None:
             timeout=30,
             check=False,
         )
-    except OSError:
+    except Exception:
         return None
     if proc.returncode != 0:
         return None

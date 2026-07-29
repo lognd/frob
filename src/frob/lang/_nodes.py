@@ -47,6 +47,13 @@ def node_text(node: Node | None) -> str:
 
 
 # frob:doc docs/modules/graph.md#public-api
+# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to str.replace/Path. \
+# as_posix, plain str/pathlib calls the resolver cannot statically bound; every real \
+# raise path (path existence/resolve checks) is caught in each language branch"
+# frob:waive AFFECT001 reason="T-1062: EXHAUST001 hardening -- widened OSError \
+# handling around Path.exists()/Path.resolve() in both language branches; the \
+# documented 'None when unresolvable' return contract and behavior are unchanged, \
+# nothing for docs/modules/graph.md#public-api to update"
 def resolve_local_import(
     specifier: str, language: str, *, file_dir: Path, root: Path
 ) -> str | None:
@@ -61,16 +68,21 @@ def resolve_local_import(
         base = specifier.replace(".", "/")
         for suffix in (".py", "/__init__.py"):
             candidate = Path(base + suffix)
-            if (root / candidate).exists():
+            try:
+                found = (root / candidate).exists()
+            except OSError:
+                continue
+            if found:
                 return candidate.as_posix()
         return None
     if language in ("c", "cpp"):
-        candidate = (file_dir / specifier).resolve()
         try:
+            candidate = (file_dir / specifier).resolve()
             rel = candidate.relative_to(root.resolve())
-        except ValueError:
+            exists = candidate.exists()
+        except (OSError, ValueError):
             return None
-        return rel.as_posix() if candidate.exists() else None
+        return rel.as_posix() if exists else None
     return None
 
 
