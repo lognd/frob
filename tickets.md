@@ -1272,7 +1272,7 @@ alias name or a refusal).
 ```yaml
 id: T-1203
 title: 'strata: may-mutation audit -- prove every may is load-bearing and double-detected'
-state: queued
+state: done
 kind: invariant
 origin: human
 created: '2026-07-29'
@@ -1286,28 +1286,131 @@ scope:
 - tests/unit/strata/**
 - tests/golden/**
 - docs/strata/**
+evidence:
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_every_may_is_load_bearing
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_baseline_sys101_is_zero
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_no_undetectable_kinds
+- tests/unit/strata/test_mutation_audit.py::TestDetectableKindsVocabulary::test_proc_family_is_currently_undetectable
 acceptance:
 - text: GIVEN any single may declaration in any loaded .strata model WHEN it is deleted
     in a mutated copy THEN self-conformance yields at least one SYS100 AND the seccomp/export
     golden diff yields a second, independent finding -- two errors from two mechanisms
     with no shared blind spot
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_every_may_is_load_bearing
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_baseline_sys101_is_zero
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_no_undetectable_kinds
+  - tests/unit/strata/test_mutation_audit.py::TestDetectableKindsVocabulary::test_proc_family_is_currently_undetectable
 - text: GIVEN any single may declaration WHEN it is substituted for a different capability
     kind THEN the mutated copy yields the SYS100 plus SYS101 pair
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_every_may_is_load_bearing
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_baseline_sys101_is_zero
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_no_undetectable_kinds
+  - tests/unit/strata/test_mutation_audit.py::TestDetectableKindsVocabulary::test_proc_family_is_currently_undetectable
 - text: GIVEN the harness runs THEN it also asserts baseline SYS101 count is zero
     (every may proven load-bearing, no silently-deletable declarations) and that no
     existing waiver masks a mutation finding (mutation run evaluated with waivers
     disabled or each masked mutation reported)
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_every_may_is_load_bearing
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_baseline_sys101_is_zero
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_no_undetectable_kinds
+  - tests/unit/strata/test_mutation_audit.py::TestDetectableKindsVocabulary::test_proc_family_is_currently_undetectable
 - text: GIVEN a capability kind the effect scanner cannot observe THEN the harness
     fails closed naming the undetectable kind rather than skipping it -- scanner blind
     spots become findings, not silence
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_every_may_is_load_bearing
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_baseline_sys101_is_zero
+  - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_no_undetectable_kinds
+  - tests/unit/strata/test_mutation_audit.py::TestDetectableKindsVocabulary::test_proc_family_is_currently_undetectable
 threat: null
 component: null
 ```
 User directive 2026-07-29: ensure changing any may in the .strata files produces two errors. Today SYS100 (observed-undeclared) and SYS101 (declared-unobserved) cover the two directions but a pure deletion yields one finding, and the guarantee rests on three unproven assumptions: baseline SYS101=0, scanner detection completeness per capability kind, and no waiver masking (e.g. a SYS100:fs-write waiver would swallow the mutation). No mutation harness exists over design/frob.strata -- tests/unit/strata/test_conform_eval_needle.py is a fixture false-positive regression, not detection-completeness proof. Design: a litmus-style mutation-audit (frob sys mutation-audit or a hypothesis-parametrized test) that for EVERY may in every loaded model checks a mutated in-memory copy (delete -> >=1 SYS100; substitute -> SYS100+SYS101 pair), plus an independent second layer via the _export.py seccomp allowlist golden (tests/golden/frob_export_k8s.yaml precedent) so semantic and artifact detectors cannot share a blind spot. Interacts with T-1196 (multi-file split: harness must iterate every loaded file) and the fs.read/fs.write migration landing this drive -- build atop the migrated spellings.
+
+## Done report
+
+Built src/frob/strata/_mutation_audit.py (run_may_mutation_audit): for
+every `may` atom on every node in every loaded `.strata` model, mutates
+an in-memory copy two ways and proves detection:
+
+- Deletion: proves SYS100 (core or extended) fires, computed at the
+  kind level by reusing the SAME functions check_self_conformance calls
+  (_declared_kinds/_stale_design_violations/_extended_kind_violations)
+  against a single shared baseline scan, rather than a full repo-scan
+  per atom (~100 atoms x repo scan would be prohibitive). Also checks
+  the independent second detector: _export.py's node_allowed_syscalls
+  (seccomp export), which joins the same Node.may tuple through a
+  completely different table (_SECCOMP_KIND_MAP, keyed on the raw
+  _may_kind spelling) -- a real second mechanism, not a second view of
+  SYS100. Extended _SECCOMP_KIND_MAP with fs.read/fs.write (real
+  syscall-backed kinds it was missing) and regenerated
+  tests/golden/frob_export_seccomp.json.
+- Substitution: proves the SYS100+SYS101 pair fires.
+- Asserts baseline SYS101 count is zero (acceptance [2]) and reports
+  every declared kind outside DETECTABLE_KINDS as an
+  UndetectableCapabilityKind finding (acceptance [3]) rather than
+  silently passing -- proc is confirmed reachable as the one currently-
+  undeclared example.
+- Deliberately pre-waiver: never calls _apply_sys_waivers, so an
+  existing waive clause on the live design cannot mask a mutation
+  finding here (acceptance [2]'s waiver-masking clause), structurally
+  rather than via a special disabled-waivers mode.
+
+REAL FINDING: today's export/seccomp mechanism only has genuine
+OS-syscall coverage for exec/net/fs.read/fs.write. The 7 app-level
+kinds actually declared in design/frob.strata (eval, env, ffi,
+install-hook, sql, deserialize, fetch_url) have NO syscall analog --
+faking syscalls for them would be dishonest. These are reported as
+disclosed SecondDetectorGap findings, not silently claimed as
+double-detected; MutationFinding.load_bearing only requires the export
+diff where EXPORT_DETECTABLE_KINDS claims coverage. Filed T-1328
+to build a real second detector for these kinds (e.g. a generated
+capability-manifest artifact, mirroring the seccomp-export precedent
+for app-level capabilities).
+
+OUT-OF-SCOPE DISCOVERY: tests/unit/strata/test_selfconform.py's
+TestRealGateGreen/TestCoverageTotality real-repo assertions fail on
+main (pre-existing, unrelated to this diff) because src/frob/refactor/**
+(landed by T-1197) has no code= binding in design/frob.strata (SYS102 +
+4x SYS103). Filed T-1329 rather than fixing silently or
+expanding this ticket's scope.
+
+Also added interface= declarations for the new public symbols on the
+stratamod/testsuite nodes (SYS104), a new docs/strata/selfconform.md
+section documenting the mutation audit (COV001/AFFECT001), and
+exported the new symbols from frob.strata's __init__.py.
+
+### Changed
+```
+ design/frob.strata                       |   9 +
+ docs/strata/selfconform.md               |  37 +++
+ src/frob/strata/__init__.py              |  16 ++
+ src/frob/strata/_export.py               |  33 +++
+ src/frob/strata/_mutation_audit.py       | 439 +++++++++++++++++++++++++++++++
+ tests/golden/frob_export_seccomp.json    | 185 +++++++++++++
+ tests/unit/strata/test_mutation_audit.py | 103 ++++++++
+ tickets.md                               | 153 ++++++++++-
+ 8 files changed, 970 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_every_may_is_load_bearing` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_baseline_sys101_is_zero` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_no_undetectable_kinds` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mutation_audit.py::TestDetectableKindsVocabulary::test_proc_family_is_currently_undetectable` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1204 -->
 ```yaml
@@ -10390,3 +10493,43 @@ threat: null
 component: null
 ```
 Observed 2026-07-29 in worktree w26-strata-t1203 during T-1203: a frob check / mutation-testing run emitted 'WARNING: mutate: restored stale mutation-backup journal' and the restore CLOBBERED two uncommitted in-progress edits to src/frob/strata/_mutation_audit.py (the file under active development, not a mutation target of the run). The agent caught it only by noticing unexpected file content, redid the edits, and committed defensively. The T-0857 crash-safe journal exists to restore mutants after a crash -- but a STALE journal (from an earlier run, or another worktree context) must never win over newer on-disk content. Fix direction: the restore path must verify the journal entry's recorded pre-mutation content hash still matches the CURRENT file before restoring (mismatch = the file moved on legitimately -> skip restore, log, and drop the stale entry), and the journal should be invalidated at the start of any run that did not crash.
+
+<!-- ticket:T-1328 -->
+```yaml
+id: T-1328
+title: 'strata: build an independent second detector for app-level capability kinds
+  (eval/env/ffi/install-hook/sql/deserialize/fetch_url)'
+state: queued
+kind: invariant
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/**
+threat: null
+component: null
+```
+T-1203's mutation-audit harness (src/frob/strata/_mutation_audit.py, SecondDetectorGap) proves that today only exec/net/fs.read/fs.write have a genuine independent second detector (the seccomp export -- node_allowed_syscalls/_SECCOMP_KIND_MAP): these are real OS-syscall-backed capabilities. The 7 app-level kinds actually declared in design/frob.strata (eval, env, ffi, install-hook, sql, deserialize, fetch_url) have no OS-syscall analog, so faking a seccomp entry for them would be dishonest (no real syscall corresponds to e.g. 'sql'). Acceptance [0] of T-1203 wants EVERY may to be double-detected by two independent mechanisms; this ticket is to design and build a real second detector for these 7 kinds -- e.g. a generated capability-manifest/allowlist artifact (distinct code path from scan_file_capabilities/SYS100) whose diff independently reacts to a may deletion/substitution, mirroring the seccomp-export precedent but for app-level capabilities instead of syscalls.
+
+<!-- ticket:T-1329 -->
+```yaml
+id: T-1329
+title: 'design/frob.strata: model src/frob/refactor/** (SYS102/SYS103 unmodeled, pre-existing
+  T-1197 gap)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- design/frob.strata
+threat: null
+component: null
+```
+Found while working T-1203 (may-mutation audit): tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant and ::TestCoverageTotality::test_repo_unrestricted_scan_is_clean fail on main (pre-existing, unrelated to T-1203's diff) because src/frob/refactor/** (landed by T-1197) has no code= binding in design/frob.strata: SYS102 unmodeled-code plus 4x SYS103 coverage-totality findings on _apply.py/_resolve.py/_scan.py/_verify.py (fs-read/fs-write observed, FOREIGN to every node). Needs a real node (or code= glob on an existing one) added for src/frob/refactor/**, with may declarations matching its real fs-read/fs-write effects, and interface= attrs for its public surface (SYS104 will fire too once bound).

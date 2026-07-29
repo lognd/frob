@@ -114,6 +114,43 @@ detection THREAT004 already runs.
   rule (imports), but it leaves "this whole directory has no owner"
   unraised anywhere. SYS102 is that missing raise.
 
+## may-mutation audit (T-1203)
+
+SYS100/SYS101 prove that today's `design/frob.strata` declarations are
+CONSISTENT with today's code -- they say nothing about whether removing a
+declaration would actually be CAUGHT. `src/frob/strata/_mutation_audit.py`
+(`run_may_mutation_audit`) closes that gap: for every `may` atom on every
+node in every loaded model, it checks a mutated in-memory copy of just
+that one atom two ways:
+
+- **Deletion** must trip SYS100 (core or extended, `DETECTABLE_KINDS` is
+  the exact union of kinds either producer can ever see -- a kind outside
+  it is reported as an `UndetectableCapabilityKind` finding rather than
+  silently passing) plus, wherever `EXPORT_DETECTABLE_KINDS` claims
+  coverage, an independent SECOND detector: `_export.py::
+  node_allowed_syscalls`'s generated seccomp allowlist, which joins the
+  same `Node.may` tuple through a completely different table
+  (`_SECCOMP_KIND_MAP`, keyed on the raw `_may_kind` spelling) -- a
+  semantic scanner and an artifact generator sharing no code path, so a
+  gap in one cannot hide a matching gap in the other. Today that second
+  detector only has real OS-syscall coverage for `exec`/`net`/`fs.read`/
+  `fs.write`; every other declared kind (`eval`/`env`/`ffi`/
+  `install-hook`/`sql`/`deserialize`/`fetch_url`) has no syscall analog
+  and is reported instead as a disclosed `SecondDetectorGap` -- not
+  silently claimed as double-detected. Building a real second detector
+  for those app-level kinds is a follow-up, not faked here.
+- **Substitution** (swapping the atom for an unrelated, detectable kind)
+  must trip the SYS100+SYS101 pair -- the original kind now undeclared,
+  the substituted kind now declared-but-unobserved.
+
+The harness also asserts the baseline SYS101 count is zero (every `may`
+already-observed BEFORE any mutation -- the precondition the whole
+guarantee rests on) and is deliberately pre-waiver: it reuses the same
+kind-level join functions `check_self_conformance` calls, but never
+`_apply_sys_waivers`, so an existing `waive "SYS100:..."` clause on the
+real design cannot mask a mutation finding here even though it would
+suppress the corresponding live `frob sys audit` finding.
+
 ## Kind-space drift-lock
 
 The net-connect/net-listen/fs-write/fs-read/exec vs. eval/env-read/

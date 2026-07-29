@@ -400,6 +400,15 @@ from frob.strata._secrets import (
     SecretSpec,
     elaborate_secret,
 )
+from frob.strata._mutation_audit import (
+    DETECTABLE_KINDS,
+    EXPORT_DETECTABLE_KINDS,
+    MutationAuditReport,
+    MutationFinding,
+    SecondDetectorGap,
+    UndetectableCapabilityKind,
+    run_may_mutation_audit,
+)
 from frob.strata._selfconform import (
     SYS_BINDING_TOTALITY,
     SYS_COVERAGE_TOTALITY,
@@ -542,6 +551,13 @@ __all__ = [
     "DEFAULT_COMPLIANCE_VIEWS",
     "DEFAULT_QUALITY_VIEWS",
     "DEFAULT_SECURITY_VIEWS",
+    "DETECTABLE_KINDS",
+    "EXPORT_DETECTABLE_KINDS",
+    "MutationAuditReport",
+    "MutationFinding",
+    "SecondDetectorGap",
+    "UndetectableCapabilityKind",
+    "run_may_mutation_audit",
     "SYS_BINDING_TOTALITY",
     "SYS_COVERAGE_TOTALITY",
     "SYS_INTERFACE_CONFORMANCE",

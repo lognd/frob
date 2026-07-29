@@ -1069,6 +1069,13 @@ node stratamod : trusted {
     attr interface=DesignLoadError;
     attr interface=DistributedTxnReport;
     attr interface=DistributedTxnViolation;
+    attr interface=DETECTABLE_KINDS;
+    attr interface=EXPORT_DETECTABLE_KINDS;
+    attr interface=MutationAuditReport;
+    attr interface=MutationFinding;
+    attr interface=SecondDetectorGap;
+    attr interface=UndetectableCapabilityKind;
+    attr interface=run_may_mutation_audit;
     attr interface=EXTRACTION_SOUNDNESS;
     attr interface=EffectPhase;
     attr interface=EffectReport;
@@ -3205,6 +3212,8 @@ node testsuite : trusted {
     attr interface=TestD11DedupedMatchRule;
     attr interface=TestD12DeletionFilterBroadScope;
     attr interface=TestDataClumps;
+    attr interface=TestDetectableKindsVocabulary;
+    attr interface=TestMayMutationAuditRealRepo;
     attr interface=TestDdlSchema;
     attr interface=TestDeadPrivateCode;
     attr interface=TestDeadSymbolGate;

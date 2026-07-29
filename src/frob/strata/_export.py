@@ -57,6 +57,39 @@ _FOREIGN_NOTE = "frob.strata/foreign-peer"
 _SECCOMP_KIND_MAP: dict[str, tuple[str, ...]] = {
     "exec": ("execve", "execveat", "fork", "vfork", "clone"),
     "net": ("socket", "connect", "bind", "listen", "accept", "sendto", "recvfrom"),
+    # T-1203 (may-mutation audit): `fs.read`/`fs.write` are the precise,
+    # mode-qualified spellings `_may_kind` returns whole for a T-0717
+    # `family.mode` atom (never split like a bare `fs` would be) -- added
+    # here so the seccomp export (the mutation audit's independent
+    # second detector, module docstring) actually varies when one of
+    # these two atoms is deleted or substituted, not just when the
+    # coarser `exec`/`net` kinds are. `env`/`eval`/`ffi`/`install-hook`/
+    # `sql`/`deserialize`/`html_render`/`fetch_url`/`client_storage` have
+    # NO real OS-syscall analog (an app-level capability, not a kernel
+    # one) and are deliberately NOT faked into this table -- T-1203's
+    # Done report files the follow-up ticket to build those kinds' own
+    # independent second detector rather than fabricating syscalls here.
+    "fs.read": (
+        "open",
+        "openat",
+        "read",
+        "pread64",
+        "stat",
+        "fstat",
+        "lstat",
+        "access",
+    ),
+    "fs.write": (
+        "open",
+        "openat",
+        "write",
+        "pwrite64",
+        "unlink",
+        "rename",
+        "mkdir",
+        "chmod",
+        "truncate",
+    ),
 }
 
 #: Baseline syscalls every profile allows regardless of `may` capabilities --

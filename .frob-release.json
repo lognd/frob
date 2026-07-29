@@ -1433,6 +1433,15 @@
     "src/frob/strata/_models.py::TRUST": "e8e283319edc69bd37ca6cba36cf7d176db52c0ccbf83f13441a0c14ecf06277",
     "src/frob/strata/_models.py::Verdict": "29849300e036eff7028404b916179a46687e086978117a8ab2103314810be91e",
     "src/frob/strata/_models.py::Waiver": "1a334b8f20170fde73359dc0cc26065fd38ba72af344ad74284a0f7f086f5588",
+    "src/frob/strata/_mutation_audit.py::DETECTABLE_KINDS": "078ceee1496219360165382fcb66f55c4e3bb479fa8a28839b7462af2044ea44",
+    "src/frob/strata/_mutation_audit.py::EXPORT_DETECTABLE_KINDS": "34e2187ba8d8a32bea87ad40b93f394816e6fb31f2a0732d2c3415ee82702b68",
+    "src/frob/strata/_mutation_audit.py::MutationAuditReport": "b1e820c060444e19801a7f97cfcb5bf8e5abd005b7656e0635318bba80e0372e",
+    "src/frob/strata/_mutation_audit.py::MutationAuditReport.all_load_bearing": "bb02fc6aea0f544cfd9901808cfa5430ad2d77f000dbbd9fcc45dd62a32aa417",
+    "src/frob/strata/_mutation_audit.py::MutationFinding": "43cf8cffbeea524f8cdbd10f5c292d65f581f08bc6ecff972ea4fe3e6705461d",
+    "src/frob/strata/_mutation_audit.py::MutationFinding.load_bearing": "38d3cb0b09d981f0b02effb64c1771d97a876549870200f30ec4ea4633f2899c",
+    "src/frob/strata/_mutation_audit.py::SecondDetectorGap": "ca0ac6329d2fd3841005bb1f2f8045323e0f863ba048c3412a036473990e88c0",
+    "src/frob/strata/_mutation_audit.py::UndetectableCapabilityKind": "963aca1eab024de4775f905f3fe4b96d1a6158dae738629cb5511b813f819622",
+    "src/frob/strata/_mutation_audit.py::run_may_mutation_audit": "9df128d75e41cfb7ad034f79b4784d6ad76431f88cc3afd87b030bf8de46b59c",
     "src/frob/strata/_native_staleness.py::NATIVE_SOURCE_DIRS": "1dcc7ed85b2ae14539ace14aefe3dc9f61c13cc9d0fac4820100b53c471d8680",
     "src/frob/strata/_native_staleness.py::StaleNative": "6de28eac4e1ade10ec60bff4447e184ff09ff2572244d75ad2a078e32c87b0f3",
     "src/frob/strata/_native_staleness.py::check_native_staleness_or_exit": "e6fd952c7815daf73832510fcee92c0ef5cef22141a82f6f6348627461f8bd0f",
@@ -1906,5 +1915,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.284.0"
+  "version": "0.285.0"
 }
