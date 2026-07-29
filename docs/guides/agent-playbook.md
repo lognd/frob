@@ -11,6 +11,56 @@ Each incident referenced below actually happened in this repo's history
 (tickets.md / tickets-archive.md Done reports). This is not theoretical
 caution.
 
+## 0. Standard dispatch contract (the whole ritual, in order)
+
+This section IS the dispatch prompt. A coordinator prompt that names your
+ticket series plus any ticket-specific notes and says "playbook governs"
+means exactly this list; everything below it in this file is the detailed
+WHY and the recovery recipes.
+
+1. ONE named worktree per series (`.claude/worktrees/<slug>`), reused for
+   every ticket in the series. `EnterWorktree`, fallback
+   `git worktree add <path> main`. Verify base == current main tip; merge
+   main if stale (sec 1).
+2. `uv run frob natives build` in the worktree BEFORE anything else --
+   missing natives = mass phantom findings, not real drift (NATIVE001
+   exists but do not wait to hit it). ALWAYS `uv run frob`, never bare
+   `frob`.
+3. Long frob verbs (`land`, `done-report`, `check`, `test`) MUST be run
+   foreground with the Bash TOOL-level parameter `timeout: 600000` PLUS a
+   shell-level `timeout 540 ...` wrapper. A project PreToolUse hook DENIES
+   the call otherwise. The shell wrapper alone does NOT prevent the ~120s
+   harness auto-background (sec 3b). Never background these, never arm a
+   Monitor on them, never end your turn waiting for anything.
+4. Work strictly inside the ticket's scope; narrow a broad scope to the
+   real files via `uv run frob ticket scope` before working (sec 4). If
+   `ticket start` refuses on a lease collision, skip to the next series
+   item and retry later; report anything still blocked -- never wait idle.
+5. Before every land: `uv run frob fmt` on touched files (an unwrapped
+   over-length directive is an E501 error on main), and
+   `uv run frob sys sync-interface --check` -- SYS104 is mandatory, so any
+   public-surface change must sync `design/frob.strata` in the SAME land.
+6. Evidence: pytest node ids in `file::Class::method` form, bound to
+   acceptance indices via `--accepts N` (sec 5). Every `frob:tests` edge
+   uses the dotted `Class.method` form, never pytest `::` form. New public
+   API needs the REL001 stamp via `uv run frob release` tooling -- never
+   hand-edit versions. Docs move in the same change as the code.
+7. NEVER `git stash` (sec 1b). NEVER remove a worktree after a failed
+   land -- the branch is the recovery path. A land that dies silently may
+   have SUCCEEDED: check `git log main` before retrying; after a second
+   silent death, keep your commits, report, continue the series.
+8. Every residue/follow-up you file is a draft that renumbers at land.
+   T-1125 rewrites prose citations automatically, but VERIFY the real id
+   exists on main before citing it in your final report. A disclosed cut
+   with no ticket is a TICK011 finding -- file it or state why not.
+9. Verify EVERY land is an ancestor of main (`git merge-base
+   --is-ancestor <hash> main`) and the ticket state is done ON MAIN before
+   counting it landed. Remove the worktree only after all lands verify
+   (sec 9, 12b).
+10. ASCII only. No emojis. No Co-Authored-By lines. End your turn only
+    with the full series report: per ticket, the land hash, evidence
+    bound, and residue with verified real ids.
+
 ## 1. Worktree warm-up (do this FIRST, every time)
 
 1. `git merge main` in the worktree, then verify the tip:
