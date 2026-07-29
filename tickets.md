@@ -2121,3 +2121,29 @@ threat: null
 component: null
 ```
 Rows: CMPL-NIST80053-FAMILIES, CMPL-NISTCSF-FUNCTIONS (process, already out_of_scope), CMPL-NIST80263-VOLUMES, CMPL-SSDF-PRACTICE-GROUPS. All 3 non-out_of_scope rows currently sit at handled_by:COMPLIANCE005 with no corresponding RegulationEntry in COMPLIANCE_CATALOG at all -- classify each: (a) enforceable via existing/extended strata vocabulary + new RegulationEntry, (b) needs new model vocabulary, (c) attestation-only, (d) out of scope with documented reason.
+
+<!-- ticket:T-1248 -->
+```yaml
+id: T-1248
+title: 'compliance triage: ISO 27002 themes/controls + CIS controls/safeguards/implementation-groups
+  rows'
+state: queued
+kind: security
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: T-1241
+tier: ticket
+sprint: null
+scope:
+- docs/design/registry/compliance.yaml
+- src/frob/strata/_compliance.py
+acceptance:
+- text: GIVEN this ticket closes WHEN each of the 4 rows is inspected THEN each carries
+    a follow-on ticket reference (for a/b/c) or an explicit out_of_scope reason recorded
+    in this ticket's body -- never left as a bare handled_by:COMPLIANCE005
+  evidence: []
+threat: null
+component: null
+```
+Rows: CMPL-ISO27002-THEMES, CMPL-ISO27002-CONTROLS, CMPL-CIS-CONTROLS, CMPL-CIS-SAFEGUARDS, CMPL-CIS-IMPLEMENTATION-GROUPS (advisory, already out_of_scope). The 4 non-out_of_scope rows all sit at handled_by:COMPLIANCE005 with no RegulationEntry backing. CIS-SAFEGUARDS alone is 153 leaf controls (config-checkability) -- do not attempt per-leaf enforcement here, classify at the unit/family level: (a) enforceable via existing/extended vocabulary + new RegulationEntry(ies), (b) needs new model vocabulary, (c) attestation-only, (d) out of scope with documented reason.
