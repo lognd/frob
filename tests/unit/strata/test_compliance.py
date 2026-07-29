@@ -21,13 +21,13 @@ from frob.strata import (
     Quantity,
 )
 from frob.strata._compliance import (
+    _CMPL_UNIT_TRIAGE_TICKET,
     CMPL_REGISTRY_UNIT_IDS,
     COMPLIANCE_CATALOG,
     REGULATION_VIEWS,
     _check_cmpl_registry_unit_backing,
     _check_cmpl_registry_unit_dispositions,
     _check_regulation_caught_by_integrity,
-    _CMPL_UNIT_TRIAGE_TICKET,
     check_cmpl_registry,
     check_privacy_policy,
     check_regulation_catalog_completeness,
@@ -752,7 +752,9 @@ class TestCmplRegistryBacking:
     # kind="unit"
     def test_frob_catalog_entries_self_reference_is_not_flagged(self):
         entries = (
-            _cmpl_entry("handled_by:COMPLIANCE005", entry_id="CMPL-FROB-CATALOG-ENTRIES"),
+            _cmpl_entry(
+                "handled_by:COMPLIANCE005", entry_id="CMPL-FROB-CATALOG-ENTRIES"
+            ),
         )
         violations = _check_cmpl_registry_unit_backing(entries)
         assert violations == ()
