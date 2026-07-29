@@ -308,7 +308,7 @@ the exact per-site verification recipe that caught this).
 id: T-1190
 title: 'test: fix 5 unwaived TEST003/TEST014 findings found in T-0204 verification
   close'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-29'
@@ -351,7 +351,6 @@ disambiguate the three TEST014 `stop` collisions with explicit
 each `.stop`, then re-verify `frob check --only gates-fast` shows 0
 unwaived TEST findings again (TEST006 aside, which only ever clears via
 `make coverage` at land, never in a worktree).
-
 <!-- ticket:T-1191 -->
 ```yaml
 id: T-1191
