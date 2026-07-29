@@ -11573,3 +11573,32 @@ finalize-commit step) exclude `.frob/` explicitly regardless of the
 target repo's own `.gitignore`. Filed by T-1258 (ledger v2 land merge
 story) -- out of that ticket's own scope (pre-existing failure, unrelated
 to its diff, confirmed via a clean main-HEAD scratch clone).
+
+<!-- ticket:T-1332 -->
+```yaml
+id: T-1332
+title: 'land waive-guard: test branch-merged-main deletion attribution and rename-aware
+  paths'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/test_ticket_land.py
+- src/frob/tickets/_land_merge.py
+acceptance:
+- text: GIVEN a branch that merged main after main legitimately deleted a waiver WHEN
+    land runs THEN no refusal occurs (locked by test)
+  evidence: []
+- text: GIVEN a waiver deleted inside a file renamed in the same branch THEN the guard
+    attributes the deletion to a path that scope-ownership evaluates correctly (test
+    proves which)
+  evidence: []
+threat: null
+component: null
+```
+Two verification gaps flagged at T-1326 review (both inherited/analysis-only today): (1) no test exercises a branch that runs git merge main AFTER main legitimately deleted a waiver, then lands -- the committed-history guard is safe by git merge-base construction (the merge advances the base past main's deletion) but nothing locks that in; every agent worktree merges main mid-flight, so a regression here would break all lands. (2) rename-aware attribution: _waive_deletions_in_diff takes the pre-image path from the hunk header; a waiver deleted inside a renamed file has untested scope-ownership attribution (pre- vs post-rename path) on BOTH the uncommitted (T-1323) and committed (T-1326) checks. Add tests for both; fix attribution if the rename test exposes a wrong-path bug.
