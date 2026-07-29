@@ -1,4 +1,3 @@
-# frob:waive REF002 preset="split-fragment"
 """frob.gates._debt_deprecated -- DEBT00x (`frob:debt`) and DEPR00x
 (`frob:deprecated`) gate families, split out of `frob.gates.__init__`
 (T-1115, following T-1072/T-1077's precedent).

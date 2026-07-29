@@ -574,7 +574,6 @@ def undispatched_stale(
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
 # frob:tests tests/test_tickets_tiers.py::TestDoableLeafOnly.test_epic_and_story_never_surface  # noqa: E501
-# frob:waive DRIFT001 reason="T-0453 added root/ignore_lease params; frob.lock ack out of scope, no inline-waivable syntax for JSON -- reviewer re-acks at land"  # noqa: E501
 # frob:invariant INV-024
 # frob:ticket T-0715
 # invariant spec: [INV-024](invariants/INV-024.md)

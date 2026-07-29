@@ -1,4 +1,3 @@
-# frob:waive REF002 preset="split-fragment"
 """T-1134: INV006 split-assist -- when a module split moves exclusivity-
 claim prose VERBATIM out of a file that already carries an INV006 waiver
 or a bound `frob:invariant` edge, the destination file's own INV006

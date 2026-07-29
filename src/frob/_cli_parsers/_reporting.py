@@ -2,7 +2,6 @@
 # module's help/docstring text carries incidental exclusivity-flavored wording \
 # (argparse help strings, scope-cut prose) inherited verbatim from __main__.py, not a \
 # new normative contract -- disposed as the same calibration batch, not claim-by-claim"
-# frob:waive REF002 preset="split-fragment"
 """CLI parser builders: reporting/inspection subcommands (gitlog, graph,
 ack, debt, deprecated, pool, registry, fleet).
 

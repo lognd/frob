@@ -1,4 +1,3 @@
-# frob:waive REF002 preset="split-fragment"
 """frob.app.ticket_runner._mutate -- the `scope`/`priority`/`kind`/
 `component`/`label`/`accept`/`board`/`epic`/`tier`/`sprint`/`brief`/`flow`
 mutation command family.

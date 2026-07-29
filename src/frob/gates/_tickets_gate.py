@@ -786,7 +786,6 @@ def _tick008_violations_for_ticket(
     if not extras:
         return []
     violations: list[Violation] = []
-    # frob:waive PERF004 reason="own distinct extras set per ticket, not a shared re-sort"  # noqa: E501
     for extra_field in sorted(extras):
         hint = ""
         close = difflib.get_close_matches(extra_field, known_fields, n=1)

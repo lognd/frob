@@ -321,11 +321,6 @@ class _RequestHandler(socketserver.StreamRequestHandler):
 
     # frob:doc docs/modules/serve.md#protocol
     # frob:tests tests/test_serve_socket.py::TestRunSocketDaemon.test_serves_one_request_then_idle_exits kind="unit"  # noqa: E501
-    # frob:waive ARCH103 reason="T-1092: the connection loop -- read a line, parse it, \
-    # dispatch it, write the response -- is the entire, inherently sequential job of a \
-    # socketserver.StreamRequestHandler.handle() override; splitting the \
-    # parse/dispatch/write steps into separate functions would not reduce real \
-    # complexity, only relocate it behind an extra call boundary for a single caller"
     def handle(self) -> None:  # noqa: ANN201
         """Serve every request line on this connection until EOF or a
         malformed line -- one connection may carry many sequential
