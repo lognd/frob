@@ -646,6 +646,7 @@ blocked_by:
 - T-1197
 - T-1199
 - T-1200
+- T-draft-d6ca9da7
 parent: T-1197
 tier: ticket
 sprint: null
@@ -703,7 +704,6 @@ Scope for this ticket: the split-specific pieces only --
   (not per whole split) per T-1135's transaction model.
 - Re-running T-1197/T-1199/T-1200's move/rewrite machinery per symbol
   moved, not reimplementing rewrite logic here.
-
 <!-- ticket:T-1202 -->
 ```yaml
 id: T-1202
@@ -868,8 +868,34 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/refactor/**
-- docs/**
 - tests/test_refactor.py
+- docs/design/refactor-verb.md
+- docs/commands/refactor.md
+scope_changes:
+- op: remove
+  glob: docs/**
+  reason: docs/** is chronically over-broad (matches every doc-anchor in the repo,
+    spamming scope-closure warnings); this ticket's own design/docs surface is narrow
+    -- the actual doc files it rewrites at runtime are the refactor target's own doc
+    set, discovered dynamically, not a static scope glob
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: docs/design/refactor-verb.md
+  reason: docs/** is chronically over-broad (matches every doc-anchor in the repo,
+    spamming scope-closure warnings); this ticket's own design/docs surface is narrow
+    -- the actual doc files it rewrites at runtime are the refactor target's own doc
+    set, discovered dynamically, not a static scope glob
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: docs/commands/refactor.md
+  reason: docs/** is chronically over-broad (matches every doc-anchor in the repo,
+    spamming scope-closure warnings); this ticket's own design/docs surface is narrow
+    -- the actual doc files it rewrites at runtime are the refactor target's own doc
+    set, discovered dynamically, not a static scope glob
+  actor: logan
+  at: '2026-07-29'
 acceptance:
 - text: 'GIVEN a docstring or comment in a file unrelated to a moved symbol''s own
 

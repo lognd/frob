@@ -192,16 +192,21 @@ sourced from the substrate above:
 | archived-ticket evidence node ids | `tickets.md`/`tickets-archive.md` evidence lines (`path::Class.method` / pytest `::` form) | ticket ledger text, both live and archived |
 | `frob.lock` ack entries | `frob.lock` (tracked) | `frob.graph.lock`, keyed on symbol identity+digest -- same digest at new symref carries the ack forward, never re-flagged stale by the move itself |
 
-The directive/waiver carrier child owns every DSL-target row; the
-registry/evidence repointer child owns the registry-YAML and
-ticket-ledger rows; the reference-rewrite engine child owns the Python
-import/call-site row and is the shared substrate (parse + plan + apply +
-verify machinery) the other two are built on top of, not parallel to.
+The directive/waiver carrier child (T-1199) owns every DSL-target row;
+the registry/evidence repointer child (T-1200) owns the registry-YAML
+and ticket-ledger rows; the reference-rewrite engine child (T-1197) owns
+the Python import/call-site row and is the shared substrate (parse +
+plan + apply + verify machinery) the others are built on top of, not
+parallel to; the prose/doc-anchor carrier child (T-1203) owns every row
+in the "Prose-rewrite scope" section below -- free text is NOT a DSL
+target and is NOT covered by T-1199.
 
 ## Prose-rewrite scope
 
 Distinct from the frob-owned DSL rewrite above -- this is free text that
-happens to NAME a moved symbol:
+happens to NAME a moved symbol. Owned in full by the prose/doc-anchor
+carrier child (T-1203), not by the directive carrier (T-1199), which
+only rewrites structured `frob:*` DSL directive targets:
 
 - Docstrings and comments naming the dotted path, anywhere in the repo
   (not just attached to the moved symbol) -- e.g. "see `frob.gates.
@@ -211,15 +216,18 @@ happens to NAME a moved symbol:
 - Doc anchor slugs whose heading text embeds the symbol/module name
   (e.g. `#inv006-t-0408` style anchors already keyed on gate id, but a
   heading literally titled with a module name changes its slug on
-  rename) -- checked against `frob.gates` doclink/docanchor gates
-  (DOCLINK/DOCANCHOR families) as the post-condition proof that no
-  anchor broke.
+  rename) -- checked against `frob.gates._doclink_docanchor`'s
+  `doclink_gate`/`docanchor_gate` (DOC001/DOC002) as the post-condition
+  proof that no anchor broke.
 - Every `frob:` comment-DSL directive TARGET anywhere in the repo that
   names the moved symbol, even on a directive whose OWNING symbol is
   not itself moving (epic acceptance [2]'s explicit scope -- this is
   broader than the reference-kind inventory above, which only covers
   edges attached to code that travels; this row is "any other file's
-  directive that merely points at the moved thing").
+  directive that merely points at the moved thing"). This particular row
+  is structured DSL text, not prose, so it is T-1199's to rewrite even
+  though it shares this section's "anywhere in the repo, not just on the
+  moved symbol" scope with the free-text rows above.
 
 Unresolvable prose (ambiguous natural-language mention, a name that is
 also a common English word, a mention inside a generated/vendored file)
@@ -283,14 +291,21 @@ built here.
    incremental per-chunk verification).
 5. Alias-conflict policy (the `--alias-conflict` flag, alias-naming
    scheme, disclosed alias report format).
+6. Prose/doc-anchor carrier (docstring/comment mentions repo-wide,
+   `docs/**` prose and embedded code references, doc-anchor heading-slug
+   rewriting, and the disclosed unresolvable-mentions report -- epic
+   acceptance [2]'s three prose-rewrite items, distinct from child 2's
+   structured DSL-target rewrite).
 
-Dependency order: 1 is the foundation every other child calls into; 2
-and 3 both depend on 1's plan/apply/verify pipeline existing (they
+Dependency order: 1 is the foundation every other child calls into; 2,
+3, and 6 all depend on 1's plan/apply/verify pipeline existing (they
 extend its reference-kind inventory, not re-implement transaction
 mechanics); 5 is a policy layer that 1 must expose an extension point
 for, so 5 depends on 1 too; 4 (split) is the highest-level verb, built
-last, depending on 1+2+3 all being usable underneath it for a split's
-own reference/directive/registry carrying.
+last, depending on 1+2+3+6 all being usable underneath it for a split's
+own reference/directive/registry/prose carrying -- a split is a move of
+many symbols at once, so it needs prose mentions carried too, the same
+as a single move/rename does.
 
 ## Open design questions for the coordinator
 
