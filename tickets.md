@@ -652,3 +652,55 @@ ticket, Tier C not built yet) -- shape the summary so later tickets can
 add to it without a reshape. `--fix --json` emits the existing violations
 array plus an (empty for now) `fixits` key. See docs/design/check-fix-engine.md
 "Gate re-run semantics" and "Fix-it emission format" sections.
+
+<!-- ticket:T-draft-cc933a76 -->
+```yaml
+id: T-draft-cc933a76
+title: 'gates --fix Tier-A batch 2: fmt/registry-regen/release-sync/WAIVE004 handlers'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: T-1137
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_fix_engine.py
+- tests/test_gates.py
+acceptance:
+- text: GIVEN an E501 finding on a line carrying a frob:waive comment WHEN --fix runs
+    THEN frob fmt is invoked and the line re-verifies clean
+  evidence: []
+- text: GIVEN a REG008/REG010 missing gate_rule_entries finding WHEN --fix runs THEN
+    sync_gate_rule_entries regenerates the missing entries and REG010 re-verifies
+    clean
+  evidence: []
+- text: GIVEN a REL002 version-quartet mismatch WHEN --fix runs THEN the existing
+    release sync path regenerates the three derived artifacts from the manifest and
+    REL002 re-verifies clean, with pyproject.toml/CHANGELOG.md/uv.lock never hand-edited
+  evidence: []
+- text: GIVEN a WAIVE004 finding produced by a genuine full unscoped frob check run
+    WHEN --fix runs THEN the stale frob:waive line is removed and WAIVE004 re-verifies
+    clean; GIVEN the same finding from a --only/--ticket-scoped run THEN --fix refuses
+    to act on it and leaves the waiver untouched
+  evidence: []
+threat: null
+component: null
+```
+Add four more Tier-A handlers to src/frob/gates/_fix_engine.py (same
+protocol as the four T-1138/T-1177 already ship): frob fmt invocation for
+E501-on-waive-line findings (frob fmt is already idempotent, calling it
+IS the fix -- no new rewrite logic), generated-registry regeneration for
+REG008/REG010 (call frob.registry._staleness.sync_gate_rule_entries,
+already exists), release sync for REL002 (call the existing frob release
+sync machinery, never hand-bump), and WAIVE004 full-run-verified
+stale-waiver removal (delete the frob:waive line ONLY when the run that
+produced the finding was a genuine full unscoped run, mirroring
+_waive.py's own "trust this only from a full run" disclaimer -- refuse to
+act on a --only/--ticket-scoped run's WAIVE004 output). Register each in
+an explicit TIER_A_HANDLERS: dict[str, TierAHandler] alongside the
+existing four (promoting apply_tier_a_fixes's current positional-call
+list to a dict keyed by rule id, per docs/design/check-fix-engine.md's
+"Fix-handler protocol" section, so the fixability-registry-field ticket
+has a real table to scan).
