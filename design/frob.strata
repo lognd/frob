@@ -373,6 +373,7 @@ node cli : trusted {
     attr interface=dup_runner_run;
     attr interface=ensure_daemon;
     attr interface=estimate_tokens;
+    attr interface=excerpt;
     attr interface=exports_runner_run;
     attr interface=fleet_runner_run;
     attr interface=git_common_dir;

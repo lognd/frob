@@ -15,10 +15,13 @@ requires it, imported lazily at call time.
 
 from __future__ import annotations
 
+from frob.serve._events import CoverageWatcher, subscribe_and_wait
+from frob.serve._leases import ResourceLeaseManager
 from frob.serve._socketd import (
     DaemonError,
     SocketDaemonConfig,
     acquire_singleton_lock,
+    daemon_version,
     dispatch_request,
     lock_path,
     run_socket_daemon,
@@ -40,6 +43,7 @@ from frob.serve._tools import (
     frob_stale_docs,
     frob_stats,
 )
+from frob.serve._watch import WatchThread, watch_tick
 
 
 def __getattr__(name: str):  # noqa: ANN201
@@ -58,12 +62,16 @@ def __getattr__(name: str):  # noqa: ANN201
 
 
 __all__ = [
+    "CoverageWatcher",
     "DaemonError",
     "McpUnavailable",
+    "ResourceLeaseManager",
     "ServeError",
     "SocketDaemonConfig",
+    "WatchThread",
     "acquire_singleton_lock",
     "build_server",
+    "daemon_version",
     "dispatch_request",
     "frob_affects",
     "frob_check_delta",
@@ -82,4 +90,6 @@ __all__ = [
     "run_stdio",
     "send_request",
     "socket_path",
+    "subscribe_and_wait",
+    "watch_tick",
 ]

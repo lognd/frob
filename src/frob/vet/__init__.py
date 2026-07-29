@@ -11,6 +11,7 @@ out of scope (VET006-VET010, most of VET-C, dynamic detonation).
 
 from __future__ import annotations
 
+from frob.vet._cache import ttl_cache_get, ttl_cache_set
 from frob.vet._capability import (
     is_self_pattern_path,
     language_for,
@@ -64,6 +65,8 @@ from frob.vet._models import (
 from frob.vet._nvd import NvdResult, fetch_cwe_for_cve
 from frob.vet._osv import OsvAdvisory, cve_ids
 from frob.vet._scan import scan_tree
+from frob.vet._supplychain import supply_chain_tree_violations
+from frob.vet._taint import TaintFinding, taint_findings
 
 __all__ = [
     "CONTAINED",
@@ -84,6 +87,7 @@ __all__ = [
     "NvdResult",
     "OsvAdvisory",
     "PackageVerdict",
+    "TaintFinding",
     "VetConfig",
     "VetError",
     "VetReport",
@@ -109,5 +113,9 @@ __all__ = [
     "resolve_import",
     "scan_file_capabilities",
     "scan_tree",
+    "supply_chain_tree_violations",
+    "taint_findings",
+    "ttl_cache_get",
+    "ttl_cache_set",
     "walk_python_imports",
 ]
