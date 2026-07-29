@@ -505,6 +505,7 @@ _CLI_DOC_TEMPLATE = (
 )
 
 
+# invariant spec: [INV-045](invariants/INV-045.md)
 class TestCliCommandTableGenerator:
     """T-1011(b): `generate_cli_command_table`/`sync_cli_command_table`
     regenerate `docs/modules/cli.md`'s marked block from the live argparse

@@ -285,7 +285,6 @@ def _fmt001_touched_lines(diff: Diff, file: str) -> set[int]:
     return lines
 
 
-# frob:doc docs/modules/gates.md#fmt001-t-0851
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_directive_run_over_limit_flagged
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_ordinary_long_comment_not_flagged
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_long_code_line_not_flagged

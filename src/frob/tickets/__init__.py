@@ -202,7 +202,6 @@ _DROP_REASON_HEADING = DROP_REASON_HEADING
 
 
 # frob:ticket T-0453
-# frob:doc docs/modules/tickets.md#public-api
 _LARGE_GLOB_DEFAULT_MAX_FILES = 25
 
 
@@ -1966,6 +1965,7 @@ def record_failure(
 
 # frob:ticket T-0571
 # frob:doc docs/modules/tickets.md#public-api
+# frob:waive COV007 reason="docs/modules/tickets.md#public-api individually names _resolve_review_commit by name (T-0529 precedent: a deliberate architecture-doc callout of the never-store-abbreviated-SHA security behavior, not accidental drift onto a private helper)"
 # frob:tests tests/test_tickets_review.py::TestRecordReview.test_unresolvable_commit_rejected  # noqa: E501
 # frob:tests tests/test_tickets_review.py::TestRecordReview.test_short_sha_normalized_to_full_sha  # noqa: E501
 def _resolve_review_commit(root: Path, commit: str) -> Result[str, TicketError]:

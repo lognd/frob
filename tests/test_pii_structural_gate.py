@@ -52,6 +52,7 @@ def _commit(root: Path, message: str = "commit") -> None:
 
 
 # frob:ticket T-0971
+# frob:ticket T-1110
 class TestFieldNames:
     """PII010: field-name/type detection over Python data structures."""
 
@@ -84,8 +85,14 @@ class TestFieldNames:
         assert any(v.rule == "PII010" for v in violations)
 
     # frob:ticket T-0971
+    # frob:ticket T-1110
     def test_camelcase_password_hash_field_fires(self) -> None:
         # frob:tests src/frob/gates/_pii_structural/_signatures.py::_field_name_hit
+        # frob:waive COV006 reason="confirmed exercised: _scan_python_fields \
+        # (_python_fields.py) calls _field_name_hit (_signatures.py) -- a real \
+        # cross-file call within the _pii_structural package, but the best-effort \
+        # callgraph resolves same-file privates only, same cross-package blind \
+        # spot as the other T-1024/3d574f3a-precedent COV006 waivers in this file"
         """T-0971 (gates-quality audit finding 5): a camelCase field name
         must still match its snake_case keyword equivalent."""
         src = (

@@ -1348,6 +1348,7 @@ def _top_level_command_help(parser) -> dict[str, str]:  # noqa: ANN001
 # frob:doc docs/modules/cli.md#generated-command-reference-t-1011
 # frob:ticket T-1011
 # frob:invariant INV-045
+# invariant spec: [INV-045](invariants/INV-045.md)
 # frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_generate_sorts_rows_across_sources  # noqa: E501
 # frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_generate_no_config_is_none  # noqa: E501
 # frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_doc005_freshness_flags_stale_generated_block  # noqa: E501

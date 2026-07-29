@@ -1225,6 +1225,7 @@ class TestModeQualifiedFsStaleDesign:
         assert any(v.node == "widget" and v.capability == "fs.read" for v in hit)
 
 
+# invariant spec: [INV-048](invariants/INV-048.md)
 class TestCoverageTotality:
     """SYS103 (SYS-COV, T-0667): a `FOREIGN` file the binding-aware
     scanner observes ANY capability in fires, on any root -- not just

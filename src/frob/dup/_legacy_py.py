@@ -195,6 +195,8 @@ def _leaf_token(n: Node, locals_: set[str], mapping: dict[str, str]) -> str:
     return raw
 
 
+# frob:tests tests/unit/test_dup_legacy_py.py::test_enclosing_class_py_none_for_top_level_function  # noqa: E501
+# frob:tests tests/unit/test_dup_legacy_py.py::test_enclosing_class_py_finds_class_for_method  # noqa: E501
 def _enclosing_class_py(func_node: Node) -> str | None:
     """Return the enclosing class name for a function node, or None.
 

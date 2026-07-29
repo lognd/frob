@@ -1,3 +1,6 @@
+# frob:waive REF002 reason="a T-1134 split-assist submodule of frob.gates, imported \
+# only by gates/__init__.py's dispatch by design -- the same package structure \
+# every sibling gates/_*.py module has, a second consumer would not be genuine"
 """T-1134: INV006 split-assist -- when a module split moves exclusivity-
 claim prose VERBATIM out of a file that already carries an INV006 waiver
 or a bound `frob:invariant` edge, the destination file's own INV006

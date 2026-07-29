@@ -521,6 +521,7 @@ def _apply_reliability_waivers(
 # frob:ticket T-0640
 # frob:ticket T-0958
 # frob:invariant INV-047
+# invariant spec: [INV-047](invariants/INV-047.md)
 # frob:enforces SDC-5-TIMEOUT
 # frob:enforces CHK-GATE-REL200
 # frob:enforces CHK-GATE-REL201

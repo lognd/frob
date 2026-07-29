@@ -6458,6 +6458,7 @@ def _uv_lock_version(root: Path) -> str | None:
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-1009
 # frob:invariant INV-044
+# invariant spec: [INV-044](invariants/INV-044.md)
 # frob:tests tests/test_release.py::TestReleaseGateCoherence.test_hand_edited_pyproject_fires_rel002  # noqa: E501
 # frob:enforces CHK-GATE-REL002
 def _rel002_coherence_violations(root: Path, manifest) -> list[Violation]:  # noqa: ANN001

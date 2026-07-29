@@ -996,6 +996,7 @@ def _add_ticket_lifecycle_parsers(ticket_sub) -> list:
 
 
 # frob:ticket T-0030
+# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) does not trace this cross-package private import -- same class of gap as this repo's other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_ticket_parser(sub) -> None:
     """Register the `frob ticket` subcommand and its arguments."""
     ticket_p = sub.add_parser("ticket", help="the statically-checkable ticket queue")

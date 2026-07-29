@@ -209,6 +209,7 @@ class TestChangelogSkeletonEntry:
 
 
 # frob:ticket T-1009
+# invariant spec: [INV-044](invariants/INV-044.md)
 class TestReleaseGateCoherence:
     """T-1009: REL002 -- `.frob-release.json`'s version is authoritative;
     any derived artifact that disagrees is a hard ERROR, born from a

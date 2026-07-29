@@ -1,6 +1,7 @@
 // Lexer for the strata surface grammar: tokenizes source text into
 // [`Token`]s consumed by the recursive-descent parser in sibling
 // `grammar_*` modules (docs/strata/surface.md#parser).
+// frob:waive REF002 reason="a T-1099 grammar-family split fragment of parse.rs, imported only by parse/mod.rs's `mod` declaration by design -- the same package structure every sibling parse/grammar_*.rs module has, a second consumer would not be genuine"
 
 // ---------------------------------------------------------------------
 // Lexer

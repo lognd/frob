@@ -8,6 +8,7 @@ from pathlib import Path
 from frob.fleet import FleetError, load_manifest
 
 
+# invariant spec: [INV-046](invariants/INV-046.md)
 class TestLoadManifest:
     def test_load_manifest_ok(self, tmp_path: Path) -> None:
         manifest_path = tmp_path / "fleet.toml"

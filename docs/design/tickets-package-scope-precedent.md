@@ -1,3 +1,5 @@
+<!-- frob:waive REF002 reason="a T-1145 design-decision precedent doc, deliberately singly-anchored from docs/index.md's design-doc index -- a second consumer would not be genuine" -->
+
 # `src/frob/tickets/**` broad-scope precedent (T-1145)
 
 One sentence: a ticket whose own body genuinely spans the whole

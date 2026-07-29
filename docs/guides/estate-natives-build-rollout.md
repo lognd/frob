@@ -1,3 +1,5 @@
+<!-- frob:waive REF002 reason="a rollout-tracking guide, deliberately singly-anchored from docs/index.md's guide index -- a second consumer would not be genuine" -->
+
 # ESTATE rollout: the Makefile core one-line native-build shim
 
 T-1031, the "estate rollout via fleet at close" follow-up named in

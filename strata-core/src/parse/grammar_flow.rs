@@ -1,5 +1,6 @@
 // Flow/boundary/operation grammar productions: `flow`, `boundary`,
 // phase blocks, `operation`, and `refine` constructs (docs/strata/surface.md#parser).
+// frob:waive REF002 reason="a T-1099 grammar-family split fragment of parse.rs, imported only by parse/mod.rs's `mod` declaration by design -- the same package structure every sibling parse/grammar_*.rs module has, a second consumer would not be genuine"
 
 impl Parser {
     fn parse_flow(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {

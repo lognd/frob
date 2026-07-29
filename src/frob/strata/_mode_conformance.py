@@ -280,7 +280,6 @@ class ModeConformanceReport(BaseModel):
     waived: tuple[ModeConformanceViolation, ...] = ()
 
 
-# frob:doc docs/strata/host.md#resource-access-modes-t-0700
 def _classify_line(line: str) -> str | None:
     """The write-capable category `line` exhibits, or `None` if it
     matches none of this module's curated write-capable shapes (module
@@ -305,7 +304,6 @@ def _classify_line(line: str) -> str | None:
     return None
 
 
-# frob:doc docs/strata/host.md#resource-access-modes-t-0700
 def _file_mode_observations(path: Path, root: Path) -> list[ModeObservation]:
     """Every write-capable line in `path` (python only, module docstring's
     disclosed cut) -- `is_self_pattern_path`-excluded exactly like
@@ -338,7 +336,6 @@ def _sorted_owned_files(binding: CodeBinding, owner: str) -> list[str]:
     return sorted(rel for rel, o in binding.owner.items() if o == owner)
 
 
-# frob:doc docs/strata/host.md#resource-access-modes-t-0700
 def _node_mode_observations(
     node: Node, binding: CodeBinding, root: Path
 ) -> list[ModeObservation]:
@@ -353,7 +350,6 @@ def _node_mode_observations(
     return observations
 
 
-# frob:doc docs/strata/host.md#resource-access-modes-t-0700
 def _enclosing_with_headers(lines: list[str], line_no: int) -> list[str]:
     """Every `with` statement header lexically enclosing 1-indexed
     `line_no` in `lines`, found by climbing to each strictly-lower-

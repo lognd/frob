@@ -38,6 +38,7 @@ def _write(root: Path, rel: str, source: str) -> None:
     path.write_text(source, encoding="utf-8")
 
 
+# invariant spec: [INV-047](invariants/INV-047.md)
 class TestMissingTimeout:
     # frob:tests \
     # tests/unit/strata/test_reliability.py::TestMissingTimeout.test_flow_without_timeo\

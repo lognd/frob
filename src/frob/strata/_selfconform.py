@@ -720,7 +720,6 @@ def _stale_design_violations(
     return found
 
 
-# frob:doc docs/modules/strata.md#sys-cov-coverage-totality-sys103-t-0667
 # frob:tests tests/unit/strata/test_selfconform.py::TestCoverageTotality.test_foreign_file_with_capability_fires_sys103  # noqa: E501
 def _coverage_totality_scan_prefix(root: Path) -> str | None:
     """UNRESTRICTED as of T-1091: always returns `None` -- SYS103 scans
@@ -757,6 +756,7 @@ def _coverage_totality_scan_prefix(root: Path) -> str | None:
 
 
 # frob:invariant INV-048
+# invariant spec: [INV-048](invariants/INV-048.md)
 # frob:tests tests/unit/strata/test_selfconform.py::TestCoverageTotality.test_foreign_file_with_capability_fires_sys103  # noqa: E501
 def _coverage_totality_violations(
     capability_binding: CodeBinding, root: Path

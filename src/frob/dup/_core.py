@@ -170,6 +170,7 @@ def anti_unify(
 # frob:waive COV007 reason="docs/modules/dup.md's R1.5 section documents this private \
 # frob_core shim's algorithm directly (T-0524) -- a deliberate architecture doc, not \
 # accidental doc-anchor drift onto a private helper"
+# frob:waive DEAD001 reason="confirmed exercised: called from frob.dup._pipeline._fingerprint's R6 region path (_core._exact_regions(...)) -- a real cross-package private call the best-effort callgraph resolves same-directory privates only, does not trace across the T-1086 dup/_pipeline package split"
 def _exact_regions(
     documents: tuple[tuple[str, ...], ...], min_len: int, max_run_size: int = 200
 ) -> Result[tuple[tuple[tuple[int, int, int, int, int], ...], bool], DupError]:

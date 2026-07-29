@@ -51,7 +51,6 @@ def _is_unpinned_spec(spec: str) -> bool:
     return any(marker in spec for marker in _UNPINNED_MARKERS) or spec == ""
 
 
-# frob:doc docs/modules/vet.md#public-api
 def _pyproject_unpinned_violations(project_root: Path) -> list[Violation]:
     """VET007 half: scan `pyproject.toml`'s `dependencies = [...]` block for
     specs with no exact pin."""
@@ -164,7 +163,6 @@ def _unpinned_dependency_violations(project_root: Path) -> list[Violation]:
     ]
 
 
-# frob:doc docs/modules/vet.md#public-api
 # frob:enforces SC-DETECTION-PYTHON-INSTALL-ARTIFACTS
 # frob:enforces CHK-GATE-VET008
 # frob:tests tests/test_vet.py::TestSupplyChainInstallArtifacts.test_setup_py_absolute_data_files_flagged
@@ -206,7 +204,6 @@ _USES_RE = re.compile(
 )
 
 
-# frob:doc docs/modules/vet.md#public-api
 # frob:enforces SC-DETECTION-UNPINNED-CI-ACTION
 # frob:enforces CHK-GATE-VET009
 # frob:tests tests/test_vet.py::TestSupplyChainCiActionPin.test_workflow_branch_ref_flagged
@@ -265,7 +262,6 @@ def _has_nearby_build_recipe(path: Path, project_root: Path) -> bool:
         directory = directory.parent
 
 
-# frob:doc docs/modules/vet.md#public-api
 # frob:enforces SC-DETECTION-OPAQUE-BINARY-ARTIFACT
 # frob:enforces CHK-GATE-VET010
 # frob:tests tests/test_vet.py::TestSupplyChainOpaqueBinaryArtifact.test_tracked_so_without_recipe_flagged
