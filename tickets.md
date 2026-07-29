@@ -2759,7 +2759,7 @@ confirmed with a second `--diff-filter=D` check).
 id: T-1152
 title: 'arch: extract tickets/__init__.py evidence/transition + done-report/review/drop/attach
   families + split _land.py -- T-1151 residue'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -3003,7 +3003,6 @@ outcomes, exit 0.
 - tests: 26 passed (from 26 evidence id(s))
 - gates: 0 error(s), 960 warning(s), 505 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1154 -->
 ```yaml
 id: T-1154
