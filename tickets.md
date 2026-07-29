@@ -4885,3 +4885,33 @@ threat: null
 component: null
 ```
 User directive 2026-07-29: agents should only run frob commands and write content requiring actual thinking. The remaining per-ticket ritual (playbook section 0) is ~10 mechanical steps; steps 1-2, 5, and 9 are pure command sequences frob can own. This collapses them into two verbs. The playbook contract section then shrinks to: work, think, land. Absorb-not-add: reuse the existing fmt/sync-interface/fix-engine/land machinery, no new subsystems.
+
+<!-- ticket:T-1176 -->
+```yaml
+id: T-1176
+title: 'gates: named waiver presets -- frob:waive RULE preset=<name> resolving to
+  one documented reason text'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- docs/modules/gates.md
+acceptance:
+- text: GIVEN a frob:waive directive using preset=<name> WHEN gates evaluate it THEN
+    the reason resolves from a single documented preset table (docs/modules/gates.md
+    section, machine-read), behaves identically to the inline reason, and an unknown
+    preset name is an error
+  evidence: []
+- text: GIVEN the existing calibration-batch INV006 text THEN it becomes preset=split-carried-prose
+    and the repo's 10+ verbatim copies are migrated to it in the same land
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-07-29: remove boilerplate agents hand-write. The 8-line INV006 calibration-batch waiver text has been copy-pasted 10+ times this drive (0abc4e3a lineage), and the T-1099 REF002 split-fragment text 7+ times. A preset is NOT a blanket waiver: each site still carries an explicit per-site directive naming rule + preset; the preset only deduplicates the REASON prose, which the NO DUPLICATION principle applies to as much as code. Reason-required stays intact -- a preset name must resolve to a real documented reason.
