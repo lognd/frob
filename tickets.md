@@ -4825,3 +4825,30 @@ threat: null
 component: null
 ```
 Observed while landing T-1165/T-1172 in the same worktree: frob ticket start T-draft-XXXXXXXX records a lease at .git/frob-leases/T-draft-XXXXXXXX.json. When the draft is renumbered to a real id (T-1172) at land time, the lease file is never renamed/migrated -- a subsequent frob check --ticket T-1172 in the SAME worktree that started it fails with 'no recorded lease', even though the worktree genuinely holds the ticket. Worked around by hand-copying the lease json with the new id; the renumber path should do this automatically.
+
+<!-- ticket:T-1174 -->
+```yaml
+id: T-1174
+title: 'tickets: complete the auto-commit family -- close/done-report/evidence/requeue
+  transitions commit like start/new/drop/fail'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-29'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- tests/test_ticket_leases.py
+acceptance:
+- text: GIVEN any ledger-writing ticket verb run on main WHEN it completes THEN its
+    transition is committed automatically (T-1130's commit_ticket_ledger_change, --no-commit
+    opt-out), so no concurrent land preflight reset can ever discard a completed verb's
+    write
+  evidence: []
+threat: null
+component: null
+```
+Live incident 2026-07-29: the coordinator's T-0329 epic close wrote the ledger uncommitted (close is not in T-1130's new/drop/fail set), a concurrent agent land preflight ran git reset --hard in root, and the close silently vanished -- caught only by T-1131's doctor stale-lease scan. Extend commit_ticket_ledger_change to every remaining ledger-writing verb: close, done-report, evidence add, requeue, kind/priority/scope mutations if any remain uncommitted. This closes the reset-eats-uncommitted-coordinator-work class (T-0948 incident lineage) at the verb layer.
