@@ -9236,7 +9236,7 @@ concluding it is safe to drop.
 id: T-1323
 title: land wip snapshot committed out-of-scope frob:waive deletions (T-1234 land
   stripped 50 PERF waivers)
-state: queued
+state: in-progress
 kind: incident
 origin: agent
 created: '2026-07-29'
@@ -9251,10 +9251,16 @@ scope:
 - tests/test_ticket_land.py
 - tests/test_gates.py
 - docs/modules/gates.md
+- src/frob/app/ticket_runner/_land_cmd.py
 scope_changes:
 - op: add
   glob: docs/modules/gates.md
   reason: 'scope-closure warnings: fix_engine frob:doc targets live there'
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'pre-land Tier-A invocation site: the interim WAIVE004 exclusion lands here'
   actor: logan
   at: '2026-07-29'
 acceptance:
