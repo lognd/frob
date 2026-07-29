@@ -4,7 +4,7 @@ One sentence: pydantic v2 models plus a parser/mirror-walker for CVE
 Record Format v5 JSON as published at github.com/CVEProject/cvelistV5 --
 parser and models only; matching a project's dependencies against a local
 mirror and linking CWEs into the strata threat catalog is `frob vet`'s job
-(T-0147, not yet built).
+(shipped as `src/frob/vet/_cve.py`, T-0147).
 
 ## Scope
 
@@ -108,8 +108,8 @@ def iter_mirror(root: Path) -> Iterator[tuple[Path, Result[CveRecord, CveError]]
 - Matching parsed records against a project's resolved dependencies
   (name + version against `affected[].versions[]` range semantics) and
   linking `problemTypes[].descriptions[].cweId` into the strata threat
-  catalog (`CWE_CATALOG`, `CWE_TOP_25_CATALOG`) is T-0147 (`frob vet`
-  integration), not this module.
+  catalog (`CWE_CATALOG`, `CWE_TOP_25_CATALOG`) lives in `frob vet`
+  (`src/frob/vet/_cve.py`, landed as T-0147), not this module.
 - No fetch/clone/update-mirror command exists here; a mirror is assumed
   to already exist on disk (e.g. `git clone
   https://github.com/CVEProject/cvelistV5`), consistent with the

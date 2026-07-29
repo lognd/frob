@@ -51,21 +51,24 @@ Obligation scope, `frob.toml`:
 
 ```toml
 [fuzz]
-enforce = "invariant-anchored"   # off | invariant-anchored | public
-budget_s = 60                    # per frob test --fuzz run
+enforce = "invariant-anchored"   # off (default) | invariant-anchored | public
+budget_s = 60                    # per fuzz run
 max_reject_rate = 0.99           # derived-generator rejection ceiling
 ```
 
-`invariant-anchored` (default): every function carrying a `frob:invariant`
-anchor is fuzz-obligated -- the things you claim matter are the things that
-get fuzzed. `public`: every public function with generatable parameters.
+The shipped gate default is `off` (`FuzzEnforce.OFF`,
+`src/frob/gates/_fuzz.py`); a repo opts in by setting `enforce`.
+`invariant-anchored`: every function carrying a `frob:invariant` anchor is
+fuzz-obligated -- the things you claim matter are the things that get
+fuzzed. `public`: every public function with generatable parameters.
 Waivable per-site as always (`frob:waive FUZZ001 reason="..."`).
 
 ## Execution and corpus
 
-- `frob test --fuzz [--budget S]` runs the kind="fuzz" bindings (touched-
-  set selection applies: only fuzz targets bound to touched symbols run,
-  `--all --fuzz` runs everything).
+- `frob test --fuzz` runs the kind="fuzz" bindings (touched-set selection
+  applies: only fuzz targets bound to touched symbols run, `--all --fuzz`
+  runs everything); the time budget flag (`--budget S`) lives on
+  `frob check` (`src/frob/_cli_parsers/_check.py`), not `frob test`.
 - Corpus per target under `.frob/corpus/<sha-of-symref>/`: hypothesis
   database files, content-addressed by target so renames start fresh and
   stale corpora die with their symbol. The corpus directory is LRU-capped
