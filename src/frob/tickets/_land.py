@@ -1450,74 +1450,31 @@ def _read_text_at_ref(worktree: Path, ref: str, relative_path: str) -> str | Non
 # frob:ticket T-0959
 # frob:tests tests/test_ticket_land.py::TestArchiveSpliceDiscipline.test_splice_and_stage_archive_merges_by_id_never_overwrites  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestArchiveSpliceDiscipline.test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish  # noqa: E501
-def _splice_and_stage_archive(
-    checkout: Path,
-    authoritative_text: str,
-    other_text: str,
-    *,
-    base_text: str | None = None,
+def _parse_archive_side(
+    text: str, side: str, checkout: Path
+) -> Result[dict[str, Ticket], LandError]:
+    """Parse one side of the archive splice, refusing loudly (T-0959) rather
+    than letting an unparseable copy silently fall out of the union merge."""
+    parsed = _parse_ledger(text)
+    if parsed.is_err:
+        _log.error(
+            "land: tickets-archive.md splice refused -- %s copy "
+            "unparseable (%s), resolve manually in %s",
+            side,
+            parsed.danger_err,
+            checkout,
+        )
+        return Err(LandError.GitFailed)
+    return Ok(parsed.danger_ok)
+
+
+def _verify_archive_merge(
+    authoritative: dict[str, Ticket], merged: dict[str, Ticket], checkout: Path
 ) -> Result[str, LandError]:
-    """Ledger-level splice of `tickets-archive.md` (T-0959), mirroring
-    `_splice_and_stage`'s tickets.md discipline instead of trusting git's raw
-    text merge/checkout to resolve it: parses both sides as ledgers, unions
-    them by id keeping the newest per id (`_merge_ledger_tickets`/`_newer`,
-    the same primitives `splice_ledger` uses), then refuses loudly
-    (`Err(GitFailed)`) if any id present in `authoritative_text` would
-    vanish from the merged result, before ever writing anything.
-
-    `authoritative_text` is always root/main's CURRENT tickets-archive.md at
-    the call site -- the freshest copy, since only main ever runs a TICK003
-    archive sweep; a worktree's copy can only ever be equal or stale.
-    `other_text` is the other side (the worktree's copy at whichever stage
-    this runs). This is the direct fix for the T-0703 incident: a prior
-    land staged tickets-archive.md WHOLESALE from a stale worktree copy at
-    both the merge-main-into-worktree and squash-onto-root stages, silently
-    wiping 62 already-archived blocks a sweep on main had added after the
-    worktree's own warmup merge -- git's merge/checkout machinery for this
-    file had no per-id awareness at all, unlike tickets.md's `_splice_and_
-    stage`. Writes the merged text to `checkout`'s tickets-archive.md and
-    `git add`s it; never a bare copy of either side.
-
-    T-1154: `base_text` (the true 3-way merge-base's tickets-archive.md,
-    when the caller has one) sharpens the per-id tiebreak the same way
-    `splice_ledger`'s own `base_text` does -- see `_merge_ledger_tickets`/
-    `_resolve_divergence`'s docstrings for the wrong-side-merge class this
-    closes (the direct fix for the T-1145/T-1143 incident this ticket's
-    Done report documents: a worktree's untouched, merely-stale archive
-    copy no longer beats a real content edit main made, e.g. an
-    evidence-path migration inside an already-`done` block, on a tied
-    state-rank/richness fallback). Optional and unparseable/`None` degrades
-    to the pre-T-1154 `_newer`-only behavior."""
-    authoritative_parsed = _parse_ledger(authoritative_text)
-    if authoritative_parsed.is_err:
-        _log.error(
-            "land: tickets-archive.md splice refused -- authoritative copy "
-            "unparseable (%s), resolve manually in %s",
-            authoritative_parsed.danger_err,
-            checkout,
-        )
-        return Err(LandError.GitFailed)
-    other_parsed = _parse_ledger(other_text)
-    if other_parsed.is_err:
-        _log.error(
-            "land: tickets-archive.md splice refused -- worktree copy "
-            "unparseable (%s), resolve manually in %s",
-            other_parsed.danger_err,
-            checkout,
-        )
-        return Err(LandError.GitFailed)
-    authoritative, other = authoritative_parsed.danger_ok, other_parsed.danger_ok
-    base = None
-    if base_text is not None:
-        base_parsed = _parse_ledger(base_text)
-        base = base_parsed.danger_ok if base_parsed.is_ok else None
-    merged = _merge_ledger_tickets(authoritative, other, base=base)
-
-    # T-0959: the id-integrity assertion the ticket calls for, extending the
-    # T-0740 `_check_ledger_id_integrity` pattern to this file -- every id
-    # present in the AUTHORITATIVE (root/main pre-land) archive must survive
-    # into the staged post-land result, refusing loudly rather than silently
-    # dropping anything if it somehow does not.
+    """Render the merged archive after the T-0959 guards: every id in the
+    authoritative (root/main pre-land) archive must survive the merge, and
+    the rendered text must round-trip (`_check_ledger_id_integrity`,
+    extending the T-0740 pattern to this file)."""
     missing = set(authoritative) - set(merged)
     if missing:
         _log.error(
@@ -1530,7 +1487,6 @@ def _splice_and_stage_archive(
             checkout,
         )
         return Err(LandError.GitFailed)
-
     rendered = _render_ledger(merged)
     integrity = _check_ledger_id_integrity(merged, rendered)
     if integrity.is_err:
@@ -1541,6 +1497,45 @@ def _splice_and_stage_archive(
             checkout,
         )
         return Err(LandError.GitFailed)
+    return Ok(rendered)
+
+
+def _splice_and_stage_archive(
+    checkout: Path,
+    authoritative_text: str,
+    other_text: str,
+    *,
+    base_text: str | None = None,
+) -> Result[str, LandError]:
+    """Ledger-level splice of `tickets-archive.md` (T-0959): union both
+    sides by id via `_merge_ledger_tickets` (never git's raw text merge --
+    the T-0703 wholesale-stale-copy incident), verify no authoritative id
+    vanishes, then write and `git add` the merged result.
+
+    `authoritative_text` is always root/main's CURRENT copy (only main
+    sweeps archives; a worktree copy is equal or stale). T-1154:
+    `base_text` (true 3-way merge-base, optional, degrades to `_newer`-only
+    when absent/unparseable) sharpens the per-id tiebreak -- see
+    `_merge_ledger_tickets`/`_resolve_divergence` for the wrong-side-merge
+    class this closes (the T-1145/T-1143 incident)."""
+    authoritative_parsed = _parse_archive_side(
+        authoritative_text, "authoritative", checkout
+    )
+    if authoritative_parsed.is_err:
+        return Err(authoritative_parsed.danger_err)
+    other_parsed = _parse_archive_side(other_text, "worktree", checkout)
+    if other_parsed.is_err:
+        return Err(other_parsed.danger_err)
+    authoritative, other = authoritative_parsed.danger_ok, other_parsed.danger_ok
+    base = None
+    if base_text is not None:
+        base_parsed = _parse_ledger(base_text)
+        base = base_parsed.danger_ok if base_parsed.is_ok else None
+    merged = _merge_ledger_tickets(authoritative, other, base=base)
+    rendered_result = _verify_archive_merge(authoritative, merged, checkout)
+    if rendered_result.is_err:
+        return Err(rendered_result.danger_err)
+    rendered = rendered_result.danger_ok
     archive_path(checkout).write_text(rendered, encoding="utf-8")
     add = run_argv(["git", "-C", str(checkout), "add", "tickets-archive.md"])
     if add.is_err or add.danger_ok.returncode != 0:
