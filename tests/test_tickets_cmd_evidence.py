@@ -66,17 +66,22 @@ class TestIsCmdEvidence:
 
 
 class TestCmdEvidence:
-    """`run_cmd_evidence` -- the raw run-and-digest primitive."""
+    """`run_cmd_evidence` -- the raw run-and-digest primitive.
+
+    frob:ticket T-1152
+    """
 
     def test_exit_zero(self) -> None:
-        # frob:tests src/frob/tickets/__init__.py::run_cmd_evidence
+        # frob:tests src/frob/tickets/_evidence.py::run_cmd_evidence
+        # frob:ticket T-1152
         result = run_cmd_evidence("printf hello")
         assert result.is_ok
         entry = result.danger_ok
         assert entry.startswith("cmd:printf hello exit=0 sha256=")
 
     def test_nonzero_exit(self) -> None:
-        # frob:tests src/frob/tickets/__init__.py::run_cmd_evidence
+        # frob:tests src/frob/tickets/_evidence.py::run_cmd_evidence
+        # frob:ticket T-1152
         result = run_cmd_evidence("false")
         assert result.is_err
         assert result.danger_err == TicketError.EvidenceCmdFailed
@@ -88,10 +93,14 @@ class TestCmdEvidence:
 
 
 class TestKindGate:
-    """Only docs-kind tickets may close on `--evidence-cmd` alone (T-0215)."""
+    """Only docs-kind tickets may close on `--evidence-cmd` alone (T-0215).
+
+    frob:ticket T-1152
+    """
 
     def test_bug_kind_rejected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::add_cmd_evidence
+        # frob:tests src/frob/tickets/_evidence.py::add_cmd_evidence
+        # frob:ticket T-1152
         _seed_ticket(tmp_path, kind=TicketKind.BUG)
         cfg = AppConfig(
             ticket_command="close",
@@ -152,7 +161,8 @@ class TestKindGate:
         assert queue.tickets["T-0001"].evidence == ()
 
     def test_docs_kind_closes(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::add_cmd_evidence
+        # frob:tests src/frob/tickets/_evidence.py::add_cmd_evidence
+        # frob:ticket T-1152
         _seed_ticket(tmp_path, kind=TicketKind.DOCS)
         cfg = AppConfig(
             ticket_command="close",
@@ -442,12 +452,16 @@ class TestKindConsistencyAtClose:
 
 class TestRunCmdEvidenceLaunchFailure:
     """`run_cmd_evidence`'s OSError branch: a command that fails to launch
-    entirely (not just a nonzero exit) also folds to EvidenceCmdFailed."""
+    entirely (not just a nonzero exit) also folds to EvidenceCmdFailed.
+
+    frob:ticket T-1152
+    """
 
     def test_oserror_on_launch_is_evidence_cmd_failed(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/tickets/__init__.py::run_cmd_evidence
+        # frob:tests src/frob/tickets/_evidence.py::run_cmd_evidence
+        # frob:ticket T-1152
         import frob.tickets as tickets_mod
 
         def _raise(*_args: object, **_kwargs: object) -> None:
@@ -462,10 +476,14 @@ class TestRunCmdEvidenceLaunchFailure:
 class TestAddCmdEvidenceLoadAndWriteFailures:
     """`add_cmd_evidence`'s error propagation paths that don't depend on
     the kind gate or the command itself: ticket-not-found on load, and a
-    downstream write failure after a successful command run."""
+    downstream write failure after a successful command run.
+
+    frob:ticket T-1152
+    """
 
     def test_ticket_not_found_propagates_load_error(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::add_cmd_evidence
+        # frob:tests src/frob/tickets/_evidence.py::add_cmd_evidence
+        # frob:ticket T-1152
         from frob.tickets import add_cmd_evidence
 
         result = add_cmd_evidence(tmp_path, "T-9999", "printf ok")
@@ -475,7 +493,8 @@ class TestAddCmdEvidenceLoadAndWriteFailures:
     def test_write_failure_propagates(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/tickets/__init__.py::add_cmd_evidence
+        # frob:tests src/frob/tickets/_evidence.py::add_cmd_evidence
+        # frob:ticket T-1152
         import frob.tickets as tickets_mod
         from frob.tickets import add_cmd_evidence
 

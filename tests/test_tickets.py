@@ -229,7 +229,7 @@ class TestEvidenceValidation:
         assert result.danger_err is TicketError.MalformedEvidence
 
     def test_add_evidence_appends_and_round_trips(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::add_evidence kind="unit"
+        # frob:tests src/frob/tickets/_evidence.py::add_evidence kind="unit"
         _write(tmp_path, _ticket(ticket_id="T-0001"))
         result = add_evidence(tmp_path, "T-0001", ("tests/test_foo.py::test_a",))
         assert result.is_ok
@@ -307,7 +307,7 @@ class TestEvidenceValidation:
     def test_add_evidence_normalizes_dot_form_before_resolving_and_storing(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/tickets/__init__.py::add_evidence kind="unit"
+        # frob:tests src/frob/tickets/_evidence.py::add_evidence kind="unit"
         # The normalized (::) form, not the original dot-form the caller
         # passed in, must be what gets resolved against `collected` and
         # what actually lands in the ticket's stored evidence.
@@ -337,14 +337,14 @@ class TestStateMachine:
     def test_legal_transitions(
         self, tmp_path: Path, start: TicketState, to: TicketState
     ) -> None:
-        # frob:tests src/frob/tickets/__init__.py::transition
+        # frob:tests src/frob/tickets/_evidence.py::transition
         _write(tmp_path, _ticket(state=start))
         result = transition(tmp_path, "T-0001", to)
         assert result.is_ok, result.err
         assert result.danger_ok.state == to
 
     def test_transition_queued_to_planned_unit(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::transition kind="unit"
+        # frob:tests src/frob/tickets/_evidence.py::transition kind="unit"
         _write(tmp_path, _ticket(state=TicketState.QUEUED))
         result = transition(tmp_path, "T-0001", TicketState.PLANNED)
         assert result.is_ok, result.err
@@ -975,7 +975,7 @@ class TestAttach:
 
 class TestEvidence:
     def test_resolvable_ids_appended(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::add_evidence
+        # frob:tests src/frob/tickets/_evidence.py::add_evidence
         _write(tmp_path, _ticket())
         collected = frozenset({"tests/test_x.py::test_a", "tests/test_x.py::test_b"})
         result = add_evidence(
@@ -1014,7 +1014,7 @@ class TestEvidence:
         # T-0292 sibling: the warning must NOT point at the nonexistent
         # `frob test --collect` flag; it must name the real content-hash
         # auto-refresh + cache-file fallback instead.
-        # frob:tests src/frob/tickets/__init__.py::add_evidence
+        # frob:tests src/frob/tickets/_evidence.py::add_evidence
         _write(tmp_path, _ticket())
         collected = frozenset({"tests/test_x.py::test_a"})
         with caplog.at_level(logging.WARNING):
