@@ -308,7 +308,7 @@ the exact per-site verification recipe that caught this).
 id: T-1190
 title: 'test: fix 5 unwaived TEST003/TEST014 findings found in T-0204 verification
   close'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-07-29'
@@ -351,6 +351,9 @@ disambiguate the three TEST014 `stop` collisions with explicit
 each `.stop`, then re-verify `frob check --only gates-fast` shows 0
 unwaived TEST findings again (TEST006 aside, which only ever clears via
 `make coverage` at land, never in a worktree).
+
+## Failure log
+- 2026-07-29 attempt 1: T-0204's cited TEST003/TEST014 findings do not reproduce on current main: full frob check --ticket T-1190 shows gate:TEST at 0 errors, 6 warnings, 2 waived, none matching tomlio.py/strata-core-parse/perf-serve stop trio -- already resolved before this dispatch
 <!-- ticket:T-1191 -->
 ```yaml
 id: T-1191
