@@ -394,6 +394,9 @@ def check_native_staleness_or_exit(root: Path) -> None:
 # frob:doc docs/modules/gates.md#native001-t-1148
 # frob:tests tests/unit/strata/test_native_staleness.py::TestUnimportableNatives.test_reports_a_declared_native_that_fails_to_import  # noqa: E501
 # frob:tests tests/unit/strata/test_native_staleness.py::TestUnimportableNatives.test_healthy_native_reports_nothing  # noqa: E501
+# frob:waive OPAQUE001 reason="T-1038: spec.name is a module name from the repo \
+# owner's own frob.toml [[native]] declarations, not attacker/external input -- \
+# deliberate module-import-health probing, the whole point of this function"
 def unimportable_natives(root: Path) -> tuple[NativeSpec, ...]:
     """Every declared `[[native]]` under `root` that CANNOT be imported at
     all right now -- distinct from `stale_natives`' "built but older than

@@ -115,6 +115,7 @@ class _Mutation:
     mutant: Mutant
 
 
+# frob:ticket T-1038
 class _Mutator(ast.NodeTransformer):
     """Applies exactly ONE mutation, identified by a running counter."""
 
@@ -146,18 +147,34 @@ class _Mutator(ast.NodeTransformer):
                 node.ops = [_COMPARE_SWAPS[type(node.ops[0])]()]
         return node
 
+    # frob:ticket T-1038
+    # frob:waive AFFECT001 reason="T-1038: OPAQUE001 hardening -- added a reasoned \
+    # frob:waive comment above the existing type(node.op) dynamic-key call; the \
+    # documented single-mutation-per-call contract and behavior are unchanged, \
+    # nothing for docs/modules/mutate.md#public-api to update"
     def visit_BinOp(self, node: ast.BinOp):  # noqa: N802
         # frob:doc docs/modules/mutate.md#public-api
         self.generic_visit(node)
+        # frob:waive OPAQUE001 reason="T-1038: type(node.op) is checked against \
+        # _BINOP_SWAPS's own key set (the 'in' test immediately above) before the \
+        # dynamic-key call -- an ast.operator subclass, never attacker/external input"
         if type(node.op) in _BINOP_SWAPS and self._hit(
             f"binop {type(node.op).__name__} swapped", node.lineno
         ):
             node.op = _BINOP_SWAPS[type(node.op)]()
         return node
 
+    # frob:ticket T-1038
+    # frob:waive AFFECT001 reason="T-1038: OPAQUE001 hardening -- added a reasoned \
+    # frob:waive comment above the existing type(node.op) dynamic-key call; the \
+    # documented single-mutation-per-call contract and behavior are unchanged, \
+    # nothing for docs/modules/mutate.md#public-api to update"
     def visit_BoolOp(self, node: ast.BoolOp):  # noqa: N802
         # frob:doc docs/modules/mutate.md#public-api
         self.generic_visit(node)
+        # frob:waive OPAQUE001 reason="T-1038: type(node.op) is checked against \
+        # _BOOLOP_SWAPS's own key set (the 'in' test immediately above) before the \
+        # dynamic-key call -- an ast.boolop subclass, never attacker/external input"
         if type(node.op) in _BOOLOP_SWAPS and self._hit(
             f"boolop {type(node.op).__name__} swapped", node.lineno
         ):

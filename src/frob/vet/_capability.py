@@ -5382,6 +5382,9 @@ def _scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
+# frob:waive OPAQUE001 reason="T-1038: scanner false positive on the string literals \
+# 'exec' (_EXEC_NEEDLES) below -- this function TEXT-SEARCHES for eval/exec/Function/ \
+# etc as substrings in SCANNED source code, it never calls python's exec() itself"
 def _decode_to_exec_signal(path: Path) -> bool:
     """True if one function's body reaches both a decode-ish and an exec-ish
     token (docs/modules/vet.md "eval-reachability": the highest-precision detector).
@@ -5427,6 +5430,9 @@ _EXEC_NEEDLES = (
 )
 
 
+# frob:waive OPAQUE001 reason="T-1038: scanner false positive on the string literals \
+# 'exec' (_EXEC_NEEDLES) below -- this function TEXT-SEARCHES for eval/exec/Function/ \
+# etc as substrings in SCANNED source code, it never calls python's exec() itself"
 def _body_reaches_decode_and_exec(body: str) -> bool:
     """True if one function body's token text reaches both a decode-ish and an
     exec-ish token -- the co-occurrence VET004's highest-precision signal needs."""

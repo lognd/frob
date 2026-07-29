@@ -1,5 +1,9 @@
 """Unit tests for the strata fact base and closure engine (docs/strata/kernel.md)."""
 
+# frob:waive OPAQUE001 reason="T-1038: sys.modules replacement below fakes an import \
+# target for one test's own fixture module, standard unittest.mock/sys.modules test \
+# isolation -- deliberate test infrastructure, not an evasion risk"
+
 from __future__ import annotations
 
 import sys

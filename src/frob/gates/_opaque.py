@@ -40,9 +40,13 @@ gate, not silently dropped:
 
 T-0665's own first-turn-on measurement against this repo's live codebase
 found frob's own use of dynamic `getattr` at more than the T-0688/T-0973
-25-site WARN-first threshold -- see the `severity=Severity.WARN` assignment
-below and its own docstring note for the promotion-to-ERROR follow-up
-ticket this filed.
+25-site WARN-first threshold -- 93 sites. T-1038 fixed or waived 90 of
+them (every site outside `src/frob/gates/**`, which was out of its
+declared scope, owned by a concurrent sibling ticket this wave); the
+3 remaining `src/frob/gates/**` sites and the actual promotion to
+`Severity.ERROR` are tracked by a follow-up ticket (see tickets.md) --
+the T-0973/T-0976 promote-at-zero precedent means promoting happens in
+the SAME land that zeroes the REPO-WIDE unwaived count, never before.
 """
 
 from __future__ import annotations
@@ -73,16 +77,22 @@ _log = get_logger(__name__)
 # module.
 # frob:enforces SC-ATTACK-NATIVE-EXTENSION-OPACITY
 # frob:enforces SC-DETECTION-PROC-MACRO-BUILDRS
+# frob:waive AFFECT001 reason="T-1038: this docstring edit is the disposition-count \
+# update itself (93 -> 90-fixed-or-waived/3-deferred) already fully told by the \
+# docstring text; docs/modules/gates.md#public-api's own OPAQUE001 entry describes \
+# the rule's mechanism, not its live promotion status, so nothing there needs to \
+# change"
 def opaque_gate(root: Path) -> tuple[Violation, ...]:
     """OPAQUE001: every git-tracked, language-recognized source file
     scanned for `RUNTIME_OPAQUE_CONSTRUCTS` sites (T-0665). WARN-tier
-    (`Severity.WARN`, not `Severity.ERROR`) at first turn-on -- the
-    T-0688/T-0973 promotion precedent this ticket's Done report cites:
-    frob's own codebase trips this gate at more than 25 real sites
-    (dynamic `getattr` in a handful of dispatch tables), each of which
-    needs a real fix-or-waive pass before promoting to ERROR is safe. A
-    follow-up ticket (filed alongside this one, see tickets.md) tracks
-    that promotion; do not silently flip this to ERROR without it."""
+    (`Severity.WARN`, not `Severity.ERROR`) still, at T-1038's own close:
+    that ticket fixed or waived every non-`src/frob/gates/**` site (90 of
+    93), but 3 sites inside `src/frob/gates/**` were out of its declared
+    scope (owned by a concurrent sibling ticket) and remain live/unwaived
+    -- promoting to ERROR before those resolve would red the build on a
+    site this ticket could not touch. A follow-up ticket (see tickets.md)
+    tracks disposing the last 3 and completing the promotion; do not
+    flip this to ERROR without it landing (or those 3 being resolved)."""
     root = Path(root)
     exts = set(supported_extensions())
     violations: list[Violation] = []

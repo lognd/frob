@@ -47,6 +47,7 @@ _RUNNER_MODULE_NAMES = (
 """Every `frob.app.*_runner` module name, dispatched by `_dispatch_table`."""
 
 
+# frob:ticket T-1038
 def _import_runner_modules() -> dict[str, Callable[[AppConfig], None]]:
     """Every uniform `frob.app.*_runner` module's `run` entry point, keyed by name.
 
@@ -59,6 +60,10 @@ def _import_runner_modules() -> dict[str, Callable[[AppConfig], None]]:
     """
     import importlib
 
+    # frob:waive OPAQUE001 reason="T-1038: name ranges over the closed, \
+    # statically-declared _RUNNER_MODULE_NAMES tuple immediately above -- not \
+    # attacker- or config-controlled input; the runtime import/attr lookup is a \
+    # module-loading convenience over a fixed, auditable set, not an evasion surface"
     return {
         name: getattr(importlib.import_module(f"frob.app.{name}"), "run")
         for name in _RUNNER_MODULE_NAMES

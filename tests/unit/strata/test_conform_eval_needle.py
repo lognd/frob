@@ -4,6 +4,10 @@ function named `_mutation_for_eval`) -- only a genuine bare `eval(`/`exec(`
 builtin call site should fire (docs/strata/selfconform.md#the-three-rules).
 """
 
+# frob:waive OPAQUE001 reason="T-1038: this file's own subject is the eval-substring \
+# false-positive this ticket's other waivers also cite (_mutation_for_eval-shaped \
+# names); its fixture text is never an actual eval()/exec() call"
+
 from __future__ import annotations
 
 from pathlib import Path

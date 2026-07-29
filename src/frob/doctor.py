@@ -431,6 +431,10 @@ def _json_validity(data: bytes) -> str | None:
 _VALIDATORS = {"sqlite": _sqlite_validity, "json": _json_validity}
 
 
+# frob:waive OPAQUE001 reason="T-1038: kind is always a literal 'sqlite'/'json' string \
+# passed by this module's own internal derived-artifact manifest (every call site is \
+# in this file, never user/CLI input) -- the dict-key lookup can only ever resolve to \
+# one of the two _VALIDATORS entries declared right above"
 def _artifact_status(
     root: Path, name: str, rel_path: str, kind: str
 ) -> DerivedArtifactStatus:
@@ -663,6 +667,10 @@ class DoctorReport(BaseModel):
     remediation: str | None = None
 
 
+# frob:waive OPAQUE001 reason="T-1038: name is always one of the fixed \
+# NATIVE_EXTENSIONS module-level constant's entries (this function's one call site) -- \
+# not attacker/config-controlled input; a closed, statically-declared native extension \
+# name list"
 def _extension_status(name: str) -> NativeExtensionStatus:
     """Import `name` and report whether it succeeded, plus its version if
     the module exposes one -- never raises, a missing extension is a normal

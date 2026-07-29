@@ -46,6 +46,10 @@ from frob.serve._tools import (
 from frob.serve._watch import WatchThread, watch_tick
 
 
+# frob:waive OPAQUE001 reason="T-1038: this module-level __getattr__ only lazily \
+# re-exports one of three literal, statically-declared names (the 'in' check below) \
+# from frob.serve.server -- not an arbitrary attribute-interception surface; any name \
+# outside that closed set raises AttributeError immediately"
 def __getattr__(name: str):  # noqa: ANN201
     """Lazily re-export `frob.serve.server`'s `McpUnavailable`/`build_server`/
     `run_stdio` (T-0362): `server.py` imports the optional `mcp` SDK at

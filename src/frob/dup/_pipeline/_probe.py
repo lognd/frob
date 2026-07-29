@@ -66,6 +66,10 @@ def _is_pure_heuristic(tokens: tuple[str, ...]) -> bool:
     return not any(tok in _IMPURE_TOKENS for tok in tokens)
 
 
+# frob:waive OPAQUE001 reason="T-1038: qualname is a symref name this ticket's own \
+# duplicate-detection graph already resolved (frob.graph's own symbol table), not \
+# attacker-controlled input -- deliberate reflection to load the exact candidate \
+# callable for the R6/R7 probe pipeline, the whole point of this module"
 def _load_python_callable(root: Path, path: str, qualname: str) -> Any | None:
     """Best-effort `importlib` load of a top-level or `Class.method` callable."""
     if not path.endswith(".py"):

@@ -64,6 +64,7 @@ def _toml_top_level_updates(cfg: AppConfig, data: dict) -> dict:
     return updates
 
 
+# frob:ticket T-1038
 def _toml_check_section_updates(cfg: AppConfig, section: dict) -> dict:
     """`check_only`/`check_skip_*` defaults from `frob.toml`'s `[check]` table."""
     updates: dict = {}
@@ -71,6 +72,10 @@ def _toml_check_section_updates(cfg: AppConfig, section: dict) -> dict:
         updates["check_only"] = [str(s) for s in section["only"]]
     raw_skip = section.get("skip")
     skip_list: list = raw_skip if isinstance(raw_skip, list) else []
+    # frob:waive OPAQUE001 reason="T-1038: field ranges over frob.toml's own \
+    # [check].skip list (the repo owner's own config, not attacker/external input); \
+    # hasattr() gates the lookup to real AppConfig fields, so an unknown stage name is \
+    # a silent no-op, never an arbitrary-attribute write"
     for stage in skip_list:
         field = f"check_skip_{str(stage).replace('-', '_')}"
         if hasattr(cfg, field) and not getattr(cfg, field):

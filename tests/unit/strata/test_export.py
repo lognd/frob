@@ -2,6 +2,10 @@
 T-0086): k8s NetworkPolicy, seccomp profile skeletons, IAM policy skeletons.
 """
 
+# frob:waive OPAQUE001 reason="T-1038: the exec text below is fixture STRING LITERAL \
+# data (an exported policy/profile skeleton assertion), never an actual exec() call in \
+# this file"
+
 from __future__ import annotations
 
 import json

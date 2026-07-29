@@ -141,6 +141,16 @@
       "ref": "src/frob/gates/_fmt_directives.py::canonicalize_text"
     },
     {
+      "digest": "6f945b999f6254c961848b0eab43690e820b025b15a991a6c02cc9c2d7f128f9",
+      "facet": "body",
+      "ref": "src/frob/gates/_opaque.py::opaque_gate"
+    },
+    {
+      "digest": "0eb55c661ccdef04c21ab211bd9581f3f8c1fddd62e86d13639afe915825fc84",
+      "facet": "sig",
+      "ref": "src/frob/gates/_opaque.py::opaque_gate"
+    },
+    {
       "digest": "3ab9cac153b46148f43458ef9a208c3011c3759d18896bb70ba1f0ffb0fdd8e1",
       "facet": "body",
       "ref": "src/frob/gates/_pii_structural.py::_scan_one_python_file"
@@ -319,6 +329,31 @@
       "digest": "26fc40e7c586f26b3a596bc3bc12a5dbc4b291c33a46761aa41b062930e73454",
       "facet": "sig",
       "ref": "src/frob/lang/_nodes.py::resolve_local_import"
+    },
+    {
+      "digest": "60805f5a000c209edd246580a5044335eeb1f4d3bcd37548d887bef5f5894c5f",
+      "facet": "sig",
+      "ref": "src/frob/logging/filter.py::_BelowLevelFilter"
+    },
+    {
+      "digest": "93d79f5dc97fa8dd7dac2dc263391d4a8d6d5160599d00c56893b90b9aa75f62",
+      "facet": "body",
+      "ref": "src/frob/mutate/__init__.py::_Mutator.visit_BinOp"
+    },
+    {
+      "digest": "45ae91c3db63b3f4c5e1acbadb5be35c4be713f17caad54bc7caf19e43280018",
+      "facet": "sig",
+      "ref": "src/frob/mutate/__init__.py::_Mutator.visit_BinOp"
+    },
+    {
+      "digest": "7b5f026ef62d49b2c1b7b7ff1e5242d8a6de072e2763d7e24427680023f4e52e",
+      "facet": "body",
+      "ref": "src/frob/mutate/__init__.py::_Mutator.visit_BoolOp"
+    },
+    {
+      "digest": "a9740bc9215fee5a64ed9a32c733f2670785f416b786b4692182a0b9ff74dced",
+      "facet": "sig",
+      "ref": "src/frob/mutate/__init__.py::_Mutator.visit_BoolOp"
     },
     {
       "digest": "7e3b0f8b40eeef7d827dec7813e9ae6589728a619e99dcbc65fc27c351c0c488",

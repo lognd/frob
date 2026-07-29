@@ -61,6 +61,10 @@ _PARSERS = {
 # arg, dispatches stdin/file input, logs text or json, propagates the passthrough exit \
 # code; this dispatch/format/exit triad IS the runner's job, matching every other \
 # `frob.app.*_runner`"
+# frob:waive OPAQUE001 reason="T-1038: tool is validated against _PARSERS's own key \
+# set immediately above (unknown tool exits before reaching the lookup) -- the \
+# container-dynamic-key call cannot resolve to anything outside that closed, \
+# statically-declared parser table"
 def run(cfg: AppConfig) -> None:
     tool = cfg.parse_tool
     if tool is None:

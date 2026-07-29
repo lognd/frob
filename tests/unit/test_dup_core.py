@@ -6,6 +6,11 @@ no-silent-fallback rule means these functions themselves already return
 `test_core_unavailable_path_is_err_not_exception` exercises directly.
 """
 
+# frob:waive OPAQUE001 reason="T-1038: the getattr(...) below resolves a \
+# fixture-module attribute by a name this test itself constructs, standard \
+# test-fixture introspection -- deliberate test infrastructure, not an evasion risk \
+# over untrusted input"
+
 from __future__ import annotations
 
 import pytest

@@ -134,6 +134,10 @@ def _sorted_entries(entries: Sequence[LockEntry]) -> tuple[LockEntry, ...]:
 # frob:tests tests/test_graph_lock.py::TestAckDrift.test_acknowledge_skips_meaningless_body_facet_on_class  # noqa: E501
 # frob:tests tests/test_graph_lock.py::TestAckDrift.test_acknowledge_endpoint_that_does_not_resolve_is_err  # noqa: E501
 # frob:ticket T-0972
+# frob:waive OPAQUE001 reason="T-1038: facet ranges only over _facets_for_ref's own \
+# closed 'sig'/'body' vocabulary (a Digests model with exactly those two fields) -- \
+# not attacker- or externally-controlled input; a deliberate generic accessor over a \
+# fixed two-facet shape"
 def acknowledge(
     lock: LockFile, snapshot: GraphSnapshot, refs: Sequence[str]
 ) -> Result[LockFile, LockError]:
@@ -234,6 +238,9 @@ def _rename_candidates(
     return tuple(sorted(candidates))
 
 
+# frob:waive OPAQUE001 reason="T-1038: entry.facet is always one of the closed \
+# 'sig'/'body' vocabulary a persisted LockEntry can hold (the same Digests model \
+# acknowledge() writes above) -- not attacker- or externally-controlled input"
 def _stale_items(lock: LockFile, snapshot: GraphSnapshot) -> tuple[StaleItem, ...]:
     """Acked entries whose current digest has moved off the recorded value."""
     stale: list[StaleItem] = []

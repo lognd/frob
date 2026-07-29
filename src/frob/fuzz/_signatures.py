@@ -47,6 +47,10 @@ def _module_name(path: str) -> str | None:
     return ".".join(parts)
 
 
+# frob:waive OPAQUE001 reason="T-1038: qualname is a symref name resolved from \
+# frob.graph's own symbol table (this module's fuzz-target discovery pipeline), not \
+# attacker-controlled input -- deliberate reflection to load the exact target callable \
+# being fuzzed, the whole point of this module"
 def _resolve_attr(module: object, qualname: str) -> object | None:
     """Walk a dotted qualname off `module`, returning `None` on any miss."""
     obj: object = module
@@ -144,6 +148,10 @@ def _resolve_hints(target: Callable[..., object], ref: str) -> dict[str, type] |
 # module name, logs why on any derivation/import failure, returns None; the \
 # log-on-failure step is the SAME best-effort-import concern the docstring names, not \
 # a separate responsibility"
+# frob:waive OPAQUE001 reason="T-1038: module_name is derived from a repo-relative \
+# source path this module's own caller already resolved via frob.graph's symbol table, \
+# not attacker-controlled input -- deliberate module loading for the fuzz target being \
+# introspected, the whole point of this module"
 def _import_ref_module(root: Path, path_str: str) -> object | None:
     """Import the module backing source file `path_str`, temporarily adding
     `root/src` to `sys.path` if needed; `None` on any derivation/import failure."""

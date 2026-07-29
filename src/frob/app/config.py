@@ -582,6 +582,12 @@ class AppConfig(BaseModel):
     natives_path: Path | None = None
 
     @classmethod
+    # frob:waive OPAQUE001 reason="T-1038: every getattr(args, field, None)/ \
+    # getattr(args, flag, False) call in this function ranges over a closed, \
+    # statically-declared tuple/string literal of known AppConfig/argparse field names \
+    # defined right above each loop -- not attacker- or externally-controlled input; \
+    # this is the standard argparse-Namespace-to-model field-copy idiom, not an \
+    # evasion surface"
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
         # frob:doc docs/modules/app.md#config
         # frob:waive AFFECT001 reason="same T-1150 sys_check/scope-closure disclosed \
