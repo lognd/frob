@@ -66,6 +66,7 @@ class TestCheckCoverageRegistryFile:
                 DispositionKind.HANDLED_BY,
             ), entry
             if entry.disposition.kind is DispositionKind.DEFERRED:
+                assert entry.disposition.target is not None, entry
                 assert entry.disposition.target.startswith("T-"), entry
 
     def test_no_malformed_entries(self) -> None:
