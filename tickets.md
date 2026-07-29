@@ -3250,10 +3250,11 @@ structurally impossible (draft directories are disjoint git objects,
 verified by a regression test reproducing the T-1115/T-1126/T-1127/
 T-1128 draft-death shape against v2 and asserting no draft is lost).
 
-<!-- ticket:T-draft-2fcdab16 -->
+<!-- ticket:T-1260 -->
 ```yaml
-id: T-draft-2fcdab16
-title: 'gates --fix Tier-B transaction engine: apply-verify-rollback per fix'
+id: T-1260
+title: 'gates --fix CLI wiring: wire apply_tier_a_fixes into frob check --fix + affected-gate
+  re-run'
 state: queued
 kind: feature
 origin: human
@@ -3263,143 +3264,40 @@ parent: T-1137
 tier: ticket
 sprint: null
 scope:
-- src/frob/gates/_fix_engine_tier_b.py
-- tests/test_gates.py
+- src/frob/_cli_parsers/_check.py
+- src/frob/app/check_runner.py
+- tests/test_check_runner.py
 acceptance:
-- text: GIVEN a Tier-B fix that applies cleanly WHEN its affected_gates and bound_tests
-    all re-verify clean THEN the fix is committed and reported as fixed
+- text: GIVEN a repo with a live DOC007 finding WHEN `frob check --fix` runs THEN
+    the directive is rewritten and the summary line reports it fixed with DOC007 re-verified
+    clean in the same invocation
   evidence: []
-- text: GIVEN a Tier-B fix that introduces a regression WHEN affected_gates or bound_tests
-    fail after applying THEN every touched file is restored byte-for-byte from its
-    pre-fix backup and a FixRolledBack record discloses which gate/test regressed
+- text: 'GIVEN `frob check --fix --json` WHEN no Tier B/C handlers exist yet THEN
+    the json output includes an empty `fixits` array and a `rolled_back: []` field,
+    not a missing key'
   evidence: []
-- text: GIVEN N Tier-B fixes in one --fix invocation THEN each is applied and verified
-    sequentially, never batched, so a rollback never has to bisect more than one fix
+- text: GIVEN `frob check` (no --fix) WHEN run against the same repo THEN behavior
+    and output are byte-identical to before this ticket -- --fix is strictly additive
   evidence: []
 threat: null
 component: null
 ```
-Build the Tier-B transactional fix engine per docs/design/check-fix-engine.md
-"Transaction / rollback model" section: new src/frob/gates/_fix_engine_tier_b.py
-with TIER_B_HANDLERS: dict[str, TierBHandler], a TierBFix model (backup
-bytes, affected_gates, bound_tests), and the apply-verify-commit-or-
-rollback engine itself (snapshot pre-fix bytes, apply, re-run affected
-gates + bound tests, restore from backup byte-for-byte on any regression,
-emit a disclosed FixRolledBack record naming what regressed). Ship
-sequential, per-fix verification -- never batched -- exactly as the design
-doc specifies. No concrete Tier-B handler is required to exist yet as
-part of THIS ticket's scope beyond one minimal reference handler proving
-the rollback path end-to-end (a synthetic/test-fixture rule is
-acceptable, or reuse whichever real Tier-B-shaped rule is cheapest to
-wire first -- implementer's judgment, disclose the choice in the Done
-report).
+Wire apply_tier_a_fixes (src/frob/gates/_fix_engine.py, T-1138) into an
+actual `--fix` CLI flag. Add the flag to src/frob/_cli_parsers/_check.py
+and orchestration to src/frob/app/check_runner.py: load the graph
+snapshot + ticket queue exactly as a normal `frob check` run does, call
+apply_tier_a_fixes, then re-run the UNION of every rule id actually fixed
+once in the same invocation and report the residual violation count for
+those rules. Report three counts in the summary line: fixed / rolled-back
+(0 for this ticket, Tier B not built yet) / fix-its emitted (0 for this
+ticket, Tier C not built yet) -- shape the summary so later tickets can
+add to it without a reshape. `--fix --json` emits the existing violations
+array plus an (empty for now) `fixits` key. See docs/design/check-fix-engine.md
+"Gate re-run semantics" and "Fix-it emission format" sections.
 
-<!-- ticket:T-draft-81a35bce -->
+<!-- ticket:T-1261 -->
 ```yaml
-id: T-draft-81a35bce
-title: 'gates --fix fixability registry field: generated-verified auto/verified/assisted/manual
-  tier per rule id'
-state: queued
-kind: feature
-origin: human
-created: '2026-07-29'
-priority: medium
-blocked_by:
-- T-draft-2fcdab16
-- T-draft-86e35dc2
-- T-draft-cc933a76
-parent: T-1137
-tier: ticket
-sprint: null
-scope:
-- src/frob/gates/_fixability_scan.py
-- src/frob/gates/__init__.py
-- docs/design/registry/check-coverage.yaml
-- src/frob/registry/_staleness.py
-- tests/test_gates.py
-acceptance:
-- text: GIVEN every known gate rule id THEN generated_fixability() maps it to exactly
-    one of auto/verified/assisted/manual, with manual as the correct default for a
-    rule with no handler in any table
-  evidence: []
-- text: GIVEN a rule id registered in more than one of TIER_A_HANDLERS/TIER_B_HANDLERS/TIER_C_EMITTERS
-    WHEN generated_fixability() runs THEN it raises FixabilityConflict rather than
-    silently picking one
-  evidence: []
-- text: GIVEN the checked-in _KNOWN_RULE_FIXABILITY literal WHEN it drifts from a
-    fresh generated_fixability() scan (a handler added without updating the literal)
-    THEN TestRuleFixability fails loud
-  evidence: []
-- text: 'GIVEN check-coverage.yaml''s CHK-GATE-<rule> entries THEN each carries a
-    fixability: field kept in sync the same idempotent way gate_rule_entries already
-    is'
-  evidence: []
-threat: null
-component: null
-```
-Build the generated-verified fixability registry field per
-docs/design/check-fix-engine.md "Fixability registry field" section,
-mirroring src/frob/gates/_rule_id_scan.py's own generated-verified shape
-(scanner is authority, checked-in literal is generated artifact,
-drift-lock test re-verifies every run). New
-src/frob/gates/_fixability_scan.py: generated_fixability() imports
-TIER_A_HANDLERS (_fix_engine.py), TIER_B_HANDLERS (_fix_engine_tier_b.py),
-TIER_C_EMITTERS (_fix_engine_tier_c.py), and known_gate_rule_ids()
-(_rule_id_scan.py), and maps every known rule id to auto/verified/
-assisted/manual -- raising FixabilityConflict if a rule id appears in
-more than one table. Add the checked-in _KNOWN_RULE_FIXABILITY literal
-(frob.gates.__init__ or a similarly central module) plus
-tests/test_gates.py::TestRuleFixability re-verifying it against a fresh
-scan. Extend docs/design/registry/check-coverage.yaml's CHK-GATE-<rule>
-entries with a fixability: field, synthesized the same idempotent way
-sync_gate_rule_entries already synthesizes missing entries (reuse that
-function's shape, do not invent a second YAML-mutation pattern).
-
-<!-- ticket:T-draft-86e35dc2 -->
-```yaml
-id: T-draft-86e35dc2
-title: gates --fix Tier-C fix-it emission format for agents
-state: queued
-kind: feature
-origin: human
-created: '2026-07-29'
-priority: medium
-parent: T-1137
-tier: ticket
-sprint: null
-scope:
-- src/frob/gates/_fix_engine_tier_c.py
-- tests/test_gates.py
-acceptance:
-- text: GIVEN a content-required finding with a registered Tier-C emitter WHEN --fix
-    runs THEN no file is edited and a FixIt record with a non-empty reason_unfixable
-    is emitted
-  evidence: []
-- text: GIVEN --fix --json THEN the output includes a `fixits` array; on a repo with
-    zero Tier-C-eligible findings the array is empty, never a missing key
-  evidence: []
-- text: GIVEN a FixIt's message field THEN it is the original violation's message
-    verbatim, never paraphrased
-  evidence: []
-threat: null
-component: null
-```
-Build Tier-C fix-it emission per docs/design/check-fix-engine.md
-"Fix-it emission format" section: new src/frob/gates/_fix_engine_tier_c.py
-with a FixIt model (rule, file, line, message, proposed_patch: str | None,
-reason_unfixable: str) and TIER_C_EMITTERS: dict[str, TierCEmitter]. Wire
-`--fix --json`'s output to include a `fixits` array (empty when no Tier-C
-emitter fires) alongside the existing violations array -- additive only,
-never replacing frob check's existing --json shape. Ship at least one
-real Tier-C emitter (a content-required finding with no mechanical
-rewrite -- e.g. TODO001's "bind this to a ticket" case, or a DOC002
-finding with 0 or 2+ fuzzy candidates, reusing fix_doc002_unique_slug's
-own already-computed candidate set to populate proposed_patch when
-exactly the wrong number of candidates exist, or null when zero).
-
-<!-- ticket:T-draft-cc933a76 -->
-```yaml
-id: T-draft-cc933a76
+id: T-1261
 title: 'gates --fix Tier-A batch 2: fmt/registry-regen/release-sync/WAIVE004 handlers'
 state: queued
 kind: feature
@@ -3464,11 +3362,10 @@ list to a dict keyed by rule id, per docs/design/check-fix-engine.md's
 "Fix-handler protocol" section, so the fixability-registry-field ticket
 has a real table to scan).
 
-<!-- ticket:T-draft-d540346c -->
+<!-- ticket:T-1262 -->
 ```yaml
-id: T-draft-d540346c
-title: 'gates --fix CLI wiring: wire apply_tier_a_fixes into frob check --fix + affected-gate
-  re-run'
+id: T-1262
+title: 'gates --fix Tier-B transaction engine: apply-verify-rollback per fix'
 state: queued
 kind: feature
 origin: human
@@ -3478,33 +3375,136 @@ parent: T-1137
 tier: ticket
 sprint: null
 scope:
-- src/frob/_cli_parsers/_check.py
-- src/frob/app/check_runner.py
-- tests/test_check_runner.py
+- src/frob/gates/_fix_engine_tier_b.py
+- tests/test_gates.py
 acceptance:
-- text: GIVEN a repo with a live DOC007 finding WHEN `frob check --fix` runs THEN
-    the directive is rewritten and the summary line reports it fixed with DOC007 re-verified
-    clean in the same invocation
+- text: GIVEN a Tier-B fix that applies cleanly WHEN its affected_gates and bound_tests
+    all re-verify clean THEN the fix is committed and reported as fixed
   evidence: []
-- text: 'GIVEN `frob check --fix --json` WHEN no Tier B/C handlers exist yet THEN
-    the json output includes an empty `fixits` array and a `rolled_back: []` field,
-    not a missing key'
+- text: GIVEN a Tier-B fix that introduces a regression WHEN affected_gates or bound_tests
+    fail after applying THEN every touched file is restored byte-for-byte from its
+    pre-fix backup and a FixRolledBack record discloses which gate/test regressed
   evidence: []
-- text: GIVEN `frob check` (no --fix) WHEN run against the same repo THEN behavior
-    and output are byte-identical to before this ticket -- --fix is strictly additive
+- text: GIVEN N Tier-B fixes in one --fix invocation THEN each is applied and verified
+    sequentially, never batched, so a rollback never has to bisect more than one fix
   evidence: []
 threat: null
 component: null
 ```
-Wire apply_tier_a_fixes (src/frob/gates/_fix_engine.py, T-1138) into an
-actual `--fix` CLI flag. Add the flag to src/frob/_cli_parsers/_check.py
-and orchestration to src/frob/app/check_runner.py: load the graph
-snapshot + ticket queue exactly as a normal `frob check` run does, call
-apply_tier_a_fixes, then re-run the UNION of every rule id actually fixed
-once in the same invocation and report the residual violation count for
-those rules. Report three counts in the summary line: fixed / rolled-back
-(0 for this ticket, Tier B not built yet) / fix-its emitted (0 for this
-ticket, Tier C not built yet) -- shape the summary so later tickets can
-add to it without a reshape. `--fix --json` emits the existing violations
-array plus an (empty for now) `fixits` key. See docs/design/check-fix-engine.md
-"Gate re-run semantics" and "Fix-it emission format" sections.
+Build the Tier-B transactional fix engine per docs/design/check-fix-engine.md
+"Transaction / rollback model" section: new src/frob/gates/_fix_engine_tier_b.py
+with TIER_B_HANDLERS: dict[str, TierBHandler], a TierBFix model (backup
+bytes, affected_gates, bound_tests), and the apply-verify-commit-or-
+rollback engine itself (snapshot pre-fix bytes, apply, re-run affected
+gates + bound tests, restore from backup byte-for-byte on any regression,
+emit a disclosed FixRolledBack record naming what regressed). Ship
+sequential, per-fix verification -- never batched -- exactly as the design
+doc specifies. No concrete Tier-B handler is required to exist yet as
+part of THIS ticket's scope beyond one minimal reference handler proving
+the rollback path end-to-end (a synthetic/test-fixture rule is
+acceptable, or reuse whichever real Tier-B-shaped rule is cheapest to
+wire first -- implementer's judgment, disclose the choice in the Done
+report).
+
+<!-- ticket:T-1263 -->
+```yaml
+id: T-1263
+title: gates --fix Tier-C fix-it emission format for agents
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: T-1137
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_fix_engine_tier_c.py
+- tests/test_gates.py
+acceptance:
+- text: GIVEN a content-required finding with a registered Tier-C emitter WHEN --fix
+    runs THEN no file is edited and a FixIt record with a non-empty reason_unfixable
+    is emitted
+  evidence: []
+- text: GIVEN --fix --json THEN the output includes a `fixits` array; on a repo with
+    zero Tier-C-eligible findings the array is empty, never a missing key
+  evidence: []
+- text: GIVEN a FixIt's message field THEN it is the original violation's message
+    verbatim, never paraphrased
+  evidence: []
+threat: null
+component: null
+```
+Build Tier-C fix-it emission per docs/design/check-fix-engine.md
+"Fix-it emission format" section: new src/frob/gates/_fix_engine_tier_c.py
+with a FixIt model (rule, file, line, message, proposed_patch: str | None,
+reason_unfixable: str) and TIER_C_EMITTERS: dict[str, TierCEmitter]. Wire
+`--fix --json`'s output to include a `fixits` array (empty when no Tier-C
+emitter fires) alongside the existing violations array -- additive only,
+never replacing frob check's existing --json shape. Ship at least one
+real Tier-C emitter (a content-required finding with no mechanical
+rewrite -- e.g. TODO001's "bind this to a ticket" case, or a DOC002
+finding with 0 or 2+ fuzzy candidates, reusing fix_doc002_unique_slug's
+own already-computed candidate set to populate proposed_patch when
+exactly the wrong number of candidates exist, or null when zero).
+
+<!-- ticket:T-1264 -->
+```yaml
+id: T-1264
+title: 'gates --fix fixability registry field: generated-verified auto/verified/assisted/manual
+  tier per rule id'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+blocked_by:
+- T-1262
+- T-1263
+- T-1261
+parent: T-1137
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_fixability_scan.py
+- src/frob/gates/__init__.py
+- docs/design/registry/check-coverage.yaml
+- src/frob/registry/_staleness.py
+- tests/test_gates.py
+acceptance:
+- text: GIVEN every known gate rule id THEN generated_fixability() maps it to exactly
+    one of auto/verified/assisted/manual, with manual as the correct default for a
+    rule with no handler in any table
+  evidence: []
+- text: GIVEN a rule id registered in more than one of TIER_A_HANDLERS/TIER_B_HANDLERS/TIER_C_EMITTERS
+    WHEN generated_fixability() runs THEN it raises FixabilityConflict rather than
+    silently picking one
+  evidence: []
+- text: GIVEN the checked-in _KNOWN_RULE_FIXABILITY literal WHEN it drifts from a
+    fresh generated_fixability() scan (a handler added without updating the literal)
+    THEN TestRuleFixability fails loud
+  evidence: []
+- text: 'GIVEN check-coverage.yaml''s CHK-GATE-<rule> entries THEN each carries a
+    fixability: field kept in sync the same idempotent way gate_rule_entries already
+    is'
+  evidence: []
+threat: null
+component: null
+```
+Build the generated-verified fixability registry field per
+docs/design/check-fix-engine.md "Fixability registry field" section,
+mirroring src/frob/gates/_rule_id_scan.py's own generated-verified shape
+(scanner is authority, checked-in literal is generated artifact,
+drift-lock test re-verifies every run). New
+src/frob/gates/_fixability_scan.py: generated_fixability() imports
+TIER_A_HANDLERS (_fix_engine.py), TIER_B_HANDLERS (_fix_engine_tier_b.py),
+TIER_C_EMITTERS (_fix_engine_tier_c.py), and known_gate_rule_ids()
+(_rule_id_scan.py), and maps every known rule id to auto/verified/
+assisted/manual -- raising FixabilityConflict if a rule id appears in
+more than one table. Add the checked-in _KNOWN_RULE_FIXABILITY literal
+(frob.gates.__init__ or a similarly central module) plus
+tests/test_gates.py::TestRuleFixability re-verifying it against a fresh
+scan. Extend docs/design/registry/check-coverage.yaml's CHK-GATE-<rule>
+entries with a fixability: field, synthesized the same idempotent way
+sync_gate_rule_entries already synthesizes missing entries (reuse that
+function's shape, do not invent a second YAML-mutation pattern).
