@@ -308,7 +308,7 @@ the exact per-site verification recipe that caught this).
 id: T-1190
 title: 'test: fix 5 unwaived TEST003/TEST014 findings found in T-0204 verification
   close'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-29'
@@ -354,6 +354,9 @@ unwaived TEST findings again (TEST006 aside, which only ever clears via
 
 ## Failure log
 - 2026-07-29 attempt 1: T-0204's cited TEST003/TEST014 findings do not reproduce on current main: full frob check --ticket T-1190 shows gate:TEST at 0 errors, 6 warnings, 2 waived, none matching tomlio.py/strata-core-parse/perf-serve stop trio -- already resolved before this dispatch
+
+## Drop reason
+- 2026-07-29: not reproducible: the TEST003/TEST014 findings from T-0204's close-time measurement (taken under wave-22 landing concurrency) do not exist on current main -- verified by the w23-fixes agent via full foreground scoped checks (gate:TEST 0 errors) and direct reads of the cited modules' existing frob:tests edges; transient-measurement class
 <!-- ticket:T-1191 -->
 ```yaml
 id: T-1191
