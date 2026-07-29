@@ -352,6 +352,8 @@ each `.stop`, then re-verify `frob check --only gates-fast` shows 0
 unwaived TEST findings again (TEST006 aside, which only ever clears via
 `make coverage` at land, never in a worktree).
 
+## Failure log
+- 2026-07-29 attempt 1: T-0204's cited TEST003/TEST014 findings do not reproduce on current main: full frob check --ticket T-1190 shows gate:TEST at 0 errors, 6 warnings, 2 waived, none matching tomlio.py/strata-core-parse/perf-serve stop trio -- already resolved before this dispatch
 <!-- ticket:T-1191 -->
 ```yaml
 id: T-1191
@@ -396,6 +398,8 @@ hoist/memoize the loop-invariant call) or add a reasoned
 `frob:waive PERF005`/`frob:waive PERF008` per site, then re-verify
 `frob check --only gates-native` shows 0 unwaived PERF findings again.
 
+## Failure log
+- 2026-07-29 attempt 1: T-0204's cited PERF005/PERF008 findings do not reproduce on current main: full frob check --ticket T-1191 shows gate:PERF at 0 errors, 4 warnings, 97 waived, none matching vet/_taint.py _assigned_names, arch/_ffi.py:298, serve/_watch.py:169, or test_serve_watch.py:86 -- already resolved before this dispatch
 <!-- ticket:T-1192 -->
 ```yaml
 id: T-1192
