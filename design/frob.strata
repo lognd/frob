@@ -4319,6 +4319,7 @@ node testsuite : trusted {
     attr interface=TestUnboundAcceptance;
     attr interface=TestUnboundAcceptancePreflightBeforeMerge;
     attr interface=TestUnboundedWait;
+    attr interface=TestUncommittedWaiveDeletionRefusal;
     attr interface=TestUndeclaredInterfaceCore;
     attr interface=TestUndeclaredInterfaceCrossPassDedup;
     attr interface=TestUndeclaredInterfaceExtended;
@@ -4378,6 +4379,7 @@ node testsuite : trusted {
     attr interface=TestVocabularyAliases;
     attr interface=TestVulnLitmus;
     attr interface=TestWaitCoverage;
+    attr interface=TestWaive004DegradedRunGuard;
     attr interface=TestWaive006BindingPhraseExtraction;
     attr interface=TestWaive006CommentChannel;
     attr interface=TestWaive006RealRepo;

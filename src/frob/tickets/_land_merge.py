@@ -60,6 +60,7 @@ from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
     LandError,
     Ticket,
+    _done_report_section_lines,
     is_cmd_evidence,
     scope_matches,
     unbound_acceptance,
@@ -800,6 +801,93 @@ def _unowned_deletions(
     ]
     unowned = tuple(f for f in deleted if not _deletion_owned(f, scope))
     return Ok(unowned)
+
+
+#: A single-physical-line `# frob:waive RULE ...` (or `//` for non-Python
+#: sources) comment -- mirrors `frob.gates._fix_engine._WAIVE_SINGLE_LINE_
+#: RE` exactly (same shape, independently defined here since importing
+#: `frob.gates` from `frob.tickets` would cycle: `frob.gates` already
+#: imports `frob.tickets.TicketQueue`).
+_LAND_WAIVE_LINE_RE = re.compile(r"^\s*(#|//)\s*frob:waive\s+(\S+)\b")
+
+
+def _uncommitted_waive_deletions(
+    worktree: Path,
+) -> Result[tuple[tuple[str, str], ...], LandError]:
+    """`(file, rule)` pairs for every `frob:waive` comment line the
+    worktree's UNCOMMITTED changes (against `HEAD`, i.e. before any
+    wip-commit) delete -- the T-1323 incident's own laundering path: a
+    dirty worktree's edits get wip-snapshot-committed and ride the merge
+    onto main, unattributed. Reading this straight off the working tree,
+    BEFORE `_wip_commit` runs, is what makes the refusal below fire
+    before the deletion is folded into a commit at all.
+
+    Parses a plain `git diff HEAD -U0` (0 lines of context, deterministic
+    unified-diff header shape) rather than the porcelain-name-only forms
+    `_unowned_deletions` uses -- a `frob:waive` line disappearing from an
+    otherwise-modified (not wholly deleted) file never shows up in a
+    `--diff-filter=D --name-only` listing, only inside the hunk body."""
+    diff = run_argv(["git", "-C", str(worktree), "diff", "HEAD", "--no-color", "-U0"])
+    if diff.is_err or diff.danger_ok.returncode not in (0, 1):
+        return Err(LandError.GitFailed)
+    deletions: list[tuple[str, str]] = []
+    current_file: str | None = None
+    for line in diff.danger_ok.stdout.splitlines():
+        if line.startswith("--- a/"):
+            current_file = line.removeprefix("--- a/")
+        elif line.startswith("--- /dev/null"):
+            current_file = None
+        elif line.startswith("-") and not line.startswith("---"):
+            if current_file is None:
+                continue
+            match = _LAND_WAIVE_LINE_RE.match(line[1:])
+            if match is not None:
+                deletions.append((current_file, match.group(2)))
+    return Ok(tuple(deletions))
+
+
+def _waive_deletion_declared_in_done_report(body: str, file: str, rule: str) -> bool:
+    """Whether `body`'s `## Done report` section (`_done_report_section_
+    lines`, the same section-boundary parser `_evidence.py`'s claim-
+    replay already trusts) declares THIS `(file, rule)` pair TOGETHER, on
+    one line -- the acceptance criterion's "declared by the Done report"
+    half of the out-of-scope test.
+
+    T-1323 review fix: the original shape (`file in body or rule in
+    body`) searched the ENTIRE ticket body, not just the Done report, and
+    accepted either name alone -- in an append-only ledger, a bare rule
+    id like `PERF004` can appear incidentally in old Description/Plan
+    prose (or a PRIOR Done report entry about an unrelated file) and
+    silently satisfy an OR check with no real disclosure ever written.
+    Restricting to the Done report section closes the append-only-ledger
+    leak; requiring both names on the SAME line closes the OR-vs-AND gap
+    -- a line has to actually name the file the deletion happened in
+    alongside the rule it removed, not merely mention each somewhere."""
+    section_lines = _done_report_section_lines(body)
+    if section_lines is None:
+        return False
+    return any(file in line and rule in line for line in section_lines)
+
+
+def _uncommitted_out_of_scope_waive_deletions(
+    worktree: Path, ticket: Ticket
+) -> Result[tuple[tuple[str, str], ...], LandError]:
+    """`(file, rule)` pairs from `_uncommitted_waive_deletions` that are
+    NEITHER covered by `ticket.scope` (`_deletion_owned`, the same D-12
+    deletion-filter precedent `_unowned_deletions` already uses) NOR
+    declared by `ticket.body`'s Done report
+    (`_waive_deletion_declared_in_done_report`) -- what `_land_precheck`
+    refuses on, before any merge, per the T-1323 incident guard."""
+    found = _uncommitted_waive_deletions(worktree)
+    if found.is_err:
+        return Err(found.danger_err)
+    out_of_scope = tuple(
+        (file, rule)
+        for file, rule in found.danger_ok
+        if not _deletion_owned(file, ticket.scope)
+        and not _waive_deletion_declared_in_done_report(ticket.body, file, rule)
+    )
+    return Ok(out_of_scope)
 
 
 # frob:ticket T-1003

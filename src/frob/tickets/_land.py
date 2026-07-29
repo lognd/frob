@@ -46,6 +46,7 @@ from frob.tickets._land_merge import (
     _porcelain_dirty,
     _restore_lock_version_only_drift,
     _rev_parse,
+    _uncommitted_out_of_scope_waive_deletions,
     _unowned_deletions,
     _validate_closeable,
     _wip_commit,
@@ -828,6 +829,44 @@ def _refuse_if_root_is_worktree(
     return Err(LandError.IncompleteLand)
 
 
+# frob:ticket T-1323
+def _check_uncommitted_waive_deletions(
+    worktree: Path, ticket: Ticket, ticket_id: str
+) -> Result[None, LandError]:
+    """`Err(OutOfScopeWaiveDeletion)` if `worktree`'s UNCOMMITTED changes
+    (against `HEAD`, before `_wip_commit` ever runs) delete a `frob:waive`
+    directive whose file is neither in `ticket.scope` nor named/declared in
+    `ticket.body`'s Done report -- the 2026-07-29 incident's own
+    laundering path: a wip-snapshot commit folds unattributed uncommitted
+    edits into the merge, and nothing before this check ever inspected
+    what a wip-commit was ABOUT to capture. Runs at `_land_precheck` time,
+    strictly before any git mutation (`_wip_commit`/`_merge_main_into_
+    worktree`), so the refusal fires with the worktree still dirty and
+    untouched -- nothing to unwind, unlike `_check_unowned_deletions`
+    (which necessarily runs post-merge and aborts a staged merge on
+    refusal)."""
+    found = _uncommitted_out_of_scope_waive_deletions(worktree, ticket)
+    if found.is_err:
+        return Err(found.danger_err)
+    if found.danger_ok:
+        _log.error(
+            "land: %s refused -- worktree has uncommitted frob:waive "
+            "deletion(s) outside scope %s and undeclared by the Done "
+            "report: %s. If intentional, add the file to the ticket's "
+            "scope or name it/the rule in the Done report; if accidental, "
+            "restore it: cd %s && git checkout -- <file> ; then retry "
+            "`frob ticket land %s --worktree %s`",
+            ticket_id,
+            list(ticket.scope),
+            [f"{file}:{rule}" for file, rule in found.danger_ok],
+            worktree,
+            ticket_id,
+            worktree,
+        )
+        return Err(LandError.OutOfScopeWaiveDeletion)
+    return Ok(None)
+
+
 def _validate_scope_covered_preflight(
     ticket: Ticket, covers_scope: Callable[[Ticket], bool | None] | None
 ) -> Result[None, LandError]:
@@ -1014,6 +1053,12 @@ def _land_precheck(
     validated = _validate_closeable(ticket)
     if validated.is_err:
         return Err(validated.danger_err)
+
+    waive_deletion_check = _check_uncommitted_waive_deletions(
+        worktree, ticket, ticket_id
+    )
+    if waive_deletion_check.is_err:
+        return Err(waive_deletion_check.danger_err)
 
     scope_preflight = _validate_scope_covered_preflight(ticket, covers_scope)
     if scope_preflight.is_err:

@@ -3017,6 +3017,53 @@ its finding message, so the handler just calls that existing remedy:
   `\`-continued multi-line directive is left alone, since Tier A never
   guesses which physical line to remove.
 
+  **Incident (2026-07-29, T-1323): prove-fresh-or-do-nothing.** A `frob
+  ticket land` produced a pre-land wip snapshot commit that captured
+  uncommitted worktree state in which every single-line `frob:waive
+  PERF00x` comment had been stripped across 50 files, and the land
+  commit carried those deletions onto main (gate:PERF regressed from 0
+  errors to 42). Root cause: `_absorb_pre_land_fixes`
+  (`src/frob/app/ticket_runner/_land_cmd.py`) calls `apply_tier_a_fixes`
+  pre-land, and the worktree's native extensions were stale/missing at
+  that point -- `fix_waive004_stale_waiver`'s self-manufactured
+  `run_gates()` verification silently under-reported (PERF/REF reach
+  analysis found nothing), so every live PERF waiver looked
+  simultaneously stale and got mass-deleted in one pass. `WAIVE004`
+  itself already carried T-1133's "only trust a genuine full,
+  unscoped run" disclaimer -- but nothing checked that the run this
+  handler manufactured for ITSELF actually was one, only that the
+  CALLER hadn't scoped it.
+
+  The fix is two independent guards, either of which alone would have
+  caught this incident, applied BEFORE any deletion (never a partial
+  batch -- either guard trips, zero waivers are deleted that call):
+  `_degraded_verification_reason` refuses when the self-manufactured
+  `run_gates()` report carries a `NATIVE001` finding (the exact
+  stale-natives shape `_native_unavailable_report` already detects and
+  short-circuits `run_gates` to report) or an unexpected `GateStats.
+  skipped` entry (excluding the routine unscoped-run `scope`/`prework`
+  pair every call this handler ever makes produces); `_mass_
+  invalidation_rule` independently refuses when a single run proposes
+  deleting `_WAIVE004_MASS_INVALIDATION_THRESHOLD` (5) or more waivers
+  of the SAME rule at once -- the incident's own shape, and a signal
+  that needs no separately recorded baseline pool to compare against.
+  `_absorb_pre_land_fixes` ran WAIVE004 excluded (`exclude=("WAIVE004",)`)
+  as an interim mitigation between the incident and this fix landing;
+  it runs unexcluded again now that the handler guards itself.
+  `tests/test_gates.py::TestWaive004DegradedRunGuard` reproduces the
+  degraded-run and mass-invalidation shapes directly.
+
+  A companion guard closes the same incident's OTHER half at the land
+  layer itself, independent of which Tier-A handler is at fault: `frob
+  ticket land` refuses BEFORE any git mutation (before the wip-commit
+  that would otherwise fold a dirty worktree's edits into the merge
+  unattributed) when the worktree's uncommitted state deletes a
+  `frob:waive` directive whose file is neither in the landing ticket's
+  scope nor named in its Done report
+  (`frob.tickets._land._check_uncommitted_waive_deletions`,
+  `LandError.OutOfScopeWaiveDeletion`) -- see
+  docs/modules/tickets.md#frob-ticket-land.
+
 `apply_tier_a_fixes(root, snapshot, queue)` dispatches through
 `TIER_A_HANDLERS`, a `dict[str, Callable]` keyed by rule id (T-1261
 promotes the prior positional-call list to this explicit table so a

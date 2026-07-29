@@ -1434,6 +1434,22 @@ Order of operations, and why it is this order:
    git operation, not after the merge has already landed. This is a
    PRE-merge check against the worktree's own report; see step 5.5 below
    for the T-0398 D-05 POST-merge re-verification.
+2.5. **Refuse on an out-of-scope, undeclared uncommitted `frob:waive`
+   deletion** (T-1323): before ANY git mutation -- strictly before the
+   wip-commit in step 3 that would otherwise fold a dirty worktree's
+   edits into the merge unattributed -- `_check_uncommitted_waive_
+   deletions` diffs the worktree's UNCOMMITTED state against `HEAD` for
+   any deleted `frob:waive` comment line. A deletion whose file is
+   neither covered by the ticket's `scope` nor named (file or rule) in
+   its Done report refuses loudly (`Err(OutOfScopeWaiveDeletion)`,
+   remedy: add the file to scope or name it/the rule in the Done report
+   if intentional, `git checkout -- <file>` in the worktree if
+   accidental). This is the 2026-07-29 incident's own laundering path: a
+   wip-snapshot commit is not supposed to be a way to smuggle
+   unattributed repo-wide edits onto main, and nothing before this check
+   ever inspected what a wip-commit was about to capture. See
+   docs/modules/gates.md's Tier-A section for the companion `WAIVE004`
+   auto-fix guard this incident also produced.
 3. **wip-commit** any uncommitted worktree changes (`wip: pre-land snapshot
    for <id>`) so nothing an agent forgot to commit is silently dropped by
    the merge that follows. T-1003: `worktree`'s own `uv.lock` frob-

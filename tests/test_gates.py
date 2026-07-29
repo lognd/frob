@@ -8007,7 +8007,9 @@ class TestFixEngineTierA:
 
         root = tmp_path / "repo"
         (root / "src" / "pkg").mkdir(parents=True)
-        content = "# frob:tests tests/test_mod.py::TestX::test_y\ndef real():\n    pass\n"
+        content = (
+            "# frob:tests tests/test_mod.py::TestX::test_y\ndef real():\n    pass\n"
+        )
         (root / "src" / "pkg" / "mod.py").write_text(content, encoding="utf-8")
         snapshot = self._snap(root)
 
@@ -8590,6 +8592,183 @@ class TestFixEngineTierABatch2:
         from frob.graph import build_graph
 
         return build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+
+# frob:ticket T-1323
+class TestWaive004DegradedRunGuard:
+    """`fix_waive004_stale_waiver`'s T-1323 prove-fresh-or-do-nothing guard:
+    the 2026-07-29 incident's confirmed root-cause reproduction (a
+    degraded self-manufactured `run_gates()` verification -- stale/missing
+    natives or a skipped stage -- must never drive a deletion), plus the
+    mass-invalidation shape (one rule's waivers all going stale together
+    in a single run) as an independent, baseline-free signal of the same
+    failure class."""
+
+    def _snap(self, root: Path):
+        from frob.graph import build_graph
+
+        return build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+    def _fixture_with_one_dead_waiver(self, root: Path) -> None:
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "m.py").write_text(
+            '# frob:waive REF001 reason="genuinely dead waiver, T-1323 fixture"\n'
+            "def f():\n    return 1\n",
+            encoding="utf-8",
+        )
+        (root / "tickets.md").write_text("", encoding="utf-8")
+
+    def test_native001_degraded_run_deletes_nothing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A `NATIVE001` finding in the self-manufactured run (natives
+        stale/missing) means `run_gates` returned its short-circuited
+        single-finding report -- the guard must refuse to act on it."""
+        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # kind="unit"
+        from typani.result import Ok
+
+        from frob.gates import GateReport, GateStats, Severity, Violation
+        from frob.gates._fix_engine import fix_waive004_stale_waiver
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        self._fixture_with_one_dead_waiver(root)
+        snapshot = self._snap(root)
+
+        native_report = GateReport(
+            violations=(
+                Violation(
+                    rule="NATIVE001",
+                    severity=Severity.ERROR,
+                    file=str(root),
+                    line=0,
+                    message="NATIVE001: strata_core is unavailable",
+                ),
+            ),
+            waived=(),
+            stats=GateStats(),
+        )
+        monkeypatch.setattr("frob.gates.run_gates", lambda cfg, **kw: Ok(native_report))
+
+        applied = fix_waive004_stale_waiver(root, snapshot, TicketQueue(tickets={}))
+
+        assert applied == []
+        original = (root / "src" / "m.py").read_text(encoding="utf-8")
+        assert "frob:waive REF001" in original
+
+    def test_skipped_stage_degraded_run_deletes_nothing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A non-empty `GateStats.skipped` means at least one gate stage
+        did not run at all -- the guard must refuse to act, even though
+        the WAIVE004 violation itself looks completely ordinary."""
+        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # kind="unit"
+        from typani.result import Ok
+
+        from frob.gates import GateReport, GateStats, Severity, Violation
+        from frob.gates._fix_engine import fix_waive004_stale_waiver
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        self._fixture_with_one_dead_waiver(root)
+        snapshot = self._snap(root)
+
+        degraded_report = GateReport(
+            violations=(
+                Violation(
+                    rule="WAIVE004",
+                    severity=Severity.ERROR,
+                    file="src/m.py",
+                    line=1,
+                    message="WAIVE004: frob:waive REF001 matches 0 findings",
+                ),
+            ),
+            waived=(),
+            stats=GateStats(skipped=("archgate",)),
+        )
+        monkeypatch.setattr(
+            "frob.gates.run_gates", lambda cfg, **kw: Ok(degraded_report)
+        )
+
+        applied = fix_waive004_stale_waiver(root, snapshot, TicketQueue(tickets={}))
+
+        assert applied == []
+        original = (root / "src" / "m.py").read_text(encoding="utf-8")
+        assert "frob:waive REF001" in original
+
+    def test_mass_invalidation_of_one_rule_deletes_nothing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A single self-manufactured run proposing to delete many
+        waivers of the SAME rule at once (the incident's own shape) is
+        treated as anomalous-zero-findings evidence and refuses the
+        WHOLE batch -- not just the excess above threshold."""
+        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # kind="unit"
+        from typani.result import Ok
+
+        from frob.gates import GateReport, GateStats, Severity, Violation
+        from frob.gates._fix_engine import (
+            _WAIVE004_MASS_INVALIDATION_THRESHOLD,
+            fix_waive004_stale_waiver,
+        )
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "tickets.md").write_text("", encoding="utf-8")
+        for i in range(_WAIVE004_MASS_INVALIDATION_THRESHOLD):
+            (root / "src" / f"m{i}.py").write_text(
+                f'# frob:waive PERF00{i % 9} reason="fixture {i}"\n'
+                "def f():\n    return 1\n",
+                encoding="utf-8",
+            )
+        snapshot = self._snap(root)
+
+        mass_violations = tuple(
+            Violation(
+                rule="WAIVE004",
+                severity=Severity.ERROR,
+                file=f"src/m{i}.py",
+                line=1,
+                message="WAIVE004: frob:waive PERF001 matches 0 findings",
+            )
+            for i in range(_WAIVE004_MASS_INVALIDATION_THRESHOLD)
+        )
+        mass_report = GateReport(
+            violations=mass_violations, waived=(), stats=GateStats()
+        )
+        monkeypatch.setattr("frob.gates.run_gates", lambda cfg, **kw: Ok(mass_report))
+
+        applied = fix_waive004_stale_waiver(root, snapshot, TicketQueue(tickets={}))
+
+        assert applied == []
+        for i in range(_WAIVE004_MASS_INVALIDATION_THRESHOLD):
+            content = (root / "src" / f"m{i}.py").read_text(encoding="utf-8")
+            assert "frob:waive PERF00" in content
+
+    def test_healthy_run_below_threshold_still_deletes(self, tmp_path: Path) -> None:
+        """A genuine, non-degraded full run with a single stale waiver
+        (no NATIVE001, no skipped stage, well under the mass-invalidation
+        threshold) still deletes it -- the guard must not become a
+        blanket no-op."""
+        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # kind="unit"
+        from frob.gates._fix_engine import fix_waive004_stale_waiver
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        self._fixture_with_one_dead_waiver(root)
+        snapshot = self._snap(root)
+
+        applied = fix_waive004_stale_waiver(root, snapshot, TicketQueue(tickets={}))
+
+        waive004_applied = [a for a in applied if a.rule == "WAIVE004"]
+        assert len(waive004_applied) == 1
+        rewritten = (root / "src" / "m.py").read_text(encoding="utf-8")
+        assert "frob:waive REF001" not in rewritten
 
 
 # frob:ticket T-0542

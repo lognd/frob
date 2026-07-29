@@ -1661,6 +1661,14 @@ class LandError(ErrorSet):
         "a terminal (DONE/DROPPED) ticket would regress to a non-terminal "
         "state via this land's ledger splice (TICK005 regression sweep)"
     )
+    # T-1323: the 2026-07-29 incident's own laundering path -- an
+    # uncommitted `frob:waive` DELETION in the worktree, wip-snapshotted
+    # and squash-applied onto main, whose file is neither in the landing
+    # ticket's scope nor declared by its Done report.
+    OutOfScopeWaiveDeletion = (
+        "worktree has an uncommitted frob:waive deletion outside the "
+        "landing ticket's scope and Done report"
+    )
 
 
 # frob:ticket T-0176

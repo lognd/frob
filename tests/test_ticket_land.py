@@ -1146,6 +1146,155 @@ class TestStaleBaseDeletion:
         assert result.is_ok, result.err
 
 
+# frob:ticket T-1323
+class TestUncommittedWaiveDeletionRefusal:
+    """T-1323 incident guard: the 2026-07-29 land that wip-snapshotted an
+    uncommitted, out-of-scope `frob:waive` DELETION and squash-applied it
+    onto main. `land` must refuse BEFORE any git mutation (no wip-commit,
+    no merge) when the worktree's dirty state removes a `frob:waive`
+    directive whose file is neither in the landing ticket's scope nor
+    named in its Done report."""
+
+    def test_out_of_scope_undeclared_waive_deletion_refuses_before_merge(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        (repo / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="genuinely needed, not this ticket"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add other.py with a live PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-waive-1", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Unrelated ticket", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        # Uncommitted deletion of the waiver comment -- out of ticket
+        # scope, never mentioned in its Done report. Deliberately left
+        # UNCOMMITTED: this is the exact laundering shape (dirty worktree
+        # state that a wip-commit would otherwise fold into the merge
+        # unattributed).
+        (wt / "src" / "other.py").write_text("def g():\n    pass\n")
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_err
+        assert result.danger_err == LandError.OutOfScopeWaiveDeletion
+        # Refused before any mutation: no wip-commit, no merge attempt --
+        # the worktree's dirty state is untouched.
+        status = _run(["git", "status", "--porcelain"], wt).stdout
+        assert "src/other.py" in status
+        assert (repo / "src" / "other.py").read_text().count("frob:waive") == 1
+
+    def test_in_scope_waive_deletion_is_allowed(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        (repo / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="stale, being removed by this ticket"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add other.py with a stale PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-waive-2", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Retire stale waiver", scope=("src/other.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "other.py").write_text("def g():\n    pass\n")
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_ok, result.err
+
+    def test_declared_in_done_report_waive_deletion_is_allowed(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        (repo / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="stale, being removed by this ticket"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add other.py with a stale PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-waive-3", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Unrelated ticket", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(wt, tid, TicketState.PLANNED).is_ok
+        assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
+        loaded = load_all(wt)
+        ticket = loaded.danger_ok[tid]
+        ticket = ticket.model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": (
+                    ticket.body
+                    + "\n## Done report\n\nAlso removed the stale "
+                    + "frob:waive PERF001 in src/other.py (found while "
+                    + "working this ticket).\n"
+                ),
+            }
+        )
+        assert write_ticket(wt, ticket).is_ok
+        (wt / "src" / "other.py").write_text("def g():\n    pass\n")
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_ok, result.err
+
+    def test_prose_mention_outside_done_report_is_not_a_declaration(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        # T-1323 review fix: a rule id appearing in ordinary body prose
+        # (not the Done report section) must NOT satisfy the declaration
+        # escape hatch -- the append-only ledger accumulates incidental
+        # mentions, and substring-anywhere matching laundered exactly the
+        # incident this guard exists to refuse.
+        (repo / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="load-bearing, must not vanish"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add other.py with a live PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-waive-4", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Unrelated ticket", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(wt, tid, TicketState.PLANNED).is_ok
+        assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
+        loaded = load_all(wt)
+        ticket = loaded.danger_ok[tid]
+        ticket = ticket.model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": (
+                    ticket.body
+                    + "\nEarlier discussion mentioned PERF001 and "
+                    + "src/other.py in passing, long before any work "
+                    + "happened.\n"
+                    + "\n## Done report\n\nImplemented the feature in "
+                    + "src/feature.py; no waivers were touched.\n"
+                ),
+            }
+        )
+        assert write_ticket(wt, ticket).is_ok
+        (wt / "src" / "other.py").write_text("def g():\n    pass\n")
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_err
+        assert result.danger_err == LandError.OutOfScopeWaiveDeletion
+
+
 class TestLedgerBothSidesAppend:
     """Incident class 2: main gets a new ticket appended AFTER the worktree
     branched, and the worktree independently appends its own new ticket --

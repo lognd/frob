@@ -95,17 +95,25 @@ def _absorb_pre_land_fixes(worktree: Path, ticket_id: str) -> None:
         )
         return
     # frob:ticket T-1323
-    # WAIVE004 excluded: its staleness self-check trusts a fresh gates run,
-    # but in a natives-stale worktree that run silently under-reports
-    # (PERF/REF reach analysis finds nothing), so every live waiver reads
-    # as dead and gets mass-deleted -- the 2026-07-29 incident that
-    # stripped 50 PERF waivers onto main. Re-enable only when the handler
-    # itself refuses a degraded verification run (T-1323 acceptance [1]).
+    # WAIVE004 ran unexcluded here until the 2026-07-29 incident: its
+    # staleness self-check trusts a fresh gates run, but in a natives-stale
+    # worktree that run silently under-reported (PERF/REF reach analysis
+    # found nothing), so every live waiver read as dead and got
+    # mass-deleted -- the land that stripped 50 PERF waivers onto main.
+    # `fix_waive004_stale_waiver` itself now refuses to delete anything
+    # when its self-manufactured verification run looks degraded (stale/
+    # missing natives, a skipped gate stage) or shows a mass-invalidation
+    # shape (one rule's waivers all going stale together in one run --
+    # `_degraded_verification_reason`/`_mass_invalidation_rule`,
+    # `src/frob/gates/_fix_engine.py`), so WAIVE004 runs here again
+    # unexcluded -- prove-fresh-or-do-nothing at the handler itself,
+    # rather than a blanket exclude at this call site. `exclude=` itself
+    # stays available (regression-tested, `tests/test_gates.py`) for a
+    # future caller that needs it again.
     applied = apply_tier_a_fixes(
         worktree,
         snapshot_result.danger_ok,
         queue_result.danger_ok,
-        exclude=("WAIVE004",),
     )
     if applied:
         _log.info(

@@ -29,12 +29,16 @@ import logging
 import re
 from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
 from frob.graph import EdgeKind, GraphSnapshot
 from frob.tickets import TicketQueue
 from frob.tickets._provisional import is_draft_id
+
+if TYPE_CHECKING:
+    from frob.gates import GateReport
 
 _log = logging.getLogger(__name__)
 
@@ -560,6 +564,73 @@ def fix_rel002_release_sync(root: Path, snapshot: GraphSnapshot) -> list[FixAppl
 #: continued directive.
 _WAIVE_SINGLE_LINE_RE = re.compile(r"^\s*(#|//)\s*frob:waive\s+(\S+)\b")
 
+#: T-1323 incident guard: how many WAIVE004 candidates for the SAME target
+#: rule in one self-manufactured `run_gates()` call is treated as a mass
+#: invalidation signature rather than N independent legitimately-stale
+#: waivers. The 2026-07-29 incident stripped 50 files' worth of
+#: `frob:waive PERF00x` comments in one `apply_tier_a_fixes` pass because a
+#: natives-degraded verification run under-reported PERF findings to zero
+#: across the whole tree -- every real PERF waiver looked simultaneously
+#: stale. A handful of a rule genuinely going stale together (e.g. a
+#: refactor that deletes the pattern a few waivers covered) is plausible;
+#: dozens going stale in the SAME run is not -- it is the signature of the
+#: verification itself under-reporting, not of the waivers. Chosen well
+#: below the incident's own 50-waiver footprint so this guard would have
+#: caught it with margin to spare, and well above the handful a normal
+#: single-PR cleanup would ever produce for one rule at once.
+_WAIVE004_MASS_INVALIDATION_THRESHOLD = 5
+
+#: `GateStats.skipped` names that `_build_ticket_scoped_jobs` (`frob.gates.
+#: __init__`) appends ROUTINELY whenever `run_gates` has no bound ticket to
+#: enforce `scope`/`prework` against -- true on every genuinely unscoped
+#: full run this handler itself ever manufactures (it never passes
+#: `ticket=`), so these two are NOT a degradation signal, only a normal
+#: consequence of the call shape this handler always uses. Any OTHER
+#: skipped stage name is unusual and treated as degraded.
+_ROUTINE_UNSCOPED_SKIPS = frozenset({"scope", "prework"})
+
+
+def _degraded_verification_reason(report: GateReport) -> str | None:
+    """The reason `report` (the fresh `run_gates()` call
+    `fix_waive004_stale_waiver` manufactures for itself) is NOT trustworthy
+    enough to act on, or `None` when it looks like a genuine full run.
+
+    Two structural signals, both already surfaced by `run_gates` itself
+    rather than re-derived here: a `NATIVE001` finding means the whole run
+    short-circuited to that one honest-root-cause report because a
+    declared native extension failed to import (stale/missing natives --
+    `_native_unavailable_report`), and a `GateStats.skipped` entry OTHER
+    than the routine unscoped-run `scope`/`prework` pair
+    (`_ROUTINE_UNSCOPED_SKIPS`) means some other gate stage did not run at
+    all. Either makes "this rule had 0 findings" indistinguishable from
+    "the gate that would have found something simply didn't run" (T-1133's
+    own WAIVE004 caveat, T-1323 extends it to this handler's
+    self-manufactured run too)."""
+    for violation in report.violations:
+        if violation.rule == "NATIVE001":
+            return f"native extension unavailable: {violation.message}"
+    unexpected_skips = sorted(set(report.stats.skipped) - _ROUTINE_UNSCOPED_SKIPS)
+    if unexpected_skips:
+        return f"gate stage(s) skipped: {', '.join(unexpected_skips)}"
+    return None
+
+
+def _mass_invalidation_rule(candidates: list[tuple[str, int, str]]) -> str | None:
+    """The first target rule in `candidates` (each a `(file, line, rule)`
+    WAIVE004 deletion candidate) whose count meets or exceeds
+    `_WAIVE004_MASS_INVALIDATION_THRESHOLD`, or `None` if no rule does --
+    the T-1323 incident's own shape (one rule family's waivers ALL going
+    stale in the same run) treated as anomalous-zero-findings evidence in
+    its own right, without needing a separately recorded baseline pool to
+    compare against."""
+    counts: dict[str, int] = {}
+    for _file, _line, rule in candidates:
+        counts[rule] = counts.get(rule, 0) + 1
+    for rule, count in counts.items():
+        if count >= _WAIVE004_MASS_INVALIDATION_THRESHOLD:
+            return rule
+    return None
+
 
 def _is_single_line_waiver(line: str, rule: str) -> bool:
     """True if `line` is a bare, non-continued `frob:waive <rule>` comment
@@ -588,6 +659,62 @@ def _remove_waiver_line(path: Path, line: int, rule: str) -> bool:
     del lines[idx]
     path.write_text("".join(lines), encoding="utf-8")
     return True
+
+
+def _waive004_verified_candidates(
+    root: Path, gates: frozenset[str], ticket: str | None
+) -> list[tuple[str, int, str]] | None:
+    """`fix_waive004_stale_waiver`'s own self-manufactured `run_gates()`
+    call, split out to keep the caller under ARCH001's function-length
+    ceiling: `None` if the run errored, looked degraded
+    (`_degraded_verification_reason`), or showed a mass-invalidation
+    shape (`_mass_invalidation_rule`) -- any of the three means "delete
+    nothing", per this handler's prove-fresh-or-do-nothing contract
+    (T-1323). Otherwise the `(file, line, target_rule)` WAIVE004
+    deletion candidates from a verified-trustworthy run."""
+    from frob.gates import GateConfig, run_gates
+
+    result = run_gates(GateConfig(root=str(root), gates=gates, ticket=ticket))
+    if result.is_err:
+        _log.error(
+            "WAIVE004 auto-fix: self-manufactured run_gates() errored (%s) -- "
+            "deleting nothing",
+            result.danger_err,
+        )
+        return None
+
+    report = result.danger_ok
+    degraded_reason = _degraded_verification_reason(report)
+    if degraded_reason is not None:
+        _log.error(
+            "WAIVE004 auto-fix: self-manufactured verification run looks degraded "
+            "(%s) -- deleting nothing",
+            degraded_reason,
+        )
+        return None
+
+    candidates: list[tuple[str, int, str]] = []
+    for violation in report.violations:
+        if violation.rule != "WAIVE004":
+            continue
+        target_rule = _waive004_target_rule(violation.message)
+        if target_rule is None:
+            continue
+        candidates.append((violation.file, violation.line, target_rule))
+
+    mass_rule = _mass_invalidation_rule(candidates)
+    if mass_rule is not None:
+        _log.error(
+            "WAIVE004 auto-fix: %d frob:waive %s directives went stale in one run "
+            "(>= %d threshold) -- treating as a degraded/under-reporting run, "
+            "deleting nothing",
+            sum(1 for _f, _l, rule in candidates if rule == mass_rule),
+            mass_rule,
+            _WAIVE004_MASS_INVALIDATION_THRESHOLD,
+        )
+        return None
+
+    return candidates
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
@@ -619,30 +746,33 @@ def fix_waive004_stale_waiver(
     Independently RE-RUNS the gates suite itself (`run_gates`) rather
     than trusting any violation set the caller may already have computed
     -- the finding this handler acts on is always freshly sourced from a
-    genuine full run it manufactured itself, never a stale/ambient one."""
+    genuine full run it manufactured itself, never a stale/ambient one.
+
+    T-1323: prove-fresh-or-do-nothing. Before deleting anything, checks
+    that self-manufactured run for two structural degradation signals
+    (`_degraded_verification_reason` -- stale/missing natives, any
+    skipped gate stage) and, after collecting candidates, for a mass-
+    invalidation shape (`_mass_invalidation_rule` -- one rule's waivers
+    ALL going stale together in a single run, the 2026-07-29 incident's
+    own signature). Either one aborts the ENTIRE batch -- zero waivers
+    deleted, not a partial subset -- rather than acting on a verification
+    run this handler cannot vouch for."""
     del queue  # signature uniformity only, this handler re-runs the gates itself
     if gates or ticket is not None:
         return []
 
-    from frob.gates import GateConfig, run_gates
-
-    result = run_gates(GateConfig(root=str(root), gates=gates, ticket=ticket))
-    if result.is_err:
+    candidates = _waive004_verified_candidates(root, gates, ticket)
+    if candidates is None:
         return []
 
     applied: list[FixApplied] = []
-    for violation in result.danger_ok.violations:
-        if violation.rule != "WAIVE004":
-            continue
-        target_rule = _waive004_target_rule(violation.message)
-        if target_rule is None:
-            continue
-        if _remove_waiver_line(root / violation.file, violation.line, target_rule):
+    for file, line, target_rule in candidates:
+        if _remove_waiver_line(root / file, line, target_rule):
             applied.append(
                 FixApplied(
                     rule="WAIVE004",
-                    file=violation.file,
-                    line=violation.line,
+                    file=file,
+                    line=line,
                     detail=f"removed stale frob:waive {target_rule} (0 findings this run)",  # noqa: E501
                 )
             )
