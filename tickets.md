@@ -1483,7 +1483,7 @@ REFILE: the original filing (commit 46a115c4, first allocated id clobbered by a 
 id: T-1179
 title: 'land: draft renumbering allocated an id already taken on main, clobbering
   a main-side block (T-1090 gap on the land path)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-29'
@@ -1494,21 +1494,149 @@ sprint: null
 scope:
 - src/frob/tickets/**
 - tests/test_tickets_collision.py
+- docs/modules/tickets.md
+- design/frob.strata
+- tests/test_ticket_land.py
+scope_changes:
+- op: add
+  glob: docs/modules/tickets.md
+  reason: T-1179 docstring/interface-sync fixes touch both files
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: design/frob.strata
+  reason: T-1179 docstring/interface-sync fixes touch both files
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: T-1179's finalize_draft_for_land wiring changed which symbol test_finalize_draft_failure
+    must monkeypatch
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_tickets_collision.py::TestFinalizeDraftForLandMainFreshCeiling::test_id_ceiling_reads_current_main_not_stale_worktree_view
+- tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_id_title_mismatch_is_refused_not_silently_overwritten
+- tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_same_id_same_title_still_resolves_via_newer
+- tests/test_ticket_land.py::TestLandDeeperBranches::test_finalize_draft_failure
 acceptance:
 - text: GIVEN a worktree land whose draft renumbering runs WHEN main has allocated
     new ids since the worktree's last merge THEN renumbering reads the id ceiling
     from CURRENT main (not the worktree's stale view) under the ledger lock, and a
     would-be collision with any existing main-side id is impossible by construction,
     proven by a regression test reproducing the 2026-07-29 shape
-  evidence: []
+  evidence:
+  - tests/test_tickets_collision.py::TestFinalizeDraftForLandMainFreshCeiling::test_id_ceiling_reads_current_main_not_stale_worktree_view
+  - tests/test_ticket_land.py::TestLandDeeperBranches::test_finalize_draft_failure
 - text: GIVEN the splice THEN a landing block may never overwrite a different-titled
     existing block under the same id -- a detected id/title mismatch refuses the land
     loudly instead of silently replacing content
-  evidence: []
+  evidence:
+  - tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_id_title_mismatch_is_refused_not_silently_overwritten
+  - tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_same_id_same_title_still_resolves_via_newer
 threat: null
 component: null
 ```
 2026-07-29 incident (5th id-collision, first SINCE T-1090): coordinator filed a ticket on main (46a115c4, auto-committed); minutes later T-1170's land (17c6ca89) renumbered its residue draft to the SAME id, and the splice replaced the coordinator's block wholesale -- content lost from the live ledger (recovered from git history and refiled). T-1090's atomic allocation apparently guards concurrent new_ticket calls against a shared counter but the LAND-path renumber derived its next-id from the worktree's stale ledger view. Two independent guards per acceptance: allocation-from-current-main under lock, and a splice-level id/title-mismatch refusal (defense in depth, T-0959 style).
+
+## Done report
+
+Two independent guards, matching the acceptance criteria and the 2026-07-29
+incident (46a115c4 clobbered by 17c6ca89):
+
+Guard 1 (acceptance [0]): new frob.tickets._new_renumber.finalize_draft_for_land
+(worktree, draft_id, main_root) replaces plain finalize_draft on the land path
+(frob.tickets._land._finalize_draft_id / _finalize_sibling_drafts, threaded
+through _land_finalize_and_close / _finalize_and_close_ticket, all now taking
+root explicitly). It reads BOTH ledgers fresh from disk (main_root's CURRENT
+on-disk copy, not a stale snapshot) and computes the next-id ceiling from
+their union, under worktree's own ledger_lock.
+
+Implementation note / honest disclosure: the first version of this also
+acquired main_root's OWN ledger_lock (nested, main-first) to make the read
+provably atomic against a concurrent new_ticket on main. That version was
+REVERTED after it reproduced a real regression: locking main_root creates
+main_root/.frob/tickets.lock as an untracked artifact on root's working
+tree; on any repo/fixture where .frob/ is not gitignored (the worktree
+branch legitimately tracks its OWN .frob/tickets.lock, T-1006), the
+subsequent `git merge --squash` from the worktree branch then refuses with
+git's own "untracked working tree files would be overwritten by merge"
+error, which silently degrades the later ticket-scoped splice (root's
+tickets.md never receives the squash's changes, main=0 tickets instead of
+main=1) -- caught by tests/test_ticket_land.py::TestWipCommit and
+TestWipCommitNormalizationOnlyDirty going red. Reproduced and bisected via
+a standalone repro script before landing. The shipped version reads
+main_root's ledger WITHOUT holding its lock (same lock footprint as plain
+finalize_draft -- only worktree's lock), closing the staleness gap that
+caused the incident while leaving zero new regression surface. The narrow
+residual race this leaves (a new_ticket landing on main in the tiny window
+between this unlocked read and the eventual squash-apply) is closed by
+Guard 2 below, which runs under a REAL lock at the point that actually
+commits to main -- the two guards are deliberately complementary, not each
+independently sufficient, matching the ticket's own "defense in depth"
+framing.
+
+Guard 2 (acceptance [1], defense in depth): _land._overlay_landed_ticket
+(split out of _splice_only_ticket to stay under the ARCH001 line budget)
+refuses (TicketError.IdTitleMismatch) instead of calling _newer when the
+ticket-scoped land-time splice's overlay id already exists on main under a
+DIFFERENT title -- the exact shape of the incident: a landing block would
+otherwise silently replace an unrelated main-side block sharing the same id.
+A same-id/same-title divergence (a genuine same-ticket state advance) still
+resolves via _newer exactly as before. This runs inside
+_squash_and_splice_ledger's own ledger_lock(root) span, at the point that
+actually commits to main -- the atomic backstop Guard 1's unlocked read
+cannot itself be.
+
+Reproduced the 2026-07-29 shape directly: a ticket filed on a "main" fixture
+after a "worktree" fixture branched off is invisible to finalize_draft's old
+worktree-only view (would collide); finalize_draft_for_land's main-fresh
+ceiling picks the next free id instead. A companion pair of splice tests
+proves the id/title-mismatch refusal and its same-title control case.
+
+Unplanned but necessary fix, filed and disclosed (T-1184, renumbers
+at land): _do_wip_commit's `git add -A -- . :!.frob` unconditionally failed
+on this environment's git (2.34.1) the moment .frob is actually gitignored
+(a real repo, not just a test fixture) -- naming an ignored path in a NEGATED
+pathspec still trips git's "explicitly named ignored path" refusal, aborting
+the entire add. Reproduced against a clean main checkout with zero
+ticket-related changes staged. This blocked EVERY `frob ticket land` in this
+environment outright, including this ticket's own land, so it had to be
+fixed to complete T-1179's own acceptance -- landing IS how T-1179 exercises
+its own fix. Fixed with a detect-and-fallback: try the original exclusion
+pathspec first (byte-identical behavior/staging semantics for the T-1006
+bare-fixture case that has no .gitignore at all, where the pathspec never
+hits the refusal); only on the specific ignored-path refusal, fall back to
+staging everything and unstaging .frob as a separate `git reset` step, never
+naming an ignored path in a pathspec. Filed T-1184 to track this
+fix on its own record.
+
+tests/test_ticket_land.py::TestLandDeeperBranches::test_finalize_draft_failure
+needed a one-line update: it now monkeypatches `finalize_draft_for_land`
+(the symbol land's own finalize step actually calls) instead of the now-
+bypassed `finalize_draft`.
+
+docs/modules/tickets.md's "Provisional ids" section and error-types sample
+gained a T-1179 paragraph/entry (including the locking trade-off above);
+design/frob.strata was synced (SYS104) for the two new test classes plus the
+new finalize_draft_for_land public symbol.
+
+### Changed
+```
+ tickets.md | 118 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 115 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_collision.py::TestFinalizeDraftForLandMainFreshCeiling::test_id_ceiling_reads_current_main_not_stale_worktree_view` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_id_title_mismatch_is_refused_not_silently_overwritten` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_same_id_same_title_still_resolves_via_newer` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandDeeperBranches::test_finalize_draft_failure` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 1 error(s), 931 warning(s), 501 waived
+- error-findings: PRE001@tickets/T-1179
 
 <!-- ticket:T-1180 -->
 ```yaml
@@ -1791,3 +1919,45 @@ Still remaining, in the same one-family-per-land shape:
 
 Re-filed (not re-derived from scratch) rather than letting T-1174 close
 with silent residue, per TICK011.
+
+<!-- ticket:T-1184 -->
+```yaml
+id: T-1184
+title: 'land: _do_wip_commit''s negated :!.frob pathspec aborts git add outright on
+  git 2.34.1'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+threat: null
+component: null
+```
+_do_wip_commit's git add invocation (src/frob/tickets/_land.py:1854,
+`git add -A -- . :!.frob`) fails outright on this environment's git
+(2.34.1): naming `.frob` in a NEGATED pathspec still trips git's
+"explicitly named ignored path" refusal (exit 1, "The following paths
+are ignored by one of your .gitignore files: .frob"), aborting the ENTIRE
+add -- not just skipping `.frob`. Reproduced directly against a clean
+main checkout with zero ticket-related changes staged, so this is not
+specific to any in-flight ticket's diff.
+
+`.frob/` is already covered by the repo's own top-level .gitignore
+(T-1006's own stated rationale for the negated pathspec was defense for a
+bare test fixture that has NOT gitignored .frob/) -- for this repo,
+`git add -A -- .` alone (no negation) already excludes `.frob/` correctly
+and exits 0. The negated pathspec is redundant belt-and-suspenders for the
+real repo and is the literal cause of every land's wip-commit step
+failing outright in this git version.
+
+Blocks EVERY `frob ticket land` in this environment -- found while
+landing T-1179 (unrelated to that ticket's own acceptance criteria) and
+fixed inline there only because it structurally blocked completing that
+land; filing this ticket to track the fix on its own record and note any
+test-fixture-repo defense-in-depth this drops (T-1006's original bare-
+fixture case, if any test exercises a non-gitignored .frob/ specifically).

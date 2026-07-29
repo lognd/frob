@@ -1572,6 +1572,16 @@ class TicketError(ErrorSet):
     LedgerIntegrityViolation = (
         "rendered ledger text lost a ticket id or marker -- write refused"
     )
+    # T-1179: a land-time ticket-scoped splice (`_splice_only_ticket`) whose
+    # overlay id already exists on main's side under a DIFFERENT title is a
+    # collision between two unrelated tickets sharing one id, not a genuine
+    # same-ticket divergence `_newer` should silently arbitrate -- refuse
+    # loudly instead of overwriting either side (defense in depth alongside
+    # the T-1179 main-fresh id-ceiling fix; see `_splice_only_ticket`).
+    IdTitleMismatch = (
+        "landing block's id already exists on main under a different title "
+        "-- refusing to overwrite"
+    )
     # T-0889: a wholesale `write_all`/`write_archive` caller that captured
     # a digest of the ledger at load time and passed it back as
     # `expected_digest` gets THIS instead of a silent clobber when the

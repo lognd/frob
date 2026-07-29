@@ -748,3 +748,93 @@ def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
             return Err(result.danger_err)
         _log.info("tickets: finalized draft %s -> %s", draft_id, final_id)
         return Ok(final_id)
+
+
+# frob:ticket T-1179
+# frob:doc docs/modules/tickets.md#provisional-ids
+# frob:tests tests/test_tickets_collision.py::TestFinalizeDraftForLandMainFreshCeiling.test_id_ceiling_reads_current_main_not_stale_worktree_view  # noqa: E501
+def finalize_draft_for_land(
+    worktree: Path, draft_id: str, main_root: Path
+) -> Result[str, TicketError]:
+    """Land-path twin of `finalize_draft` (T-1179 acceptance [0]): same
+    rename primitive, but the next-id CEILING is computed from
+    `main_root`'s CURRENT on-disk ledger -- read fresh (not from a stale
+    in-memory snapshot), unioned with `worktree`'s own view -- instead of
+    `worktree`'s (possibly stale) view alone.
+
+    2026-07-29 incident: a ticket filed directly on main (`new_ticket`,
+    itself serialized by `ledger_lock(main_root)`) is invisible to a land
+    whose worktree was branched/merged before that filing landed. The old
+    `finalize_draft(worktree, ...)` computed its id ceiling from
+    `worktree`'s copy alone and could re-mint the exact id `new_ticket`
+    had just claimed on main; the later squash-splice then silently
+    clobbered the main-side block (46a115c4 clobbered by 17c6ca89). This
+    reads `main_root`'s ledger fresh from disk (closing the staleness gap
+    that caused the incident) WITHOUT holding `main_root`'s own
+    `ledger_lock` across the read -- only `worktree`'s lock is held, same
+    footprint as plain `finalize_draft`. Locking `main_root` here was
+    tried and reverted: it leaves `main_root/.frob/tickets.lock` behind as
+    a stray artifact on `root`'s working tree for the remainder of this
+    land, and on a repo/fixture where `.frob/` is NOT gitignored (the
+    worktree branch legitimately tracks its OWN `.frob/tickets.lock`,
+    T-1006) the subsequent squash-merge then refuses with git's own
+    "untracked working tree file would be overwritten" error -- a real,
+    reproduced regression, not a hypothetical one. The residual race this
+    leaves (a `new_ticket` landing on main in the narrow window between
+    this unlocked read and the eventual squash-apply) is closed by the
+    SECOND guard instead: the squash-time ticket-scoped splice
+    (`_overlay_landed_ticket`, acceptance [1]) refuses loudly on any
+    id/title mismatch rather than silently overwriting, catching exactly
+    this residual window under a REAL lock (`_squash_and_splice_ledger`'s
+    own `ledger_lock(root)`) at the point that actually commits to main.
+
+    A no-op (`Ok(draft_id)` unchanged) if `draft_id` is already final,
+    mirroring `finalize_draft`."""
+    if not is_draft_id(draft_id):
+        _log.debug(
+            "tickets: finalize_draft_for_land(%s): already final, no-op", draft_id
+        )
+        return Ok(draft_id)
+    main_root = main_root.resolve()
+    worktree = worktree.resolve()
+    with ledger_lock(worktree):
+        return _finalize_draft_for_land_locked(worktree, draft_id, main_root)
+
+
+def _finalize_draft_for_land_locked(
+    worktree: Path, draft_id: str, main_root: Path
+) -> Result[str, TicketError]:
+    """`finalize_draft_for_land`'s critical section, split out to keep the
+    public entry point under the ARCH001 line budget -- runs under BOTH
+    `main_root`'s and `worktree`'s `ledger_lock` (acquired by the caller)."""
+    main_merged = _load_merged(main_root)
+    if main_merged.is_err:
+        return Err(main_merged.danger_err)
+    worktree_merged = _load_merged(worktree)
+    if worktree_merged.is_err:
+        return Err(worktree_merged.danger_err)
+    if draft_id not in worktree_merged.danger_ok:
+        _log.error(
+            "tickets: finalize_draft_for_land: %s not found in %s",
+            draft_id,
+            worktree,
+        )
+        return Err(TicketError.NotFound)
+    existing = dict(main_merged.danger_ok)
+    existing.update(
+        {tid: t for tid, t in worktree_merged.danger_ok.items() if tid != draft_id}
+    )
+    final_id = _next_ticket_id(existing)
+
+    from frob.tickets import renumber_one as _renumber_one
+
+    result = _renumber_one(worktree, draft_id, final_id)
+    if result.is_err:
+        return Err(result.danger_err)
+    _log.info(
+        "tickets: finalized draft %s -> %s (land, id ceiling fresh from main %s)",
+        draft_id,
+        final_id,
+        main_root,
+    )
+    return Ok(final_id)

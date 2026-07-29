@@ -2358,8 +2358,13 @@ class TestLandDeeperBranches:
 
         from frob.tickets._models import TicketError
 
+        # T-1179: land's own finalize step routes through
+        # `finalize_draft_for_land` (main-fresh id ceiling), not plain
+        # `finalize_draft` -- patch the symbol land actually calls.
         monkeypatch.setattr(
-            tickets_mod, "finalize_draft", lambda *a, **k: Err(TicketError.NotFound)
+            tickets_mod,
+            "finalize_draft_for_land",
+            lambda *a, **k: Err(TicketError.NotFound),
         )
         result = land(repo, draft_id, wt, dry_run=False)
         assert result.is_err

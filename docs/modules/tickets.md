@@ -1157,6 +1157,48 @@ recomputes its id against the fresh post-write ledger the moment it
 acquires the lock, never a stale pre-write snapshot. Mirrors the
 `new_ticket`/T-0458 single-writer allocation pattern.
 
+**T-1179: `finalize_draft`'s lock is still only over the WORKTREE it
+renumbers -- a ticket filed directly on main is invisible to it.**
+`land` (T-0176) always finalizes its landing (and any sibling) draft
+against a WORKTREE checkout, which can be stale relative to main's
+CURRENT ledger (a ticket filed straight onto main via `new_ticket`, itself
+serialized by `ledger_lock(main_root)`, in the window after the worktree
+last synced). T-1090's atomic allocation only protects `finalize_draft`
+against ANOTHER `finalize_draft`/`new_ticket` racing on the SAME root --
+it never reads main's root at all when `root` is a worktree, so it cannot
+see a filing that landed on a different path. The 2026-07-29 incident:
+`new_ticket` claimed an id directly on main (46a115c4); a land in flight
+finalized its own residue draft against the worktree's stale view and
+picked the exact same id; the squash-splice then silently overwrote
+main's block (17c6ca89). `finalize_draft_for_land(worktree, draft_id,
+main_root)` is the fix `land`'s own finalize callers (`_finalize_draft_id`/
+`_finalize_sibling_drafts` in `frob.tickets._land`) now use instead of
+plain `finalize_draft`: it reads `main_root`'s ledger FRESH from disk
+(closing the staleness gap) and computes the id ceiling from its union
+with `worktree`'s own view, under `worktree`'s `ledger_lock` (same lock
+footprint as plain `finalize_draft`).
+
+This does NOT also lock `main_root` -- that was tried and reverted. Doing
+so leaves `main_root/.frob/tickets.lock` behind as an untracked artifact
+on `root`'s working tree; on a repo/fixture where `.frob/` is not
+gitignored (the worktree branch legitimately tracks its OWN
+`.frob/tickets.lock`, T-1006), the land's later `git merge --squash` from
+that worktree branch then refuses with git's own "untracked working tree
+files would be overwritten by merge" error -- a real, reproduced
+regression (`tests/test_ticket_land.py::TestWipCommit`/
+`TestWipCommitNormalizationOnlyDirty` caught it), not a hypothetical one.
+The narrow residual race the unlocked read leaves (a `new_ticket` landing
+on main in the tiny window between this read and the eventual
+squash-apply) is closed by the SECOND guard instead: the land-time
+ticket-scoped splice (`_overlay_landed_ticket`/`_splice_only_ticket`, see
+below) refuses (`IdTitleMismatch`) rather than silently overwrites if the
+id it is about to overlay already exists on main under a DIFFERENT
+title -- this runs under a REAL lock (`_squash_and_splice_ledger`'s own
+`ledger_lock(root)`), at the point that actually commits to main, closing
+exactly the window the first guard's unlocked read cannot itself close.
+The two guards are deliberately complementary defense in depth, not each
+independently sufficient.
+
 ### Decision record: T-0162
 
 Three real collisions in one day (all sequential max+1 races across
@@ -2199,6 +2241,10 @@ class TicketError(ErrorSet):
     EvidenceKindNotAllowed = "cmd evidence is only allowed for docs-kind tickets"
     EvidenceCmdFailed   = "evidence command failed to launch or exited nonzero"
     LabelChangeEmpty    = "label change requires at least one --add or --remove label"
+    # T-1179: land-time ticket-scoped splice id/title-mismatch refusal --
+    # see "Provisional ids" above for the incident this defense-in-depth
+    # guard closes.
+    IdTitleMismatch     = "landing block's id already exists on main under a different title"
 
 class ClipboardError(ErrorSet):
     NoBackend     = "No clipboard backend available on this platform"

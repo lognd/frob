@@ -22,8 +22,8 @@ frob.graph or frob.lang by design (see docs/rework.md cycle-avoidance).
 # (docstrings/comments describing already-implemented internal behavior, e.g. \
 # _load_ticket_and_queue's archive-lookup fallback, add_acceptance's append-only \
 # semantics) unanchored -- same T-0585 INV006 first-turn-on calibration-batch \
-# disposition already applied to every sibling split module (_setters.py, \
-# _doable.py, _evidence.py itself), not a newly-introduced normative claim"
+# disposition already applied to every sibling split module (_setters.py, _doable.py, \
+# _evidence.py itself), not a newly-introduced normative claim"
 
 from __future__ import annotations
 
@@ -154,6 +154,7 @@ from frob.tickets._mutation_evidence import (
 )
 from frob.tickets._new_renumber import (
     finalize_draft,
+    finalize_draft_for_land,
     new_ticket,
     renumber,
     renumber_one,
@@ -1223,6 +1224,7 @@ __all__ = [
     "brief_ticket",
     "epic_rollup",
     "finalize_draft",
+    "finalize_draft_for_land",
     "migrate",
     "new_ticket",
     "renumber",

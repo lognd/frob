@@ -136,6 +136,16 @@ def _describe_git_failure(argv: Sequence[str], spawned: Result[Any, Any]) -> str
     return f"git {rendered_argv} -- exit {returncode}: {stderr}"
 
 
+# frob:ticket T-1184
+def _is_ignored_path_refusal(stderr: str) -> bool:
+    """Whether a failed `git add` spawn's stderr is git's "explicitly named
+    an ignored path" refusal (T-1184) -- narrowly matched on
+    git's own fixed message text so `_do_wip_commit`'s fallback only
+    triggers on this exact known failure mode, never masking a genuinely
+    different `git add` error as if it were this one."""
+    return "ignored by one of your .gitignore files" in stderr
+
+
 def _land_lock_path(root: Path) -> Path:
     """The advisory lock file path `_land_lock` holds, serializing every
     `land()` call against `root` (T-0577)."""
@@ -842,6 +852,38 @@ def _carry_forward_new_worktree_tickets(
         )
 
 
+# frob:ticket T-1179
+def _overlay_landed_ticket(
+    merged: dict[str, Ticket], ticket_id: str, incoming: Ticket
+) -> Result[None, TicketError]:
+    """`_splice_only_ticket`'s own id overlay, split out to keep both under
+    the ARCH001 line budget: write `incoming` into `merged[ticket_id]`,
+    resolving a genuine divergence via `_newer` -- unless main's CURRENT
+    block under this id has a DIFFERENT title than `incoming` (T-1179
+    acceptance [1], defense in depth alongside the id-ceiling fix in
+    `finalize_draft_for_land`): two unrelated tickets collided on one id,
+    not a genuine same-ticket state divergence `_newer` should arbitrate,
+    so this refuses loudly instead of silently picking a winner and
+    discarding the other ticket's content wholesale (the 2026-07-29
+    incident: 46a115c4 clobbered by 17c6ca89)."""
+    if ticket_id not in merged or merged[ticket_id] == incoming:
+        merged[ticket_id] = incoming
+        return Ok(None)
+    existing = merged[ticket_id]
+    if existing.title != incoming.title:
+        _log.error(
+            "tickets: land splice refused -- %s exists on main as %r but "
+            "this land is finalizing a DIFFERENT ticket %r under the same "
+            "id (T-1179 id/title-mismatch guard)",
+            ticket_id,
+            existing.title,
+            incoming.title,
+        )
+        return Err(TicketError.IdTitleMismatch)
+    merged[ticket_id] = _newer(existing, incoming)
+    return Ok(None)
+
+
 # frob:ticket T-0479
 def _splice_only_ticket(
     main_text: str,
@@ -879,10 +921,9 @@ def _splice_only_ticket(
     merged = dict(main_tickets)
     incoming = worktree_tickets.get(ticket_id)
     if incoming is not None:
-        if ticket_id in merged and merged[ticket_id] != incoming:
-            merged[ticket_id] = _newer(merged[ticket_id], incoming)
-        else:
-            merged[ticket_id] = incoming
+        overlaid = _overlay_landed_ticket(merged, ticket_id, incoming)
+        if overlaid.is_err:
+            return Err(overlaid.danger_err)
     _preserve_sibling_done_reports(merged, worktree_tickets, ticket_id)
     _carry_forward_new_worktree_tickets(merged, worktree_tickets, ticket_id)
     _drop_resurrected_ids(merged, archived_ids)
@@ -1798,6 +1839,64 @@ def _wip_commit(
     return _do_wip_commit(worktree, ticket_id)
 
 
+# frob:ticket T-1006
+# frob:ticket T-1184
+def _wip_add_excluding_frob(worktree: Path, ticket_id: str) -> Result[None, LandError]:
+    """`_do_wip_commit`'s own `git add -A` excluding `.frob/`, split out to
+    keep both under the ARCH001 line budget: A repo that has not
+    gitignored `.frob/` (e.g. a bare test fixture, T-1006) would otherwise
+    let frob's own bookkeeping writes made while computing the dirty check
+    get swept into `add -A` as if they were real ticket content, defeating
+    the CRLF-normalization-only no-op detection in `_do_wip_commit`.
+
+    T-1184: the negated pathspec below (`"--", ".", ":!.frob"`)
+    trips a hard refusal on git 2.34.1 the moment `.frob` IS actually
+    gitignored (the normal real-repo case, reproduced against a clean
+    checkout with no ticket diff at all: git treats a NEGATED pathspec
+    that names an ignored path as if the path had been named directly, and
+    aborts the ENTIRE add, not just skipping `.frob`). A bare test fixture
+    with no `.gitignore` at all (T-1006's original case) never hits that
+    refusal -- `.frob` isn't ignored there, so the pathspec exclusion
+    behaves as ordinary path filtering. Try the exclusion pathspec first
+    (preserves the exact original behavior/staging semantics for that
+    fixture case); only on the specific ignored-path refusal, retry by
+    staging everything and then unstaging `.frob` as a separate step,
+    which reaches the same end state without ever naming an ignored path
+    in a pathspec."""
+    add_argv = ["git", "-C", str(worktree), "add", "-A", "--", ".", ":!.frob"]
+    fallback_add_argv = ["git", "-C", str(worktree), "add", "-A", "--", "."]
+    unstage_frob_argv = ["git", "-C", str(worktree), "reset", "-q", "--", ".frob"]
+    add = run_argv(add_argv)
+    if (
+        add.is_ok
+        and add.danger_ok.returncode != 0
+        and _is_ignored_path_refusal(add.danger_ok.stderr)
+    ):
+        _log.warning(
+            "land: %s wip add's :!.frob pathspec hit the ignored-path "
+            "refusal (T-1184) -- falling back to add-then-unstage",
+            ticket_id,
+        )
+        add = run_argv(fallback_add_argv)
+        if add.is_ok and add.danger_ok.returncode == 0:
+            unstage_frob = run_argv(unstage_frob_argv)
+            if unstage_frob.is_err or unstage_frob.danger_ok.returncode != 0:
+                _log.error(
+                    "land: %s wip unstage .frob failed: %s",
+                    ticket_id,
+                    _describe_git_failure(unstage_frob_argv, unstage_frob),
+                )
+                return Err(LandError.GitFailed)
+    if add.is_err or add.danger_ok.returncode != 0:
+        _log.error(
+            "land: %s wip add failed: %s",
+            ticket_id,
+            _describe_git_failure(add_argv, add),
+        )
+        return Err(LandError.GitFailed)
+    return Ok(None)
+
+
 # frob:ticket T-0847
 # frob:tests tests/test_ticket_land.py::TestWipCommitNormalizationOnlyDirty.test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed  # noqa: E501
 def _do_wip_commit(worktree: Path, ticket_id: str) -> Result[bool, LandError]:
@@ -1814,22 +1913,10 @@ def _do_wip_commit(worktree: Path, ticket_id: str) -> Result[bool, LandError]:
     staging, re-check with `git diff --cached --quiet`: an empty stage means
     there was nothing real to snapshot, so we treat it as a no-op success
     instead of a land failure."""
-    # T-1006: exclude .frob/ (frob's own scratch state -- cache.db, lock
-    # files, prework json) from the wip snapshot. A repo that has not
-    # gitignored .frob/ (e.g. a bare test fixture) would otherwise let
-    # frob's own bookkeeping writes made while computing the dirty check
-    # get swept into `add -A` as if they were real ticket content,
-    # defeating the CRLF-normalization-only no-op detection below.
-    add_argv = ["git", "-C", str(worktree), "add", "-A", "--", ".", ":!.frob"]
     with _land_internal_git_env():
-        add = run_argv(add_argv)
-        if add.is_err or add.danger_ok.returncode != 0:
-            _log.error(
-                "land: %s wip add failed: %s",
-                ticket_id,
-                _describe_git_failure(add_argv, add),
-            )
-            return Err(LandError.GitFailed)
+        added = _wip_add_excluding_frob(worktree, ticket_id)
+        if added.is_err:
+            return Err(added.danger_err)
         staged_argv = ["git", "-C", str(worktree), "diff", "--cached", "--quiet"]
         staged = run_argv(staged_argv)
         if staged.is_ok and staged.danger_ok.returncode == 0:
@@ -2194,7 +2281,12 @@ def _land_locked(
             return Ok(dry_run_report)
 
         finalized = _land_finalize_and_close(
-            worktree, ticket_id, did_merge, main_branch_name, covers_scope=covers_scope
+            root,
+            worktree,
+            ticket_id,
+            did_merge,
+            main_branch_name,
+            covers_scope=covers_scope,
         )
         if finalized.is_err:
             return Err(finalized.danger_err)
@@ -3181,6 +3273,7 @@ def _check_unowned_deletions(
 
 
 def _land_finalize_and_close(
+    root: Path,
     worktree: Path,
     ticket_id: str,
     did_merge: bool,
@@ -3191,7 +3284,12 @@ def _land_finalize_and_close(
     """Commit the merge (if any), finalize a draft id, close the ticket,
     and commit those writes too -- returns the ticket's final id. Runs
     under `FROB_LAND_INTERNAL=1` (T-0828) so the merge commit is never
-    refused by the T-0731 land-owned-files `pre-commit` hook."""
+    refused by the T-0731 land-owned-files `pre-commit` hook.
+
+    T-1179: `root` (main) is threaded through to `_finalize_and_close_
+    ticket` so the draft-id finalize below reads its id ceiling from
+    main's CURRENT ledger, not `worktree`'s possibly-stale copy -- see
+    `finalize_draft_for_land`'s doc for the incident this closes."""
     if did_merge:
         commit_argv = [
             "git",
@@ -3212,7 +3310,7 @@ def _land_finalize_and_close(
             return Err(LandError.GitFailed)
 
     finalized = _finalize_and_close_ticket(
-        worktree, ticket_id, covers_scope=covers_scope
+        root, worktree, ticket_id, covers_scope=covers_scope
     )
     if finalized.is_err:
         return Err(finalized.danger_err)
@@ -3222,7 +3320,7 @@ def _land_finalize_and_close(
     if is_draft_id(ticket_id) and ticket_id != final_id:
         draft_id_mapping[ticket_id] = final_id
 
-    siblings_finalized = _finalize_sibling_drafts(worktree, final_id)
+    siblings_finalized = _finalize_sibling_drafts(root, worktree, final_id)
     if siblings_finalized.is_err:
         return Err(siblings_finalized.danger_err)
     draft_id_mapping.update(siblings_finalized.danger_ok)
@@ -3244,6 +3342,7 @@ def _land_finalize_and_close(
 
 
 def _finalize_and_close_ticket(
+    root: Path,
     worktree: Path,
     ticket_id: str,
     *,
@@ -3251,7 +3350,7 @@ def _finalize_and_close_ticket(
 ) -> Result[str, LandError]:
     """Finalize a draft id (if `ticket_id` is one) and transition it to
     DONE; returns the ticket's final id."""
-    final_id_result = _finalize_draft_id(worktree, ticket_id)
+    final_id_result = _finalize_draft_id(root, worktree, ticket_id)
     if final_id_result.is_err:
         return Err(final_id_result.danger_err)
     final_id = final_id_result.danger_ok
@@ -3261,14 +3360,18 @@ def _finalize_and_close_ticket(
     )
 
 
-def _finalize_draft_id(worktree: Path, ticket_id: str) -> Result[str, LandError]:
-    """`finalize_draft` if `ticket_id` is a draft id; else `ticket_id`
-    unchanged."""
-    from frob.tickets import finalize_draft
+def _finalize_draft_id(
+    root: Path, worktree: Path, ticket_id: str
+) -> Result[str, LandError]:
+    """`finalize_draft_for_land` if `ticket_id` is a draft id; else
+    `ticket_id` unchanged. T-1179: uses the land-specific finalize (id
+    ceiling read fresh from `root`/main) rather than plain `finalize_draft`
+    (worktree-only view) -- see `finalize_draft_for_land`'s doc."""
+    from frob.tickets import finalize_draft_for_land
 
     if not is_draft_id(ticket_id):
         return Ok(ticket_id)
-    finalized = finalize_draft(worktree, ticket_id)
+    finalized = finalize_draft_for_land(worktree, ticket_id, root)
     if finalized.is_err:
         _log.error(
             "land: %s draft finalize failed after merge landed in the "
@@ -3288,7 +3391,7 @@ def _finalize_draft_id(worktree: Path, ticket_id: str) -> Result[str, LandError]
 # frob:ticket T-0637
 # frob:tests tests/test_ticket_land.py::TestStandaloneSiblingDraftSurvivesLand.test_sibling_draft_ticket_finalized_and_lands_alongside  # noqa: E501
 def _finalize_sibling_drafts(
-    worktree: Path, landed_final_id: str
+    root: Path, worktree: Path, landed_final_id: str
 ) -> Result[dict[str, str], LandError]:
     """Finalize every OTHER draft ticket (T-draft-...) still in `worktree`'s
     active ledger after the ticket actually being landed has already been
@@ -3317,8 +3420,12 @@ def _finalize_sibling_drafts(
     caller does not need to thread these through further otherwise --
     once finalized, each sibling's fresh section is picked up by
     `_carry_forward_new_worktree_tickets` at squash-splice time the same
-    way any other new-to-main ticket is."""
-    from frob.tickets import finalize_draft
+    way any other new-to-main ticket is.
+
+    T-1179: uses `finalize_draft_for_land` (not `finalize_draft`) so each
+    sibling's id ceiling is also read fresh from `root` (main), not just
+    `worktree`'s copy -- same fix as the landing ticket's own finalize."""
+    from frob.tickets import finalize_draft_for_land
 
     loaded = load_all(worktree)
     if loaded.is_err:
@@ -3332,7 +3439,7 @@ def _finalize_sibling_drafts(
     )
     finalized_mapping: dict[str, str] = {}
     for draft_id in draft_ids:
-        result = finalize_draft(worktree, draft_id)
+        result = finalize_draft_for_land(worktree, draft_id, root)
         if result.is_err:
             _log.error(
                 "land: sibling draft %s finalize failed (%s) after %s "

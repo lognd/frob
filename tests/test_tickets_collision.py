@@ -9,6 +9,7 @@ no human coordination.
 from __future__ import annotations
 
 import subprocess
+from datetime import date
 from pathlib import Path
 
 from frob.gates import Severity, tickets_gate
@@ -19,14 +20,16 @@ from frob.tickets import (
     TicketSpec,
     TicketState,
     finalize_draft,
+    finalize_draft_for_land,
     load_active,
     load_queue,
     new_ticket,
     renumber_one,
 )
-from frob.tickets._models import Ticket
+from frob.tickets._land import _splice_only_ticket
+from frob.tickets._models import Ticket, TicketError
 from frob.tickets._provisional import is_draft_id, mint_draft_id, on_default_branch
-from frob.tickets._store import atomic_write, ledger_path
+from frob.tickets._store import atomic_write, ledger_path, load_all, write_all
 
 
 def _run(argv: list[str], cwd: Path) -> None:
@@ -289,8 +292,7 @@ class TestRenumberRewritesLedgerProse:
         assert loaded.is_ok
         citing_ticket = loaded.danger_ok[citing_id]
         prose_body = (
-            "## Done report\n\n"
-            f"Changed: nothing\nEvidence: none\nFiled: {old_id}\n"
+            f"## Done report\n\nChanged: nothing\nEvidence: none\nFiled: {old_id}\n"
         )
         write_result = write_ticket(
             tmp_path, citing_ticket.model_copy(update={"body": prose_body})
@@ -530,3 +532,139 @@ class TestDefaultBranchEdgeCases:
         not_a_repo = tmp_path / "not-a-repo"
         not_a_repo.mkdir()
         assert on_default_branch(not_a_repo) is True
+
+
+class TestFinalizeDraftForLandMainFreshCeiling:
+    """T-1179 acceptance [0]: reproduces the 2026-07-29 shape -- a ticket
+    filed directly on main after a worktree branched off must never be
+    re-mintable by that worktree's later draft finalize. `finalize_draft`
+    (worktree-only view) COULD reproduce the collision; `finalize_draft_
+    for_land` (main-fresh view, id ceiling under `main_root`'s own
+    `ledger_lock`) must not."""
+
+    def test_id_ceiling_reads_current_main_not_stale_worktree_view(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_new_renumber.py::finalize_draft_for_land \
+        # kind="unit"
+        main_root = tmp_path / "main"
+        main_root.mkdir()
+        first = new_ticket(main_root, _spec("First on main"))
+        assert first.is_ok
+        assert first.danger_ok.id == "T-0001"
+
+        # Worktree "branches" off main before the second main-side ticket
+        # is filed: its own ledger copy only ever saw T-0001, plus a
+        # residue draft ticket filed locally.
+        worktree = tmp_path / "worktree"
+        worktree.mkdir()
+        atomic_write(
+            ledger_path(worktree), ledger_path(main_root).read_text(encoding="utf-8")
+        )
+        draft_id = mint_draft_id()
+        spec = _spec("Worktree residue draft")
+        draft_ticket = Ticket(
+            id=draft_id,
+            title=spec.title,
+            state=TicketState.QUEUED,
+            kind=spec.kind,
+            origin=spec.origin,
+            created=date.today(),
+        )
+        loaded = load_all(worktree)
+        assert loaded.is_ok
+        tickets = dict(loaded.danger_ok)
+        tickets[draft_id] = draft_ticket
+        assert write_all(worktree, tickets).is_ok
+
+        # Meanwhile a SECOND ticket is filed directly on main -- claims
+        # T-0002 via the normal atomic allocator, invisible to `worktree`.
+        second = new_ticket(main_root, _spec("Second on main, filed late"))
+        assert second.is_ok
+        assert second.danger_ok.id == "T-0002"
+
+        finalized = finalize_draft_for_land(worktree, draft_id, main_root)
+        assert finalized.is_ok
+        final_id = finalized.danger_ok
+        assert final_id != "T-0002", (
+            "finalize_draft_for_land must not re-mint an id main already "
+            "claimed while the worktree was stale"
+        )
+        assert final_id == "T-0003"
+
+
+class TestSpliceOnlyTicketIdTitleMismatchRefusal:
+    """T-1179 acceptance [1]: defense in depth -- if the splice-time
+    overlay's id already exists on main under a DIFFERENT title, refuse
+    loudly instead of letting `_newer` silently pick a winner and discard
+    the other ticket's content (the 46a115c4-clobbered-by-17c6ca89
+    incident, at the last line of defense before the squash-apply
+    commit)."""
+
+    def test_id_title_mismatch_is_refused_not_silently_overwritten(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_splice_only_ticket kind="unit"
+        main_ticket = Ticket(
+            id="T-0042",
+            title="Coordinator-filed ticket, unrelated to the land",
+            state=TicketState.QUEUED,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+        )
+        landing_ticket = Ticket(
+            id="T-0042",
+            title="Some completely different landed feature",
+            state=TicketState.DONE,
+            kind=TicketKind.FEATURE,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body="## Done report\n\nsome report\n",
+        )
+        main_side = tmp_path / "main"
+        main_side.mkdir()
+        assert write_all(main_side, {"T-0042": main_ticket}).is_ok
+        worktree_side = tmp_path / "worktree"
+        worktree_side.mkdir()
+        assert write_all(worktree_side, {"T-0042": landing_ticket}).is_ok
+        main_text = ledger_path(main_side).read_text(encoding="utf-8")
+        worktree_text = ledger_path(worktree_side).read_text(encoding="utf-8")
+
+        result = _splice_only_ticket(main_text, worktree_text, "T-0042")
+        assert result.is_err
+        assert result.danger_err == TicketError.IdTitleMismatch
+
+    def test_same_id_same_title_still_resolves_via_newer(self, tmp_path: Path) -> None:
+        """Control case: a genuine same-ticket divergence (title matches)
+        must still resolve normally, not be caught by the mismatch guard."""
+        # frob:tests src/frob/tickets/_land.py::_splice_only_ticket kind="unit"
+        main_ticket = Ticket(
+            id="T-0042",
+            title="Same ticket, still in progress on main",
+            state=TicketState.IN_PROGRESS,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+        )
+        landing_ticket = Ticket(
+            id="T-0042",
+            title="Same ticket, still in progress on main",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body="## Done report\n\nsome report\n",
+        )
+        main_side = tmp_path / "main"
+        main_side.mkdir()
+        assert write_all(main_side, {"T-0042": main_ticket}).is_ok
+        worktree_side = tmp_path / "worktree"
+        worktree_side.mkdir()
+        assert write_all(worktree_side, {"T-0042": landing_ticket}).is_ok
+        main_text = ledger_path(main_side).read_text(encoding="utf-8")
+        worktree_text = ledger_path(worktree_side).read_text(encoding="utf-8")
+
+        result = _splice_only_ticket(main_text, worktree_text, "T-0042")
+        assert result.is_ok
+        assert "Same ticket, still in progress on main" in result.danger_ok
