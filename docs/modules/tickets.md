@@ -944,8 +944,11 @@ Every `frob ticket <subcommand>` a feature ticket adds structurally needs
 to touch the SAME three files no matter what scope was declared at filing
 time: the dispatch table (`src/frob/__main__.py`), the CLI flags it reads
 (`src/frob/app/config.py`), and the runner that implements it
-<!-- frob:waive DOC006 reason="quotes CLI_WIRING_FILES verbatim; the constant itself still says src/frob/app/ticket_runner.py post-split (now a package dir), a pre-existing code bug filed separately -- rewriting the doc would misquote the live constant" -->(`src/frob/app/ticket_runner.py`) -- `frob.tickets._models.
-CLI_WIRING_FILES`. T-0323 (the `merge-driver` subcommand) hit exactly this:
+(`src/frob/app/ticket_runner/**`, a package since an earlier split of the
+original `src/frob/app/ticket_runner.py` module; T-1163 fixed
+`CLI_WIRING_FILES` to match after it had gone stale post-split) --
+`frob.tickets._models.CLI_WIRING_FILES`. T-0323 (the `merge-driver`
+subcommand) hit exactly this:
 scoped to `src/frob/tickets/**`, it needed all three and had to run
 `frob ticket scope --add` per file, which is exactly the "scope-expansion
 ceremony" T-0446 was filed to close.

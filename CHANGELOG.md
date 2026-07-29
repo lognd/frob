@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.263.0] - unreleased
+
+- T-1163: fix: CLI_WIRING_FILES still points at retired src/frob/app/ticket_runner.py
+
 ## [0.262.0] - unreleased
 
 - T-1152: arch: extract tickets/__init__.py evidence/transition + done-report/review/drop/attach families + split _land.py -- T-1151 residue

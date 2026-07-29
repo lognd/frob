@@ -1632,6 +1632,26 @@ class TestScopeMatching:
         for wiring_file in CLI_WIRING_FILES:
             assert not scope_matches(wiring_file, narrow_scope, kind=TicketKind.BUG)
 
+    # frob:ticket T-1163
+    def test_cli_wiring_files_resolve_to_real_paths_on_disk(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::CLI_WIRING_FILES
+        """Each CLI_WIRING_FILES entry must glob-match at least one real
+        file, so a retired/renamed path (e.g. a module split into a
+        package) fails loudly here instead of silently defeating T-0446's
+        implicit-scope mechanism (T-1163: `app/ticket_runner.py` went
+        stale this way after an earlier split into `app/ticket_runner/`).
+        """
+        from frob.tickets._models import CLI_WIRING_FILES
+
+        repo_root = Path(__file__).resolve().parent.parent
+        for wiring_file in CLI_WIRING_FILES:
+            matches = list(repo_root.glob(wiring_file))
+            assert matches, (
+                f"CLI_WIRING_FILES entry {wiring_file!r} matches no real "
+                "file on disk -- it is stale and silently defeats the "
+                "implicit CLI-wiring scope mechanism for FEATURE tickets"
+            )
+
     def test_new_ticket_normalizes_comma_joined_scope(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_models.py::TicketSpec
         from frob.tickets import TicketSpec
@@ -1828,7 +1848,9 @@ class TestAddAcceptance:
 
     # frob:ticket T-1029
     def test_empty_criteria_is_rejected(self, tmp_path: Path) -> None:
-        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        spec = TicketSpec(
+            title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
         created = new_ticket(tmp_path, spec)
         assert created.is_ok
         ticket_id = created.danger_ok.id
@@ -1839,7 +1861,9 @@ class TestAddAcceptance:
 
     # frob:ticket T-1029
     def test_blank_criteria_are_dropped(self, tmp_path: Path) -> None:
-        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        spec = TicketSpec(
+            title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
         created = new_ticket(tmp_path, spec)
         assert created.is_ok
         ticket_id = created.danger_ok.id

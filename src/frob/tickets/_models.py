@@ -188,24 +188,29 @@ LEDGER_PATH = "tickets.md"
 
 # frob:ticket T-0446
 # frob:doc docs/modules/tickets.md#public-api
-# The three files EVERY new `frob ticket <subcommand>` structurally must
+# The three targets EVERY new `frob ticket <subcommand>` structurally must
 # touch to actually wire the command in: the dispatch table (`__main__.py`),
 # the CLI flags it reads (`app/config.py`), and the runner that implements
-# it (`app/ticket_runner.py`). T-0323 (git-merge-driver ticket, adding `frob
-# ticket merge-driver`) needed all three despite a scope declared as
-# `src/frob/tickets/**` -- every feature ticket that adds a subcommand hits
-# this same "scope-expansion ceremony" (a `frob ticket scope --add` per
-# wiring file, every time) because these files are structurally required
-# but never anticipated at ticket-filing time. Implicitly in scope for any
-# `TicketKind.FEATURE` ticket, the same LEDGER_PATH-always-in-scope pattern
-# T-0241 established for tickets.md -- NOT extended to every kind, since a
-# bug/docs/security ticket touching the CLI dispatch table unannounced is
-# exactly the scope-creep SCOPE001 exists to catch.
+# it (`app/ticket_runner/**`, a package since an earlier landing split the
+# original `app/ticket_runner.py` module -- T-1163 fixed a stale
+# frozenset entry here that still pointed at the pre-split single-file
+# path, which could never match a real file glob and silently defeated
+# this whole mechanism for the ticket_runner half of CLI wiring). T-0323
+# (git-merge-driver ticket, adding `frob ticket merge-driver`) needed all
+# three despite a scope declared as `src/frob/tickets/**` -- every feature
+# ticket that adds a subcommand hits this same "scope-expansion ceremony"
+# (a `frob ticket scope --add` per wiring file, every time) because these
+# files are structurally required but never anticipated at ticket-filing
+# time. Implicitly in scope for any `TicketKind.FEATURE` ticket, the same
+# LEDGER_PATH-always-in-scope pattern T-0241 established for tickets.md --
+# NOT extended to every kind, since a bug/docs/security ticket touching
+# the CLI dispatch table unannounced is exactly the scope-creep SCOPE001
+# exists to catch.
 CLI_WIRING_FILES = frozenset(
     {
         "src/frob/__main__.py",
         "src/frob/app/config.py",
-        "src/frob/app/ticket_runner.py",
+        "src/frob/app/ticket_runner/**",
     }
 )
 

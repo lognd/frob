@@ -116,6 +116,7 @@ threat: null
 component: null
 ```
 frob arch today has per-language walkers (_python.py, _cpp.py) only. To extend cleanly (not N copies of each check), introduce a NORMALIZED CODE MODEL: a language-agnostic view (module, class, function, method, param, branch, loop, call, import, override, field-access, return, raise/throw, catch) that each language adapter maps its tree-sitter grammar onto. Checks are written ONCE against the model; adapters supply per-grammar node-type maps. Then add adapters for TypeScript, Rust, Kotlin (Kotlin needs tree-sitter-kotlin added to frob.lang; ts/rust/cpp/c already parse via tree-sitter-language-pack). Language-specific checks (Rust must_use/ownership, TS any/strict-null) live in per-language extensions on top of the shared model. Acceptance: an arch check written once fires correctly across python+ts+rust+kotlin on equivalent code; Kotlin grammar wired; the existing python/cpp checks refactored onto the model with no regression. Children: normalized-model, ts-adapter, rust-adapter, kotlin-grammar+adapter.
+
 <!-- ticket:T-0395 -->
 ```yaml
 id: T-0395
@@ -3841,7 +3842,7 @@ anchor already is.
 ```yaml
 id: T-1163
 title: 'fix: CLI_WIRING_FILES still points at retired src/frob/app/ticket_runner.py'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -3851,6 +3852,22 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/tickets/_models.py
+- tests/test_tickets.py
+- docs/modules/tickets.md
+scope_changes:
+- op: add
+  glob: tests/test_tickets.py
+  reason: regression test for CLI_WIRING_FILES stale-path guard
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'AFFECT001: CLI_WIRING_FILES affects()-closure doc anchor must be touched'
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/test_tickets.py::TestScopeMatching::test_cli_wiring_files_resolve_to_real_paths_on_disk
+- tests/test_tickets.py::TestScopeMatching::test_feature_kind_implies_cli_wiring_files_in_scope
 threat: null
 component: null
 ```
@@ -3864,6 +3881,34 @@ mechanism for the ticket_runner half of CLI wiring on any FEATURE ticket.
 Fix: update CLI_WIRING_FILES to the correct current path (e.g. a glob covering
 src/frob/app/ticket_runner/**, or the package's __init__.py) and re-verify T-0446's own
 tests still pass.
+
+## Done report
+
+Fixed CLI_WIRING_FILES's stale ticket_runner.py entry to the current
+package glob (src/frob/app/ticket_runner/**) after an earlier landing
+split that module into a package, which had left the frozenset entry
+matching no real file and silently defeating T-0446's implicit CLI-wiring
+scope mechanism. Added a regression test that glob-checks every
+CLI_WIRING_FILES entry against real files on disk so a future rename/
+split fails this test loudly instead of silently. Updated
+docs/modules/tickets.md's own CLI_WIRING_FILES description (previously
+carrying a DOC006 waiver acknowledging this exact staleness) to match the
+corrected constant and removed the now-obsolete waiver.
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets.py::TestScopeMatching::test_cli_wiring_files_resolve_to_real_paths_on_disk` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestScopeMatching::test_feature_kind_implies_cli_wiring_files_in_scope` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 1 error(s), 667 warning(s), 498 waived
+- error-findings: PRE001@tickets/T-1163
 
 <!-- ticket:T-1164 -->
 ```yaml
