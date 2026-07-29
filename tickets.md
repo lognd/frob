@@ -1224,3 +1224,32 @@ threat: null
 component: null
 ```
 Root cause: arch/_python.py:782/637 _py_build_module/_py_build_function run 3 separate recursions per function (body events, nesting/depth, cyclomatic) instead of one; arch/_lock_ordering.py:136, _async_hazards.py:148, _shared_state_race.py:141 each independently reimplement _iter_own_scope (33.2s profiled = 13 pct of archgate); _concurrency_model.py:254 _walk_all and _patterns.py:518 _find_if_statements add further independent walks. Fix: fold nesting/cyclomatic/events into the existing _py_collect_body_events walk; extract one shared _iter_own_scope helper consumed by all three lock/async/race families.
+
+<!-- ticket:T-1216 -->
+```yaml
+id: T-1216
+title: 'perf: lazy per-subcommand runner import in frob.app -- drop eager deploy/strata/vet/gates
+  import chain'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: high
+parent: T-1204
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/__init__.py
+- src/frob/app/app.py
+acceptance:
+- text: GIVEN src/frob/app/__init__.py:14 imports every runner eagerly so 'frob ticket
+    list' pays the deploy -> strata (417ms, incl strata._threat 280ms) -> vet._capability
+    -> gates (213ms) import chain it never touches (775ms cumulative importtime, ~0.42s
+    user on a quiet run) WHEN the package init dispatches subcommands via importlib/getattr
+    lazily per app.py's own docstring THEN CLI invocations that do not touch deploy/strata/vet/gates
+    save ~0.3-0.5s startup (report 'CLI startup' section)
+  evidence: []
+threat: null
+component: null
+```
+Root cause: app/__init__.py:14 eagerly imports every runner; app.py's docstring already describes a dynamic importlib/getattr entrypoint that the package init does not follow. Fix: make __init__.py's dispatch table match app.py's documented lazy-import design so unrelated subcommands (e.g. ticket list) never pull in frob.deploy/frob.strata/frob.vet/frob.gates.
