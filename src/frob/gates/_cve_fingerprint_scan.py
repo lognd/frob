@@ -89,8 +89,6 @@ def _language_for(rel_path: str) -> str | None:
     return _EXT_LANGUAGE.get(suffix)
 
 
-
-
 # frob:ticket T-0897
 def _parse001_violation(rel_path: str, reason: str) -> Violation:
     """PARSE001 `Violation` for a file this gate's own read could not get

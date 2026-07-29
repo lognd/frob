@@ -26,9 +26,7 @@ _UNPINNED_MARKERS = ("^", "~", "*", ">", "<", "x", "X")
 
 _PYPROJECT_DEP_RE = re.compile(r'"([A-Za-z0-9_.-]+)\s*([^"]*)"')
 _PACKAGE_JSON_DEP_RE = re.compile(r'"([A-Za-z0-9_.@/-]+)"\s*:\s*"([^"]+)"')
-_CARGO_DEP_RE = re.compile(
-    r'^\s*([A-Za-z0-9_-]+)\s*=\s*"([^"]+)"', re.MULTILINE
-)
+_CARGO_DEP_RE = re.compile(r'^\s*([A-Za-z0-9_-]+)\s*=\s*"([^"]+)"', re.MULTILINE)
 
 
 def _read_text_or_empty(path: Path) -> str:
@@ -141,8 +139,7 @@ def _cargo_toml_unpinned_violations(project_root: Path) -> list[Violation]:
                     file=str(cargo_toml),
                     line=0,
                     message=(
-                        f"{name}: unpinned dependency spec "
-                        f"{spec!r} in Cargo.toml"
+                        f"{name}: unpinned dependency spec {spec!r} in Cargo.toml"
                     ),
                 )
             )

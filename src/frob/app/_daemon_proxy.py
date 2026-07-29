@@ -290,8 +290,7 @@ class _LeaseConnection:
 
         self._sock.sendall(
             (
-                json.dumps({"id": 1, "method": method, "params": params or {}})
-                + "\n"
+                json.dumps({"id": 1, "method": method, "params": params or {}}) + "\n"
             ).encode("utf-8")
         )
         while b"\n" not in self._buf:

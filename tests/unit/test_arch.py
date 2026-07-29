@@ -1196,7 +1196,11 @@ class TestCallThroughForwarderExclusion:
         assert not _is_call_through_forwarder_family(
             [
                 ("a.py", "heading", "heading ( _v0 )"),
-                ("a.py", "good", "stripped = _v0 . strip ( ) upper = stripped . upper ( )"),
+                (
+                    "a.py",
+                    "good",
+                    "stripped = _v0 . strip ( ) upper = stripped . upper ( )",
+                ),
             ]
         )
 

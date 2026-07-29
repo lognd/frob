@@ -339,8 +339,7 @@ def iter_raw_ledger_frontmatter(text: str) -> list[tuple[str, dict]]:
         fence = _YAML_FENCE_RE.match(chunk.lstrip("\n"))
         if fence is None:
             _log.warning(
-                "tickets: %s section has no ```yaml frontmatter, skipping "
-                "in raw scan",
+                "tickets: %s section has no ```yaml frontmatter, skipping in raw scan",
                 ticket_id,
             )
             continue
@@ -348,8 +347,7 @@ def iter_raw_ledger_frontmatter(text: str) -> list[tuple[str, dict]]:
             data = yaml.safe_load(fence.group(1))
         except yaml.YAMLError as exc:
             _log.warning(
-                "tickets: %s frontmatter is not valid YAML, skipping in "
-                "raw scan: %s",
+                "tickets: %s frontmatter is not valid YAML, skipping in raw scan: %s",
                 ticket_id,
                 exc,
             )

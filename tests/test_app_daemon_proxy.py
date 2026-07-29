@@ -392,9 +392,7 @@ class TestDifferentialParity:
             _json_tail(daemon_served.stdout)
         ) == _normalize_gate_timing(_json_tail(in_process.stdout))
 
-    def test_touched_tests_json_daemon_matches_in_process(
-        self, tmp_path: Path
-    ) -> None:
+    def test_touched_tests_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_touched_tests_jso\
         # n_daemon_matches_in_process
@@ -414,13 +412,9 @@ class TestDifferentialParity:
         subprocess.run(
             ["git", "config", "user.email", "t@example.com"], cwd=project, check=True
         )
-        subprocess.run(
-            ["git", "config", "user.name", "t"], cwd=project, check=True
-        )
+        subprocess.run(["git", "config", "user.name", "t"], cwd=project, check=True)
         subprocess.run(["git", "add", "-A"], cwd=project, check=True)
-        subprocess.run(
-            ["git", "commit", "-q", "-m", "init"], cwd=project, check=True
-        )
+        subprocess.run(["git", "commit", "-q", "-m", "init"], cwd=project, check=True)
 
         # Nothing touched (no diff against main after the initial commit) --
         # the parity-sensitive empty-selection branch both the CLI and

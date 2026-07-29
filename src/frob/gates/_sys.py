@@ -40,7 +40,6 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
-
 def _load_systems(doc: dict) -> tuple[SystemSpec, ...]:
     """Parse the `[[system]]` array from a frob.toml document; bad entries skipped."""
     systems: list[SystemSpec] = []
@@ -687,4 +686,3 @@ def _log_sys_gate_summary(design_ids, violations: tuple[Violation, ...]) -> None
         len(violations),
         len(design_ids.errors),
     )
-

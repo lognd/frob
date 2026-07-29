@@ -4352,9 +4352,7 @@ class TestFingerprintBindingResolution:
             remediation="test fixture only",
         )
         pkg = tmp_path / "pkg.rs"
-        pkg.write_text(
-            'use std::process::Command as C;\nfn f() { C::new("sh"); }\n'
-        )
+        pkg.write_text('use std::process::Command as C;\nfn f() { C::new("sh"); }\n')
         with mock.patch("frob.strata.CVE_FINGERPRINTS", (fp,)):
             matches = _scan_file_fingerprints(pkg)
         assert any(m.id == "FP-TEST-COMMAND-001" for m in matches)
@@ -6457,8 +6455,7 @@ class TestSupplyChainCiActionPin:
         workflows = tmp_path / ".github" / "workflows"
         workflows.mkdir(parents=True)
         (workflows / "ci.yaml").write_text(
-            "jobs:\n  build:\n    steps:\n"
-            "      - uses: actions/checkout@main\n"
+            "jobs:\n  build:\n    steps:\n      - uses: actions/checkout@main\n"
         )
         violations = _unpinned_ci_action_violations(tmp_path)
         assert any(v.rule == "VET009" for v in violations)
@@ -6501,7 +6498,7 @@ class TestSupplyChainOpaqueBinaryArtifact:
 
         crate_dir = tmp_path / "native"
         crate_dir.mkdir()
-        (crate_dir / "Cargo.toml").write_text("[package]\nname = \"native\"\n")
+        (crate_dir / "Cargo.toml").write_text('[package]\nname = "native"\n')
         (crate_dir / "built.so").write_bytes(b"\x7fELF")
         violations = _opaque_binary_artifact_violations(tmp_path)
         assert violations == []

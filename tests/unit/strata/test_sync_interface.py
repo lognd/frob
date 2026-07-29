@@ -130,10 +130,7 @@ def test_report_and_apply_are_the_tier_a_ready_entry_points(tmp_path: Path):
         tmp_path,
         "design",
         "widget.strata",
-        "module widget\n"
-        "node widget : trusted {\n"
-        '    code "src/frob/widget/**";\n'
-        "}\n",
+        'module widget\nnode widget : trusted {\n    code "src/frob/widget/**";\n}\n',
     )
     result = sync_interface_report(tmp_path)
     assert result.is_ok
