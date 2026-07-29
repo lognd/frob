@@ -1646,3 +1646,24 @@ threat: null
 component: null
 ```
 Extend doclink checking (DOCLNK rule) to verify relative link basenames and #fragment anchors resolve, or fail. Ref: gate-gap class 5 in docs/audits/docs-staleness-2026-07-29.md.
+
+<!-- ticket:T-1232 -->
+```yaml
+id: T-1232
+title: status/currency checks -- dated status/superseded-by header on audit docs,
+  ticket-id prose vs ledger, index completeness
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: T-1226
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- docs/audits/**
+threat: null
+component: null
+```
+Require a dated status/superseded-by header on docs/audits/* (gate-checkable); check ticket-id prose against ledger state (open/closed/renumbered); check index completeness vs the docs tree. Ref: gate-gap class 6 in docs/audits/docs-staleness-2026-07-29.md.
