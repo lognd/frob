@@ -763,3 +763,45 @@ the rollback path end-to-end (a synthetic/test-fixture rule is
 acceptable, or reuse whichever real Tier-B-shaped rule is cheapest to
 wire first -- implementer's judgment, disclose the choice in the Done
 report).
+
+<!-- ticket:T-draft-86e35dc2 -->
+```yaml
+id: T-draft-86e35dc2
+title: gates --fix Tier-C fix-it emission format for agents
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: T-1137
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_fix_engine_tier_c.py
+- tests/test_gates.py
+acceptance:
+- text: GIVEN a content-required finding with a registered Tier-C emitter WHEN --fix
+    runs THEN no file is edited and a FixIt record with a non-empty reason_unfixable
+    is emitted
+  evidence: []
+- text: GIVEN --fix --json THEN the output includes a `fixits` array; on a repo with
+    zero Tier-C-eligible findings the array is empty, never a missing key
+  evidence: []
+- text: GIVEN a FixIt's message field THEN it is the original violation's message
+    verbatim, never paraphrased
+  evidence: []
+threat: null
+component: null
+```
+Build Tier-C fix-it emission per docs/design/check-fix-engine.md
+"Fix-it emission format" section: new src/frob/gates/_fix_engine_tier_c.py
+with a FixIt model (rule, file, line, message, proposed_patch: str | None,
+reason_unfixable: str) and TIER_C_EMITTERS: dict[str, TierCEmitter]. Wire
+`--fix --json`'s output to include a `fixits` array (empty when no Tier-C
+emitter fires) alongside the existing violations array -- additive only,
+never replacing frob check's existing --json shape. Ship at least one
+real Tier-C emitter (a content-required finding with no mechanical
+rewrite -- e.g. TODO001's "bind this to a ticket" case, or a DOC002
+finding with 0 or 2+ fuzzy candidates, reusing fix_doc002_unique_slug's
+own already-computed candidate set to populate proposed_patch when
+exactly the wrong number of candidates exist, or null when zero).
