@@ -16,10 +16,14 @@ attribute) rather than code.
 `subject:health`, `subject:biometric`, `subject:financial`, or
 `basis:<consent|contract|legitimate-interest>`; a Pii-holding `Node`'s
 `attrs` carry `jurisdiction:eu-resident` / `jurisdiction:ca-resident`,
-`retention=<value><unit>`, or `covered-party` (HIPAA BAA-satisfied). This
-is opaque-string vocabulary on the existing `attrs` tuples (charter law 1:
-no new kernel primitive), the same convention `_claims.py`'s `skew=`/
-`growth=` prefixes and `_secrets.py`'s `attrs=("revocation",)` already use.
+`retention=<value><unit>`, `covered-party` (HIPAA BAA-satisfied),
+`exposure:public-web` (the node is reachable from the open web -- GDPR
+art.13/CCPA Sec.1798.100 notice-at-collection precondition), or
+`privacy-policy` (the node's data practices are covered by a published
+notice -- PRIVACY-NOTICE's mitigation). This is opaque-string vocabulary
+on the existing `attrs` tuples (charter law 1: no new kernel primitive),
+the same convention `_claims.py`'s `skew=`/`growth=` prefixes and
+`_secrets.py`'s `attrs=("revocation",)` already use.
 
 Each regulation's discharge REUSES existing kernel machinery rather than
 inventing a parallel one (docs/strata/threat.md#compliance, "THE SAME
@@ -77,6 +81,8 @@ _BASIS_PREFIX = "basis:"
 _RETENTION_PREFIX = "retention="
 _COVERED_PARTY = "covered-party"
 _REVOCATION_ATTR = "revocation"
+_EXPOSURE_PREFIX = "exposure:"
+_PRIVACY_POLICY_ATTR = "privacy-policy"
 
 
 # frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
@@ -173,6 +179,16 @@ COMPLIANCE_CATALOG: tuple[RegulationEntry, ...] = (
         cite="https://gdpr-info.eu/art-5-gdpr/",
         jurisdictions=(),  # a general good-practice duty, not jurisdiction-scoped
         mitigation="drop_or_justify",
+    ),
+    RegulationEntry(
+        id="PRIVACY-NOTICE",
+        title="Notice at collection -- a public-facing collection point "
+        "handling personal data must have a published privacy notice "
+        "(GDPR art.13 notice obligation; see also CCPA Cal. Civ. Code "
+        "Sec.1798.100 notice-at-collection)",
+        cite="https://gdpr-info.eu/art-13-gdpr/",
+        jurisdictions=(),  # public-web exposure is not jurisdiction-scoped
+        mitigation="privacy_policy_attestation",
     ),
 )
 
@@ -359,6 +375,11 @@ def _has_subject_tag(attrs: tuple[str, ...], tag: str) -> bool:
 def _has_jurisdiction(attrs: tuple[str, ...], jurisdiction: str) -> bool:
     """Whether `attrs` carries `jurisdiction:<jurisdiction>`."""
     return f"{_JURISDICTION_PREFIX}{jurisdiction}" in attrs
+
+
+def _has_exposure(attrs: tuple[str, ...], exposure: str) -> bool:
+    """Whether `attrs` carries `exposure:<exposure>` (module docstring)."""
+    return f"{_EXPOSURE_PREFIX}{exposure}" in attrs
 
 
 def _retention_limit(attrs: tuple[str, ...]) -> Quantity | None:
@@ -702,6 +723,51 @@ def _check_baa(model: KernelModel) -> tuple[ComplianceViolation, ...]:
     return tuple(violations)
 
 
+def _privacy_notice_node_violations(
+    model: KernelModel, node: Node
+) -> tuple[ComplianceViolation, ...]:
+    """PRIVACY-NOTICE per-node check body: 0-2 violations for one node."""
+    if not _has_exposure(node.attrs, "public-web"):
+        return ()
+    if not node.clearance or not _pii_or_above(model, node.clearance):
+        return ()
+    claim_id = f"compliance:PRIVACY-NOTICE:{node.id}"
+    overridden, malformed = _claim_override(model, claim_id)
+    violations: list[ComplianceViolation] = []
+    if malformed is not None:
+        violations.append(malformed)
+    if overridden:
+        return tuple(violations)
+    if _PRIVACY_POLICY_ATTR not in node.attrs:
+        _log.warning(
+            "compliance: PRIVACY-NOTICE fired on node %s, no privacy-policy attr",
+            node.id,
+        )
+        violations.append(
+            ComplianceViolation(
+                rule="COMPLIANCE002",
+                regulation="PRIVACY-NOTICE",
+                target=node.id,
+                detail=f"public-web-exposed Pii-or-above node {node.id} "
+                "declares no privacy-policy/notice mitigation",
+            )
+        )
+    return tuple(violations)
+
+
+def _check_privacy_notice(model: KernelModel) -> tuple[ComplianceViolation, ...]:
+    """Notice at collection: a `exposure:public-web`-tagged Pii-or-above
+    node with no declared `privacy-policy` attr refuses -- GDPR art.13's
+    notice obligation (docs/strata/threat.md#compliance). Node-level (not
+    flow-level, unlike HIPAA-BAA) because the precondition is the node's
+    OWN public reachability, not a specific inbound collection flow's
+    subject tag."""
+    violations: list[ComplianceViolation] = []
+    for node in sorted(model.nodes, key=lambda n: n.id):
+        violations.extend(_privacy_notice_node_violations(model, node))
+    return tuple(violations)
+
+
 def _minimization_flow_violations(
     model: KernelModel, flow: Flow, outbound: set[str]
 ) -> tuple[ComplianceViolation, ...]:
@@ -758,8 +824,8 @@ def check_regulation_discharge(
     model: KernelModel,
 ) -> Result[tuple[ComplianceViolation, ...], StrataError]:
     """COMPLIANCE002: every fired regulatory obligation (COPPA, GDPR
-    erasure/retention/basis, HIPAA BAA, minimization) is structurally
-    discharged or explicitly assumed with owner+review (docs/strata/
+    erasure/retention/basis, HIPAA BAA, minimization, PRIVACY-NOTICE) is
+    structurally discharged or explicitly assumed with owner+review (docs/strata/
     threat.md#compliance). Auto-instantiated per-obligation, mirroring
     `_secrets.py::elaborate_secret`'s auto-generated claim -- no
     author-written `Claim` is required unless overriding the structural
@@ -774,6 +840,7 @@ def check_regulation_discharge(
         *_check_lawful_basis(model),
         *_check_baa(model),
         *_check_minimization(model),
+        *_check_privacy_notice(model),
     )
     _log.info(
         "compliance: discharge check over %d node(s)/%d flow(s) -> %d violation(s)",
@@ -939,6 +1006,41 @@ CMPL_REGISTRY_UNIT_IDS: frozenset[str] = frozenset(
     }
 )
 
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#compliance005compliance007-compliance-registry-vs-model-checking-t-1244  # noqa: E501
+#: T-1244 (gate-vacuity closure): `_check_cmpl_registry_unit_dispositions`
+#: (COMPLIANCE005) only proves a `CMPL_REGISTRY_UNIT_IDS` member carries
+#: SOME `handled_by`/`out_of_scope` string -- for 16 of the 17 units that
+#: string is the SELF-referential `handled_by:COMPLIANCE005`, which is
+#: circular: "this framework is handled by the check that verifies a
+#: disposition string exists" proves nothing about whether any real
+#: `RegulationEntry`/mitigation/attestation backs THAT framework's actual
+#: obligations. `CMPL-FROB-CATALOG-ENTRIES` is the one legitimate
+#: exception -- it is a meta-row COUNTING `COMPLIANCE_CATALOG`'s own real
+#: entries, so its self-reference is not vacuous (T-1250 confirms this
+#: explicitly rather than let it ride the same generic shape as the other
+#: 16). Maps each vacuously-self-referential unit to the per-framework
+#: triage ticket (T-1245-T-1249) that owns its real (a)/(b)/(c)/(d)
+#: classification -- named here, not re-derived, so `_cmpl_unit_backing_
+#: violation`'s message always points at live, open follow-up work.
+_CMPL_UNIT_TRIAGE_TICKET: dict[str, str] = {
+    "CMPL-SOC2-CATEGORIES": "T-1245",
+    "CMPL-SOC2-CC-FAMILIES": "T-1245",
+    "CMPL-PCIDSS-REQUIREMENTS": "T-1245",
+    "CMPL-HIPAA-TECHNICAL-STANDARDS": "T-1245",
+    "CMPL-GDPR-ARTICLES": "T-1246",
+    "CMPL-NIST80053-FAMILIES": "T-1247",
+    "CMPL-NIST80263-VOLUMES": "T-1247",
+    "CMPL-SSDF-PRACTICE-GROUPS": "T-1247",
+    "CMPL-ISO27002-THEMES": "T-1248",
+    "CMPL-ISO27002-CONTROLS": "T-1248",
+    "CMPL-CIS-CONTROLS": "T-1248",
+    "CMPL-CIS-SAFEGUARDS": "T-1248",
+    "CMPL-ASVS-CHAPTERS": "T-1249",
+    "CMPL-ASVS-REQUIREMENTS": "T-1249",
+    "CMPL-FEDRAMP-IMPACT-TIERS": "T-1249",
+    "CMPL-SLSA-BUILD-LEVELS": "T-1249",
+}
+
 
 def _cmpl_disposition_violation(entry: RegistryEntry) -> ComplianceViolation:
     """COMPLIANCE005 violation helper: one `CMPL_REGISTRY_UNIT_IDS` member
@@ -1011,6 +1113,72 @@ def _check_cmpl_registry_unit_dispositions(
     return tuple(violations)
 
 
+def _cmpl_unit_backing_violation(entry_id: str, ticket_id: str) -> ComplianceViolation:
+    """COMPLIANCE007 violation helper: `entry_id`'s `handled_by:COMPLIANCE005`
+    disposition is the vacuous self-reference (module-level `_CMPL_UNIT_
+    TRIAGE_TICKET` docstring) -- names the open triage ticket that owns
+    re-dispositioning it against a real `RegulationEntry`/attestation."""
+    _log.warning(
+        "compliance: COMPLIANCE007 %s handled_by:COMPLIANCE005 is a vacuous "
+        "self-reference -- no RegulationEntry/attestation backs it yet, "
+        "see %s",
+        entry_id,
+        ticket_id,
+    )
+    return ComplianceViolation(
+        rule="COMPLIANCE007",
+        regulation=entry_id,
+        detail=f"{entry_id}'s handled_by:COMPLIANCE005 disposition only "
+        "proves a disposition string exists, not that a real "
+        "RegulationEntry/mitigation/attestation backs this framework's "
+        f"obligations (catalogued-not-enforced) -- re-disposition tracked "
+        f"in {ticket_id}",
+    )
+
+
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#compliance005compliance007-compliance-registry-vs-model-checking-t-1244  # noqa: E501
+# frob:ticket T-1244
+# frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistryBacking.test_self_referential_handled_by_is_flagged  # noqa: E501
+# frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistryBacking.test_frob_catalog_entries_self_reference_is_not_flagged  # noqa: E501
+# frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistryBacking.test_non_self_referential_handled_by_is_not_flagged  # noqa: E501
+def _check_cmpl_registry_unit_backing(
+    entries: tuple[RegistryEntry, ...],
+) -> tuple[ComplianceViolation, ...]:
+    """COMPLIANCE007 (T-1244): every `_CMPL_UNIT_TRIAGE_TICKET` member
+    present in `entries` whose disposition is the vacuous, self-
+    referential `handled_by:COMPLIANCE005` is flagged -- the generate-
+    and-verify half COMPLIANCE005 alone cannot provide (it only checks the
+    disposition STRING is non-deferred, never that the named control is
+    THIS framework's real enforcement). Deliberately WARN-tier (assigned
+    by the gate wrapper, `frob.gates._decisions_compliance`), not ERROR:
+    re-dispositioning each of these 16 rows against a real (a)/(b)/(c)/(d)
+    classification is the sibling triage tickets' job (T-1245-T-1249), a
+    decision above this ticket's pay grade -- this check's job is only to
+    make the gap loud and durable, never to silently resolve it. A unit
+    absent from `entries` is silently skipped (same convention as
+    `_check_cmpl_registry_unit_dispositions`); a non-`handled_by:
+    COMPLIANCE005` disposition (e.g. already re-triaged to a real rule, or
+    `out_of_scope`) is silent here too -- COMPLIANCE007 only fires on the
+    specific vacuous shape, not on every disposition kind."""
+    known = {entry.id: entry for entry in entries}
+    violations: list[ComplianceViolation] = []
+    for entry_id, ticket_id in sorted(_CMPL_UNIT_TRIAGE_TICKET.items()):
+        entry = known.get(entry_id)
+        if entry is None:
+            continue
+        if (
+            entry.disposition.kind is DispositionKind.HANDLED_BY
+            and entry.disposition.target == "COMPLIANCE005"
+        ):
+            violations.append(_cmpl_unit_backing_violation(entry_id, ticket_id))
+    _log.info(
+        "compliance: COMPLIANCE007 checked %d candidate unit(s) -> %d violation(s)",
+        len(_CMPL_UNIT_TRIAGE_TICKET),
+        len(violations),
+    )
+    return tuple(violations)
+
+
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#registry-exhaustiveness-drift-lock-t-0343  # noqa: E501
 # frob:ticket T-0607
 # frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistry.test_check_cmpl_registry_loads_real_file  # noqa: E501
@@ -1019,14 +1187,16 @@ def _check_cmpl_registry_unit_dispositions(
 def check_cmpl_registry(
     registry_dir: Path,
 ) -> Result[tuple[ComplianceViolation, ...], StrataError]:
-    """COMPLIANCE005 entrypoint: loads `compliance.yaml` from
+    """COMPLIANCE005/COMPLIANCE007 entrypoint: loads `compliance.yaml` from
     `registry_dir` via `frob.registry.load_registry_dir` (the ONE shared
     registry loader, T-0407 -- never re-parsed inline here) and runs
-    `_check_cmpl_registry_unit_dispositions` over its `entries:` list.
-    `Err(StrataError.ParseFailed)` on a missing/unreadable/malformed-YAML
-    manifest, mirroring every other kernel-facing Result boundary in this
-    module -- an unloadable registry never silently reports "0
-    violations"."""
+    `_check_cmpl_registry_unit_dispositions` (COMPLIANCE005: does a
+    disposition string exist) then `_check_cmpl_registry_unit_backing`
+    (COMPLIANCE007, T-1244: is that disposition a vacuous self-reference)
+    over its `entries:` list. `Err(StrataError.ParseFailed)` on a missing/
+    unreadable/malformed-YAML manifest, mirroring every other kernel-
+    facing Result boundary in this module -- an unloadable registry never
+    silently reports "0 violations"."""
     loaded = load_registry_dir(registry_dir, ("compliance.yaml",))
     result = loaded.get("compliance.yaml")
     if result is None or result.is_err:
@@ -1037,7 +1207,10 @@ def check_cmpl_registry(
         )
         return Err(StrataError.ParseFailed)
     entries = result.danger_ok.entry_lists.get("entries", ())
-    return Ok(_check_cmpl_registry_unit_dispositions(entries))
+    return Ok(
+        _check_cmpl_registry_unit_dispositions(entries)
+        + _check_cmpl_registry_unit_backing(entries)
+    )
 
 
 __all__ = [

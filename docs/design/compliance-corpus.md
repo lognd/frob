@@ -26,7 +26,7 @@ verified.
 
 ## 1. Reconciliation with `src/frob/strata/_compliance.py`
 
-Current `COMPLIANCE_CATALOG` (as of this corpus) models exactly 6 entries,
+Current `COMPLIANCE_CATALOG` (as of this corpus) models exactly 7 entries,
 all regulatory-obligation-style (not control-framework-style):
 
 | id | framework | cite |
@@ -37,9 +37,10 @@ all regulatory-obligation-style (not control-framework-style):
 | `GDPR-BASIS` | GDPR Art.6 | gdpr-info.eu/art-6-gdpr |
 | `HIPAA-BAA` | HIPAA (HHS BAA guidance) | hhs.gov BAA guidance |
 | `MINIMIZATION` | GDPR Art.5 (general) | gdpr-info.eu/art-5-gdpr |
+| `PRIVACY-NOTICE` | GDPR Art.13 (see also CCPA Sec.1798.100) | gdpr-info.eu/art-13-gdpr |
 
 This is a correct but narrow slice: three regulations (COPPA, GDPR,
-HIPAA), six duties, all privacy/data-flow shaped, matching what
+HIPAA), seven duties, all privacy/data-flow shaped, matching what
 `FactBase`/`Flow`/`Node` closure queries can discharge structurally
 (module docstring: "no new kernel primitive"). It intentionally omits
 every *security-control-framework* (SOC 2, PCI-DSS, NIST 800-53/CSF,

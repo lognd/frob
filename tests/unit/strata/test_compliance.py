@@ -24,8 +24,10 @@ from frob.strata._compliance import (
     CMPL_REGISTRY_UNIT_IDS,
     COMPLIANCE_CATALOG,
     REGULATION_VIEWS,
+    _check_cmpl_registry_unit_backing,
     _check_cmpl_registry_unit_dispositions,
     _check_regulation_caught_by_integrity,
+    _CMPL_UNIT_TRIAGE_TICKET,
     check_cmpl_registry,
     check_privacy_policy,
     check_regulation_catalog_completeness,
@@ -391,6 +393,52 @@ class TestMinimization:
         assert not any(v.regulation == "MINIMIZATION" for v in result.danger_ok)
 
 
+class TestPrivacyNotice:
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_public_web_node_with_no_mitigation_refutes(self):
+        store = Node(
+            id="Store", trust="trusted", clearance="Pii", attrs=("exposure:public-web",)
+        )
+        model = KernelModel(nodes=(store,), flows=())
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert any(v.regulation == "PRIVACY-NOTICE" for v in result.danger_ok)
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_declared_privacy_policy_attr_discharges(self):
+        store = Node(
+            id="Store",
+            trust="trusted",
+            clearance="Pii",
+            attrs=("exposure:public-web", "privacy-policy"),
+        )
+        model = KernelModel(nodes=(store,), flows=())
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert not any(v.regulation == "PRIVACY-NOTICE" for v in result.danger_ok)
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_no_public_web_exposure_is_silent(self):
+        store = Node(id="Store", trust="trusted", clearance="Pii")
+        model = KernelModel(nodes=(store,), flows=())
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert not any(v.regulation == "PRIVACY-NOTICE" for v in result.danger_ok)
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_public_web_node_below_pii_clearance_is_silent(self):
+        store = Node(
+            id="Store",
+            trust="trusted",
+            clearance="Public",
+            attrs=("exposure:public-web",),
+        )
+        model = KernelModel(nodes=(store,), flows=())
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert not any(v.regulation == "PRIVACY-NOTICE" for v in result.danger_ok)
+
+
 class TestPrivacyPolicy:
     # frob:tests src/frob/strata/_compliance.py::check_privacy_policy kind="unit"
     def test_field_the_policy_omits_refutes(self):
@@ -667,9 +715,52 @@ class TestCmplRegistry:
         )
         result = check_cmpl_registry(registry_dir)
         assert result.is_ok
-        assert result.danger_ok == ()
+        violations = result.danger_ok
+        # T-1244: COMPLIANCE005 (disposition-string presence) is clean, but
+        # COMPLIANCE007 (real per-framework backing) surfaces the honest,
+        # currently-open catalogued-not-enforced gap for every
+        # _CMPL_UNIT_TRIAGE_TICKET member that still carries the vacuous
+        # handled_by:COMPLIANCE005 self-reference -- this is the finding
+        # this ticket exists to make loud, not a regression to suppress.
+        assert not any(v.rule == "COMPLIANCE005" for v in violations)
+        compliance007 = {v.regulation for v in violations if v.rule == "COMPLIANCE007"}
+        assert compliance007 == set(_CMPL_UNIT_TRIAGE_TICKET)
 
     # frob:tests src/frob/strata/_compliance.py::check_cmpl_registry kind="unit"
     def test_check_cmpl_registry_missing_file_is_parse_failed(self, tmp_path):
         result = check_cmpl_registry(tmp_path)
         assert result.is_err
+
+
+class TestCmplRegistryBacking:
+    """COMPLIANCE007 (T-1244): the generate-and-verify half COMPLIANCE005
+    alone cannot provide -- distinguishing a real per-framework backing
+    from the vacuous handled_by:COMPLIANCE005 self-reference."""
+
+    # frob:tests src/frob/strata/_compliance.py::_check_cmpl_registry_unit_backing \
+    # kind="unit"
+    def test_self_referential_handled_by_is_flagged(self):
+        some_id = next(iter(sorted(_CMPL_UNIT_TRIAGE_TICKET)))
+        entries = (_cmpl_entry("handled_by:COMPLIANCE005", entry_id=some_id),)
+        violations = _check_cmpl_registry_unit_backing(entries)
+        assert len(violations) == 1
+        assert violations[0].rule == "COMPLIANCE007"
+        assert violations[0].regulation == some_id
+        assert _CMPL_UNIT_TRIAGE_TICKET[some_id] in violations[0].detail
+
+    # frob:tests src/frob/strata/_compliance.py::_check_cmpl_registry_unit_backing \
+    # kind="unit"
+    def test_frob_catalog_entries_self_reference_is_not_flagged(self):
+        entries = (
+            _cmpl_entry("handled_by:COMPLIANCE005", entry_id="CMPL-FROB-CATALOG-ENTRIES"),
+        )
+        violations = _check_cmpl_registry_unit_backing(entries)
+        assert violations == ()
+
+    # frob:tests src/frob/strata/_compliance.py::_check_cmpl_registry_unit_backing \
+    # kind="unit"
+    def test_non_self_referential_handled_by_is_not_flagged(self):
+        some_id = next(iter(sorted(_CMPL_UNIT_TRIAGE_TICKET)))
+        entries = (_cmpl_entry("handled_by:PII010", entry_id=some_id),)
+        violations = _check_cmpl_registry_unit_backing(entries)
+        assert violations == ()

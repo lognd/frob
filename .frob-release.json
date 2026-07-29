@@ -1222,7 +1222,7 @@
     "src/frob/strata/_code_binding.py::check_import_conformance": "1d0a8346dd268a2983e39c8b55f8cfa13d8e7109cecfdc3f77c493f6a41865d4",
     "src/frob/strata/_code_binding.py::is_managed": "aba6c15e41c0257249ca634b1033cddff76fd23a17b9efcb294776e58b29bcde",
     "src/frob/strata/_compliance.py::CMPL_REGISTRY_UNIT_IDS": "671a9d8ece927535ca1760bdd420ac2c872f62f3c4fe997ca373ab7db10b59c5",
-    "src/frob/strata/_compliance.py::COMPLIANCE_CATALOG": "9f0b63cf4bf9ef9be6c9a9a43c6d3ba70a4b9470d010e683c286aab073d3b4bb",
+    "src/frob/strata/_compliance.py::COMPLIANCE_CATALOG": "d45ca36a8f7d2e2cc03ad3156c86fda840bae0e120421c614d959be5ea93d996",
     "src/frob/strata/_compliance.py::COMPLIANCE_OUT_OF_SCOPE": "80366d1f19a3cde4d0eec6056ebcda80ce3f0f4610cd1000c55af382896a72c6",
     "src/frob/strata/_compliance.py::ComplianceReport": "ff1d8bde3dee10d1ba49de9b2351133bb956ccd5644dc516ca690bc0f062f889",
     "src/frob/strata/_compliance.py::ComplianceViolation": "fc270d1eb8ea7872c1868dc64786a84fac03c7ce36b315b17cc999a119b7e5a7",
@@ -1802,8 +1802,8 @@
     "src/frob/vet/_capability_modes.py::canonical_declared_kind": "32d14c39fe3abd5bc55bcaa3aebc69bea9c3442e2e70f49186e039f3f46e6477",
     "src/frob/vet/_capability_modes.py::expand_declared_kind": "12ee475857378ef1c8cad2b8385c6af8e6c084af8bbb94421211e17bd2f1f624",
     "src/frob/vet/_capability_modes.py::resolve_capability_kind": "f604dec2a89c2bfe5f1d2e1029ac8fd3b7e2a725c0de28606ed8d0bfb1523625",
-    "src/frob/vet/_capability_registry.py::CAPABILITY_KINDS": "ae5608d3034ecedbab00e3bfea4ff9054d5746d10e541f820091fdd25c401fd1",
-    "src/frob/vet/_capability_registry.py::CAPABILITY_MATRIX_EXCUSES": "b036ef172e6a6d75385aa0fa4ee262ef6f32bb3875ef7ff9d861e582a890eafb",
+    "src/frob/vet/_capability_registry.py::CAPABILITY_KINDS": "72b7e46164e91dd5f24964c36289fb15ddcf77e0d0b6db4e828d0a3c943679d1",
+    "src/frob/vet/_capability_registry.py::CAPABILITY_MATRIX_EXCUSES": "159bc2283045ccb7836a5915c21135c15bf61e5886617a3637d9feecd35c3f51",
     "src/frob/vet/_capability_registry.py::DANGEROUS_OPERATIONS": "f9ee4112b5c24f167eeed8251e93f64032084d794e01cd2374faf8cb803fbd98",
     "src/frob/vet/_capability_registry.py::LANGUAGES": "bae7f28f4eaab757fde26a3937c7a3ff6b9391f5d6bfbb8200c915096fd72bf8",
     "src/frob/vet/_capability_registry.py::NO_CAPABILITY_MODULES": "b93b45d24b5739b682a3dfc3dbc9a6dc711125180679c498aefc64fd5df28b9f",
@@ -1874,5 +1874,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.279.0"
+  "version": "0.280.0"
 }

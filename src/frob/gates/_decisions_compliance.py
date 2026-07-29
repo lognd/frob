@@ -107,14 +107,23 @@ def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]
 
 
 # frob:ticket T-0788
+# frob:ticket T-1244
 def _compliance005_violation(cv) -> Violation:  # noqa: ANN001
-    """Convert one `frob.strata._compliance.ComplianceViolation` (COMPLIANCE005)
-    into a gate `Violation` -- the `docs/design/registry/compliance.yaml`
-    entry id doubles as the file location since the check has no source-line
-    concept of its own."""
+    """Convert one `frob.strata._compliance.ComplianceViolation`
+    (COMPLIANCE005/COMPLIANCE007) into a gate `Violation` -- the
+    `docs/design/registry/compliance.yaml` entry id doubles as the file
+    location since the check has no source-line concept of its own.
+    COMPLIANCE007 (T-1244) is deliberately WARN, not ERROR: it surfaces a
+    real, currently-open re-disposition gap (16 rows still riding the
+    vacuous handled_by:COMPLIANCE005 self-reference) that the sibling
+    triage tickets (T-1245-T-1249) own re-classifying -- an ERROR here
+    would red the build on a decision above this gate's pay grade, not on
+    a code bug. COMPLIANCE005 itself stays ERROR: a disposition string
+    that fails to parse at all IS this gate's own bug to catch."""
+    severity = Severity.WARN if cv.rule == "COMPLIANCE007" else Severity.ERROR
     return Violation(
         rule=cv.rule,
-        severity=Severity.ERROR,
+        severity=severity,
         file="docs/design/registry/compliance.yaml",
         line=0,
         message=f"{cv.rule}: {cv.regulation}: {cv.detail}",
@@ -131,8 +140,13 @@ def _compliance005_violation(cv) -> Violation:  # noqa: ANN001
 # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_real_repo_registry_passes  # noqa: E501
 # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance006_fires_on_deleted_registry_after_adoption  # noqa: E501
 # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance006_silent_on_never_adopted_registry  # noqa: E501
+# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance007_registered_in_known_gate_rules  # noqa: E501
+# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance007_fires_warn_on_self_referential_handled_by  # noqa: E501
+# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance007_silent_on_frob_catalog_entries_self_reference  # noqa: E501
+# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance007_real_repo_registry_surfaces_known_gap  # noqa: E501
 # frob:enforces CHK-GATE-COMPLIANCE005
 # frob:enforces CHK-GATE-COMPLIANCE006
+# frob:enforces CHK-GATE-COMPLIANCE007
 # T-1020-followup: the 17 CMPL_REGISTRY_UNIT_IDS checkable-control units
 # T-0833 flipped to handled_by:COMPLIANCE005 -- compliance_gate (via
 # check_cmpl_registry) is their real enforcing site.

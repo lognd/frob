@@ -192,6 +192,61 @@ gates now live in `src/frob/gates/_decisions_compliance.py` (split out of
 `frob.gates.__init__` verbatim, re-exported from `frob.gates` unchanged),
 not `frob.gates.__init__` directly.
 
+## COMPLIANCE005/COMPLIANCE007: compliance registry vs. model checking (T-1244)
+
+`compliance_gate` (`frob.gates._decisions_compliance`) has two rules, and
+it is important to be precise about what each one does and does NOT
+prove, because they are easy to conflate:
+
+- **COMPLIANCE005** verifies that every `CMPL_REGISTRY_UNIT_IDS` member
+  present in `docs/design/registry/compliance.yaml` carries a NON-
+  deferred, non-undispositioned `handled_by:<rule>`/`out_of_scope:<reason>`
+  disposition STRING. This is purely a registry-hygiene check -- it says
+  nothing about whether the named rule actually enforces anything for
+  that specific framework. In particular, 16 of the 17 units carry the
+  self-referential `handled_by:COMPLIANCE005` -- i.e. "this framework's
+  disposition is handled by the check that verifies a disposition string
+  exists", which is circular and proves nothing about real per-framework
+  coverage.
+- **COMPLIANCE007** (T-1244) closes that gap for the specific vacuous
+  shape: it flags any `_CMPL_UNIT_TRIAGE_TICKET` member whose disposition
+  is still the self-referential `handled_by:COMPLIANCE005`, naming the
+  open triage ticket (T-1245-T-1249) that owns re-dispositioning it
+  against a real `RegulationEntry`/mitigation/attestation. `CMPL-FROB-
+  CATALOG-ENTRIES` is the one exception -- it is a meta-row counting
+  `COMPLIANCE_CATALOG`'s own real entries, so its self-reference is
+  genuine, not vacuous (T-1250 confirms this explicitly). COMPLIANCE007
+  is deliberately WARN-tier, not ERROR: re-dispositioning each of the 16
+  flagged rows is a per-framework classification decision the sibling
+  triage tickets own, not a code bug this check fixes -- as of this
+  writing it fires on all 16, an honest, currently-open finding, not a
+  regression to silence.
+
+Neither COMPLIANCE005 nor COMPLIANCE007 verifies against a real strata
+MODEL at all -- both are pure `compliance.yaml` registry-string checks,
+running in a few milliseconds regardless of whether the target repo has
+any `.strata` design file. The actual model-driven check --
+`frob.strata._compliance.evaluate_compliance(model, view, ...)`, which
+proves a specific `KernelModel` instance discharges each fired regulatory
+obligation (COPPA/GDPR/HIPAA/PRIVACY-NOTICE/etc, T-1242) -- is invoked
+only through the separate, explicit `frob sys audit <design-file>`
+command (`frob.strata._audit.evaluate_exhaustiveness`,
+`_compliance_pii_lint_fingerprint_gaps`); it is NOT wired into `frob
+check`'s automatic gate pipeline. This is a deliberate, named non-goal
+rather than a silent gap (T-1244's own investigation confirmed no code
+path calls `evaluate_compliance` from `frob check`): a repo's `.strata`
+design corpus is opt-in, hand-authored modeling work (this repo's own
+instance lives at `design/frob.strata`), not something `frob check` can
+discover and evaluate automatically the way it walks source files for
+gate rules -- the compensating control is the same one T-0150's
+self-conformance posture already documents for `frob sys audit`'s other
+SYS-family checks: a human/CI step runs `frob sys audit design/frob.strata`
+deliberately, on its own cadence, exactly like `frob vet`'s supply-chain
+scan is a separate invocation from `frob check`. A green `frob check`
+therefore makes no claim at all about whether any strata model in the
+repo passes `evaluate_compliance` -- that claim only comes from actually
+running `frob sys audit` against it.
+
 ## Honest first-turn-on state
 
 On first turn-on this gate is RED for the ~1950 entries the registry

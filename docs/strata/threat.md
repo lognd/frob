@@ -367,6 +367,7 @@ Concrete regulatory obligations, and the machinery each reuses:
 | GDPR lawful basis | `eu-resident` Pii is collected with no declared `basis` (consent/contract/legitimate-interest) | a declared basis attribute on the collection boundary; absence refuses |
 | HIPAA -- PHI to a non-covered party | `health`-tagged data flows to a `managed` external node without a declared BAA attestation | a cited BAA `assume` or a covered-party attribute; else it is a declassification-to-uncovered refusal |
 | Data minimization | a collection flow gathers a Pii field never read by any downstream flow | drop the field, or justify -- a reachability check (collected-but-never-used) |
+| PRIVACY-NOTICE -- notice at collection | a Pii-or-above node tagged `exposure:public-web` declares no `privacy-policy` attr | a declared `privacy-policy` attr on the node, or a cited `assume` (GDPR art.13; see also CCPA Sec.1798.100 notice-at-collection) |
 
 **Privacy policy as claims (the reverse audit).** A privacy policy is a
 set of DECLARED data practices ("we collect email and usage; we retain 90

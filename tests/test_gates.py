@@ -11786,6 +11786,66 @@ class TestComplianceGate:
         violations = compliance_gate(root)
         assert not any(v.rule == "COMPLIANCE005" for v in violations)
 
+    # frob:ticket T-1244
+    # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance007_registered_in_known_gate_rules  # noqa: E501
+    def test_compliance007_registered_in_known_gate_rules(self) -> None:
+        """COMPLIANCE007 (T-1244) is a real, registered gate rule id, same
+        requirement COMPLIANCE005 already carries."""
+        assert "COMPLIANCE007" in known_gate_rule_ids()
+
+    # frob:ticket T-1244
+    # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance007_fires_warn_on_self_referential_handled_by  # noqa: E501
+    def test_compliance007_fires_warn_on_self_referential_handled_by(
+        self, tmp_path: Path
+    ) -> None:
+        """A CMPL unit still riding the vacuous `handled_by:COMPLIANCE005`
+        self-reference fires COMPLIANCE007 through the real gate dispatch,
+        at WARN (not ERROR) severity -- re-dispositioning it is the
+        sibling triage tickets' job, not a hard gate failure."""
+        entry_id = sorted(CMPL_REGISTRY_UNIT_IDS - {"CMPL-FROB-CATALOG-ENTRIES"})[0]
+        registry_dir = self._write_compliance_yaml(
+            tmp_path,
+            f'  - id: "{entry_id}"\n'
+            '    title: "t"\n'
+            '    disposition: "handled_by:COMPLIANCE005"\n',
+        )
+        violations = compliance_gate(tmp_path, registry_dir)
+        cmpl007 = [v for v in violations if v.rule == "COMPLIANCE007"]
+        assert len(cmpl007) == 1
+        assert entry_id in cmpl007[0].message
+        assert cmpl007[0].severity == Severity.WARN
+
+    # frob:ticket T-1244
+    # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance007_silent_on_frob_catalog_entries_self_reference  # noqa: E501
+    def test_compliance007_silent_on_frob_catalog_entries_self_reference(
+        self, tmp_path: Path
+    ) -> None:
+        """`CMPL-FROB-CATALOG-ENTRIES`'s `handled_by:COMPLIANCE005` is the
+        one legitimate self-reference (it counts `COMPLIANCE_CATALOG`'s
+        own real entries) -- COMPLIANCE007 must not flag it."""
+        registry_dir = self._write_compliance_yaml(
+            tmp_path,
+            '  - id: "CMPL-FROB-CATALOG-ENTRIES"\n'
+            '    title: "t"\n'
+            '    disposition: "handled_by:COMPLIANCE005"\n',
+        )
+        violations = compliance_gate(tmp_path, registry_dir)
+        assert not any(v.rule == "COMPLIANCE007" for v in violations)
+
+    # frob:ticket T-1244
+    # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance007_real_repo_registry_surfaces_known_gap  # noqa: E501
+    def test_compliance007_real_repo_registry_surfaces_known_gap(self) -> None:
+        """The honest "real repo scan" smoke test for COMPLIANCE007: this
+        repo's OWN `compliance.yaml` still has 16 CMPL units riding the
+        vacuous self-reference (T-1245-T-1249 own re-dispositioning them)
+        -- this is a real, currently-open, WARN-tier finding, not a
+        regression to suppress."""
+        root = Path(__file__).resolve().parents[1]
+        violations = compliance_gate(root)
+        cmpl007 = [v for v in violations if v.rule == "COMPLIANCE007"]
+        assert len(cmpl007) == 16
+        assert all(v.severity == Severity.WARN for v in cmpl007)
+
     # frob:ticket T-0894
     # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance006_silent_on_never_adopted_registry  # noqa: E501
     def test_compliance006_silent_on_never_adopted_registry(

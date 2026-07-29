@@ -3103,6 +3103,7 @@ node testsuite : trusted {
     attr interface=TestCmdEvidence;
     attr interface=TestCmdEvidenceAcceptsBinding;
     attr interface=TestCmplRegistry;
+    attr interface=TestCmplRegistryBacking;
     attr interface=TestCodeBoundMitigationPredicate;
     attr interface=TestCodeBoundWiring;
     attr interface=TestColdDiffOracle;
@@ -3868,6 +3869,7 @@ node testsuite : trusted {
     attr interface=TestPrimitiveObsession;
     attr interface=TestPrintAsDiagnostic;
     attr interface=TestPriorityRank;
+    attr interface=TestPrivacyNotice;
     attr interface=TestPrivacyPolicy;
     attr interface=TestProcFamilyNamingReconciliation;
     attr interface=TestProcessPathGating;

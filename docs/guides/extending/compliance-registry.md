@@ -8,15 +8,16 @@
 
 `src/frob/strata/_compliance.py`. `RegulationEntry` (frozen catalog entry)
 and `OutOfScopeRegulation` populate `COMPLIANCE_CATALOG: tuple[
-RegulationEntry, ...]` (6 entries at time of writing: COPPA, GDPR erasure,
-retention, lawful-basis, HIPAA BAA, minimization). Unlike the threat
-catalog, compliance has TWO levels of extension:
+RegulationEntry, ...]` (7 entries at time of writing: COPPA, GDPR erasure,
+retention, lawful-basis, HIPAA BAA, minimization, PRIVACY-NOTICE). Unlike
+the threat catalog, compliance has TWO levels of extension:
 
 - **Catalog data** (id/attrs/cite) -- pure data, one tuple entry.
 - **Discharge logic** -- a dedicated `_check_<regulation>` function
   (`_check_coppa`, `_check_erasure`, `_check_retention`,
-  `_check_lawful_basis`, `_check_baa`, `_check_minimization`), each wired
-  individually into `check_regulation_discharge`/`evaluate_compliance`.
+  `_check_lawful_basis`, `_check_baa`, `_check_minimization`,
+  `_check_privacy_notice`), each wired individually into
+  `check_regulation_discharge`/`evaluate_compliance`.
 
 Adding a catalog entry does NOT automatically get you a discharge check --
 those are bespoke functions, not data-driven.

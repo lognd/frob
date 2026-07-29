@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.280.0] - unreleased
+
+- T-1242: compliance: exposure:public-web attr + PRIVACY-NOTICE RegulationEntry -- public web-facing nodes demand a privacy-policy mitigation
+
 ## [0.279.0] - unreleased
 
 - T-1252: strata: migrate design/frob.strata off deprecated fs/fs-read spellings

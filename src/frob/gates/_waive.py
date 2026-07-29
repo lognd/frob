@@ -374,6 +374,13 @@ _KNOWN_GATE_RULES = frozenset(
         # register it here nor dispatch it (out of that ticket's scope);
         # this closes the catalogued-is-not-enforced gap it disclosed.
         "COMPLIANCE005",
+        # T-1244: COMPLIANCE007 (frob.gates.compliance_gate, dispatching
+        # frob.strata._compliance._check_cmpl_registry_unit_backing) -- a
+        # CMPL-* unit whose handled_by:COMPLIANCE005 disposition is a
+        # vacuous self-reference (proves a string exists, not that a real
+        # RegulationEntry/attestation backs the framework). WARN-tier,
+        # waivable per-row like COMPLIANCE001-003, unlike COMPLIANCE006.
+        "COMPLIANCE007",
         # T-0894: COMPLIANCE006 (this module's compliance_gate) -- a
         # compliance.yaml that was committed on this branch's history and
         # has since been deleted, distinguished from "never adopted"
