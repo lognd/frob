@@ -1208,6 +1208,12 @@ same-input-recomputed-N-times cost; `tickets_gate` now loads `active`/
 instead. Measured `tickets` stage wall time: 2.09s (audit baseline) ->
 1.10-1.13s after. TICK001/TICK002's own invariant contract above is
 unaffected -- only how many times the ledger text is parsed to answer it.
+
+**T-1129 (`tickets_gate` grew a sibling check, no change to this
+decision).** `tickets_gate` now also runs TICK011 (a Done-report
+disclosed-cut-without-ticket scan, unrelated to the id-collision
+invariant this section documents) alongside TICK001-TICK010 -- see
+`docs/modules/gates.md#tick011-t-1129` for TICK011's own design.
 TICK002 (a `T-draft-*` id surviving onto the default branch) is the rule
 that actually matters: it means the finalize step was skipped, failed, or
 forgotten, which is precisely the "collision-proofing silently did not

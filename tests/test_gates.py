@@ -10630,6 +10630,136 @@ class TestTick006PhantomFiling:
         assert "T-draft-deadbeef" in tick006[0].message
 
 
+# frob:ticket T-1129
+class TestTick011DisclosedCutWithoutTicket:
+    """TICK011 (T-1129): a Done report's prose disclosing deferred/cut
+    work with no ticket id cited nearby and no explicit no-ticket-needed
+    reason -- the T-1085/T-0321/T-1140/T-1150 incident class."""
+
+    def _queue(self, *tickets: Ticket) -> TicketQueue:
+        """A `TicketQueue` of `tickets`, keyed by id."""
+        return TicketQueue(tickets={t.id: t for t in tickets})
+
+    # frob:tests tests/test_gates.py::TestTick011DisclosedCutWithoutTicket.test_disclosed_follow_up_with_no_citation_fires  # noqa: E501
+    def test_disclosed_follow_up_with_no_citation_fires(self, tmp_path: Path) -> None:
+        """The real T-1085 shape: "deliberately left for a follow-up
+        pass" with no `T-####` anywhere nearby -- must fire."""
+        ticket = _ticket(
+            ticket_id="T-0001",
+            body=(
+                "## Done report\n\n"
+                "`check_runner.py`'s two `ToolResult`-builder groups were "
+                "NOT touched -- deliberately left for a follow-up pass "
+                "rather than expanding this ticket's scope further.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        tick011 = [v for v in violations if v.rule == "TICK011"]
+        assert len(tick011) == 1
+        assert tick011[0].severity == Severity.WARN
+        assert "T-0001" in tick011[0].message
+
+    def test_not_yet_ticketed_with_no_citation_fires(self, tmp_path: Path) -> None:
+        """The real T-0321 close shape: "not yet ticketed as its own
+        item" with no id nearby -- must fire."""
+        ticket = _ticket(
+            ticket_id="T-0002",
+            body=(
+                "## Done report\n\n"
+                "The serve RPC gap is not yet ticketed as its own item.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        tick011 = [v for v in violations if v.rule == "TICK011"]
+        assert len(tick011) == 1
+
+    def test_disclosure_with_a_real_citing_id_is_silent(self, tmp_path: Path) -> None:
+        """The correct shape -- a disclosure immediately followed by a
+        real ticket id that resolves in the active queue -- must not
+        fire."""
+        followup = _ticket(ticket_id="T-0004", body="## Description\nx\n")
+        reporter = _ticket(
+            ticket_id="T-0003",
+            body=(
+                "## Done report\n\n"
+                "This was deliberately left for a follow-up pass, filed "
+                "as T-0004.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(followup, reporter))
+        assert not any(v.rule == "TICK011" for v in violations)
+
+    def test_explicit_no_ticket_needed_reason_is_silent(self, tmp_path: Path) -> None:
+        """The T-1129 acceptance criterion's own escape hatch: an
+        explicit no-ticket-needed disposition near the disclosure must
+        suppress the finding."""
+        ticket = _ticket(
+            ticket_id="T-0005",
+            body=(
+                "## Done report\n\n"
+                "The docs-only residue here is cosmetic; no ticket "
+                "needed.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK011" for v in violations)
+
+    def test_no_disclosure_phrase_is_silent(self, tmp_path: Path) -> None:
+        """An ordinary Done report with none of the disclosure phrases at
+        all must never fire (the common case)."""
+        ticket = _ticket(
+            ticket_id="T-0006",
+            body="## Done report\n\nAll planned work landed cleanly.\n",
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK011" for v in violations)
+
+    def test_one_finding_per_ticket_not_per_phrase(self, tmp_path: Path) -> None:
+        """Two uncited disclosure phrases in the same Done report still
+        produce exactly ONE TICK011 finding -- conservative-on-noise for
+        a WARN-tier first turn-on (this rule's own docstring)."""
+        ticket = _ticket(
+            ticket_id="T-0007",
+            body=(
+                "## Done report\n\nLeft for a follow-up pass. Also some residue here.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert len([v for v in violations if v.rule == "TICK011"]) == 1
+
+    def test_numeric_count_residual_is_not_a_disclosure(self, tmp_path: Path) -> None:
+        """T-1111's real Done report shape, found while calibrating this
+        rule against the live ledger: "7 residual, not the filed 2" is a
+        FINDING-COUNT ("N residual"), not disclosed deferred work -- must
+        not fire."""
+        ticket = _ticket(
+            ticket_id="T-0008",
+            body=(
+                "## Done report\n\n"
+                "REG -> 0 (7 residual, not the filed 2 -- re-measured "
+                "fresh): all filled.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK011" for v in violations)
+
+    def test_rule_id_shaped_residue_is_not_a_disclosure(self, tmp_path: Path) -> None:
+        """Another real T-1111 shape: "gate:WAIVE residue" and "REG010
+        residue" -- a rule-id/namespace-shaped word directly before
+        "residue", not a bare number -- must also not fire (the broader
+        technical-token exclusion, not just a digit lookback)."""
+        ticket = _ticket(
+            ticket_id="T-0009",
+            body=(
+                "## Done report\n\n"
+                "each one individually shows a nonzero gate:WAIVE residue "
+                "that is inflated by the other groups.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK011" for v in violations)
+
+
 # frob:ticket T-0820
 class TestTick007UndispatchedStale:
     """TICK007 (T-0820): the `frob check` half of T-0752's undispatched-

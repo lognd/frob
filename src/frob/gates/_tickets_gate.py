@@ -7,6 +7,7 @@ re-exported from `frob.gates` unchanged -- it is the only name this family
 is externally imported by (verified by a repo-wide grep before the move);
 every `_tickN_*` helper stays private to this module.
 """
+
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/gates/_tickets_gate.py's \
 # exclusivity-vocabulary hits are source-level design-rationale prose \
@@ -518,6 +519,152 @@ def _tick006_phantom_filing(
     return tuple(violations)
 
 
+#: T-1129: disclosure phrases a Done report uses to admit deferred/cut
+#: work -- deliberately CONSERVATIVE multi-word phrases (not a bare
+#: "deferred"/"cut" trigger) so a WARN-tier first turn-on does not drown
+#: in false positives against this ledger's existing prose. Five real
+#: incidents this drive shaped the list: T-1085 ("deliberately left for a
+#: follow-up pass"), T-0321's close (the serve RPC gap "not yet ticketed
+#: as its own item"), T-1140, T-1150 (see tickets-archive.md for their
+#: exact wording; the phrases below cover the shape all five share).
+_TICK011_DISCLOSURE_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"\bleft (?:for|as) a follow-?up\b", re.I),
+    re.compile(r"\bnot yet ticketed\b", re.I),
+    re.compile(r"\bnot ticketed\b", re.I),
+    re.compile(r"\bdeferred (?:to|as|for) a follow-?up\b", re.I),
+    re.compile(r"\b(?:residue|residual)\b", re.I),
+    re.compile(r"\bscope cut\b", re.I),
+    re.compile(r"\bcut (?:from|for) (?:this|the) (?:pass|scope|ticket)\b", re.I),
+)
+
+#: An explicit "no ticket needed" disposition (T-1129's own acceptance
+#: criterion's escape hatch) found near a disclosure phrase suppresses
+#: TICK011 for that occurrence -- a Done report that already reasoned
+#: about the gap and decided it needs no tracking is not the T-1085/
+#: T-0321 incident class this rule targets.
+_TICK011_NO_TICKET_NEEDED_RE = re.compile(
+    r"no (?:follow-?up )?ticket (?:is )?needed|no-ticket-needed", re.I
+)
+
+#: How far before/after a disclosure phrase to look for either a citing
+#: `T-####`/`T-draft-<hex>` id or an explicit no-ticket-needed reason --
+#: generous enough to span the same bullet/paragraph (a wrapped markdown
+#: sentence) without bleeding into an unrelated later paragraph, mirroring
+#: TICK006's own `_TICK006_CLAIM_WINDOW` precedent.
+_TICK011_VICINITY = 300
+
+#: Calibrating this rule against the LIVE repo ledger (T-1129's own
+#: obligation: "frob's own ledger findings fixed or dispositioned in the
+#: same land") found bare "residue"/"residual" is a term of art in this
+#: codebase's own engineering vocabulary meaning "remaining FINDING
+#: count" ("7 residual", "WARN residue", "REG010 residue", "gate:WAIVE
+#: residue", "5-error residue" -- all real T-1111 Done-report text), never
+#: disclosed leftover SCOPE. The shared shape: the word immediately
+#: before "residue"/"residual" is a technical token (a bare number, an
+#: ALL-CAPS/rule-id-shaped word, or a `namespace:RULE`-shaped identifier)
+#: rather than ordinary prose. Excluding on that token shape (not a fixed
+#: digit-lookback) is what actually clears the real false positives found.
+# frob:waive PII012 reason="'token' here means a lexical word/substring \
+# from a Done report's own prose (a whitespace-delimited chunk this rule \
+# checks the shape of), not a credential/auth token -- a name-signature \
+# false positive, same class as frob.gates._docptr's own existing PII012 \
+# waiver for its unrelated lexical-token vocabulary"
+_TICK011_TECHNICAL_TOKEN_RE = re.compile(r"[A-Z]{2,}|:|\d")
+
+
+# frob:waive PII012 reason="'token' here means a lexical word/substring \
+# from a Done report's own prose, not a credential/auth token -- see \
+# _TICK011_TECHNICAL_TOKEN_RE's own waiver for the same false-positive class"
+def _tick011_preceded_by_technical_token(text: str, start: int) -> bool:
+    """Whether the whitespace-delimited word immediately before `text[
+    start:]` looks like a technical token (a digit, a `namespace:NAME`
+    colon, or 2+ consecutive uppercase letters) rather than ordinary
+    prose -- see `_TICK011_TECHNICAL_TOKEN_RE`'s comment for the real
+    false positives this excludes."""
+    before = text[:start].rstrip()
+    word = before.rsplit(maxsplit=1)[-1] if before else ""
+    return bool(_TICK011_TECHNICAL_TOKEN_RE.search(word))
+
+
+# frob:ticket T-1129
+def _tick011_disclosure_hits(text: str) -> tuple[re.Match[str], ...]:
+    """Every `_TICK011_DISCLOSURE_PATTERNS` match in `text`, in document
+    order, EXCLUDING a bare "residue"/"residual" hit immediately preceded
+    by a technical token (`_tick011_preceded_by_technical_token`) -- this
+    codebase's own "remaining finding count" idiom, not a disclosure of
+    leftover scope -- the candidate disclosure occurrences
+    `_tick011_disclosed_cuts_without_ticket` checks for a nearby
+    citation."""
+    hits = []
+    for pattern in _TICK011_DISCLOSURE_PATTERNS:
+        for m in pattern.finditer(text):
+            if m.group(0).lower() in (
+                "residue",
+                "residual",
+            ) and _tick011_preceded_by_technical_token(text, m.start()):
+                continue
+            hits.append(m)
+    return tuple(sorted(hits, key=lambda m: m.start()))
+
+
+# frob:ticket T-1129
+# frob:tests tests/test_gates.py::TestTick011DisclosedCutWithoutTicket.test_disclosed_follow_up_with_no_citation_fires  # noqa: E501
+# frob:enforces CHK-GATE-TICK011
+def _tick011_disclosed_cuts_without_ticket(
+    queue: TicketQueue, archived: Result[dict[str, Ticket], TicketError]
+) -> tuple[Violation, ...]:
+    """TICK011 (T-1129): WARN when a Done report's prose discloses
+    deferred/cut work (`_TICK011_DISCLOSURE_PATTERNS`: "left for a
+    follow-up", "not yet ticketed", "deferred to a follow-up", "residue"/
+    "residual", a scope cut) with no `T-####`/`T-draft-<hex>` id resolving
+    to a real ledger block, and no explicit no-ticket-needed reason,
+    within `_TICK011_VICINITY` characters.
+
+    Five incidents this drive motivated this (T-1085, T-0321's close,
+    T-1140, T-1150 -- see this module's `_TICK011_DISCLOSURE_PATTERNS`
+    comment): a coordinator hand-screening every Done report for
+    unticketed disclosures does not scale, and the gap silently stalls
+    real follow-up work exactly the way TICK006 already stops a phantom
+    FILING claim from silently standing. One finding per ticket (the
+    first uncited disclosure occurrence) rather than one per phrase hit --
+    conservative on noise for a WARN-tier first turn-on, matching this
+    rule's own `_TICK011_DISCLOSURE_PATTERNS` calibration posture."""
+    known_ids = set(queue.tickets) | (
+        set(archived.danger_ok) if archived.is_ok else set()
+    )
+    violations: list[Violation] = []
+    for ticket in sorted(queue.tickets.values(), key=lambda t: t.id):
+        done_report_text = _tick006_done_report_text(ticket.body)
+        if not done_report_text:
+            continue
+        for match in _tick011_disclosure_hits(done_report_text):
+            lo = max(0, match.start() - _TICK011_VICINITY)
+            hi = min(len(done_report_text), match.end() + _TICK011_VICINITY)
+            vicinity = done_report_text[lo:hi]
+            if _TICK011_NO_TICKET_NEEDED_RE.search(vicinity):
+                continue
+            if any(tid in known_ids for tid in _TICK006_ID_RE.findall(vicinity)):
+                continue
+            violations.append(
+                Violation(
+                    rule="TICK011",
+                    severity=Severity.WARN,
+                    file="tickets.md",
+                    line=0,
+                    message=(
+                        f"TICK011: {ticket.id}'s Done report discloses "
+                        f'deferred/cut work ("{match.group(0)}") with no '
+                        f"ticket id cited nearby and no explicit "
+                        f"no-ticket-needed reason -- file the follow-up "
+                        f"ticket and cite it, or say so explicitly if none "
+                        f"is needed"
+                    ),
+                )
+            )
+            break  # one finding per ticket -- see docstring
+    return tuple(violations)
+
+
 # frob:ticket T-0820
 # frob:enforces CHK-GATE-TICK007
 # frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_stale_critical_fires  # noqa: E501
@@ -765,13 +912,14 @@ def _tick010_stale_lease_report(root: Path) -> tuple[Violation, ...]:
 # frob:doc docs/modules/tickets.md#decision-record-t-0162
 def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK001/TICK002/TICK003/TICK004/TICK005/TICK006/TICK007/TICK008/
-    TICK009/TICK010: the T-0162 ticket-id collision invariant gate, plus
-    the T-0409 ledger-hygiene check, the T-0411 priority-rot check, the
-    T-0537 post-merge terminal-state-regression lint, the T-0726
-    phantom-filing-claim check, the T-0820/T-0752 undispatched-stale-
-    CRITICAL/HIGH alarm, the T-0842 unknown-ledger-field check, and the
+    TICK009/TICK010/TICK011: the T-0162 ticket-id collision invariant
+    gate, plus the T-0409 ledger-hygiene check, the T-0411 priority-rot
+    check, the T-0537 post-merge terminal-state-regression lint, the
+    T-0726 phantom-filing-claim check, the T-0820/T-0752 undispatched-
+    stale-CRITICAL/HIGH alarm, the T-0842 unknown-ledger-field check, the
     T-0714 scope-breadth-nudge/stale-lease reports (relocated out of
-    `frob ticket doable`'s own per-invocation diagnostics).
+    `frob ticket doable`'s own per-invocation diagnostics), and the
+    T-1129 disclosed-cut-without-ticket check.
 
     T-0929 (docs/audits/check-performance.md row 10, `tickets` gate): the
     full `tickets.md`/`tickets-archive.md` ledger text is now loaded ONCE
@@ -798,6 +946,7 @@ def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
         + _tick004_queue_rot(root, queue)
         + _tick005_merge_state_regression(root, queue)
         + _tick006_phantom_filing(queue, archived)
+        + _tick011_disclosed_cuts_without_ticket(queue, archived)
         + _tick007_undispatched_stale(root, queue)
         + _tick008_unknown_ledger_fields(queue)
         + _tick009_scope_breadth_nudges(root, queue)

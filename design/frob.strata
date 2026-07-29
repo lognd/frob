@@ -4140,6 +4140,7 @@ node testsuite : trusted {
     attr interface=TestTick008UnknownLedgerFields;
     attr interface=TestTick009ScopeBreadthNudges;
     attr interface=TestTick010StaleLeaseReport;
+    attr interface=TestTick011DisclosedCutWithoutTicket;
     attr interface=TestTicketArchive;
     attr interface=TestTicketArchiveForceCLI;
     attr interface=TestTicketAttach;

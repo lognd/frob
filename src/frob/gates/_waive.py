@@ -360,6 +360,13 @@ _KNOWN_GATE_RULES = frozenset(
         # stays quiet, `frob check` is the one place both diagnostics
         # surface with detail.
         "TICK010",
+        # T-1129: disclosed-cut-without-ticket (frob.gates.tickets_gate's
+        # _tick011_disclosed_cuts_without_ticket) -- a Done report's prose
+        # admits deferred/cut work (a conservative disclosure-phrase scan,
+        # T-1085/T-0321/T-1140/T-1150's incidents) with no ticket id
+        # resolving nearby and no explicit no-ticket-needed reason. WARN,
+        # first turn-on.
+        "TICK011",
         # T-0788: COMPLIANCE005 (frob.gates.compliance_gate, dispatching
         # frob.strata._compliance.check_cmpl_registry built by T-0607) --
         # a checkable-control CMPL-* compliance-registry unit left

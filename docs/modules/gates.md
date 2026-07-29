@@ -44,6 +44,7 @@ declaration).
 | TICK008 | tickets | (warn) a ticket in the checked ledger carries unknown/extra frontmatter field(s) (`Ticket`'s `extra="allow"` captured them into `__pydantic_extra__` instead of hard-failing) -- often a typoed known field, whose value is silently lost to the schema default; see "TICK008 (T-0842)" below |
 | TICK009 | tickets | (warn) a queued/planned/in-progress ticket's declared scope is over-broad (`frob.tickets.large_glob_warnings`) -- relocated out of `frob ticket doable`'s own per-invocation output; see "TICK009/TICK010 (T-0714)" below |
 | TICK010 | tickets | (warn) a cross-worktree lease file (`.git/frob-leases/*.json`) whose recorded worktree path no longer exists on disk -- names the lease file and the remedy; see "TICK009/TICK010 (T-0714)" below |
+| TICK011 | tickets | (warn) a Done report's prose discloses deferred/cut work (a conservative disclosure-phrase scan) with no ticket id resolving nearby and no explicit no-ticket-needed reason -- see "TICK011 (T-1129)" below |
 | COMPLIANCE005 | compliance | a `docs/design/registry/compliance.yaml` `CMPL_REGISTRY_UNIT_IDS` member carries a `deferred`/undispositioned disposition instead of `handled_by`/`out_of_scope` -- see "COMPLIANCE005 (T-0788)" below |
 | FMT001 | fmt | (warn) a diff-touched `frob:` directive comment line exceeds the project's configured line length -- see "FMT001 (T-0851)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a record that does not exist (opt-in: a `decisions/` dir must exist) |
@@ -1198,6 +1199,59 @@ removed.
 `tickets` stage), waivable (not in `_UNWAIVABLE_RULES`) -- a genuinely
 temporary over-broad scope or a lease cleanup already in flight can be
 dispositioned with a reasoned `frob:waive TICK009|TICK010 reason="..."`.
+
+### TICK011 (T-1129)
+
+<!-- frob:describes src/frob/gates/_tickets_gate.py::_tick011_disclosed_cuts_without_ticket -->
+
+Five incidents in one wave (T-1085, T-0321's close, T-1140, T-1150 --
+each disclosed deferred/cut work in a Done report's own prose with no
+ticket filed for it) made a coordinator hand-screening every Done report
+for this shape a standing, non-scaling tax; TICK006 already catches a
+phantom FILING claim mechanically, but nothing caught the mirror-image
+gap: a report that admits "there's more to do" and simply never files it.
+
+TICK011 scans the SAME Done-report substring TICK006 does
+(`_tick006_done_report_text`, everything from the first "Done report"
+heading onward -- a ticket's Description/Plan narrating OTHER tickets'
+ids is not in scope) for a conservative, deliberately narrow set of
+disclosure phrases (`_TICK011_DISCLOSURE_PATTERNS`): "left for/as a
+follow-up", "not yet ticketed"/"not ticketed", "deferred to/as/for a
+follow-up", bare "residue"/"residual", and a "scope cut"/"cut from/for
+this/the pass/scope/ticket" shape. Multi-word phrases on purpose (not a
+bare "deferred"/"cut" trigger) -- a WARN-tier first turn-on that drowned
+in false positives would train reviewers to ignore it, defeating the
+point. Calibrating against this repo's OWN live ledger (T-1129's own
+"frob's own ledger findings fixed or dispositioned in the same land"
+obligation) found bare "residue"/"residual" is this codebase's own term
+of art for "remaining FINDING count" ("7 residual", "WARN residue",
+"REG010 residue", "gate:WAIVE residue" -- all real T-1111 Done-report
+text), never disclosed leftover scope; `_tick011_preceded_by_technical_
+token` excludes exactly that shape (the word immediately before
+"residue"/"residual" is a bare number, an ALL-CAPS/rule-id-shaped word,
+or contains a `namespace:NAME` colon) rather than a narrower fixed-digit
+lookback, which is what actually cleared the false positive found (a
+digit-only lookback still fired on "WARN residue"/"gate:WAIVE residue").
+
+A disclosure occurrence is only a finding if NEITHER an explicit
+no-ticket-needed reason (`_TICK011_NO_TICKET_NEEDED_RE`: "no ticket
+needed", "no follow-up ticket needed", "no-ticket-needed") NOR a
+`T-####`/`T-draft-<hex>` id resolving to a real block in `tickets.md` or
+`tickets-archive.md` appears within `_TICK011_VICINITY` (300 characters)
+of it -- mirroring TICK006's own `_TICK006_CLAIM_WINDOW` precedent for
+"same bullet/paragraph, not an unrelated later one". One finding per
+ticket (the first uncited occurrence), not one per phrase hit, for the
+same noise-conservatism reason the phrase list itself is narrow.
+
+**Where it runs.** TICK011 is one of `tickets_gate`'s checks (`frob
+check`'s `tickets` stage), WARN severity, waivable (not in
+`_UNWAIVABLE_RULES`) -- a genuine "this really doesn't need its own
+ticket" case dispositions with a reasoned `frob:waive TICK011
+reason="..."`. First-turn-on measurement against this repo's own live
+ledger: 0 findings (the T-1111 false positives above were the only hits
+before the technical-token exclusion; the real T-1085/T-0321-class
+incidents this rule targets had already been hand-filed by the
+coordinator by the time this rule landed).
 
 ### COMPLIANCE005 (T-0788)
 
