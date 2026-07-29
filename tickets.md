@@ -1564,3 +1564,23 @@ threat: null
 component: null
 ```
 Doc span binds to a named collection literal (dict/set/tuple/Literal/ErrorSet/StrEnum); gate AST-diffs claimed members vs actual at check time, independent of ack state. Acceptance: fires on the two known-stale check.md _STAGE_GROUPS tables pre-fix (regression corpus); the sweep's drift-lock candidate list (docs/audits/docs-staleness-2026-07-29.md, 'Drift-lock candidates' section) gets bound as the initial adoption wave. Ref: gate-gap class 1 in docs/audits/docs-staleness-2026-07-29.md.
+
+<!-- ticket:T-1228 -->
+```yaml
+id: T-1228
+title: DOC006 pointer-grammar extension -- bare identifiers, file.py::symbol, rust
+  path.rs::fn, wrapped spans, private-name awareness
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: high
+parent: T-1226
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_docptr.py
+threat: null
+component: null
+```
+Resolve bare backticked identifiers within the doc's anchored module scope; support file.py::symbol and rust path.rs::fn shapes; handle line-wrapped backtick spans; flag renamed-to-private mentions. Cite src/frob/gates/_docptr.py:8-33,103,220. Ref: gate-gap class 2 in docs/audits/docs-staleness-2026-07-29.md.
