@@ -362,7 +362,7 @@ unwaived TEST findings again (TEST006 aside, which only ever clears via
 id: T-1191
 title: 'perf: fix 4 unwaived PERF005/PERF008 findings found in T-0204 verification
   close'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-29'
@@ -403,6 +403,9 @@ hoist/memoize the loop-invariant call) or add a reasoned
 
 ## Failure log
 - 2026-07-29 attempt 1: T-0204's cited PERF005/PERF008 findings do not reproduce on current main: full frob check --ticket T-1191 shows gate:PERF at 0 errors, 4 warnings, 97 waived, none matching vet/_taint.py _assigned_names, arch/_ffi.py:298, serve/_watch.py:169, or test_serve_watch.py:86 -- already resolved before this dispatch
+
+## Drop reason
+- 2026-07-29: not reproducible: the PERF005/PERF008 findings from T-0204's close-time measurement do not exist on current main -- verified via full foreground scoped checks (gate:PERF 0 errors) and structural-termination reading of the one named function; transient-measurement class
 <!-- ticket:T-1192 -->
 ```yaml
 id: T-1192
