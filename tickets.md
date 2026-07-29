@@ -4852,3 +4852,36 @@ threat: null
 component: null
 ```
 Live incident 2026-07-29: the coordinator's T-0329 epic close wrote the ledger uncommitted (close is not in T-1130's new/drop/fail set), a concurrent agent land preflight ran git reset --hard in root, and the close silently vanished -- caught only by T-1131's doctor stale-lease scan. Extend commit_ticket_ledger_change to every remaining ledger-writing verb: close, done-report, evidence add, requeue, kind/priority/scope mutations if any remain uncommitted. This closes the reset-eats-uncommitted-coordinator-work class (T-0948 incident lineage) at the verb layer.
+
+<!-- ticket:T-1175 -->
+```yaml
+id: T-1175
+title: 'tickets: one-verb lifecycle -- frob ticket work (setup) and land absorbing
+  fmt + sync-interface + Tier-A fixes + on-main proof + finish'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-29'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- src/frob/app/**
+- docs/guides/agent-playbook.md
+acceptance:
+- text: GIVEN frob ticket work T-#### WHEN run from root THEN it creates/reuses the
+    named worktree, verifies base freshness against main tip, builds natives, and
+    starts the ticket -- one command replacing playbook contract steps 1-2 plus start
+  evidence: []
+- text: GIVEN frob ticket land WHEN run THEN it first runs frob fmt on touched files,
+    sys sync-interface (applying the interface diff in-land), and the T-1137 Tier-A
+    fix handlers; after landing it prints a machine-checkable proof line (land hash
+    + is-ancestor-of-main + ticket state on main) and offers --finish to remove the
+    worktree only when every series land verifies
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-07-29: agents should only run frob commands and write content requiring actual thinking. The remaining per-ticket ritual (playbook section 0) is ~10 mechanical steps; steps 1-2, 5, and 9 are pure command sequences frob can own. This collapses them into two verbs. The playbook contract section then shrinks to: work, think, land. Absorb-not-add: reuse the existing fmt/sync-interface/fix-engine/land machinery, no new subsystems.
