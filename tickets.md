@@ -4449,3 +4449,20 @@ threat: null
 component: null
 ```
 User directive 2026-07-29: no hidden optional argument hell; intuitive and maximally informative -- no noise, nothing missing; mine what agents ACTUALLY do. Evidence from this drive's own agent/coordinator usage: (1) --status open cryptic enum error; (2) ticket new scope-closure warning floods (5000+ lines in one invocation) drowning the created-id line; (3) frob check --ticket lease requirement blocked all four reviewers from re-verifying gate claims read-only; (4) ticket renumber had no --next and its usage was guessable only from error text; (5) the close dance (start -> done-report -> evidence -> accepts -> close) was discovered by error-chasing across five invocations -- each error WAS informative (good pattern, keep) but no porcelain wraps the sequence; (6) positive examples to preserve: evidence-rejection errors name the cache-refresh remedy, TICK002 names its exact fix command. Method: also mine .frob spawn/telemetry if present and the agent-playbook's accumulated workarounds for further real-usage pain points before designing.
+
+<!-- ticket:T-1272 -->
+```yaml
+id: T-1272
+title: 'gates: waive COV006 dict-dispatch blind spot in TestWaivePresets'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+threat: null
+component: null
+```
+T-1176's TestWaivePresets tests reach dsl.py::_attrs_verb_error_waive only through the _VERB_ATTRS_VALIDATORS dict-dispatch table, which frob.graph.callgraph's best-effort BFS cannot trace (same blind spot as the T-1024 _scope_covers waivers). Added matching frob:waive COV006 comments.
