@@ -1043,3 +1043,30 @@ threat: null
 component: null
 ```
 Refile from the w20-arch T-1083 disposition pass (draft died with the fail-log; full record on branch w20-arch commit a8085d7f): _is_language_parity_family's synonym map lacks the long-form language spellings, so genuinely-parity families with those tags escape the exclusion and pollute abstraction-opportunity counts.
+
+<!-- ticket:T-1182 -->
+```yaml
+id: T-1182
+title: 'arch: abstraction-opportunity detector should skip same-name call-through
+  forwarders'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/arch/**
+- tests/unit/test_arch.py
+acceptance:
+- text: GIVEN a group whose members are same-name single-statement forwarders to another
+    symbol WHEN abstraction-opportunity clusters by signature THEN forwarders are
+    excluded (they are deliberate indirection, not duplicated logic), measured before/after
+    on the T-1083 finding set
+  evidence: []
+threat: null
+component: null
+```
+Refile from the w20-arch T-1083 disposition pass (draft died with the fail-log; record on branch w20-arch commit a8085d7f): call-through forwarders (one-line delegation wrappers) coincide on signature by construction and are not extraction candidates.
