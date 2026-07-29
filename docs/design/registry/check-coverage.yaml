@@ -1110,7 +1110,7 @@ concern_family_entries:
     # over the language-agnostic graph; reviewer-verified non-vacuous
     # (tree-sitter grammars produce real non-Python graph nodes).
     disposition: "handled_by:COV001"
-    cross_refs: ["T-0554"]
+    cross_refs: []
   - id: "CHK-THEME-FAIL-OPEN"
     name: "Fail-open on the unknown: unparseable file, source-unavailable dependency, unknown-language change, missing tool, second lockfile, non-UTF-8 doc all silently skip/pass rather than fail-closed"
     source_doc: "docs/audits/README.md"
@@ -1120,7 +1120,7 @@ concern_family_entries:
     # (T-0402); the earlier clauses landed as PARSE001/002, NATIVE001,
     # tool-unavailable ToolResults.
     disposition: "handled_by:PARSE001"
-    cross_refs: ["T-0400", "T-0402"]
+    cross_refs: []
   - id: "CHK-THEME-GITIGNORED-TRUST"
     name: "Gitignored-local trust: coverage/stamp/baseline/prework signals live in .frob/ (gitignored), so CI cannot verify the one behavioral gate that exists"
     source_doc: "docs/audits/README.md"
@@ -1153,7 +1153,7 @@ concern_family_entries:
     # (T-0730); the remaining C/C++ structural-fallback clause repoints
     # to its dedicated child.
     disposition: "deferred:T-1266"
-    cross_refs: ["T-0556"]
+    cross_refs: []
   - id: "CHK-SUBSYS-LANG-CHECK-DOCS"
     name: "lang + check + docs: doc/coverage/drift gates run ONLY in the Python pipeline; parse/IO failure silently erases a file's whole obligation set; COV001 is WARN-only"
     source_doc: "docs/audits/README.md"
@@ -1161,7 +1161,7 @@ concern_family_entries:
     # (T-0554 wires _run_gates into every language pipeline); the
     # parse-failure clause is PARSE001/002's landed disclosure.
     disposition: "handled_by:COV001"
-    cross_refs: ["T-0554"]
+    cross_refs: []
   - id: "CHK-SUBSYS-GRAPH-EDGES"
     name: "graph + edges: load_graph only re-hashes already-cached files (incomplete snapshot on a new file); a non-UTF-8 .md hard-crashes frob check"
     source_doc: "docs/audits/README.md"
@@ -1170,7 +1170,7 @@ concern_family_entries:
     # with a disclosed warning instead of crashing (both T-0402, with
     # regression tests bound via frob:tests on load_graph).
     disposition: "handled_by:PARSE001"
-    cross_refs: ["T-0402"]
+    cross_refs: []
   - id: "CHK-SUBSYS-PERF"
     name: "performance + caching: ~168s CPU is redundant parsing (frob.lang._parse uncached, tree re-walked ~7x/run, 17 gates GIL-serialized)"
     source_doc: "docs/audits/README.md"

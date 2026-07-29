@@ -2125,6 +2125,7 @@ class TestDsl001:
         assert _dsl001_violations(snap) == ()
 
 
+# frob:ticket T-1272
 class TestWaivePresets:
     """T-1176: `frob:waive RULE preset="<name>"` resolves its reason from
     `frob.graph._waive_presets.WAIVE_PRESETS`, drift-locked against the
@@ -2173,6 +2174,8 @@ class TestWaivePresets:
 
         assert resolve_preset("no-such-preset") is None
 
+    # frob:ticket T-1272
+    # frob:waive COV006 reason="genuinely reachable via _snapshot -> build_graph -> parse_directives -> _parse_attrs -> _parse_attrs_verb_error -> _VERB_ATTRS_VALIDATORS[verb] -> _attrs_verb_error_waive, but frob.graph.callgraph's best-effort BFS cannot trace through that dict-of-callables dispatch, same blind spot as the T-1024 _scope_covers waivers above"  # noqa: E501
     def test_waive_preset_resolves_reason_and_matches_like_inline(
         self, tmp_path: Path
     ) -> None:
@@ -2202,6 +2205,8 @@ class TestWaivePresets:
         assert waived[0].waived is not None
         assert waived[0].waived.reason == WAIVE_PRESETS["split-carried-prose"]
 
+    # frob:ticket T-1272
+    # frob:waive COV006 reason="genuinely reachable via _snapshot -> build_graph -> parse_directives -> _parse_attrs -> _parse_attrs_verb_error -> _VERB_ATTRS_VALIDATORS[verb] -> _attrs_verb_error_waive, but frob.graph.callgraph's best-effort BFS cannot trace through that dict-of-callables dispatch, same blind spot as the T-1024 _scope_covers waivers above"  # noqa: E501
     def test_unknown_preset_is_malformed_directive(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_attrs_verb_error_waive kind="unit"
         source = (
