@@ -1921,3 +1921,74 @@ threat: null
 component: null
 ```
 User directive 2026-07-29: compliance coverage must be ENFORCED, not catalogued. Standing repo principle: a registry row read by zero code is orphaned docs presented as implemented; a completion claim needs a passing gate. State as of filing: 27 CMPL-* rows in docs/design/registry/compliance.yaml are all unit-level dispositioned (10 out_of_scope process/advisory, 17 handled_by:COMPLIANCE005), but COMPLIANCE005 only checks that a disposition STRING exists -- it does not verify any real mitigation predicate or model vocabulary backs the 17 handled_by units. Only 6 RegulationEntry/mitigation pairs exist in COMPLIANCE_CATALOG (COPPA, GDPR-ERASURE/RETENTION/BASIS, HIPAA-BAA, MINIMIZATION). No exposure:public-web (or equivalent) attr vocabulary exists, so nothing today forces a public web-facing node to carry a privacy-policy/notice/consent mitigation -- the user's concrete example of catalogued-not-enforced. CCPA/CPRA sit as OutOfScopeRegulation entries (caught_by PII010) -- worth revisiting once exposure:public-web lands, not force-closed here.
+
+<!-- ticket:T-1242 -->
+```yaml
+id: T-1242
+title: 'compliance: exposure:public-web attr + PRIVACY-NOTICE RegulationEntry -- public
+  web-facing nodes demand a privacy-policy mitigation'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: high
+parent: T-1241
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/_compliance.py
+- src/frob/strata/_models.py
+- docs/strata/threat.md
+- docs/guides/extending/compliance-registry.md
+acceptance:
+- text: GIVEN a strata model with a public web-facing Node (exposure:public-web) handling
+    Pii-or-above data and no privacy-policy mitigation and no Claim override WHEN
+    evaluate_compliance runs THEN it emits a COMPLIANCE00x violation and the compliance
+    gate fails
+  evidence: []
+- text: GIVEN the same model but with a declared privacy-policy mitigation (or an
+    owner+review Claim override) WHEN evaluate_compliance runs THEN no violation fires
+  evidence: []
+- text: GIVEN a model with no exposure:public-web node at all WHEN evaluate_compliance
+    runs THEN the check is silent (not vacuously firing on unrelated models)
+  evidence: []
+threat: null
+component: null
+```
+User's concrete example, buildable now without waiting on the framework-family triage children (T-1241's other children just classify rows; this introduces the one new piece of model vocabulary several of them will point at). Add exposure:public-web as a new Node attr prefix (same opaque-string attrs convention as subject:/jurisdiction:/basis:, module docstring's 'no new kernel primitive' law). Add a RegulationEntry (id e.g. PRIVACY-NOTICE) with a mitigation predicate: a public-web-exposed Node handling Pii-or-above data must have an associated privacy-policy/notice mitigation (reuse the existing PrivacyPolicy/check_privacy_policy (COMPLIANCE003) machinery as the notice-existence proof, or a new structural check colocated in _compliance.py) or an explicit Claim override with owner+review (module docstring's assume-override convention). Wire into REGULATION_VIEWS (a ccpa/notice view) and COMPLIANCE_CATALOG.
+
+<!-- ticket:T-1243 -->
+```yaml
+id: T-1243
+title: 'tickets: cluster dispatch -- brief and lease an epic/story as one agent mission'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-29'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- src/frob/_cli_parsers/_ticket.py
+- docs/**
+- tests/**
+acceptance:
+- text: 'GIVEN frob ticket brief --cluster <epic-or-story-id> THEN one briefing is
+    emitted covering every doable descendant in dependency order: shared playbook
+    rules once, per-ticket body+acceptance+scope, the union scope lease, and the expected
+    land cadence (one land per ticket, not one mega-land)'
+  evidence: []
+- text: GIVEN frob ticket work --cluster <id> THEN one worktree is created/reused
+    with natives built once and every ticket in the cluster leased to it, so an agent
+    pays worktree warmup, playbook read, and natives build exactly once per cluster
+    instead of once per ticket
+  evidence: []
+- text: GIVEN two clusters with overlapping union scopes THEN the second lease attempt
+    fails loud naming the conflict, preserving the disjoint-scope dispatch guarantee
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-07-29: agents should receive a series of related tickets in one mission to avoid cold-start cost (worktree creation, playbook read, natives build, graph warm) being paid per ticket. The tier system (epic/story/ticket) and parent edges already express the grouping; frob ticket brief (T-0568) and frob ticket work already exist per-ticket. This adds the cluster form: dependency-ordered doable descendants of an epic/story as one mission with a union scope lease. Serial-cluster dispatch is already the coordinator practice (drive memory); this makes it a first-class frob verb instead of hand-assembled prompts.
