@@ -967,6 +967,38 @@ is forcing a human re-review, not silently un-waiving something a prior
 author deliberately excepted); resolve it by extending `until` with a
 written reason, or removing the directive once it's no longer warranted.
 
+### Waiver presets (T-1176)
+
+`frob:waive RULE preset="<name>"` is a second, equivalent way to satisfy
+the mandatory reason requirement: instead of `reason="..."`, the site
+names a preset, and the reason resolves from the single table below
+(`frob.graph._waive_presets.WAIVE_PRESETS`, machine-read -- this table
+IS the source of truth, this section is its documented mirror, and
+`tests/test_gates.py::TestWaivePresets` drift-locks the two together).
+A preset is NOT a blanket waiver: the site still carries an explicit
+`frob:waive RULE preset="name"` directive naming the exact rule it
+suppresses, at the exact site it suppresses it -- only the REASON PROSE
+deduplicates, which the repo's NO DUPLICATION principle applies to
+comment prose as much as to code. `preset="unknown-name"` is a malformed
+directive (the same WAIVE001-shaped error an inline `reason=`-less
+waiver already gets), never a silent no-op; a `preset=` waiver otherwise
+matches and reports identically to an equivalent inline `reason=`
+waiver (same `_match_waiver`/`_apply_waivers` spine, same `WaiverRef`
+shape -- the resolved reason text lands in `attrs["reason"]` at parse
+time, so nothing downstream of `frob.graph.dsl` needs to know a preset
+was involved at all).
+
+| preset name | reason text |
+| --- | --- |
+| `split-carried-prose` | INV006 first-turn-on pool (T-0585 lineage): this exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a docstring or comment describing already-implemented internal behavior, verifiable by reading the code it annotates) rather than a separate cross-module contract needing its own tracked invariant; disposed as a calibration batch, not claim-by-claim |
+| `split-fragment` | a split submodule of its owning package's own dispatch table, imported only by that package's __init__.py by design -- the same package-split structure every sibling submodule in that package has, so a second consumer would not be genuine |
+
+Both an explicit `reason=` and a `preset=` may appear on the same
+directive; the explicit `reason=` wins (a site with something more
+specific to say than the preset's generic text is never forced to drop
+it). Adding a preset: add it to `WAIVE_PRESETS`, add its row here in
+the same change -- the drift-lock test fails otherwise.
+
 ### `frob check`'s dup/arch stage summaries are also waiver-aware (T-0375)
 
 The `frob-dup` and `frob-arch` TOOL stages (`frob.check._python._run_dup`/

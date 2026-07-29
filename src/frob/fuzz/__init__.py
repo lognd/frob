@@ -16,12 +16,7 @@ registry, `obligations` computes fuzz debt purely from a `GraphSnapshot`,
 parsing, and the `frob test --fuzz` CLI surface is coordinator work on
 this ticket (T-0002), not this module's.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/fuzz/__init__.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -27,12 +27,7 @@ rather than imported, the same small-helper-not-worth-the-coupling call
 and scanned via `frob.strata._cve_fingerprint.scan_text_for_fingerprints`,
 which returns a `FingerprintHit` per needle occurrence WITH a line number.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_cve_fingerprint_scan.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 # frob:ticket T-0439
 from __future__ import annotations

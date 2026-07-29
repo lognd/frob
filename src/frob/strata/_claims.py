@@ -5,12 +5,7 @@ and, on refutation, a witness path or number -- never a vibe (charter
 law 4). Assumes close as ASSUMED (law 3); everything else is proved or
 refuted against the `FactBase` closure, which is complete over the model.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/strata/_claims.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -6,12 +6,7 @@ caches by value -- the same identity-of-value contract as `frob.lang`.
 The prover (`_facts.py`, `_claims.py`) consumes these and nothing else:
 no vocabulary word (cache, secret, deploy) may appear in this module.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/strata/_models.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

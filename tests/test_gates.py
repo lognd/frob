@@ -2125,6 +2125,97 @@ class TestDsl001:
         assert _dsl001_violations(snap) == ()
 
 
+class TestWaivePresets:
+    """T-1176: `frob:waive RULE preset="<name>"` resolves its reason from
+    `frob.graph._waive_presets.WAIVE_PRESETS`, drift-locked against the
+    documented table in `docs/modules/gates.md#waiver-presets`."""
+
+    def test_docs_table_matches_waive_presets(self) -> None:
+        # frob:tests src/frob/graph/_waive_presets.py::WAIVE_PRESETS kind="unit"
+        # Parses docs/modules/gates.md's "Waiver presets" markdown table and
+        # asserts its (name, reason) rows match WAIVE_PRESETS exactly -- a
+        # preset added/edited in one place without the other fails here.
+        from frob.graph._waive_presets import WAIVE_PRESETS
+
+        doc_path = (
+            Path(__file__).resolve().parent.parent / "docs" / "modules" / "gates.md"
+        )
+        text = doc_path.read_text()
+        start = text.index("### Waiver presets")
+        table_start = text.index("| preset name |", start)
+        section = text[table_start : text.index("\n\n", table_start)]
+        rows = [
+            line
+            for line in section.splitlines()
+            if line.startswith("| `") and "---" not in line
+        ]
+        assert rows, "expected at least one preset row in docs/modules/gates.md"
+        doc_presets: dict[str, str] = {}
+        for row in rows:
+            cells = [c.strip() for c in row.strip("|").split("|")]
+            name = cells[0].strip("`")
+            reason = cells[1]
+            doc_presets[name] = reason
+        assert doc_presets == WAIVE_PRESETS
+
+    def test_resolve_preset_known_name(self) -> None:
+        # frob:tests src/frob/graph/_waive_presets.py::resolve_preset kind="unit"
+        from frob.graph._waive_presets import WAIVE_PRESETS, resolve_preset
+
+        assert (
+            resolve_preset("split-carried-prose")
+            == WAIVE_PRESETS["split-carried-prose"]
+        )
+
+    def test_resolve_preset_unknown_name_is_none(self) -> None:
+        # frob:tests src/frob/graph/_waive_presets.py::resolve_preset kind="unit"
+        from frob.graph._waive_presets import resolve_preset
+
+        assert resolve_preset("no-such-preset") is None
+
+    def test_waive_preset_resolves_reason_and_matches_like_inline(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::_attrs_verb_error_waive kind="unit"
+        # A preset= waiver suppresses a violation identically to an
+        # equivalent inline reason= waiver -- same _apply_waivers spine.
+        from frob.gates._waive import _apply_waivers
+        from frob.graph._waive_presets import WAIVE_PRESETS
+
+        source = (
+            '# frob:waive DEAD001 preset="split-carried-prose"\n'
+            "def helper(x):\n    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        assert snap.malformed == ()
+        violation = Violation(
+            rule="DEAD001",
+            severity=Severity.ERROR,
+            file="src/a.py",
+            line=1,
+            message="DEAD001 test violation",
+        )
+        kept, waived = _apply_waivers((violation,), snap)
+        assert kept == ()
+        assert len(waived) == 1
+        assert waived[0].waived is not None
+        assert waived[0].waived.reason == WAIVE_PRESETS["split-carried-prose"]
+
+    def test_unknown_preset_is_malformed_directive(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_attrs_verb_error_waive kind="unit"
+        source = (
+            '# frob:waive DEAD001 preset="does-not-exist"\n'
+            "def helper(x):\n    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        assert any(
+            "frob:waive" in md.reason and "does-not-exist" in md.reason
+            for md in snap.malformed
+        )
+
+
 class TestParseFailureGate:
     """T-0558: a swallowed frob.lang parse/IO failure must be an ERROR
     violation (PARSE001), not just a log line.

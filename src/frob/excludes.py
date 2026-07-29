@@ -9,11 +9,7 @@ to prevent, so it lives here as a near-leaf module -- its only frob
 dependency is `frob.gitio.run_argv` (T-0471's `iter_files` git-ls-files
 fast path), itself a leaf with no further frob imports.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: src/frob/excludes.py's \
-# exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
-# docstring or comment describing already-implemented internal behavior, verifiable by \
-# reading the code it annotates) rather than a separate cross-module contract needing \
-# its own tracked invariant; disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

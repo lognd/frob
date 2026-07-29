@@ -2,9 +2,7 @@
 # module's help/docstring text carries incidental exclusivity-flavored wording \
 # (argparse help strings, scope-cut prose) inherited verbatim from __main__.py, not a \
 # new normative contract -- disposed as the same calibration batch, not claim-by-claim"
-# frob:waive REF002 reason="a per-domain CLI parser-builder submodule, imported only \
-# by the __init__.py dispatch table it feeds by design -- the same package structure \
-# every sibling _cli_parsers/_*.py module has, a second consumer would not be genuine"
+# frob:waive REF002 preset="split-fragment"
 """CLI parser builders: reporting/inspection subcommands (gitlog, graph,
 ack, debt, deprecated, pool, registry, fleet).
 

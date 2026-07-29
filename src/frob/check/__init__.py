@@ -10,12 +10,7 @@ their `frob:doc`/`frob:tests` bindings keep their `__init__.py` symref.
 (`frob.dup._legacy`, `frob.graph`, `frob.arch`, `frob.lang`) and are
 re-exported here for the same reason (T-0599).
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/check/__init__.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

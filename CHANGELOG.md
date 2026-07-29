@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.269.0] - unreleased
+
+- T-1176: gates: named waiver presets -- frob:waive RULE preset=<name> resolving to one documented reason text
+
 ## [0.268.0] - unreleased
 
 - T-1179: land: draft renumbering allocated an id already taken on main, clobbering a main-side block (T-1090 gap on the land path)

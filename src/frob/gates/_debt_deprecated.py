@@ -1,6 +1,4 @@
-# frob:waive REF002 reason="a T-1115 split submodule of frob.gates, imported only by \
-# gates/__init__.py's dispatch table by design -- the same package structure every \
-# sibling gates/_*.py module has, a second consumer would not be genuine"
+# frob:waive REF002 preset="split-fragment"
 """frob.gates._debt_deprecated -- DEBT00x (`frob:debt`) and DEPR00x
 (`frob:deprecated`) gate families, split out of `frob.gates.__init__`
 (T-1115, following T-1072/T-1077's precedent).

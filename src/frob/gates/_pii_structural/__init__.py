@@ -86,12 +86,7 @@ and test-consumed private symbol so `from frob.gates._pii_structural
 import ...` is unchanged for every existing caller (zero caller edits, per
 the T-1072/T-0989 split discipline).
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_pii_structural/__init__.py's exclusivity-vocabulary hit is \
-# source-level design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 # frob:ticket T-0207
 # frob:ticket T-1076

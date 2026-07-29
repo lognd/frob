@@ -8,12 +8,7 @@ modules define is re-imported here so `from frob.testing._collect import
 `tickets/_evidence.py`-style split precedent). Cache-file and directory-walk
 primitives shared across all four languages live in
 `frob.testing._collect_shared`."""
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/testing/_collect.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 # frob:waive ARCH102 reason="T-1161 added python_collection_failure_detail, one more \
 # read accessor over this module's existing collect_python_tests/_run_collect_only \
 # outer-collection pair (it reads the exact module-level detail those two functions \

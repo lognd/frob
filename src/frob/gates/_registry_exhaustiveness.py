@@ -93,12 +93,7 @@ which predates and does not yet match this module's `handled_by`/
 state. It is driven green only by the per-registry reconciliation tickets
 (T-0384..T-0392), never by suppressing or bulk-waiving this gate.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_registry_exhaustiveness.py's exclusivity-vocabulary hit is \
-# source-level design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

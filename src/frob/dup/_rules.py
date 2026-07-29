@@ -7,11 +7,7 @@ other gate rule in `frob.gates` (`drift_gate`, `fuzz_gate`, ...). The caller
 (`frob.gates.__init__`) owns loading `DupConfig`, calling `find_clones`, and
 composing these into the gate's `Violation` tuple.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: src/frob/dup/_rules.py's \
-# exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
-# docstring or comment describing already-implemented internal behavior, verifiable by \
-# reading the code it annotates) rather than a separate cross-module contract needing \
-# its own tracked invariant; disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -4,12 +4,7 @@ Every model is a frozen pydantic ``BaseModel`` so a `GateReport` can be
 compared, cached, and serialized by identity-of-value -- the same posture
 `frob.graph._models` and `frob.tickets._models` take.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_models.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

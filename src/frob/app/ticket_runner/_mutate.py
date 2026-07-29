@@ -1,7 +1,4 @@
-# frob:waive REF002 reason="a T-1089 tier-2 split submodule of ticket_runner, imported \
-# only by ticket_runner/__init__.py's dispatch table by design -- the same package \
-# structure every sibling ticket_runner/_*.py module has, a second consumer would not \
-# be genuine"
+# frob:waive REF002 preset="split-fragment"
 """frob.app.ticket_runner._mutate -- the `scope`/`priority`/`kind`/
 `component`/`label`/`accept`/`board`/`epic`/`tier`/`sprint`/`brief`/`flow`
 mutation command family.

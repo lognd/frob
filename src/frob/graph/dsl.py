@@ -6,11 +6,7 @@ a `RawComment` reaches this module, so parsing here is language-agnostic.
 A malformed directive is data (`MalformedDirective`), never a crash and
 never silently dropped -- `frob.gates` reports it.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: src/frob/graph/dsl.py's \
-# exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
-# docstring or comment describing already-implemented internal behavior, verifiable by \
-# reading the code it annotates) rather than a separate cross-module contract needing \
-# its own tracked invariant; disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 
@@ -241,16 +237,35 @@ def _parse_attrs(
 
 
 # frob:ticket T-0598
+# frob:ticket T-1176
 def _attrs_verb_error_waive(
     attrs: dict[str, str], *, path: str, lineno: int
 ) -> MalformedDirective | None:
-    """`frob:waive`'s own attribute requirements: `reason=` mandatory, an
-    optional `until=` must be a `YYYY-MM-DD` date (T-0753, the same
-    grammar `frob:deprecated`'s `sunset=` uses)."""
-    if "reason" not in attrs:
+    """`frob:waive`'s own attribute requirements: `reason=` OR `preset=`
+    mandatory (T-1176 -- `preset="<name>"` resolves against
+    `frob.graph._waive_presets.WAIVE_PRESETS`, a single documented table,
+    instead of every site hand-writing the same boilerplate reason prose;
+    an unknown preset name is a malformed directive, never a silent
+    no-op), an optional `until=` must be a `YYYY-MM-DD` date (T-0753, the
+    same grammar `frob:deprecated`'s `sunset=` uses)."""
+    preset = attrs.get("preset")
+    if "reason" not in attrs and preset is None:
         return MalformedDirective(
-            file=path, line=lineno, reason='frob:waive requires reason="..."'
+            file=path,
+            line=lineno,
+            reason='frob:waive requires reason="..." or preset="<name>"',
         )
+    if preset is not None:
+        from frob.graph._waive_presets import resolve_preset
+
+        resolved = resolve_preset(preset)
+        if resolved is None:
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason=f"frob:waive preset={preset!r} is not a known preset",
+            )
+        attrs.setdefault("reason", resolved)
     until = attrs.get("until")
     if until is not None and not _DATE_RE.match(until.strip()):
         return MalformedDirective(

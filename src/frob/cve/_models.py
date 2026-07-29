@@ -13,12 +13,7 @@ REQUIRED field -- `cveMetadata.cveId`/`state`, `containers.cna`, an
 real pydantic ValidationError, which `parse_record` (`_parser.py`) turns
 into a typed `CveError.MalformedRecord` -- never a silent partial parse.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/cve/_models.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 # frob:ticket T-0146
 from __future__ import annotations

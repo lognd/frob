@@ -698,6 +698,8 @@
     "src/frob/graph/_models.py::SymbolId": "dfd6580a30eca20b213dd7b1e95d05629681637a32897edd25ce183e3f6b3ded",
     "src/frob/graph/_models.py::SymbolRecord": "09d8fb53939ebb1a21a2eb413d9171aea7ebc52f7a8cd8e7d770b21685dcddd4",
     "src/frob/graph/_models.py::SymbolRecord.symref": "c5c42376a49fb98600dd0b469b304c2db4bec5e6c140402c345dd19de0b14178",
+    "src/frob/graph/_waive_presets.py::WAIVE_PRESETS": "360c5e9e3db797f3f9f2a651da7e9ad384a7248d4eeb46a41dbc283433d2a785",
+    "src/frob/graph/_waive_presets.py::resolve_preset": "a618d3db662329a393d2109b1500905684ab4913ba16d7d5b489cd0687703639",
     "src/frob/graph/affects.py::AffectedSet": "8b26a1d5001e8eae53c27d6a3f472844964e97e6e994b2374d7a84e3de10ea74",
     "src/frob/graph/affects.py::ScopeClosureGap": "f0cfed1627867d7cb43df447cc67dfc9c1827c6665f5373c658c68d204866696",
     "src/frob/graph/affects.py::affects": "9a8e5fffc6787bfa0ab637478b3e44918b0038c5a1e4e591c755f3e31dfee326",
@@ -1870,5 +1872,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.268.0"
+  "version": "0.269.0"
 }

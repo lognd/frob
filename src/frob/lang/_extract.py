@@ -10,12 +10,7 @@ This module owns only what is genuinely language-agnostic: the symbol-walker
 dispatch table, comment extraction and its enclosing/following binding, and
 the narrower import/identifier walks `frob.cycle` and `frob.xref` consume.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/lang/_extract.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

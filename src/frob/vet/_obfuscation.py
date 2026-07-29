@@ -14,12 +14,7 @@ non-code files. These need a cost/benefit case tree-sitter queries alone
 don't cheaply buy; VET008 (artifact/source divergence) that would corroborate
 the minified-vs-obfuscated call is also out of scope here (0.2.x proper).
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/vet/_obfuscation.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

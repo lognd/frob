@@ -5,12 +5,7 @@ Raw node traversal (`child_by_field`/`node_text`) now lives in `frob.lang`
 `frob.arch` instead of duplicated here; only the dup-specific body digest
 stays local.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/dup/_legacy_common.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

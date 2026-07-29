@@ -85,12 +85,7 @@ directly the same way `_docblocks.py` honors `frob:waive DOC004` on a doc
 to on a bare tracked `.md` file, so without this a REF001/REF002 finding on
 a doc was structurally unwaivable. See `_md_waived_rules`.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_refs.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

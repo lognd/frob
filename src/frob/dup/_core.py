@@ -5,11 +5,7 @@ never cross the boundary as exceptions the rest of `frob.dup` has to know
 about -- `core_available()` gates every call site, and a missing extension
 becomes `Err(DupError.CoreUnavailable)`, never a silent downgrade.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: src/frob/dup/_core.py's \
-# exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
-# docstring or comment describing already-implemented internal behavior, verifiable by \
-# reading the code it annotates) rather than a separate cross-module contract needing \
-# its own tracked invariant; disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

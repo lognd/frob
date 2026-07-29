@@ -12,12 +12,7 @@ the one grammar, `load_registry_dir` is the one loader. `frob.gates.
 _registry_exhaustiveness.registry_gate` now calls into this module rather
 than parsing YAML/disposition strings itself.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/registry/_models.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

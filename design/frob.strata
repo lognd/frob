@@ -560,6 +560,7 @@ node graphlang : trusted {
     attr interface=UBIQUITOUS_TIER;
     attr interface=UNKNOWN;
     attr interface=UNRESOLVED_CALLEE;
+    attr interface=WAIVE_PRESETS;
     attr interface=_CppFunctionRaises;
     attr interface=_digest_body;
     attr interface=_digest_doc;
@@ -653,6 +654,7 @@ node graphlang : trusted {
     attr interface=resolve;
     attr interface=resolve_call_edges_native;
     attr interface=resolve_local_import;
+    attr interface=resolve_preset;
     attr interface=run_fallibility_checks;
     attr interface=run_isp_checks;
     attr interface=run_logging_checks;
@@ -4344,6 +4346,7 @@ node testsuite : trusted {
     attr interface=TestWaive007Registration;
     attr interface=TestWaive007StrataChannel;
     attr interface=TestWaiveLitmus;
+    attr interface=TestWaivePresets;
     attr interface=TestWaiveStoreLitmus;
     attr interface=TestWaiverChannel;
     attr interface=TestWalkKotlin;

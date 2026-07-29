@@ -10,12 +10,7 @@ re-deriving it in each of the five per-language walkers in ``_extract.py``,
 is what keeps this package free of the five-way duplication the task spec
 explicitly forbids.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/lang/_common.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 # frob:waive ARCH102 reason="T-0871 demoted child_text/iter_cpp_functions to \
 # _child_text/_iter_cpp_functions (frob-exports: genuinely private, used only within \
 # frob.lang's own walkers, never a cross-package import) -- the reduced public surface \

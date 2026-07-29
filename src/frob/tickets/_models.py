@@ -1,11 +1,6 @@
 """Data models and error types for frob.tickets
 (docs/modules/tickets.md is authoritative)."""
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/tickets/_models.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 preset="split-carried-prose"
 # frob:waive ARCH102 reason="19 of 23 exports (after T-0977's data-only- class \
 # exclusion) form one connected cluster around scope-glob matching and done-report \
 # parsing over the same Ticket/Evidence models this module's docstring names; the 4 \
