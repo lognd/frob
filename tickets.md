@@ -84,6 +84,7 @@ Sunset-execution ticket for the user's 2026-07-23 deprecation decision (T-0580, 
 
 ## Drop reason
 - 2026-07-29: superseded 2026-07-29: user chose regrouping over sunset -- map/outline/xref/docs-search move under frob explore and are un-deprecated (see cli-regrouping epic); executing the removal would delete commands we now keep
+
 <!-- ticket:T-0969 -->
 ```yaml
 id: T-0969
@@ -259,7 +260,7 @@ Successor to the T-0397 audit epic for the concern-family rows NOT yet closed by
 id: T-1194
 title: 'arch: split remaining seams of _land_merge.py/_land_finalize.py -- T-1189
   residue'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -270,6 +271,54 @@ sprint: null
 scope:
 - src/frob/tickets/_land_merge.py
 - src/frob/tickets/_land_finalize.py
+- src/frob/tickets/_land_ledger_merge.py
+- tests/test_ticket_land.py
+- tests/test_tickets_collision.py
+- tests/test_evidence_integrity.py
+- docs/modules/tickets.md
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_ledger_merge.py
+  reason: 'T-1194 pure-move split: new module + updated frob:tests/frob:doc bindings
+    and doc anchor'
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'T-1194 pure-move split: new module + updated frob:tests/frob:doc bindings
+    and doc anchor'
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: tests/test_tickets_collision.py
+  reason: 'T-1194 pure-move split: new module + updated frob:tests/frob:doc bindings
+    and doc anchor'
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: tests/test_evidence_integrity.py
+  reason: 'T-1194 pure-move split: new module + updated frob:tests/frob:doc bindings
+    and doc anchor'
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'T-1194 pure-move split: new module + updated frob:tests/frob:doc bindings
+    and doc anchor'
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_ticket_land.py::TestSpliceLedger::test_same_id_newer_state_wins
+- tests/test_ticket_land.py::TestSpliceOnlyTicket::test_render_that_would_drop_an_id_is_refused
+- tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_render_that_would_drop_an_id_is_refused
+- tests/test_ticket_land.py::TestSiblingDoneReportPreserved::test_sibling_done_report_survives_landing_another_ticket
+- tests/test_ticket_land.py::TestArchiveResurrection::test_archived_id_never_resurrected
+- tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch
+- tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_terminal_side_always_wins_over_non_terminal
+- tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_strictly_higher_rank_poorer_side_always_wins
+- tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_richer_side_wins_at_equal_or_lower_rank
+- tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_id_title_mismatch_is_refused_not_silently_overwritten
+- tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_same_id_same_title_still_resolves_via_newer
 threat: null
 component: null
 ```
@@ -305,6 +354,78 @@ Still remaining, in the same one-family-per-land shape:
 
 Re-filed (not re-derived from scratch) rather than letting T-1189 close
 with silent residue, per TICK011.
+
+## Done report
+
+Continued the one-family-per-land split discipline (T-1186/T-1187/T-1188/
+T-1189/T-1192) on `_land_merge.py`: extracted the ledger-merge/newest-wins
+family named in the ticket body -- `splice_ledger`, `_merge_ledger_tickets`,
+`_resolve_divergence`, `_newer`/`_newer_winner`/`_richness`,
+`_union_evidence`/`_union_acceptance`, `_drop_resurrected_ids`,
+`_preserve_sibling_done_reports`, `_carry_forward_new_worktree_tickets`,
+`_overlay_landed_ticket`, `_splice_only_ticket` -- plus the `_STATE_RANK`/
+`_TERMINAL_RANK` table and `_has_done_report` helper the family shares, into
+a new `src/frob/tickets/_land_ledger_merge.py` (552 lines). Pure verbatim
+move: every function keeps its original body, docstring, and
+`frob:ticket`/`frob:tests`/`frob:invariant` directives unchanged.
+`_land_merge.py` (1006 lines, was 1507) imports `splice_ledger`,
+`_splice_only_ticket`, `_merge_ledger_tickets`, and `_has_done_report` back
+for its own `_splice_and_stage`/`_splice_and_stage_archive`/
+`_validate_closeable` use; `_land.py`'s re-export of `splice_ledger` is
+unaffected (it still imports it from `_land_merge`, which now re-exports it
+transitively).
+
+Updated `frob:tests`/doc bindings that named the old location:
+`docs/modules/tickets.md`'s `splice_ledger` `frob:describes` anchor now
+points at `_land_ledger_merge.py`; `tests/test_ticket_land.py`,
+`tests/test_tickets_collision.py`, and `tests/test_evidence_integrity.py`
+import the moved private symbols from `_land_ledger_merge` instead of
+`_land_merge`, and their `frob:tests` comment directives were repointed at
+the new module path. Two hypothesis-property tests
+(`TestNewerWinnerQualifiedPreferenceProperty`) and two guard tests
+(`TestSpliceLedgerIdDropGuard`/`TestSpliceOnlyTicket`'s
+`test_render_that_would_drop_an_id_is_refused`) that monkeypatch
+`_render_ledger`/reference `_newer_winner` directly were repointed at the
+`_land_ledger_merge` module object, since those symbols now live there.
+
+Budget did not allow the git-plumbing/wip-commit family or the
+`_land_finalize.py` split named in the ticket's residue list this land;
+refiled the remaining residue (unchanged in substance) as
+T-1251 per the T-1189/T-1192 precedent, since a fresh
+implementer will need the same seam description.
+
+Gates: `uv run frob check --ticket T-1194 --only gates-fast` -- 0 errors
+after adding `frob:ticket T-1194` edges to the changed test classes/methods
+COV002 flagged and expanding scope (`frob ticket scope T-1194 --add ...`)
+to cover the new module, the three touched test files, and the doc anchor
+edit. `uv run frob test --base main` -- `[PASS] python exit=0 10.28s`, 25
+outcome(s) recorded, touched-set selection covering both moved-family
+call sites and the archive/sibling/newer-winner property suites.
+`uv run ruff check`/`ruff format --check` clean on both files.
+
+### Changed
+```
+ tickets.md | 95 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 93 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestSpliceLedger::test_same_id_newer_state_wins` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestSpliceOnlyTicket::test_render_that_would_drop_an_id_is_refused` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_render_that_would_drop_an_id_is_refused` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestSiblingDoneReportPreserved::test_sibling_done_report_survives_landing_another_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestArchiveResurrection::test_archived_id_never_resurrected` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_terminal_side_always_wins_over_non_terminal` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_strictly_higher_rank_poorer_side_always_wins` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_richer_side_wins_at_equal_or_lower_rank` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_id_title_mismatch_is_refused_not_silently_overwritten` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_same_id_same_title_still_resolves_via_newer` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 11 passed (from 11 evidence id(s))
+- gates: 0 error(s), 572 warning(s), 671 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1195 -->
 ```yaml
@@ -533,6 +654,7 @@ threat: null
 component: null
 ```
 User directive 2026-07-29: 4236 of design/frob.strata's 5588 lines are attr interface=<symbol> lines, one symbol per line, maintained mechanically by frob.strata._sync_interface (which loads every .strata file and rewrites the attrs to match code exactly). The hand-authored design intent drowns in generated-shaped noise. Candidate designs for the design note: (a) generated sidecar fragment design/frob.interface.strata written by sync_interface and verified by the SYS gate (T-1008 generate-and-verify precedent); (b) grammar shorthand attr interface=[a, b, ...] or interface from <module-path> resolved at parse time; (c) move interface bindings out of the surface file entirely into the code-binding layer. Coordinate with T-1196 (multi-file split) -- a generated fragment is itself a second file, so the cross-file semantics land first or together.
+
 <!-- ticket:T-1199 -->
 ```yaml
 id: T-1199
@@ -940,6 +1062,7 @@ threat: null
 component: null
 ```
 User directive 2026-07-29: we should never run make coverage manually; frob must never consume stale data or retread work that should be cached. Today coverage.xml is a hand-refreshed artifact: TEST011 warns it predates tracked changes and TEST005 findings are computed from it anyway (the attribution-inflation problem T-0969 is untangling). Design: treat coverage like the graph cache -- a derived artifact frob owns, refreshed incrementally from the touched-set (the affects closure already exists in frob.graph.affects), merged per-file keyed by content hash, with the freshness contract enforced by the gate rather than a Makefile comment. Interacts with T-0969 (attribution fix defines what honest data is) and the CI gitignored-trust child under T-1193 (CI needs the same no-stale contract). Related: the profiler found process-pool workers re-derive per-file artifacts every run -- same no-retread principle, separate ticket in the perf tree.
+
 <!-- ticket:T-1206 -->
 ```yaml
 id: T-1206
@@ -2204,3 +2327,47 @@ threat: null
 component: null
 ```
 CMPL-FROB-CATALOG-ENTRIES (framework frob-std.compliance, leaf_count 6) is the meta-row counting COMPLIANCE_CATALOG's own 6 RegulationEntry units (COPPA, GDPR-ERASURE/RETENTION/BASIS, HIPAA-BAA, MINIMIZATION) as a denominator entry in the registry -- confirm its handled_by:COMPLIANCE005 disposition is not circular (a row about the catalog counted by a gate that only checks the row has a disposition string). Likely fine as-is since the 6 units ARE genuinely implemented with real RegulationEntry+mitigation each, but state that explicitly rather than leaving it riding the same generic handled_by:COMPLIANCE005 text as the 16 other under-enforced rows -- distinguish 'this row is fine because its 6 members are real' from 'this row has a disposition string'.
+
+<!-- ticket:T-1251 -->
+```yaml
+id: T-1251
+title: 'arch: split remaining seams of _land_merge.py/_land_finalize.py -- T-1194
+  residue'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+threat: null
+component: null
+```
+T-1194 extracted the ledger-merge/newest-wins family (`splice_ledger`,
+`_merge_ledger_tickets`, `_resolve_divergence`, `_newer`/`_newer_winner`/
+`_richness`, `_union_evidence`/`_union_acceptance`, `_drop_resurrected_ids`,
+`_preserve_sibling_done_reports`, `_carry_forward_new_worktree_tickets`,
+`_overlay_landed_ticket`, `_splice_only_ticket`) out of _land_merge.py into
+a new src/frob/tickets/_land_ledger_merge.py (1507 -> 1006 lines),
+continuing the same one-family-per-land discipline T-1186/T-1187/T-1188/
+T-1189/T-1192 established. Budget did not allow the other seams T-1189's
+own plan named. _land_merge.py is still 1006 lines and _land_finalize.py is
+still 1735 lines; _land_finalize.py is above the 800-line LARGE001
+threshold.
+
+Still remaining, in the same one-family-per-land shape:
+
+- `_land_merge.py`: the git-plumbing/wip-commit family
+  (`_merge_main_into_worktree`, `_auto_resolve_out_of_scope_conflicts`,
+  `_wip_commit`/`_wip_add_excluding_frob`/`_do_wip_commit`,
+  `_splice_and_stage`/`_splice_and_stage_archive`, `_verify_archive_merge`,
+  `_rev_parse`/`_true_merge_base`) -- the deletion-authorization pair
+  (`_deletion_glob_too_broad`/`_deletion_owned`) can go with whichever side
+  ends up using `_unowned_deletions`.
+- `_land_finalize.py`: draft-finalization/sibling-renumbering vs.
+  squash-apply/close vs. the release-bump/uv.lock/native-rebuild family
+  (T-1189's own plan named this split, not yet started).
+
+Re-filed (not re-derived from scratch) rather than letting T-1194 close
+with silent residue, per TICK011.

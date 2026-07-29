@@ -35,7 +35,7 @@ from frob.tickets import (
     transition,
 )
 from frob.tickets._land import splice_ledger
-from frob.tickets._land_merge import _newer
+from frob.tickets._land_ledger_merge import _newer
 from frob.tickets._models import (
     TicketSpec,
     has_substantive_done_report,

@@ -1334,7 +1334,7 @@ concurrent automation.
 ## `frob ticket land`
 
 <!-- frob:describes src/frob/tickets/_land.py::land -->
-<!-- frob:describes src/frob/tickets/_land_merge.py::splice_ledger -->
+<!-- frob:describes src/frob/tickets/_land_ledger_merge.py::splice_ledger -->
 <!-- frob:describes src/frob/tickets/_land_finalize.py::_assert_land_complete -->
 <!-- frob:describes src/frob/tickets/_land_finalize.py::_worktree_full_changeset -->
 <!-- frob:describes src/frob/tickets/_land_finalize.py::_apply_release_bump -->

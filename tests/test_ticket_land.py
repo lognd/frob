@@ -33,6 +33,7 @@ from typani.result import Err, Ok, Result
 
 import frob.tickets._land as _land_mod
 import frob.tickets._land_finalize as _land_finalize_mod
+import frob.tickets._land_ledger_merge as _land_ledger_merge_mod
 import frob.tickets._land_merge as _land_merge_mod
 import frob.tickets._land_merge_zones as _land_merge_zones_mod
 from frob.gates import PreworkSweep, load_prework, record_prework, scope_digest
@@ -169,6 +170,7 @@ def repo(tmp_path: Path) -> Path:
     return main_repo
 
 
+# frob:ticket T-1194
 class TestSpliceLedger:
     """`splice_ledger` -- the id-level merge tickets.md conflicts always go
     through, never git's line-level textual algorithm."""
@@ -196,8 +198,9 @@ class TestSpliceLedger:
         assert "Ours" in spliced.danger_ok
         assert "Theirs" in spliced.danger_ok
 
+    # frob:ticket T-1194
     def test_same_id_newer_state_wins(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_land_merge.py::splice_ledger kind="unit"
+        # frob:tests src/frob/tickets/_land_ledger_merge.py::splice_ledger kind="unit"
         created = new_ticket(tmp_path, _spec("Shared"))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -211,7 +214,7 @@ class TestSpliceLedger:
         assert "state: planned" in spliced.danger_ok
         assert "state: queued" not in spliced.danger_ok
 
-    # frob:tests src/frob/tickets/_land_merge.py::splice_ledger kind="unit"
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::splice_ledger kind="unit"
     def test_malformed_ours_propagates_as_err(self, tmp_path: Path) -> None:
         """A malformed `ours_text` (a ticket marker with no ```yaml
         frontmatter) must surface `_parse_ledger`'s error unchanged --
@@ -225,7 +228,7 @@ class TestSpliceLedger:
         spliced = splice_ledger(malformed_ours, theirs_text)
         assert spliced.is_err
 
-    # frob:tests src/frob/tickets/_land_merge.py::splice_ledger kind="unit"
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::splice_ledger kind="unit"
     def test_malformed_theirs_propagates_as_err(self, tmp_path: Path) -> None:
         """A malformed `theirs_text` must ALSO surface as `Err` -- the
         second `_parse_ledger` call's error path is exercised
@@ -240,11 +243,12 @@ class TestSpliceLedger:
         assert spliced.is_err
 
 
+# frob:ticket T-1194
 class TestSpliceOnlyTicket:
     """`_splice_only_ticket` (T-0479) -- the ledger splice scoped to ONE
     ticket id, the fix for the T-0475 sibling-resurrection incident."""
 
-    # frob:tests src/frob/tickets/_land_merge.py::_splice_only_ticket kind="unit"
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_splice_only_ticket kind="unit"
     def test_sibling_state_never_taken_from_worktree(self, tmp_path: Path) -> None:
         """Main has T-A queued (already requeued back from in-progress) and
         T-B queued. The worktree's stale copy still remembers T-A as
@@ -279,7 +283,7 @@ class TestSpliceOnlyTicket:
         assert merged[tid_a].state == TicketState.QUEUED  # sibling untouched
         assert merged[tid_b].state == TicketState.PLANNED  # landed ticket's own block
 
-    # frob:tests src/frob/tickets/_land_merge.py::_splice_only_ticket kind="unit"
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_splice_only_ticket kind="unit"
     def test_landed_tickets_own_divergence_still_resolved(self, tmp_path: Path) -> None:
         """If the SAME ticket id genuinely diverges between main and the
         worktree, `_newer` still resolves it (via the scoped splice) --
@@ -297,6 +301,7 @@ class TestSpliceOnlyTicket:
         assert "state: planned" in spliced.danger_ok
 
     # frob:ticket T-0740
+    # frob:ticket T-1194
     # frob:tests tests/test_ticket_land.py::TestSpliceOnlyTicket.test_render_that_would_drop_an_id_is_refused  # noqa: E501
     def test_render_that_would_drop_an_id_is_refused(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -321,12 +326,12 @@ class TestSpliceOnlyTicket:
             # Simulate a render bug: silently omit every ticket's section.
             return "# Tickets\n\nCentral ledger managed by `frob ticket`.\n"
 
-        monkeypatch.setattr(_land_merge_mod, "_render_ledger", _dropping_render)
+        monkeypatch.setattr(_land_ledger_merge_mod, "_render_ledger", _dropping_render)
         spliced = _land_merge_mod._splice_only_ticket(main_text, worktree_text, tid)
         assert spliced.is_err
         assert spliced.danger_err.name == "LedgerIntegrityViolation"
 
-    # frob:tests src/frob/tickets/_land_merge.py::splice_ledger kind="unit"
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::splice_ledger kind="unit"
     def test_whole_ledger_splice_never_regresses_a_sibling_from_done(
         self, tmp_path: Path
     ) -> None:
@@ -362,6 +367,7 @@ class TestSpliceOnlyTicket:
         assert parsed.danger_ok[tid].state == TicketState.DONE
 
 
+# frob:ticket T-1194
 class TestSiblingDoneReportPreserved:
     """T-0577: a real multi-ticket-worktree incident -- landing T-0386 in a
     worktree that ALSO carried sibling tickets T-0387/T-0388 (in-progress,
@@ -372,7 +378,7 @@ class TestSiblingDoneReportPreserved:
     carries a substantive Done report when the OTHER side has none, even
     for a sibling id it does not otherwise touch."""
 
-    # frob:tests src/frob/tickets/_land_merge.py::_splice_only_ticket kind="unit"
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_splice_only_ticket kind="unit"
     def test_sibling_done_report_survives_landing_another_ticket(
         self, tmp_path: Path
     ) -> None:
@@ -415,7 +421,7 @@ class TestSiblingDoneReportPreserved:
         assert "## Done report" in parsed[tid_sibling].body
         assert parsed[tid_sibling].evidence == ("tests/test_x.py::test_ok",)
 
-    # frob:tests src/frob/tickets/_land_merge.py::_splice_only_ticket kind="unit"
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_splice_only_ticket kind="unit"
     def test_sibling_requeue_on_main_still_wins_when_neither_side_has_a_done_report(
         self, tmp_path: Path
     ) -> None:
@@ -737,6 +743,7 @@ class TestSpliceLedgerPrefersEvidenceRichSideOnRankTie:
         assert parsed[tid].acceptance[0].evidence == ("tests/test_widget.py::test_x",)
 
 
+# frob:ticket T-1194
 class TestSpliceLedgerIdDropGuard:
     """The structural guard the T-0367 incident demands: `splice_ledger`
     refuses loudly rather than silently committing a merge that drops an
@@ -784,6 +791,7 @@ class TestSpliceLedgerIdDropGuard:
         assert spliced.is_err
 
     # frob:ticket T-0764
+    # frob:ticket T-1194
     # frob:tests tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an_id_is_refused  # noqa: E501
     def test_render_that_would_drop_an_id_is_refused(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -801,7 +809,7 @@ class TestSpliceLedgerIdDropGuard:
             # Simulate a render bug: silently omit every ticket's section.
             return "# Tickets\n\nCentral ledger managed by `frob ticket`.\n"
 
-        monkeypatch.setattr(_land_merge_mod, "_render_ledger", _dropping_render)
+        monkeypatch.setattr(_land_ledger_merge_mod, "_render_ledger", _dropping_render)
         spliced = splice_ledger(ours_text, theirs_text)
         assert spliced.is_err
         assert spliced.danger_err.name == "LedgerIntegrityViolation"
@@ -1279,6 +1287,7 @@ class TestDraftFinalizeRewritesRegistryYamlRefs:
         assert f'"deferred:{final_id}"' in landed_yaml
 
 
+# frob:ticket T-1194
 class TestArchiveResurrection:
     """Reviewer bug 2: `splice_ledger` only read active tickets.md, never
     tickets-archive.md -- an id archived on main after the branch point
@@ -1287,8 +1296,9 @@ class TestArchiveResurrection:
     hand at merge time (T-0176's own 0bb02cf merge). `land` must never
     reintroduce an already-archived id."""
 
+    # frob:ticket T-1194
     def test_archived_id_never_resurrected(self, repo: Path) -> None:
-        # frob:tests src/frob/tickets/_land_merge.py::splice_ledger kind="unit"
+        # frob:tests src/frob/tickets/_land_ledger_merge.py::splice_ledger kind="unit"
         # Seed a ticket that exists (stale, still active) in the worktree's
         # ledger view, then archive it on MAIN after the branch point --
         # simulating a branch whose base predates the archive.
@@ -1346,6 +1356,7 @@ class TestArchiveResurrection:
 
 
 # frob:ticket T-0959
+# frob:ticket T-1194
 class TestArchiveSpliceDiscipline:
     """T-0959: `tickets-archive.md` used to ride along on whatever git's raw
     merge/checkout produced at land time, with no per-id splice discipline
@@ -1501,11 +1512,14 @@ class TestArchiveSpliceDiscipline:
             f"worktree's own archived sibling {sibling_id} was dropped by land (T-0959)"
         )
 
+    # frob:ticket T-1194
     def test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land_merge.py::_merge_ledger_tickets kind="unit"
-        # frob:tests src/frob/tickets/_land_merge.py::_resolve_divergence kind="unit"
+        # frob:tests src/frob/tickets/_land_ledger_merge.py::_merge_ledger_tickets \
+        # kind="unit"
+        # frob:tests src/frob/tickets/_land_ledger_merge.py::_resolve_divergence \
+        # kind="unit"
         # T-1154 (3rd occurrence of the wrong-side-merge class, see this
         # ticket's own Done report): a ticket archived on BOTH main and the
         # worktree, same state (done) and same richness (both carry a Done
@@ -5841,6 +5855,7 @@ def _synthetic_ticket(
     )
 
 
+# frob:ticket T-1194
 class TestNewerWinnerQualifiedPreferenceProperty:
     """T-0757: an establish-property obligation (INV008, `frob:invariant
     INV-043 establishes="..."` anchored on `_land._newer`) for T-0682's
@@ -5859,6 +5874,7 @@ class TestNewerWinnerQualifiedPreferenceProperty:
        wins over a richer-but-lower-or-equal-rank side.
     """
 
+    # frob:ticket T-1194
     # frob:tests tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty.test_terminal_side_always_wins_over_non_terminal  # noqa: E501
     @given(
         st.sampled_from([0, 1, 2]),
@@ -5886,9 +5902,10 @@ class TestNewerWinnerQualifiedPreferenceProperty:
         b = _synthetic_ticket(
             "T-X", terminal_state, has_report=b_report, evidence_count=b_evidence
         )
-        assert _land_merge_mod._newer_winner(a, b) is b
-        assert _land_merge_mod._newer_winner(b, a) is b
+        assert _land_ledger_merge_mod._newer_winner(a, b) is b
+        assert _land_ledger_merge_mod._newer_winner(b, a) is b
 
+    # frob:ticket T-1194
     # frob:tests tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty.test_strictly_higher_rank_poorer_side_always_wins  # noqa: E501
     @given(
         st.sampled_from([0, 1, 2]),
@@ -5921,9 +5938,10 @@ class TestNewerWinnerQualifiedPreferenceProperty:
             has_report=False,
             evidence_count=poorer_evidence,
         )
-        assert _land_merge_mod._newer_winner(richer, poorer) is poorer
-        assert _land_merge_mod._newer_winner(poorer, richer) is poorer
+        assert _land_ledger_merge_mod._newer_winner(richer, poorer) is poorer
+        assert _land_ledger_merge_mod._newer_winner(poorer, richer) is poorer
 
+    # frob:ticket T-1194
     # frob:tests tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty.test_richer_side_wins_at_equal_or_lower_rank  # noqa: E501
     @given(
         st.sampled_from([0, 1, 2]),
@@ -5955,5 +5973,5 @@ class TestNewerWinnerQualifiedPreferenceProperty:
             has_report=False,
             evidence_count=poorer_evidence,
         )
-        assert _land_merge_mod._newer_winner(richer, poorer) is richer
-        assert _land_merge_mod._newer_winner(poorer, richer) is richer
+        assert _land_ledger_merge_mod._newer_winner(richer, poorer) is richer
+        assert _land_ledger_merge_mod._newer_winner(poorer, richer) is richer
