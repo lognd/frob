@@ -888,3 +888,119 @@ WHEN `frob ticket flow`/velocity mining runs (new command, name TBD)
 THEN it reports per-state cycle time and throughput derived purely from
 `git log --follow` diff hunks on the `state:` field, with no separate
 event log required.
+
+<!-- ticket:T-draft-0ce0d873 -->
+```yaml
+id: T-draft-0ce0d873
+title: 'ledger v2: land merge story on native git per-file merge, retire frob-ledger
+  driver'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+blocked_by:
+- T-draft-4ae257ca
+- T-draft-d8653bfe
+- T-draft-123962ab
+parent: T-1136
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/tickets/_land_finalize.py
+- src/frob/tickets/_land_verify.py
+- .gitattributes
+- tests/test_ticket_land.py
+acceptance:
+- text: 'Ledger v2 design (docs/design/ledger-v2.md section 5) needs `frob ticket
+
+    land`''s merge story rebuilt around git''s native per-file 3-way merge:
+
+    disjoint-scope branches touching different `tickets/T-####/` directories
+
+    need no custom resolution at all. Retires the `merge.frob-ledger` git
+
+    merge driver, `splice_ledger`, `_merge_ledger_tickets`, the archive-
+
+    specific splice (T-0959''s fix), and the sibling-Done-report preservation
+
+    heuristic (T-0577 item 2) -- ALL as dead code once every land runs in
+
+    v2-only mode. Blocked by store backend, renumber, and archive tickets
+
+    (land must be able to finalize/renumber/archive in v2 before its old
+
+    monofile-splice logic can be safely removed).'
+  evidence: []
+- text: 'Do NOT delete `_land_merge.py`/`_land_merge_zones.py` in the same diff
+
+    as adding v2 land support -- land a v2-aware land path FIRST, gated
+
+    alongside v1 support during the compatibility window; deletion of the
+
+    retired monofile-merge code is the migration ticket''s final-cutover step
+
+    (design section 7.4), not this ticket''s.'
+  evidence: []
+- text: 'GIVEN two branches each editing a DIFFERENT ticket''s `tickets/T-####/`
+
+    directory
+
+    WHEN both land
+
+    THEN git''s own merge produces zero conflicts (no custom driver invoked),
+
+    verified by an end-to-end land test with two disjoint-scope v2 tickets.'
+  evidence: []
+- text: 'GIVEN two branches BOTH editing the SAME ticket''s `ticket.md`
+
+    WHEN both attempt to land
+
+    THEN the conflict surfaces as an ordinary git conflict on that one file
+
+    (no `splice_ledger`-class resolution needed), verified by a test asserting
+
+    land refuses loudly rather than silently picking a side.'
+  evidence: []
+- text: 'GIVEN `.gitattributes` currently registers `tickets.md merge=frob-ledger`
+
+    WHEN v2-only mode is reached (post-migration, this ticket''s own scope)
+
+    THEN that line is removed and no replacement driver is registered.'
+  evidence: []
+threat: null
+component: null
+```
+Ledger v2 design (docs/design/ledger-v2.md section 5) needs `frob ticket
+land`'s merge story rebuilt around git's native per-file 3-way merge:
+disjoint-scope branches touching different `tickets/T-####/` directories
+need no custom resolution at all. Retires the `merge.frob-ledger` git
+merge driver, `splice_ledger`, `_merge_ledger_tickets`, the archive-
+specific splice (T-0959's fix), and the sibling-Done-report preservation
+heuristic (T-0577 item 2) -- ALL as dead code once every land runs in
+v2-only mode. Blocked by store backend, renumber, and archive tickets
+(land must be able to finalize/renumber/archive in v2 before its old
+monofile-splice logic can be safely removed).
+
+Do NOT delete `_land_merge.py`/`_land_merge_zones.py` in the same diff
+as adding v2 land support -- land a v2-aware land path FIRST, gated
+alongside v1 support during the compatibility window; deletion of the
+retired monofile-merge code is the migration ticket's final-cutover step
+(design section 7.4), not this ticket's.
+
+GIVEN two branches each editing a DIFFERENT ticket's `tickets/T-####/`
+directory
+WHEN both land
+THEN git's own merge produces zero conflicts (no custom driver invoked),
+verified by an end-to-end land test with two disjoint-scope v2 tickets.
+
+GIVEN two branches BOTH editing the SAME ticket's `ticket.md`
+WHEN both attempt to land
+THEN the conflict surfaces as an ordinary git conflict on that one file
+(no `splice_ledger`-class resolution needed), verified by a test asserting
+land refuses loudly rather than silently picking a side.
+
+GIVEN `.gitattributes` currently registers `tickets.md merge=frob-ledger`
+WHEN v2-only mode is reached (post-migration, this ticket's own scope)
+THEN that line is removed and no replacement driver is registered.
