@@ -94,8 +94,18 @@ def _absorb_pre_land_fixes(worktree: Path, ticket_id: str) -> None:
             ticket_id,
         )
         return
+    # frob:ticket T-1323
+    # WAIVE004 excluded: its staleness self-check trusts a fresh gates run,
+    # but in a natives-stale worktree that run silently under-reports
+    # (PERF/REF reach analysis finds nothing), so every live waiver reads
+    # as dead and gets mass-deleted -- the 2026-07-29 incident that
+    # stripped 50 PERF waivers onto main. Re-enable only when the handler
+    # itself refuses a degraded verification run (T-1323 acceptance [1]).
     applied = apply_tier_a_fixes(
-        worktree, snapshot_result.danger_ok, queue_result.danger_ok
+        worktree,
+        snapshot_result.danger_ok,
+        queue_result.danger_ok,
+        exclude=("WAIVE004",),
     )
     if applied:
         _log.info(

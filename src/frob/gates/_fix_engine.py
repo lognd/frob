@@ -25,6 +25,7 @@ that CLI batch to call directly.
 from __future__ import annotations
 
 import difflib
+import logging
 import re
 from collections.abc import Callable
 from pathlib import Path
@@ -34,6 +35,8 @@ from pydantic import BaseModel
 from frob.graph import EdgeKind, GraphSnapshot
 from frob.tickets import TicketQueue
 from frob.tickets._provisional import is_draft_id
+
+_log = logging.getLogger(__name__)
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
@@ -702,7 +705,10 @@ TIER_A_HANDLERS: dict[
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:tests tests/test_gates.py::TestFixEngineTierA.test_doc007_dotted_form_rewrite_applies_and_reverifies_clean kind="unit"  # noqa: E501
 def apply_tier_a_fixes(
-    root: Path, snapshot: GraphSnapshot, queue: TicketQueue
+    root: Path,
+    snapshot: GraphSnapshot,
+    queue: TicketQueue,
+    exclude: tuple[str, ...] = (),
 ) -> list[FixApplied]:
     """Apply every Tier-A deterministic fix this batch ships (T-1138,
     T-1177, T-1261) via `TIER_A_HANDLERS`, in that dict's declared order
@@ -719,6 +725,9 @@ def apply_tier_a_fixes(
     already-correct DOC007 target is silently a no-op for that one
     finding, not an error."""
     applied: list[FixApplied] = []
-    for handler in TIER_A_HANDLERS.values():
+    for rule_id, handler in TIER_A_HANDLERS.items():
+        if rule_id in exclude:
+            _log.info("tier-a fixes: %s excluded by caller", rule_id)
+            continue
         applied.extend(handler(root, snapshot, queue))
     return applied

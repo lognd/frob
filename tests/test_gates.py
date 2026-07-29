@@ -7997,6 +7997,26 @@ class TestFixEngineTierA:
         assert not [a for a in applied if a.rule == "DOC007"]
         assert (root / "src" / "pkg" / "mod.py").read_text(encoding="utf-8") == content
 
+    def test_excluded_handler_is_skipped_and_file_untouched(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::apply_tier_a_fixes kind="unit"
+        # frob:ticket T-1323
+        from frob.gates import apply_tier_a_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src" / "pkg").mkdir(parents=True)
+        content = "# frob:tests tests/test_mod.py::TestX::test_y\ndef real():\n    pass\n"
+        (root / "src" / "pkg" / "mod.py").write_text(content, encoding="utf-8")
+        snapshot = self._snap(root)
+
+        applied = apply_tier_a_fixes(
+            root, snapshot, TicketQueue(tickets={}), exclude=("DOC007",)
+        )
+        assert not [a for a in applied if a.rule == "DOC007"]
+        assert (root / "src" / "pkg" / "mod.py").read_text(encoding="utf-8") == content
+
     # -- acceptance [1]: DOC002 unique-anchor-slug correction --------------
 
     def test_doc002_unique_fuzzy_candidate_rewritten_and_reverifies_clean(
