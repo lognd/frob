@@ -115,6 +115,16 @@ CAPABILITY_KINDS: tuple[str, ...] = (
     #: node that declares `may "fs-read"` specifically gets the honest,
     #: narrower signal (docs/strata/selfconform.md#fs-read-fs-write).
     "fs-read",
+    #: T-1252: `fs` joined `frob.vet._capability_modes.WIRED_MODE_
+    #: FAMILIES` -- `frob.strata._threat.DEFAULT_BENIGN_CAPABILITIES` now
+    #: excuses THREAT005 against the tier-2 `_effects.py::_KIND_MAP`-
+    #: NORMALIZED observed kind (`fs.read`/`fs.write`, mode-qualified, the
+    #: same spelling `may` declarations resolve to) -- a DIFFERENT string
+    #: from the raw vet-scanner kind just above (`fs-read`/`fs-write`,
+    #: hyphenated), mirroring `net.connect`/`net.listen`'s and `env.read`/
+    #: `env.write`'s own T-0771/T-1075 dual-registration.
+    "fs.read",
+    "fs.write",
     "env",
     #: T-0771: precise read-vs-write scanner-observed kinds for `env`, the
     #: same shape as `net-connect`/`net-listen` above.
@@ -2061,6 +2071,69 @@ CAPABILITY_MATRIX_EXCUSES: tuple[_MatrixExcuse, ...] = (
         capability_kind="env.write",
         language="kotlin",
         reason="see the python/env.read excuse above, write-side",
+    ),
+    # T-1252: `fs.read`/`fs.write` (dotted, the tier-2 `_KIND_MAP`-
+    # normalized spelling `frob.strata._threat.DEFAULT_BENIGN_CAPABILITIES`
+    # excuses THREAT005 against) are a DIFFERENT registered kind from the
+    # raw scanner's `fs-read`/`fs-write` (hyphenated, patterned above) --
+    # same shape as `net.connect`/`net.listen` and `env.read`/`env.write`
+    # above. Nothing in `DANGEROUS_OPERATIONS` ever emits the dotted
+    # spelling directly (only `_effects.py::_KIND_MAP` produces it,
+    # downstream of the scanner), so every language cell for both dotted
+    # kinds is excused, not patterned.
+    _MatrixExcuse(
+        capability_kind="fs.read",
+        language="python",
+        reason="dotted mode-qualified spelling, never emitted directly by "
+        "the scanner (only frob.strata._effects.py::_KIND_MAP produces "
+        "it from the raw fs-read scanner kind, already patterned above) "
+        "-- registered only so THREAT005's BenignCapability excuse kind "
+        "is a known kind, not a separate detection surface",
+    ),
+    _MatrixExcuse(
+        capability_kind="fs.read",
+        language="typescript",
+        reason="see the python/fs.read excuse above",
+    ),
+    _MatrixExcuse(
+        capability_kind="fs.read",
+        language="rust",
+        reason="see the python/fs.read excuse above",
+    ),
+    _MatrixExcuse(
+        capability_kind="fs.read",
+        language="c-cpp",
+        reason="see the python/fs.read excuse above",
+    ),
+    _MatrixExcuse(
+        capability_kind="fs.read",
+        language="kotlin",
+        reason="see the python/fs.read excuse above",
+    ),
+    _MatrixExcuse(
+        capability_kind="fs.write",
+        language="python",
+        reason="see the python/fs.read excuse above, write-side",
+    ),
+    _MatrixExcuse(
+        capability_kind="fs.write",
+        language="typescript",
+        reason="see the python/fs.read excuse above, write-side",
+    ),
+    _MatrixExcuse(
+        capability_kind="fs.write",
+        language="rust",
+        reason="see the python/fs.read excuse above, write-side",
+    ),
+    _MatrixExcuse(
+        capability_kind="fs.write",
+        language="c-cpp",
+        reason="see the python/fs.read excuse above, write-side",
+    ),
+    _MatrixExcuse(
+        capability_kind="fs.write",
+        language="kotlin",
+        reason="see the python/fs.read excuse above, write-side",
     ),
     _MatrixExcuse(
         capability_kind="fs",
