@@ -569,6 +569,7 @@
     "src/frob/gates/_gate_cache.py::evaluate_cacheable_gate": "edef6d4469821521c8de83f1df534346b40525212c80b41f64433a05036cba13",
     "src/frob/gates/_gate_cache.py::extra_key": "b7c9959e957f3034f89c958429d1810294ba89d012e58f1edfef8765367f1eea",
     "src/frob/gates/_gate_cache.py::invalidate": "04fbcd19cdded6a0a280e13469150b12c4c48982bd88c0ff7d1bcd899ce96bc1",
+    "src/frob/gates/_inv006_split_assist.py::find_carried_waiver": "5f615291efb57b07845d0c401b2a7d87871f123018a73c58245405d6f6911f52",
     "src/frob/gates/_lang_conformance.py::lang_conformance_gate": "39dbe48b9e5dd8c93a6abfa14d9100ad749dbfe3c734a915bb503a4a185fe417",
     "src/frob/gates/_lang_conformance.py::project_lang_conformance_gate": "f5e3b17778206d1ee73cde5d6f955bae9cae450f28b7c929347b943b0401d305",
     "src/frob/gates/_models.py::CoverageData": "001138b91932cc4d61786cd5c81887b9816e4afa8e020c55b42a31532c511915",
@@ -641,6 +642,7 @@
     "src/frob/gates/invariants.py::Invariant": "5d1e82ef09a80c49ce9248893beadbb328d0006b50b8a5dd498913ff8c10ecc2",
     "src/frob/gates/invariants.py::InvariantError": "73188f0e935fa34fcb42ae278451406340b987823ff6da274e78e88f38185073",
     "src/frob/gates/invariants.py::NORMATIVE_CLAIM_PATTERNS": "280f6723744f238ff1d2470f36c62ee301f96e4db91b17d526b11f005362ff55",
+    "src/frob/gates/invariants.py::find_exclusivity_claim_sentences": "db28dd9caff3bf0eb7ffc864d8686c91f507d80b8a245c655a50f08a7e382691",
     "src/frob/gates/invariants.py::find_exclusivity_claims": "cb8f07b0a9464fb49fe488cfa3cffa540ae747c3645def0d4a3700aebd66982a",
     "src/frob/gates/invariants.py::find_normative_claims": "c98c486cd2d9c9b08a89c0ad0f10036e7326d57cb9b0247b562aa3841a741b22",
     "src/frob/gates/invariants.py::load_invariants": "665ae6d12c7b7b89371895196db67b373e31ff71306f5af194f4bc8d7e80bc6f",
@@ -1862,5 +1864,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.257.0"
+  "version": "0.258.0"
 }

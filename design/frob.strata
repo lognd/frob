@@ -803,6 +803,8 @@ node gates : trusted {
     attr interface=fake_marker_staleness_gate;
     attr interface=ffi_boundary_gate;
     attr interface=file_reference_counts;
+    attr interface=find_carried_waiver;
+    attr interface=find_exclusivity_claim_sentences;
     attr interface=find_exclusivity_claims;
     attr interface=find_normative_claims;
     attr interface=fix_doc002_unique_slug;
@@ -3450,6 +3452,7 @@ node testsuite : trusted {
     attr interface=TestInv003Gate;
     attr interface=TestInv004Gate;
     attr interface=TestInv006Gate;
+    attr interface=TestInv006SplitAssist;
     attr interface=TestInv007;
     attr interface=TestInv008;
     attr interface=TestInvariantGate;

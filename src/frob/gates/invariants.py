@@ -123,6 +123,25 @@ def find_exclusivity_claims(text: str) -> tuple[str, ...]:
     )
 
 
+# frob:doc docs/modules/gates.md#inv006-t-0408
+# frob:ticket T-1134
+# frob:tests tests/test_gates.py::TestInv006SplitAssist.test_find_exclusivity_claim_sentences_returns_actual_prose  # noqa: E501
+def find_exclusivity_claim_sentences(text: str) -> tuple[str, ...]:
+    """Every claim-shaped SENTENCE (not merely the matched pattern's own
+    `.pattern` regex source, what `find_exclusivity_claims` returns) that
+    trips an `EXCLUSIVITY_CLAIM_PATTERNS` entry in `text` -- the actual
+    prose T-1134's INV006 split-assist (`frob.gates._inv006_split_assist`)
+    compares verbatim against other files, since a regex source string can
+    never appear literally in a moved docstring/comment the way the real
+    sentence it matched can."""
+    sentences = _claim_shaped_sentences(text)
+    return tuple(
+        s
+        for s in sentences
+        if any(pattern.search(s) is not None for pattern in EXCLUSIVITY_CLAIM_PATTERNS)
+    )
+
+
 # frob:doc docs/modules/gates.md#invariants
 # frob:ticket T-0452
 # The base normative-claim vocabulary INV004 (frob.gates.__init__) uses to
@@ -314,6 +333,7 @@ __all__ = [
     "Invariant",
     "InvariantError",
     "_Criticality",
+    "find_exclusivity_claim_sentences",
     "find_exclusivity_claims",
     "find_normative_claims",
     "load_invariants",

@@ -4966,6 +4966,90 @@ class TestInv006Gate:
         )
 
 
+# frob:ticket T-1134
+class TestInv006SplitAssist:
+    """T-1134: when an exclusivity claim's exact prose is moved out of a
+    file that already carries a covering INV006 waiver/invariant, the
+    destination's INV006 finding must name that source and offer the
+    carried disposition as a fix-it."""
+
+    # frob:tests tests/test_gates.py::TestInv006SplitAssist.test_find_exclusivity_claim_sentences_returns_actual_prose  # noqa: E501
+    def test_find_exclusivity_claim_sentences_returns_actual_prose(self) -> None:
+        """`find_exclusivity_claim_sentences` returns the real matched
+        sentence text, not `find_exclusivity_claims`'s regex-source
+        pattern name -- the verbatim-comparable form T-1134 needs."""
+        from frob.gates.invariants import find_exclusivity_claim_sentences
+
+        text = '"""The only writer of this file is the daemon process."""\n'
+        sentences = find_exclusivity_claim_sentences(text)
+        assert len(sentences) == 1
+        assert "only writer" in sentences[0]
+
+    # frob:tests tests/test_gates.py::TestInv006SplitAssist.test_finds_carried_waiver_for_verbatim_moved_claim  # noqa: E501
+    def test_finds_carried_waiver_for_verbatim_moved_claim(
+        self, tmp_path: Path
+    ) -> None:
+        """A claim sentence moved VERBATIM from `src/old.py` (which
+        carries a covering `frob:waive INV006`) into `src/new.py` (no
+        waiver of its own) -- the destination's INV006 finding must name
+        `src/old.py` and offer its waiver text as a fix-it."""
+        sentence = "The only writer of this file is the daemon process."
+        _write(
+            tmp_path,
+            "src/old.py",
+            f'# frob:waive INV006 reason="genuine design intent, not enforced"\n'
+            f'"""{sentence}"""\n',
+        )
+        _write(tmp_path, "src/new.py", f'"""{sentence}"""\n')
+        snapshot = _snapshot(tmp_path)
+        violations = inv006_gate(tmp_path, snapshot)
+        new_violations = [v for v in violations if v.file == "src/new.py"]
+        assert len(new_violations) == 1
+        assert "src/old.py" in new_violations[0].message
+        assert "carry it here" in new_violations[0].message
+        assert "genuine design intent, not enforced" in new_violations[0].message
+
+    # frob:tests tests/test_gates.py::TestInv006SplitAssist.test_no_match_when_no_other_file_shares_the_claim  # noqa: E501
+    def test_no_match_when_no_other_file_shares_the_claim(self, tmp_path: Path) -> None:
+        """An ordinary, never-moved INV006 finding (no other file shares
+        the claim text at all) must not gain a bogus carried-waiver
+        suggestion."""
+        _write(
+            tmp_path,
+            "src/pkg.py",
+            '"""Module docstring."""\n\n'
+            "def only_writer() -> None:\n"
+            '    """The only writer of this file is the daemon."""\n',
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = inv006_gate(tmp_path, snapshot)
+        assert len(violations) == 1
+        assert "carry it here" not in violations[0].message
+
+    # frob:tests tests/test_gates.py::TestInv006SplitAssist.test_reworded_claim_is_not_detected_v1_disclosed  # noqa: E501
+    def test_reworded_claim_is_not_detected_v1_disclosed(self, tmp_path: Path) -> None:
+        """T-1134 v1 (disclosed narrow scope): detection is exact-sentence
+        verbatim match only -- a paraphrase of a waived claim in another
+        file must NOT be reported as carried, since it genuinely is not
+        the same text."""
+        _write(
+            tmp_path,
+            "src/old.py",
+            '# frob:waive INV006 reason="x"\n'
+            '"""The only writer of this file is the daemon process."""\n',
+        )
+        _write(
+            tmp_path,
+            "src/new.py",
+            '"""This file is written to solely by the daemon process."""\n',
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = inv006_gate(tmp_path, snapshot)
+        new_violations = [v for v in violations if v.file == "src/new.py"]
+        assert len(new_violations) == 1
+        assert "carry it here" not in new_violations[0].message
+
+
 class TestPlace001Gate:
     """T-0504: PLACE001 replaces the dropped T-0470 "distance from the
     class's own span start" prototype (proven noisy against this repo's

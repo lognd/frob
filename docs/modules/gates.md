@@ -2494,6 +2494,35 @@ down to 0 (bind each to a real invariant, waive with a specific reason,
 or reword) is tracked as a follow-up burndown, same as INV003/INV004's
 own residual, not hand-closed in this pass.
 
+**Split-assist (T-1134)**: every module split this drive
+(T-1103/T-1107/T-1072/T-1077/T-1081/T-1082, plus 3 more the coordinator
+hand-carried on 2026-07-28) had to remember to re-carry an already-
+existing INV006 waiver/invariant into the new file its claim prose moved
+into -- a human step nothing caught if skipped. `frob.gates.
+_inv006_split_assist.find_carried_waiver` closes this: when
+`_inv006_src_violations` is about to report an unwaived finding, it first
+checks whether the offending claim SENTENCE (`frob.gates.invariants.
+find_exclusivity_claim_sentences`, the real matched prose, not the
+pattern name `find_exclusivity_claims` returns) appears VERBATIM
+(whitespace-normalized) in some OTHER file under `INV006_SRC_DIRS` that
+already carries a covering `frob:waive INV006` or `frob:invariant` edge.
+If so, the finding's message names that source and offers its exact
+disposition as a copy-pastable fix-it (`frob:waive INV006 reason="..."`
+or the source's `frob:invariant INV-###` id) instead of leaving "remember
+the carried waiver" a silent human step.
+
+Deliberately narrow, disclosed (v1): detection is an EXACT sentence match
+only -- a reworded paraphrase of a waived claim is not recognized as
+"moved" and still fires a plain, un-augmented INV006 finding. This is a
+lighter-weight sibling of `frob.dup`'s full clone pipeline (function/
+symbol-scoped, not applicable to bare docstring/comment prose), same
+"exact match first" posture as `frob.dup`'s own Type-1 rung.
+`find_carried_waiver` is written to be reusable outside INV006
+specifically so T-1135's refactor epic (this ticket is expected to become
+a child of it at design time) can wire the same detector into PII012's
+(file, token)-keyed allowlist, which has the identical code-moves-need-a-
+new-entry failure mode (T-1076 precedent).
+
 ### INV007 and INV008 (T-0757)
 
 INV001-INV006 (above) are all about whether a DECLARED invariant has

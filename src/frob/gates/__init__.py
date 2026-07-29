@@ -105,6 +105,7 @@ from frob.gates._fmt_directives import (
 )
 from frob.gates._gate_cache import evaluate_cacheable_gate
 from frob.gates._gate_cache import invalidate as invalidate_gate_cache
+from frob.gates._inv006_split_assist import find_carried_waiver
 from frob.gates._lang_conformance import (
     lang_conformance_gate,
     project_lang_conformance_gate,
@@ -3858,21 +3859,49 @@ def _inv006_src_violations(
         _log.debug(
             "INV006: %s ratchet-resolved to %s (rules=%s)", rel, resolved, ratchet_rules
         )
+    message = (
+        f"INV006: {rel} makes an exclusivity/normative claim "
+        f"({', '.join(sorted(claims))}) with no `frob:invariant "
+        f"INV-###` edge anchored anywhere in the file -- bind an "
+        f"invariant that covers the claim, waive with a reason, "
+        f"or reword to drop the exclusivity language if it isn't "
+        f"actually enforced"
+    ) + _inv006_split_assist_suffix(root, text, rel, snapshot)
     return (
         Violation(
             rule="INV006",
             severity=severity,
             file=rel,
             line=0,
-            message=(
-                f"INV006: {rel} makes an exclusivity/normative claim "
-                f"({', '.join(sorted(claims))}) with no `frob:invariant "
-                f"INV-###` edge anchored anywhere in the file -- bind an "
-                f"invariant that covers the claim, waive with a reason, "
-                f"or reword to drop the exclusivity language if it isn't "
-                f"actually enforced"
-            ),
+            message=message,
         ),
+    )
+
+
+# frob:ticket T-1134
+def _inv006_split_assist_suffix(
+    root: Path, text: str, rel: str, snapshot: GraphSnapshot
+) -> str:
+    """T-1134: `""` unless this claim sentence in `text` was moved VERBATIM
+    out of a file that already carries a covering INV006 waiver/invariant
+    (a module split, the recurring T-1103/T-1107/T-1072/T-1077/T-1081/
+    T-1082 cost this drive) -- otherwise the message suffix naming that
+    source and offering its disposition as a copy-pastable fix-it, instead
+    of leaving "remember the carried waiver" a silent human step."""
+    carried = find_carried_waiver(
+        root,
+        text,
+        exclude_rel=rel,
+        candidate_dirs=INV006_SRC_DIRS,
+        candidate_suffixes=INV006_SRC_SUFFIXES,
+        snapshot=snapshot,
+    )
+    if carried is None:
+        return ""
+    source_rel, kind, fixit = carried
+    return (
+        f" -- T-1134: this claim was moved verbatim from {source_rel}, "
+        f"which already carries a covering {kind}; carry it here: {fixit}"
     )
 
 
