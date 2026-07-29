@@ -1332,3 +1332,42 @@ threat: null
 component: null
 ```
 Umbrella epic: migrate the Python-side tree-sitter tree-extraction layer (frob.lang._extract.extract, _walk_python, _common.walk) into frob_core (PyO3/Rust), per the report's Rust-migration-candidates ranking. This is the largest single native-cost family measured (perf 38 pct, clones 69 pct, deprecated 76 pct, dead_symbols 88 pct, opaque 92 pct, sys ~50 pct -- summed ~40-50s native per full check) and is not covered by frob_core today (existing kernels consume the token lists this layer produces). 4 children: tree-extraction kernel, capability-scan resolver, arch metrics single-pass walk export, and an interim zero-Rust tree-sitter Query step for comment/docstring spans. New FFI boundaries must satisfy FFI001/FFI002 (src/frob/gates/_ffi_boundary.py).
+
+<!-- ticket:T-1220 -->
+```yaml
+id: T-1220
+title: 'rust: tree-extraction kernel -- source bytes to symbols/spans/tokens/identifiers/comment+docstring
+  spans/import specs'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: high
+parent: T-1219
+tier: ticket
+sprint: null
+scope:
+- src/frob/lang/**
+- frob-core/**
+acceptance:
+- text: 'GIVEN frob.lang._extract.extract and _walk_python do pure per-node Python
+    recursion over py-tree-sitter Node objects (measured shares: perf 38 pct, clones
+    69 pct, deprecated 76 pct, dead_symbols 88 pct, opaque 92 pct, sys ~50 pct) WHEN
+    a frob_core kernel (e.g. extract_tree(source: bytes, lang: str) -> (symbols, spans,
+    body_tokens, leaf_identifiers, comment_spans, docstring_spans, import_specs))
+    is exported for python/cpp/rust/typescript via the tree-sitter Rust crates, with
+    kotlin staying on the existing Python path, and the FFI boundary passes FFI001/FFI002
+    THEN callers across perf/clones/deprecated/dead_symbols/opaque/sys switch to the
+    native kernel and each site''s measured native-cost share for extraction drops
+    correspondingly'
+  evidence: []
+- text: 'GIVEN the report''s Rust-migration-candidates #1 and #4 overlap (identifier/xref
+    index kernel is subsumed by the tree-extraction kernel if it lands first) WHEN
+    this ticket lands THEN the identifier/xref index kernel work is satisfied as a
+    byproduct (leaf_identifiers output) rather than needing a separate crate export
+    -- no duplicate kernel is built for identifier extraction'
+  evidence: []
+threat: null
+component: null
+```
+Root cause and target: this is Rust-migration candidate #1 from the report, HIGH feasibility. tree-sitter has first-class Rust crates and tree-sitter-python/cpp/rust/typescript grammars exist as crates; kotlin (via tree-sitter-language-pack) stays Python-side for now. frob-core already has the pyo3/abi3 plumbing and .pyi convention; API shape mirrors existing kernels (plain lists/tuples over the FFI, consistent with dup/callgraph/arch kernels already shipped). This ticket SUBSUMES Rust-migration candidate #4 (identifier/xref index kernel): note explicitly in the design that leaf-identifier output from this kernel satisfies #4's need, so no second crate export is built purely for identifiers. Not blocked on anything -- this is the foundation the other EPIC B children (capability resolver, arch metrics walk) build on, but do not add a blocked_by edge for those; they are downstream consumers, this ticket's own scope does not require them to exist first.
