@@ -1004,3 +1004,163 @@ land refuses loudly rather than silently picking a side.
 GIVEN `.gitattributes` currently registers `tickets.md merge=frob-ledger`
 WHEN v2-only mode is reached (post-migration, this ticket's own scope)
 THEN that line is removed and no replacement driver is registered.
+
+<!-- ticket:T-draft-ffbf6ea3 -->
+```yaml
+id: T-draft-ffbf6ea3
+title: 'ledger v2: migration (frob ticket migrate --to v2, golden round-trip, deprecation
+  gate, final cutover)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+blocked_by:
+- T-draft-53d33977
+- T-draft-4ae257ca
+- T-draft-d8653bfe
+- T-draft-123962ab
+- T-draft-600ca3b0
+- T-draft-0ce0d873
+parent: T-1136
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_store.py
+- src/frob/tickets/_land.py
+- src/frob/tickets/_land_merge.py
+- src/frob/tickets/_land_merge_zones.py
+- src/frob/gates/**
+- docs/modules/tickets.md
+- .gitattributes
+- tests/fixtures/tickets/**
+- tests/test_tickets_migration.py
+acceptance:
+- text: 'The migration child ticket, per T-1136''s epic body ("migration is a
+
+    separate child... with golden round-trip tests") and design doc section
+
+    7. Blocked by every design-implementing child (lock model, store
+
+    backend, renumber, archive, doable/index, land merge-story retirement) --
+
+    migration only makes sense once v2 is a fully working alternate mode.'
+  evidence: []
+- text: "Deliverables (design section 7, this ticket owns ALL of them):\n1. `frob\
+    \ ticket migrate --to v2`: one-shot, reversible migrator reading\n   today's `tickets.md`/`tickets-archive.md`\
+    \ via existing `_parse_ledger`,\n   writing `tickets/T-####/ticket.md` + `done-report.md`\
+    \ + moved\n   attachments -- WITHOUT deleting the monofiles in the same commit.\n\
+    2. Golden round-trip test: migrate a fixture ledger to v2, migrate v2\n   back\
+    \ to a monofile rendering, assert semantic equality (same id set,\n   field values,\
+    \ Done-report text) even if not byte-identical.\n3. A new deprecation-class gate\
+    \ (name TBD, e.g. LEDGERV1001) warning on\n   monofile-mode repos once v2 ships,\
+    \ mirroring the existing DEPR00x\n   escalation-after-expiry pattern.\n4. Final-cutover\
+    \ step (separate commit within this ticket, or an\n   explicitly filed follow-up\
+    \ if judged too large): flip the fresh-repo\n   default to v2, delete `_render_ledger`/`splice_ledger`/\n\
+    \   `_land_merge.py`/`_land_merge_zones.py`, remove the `.gitattributes`\n   merge-driver\
+    \ line."
+  evidence: []
+- text: 'Do NOT delete the v1 monofile code path until the golden round-trip test
+
+    is green AND a compatibility-window period has been explicitly recorded
+
+    (a dated note in docs/modules/tickets.md is sufficient evidence, no fixed
+
+    calendar length is prescribed here -- follow the DEPR00x precedent''s own
+
+    expiry-recording convention).'
+  evidence: []
+- text: 'GIVEN a fixture monofile ledger covering a done ticket with a Done
+
+    report, a queued ticket with blocked_by, a ticket with attachments, an
+
+    archived ticket, and a draft-id ticket
+
+    WHEN it is migrated to v2 then migrated back to a monofile rendering
+
+    THEN the round-tripped rendering parses to an equal id-set and equal
+
+    per-ticket field values and Done-report text as the original (golden
+
+    round-trip test, T-1136 acceptance[1]''s reversibility requirement).'
+  evidence: []
+- text: 'GIVEN a migration mid-way through the compatibility window
+
+    WHEN `frob check` runs against a monofile-mode repo
+
+    THEN it reports a new deprecation-class warning (not yet an error) naming
+
+    the v2 migration path, escalating to error only after an explicitly
+
+    recorded expiry.'
+  evidence: []
+- text: 'GIVEN the final cutover has landed
+
+    WHEN a real land runs
+
+    THEN it performs no monofile splice (T-1136 acceptance[1]), two agents
+
+    landing disjoint tickets produce no ledger merge conflict, and the
+
+    TICK002/TICK006 draft-death classes described in the epic are
+
+    structurally impossible (draft directories are disjoint git objects,
+
+    verified by a regression test reproducing the T-1115/T-1126/T-1127/
+
+    T-1128 draft-death shape against v2 and asserting no draft is lost).'
+  evidence: []
+threat: null
+component: null
+```
+The migration child ticket, per T-1136's epic body ("migration is a
+separate child... with golden round-trip tests") and design doc section
+7. Blocked by every design-implementing child (lock model, store
+backend, renumber, archive, doable/index, land merge-story retirement) --
+migration only makes sense once v2 is a fully working alternate mode.
+
+Deliverables (design section 7, this ticket owns ALL of them):
+1. `frob ticket migrate --to v2`: one-shot, reversible migrator reading
+   today's `tickets.md`/`tickets-archive.md` via existing `_parse_ledger`,
+   writing `tickets/T-####/ticket.md` + `done-report.md` + moved
+   attachments -- WITHOUT deleting the monofiles in the same commit.
+2. Golden round-trip test: migrate a fixture ledger to v2, migrate v2
+   back to a monofile rendering, assert semantic equality (same id set,
+   field values, Done-report text) even if not byte-identical.
+3. A new deprecation-class gate (name TBD, e.g. LEDGERV1001) warning on
+   monofile-mode repos once v2 ships, mirroring the existing DEPR00x
+   escalation-after-expiry pattern.
+4. Final-cutover step (separate commit within this ticket, or an
+   explicitly filed follow-up if judged too large): flip the fresh-repo
+   default to v2, delete `_render_ledger`/`splice_ledger`/
+   `_land_merge.py`/`_land_merge_zones.py`, remove the `.gitattributes`
+   merge-driver line.
+
+Do NOT delete the v1 monofile code path until the golden round-trip test
+is green AND a compatibility-window period has been explicitly recorded
+(a dated note in docs/modules/tickets.md is sufficient evidence, no fixed
+calendar length is prescribed here -- follow the DEPR00x precedent's own
+expiry-recording convention).
+
+GIVEN a fixture monofile ledger covering a done ticket with a Done
+report, a queued ticket with blocked_by, a ticket with attachments, an
+archived ticket, and a draft-id ticket
+WHEN it is migrated to v2 then migrated back to a monofile rendering
+THEN the round-tripped rendering parses to an equal id-set and equal
+per-ticket field values and Done-report text as the original (golden
+round-trip test, T-1136 acceptance[1]'s reversibility requirement).
+
+GIVEN a migration mid-way through the compatibility window
+WHEN `frob check` runs against a monofile-mode repo
+THEN it reports a new deprecation-class warning (not yet an error) naming
+the v2 migration path, escalating to error only after an explicitly
+recorded expiry.
+
+GIVEN the final cutover has landed
+WHEN a real land runs
+THEN it performs no monofile splice (T-1136 acceptance[1]), two agents
+landing disjoint tickets produce no ledger merge conflict, and the
+TICK002/TICK006 draft-death classes described in the epic are
+structurally impossible (draft directories are disjoint git objects,
+verified by a regression test reproducing the T-1115/T-1126/T-1127/
+T-1128 draft-death shape against v2 and asserting no draft is lost).
