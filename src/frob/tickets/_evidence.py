@@ -28,6 +28,18 @@ rather than at load time, the same load-order-safe indirection
 `__init__` imports THIS module before any of the six exist yet at its own
 module scope.
 """
+# frob:waive ARCH102 reason="the naming/usage clustering heuristic groups these 26 \
+# exports into 4 clusters by surface-level name prefix and direct call edges \
+# (transition/reverify_*/guard-shaped names vs evidence/cmd_evidence-shaped names \
+# vs render_*/compute_*/base_ref_resolvable Done-report helpers vs replay_evidence_ \
+# from_done_report's own recovery path); the module docstring above already names \
+# the real cohesion -- every one of these functions feeds or guards the SAME DONE- \
+# transition decision (evidence recorded here, verified here, guard chain that \
+# decides closability lives here) -- coupled by the shared TicketQueue/Ticket state \
+# machine this family exists to enforce, not by call-graph adjacency alone; same \
+# T-1103/T-1108 precedent as frob.tickets.__init__'s own ARCH102 waiver for the \
+# identical reason (one deliberately centralized concern, not several bolted \
+# together)"
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/tickets/_evidence.py's \
 # exclusivity-vocabulary hits are source-level design-rationale prose \

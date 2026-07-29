@@ -131,7 +131,6 @@ from frob.tickets._models import (
     TicketSpec,
     TicketState,
     TicketTier,
-    _glob_is_subset,
     is_cmd_evidence,
     is_valid_ticket_ref,
     parse_claims_from_done_report,
