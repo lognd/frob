@@ -56,7 +56,7 @@ T-0254 child 6 (proof on reality). Apply the full chain to malmberg (the real se
 id: T-0802
 title: 'execute the 2026-10-01 navigation-command sunset: remove map/outline/xref/docs-search
   per T-0580 deprecation'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-23'
@@ -82,6 +82,8 @@ component: null
 ```
 Sunset-execution ticket for the user's 2026-07-23 deprecation decision (T-0580, done). Stays OPEN until the sunset so the four frob:deprecated directives have a live ticket binding (DEPR002 requires ticket= to reference an open ticket -- T-0797 registration surfaced that the directives bound to the closed T-0580). Do not work before the sunset date.
 
+## Drop reason
+- 2026-07-29: superseded 2026-07-29: user chose regrouping over sunset -- map/outline/xref/docs-search move under frob explore and are un-deprecated (see cli-regrouping epic); executing the removal would delete commands we now keep
 <!-- ticket:T-0969 -->
 ```yaml
 id: T-0969
