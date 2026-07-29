@@ -3003,6 +3003,7 @@ outcomes, exit 0.
 - tests: 26 passed (from 26 evidence id(s))
 - gates: 0 error(s), 960 warning(s), 505 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1154 -->
 ```yaml
 id: T-1154
@@ -4260,3 +4261,51 @@ land" the way this one was, not one giant ticket -- but re-filing T-1159
 itself (re-titled to name only the STILL-remaining families) is simplest
 and avoids re-deriving the acceptance criteria/discipline notes from
 scratch.
+
+<!-- ticket:T-1171 -->
+```yaml
+id: T-1171
+title: 'arch: extract tickets/__init__.py done-report/review/drop/attach family +
+  split _land.py -- T-1152 residue'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- docs/modules/tickets.md
+- tests/test_tickets.py
+threat: null
+component: null
+```
+T-1152 extracted ONE family (evidence/transition) out of
+src/frob/tickets/__init__.py into src/frob/tickets/_evidence.py
+(__init__.py: 2333 -> ~1250 lines). Remaining work from T-1152's own
+original scope, not touched this dispatch:
+
+- done-report/review/drop/attach family (brief_ticket, mutate_labels,
+  record_review, attach, drop_ticket helpers, compose_done_report/
+  set_done_report, record_failure) -- still in
+  src/frob/tickets/__init__.py.
+- src/frob/tickets/_land.py (4866 lines, untouched across T-1108/T-1122/
+  T-1123/T-1151/T-1152) still needs its own split into cohesive
+  preflight/merge-splice/verify/sweep submodules per T-1108's original
+  plan, before LARGE001 stops flagging it.
+
+Follow the same pattern each dispatch: one cohesive family per land,
+private module re-exported from __init__ via explicit imports, zero
+caller-visible behavior change, existing tests as the safety net, carry
+frob:ticket/frob:doc/frob:tests directives verbatim, repoint
+docs/modules/tickets.md's frob:describes anchors and any tests/*.py
+frob:tests directives at the new module path, add frob:ticket edges to
+any test class/method a directive-repoint touches (COV002), carry a
+file-level INV006 split-module waiver (T-0585 calibration-batch
+precedent) if the moved prose trips it, watch for tests that monkeypatch
+a moved function via the PACKAGE attribute (tickets_mod.<name>) -- those
+need a late `from frob.tickets import <name>` inside the moved function
+body instead of a module-top-level binding (two such hazards hit T-1152:
+write_ticket and the bare `subprocess` module object itself).
