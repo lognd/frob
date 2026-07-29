@@ -7328,3 +7328,47 @@ threat: null
 component: null
 ```
 T-1206/T-1216 review 2026-07-29: both non-blocking APPROVE findings. Reviewer verified dispatch totality programmatically (34/34) so there is no live gap; this hardens it. The silent doc-anchor deletion is also a fresh instance of an ungated silent-miss shape (removing a frob:describes anchor from a doc leaves no finding when the doc file survives) -- note it on T-1232's status/currency mechanism as a candidate check: anchor-count regression on a doc file without an ack.
+
+<!-- ticket:T-draft-d058e907 -->
+```yaml
+id: T-draft-d058e907
+title: Re-baseline TEST005 for src/frob/app before continuing T-1276
+state: queued
+kind: docs
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tickets.md
+acceptance:
+- text: GIVEN main's HEAD WHEN make coverage + frob check --stamp-coverage runs THEN
+    the TEST005 finding list for src/frob/app is re-derived and T-1276 is re-scoped
+    or closed accordingly
+  evidence: []
+threat: null
+component: null
+```
+T-1276's baseline (115 TEST005 findings, 63 at exactly 0.0% branch) is a
+stale coordinator-side coverage-stamp snapshot. A T-1276 attempt sampled
+17 of the 63 listed 0.0%-branch symbols across 15 files via targeted
+pytest --cov runs against each symbol's own dedicated test file (not the
+full suite) and every one already showed 68-100% real branch coverage
+from existing, already-landed tests -- fleet_runner::run,
+gitlog_runner::run, arch_runner::run, vet_runner::run, dup_runner::run,
+natives_runner::run, deploy_runner::run, parse_runner::run,
+agent_runner, clean_runner, debt_runner, deprecated_runner, fmt_runner,
+pool_runner, worktree_runner, and all 9 telemetry.py functions.
+
+A sub-agent cannot regenerate a trustworthy full-suite coverage stamp
+itself (playbook agent-playbook.md#6b is coordinator-only, and this was
+confirmed empirically in the T-1276 attempt: a pytest --cov run scoped to
+just the app package's own test files still SIGTERMed past a 540s
+foreground timeout without finishing).
+
+Work: coordinator runs `make coverage` + `frob check --stamp-coverage`
+against current main, re-derives the real TEST005 finding list for
+src/frob/app/**, and either re-scopes T-1276 (if requeued) with the
+current list, or closes it outright if the list is now empty.
