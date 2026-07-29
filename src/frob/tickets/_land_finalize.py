@@ -681,14 +681,14 @@ def _commit_finalize_writes(worktree: Path, final_id: str) -> Result[None, LandE
 
 
 # frob:ticket T-0907
-# frob:waive DUP002 reason="T-1186 split-induced false positive: this is the pre-\
-# existing, deliberate mirror-image counterpart to \
+# frob:waive DUP002 reason="T-1186 split-induced false positive: this is the \
+# pre-existing, deliberate mirror-image counterpart to \
 # frob.tickets._land_merge._check_only_tickets_conflicted -- one checks conflicts \
-# after squash-merging main INTO root (root=ours), the other after merging main \
-# INTO the worktree (worktree=theirs); the two already coexisted, unwaived, side by \
-# side in frob.tickets._land before T-1186's split moved them into separate modules, \
-# which is what triggers DUP002's both-new-in-this-diff pairing -- neither function's \
-# body changed"
+# after squash-merging main INTO root (root=ours), the other after merging main INTO \
+# the worktree (worktree=theirs); the two already coexisted, unwaived, side by side in \
+# frob.tickets._land before T-1186's split moved them into separate modules, which is \
+# what triggers DUP002's both-new-in-this-diff pairing -- neither function's body \
+# changed"
 def _check_squash_conflicted(
     root: Path, worktree: Path, ticket: Ticket, branch_name: str, pre_land_tip: str
 ) -> Result[None, LandError]:
