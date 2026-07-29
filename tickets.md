@@ -847,6 +847,8 @@ This ticket owns ONLY the free-text prose/doc-anchor rows; it does not
 touch `frob:*` DSL directive targets (T-1199's scope) or the Python
 import/call-site rewrite (T-1197's scope).
 
+## Failure log
+- 2026-07-29 attempt 1: duplicate creation (same command re-run while diagnosing scope-closure warnings); superseded by T-draft-d6ca9da7
 <!-- ticket:T-draft-d6ca9da7 -->
 ```yaml
 id: T-draft-d6ca9da7
