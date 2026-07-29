@@ -388,3 +388,34 @@ file-level finding has no symref) -- not every file on this list needs a
 structural split; a disposition is a valid, honest outcome where a real
 split boundary would fragment a genuinely cohesive module (T-1074's own
 precedent for the 7 files it dispositioned rather than split).
+
+<!-- ticket:T-1196 -->
+```yaml
+id: T-1196
+title: 'strata: multi-file design split with cross-file reference semantics'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/**
+- design/**
+- docs/**
+- tests/**
+acceptance:
+- text: GIVEN design/frob.strata split into multiple .strata files under design/ WHEN
+    frob check --only sys runs THEN elaboration resolves cross-file node/flow/boundary
+    references identically to the single-file model (merged-model or explicit import
+    mechanism, design decides) and gate findings are diff-clean vs the monofile
+  evidence: []
+- text: GIVEN a reference to a node declared in no loaded file THEN elaboration fails
+    closed with a per-file error naming the missing id, not a silent partial model
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-07-29: design/frob.strata is 5588 lines and monolithic. _design_load.py (T-0080) already rglobs and loads every .strata file under design/, but elaboration produces one KernelModel PER FILE (DesignIds.models, one per file), so cross-file edges (flows/boundaries referencing nodes in another file) do not elaborate into one model today -- only merged id-surfaces (channels/boundaries/secrets/store_ids/resources) are unioned. Design question for the child design note: merge parsed Modules pre-elaboration into one KernelModel vs an explicit import/include construct in the surface grammar. Sibling ticket covers the attr interface= volume; splitting along component seams is only safe once cross-file references resolve.
