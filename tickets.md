@@ -1626,3 +1626,23 @@ threat: null
 component: null
 ```
 Doc edges to Makefile recipe/dep claims, frob.toml severity claims, pyproject entries, Rust file layout; builds on the multi-language graph. Relate to T-1193's python-only theme; check whether its children already cover part of this and cross-reference rather than duplicate. Ref: gate-gap class 4 in docs/audits/docs-staleness-2026-07-29.md.
+
+<!-- ticket:T-1231 -->
+```yaml
+id: T-1231
+title: 'doclink basename+fragment validation -- resolve relative link targets and
+  #fragment anchors'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: T-1226
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+threat: null
+component: null
+```
+Extend doclink checking (DOCLNK rule) to verify relative link basenames and #fragment anchors resolve, or fail. Ref: gate-gap class 5 in docs/audits/docs-staleness-2026-07-29.md.
