@@ -137,7 +137,16 @@ node cli : trusted {
     // justify is REMOVED (it went stale the moment that wiring landed,
     // verified via `frob sys audit`'s own stale-waiver detection).
     access "tickets_ledger" mode write;
-    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. T-1149 gave SYS201 arbiter-awareness (mirroring SYS203/T-1025) so declaring owns=tickets.md would no longer create new SYS201 findings for these five nodes IN PRINCIPLE, but the live SELFAUDIT001/frob sys audit call sites still do not pass module= to check_resource_contention (same disclosed gap T-1025 left for SYS203), so neither rule actually discharges live yet. Waived pending that wiring plus end-to-end verification against SYS205 own WRITE path-scoping." ticket "T-1158";
+    // T-1158: SYS205 WRITE path-scoping now discharges cleanly via a
+    // real owns= claim -- T-1164 fixed the blast-radius false positive
+    // this declaration would otherwise have triggered (bare runs_as=None
+    // treated as a compromised-user identity), and T-1146/T-1149 wired
+    // module= into the live check_resource_contention call so SYS201
+    // stays arbiter-aware for this owns= claim (tickets_ledger's shared
+    // lock, verified: `frob sys audit` clean with no new SYS201/SYS205
+    // findings). The `waive "SYS205:tickets_ledger" ...` clause this
+    // comment used to justify is REMOVED.
+    owns "tickets.md" "0644";
     attr interface=ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS;
     attr interface=ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS;
     attr interface=ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS;
@@ -705,7 +714,16 @@ node gates : trusted {
     // justify is REMOVED; see `cli`'s full comment above for the
     // reasoning).
     access "tickets_ledger" mode write;
-    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. T-1149 gave SYS201 arbiter-awareness (mirroring SYS203/T-1025) so declaring owns=tickets.md would no longer create new SYS201 findings for these five nodes IN PRINCIPLE, but the live SELFAUDIT001/frob sys audit call sites still do not pass module= to check_resource_contention (same disclosed gap T-1025 left for SYS203), so neither rule actually discharges live yet. Waived pending that wiring plus end-to-end verification against SYS205 own WRITE path-scoping." ticket "T-1158";
+    // T-1158: SYS205 WRITE path-scoping now discharges cleanly via a
+    // real owns= claim -- T-1164 fixed the blast-radius false positive
+    // this declaration would otherwise have triggered (bare runs_as=None
+    // treated as a compromised-user identity), and T-1146/T-1149 wired
+    // module= into the live check_resource_contention call so SYS201
+    // stays arbiter-aware for this owns= claim (tickets_ledger's shared
+    // lock, verified: `frob sys audit` clean with no new SYS201/SYS205
+    // findings). The `waive "SYS205:tickets_ledger" ...` clause this
+    // comment used to justify is REMOVED.
+    owns "tickets.md" "0644";
     attr interface=ALL_PROVIDERS;
     attr interface=BASELINE_REL;
     attr interface=CRITICAL_PROVIDERS;
@@ -1479,7 +1497,16 @@ node fleet : trusted {
     // justify is REMOVED; see `cli`'s full comment above for the
     // reasoning).
     access "tickets_ledger" mode write;
-    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. T-1149 gave SYS201 arbiter-awareness (mirroring SYS203/T-1025) so declaring owns=tickets.md would no longer create new SYS201 findings for these five nodes IN PRINCIPLE, but the live SELFAUDIT001/frob sys audit call sites still do not pass module= to check_resource_contention (same disclosed gap T-1025 left for SYS203), so neither rule actually discharges live yet. Waived pending that wiring plus end-to-end verification against SYS205 own WRITE path-scoping." ticket "T-1158";
+    // T-1158: SYS205 WRITE path-scoping now discharges cleanly via a
+    // real owns= claim -- T-1164 fixed the blast-radius false positive
+    // this declaration would otherwise have triggered (bare runs_as=None
+    // treated as a compromised-user identity), and T-1146/T-1149 wired
+    // module= into the live check_resource_contention call so SYS201
+    // stays arbiter-aware for this owns= claim (tickets_ledger's shared
+    // lock, verified: `frob sys audit` clean with no new SYS201/SYS205
+    // findings). The `waive "SYS205:tickets_ledger" ...` clause this
+    // comment used to justify is REMOVED.
+    owns "tickets.md" "0644";
     attr interface=DEFAULT_MANIFEST_PATH;
     attr interface=FleetError;
     attr interface=FleetManifest;
@@ -1572,7 +1599,16 @@ node core : trusted {
     // justify is REMOVED; see `cli`'s full comment above for the
     // reasoning).
     access "tickets_ledger" mode write;
-    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. T-1149 gave SYS201 arbiter-awareness (mirroring SYS203/T-1025) so declaring owns=tickets.md would no longer create new SYS201 findings for these five nodes IN PRINCIPLE, but the live SELFAUDIT001/frob sys audit call sites still do not pass module= to check_resource_contention (same disclosed gap T-1025 left for SYS203), so neither rule actually discharges live yet. Waived pending that wiring plus end-to-end verification against SYS205 own WRITE path-scoping." ticket "T-1158";
+    // T-1158: SYS205 WRITE path-scoping now discharges cleanly via a
+    // real owns= claim -- T-1164 fixed the blast-radius false positive
+    // this declaration would otherwise have triggered (bare runs_as=None
+    // treated as a compromised-user identity), and T-1146/T-1149 wired
+    // module= into the live check_resource_contention call so SYS201
+    // stays arbiter-aware for this owns= claim (tickets_ledger's shared
+    // lock, verified: `frob sys audit` clean with no new SYS201/SYS205
+    // findings). The `waive "SYS205:tickets_ledger" ...` clause this
+    // comment used to justify is REMOVED.
+    owns "tickets.md" "0644";
     attr interface=ACCENT;
     attr interface=ALL_SENTINEL;
     attr interface=AdpContainer;
@@ -2130,7 +2166,16 @@ node serve : trusted {
     // justify is REMOVED; see `cli`'s full comment above for the
     // reasoning).
     access "tickets_ledger" mode write;
-    waive "SYS205:tickets_ledger" reason "SYS205 first fires here now that T-1061 wires check_mode_conformance into the live SELFAUDIT001 gate: this node truly has no owns/acl path claim scoping its write access to tickets_ledger. T-1149 gave SYS201 arbiter-awareness (mirroring SYS203/T-1025) so declaring owns=tickets.md would no longer create new SYS201 findings for these five nodes IN PRINCIPLE, but the live SELFAUDIT001/frob sys audit call sites still do not pass module= to check_resource_contention (same disclosed gap T-1025 left for SYS203), so neither rule actually discharges live yet. Waived pending that wiring plus end-to-end verification against SYS205 own WRITE path-scoping." ticket "T-1158";
+    // T-1158: SYS205 WRITE path-scoping now discharges cleanly via a
+    // real owns= claim -- T-1164 fixed the blast-radius false positive
+    // this declaration would otherwise have triggered (bare runs_as=None
+    // treated as a compromised-user identity), and T-1146/T-1149 wired
+    // module= into the live check_resource_contention call so SYS201
+    // stays arbiter-aware for this owns= claim (tickets_ledger's shared
+    // lock, verified: `frob sys audit` clean with no new SYS201/SYS205
+    // findings). The `waive "SYS205:tickets_ledger" ...` clause this
+    // comment used to justify is REMOVED.
+    owns "tickets.md" "0644";
     attr interface=CoverageWatcher;
     attr interface=DEFAULT_COVERAGE_POLL_INTERVAL_S;
     attr interface=DEFAULT_IDLE_TIMEOUT_S;
@@ -2662,6 +2707,7 @@ store tickets_ledger : trusted {
 // discharged by the declared lock, matching the flock's real behavior.
 // frob:doc docs/strata/host.md#resource-access-modes-t-0700
 // frob:ticket T-0956
+// frob:tests tests/system/test_frob_self_model.py::TestFrobSelfModel.test_sys_gate_zero_violations
 resource tickets_ledger {
     lock "tickets.lock";
 }
