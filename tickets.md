@@ -1285,3 +1285,30 @@ threat: null
 component: null
 ```
 Root cause: gates/__init__.py:6050 _run_process_gate ships gates to a ProcessPoolExecutor with no run_memo_scope and no shared parse-artifact cache, unlike check/__init__.py:612 which wraps thread stages with memoization. Each pool worker re-parses and re-extracts the whole repo independently. Fix (Python-side, precedes any Rust migration): persist derived per-file artifacts (body tokens, leaf identifiers, comment/docstring spans, import specs) in a sqlite table keyed by the content hash already in cache.db; parse_file/extract read this table instead of re-walking trees. This is the single largest summed cost in the profile and should land before or alongside EPIC B's Rust migration, not instead of it -- Rust makes the per-artifact compute cheaper, this ticket stops it from being redone N times.
+
+<!-- ticket:T-1218 -->
+```yaml
+id: T-1218
+title: 'doctor: stale-global-frob self-check -- invoked version vs repo floor'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: low
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/doctor.py
+- src/frob/app/**
+- docs/**
+- tests/**
+acceptance:
+- text: GIVEN a frob invocation in a repo whose frob.toml declares a minimum frob
+    version WHEN the invoked frob is older THEN every command prints a prominent stale-binary
+    warning naming the upgrade command, and frob doctor reports it as a finding
+  evidence: []
+threat: null
+component: null
+```
+Derived-state auto-refresh sweep 2026-07-29: the globally installed frob (uv tool) went stale at 0.9.0 while the repo advanced to 0.277.0, causing wrong gate numbers for anyone invoking bare frob -- a documented recurring papercut. Detection belongs in frob itself: version floor in frob.toml, checked at CLI startup (cheap), doctor finding with the exact uv tool upgrade frob remedy.
