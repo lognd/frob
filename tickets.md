@@ -7019,3 +7019,40 @@ Post-land verification of T-1233 found three residual audit findings in files th
 - tests: 0 passed (from 0 evidence id(s))
 - gates: 0 error(s), 1699 warning(s), 676 waived
 - error-findings: none (measured, zero errors)
+
+<!-- ticket:T-1317 -->
+```yaml
+id: T-1317
+title: 'ack accountability: frob ack requires a reason and records the digest delta
+  it vouches for'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: high
+parent: T-1226
+tier: ticket
+sprint: null
+scope:
+- src/frob/graph/lock.py
+- src/frob/_cli_parsers/**
+- src/frob/app/**
+- docs/**
+- tests/**
+acceptance:
+- text: 'GIVEN frob ack clears a DRIFT finding THEN it requires a reason string (waiver-style:
+    what was re-verified and why the doc is still true) and records the acked digest
+    delta (old->new sig/body/doc facets) in frob.lock, so every ack is an auditable
+    vouch rather than a silent clear'
+  evidence: []
+- text: GIVEN an ack whose reason is empty or boilerplate-detected THEN the ack is
+    refused -- rubber-stamping is a gate failure, mirroring WAIVE002's reason discipline
+  evidence: []
+- text: 'GIVEN a doc claim class that is machine-checkable (enumerations via DOCENUM001,
+    pointers via DOC006) THEN it is content-verified and ack-immune: an ack never
+    clears a finding that a checker can prove true or false'
+  evidence: []
+threat: null
+component: null
+```
+User question 2026-07-29 answered by the staleness sweep: the ~140 silent doc misses trace to six gate blind spots (T-1227..T-1232) PLUS this seventh systemic one the audit named but no ticket owned -- DRIFT001 verifies freshness of attention (digest vs last ack), and frob ack clears it with no proof the prose was re-verified. Waivers require reason=; acks do not. Principle: move every machine-checkable claim class from ack-based trust to content-verified proof (the DOCENUM/pointer work), and make the residual human vouches auditable (reason + digest delta + date), refusable when empty. Interacts with T-1137's anti-goal (no auto-discharge): the fix engine must never auto-ack, and this ticket makes a hand-ack itself carry evidence.
