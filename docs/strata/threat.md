@@ -369,6 +369,17 @@ Concrete regulatory obligations, and the machinery each reuses:
 | Data minimization | a collection flow gathers a Pii field never read by any downstream flow | drop the field, or justify -- a reachability check (collected-but-never-used) |
 | PRIVACY-NOTICE -- notice at collection | a Pii-or-above node tagged `exposure:public-web` declares no `privacy-policy` attr | a declared `privacy-policy` attr on the node, or a cited `assume` (GDPR art.13; see also CCPA Sec.1798.100 notice-at-collection) |
 
+**CCPA -- partially in scope (T-1246).** CCPA carries no separate
+California-specific consumer-request primitive distinct from the GDPR
+vocabulary already in the kernel, so `COMPLIANCE_OUT_OF_SCOPE` still marks
+it out of scope overall -- but PRIVACY-NOTICE's notice-at-collection
+obligation now directly discharges CCPA's right-to-know component for any
+`exposure:public-web` collection point (same "must disclose what it
+collects" duty, cited via CCPA Sec.1798.100 above). Right-to-delete has no
+matching primitive and remains out of scope, caught only by the
+structural PII detector (PII010) rather than a jurisdiction-aware model
+check.
+
 **Privacy policy as claims (the reverse audit).** A privacy policy is a
 set of DECLARED data practices ("we collect email and usage; we retain 90
 days; we share with no third parties"). Model each as an `assert`: the

@@ -69,7 +69,7 @@ declaration).
 | SYS002 | sys | a `Boundary` or Secret-clearance `Node` in the design model has no `frob:boundary`/`frob:secret` code binding anywhere |
 | SYS003 | sys | (warn) tier-2 code binding (`frob.strata.bind_code`/`check_import_conformance`) finds an undeclared cross-component import between two design-bound files; warn-first on landing, intended to flip to error via `[gates.severity]` once proven |
 | SYS004 | sys | a `.strata` design file failed to parse/elaborate; the message names a stale native build (`make core`) as the likely remedy when one is detected (T-0347, T-0248's `frob.strata.stale_natives`), per the T-0166 incident where a grammar-ahead-of-native mismatch masqueraded as a `.strata` syntax error |
-| SELFAUDIT001 | sys | (T-0756, SYS205 leg T-1061) frob's own self-conformance (SYS100/SYS101/SYS102), resource-contention (SYS2xx), mode-conformance (SYS205), and reliability (REL2xx) audit surface, folded into the ordinary `frob check` gate pipeline -- see "Self-audit at land (SELFAUDIT001, T-0756)" below |
+| SELFAUDIT001 | sys | (T-0756, SYS205 leg T-1061, compliance leg T-1314) frob's own self-conformance (SYS100/SYS101/SYS102), resource-contention (SYS2xx), mode-conformance (SYS205), reliability (REL2xx), and compliance (`evaluate_compliance`, WARN-tier) audit surface, folded into the ordinary `frob check` gate pipeline -- see "Self-audit at land (SELFAUDIT001, T-0756)" below |
 | SEC001 | secrets | a git-tracked file contains text matching a provider's real-looking credential shape (waivable with reason) |
 | SEC002 | secrets | a git-tracked `.env`/`.env.*` file exists (`.env.example`/`.env.sample`/`.env.template` excepted) |
 | SEC003 | secrets | a git-tracked file contains a live Stripe secret key (`sk_live_...`) or a private-key PEM header -- unwaivable, see `_UNWAIVABLE_RULES` |
@@ -583,6 +583,37 @@ docstring disclosed for SYS205 specifically -- `check_mode_conformance`
 needs a `Module` argument (the `lock`/`arbitrated_by` arbiter lookup, see
 docs/strata/host.md#cli-dispatch--waiver-channel-t-1061 for the
 `DesignIds.resources` plumbing this required).
+
+T-1314 added a sixth leg: `frob.strata.evaluate_compliance` (the
+`std.compliance` COPPA/GDPR/HIPAA/PRIVACY-NOTICE regulatory-obligation
+audit, run once per `DEFAULT_COMPLIANCE_VIEWS` entry against the same
+merged model, `out_of_scope=COMPLIANCE_OUT_OF_SCOPE`,
+`known_rule_ids=_KNOWN_GATE_RULES`), reviewer-confirmed at the T-1242/
+T-1244 close as the SAME "catalogued but check-invisible" gap this whole
+section already closed for the other five families -- `evaluate_
+compliance` had zero call sites under `src/frob/gates/` until this
+ticket, reachable only via `frob sys audit`. `_compliance_selfaudit_
+violations` (`frob.gates._sys`) is this leg's own function, mirroring
+`_selfaudit_violations`'s suppress-on-design-load-error posture exactly.
+
+**Tier: WARN, not ERROR** (the one leg in this family that is not
+ERROR). Every other SELFAUDIT001 sub-family was ERROR from the day it
+was folded in, because folding happened alongside the check being built
+in the first place -- no repo had ever been able to pass `frob check`
+while failing that check. Compliance is different: `evaluate_compliance`
+already existed and a `design/` repo could already be failing it
+silently (via `frob sys audit`) with a fully green `frob check`. Folding
+straight to ERROR would flip every such repo's `frob check` from PASS to
+FAIL the moment this ticket lands, with no grace period -- a latent,
+previously-advisory gap turning into a hard build break with zero
+warning. WARN surfaces the SAME finding in the SAME `frob check` run
+(closing the green-check-red-audit divergence class this ticket's own
+regression test locks down) without silently blocking a land the moment
+it ships; promoting it to ERROR is a deliberate, disclosed follow-up once
+a repo's own compliance posture is reviewed, not an accident of this
+ticket's landing. This mirrors COMPLIANCE007's own WARN precedent
+(`frob.gates._decisions_compliance`) for the identical "real gap
+surfaced, not yet a proven code bug for every model" reasoning.
 
 **Why this closes both halves of the ticket's mandate with ZERO new land
 wiring**: `frob ticket land`'s existing `check_gates`/`check_gate_findings`

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.283.0] - unreleased
+
+- T-1250: compliance triage: CMPL-FROB-CATALOG-ENTRIES row -- the 6 RegulationEntry units counted against themselves
+
 ## [0.282.0] - unreleased
 
 - T-1234: fix LANG002 rationale text still naming kotlin as unregistered

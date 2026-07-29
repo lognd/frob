@@ -10555,6 +10555,82 @@ class TestSelfAuditGate:
         assert matches[0].severity == Severity.ERROR
         assert "widget" in matches[0].message
 
+    # frob:tests src/frob/gates/_sys.py::_compliance_selfaudit_violations kind="unit"
+    def test_selfaudit001_folds_compliance_violation(self, tmp_path: Path) -> None:
+        """T-1314: GIVEN a design model with a Pii-clearance node carrying
+        `exposure:public-web` and no `privacy-policy` attr (PRIVACY-NOTICE,
+        `check_regulation_discharge`'s own litmus case) WHEN `_compliance_
+        selfaudit_violations` (the function `sys_gate` calls) runs THEN it
+        returns an unwaived SELFAUDIT001 WARN naming the underlying
+        PRIVACY-NOTICE finding -- proving `evaluate_compliance` is now
+        reachable through `frob check`'s own gate pipeline, not only
+        through the separate `frob sys audit` CLI verb. Built directly
+        against a constructed `DesignIds`/`KernelModel` (not a parsed
+        `.strata` file) because the compliance vocabulary
+        (`exposure:public-web`/`privacy-policy`/`subject:*`/
+        `jurisdiction:*`) has no `.strata` grammar surface today -- only
+        Python-constructed `Node.attrs` can express it (a disclosed,
+        out-of-scope-for-this-ticket grammar gap, filed separately)."""
+        from frob.gates._sys import _compliance_selfaudit_violations
+        from frob.strata import DesignIds, KernelModel, Node
+
+        store = Node(
+            id="Store", trust="trusted", clearance="Pii", attrs=("exposure:public-web",)
+        )
+        model = KernelModel(nodes=(store,), flows=())
+        design_ids = DesignIds(models=(model,))
+        violations = _compliance_selfaudit_violations(tmp_path, design_ids, "design")
+        selfaudit = _by_rule(violations, "SELFAUDIT001")
+        matches = [v for v in selfaudit if "PRIVACY-NOTICE" in v.message]
+        assert len(matches) >= 1
+        assert matches[0].severity == Severity.WARN
+
+    # frob:tests src/frob/gates/_sys.py::_compliance_selfaudit_violations kind="unit"
+    def test_selfaudit001_compliance_clean_model_no_violations(
+        self, tmp_path: Path
+    ) -> None:
+        """GIVEN a design model with no compliance-vocabulary attrs at all
+        WHEN `_compliance_selfaudit_violations` runs THEN it returns zero
+        SELFAUDIT001 findings -- the after-fix half of the same before/
+        after fixture proof as `test_selfaudit001_folds_compliance_
+        violation`."""
+        from frob.gates._sys import _compliance_selfaudit_violations
+        from frob.strata import DesignIds, KernelModel, Node
+
+        store = Node(id="Store", trust="trusted", clearance="Pii")
+        model = KernelModel(nodes=(store,), flows=())
+        design_ids = DesignIds(models=(model,))
+        violations = _compliance_selfaudit_violations(tmp_path, design_ids, "design")
+        assert _by_rule(violations, "SELFAUDIT001") == []
+
+    # frob:tests src/frob/gates/_sys.py::_compliance_selfaudit_violations kind="unit"
+    def test_selfaudit001_compliance_suppressed_on_design_load_error(
+        self, tmp_path: Path
+    ) -> None:
+        """A `DesignIds` carrying a load error suppresses the compliance
+        fold entirely (matches every other `_selfaudit_violations` sub-
+        family's suppression posture) -- a broken model cannot be honestly
+        compliance-audited."""
+        from frob.gates._sys import _compliance_selfaudit_violations
+        from frob.strata import DesignIds, KernelModel, Node
+        from frob.strata._design_load import DesignLoadError
+        from frob.strata._errors import StrataError
+
+        store = Node(
+            id="Store", trust="trusted", clearance="Pii", attrs=("exposure:public-web",)
+        )
+        model = KernelModel(nodes=(store,), flows=())
+        design_ids = DesignIds(
+            models=(model,),
+            errors=(
+                DesignLoadError(
+                    path="design/broken.strata", error=StrataError.ParseFailed
+                ),
+            ),
+        )
+        violations = _compliance_selfaudit_violations(tmp_path, design_ids, "design")
+        assert violations == []
+
 
 def _complex_function_source(fn_name: str) -> str:
     """A python module with one function long enough to trip the 30-line

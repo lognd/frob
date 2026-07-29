@@ -716,15 +716,23 @@ class TestCmplRegistry:
         result = check_cmpl_registry(registry_dir)
         assert result.is_ok
         violations = result.danger_ok
-        # T-1244: COMPLIANCE005 (disposition-string presence) is clean, but
-        # COMPLIANCE007 (real per-framework backing) surfaces the honest,
-        # currently-open catalogued-not-enforced gap for every
-        # _CMPL_UNIT_TRIAGE_TICKET member that still carries the vacuous
-        # handled_by:COMPLIANCE005 self-reference -- this is the finding
-        # this ticket exists to make loud, not a regression to suppress.
+        # T-1244 opened this gap: COMPLIANCE005 (disposition-string
+        # presence) was already clean, while COMPLIANCE007 (real
+        # per-framework backing) surfaced every _CMPL_UNIT_TRIAGE_TICKET
+        # member still carrying the vacuous handled_by:COMPLIANCE005
+        # self-reference. T-1245-T-1249 (the sibling triage tickets named
+        # in _CMPL_UNIT_TRIAGE_TICKET) have since re-dispositioned every
+        # one of those 16 rows to a real, documented out_of_scope:none
+        # reason (classification (d) -- no primary-source leaf-control
+        # text available to build per-control enforcement without
+        # fabricating unverified text) -- COMPLIANCE007 only fires on the
+        # specific vacuous handled_by:COMPLIANCE005 shape, so the real
+        # registry file now carries zero live COMPLIANCE007 findings.
+        # `_check_cmpl_registry_unit_backing`'s own synthetic-entry unit
+        # tests below still exercise the flagging behavior directly.
         assert not any(v.rule == "COMPLIANCE005" for v in violations)
         compliance007 = {v.regulation for v in violations if v.rule == "COMPLIANCE007"}
-        assert compliance007 == set(_CMPL_UNIT_TRIAGE_TICKET)
+        assert compliance007 == set()
 
     # frob:tests src/frob/strata/_compliance.py::check_cmpl_registry kind="unit"
     def test_check_cmpl_registry_missing_file_is_parse_failed(self, tmp_path):

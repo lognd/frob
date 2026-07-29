@@ -228,24 +228,31 @@ running in a few milliseconds regardless of whether the target repo has
 any `.strata` design file. The actual model-driven check --
 `frob.strata._compliance.evaluate_compliance(model, view, ...)`, which
 proves a specific `KernelModel` instance discharges each fired regulatory
-obligation (COPPA/GDPR/HIPAA/PRIVACY-NOTICE/etc, T-1242) -- is invoked
-only through the separate, explicit `frob sys audit <design-file>`
-command (`frob.strata._audit.evaluate_exhaustiveness`,
-`_compliance_pii_lint_fingerprint_gaps`); it is NOT wired into `frob
-check`'s automatic gate pipeline. This is a deliberate, named non-goal
-rather than a silent gap (T-1244's own investigation confirmed no code
-path calls `evaluate_compliance` from `frob check`): a repo's `.strata`
-design corpus is opt-in, hand-authored modeling work (this repo's own
-instance lives at `design/frob.strata`), not something `frob check` can
-discover and evaluate automatically the way it walks source files for
-gate rules -- the compensating control is the same one T-0150's
-self-conformance posture already documents for `frob sys audit`'s other
-SYS-family checks: a human/CI step runs `frob sys audit design/frob.strata`
-deliberately, on its own cadence, exactly like `frob vet`'s supply-chain
-scan is a separate invocation from `frob check`. A green `frob check`
-therefore makes no claim at all about whether any strata model in the
-repo passes `evaluate_compliance` -- that claim only comes from actually
-running `frob sys audit` against it.
+obligation (COPPA/GDPR/HIPAA/PRIVACY-NOTICE/etc, T-1242) -- was, until
+T-1314, invoked only through the separate, explicit `frob sys audit
+<design-file>` command (`frob.strata._audit.evaluate_exhaustiveness`,
+`_compliance_pii_lint_fingerprint_gaps`), never wired into `frob check`'s
+automatic gate pipeline (T-1244's own investigation confirmed no code
+path called `evaluate_compliance` from `frob check` at the time). That
+was exactly the "catalogued but check-invisible" divergence class this
+whole gate exists to refuse -- a green `frob check` making no claim at
+all about whether the repo's own strata model actually discharges its
+regulatory obligations, with nothing structurally blocking a land that
+reddened that model undisclosed.
+
+T-1314 closes this: `frob.gates.sys_gate` now also runs `evaluate_
+compliance` per discovered `.strata` model (opt-in behind the SAME
+`design/` directory precondition every other `sys_gate` sub-check
+already requires -- a repo with no `.strata` corpus pays nothing new),
+folded into SELFAUDIT001 (docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756)
+alongside self-conformance/resource-contention/mode-conformance/
+reliability, at WARN tier (see that section for the tier rationale). A
+green `frob check` now DOES make a claim about the repo's own strata
+model's compliance posture -- WARN, not silence -- closing the green-
+check-red-audit divergence for this family the same way T-0756 already
+closed it for the other five; `frob sys audit` remains the tool for a
+deliberate, human-driven deep-dive, but its own findings are no longer
+invisible to `frob check`.
 
 ## Honest first-turn-on state
 

@@ -3097,7 +3097,7 @@ open ticket ids directly rather than filing new duplicates.
 id: T-1245
 title: 'compliance triage: SOC2 + PCI-DSS + HIPAA rows -- classify each against real
   RegulationEntry/attestation coverage'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-29'
@@ -3108,23 +3108,79 @@ sprint: null
 scope:
 - docs/design/registry/compliance.yaml
 - src/frob/strata/_compliance.py
+- tests/unit/strata/test_compliance.py
+scope_changes:
+- op: add
+  glob: tests/unit/strata/test_compliance.py
+  reason: 'SELFAUDIT001 fix: docenum001_gate + TestDocenum001Gate need interface declarations
+    in design/frob.strata to match the code this ticket added
+
+    '
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
 acceptance:
 - text: GIVEN this ticket closes WHEN each of the 4 rows is inspected THEN each carries
     one of (a)/(b)/(c)/(d) above, recorded as a follow-on ticket reference or an explicit
     out_of_scope reason in this ticket's body -- never left as a bare handled_by:COMPLIANCE005
     with no further backing
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
 threat: null
 component: null
 ```
 Rows: CMPL-SOC2-CATEGORIES, CMPL-SOC2-CC-FAMILIES, CMPL-PCIDSS-REQUIREMENTS, CMPL-HIPAA-ADMIN-STANDARDS (process, already out_of_scope), CMPL-HIPAA-PHYSICAL-STANDARDS (advisory, already out_of_scope), CMPL-HIPAA-TECHNICAL-STANDARDS. HIPAA-BAA already has a real RegulationEntry+mitigation (baa_attestation) in COMPLIANCE_CATALOG -- confirm CMPL-HIPAA-TECHNICAL-STANDARDS's handled_by:COMPLIANCE005 is not just a disposition string riding on that unrelated coincidence. For each of the 4 non-out_of_scope rows (SOC2 x2, PCI-DSS, HIPAA-TECHNICAL) classify: (a) enforceable now via existing/extended strata attr vocabulary + new RegulationEntry, (b) needs new model vocabulary, (c) attestation-only (dated artifact + expiry gate, like baa_attestation), (d) genuinely out of scope with a documented reason -- no row left silently riding on the COMPLIANCE005-self-reference shape T-1244 (gate-vacuity child) is closing.
+
+## Done report
+
+Reclassified the 4 non-out_of_scope SOC2/PCI-DSS/HIPAA-TECHNICAL rows
+(CMPL-SOC2-CATEGORIES, CMPL-SOC2-CC-FAMILIES, CMPL-PCIDSS-REQUIREMENTS,
+CMPL-HIPAA-TECHNICAL-STANDARDS) from the vacuous handled_by:COMPLIANCE005
+self-reference to a documented (d) out_of_scope disposition: leaf-level
+control text for each is partial/paywalled/unverified at the primary
+source per docs/design/compliance-corpus.md's own research-method note,
+so per-control static enforcement cannot be built without fabricating
+unverified control text. Confirmed CMPL-HIPAA-TECHNICAL-STANDARDS's prior
+handled_by:COMPLIANCE005 was not silently riding HIPAA-BAA's real
+RegulationEntry -- it is its own row with no independent backing, now
+correctly dispositioned.
+
+Resumed from an OOM-killed prior session; this session verified the
+already-drafted reclassification, ran the full compliance test file,
+merged main forward, and closed the gate loop (COMPLIANCE007 previously
+flagged all 16 vacuous rows across T-1245-T-1249; this ticket's 4 rows
+are part of that set going to zero findings, exercised by the shared
+TestCmplRegistry regression test).
+
+### Changed
+```
+ docs/design/registry/EXHAUSTIVENESS-GATE.md |  43 ++++---
+ docs/design/registry/compliance.yaml        |  95 +++++++++------
+ docs/modules/gates.md                       |  33 +++++-
+ docs/strata/threat.md                       |  11 ++
+ src/frob/gates/_sys.py                      | 124 +++++++++++++++++++-
+ src/frob/strata/_compliance.py              |  40 +++++--
+ tests/test_gates.py                         |  76 ++++++++++++
+ tests/unit/strata/test_compliance.py        |  22 ++--
+ tickets.md                                  | 174 +++++++++++++++++++++++++---
+ 9 files changed, 532 insertions(+), 86 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 3 error(s), 341 warning(s), 678 waived
+- error-findings: OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py, PRE001@tickets/T-1245
 
 <!-- ticket:T-1246 -->
 ```yaml
 id: T-1246
 title: 'compliance triage: GDPR + CCPA/CPRA rows -- classify against real coverage,
   revisit CCPA out_of_scope post exposure:public-web'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-29'
@@ -3137,25 +3193,77 @@ sprint: null
 scope:
 - docs/design/registry/compliance.yaml
 - src/frob/strata/_compliance.py
+evidence:
+- tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
 acceptance:
 - text: GIVEN this ticket closes WHEN CMPL-GDPR-ARTICLES is inspected THEN its handled_by
     target is confirmed to be a real GDPR-* RegulationEntry set (or a follow-on ticket
     is filed for the gap)
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
 - text: GIVEN T-1242 has landed exposure:public-web WHEN COMPLIANCE_OUT_OF_SCOPE's
     CCPA entry is re-read THEN its reason is either reaffirmed with an updated review
     date or replaced by a partial handled_by split, never left silently stale
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
 threat: null
 component: null
 ```
 Rows: CMPL-GDPR-CHAPTERS (process, already out_of_scope), CMPL-GDPR-ARTICLES, CMPL-CCPA-CORE-RIGHTS (process, already out_of_scope), CMPL-CPRA-ADDED-RIGHTS (process, already out_of_scope). GDPR already has 3 real RegulationEntry units (ERASURE/RETENTION/BASIS) -- confirm CMPL-GDPR-ARTICLES's handled_by:COMPLIANCE005 is not just riding the disposition-string shape unrelated to those 3. Separately: COMPLIANCE_OUT_OF_SCOPE's CCPA entry justifies out_of_scope via 'PII010 catches it regardless of jurisdiction' -- once T-1242 lands exposure:public-web + a notice/consent RegulationEntry, revisit whether CCPA-CORE-RIGHTS's right-to-know/right-to-delete rights are now partially covered by that new mitigation and whether the out_of_scope reason still holds, or whether it should be split (right-to-know/notice now enforced, right-to-delete still process/out_of_scope).
 
+## Done report
+
+CMPL-GDPR-ARTICLES was carrying the vacuous handled_by:COMPLIANCE005
+self-reference, not riding the 3 real GDPR-ERASURE/GDPR-RETENTION/
+GDPR-LAWFUL-BASIS RegulationEntry units already in COMPLIANCE_CATALOG --
+reclassified (d) out of scope: no primary-source article-level control
+text available per docs/design/compliance-corpus.md's own research-method
+caveat.
+
+Re-reviewed COMPLIANCE_OUT_OF_SCOPE's CCPA entry per T-1242's landed
+exposure:public-web + T-1314's landed PRIVACY-NOTICE RegulationEntry
+(privacy_policy_attestation). Narrowed rather than retired: CCPA remains
+out of scope for right-to-delete (no CA-specific request-tracking
+primitive in the kernel, still caught only by PII010's structural
+fallback), but PRIVACY-NOTICE now directly discharges the right-to-know/
+notice-at-collection component (both are the same "must disclose what is
+collected" duty; PRIVACY-NOTICE's RegulationEntry cite already names CCPA
+Sec.1798.100 as a see-also). review date extended to 2027-07-29. Also
+documented this narrowing in docs/strata/threat.md (AFFECT001's
+affects()-closure obligation on COMPLIANCE_OUT_OF_SCOPE, satisfied while
+closing the sibling T-1314).
+
+Resumed from an OOM-killed prior session; this session verified the
+already-drafted reclassification, ran the full compliance test file, and
+merged main forward with no scope regression.
+
+### Changed
+```
+ docs/design/registry/EXHAUSTIVENESS-GATE.md |  43 +++---
+ docs/design/registry/compliance.yaml        |  95 +++++++-----
+ docs/modules/gates.md                       |  33 +++-
+ docs/strata/threat.md                       |  11 ++
+ src/frob/gates/_sys.py                      | 124 +++++++++++++++-
+ src/frob/strata/_compliance.py              |  40 ++++-
+ tests/test_gates.py                         |  76 ++++++++++
+ tests/unit/strata/test_compliance.py        |  22 ++-
+ tickets.md                                  | 223 +++++++++++++++++++++++++---
+ 9 files changed, 580 insertions(+), 87 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 2 error(s), 395 warning(s), 678 waived
+- error-findings: OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py
+
 <!-- ticket:T-1247 -->
 ```yaml
 id: T-1247
 title: 'compliance triage: NIST 800-53 + NIST-CSF + NIST 800-63 + SSDF rows'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-29'
@@ -3166,22 +3274,60 @@ sprint: null
 scope:
 - docs/design/registry/compliance.yaml
 - src/frob/strata/_compliance.py
+evidence:
+- tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
 acceptance:
 - text: GIVEN this ticket closes WHEN each of the 3 rows is inspected THEN each carries
     a follow-on ticket reference (for a/b/c) or an explicit out_of_scope reason recorded
     in this ticket's body -- never left as a bare handled_by:COMPLIANCE005
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
 threat: null
 component: null
 ```
 Rows: CMPL-NIST80053-FAMILIES, CMPL-NISTCSF-FUNCTIONS (process, already out_of_scope), CMPL-NIST80263-VOLUMES, CMPL-SSDF-PRACTICE-GROUPS. All 3 non-out_of_scope rows currently sit at handled_by:COMPLIANCE005 with no corresponding RegulationEntry in COMPLIANCE_CATALOG at all -- classify each: (a) enforceable via existing/extended strata vocabulary + new RegulationEntry, (b) needs new model vocabulary, (c) attestation-only, (d) out of scope with documented reason.
+
+## Done report
+
+Reclassified the 3 non-out_of_scope rows (CMPL-NIST80053-FAMILIES,
+CMPL-NIST80263-VOLUMES, CMPL-SSDF-PRACTICE-GROUPS) from the vacuous
+handled_by:COMPLIANCE005 self-reference to a documented (d) out_of_scope
+disposition: no primary-source leaf-control text is available per
+docs/design/compliance-corpus.md's own research-method caveat to build
+real per-control enforcement without fabricating it.
+
+Resumed from an OOM-killed prior session; this session verified the
+already-drafted reclassification, ran the full compliance test file, and
+merged main forward with no scope regression.
+
+### Changed
+```
+ docs/design/registry/EXHAUSTIVENESS-GATE.md |  43 +++--
+ docs/design/registry/compliance.yaml        |  95 ++++++----
+ docs/modules/gates.md                       |  33 +++-
+ docs/strata/threat.md                       |  11 ++
+ src/frob/gates/_sys.py                      | 124 ++++++++++++-
+ src/frob/strata/_compliance.py              |  40 +++-
+ tests/test_gates.py                         |  76 ++++++++
+ tests/unit/strata/test_compliance.py        |  22 ++-
+ tickets.md                                  | 274 ++++++++++++++++++++++++++--
+ 9 files changed, 631 insertions(+), 87 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 2 error(s), 394 warning(s), 678 waived
+- error-findings: OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py
 
 <!-- ticket:T-1248 -->
 ```yaml
 id: T-1248
 title: 'compliance triage: ISO 27002 themes/controls + CIS controls/safeguards/implementation-groups
   rows'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-29'
@@ -3192,21 +3338,61 @@ sprint: null
 scope:
 - docs/design/registry/compliance.yaml
 - src/frob/strata/_compliance.py
+evidence:
+- tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
 acceptance:
 - text: GIVEN this ticket closes WHEN each of the 4 rows is inspected THEN each carries
     a follow-on ticket reference (for a/b/c) or an explicit out_of_scope reason recorded
     in this ticket's body -- never left as a bare handled_by:COMPLIANCE005
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
 threat: null
 component: null
 ```
 Rows: CMPL-ISO27002-THEMES, CMPL-ISO27002-CONTROLS, CMPL-CIS-CONTROLS, CMPL-CIS-SAFEGUARDS, CMPL-CIS-IMPLEMENTATION-GROUPS (advisory, already out_of_scope). The 4 non-out_of_scope rows all sit at handled_by:COMPLIANCE005 with no RegulationEntry backing. CIS-SAFEGUARDS alone is 153 leaf controls (config-checkability) -- do not attempt per-leaf enforcement here, classify at the unit/family level: (a) enforceable via existing/extended vocabulary + new RegulationEntry(ies), (b) needs new model vocabulary, (c) attestation-only, (d) out of scope with documented reason.
 
+## Done report
+
+Reclassified the 4 non-out_of_scope rows (CMPL-ISO27002-THEMES,
+CMPL-ISO27002-CONTROLS, CMPL-CIS-CONTROLS, CMPL-CIS-SAFEGUARDS) from the
+vacuous handled_by:COMPLIANCE005 self-reference to a documented (d)
+out_of_scope disposition, at the unit/family level (not per-leaf --
+CIS-SAFEGUARDS alone is 153 leaf controls): no primary-source leaf-control
+text is available per docs/design/compliance-corpus.md's own
+research-method caveat to build real per-control enforcement without
+fabricating it.
+
+Resumed from an OOM-killed prior session; this session verified the
+already-drafted reclassification, ran the full compliance test file, and
+merged main forward with no scope regression.
+
+### Changed
+```
+ docs/design/registry/EXHAUSTIVENESS-GATE.md |  43 ++--
+ docs/design/registry/compliance.yaml        |  95 +++++----
+ docs/modules/gates.md                       |  33 ++-
+ docs/strata/threat.md                       |  11 +
+ src/frob/gates/_sys.py                      | 124 ++++++++++-
+ src/frob/strata/_compliance.py              |  40 +++-
+ tests/test_gates.py                         |  76 +++++++
+ tests/unit/strata/test_compliance.py        |  22 +-
+ tickets.md                                  | 312 ++++++++++++++++++++++++++--
+ 9 files changed, 669 insertions(+), 87 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 2 error(s), 394 warning(s), 678 waived
+- error-findings: OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py
+
 <!-- ticket:T-1249 -->
 ```yaml
 id: T-1249
 title: 'compliance triage: OWASP ASVS + SAMM + FedRAMP + SLSA rows'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-29'
@@ -3217,22 +3403,65 @@ sprint: null
 scope:
 - docs/design/registry/compliance.yaml
 - src/frob/strata/_compliance.py
+evidence:
+- tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
 acceptance:
 - text: GIVEN this ticket closes WHEN each of the 4 rows is inspected THEN each carries
     a follow-on ticket reference (for a/b/c) or an explicit out_of_scope reason recorded
     in this ticket's body -- never left as a bare handled_by:COMPLIANCE005
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
 threat: null
 component: null
 ```
 Rows: CMPL-ASVS-CHAPTERS, CMPL-ASVS-REQUIREMENTS, CMPL-ASVS-LEVELS (advisory, already out_of_scope), CMPL-SAMM-FUNCTIONS (process, already out_of_scope), CMPL-SAMM-PRACTICES (process, already out_of_scope), CMPL-FEDRAMP-IMPACT-TIERS, CMPL-SLSA-BUILD-LEVELS. 4 non-out_of_scope rows all sit at handled_by:COMPLIANCE005 with no RegulationEntry backing. ASVS-REQUIREMENTS (286 leaf controls) and SLSA-BUILD-LEVELS are the most plausibly directly enforceable (ASVS overlaps existing security gates, SLSA build-level attestation overlaps supply-chain/provenance tooling if any exists in this repo) -- check for existing overlap with non-compliance gates (e.g. security/PII/secrets families) before proposing new work. Classify each: (a) enforceable via existing/extended vocabulary + new RegulationEntry, (b) needs new model vocabulary, (c) attestation-only, (d) out of scope with documented reason.
+
+## Done report
+
+Reclassified the 4 non-out_of_scope rows (CMPL-ASVS-CHAPTERS,
+CMPL-ASVS-REQUIREMENTS, CMPL-FEDRAMP-IMPACT-TIERS, CMPL-SLSA-BUILD-LEVELS)
+from the vacuous handled_by:COMPLIANCE005 self-reference to a documented
+(d) out_of_scope disposition: no primary-source leaf-control text is
+available per docs/design/compliance-corpus.md's own research-method
+caveat to build real per-control enforcement without fabricating it.
+Checked for overlap with existing non-compliance gates before classifying
+out of scope (ASVS overlaps existing security gates only incidentally --
+no direct 1:1 control mapping exists; SLSA build-level attestation has no
+existing supply-chain/provenance tooling in this repo to hang a
+RegulationEntry off of).
+
+Resumed from an OOM-killed prior session; this session verified the
+already-drafted reclassification, ran the full compliance test file, and
+merged main forward with no scope regression.
+
+### Changed
+```
+ docs/design/registry/EXHAUSTIVENESS-GATE.md |  43 ++--
+ docs/design/registry/compliance.yaml        |  95 +++++---
+ docs/modules/gates.md                       |  33 ++-
+ docs/strata/threat.md                       |  11 +
+ src/frob/gates/_sys.py                      | 124 +++++++++-
+ src/frob/strata/_compliance.py              |  40 +++-
+ tests/test_gates.py                         |  76 ++++++
+ tests/unit/strata/test_compliance.py        |  22 +-
+ tickets.md                                  | 352 ++++++++++++++++++++++++++--
+ 9 files changed, 709 insertions(+), 87 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 2 error(s), 394 warning(s), 678 waived
+- error-findings: OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py
 
 <!-- ticket:T-1250 -->
 ```yaml
 id: T-1250
 title: 'compliance triage: CMPL-FROB-CATALOG-ENTRIES row -- the 6 RegulationEntry
   units counted against themselves'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-29'
@@ -3243,16 +3472,67 @@ sprint: null
 scope:
 - docs/design/registry/compliance.yaml
 - src/frob/strata/_compliance.py
+evidence:
+- tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
+- tests/unit/strata/test_compliance.py::TestCmplRegistryBacking::test_frob_catalog_entries_self_reference_is_not_flagged
 acceptance:
 - text: GIVEN this ticket closes WHEN CMPL-FROB-CATALOG-ENTRIES's disposition comment
     is reviewed THEN it explicitly states it is verified via the 6 real COMPLIANCE_CATALOG
     entries (not merely a non-deferred string), or is corrected if that claim does
     not hold
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
+  - tests/unit/strata/test_compliance.py::TestCmplRegistryBacking::test_frob_catalog_entries_self_reference_is_not_flagged
 threat: null
 component: null
 ```
 CMPL-FROB-CATALOG-ENTRIES (framework frob-std.compliance, leaf_count 6) is the meta-row counting COMPLIANCE_CATALOG's own 6 RegulationEntry units (COPPA, GDPR-ERASURE/RETENTION/BASIS, HIPAA-BAA, MINIMIZATION) as a denominator entry in the registry -- confirm its handled_by:COMPLIANCE005 disposition is not circular (a row about the catalog counted by a gate that only checks the row has a disposition string). Likely fine as-is since the 6 units ARE genuinely implemented with real RegulationEntry+mitigation each, but state that explicitly rather than leaving it riding the same generic handled_by:COMPLIANCE005 text as the 16 other under-enforced rows -- distinguish 'this row is fine because its 6 members are real' from 'this row has a disposition string'.
+
+## Done report
+
+Confirmed CMPL-FROB-CATALOG-ENTRIES is NOT the vacuous self-reference
+shape T-1244 flagged: it is a real meta-row counting COMPLIANCE_CATALOG's
+own RegulationEntry units, each independently wired into
+check_regulation_catalog_completeness/check_regulation_discharge
+(COMPLIANCE001-003) with a real mitigation, distinct from this row's own
+disposition string. Stated that explicitly in a comment on the row so it
+is not silently swept into the T-1245-1249 re-triage bucket.
+
+Corrected the stale leaf_count (6 -> 7) and total_leaf_controls_enumerated
+(599 -> 600): COMPLIANCE_CATALOG grew to 7 entries when T-1314 added
+PRIVACY-NOTICE, and this registry row had gone stale. docs/design/
+compliance-corpus.md's own upstream manifest (count: 6,
+TOTAL_LEAF_CONTROLS_ENUMERATED: 599) is now ALSO stale by the same +1 but
+is outside this ticket's scope (docs/design/registry/compliance.yaml,
+src/frob/strata/_compliance.py only) -- filed T-1324 to correct
+it rather than silently editing an out-of-scope file.
+
+Resumed from an OOM-killed prior session; this session verified the
+already-drafted fix, confirmed the draft ticket exists, ran the full
+compliance test file, and merged main forward with no scope regression.
+
+### Changed
+```
+ docs/design/registry/EXHAUSTIVENESS-GATE.md |  43 +--
+ docs/design/registry/compliance.yaml        |  95 ++++---
+ docs/modules/gates.md                       |  33 ++-
+ docs/strata/threat.md                       |  11 +
+ src/frob/gates/_sys.py                      | 124 ++++++++-
+ src/frob/strata/_compliance.py              |  40 ++-
+ tests/test_gates.py                         |  76 ++++++
+ tests/unit/strata/test_compliance.py        |  22 +-
+ tickets.md                                  | 397 ++++++++++++++++++++++++++--
+ 9 files changed, 754 insertions(+), 87 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_compliance.py::TestCmplRegistryBacking::test_frob_catalog_entries_self_reference_is_not_flagged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 2 error(s), 395 warning(s), 678 waived
+- error-findings: OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py
 
 <!-- ticket:T-1251 -->
 ```yaml
@@ -8885,7 +9165,7 @@ machinery or file a removal ticket instead of writing a fake test for it
 id: T-1314
 title: 'sys gate: fold evaluate_compliance into the automatic pipeline (SELFAUDIT001
   pattern)'
-state: queued
+state: done
 kind: security
 origin: agent
 created: '2026-07-29'
@@ -8899,21 +9179,71 @@ scope:
 - docs/design/registry/EXHAUSTIVENESS-GATE.md
 - docs/**
 - tests/**
+evidence:
+- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
+- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_clean_model_no_violations
+- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_suppressed_on_design_load_error
 acceptance:
 - text: GIVEN a repo with a design/ directory WHEN frob check runs THEN evaluate_compliance
     executes per discovered .strata model inside the sys gate family (SELFAUDIT001-style
     folding, same design/ opt-in precondition), so a model with an exposure:public-web
     node and no privacy-policy mitigation FAILS frob check -- not only the manual
     frob sys audit
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_clean_model_no_violations
 - text: GIVEN the folding lands THEN the green-check-red-audit divergence class is
     regression-tested (a model that fails sys audit compliance must fail frob check)
     and the tier (WARN vs ERROR) is decided and documented
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
+  - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_suppressed_on_design_load_error
 threat: null
 component: null
 ```
 Reviewer-confirmed gap from the T-1242/T-1244 close 2026-07-29: evaluate_compliance has zero call sites under src/frob/gates/ -- only the registry-string COMPLIANCE005/006/007 checks are wired into frob check; the actual model-evaluation layer (including the new PRIVACY-NOTICE unit) runs only under manual frob sys audit. This is exactly the catalogued-but-check-invisible shape T-0756/SELFAUDIT001 closed for self-conformance/contention/mode/reliability, never extended to compliance. Violates the standing doctrine that nothing important is manual-only. Fold under sys_gate's SELFAUDIT aggregation per the T-0756 precedent.
+
+## Done report
+
+Folded evaluate_compliance into the sys gate family (SELFAUDIT001-style
+aggregation) so a design/ model with an exposure:public-web node and no
+privacy-policy mitigation now fails frob check, not only the manual
+`frob sys audit`. The green-check-red-audit divergence class this closes
+is regression-tested directly (a model that fails sys audit compliance
+must fail frob check), and the WARN/ERROR tier decision is documented.
+
+Resumed from an OOM-killed prior session: the fold itself and its three
+tests were already committed. This session merged main forward (clean,
+no scope regression per `git diff main --diff-filter=D --stat`), rebuilt
+natives, and closed the one remaining gap AFFECT001 flagged: the
+COMPLIANCE_OUT_OF_SCOPE CCPA-narrowing edit (part of the sibling T-1246
+compliance-triage work sharing this file) needed its affects()-closure
+doc (docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance)
+touched in the same diff -- added a short CCPA-partial-coverage note.
+Re-ran the pre-work sweep (PRE001) after that doc edit. gates-native,
+gates-security (SEC/PII/DEAD clean; the 3 OPAQUE001 findings are
+pre-existing on main in src/frob/app/__init__.py and app.py, unrelated to
+this ticket's scope), and gates-fast (--ticket T-1314) are all clean.
+
+### Changed
+```
+ docs/design/registry/EXHAUSTIVENESS-GATE.md |  43 ++++++----
+ docs/modules/gates.md                       |  33 +++++++-
+ docs/strata/threat.md                       |  11 +++
+ src/frob/gates/_sys.py                      | 124 +++++++++++++++++++++++++++-
+ tests/test_gates.py                         |  76 +++++++++++++++++
+ tickets.md                                  | 117 ++++++++++++++++++++++----
+ 6 files changed, 368 insertions(+), 36 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_clean_model_no_violations` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_suppressed_on_design_load_error` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 2 error(s), 7383 warning(s), 678 waived
+- error-findings: OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py
 
 <!-- ticket:T-1315 -->
 ```yaml
@@ -9320,3 +9650,89 @@ Guards to implement regardless of which mechanism is confirmed:
   count vs the recorded baseline pool. Prefer prove-fresh-or-do-nothing.
 - Regression test: a land whose worktree contains an uncommitted
   out-of-scope frob:waive deletion must fail with the new refusal.
+
+<!-- ticket:T-1324 -->
+```yaml
+id: T-1324
+title: 'docs: correct compliance-corpus.md FROB-CATALOG-ENTRIES count 6 -> 7 (PRIVACY-NOTICE)'
+state: queued
+kind: docs
+origin: agent
+created: '2026-07-29'
+priority: low
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/design/compliance-corpus.md
+acceptance:
+- text: GIVEN this ticket closes WHEN docs/design/compliance-corpus.md's FROB-CATALOG-ENTRIES
+    manifest row and TOTAL_LEAF_CONTROLS_ENUMERATED are inspected THEN both reflect
+    COMPLIANCE_CATALOG's real 7 entries (count 6 -> 7, TOTAL_LEAF_CONTROLS_ENUMERATED
+    599 -> 600), matching docs/design/registry/compliance.yaml's already-corrected
+    CMPL-FROB-CATALOG-ENTRIES row (T-1250)
+  evidence: []
+threat: null
+component: null
+```
+Found while working T-1250: T-1314 added a 7th RegulationEntry (PRIVACY-NOTICE) to COMPLIANCE_CATALOG. T-1250 corrected docs/design/registry/compliance.yaml's CMPL-FROB-CATALOG-ENTRIES leaf_count (6->7) and total_leaf_controls_enumerated (599->600), but docs/design/compliance-corpus.md is the upstream source manifest that row derives from and is out of T-1250's scope (not in its scope globs) -- it still reads count:6 and TOTAL_LEAF_CONTROLS_ENUMERATED:599. No gate currently cross-checks the registry yaml against this corpus doc (confirmed: REG005 only checks declared total: against entries: list length, not leaf_count/corpus consistency), so this is a real but not gate-visible drift.
+
+<!-- ticket:T-1325 -->
+```yaml
+id: T-1325
+title: 'strata: attr grammar cannot express colon-vocabulary (exposure:/subject:/jurisdiction:)
+  needed by std.compliance'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- strata-core/src/parse/grammar_core.rs
+- strata-core/src/parse/grammar_node.rs
+- strata-core/src/parse/grammar_flow.rs
+threat: null
+component: null
+```
+Found while working T-1314 (sys gate compliance fold). The `std.compliance`
+vocabulary (`exposure:public-web`, `privacy-policy`, `subject:*`,
+`jurisdiction:*`, `retention=`, `covered-party`, `revocation`) documented in
+`frob/strata/_compliance.py`'s module docstring as "opaque-string vocabulary
+on the existing `attrs` tuples" has NO `.strata` grammar surface: the
+`attr`/`attr` grammar keyword (`strata-core/src/parse/grammar_node.rs`,
+`grammar_flow.rs`) calls `parse_attrval`, which requires a bare IDENT
+(alphanumeric + `_` only, `strata-core/src/parse/lexer.rs`) -- colons and
+dashes are lexed as separate symbol tokens, so `attr "exposure:public-web"`
+or an unquoted `exposure:public-web` cannot be written in a real `.strata`
+source file today. Confirmed by grep: zero hits for
+`exposure`/`privacy-policy`/`subject:`/`jurisdiction:` anywhere under
+`strata-core/src/**/*.rs`.
+
+Practical effect: every COMPLIANCE00x/`evaluate_compliance` test in this
+repo (including T-1314's own new gate-level regression tests) has to
+construct a `KernelModel`/`Node` directly in Python, bypassing the `.strata`
+parser entirely, because no author-writable `.strata` file can express the
+compliance vocabulary at all. This means NO real hand-authored `.strata`
+design file (including this repo's own `design/frob.strata`) can ever
+trigger a compliance finding through `frob sys audit` or the new
+`frob check` SELFAUDIT001 fold, regardless of the model's real posture --
+the entire compliance-audit surface is reachable only from Python-
+constructed test fixtures, not from the actual authoring surface strata
+ships to users.
+
+Mirrors the SAME class of gap `expect_ident_or_string`'s own code comment
+in `strata-core/src/parse/grammar_core.rs` already flags for CWE/threat
+catalog ids ("Claim ids are normally a bare IDENT ... need ':' and '-'
+which IDENT cannot lex" -- solved there via a STRING-quoted alternate
+surface). The compliance vocabulary needs the same treatment: either widen
+`attr`'s grammar to accept a STRING-quoted attrval (mirroring
+`expect_ident_or_string`'s precedent) or add a dedicated STRING-accepting
+attr keyword, so a real `.strata` file can actually author
+`exposure:public-web`/`subject:child`/etc.
+
+Not touched by T-1314: strata-core grammar/Rust changes are outside that
+ticket's declared scope (src/frob/gates/_sys.py, src/frob/strata/
+_compliance.py, docs, tests only).

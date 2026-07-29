@@ -223,19 +223,45 @@ REGULATION_VIEWS: dict[str, frozenset[str]] = {
 #: elsewhere -- a fabricated or typo'd `caught_by` here is exactly the case
 #: COMPLIANCE004 exists to refuse.
 COMPLIANCE_OUT_OF_SCOPE: tuple[OutOfScopeRegulation, ...] = (
+    # T-1246 re-review (2026-07-29): T-1242 landed exposure:public-web and
+    # T-1314 landed PRIVACY-NOTICE (mitigation privacy_policy_attestation)
+    # into COMPLIANCE_CATALOG. PRIVACY-NOTICE's notice-at-collection duty
+    # now PARTIALLY discharges CMPL-CCPA-CORE-RIGHTS's right-to-know
+    # component (both are the same "a public collection point must
+    # disclose what it collects" obligation -- PRIVACY-NOTICE's own
+    # RegulationEntry cite already names CCPA Cal. Civ. Code Sec.1798.100
+    # notice-at-collection as a see-also). Right-to-delete has NO
+    # matching coverage: GDPR-ERASURE only fires on a `revocation` edge in
+    # a GDPR jurisdiction, and CCPA carries no separate CA-specific
+    # consumer-deletion-request primitive. This out_of_scope entry is
+    # therefore NOT retired -- it is narrowed and reaffirmed: still
+    # correct for right-to-delete, no longer the whole story for
+    # right-to-know now that PRIVACY-NOTICE exists. Review date extended;
+    # a future ticket may split CCPA-CORE-RIGHTS's disposition into a
+    # real handled_by (right-to-know, via PRIVACY-NOTICE) plus a narrower
+    # out_of_scope (right-to-delete only) once the registry-row-level
+    # split machinery exists to express partial coverage per row.
     OutOfScopeRegulation(
         id="CCPA",
         reason="the kernel carries GDPR's subject/jurisdiction/retention "
         "vocabulary (subject:*, jurisdiction:*, retention=) but has no "
         "separate California-specific consumer-request primitive "
-        "(right-to-know/right-to-delete request tracking) distinct from "
-        "GDPR-ERASURE/GDPR-RETENTION already in COMPLIANCE_CATALOG -- "
-        "adding one would duplicate rather than extend the existing model",
+        "(right-to-delete request tracking) distinct from GDPR-ERASURE/"
+        "GDPR-RETENTION already in COMPLIANCE_CATALOG -- adding one would "
+        "duplicate rather than extend the existing model. Right-to-know/"
+        "notice-at-collection is NO LONGER wholly out of scope: T-1314's "
+        "PRIVACY-NOTICE RegulationEntry (privacy_policy_attestation) "
+        "discharges the same notice obligation CCPA's right-to-know rests "
+        "on for any exposure:public-web collection point -- this entry now "
+        "covers only the right-to-delete gap, re-reviewed under T-1246",
         owner="logan",
-        review="2027-01-21",
-        caught_by="the structural PII field detector (PII010) flags any "
-        "PII-shaped field regardless of jurisdiction, compensating for the "
-        "missing CA-specific request-tracking model at the code level",
+        review="2027-07-29",
+        caught_by="right-to-delete: the structural PII field detector "
+        "(PII010) flags any PII-shaped field regardless of jurisdiction, "
+        "compensating for the missing CA-specific request-tracking model "
+        "at the code level. right-to-know/notice: PRIVACY-NOTICE "
+        "(COMPLIANCE_CATALOG, T-1314) now directly enforces this via "
+        "SELFAUDIT001/evaluate_compliance, not merely PII010's fallback",
     ),
 )
 
