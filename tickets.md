@@ -6973,3 +6973,30 @@ the recalibration silently becomes a ceiling. Decide and document
 (either in frob.toml as per-package floor overrides, or as a documented
 schedule/policy the gate reads) how and when a cleared package's floor
 increases, and how regressions below the new floor are caught.
+
+<!-- ticket:T-1316 -->
+```yaml
+id: T-1316
+title: 'docs: T-1233 residue -- cve.md/index.md stale T-0147 framing, fuzz.md default
+  and --budget claims'
+state: queued
+kind: docs
+origin: agent
+created: '2026-07-29'
+priority: high
+parent: T-1226
+tier: ticket
+sprint: null
+scope:
+- docs/modules/cve.md
+- docs/modules/fuzz.md
+- docs/index.md
+acceptance:
+- text: GIVEN the three residual findings from the T-1233 post-land verification THEN
+    cve.md and index.md describe T-0147 (vet CVE matching) as shipped (src/frob/vet/_cve.py),
+    and fuzz.md states the real [fuzz].enforce default (OFF) and puts --budget on
+    frob check where it lives
+  evidence: []
+threat: null
+component: null
+```
