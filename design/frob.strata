@@ -70,8 +70,8 @@ node registry : foreign { clearance Public; }
 // `_dispatch_table`); every other component is reached only via a runner
 // in this layer. `may`: T-0150 measured `eval` (bare `compile(` matches --
 // see the filed T-0151-class scanner-precision ticket in this ticket's
-// Done report, not fixed here) and `fs` (config/log file writes) across
-// every file `code` binds.
+// Done report, not fixed here) and `fs.write` (T-0717 mode-qualified
+// spelling; config/log file writes) across every file `code` binds.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 // frob:ticket T-0956
 // frob:waive AFFECT001 reason="T-1113: mechanical interface= attr population (measured public-surface metadata for the new mandatory SYS104 check), not a behavioral/architectural change -- the cited affects()-closure doc does not describe this node's public surface and has nothing to update here."
@@ -96,8 +96,8 @@ node cli : trusted {
         "src/frob/_cli_parsers/**"
         "src/frob/doctor.py" "src/frob/excludes.py" "src/frob/tomlio.py";
     may "eval";
-    may "fs";
-    may "fs-read";
+    may "fs.write";
+    may "fs.read";
     // T-0178: frob.app.telemetry reads FROB_NO_TELEMETRY/FROB_STATS_AGENTIC
     // (os.environ.get) to opt out of/into the non-gated agentic telemetry
     // stream and its `--agentic` report trigger.
@@ -453,8 +453,8 @@ node graphlang : trusted {
     clearance Internal;
     code "src/frob/graph/**" "src/frob/lang/**" "src/frob/arch/**";
     may "eval";
-    may "fs";
-    may "fs-read";
+    may "fs.write";
+    may "fs.read";
     may "sql";
     // T-0845: graph_cache's fill/invalidation flows are `_infra.py::
     // _cache_node_and_fill_flow`/`_cache_invalidation_flow_for`-
@@ -705,8 +705,8 @@ node gates : trusted {
     // the scanner cannot prove gates never reads env), matching how every
     // other node's `may` set is measured from `scan_directory_capabilities`.
     may "env";
-    may "fs";
-    may "fs-read";
+    may "fs.write";
+    may "fs.read";
     // T-0443: the DOC004 console/bash command-drift tier resolves the
     // `[[docblocks.commands]]` parser source by dotted path via
     // importlib.import_module (gates/_docblocks.py) -- a dynamic-import
@@ -932,8 +932,8 @@ node checker : trusted {
     clearance Internal;
     code "src/frob/check/**";
     may "exec";
-    may "fs";
-    may "fs-read";
+    may "fs.write";
+    may "fs.read";
     attr flag=frob_check_exec_kill_switch;
     attr interface=CheckResult;
     attr interface=available_stages;
@@ -977,10 +977,10 @@ node stratamod : trusted {
     may "ffi";
     // T-0017 (graphite adoption): `load_repo_benign_capabilities`
     // (`_threat.py`) reads a consuming repo's `frob.toml` -- a real,
-    // observed `fs`/`fs-read` site (`Path.open("rb")`/`tomllib.load`),
+    // observed `fs.write`/`fs.read` site (`Path.open("rb")`/`tomllib.load`),
     // not previously exercised anywhere else in this package.
-    may "fs";
-    may "fs-read";
+    may "fs.write";
+    may "fs.read";
     attr interface=ALL_CATALOG;
     attr interface=ANALYZABLE;
     attr interface=ANALYZABLE_POLICY_ID;
@@ -1434,16 +1434,15 @@ node stratamod : trusted {
 // in this model, so `registry_model` avoids conflating the two.
 // `may` measured the same honest way every other node's header here
 // documents (direct grep of `src/frob/registry/**`, T-0707 Done report):
-// `fs`/`fs-read` (`_models.py`/`_corpus.py`/`_staleness.py` all
+// `fs.write`/`fs.read` (`_models.py`/`_corpus.py`/`_staleness.py` all
 // `Path.read_text` the tracked `docs/design/registry/*.yaml` manifests;
 // `_corpus.py::append_entry` and `_staleness.py`'s rewrite path both
 // `Path.write_text` back to the SAME tracked manifest files -- never an
 // arbitrary path, always the registry file the caller already loaded).
-// `fs-write` is declared as plain `fs` here, not the separate `fs-write`
-// kind, matching every other node/store in this model (`_effects.py`'s
-// `_KIND_MAP` normalizes the write-shaped sink to `fs`, so no node here
-// declares `fs-write` on its own -- doing so trips SYS101 as a capability
-// this scanner never actually reports). No `eval`/`exec`/`net`/`sql`/
+// T-0717: `_effects.py`'s `_KIND_MAP` normalizes the write-shaped sink
+// directly to the precise `fs.write` spelling (no more bare `fs` alias),
+// so this node declares `fs.write` explicitly rather than the retired
+// coarse `fs` kind. No `eval`/`exec`/`net`/`sql`/
 // `fetch_url`/`ffi` call exists anywhere under this package (verified by
 // direct grep) -- it never talks to a network registry itself, it only
 // parses/writes the repo's own tracked YAML.
@@ -1452,8 +1451,8 @@ node stratamod : trusted {
 node registry_model : trusted {
     clearance Internal;
     code "src/frob/registry/**";
-    may "fs";
-    may "fs-read";
+    may "fs.write";
+    may "fs.read";
     attr interface=CorpusError;
     attr interface=Disposition;
     attr interface=DispositionKind;
@@ -1475,14 +1474,16 @@ node registry_model : trusted {
 // EITHER unmodeled directory remains): the multi-repo fleet orchestrator
 // (T-0573, `frob.fleet`) -- `load_manifest`/`collect_status`/`rollup`/
 // `route_ticket` over `fleet.toml`, the `frob fleet` subcommand's engine.
-// `may` measured by direct grep of `src/frob/fleet/__init__.py`: `fs`
+// `may` measured by direct grep of `src/frob/fleet/__init__.py`: `fs.write`
 // (`load_manifest`'s `path.open("rb")` + `tomllib.load` of the tracked
-// `fleet.toml` -- declared as the plain `fs` kind, not `fs-read`: this
-// scanner's `fs-read` needle only fires on `Path.read_text`-shaped reads,
-// which `open("rb")`/`tomllib.load` is not, so declaring `fs-read` here
-// trips SYS101 as a capability this scanner never actually reports for
-// this file, same precision lesson `registry_model` above already
-// documents for `fs-write`), `exec` (`_git_branch_and_dirty`/
+// `fleet.toml` -- declared as `fs.write`, not `fs.read`: the scanner's
+// bare `open(` needle is bucketed under the write-derived kind
+// regardless of open mode, and its `fs-read` needle only fires on
+// `Path.read_text`-shaped reads, which `open("rb")`/`tomllib.load` is
+// not, so declaring `fs.read` here trips SYS101 as a capability this
+// scanner never actually reports for this file, same precision lesson
+// `registry_model` above already documents for `fs.write`), `exec`
+// (`_git_branch_and_dirty`/
 // `_gate_summary_probe` both `subprocess.run` a FIXED argv --
 // `["git", "status", ...]` and `["uv", "run", "--project", <path>, "frob",
 // "check", "--json"]` -- built from this repo's own manifest-declared
@@ -1499,7 +1500,7 @@ node fleet : trusted {
     code "src/frob/fleet/**";
     may "exec";
     attr flag=frob_check_exec_kill_switch;
-    may "fs";
+    may "fs.write";
     // T-0778: T-0200's kill switch (frob.process._guard.
     // guarded_subprocess_run) is real and shipped, but this node's own
     // `subprocess.run` call sites (src/frob/fleet/__init__.py, not the
@@ -1570,7 +1571,7 @@ node fleet : trusted {
 // output layer) landed without a code= binding anywhere -- SYS102 caught
 // both as unmodeled. Folded onto `core` for the same density reason as the
 // rest of this node's list rather than as two new components: `clean`
-// measures as `fs`/`fs-read` only (`_core.py`'s `shutil.rmtree`/
+// measures as `fs.write`/`fs.read` only (`_core.py`'s `shutil.rmtree`/
 // `Path.unlink`, `git ls-files` read, `frob.toml` read -- all already
 // declared below); `render` measures as `env` only (`_color.py`'s
 // `os.environ`/`NO_COLOR`/`CLICOLOR_FORCE` reads, also already declared).
@@ -1592,8 +1593,8 @@ node core : trusted {
     may "eval";
     may "exec";
     attr flag=frob_check_exec_kill_switch;
-    may "fs";
-    may "fs-read";
+    may "fs.write";
+    may "fs.read";
     // T-0778: `src/frob/gitio.py`'s own subprocess spawns are now real,
     // wired kill-switch coverage (frob.process._guard.
     // guarded_subprocess_run, transitively covering the serve daemon and
@@ -2040,9 +2041,9 @@ node core : trusted {
 // than the generic "dense utility mesh" framing gave it credit for.
 // `may` measured by `frob.strata._effects._line_effects` /
 // `frob.vet._capability._scan_directory_capabilities` against
-// `src/frob/mutate/**` (T-0440 Done report): `fs` (`_run_mutants`'s
+// `src/frob/mutate/**` (T-0440 Done report): `fs.write` (`_run_mutants`'s
 // `target.write_text` of each mutant, restored via the same call in the
-// `finally` block) + `fs-read` (`run_mutations`'s `target.read_text` of
+// `finally` block) + `fs.read` (`run_mutations`'s `target.read_text` of
 // the original source) + `exec` (`_run_mutants`'s
 // `guarded_subprocess_run` call, imported from `frob.process._guard`
 // inside `_run_mutants` itself -- deferred, but still a real, observed
@@ -2074,8 +2075,8 @@ node mutate : trusted {
     code "src/frob/mutate/**";
     may "exec";
     attr flag=frob_check_exec_kill_switch;
-    may "fs";
-    may "fs-read";
+    may "fs.write";
+    may "fs.read";
     may "env";
     attr interface=JOURNAL_DIR;
     attr interface=JournalError;
@@ -2101,7 +2102,7 @@ node mutate : trusted {
 // mechanism every other `guarded_subprocess_run` caller in this model
 // already names) + `env` (`os.environ.copy()` to build the maturin
 // subprocess's own env with `VIRTUAL_ENV`/`CARGO_TARGET_DIR` overlaid). No
-// `fs`/`fs-read`: `_crate_dir_for`'s `Path.is_file()` is a plain
+// `fs.write`/`fs.read`: `_crate_dir_for`'s `Path.is_file()` is a plain
 // existence stat, never an actual file open/read -- the real
 // `frob.toml`/crate-tree reads are `frob.testing._runners.load_natives`'s
 // own `core`-node capability, reached via the `f_natives_core` flow
@@ -2146,7 +2147,7 @@ node natives : trusted {
 // T-1092: `serve` is no longer a zero-`may` node. `frob.serve._socketd`
 // (T-1092, docs/modules/serve.md#socket-daemon-t-1092) adds the module's own
 // first genuine effects, both bound to `src/frob/serve/**` itself, not
-// delegated to another node: (1) `fs` -- `acquire_singleton_lock`/
+// delegated to another node: (1) `fs.write` -- `acquire_singleton_lock`/
 // `run_socket_daemon` create/write `.frob/daemon.lock` and bind/unlink
 // `.frob/daemon.sock` directly (`_socketd.py`'s `open`/`Path.unlink`/
 // socket-bind calls); (2) `net` -- the unix-domain-socket transport
@@ -2167,7 +2168,7 @@ node natives : trusted {
 node serve : trusted {
     clearance Internal;
     code "src/frob/serve/**";
-    may "fs";
+    may "fs.write";
     may "net";
 
     // T-0756: same SYS203/tickets_ledger disposition as `cli`/`gates`/
@@ -2254,12 +2255,12 @@ node serve : trusted {
 // against that target directly.
 // `may` measured by `frob.strata._effects._line_effects` /
 // `frob.vet._capability._scan_directory_capabilities` against
-// `src/frob/deploy/**` (T-0440 Done report): `fs` (`_drift.py`'s
-// `toml_path.open("rb")` -- the scanner's `open(`-shaped needle, same
-// precision note `registry_model`/`fleet` above already document: this
-// declares as the plain `fs` kind, not `fs-write`, matching every other
-// node/store in this model) + `fs-read` (`_drift.py`'s
-// `committed_path.read_text`) + `exec` (`_vm_runner.py`'s
+// `src/frob/deploy/**` (T-0440 Done report): `fs.write` (`_drift.py`'s
+// `toml_path.open("rb")` -- the scanner's `open(`-shaped needle is
+// bucketed under the write-derived kind regardless of open mode, same
+// precision note `registry_model`/`fleet` above already document) +
+// `fs.read` (`_drift.py`'s `committed_path.read_text`) + `exec`
+// (`_vm_runner.py`'s
 // `_run_guarded`, routed through `guarded_subprocess_run` -- the SAME
 // real, wired `frob.process._guard.EXEC_KILL_SWITCH_ENV` kill switch
 // every other `guarded_subprocess_run` caller in this model names via
@@ -2290,8 +2291,8 @@ node deploy : trusted {
     code "src/frob/deploy/**";
     may "exec";
     attr flag=frob_check_exec_kill_switch;
-    may "fs";
-    may "fs-read";
+    may "fs.write";
+    may "fs.read";
     attr interface=ALLOWLIST_PATTERNS;
     attr interface=AuditAttestation;
     attr interface=AuditRunResult;
@@ -2373,8 +2374,8 @@ node vet : trusted {
     may "env";
     may "fetch_url";
     may "ffi";
-    may "fs";
-    may "fs-read";
+    may "fs.write";
+    may "fs.read";
     may "install-hook";
     may "net";
     attr flag=frob_vet_net_kill_switch;
@@ -2509,7 +2510,7 @@ node vet : trusted {
 // (`frob.vet._capability.scan_directory_capabilities` against
 // `src/frob/tickets/**`: `env` (`clipboard.py` env probing),
 // `exec` (`clipboard.py`'s `subprocess.run` calls to `wl-paste`/platform
-// clipboard tools), `fs` (`_store.py`/`_land.py` ledger file writes) --
+// clipboard tools), `fs.write` (`_store.py`/`_land.py` ledger file writes) --
 // zero `eval`/`net`/`ffi` observed). `core`'s existing
 // `f_core_tickets: core -> tickets_ledger` flow (and the cli/gates
 // equivalents) still model the real cross-component calls INTO this
@@ -2536,8 +2537,8 @@ store tickets_ledger : trusted {
     may "eval";
     may "exec";
     attr flag=frob_check_exec_kill_switch;
-    may "fs";
-    may "fs-read";
+    may "fs.write";
+    may "fs.read";
     // T-0166 LINT004: `may "exec"` is a risky capability. T-0200 built a
     // real kill switch and T-0778 wired the git seam (`frob.gitio.
     // run_argv`, which the serve daemon and gitio-based lease reads reuse
@@ -2762,11 +2763,12 @@ cache graph_cache of graphlang {
 // `frob.vet._capability.scan_file_capabilities`'s own per-file output
 // for the unrestricted SYS103 scan (T-1079 Done report has the exact
 // counts): each kind below is a kind this ticket's own scan actually
-// observed under the tree, never a guessed/aspirational one, and
-// hyphenated scanner-only aliases (`fs-write`, `env-read`/`env-write`,
-// `net-connect`) fold to the SAME bare kind (`fs`, `env`, `net`) every
-// other node in this file already declares (`fs-read` is kept split,
-// matching every existing node's own `fs`/`fs-read` convention above).
+// observed under the tree, never a guessed/aspirational one. T-0717:
+// the scanner's `fs-write`/`fs-read` kinds now normalize to the precise
+// mode-qualified `fs.write`/`fs.read` spellings (no more folding to a
+// bare `fs` kind); `env-read`/`env-write` and `net-connect` still fold
+// to the bare `env`/`net` kind every other node in this file already
+// declares, unaffected by this ticket's fs-only migration.
 
 // The test suite itself: `tests/**`. By far the largest of the four
 // trees (262 of 264 findings) and, by construction, the one exercising
@@ -2776,7 +2778,7 @@ cache graph_cache of graphlang {
 // know about: `env`/`eval`/`exec` (subprocess-spawning CLI-dispatch
 // tests, `os.environ` monkeypatching), `fetch_url`/`net` (httpx/network
 // mock tests for `vet`'s registry client), `ffi` (native-extension
-// tests against `strata_core`/`frob_core`), `fs`/`fs-read` (fixture
+// tests against `strata_core`/`frob_core`), `fs.write`/`fs.read` (fixture
 // files, tmp_path-based ledger/config round-trips), `install-hook` (git
 // hook scaffolding tests), `sql` (cache/db tests), `deserialize`
 // (pickle/CVE-fixture parsing tests in `tests/unit/cve/**`). Declaring
@@ -2792,8 +2794,8 @@ node testsuite : trusted {
     may "exec";
     may "fetch_url";
     may "ffi";
-    may "fs";
-    may "fs-read";
+    may "fs.write";
+    may "fs.read";
     may "install-hook";
     may "net";
     may "sql";
@@ -5094,14 +5096,14 @@ node testsuite : trusted {
 // (`scripts/bump_version.py` -- edits `pyproject.toml`'s version line and
 // `CHANGELOG.md` as part of a release; `scripts/frob-telemetry-hook`, a
 // non-Python hook script the scanner observes no capability in). `may`
-// measured directly: `fs`/`fs-read` (`bump_version.py`'s
+// measured directly: `fs.write`/`fs.read` (`bump_version.py`'s
 // read-then-rewrite of `pyproject.toml`/`CHANGELOG.md`).
 // frob:doc docs/modules/strata.md#modeled-_package_root-restrictions-264-finding-follow-up-t-1079-closed
 node scripts_ops : trusted {
     clearance Internal;
     code "scripts/**";
-    may "fs";
-    may "fs-read";
+    may "fs.write";
+    may "fs.read";
     attr interface=current;
     attr interface=new;
     attr interface=parts;

@@ -307,6 +307,43 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
             "elsewhere"
         ),
     ),
+    # T-0717 added the precise, mode-qualified `fs.write`/`fs.read` spellings
+    # (`_effects.py::_KIND_MAP`, `frob.vet._capability_modes`) as the
+    # preferred replacement for the deprecated bare `fs`/`fs-read` kinds
+    # above -- same `net`/`net.connect`/`net.listen` precedent as T-0771's
+    # entries earlier in this tuple. The old `fs`/`fs-read` entries are kept
+    # (not replaced) since `LEGACY_CAPABILITY_ALIASES` still lets a consumer
+    # declare the deprecated spelling; these two entries are what let
+    # `design/frob.strata`'s own migrated nodes (may "fs.write"/"fs.read")
+    # pass THREAT002 without a per-node waiver.
+    BenignCapability(
+        kind="fs.write",
+        reason=(
+            "T-0717 mode-qualified spelling of the tier-2 filesystem-write "
+            "capability above ('fs'); no CWE_CATALOG entry targets local "
+            "filesystem writes as a sink on their own (CWE-22 path "
+            "traversal is a distinct, flow-to-path-sink precondition, "
+            "capability_kind=None), same rationale as 'fs'"
+        ),
+        caught_by=(
+            "none -- no CWE_CATALOG entry targets local filesystem writes "
+            "as a sink on their own; not compensated elsewhere"
+        ),
+    ),
+    BenignCapability(
+        kind="fs.read",
+        reason=(
+            "T-0717 mode-qualified spelling of the tier-2 filesystem-read "
+            "capability above ('fs-read'); no CWE_CATALOG entry targets "
+            "local filesystem reads as a sink on their own, same rationale "
+            "as 'fs-read'"
+        ),
+        caught_by=(
+            "none -- no CWE_CATALOG entry targets local filesystem reads "
+            "as a sink on their own (same gap as 'fs-read'); not "
+            "compensated elsewhere"
+        ),
+    ),
     BenignCapability(
         kind="env",
         reason=(

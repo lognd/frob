@@ -1548,7 +1548,7 @@
     "src/frob/strata/_threat.py::CWE_TOP_25_CATALOG": "548c172f23f15314e0d8d2356d755652440441bd6b33fc05eacc4e94fd837672",
     "src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE": "7124e10332a43e9ccd2d60046f6e91e1a6d012224d48b0154685f558a2b31bc8",
     "src/frob/strata/_threat.py::CWE_TOP_25_VIEWS": "287d46a6d9a1f99aef10839458c8ede72466383cb8ab92c8d36cab2c98adf245",
-    "src/frob/strata/_threat.py::DEFAULT_BENIGN_CAPABILITIES": "09c85fd4f7b77182b4fea8d06ff591064ae9f496dc4c99ac0ee1d3f8c1436149",
+    "src/frob/strata/_threat.py::DEFAULT_BENIGN_CAPABILITIES": "fb45d6f9306a1e5f085533041408795a2e5fc7e586b2b0993fa56cc2d4927471",
     "src/frob/strata/_threat.py::OutOfScopeEntry": "62b72243142509ba3b79935ce59db1477cd320076b12f390a357a87984aec455",
     "src/frob/strata/_threat.py::QUALITY_CATALOG": "2c9090d5d1313b69d5d34421a24ab6e993a6376a8dda56dd41333618704522c7",
     "src/frob/strata/_threat.py::QUALITY_OUT_OF_SCOPE": "a2b1805f68803d2af9c6496866fbc8b09cfc04ade925ab387c089781040bd358",
@@ -1874,5 +1874,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.278.0"
+  "version": "0.279.0"
 }
