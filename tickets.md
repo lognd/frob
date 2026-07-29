@@ -1711,3 +1711,39 @@ threat: null
 component: null
 ```
 src/frob/gates/_lang_conformance.py:62-70 LANG002 rationale still names kotlin as unregistered (registered since T-0723). Behavior coincidentally right, rationale stale -- fix rationale text/logic.
+
+<!-- ticket:T-1235 -->
+```yaml
+id: T-1235
+title: 'coverage attribution fix: subprocess rc + multiprocessing concurrency'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-29'
+priority: critical
+parent: T-0969
+tier: ticket
+sprint: null
+scope:
+- Makefile
+- pyproject.toml
+- tests/**
+- docs/**
+acceptance:
+- text: GIVEN make coverage runs THEN a generated .frob/coverage-subprocess.rc (absolute
+    source and data_file, branch/parallel/relative_files/sigterm true, concurrency
+    multiprocessing+thread, disable_warnings no-data-collected, paths remap) is what
+    COVERAGE_PROCESS_START points at, and zero .coverage.* files are stranded outside
+    repo root after the run
+  evidence: []
+- text: GIVEN pyproject [tool.coverage.run] THEN concurrency multiprocessing+thread
+    and sigterm true are set so in-process gate-pool execution is recorded
+  evidence: []
+- text: GIVEN the corrected full run THEN previously-exercised-but-zero symbols (excludes.py,
+    doctor.py, serve/, __main__.py) report real coverage and the TEST005 count reflects
+    it
+  evidence: []
+threat: null
+component: null
+```
+T-0969 diagnosis 2026-07-29: fresh coverage RAISED TEST005 to 1357; staleness was not the inflation. Loss A: CLI subprocesses measure nothing (relative source vs child cwd) and strand data files in child cwds (626 stranded, 100% of 120 sampled empty). Loss B: ProcessPoolExecutor gate workers unrecorded. Verified experiment: corrected rc moved excludes.py 51->97, doctor 33->86, 81 of 103 zero-modules gained data; merged count 1357->1175 from a partial subset alone.
