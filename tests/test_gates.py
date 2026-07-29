@@ -7726,7 +7726,8 @@ class TestDocanchorGate:
         assert any("nonexistent-slug" in v.message for v in violations)
 
     def test_unresolvable_anchor_reports_slug_and_nearest_match(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::_anchor_mismatch_message kind="unit"
+        # frob:tests src/frob/gates/_doclink_docanchor.py::_anchor_mismatch_message \
+        # kind="unit"
         from frob.gates import docanchor_gate
 
         root = tmp_path / "repo"
@@ -8854,7 +8855,7 @@ class TestCppSourceAccurateCollection:
     def _mock_ctest(self, monkeypatch, tmp_path: Path, names: list[str]) -> None:
         from typani import Ok
 
-        import frob.testing._collect as collect_mod
+        import frob.testing._collect_cpp as collect_mod
         from frob.gitio import ProcResult
 
         monkeypatch.setattr(collect_mod.shutil, "which", lambda name: "/usr/bin/ctest")

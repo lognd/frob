@@ -249,7 +249,7 @@ cause).
 <!-- frob:describes src/frob/testing/_runners.py::run_selected -->
 <!-- frob:describes src/frob/testing/_runners.py::load_runners -->
 <!-- frob:describes src/frob/testing/_collect.py::collect_python_tests -->
-<!-- frob:describes src/frob/testing/_collect.py::collect_rust_tests -->
+<!-- frob:describes src/frob/testing/_collect_rust.py::collect_rust_tests -->
 <!-- frob:describes src/frob/testing/_collect.py::drop_collection_cache -->
 <!-- frob:describes src/frob/testing/_collect.py::python_collection_failure_detail -->
 <!-- frob:describes src/frob/testing/_runners.py::load_natives -->

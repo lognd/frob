@@ -1077,7 +1077,7 @@ class TestCollectRustTests:
         )
 
     def test_module_path_to_symref_inline_and_file_module(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        # frob:tests src/frob/testing/_collect_rust.py::collect_rust_tests
         from frob.testing._collect import _module_path_to_symref
 
         self._write_crate(tmp_path)
@@ -1098,10 +1098,10 @@ class TestCollectRustTests:
     def test_collect_rust_tests_parses_and_caches(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        # frob:tests src/frob/testing/_collect_rust.py::collect_rust_tests
         from typani import Ok
 
-        import frob.testing._collect as collect_mod
+        import frob.testing._collect_rust as collect_mod
 
         self._write_crate(tmp_path)
         monkeypatch.setattr(
@@ -1141,7 +1141,7 @@ class TestCollectRustTests:
         assert len(calls) == 1  # cache hit, no second spawn
 
     def test_collect_rust_tests_no_crates_is_ok_empty(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        # frob:tests src/frob/testing/_collect_rust.py::collect_rust_tests
         from frob.testing._collect import collect_rust_tests
 
         result = collect_rust_tests(tmp_path)
@@ -1158,7 +1158,7 @@ class TestCollectRustTests:
         # detected by cargo's own "no library targets found" wording.
         from typani import Ok
 
-        import frob.testing._collect as collect_mod
+        import frob.testing._collect_rust as collect_mod
 
         self._write_crate(tmp_path)
         _write(
@@ -1216,7 +1216,7 @@ class TestCollectRustTests:
         # targets found" wording is treated as a skip.
         from typani import Ok
 
-        import frob.testing._collect as collect_mod
+        import frob.testing._collect_rust as collect_mod
 
         self._write_crate(tmp_path)
         monkeypatch.setattr(
@@ -1245,8 +1245,8 @@ class TestCollectRustTests:
     def test_collect_rust_tests_err_when_env_unavailable(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
-        import frob.testing._collect as collect_mod
+        # frob:tests src/frob/testing/_collect_rust.py::collect_rust_tests
+        import frob.testing._collect_rust as collect_mod
 
         self._write_crate(tmp_path)
         monkeypatch.setattr(
@@ -1286,7 +1286,7 @@ class TestFindCrates:
         _write(root, f"{rel}/src/lib.rs", "pub fn noop() {}\n")
 
     def test_virtual_workspace_root_descends_to_members(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        # frob:tests src/frob/testing/_collect_rust.py::collect_rust_tests
         from frob.testing._collect import _find_crates
 
         self._workspace_root(tmp_path)
@@ -1298,7 +1298,7 @@ class TestFindCrates:
         assert tmp_path not in found
 
     def test_root_package_with_nested_workspace_members(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        # frob:tests src/frob/testing/_collect_rust.py::collect_rust_tests
         from frob.testing._collect import _find_crates
 
         _write(
@@ -1320,7 +1320,7 @@ class TestFindCrates:
         assert found == sorted([tmp_path, tmp_path / "crates/a"])
 
     def test_plain_single_crate_unchanged(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        # frob:tests src/frob/testing/_collect_rust.py::collect_rust_tests
         from frob.testing._collect import _find_crates
 
         self._member_crate(tmp_path, ".", "solo")
@@ -1330,7 +1330,7 @@ class TestFindCrates:
     def test_unparseable_manifest_keeps_old_behavior_and_warns(
         self, tmp_path: Path, caplog
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        # frob:tests src/frob/testing/_collect_rust.py::collect_rust_tests
         from frob.testing._collect import _find_crates
 
         _write(tmp_path, "Cargo.toml", "this is not [ valid toml")
@@ -1346,7 +1346,7 @@ class TestFindCrates:
         # the desync docs/strata/surface.md warns against -- a stale agent
         # worktree checkout (lithos's .claude/worktrees/**) must be pruned
         # before its own Cargo.toml is ever inspected.
-        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        # frob:tests src/frob/testing/_collect_rust.py::collect_rust_tests
         from frob.testing._collect import _find_crates
 
         self._member_crate(tmp_path, "crates/a", "a")
@@ -1393,7 +1393,7 @@ class TestIntegrationTestCollection:
     never validate either -- verify the symref mapping directly."""
 
     def test_integration_module_path_to_symref_flat_case(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        # frob:tests src/frob/testing/_collect_rust.py::collect_rust_tests
         from frob.testing._collect import _integration_module_path_to_symref
 
         crate_dir = tmp_path / "crates" / "a"
@@ -1415,7 +1415,7 @@ class TestIntegrationTestCollection:
     def test_find_integration_test_files_lists_and_skips_missing_dir(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        # frob:tests src/frob/testing/_collect_rust.py::collect_rust_tests
         from frob.testing._collect import _find_integration_test_files
 
         crate_dir = tmp_path / "crates" / "a"
@@ -1918,7 +1918,7 @@ class TestCollectBranchGaps:
     def test_rust_content_key_unreadable_file_is_skipped(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_rust_tests kind="unit"
+        # frob:tests src/frob/testing/_collect_rust.py::collect_rust_tests kind="unit"
         from frob.testing._collect import _rust_content_key
 
         _write(tmp_path, "src/lib.rs", "pub fn noop() {}\n")
@@ -1943,7 +1943,7 @@ class TestCollectBranchGaps:
         assert isinstance(key, str) and key
 
     def test_cargo_list_result_spawn_failure_is_err(self) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_rust_tests kind="unit"
+        # frob:tests src/frob/testing/_collect_rust.py::collect_rust_tests kind="unit"
         from frob.gitio import GitError
         from frob.testing import TestingError
         from frob.testing._collect import _cargo_list_result
@@ -1955,11 +1955,11 @@ class TestCollectBranchGaps:
     def test_run_cargo_test_list_integration_failure_propagates(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_rust_tests kind="unit"
+        # frob:tests src/frob/testing/_collect_rust.py::collect_rust_tests kind="unit"
         # an integration binary's `cargo test --test <stem> -- --list`
         # failing (real compile error, not the no-lib-target case) must
         # propagate as Err from _collect_rust_uncached, not be swallowed.
-        import frob.testing._collect as collect_mod
+        import frob.testing._collect_rust as collect_mod
         from frob.testing import TestingError
 
         self_member = tmp_path
@@ -2028,8 +2028,8 @@ class TestCollectTsTests:
     def test_collect_ts_tests_parses_and_caches(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_ts_tests
-        import frob.testing._collect as collect_mod
+        # frob:tests src/frob/testing/_collect_ts.py::collect_ts_tests
+        import frob.testing._collect_ts as collect_mod
 
         self._write_project(tmp_path)
         monkeypatch.setattr(collect_mod.shutil, "which", lambda name: "/usr/bin/npx")
@@ -2058,7 +2058,7 @@ class TestCollectTsTests:
 
     # frob:ticket T-0587
     def test_collect_ts_tests_no_projects_is_ok_empty(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_ts_tests
+        # frob:tests src/frob/testing/_collect_ts.py::collect_ts_tests
         from frob.testing._collect import collect_ts_tests
 
         result = collect_ts_tests(tmp_path)
@@ -2069,8 +2069,8 @@ class TestCollectTsTests:
     def test_collect_ts_tests_degrades_when_npx_absent(
         self, tmp_path: Path, monkeypatch, caplog
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_ts_tests
-        import frob.testing._collect as collect_mod
+        # frob:tests src/frob/testing/_collect_ts.py::collect_ts_tests
+        import frob.testing._collect_ts as collect_mod
 
         self._write_project(tmp_path)
         monkeypatch.setattr(collect_mod.shutil, "which", lambda name: None)
@@ -2091,8 +2091,8 @@ class TestCollectTsTests:
     def test_collect_ts_tests_genuine_failure_is_err(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_ts_tests
-        import frob.testing._collect as collect_mod
+        # frob:tests src/frob/testing/_collect_ts.py::collect_ts_tests
+        import frob.testing._collect_ts as collect_mod
 
         self._write_project(tmp_path)
         monkeypatch.setattr(collect_mod.shutil, "which", lambda name: "/usr/bin/npx")
@@ -2117,8 +2117,8 @@ class TestCollectTsTests:
     def test_collect_ts_tests_skips_malformed_entries(
         self, tmp_path: Path, monkeypatch, caplog
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_ts_tests
-        import frob.testing._collect as collect_mod
+        # frob:tests src/frob/testing/_collect_ts.py::collect_ts_tests
+        import frob.testing._collect_ts as collect_mod
 
         self._write_project(tmp_path)
         monkeypatch.setattr(collect_mod.shutil, "which", lambda name: "/usr/bin/npx")
@@ -2145,7 +2145,7 @@ class TestCollectTsTests:
 class TestFindVitestProjects:
     # frob:ticket T-0587
     def test_ignores_node_modules_package_json(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_ts_tests
+        # frob:tests src/frob/testing/_collect_ts.py::collect_ts_tests
         from frob.testing._collect import _find_vitest_projects
 
         _write(
@@ -2163,7 +2163,7 @@ class TestFindVitestProjects:
 
     # frob:ticket T-0587
     def test_ignores_project_without_vitest_dep(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_ts_tests
+        # frob:tests src/frob/testing/_collect_ts.py::collect_ts_tests
         from frob.testing._collect import _find_vitest_projects
 
         _write(tmp_path, "package.json", '{"dependencies": {"react": "^18.0.0"}}')
@@ -2194,8 +2194,8 @@ class TestCollectCppTests:
     def test_collect_cpp_tests_parses_and_caches(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_cpp_tests
-        import frob.testing._collect as collect_mod
+        # frob:tests src/frob/testing/_collect_cpp.py::collect_cpp_tests
+        import frob.testing._collect_cpp as collect_mod
 
         self._write_project(tmp_path)
         monkeypatch.setattr(collect_mod.shutil, "which", lambda name: "/usr/bin/ctest")
@@ -2224,7 +2224,7 @@ class TestCollectCppTests:
 
     # frob:ticket T-0587
     def test_collect_cpp_tests_no_projects_is_ok_empty(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_cpp_tests
+        # frob:tests src/frob/testing/_collect_cpp.py::collect_cpp_tests
         from frob.testing._collect import collect_cpp_tests
 
         result = collect_cpp_tests(tmp_path)
@@ -2237,7 +2237,7 @@ class TestCollectCppTests:
     ) -> None:
         # a CMakeLists.txt with no build/CTestTestfile.cmake yet (not
         # configured) must degrade to empty, not error.
-        # frob:tests src/frob/testing/_collect.py::collect_cpp_tests
+        # frob:tests src/frob/testing/_collect_cpp.py::collect_cpp_tests
         from frob.testing._collect import collect_cpp_tests
 
         _write(
@@ -2256,8 +2256,8 @@ class TestCollectCppTests:
     def test_collect_cpp_tests_degrades_when_ctest_absent(
         self, tmp_path: Path, monkeypatch, caplog
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_cpp_tests
-        import frob.testing._collect as collect_mod
+        # frob:tests src/frob/testing/_collect_cpp.py::collect_cpp_tests
+        import frob.testing._collect_cpp as collect_mod
 
         self._write_project(tmp_path)
         monkeypatch.setattr(collect_mod.shutil, "which", lambda name: None)
@@ -2278,8 +2278,8 @@ class TestCollectCppTests:
     def test_collect_cpp_tests_genuine_failure_is_err(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_cpp_tests
-        import frob.testing._collect as collect_mod
+        # frob:tests src/frob/testing/_collect_cpp.py::collect_cpp_tests
+        import frob.testing._collect_cpp as collect_mod
 
         self._write_project(tmp_path)
         monkeypatch.setattr(collect_mod.shutil, "which", lambda name: "/usr/bin/ctest")
@@ -2301,8 +2301,8 @@ class TestCollectCppTests:
     def test_collect_cpp_tests_unparseable_json_is_err(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_cpp_tests
-        import frob.testing._collect as collect_mod
+        # frob:tests src/frob/testing/_collect_cpp.py::collect_cpp_tests
+        import frob.testing._collect_cpp as collect_mod
 
         self._write_project(tmp_path)
         monkeypatch.setattr(collect_mod.shutil, "which", lambda name: "/usr/bin/ctest")
@@ -2323,7 +2323,7 @@ class TestCollectCppTests:
 class TestFindCmakeProjects:
     # frob:ticket T-0587
     def test_skips_build_dir_copy_of_cmakelists(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/testing/_collect.py::collect_cpp_tests
+        # frob:tests src/frob/testing/_collect_cpp.py::collect_cpp_tests
         from frob.testing._collect import _find_cmake_projects
 
         _write(tmp_path, "CMakeLists.txt", "project(widget)\n")
