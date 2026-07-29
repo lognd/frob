@@ -34,6 +34,7 @@ from typani.result import Err, Ok, Result
 import frob.tickets._land as _land_mod
 import frob.tickets._land_finalize as _land_finalize_mod
 import frob.tickets._land_merge as _land_merge_mod
+import frob.tickets._land_merge_zones as _land_merge_zones_mod
 from frob.gates import PreworkSweep, load_prework, record_prework, scope_digest
 from frob.gitio import GitError, ProcResult, run_argv
 from frob.graph import build_graph
@@ -5711,7 +5712,7 @@ class TestUnionZoneMerge:
         # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_keyed_lines_union_composes  # noqa: E501
         ours = '# comment for A\nRULEA = "error"\n'
         theirs = '# comment for B\nRULEB = "warn"\n'
-        merged = _land_merge_mod._union_keyed_chunks(
+        merged = _land_merge_zones_mod._union_keyed_chunks(
             ours, theirs, re.compile(r"^(?P<key>[A-Za-z0-9]+)\s*=")
         )
         assert merged is not None
@@ -5722,7 +5723,7 @@ class TestUnionZoneMerge:
         # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_keyed_lines_union_refuses  # noqa: E501
         ours = 'RULEA = "error"\n'
         theirs = 'RULEA = "warn"\n'
-        merged = _land_merge_mod._union_keyed_chunks(
+        merged = _land_merge_zones_mod._union_keyed_chunks(
             ours, theirs, re.compile(r"^(?P<key>[A-Za-z0-9]+)\s*=")
         )
         assert merged is None
@@ -5741,7 +5742,9 @@ class TestUnionZoneMerge:
             "# frob-zone-end gates.severity T-1002\n"
         )
         _commit_all(repo, "conflict marker fixture")
-        resolved = _land_merge_mod._resolve_union_zone_conflicts(repo, {"frob.toml"})
+        resolved = _land_merge_zones_mod._resolve_union_zone_conflicts(
+            repo, {"frob.toml"}
+        )
         assert resolved.is_ok
         assert resolved.danger_ok == frozenset()
         content = target.read_text()
@@ -5753,7 +5756,7 @@ class TestUnionZoneMerge:
         # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_append_only_union_concatenates  # noqa: E501
         ours = "## Remediation log (T-A)\nfixed thing A\n"
         theirs = "## Remediation log (T-B)\nfixed thing B\n"
-        merged = _land_merge_mod._union_append_only(ours, theirs)
+        merged = _land_merge_zones_mod._union_append_only(ours, theirs)
         assert "T-A" in merged and "T-B" in merged
 
 
