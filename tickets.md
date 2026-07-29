@@ -2031,3 +2031,30 @@ threat: null
 component: null
 ```
 compliance_gate/COMPLIANCE005 currently only checks that each of the 17 CMPL_REGISTRY_UNIT_IDS carries SOME handled_by/out_of_scope disposition string (_check_cmpl_registry_unit_dispositions) -- it never verifies the named handled_by control (COMPLIANCE005 itself, self-referential for all 17) actually corresponds to a live RegulationEntry/mitigation predicate, and it is silent (empty tuple) on any repo with no compliance.yaml or no strata model at all (runs in ~0.01s -- confirm this is registry-presence-only, not model-driven). Two distinct problems to close: (a) generate-and-verify the registry against code the way the rule registry does -- every CMPL-* row's disposition must resolve to a real, named, currently-existing check function or RegulationEntry.id, not just a non-deferred string (a handled_by:COMPLIANCE005 that is self-referential for 17/27 rows is exactly the catalogued-not-enforced shape this epic exists to close); (b) confirm/document what happens on a repo with strata models present but this registry never wired to evaluate_compliance -- if compliance.yaml presence and evaluate_compliance model-checking are two independently-silent paths, name that gap explicitly rather than letting compliance_gate's green rely on registry-only checking.
+
+<!-- ticket:T-1245 -->
+```yaml
+id: T-1245
+title: 'compliance triage: SOC2 + PCI-DSS + HIPAA rows -- classify each against real
+  RegulationEntry/attestation coverage'
+state: queued
+kind: security
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: T-1241
+tier: ticket
+sprint: null
+scope:
+- docs/design/registry/compliance.yaml
+- src/frob/strata/_compliance.py
+acceptance:
+- text: GIVEN this ticket closes WHEN each of the 4 rows is inspected THEN each carries
+    one of (a)/(b)/(c)/(d) above, recorded as a follow-on ticket reference or an explicit
+    out_of_scope reason in this ticket's body -- never left as a bare handled_by:COMPLIANCE005
+    with no further backing
+  evidence: []
+threat: null
+component: null
+```
+Rows: CMPL-SOC2-CATEGORIES, CMPL-SOC2-CC-FAMILIES, CMPL-PCIDSS-REQUIREMENTS, CMPL-HIPAA-ADMIN-STANDARDS (process, already out_of_scope), CMPL-HIPAA-PHYSICAL-STANDARDS (advisory, already out_of_scope), CMPL-HIPAA-TECHNICAL-STANDARDS. HIPAA-BAA already has a real RegulationEntry+mitigation (baa_attestation) in COMPLIANCE_CATALOG -- confirm CMPL-HIPAA-TECHNICAL-STANDARDS's handled_by:COMPLIANCE005 is not just a disposition string riding on that unrelated coincidence. For each of the 4 non-out_of_scope rows (SOC2 x2, PCI-DSS, HIPAA-TECHNICAL) classify: (a) enforceable now via existing/extended strata attr vocabulary + new RegulationEntry, (b) needs new model vocabulary, (c) attestation-only (dated artifact + expiry gate, like baa_attestation), (d) genuinely out of scope with a documented reason -- no row left silently riding on the COMPLIANCE005-self-reference shape T-1244 (gate-vacuity child) is closing.
