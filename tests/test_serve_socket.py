@@ -42,7 +42,8 @@ class TestAcquireSingletonLock:
 
     def test_second_caller_loses_while_first_holds(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestAcquireSingletonLock.test_second_caller_loses_while_first_holds
+        # tests/test_serve_socket.py::TestAcquireSingletonLock.test_second_caller_loses\
+        # _while_first_holds
         first = acquire_singleton_lock(root)
         assert first.is_ok
         second = acquire_singleton_lock(root)
@@ -52,7 +53,8 @@ class TestAcquireSingletonLock:
 
     def test_lock_released_on_close_allows_next_caller(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestAcquireSingletonLock.test_lock_released_on_close_allows_next_caller
+        # tests/test_serve_socket.py::TestAcquireSingletonLock.test_lock_released_on_cl\
+        # ose_allows_next_caller
         first = acquire_singleton_lock(root)
         assert first.is_ok
         first.danger_ok.close()
@@ -62,7 +64,8 @@ class TestAcquireSingletonLock:
 
     def test_n_racing_callers_exactly_one_wins(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestAcquireSingletonLock.test_n_racing_callers_exactly_one_wins
+        # tests/test_serve_socket.py::TestAcquireSingletonLock.test_n_racing_callers_ex\
+        # actly_one_wins
         outcomes: list[bool] = []
         lock_guard = threading.Lock()
         barrier = threading.Barrier(8)
@@ -108,7 +111,8 @@ class TestDispatchRequest:
 
     def test_frob_version_reports_daemon_version(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestDispatchRequest.test_frob_version_reports_daemon_version
+        # tests/test_serve_socket.py::TestDispatchRequest.test_frob_version_reports_dae\
+        # mon_version
         # T-1105: `frob_version` is handled specially by `_RequestHandler`
         # (like `subscribe`), not routed through `dispatch_request`'s
         # `_TOOL_DISPATCH` table -- exercise it over a real running daemon.
@@ -130,7 +134,8 @@ class TestDispatchRequest:
 
     def test_frob_shutdown_stops_the_server(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestDispatchRequest.test_frob_shutdown_stops_the_server
+        # tests/test_serve_socket.py::TestDispatchRequest.test_frob_shutdown_stops_the_\
+        # server
         cfg = SocketDaemonConfig(root=root, idle_timeout_s=5.0)
         results: list = []
         thread = threading.Thread(
@@ -155,7 +160,8 @@ class TestDispatchRequest:
 class TestRunSocketDaemon:
     def test_serves_one_request_then_idle_exits(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestRunSocketDaemon.test_serves_one_request_then_idle_exits
+        # tests/test_serve_socket.py::TestRunSocketDaemon.test_serves_one_request_then_\
+        # idle_exits
         cfg = SocketDaemonConfig(root=root, idle_timeout_s=0.3)
         results: list = []
 
@@ -196,7 +202,8 @@ class TestRunSocketDaemon:
 
     def test_stale_socket_file_is_replaced(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestRunSocketDaemon.test_stale_socket_file_is_replaced
+        # tests/test_serve_socket.py::TestRunSocketDaemon.test_stale_socket_file_is_rep\
+        # laced
         stale = socket_path(root)
         stale.parent.mkdir(parents=True, exist_ok=True)
         stale.write_text("not a real socket")

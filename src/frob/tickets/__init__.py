@@ -19,8 +19,6 @@ frob.graph or frob.lang by design (see docs/rework.md cycle-avoidance).
 
 from __future__ import annotations
 
-import fnmatch
-import getpass
 import hashlib
 import re
 import shlex
@@ -32,7 +30,6 @@ from pathlib import Path
 
 from typani.result import Err, Ok, Result
 
-from frob.excludes import is_test_file
 from frob.logging import get_logger
 from frob.process._guard import guarded_subprocess_run
 from frob.tickets._archive import (
@@ -43,7 +40,6 @@ from frob.tickets._archive import (
     migrate,
 )
 from frob.tickets._doable import (
-    _over_broad_scope_entries,
     _repo_files,  # noqa: F401 -- re-exported so `_doable.scope_breadth_context`'s own
     # late `from frob.tickets import _repo_files` (monkeypatch-indirection, T-1108)
     # resolves; not referenced by name elsewhere in this module.
@@ -108,7 +104,6 @@ from frob.tickets._models import (
     TicketState,
     TicketTier,
     _done_report_section_lines,
-    _glob_is_subset,
     has_substantive_done_report,
     is_cmd_evidence,
     is_valid_ticket_ref,
@@ -1965,7 +1960,10 @@ def record_failure(
 
 # frob:ticket T-0571
 # frob:doc docs/modules/tickets.md#public-api
-# frob:waive COV007 reason="docs/modules/tickets.md#public-api individually names _resolve_review_commit by name (T-0529 precedent: a deliberate architecture-doc callout of the never-store-abbreviated-SHA security behavior, not accidental drift onto a private helper)"
+# frob:waive COV007 reason="docs/modules/tickets.md#public-api individually names \
+# _resolve_review_commit by name (T-0529 precedent: a deliberate architecture-doc \
+# callout of the never-store-abbreviated-SHA security behavior, not accidental drift \
+# onto a private helper)"
 # frob:tests tests/test_tickets_review.py::TestRecordReview.test_unresolvable_commit_rejected  # noqa: E501
 # frob:tests tests/test_tickets_review.py::TestRecordReview.test_short_sha_normalized_to_full_sha  # noqa: E501
 def _resolve_review_commit(root: Path, commit: str) -> Result[str, TicketError]:

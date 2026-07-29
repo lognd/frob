@@ -106,8 +106,7 @@ _lock_local = threading.local()
 
 
 # frob:tests \
-# tests/unit/test_ticket_store.py::TestLockPath.test_lock_path_under_frob_dir  # noqa: \
-# E501
+# tests/unit/test_ticket_store.py::TestLockPath.test_lock_path_under_frob_dir
 # frob:ticket T-0601
 def _lock_path(root: Path) -> Path:
     """The advisory lock file path (`.frob/tickets.lock`) `ledger_lock` holds.

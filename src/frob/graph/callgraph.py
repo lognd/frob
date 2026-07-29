@@ -16,8 +16,8 @@ a triage aid, not a soundness guarantee, matching every other rung in
 `frob.dup` (docs/modules/dup.md's no-silent-fallback rule only applies to
 frob_core-dependent rungs, not to this best-effort resolution step).
 """
-# frob:waive ARCH102 reason="T-0861's is_symref extraction pushed this module past \
-# the export-cluster threshold: the graph-building pipeline (build_call_graph/ \
+# frob:waive ARCH102 reason="T-0861's is_symref extraction pushed this module past the \
+# export-cluster threshold: the graph-building pipeline (build_call_graph/ \
 # build_ordered_call_graph/build_reference_graph/closure/scope_private_helper_gaps/ \
 # UNRESOLVED_CALLEE/CallGraph/OrderedCallGraph/PrivateHelperGap) forms the one real \
 # cohesive seam this module exists to centralize; is_symref is a tiny, independently \

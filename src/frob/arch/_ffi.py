@@ -52,11 +52,11 @@ otherwise") -- `frob.arch._mayraise`'s existing fail-closed `UNKNOWN`
 default for any unresolved callee already covers it; nothing here changes
 that behavior."""
 # frob:waive INV006 reason="this module's 'only' occurrences are source-level \
-# design-rationale prose (the module docstring's tier-by-tier mandate summary \
-# and per-function docstrings describing already-implemented scan logic), \
-# verifiable by reading the function it annotates, not a separate cross-module \
-# contract needing its own tracked invariant -- the same INV006 first-turn-on-pool \
-# disposition frob.arch._mayraise/_fallibility's own module docstrings already carry"
+# design-rationale prose (the module docstring's tier-by-tier mandate summary and \
+# per-function docstrings describing already-implemented scan logic), verifiable by \
+# reading the function it annotates, not a separate cross-module contract needing its \
+# own tracked invariant -- the same INV006 first-turn-on-pool disposition \
+# frob.arch._mayraise/_fallibility's own module docstrings already carry"
 
 from __future__ import annotations
 
@@ -285,10 +285,9 @@ def _scan_function_body(lines: list[str], start: int) -> frozenset[str]:
     n = len(lines)
     while k < n:
         line = lines[k]
-        # frob:waive PERF003 reason="single per-character brace-depth scan, not \
-        # a compare-every-pair nested search -- each line's characters are \
-        # visited once each to track depth; there is no second collection to \
-        # index this against"
+        # frob:waive PERF003 reason="single per-character brace-depth scan, not a \
+        # compare-every-pair nested search -- each line's characters are visited once \
+        # each to track depth; there is no second collection to index this against"
         for ch in line:
             if ch == "{":
                 depth += 1

@@ -247,10 +247,17 @@ class TestPerf012DuplicateSpawn:
         )
 
 
-# frob:doc docs/modules/perf.md#duplicate-identical-subprocess-spawn-detector-perf012-t-0919
-# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018.test_before_after_state_check_with_mutation_between_is_not_flagged
-# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018.test_adjacent_true_positive_still_fires_after_interleaving_fix
-# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018.test_splat_forwarding_wrapper_called_with_different_args_is_not_flagged
+# frob:doc \
+# docs/modules/perf.md#duplicate-identical-subprocess-spawn-detector-perf012-t-0919
+# frob:tests \
+# tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018.test_before_after_stat\
+# e_check_with_mutation_between_is_not_flagged
+# frob:tests \
+# tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018.test_adjacent_true_pos\
+# itive_still_fires_after_interleaving_fix
+# frob:tests \
+# tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018.test_splat_forwarding_\
+# wrapper_called_with_different_args_is_not_flagged
 # frob:ticket T-1018
 class TestPerf012CalibrationT1018:
     """T-1018: the two false-positive classes discovered while calibrating

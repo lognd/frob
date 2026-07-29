@@ -240,7 +240,11 @@ def scan_malformed_ticket_edges(root: Path) -> list[MalformedTicketEdge]:
     it) being at risk of a single bad edge hard-failing the entire shared
     ledger's load. Missing ledger file(s) (a fresh checkout with no
     `tickets-archive.md` yet) contribute zero findings, not an error."""
-    from frob.tickets._store import archive_path, iter_raw_ledger_frontmatter, ledger_path
+    from frob.tickets._store import (
+        archive_path,
+        iter_raw_ledger_frontmatter,
+        ledger_path,
+    )
 
     found: list[MalformedTicketEdge] = []
     for path in (ledger_path(root), archive_path(root)):
@@ -644,10 +648,10 @@ def _collect_doctor_scans(resolved_root: Path):
 
 
 # frob:ticket T-1162
-# frob:waive PII012 reason="'diagnosis' here is repository-health machinery \
-# (frob doctor's own DoctorReport summary log), not a medical/health \
-# record about a person -- a name-signature false positive, same class as \
-# run_diagnosis's own existing PII surface"
+# frob:waive PII012 reason="'diagnosis' here is repository-health machinery (frob \
+# doctor's own DoctorReport summary log), not a medical/health record about a person \
+# -- a name-signature false positive, same class as run_diagnosis's own existing PII \
+# surface"
 def _log_doctor_diagnosis(
     healthy,
     extensions,
@@ -678,10 +682,10 @@ def _log_doctor_diagnosis(
 
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 # frob:tests tests/system/test_cli_doctor.py kind="integration"
-# frob:waive AFFECT001 reason="T-1162 is a pure internal extraction \
-# (I/O/scan/log helpers pulled out to cut the function under the 60-line \
-# ARCH threshold); behavior, inputs, outputs, and the documented contract \
-# are all unchanged, so docs/guides/install.md's own content needs no edit"
+# frob:waive AFFECT001 reason="T-1162 is a pure internal extraction (I/O/scan/log \
+# helpers pulled out to cut the function under the 60-line ARCH threshold); behavior, \
+# inputs, outputs, and the documented contract are all unchanged, so \
+# docs/guides/install.md's own content needs no edit"
 def run_diagnosis(root: Path | None = None) -> DoctorReport:
     """Check every entry in `NATIVE_EXTENSIONS` for importability and
     fingerprint every entry in `DERIVED_ARTIFACTS` under `root` (T-0570),

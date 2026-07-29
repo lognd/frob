@@ -21,10 +21,10 @@ lazily-imported sibling module (`frob.gates.decisions`/
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/gates/_decisions_compliance.py's exclusivity-vocabulary hits are \
 # source-level design-rationale prose (docstrings and comments describing \
-# already-implemented internal behavior, verifiable by reading the code they \
-# annotate) rather than a separate cross-module contract needing its own \
-# tracked invariant; disposed as a calibration batch, not claim-by-claim -- \
-# module prose split verbatim from the pre-T-1159 gates/__init__.py monolith"
+# already-implemented internal behavior, verifiable by reading the code they annotate) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim -- module prose split verbatim \
+# from the pre-T-1159 gates/__init__.py monolith"
 
 from __future__ import annotations
 
@@ -40,11 +40,11 @@ _log = get_logger(__name__)
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0004
 # frob:ticket T-0894
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to the deferred \
-# imports of decision_gate/decisions_dir/load_decisions/path_ever_tracked, whose \
-# own call surfaces the resolver cannot follow through a function-local import; \
-# every locally-visible fallible operation in this gate (path checks, the two \
-# try/except blocks below) is already narrowly handled"
+# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to the deferred imports \
+# of decision_gate/decisions_dir/load_decisions/path_ever_tracked, whose own call \
+# surfaces the resolver cannot follow through a function-local import; every \
+# locally-visible fallible operation in this gate (path checks, the two try/except \
+# blocks below) is already narrowly handled"
 # frob:enforces CHK-GATE-DEC000
 # frob:enforces CHK-GATE-DEC003
 def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
@@ -153,10 +153,10 @@ def _compliance005_violation(cv) -> Violation:  # noqa: ANN001
 # frob:enforces CMPL-FEDRAMP-IMPACT-TIERS
 # frob:enforces CMPL-SLSA-BUILD-LEVELS
 # frob:enforces CMPL-FROB-CATALOG-ENTRIES
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to the deferred \
-# import of path_ever_tracked and check_cmpl_registry's own resolution, which the \
-# resolver cannot follow through a function-local import boundary; this function's \
-# own locally-visible fallible step (registry_dir existence) is a plain path check"
+# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to the deferred import \
+# of path_ever_tracked and check_cmpl_registry's own resolution, which the resolver \
+# cannot follow through a function-local import boundary; this function's own \
+# locally-visible fallible step (registry_dir existence) is a plain path check"
 def compliance_gate(
     repo_root: Path, registry_dir: Path | None = None
 ) -> tuple[Violation, ...]:

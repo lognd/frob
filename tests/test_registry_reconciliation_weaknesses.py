@@ -105,7 +105,15 @@ class TestWeaknessesRegistryFile:
 # frob:tests tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness.test_audit_reports_exhausted  # noqa: E501
 # frob:tests tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness.test_every_deferred_entry_targets_an_open_ticket  # noqa: E501
 # frob:tests tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness.test_no_entry_defers_to_this_reconciliation_ticket  # noqa: E501
-# frob:waive DUP001 reason="T-1116: test_every_deferred_entry_targets_an_open_ticket's zero-deferred guard clause deliberately mirrors the identical fix already established in the sibling test_registry_reconciliation_system_design/supply_chain/evasion.py exhaustiveness tests (T-0958/T-0960/T-0962, commit 6baef20d); each reconciliation registry's positive-case test is intentionally the same shape by convention (T-0384/T-0385/T-0386/T-0387/T-0388 family) -- extracting a shared helper across four independent registry test modules is a cross-file refactor out of T-1116's declared scope (docs/design/registry/weaknesses.yaml, this file only)"
+# frob:waive DUP001 reason="T-1116: test_every_deferred_entry_targets_an_open_ticket's \
+# zero-deferred guard clause deliberately mirrors the identical fix already \
+# established in the sibling \
+# test_registry_reconciliation_system_design/supply_chain/evasion.py exhaustiveness \
+# tests (T-0958/T-0960/T-0962, commit 6baef20d); each reconciliation registry's \
+# positive-case test is intentionally the same shape by convention \
+# (T-0384/T-0385/T-0386/T-0387/T-0388 family) -- extracting a shared helper across \
+# four independent registry test modules is a cross-file refactor out of T-1116's \
+# declared scope (docs/design/registry/weaknesses.yaml, this file only)"
 class TestWeaknessesExhaustiveness:
     """The T-0384 acceptance criterion: catalogued count == enforced +
     excused + deferred, pinned against the file's own declared 944-CWE

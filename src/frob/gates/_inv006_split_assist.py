@@ -1,6 +1,6 @@
 # frob:waive REF002 reason="a T-1134 split-assist submodule of frob.gates, imported \
-# only by gates/__init__.py's dispatch by design -- the same package structure \
-# every sibling gates/_*.py module has, a second consumer would not be genuine"
+# only by gates/__init__.py's dispatch by design -- the same package structure every \
+# sibling gates/_*.py module has, a second consumer would not be genuine"
 """T-1134: INV006 split-assist -- when a module split moves exclusivity-
 claim prose VERBATIM out of a file that already carries an INV006 waiver
 or a bound `frob:invariant` edge, the destination file's own INV006
@@ -22,11 +22,10 @@ outside INV006 specifically for that reason (its own T-1076 PII012
 precedent has the identical (file, token)-keyed-allowlist-needs-a-new-
 entry-on-move failure mode)."""
 # frob:waive INV006 reason="module-docstring exclusivity-vocabulary hit is \
-# source-level design-rationale prose describing this module's own already-\
-# implemented detection behavior, verifiable by reading the code it annotates \
-# -- not a separate cross-module contract needing its own tracked invariant, \
-# same calibration posture as frob.tickets._new_gate_rule_acceptance's own \
-# T-0756 INV006 waiver"
+# source-level design-rationale prose describing this module's own already-implemented \
+# detection behavior, verifiable by reading the code it annotates -- not a separate \
+# cross-module contract needing its own tracked invariant, same calibration posture as \
+# frob.tickets._new_gate_rule_acceptance's own T-0756 INV006 waiver"
 
 from __future__ import annotations
 

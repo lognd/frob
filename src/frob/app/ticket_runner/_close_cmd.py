@@ -5,14 +5,13 @@ Extracted from `frob.app.ticket_runner` (T-1089, T-0395 tier-2 split
 residue). Re-exported from `frob.app.ticket_runner`'s package `__init__`
 unchanged so every existing `frob.app.ticket_runner.<name>` call site (CLI
 dispatch, tests that monkeypatch these names) keeps working."""
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this \
-# file's exclusivity-vocabulary hit is source-level design-rationale/ \
-# scope-cut prose (a docstring or comment describing already-implemented \
-# internal behavior, verifiable by reading the code it annotates) rather \
-# than a separate cross-module contract needing its own tracked \
-# invariant; disposed as a calibration batch, not claim-by-claim -- \
-# carried from the pre-T-1089-split monolith's identical file-level \
-# waiver (frob.app.ticket_runner/__init__.py)"
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's \
+# exclusivity-vocabulary hit is source-level design-rationale/ scope-cut prose (a \
+# docstring or comment describing already-implemented internal behavior, verifiable by \
+# reading the code it annotates) rather than a separate cross-module contract needing \
+# its own tracked invariant; disposed as a calibration batch, not claim-by-claim -- \
+# carried from the pre-T-1089-split monolith's identical file-level waiver \
+# (frob.app.ticket_runner/__init__.py)"
 
 from __future__ import annotations
 
@@ -172,15 +171,14 @@ def _close_mutation_evidence_for_ticket(root: Path, ticket) -> bool | None:  # n
 
 
 # frob:ticket T-0417
-# frob:waive DUP001 reason="T-1089 split moved this function to a new file \
-# path with an unchanged body, which the diff-scoped DUP001 gate reads as \
-# newly-introduced code and compares against the rest of the tree; the 95% \
-# r2 match against frob.tickets._land._reverify_test_count_claim is \
-# same-shape (a bool|None-returning re-verify-then-log-and-report helper) \
-# but different-domain -- this one re-runs close's own recorded evidence \
-# ids against the current tree, that one compares a captured test/evidence \
-# count claim for regression at land time; no shared logic to extract, \
-# pre-existing structural similarity the split did not create"
+# frob:waive DUP001 reason="T-1089 split moved this function to a new file path with \
+# an unchanged body, which the diff-scoped DUP001 gate reads as newly-introduced code \
+# and compares against the rest of the tree; the 95% r2 match against \
+# frob.tickets._land._reverify_test_count_claim is same-shape (a bool|None-returning \
+# re-verify-then-log-and-report helper) but different-domain -- this one re-runs \
+# close's own recorded evidence ids against the current tree, that one compares a \
+# captured test/evidence count claim for regression at land time; no shared logic to \
+# extract, pre-existing structural similarity the split did not create"
 def _reverify_evidence_for_close(root: Path, ticket) -> bool | None:  # noqa: ANN001
     """N-02 CLI wiring: whether `ticket`'s own non-cmd evidence ids STILL
     pass when actually re-run against the CURRENT tree at `frob ticket

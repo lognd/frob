@@ -5657,13 +5657,12 @@ def _selfaudit_violation(
 
 
 # frob:doc docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756
-# frob:waive AFFECT001 reason="T-1146 threads the SAME resource_module \
-# this function already built for check_mode_conformance into \
-# check_resource_contention's module= too (moved a few lines earlier, no \
-# new fact for docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756 \
-# to describe -- SELFAUDIT001's own shape/behavior is unchanged, only \
-# which findings it now correctly skips); docs/modules/gates.md is not in \
-# T-1146's declared scope"
+# frob:waive AFFECT001 reason="T-1146 threads the SAME resource_module this function \
+# already built for check_mode_conformance into check_resource_contention's module= \
+# too (moved a few lines earlier, no new fact for \
+# docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756 to describe -- \
+# SELFAUDIT001's own shape/behavior is unchanged, only which findings it now correctly \
+# skips); docs/modules/gates.md is not in T-1146's declared scope"
 # frob:invariant INV-041
 # frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_folds_selfconform_violation  # noqa: E501
 # frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_clean_model_no_violations  # noqa: E501
@@ -5940,9 +5939,9 @@ def _dup_gate_violations(
     )
 
 
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to \
-# data.get('project', {}).get(field) on a dict already produced by \
-# tomllib.load's caught call; plain dict.get access cannot raise"
+# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to data.get('project', \
+# {}).get(field) on a dict already produced by tomllib.load's caught call; plain \
+# dict.get access cannot raise"
 def _pyproject_project_field(root: Path, field: str) -> str | None:
     """One `[project].<field>` string from `root/pyproject.toml`, or
     `None` if the file, table, or field is missing/mistyped (extracted
@@ -5969,10 +5968,10 @@ def _current_version(root: Path) -> str | None:
 # frob:ticket T-0403
 # frob:tests tests/test_gates.py::TestTestGate.test_changelog_mentions_rejects_substring_in_prose  # noqa: E501
 # frob:tests tests/test_gates.py::TestTestGate.test_changelog_mentions_accepts_real_heading_entry  # noqa: E501
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to \
-# pattern.search(text) against a re.Pattern compiled from a version string via \
-# re.escape, on text already caught via read_text()'s own OSError handling; a \
-# compiled-pattern search over an already-decoded str cannot raise"
+# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to pattern.search(text) \
+# against a re.Pattern compiled from a version string via re.escape, on text already \
+# caught via read_text()'s own OSError handling; a compiled-pattern search over an \
+# already-decoded str cannot raise"
 def _changelog_mentions(root: Path, version: str) -> bool:
     """Whether CHANGELOG.md (if present) has a HEADING entry for `version`;
     absent file passes.
@@ -6223,10 +6222,9 @@ def _current_project_name(root: Path) -> str | None:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-1009
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to \
-# data.get('package', []) iteration and package.get(...) dict access on a dict \
-# already produced by tomllib.load's caught call; plain dict/list access cannot \
-# raise"
+# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to data.get('package', \
+# []) iteration and package.get(...) dict access on a dict already produced by \
+# tomllib.load's caught call; plain dict/list access cannot raise"
 def _uv_lock_version(root: Path) -> str | None:
     """The project's own package `version` as recorded in `root/uv.lock`'s
     `[[package]]` table (matched by `pyproject.toml`'s `[project].name`),
@@ -6454,9 +6452,9 @@ def _linked_from_edges(snapshot: GraphSnapshot) -> set[str]:
 
 
 # frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to \
-# _MD_LINK_RE.findall/_MD_CODE_REF_RE.findall and PurePosixPath composition over \
-# text already caught via read_text()'s own OSError handling; regex/path-string \
-# operations over an already-decoded str cannot raise"
+# _MD_LINK_RE.findall/_MD_CODE_REF_RE.findall and PurePosixPath composition over text \
+# already caught via read_text()'s own OSError handling; regex/path-string operations \
+# over an already-decoded str cannot raise"
 def _crawl_reachable(
     root: Path, roots: list[str], linked: set[str], obligated: set[str]
 ) -> set[str]:
@@ -6559,11 +6557,11 @@ _ANCHOR_ID_RE = re.compile(r'<a\s+id="([^"]+)"')
 _MD_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$", re.MULTILINE)
 
 
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to \
-# slugify/dedupe_slug (imported helpers) and _MD_HEADING_RE/_ANCHOR_ID_RE.finditer \
-# over text already caught via read_text()'s own OSError handling; the resolver \
-# cannot follow through the cross-module helper import, but both are pure \
-# str/regex transforms with no documented raise path"
+# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to slugify/dedupe_slug \
+# (imported helpers) and _MD_HEADING_RE/_ANCHOR_ID_RE.finditer over text already \
+# caught via read_text()'s own OSError handling; the resolver cannot follow through \
+# the cross-module helper import, but both are pure str/regex transforms with no \
+# documented raise path"
 def _doc_anchor_slugs(path: Path) -> Option[set[str]]:
     """Every resolvable slug in a doc file: heading slugs plus explicit `<a id>`s.
 

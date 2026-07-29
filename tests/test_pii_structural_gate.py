@@ -57,7 +57,8 @@ class TestFieldNames:
     """PII010: field-name/type detection over Python data structures."""
 
     def test_password_field_fires(self) -> None:
-        # frob:tests src/frob/gates/_pii_structural/_python_fields.py::_scan_python_fields
+        # frob:tests \
+        # src/frob/gates/_pii_structural/_python_fields.py::_scan_python_fields
         src = (
             "from dataclasses import dataclass\n\n"
             "@dataclass\n"
@@ -91,8 +92,8 @@ class TestFieldNames:
         # frob:waive COV006 reason="confirmed exercised: _scan_python_fields \
         # (_python_fields.py) calls _field_name_hit (_signatures.py) -- a real \
         # cross-file call within the _pii_structural package, but the best-effort \
-        # callgraph resolves same-file privates only, same cross-package blind \
-        # spot as the other T-1024/3d574f3a-precedent COV006 waivers in this file"
+        # callgraph resolves same-file privates only, same cross-package blind spot as \
+        # the other T-1024/3d574f3a-precedent COV006 waivers in this file"
         """T-0971 (gates-quality audit finding 5): a camelCase field name
         must still match its snake_case keyword equivalent."""
         src = (
@@ -185,7 +186,8 @@ class TestEnvAccess:
     """SEC110: os.environ/os.getenv access-site detection."""
 
     def test_os_getenv_fires(self) -> None:
-        # frob:tests src/frob/gates/_pii_structural/_env_access.py::_scan_python_env_access
+        # frob:tests \
+        # src/frob/gates/_pii_structural/_env_access.py::_scan_python_env_access
         src = "import os\nvalue = os.getenv('SOME_VAR')\n"
         tree = ast.parse(src)
         violations = _scan_python_env_access(tree, "example.py")

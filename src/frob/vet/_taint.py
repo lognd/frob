@@ -44,14 +44,12 @@ call and no preceding `"--"` is a finding. Interprocedural flow (taint
 crossing a function boundary via a parameter or return value) is NOT
 attempted here -- a disclosed phase-2 gap, matching T-0781's own body.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/vet/_taint.py's \
-# exclusivity-vocabulary hit is source-level design-rationale prose (a \
-# docstring or comment describing already-implemented internal behavior, \
-# verifiable by reading the code it annotates) rather than a separate \
-# cross-module contract needing its own tracked invariant; disposed as a \
-# calibration batch, not claim-by-claim -- first-turn-on prose of \
-# the T-0781 taint module"
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: src/frob/vet/_taint.py's \
+# exclusivity-vocabulary hit is source-level design-rationale prose (a docstring or \
+# comment describing already-implemented internal behavior, verifiable by reading the \
+# code it annotates) rather than a separate cross-module contract needing its own \
+# tracked invariant; disposed as a calibration batch, not claim-by-claim -- \
+# first-turn-on prose of the T-0781 taint module"
 
 from __future__ import annotations
 

@@ -1,5 +1,5 @@
-# frob:waive INV006 reason="T-1076 split of __main__.py's original T-0585 waiver: \
-# this module's help/docstring text carries incidental exclusivity-flavored wording \
+# frob:waive INV006 reason="T-1076 split of __main__.py's original T-0585 waiver: this \
+# module's help/docstring text carries incidental exclusivity-flavored wording \
 # (argparse help strings, scope-cut prose) inherited verbatim from __main__.py, not a \
 # new normative contract -- disposed as the same calibration batch, not claim-by-claim"
 """CLI parser builders: `frob check`'s stage-skip/scope/selection/delta

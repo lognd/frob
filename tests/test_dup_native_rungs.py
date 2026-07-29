@@ -55,7 +55,8 @@ class TestNativeRungsDefaultsOnForDirectCallers:
     turns this off; see frob.gates._dup_config)."""
 
     def test_default_config_still_reports_native_rungs(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline/_fingerprint.py::_fingerprint_symbol kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_fingerprint.py::_fingerprint_symbol \
+        # kind="unit"
         report = find_clones(
             snapshot, DupConfig(min_tokens=5, threshold=0.85)
         ).danger_ok
@@ -67,7 +68,8 @@ class TestNativeRungsOffWhenDisabled:
     (the shape `frob.gates.dup_gate` requests by default)."""
 
     def test_explicit_false_reports_no_native_rungs(self, snapshot):
-        # frob:tests src/frob/dup/_pipeline/_fingerprint.py::_fingerprint_symbol kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_fingerprint.py::_fingerprint_symbol \
+        # kind="unit"
         report = find_clones(
             snapshot,
             DupConfig(min_tokens=5, threshold=0.85, native_rungs_enabled=False),

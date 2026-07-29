@@ -179,11 +179,11 @@ FAMILY_MODES: Final[dict[str, tuple[str, ...]]] = {
 WIRED_MODE_FAMILIES: Final[frozenset[str]] = frozenset({"fs", "net", "env"})
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
-# frob:waive AFFECT001 reason="T-1073 naming-reconciliation decision, no \
-# behavior change to any existing wired join; docs/strata/selfconform.md is \
-# outside T-1073's declared scope (src/frob/vet/_capability_modes.py, \
-# src/frob/vet/_capability_registry.py) -- matches T-1047's own precedent \
-# for the identical situation on CAPABILITY_KINDS"
+# frob:waive AFFECT001 reason="T-1073 naming-reconciliation decision, no behavior \
+# change to any existing wired join; docs/strata/selfconform.md is outside T-1073's \
+# declared scope (src/frob/vet/_capability_modes.py, \
+# src/frob/vet/_capability_registry.py) -- matches T-1047's own precedent for the \
+# identical situation on CAPABILITY_KINDS"
 #: T-1073 naming-reconciliation decision (module docstring): the `"proc"`
 #: family here is DELIBERATELY not the same string as the vet registry's
 #: `capability_kind="exec"` (`frob.vet._capability_registry.CAPABILITY_

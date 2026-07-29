@@ -649,9 +649,9 @@ class EffectGraph:
 
     # frob:ticket T-0976
     # frob:invariant terminates reason="every call into _summary from here shares the \
-    # same self._budget counter _summary itself decrements before recursing again, \
-    # and the same stack frozenset guard against call-graph cycles -- see _summary's \
-    # own frob:invariant for the shared measure this mutual recursion relies on" \
+    # same self._budget counter _summary itself decrements before recursing again, and \
+    # the same stack frozenset guard against call-graph cycles -- see _summary's own \
+    # frob:invariant for the shared measure this mutual recursion relies on" \
     # measure="self._budget, a non-negative int strictly decreasing by 1 per mutual \
     # _summary call, floored by _summary's own eager return at budget<=0"
     def _called_callee_effects(

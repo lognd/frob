@@ -1,7 +1,6 @@
-# frob:waive REF002 reason="a T-1115 split submodule of frob.gates, imported \
-# only by gates/__init__.py's dispatch table by design -- the same package \
-# structure every sibling gates/_*.py module has, a second consumer would \
-# not be genuine"
+# frob:waive REF002 reason="a T-1115 split submodule of frob.gates, imported only by \
+# gates/__init__.py's dispatch table by design -- the same package structure every \
+# sibling gates/_*.py module has, a second consumer would not be genuine"
 """frob.gates._debt_deprecated -- DEBT00x (`frob:debt`) and DEPR00x
 (`frob:deprecated`) gate families, split out of `frob.gates.__init__`
 (T-1115, following T-1072/T-1077's precedent).
@@ -12,13 +11,12 @@ DEPR005 is deprecated-specific, T-0639) and both feed the same REL001
 release-blocking check in `run_gates`'s spine.
 """
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_debt_deprecated.py's exclusivity-vocabulary hits are \
-# source-level design-rationale prose (docstrings and comments describing \
-# already-implemented internal behavior, verifiable by reading the code \
-# they annotate) rather than a separate cross-module contract needing its \
-# own tracked invariant; disposed as a calibration batch, not claim-by- \
-# claim -- module prose split verbatim from the pre-T-1115 \
-# gates/__init__.py monolith, mirroring the T-1077/_todo_fmt.py precedent"
+# src/frob/gates/_debt_deprecated.py's exclusivity-vocabulary hits are source-level \
+# design-rationale prose (docstrings and comments describing already-implemented \
+# internal behavior, verifiable by reading the code they annotate) rather than a \
+# separate cross-module contract needing its own tracked invariant; disposed as a \
+# calibration batch, not claim-by- claim -- module prose split verbatim from the \
+# pre-T-1115 gates/__init__.py monolith, mirroring the T-1077/_todo_fmt.py precedent"
 
 from __future__ import annotations
 
@@ -609,8 +607,8 @@ def _depr005_violations(
         for grown_file in grown_files:
             # frob:waive PERF004 reason="T-1115: grown_lines sorts the current \
             # reference set's own line numbers for THIS grown_file only -- a \
-            # different, per-iteration distinct subset each time, not a shared \
-            # re-sort hoistable out of the loop"
+            # different, per-iteration distinct subset each time, not a shared re-sort \
+            # hoistable out of the loop"
             grown_lines = sorted(
                 int(ref.rpartition(":")[2])
                 for ref in current_refs

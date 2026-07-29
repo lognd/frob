@@ -345,8 +345,8 @@ def _try_affects_via_daemon(root: Path, cfg: AppConfig) -> bool:
 # frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_json_mode_payload  # noqa: E501
 # frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_truncated_closure_flagged  # noqa: E501
 # frob:waive ARCH103 reason="T-0977/T-1106: `frob graph affects` CLI entrypoint -- \
-# same runner shape as `_run_query`/`_run_why` in this module: try the daemon \
-# proxy, resolve, render text-or-json, exit"
+# same runner shape as `_run_query`/`_run_why` in this module: try the daemon proxy, \
+# resolve, render text-or-json, exit"
 def _run_affects(root: Path, cache: Path, cfg: AppConfig) -> None:
     """`frob graph affects <ref>`: the CLI counterpart T-0325 deliberately
     cut (docs/modules/graph.md#affects) -- prints the same `AffectedSet`

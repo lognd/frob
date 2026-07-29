@@ -321,9 +321,9 @@ class _RequestHandler(socketserver.StreamRequestHandler):
 
     # frob:doc docs/modules/serve.md#protocol
     # frob:tests tests/test_serve_socket.py::TestRunSocketDaemon.test_serves_one_request_then_idle_exits kind="unit"  # noqa: E501
-    # frob:waive ARCH103 reason="T-1092: the connection loop -- read a line, parse \
-    # it, dispatch it, write the response -- is the entire, inherently sequential \
-    # job of a socketserver.StreamRequestHandler.handle() override; splitting the \
+    # frob:waive ARCH103 reason="T-1092: the connection loop -- read a line, parse it, \
+    # dispatch it, write the response -- is the entire, inherently sequential job of a \
+    # socketserver.StreamRequestHandler.handle() override; splitting the \
     # parse/dispatch/write steps into separate functions would not reduce real \
     # complexity, only relocate it behind an extra call boundary for a single caller"
     def handle(self) -> None:  # noqa: ANN201
@@ -372,7 +372,9 @@ class _RequestHandler(socketserver.StreamRequestHandler):
             self.server.lease_manager.release_holder(self._lease_holder_id)
 
     # frob:doc docs/modules/serve.md#subscribepush-events-t-1096
-    # frob:waive COV007 reason="docs/modules/serve.md individually names _RequestHandler._handle_subscribe (T-0529 precedent: a deliberate per-RPC-verb architecture doc, not accidental drift onto a private helper)"
+    # frob:waive COV007 reason="docs/modules/serve.md individually names \
+    # _RequestHandler._handle_subscribe (T-0529 precedent: a deliberate per-RPC-verb \
+    # architecture doc, not accidental drift onto a private helper)"
     # frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_receives_graph_changed_after_edit kind="unit"  # noqa: E501
     def _handle_subscribe(self, request: _JsonRpcRequest) -> dict[str, Any]:
         """Register this connection with `server.event_bus` and start its
@@ -394,7 +396,9 @@ class _RequestHandler(socketserver.StreamRequestHandler):
         return {"id": request.id, "result": {"subscribed": True}}
 
     # frob:doc docs/modules/serve.md#version-handshake-t-1105
-    # frob:waive COV007 reason="each _RequestHandler._handle_* method is a distinct wire-protocol RPC verb with its own dedicated doc anchor (T-0529 precedent: deliberate per-RPC-verb architecture doc, not accidental drift)"
+    # frob:waive COV007 reason="each _RequestHandler._handle_* method is a distinct \
+    # wire-protocol RPC verb with its own dedicated doc anchor (T-0529 precedent: \
+    # deliberate per-RPC-verb architecture doc, not accidental drift)"
     # frob:tests tests/test_serve_socket.py::TestDispatchRequest.test_frob_version_reports_daemon_version kind="unit"  # noqa: E501
     def _handle_version(self, request: _JsonRpcRequest) -> dict[str, Any]:
         """Answer the `frob_version` handshake RPC (T-1105) with this
@@ -406,7 +410,9 @@ class _RequestHandler(socketserver.StreamRequestHandler):
         return {"id": request.id, "result": {"version": daemon_version()}}
 
     # frob:doc docs/modules/serve.md#version-handshake-t-1105
-    # frob:waive COV007 reason="each _RequestHandler._handle_* method is a distinct wire-protocol RPC verb with its own dedicated doc anchor (T-0529 precedent: deliberate per-RPC-verb architecture doc, not accidental drift)"
+    # frob:waive COV007 reason="each _RequestHandler._handle_* method is a distinct \
+    # wire-protocol RPC verb with its own dedicated doc anchor (T-0529 precedent: \
+    # deliberate per-RPC-verb architecture doc, not accidental drift)"
     # frob:tests tests/test_serve_socket.py::TestDispatchRequest.test_frob_shutdown_stops_the_server kind="unit"  # noqa: E501
     def _handle_shutdown(self, request: _JsonRpcRequest) -> dict[str, Any]:
         """Answer `frob_shutdown` (T-1105) and asynchronously stop the
@@ -425,7 +431,9 @@ class _RequestHandler(socketserver.StreamRequestHandler):
         return {"id": request.id, "result": {"shutting_down": True}}
 
     # frob:doc docs/modules/serve.md#resource-leasessemaphores-t-1097
-    # frob:waive COV007 reason="each _RequestHandler._handle_* method is a distinct wire-protocol RPC verb with its own dedicated doc anchor (T-0529 precedent: deliberate per-RPC-verb architecture doc, not accidental drift)"
+    # frob:waive COV007 reason="each _RequestHandler._handle_* method is a distinct \
+    # wire-protocol RPC verb with its own dedicated doc anchor (T-0529 precedent: \
+    # deliberate per-RPC-verb architecture doc, not accidental drift)"
     # frob:tests tests/test_serve_leases.py::TestLeaseRpc.test_second_client_blocks_until_first_releases kind="unit"  # noqa: E501
     def _handle_lease_acquire(self, request: _JsonRpcRequest) -> dict[str, Any]:
         """Answer `frob_lease_acquire` (T-1097): block THIS connection's
@@ -454,7 +462,9 @@ class _RequestHandler(socketserver.StreamRequestHandler):
         return {"id": request.id, "result": {"acquired": acquired}}
 
     # frob:doc docs/modules/serve.md#resource-leasessemaphores-t-1097
-    # frob:waive COV007 reason="each _RequestHandler._handle_* method is a distinct wire-protocol RPC verb with its own dedicated doc anchor (T-0529 precedent: deliberate per-RPC-verb architecture doc, not accidental drift)"
+    # frob:waive COV007 reason="each _RequestHandler._handle_* method is a distinct \
+    # wire-protocol RPC verb with its own dedicated doc anchor (T-0529 precedent: \
+    # deliberate per-RPC-verb architecture doc, not accidental drift)"
     # frob:tests tests/test_serve_leases.py::TestLeaseRpc.test_explicit_release_frees_the_slot_for_the_next_waiter kind="unit"  # noqa: E501
     def _handle_lease_release(self, request: _JsonRpcRequest) -> dict[str, Any]:
         """Answer `frob_lease_release` (T-1097): free THIS connection's
@@ -507,8 +517,8 @@ class _DaemonServer(socketserver.ThreadingUnixStreamServer):
 
     daemon_threads = True
     # frob:waive PII012 reason="T-1092: stdlib socketserver.BaseServer's own \
-    # reuse-addr flag (SO_REUSEADDR); no relation to a person's contact address \
-    # -- a name-only false-positive match on 'address'"
+    # reuse-addr flag (SO_REUSEADDR); no relation to a person's contact address -- a \
+    # name-only false-positive match on 'address'"
     allow_reuse_address = True
 
     def __init__(self, root: Path, sock_path: Path) -> None:

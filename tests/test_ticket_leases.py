@@ -555,7 +555,8 @@ class TestCommitStartTransition:
         monkeypatch.setenv("FROB_AGENT", "1")
         result = commit_start_transition(repo, "T-0001")
         assert result.is_ok
-        # frob:waive SEC110 reason="asserting a test-set dispatch-context marker restored, not a secret"
+        # frob:waive SEC110 reason="asserting a test-set dispatch-context marker \
+        # restored, not a secret"
         assert os.environ.get("FROB_AGENT") == "1"
 
         status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)

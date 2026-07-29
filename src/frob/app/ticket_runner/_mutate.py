@@ -1,7 +1,7 @@
-# frob:waive REF002 reason="a T-1089 tier-2 split submodule of ticket_runner, \
-# imported only by ticket_runner/__init__.py's dispatch table by design -- the \
-# same package structure every sibling ticket_runner/_*.py module has, a \
-# second consumer would not be genuine"
+# frob:waive REF002 reason="a T-1089 tier-2 split submodule of ticket_runner, imported \
+# only by ticket_runner/__init__.py's dispatch table by design -- the same package \
+# structure every sibling ticket_runner/_*.py module has, a second consumer would not \
+# be genuine"
 """frob.app.ticket_runner._mutate -- the `scope`/`priority`/`kind`/
 `component`/`label`/`accept`/`board`/`epic`/`tier`/`sprint`/`brief`/`flow`
 mutation command family.
@@ -11,13 +11,12 @@ residue). Re-exported from `frob.app.ticket_runner`'s package `__init__`
 unchanged so every existing `frob.app.ticket_runner.<name>` call site (CLI
 dispatch, tests that monkeypatch these names) keeps working."""
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/app/ticket_runner/_mutate.py's \
-# exclusivity-vocabulary hits are source-level design-rationale prose \
-# (docstrings and comments describing already-implemented internal \
-# behavior, verifiable by reading the code they annotate) rather than a \
-# separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim -- module prose \
-# split verbatim from the pre-T-1089 ticket_runner.py monolith"
+# src/frob/app/ticket_runner/_mutate.py's exclusivity-vocabulary hits are source-level \
+# design-rationale prose (docstrings and comments describing already-implemented \
+# internal behavior, verifiable by reading the code they annotate) rather than a \
+# separate cross-module contract needing its own tracked invariant; disposed as a \
+# calibration batch, not claim-by-claim -- module prose split verbatim from the \
+# pre-T-1089 ticket_runner.py monolith"
 
 from __future__ import annotations
 
