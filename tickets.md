@@ -3785,9 +3785,9 @@ This ticket owns ONLY the free-text prose/doc-anchor rows; it does not
 touch `frob:*` DSL directive targets (T-1199's scope) or the Python
 import/call-site rewrite (T-1197's scope).
 
-<!-- ticket:T-draft-e578bd64 -->
+<!-- ticket:T-1268 -->
 ```yaml
-id: T-draft-e578bd64
+id: T-1268
 title: 'refactor: prose/doc-anchor carrier (docstring, docs/**, anchor-slug rewrite)'
 state: dropped
 kind: feature
