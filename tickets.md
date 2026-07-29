@@ -257,7 +257,7 @@ unowned residue -- is what this pass could honestly complete.
 ```yaml
 id: T-0397
 title: 'AUDIT REMEDIATION EPIC: North-Star integrity -- every green must be earned'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
