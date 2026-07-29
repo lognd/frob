@@ -6534,3 +6534,77 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 (no live caller, no CLI/API entry point), route it to the DEAD gate / dup
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
+
+<!-- ticket:T-1314 -->
+```yaml
+id: T-1314
+title: 'sys gate: fold evaluate_compliance into the automatic pipeline (SELFAUDIT001
+  pattern)'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-29'
+priority: high
+parent: T-1241
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_sys.py
+- src/frob/strata/_compliance.py
+- docs/design/registry/EXHAUSTIVENESS-GATE.md
+- docs/**
+- tests/**
+acceptance:
+- text: GIVEN a repo with a design/ directory WHEN frob check runs THEN evaluate_compliance
+    executes per discovered .strata model inside the sys gate family (SELFAUDIT001-style
+    folding, same design/ opt-in precondition), so a model with an exposure:public-web
+    node and no privacy-policy mitigation FAILS frob check -- not only the manual
+    frob sys audit
+  evidence: []
+- text: GIVEN the folding lands THEN the green-check-red-audit divergence class is
+    regression-tested (a model that fails sys audit compliance must fail frob check)
+    and the tier (WARN vs ERROR) is decided and documented
+  evidence: []
+threat: null
+component: null
+```
+Reviewer-confirmed gap from the T-1242/T-1244 close 2026-07-29: evaluate_compliance has zero call sites under src/frob/gates/ -- only the registry-string COMPLIANCE005/006/007 checks are wired into frob check; the actual model-evaluation layer (including the new PRIVACY-NOTICE unit) runs only under manual frob sys audit. This is exactly the catalogued-but-check-invisible shape T-0756/SELFAUDIT001 closed for self-conformance/contention/mode/reliability, never extended to compliance. Violates the standing doctrine that nothing important is manual-only. Fold under sys_gate's SELFAUDIT aggregation per the T-0756 precedent.
+
+<!-- ticket:T-1315 -->
+```yaml
+id: T-1315
+title: 'TEST005 floor ratchet-up schedule: 75/70 is a waypoint, not a surrender'
+state: queued
+kind: docs
+origin: human
+created: '2026-07-29'
+priority: low
+parent: T-1273
+tier: ticket
+sprint: null
+acceptance:
+- text: GIVEN a package that has reached zero TEST005 findings at 75/70 WHEN the ratchet
+    schedule lands THEN that package's effective floor is documented to step toward
+    90/85 (per-package override or schedule), not remain frozen at the recalibrated
+    minimum
+  evidence: []
+- text: GIVEN frob.toml's existing recalibration rationale comment WHEN the ratchet
+    design is written THEN it explicitly cites and extends that rationale rather than
+    contradicting or duplicating it
+  evidence: []
+threat: null
+component: null
+```
+frob.toml [testing] recalibrated unit_branch_cov=75 / module_line_cov=70
+on honest TEST005 attribution data (T-1235 fixed subprocess + pool-worker
+coverage recording); the in-file rationale comment documents why these
+specific numbers were chosen as the current floor, not a permanent
+target.
+
+Design a ratchet schedule: once a package (T-1276..T-1313 in this epic)
+reaches zero TEST005 findings at 75/70, its floor should step up toward
+90/85 rather than stay parked at the recalibrated minimum -- otherwise
+the recalibration silently becomes a ceiling. Decide and document
+(either in frob.toml as per-package floor overrides, or as a documented
+schedule/policy the gate reads) how and when a cleared package's floor
+increases, and how regressions below the new floor are caught.
