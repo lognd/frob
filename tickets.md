@@ -275,6 +275,7 @@ Investigated all six audit-residue rows with per-row file:line evidence (planner
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 8 error(s), 6123 warning(s), 668 waived
 - error-findings: DEPR002@src/frob/app/docs_runner.py, DEPR002@src/frob/app/map_runner.py, DEPR002@src/frob/app/outline_runner.py, DEPR002@src/frob/app/xref_runner.py, DOC001@docs/audits/docs-staleness-2026-07-29.md, DOC001@docs/design/check-fix-engine.md, DOC001@docs/design/ledger-v2.md, DOC001@docs/design/refactor-verb.md
+
 <!-- ticket:T-1194 -->
 ```yaml
 id: T-1194
@@ -451,7 +452,7 @@ call sites and the archive/sibling/newer-winner property suites.
 ```yaml
 id: T-1195
 title: 'arch: 33-file LARGE001 residue after T-1192 split (_new_renumber.py done)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -461,6 +462,41 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/
+- docs/modules/arch.md
+- tests/test_arch_near_duplicate_native.py
+- tests/unit/test_arch.py
+- tests/unit/test_check_budget.py
+scope_changes:
+- op: add
+  glob: docs/modules/arch.md
+  reason: split arch/_python.py's abstraction-opportunity family into arch/_abstraction.py;
+    carried doc prose + test imports/directives to new module path
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: tests/test_arch_near_duplicate_native.py
+  reason: split arch/_python.py's abstraction-opportunity family into arch/_abstraction.py;
+    carried doc prose + test imports/directives to new module path
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: split arch/_python.py's abstraction-opportunity family into arch/_abstraction.py;
+    carried doc prose + test imports/directives to new module path
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: tests/unit/test_check_budget.py
+  reason: moved chunked-check bookkeeping tests reference new _check_chunking module
+    directly
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/unit/test_arch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity
+- tests/test_arch_near_duplicate_native.py::test_near_duplicate_cluster_dispatches_to_native_and_matches_reference
+- tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_mode_calls_stamp_and_returns
+- tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_runs_selected_chunks_and_reports_result
+- tests/unit/test_arch.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[duplicate_rust_tag]
 threat: null
 component: null
 ```
@@ -531,6 +567,97 @@ file-level finding has no symref) -- not every file on this list needs a
 structural split; a disposition is a valid, honest outcome where a real
 split boundary would fragment a genuinely cohesive module (T-1074's own
 precedent for the 7 files it dispositioned rather than split).
+
+## Done report
+
+AMENDMENT (post-close review, REJECT then fixed):
+
+The initial close was reviewed and rejected for three issues, all fixed
+in follow-up commits within this same worktree (T-1195 stays closed;
+these ride the same land):
+
+1. COV002 (102 unwaived errors, all in the 3 new files): caused by a
+   bogus module-level "frob:ticket T-1195" line sitting in each new
+   file's docstring text -- not a real directive (no leading '#'), so
+   it created no coverage binding at all. COV002 had actually been
+   passing only via T-1195's own open-ticket scope coverage while the
+   ticket was open; once closed, that stopped applying, and turned out
+   to be ambiguous besides (multiple other open tickets independently
+   claim 'src/frob/' scope, defeating COV002's B10 unambiguous-
+   narrowest-match rule). Fix: removed the bogus docstring lines and
+   added real per-symbol "# frob:ticket T-1195" directives (valid via
+   the T-0214/T-0965 grace window -- T-1195 closed within this same
+   uncommitted diff) to every symbol COV002 flagged; narrowed
+   T-1270's scope from a bare 'src/frob/' catch-all to its
+   actual residue file list to remove the scope-ambiguity tie.
+2. DUP001 (unwaived, arch/_abstraction.py::_near_duplicate_cluster,
+   95% similar to strata/_report.py::_assumption_ledger_lines and
+   app/test_runner.py::_print_fuzz_results): pre-existing duplication
+   surfaced by the move, not introduced by it. Fixed with a
+   frob:waive DUP001 naming both counterparts.
+3. DUP002 (unwaived, two 100%-identical tests in
+   tests/unit/test_arch.py::TestLanguageParityExclusion): collapsed
+   test_duplicate_tag_within_group_still_flagged and
+   test_untagged_member_within_group_still_flagged into one
+   parametrized test_non_parity_group_still_flagged; updated T-1068's
+   archived evidence (tickets-archive.md) to the new parametrized
+   pytest node ids.
+
+Re-verification (uv run frob check --base main, full generous-timeout
+foreground runs, after `git merge main` to bring the worktree current):
+- --only coverage: 0 errors, 12 warnings, 135 waived (down from 104
+  errors before the fix; the 12 warnings/135 waived are pre-existing,
+  none touching the 3 split modules or the two original split-source
+  files)
+- --only gates-native: 0 errors (ARCH/DUP/EXHAUST/LARGE/PERF all pass;
+  clones/DUP shows 0 errors, 2 waived -- the DUP001 waiver from item 2)
+- --only gates-security: 0 errors (DEAD/OPAQUE/PII/SEC all pass)
+- --only gates-fast: 7 pre-existing errors (DEPR002 x4 on unrelated
+  app/xref_runner.py etc., DOC001 on an unrelated audit doc that
+  arrived via a main merge, PRE001/SCOPE001 -- both artifacts of
+  running the check bare without --ticket/a T-####-branch, not real
+  diff gaps) -- none reference arch/_abstraction.py,
+  app/_check_chunking.py, gates/_docblocks_refs.py, arch/_python.py,
+  app/check_runner.py, or gates/_docblocks.py
+- --only static: all pass (frob-cycle, frob-dup, frob-arch, frob-
+  exports x7 -- pre-existing warnings only)
+- --only lint: 0 errors, 0 warnings (ruff-check, ruff-format, ty all
+  clean)
+
+Touched-set pytest re-run (all green): tests/unit/test_arch.py,
+tests/test_arch_near_duplicate_native.py, tests/unit/test_check_budget.py,
+tests/unit/test_app_runners_batch6.py, tests/test_docblocks_gate.py.
+
+Fix commit: 9a4ce42b "fix(arch,app,gates): resolve reviewer-flagged
+COV002/DUP001/DUP002" (rides the same land as the original 3 split
+commits; T-1195 itself was not reopened).
+
+### Changed
+```
+ docs/modules/arch.md                     |   4 +-
+ src/frob/app/_check_chunking.py          | 521 +++++++++++++++++++++
+ src/frob/app/check_runner.py             | 472 +------------------
+ src/frob/arch/_abstraction.py            | 762 ++++++++++++++++++++++++++++++
+ src/frob/arch/_python.py                 | 701 +---------------------------
+ src/frob/gates/_docblocks.py             | 777 +++----------------------------
+ src/frob/gates/_docblocks_refs.py        | 770 ++++++++++++++++++++++++++++++
+ tests/test_arch_near_duplicate_native.py |   6 +-
+ tests/unit/test_arch.py                  | 161 ++++---
+ tests/unit/test_check_budget.py          |  27 +-
+ tickets-archive.md                       |   8 +-
+ tickets.md                               | 469 ++++++++++++++++++-
+ 12 files changed, 2705 insertions(+), 1973 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_arch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity` (pytest node id, verified passing when recorded)
+- `tests/test_arch_near_duplicate_native.py::test_near_duplicate_cluster_dispatches_to_native_and_matches_reference` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_mode_calls_stamp_and_returns` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_runs_selected_chunks_and_reports_result` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1196 -->
 ```yaml
@@ -3928,3 +4055,352 @@ threat: null
 component: null
 ```
 User directive 2026-07-29: renumbering must be atomic and automatic. Evidence from this drive: landing four design-phase planner worktrees required a guarded plain git merge (FROB_LAND_INTERNAL=1) plus 15 hand-assigned frob ticket renumber calls across 4 batches, because frob ticket land (T-0176) requires a closeable ticket and its draft-finalization path only runs for worked-ticket lands. Also fix the stale TICK002 remedy text that still says 'once T-0176 lands' (it landed). Builds on the existing finalize_draft_for_land machinery (_draft_finalize.py) and the T-0162 id allocator; ledger-v2 (T-1255 renumber child) later absorbs the same behavior for the file-per-ticket store.
+
+<!-- ticket:T-1270 -->
+```yaml
+id: T-1270
+title: 'arch: 32-file LARGE001 residue after T-1195 split'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/_cli_parsers/_ticket.py
+- src/frob/app/config.py
+- src/frob/app/sys_runner.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/app/ticket_runner/_verify.py
+- src/frob/arch/_patterns.py
+- src/frob/check/__init__.py
+- src/frob/check/_python.py
+- src/frob/doctor.py
+- src/frob/gates/_docptr.py
+- src/frob/gates/_protocol_summary.py
+- src/frob/gates/_registry_exhaustiveness.py
+- src/frob/gates/_secrets.py
+- src/frob/gates/_tickets_gate.py
+- src/frob/gates/_waive.py
+- src/frob/strata/__init__.py
+- src/frob/strata/_audit.py
+- src/frob/strata/_compliance.py
+- src/frob/strata/_elaborate.py
+- src/frob/strata/_host_isolation.py
+- src/frob/strata/_infra.py
+- src/frob/strata/_mode_conformance.py
+- src/frob/strata/_selfconform.py
+- src/frob/strata/_threat.py
+- src/frob/tickets/_evidence.py
+- src/frob/tickets/_land.py
+- src/frob/tickets/_leases.py
+- src/frob/tickets/_models.py
+- src/frob/vet/_capability.py
+- src/frob/vet/_capability_registry.py
+- src/frob/vet/_scan.py
+- src/frob/arch/_python.py
+- src/frob/app/check_runner.py
+scope_changes:
+- op: remove
+  glob: src/frob/
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/app/config.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/app/sys_runner.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/arch/_patterns.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/doctor.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/gates/_docptr.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/gates/_protocol_summary.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/gates/_registry_exhaustiveness.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/gates/_secrets.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/gates/_tickets_gate.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/__init__.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_audit.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_compliance.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_elaborate.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_host_isolation.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_infra.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_mode_conformance.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_selfconform.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/strata/_threat.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/vet/_capability.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/vet/_capability_registry.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/vet/_scan.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/arch/_python.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: narrow from broad src/frob/ catch-all to the specific residue files this
+    ticket tracks -- avoids ambiguous-scope ties with other open tickets' scope-coverage
+    claims (COV002 B10)
+  actor: logan
+  at: '2026-07-29'
+threat: null
+component: null
+```
+T-1195 split 3 files this land (arch/_python.py, app/check_runner.py,
+gates/_docblocks.py). Budget did not allow the other 30.
+
+Still unowned, current line counts as of T-1195's own filing (re-measure
+before starting -- some may have shifted from unrelated work landing in
+between):
+
+- src/frob/_cli_parsers/_ticket.py (1102)
+- src/frob/app/config.py (1167)
+- src/frob/app/sys_runner.py (1023)
+- src/frob/app/ticket_runner/_land_cmd.py (907)
+- src/frob/app/ticket_runner/_verify.py (973)
+- src/frob/arch/_patterns.py (1486)
+- src/frob/check/__init__.py (953)
+- src/frob/check/_python.py (977)
+- src/frob/doctor.py (918)
+- src/frob/gates/_docptr.py (1000)
+- src/frob/gates/_protocol_summary.py (1244)
+- src/frob/gates/_registry_exhaustiveness.py (988)
+- src/frob/gates/_secrets.py (1088)
+- src/frob/gates/_tickets_gate.py (953)
+- src/frob/gates/_waive.py (1424)
+- src/frob/strata/__init__.py (941)
+- src/frob/strata/_audit.py (1055)
+- src/frob/strata/_compliance.py (1058)
+- src/frob/strata/_elaborate.py (1401)
+- src/frob/strata/_host_isolation.py (1281)
+- src/frob/strata/_infra.py (837)
+- src/frob/strata/_mode_conformance.py (867)
+- src/frob/strata/_selfconform.py (1621)
+- src/frob/strata/_threat.py (2485)
+- src/frob/tickets/_evidence.py (1201)
+- src/frob/tickets/_land.py (1178)
+- src/frob/tickets/_leases.py (1339)
+- src/frob/tickets/_models.py (1873)
+- src/frob/vet/_capability.py (5944) -- T-1074 explicitly flagged this
+  and the next file as needing a dedicated follow-up but did not file
+  one ("budget did not allow investigating a safe split boundary for
+  either").
+- src/frob/vet/_capability_registry.py (2918)
+- src/frob/vet/_scan.py (901)
+
+Also newly grown over threshold this land (not previously on any
+residue list -- picked up incidentally while re-measuring):
+
+- src/frob/arch/_python.py (962, post-T-1195 split; still over 800)
+- src/frob/app/check_runner.py (1127, post-T-1195 split; still over 800)
+
+## Plan
+
+Same discipline as T-1072/T-1074/T-1186/T-1187/T-1188/T-1189/T-1192/
+T-1195: pick a cohesive subsystem slice per land, split it (or record an
+accepted-with-reason disposition per T-1074's precedent if no safe seam
+exists), full verification per group, re-measure, re-file remaining
+residue rather than closing silently. LARGE001 is a warning-tier,
+waivable advisory (`frob:waive LARGE001 reason="..."`, file-level since a
+file-level finding has no symref) -- not every file on this list needs a
+structural split; a disposition is a valid, honest outcome where a real
+split boundary would fragment a genuinely cohesive module (T-1074's own
+precedent for the 7 files it dispositioned rather than split).

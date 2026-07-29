@@ -15,6 +15,7 @@ from pathlib import Path
 
 import pytest
 
+import frob.app._check_chunking as check_chunking_mod
 import frob.app.check_runner as check_runner_mod
 import frob.check as check_mod
 from frob.app.check_runner import run as check_run
@@ -32,7 +33,7 @@ class TestSelectBudgetChunks:
         the total over is deferred instead."""
         remaining = ["a", "b", "c"]
         timing = {"a": 30.0, "b": 40.0, "c": 50.0}
-        selected, deferred = check_runner_mod._select_budget_chunks(
+        selected, deferred = check_chunking_mod._select_budget_chunks(
             remaining, timing, 80
         )
         assert selected == ["a", "b"]
@@ -43,7 +44,7 @@ class TestSelectBudgetChunks:
         selects that one group -- forward progress beats a zero-work run."""
         remaining = ["a", "b"]
         timing = {"a": 200.0}
-        selected, deferred = check_runner_mod._select_budget_chunks(
+        selected, deferred = check_chunking_mod._select_budget_chunks(
             remaining, timing, 10
         )
         assert selected == ["a"]
@@ -54,15 +55,15 @@ class TestSelectBudgetChunks:
         `_BUDGET_DEFAULT_ESTIMATE_S`, not zero (which would silently
         over-pack an unmeasured group as free)."""
         remaining = ["unmeasured"]
-        selected, deferred = check_runner_mod._select_budget_chunks(
-            remaining, {}, int(check_runner_mod._BUDGET_DEFAULT_ESTIMATE_S) + 10
+        selected, deferred = check_chunking_mod._select_budget_chunks(
+            remaining, {}, int(check_chunking_mod._BUDGET_DEFAULT_ESTIMATE_S) + 10
         )
         assert selected == ["unmeasured"]
         assert deferred == []
 
     def test_empty_remaining_selects_nothing(self) -> None:
         """No stage groups left to consider -- selects and defers nothing."""
-        selected, deferred = check_runner_mod._select_budget_chunks([], {}, 100)
+        selected, deferred = check_chunking_mod._select_budget_chunks([], {}, 100)
         assert selected == []
         assert deferred == []
 
@@ -73,20 +74,20 @@ class TestUpdateBudgetTiming:
     def test_first_measurement_seeds_estimate_directly(self) -> None:
         """No prior estimate: the fresh measurement becomes the estimate
         outright (no averaging against nothing)."""
-        updated = check_runner_mod._update_budget_timing({}, "g", 42.0)
+        updated = check_chunking_mod._update_budget_timing({}, "g", 42.0)
         assert updated["g"] == 42.0
 
     def test_later_measurement_blends_with_prior(self) -> None:
         """A second measurement blends with the prior estimate via the EMA
         weight, landing strictly between the two raw values."""
-        updated = check_runner_mod._update_budget_timing({"g": 100.0}, "g", 50.0)
+        updated = check_chunking_mod._update_budget_timing({"g": 100.0}, "g", 50.0)
         assert 50.0 < updated["g"] < 100.0
 
     def test_does_not_mutate_input_dict(self) -> None:
         """Returns a new dict -- the caller's own accumulator stays valid
         for comparison/logging against the pre-update state."""
         original = {"g": 10.0}
-        check_runner_mod._update_budget_timing(original, "g", 20.0)
+        check_chunking_mod._update_budget_timing(original, "g", 20.0)
         assert original == {"g": 10.0}
 
 
@@ -139,7 +140,7 @@ class TestRunBudgetedCheck:
         monkeypatch.setattr(check_runner_mod, "_run_all_stages", _fake_run_all_stages)
         # Pre-seed timing so selection math is deterministic: g1 costs 10s,
         # a 15s budget cannot also fit g2's unmeasured 90s default.
-        check_runner_mod._save_budget_timing(tmp_path, {"g1": 10.0})
+        check_chunking_mod._save_budget_timing(tmp_path, {"g1": 10.0})
         cfg = AppConfig(check_path=tmp_path, check_budget=15)
         with caplog.at_level("INFO"):
             check_run(cfg)
@@ -167,7 +168,7 @@ class TestRunBudgetedCheck:
             return self._fake_result(group)
 
         monkeypatch.setattr(check_runner_mod, "_run_all_stages", _fake_run_all_stages)
-        check_runner_mod._save_budget_remaining(tmp_path, ["g2"])
+        check_chunking_mod._save_budget_remaining(tmp_path, ["g2"])
         cfg = AppConfig(check_path=tmp_path, check_budget=1000)
         check_run(cfg)
         assert calls == ["g2"]
@@ -185,7 +186,7 @@ class TestRunBudgetedCheck:
             "_run_all_stages",
             lambda cfg, root, **kwargs: self._fake_result(cfg.check_only[0]),
         )
-        check_runner_mod._save_budget_remaining(tmp_path, ["g2"])
+        check_chunking_mod._save_budget_remaining(tmp_path, ["g2"])
         cfg = AppConfig(check_path=tmp_path, check_budget=1000)
         check_run(cfg)
         assert not (tmp_path / ".frob" / "check-budget-state.json").exists()
@@ -206,7 +207,7 @@ class TestRunBudgetedCheck:
             return self._fake_result(group)
 
         monkeypatch.setattr(check_runner_mod, "_run_all_stages", _fake_run_all_stages)
-        check_runner_mod._save_budget_remaining(tmp_path, ["stale-group"])
+        check_chunking_mod._save_budget_remaining(tmp_path, ["stale-group"])
         cfg = AppConfig(check_path=tmp_path, check_budget=1000)
         check_run(cfg)
         assert calls == ["g1", "g2"]
@@ -215,7 +216,7 @@ class TestRunBudgetedCheck:
         """`_budget_deferred_result`'s diagnostic message names every
         deferred group verbatim -- a coordinator reading it can tell
         exactly what's outstanding without cross-referencing state files."""
-        result = check_runner_mod._budget_deferred_result(
+        result = check_chunking_mod._budget_deferred_result(
             ["gates-native", "static"], 60
         )
         assert result.tool == "budget"

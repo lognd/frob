@@ -318,7 +318,7 @@ class TestCollectDispatchRefs:
     argument branches, extracted to `_collect_dispatch_refs_from_call`)."""
 
     def _refs(self, tmp_path: Path, source: str) -> set[str]:
-        from frob.arch._python import _collect_dispatch_refs
+        from frob.arch._abstraction import _collect_dispatch_refs
         from frob.lang import raw_tree
 
         path = tmp_path / "mod.py"
@@ -331,32 +331,32 @@ class TestCollectDispatchRefs:
         return out
 
     def test_call_callee_identifier_counted(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/arch/_python.py::_collect_dispatch_refs_from_call
+        # frob:tests src/frob/arch/_abstraction.py::_collect_dispatch_refs_from_call
         assert self._refs(tmp_path, "handler()\n") == {"handler"}
 
     def test_call_positional_argument_identifier_counted(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/arch/_python.py::_collect_dispatch_refs_from_call
+        # frob:tests src/frob/arch/_abstraction.py::_collect_dispatch_refs_from_call
         assert "handler" in self._refs(tmp_path, "register(handler)\n")
 
     def test_call_keyword_argument_identifier_counted(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/arch/_python.py::_collect_dispatch_refs_from_call
+        # frob:tests src/frob/arch/_abstraction.py::_collect_dispatch_refs_from_call
         assert "handler" in self._refs(tmp_path, "dispatch(cmd, target=handler)\n")
 
     def test_call_keyword_argument_non_identifier_not_counted(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/arch/_python.py::_collect_dispatch_refs_from_call
+        # frob:tests src/frob/arch/_abstraction.py::_collect_dispatch_refs_from_call
         refs = self._refs(tmp_path, 'dispatch(cmd, target="literal")\n')
         assert refs == {"dispatch", "cmd"}
 
     def test_call_string_argument_not_counted(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/arch/_python.py::_collect_dispatch_refs_from_call
+        # frob:tests src/frob/arch/_abstraction.py::_collect_dispatch_refs_from_call
         assert self._refs(tmp_path, 'register("not_a_name")\n') == {"register"}
 
 
 class TestDispatchFamilySuppression:
     def test_dispatch_family_no_abstraction_opportunity(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_is_dispatch_family
+        # frob:tests src/frob/arch/_abstraction.py::_is_dispatch_family
         # Three same-signature handlers all registered in one command table
         # in the SAME file -- an intentional dispatch family, not a missing
         # abstraction: the shared signature IS the contract that lets the
@@ -416,8 +416,8 @@ class TestDispatchFamilySuppression:
         assert "abstraction-opportunity" not in categories
 
     def test_accidental_same_signature_still_flagged(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_is_dispatch_family
-        # frob:tests src/frob/arch/_python.py::_near_duplicate_cluster
+        # frob:tests src/frob/arch/_abstraction.py::_is_dispatch_family
+        # frob:tests src/frob/arch/_abstraction.py::_near_duplicate_cluster
         # Three same-(generic)-signature functions with NO common
         # caller/registry anywhere AND structurally near-duplicate bodies
         # (validate-then-transform, differing only in which str method is
@@ -527,7 +527,7 @@ class TestDispatchFamilySuppression:
         assert "normalize_gamma" in msg
 
     def test_test_file_co_mention_does_not_suppress(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_is_dispatch_family
+        # frob:tests src/frob/arch/_abstraction.py::_is_dispatch_family
         # Reviewer-demonstrated false-suppression path: a test file that
         # imports and CALLS all three near-duplicate-bodied (T-0370)
         # same-signature functions (each name appears as a real call). A
@@ -727,9 +727,9 @@ class TestDeepNestingExemption:
 
 class TestAbstractionOpportunityDiscriminators:
     def test_generic_signature_unrelated_bodies_not_flagged(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
-        # frob:tests src/frob/arch/_python.py::_signature_is_specific
-        # frob:tests src/frob/arch/_python.py::_near_duplicate_cluster
+        # frob:tests src/frob/arch/_abstraction.py::_check_abstraction_opportunities
+        # frob:tests src/frob/arch/_abstraction.py::_signature_is_specific
+        # frob:tests src/frob/arch/_abstraction.py::_near_duplicate_cluster
         # N functions sharing an over-generic `(str) -> str` signature
         # (like the 31-member residue this ticket targets) whose bodies do
         # completely different, structurally unrelated things -- a bare
@@ -774,8 +774,8 @@ class TestAbstractionOpportunityDiscriminators:
         assert "abstraction-opportunity" not in categories
 
     def test_generic_signature_near_duplicate_bodies_still_flagged(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
-        # frob:tests src/frob/arch/_python.py::_near_duplicate_cluster
+        # frob:tests src/frob/arch/_abstraction.py::_check_abstraction_opportunities
+        # frob:tests src/frob/arch/_abstraction.py::_near_duplicate_cluster
         # N functions sharing a generic `(AppConfig) -> None` signature
         # (the shape of the 39-member `run` residue this ticket targets)
         # whose bodies are near-DUPLICATE -- same shape, only the renamed
@@ -833,8 +833,8 @@ class TestAbstractionOpportunityDiscriminators:
         assert "run_sweep" in msg
 
     def test_specific_signature_genuine_family_still_flagged(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_signature_is_specific
-        # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
+        # frob:tests src/frob/arch/_abstraction.py::_signature_is_specific
+        # frob:tests src/frob/arch/_abstraction.py::_check_abstraction_opportunities
         # A shared signature carrying a real domain type (`TicketStore`,
         # not one of the ubiquitous primitives) is specific enough to flag
         # on the signature alone, even though the bodies below are
@@ -886,7 +886,7 @@ class TestAbstractionOpportunityDiscriminators:
         assert "count_archived" in msg
 
     def test_generic_signature_only_two_bodies_similar_reports_pair(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_near_duplicate_cluster
+        # frob:tests src/frob/arch/_abstraction.py::_near_duplicate_cluster
         # 3 functions share a generic `(str) -> bool` signature; only 2 of
         # them have near-duplicate bodies, the third is unrelated. The
         # finding must report the near-duplicate PAIR, not misrepresent
@@ -940,8 +940,8 @@ class TestAbstractionOpportunityDiscriminators:
 
 class TestLanguageParityExclusion:
     def test_one_member_per_language_not_flagged(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_is_language_parity_family
-        # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
+        # frob:tests src/frob/arch/_abstraction.py::_is_language_parity_family
+        # frob:tests src/frob/arch/_abstraction.py::_check_abstraction_opportunities
         # Three distinctly-tagged per-language walkers sharing a SPECIFIC
         # (domain-typed) signature -- `_signature_is_specific` alone would
         # flag this group (verified: with the language-parity check
@@ -969,11 +969,35 @@ class TestLanguageParityExclusion:
         categories = {s.category for s in result.suggestions}
         assert "abstraction-opportunity" not in categories
 
-    def test_duplicate_tag_within_group_still_flagged(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_is_language_parity_family
-        # Two `_rust_*` members share the "rust" tag -- not genuine
-        # one-per-language parity (a real accidental collision within the
-        # same language), so this must still flag.
+    @pytest.mark.parametrize(
+        ("third_member_src", "reason"),
+        [
+            pytest.param(
+                "def _rust_build_alias(node: object) -> RawSymbol:\n"
+                "    return RawSymbol()\n",
+                "duplicate-tag",
+                id="duplicate_rust_tag",
+            ),
+            pytest.param(
+                "def _read_symbol(node: object) -> RawSymbol:\n"
+                "    return RawSymbol()\n",
+                "untagged-member",
+                id="untagged_member",
+            ),
+        ],
+    )
+    def test_non_parity_group_still_flagged(self, tmp_path, third_member_src, reason):
+        # frob:tests src/frob/arch/_abstraction.py::_is_language_parity_family
+        # Two scenarios that must NOT be excluded as an intentional
+        # per-language parity family, each still flagging as a real
+        # abstraction opportunity:
+        # - "duplicate-tag": a second `_rust_*` member shares the "rust"
+        #   tag with the first -- a real accidental collision WITHIN the
+        #   same language, not one-per-language parity.
+        # - "untagged-member": `_read_symbol` carries no recognized
+        #   language tag at all -- with no tag to compare, parity cannot
+        #   be established, so the group falls through to the normal
+        #   signature/body checks.
         src_dir = tmp_path / "src"
         src_dir.mkdir()
         (src_dir / "walkers.py").write_text(
@@ -985,63 +1009,36 @@ class TestLanguageParityExclusion:
             "def _rust_build_symbol(node: object) -> RawSymbol:\n"
             "    return RawSymbol()\n"
             "\n"
-            "def _rust_build_alias(node: object) -> RawSymbol:\n"
-            "    return RawSymbol()\n"
+            f"{third_member_src}"
             "\n"
             "def _kt_build_symbol(node: object) -> RawSymbol:\n"
             "    return RawSymbol()\n"
         )
         result = analyze_project(src_dir)
         categories = {s.category for s in result.suggestions}
-        assert "abstraction-opportunity" in categories
-
-    def test_untagged_member_within_group_still_flagged(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_is_language_parity_family
-        # `_read_symbol` carries no recognized language tag -- with no tag
-        # to compare, parity cannot be established, so the group falls
-        # through to the normal signature/body checks and still flags.
-        src_dir = tmp_path / "src"
-        src_dir.mkdir()
-        (src_dir / "walkers.py").write_text(
-            "from __future__ import annotations\n"
-            "\n"
-            "class RawSymbol:\n"
-            "    pass\n"
-            "\n"
-            "def _read_symbol(node: object) -> RawSymbol:\n"
-            "    return RawSymbol()\n"
-            "\n"
-            "def _rust_build_symbol(node: object) -> RawSymbol:\n"
-            "    return RawSymbol()\n"
-            "\n"
-            "def _kt_build_symbol(node: object) -> RawSymbol:\n"
-            "    return RawSymbol()\n"
-        )
-        result = analyze_project(src_dir)
-        categories = {s.category for s in result.suggestions}
-        assert "abstraction-opportunity" in categories
+        assert "abstraction-opportunity" in categories, reason
 
     def test_tag_requires_underscore_boundary(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_language_tag
+        # frob:tests src/frob/arch/_abstraction.py::_language_tag
         # "results_summary" contains "ts" as a bare substring with no
         # underscore before it -- must NOT be mistaken for a `_ts_` tag
         # (the T-0360-style structural rigor this detector requires, no
         # raw text proximity).
-        from frob.arch._python import _language_tag
+        from frob.arch._abstraction import _language_tag
 
         assert _language_tag("results_summary") is None
         assert _language_tag("_ts_build_module") == "ts"
         assert _language_tag("_kt_build_module") == "kt"
 
     def test_long_form_language_spellings_normalize_to_short_tag(self):
-        # frob:tests src/frob/arch/_python.py::_language_tag
+        # frob:tests src/frob/arch/_abstraction.py::_language_tag
         # T-1181: python/typescript/kotlin/cplusplus long-form spellings
         # (e.g. frob.testing._collect*.py's collect_python_tests/
         # collect_typescript_tests/collect_kotlin_tests) must normalize to
         # the SAME canonical short tag as their short-form counterpart so
         # `_is_language_parity_family`'s distinctness check treats them as
         # identity-equivalent, not as untagged/unknown segments.
-        from frob.arch._python import _language_tag
+        from frob.arch._abstraction import _language_tag
 
         assert _language_tag("collect_python_tests") == "py"
         assert _language_tag("collect_typescript_tests") == "ts"
@@ -1049,8 +1046,8 @@ class TestLanguageParityExclusion:
         assert _language_tag("collect_cplusplus_tests") == "cpp"
 
     def test_long_and_short_form_parity_group_not_flagged(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_is_language_parity_family
-        # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
+        # frob:tests src/frob/arch/_abstraction.py::_is_language_parity_family
+        # frob:tests src/frob/arch/_abstraction.py::_check_abstraction_opportunities
         # A parity family mixing long-form (python/typescript/kotlin) and
         # short-form (cpp) tags -- the T-1181 refile scenario -- must be
         # recognized as genuinely distinct-per-language and excluded, the
@@ -1083,9 +1080,9 @@ class TestLanguageParityExclusion:
 
 class TestCallThroughForwarderExclusion:
     def test_distinct_named_self_forwarders_not_flagged(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_is_call_through_forwarder_family
-        # frob:tests src/frob/arch/_python.py::_is_self_named_forwarder
-        # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
+        # frob:tests src/frob/arch/_abstraction.py::_is_call_through_forwarder_family
+        # frob:tests src/frob/arch/_abstraction.py::_is_self_named_forwarder
+        # frob:tests src/frob/arch/_abstraction.py::_check_abstraction_opportunities
         # The real `RenderWriter` shape (T-1182, refiled from the T-1083
         # disposition): each method carries a DIFFERENT bare name
         # (heading/good/warn) but its own body is a short call-through to
@@ -1133,7 +1130,7 @@ class TestCallThroughForwarderExclusion:
         assert "abstraction-opportunity" not in categories
 
     def test_group_with_one_non_self_named_member_still_flagged(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_is_call_through_forwarder_family
+        # frob:tests src/frob/arch/_abstraction.py::_is_call_through_forwarder_family
         # Three near-duplicate-bodied methods CLUSTER together (same
         # shape, high body-similarity), but `good`/`warn` each mistakenly
         # delegate to `heading` instead of their OWN name -- not real
@@ -1174,9 +1171,9 @@ class TestCallThroughForwarderExclusion:
         assert "abstraction-opportunity" in categories
 
     def test_forwarder_helper_requires_self_named_short_body(self):
-        # frob:tests src/frob/arch/_python.py::_is_call_through_forwarder_family
-        # frob:tests src/frob/arch/_python.py::_is_self_named_forwarder
-        from frob.arch._python import (
+        # frob:tests src/frob/arch/_abstraction.py::_is_call_through_forwarder_family
+        # frob:tests src/frob/arch/_abstraction.py::_is_self_named_forwarder
+        from frob.arch._abstraction import (
             _is_call_through_forwarder_family,
             _is_self_named_forwarder,
         )
@@ -1207,8 +1204,8 @@ class TestCallThroughForwarderExclusion:
 
 class TestCheckRegistryExclusion:
     def test_check_and_run_checks_names_not_flagged(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_is_check_registry_family
-        # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
+        # frob:tests src/frob/arch/_abstraction.py::_is_check_registry_family
+        # frob:tests src/frob/arch/_abstraction.py::_check_abstraction_opportunities
         # Three same-signature functions named per `frob.arch`'s own
         # detector-registry convention (`check_*` detectors plus a family's
         # `run_*_checks` aggregator, T-1112) -- `_signature_is_specific`
@@ -1238,7 +1235,7 @@ class TestCheckRegistryExclusion:
         assert "abstraction-opportunity" not in categories
 
     def test_non_registry_named_group_still_flagged(self, tmp_path):
-        # frob:tests src/frob/arch/_python.py::_is_check_registry_family
+        # frob:tests src/frob/arch/_abstraction.py::_is_check_registry_family
         # `_validate_no_di` does not match the `check_*`/`run_*_checks`
         # naming convention -- the group has no such registry shape to
         # exclude, so it falls through to the normal signature/body checks
@@ -1266,8 +1263,8 @@ class TestCheckRegistryExclusion:
         assert "abstraction-opportunity" in categories
 
     def test_check_registry_regex_matches_both_shapes(self) -> None:
-        # frob:tests src/frob/arch/_python.py::_is_check_registry_family
-        from frob.arch._python import _is_check_registry_family
+        # frob:tests src/frob/arch/_abstraction.py::_is_check_registry_family
+        from frob.arch._abstraction import _is_check_registry_family
 
         assert _is_check_registry_family(
             [("a.py", "check_boolean_flag_param"), ("b.py", "run_smell_checks")]
@@ -1289,8 +1286,8 @@ class TestGateRuleBuilderExclusion:
     `check_*`/`run_*_checks` do."""
 
     def test_violation_returning_group_not_flagged(self, tmp_path) -> None:
-        # frob:tests src/frob/arch/_python.py::_is_gate_rule_builder_family
-        # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
+        # frob:tests src/frob/arch/_abstraction.py::_is_gate_rule_builder_family
+        # frob:tests src/frob/arch/_abstraction.py::_check_abstraction_opportunities
         # Three same-signature functions returning `tuple[Violation, ...]`
         # with arbitrary, non-convention-matching names -- verified: with
         # the gate-rule-builder exclusion removed, this exact fixture
@@ -1318,7 +1315,7 @@ class TestGateRuleBuilderExclusion:
         assert "abstraction-opportunity" not in categories
 
     def test_non_violation_returning_group_still_flagged(self, tmp_path) -> None:
-        # frob:tests src/frob/arch/_python.py::_is_gate_rule_builder_family
+        # frob:tests src/frob/arch/_abstraction.py::_is_gate_rule_builder_family
         # A same-signature group over a specific (non-generic) type that
         # does NOT return a Violation shape has no gate/rule-builder
         # convention to exclude, so it falls through to the normal
@@ -1345,8 +1342,8 @@ class TestGateRuleBuilderExclusion:
         assert "abstraction-opportunity" in categories
 
     def test_return_type_membership_matches_all_three_shapes(self) -> None:
-        # frob:tests src/frob/arch/_python.py::_is_gate_rule_builder_family
-        from frob.arch._python import _is_gate_rule_builder_family
+        # frob:tests src/frob/arch/_abstraction.py::_is_gate_rule_builder_family
+        from frob.arch._abstraction import _is_gate_rule_builder_family
 
         assert _is_gate_rule_builder_family("Violation")
         assert _is_gate_rule_builder_family("list[Violation]")
@@ -1364,8 +1361,8 @@ class TestToolResultBuilderExclusion:
     check-stage-runner convention, not an accidental duplication."""
 
     def test_toolresult_returning_group_not_flagged(self, tmp_path) -> None:
-        # frob:tests src/frob/arch/_python.py::_is_tool_result_builder_family
-        # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
+        # frob:tests src/frob/arch/_abstraction.py::_is_tool_result_builder_family
+        # frob:tests src/frob/arch/_abstraction.py::_check_abstraction_opportunities
         # Three same-signature functions returning `ToolResult` with
         # arbitrary, non-convention-matching names -- verified: with the
         # tool-result-builder exclusion removed, this exact fixture flags
@@ -1393,7 +1390,7 @@ class TestToolResultBuilderExclusion:
         assert "abstraction-opportunity" not in categories
 
     def test_non_toolresult_returning_group_still_flagged(self, tmp_path) -> None:
-        # frob:tests src/frob/arch/_python.py::_is_tool_result_builder_family
+        # frob:tests src/frob/arch/_abstraction.py::_is_tool_result_builder_family
         # A same-shaped group over a specific (non-generic) type that does
         # NOT return a ToolResult shape has no check-stage-runner
         # convention to exclude, so it falls through to the normal
@@ -1420,8 +1417,8 @@ class TestToolResultBuilderExclusion:
         assert "abstraction-opportunity" in categories
 
     def test_return_type_membership_matches_both_shapes(self) -> None:
-        # frob:tests src/frob/arch/_python.py::_is_tool_result_builder_family
-        from frob.arch._python import _is_tool_result_builder_family
+        # frob:tests src/frob/arch/_abstraction.py::_is_tool_result_builder_family
+        from frob.arch._abstraction import _is_tool_result_builder_family
 
         assert _is_tool_result_builder_family("ToolResult")
         assert _is_tool_result_builder_family("ToolResult | None")

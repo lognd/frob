@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from frob.arch._python import (
+from frob.arch._abstraction import (
     _BODY_MIN_TOKENS,
     _BODY_SIMILARITY_THRESHOLD,
     _near_duplicate_cluster,
@@ -62,7 +62,7 @@ def test_native_kernel_matches_difflib_on_synthetic_archgate_fixture():
 
 
 def test_near_duplicate_cluster_dispatches_to_native_and_matches_reference():
-    # frob:tests src/frob/arch/_python.py::_near_duplicate_cluster
+    # frob:tests src/frob/arch/_abstraction.py::_near_duplicate_cluster
     # Exercises the public `_near_duplicate_cluster` entry point (native
     # dispatch included) against the same fixture, proving the wired
     # function -- not just the raw kernel -- is byte-identical to the
@@ -87,7 +87,7 @@ def test_native_kernel_matches_difflib_over_this_repos_own_arch_tree():
     # pure-Python `difflib` reference, must agree exactly.
     import frob_core
 
-    from frob.arch import _python as ap
+    from frob.arch import _abstraction as ap
 
     root = Path(__file__).resolve().parents[1] / "src" / "frob" / "arch"
     groups: list[list[str]] = []

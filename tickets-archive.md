@@ -120479,8 +120479,8 @@ scope_changes:
   at: '2026-07-28'
 evidence:
 - tests/unit/test_arch.py::TestLanguageParityExclusion::test_one_member_per_language_not_flagged
-- tests/unit/test_arch.py::TestLanguageParityExclusion::test_duplicate_tag_within_group_still_flagged
-- tests/unit/test_arch.py::TestLanguageParityExclusion::test_untagged_member_within_group_still_flagged
+- tests/unit/test_arch.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[duplicate_rust_tag]
+- tests/unit/test_arch.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[untagged_member]
 - tests/unit/test_arch.py::TestLanguageParityExclusion::test_tag_requires_underscore_boundary
 threat: null
 component: null
@@ -120557,8 +120557,8 @@ No file under src/frob/gates/** was touched.
 
 ### Evidence
 - `tests/unit/test_arch.py::TestLanguageParityExclusion::test_one_member_per_language_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_duplicate_tag_within_group_still_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_untagged_member_within_group_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[duplicate_rust_tag]` (pytest node id, renamed by T-1195's DUP002 fix; verified passing)
+- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[untagged_member]` (pytest node id, renamed by T-1195's DUP002 fix; verified passing)
 - `tests/unit/test_arch.py::TestLanguageParityExclusion::test_tag_requires_underscore_boundary` (pytest node id, verified passing when recorded)
 
 ### Captured claims

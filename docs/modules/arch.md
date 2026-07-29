@@ -91,7 +91,7 @@ validator runner, an `elif` chain on a tag). There the shared signature IS
 the contract that lets the site call them uniformly; extracting a shared
 base class or protocol would add ceremony, not remove duplication.
 
-`frob.arch._python._is_dispatch_family` detects this off tree-sitter
+`frob.arch._abstraction._is_dispatch_family` detects this off tree-sitter
 STRUCTURE, not raw text (a plain textual "mentioned nearby" signal was
 tried first and reviewer-rejected -- see below for why). For every
 eligible python file, `_python.collect_file_dispatch_refs` walks its
@@ -167,7 +167,7 @@ happen to take the same primitive types; T-0360's dispatch-family
 suppression caught the intentional-registry case but left this
 coincidental-collision residue untouched.
 
-`frob.arch._python._check_abstraction_opportunities` now requires one of
+`frob.arch._abstraction._check_abstraction_opportunities` now requires one of
 two discriminators before flagging a same-signature group (after the
 T-0360 dispatch-family exclusion above still runs first):
 
