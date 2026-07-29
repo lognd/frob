@@ -7374,3 +7374,27 @@ Work: coordinator runs `make coverage` + `frob check --stamp-coverage`
 against current main, re-derives the real TEST005 finding list for
 src/frob/app/**, and either re-scopes T-1276 (if requeued) with the
 current list, or closes it outright if the list is now empty.
+
+<!-- ticket:T-1321 -->
+```yaml
+id: T-1321
+title: 'CI-env test hermeticity: doctor scaffold fold, ledger-commit git identity,
+  serial-pools install leak'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/test_doctor.py
+- tests/test_prework_parity.py
+- tests/unit/perf/test_serial_pools.py
+- src/frob/tickets/_leases.py
+- .github/workflows/ci.yml
+threat: null
+component: null
+```
+Three CI-only pytest failures (seen at v0.277.0, all still latent because the causes are environmental, not code that later lands fixed): (1) tests/test_doctor.py run_diagnosis tests assert healthy=True / exact REMEDIATION_HINT against the REAL checkout; doctor folds scaffold conformance into healthy, and a fresh CI clone has the 3 git-hook managed blocks missing (hook-pre-commit, hook-pre-merge-commit, hook-reference-transaction-stash-guard) -- monkeypatch the scaffold/derived scans so the natives tests test natives only. (2) tests/test_prework_parity.py e2e drives frob ticket new in a tmp repo; T-1130 auto-commit runs plain git commit and CI runners have no user.name/user.email, so the ledger commit fails rc=128 (local passes via the developer's global config) -- set identity in the test fixture repo AND consider a -c user.name/user.email fallback in _add_and_commit_tickets_md for identity-less environments. (3) tests/unit/perf/test_serial_pools.py baseline test_without_serial_pools_worker_is_unattributed got fraction 0.45 in CI: install_serial_pools() patches concurrent.futures globally and no test uninstalls it, so full-suite ordering can leak the patch into the baseline -- add an uninstall/restore fixture around every install_serial_pools() caller. Verified 2026-07-29: all six failing tests pass locally in isolation on main, so the remaining exposure is purely environmental/ordering.
