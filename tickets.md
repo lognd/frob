@@ -1431,3 +1431,32 @@ threat: null
 component: null
 ```
 Root cause and target: Rust-migration candidate #3 from the report, MEDIUM feasibility -- more rule logic crosses the boundary than candidates #1/#2, so scope is deliberately extraction-only; keep rule families in Python. frob_core already hosts arch's near-dup clustering (near_duplicate_indices), so the crate boundary for arch already exists and this extends it. FFI001/FFI002 apply. This is independent of Epic A's T-1215 (arch dedupe of _iter_own_scope, a Python-side fix) -- that ticket should land on its own timeline; this ticket does not block or get blocked by it, since T-1215 is a pure-Python fix to the current implementation and this ticket replaces the extraction step underneath it.
+
+<!-- ticket:T-1223 -->
+```yaml
+id: T-1223
+title: 'rust(interim): tree-sitter Query captures for comment/docstring spans shared
+  by sys+opaque+vet'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: T-1219
+tier: ticket
+sprint: null
+scope:
+- src/frob/vet/_capability.py
+acceptance:
+- text: GIVEN _comment_byte_spans (vet/_capability.py:212) and _docstring_byte_spans
+    (:286) are per-node Python recursions independently re-run by sys and opaque (12
+    pct of sys + 92 pct of opaque combined) WHEN they are replaced with tree-sitter
+    Query captures ('(comment) @c' and the docstring-node equivalent), which run in
+    C via the existing py-tree-sitter binding rather than a Python recursion, THEN
+    sys+opaque's span-extraction share drops without requiring a new frob_core crate
+    export
+  evidence: []
+threat: null
+component: null
+```
+Root cause and target: this is the interim zero-Rust step noted under Rust-migration candidate #1 ('use tree-sitter Query captures (C speed) for comment/docstring/identifier extraction from Python'), and it is the mechanism half of PERF-epic child T-1210 (report candidate #5). Split of ownership: this ticket owns the span-EXTRACTION mechanism (Query captures replacing Python recursion) since it is the natural home for a tree-sitter-API-level change; T-1210 owns the sort+bisect containment fix and the per-run cache for the resulting spans, and its acceptance criteria explicitly defer the mechanism to this ticket to avoid two owners writing to the same function. Do not duplicate the containment/caching acceptance criteria here -- see T-1210.
