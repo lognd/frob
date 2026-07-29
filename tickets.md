@@ -5265,6 +5265,8 @@ kind: feature
 origin: human
 created: '2026-07-29'
 priority: high
+blocked_by:
+- T-1320
 parent: T-1273
 tier: ticket
 sprint: null
@@ -7329,9 +7331,9 @@ component: null
 ```
 T-1206/T-1216 review 2026-07-29: both non-blocking APPROVE findings. Reviewer verified dispatch totality programmatically (34/34) so there is no live gap; this hardens it. The silent doc-anchor deletion is also a fresh instance of an ungated silent-miss shape (removing a frob:describes anchor from a doc leaves no finding when the doc file survives) -- note it on T-1232's status/currency mechanism as a candidate check: anchor-count regression on a doc file without an ack.
 
-<!-- ticket:T-draft-d058e907 -->
+<!-- ticket:T-1320 -->
 ```yaml
-id: T-draft-d058e907
+id: T-1320
 title: Re-baseline TEST005 for src/frob/app before continuing T-1276
 state: queued
 kind: docs
