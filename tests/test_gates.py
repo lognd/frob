@@ -9624,7 +9624,7 @@ class TestOptInGates:
         assert violations[0].severity == Severity.ERROR
 
     def test_fuzz_gate_off_by_default(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/__init__.py::fuzz_gate
+        # frob:tests src/frob/gates/_fuzz.py::fuzz_gate
         # frob:tests src/frob/fuzz kind="integration"
         from frob.gates import fuzz_gate
 

@@ -490,7 +490,6 @@
     "src/frob/gates/__init__.py::coverage_gate": "fbb174c7bb93a7836cf6d6e3b3881f8cabe9ee2cb07604bd57bc204683474300",
     "src/frob/gates/__init__.py::drift_gate": "5c212d52c12a13920ee34ad607ff4d2367a47d7d7f940927aae71563b733a8e4",
     "src/frob/gates/__init__.py::evidence_covers_scope": "0b51203d0ff4e37830ddea56708947cf909cde9d9d8b64cba872defa996266f0",
-    "src/frob/gates/__init__.py::fuzz_gate": "ffa8533c057bcee13876df5c547fab8eda00ee601fc2a8d12d1464a107abf0b8",
     "src/frob/gates/__init__.py::inv003_gate": "14e00b0157ebcb219f147e711a416d35ba3b0254063a0ffc701485776ae30b71",
     "src/frob/gates/__init__.py::inv004_gate": "3fcdb93435385b377a7e1f26befa99635c613f179c8dd8698f9c41269dc96902",
     "src/frob/gates/__init__.py::inv006_gate": "b83a1e3f177da2d2a96141ecf27c3d8003b06a804ad1a0c060b839e904ff2441",
@@ -561,6 +560,7 @@
     "src/frob/gates/_fmt_directives.py::format_paths": "205d4437fa6d2f51b6311b3e7e1fc8524f85f177bc3af2b19542681869ebdd2e",
     "src/frob/gates/_fmt_directives.py::marker_for": "4ecc2ea6297b65a8707f28903068312f02340040a4f303cc99c98b1e9d390b02",
     "src/frob/gates/_fmt_directives.py::read_line_length": "fdeac28194531c0a95f14523d29cbb236495a094406a75d92400b2a731fbb700",
+    "src/frob/gates/_fuzz.py::fuzz_gate": "ffa8533c057bcee13876df5c547fab8eda00ee601fc2a8d12d1464a107abf0b8",
     "src/frob/gates/_gate_cache.py::TrackedSnapshot": "5690552edc6a5a0a975f6ccbcb846b31a8b0f48b625e8856aff9f9d349c155ce",
     "src/frob/gates/_gate_cache.py::TrackedSnapshot.edges": "d37b250812c8b84480883806e339b8d2007bb5967836ee1fe93f9e46f34fd59c",
     "src/frob/gates/_gate_cache.py::TrackedSnapshot.file_hashes": "af823fb8105ed43f2daac400ffb45c9ad872c24275937cbc9cdad9b62f2505c9",
@@ -1873,5 +1873,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.271.0"
+  "version": "0.272.0"
 }

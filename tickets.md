@@ -2652,7 +2652,7 @@ Refile from the w20-arch T-1083 disposition pass (draft died with the fail-log; 
 id: T-1183
 title: 'arch: split remaining ~9 gate families out of src/frob/gates/__init__.py (8015
   lines) -- T-1174 residue'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -2664,6 +2664,8 @@ scope:
 - src/frob/gates/**
 - docs/modules/gates.md
 - tests/test_gates.py
+evidence:
+- tests/test_gates.py::TestOptInGates::test_fuzz_gate_off_by_default
 threat: null
 component: null
 ```
@@ -2690,6 +2692,51 @@ Still remaining, in the same one-family-per-land shape:
 
 Re-filed (not re-derived from scratch) rather than letting T-1174 close
 with silent residue, per TICK011.
+
+## Done report
+
+Continuing the T-1072/T-1140/T-1159/T-1170/T-1174 one-family-per-land
+discipline: extracted the FUZZ001/FUZZ002/FUZZ003 family (fuzz_gate plus
+its private helpers _fuzz_enforce/_fuzz_gate_violations) into a new
+src/frob/gates/_fuzz.py module, mirroring T-1174's _dup.py precedent
+exactly (same docstring shape, same re-export-unchanged posture,
+fuzz_gate imported at the top of gates/__init__.py and re-exported so
+every existing frob.gates.fuzz_gate call site keeps working unchanged).
+gates/__init__.py: 8015 -> 7960 lines.
+
+Updated the frob:doc/frob:tests directive pointers that named
+src/frob/gates/__init__.py::fuzz_gate to point at the symbol's new home
+(src/frob/gates/_fuzz.py::fuzz_gate) in docs/modules/gates.md and
+tests/test_gates.py, matching the T-1174 dup_gate precedent.
+
+The new module's own docstring tripped INV006 (exclusivity-vocabulary
+claim, "only"/"solely" phrasing describing its own already-implemented
+split rationale) -- disposed via preset="split-carried-prose" (T-1176),
+the same calibration-batch class every other first-turn-on INV006 site
+in this repo uses.
+
+Budget did not allow the other ~8 remaining families (SYS00x/DOC003,
+INV00x, TEST00x, REL00x, PERF, COV00x, SCOPE/PREWORK, the run_gates
+spine) in this pass. Filed as T-1187 (re-filed, not
+re-derived from scratch, per TICK011) rather than let this ticket close
+with silent residue.
+
+### Changed
+```
+ docs/modules/gates.md      |  2 +-
+ src/frob/gates/__init__.py | 63 ++------------------------------
+ src/frob/gates/_fuzz.py    | 91 ++++++++++++++++++++++++++++++++++++++++++++++
+ tests/test_gates.py        |  2 +-
+ tickets.md                 | 48 +++++++++++++++++++++++-
+ 5 files changed, 143 insertions(+), 63 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestOptInGates::test_fuzz_gate_off_by_default` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1184 -->
 ```yaml
@@ -2852,3 +2899,46 @@ Given the file's size (4973 lines), this is likely its OWN multi-land
 series rather than one land -- consider splitting the plan itself into
 2-3 tickets (e.g. preflight+merge-splice as one family, verify+sweep as
 another) rather than one ticket trying to move the whole file at once.
+
+<!-- ticket:T-1187 -->
+```yaml
+id: T-1187
+title: 'arch: split remaining ~8 gate families out of src/frob/gates/__init__.py (7960
+  lines) -- T-1183 residue'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- docs/modules/gates.md
+- tests/test_gates.py
+threat: null
+component: null
+```
+T-1183 extracted ONE more cohesive family (FUZZ001/002/003 -- fuzz_gate
+plus its private helpers _fuzz_enforce/_fuzz_gate_violations) into
+src/frob/gates/_fuzz.py (gates/__init__.py 8015 -> 7960 lines),
+continuing the T-1072/T-1140/T-1159/T-1170/T-1174 one-family-per-land
+discipline. Budget did not allow the other ~8 remaining families this
+ticket's own body named. gates/__init__.py is still 7960 lines, well
+above the large-file threshold.
+
+Still remaining, in the same one-family-per-land shape:
+- SYS00x/DOC003 (sys_gate + helpers, ~600 lines)
+- INV00x (inv006_gate + helpers)
+- TEST00x (test policy loading + TEST00x gate family)
+- REL00x (release-bump/debt gate wiring)
+- PERF (perf gate wiring, distinct from frob.perf's own module)
+- COV00x (coverage gate family)
+- SCOPE/PREWORK (scope_gate, prework_gate)
+- the run_gates spine itself (_assemble_gate_report, _build_jobs,
+  run_gates) -- likely stays in __init__.py as the module's own
+  orchestration root, but worth an explicit decision at design time
+
+Re-filed (not re-derived from scratch) rather than letting T-1183 close
+with silent residue, per TICK011.

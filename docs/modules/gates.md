@@ -1613,7 +1613,7 @@ EXHAUST001/002's own carve-out).
 <!-- frob:describes src/frob/gates/_decisions_compliance.py::decisions_gate -->
 <!-- frob:describes src/frob/gates/_dup.py::dup_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::release_gate -->
-<!-- frob:describes src/frob/gates/__init__.py::fuzz_gate -->
+<!-- frob:describes src/frob/gates/_fuzz.py::fuzz_gate -->
 <!-- frob:describes src/frob/gates/_doclink_docanchor.py::doclink_gate -->
 <!-- frob:describes src/frob/gates/_doclink_docanchor.py::docanchor_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::run_gates -->

@@ -111,6 +111,7 @@ from frob.gates._fmt_directives import (
     FmtReport,
     format_paths,
 )
+from frob.gates._fuzz import fuzz_gate
 from frob.gates._gate_cache import evaluate_cacheable_gate
 from frob.gates._gate_cache import invalidate as invalidate_gate_cache
 from frob.gates._inv006_split_assist import find_carried_waiver
@@ -6269,65 +6270,9 @@ def _rel001_missing_changelog(current_version: str) -> Violation:
     )
 
 
-def _fuzz_enforce(root: Path):  # noqa: ANN202
-    """The `[fuzz].enforce` value from frob.toml as a `FuzzEnforce`, default OFF."""
-    from frob.fuzz import FuzzEnforce
-
-    enforce = FuzzEnforce.OFF
-    toml_path = root / "frob.toml"
-    if toml_path.exists():
-        try:
-            with toml_path.open("rb") as fh:
-                raw = tomllib.load(fh).get("fuzz", {}).get("enforce")
-            if raw in tuple(FuzzEnforce):
-                enforce = FuzzEnforce(raw)
-        except (OSError, tomllib.TOMLDecodeError) as exc:
-            _log.warning("fuzz_gate: frob.toml unreadable: %s", exc)
-    return enforce
-
-
-# frob:doc docs/modules/gates.md#public-api
-# frob:ticket T-0002
-def fuzz_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
-    """FUZZ001/002/003 over the [fuzz] policy in frob.toml.
-
-    Default enforce is OFF (a repo opts in): fuzzing is a strong mandate, so
-    it stays silent until [fuzz].enforce is set -- the warn-first adoption
-    posture.
-    """
-    from frob.fuzz import FuzzEnforce, FuzzPolicy, obligations
-
-    root = Path(root)
-    enforce = _fuzz_enforce(root)
-    if enforce == FuzzEnforce.OFF:
-        _log.debug("fuzz_gate: [fuzz].enforce=off, skipping")
-        return ()
-
-    obs = obligations(snapshot, FuzzPolicy(enforce=enforce))
-    violations = _fuzz_gate_violations(root, snapshot, obs)
-    _log.info("fuzz_gate: %d obligation(s), %d violation(s)", len(obs), len(violations))
-    return violations
-
-
-def _fuzz_gate_violations(
-    root: Path, snapshot: GraphSnapshot, obs
-) -> tuple[Violation, ...]:  # noqa: ANN001
-    """FUZZ001/002/003 for the resolved fuzz `obs` obligations."""
-    from frob.fuzz import (
-        FUZZ001,
-        FUZZ002,
-        FUZZ003,
-        load_fuzz_stamp,
-        resolve_param_types,
-    )
-
-    param_types = {ob.ref: resolve_param_types(root, ob.ref) for ob in obs}
-    stamp = load_fuzz_stamp(root)
-    return (
-        *FUZZ001(snapshot, obs),
-        *FUZZ002(obs, param_types),
-        *FUZZ003(snapshot, obs, stamp),
-    )
+# T-1183: _fuzz_enforce/fuzz_gate/_fuzz_gate_violations moved to
+# frob.gates._fuzz (FUZZ001/FUZZ002/FUZZ003 family); fuzz_gate is
+# imported at the top of this module and re-exported below.
 
 
 def _perf_gate_candidate_paths(snapshot: GraphSnapshot) -> list[str]:
