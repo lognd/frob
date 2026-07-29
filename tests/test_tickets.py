@@ -552,7 +552,7 @@ class TestDoable:
 
 class TestFailureLog:
     def test_appends_creates_section(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::record_failure
+        # frob:tests src/frob/tickets/_reporting.py::record_failure
         _write(tmp_path, _ticket(body="## Description\nx\n"))
         entry = FailureEntry(
             date=date(2026, 1, 5), attempt=1, summary="wl-paste has no socket"
@@ -588,7 +588,7 @@ class TestFailureLog:
 class TestDropTicket:
     # frob:ticket T-0579
     def test_drops_queued_ticket_with_reason(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::drop_ticket
+        # frob:tests src/frob/tickets/_reporting.py::drop_ticket
         _write(tmp_path, _ticket(state=TicketState.QUEUED))
         result = drop_ticket(tmp_path, "T-0001", "absorbed elsewhere")
         assert result.is_ok, result.err
@@ -920,7 +920,7 @@ class TestIterRawLedgerFrontmatter:
 
 class TestAttach:
     def test_file_source_copies_and_records_sha256(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::attach
+        # frob:tests src/frob/tickets/_reporting.py::attach
         _write(tmp_path, _ticket())
         src = tmp_path / "mockup.png"
         data = b"fake-png-bytes"

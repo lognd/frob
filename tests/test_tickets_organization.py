@@ -152,9 +152,10 @@ class TestSetComponent:
         assert result.danger_ok.component is None
 
 
+# frob:ticket T-1171
 class TestMutateLabels:
     def test_add_and_remove_labels(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::mutate_labels kind="unit"
+        # frob:tests src/frob/tickets/_reporting.py::mutate_labels kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -174,7 +175,7 @@ class TestMutateLabels:
         assert result.danger_ok.labels == ("b", "c")
 
     def test_empty_call_is_error(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::mutate_labels kind="unit"
+        # frob:tests src/frob/tickets/_reporting.py::mutate_labels kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True

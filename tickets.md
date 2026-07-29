@@ -1500,7 +1500,7 @@ User directive 2026-07-28: the annoying errors are the ones whose fix is mechani
 id: T-1171
 title: 'arch: extract tickets/__init__.py done-report/review/drop/attach family +
   split _land.py -- T-1152 residue'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -1512,6 +1512,28 @@ scope:
 - src/frob/tickets/**
 - docs/modules/tickets.md
 - tests/test_tickets.py
+- tests/test_tickets_organization.py
+scope_changes:
+- op: add
+  glob: tests/test_tickets_organization.py
+  reason: TestMutateLabels moved with mutate_labels into _reporting.py; COV002 needs
+    the tests bound to T-1171 too
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_tickets_organization.py::TestMutateLabels::test_add_and_remove_labels
+- tests/test_tickets_organization.py::TestMutateLabels::test_empty_call_is_error
+- tests/test_tickets_brief.py::TestBriefTicket::test_composes_full_briefing
+- tests/unit/test_ticket_store.py::TestComposeDoneReport::test_composes_all_three_sections
+- tests/unit/test_ticket_store.py::TestComposeDoneReport::test_strips_duplicate_leading_heading_from_why
+- tests/unit/test_ticket_store.py::TestSetDoneReport::test_composes_and_writes_atomically
+- tests/unit/test_ticket_store.py::TestSetDoneReport::test_caller_never_touches_markdown
+- tests/test_tickets.py::TestArchive::test_blocked_by_archived_ticket_resolves_closed
+- tests/test_tickets.py::TestFailureLog::test_appends_creates_section
+- tests/test_tickets.py::TestDropTicket::test_drops_queued_ticket_with_reason
+- tests/test_tickets.py::TestAttach::test_file_source_copies_and_records_sha256
+- tests/test_tickets_review.py::TestRecordReview::test_appends_approve_entry
+- tests/test_tickets_review.py::TestHasApprovedReviewForCommit::test_true_only_for_matching_approve
 threat: null
 component: null
 ```
@@ -1542,6 +1564,62 @@ a moved function via the PACKAGE attribute (tickets_mod.<name>) -- those
 need a late `from frob.tickets import <name>` inside the moved function
 body instead of a module-top-level binding (two such hazards hit T-1152:
 write_ticket and the bare `subprocess` module object itself).
+
+## Done report
+
+One cohesive family per land, per T-1152's precedent: extracted the
+done-report/review/drop/attach family (mutate_labels, brief_ticket,
+compose_done_report/_capture_done_report_claims/set_done_report,
+record_failure, _resolve_review_commit/record_review/has_approved_
+review_for_commit, drop_ticket, and the attach/_attachment_bytes/
+_next_attachment_path/_record_attachment quartet) out of
+src/frob/tickets/__init__.py into a new src/frob/tickets/_reporting.py
+(__init__.py: 1266 -> ~640 lines). Verbatim moves: every frob:ticket/
+frob:doc/frob:tests directive carried unchanged, public surface
+re-exported from __init__ via explicit imports, zero caller-visible
+behavior change. `_load_one`/`_load_ticket_and_queue` stayed in
+__init__ per the ticket's own guidance (still depended on as bare
+package attributes via `from frob.tickets import _load_one` elsewhere
+in _land.py/_evidence.py/app/ticket_runner/_lifecycle.py) -- _reporting.py
+late-imports both the same way _evidence.py/_setters.py already do.
+Repointed docs/modules/tickets.md's frob:describes anchors and the
+tests/*.py frob:tests directives that named the old __init__.py path,
+added a `frob:ticket T-1171` edge to TestMutateLabels (COV002) and
+extended scope to tests/test_tickets_organization.py, and carried a
+DUP001 waiver for a split-induced false-positive template match against
+an unrelated frob.vet._capability TS helper.
+
+The _land.py half of T-1171's scope (4973 lines, still needing its own
+preflight/merge-splice/verify/sweep split) was NOT touched -- filed as
+a draft residue ticket per the playbook's per-family-per-land guidance;
+its own size likely warrants a multi-ticket series of its own rather
+than one land.
+
+### Changed
+```
+ tickets.md | 78 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 76 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_organization.py::TestMutateLabels::test_add_and_remove_labels` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_organization.py::TestMutateLabels::test_empty_call_is_error` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestBriefTicket::test_composes_full_briefing` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestComposeDoneReport::test_composes_all_three_sections` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestComposeDoneReport::test_strips_duplicate_leading_heading_from_why` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestSetDoneReport::test_composes_and_writes_atomically` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestSetDoneReport::test_caller_never_touches_markdown` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestArchive::test_blocked_by_archived_ticket_resolves_closed` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestFailureLog::test_appends_creates_section` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropTicket::test_drops_queued_ticket_with_reason` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestAttach::test_file_source_copies_and_records_sha256` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_review.py::TestRecordReview::test_appends_approve_entry` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_review.py::TestHasApprovedReviewForCommit::test_true_only_for_matching_approve` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 13 passed (from 13 evidence id(s))
+- gates: 0 error(s), 649 warning(s), 678 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1173 -->
 ```yaml
@@ -2721,3 +2799,56 @@ threat: null
 component: null
 ```
 T-1038 fixed or waived 90 of the T-0665 first-turn-on 93-site OPAQUE001 set, but src/frob/gates/__init__.py:7536 (getattr) and src/frob/gates/_docblocks.py:396-397 (importlib.import_module/getattr) were out of T-1038's declared scope (owned by a concurrent sibling ticket that wave). Dispose those 3 the same way (real fix or reasoned frob:waive), then promote OPAQUE001 from Severity.WARN to Severity.ERROR in src/frob/gates/_opaque.py (opaque_gate's Violation construction) and add OPAQUE001 = "error" to frob.toml's [gates.severity] table, in the SAME land that zeroes the repo-wide unwaived count -- the T-0973/T-0976 promote-at-zero precedent T-1038's own Done report follows.
+
+<!-- ticket:T-1186 -->
+```yaml
+id: T-1186
+title: 'arch: split tickets/_land.py (4973 lines) -- T-1171 residue'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- docs/modules/tickets.md
+threat: null
+component: null
+```
+T-1171 landed the __init__.py half of its own scope (the done-report/
+review/drop/attach family, extracted into src/frob/tickets/_reporting.py:
+mutate_labels, brief_ticket, compose_done_report/_capture_done_report_
+claims/set_done_report, record_failure, _resolve_review_commit/
+record_review/has_approved_review_for_commit, drop_ticket, and the
+attach/_attachment_bytes/_next_attachment_path/_record_attachment
+quartet -- __init__.py: 1266 -> ~640 lines).
+
+The _land.py half of T-1171's own scope was NOT touched this dispatch,
+budget did not allow both in one land: src/frob/tickets/_land.py is
+still 4973 lines (unchanged across T-1108/T-1122/T-1123/T-1151/T-1152/
+T-1171), still triggering LARGE001, and still needs the preflight/
+merge-splice/verify/sweep submodule split T-1108's original plan called
+for.
+
+Follow the same verbatim-move pattern as _evidence.py/_reporting.py:
+private module(s) re-exported from _land.py or __init__ via explicit
+imports, zero caller-visible behavior change, existing tests as the
+safety net, carry frob:ticket/frob:doc/frob:tests directives verbatim,
+repoint docs/modules/tickets.md's frob:describes anchors and any
+tests/*.py frob:tests directives at the new module path(s), add
+frob:ticket edges to any test class/method a directive-repoint touches
+(COV002), carry a file-level INV006 split-module waiver (T-0585
+calibration-batch precedent) if the moved prose trips it, watch for
+tests that monkeypatch a moved function via the PACKAGE attribute
+(land_mod.<name> or tickets_mod.<name>) -- those need a late `from
+frob.tickets import <name>` / `from frob.tickets._land import <name>`
+inside the moved function body instead of a module-top-level binding
+(the same write_ticket/bare-subprocess hazards T-1152 hit).
+
+Given the file's size (4973 lines), this is likely its OWN multi-land
+series rather than one land -- consider splitting the plan itself into
+2-3 tickets (e.g. preflight+merge-splice as one family, verify+sweep as
+another) rather than one ticket trying to move the whole file at once.

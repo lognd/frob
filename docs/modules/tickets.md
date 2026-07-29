@@ -86,8 +86,8 @@ attachments:
 <!-- frob:describes src/frob/tickets/_new_renumber.py::new_ticket -->
 <!-- frob:describes src/frob/tickets/_doable.py::doable -->
 <!-- frob:describes src/frob/tickets/_evidence.py::transition -->
-<!-- frob:describes src/frob/tickets/__init__.py::record_failure -->
-<!-- frob:describes src/frob/tickets/__init__.py::attach -->
+<!-- frob:describes src/frob/tickets/_reporting.py::record_failure -->
+<!-- frob:describes src/frob/tickets/_reporting.py::attach -->
 <!-- frob:describes src/frob/tickets/_evidence.py::add_evidence -->
 <!-- frob:describes src/frob/tickets/_evidence.py::run_cmd_evidence -->
 <!-- frob:describes src/frob/tickets/_evidence.py::reverify_cmd_evidence -->
@@ -107,10 +107,10 @@ attachments:
 <!-- frob:describes src/frob/tickets/_doable.py::large_glob_warnings -->
 <!-- frob:describes src/frob/tickets/_models.py::scope_overlap -->
 <!-- frob:describes src/frob/tickets/_models.py::scope_overlap_globs -->
-<!-- frob:describes src/frob/tickets/__init__.py::set_done_report -->
+<!-- frob:describes src/frob/tickets/_reporting.py::set_done_report -->
 <!-- frob:describes src/frob/tickets/_evidence.py::reverify_close_guard -->
 <!-- frob:describes src/frob/tickets/_models.py::recover_done_report_why -->
-<!-- frob:describes src/frob/tickets/__init__.py::compose_done_report -->
+<!-- frob:describes src/frob/tickets/_reporting.py::compose_done_report -->
 <!-- frob:describes src/frob/tickets/_evidence.py::render_evidence_block -->
 <!-- frob:describes src/frob/tickets/_evidence.py::replay_evidence_from_done_report -->
 <!-- frob:describes src/frob/tickets/_evidence.py::render_changed_block -->
@@ -122,7 +122,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::_doable_sort_key -->
 <!-- frob:describes src/frob/tickets/_setters.py::set_component -->
 <!-- frob:describes src/frob/tickets/_setters.py::set_tier -->
-<!-- frob:describes src/frob/tickets/__init__.py::mutate_labels -->
+<!-- frob:describes src/frob/tickets/_reporting.py::mutate_labels -->
 <!-- frob:describes src/frob/tickets/__init__.py::board_view -->
 <!-- frob:describes src/frob/tickets/__init__.py::epic_rollup -->
 <!-- frob:describes src/frob/tickets/_doable.py::has_live_lease -->
