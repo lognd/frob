@@ -868,3 +868,61 @@ threat: null
 component: null
 ```
 User directive 2026-07-29: ensure changing any may in the .strata files produces two errors. Today SYS100 (observed-undeclared) and SYS101 (declared-unobserved) cover the two directions but a pure deletion yields one finding, and the guarantee rests on three unproven assumptions: baseline SYS101=0, scanner detection completeness per capability kind, and no waiver masking (e.g. a SYS100:fs-write waiver would swallow the mutation). No mutation harness exists over design/frob.strata -- tests/unit/strata/test_conform_eval_needle.py is a fixture false-positive regression, not detection-completeness proof. Design: a litmus-style mutation-audit (frob sys mutation-audit or a hypothesis-parametrized test) that for EVERY may in every loaded model checks a mutated in-memory copy (delete -> >=1 SYS100; substitute -> SYS100+SYS101 pair), plus an independent second layer via the _export.py seccomp allowlist golden (tests/golden/frob_export_k8s.yaml precedent) so semantic and artifact detectors cannot share a blind spot. Interacts with T-1196 (multi-file split: harness must iterate every loaded file) and the fs.read/fs.write migration landing this drive -- build atop the migrated spellings.
+
+<!-- ticket:T-1204 -->
+```yaml
+id: T-1204
+title: 'perf: hot-graph burn-down (2026-07-29 profile)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: high
+parent: null
+tier: epic
+sprint: null
+scope:
+- src/frob/**
+threat: null
+component: null
+```
+Umbrella epic for the 2026-07-29 in-process cProfile hot-graph report (scratchpad hotgraph/report.md). 11 children, one per ranked PERF candidate (10 from the report's 'Ranked PERF ticket candidates' section) plus a CLI-startup lazy-import fix. Each child fixes a measured root cause AND ships a PERF01x lint rule per repo convention (perf root causes ship as both a .strata obligation and a PERF0xx detector, never fix-only). See STANDALONE ticket 'perf: PERF01x detectors from hot-graph root causes' for the four new detector rules this epic's children rely on.
+
+<!-- ticket:T-1205 -->
+```yaml
+id: T-1205
+title: 'coverage as managed derived state: auto-refresh touched-set, never stale,
+  never manual'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- src/frob/app/**
+- src/frob/testing/**
+- Makefile
+- docs/**
+- tests/**
+acceptance:
+- text: GIVEN a tracked source change WHEN frob check runs THEN coverage data for
+    affected symbols is refreshed automatically via the touched-set test machinery
+    (frob test --base semantics) merged into the persisted coverage store -- no manual
+    make coverage invocation exists in any documented or gate-suggested workflow
+  evidence: []
+- text: GIVEN coverage data that cannot be refreshed (tests failing, run interrupted)
+    THEN TEST005-family findings against stale regions are marked stale-and-disclosed
+    rather than reported as current fact, and TEST011 escalates from advisory to a
+    blocking freshness contract
+  evidence: []
+- text: 'GIVEN an unchanged file THEN its coverage is never recomputed: per-file coverage
+    keyed by content hash, full-suite runs reserved for cold start or explicit --full'
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-07-29: we should never run make coverage manually; frob must never consume stale data or retread work that should be cached. Today coverage.xml is a hand-refreshed artifact: TEST011 warns it predates tracked changes and TEST005 findings are computed from it anyway (the attribution-inflation problem T-0969 is untangling). Design: treat coverage like the graph cache -- a derived artifact frob owns, refreshed incrementally from the touched-set (the affects closure already exists in frob.graph.affects), merged per-file keyed by content hash, with the freshness contract enforced by the gate rather than a Makefile comment. Interacts with T-0969 (attribution fix defines what honest data is) and the CI gitignored-trust child under T-1193 (CI needs the same no-stale contract). Related: the profiler found process-pool workers re-derive per-file artifacts every run -- same no-retread principle, separate ticket in the perf tree.
