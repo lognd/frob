@@ -553,6 +553,7 @@
     "src/frob/gates/_fix_engine.py::apply_tier_a_fixes": "450c37af8b33d0cd5cc803392087404c949b0a997d31e5fde1b3270437b4b64c",
     "src/frob/gates/_fix_engine.py::fix_doc002_unique_slug": "7ef8d8ae7a08a3d93bc18dc16223b448c204ff22108ce82b571ff3a9bd779892",
     "src/frob/gates/_fix_engine.py::fix_doc007_dotted_form": "327da98ed7d5183d7687e61242a3ef58b030cd5fb58e4eb335b441e918bb0024",
+    "src/frob/gates/_fix_engine.py::fix_inv006_carried_waiver": "c7076e6aeef11ba2582b512a8618cf6e4ef49ff30539c246e63afb7cb0cc3f5d",
     "src/frob/gates/_fix_engine.py::fix_tick002_renumber": "d3462147dd6790eedaa789114b5c65fcdf397f879de80e2dbb3ba770289490fe",
     "src/frob/gates/_fmt_directives.py::FmtChange": "ea8741b398fe11d4690d8916903481776ec126dd2a6c5422ebd6f1f7e8fc9ac2",
     "src/frob/gates/_fmt_directives.py::FmtReport": "11a60528b9ef3d166ee7b3928901298283e5a50d65961937b22ba07fa6dc2c63",
@@ -1872,5 +1873,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.269.0"
+  "version": "0.270.0"
 }

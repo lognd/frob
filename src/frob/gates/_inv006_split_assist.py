@@ -43,12 +43,19 @@ def _normalize_prose(text: str) -> str:
     return " ".join(text.split())
 
 
-def _covering_waiver_reason(rel: str, snapshot: GraphSnapshot) -> str | None:
-    """The `reason=` text of a `frob:waive INV006` edge covering `rel`, or
-    `None` if none exists -- mirrors `frob.gates._inv006_waived`'s own
-    file-or-symbol-under-it matching rule without importing from
-    `frob.gates` (would be circular; `_inv006_src_violations` imports
-    THIS module, not the reverse)."""
+def _covering_waiver_directive_attrs(
+    rel: str, snapshot: GraphSnapshot
+) -> tuple[str, str | None] | None:
+    """The `(reason, preset)` pair of a `frob:waive INV006` edge covering
+    `rel`, or `None` if none exists -- mirrors `frob.gates._inv006_waived`'s
+    own file-or-symbol-under-it matching rule without importing from
+    `frob.gates` (would be circular; `_inv006_src_violations` imports THIS
+    module, not the reverse). `preset` is `None` when the covering edge was
+    written with a plain inline `reason=` (T-1176: a `preset=`-written
+    edge's resolved reason still lands in `attrs["reason"]` at parse time,
+    so `reason` is always present when this returns non-`None`; `preset`
+    is only set when the site can be carried as a preset REFERENCE rather
+    than a copy of its resolved text)."""
     for edge in snapshot.edges:
         if edge.kind != EdgeKind.WAIVE or edge.target != "INV006":
             continue
@@ -59,7 +66,7 @@ def _covering_waiver_reason(rel: str, snapshot: GraphSnapshot) -> str | None:
         ):
             reason = edge.attrs.get("reason")
             if reason:
-                return reason
+                return (reason, edge.attrs.get("preset"))
     return None
 
 
@@ -122,9 +129,22 @@ def find_carried_waiver(
                 normalized_candidate = _normalize_prose(candidate_text)
                 if not any(s in normalized_candidate for s in sentences):
                     continue
-                reason = _covering_waiver_reason(rel, snapshot)
-                if reason is not None:
-                    return (rel, "waiver", f'frob:waive INV006 reason="{reason}"')
+                covering = _covering_waiver_directive_attrs(rel, snapshot)
+                if covering is not None:
+                    reason, preset = covering
+                    # T-1176/T-1177: carry a PRESET REFERENCE, not a copy
+                    # of its resolved reason text, whenever the source
+                    # itself was written with preset= -- the whole point
+                    # of a preset is that the reason prose lives in one
+                    # place; copying its resolved text at every carry
+                    # site would silently recreate the exact duplication
+                    # presets exist to remove.
+                    fixit = (
+                        f'frob:waive INV006 preset="{preset}"'
+                        if preset is not None
+                        else f'frob:waive INV006 reason="{reason}"'
+                    )
+                    return (rel, "waiver", fixit)
                 inv_id = _covering_invariant_id(rel, snapshot)
                 if inv_id is not None:
                     return (rel, "invariant", f"frob:invariant {inv_id}")

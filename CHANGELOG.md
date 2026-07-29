@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.270.0] - unreleased
+
+- T-1177: fix-engine: Tier-A auto-carry of split-carried waivers (T-1137 child; coordinator decision recorded)
+
 ## [0.269.0] - unreleased
 
 - T-1176: gates: named waiver presets -- frob:waive RULE preset=<name> resolving to one documented reason text

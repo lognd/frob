@@ -2868,6 +2868,7 @@ site -- no new mechanism needed.
 <!-- frob:describes src/frob/gates/_fix_engine.py::apply_tier_a_fixes -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::fix_doc007_dotted_form -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::fix_doc002_unique_slug -->
+<!-- frob:describes src/frob/gates/_fix_engine.py::fix_inv006_carried_waiver -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::fix_tick002_renumber -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::FixApplied -->
 
@@ -2897,6 +2898,21 @@ guess, never a waiver insertion):
   an ambiguous or absent match has no single correct rewrite to make
   automatically, so it stays a normal DOC002 finding (the assisted
   fix-it path, not this ticket's own scope).
+- **`fix_inv006_carried_waiver`** (T-1177, T-1134's `find_carried_waiver`
+  detector applied): an INV006 finding whose exclusivity-claim prose was
+  moved VERBATIM out of a file that already carries a covering
+  `frob:waive INV006` gets that EXACT directive inserted as its own
+  first line -- a preset REFERENCE (`preset="..."`, T-1176) when the
+  source itself used one, never a copy of its resolved reason text, so
+  a chain of carries never re-duplicates the prose a preset exists to
+  deduplicate. Coordinator decision (2026-07-29, under user-delegated
+  authority): this is the one narrow exception to T-1137's
+  never-auto-waive anti-goal -- carrying an EXISTING, already-made human
+  disposition forward through a verbatim text move is not a NEW waiver
+  judgment, so it does not violate the anti-goal, which still binds for
+  every other case (a match that only carries a bound `frob:invariant`,
+  or no verbatim match at all, is left completely untouched -- no guess,
+  no waiver inserted).
 - **`fix_tick002_renumber`**: TICK002 (a `T-draft-*` id that survived
   onto the default branch) already prescribes its own remedy in its
   message; this performs exactly that renumber via `frob.tickets.
@@ -2907,14 +2923,14 @@ guess, never a waiver insertion):
   `finalize_draft` -> `renumber_one` already performs it. A no-op off
   the default branch.
 
-`apply_tier_a_fixes(root, snapshot, queue)` runs all three in order
-(DOC007/DOC002 first, since they are pure source-text rewrites with no
-ledger interaction; TICK002 last, so a source-text fix never races a
-concurrent renumber's own ledger-prose rewrite) and returns every
-`FixApplied` (rule, file, line, one-line rewrite summary) actually made
--- the disclosed audit trail every fix must leave, mirroring T-1137's own
-"no silent auto-discharge" anti-goal applied to what WAS auto-fixed
-rather than only what was left alone.
+`apply_tier_a_fixes(root, snapshot, queue)` runs all four in order
+(DOC007/DOC002/INV006-carry first, since they are pure source-text
+rewrites with no ledger interaction; TICK002 last, so a source-text fix
+never races a concurrent renumber's own ledger-prose rewrite) and
+returns every `FixApplied` (rule, file, line, one-line rewrite summary)
+actually made -- the disclosed audit trail every fix must leave,
+mirroring T-1137's own "no silent auto-discharge" anti-goal applied to
+what WAS auto-fixed rather than only what was left alone.
 
 **Scope boundary (T-1138):** this module is the fix HANDLERS and their
 callable entry point (`src/frob/gates/**`), not the

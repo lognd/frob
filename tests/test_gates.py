@@ -8079,6 +8079,97 @@ class TestFixEngineTierA:
         after = docanchor_gate(root, self._snap(root))
         assert any(v.rule == "DOC002" for v in after)
 
+    # -- T-1177 acceptance [0]/[1]: INV006 split-carried-waiver auto-carry --
+
+    def test_inv006_carries_waiver_verbatim_moved_from_waived_source(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_inv006_carried_waiver \
+        # kind="unit"
+        from frob.gates import apply_tier_a_fixes, inv006_gate
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        sentence = "The only writer of this file is the daemon process."
+        (root / "src" / "old.py").write_text(
+            f'# frob:waive INV006 reason="genuine design intent, not enforced"\n'
+            f'"""{sentence}"""\n',
+            encoding="utf-8",
+        )
+        (root / "src" / "new.py").write_text(f'"""{sentence}"""\n', encoding="utf-8")
+        snapshot = self._snap(root)
+        before = inv006_gate(root, snapshot)
+        assert any(v.file == "src/new.py" for v in before)
+
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        inv006_applied = [a for a in applied if a.rule == "INV006"]
+        assert len(inv006_applied) == 1
+        assert inv006_applied[0].file == "src/new.py"
+        assert "src/old.py" in inv006_applied[0].detail
+
+        rewritten = (root / "src" / "new.py").read_text(encoding="utf-8")
+        assert rewritten.splitlines()[0] == (
+            '# frob:waive INV006 reason="genuine design intent, not enforced"'
+        )
+
+        after = inv006_gate(root, self._snap(root))
+        assert not [v for v in after if v.file == "src/new.py"]
+
+    def test_inv006_carries_a_preset_reference_not_a_reason_copy(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_inv006_carried_waiver \
+        # kind="unit"
+        # T-1176/T-1177: when the source waiver was itself written with
+        # preset=, the carried directive at the new site must reference
+        # the SAME preset -- never a copy of its resolved reason text --
+        # or every carry would silently recreate the duplication presets
+        # exist to remove.
+        from frob.gates import apply_tier_a_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        sentence = "The only writer of this file is the daemon process."
+        (root / "src" / "old.py").write_text(
+            f'# frob:waive INV006 preset="split-carried-prose"\n"""{sentence}"""\n',
+            encoding="utf-8",
+        )
+        (root / "src" / "new.py").write_text(f'"""{sentence}"""\n', encoding="utf-8")
+        snapshot = self._snap(root)
+
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        inv006_applied = [a for a in applied if a.rule == "INV006"]
+        assert len(inv006_applied) == 1
+
+        rewritten = (root / "src" / "new.py").read_text(encoding="utf-8")
+        assert rewritten.splitlines()[0] == (
+            '# frob:waive INV006 preset="split-carried-prose"'
+        )
+
+    def test_inv006_never_auto_waives_a_non_carried_finding(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_inv006_carried_waiver \
+        # kind="unit"
+        # T-1137 anti-goal: an INV006 finding with no verbatim-matched,
+        # already-waived source must never gain an inserted waiver.
+        from frob.gates import apply_tier_a_fixes, inv006_gate
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        content = '"""The only writer of this file is the daemon."""\n'
+        (root / "src" / "pkg.py").write_text(content, encoding="utf-8")
+        snapshot = self._snap(root)
+        before = inv006_gate(root, snapshot)
+        assert any(v.file == "src/pkg.py" for v in before)
+
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        assert not [a for a in applied if a.rule == "INV006"]
+        assert (root / "src" / "pkg.py").read_text(encoding="utf-8") == content
+
     # -- acceptance [2]: TICK002 draft renumber -----------------------------
 
     def test_tick002_renumbers_draft_and_reverifies_clean(self, tmp_path: Path) -> None:

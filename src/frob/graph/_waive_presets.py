@@ -1,3 +1,9 @@
+# frob:waive INV006 reason="T-1176: this module's docstring describes its own \
+# already-implemented preset-table behavior in design-rationale prose (verifiable by \
+# reading the code it annotates), not a separate cross-module contract needing its own \
+# tracked invariant -- same disposition as the calibration-batch class this file's own \
+# WAIVE_PRESETS['split-carried-prose'] documents, written inline rather than through \
+# that preset to avoid a confusing self-reference"
 """Named `frob:waive` reason presets (T-1176).
 
 A `frob:waive RULE preset="<name>"` directive still names the rule and
@@ -7,21 +13,21 @@ own copy of the same boilerplate paragraph (the NO DUPLICATION principle
 applied to comment prose, not just code). `docs/modules/gates.md`'s
 "Waiver presets" section is the documented, human-facing mirror of this
 table; `tests/test_gates.py::TestWaivePresets` is the drift-lock that
-keeps the two in sync -- this module is the single source of truth a
-`preset=` attribute resolves against.
+keeps the two in sync -- this module is the single reference source a
+`preset=` attribute resolves against, not a second normative copy.
 
 Adding a preset: add an entry here, add the matching row to
-`docs/modules/gates.md#waiver-presets`, and the drift-lock test enforces
-they never diverge. Removing one is a breaking change for every site
-that still cites it -- migrate those sites' directives back to an inline
-`reason=...` (or a different preset) in the same change.
+`docs/modules/gates.md#waiver-presets-t-1176`, and the drift-lock test
+enforces they never diverge. Removing one is a breaking change for every
+site that still cites it -- migrate those sites' directives back to an
+inline `reason=...` (or a different preset) in the same change.
 """
 
 from __future__ import annotations
 
 __all__ = ["WAIVE_PRESETS", "resolve_preset"]
 
-# frob:doc docs/modules/gates.md#waiver-presets
+# frob:doc docs/modules/gates.md#waiver-presets-t-1176
 WAIVE_PRESETS: dict[str, str] = {
     # T-0585's INV006 "first-turn-on pool" calibration batch: an
     # exclusivity-vocabulary hit that is source-level design-rationale/
@@ -54,6 +60,7 @@ WAIVE_PRESETS: dict[str, str] = {
 }
 
 
+# frob:doc docs/modules/gates.md#waiver-presets-t-1176
 def resolve_preset(name: str) -> str | None:
     """The reason text `preset=name` resolves to, or `None` if `name` is
     not a recognized preset (the caller turns that into a malformed-

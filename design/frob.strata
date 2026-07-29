@@ -837,6 +837,7 @@ node gates : trusted {
     attr interface=find_normative_claims;
     attr interface=fix_doc002_unique_slug;
     attr interface=fix_doc007_dotted_form;
+    attr interface=fix_inv006_carried_waiver;
     attr interface=fix_tick002_renumber;
     attr interface=fmt_gate;
     attr interface=format_paths;
