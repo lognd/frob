@@ -36,6 +36,15 @@ def _init_repo(root: Path) -> None:
     _git(root, "config", "user.email", "test@example.com")
     _git(root, "config", "user.name", "Test")
     _git(root, "checkout", "-q", "-b", "main")
+    # T-1006: a real repo always gitignores .frob/ (frob's own scratch
+    # state); without this a fixture with no .gitignore lets frob's own
+    # derived.lock/cache.db writes (produced merely by calling build_graph
+    # during the test itself) show up as untouched-by-user files in
+    # `git ls-files --others`, which python_coverage_targets then treats
+    # as a genuine unknown-language touched file and falls back to a
+    # suite-wide '*' selection -- not a real product bug, just an
+    # under-configured fixture repo.
+    (root / ".gitignore").write_text(".frob/\n", encoding="utf-8")
 
 
 def _commit(root: Path, message: str) -> None:

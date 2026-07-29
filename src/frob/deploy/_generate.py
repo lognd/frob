@@ -153,13 +153,23 @@ def _node_capabilities(node: Node, manifest: HostManifest) -> frozenset[str]:
     needs it, so granting it unconditionally was an over-grant. Other
     `_CAP_KIND_MAP` kinds (should the map grow) are unaffected by this
     port gate -- it applies to `CAP_NET_BIND_SERVICE` specifically, the
-    one Linux capability whose need is itself port-dependent."""
+    one Linux capability whose need is itself port-dependent.
+
+    T-1006: `node_may_kinds` returns T-0717 mode-qualified `family.mode`
+    ids (e.g. `"net.out"`), not the bare coarse family `_CAP_KIND_MAP` is
+    keyed by (`"net"`) -- a node declaring only a precise mode-qualified
+    `may` atom used to silently match nothing here and lose its
+    capability grant entirely. Look up `_CAP_KIND_MAP` by the family
+    prefix (the segment before the first `.`, `_mode_qualified`'s own
+    join character) so both a bare coarse declaration and a precise
+    mode-qualified one resolve to the same capability grant."""
     needs_privileged_bind = any(
         port < _PRIVILEGED_PORT_CUTOFF for port in manifest.listens
     )
     caps: set[str] = set()
     for kind in node_may_kinds(node):
-        for cap in _CAP_KIND_MAP.get(kind, ()):
+        family = kind.split(".", 1)[0]
+        for cap in _CAP_KIND_MAP.get(family, ()):
             if cap == "CAP_NET_BIND_SERVICE" and not needs_privileged_bind:
                 continue
             caps.add(cap)

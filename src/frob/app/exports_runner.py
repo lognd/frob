@@ -64,21 +64,30 @@ def _try_exports_via_daemon(pkg_dir: Path, cfg: AppConfig) -> bool:
         return False
     from frob.gitio import repo_root
 
-    root_result = repo_root(pkg_dir)
-    if root_result.is_err:
-        return False
+    # T-1006: `repo_root`'s own `gitio` DEBUG logging (every `git`
+    # subprocess it spawns) and `query`'s RPC round trip both ran OUTSIDE
+    # `run()`'s `quiet_stdout_logs()` context (that context previously wrapped
+    # the non-daemon `exports_package` fallback below it) -- a DEBUG log
+    # line from `repo_root` landed straight on stdout ahead of the JSON
+    # payload this whole call exists to keep machine-parseable, corrupting
+    # it for any daemon-hit `--json` run. Wrap this entire helper's body
+    # in the same `quiet_stdout_logs()` the fallback path already uses.
+    with quiet_stdout_logs():
+        root_result = repo_root(pkg_dir)
+        if root_result.is_err:
+            return False
 
-    from frob.app._daemon_proxy import query
+        from frob.app._daemon_proxy import query
 
-    proxied = query(
-        root_result.danger_ok,
-        "frob_exports",
-        {
-            "pkg_dir": str(pkg_dir),
-            "include_private": cfg.exports_all,
-            "exclude_modules": cfg.exports_exclude or [],
-        },
-    )
+        proxied = query(
+            root_result.danger_ok,
+            "frob_exports",
+            {
+                "pkg_dir": str(pkg_dir),
+                "include_private": cfg.exports_all,
+                "exclude_modules": cfg.exports_exclude or [],
+            },
+        )
     if proxied.is_err:
         return False
     import json

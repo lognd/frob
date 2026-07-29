@@ -820,7 +820,7 @@ class TestLand:
         )
         assert _run(["git", "rev-parse", "HEAD"], wt).stdout.strip() == before_wt_sha
         assert _status_ignoring_frob(repo) == ""
-        assert _run(["git", "status", "--porcelain"], wt).stdout.strip() == ""
+        assert _status_ignoring_frob(wt) == ""
 
     def test_real_land_lands(self, repo: Path) -> None:
         # frob:tests src/frob/tickets/_land.py::land kind="unit"
@@ -1732,7 +1732,7 @@ class TestMergeConflictOutsideLedger:
         assert result.danger_err == LandError.MergeConflict
 
         # _abort_merge must have run -- worktree left exactly as found.
-        assert _run(["git", "status", "--porcelain"], wt).stdout.strip() == ""
+        assert _status_ignoring_frob(wt) == ""
 
 
 class TestOutOfScopeConflictAutoResolved:

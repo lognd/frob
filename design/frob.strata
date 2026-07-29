@@ -2775,7 +2775,7 @@ node testsuite : trusted {
     attr interface=MCP_JSON;
     attr interface=PACKAGE_LOCK_JSON_V1;
     attr interface=PACKAGE_LOCK_JSON_V3;
-    attr interface=PARSE_RS;
+    attr interface=PARSE_DIR;
     attr interface=PNPM_LOCK_YAML;
     attr interface=PYTEST_ALL_PASS;
     attr interface=PYTEST_EMPTY;

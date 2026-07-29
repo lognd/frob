@@ -29,18 +29,25 @@
       {
         "action": "SCMP_ACT_ALLOW",
         "names": [
+          "accept",
+          "bind",
           "brk",
           "clone",
           "close",
+          "connect",
           "execve",
           "execveat",
           "exit",
           "exit_group",
           "fork",
+          "listen",
           "mmap",
           "munmap",
           "read",
+          "recvfrom",
           "rt_sigreturn",
+          "sendto",
+          "socket",
           "vfork",
           "write"
         ]
@@ -306,14 +313,21 @@
       {
         "action": "SCMP_ACT_ALLOW",
         "names": [
+          "accept",
+          "bind",
           "brk",
           "close",
+          "connect",
           "exit",
           "exit_group",
+          "listen",
           "mmap",
           "munmap",
           "read",
+          "recvfrom",
           "rt_sigreturn",
+          "sendto",
+          "socket",
           "write"
         ]
       }

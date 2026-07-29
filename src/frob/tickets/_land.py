@@ -1814,7 +1814,13 @@ def _do_wip_commit(worktree: Path, ticket_id: str) -> Result[bool, LandError]:
     staging, re-check with `git diff --cached --quiet`: an empty stage means
     there was nothing real to snapshot, so we treat it as a no-op success
     instead of a land failure."""
-    add_argv = ["git", "-C", str(worktree), "add", "-A"]
+    # T-1006: exclude .frob/ (frob's own scratch state -- cache.db, lock
+    # files, prework json) from the wip snapshot. A repo that has not
+    # gitignored .frob/ (e.g. a bare test fixture) would otherwise let
+    # frob's own bookkeeping writes made while computing the dirty check
+    # get swept into `add -A` as if they were real ticket content,
+    # defeating the CRLF-normalization-only no-op detection below.
+    add_argv = ["git", "-C", str(worktree), "add", "-A", "--", ".", ":!.frob"]
     with _land_internal_git_env():
         add = run_argv(add_argv)
         if add.is_err or add.danger_ok.returncode != 0:

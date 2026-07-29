@@ -34,10 +34,19 @@ def _upload_recipe() -> str:
 
 def test_upload_relocks_after_version_bump():
     # frob:tests tests/test_makefile_lock_sync.py::test_upload_relocks_after_version_bump kind="unit"  # noqa: E501
+    # T-1006: the recipe no longer runs a literal `uv lock` step -- T-1009
+    # (`.frob-release.json` as the one version authority) replaced it with
+    # `frob release sync`, whose `_sync` (src/frob/app/release_runner.py)
+    # itself runs `uv lock` internally after rewriting pyproject.toml's
+    # version, superseding this recipe's own bare invocation. Assert the
+    # superseding step is present and still ordered after the bump.
     recipe = _upload_recipe()
     bump_idx = recipe.index("bump_version.py")
-    lock_idx = recipe.index("uv lock")
-    assert bump_idx < lock_idx, "uv lock must run AFTER the version bump, not before"
+    lock_idx = recipe.index("frob release sync")
+    assert bump_idx < lock_idx, (
+        "frob release sync (which relocks uv.lock) must run AFTER the "
+        "version bump, not before"
+    )
 
 
 def test_upload_commits_uv_lock_with_pyproject():

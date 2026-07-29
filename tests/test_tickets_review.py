@@ -74,7 +74,20 @@ def _commit_more(root: Path) -> str:
 def _seed_in_progress_ticket(tmp_path: Path) -> Ticket:
     """One in-progress ticket carrying a substantive Done report + evidence
     -- the minimum state `close` (non-strict) already accepts, before this
-    module's tests layer T-0571's review requirement on top."""
+    module's tests layer T-0571's review requirement on top.
+
+    T-1006: the evidence id must actually collect and pass against
+    `tmp_path` -- `_close`'s N-02 evidence reverification (added after this
+    fixture was first written) now re-runs every non-`cmd:` evidence id at
+    close time via a real `pytest --collect-only`/run against `root`, so a
+    fabricated id like the old `tests/fixture.py::test_ok` (no such file)
+    always fails to re-verify and blocks the close this fixture exists to
+    set up. Write one trivial always-green test under `tmp_path` instead so
+    reverification has something real to find."""
+    (tmp_path / "tests").mkdir(exist_ok=True)
+    (tmp_path / "tests" / "test_fixture.py").write_text(
+        "def test_ok() -> None:\n    assert True\n", encoding="utf-8"
+    )
     created = new_ticket(
         tmp_path,
         TicketSpec(
@@ -82,7 +95,7 @@ def _seed_in_progress_ticket(tmp_path: Path) -> Ticket:
             kind=TicketKind.FEATURE,
             origin=Origin.AGENT,
             body="## Description\nx\n\n## Done report\nAll good.\n",
-            evidence=("tests/fixture.py::test_ok",),
+            evidence=("tests/test_fixture.py::test_ok",),
         ),
     )
     assert created.is_ok, created

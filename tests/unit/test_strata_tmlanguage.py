@@ -1,16 +1,18 @@
-"""Drift-lock the strata TextMate grammar against strata-core/src/parse.rs.
+"""Drift-lock the strata TextMate grammar against strata-core/src/parse/.
 
 WHY: editors/vscode-strata/syntaxes/strata.tmLanguage.json hand-spells the
 strata surface keyword vocabulary for syntax highlighting (T-0139). That
 vocabulary already has one authoritative home -- the lexer/parser dispatch
-in strata-core/src/parse.rs -- so this test extracts both keyword sets
-straight from source (regex over the Rust file, json.load over the
-grammar) and asserts they agree bidirectionally. A keyword added to the
-parser without a matching grammar update, or a stray keyword left in the
-grammar after a parser change, fails this test instead of silently going
-unhighlighted or unhonest.
+under strata-core/src/parse/ (split from a single parse.rs into
+grammar_core.rs/grammar_node.rs/grammar_flow.rs/grammar_policy.rs/
+grammar_infra.rs/lexer.rs + mod.rs, T-1006) -- so this test extracts both
+keyword sets straight from source (regex over the concatenated Rust
+files, json.load over the grammar) and asserts they agree bidirectionally.
+A keyword added to the parser without a matching grammar update, or a
+stray keyword left in the grammar after a parser change, fails this test
+instead of silently going unhighlighted or unhonest.
 
-frob:tests strata-core/src/parse.rs kind="unit"
+frob:tests strata-core/src/parse/grammar_policy.rs kind="unit"
 """
 
 from __future__ import annotations
@@ -22,7 +24,16 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-PARSE_RS = REPO_ROOT / "strata-core" / "src" / "parse.rs"
+# T-1006: strata-core/src/parse.rs was split into strata-core/src/parse/
+# (mod.rs + grammar_core.rs/grammar_node.rs/grammar_flow.rs/
+# grammar_policy.rs/grammar_infra.rs/lexer.rs), mirroring the same
+# arch-split precedent applied to tickets/__init__.py and tickets/_land.py
+# (T-1103). The keyword dispatch this test drift-locks against now lives
+# somewhere in that directory rather than in one file -- concatenate
+# every .rs file under parse/ so the keyword extraction below still sees
+# the whole parser regardless of which grammar_*.rs module a given
+# construct's dispatch arm lives in.
+PARSE_DIR = REPO_ROOT / "strata-core" / "src" / "parse"
 TMLANGUAGE = (
     REPO_ROOT / "editors" / "vscode-strata" / "syntaxes" / "strata.tmLanguage.json"
 )
@@ -31,9 +42,12 @@ _IDENT = r"[a-z_][a-z0-9_]*"
 
 
 def _parse_rs_text() -> str:
-    """Return the full source of parse.rs, failing loudly if it moved."""
-    assert PARSE_RS.exists(), f"expected {PARSE_RS} to exist"
-    return PARSE_RS.read_text(encoding="utf-8")
+    """Return the concatenated source of every .rs file under
+    strata-core/src/parse/, failing loudly if that directory moved."""
+    assert PARSE_DIR.is_dir(), f"expected {PARSE_DIR} to be a directory"
+    rs_files = sorted(PARSE_DIR.glob("*.rs"))
+    assert rs_files, f"expected at least one .rs file under {PARSE_DIR}"
+    return "\n".join(p.read_text(encoding="utf-8") for p in rs_files)
 
 
 def _extract_construct_keywords(source: str) -> set[str]:

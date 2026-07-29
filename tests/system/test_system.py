@@ -321,6 +321,7 @@ node api : trusted {
     owns "/etc/api" "0640";
     listens 8080;
     group "api-grp";
+    attr health;
 }
 
 node worker : trusted {
@@ -330,6 +331,7 @@ node worker : trusted {
     owns "/etc/worker" "0640";
     listens 8081;
     group "worker-grp";
+    attr health;
 }
 """
 

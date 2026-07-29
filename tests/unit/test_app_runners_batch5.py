@@ -59,8 +59,21 @@ class TestStatsRunner:
         assert "frob stats" in out
         assert "tickets:" in out
 
-    def test_json_mode_prints_json(self, tmp_path, capsys):
-        """`--json` prints the JSON-serialized report."""
+    def test_json_mode_prints_json(self, tmp_path, capsys, monkeypatch):
+        """`--json` prints the JSON-serialized report.
+
+        T-1006: `stats_run` now proxies through `frob`'s daemon
+        (`frob.app._daemon_proxy`) when a live daemon can be reached/
+        spawned. This unit test asserts on the RUNNER's own synchronous
+        report rendering, not on the daemon-proxy round trip (that has
+        its own dedicated coverage in tests/test_app_daemon_proxy.py) --
+        `FROB_NO_DAEMON=1` (the documented unconditional bypass,
+        `frob.app._daemon_proxy`) keeps this test deterministic and off
+        the real background-daemon-subprocess/socket-retry path, which
+        writes to this process's inherited fd asynchronously and is not
+        reliably observable via `capsys`/`capfd` at the point `stats_run`
+        returns."""
+        monkeypatch.setenv("FROB_NO_DAEMON", "1")
         _init_git_repo(tmp_path)
         cfg = AppConfig(stats_path=tmp_path, stats_json=True)
         stats_run(cfg)
