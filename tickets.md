@@ -816,6 +816,10 @@ kind: feature
 origin: human
 created: '2026-07-29'
 priority: medium
+blocked_by:
+- T-draft-2fcdab16
+- T-draft-86e35dc2
+- T-draft-cc933a76
 parent: T-1137
 tier: ticket
 sprint: null
