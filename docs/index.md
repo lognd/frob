@@ -190,6 +190,21 @@ their owning module design docs above (`docs/modules/graph.md`, `docs/modules/ti
 `docs/modules/testing.md`) rather than as separate per-command pages, since their
 usage is inseparable from the data model they operate on.
 
+## Design docs (active epics)
+
+Design-first epics landed 2026-07-29; each doc is the canonical design its
+epic's children implement:
+
+- `docs/design/refactor-verb.md` -- T-1135: transactional frob refactor
+  move/rename/split with full reference, directive, and prose rewrite.
+- `docs/design/ledger-v2.md` -- T-1136: per-ticket files replacing the
+  tickets.md monofile, with locks, merge story, and reversible migration.
+- `docs/design/check-fix-engine.md` -- T-1137: tiered frob check --fix
+  auto-fix engine (Tier A/B/C, fixability registry, no auto-waivers).
+- `docs/audits/docs-staleness-2026-07-29.md` -- the 121-doc staleness
+  sweep whose findings drive the T-1226 docs-integrity epic and the
+  T-1233 fix campaign.
+
 ## Design research corpora (arch + strata check foundations)
 
 Cited, exhaustive design foundations that feed the arch epic (T-0330), the
