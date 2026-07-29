@@ -4614,7 +4614,7 @@ machinery or file a removal ticket instead of writing a fake test for it
 ```yaml
 id: T-1275
 title: 'TEST005 burn-down: src/frob/app (115 findings, 63 at 0.0%)'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -4694,6 +4694,8 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
 
+## Drop reason
+- 2026-07-29: duplicate: created twice due to script retry, T-1276 is canonical
 <!-- ticket:T-1276 -->
 ```yaml
 id: T-1276
