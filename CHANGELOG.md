@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.286.0] - unreleased
+
+- T-1258: ledger v2: land merge story on native git per-file merge, retire frob-ledger driver
+
 ## [0.285.0] - unreleased
 
 - T-1203: strata: may-mutation audit -- prove every may is load-bearing and double-detected

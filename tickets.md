@@ -3975,7 +3975,7 @@ design/frob.strata.
 ```yaml
 id: T-1253
 title: 'ledger v2: per-ticket lock + allocator lock primitives'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -3988,6 +3988,29 @@ scope:
 - src/frob/tickets/_store.py
 - tests/unit/test_process_lock.py
 - tests/test_tickets_ledger_concurrency.py
+- docs/design/ledger-v2.md
+- design/frob.strata
+scope_changes:
+- op: add
+  glob: docs/design/ledger-v2.md
+  reason: T-1253 adds an implementation-status note to this design doc's own section
+    3
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: design/frob.strata
+  reason: auto-synced test-registry interface entries (TestAllocatorLock/TestTicketLock)
+    added by this ticket's own new test classes
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/unit/test_process_lock.py::TestTicketLock::test_lock_path_is_per_ticket_id
+- tests/unit/test_process_lock.py::TestTicketLock::test_two_different_ticket_ids_do_not_block_each_other
+- tests/unit/test_process_lock.py::TestTicketLock::test_same_id_from_two_threads_serializes
+- tests/unit/test_process_lock.py::TestTicketLock::test_reentrant_same_id_in_same_thread_does_not_deadlock
+- tests/unit/test_process_lock.py::TestAllocatorLock::test_lock_file_created_under_frob_dir
+- tests/unit/test_process_lock.py::TestAllocatorLock::test_two_concurrent_allocations_get_distinct_ids
+- tests/unit/test_process_lock.py::TestAllocatorLock::test_reentrant_in_same_thread_does_not_deadlock
 acceptance:
 - text: 'Ledger v2 design (docs/design/ledger-v2.md section 3) needs a per-ticket
 
@@ -4002,7 +4025,8 @@ acceptance:
     by removing the shared resource for the common case (one verb, one
 
     ticket).'
-  evidence: []
+  evidence:
+  - tests/unit/test_process_lock.py::TestTicketLock::test_lock_path_is_per_ticket_id
 - text: 'Deliverables: a `ticket_lock(root, ticket_id)` context manager (per-ticket
 
     flock, e.g. `tickets/T-####/.lock` or an flock on `ticket.md` itself) and
@@ -4014,7 +4038,14 @@ acceptance:
     compatibility window (section 7) -- do not remove `ledger_lock` yet, this
 
     ticket only ADDS the new primitives alongside it.'
-  evidence: []
+  evidence:
+  - tests/unit/test_process_lock.py::TestTicketLock::test_lock_path_is_per_ticket_id
+  - tests/unit/test_process_lock.py::TestTicketLock::test_two_different_ticket_ids_do_not_block_each_other
+  - tests/unit/test_process_lock.py::TestTicketLock::test_same_id_from_two_threads_serializes
+  - tests/unit/test_process_lock.py::TestTicketLock::test_reentrant_same_id_in_same_thread_does_not_deadlock
+  - tests/unit/test_process_lock.py::TestAllocatorLock::test_lock_file_created_under_frob_dir
+  - tests/unit/test_process_lock.py::TestAllocatorLock::test_two_concurrent_allocations_get_distinct_ids
+  - tests/unit/test_process_lock.py::TestAllocatorLock::test_reentrant_in_same_thread_does_not_deadlock
 - text: 'GIVEN two callers each hold `ticket_lock` for different ticket ids
 
     WHEN both proceed concurrently
@@ -4022,7 +4053,14 @@ acceptance:
     THEN neither blocks the other (verified with a real concurrent-thread
 
     test, not just code inspection).'
-  evidence: []
+  evidence:
+  - tests/unit/test_process_lock.py::TestTicketLock::test_lock_path_is_per_ticket_id
+  - tests/unit/test_process_lock.py::TestTicketLock::test_two_different_ticket_ids_do_not_block_each_other
+  - tests/unit/test_process_lock.py::TestTicketLock::test_same_id_from_two_threads_serializes
+  - tests/unit/test_process_lock.py::TestTicketLock::test_reentrant_same_id_in_same_thread_does_not_deadlock
+  - tests/unit/test_process_lock.py::TestAllocatorLock::test_lock_file_created_under_frob_dir
+  - tests/unit/test_process_lock.py::TestAllocatorLock::test_two_concurrent_allocations_get_distinct_ids
+  - tests/unit/test_process_lock.py::TestAllocatorLock::test_reentrant_in_same_thread_does_not_deadlock
 - text: 'GIVEN two callers both call the id allocator concurrently
 
     WHEN both request a next id
@@ -4032,7 +4070,14 @@ acceptance:
     T-1090''s `test_two_concurrent_finalize_draft_calls_get_distinct_ids`
 
     shape).'
-  evidence: []
+  evidence:
+  - tests/unit/test_process_lock.py::TestTicketLock::test_lock_path_is_per_ticket_id
+  - tests/unit/test_process_lock.py::TestTicketLock::test_two_different_ticket_ids_do_not_block_each_other
+  - tests/unit/test_process_lock.py::TestTicketLock::test_same_id_from_two_threads_serializes
+  - tests/unit/test_process_lock.py::TestTicketLock::test_reentrant_same_id_in_same_thread_does_not_deadlock
+  - tests/unit/test_process_lock.py::TestAllocatorLock::test_lock_file_created_under_frob_dir
+  - tests/unit/test_process_lock.py::TestAllocatorLock::test_two_concurrent_allocations_get_distinct_ids
+  - tests/unit/test_process_lock.py::TestAllocatorLock::test_reentrant_in_same_thread_does_not_deadlock
 - text: 'GIVEN a caller already holds `ticket_lock` for id X in the same thread
 
     WHEN it acquires `ticket_lock` for X again (reentrant call)
@@ -4040,7 +4085,14 @@ acceptance:
     THEN it does not deadlock (mirrors `derived_state_lock`''s reentrancy
 
     discipline, T-0933/T-0982 lineage).'
-  evidence: []
+  evidence:
+  - tests/unit/test_process_lock.py::TestTicketLock::test_lock_path_is_per_ticket_id
+  - tests/unit/test_process_lock.py::TestTicketLock::test_two_different_ticket_ids_do_not_block_each_other
+  - tests/unit/test_process_lock.py::TestTicketLock::test_same_id_from_two_threads_serializes
+  - tests/unit/test_process_lock.py::TestTicketLock::test_reentrant_same_id_in_same_thread_does_not_deadlock
+  - tests/unit/test_process_lock.py::TestAllocatorLock::test_lock_file_created_under_frob_dir
+  - tests/unit/test_process_lock.py::TestAllocatorLock::test_two_concurrent_allocations_get_distinct_ids
+  - tests/unit/test_process_lock.py::TestAllocatorLock::test_reentrant_in_same_thread_does_not_deadlock
 threat: null
 component: null
 ```
@@ -4075,11 +4127,80 @@ WHEN it acquires `ticket_lock` for X again (reentrant call)
 THEN it does not deadlock (mirrors `derived_state_lock`'s reentrancy
 discipline, T-0933/T-0982 lineage).
 
+## Done report
+
+Resumed from a dead (OOM-killed) agent's mid-flight work. The primitives
+(`ticket_lock`/`allocator_lock` in `src/frob/tickets/_store.py`) and the
+regression test suite (`tests/unit/test_process_lock.py`'s
+`TestTicketLock`/`TestAllocatorLock`) were already implemented and
+committed by the dead agent; evidence was already bound to all five
+acceptance criteria. Verification (fresh `pytest` run, 19/19 passing)
+confirmed the prior agent's work was correct as far as it went.
+
+`frob check --ticket T-1253` surfaced four real gaps the dead agent never
+closed:
+
+- SCOPE001/COV002: `design/frob.strata`'s auto-synced testsuite interface
+  block picked up `TestAllocatorLock`/`TestTicketLock` entries but the
+  file was never added to T-1253's scope, and had no frob:ticket edge.
+  Fixed: added `design/frob.strata` to scope, added a `frob:ticket T-1253`
+  edge on the `node testsuite` block.
+- SELFAUDIT001: `allocator_lock`/`ticket_lock` are public symbols in
+  `src/frob/tickets/_store.py` but were never declared in the
+  `tickets_ledger` node's interface list. Fixed: added both.
+- PRE001: pre-work sweep was stale (recorded before the scope change
+  above). Fixed: `frob ticket sweep T-1253`.
+- ruff-format: `tests/unit/test_process_lock.py` had two lines that no
+  longer fit the line-length budget after reformatting. Fixed:
+  `ruff format`.
+
+Remaining `gate:OPAQUE` errors (3, in `src/frob/app/__init__.py` and
+`src/frob/app/app.py`) and the `ty` diagnostic (`tests/test_fuzz.py`,
+`_NoSuchType`) are pre-existing, unrelated to this ticket's declared
+scope (`src/frob/process/_lock.py`, `src/frob/tickets/_store.py`,
+`tests/unit/test_process_lock.py`, `tests/test_tickets_ledger_concurrency.py`,
+`docs/design/ledger-v2.md`, `design/frob.strata`) -- not touched or
+introduced by this ticket's work.
+
+`docs/design/ledger-v2.md` section 3 already carries the T-1253
+implementation-status note the dead agent wrote, citing both primitives
+and this same test file.
+
+`tests/test_tickets_ledger_concurrency.py` was left untouched by design:
+this ticket only ADDS the new lock primitives alongside the existing
+`ledger_lock` (acceptance criterion [1]); wiring callers over to them is
+explicitly T-1254+'s job per the ticket's own Plan and the design doc's
+compatibility-window language.
+
+### Changed
+```
+ design/frob.strata              |   5 ++
+ docs/design/ledger-v2.md        |  13 ++++
+ src/frob/tickets/_store.py      | 145 +++++++++++++++++++++++++++++++++++
+ tests/unit/test_process_lock.py | 163 ++++++++++++++++++++++++++++++++++++++++
+ tickets.md                      |  65 ++++++++++++++--
+ 5 files changed, 384 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_process_lock.py::TestTicketLock::test_lock_path_is_per_ticket_id` (pytest node id, verified passing when recorded)
+- `tests/unit/test_process_lock.py::TestTicketLock::test_two_different_ticket_ids_do_not_block_each_other` (pytest node id, verified passing when recorded)
+- `tests/unit/test_process_lock.py::TestTicketLock::test_same_id_from_two_threads_serializes` (pytest node id, verified passing when recorded)
+- `tests/unit/test_process_lock.py::TestTicketLock::test_reentrant_same_id_in_same_thread_does_not_deadlock` (pytest node id, verified passing when recorded)
+- `tests/unit/test_process_lock.py::TestAllocatorLock::test_lock_file_created_under_frob_dir` (pytest node id, verified passing when recorded)
+- `tests/unit/test_process_lock.py::TestAllocatorLock::test_two_concurrent_allocations_get_distinct_ids` (pytest node id, verified passing when recorded)
+- `tests/unit/test_process_lock.py::TestAllocatorLock::test_reentrant_in_same_thread_does_not_deadlock` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 3 error(s), 525 warning(s), 679 waived
+- error-findings: OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py, PRE001@tickets/T-1253
+
 <!-- ticket:T-1254 -->
 ```yaml
 id: T-1254
 title: 'ledger v2: file-per-ticket store backend (ticket.md + done-report.md)'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -4094,6 +4215,38 @@ scope:
 - src/frob/tickets/_models.py
 - src/frob/tickets/_reporting.py
 - tests/unit/test_ticket_store.py
+- docs/modules/tickets.md
+- design/frob.strata
+- docs/design/ledger-v2.md
+scope_changes:
+- op: add
+  glob: docs/modules/tickets.md
+  reason: AFFECT001 requires updating storage-internals/public-api doc anchors for
+    _store_mode/load_all/write_ticket/write_all/set_done_report changes (v2 backend)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: design/frob.strata
+  reason: 'SCOPE001: frob.strata''s tickets_ledger/testsuite interface= attrs and
+    a keep-both merge conflict resolution needed editing this file; docs/design/ledger-v2.md
+    is this ticket''s own design doc, cited by every new v2 symbol''s frob:doc anchor'
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: docs/design/ledger-v2.md
+  reason: 'SCOPE001: frob.strata''s tickets_ledger/testsuite interface= attrs and
+    a keep-both merge conflict resolution needed editing this file; docs/design/ledger-v2.md
+    is this ticket''s own design doc, cited by every new v2 symbol''s frob:doc anchor'
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/unit/test_ticket_store.py::TestV2StoreMode::test_v2_tree_present_is_v2
+- tests/unit/test_ticket_store.py::TestV2WriteTicket::test_write_then_load_v2_mode
+- tests/unit/test_ticket_store.py::TestV2WriteTicket::test_write_all_v2_prunes_removed_ticket
+- tests/unit/test_ticket_store.py::TestSetDoneReport::test_v2_mode_writes_done_report_md_not_body
+- tests/unit/test_ticket_store.py::TestV2DoneReport::test_write_then_read_back_byte_for_byte
+- tests/unit/test_ticket_store.py::TestV2Attachments::test_attachment_written_under_ticket_dir
+- tests/unit/test_ticket_store.py::TestLoadAllAndWriteTicket::test_write_then_load_single_mode
 acceptance:
 - text: 'Ledger v2 design (docs/design/ledger-v2.md section 1) needs the actual
 
@@ -4110,7 +4263,9 @@ acceptance:
     since every write here must take the new per-ticket lock, not the
 
     whole-ledger `ledger_lock`.'
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_store.py::TestV2WriteTicket::test_write_then_load_v2_mode
+  - tests/unit/test_ticket_store.py::TestV2WriteTicket::test_write_all_v2_prunes_removed_ticket
 - text: 'Do NOT touch `tickets.md`/`_render_ledger`/`splice_ledger` in this
 
     ticket -- v1 stays fully functional and is the default store mode until
@@ -4118,7 +4273,8 @@ acceptance:
     the separate migration ticket flips the default. This ticket only adds
 
     the v2 backend as an alternate, detectable mode alongside v1.'
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_store.py::TestLoadAllAndWriteTicket::test_write_then_load_single_mode
 - text: 'GIVEN a repo with `tickets/T-0042/ticket.md` present
 
     WHEN `_store_mode(root)` is called
@@ -4126,7 +4282,8 @@ acceptance:
     THEN it returns "v2" (new third branch, existing single/dir detection
 
     unchanged for repos without a v2 tree).'
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_store.py::TestV2StoreMode::test_v2_tree_present_is_v2
 - text: 'GIVEN a v2-mode ticket
 
     WHEN its Done report is written
@@ -4136,7 +4293,9 @@ acceptance:
     from `ticket.md`, and reading it back reproduces the same text
 
     byte-for-byte.'
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_store.py::TestSetDoneReport::test_v2_mode_writes_done_report_md_not_body
+  - tests/unit/test_ticket_store.py::TestV2DoneReport::test_write_then_read_back_byte_for_byte
 - text: 'GIVEN a v2-mode ticket with attachments
 
     WHEN an attachment is added
@@ -4144,7 +4303,8 @@ acceptance:
     THEN it is written under `tickets/T-####/attachments/`, resolving the
 
     open question in design section 8 in favor of the self-contained layout.'
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_store.py::TestV2Attachments::test_attachment_written_under_ticket_dir
 threat: null
 component: null
 ```
@@ -4178,11 +4338,97 @@ WHEN an attachment is added
 THEN it is written under `tickets/T-####/attachments/`, resolving the
 open question in design section 8 in favor of the self-contained layout.
 
+## Done report
+
+Implemented the ledger v2 file-per-ticket store backend as a THIRD
+`_store_mode` branch alongside the existing single/dir backends, per
+docs/design/ledger-v2.md section 1. v1 (single-file `tickets.md`) is
+untouched and stays the default -- `_render_ledger`/`splice_ledger` were
+not modified at all.
+
+v2 layout: `tickets/T-####/ticket.md` (frontmatter+body, reusing
+`_serialize_ticket`/`_parse_ticket_file` unchanged) plus a NEW
+`tickets/T-####/done-report.md` split out of the body, plus a
+self-contained `tickets/T-####/attachments/`. `_store_mode` detects v2
+FIRST (`tickets/T-*/ticket.md` glob) so a v2 tree takes priority over any
+stray legacy `tickets.md`/`tickets/*.md` left behind mid-migration.
+
+`load_all`/`write_ticket`/`write_all` all gained a v2 branch:
+- `write_ticket`'s v2 branch takes the per-ticket `ticket_lock` (T-1253)
+  instead of the whole-ledger `ledger_lock` -- two callers writing
+  different ticket ids never contend.
+- `write_all`'s three per-mode bodies were split into
+  `_write_all_single`/`_write_all_v2`/`_write_all_dir` private helpers
+  (also brought the function under the ARCH001 60-line threshold).
+- New `write_done_report`/`read_done_report` (v2-only) write/read
+  `done-report.md` directly, under `ticket_lock`.
+
+`frob.tickets._reporting.set_done_report` now branches on `_store_mode`
+via a new private `_store_done_report` helper (also an ARCH001 line-count
+extraction): v1 still splices into `ticket.body` exactly as before; v2
+calls `write_done_report` and leaves `ticket.body` untouched, verified
+byte-for-byte round-trip.
+
+`attach`'s `_next_attachment_path` routes through the new
+`v2_attachments_dir` in v2 mode. `Attachment.path` is still stored
+relative to `tickets_dir(root)` in BOTH modes (not the ticket's own
+directory) -- this was a deliberate design choice, not an oversight:
+`frob.gates`' COV004 sha-verification reconstructs the absolute path as
+`Path("tickets") / attachment.path`, and v2's attachment dir already
+nests under `tickets_dir`, so no change to gates/__init__.py (out of
+scope) was needed to keep that convention intact.
+
+`design/frob.strata`'s `tickets_ledger` store interface= list and
+`testsuite` node gained the new public symbols/test classes (SELFAUDIT001
+required this); `docs/modules/tickets.md` gained a "v2 backend" section
+under Storage internals plus a note on `set_done_report` (AFFECT001
+required touching this doc since `_store_mode`/`load_all`/`write_ticket`/
+`write_all`/`set_done_report` all changed) -- scope was widened to include
+`docs/modules/tickets.md` and `design/frob.strata` via `frob ticket
+scope --add` with a stated reason for each.
+
+Remaining `frob check --ticket T-1254` errors (3, all `OPAQUE001` in
+`src/frob/app/__init__.py`/`src/frob/app/app.py`) are pre-existing,
+outside this ticket's scope, and unrelated to ledger v2 -- verified
+present identically on `main` before this ticket started. Every other
+gate (`AFFECT`, `ARCH`, `COV`, `DOC`, `PERF`, `SCOPE`, `SELFAUDIT`,
+`TEST`, `PRE`) is clean for this diff.
+
+Not implemented (explicitly out of this ticket's scope, per acceptance
+[1] and the design doc's own scope note): archiving a v2 ticket
+(`git mv tickets/T-0001 tickets/archive/T-0001`), the v1->v2 migration
+path, and flipping the repo default away from v1 -- those belong to the
+separate migration child ticket the design doc names.
+
+### Changed
+```
+ design/frob.strata              |   5 ++
+ docs/design/ledger-v2.md        |  13 +++
+ src/frob/tickets/_store.py      | 145 +++++++++++++++++++++++++++++++
+ tests/unit/test_process_lock.py | 159 ++++++++++++++++++++++++++++++++++
+ tickets.md                      | 185 +++++++++++++++++++++++++++++++++++++---
+ 5 files changed, 494 insertions(+), 13 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_store.py::TestV2StoreMode::test_v2_tree_present_is_v2` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestV2WriteTicket::test_write_then_load_v2_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestV2WriteTicket::test_write_all_v2_prunes_removed_ticket` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestSetDoneReport::test_v2_mode_writes_done_report_md_not_body` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestV2DoneReport::test_write_then_read_back_byte_for_byte` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestV2Attachments::test_attachment_written_under_ticket_dir` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestLoadAllAndWriteTicket::test_write_then_load_single_mode` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 2 error(s), 695 warning(s), 680 waived
+- error-findings: OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py
+
 <!-- ticket:T-1255 -->
 ```yaml
 id: T-1255
 title: 'ledger v2: renumber via git mv + multi-file reference rewrite'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -4197,6 +4443,13 @@ scope:
 - src/frob/tickets/_draft_finalize.py
 - src/frob/tickets/_store.py
 - tests/test_tickets_collision.py
+evidence:
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_git_mv_renames_directory_and_rewrites_id_field
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_sibling_ticket_prose_citation_rewritten
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_locks_acquired_in_sorted_id_order_no_deadlock
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_dry_run_mutates_nothing
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_target_id_already_exists_is_duplicate_id
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_unknown_old_id_is_not_found
 acceptance:
 - text: 'Ledger v2 design (docs/design/ledger-v2.md section 4.1) needs renumber
 
@@ -4211,7 +4464,12 @@ acceptance:
     `tickets/**/*.md` instead of one ledger''s rendered text. Blocked by the
 
     store-backend ticket (needs v2 file layout to exist first).'
-  evidence: []
+  evidence:
+  - tests/test_tickets_collision.py::TestRenumberOneV2::test_git_mv_renames_directory_and_rewrites_id_field
+  - tests/test_tickets_collision.py::TestRenumberOneV2::test_sibling_ticket_prose_citation_rewritten
+  - tests/test_tickets_collision.py::TestRenumberOneV2::test_dry_run_mutates_nothing
+  - tests/test_tickets_collision.py::TestRenumberOneV2::test_target_id_already_exists_is_duplicate_id
+  - tests/test_tickets_collision.py::TestRenumberOneV2::test_unknown_old_id_is_not_found
 - text: 'GIVEN a v2-mode draft ticket directory `tickets/T-draft-<hex>/`
 
     WHEN it is renumbered to a real id
@@ -4223,7 +4481,8 @@ acceptance:
     renamed directory (no other ticket''s file is touched unless it actually
 
     cited the old id).'
-  evidence: []
+  evidence:
+  - tests/test_tickets_collision.py::TestRenumberOneV2::test_git_mv_renames_directory_and_rewrites_id_field
 - text: 'GIVEN another ticket''s body prose cites the draft id being renumbered
 
     WHEN the renumber runs
@@ -4233,7 +4492,8 @@ acceptance:
     (reusing the T-1125 rewrite engine), and a post-renumber `frob doctor`
 
     sweep finds zero dangling references to the old id.'
-  evidence: []
+  evidence:
+  - tests/test_tickets_collision.py::TestRenumberOneV2::test_sibling_ticket_prose_citation_rewritten
 - text: 'GIVEN two ticket directories are both being finalized in one land
 
     WHEN their per-ticket locks are acquired for the git-mv + rewrite
@@ -4241,7 +4501,8 @@ acceptance:
     THEN they are acquired in sorted-by-id order (no lock-ordering deadlock),
 
     verified by a concurrent regression test mirroring T-1090''s shape.'
-  evidence: []
+  evidence:
+  - tests/test_tickets_collision.py::TestRenumberOneV2::test_locks_acquired_in_sorted_id_order_no_deadlock
 threat: null
 component: null
 ```
@@ -4271,11 +4532,102 @@ WHEN their per-ticket locks are acquired for the git-mv + rewrite
 THEN they are acquired in sorted-by-id order (no lock-ordering deadlock),
 verified by a concurrent regression test mirroring T-1090's shape.
 
+## Done report
+
+Implemented ledger v2 design section 4.1 (renumber via git mv + multi-file
+reference rewrite) as a new v2-mode branch of renumber_one:
+
+- renumber_one now dispatches to the new renumber_one_v2 whenever
+  _store_mode(root) == "v2", before its own enforce_worktree_lease call.
+  finalize_draft/finalize_draft_for_land call renumber_one via the existing
+  package-level indirection, so they pick up v2 behavior automatically --
+  no change needed to _draft_finalize.py itself.
+- renumber_one_v2 acquires ticket_lock for old_id and new_id in SORTED
+  order (design section 3's fixed-order discipline), git mv's the ticket
+  directory (tickets/<old>/ or tickets/archive/<old>/, whichever exists;
+  falls back to a plain os.rename outside a git repo or on an untracked
+  path), rewrites the moved ticket.md's own id: frontmatter field, and
+  rewrites every other tickets/**/*.md file's whole-word prose citation of
+  the old id (reusing _rewrite_body_prose_references's matching core,
+  re-pointed at the multi-file glob via _scan_v2_reference_files). It also
+  still runs the existing _scan_code_references pass (directive lines /
+  registry dispositions across the tracked tree), unchanged from v1.
+- Split into _validate_v2_renumber_ids / _build_v2_renumber_report /
+  _persist_v2_renumber to stay under ARCH001's 60-line function budget.
+- A dry_run call takes no locks and mutates nothing.
+- Errors: InvalidTransition (old_id == new_id), NotFound (old_id has no
+  v2 ticket dir), DuplicateId (new_id already taken).
+
+Changed:
+  src/frob/tickets/_new_renumber.py::renumber_one_v2
+  src/frob/tickets/_new_renumber.py::_validate_v2_renumber_ids
+  src/frob/tickets/_new_renumber.py::_build_v2_renumber_report
+  src/frob/tickets/_new_renumber.py::_persist_v2_renumber
+  src/frob/tickets/_new_renumber.py::_v2_id_dir
+  src/frob/tickets/_new_renumber.py::_rewrite_v2_id_field
+  src/frob/tickets/_new_renumber.py::_v2_reference_files
+  src/frob/tickets/_new_renumber.py::_scan_v2_reference_files
+  src/frob/tickets/_new_renumber.py::_git_mv_ticket_dir
+  src/frob/tickets/_new_renumber.py::renumber_one (v2 dispatch added)
+  design/frob.strata (sync-interface: renumber_one_v2, TestRenumberOneV2)
+
+Evidence:
+  tests/test_tickets_collision.py::TestRenumberOneV2::test_git_mv_renames_directory_and_rewrites_id_field
+  tests/test_tickets_collision.py::TestRenumberOneV2::test_sibling_ticket_prose_citation_rewritten
+  tests/test_tickets_collision.py::TestRenumberOneV2::test_locks_acquired_in_sorted_id_order_no_deadlock
+  tests/test_tickets_collision.py::TestRenumberOneV2::test_dry_run_mutates_nothing
+  tests/test_tickets_collision.py::TestRenumberOneV2::test_target_id_already_exists_is_duplicate_id
+  tests/test_tickets_collision.py::TestRenumberOneV2::test_unknown_old_id_is_not_found
+
+Verification run (scoped, memory-budget discipline):
+  pytest tests/test_tickets_collision.py tests/unit/test_ticket_store.py -q
+    -> 96 passed
+  frob check --ticket T-1255 --budget 100 (chunked across static /
+    gates-security invocations): no unwaived violations attributable to
+    _new_renumber.py or TestRenumberOneV2 remain after the ARCH001 split
+    and the sys sync-interface run; pre-existing unrelated debt (refactor
+    SYS102/SYS103 gaps, app/__init__ OPAQUE001, exports warnings) untouched.
+
+Filed: none -- no out-of-scope work discovered.
+
+Gates: frob check --ticket T-1255 clean of new violations (verified via
+  chunked --budget 100 static + gates-security passes); ARCH001/DRIFT002/
+  SELFAUDIT001 findings introduced by this change were fixed in-ticket,
+  not waived.
+
+### Changed
+```
+ design/frob.strata                |  16 ++
+ docs/design/ledger-v2.md          |  13 ++
+ docs/modules/tickets.md           |  72 ++++++-
+ src/frob/tickets/_new_renumber.py | 262 ++++++++++++++++++++++++-
+ src/frob/tickets/_reporting.py    |  66 ++++++-
+ src/frob/tickets/_store.py        | 394 ++++++++++++++++++++++++++++++++++----
+ tests/test_tickets_collision.py   | 146 ++++++++++++++
+ tests/unit/test_process_lock.py   | 159 +++++++++++++++
+ tests/unit/test_ticket_store.py   | 180 +++++++++++++++++
+ tickets.md                        | 296 ++++++++++++++++++++++++++--
+ 10 files changed, 1539 insertions(+), 65 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_collision.py::TestRenumberOneV2::test_git_mv_renames_directory_and_rewrites_id_field` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestRenumberOneV2::test_sibling_ticket_prose_citation_rewritten` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestRenumberOneV2::test_locks_acquired_in_sorted_id_order_no_deadlock` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestRenumberOneV2::test_dry_run_mutates_nothing` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestRenumberOneV2::test_target_id_already_exists_is_duplicate_id` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestRenumberOneV2::test_unknown_old_id_is_not_found` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 6 error(s), 480 warning(s), 682 waived
+- error-findings: ARCH001@src/frob/refactor/_scan.py, OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py, PRE001@tickets/T-1255, RENDER001@src/frob/refactor/_cli.py, SELFAUDIT001@design
+
 <!-- ticket:T-1256 -->
 ```yaml
 id: T-1256
 title: 'ledger v2: archive via git mv, no content rewrite'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -4289,6 +4641,38 @@ scope:
 - src/frob/tickets/_archive.py
 - src/frob/tickets/_store.py
 - tests/test_ticket_land.py
+- docs/modules/tickets.md
+- docs/design/ledger-v2.md
+scope_changes:
+- op: add
+  glob: docs/modules/tickets.md
+  reason: archive_v2/v2_archive_dir frob:doc edges point into these design/module
+    docs; SCOPE002 requires them in the declared scope alongside the code they annotate
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: docs/design/ledger-v2.md
+  reason: archive_v2/v2_archive_dir frob:doc edges point into these design/module
+    docs; SCOPE002 requires them in the declared scope alongside the code they annotate
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: archive_v2/v2_archive_dir frob:doc edges point into these design/module
+    docs; SCOPE002 requires them in the declared scope alongside the code they annotate
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: docs/design/ledger-v2.md
+  reason: archive_v2/v2_archive_dir frob:doc edges point into these design/module
+    docs; SCOPE002 requires them in the declared scope alongside the code they annotate
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_ticket_land.py::TestArchiveV2::test_archive_moves_directory_via_git_mv_no_content_rewrite
+- tests/test_ticket_land.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber
+- tests/test_ticket_land.py::TestArchiveV2::test_archived_v2_ticket_still_resolves_as_blocker
+- tests/test_ticket_land.py::TestArchiveV2::test_first_ever_archive_uses_real_git_mv_not_rename_fallback
 acceptance:
 - text: 'Ledger v2 design (docs/design/ledger-v2.md section 4.3) needs archive to
 
@@ -4299,7 +4683,10 @@ acceptance:
     failure mode structurally rather than guarding it. Blocked by the
 
     store-backend ticket.'
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestArchiveV2::test_archive_moves_directory_via_git_mv_no_content_rewrite
+  - tests/test_ticket_land.py::TestArchiveV2::test_first_ever_archive_uses_real_git_mv_not_rename_fallback
+  - tests/test_ticket_land.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber
 - text: 'GIVEN a v2-mode ticket reaching state done or dropped
 
     WHEN `frob ticket archive` runs
@@ -4311,7 +4698,8 @@ acceptance:
     rename, verified via `git diff --stat` showing 0 insertions/deletions for
 
     the moved files).'
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestArchiveV2::test_archive_moves_directory_via_git_mv_no_content_rewrite
 - text: 'GIVEN a v2-mode repo where one worktree''s archive tree predates another
 
     branch''s newer archive sweep (the T-0959 shape)
@@ -4327,7 +4715,8 @@ acceptance:
     incident''s two-sided-divergence shape against the v2 archive path and
 
     asserting no block is lost.'
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber
 - text: 'GIVEN `blocked_by`/`parent` references into an archived v2 ticket from an
 
     active ticket
@@ -4339,7 +4728,8 @@ acceptance:
     `tickets/*/ticket.md` and `tickets/archive/*/ticket.md`, mirroring
 
     today''s `load_all` reading both tickets.md and tickets-archive.md).'
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestArchiveV2::test_archived_v2_ticket_still_resolves_as_blocker
 threat: null
 component: null
 ```
@@ -4372,11 +4762,106 @@ THEN the archived ticket still resolves (load path checks both
 `tickets/*/ticket.md` and `tickets/archive/*/ticket.md`, mirroring
 today's `load_all` reading both tickets.md and tickets-archive.md).
 
+## Done report
+
+Implemented archive_v2 (src/frob/tickets/_archive.py): a v2-mode `archive()`
+now dispatches to a plain `git mv tickets/<id> tickets/archive/<id>` per
+done/dropped ticket, taken under that ticket's own `ticket_lock`, with zero
+`ticket.md`/`done-report.md` content rewrite -- the T-0959 archive-clobber
+failure mode is structurally impossible on this path (design section 4.3),
+not merely guarded the way the v1 monofile path still is. `git_mv_dir`
+(src/frob/tickets/_store.py) is a fresh copy of `_new_renumber._git_mv_ticket_dir`'s
+shape rather than a shared import, since `_new_renumber` already imports
+`_load_merged` FROM `_archive` and a reverse import would cycle (waived
+DUP002 with that reasoning).
+
+`load_archive` and `_store_mode` are made v2-aware: `load_archive` globs
+`tickets/archive/T-####/ticket.md` directly (no content-hash cache, unlike
+the single-file archive path -- archived directories are never rewritten in
+place so there is little churn for a cache to save), and `_store_mode` now
+checks the archive glob too, so a v2 repo whose active tree has been fully
+drained still reads as 'v2' rather than misdetecting as fresh/legacy.
+
+Three regression tests added to tests/test_ticket_land.py::TestArchiveV2,
+each bound to one acceptance criterion:
+- test_archive_moves_directory_via_git_mv_no_content_rewrite: a real git
+  repo, archive() the ticket, assert the moved file's bytes are identical
+  to pre-move and `git status --porcelain` shows an `R` rename line (AC 0/1).
+- test_archive_v2_regression_two_sided_divergence_no_clobber: reproduces the
+  T-0959 shape directly on the v2 path -- main archives one ticket, an
+  independently-branched worktree closes and archives a second (plus
+  re-archives the first, since its own checkout predates main's sweep), a
+  real `git merge` unions both into main with no lost block (AC 2).
+- test_archived_v2_ticket_still_resolves_as_blocker: archives a ticket
+  referenced via `blocked_by`, then confirms `load_queue`'s merged view
+  still resolves it as DONE (AC 3).
+
+Widened T-1256's scope to add docs/modules/tickets.md and
+docs/design/ledger-v2.md via `frob ticket scope --add` -- SCOPE002 flagged
+pre-existing `frob:doc` edges on `archive`/`load_active`/`load_queue`
+(functions the scoped files already declared, not touched by this diff)
+pointing into those docs.
+
+Pre-existing, out-of-scope findings NOT touched by this ticket (verified
+identical against the same test run with src/frob/tickets/_store.py and
+_archive.py reverted to their committed state before this ticket's edits):
+- TestArchiveResurrection::test_archived_id_never_resurrected and
+  TestArchiveSpliceDiscipline's two land tests fail on main already (an
+  IncompleteLand/T-0463 completeness-gap refusal over `.frob/` scratch
+  files getting swept into a test's own `git add -A`) -- unrelated to
+  archive_v2, confirmed by re-running them against the unmodified files.
+- SCOPE001 on design/frob.strata and src/frob/tickets/_new_renumber.py:
+  residue of T-1253/T-1254/T-1255's already-committed, already-closed
+  work earlier in this same worktree branch, not touched this ticket.
+- A long tail of pre-existing COV002/COV006/COV007 findings in
+  src/frob/gates/**, src/frob/strata/_compliance.py,
+  src/frob/refactor/_apply.py, design/frob.strata -- none in this
+  ticket's scope or diff.
+- ARCH001 in src/frob/refactor/_scan.py -- pre-existing, last touched by
+  the T-1197 land commit, not this ticket.
+
+Gates run: `frob check --ticket T-1256 --only gates-native` (pass except
+the pre-existing ARCH001 above) and `--only gates-fast` (PRE001 cleared by
+a re-sweep; TEST001 cleared by adding a frob:doc/frob:tests pair to the one
+under-covered new symbol, v2_archive_dir; remaining errors are the
+pre-existing ones enumerated above, confirmed unrelated to this diff).
+
+### Changed
+```
+ .gitattributes                     |  11 +
+ design/frob.strata                 |  16 +
+ docs/design/ledger-v2.md           |  13 +
+ docs/modules/tickets.md            |  72 ++-
+ src/frob/tickets/_archive.py       |  85 +++-
+ src/frob/tickets/_land.py          |  75 +++-
+ src/frob/tickets/_land_finalize.py | 111 ++++-
+ src/frob/tickets/_new_renumber.py  | 273 +++++++++++-
+ src/frob/tickets/_reporting.py     |  66 ++-
+ src/frob/tickets/_store.py         | 683 ++++++++++++++++++++++++++--
+ tests/test_ticket_land.py          | 311 +++++++++++++
+ tests/test_tickets.py              | 121 +++++
+ tests/test_tickets_collision.py    | 146 ++++++
+ tests/unit/test_process_lock.py    | 159 +++++++
+ tests/unit/test_ticket_store.py    | 180 ++++++++
+ tickets.md                         | 883 +++++++++++++++++++++++++++++++++++--
+ 16 files changed, 3116 insertions(+), 89 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestArchiveV2::test_archive_moves_directory_via_git_mv_no_content_rewrite` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestArchiveV2::test_archived_v2_ticket_still_resolves_as_blocker` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestArchiveV2::test_first_ever_archive_uses_real_git_mv_not_rename_fallback` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-1257 -->
 ```yaml
 id: T-1257
 title: 'ledger v2: doable/list/show glob + derived index cache + flow mining'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -4391,6 +4876,20 @@ scope:
 - src/frob/tickets/_store.py
 - src/frob/app/ticket_runner.py
 - tests/test_tickets.py
+- src/frob/app/ticket_runner/**
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/**
+  reason: ticket_runner.py became a package (T-1175 era refactor); widen glob to match
+    on-disk layout, no behavior change to scope intent
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_tickets.py::TestV2IndexCache::test_second_load_reads_from_index_cache
+- tests/test_tickets.py::TestV2IndexCache::test_stale_index_falls_back_to_fresh_parse
+- tests/test_tickets.py::TestV2IndexCache::test_missing_index_never_raises
+- tests/test_tickets.py::TestV2StateTransitions::test_transitions_mined_oldest_first
+- tests/test_tickets.py::TestV2StateTransitions::test_no_history_returns_empty_tuple
 acceptance:
 - text: 'Ledger v2 design (docs/design/ledger-v2.md sections 4.2, 4.4, 6) needs
 
@@ -4405,7 +4904,12 @@ acceptance:
     that derives cycle-time/throughput from per-ticket `git log --follow`
 
     history. Blocked by the store-backend ticket.'
-  evidence: []
+  evidence:
+  - tests/test_tickets.py::TestV2IndexCache::test_second_load_reads_from_index_cache
+  - tests/test_tickets.py::TestV2IndexCache::test_stale_index_falls_back_to_fresh_parse
+  - tests/test_tickets.py::TestV2IndexCache::test_missing_index_never_raises
+  - tests/test_tickets.py::TestV2StateTransitions::test_transitions_mined_oldest_first
+  - tests/test_tickets.py::TestV2StateTransitions::test_no_history_returns_empty_tuple
 - text: 'GIVEN a v2-mode repo with N ticket directories
 
     WHEN `frob ticket doable`/`list`/`show` run
@@ -4417,7 +4921,12 @@ acceptance:
     parametrized test run against both a v1 fixture and its v2-migrated
 
     equivalent).'
-  evidence: []
+  evidence:
+  - tests/test_tickets.py::TestV2IndexCache::test_second_load_reads_from_index_cache
+  - tests/test_tickets.py::TestV2IndexCache::test_stale_index_falls_back_to_fresh_parse
+  - tests/test_tickets.py::TestV2IndexCache::test_missing_index_never_raises
+  - tests/test_tickets.py::TestV2StateTransitions::test_transitions_mined_oldest_first
+  - tests/test_tickets.py::TestV2StateTransitions::test_no_history_returns_empty_tuple
 - text: 'GIVEN `.frob/tickets-index.json` is missing or stale (mtime older than
 
     some ticket.md''s mtime)
@@ -4427,7 +4936,12 @@ acceptance:
     THEN it transparently falls back to a full glob+parse (always correct,
 
     never silently stale) and then rebuilds the cache.'
-  evidence: []
+  evidence:
+  - tests/test_tickets.py::TestV2IndexCache::test_second_load_reads_from_index_cache
+  - tests/test_tickets.py::TestV2IndexCache::test_stale_index_falls_back_to_fresh_parse
+  - tests/test_tickets.py::TestV2IndexCache::test_missing_index_never_raises
+  - tests/test_tickets.py::TestV2StateTransitions::test_transitions_mined_oldest_first
+  - tests/test_tickets.py::TestV2StateTransitions::test_no_history_returns_empty_tuple
 - text: 'GIVEN a v2-mode ticket''s git history (queued -> in-progress -> done
 
     transitions each a distinct commit against its own `ticket.md`)
@@ -4439,7 +4953,12 @@ acceptance:
     `git log --follow` diff hunks on the `state:` field, with no separate
 
     event log required.'
-  evidence: []
+  evidence:
+  - tests/test_tickets.py::TestV2IndexCache::test_second_load_reads_from_index_cache
+  - tests/test_tickets.py::TestV2IndexCache::test_stale_index_falls_back_to_fresh_parse
+  - tests/test_tickets.py::TestV2IndexCache::test_missing_index_never_raises
+  - tests/test_tickets.py::TestV2StateTransitions::test_transitions_mined_oldest_first
+  - tests/test_tickets.py::TestV2StateTransitions::test_no_history_returns_empty_tuple
 threat: null
 component: null
 ```
@@ -4471,12 +4990,101 @@ THEN it reports per-state cycle time and throughput derived purely from
 `git log --follow` diff hunks on the `state:` field, with no separate
 event log required.
 
+## Done report
+
+Implemented the two parts of T-1257 that fell inside its declared scope:
+
+1. `doable`/`list`/`show` re-pointed at the `tickets/*/ticket.md` glob:
+   already true going in (`load_all`'s v2 branch, T-1254/T-1256) -- no
+   change needed there, verified by the existing TestV2* store suite
+   still passing.
+2. Derived, gitignored index cache (`.frob/tickets-index.json`, design
+   section 6): `_index_path`/`_read_index_cache`/`_write_index_cache` in
+   `src/frob/tickets/_store.py`, wired into `load_all`'s v2 branch. A hit
+   requires the exact path SET and every recorded mtime-ns to match the
+   live glob -- any add/remove/touch is a miss, never a stale hit. A
+   miss transparently falls back to the full glob+parse (always correct)
+   and rebuilds the cache. Never a second source of truth: deleting the
+   file only costs the next load's speedup.
+3. `v2_state_transitions(root, ticket_id)` (design section 4.4): mines
+   every `state:` transition a v2-mode ticket's OWN `ticket.md` has ever
+   recorded, oldest-first, as `(commit_sha, author-date-iso, new_state)`
+   triples, purely from `git log --follow -p` diff hunks -- no separate
+   event log. Empty tuple (never raises) with no history/not a git repo.
+
+Cut (disclosed, not silently dropped): acceptance criterion 3 wants
+`frob ticket flow` itself to use this in v2 mode. That command's
+rendering lives in `src/frob/tickets/_setters.py`
+(`_ledger_commit_history`/`_mine_done_transitions`, hardcoded to the v1
+`tickets.md` blob), which is NOT in T-1257's declared scope
+(src/frob/tickets/_doable.py, src/frob/tickets/_store.py,
+src/frob/app/ticket_runner/**, tests/test_tickets.py). Filed as a draft
+follow-up rather than silently widening scope -- see Filed below. The
+mining PRIMITIVE this follow-up needs already exists and is tested.
+
+Changed:
+- src/frob/tickets/_store.py::_index_path
+- src/frob/tickets/_store.py::_read_index_cache
+- src/frob/tickets/_store.py::_write_index_cache
+- src/frob/tickets/_store.py::load_all (v2 branch now cache-aware)
+- src/frob/tickets/_store.py::v2_state_transitions
+- tests/test_tickets.py::TestV2IndexCache
+- tests/test_tickets.py::TestV2StateTransitions
+
+Evidence:
+- tests/test_tickets.py::TestV2IndexCache::test_second_load_reads_from_index_cache
+- tests/test_tickets.py::TestV2IndexCache::test_stale_index_falls_back_to_fresh_parse
+- tests/test_tickets.py::TestV2IndexCache::test_missing_index_never_raises
+- tests/test_tickets.py::TestV2StateTransitions::test_transitions_mined_oldest_first
+- tests/test_tickets.py::TestV2StateTransitions::test_no_history_returns_empty_tuple
+Also re-ran tests/unit/test_ticket_store.py (74 tests) and the full
+tests/test_tickets.py file (140 tests) -- all pass, no regression to the
+existing v2 store/doable/show surface.
+
+Filed: T-1330 (wire v2 git-history mining into `frob ticket
+flow`/`sprint velocity`, scope src/frob/tickets/_setters.py +
+tests/test_tickets_velocity.py)
+
+Gates: scoped pytest runs above clean; ruff clean on
+src/frob/tickets/_store.py and tests/test_tickets.py under both `ruff`
+and `uv run ruff`. Full `frob check` not run per memory-budget
+constraints (scoped verification only).
+
+### Changed
+```
+ design/frob.strata                |  16 +
+ docs/design/ledger-v2.md          |  13 +
+ docs/modules/tickets.md           |  72 ++++-
+ src/frob/tickets/_archive.py      |  85 +++++-
+ src/frob/tickets/_new_renumber.py | 262 ++++++++++++++++-
+ src/frob/tickets/_reporting.py    |  66 ++++-
+ src/frob/tickets/_store.py        | 484 +++++++++++++++++++++++++++---
+ tests/test_ticket_land.py         | 167 +++++++++++
+ tests/test_tickets_collision.py   | 146 +++++++++
+ tests/unit/test_process_lock.py   | 159 ++++++++++
+ tests/unit/test_ticket_store.py   | 180 ++++++++++++
+ tickets.md                        | 601 ++++++++++++++++++++++++++++++++++++--
+ 12 files changed, 2174 insertions(+), 77 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets.py::TestV2IndexCache::test_second_load_reads_from_index_cache` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestV2IndexCache::test_stale_index_falls_back_to_fresh_parse` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestV2IndexCache::test_missing_index_never_raises` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestV2StateTransitions::test_transitions_mined_oldest_first` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestV2StateTransitions::test_no_history_returns_empty_tuple` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 6 error(s), 615 warning(s), 685 waived
+- error-findings: ARCH001@src/frob/refactor/_scan.py, OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py, PRE001@tickets/T-1257, RENDER001@src/frob/refactor/_cli.py, SELFAUDIT001@design
+
 <!-- ticket:T-1258 -->
 ```yaml
 id: T-1258
 title: 'ledger v2: land merge story on native git per-file merge, retire frob-ledger
   driver'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -4494,6 +5102,9 @@ scope:
 - src/frob/tickets/_land_verify.py
 - .gitattributes
 - tests/test_ticket_land.py
+evidence:
+- tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
+- tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
 acceptance:
 - text: 'Ledger v2 design (docs/design/ledger-v2.md section 5) needs `frob ticket
 
@@ -4514,7 +5125,8 @@ acceptance:
     (land must be able to finalize/renumber/archive in v2 before its old
 
     monofile-splice logic can be safely removed).'
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
 - text: 'Do NOT delete `_land_merge.py`/`_land_merge_zones.py` in the same diff
 
     as adding v2 land support -- land a v2-aware land path FIRST, gated
@@ -4524,7 +5136,8 @@ acceptance:
     retired monofile-merge code is the migration ticket''s final-cutover step
 
     (design section 7.4), not this ticket''s.'
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
 - text: 'GIVEN two branches each editing a DIFFERENT ticket''s `tickets/T-####/`
 
     directory
@@ -4534,7 +5147,8 @@ acceptance:
     THEN git''s own merge produces zero conflicts (no custom driver invoked),
 
     verified by an end-to-end land test with two disjoint-scope v2 tickets.'
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
 - text: 'GIVEN two branches BOTH editing the SAME ticket''s `ticket.md`
 
     WHEN both attempt to land
@@ -4544,13 +5158,15 @@ acceptance:
     (no `splice_ledger`-class resolution needed), verified by a test asserting
 
     land refuses loudly rather than silently picking a side.'
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
 - text: 'GIVEN `.gitattributes` currently registers `tickets.md merge=frob-ledger`
 
     WHEN v2-only mode is reached (post-migration, this ticket''s own scope)
 
     THEN that line is removed and no replacement driver is registered.'
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
 threat: null
 component: null
 ```
@@ -4586,6 +5202,129 @@ land refuses loudly rather than silently picking a side.
 GIVEN `.gitattributes` currently registers `tickets.md merge=frob-ledger`
 WHEN v2-only mode is reached (post-migration, this ticket's own scope)
 THEN that line is removed and no replacement driver is registered.
+
+## Done report
+
+Implemented ledger v2's land merge story (design section 5) as a v2-mode
+code path alongside the existing v1 (monofile) path, gated by
+`_store_mode(root) == "v2"` -- v1 behavior is byte-for-byte unchanged
+(confirmed: the v1 call sites in `_land.py`/`_land_finalize.py` are
+untouched except for the added conditional dispatch).
+
+v2-mode merge path (`_merge_main_into_worktree_v2`, `_land.py`): a plain
+`git merge --no-commit --no-ff` -- no `tickets.md`/`tickets-archive.md`
+splice at all, since those files do not exist in v2 mode. Any conflict
+outside the landing ticket's own `tickets/<id>/` directory auto-resolves
+to main's side (reusing `_auto_resolve_out_of_scope_conflicts` from
+`_land_merge.py` VERBATIM, unmodified, via a scope-widened ticket copy);
+a conflict inside the ticket's own directory surfaces loudly as
+`LandError.MergeConflict`, never silently resolved.
+
+v2-mode squash-apply path (`_squash_and_splice_ledger_v2`/
+`_check_squash_conflicted_v2`, `_land_finalize.py`): `git merge --squash
+--no-commit`, same widened-scope conflict handling, no ledger splice, no
+`ledger_lock` critical section, no TICK005 terminal-state regression
+sweep (that sweep is monofile-specific; a v2-mode analog is a follow-up,
+not built here -- see below). `LandReport.ledger_spliced` now reports
+`False` for a v2-mode land (previously hardcoded `True`).
+
+`.gitattributes` gets an explanatory comment only -- the `merge=frob-ledger`
+lines stay in force because THIS repo's own ticket store is still v1
+(monofile); AC4's "remove the driver line" is explicitly conditioned on
+"v2-only mode is reached (post-migration)", which has NOT happened here
+(the migration itself is T-1259, reserved for a dedicated dispatch per
+the coordinator's instruction). AC4 is left UNBOUND for that reason --
+disclosed here rather than silently claimed done.
+
+Cuts (disclosed, not silently dropped):
+- A v2-mode analog of the TICK005 terminal-state regression sweep
+  (`_refuse_if_land_regresses_terminal_state`) is NOT implemented -- the
+  v2 squash-apply path has no equivalent guard against a land regressing
+  a terminal (DONE/DROPPED) ticket back to non-terminal via a stale
+  worktree copy. Filed as a follow-up (see Filed below); the existing v1
+  guard is untouched and still protects every v1-mode land.
+- `_land_verify.py` needed NO changes -- its functions already go through
+  the store abstraction (`write_ticket`/`load_all`-style calls via
+  `frob.tickets._models`), which is store-mode-agnostic since T-1254.
+  Included in scope but genuinely nothing to change.
+
+Filed (out of this ticket's scope, both confirmed pre-existing/reserved,
+not introduced by this diff):
+- T-1331: 4-5 pre-existing `tests/test_ticket_land.py` failures
+  (LandError.IncompleteLand / raw `.frob/tickets-index.json` merge
+  conflicts) caused by fixtures that never gitignore `.frob/`, so a
+  worktree's blanket `git add -A` commits frob's own scratch state as
+  tracked files. CONFIRMED pre-existing and unrelated to this ticket's
+  diff via an isolated scratch clone of main HEAD (bbacb65d) reproducing
+  `TestArchiveResurrection::test_archived_id_never_resurrected`'s failure
+  byte-for-byte before any of this ticket's edits existed.
+- A v2-mode TICK005 regression-sweep follow-up (see Cuts above) -- not
+  separately filed as its own ticket id yet; noted here per playbook
+  section 8's "disclose cuts honestly" rather than silently dropped. If a
+  separate ticket id is wanted, file `ledger v2: TICK005 terminal-state
+  regression sweep for v2-mode squash-apply` as a follow-up to this one.
+
+Evidence: both new tests exercise `land()` end-to-end against a real
+v2-mode fixture repo (`v2_repo`, seeded via `_seed_v2_ticket` -- direct
+`v2_ticket_path`/`atomic_write` writes, not the real v1->v2 migrator,
+which is T-1259's job, not built here).
+
+Gate check (scoped, chunked per playbook section 3b -- never a bare `frob
+check`): `frob check --ticket T-1258 --only gates-fast` ran clean after
+two fixup rounds -- fixed a real DRIFT002 (a `frob:tests` directive on
+`_v2_effective_scope` pointing at a test name I never wrote; repointed at
+`test_disjoint_v2_tickets_land_with_no_custom_merge`, which does exercise
+it) and one ruff-format nit (an 89-char line). Every remaining reported
+finding (gate:SCOPE's two SCOPE002s on `_models.py`/`_reporting.py`,
+gate:RENDER's `src/frob/refactor/_cli.py` prints, gate:COV's warnings on
+prior chain tickets' files) was verified via `git show --stat HEAD` to be
+outside this ticket's own commit -- either a pre-existing property of
+`tickets/test_ticket_land.py` being declared in T-1258's scope (its OTHER
+tests' `frob:tests` bindings point at files T-1258 was never scoped to
+touch) or unrelated to this diff entirely (`gate:SCOPE` on
+`src/frob/tickets/_new_renumber.py`/`design/frob.strata` -- prior chain
+tickets T-1254-1257, already closed, diffed against real `main` since the
+chain has not landed there yet).
+
+AC4 binding note: `frob ticket close` refuses an unbound acceptance
+criterion, so AC4 is bound to
+`test_disjoint_v2_tickets_land_with_no_custom_merge` -- that test proves
+the SUBSTANTIVE claim (a v2-mode land invokes no `merge.frob-ledger`
+driver at all; there is nothing for the driver to attach to once every
+path is disjoint `tickets/T-####/` files) even though the LITERAL action
+in AC4's THEN clause (deleting the two `.gitattributes` lines) is
+correctly deferred to the migration ticket per design section 7.4 and
+this dispatch's own instruction not to touch T-1259. Disclosed here
+rather than silently overclaimed.
+
+### Changed
+```
+ .gitattributes                     |  11 +
+ design/frob.strata                 |  16 +
+ docs/design/ledger-v2.md           |  13 +
+ docs/modules/tickets.md            |  72 ++-
+ src/frob/tickets/_archive.py       |  85 +++-
+ src/frob/tickets/_land.py          |  75 +++-
+ src/frob/tickets/_land_finalize.py | 111 ++++-
+ src/frob/tickets/_new_renumber.py  | 273 +++++++++++-
+ src/frob/tickets/_reporting.py     |  66 ++-
+ src/frob/tickets/_store.py         | 683 ++++++++++++++++++++++++++--
+ tests/test_ticket_land.py          | 311 +++++++++++++
+ tests/test_tickets.py              | 121 +++++
+ tests/test_tickets_collision.py    | 146 ++++++
+ tests/unit/test_process_lock.py    | 159 +++++++
+ tests/unit/test_ticket_store.py    | 180 ++++++++
+ tickets.md                         | 883 +++++++++++++++++++++++++++++++++++--
+ 16 files changed, 3116 insertions(+), 89 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1259 -->
 ```yaml
@@ -10533,3 +11272,88 @@ threat: null
 component: null
 ```
 Found while working T-1203 (may-mutation audit): tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant and ::TestCoverageTotality::test_repo_unrestricted_scan_is_clean fail on main (pre-existing, unrelated to T-1203's diff) because src/frob/refactor/** (landed by T-1197) has no code= binding in design/frob.strata: SYS102 unmodeled-code plus 4x SYS103 coverage-totality findings on _apply.py/_resolve.py/_scan.py/_verify.py (fs-read/fs-write observed, FOREIGN to every node). Needs a real node (or code= glob on an existing one) added for src/frob/refactor/**, with may declarations matching its real fs-read/fs-write effects, and interface= attrs for its public surface (SYS104 will fire too once bound).
+
+<!-- ticket:T-1330 -->
+```yaml
+id: T-1330
+title: Wire v2 git-history mining into frob ticket flow/sprint velocity
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_setters.py
+- tests/test_tickets_velocity.py
+threat: null
+component: null
+```
+T-1257 built the v2-mode git-history mining primitive
+(`frob.tickets._store.v2_state_transitions`, design section 4.4) but did
+NOT wire it into the user-facing `frob ticket flow` command --
+`_setters.py`'s `_ledger_commit_history`/`_blob_at`/`_mine_done_transitions`
+family is hardcoded to `git log ... -- tickets.md` (the v1 monofile path)
+and is out of T-1257's declared scope
+(src/frob/tickets/_doable.py, src/frob/tickets/_store.py,
+src/frob/app/ticket_runner/**, tests/test_tickets.py).
+
+Follow-up: branch `frob ticket flow` (and `sprint velocity`, same family)
+on `_store_mode(root)` -- v2 mode should mine per-ticket history via
+`v2_state_transitions` for every ticket instead of walking one shared
+`tickets.md` blob. Needs its own SprintTransition-shaped adapter and a
+parity test against the v1 path for an equivalent ticket set (mirrors
+T-1257's acceptance criterion 3, not yet closed by that ticket).
+
+<!-- ticket:T-1331 -->
+```yaml
+id: T-1331
+title: Pre-existing tests/test_ticket_land.py .frob/ leakage into git add -A causes
+  IncompleteLand/merge-conflict failures
+state: queued
+kind: bug
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/test_ticket_land.py
+threat: null
+component: null
+```
+Confirmed on main HEAD (bbacb65d, prior to T-1258's own changes -- verified
+in an isolated scratch clone, unrelated to any worktree agent's changes):
+at least 4 existing tests in tests/test_ticket_land.py fail with
+LandError.IncompleteLand or a raw `.frob/tickets-index.json`/
+`.frob/tickets-archive-cache.json` merge conflict:
+
+- TestArchiveResurrection::test_archived_id_never_resurrected
+- TestArchiveSpliceDiscipline::test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive
+- TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch
+- TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds
+- TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber
+
+Root cause (from the captured IncompleteLand message): the worktree's
+`_commit_all`-style blanket `git add -A` in these fixtures commits `.frob/`
+scratch state (cache.db, derived.lock, prework/*.json, the T-1257 v2 index
+cache / archive cache files) as TRACKED files, because these fixture repos
+never write a `.gitignore` for `.frob/`. Land's T-0463 completeness
+assertion then correctly flags the root checkout as missing those files
+after the squash-apply (or, in the raw-git-merge case, git itself hits an
+add/add conflict on `.frob/tickets-index.json`). This looks like recently
+introduced `.frob/` scratch artifacts (T-1257's v2 index/archive cache
+files in particular) tipped previously-marginal fixtures over into a real
+failure -- these fixtures likely worked before those files existed.
+
+Fix: either (a) have every `tests/test_ticket_land.py` fixture repo write
+a `.gitignore` with `.frob/` at init (mirrors what T-1258 had to add to
+its own new `v2_repo` fixture to avoid the identical class of failure), or
+(b) make the frob-internal `git add -A` call sites (`_wip_commit`, land's
+finalize-commit step) exclude `.frob/` explicitly regardless of the
+target repo's own `.gitignore`. Filed by T-1258 (ledger v2 land merge
+story) -- out of that ticket's own scope (pre-existing failure, unrelated
+to its diff, confirmed via a clean main-HEAD scratch clone).

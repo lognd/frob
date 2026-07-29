@@ -205,6 +205,19 @@ the per-ticket locks for all of them in a fixed order (sorted by id) to
 avoid a lock-ordering deadlock -- the one new discipline this model
 requires, tested explicitly (section 7).
 
+**Implementation status (T-1253):** both primitives described above ship
+in `src/frob/tickets/_store.py` as `ticket_lock(root, ticket_id)` and
+`allocator_lock(root)`, built on the same `flock`-plus-thread-local-
+reentrancy shape as the existing `ledger_lock`/`derived_state_lock`
+primitives. They compose ALONGSIDE `ledger_lock` during the compatibility
+window (section 7) -- no v1 call site has been switched over yet; that is
+the store-backend ticket's job (T-1254+). Verified with real
+concurrent-thread tests (two different ticket ids never block each
+other; the same id from two threads serializes; the allocator lock
+serializes a read-increment-write id-allocation race; both primitives are
+same-thread reentrant) -- see `tests/unit/test_process_lock.py`'s
+`TestTicketLock`/`TestAllocatorLock`.
+
 ## 4. Cross-ticket operations
 
 ### 4.1 Renumber, with reference rewrite

@@ -19,3 +19,14 @@
 # with NO conflict markers -- silent ~900-line doc loss during any merge.
 /tickets.md merge=frob-ledger
 /tickets-archive.md merge=frob-ledger
+
+# T-1258: ledger v2 (docs/design/ledger-v2.md section 5) retires this
+# driver's NEED once a repo is v2-only -- disjoint `tickets/T-####/`
+# directories are ordinary git objects git's native per-file 3-way merge
+# already resolves correctly, with zero conflict for two branches editing
+# different tickets and an ordinary (non-spliced) conflict for two
+# branches editing the SAME ticket. This repo itself still stores tickets
+# in the v1 monofile (`tickets.md`/`tickets-archive.md` above), so the two
+# lines above stay in force; removing them is the migration ticket's
+# final-cutover step (design section 7.4), not this ticket's -- see
+# docs/design/ledger-v2.md#7-reversible-migration-plan-design-for-the-child-ticket-not-built-here.

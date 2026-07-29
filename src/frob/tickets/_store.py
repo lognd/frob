@@ -31,6 +31,7 @@ import importlib
 import json
 import os
 import re
+import shutil
 import tempfile
 import threading
 from collections.abc import Iterator
@@ -42,6 +43,7 @@ import yaml
 from pydantic import ValidationError
 from typani.result import Err, Ok, Result
 
+from frob.gitio import run_argv
 from frob.logging import get_logger
 from frob.tickets._models import Ticket, TicketError
 
@@ -210,6 +212,151 @@ def ledger_lock(root: Path) -> Iterator[None]:
         _log.debug("tickets: ledger_lock released (%s)", path)
 
 
+# frob:ticket T-1253
+# Per-ticket lock file directory (`.frob/tickets/<id>.lock`), distinct from
+# `_LOCK_REL` (the whole-ledger `ledger_lock` path): ledger v2 (docs/design/
+# ledger-v2.md section 3) replaces the one repo-wide writer lock with a
+# per-ticket lock plus a tiny allocator lock, so two callers touching
+# DIFFERENT ticket ids never contend at all. Kept under `.frob/` (derived,
+# gitignored) rather than inside `tickets/T-####/` itself so this ticket can
+# ship the primitive ahead of the v2 store backend (T-1254) that will later
+# give each ticket its own real directory to hold a lock file natively.
+_TICKET_LOCK_DIR_REL = Path(".frob") / "tickets"
+
+# frob:ticket T-1253
+# The single allocator lock file guarding ONLY next-id computation (T-1090's
+# root cause: allocation is inherently one shared sequence, no per-ticket
+# split can avoid that) -- distinct from both `_LOCK_REL` and
+# `_TICKET_LOCK_DIR_REL` so it never contends with an unrelated per-ticket or
+# whole-ledger hold for a spurious reason.
+_ALLOCATOR_LOCK_REL = Path(".frob") / "tickets-allocator.lock"
+
+# frob:ticket T-1253
+# Thread-local re-entrancy bookkeeping for `ticket_lock`/`allocator_lock`,
+# same shape and same reasoning as `_lock_local` above (one entry per
+# (path, depth) key): `flock` is scoped to an open file DESCRIPTION, not a
+# process, so a naive "always os.open + flock" implementation would
+# self-deadlock the moment a caller already holding a given ticket's lock
+# re-enters it (e.g. a helper that itself takes `ticket_lock` for an id its
+# own caller already locked). Kept as a SEPARATE thread-local dict from
+# `_lock_local`'s `held` mapping (own attribute name) rather than reused, so
+# a key collision between a whole-ledger lock path and a per-ticket lock path
+# can never happen even in principle.
+_fine_lock_local = threading.local()
+
+
+def _ticket_lock_path(root: Path, ticket_id: str) -> Path:
+    """The advisory lock file path for one ticket's `ticket_lock` (T-1253),
+    `.frob/tickets/<id>.lock` -- distinct from `_lock_path` (the whole-ledger
+    lock) and from `_allocator_lock_path` (the id-allocator lock)."""
+    return root / _TICKET_LOCK_DIR_REL / f"{ticket_id}.lock"
+
+
+def _allocator_lock_path(root: Path) -> Path:
+    """The advisory lock file path `allocator_lock` holds (T-1253),
+    `.frob/tickets-allocator.lock` -- guards only next-id computation, never
+    a whole ticket's read-modify-write."""
+    return root / _ALLOCATOR_LOCK_REL
+
+
+@contextmanager
+def _flock_path(path: Path) -> Iterator[None]:
+    """Shared re-entrant `flock` primitive `ticket_lock`/`allocator_lock`
+    build on (T-1253): exclusive, blocking, cross-process, re-entrant per
+    thread via `_fine_lock_local` (mirrors `ledger_lock`'s own re-entrancy
+    bookkeeping, kept in a separate dict so the two primitive families never
+    share a key namespace). Degrades to a documented no-op on a platform
+    without `fcntl`, matching `ledger_lock`'s and `derived_state_lock`'s same
+    fallback -- never silently pretends to be locked."""
+    if fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
+        _log.warning(
+            "tickets: %s: fcntl unavailable on this platform, lock is a "
+            "NO-OP -- concurrent writers are NOT serialized here",
+            path,
+        )
+        yield
+        return
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    key = str(path)
+    maybe_held: dict[str, tuple[int, int]] | None = getattr(
+        _fine_lock_local, "held", None
+    )
+    held: dict[str, tuple[int, int]] = maybe_held if maybe_held is not None else {}
+    if maybe_held is None:
+        _fine_lock_local.held = held
+
+    entry = held.get(key)
+    if entry is not None:
+        fd, depth = entry
+        held[key] = (fd, depth + 1)
+        try:
+            yield
+        finally:
+            fd, depth = held[key]
+            if depth <= 1:
+                del held[key]
+            else:
+                held[key] = (fd, depth - 1)
+        return
+
+    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+    fcntl.flock(fd, fcntl.LOCK_EX)
+    held[key] = (fd, 1)
+    _log.debug("tickets: fine-grained lock acquired (%s)", path)
+    try:
+        yield
+    finally:
+        del held[key]
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+        _log.debug("tickets: fine-grained lock released (%s)", path)
+
+
+# frob:doc docs/design/ledger-v2.md#3-lock-model
+# frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_two_different_ticket_ids_do_not_block_each_other  # noqa: E501
+# frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_reentrant_same_id_in_same_thread_does_not_deadlock  # noqa: E501
+# frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_same_id_from_two_threads_serializes  # noqa: E501
+# frob:ticket T-1253
+@contextmanager
+def ticket_lock(root: Path, ticket_id: str) -> Iterator[None]:
+    """Per-ticket exclusive lock (ledger v2 design section 3): held only
+    while writing ONE ticket's own files, so two callers working DIFFERENT
+    ticket ids never contend at all -- generalizes the T-0933/T-0982 fix (a
+    process-registry reentrancy bug caused by one shared contended resource)
+    by removing the shared resource entirely for the common case (one verb,
+    one ticket).
+
+    During the compatibility window (design section 7) this composes
+    alongside `ledger_lock`, not instead of it: v1 (monofile) callers keep
+    using `ledger_lock` exactly as before; `ticket_lock` is additive,
+    reserved for v2-mode call sites (T-1254+) and this module's own
+    concurrency tests. Re-entrant per thread (same discipline as
+    `ledger_lock`): a caller that already holds `ticket_lock` for `ticket_id`
+    in this thread can acquire it again without deadlocking.
+    """
+    with _flock_path(_ticket_lock_path(root, ticket_id)):
+        yield
+
+
+# frob:doc docs/design/ledger-v2.md#3-lock-model
+# frob:tests tests/unit/test_process_lock.py::TestAllocatorLock.test_two_concurrent_allocations_get_distinct_ids  # noqa: E501
+# frob:ticket T-1253
+@contextmanager
+def allocator_lock(root: Path) -> Iterator[None]:
+    """The single lock guarding ONLY next-id computation (ledger v2 design
+    section 3) -- the one genuinely shared resource left once per-ticket
+    writes no longer need a repo-wide lock (T-1090's root cause: allocation
+    is inherently a global sequence). Meant to be held for microseconds (read
+    an integer, increment, write it back), unlike `ledger_lock`, which today
+    is held across an entire read-render-reparse-write cycle. Composes
+    alongside `ledger_lock` during the compatibility window exactly like
+    `ticket_lock` does -- additive, not a replacement, until the v2 store
+    backend (T-1254+) actually routes allocation through it."""
+    with _flock_path(_allocator_lock_path(root)):
+        yield
+
+
 # frob:doc docs/modules/tickets.md#storage-internals
 def slugify(title: str) -> str:
     """Lowercase, hyphenate, and strip non-alnum runs from a title for a filename."""
@@ -249,14 +396,68 @@ def _dir_glob(root: Path) -> list[Path]:
     return sorted(p for p in d.glob("T-*.md") if p.is_file())
 
 
+# frob:ticket T-1254
+# `tickets/T-####/ticket.md` (a v2-mode ticket directory), distinct from a
+# legacy dir-mode flat file (`tickets/T-####-slug.md`, no subdirectory) --
+# the two glob patterns never collide, so a repo can never be misread as
+# both modes at once.
+_V2_TICKET_GLOB = "T-*/ticket.md"
+
+
+# frob:ticket T-1254
+# frob:tests tests/unit/test_ticket_store.py::TestV2StoreMode.test_v2_tree_present_is_v2
+def _v2_glob(root: Path) -> list[Path]:
+    """Every v2-mode `tickets/T-####/ticket.md` path, sorted (ledger v2
+    design section 1)."""
+    d = tickets_dir(root)
+    if not d.exists():
+        return []
+    return sorted(p for p in d.glob(_V2_TICKET_GLOB) if p.is_file())
+
+
+# frob:ticket T-1256
+# frob:doc docs/design/ledger-v2.md#43-archive-as-git-mv
+# frob:tests tests/test_ticket_land.py::TestArchiveV2.test_archive_moves_directory_via_git_mv_no_content_rewrite  # noqa: E501
+def v2_archive_dir(root: Path, ticket_id: str) -> Path:
+    """The `tickets/archive/T-####/` directory an archived v2-mode ticket
+    owns (design section 4.3) -- `archive_v2`'s `git mv` destination, same
+    directory-named-by-id convention `v2_ticket_dir` uses for the active
+    tree, one level deeper under `archive/`."""
+    return tickets_dir(root) / "archive" / ticket_id
+
+
+# frob:ticket T-1256
+def _v2_archive_glob(root: Path) -> list[Path]:
+    """Every archived v2-mode `tickets/archive/T-####/ticket.md` path,
+    sorted (design section 4.3) -- `load_archive`'s v2-mode source, the
+    archive-tree analog of `_v2_glob`."""
+    d = tickets_dir(root) / "archive"
+    if not d.exists():
+        return []
+    return sorted(p for p in d.glob(_V2_TICKET_GLOB) if p.is_file())
+
+
 # frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
 # frob:waive COV007 reason="docs/modules/tickets.md's Storage internals section \
 # individually frob:describes this private helper by name (T-0529) -- a deliberate \
 # architecture doc, not accidental drift onto a private helper"
 def _store_mode(root: Path) -> str:
-    """Which backend a repo uses: 'single' if tickets.md exists, 'dir' if only
-    the legacy tickets/*.md files exist, else 'single' (the default for a
-    fresh repo -- new ledgers are compact, not sprawling)."""
+    """Which backend a repo uses: 'v2' if any `tickets/T-####/ticket.md`
+    directory exists, ACTIVE OR ARCHIVED (ledger v2, design section 1/4.3 --
+    checked FIRST since a v2 tree takes priority over a stray legacy
+    `tickets.md`/`tickets/*.md` left behind mid-migration), else 'single' if
+    `tickets.md` exists, else 'dir' if only legacy `tickets/*.md` flat files
+    exist, else 'single' (the default for a fresh repo -- new ledgers are
+    compact, not sprawling).
+
+    T-1256: the archive glob is included alongside the active glob so a v2
+    repo whose active tree has been fully drained (every ticket done/
+    dropped and archived) still reads as 'v2', not 'single' -- without this
+    an all-archived v2 repo would silently misdetect as a fresh/legacy
+    store the moment its last active ticket is archived."""
+    if _v2_glob(root) or _v2_archive_glob(root):
+        return "v2"
     if ledger_path(root).exists():
         return "single"
     if _dir_glob(root):
@@ -324,6 +525,213 @@ def _parse_ticket_file(path: Path) -> Result[Ticket, TicketError]:
 def _dir_path_for(root: Path, ticket: Ticket) -> Path:
     """The tickets/T-####-slug.md path a ticket serializes to."""
     return tickets_dir(root) / f"{ticket.id}-{slugify(ticket.title)}.md"
+
+
+# ---------------------------------------------------------------------------
+# v2 backend: file-per-ticket (docs/design/ledger-v2.md section 1)
+# ---------------------------------------------------------------------------
+
+
+# frob:ticket T-1254
+# frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
+# frob:tests tests/unit/test_ticket_store.py::TestV2WriteTicket.test_ticket_dir_named_by_id_not_slug  # noqa: E501
+def v2_ticket_dir(root: Path, ticket_id: str) -> Path:
+    """The `tickets/T-####/` directory a v2-mode ticket owns (design section
+    1) -- the directory name IS the id, never a slugified title, so a
+    retitle never renames the path the way legacy dir-mode does."""
+    return tickets_dir(root) / ticket_id
+
+
+# frob:ticket T-1254
+# frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
+# frob:tests tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_then_load_v2_mode  # noqa: E501
+def v2_ticket_path(root: Path, ticket_id: str) -> Path:
+    """The `tickets/T-####/ticket.md` frontmatter+body file for a v2-mode
+    ticket -- same shape `_serialize_ticket`/`_parse_ticket_file` already
+    produce/consume for legacy dir mode, one subdirectory deeper."""
+    return v2_ticket_dir(root, ticket_id) / "ticket.md"
+
+
+# frob:ticket T-1254
+# frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
+# frob:tests tests/unit/test_ticket_store.py::TestV2DoneReport.test_write_then_read_back_byte_for_byte  # noqa: E501
+def v2_done_report_path(root: Path, ticket_id: str) -> Path:
+    """The `tickets/T-####/done-report.md` file (design section 1) -- the
+    Done report split OUT of `ticket.md`'s body, its own file so recording
+    evidence/scope changes and writing the Done report are independently
+    mergeable, independently lockable writes rather than three regex-scoped
+    edits into one blob."""
+    return v2_ticket_dir(root, ticket_id) / "done-report.md"
+
+
+# frob:ticket T-1254
+# frob:doc docs/design/ledger-v2.md#8-what-this-design-does-not-cover-open-questions-for-the-migration-child  # noqa: E501
+# frob:tests tests/unit/test_ticket_store.py::TestV2Attachments.test_attachment_written_under_ticket_dir  # noqa: E501
+def v2_attachments_dir(root: Path, ticket_id: str) -> Path:
+    """The self-contained `tickets/T-####/attachments/` directory a v2-mode
+    ticket's attachments live under (design section 8's open question,
+    resolved in favor of the self-contained layout) -- distinct from the
+    legacy single/dir-mode `attachments_dir` (`tickets/attachments/<id>/`,
+    a side-channel shared across every ticket's attachments)."""
+    return v2_ticket_dir(root, ticket_id) / "attachments"
+
+
+# frob:ticket T-1254
+# frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
+# frob:tests tests/unit/test_ticket_store.py::TestV2DoneReport.test_write_then_read_back_byte_for_byte  # noqa: E501
+def write_done_report(
+    root: Path, ticket_id: str, report_text: str
+) -> Result[None, TicketError]:
+    """v2-mode only: atomically write `report_text` to `tickets/T-####/
+    done-report.md`, split OUT of `ticket.md`'s body (design section 1) --
+    a DIFFERENT file, and therefore a DIFFERENT git object and a
+    DIFFERENT lockable unit, than the ticket's own frontmatter/description.
+    Held under `ticket_lock` (not the whole-ledger `ledger_lock`) since this
+    only ever touches one ticket's own directory."""
+    with ticket_lock(root, ticket_id):
+        return atomic_write(v2_done_report_path(root, ticket_id), report_text)
+
+
+# frob:ticket T-1254
+# frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
+# frob:tests tests/unit/test_ticket_store.py::TestV2DoneReport.test_write_then_read_back_byte_for_byte  # noqa: E501
+# frob:tests tests/unit/test_ticket_store.py::TestV2DoneReport.test_missing_report_is_none  # noqa: E501
+def read_done_report(root: Path, ticket_id: str) -> str | None:
+    """v2-mode only: `tickets/T-####/done-report.md`'s raw text, or `None`
+    if it does not exist yet (the ticket has not reached `done`, or was
+    dropped without one)."""
+    path = v2_done_report_path(root, ticket_id)
+    if not path.exists():
+        return None
+    return path.read_text(encoding="utf-8")
+
+
+_V2_STATE_ADD_RE = re.compile(r"^\+state:\s*(\S+)\s*$")
+
+
+# frob:ticket T-1257
+# frob:doc docs/design/ledger-v2.md#44-flow--velocity-mining
+# frob:tests tests/test_tickets.py::TestV2StateTransitions.test_transitions_mined_oldest_first  # noqa: E501
+# frob:tests tests/test_tickets.py::TestV2StateTransitions.test_no_history_returns_empty_tuple  # noqa: E501
+def v2_state_transitions(
+    root: Path, ticket_id: str
+) -> tuple[tuple[str, str, str], ...]:
+    """Every `state:` transition a v2-mode ticket's OWN file has ever
+    recorded, oldest-first, as `(commit_sha, author-date-iso, new_state)`
+    triples -- mined purely from `git log --follow -p` over
+    `tickets/T-####/ticket.md` (design section 4.4), no separate event log
+    required. `--follow` means a renumbered/renamed ticket directory
+    (`T-draft-<hex>` -> `T-####`, or an archive `git mv`) still yields its
+    full pre-rename history in one call, mirroring how `git log --follow`
+    already works for any other tracked file.
+
+    Every commit that touches this file contributes at most one entry:
+    the LAST added `+state: X` line the diff shows for that commit (a
+    ticket rewrite that happens to touch the state line twice in one
+    diff -- never expected in practice, but not assumed away -- still
+    yields the one value the file actually ends that commit holding).
+    Returns an empty tuple (never raises) if the ticket has no v2-mode
+    file, `root` is not a git checkout, or the file has no history yet --
+    matching `_setters._ledger_commit_history`'s existing best-effort git
+    contract for the v1 monofile path."""
+    rel_path = f"{tickets_dir(root).name}/{ticket_id}/ticket.md"
+    spawned = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "log",
+            "--reverse",
+            "--follow",
+            "-p",
+            "--format=--frob-v2-commit-- %H%x1f%aI",
+            "--",
+            rel_path,
+        ]
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return ()
+    transitions: list[tuple[str, str, str]] = []
+    current: tuple[str, str] | None = None
+    pending_state: str | None = None
+    for line in spawned.danger_ok.stdout.splitlines():
+        if line.startswith("--frob-v2-commit-- "):
+            if current is not None and pending_state is not None:
+                transitions.append((current[0], current[1], pending_state))
+            sha, _, iso = line[len("--frob-v2-commit-- ") :].partition("\x1f")
+            current = (sha, iso)
+            pending_state = None
+            continue
+        match = _V2_STATE_ADD_RE.match(line)
+        if match is not None:
+            pending_state = match.group(1)
+    if current is not None and pending_state is not None:
+        transitions.append((current[0], current[1], pending_state))
+    return tuple(transitions)
+
+
+# frob:ticket T-1256
+# frob:doc docs/design/ledger-v2.md#43-archive-as-git-mv
+# frob:tests tests/test_ticket_land.py::TestArchiveV2.test_archive_moves_directory_via_git_mv_no_content_rewrite  # noqa: E501
+# frob:waive DUP002 reason="near-duplicate of _new_renumber._git_mv_ticket_dir by \
+# design -- _new_renumber already imports _load_merged FROM _archive, so importing \
+# this back from _new_renumber would cycle; a third shared-helper module for one \
+# ~15-line git-mv-with-rename-fallback is not worth the indirection, per the T-1255 \
+# precedent this mirrors"
+def git_mv_dir(root: Path, old_dir: Path, new_dir: Path) -> Result[None, TicketError]:
+    """`git mv old_dir new_dir` (design section 4.3's archive-as-rename) --
+    falls back to a plain filesystem rename if `old_dir` is not yet tracked
+    by git (e.g. a just-filed draft never `git add`ed), since a git-mv over
+    an untracked path always fails even though the rename itself is
+    perfectly safe. Shared by `archive_v2` (this ticket) and mirrors
+    `_new_renumber._git_mv_ticket_dir`'s identical shape -- kept as its own
+    copy here rather than imported, since `_new_renumber` already imports
+    FROM `_archive` (`_load_merged`) and a reverse import would cycle.
+
+    Chain-review fix (found alongside T-1258, connected to
+    T-1331): `git mv` on a DIRECTORY refuses with "No such file
+    or directory" whenever `new_dir`'s PARENT does not exist yet (e.g. the
+    very first-ever archive of a v2 repo, before `tickets/archive/` has
+    ever been created) -- previously this silently took the os.rename
+    fallback below, which never leaves a real git rename record (only
+    `git status`'s own similarity heuristic makes it LOOK like a rename
+    after the fact), undermining rename-detection unification for what is
+    actually the COMMON case, not the rare untracked-draft case the
+    fallback's docstring/log line describes. Pre-creating the parent here
+    makes `git mv` itself succeed (and record a real rename) for every
+    case except a genuinely untracked source, which is the only case the
+    fallback below should ever need to handle now."""
+    new_dir.parent.mkdir(parents=True, exist_ok=True)
+    argv = ("git", "-C", str(root), "mv", str(old_dir), str(new_dir))
+    spawned = run_argv(argv)
+    if spawned.is_ok and spawned.danger_ok.returncode == 0:
+        return Ok(None)
+    _log.debug(
+        "tickets: git mv %s -> %s failed or untracked, falling back to os.rename",
+        old_dir,
+        new_dir,
+    )
+    try:
+        new_dir.parent.mkdir(parents=True, exist_ok=True)
+        old_dir.rename(new_dir)
+    except OSError as exc:
+        _log.error(
+            "tickets: git_mv_dir: rename %s -> %s failed: %s", old_dir, new_dir, exc
+        )
+        return Err(TicketError.WriteFailed)
+    return Ok(None)
+
+
+def _prune_stale_v2_dirs(root: Path, keep_dirs: set[Path]) -> None:
+    """Remove any v2 ticket directory (and its `ticket.md`/`done-report.md`/
+    `attachments/`) not in `keep_dirs` -- `write_all`'s v2 counterpart to
+    `_prune_stale_files`. Only removes directories this store actually
+    manages (`tickets/T-####/` holding a `ticket.md`); a KEPT directory's
+    own files are never touched, and nothing outside `tickets/` is ever
+    touched."""
+    stale_dirs = {path.parent for path in _v2_glob(root)} - keep_dirs
+    for ticket_dir in stale_dirs:
+        shutil.rmtree(ticket_dir, ignore_errors=True)
 
 
 # ---------------------------------------------------------------------------
@@ -549,16 +957,135 @@ def ledger_digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+# frob:ticket T-1257
+# The derived, gitignored index cache (design section 6): rebuildable at
+# any time from `tickets/**/ticket.md`, NEVER a second source of truth --
+# a stale or missing index degrades to a full glob+parse (always correct)
+# and then rebuilds itself, exactly the same "derived vs tracked" split
+# `.frob/` already draws for the archive-parse cache (`_ARCHIVE_CACHE_REL`,
+# T-1206) and the symbol graph.
+_INDEX_REL = Path(".frob") / "tickets-index.json"
+
+
+# frob:ticket T-1257
+def _index_path(root: Path) -> Path:
+    """The v2-mode derived index cache file (`.frob/tickets-index.json`),
+    gitignored and safe to delete like the rest of `.frob/` -- deleting it
+    only costs the next load's speedup, never correctness (section 6)."""
+    return root / _INDEX_REL
+
+
+# frob:ticket T-1257
+# frob:tests tests/test_tickets.py::TestV2IndexCache.test_stale_index_falls_back_to_fresh_parse  # noqa: E501
+def _read_index_cache(index_path: Path, paths: list[Path]) -> dict[str, Ticket] | None:
+    """The cached v2-mode parse keyed by exact `(relative path, mtime-ns)`
+    pairs for every path in `paths`, or `None` meaning "caller must parse
+    fresh" -- a cache hit requires the recorded path SET and every
+    recorded mtime to match `paths` EXACTLY (an added/removed/touched
+    ticket file is a miss, never a silently stale hit, per design section
+    6's staleness contract). Any read/parse/schema failure is treated the
+    same as a miss -- logged and ignored, since this cache is purely a
+    speed optimization derived from the files themselves."""
+    if not index_path.exists():
+        return None
+    try:
+        raw = json.loads(index_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        _log.warning("tickets: v2 index cache unreadable, reparsing (%s)", exc)
+        return None
+    if not isinstance(raw, dict):
+        return None
+    entries = raw.get("entries")
+    tickets_raw = raw.get("tickets")
+    if not isinstance(entries, dict) or not isinstance(tickets_raw, dict):
+        return None
+    live: dict[str, int] = {}
+    for path in paths:
+        try:
+            live[str(path)] = path.stat().st_mtime_ns
+        except OSError:
+            return None
+    if set(live) != set(entries):
+        _log.debug("tickets: v2 index cache stale (path set changed)")
+        return None
+    if any(entries[key] != mtime_ns for key, mtime_ns in live.items()):
+        _log.debug("tickets: v2 index cache stale (mtime changed)")
+        return None
+    try:
+        return {
+            ticket_id: Ticket.model_validate(data)
+            for ticket_id, data in tickets_raw.items()
+        }
+    except ValidationError as exc:
+        _log.warning(
+            "tickets: v2 index cache failed to deserialize, reparsing (%s)", exc
+        )
+        return None
+
+
+# frob:ticket T-1257
+def _write_index_cache(
+    index_path: Path, paths: list[Path], tickets: dict[str, Ticket]
+) -> None:
+    """Best-effort rebuild of the v2 index cache from a just-completed
+    fresh parse. Never raises: a failed write only costs the NEXT load's
+    speedup, never correctness (mirrors `_write_archive_cache`)."""
+    entries: dict[str, int] = {}
+    for path in paths:
+        try:
+            entries[str(path)] = path.stat().st_mtime_ns
+        except OSError:
+            return  # a path vanished mid-write -- skip caching this round
+    payload = {
+        "entries": entries,
+        "tickets": {
+            ticket_id: ticket.model_dump(mode="json")
+            for ticket_id, ticket in tickets.items()
+        },
+    }
+    try:
+        index_path.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp_name = tempfile.mkstemp(
+            dir=str(index_path.parent), prefix=".tickets-index-"
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                json.dump(payload, handle)
+            os.replace(tmp_name, index_path)
+        except BaseException:
+            with suppress(OSError):
+                os.unlink(tmp_name)
+            raise
+    except OSError as exc:
+        _log.warning("tickets: failed to write v2 index cache, skipping (%s)", exc)
+
+
 # frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
+# frob:doc docs/design/ledger-v2.md#6-greppability
 def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]:
-    """Every ticket in the repo as an id -> Ticket map, backend-agnostic."""
-    if _store_mode(root) == "single":
+    """Every ticket in the repo as an id -> Ticket map, backend-agnostic.
+
+    T-1257: v2-mode reads try the derived `.frob/tickets-index.json` cache
+    first (design section 6) -- a hit skips re-parsing every
+    `ticket.md`'s YAML frontmatter, a miss (missing/stale) transparently
+    falls back to the full glob+parse below and then rebuilds the cache,
+    so a v2-mode `doable`/`list`/`show` never trades correctness for
+    speed."""
+    mode = _store_mode(root)
+    if mode == "single":
         ledger = ledger_path(root)
         if not ledger.exists():
             return Ok({})
         return _parse_ledger(ledger.read_text(encoding="utf-8"))
+    paths = _v2_glob(root) if mode == "v2" else _dir_glob(root)
+    if mode == "v2":
+        cached = _read_index_cache(_index_path(root), paths)
+        if cached is not None:
+            _log.debug("tickets: v2 index cache hit (%d ticket(s))", len(cached))
+            return Ok(cached)
     tickets: dict[str, Ticket] = {}
-    for path in _dir_glob(root):
+    for path in paths:
         parsed = _parse_ticket_file(path)
         if parsed.is_err:
             _log.error("tickets: load aborted, %s is malformed", path)
@@ -568,6 +1095,8 @@ def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]:
             _log.error("tickets: duplicate id %s (%s)", ticket.id, path)
             return Err(TicketError.DuplicateId)
         tickets[ticket.id] = ticket
+    if mode == "v2":
+        _write_index_cache(_index_path(root), paths, tickets)
     return Ok(tickets)
 
 
@@ -671,7 +1200,28 @@ def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]:
     (`ledger_digest`, never mtime -- an mtime-based key would treat a
     content-identical `git checkout` or same-second edit as either a false
     hit or a false miss) -- an unchanged archive is never reparsed, and any
-    byte change invalidates the cache on the very next read."""
+    byte change invalidates the cache on the very next read.
+
+    T-1256: v2 mode (design section 4.3) has no single archive FILE to
+    hash, so this branch bypasses the content-hash cache entirely and globs
+    `tickets/archive/T-####/ticket.md` directly, one small parse per
+    archived ticket -- the same shape `load_all`'s v2 branch already uses
+    for the active tree. Archived tickets are never rewritten in place
+    (only `git mv`-ed in whole), so there is little steady-state churn for
+    a cache to save here the way there is for the single-file archive."""
+    if _store_mode(root) == "v2":
+        tickets: dict[str, Ticket] = {}
+        for path in _v2_archive_glob(root):
+            parsed = _parse_ticket_file(path)
+            if parsed.is_err:
+                _log.error("tickets: load_archive aborted, %s is malformed", path)
+                return Err(parsed.danger_err)
+            ticket = parsed.danger_ok
+            if ticket.id in tickets:
+                _log.error("tickets: duplicate archived id %s (%s)", ticket.id, path)
+                return Err(TicketError.DuplicateId)
+            tickets[ticket.id] = ticket
+        return Ok(tickets)
     path = archive_path(root)
     if not path.exists():
         return Ok({})
@@ -729,7 +1279,10 @@ def write_archive(
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/design/ledger-v2.md#3-lock-model
 # frob:ticket T-0458
+# frob:ticket T-1254
+# frob:tests tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_then_load_v2_mode  # noqa: E501
 def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     """Upsert one ticket into whichever backend the repo uses (atomic).
 
@@ -750,9 +1303,23 @@ def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     clobber this write (or vice versa). Dir mode has no read step (one file
     per ticket) but still locks, so it serializes correctly against a
     concurrent `write_all`/`archive` touching the same store.
+
+    T-1254: v2 mode takes the NEW per-ticket `ticket_lock` (design section
+    3) rather than the whole-ledger `ledger_lock` -- two callers writing
+    DIFFERENT ticket ids never contend at all, the structural fix the design
+    doc's incident museum (T-1036/T-0933/T-0982) traces every ledger-churn
+    race back to. Composes with the caller's own `ledger_lock` hold where
+    one exists (e.g. `_reporting.py`'s `set_done_report`) rather than
+    replacing it -- see `ticket_lock`'s own docstring.
     """
+    mode = _store_mode(root)
+    if mode == "v2":
+        with ticket_lock(root, ticket.id):
+            return atomic_write(
+                v2_ticket_path(root, ticket.id), _serialize_ticket(ticket)
+            )
     with ledger_lock(root):
-        if _store_mode(root) == "single":
+        if mode == "single":
             path = ledger_path(root)
             if not path.exists():
                 fresh = _splice_ticket_section(_LEDGER_HEADER, ticket)
@@ -793,36 +1360,78 @@ def write_all(
     `None` (the default) preserves the pre-T-0889 unconditional-overwrite
     behavior for callers that have not been updated to pass a digest --
     single-mode only, since dir mode has no single ledger file to
-    fingerprint."""
+    fingerprint.
+
+    T-1254: v2 mode writes each ticket's own `ticket.md` (never touching a
+    sibling's `done-report.md`/`attachments/`) and prunes any v2 directory
+    not present in `tickets` (`_prune_stale_v2_dirs`), mirroring dir mode's
+    write-each-then-prune shape one directory level deeper. Held under the
+    same `ledger_lock` as the other branches -- a wholesale replace is
+    still a whole-store operation regardless of backend, distinct from the
+    single-ticket `ticket_lock` `write_ticket` uses for its own v2 path.
+    Each backend's own body is a private per-mode helper (`_write_all_
+    single`/`_write_all_v2`/`_write_all_dir`) so this function stays the
+    thin mode-dispatch it reads as."""
     with ledger_lock(root):
-        if _store_mode(root) == "single":
-            path = ledger_path(root)
-            if expected_digest is not None:
-                current = ledger_digest(path)
-                if current != expected_digest:
-                    _log.error(
-                        "tickets: write_all refused -- %s changed on disk "
-                        "since this caller's load (expected digest %s, "
-                        "found %s)",
-                        path,
-                        expected_digest,
-                        current,
-                    )
-                    return Err(TicketError.LedgerChangedSinceLoad)
-            text = _render_ledger(tickets)
-            integrity = _check_ledger_id_integrity(tickets, text)
-            if integrity.is_err:
-                return Err(integrity.danger_err)
-            return atomic_write(path, text)
-        keep_files: set[Path] = set()
-        for ticket in tickets.values():
-            path = _dir_path_for(root, ticket)
-            result = atomic_write(path, _serialize_ticket(ticket))
-            if result.is_err:
-                return Err(result.danger_err)
-            keep_files.add(path)
-        _prune_stale_files(root, keep_files)
-        return Ok(None)
+        mode = _store_mode(root)
+        if mode == "single":
+            return _write_all_single(root, tickets, expected_digest)
+        if mode == "v2":
+            return _write_all_v2(root, tickets)
+        return _write_all_dir(root, tickets)
+
+
+def _write_all_single(
+    root: Path, tickets: dict[str, Ticket], expected_digest: str | None
+) -> Result[None, TicketError]:
+    """`write_all`'s single-mode body (T-0889 digest guard, T-0764
+    integrity check), split out so `write_all` itself stays a thin
+    mode-dispatch."""
+    path = ledger_path(root)
+    if expected_digest is not None:
+        current = ledger_digest(path)
+        if current != expected_digest:
+            _log.error(
+                "tickets: write_all refused -- %s changed on disk "
+                "since this caller's load (expected digest %s, found %s)",
+                path,
+                expected_digest,
+                current,
+            )
+            return Err(TicketError.LedgerChangedSinceLoad)
+    text = _render_ledger(tickets)
+    integrity = _check_ledger_id_integrity(tickets, text)
+    if integrity.is_err:
+        return Err(integrity.danger_err)
+    return atomic_write(path, text)
+
+
+def _write_all_v2(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]:
+    """`write_all`'s v2-mode body (T-1254): write each ticket's own
+    `ticket.md`, then prune any v2 directory not present in `tickets`."""
+    keep_dirs: set[Path] = set()
+    for ticket in tickets.values():
+        path = v2_ticket_path(root, ticket.id)
+        result = atomic_write(path, _serialize_ticket(ticket))
+        if result.is_err:
+            return Err(result.danger_err)
+        keep_dirs.add(v2_ticket_dir(root, ticket.id))
+    _prune_stale_v2_dirs(root, keep_dirs)
+    return Ok(None)
+
+
+def _write_all_dir(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]:
+    """`write_all`'s legacy dir-mode body: write each `T-####-slug.md`, then
+    prune any file whose id is no longer present."""
+    keep_files: set[Path] = set()
+    for ticket in tickets.values():
+        path = _dir_path_for(root, ticket)
+        result = atomic_write(path, _serialize_ticket(ticket))
+        if result.is_err:
+            return Err(result.danger_err)
+        keep_files.add(path)
+    _prune_stale_files(root, keep_files)
+    return Ok(None)
 
 
 def _prune_stale_files(root: Path, keep_files: set[Path]) -> None:

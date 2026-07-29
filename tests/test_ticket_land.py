@@ -54,14 +54,18 @@ from frob.tickets._models import (
     AcceptanceCriterion,
     DoneReportClaims,
     LandError,
+    Ticket,
     render_claims_block,
 )
+from frob.tickets._new_renumber import _ticket_from_spec
 from frob.tickets._store import (
+    _serialize_ticket,
     archive_path,
     atomic_write,
     ledger_path,
     load_all,
     load_archive,
+    v2_ticket_path,
     write_archive,
     write_ticket,
 )
@@ -113,10 +117,23 @@ def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
 
 
 def _git_init(root: Path, *, branch: str = "main") -> None:
+    """Init a fixture repo AND gitignore `.frob/` from the very first
+    commit (T-1258 chain-review fix, connects to T-1331):
+    without this, every fixture's blanket `git add -A` helper
+    (`_commit_all`) commits frob's own scratch state (per-ticket locks,
+    the T-1257 v2 index/archive cache) as TRACKED files -- two branches
+    that each write a DIFFERENT `.frob/tickets-index.json` (a real,
+    reproduced add/add conflict: `TestArchiveV2::test_archive_v2_
+    regression_two_sided_divergence_no_clobber`) then collide at merge,
+    an artifact of an un-gitignored fixture, not of the product. Written
+    into the working tree here so it lands in whichever commit each test
+    makes first -- every worktree branched off that commit (or a later
+    one) inherits the ignore rule automatically, same as a real repo's."""
     root.mkdir(parents=True, exist_ok=True)
     _run(["git", "init", "-q", "-b", branch], root)
     _run(["git", "config", "user.email", "test@example.com"], root)
     _run(["git", "config", "user.name", "Test"], root)
+    (root / ".gitignore").write_text(".frob/\n")
 
 
 def _commit_all(root: Path, message: str) -> None:
@@ -167,6 +184,38 @@ def repo(tmp_path: Path) -> Path:
     (main_repo / "src").mkdir()
     (main_repo / "src" / "feature.py").write_text("# landed feature\n")
     _commit_all(main_repo, "init")
+    return main_repo
+
+
+# frob:ticket T-1258
+def _seed_v2_ticket(
+    root: Path, ticket_id: str, *, scope: tuple[str, ...] = ()
+) -> Ticket:
+    """Write a fresh QUEUED ticket directly into v2-mode storage
+    (`tickets/<ticket_id>/ticket.md`) -- flips `_store_mode(root)`
+    detection to 'v2' for every subsequent ticket op against `root`.
+    Fixture-only seeding for T-1258's land tests; the real v1->v2
+    migrator is T-1259 (reserved, not built here)."""
+    ticket = _ticket_from_spec(ticket_id, _spec("Seed", scope=scope), ())
+    path = v2_ticket_path(root, ticket_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    assert atomic_write(path, _serialize_ticket(ticket)).is_ok
+    return ticket
+
+
+# frob:ticket T-1258
+@pytest.fixture
+def v2_repo(tmp_path: Path) -> Path:
+    """A main checkout in v2-mode storage (`tickets/T-####/ticket.md`,
+    ledger-v2 design section 1) -- the v2-mode analog of the `repo`
+    fixture above, seeded with one ticket (T-3000) and one committed
+    source file so `_store_mode` reads 'v2' from the very first commit."""
+    main_repo = tmp_path / "v2main"
+    _git_init(main_repo)  # gitignores .frob/ already (see _git_init's docstring)
+    _seed_v2_ticket(main_repo, "T-3000", scope=("src/seed.py",))
+    (main_repo / "src").mkdir()
+    (main_repo / "src" / "feature.py").write_text("# landed feature\n")
+    _commit_all(main_repo, "init v2")
     return main_repo
 
 
@@ -2012,6 +2061,77 @@ class TestOutOfScopeConflictAutoResolved:
         # Main's side of the out-of-scope conflict won.
         assert (repo / "src" / "feature.py").read_text() == "# main-side edit\n"
         assert (repo / "src" / "other.py").read_text() == "worktree change\n"
+
+
+class TestLedgerV2LandMergeStory:
+    """T-1258: ledger v2's native-git merge story for `frob ticket land` --
+    disjoint `tickets/T-####/` directories merge with zero custom
+    resolution (AC2), and a genuine same-ticket-file conflict surfaces as
+    an ordinary git conflict, never a silent splice (AC3)."""
+
+    def test_disjoint_v2_tickets_land_with_no_custom_merge(self, v2_repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        wt = v2_repo.parent / "wt-v2-a"
+        _run(["git", "worktree", "add", "-b", "feature-v2-a", str(wt)], v2_repo)
+
+        created = new_ticket(wt, _spec("Add widget v2", scope=("src/widget.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "widget.py").write_text("# new widget\n")
+        _commit_all(wt, "add widget v2")
+
+        # Main gains a DIFFERENT ticket's own directory after the worktree
+        # branched -- a real merge, disjoint ticket dirs on both sides.
+        other = _seed_v2_ticket(v2_repo, "T-3005", scope=("src/other.py",))
+        assert other.id == "T-3005"
+        _commit_all(v2_repo, "main gains sibling v2 ticket T-3005")
+
+        result = land(v2_repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+        # No monofile splice happened -- there is no monofile in v2 mode.
+        assert report.ledger_spliced is False
+
+        landed = load_all(v2_repo)
+        assert landed.is_ok
+        assert landed.danger_ok[report.final_id].state == TicketState.DONE
+        assert "T-3005" in landed.danger_ok
+        assert (v2_repo / "tickets" / "T-3005" / "ticket.md").exists()
+        assert (v2_repo / "src" / "widget.py").exists()
+        assert not (v2_repo / "tickets.md").exists()
+
+    def test_same_ticket_conflict_surfaces_loudly_no_splice(
+        self, v2_repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        wt = v2_repo.parent / "wt-v2-b"
+        _run(["git", "worktree", "add", "-b", "feature-v2-b", str(wt)], v2_repo)
+
+        # Worktree finalizes T-3000 AND retitles it as part of the same edit.
+        _make_closeable(wt, "T-3000")
+        wt_ticket = load_all(wt).danger_ok["T-3000"]
+        assert write_ticket(
+            wt, wt_ticket.model_copy(update={"title": "Renamed by worktree"})
+        ).is_ok
+        _commit_all(wt, "worktree finalizes and retitles T-3000")
+
+        # Main independently retitles the SAME ticket's SAME field, after
+        # the branch point -- a genuine same-line textual conflict on
+        # tickets/T-3000/ticket.md.
+        main_ticket = load_all(v2_repo).danger_ok["T-3000"]
+        assert write_ticket(
+            v2_repo, main_ticket.model_copy(update={"title": "Renamed by main"})
+        ).is_ok
+        _commit_all(v2_repo, "main retitles T-3000")
+
+        result = land(v2_repo, "T-3000", wt, dry_run=True)
+        assert result.is_err
+        assert result.danger_err == LandError.MergeConflict
+
+        # Refused loudly, not silently spliced -- the merge attempt is
+        # cleanly aborted, worktree left exactly as found.
+        assert _status_ignoring_frob(wt) == ""
 
 
 class TestDraftIdFinalization:
@@ -6124,3 +6244,194 @@ class TestNewerWinnerQualifiedPreferenceProperty:
         )
         assert _land_ledger_merge_mod._newer_winner(richer, poorer) is richer
         assert _land_ledger_merge_mod._newer_winner(poorer, richer) is richer
+
+
+# frob:ticket T-1256
+class TestArchiveV2:
+    """Ledger v2 design section 4.3: `archive` on a v2-mode tree does a
+    plain `git mv tickets/T-#### tickets/archive/T-####` per done/dropped
+    ticket, zero content rewrite -- eliminating the T-0959 archive-clobber
+    failure mode structurally (no destination FILE is ever rewritten,
+    only a rename) rather than merely guarding it the way
+    `TestArchiveSpliceDiscipline` above guards the v1 monofile path."""
+
+    def _v2_ticket(
+        self,
+        root: Path,
+        ticket_id: str,
+        *,
+        state: TicketState = TicketState.DONE,
+        blocked_by: tuple[str, ...] = (),
+    ) -> Path:
+        # Writes ticket.md directly (mirrors TestRenumberOneV2's own
+        # `_v2_ticket` helper in tests/test_tickets_collision.py) so an
+        # empty tmp_path's first ticket lands under tickets/<id>/ instead
+        # of tickets.md, which write_ticket's own _store_mode dispatch
+        # would otherwise choose for a tree with no v2 dir yet.
+        from frob.tickets._models import Ticket
+        from frob.tickets._store import _serialize_ticket, v2_ticket_path
+
+        ticket = Ticket(
+            id=ticket_id,
+            title=f"Ticket {ticket_id}",
+            state=state,
+            kind=TicketKind.FEATURE,
+            origin=Origin.AGENT,
+            created=date.today(),
+            blocked_by=blocked_by,
+            evidence=("tests/test_x.py::test_ok",),
+            body="## Description\nx\n\n## Done report\n\ndone\n",
+        )
+        path = v2_ticket_path(root, ticket_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(_serialize_ticket(ticket), encoding="utf-8")
+        return path
+
+    # frob:ticket T-1256
+    def test_archive_moves_directory_via_git_mv_no_content_rewrite(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_archive.py::archive_v2 kind="unit"
+        from frob.tickets import archive
+        from frob.tickets._store import v2_archive_dir, v2_ticket_dir
+
+        root = tmp_path / "repo"
+        _git_init(root)
+        path = self._v2_ticket(root, "T-0042")
+        original_text = path.read_text(encoding="utf-8")
+        _commit_all(root, "seed v2 ticket")
+
+        result = archive(root)
+        assert result.is_ok, result.err
+        assert result.danger_ok == 1
+
+        assert not v2_ticket_dir(root, "T-0042").exists()
+        moved_path = v2_archive_dir(root, "T-0042") / "ticket.md"
+        assert moved_path.exists()
+        # Zero content rewrite: the moved file's bytes are byte-for-byte
+        # identical to what git_mv_dir moved -- the AC's core claim.
+        assert moved_path.read_text(encoding="utf-8") == original_text
+
+        _run(["git", "add", "-A"], root)
+        status = _run(["git", "status", "--porcelain"], root).stdout
+        assert (
+            "R  tickets/T-0042/ticket.md -> tickets/archive/T-0042/ticket.md" in status
+        ), status
+
+        # A second call is idempotent -- nothing left to archive.
+        again = archive(root)
+        assert again.is_ok and again.danger_ok == 0
+
+    # frob:ticket T-1258
+    # frob:doc docs/design/ledger-v2.md#43-archive-as-git-mv
+    def test_first_ever_archive_uses_real_git_mv_not_rename_fallback(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests src/frob/tickets/_store.py::git_mv_dir kind="unit"
+        # Chain-review fix: the VERY FIRST archive of a v2 repo (before
+        # `tickets/archive/` has ever existed) used to silently take
+        # `git_mv_dir`'s os.rename fallback -- `git mv` on a directory
+        # refuses when the destination's PARENT does not exist yet, which
+        # is exactly true on a repo's first-ever archive. Pre-creating the
+        # parent (this fix) makes `git mv` itself succeed, so the fallback
+        # log line must never fire here.
+        from frob.tickets import archive
+
+        root = tmp_path / "repo"
+        _git_init(root)
+        assert not (root / "tickets" / "archive").exists()
+        self._v2_ticket(root, "T-0043")
+        _commit_all(root, "seed v2 ticket")
+
+        with caplog.at_level("DEBUG", logger="frob.tickets._store"):
+            result = archive(root)
+        assert result.is_ok, result.err
+        assert result.danger_ok == 1
+        assert "falling back to os.rename" not in caplog.text
+
+    # frob:ticket T-1256
+    def test_archive_v2_regression_two_sided_divergence_no_clobber(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_archive.py::archive_v2 kind="unit"
+        # Reproduces the T-0959 incident SHAPE (two branches each archive a
+        # DIFFERENT ticket, then merge) against the v2 path: since each
+        # archived ticket is its own disjoint git path, a real git merge
+        # unions both sides with no custom splice code and no lost block --
+        # unlike the v1 monofile path TestArchiveSpliceDiscipline guards.
+        from frob.tickets import archive
+        from frob.tickets._store import load_all, load_archive, write_ticket
+
+        root = tmp_path / "repo"
+        _git_init(root)
+        self._v2_ticket(root, "T-0100")
+        # T-0200 starts QUEUED (not archive-eligible yet) -- it only
+        # becomes done+archived on the WORKTREE side, after main has
+        # already branched and archived T-0100 -- the two-sided
+        # divergence shape.
+        self._v2_ticket(root, "T-0200", state=TicketState.QUEUED)
+        _commit_all(root, "seed two v2 tickets")
+
+        wt = tmp_path / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-archive", str(wt)], root)
+
+        # Main archives T-0100 only, after the worktree branched.
+        main_archived = archive(root)
+        assert main_archived.is_ok and main_archived.danger_ok == 1
+        _commit_all(root, "main archives T-0100")
+
+        # The worktree, unaware of main's sweep, closes AND independently
+        # archives T-0200 -- the exact two-sided-divergence shape.
+        wt_loaded = load_all(wt)
+        assert wt_loaded.is_ok
+        wt_ticket = wt_loaded.danger_ok["T-0200"].model_copy(
+            update={"state": TicketState.DONE}
+        )
+        assert write_ticket(wt, wt_ticket).is_ok
+        # The worktree's own checkout still has T-0100 as active+done too
+        # (its branch point predates main's archive commit) -- archiving
+        # here independently re-archives T-0100 AND T-0200, the literal
+        # T-0959 double-archive shape: both sides archive T-0100.
+        wt_archived = archive(wt)
+        assert wt_archived.is_ok and wt_archived.danger_ok == 2
+        _commit_all(wt, "worktree closes and archives T-0200 (and re-archives T-0100)")
+
+        merge_result = _run(["git", "merge", "--no-edit", "feature-archive"], root)
+        assert merge_result.returncode == 0, merge_result.stderr
+
+        active = load_all(root)
+        assert active.is_ok
+        assert "T-0100" not in active.danger_ok
+        assert "T-0200" not in active.danger_ok
+
+        archived = load_archive(root)
+        assert archived.is_ok
+        assert "T-0100" in archived.danger_ok, "main's own archive sweep was lost"
+        assert "T-0200" in archived.danger_ok, (
+            "the worktree's archive sweep was clobbered by main's -- the "
+            "T-0959 shape this test guards against"
+        )
+
+    # frob:ticket T-1256
+    def test_archived_v2_ticket_still_resolves_as_blocker(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_archive.py::load_queue kind="unit"
+        from frob.tickets import archive, load_queue
+
+        root = tmp_path / "repo"
+        _git_init(root)
+        self._v2_ticket(root, "T-0400")
+        self._v2_ticket(
+            root, "T-0500", state=TicketState.QUEUED, blocked_by=("T-0400",)
+        )
+        _commit_all(root, "seed blocker pair")
+
+        archived_count = archive(root)
+        assert archived_count.is_ok and archived_count.danger_ok == 1
+
+        queue = load_queue(root)
+        assert queue.is_ok, queue.err
+        merged = queue.danger_ok.tickets
+        assert "T-0400" in merged, "archived blocker no longer resolves"
+        assert merged["T-0400"].state == TicketState.DONE
+        assert "T-0500" in merged
+        assert merged["T-0500"].blocked_by == ("T-0400",)

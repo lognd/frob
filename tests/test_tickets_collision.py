@@ -678,3 +678,149 @@ class TestSpliceOnlyTicketIdTitleMismatchRefusal:
         result = _splice_only_ticket(main_text, worktree_text, "T-0042")
         assert result.is_ok
         assert "Same ticket, still in progress on main" in result.danger_ok
+
+
+# frob:ticket T-1255
+class TestRenumberOneV2:
+    """Ledger v2 design section 4.1: `renumber_one` on a v2-mode tree does a
+    `git mv` (or a plain rename fallback outside a git repo) plus a
+    multi-file `tickets/**/*.md` reference rewrite, instead of the v1
+    whole-ledger read-modify-write."""
+
+    def _v2_ticket(
+        self, root: Path, ticket_id: str, *, body: str = "## Description\nx\n"
+    ) -> None:
+        # Writes the ticket.md file DIRECTLY (never via write_ticket's own
+        # mode dispatch) -- the first ticket in an empty tmp_path has no v2
+        # tree yet, so write_ticket's own _store_mode(root) check would read
+        # "single" and land it in tickets.md instead of tickets/<id>/.
+        from frob.tickets._store import _serialize_ticket, v2_ticket_path
+
+        ticket = Ticket(
+            id=ticket_id,
+            title=f"Ticket {ticket_id}",
+            state=TicketState.QUEUED,
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            created=date.today(),
+            body=body,
+        )
+        path = v2_ticket_path(root, ticket_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(_serialize_ticket(ticket), encoding="utf-8")
+
+    # frob:ticket T-1255
+    def test_git_mv_renames_directory_and_rewrites_id_field(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_new_renumber.py::renumber_one_v2 kind="unit"
+        from frob.tickets._store import _store_mode, v2_ticket_dir, v2_ticket_path
+
+        self._v2_ticket(tmp_path, "T-0042")
+        assert _store_mode(tmp_path) == "v2"
+
+        result = renumber_one(tmp_path, "T-0042", "T-0099")
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.old_id == "T-0042"
+        assert report.new_id == "T-0099"
+        assert report.ledger_changed is True
+
+        assert not v2_ticket_dir(tmp_path, "T-0042").exists()
+        assert v2_ticket_path(tmp_path, "T-0099").exists()
+        moved_text = v2_ticket_path(tmp_path, "T-0099").read_text(encoding="utf-8")
+        assert "id: T-0099" in moved_text
+        assert "id: T-0042" not in moved_text
+
+        reloaded = load_all(tmp_path)
+        assert reloaded.is_ok
+        assert "T-0099" in reloaded.danger_ok
+        assert "T-0042" not in reloaded.danger_ok
+
+    # frob:ticket T-1255
+    def test_sibling_ticket_prose_citation_rewritten(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_new_renumber.py::renumber_one_v2 kind="unit"
+        self._v2_ticket(tmp_path, "T-0042")
+        self._v2_ticket(
+            tmp_path,
+            "T-0043",
+            body="## Done report\n\nFiled: T-0042\n",
+        )
+
+        result = renumber_one(tmp_path, "T-0042", "T-0099")
+        assert result.is_ok
+        assert result.danger_ok.occurrences >= 2  # own id: field + sibling prose
+
+        reloaded = load_all(tmp_path)
+        assert reloaded.is_ok
+        sibling_body = reloaded.danger_ok["T-0043"].body
+        assert "T-0099" in sibling_body
+        assert "T-0042" not in sibling_body
+
+    # frob:ticket T-1255
+    def test_dry_run_mutates_nothing(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_new_renumber.py::renumber_one_v2 kind="unit"
+        from frob.tickets._store import v2_ticket_dir
+
+        self._v2_ticket(tmp_path, "T-0042")
+        result = renumber_one(tmp_path, "T-0042", "T-0099", dry_run=True)
+        assert result.is_ok
+        assert result.danger_ok.dry_run is True
+        assert v2_ticket_dir(tmp_path, "T-0042").exists()
+        assert not v2_ticket_dir(tmp_path, "T-0099").exists()
+
+    # frob:ticket T-1255
+    def test_target_id_already_exists_is_duplicate_id(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_new_renumber.py::renumber_one_v2 kind="unit"
+        self._v2_ticket(tmp_path, "T-0042")
+        self._v2_ticket(tmp_path, "T-0099")
+        result = renumber_one(tmp_path, "T-0042", "T-0099")
+        assert result.is_err
+        assert result.danger_err == TicketError.DuplicateId
+
+    # frob:ticket T-1255
+    def test_unknown_old_id_is_not_found(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_new_renumber.py::renumber_one_v2 kind="unit"
+        self._v2_ticket(tmp_path, "T-0001")  # any v2 ticket, so mode is v2
+        result = renumber_one(tmp_path, "T-9999", "T-0100")
+        assert result.is_err
+        assert result.danger_err == TicketError.NotFound
+
+    # frob:ticket T-1255
+    def test_locks_acquired_in_sorted_id_order_no_deadlock(
+        self, tmp_path: Path
+    ) -> None:
+        """Design section 3's fixed-order discipline: two renumbers that
+        both touch the SAME two ids, requested in OPPOSITE orders by two
+        concurrent callers, must never deadlock -- mirrors the T-1090
+        concurrent-allocation-race shape, but for lock ACQUISITION order
+        rather than id allocation. Both threads race for the pair of ticket
+        directories `T-0001`/`T-0002`; only one can win (the other's target
+        id is already taken by the time it gets the lock, since the first
+        renumber vacated `T-0001` and claimed a slot the second can't also
+        claim), but neither may ever hang."""
+        # frob:tests tests/test_tickets_collision.py::TestRenumberOneV2.test_locks_acquired_in_sorted_id_order_no_deadlock  # noqa: E501
+        import threading
+
+        self._v2_ticket(tmp_path, "T-0001")
+        self._v2_ticket(tmp_path, "T-0002")
+
+        results: list[object] = []
+
+        def _renumber_a() -> None:
+            results.append(renumber_one(tmp_path, "T-0001", "T-0100"))
+
+        def _renumber_b() -> None:
+            results.append(renumber_one(tmp_path, "T-0002", "T-0101"))
+
+        thread_a = threading.Thread(target=_renumber_a)
+        thread_b = threading.Thread(target=_renumber_b)
+        thread_a.start()
+        thread_b.start()
+        thread_a.join(timeout=10)
+        thread_b.join(timeout=10)
+
+        assert not thread_a.is_alive(), "renumber_one_v2 deadlocked (thread A)"
+        assert not thread_b.is_alive(), "renumber_one_v2 deadlocked (thread B)"
+        assert len(results) == 2
+        assert all(r.is_ok for r in results)  # type: ignore[attr-defined]

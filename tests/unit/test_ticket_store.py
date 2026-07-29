@@ -12,6 +12,7 @@ import pytest
 
 from frob.tickets import (
     TicketSpec,
+    attach,
     closed_ticket_ids,
     new_ticket,
     replay_evidence_from_done_report,
@@ -19,6 +20,7 @@ from frob.tickets import (
     transition,
 )
 from frob.tickets._models import (
+    AttachmentSource,
     Origin,
     Ticket,
     TicketError,
@@ -40,9 +42,16 @@ from frob.tickets._store import (
     load_all,
     load_archive,
     migrate_to_ledger,
+    read_done_report,
     slugify,
     tickets_dir,
+    v2_attachments_dir,
+    v2_done_report_path,
+    v2_ticket_dir,
+    v2_ticket_path,
+    write_all,
     write_archive,
+    write_done_report,
     write_ticket,
 )
 
@@ -92,6 +101,70 @@ class TestPathHelpers:
         )
 
 
+# frob:ticket T-1254
+class TestV2DoneReport:
+    def _v2_ticket(self, tmp_path: Path, ticket_id: str = "T-0001") -> None:
+        d = tmp_path / "tickets" / ticket_id
+        d.mkdir(parents=True)
+        (d / "ticket.md").write_text(_serialize_ticket(_ticket(ticket_id)))
+
+    def test_write_then_read_back_byte_for_byte(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestV2DoneReport.test_write_then_read_back_byte_for_byte  # noqa: E501
+        self._v2_ticket(tmp_path)
+        report = "## Done report\n\nimplemented the thing\n\n### Evidence\nnone\n"
+        written = write_done_report(tmp_path, "T-0001", report)
+        assert written.is_ok
+        assert v2_done_report_path(tmp_path, "T-0001").exists()
+
+        read_back = read_done_report(tmp_path, "T-0001")
+        assert read_back == report
+
+    def test_done_report_is_a_distinct_file_from_ticket_md(
+        self, tmp_path: Path
+    ) -> None:
+        self._v2_ticket(tmp_path)
+        write_done_report(tmp_path, "T-0001", "## Done report\n\nx\n")
+        ticket_path = v2_ticket_path(tmp_path, "T-0001")
+        report_path = v2_done_report_path(tmp_path, "T-0001")
+        assert ticket_path != report_path
+        assert "Done report" not in ticket_path.read_text(encoding="utf-8")
+
+    def test_missing_report_is_none(self, tmp_path: Path) -> None:
+        self._v2_ticket(tmp_path)
+        assert read_done_report(tmp_path, "T-0001") is None
+
+
+# frob:ticket T-1254
+class TestV2Attachments:
+    def test_attachment_written_under_ticket_dir(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestV2Attachments.test_attachment_written_under_ticket_dir  # noqa: E501
+        d = tmp_path / "tickets" / "T-0001"
+        d.mkdir(parents=True)
+        (d / "ticket.md").write_text(_serialize_ticket(_ticket()))
+        assert _store_mode(tmp_path) == "v2"
+
+        src = tmp_path / "mockup.png"
+        src.write_bytes(b"fake-png-bytes")
+        result = attach(tmp_path, "T-0001", AttachmentSource(path=src), "mockup")
+        assert result.is_ok
+        attachment = result.danger_ok
+
+        expected_dir = v2_attachments_dir(tmp_path, "T-0001")
+        assert expected_dir.exists()
+        written_files = list(expected_dir.iterdir())
+        assert len(written_files) == 1
+        assert written_files[0].read_bytes() == b"fake-png-bytes"
+
+        # Attachment.path stays relative to tickets_dir(root) (COV004's own
+        # convention, src/frob/gates/__init__.py) -- reconstructs to the
+        # same v2 path via `Path("tickets") / attachment.path`.
+        assert (tmp_path / "tickets" / attachment.path) == written_files[0]
+
+        reloaded = load_all(tmp_path)
+        assert reloaded.is_ok
+        assert len(reloaded.danger_ok["T-0001"].attachments) == 1
+
+
 class TestStoreMode:
     def test_fresh_repo_defaults_to_single(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_store.py::_store_mode kind="unit"
@@ -102,6 +175,41 @@ class TestStoreMode:
         assert _store_mode(tmp_path) == "single"
 
     def test_only_legacy_dir_files_is_dir(self, tmp_path: Path) -> None:
+        d = tmp_path / "tickets"
+        d.mkdir()
+        (d / "T-0001-x.md").write_text(_serialize_ticket(_ticket()))
+        assert _store_mode(tmp_path) == "dir"
+
+
+# frob:ticket T-1254
+class TestV2StoreMode:
+    def test_v2_tree_present_is_v2(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_store.py::_store_mode kind="unit"
+        ticket_dir = tmp_path / "tickets" / "T-0042"
+        ticket_dir.mkdir(parents=True)
+        (ticket_dir / "ticket.md").write_text(_serialize_ticket(_ticket("T-0042")))
+        assert _store_mode(tmp_path) == "v2"
+
+    def test_v2_takes_priority_over_stray_ledger(self, tmp_path: Path) -> None:
+        (tmp_path / "tickets.md").write_text("# Tickets\n")
+        ticket_dir = tmp_path / "tickets" / "T-0042"
+        ticket_dir.mkdir(parents=True)
+        (ticket_dir / "ticket.md").write_text(_serialize_ticket(_ticket("T-0042")))
+        assert _store_mode(tmp_path) == "v2"
+
+    def test_v2_takes_priority_over_stray_dir_mode_files(self, tmp_path: Path) -> None:
+        d = tmp_path / "tickets"
+        d.mkdir()
+        (d / "T-0001-x.md").write_text(_serialize_ticket(_ticket()))
+        ticket_dir = d / "T-0042"
+        ticket_dir.mkdir()
+        (ticket_dir / "ticket.md").write_text(_serialize_ticket(_ticket("T-0042")))
+        assert _store_mode(tmp_path) == "v2"
+
+    def test_flat_dir_file_does_not_look_like_v2(self, tmp_path: Path) -> None:
+        """A legacy `tickets/T-0001-slug.md` FILE never matches the v2
+        glob (`T-*/ticket.md`, which requires a subdirectory) -- the two
+        modes structurally cannot collide."""
         d = tmp_path / "tickets"
         d.mkdir()
         (d / "T-0001-x.md").write_text(_serialize_ticket(_ticket()))
@@ -164,6 +272,57 @@ class TestLoadAllAndWriteTicket:
         assert loaded.is_ok
         assert loaded.danger_ok["T-0001"].component == "tickets"
         assert loaded.danger_ok["T-0001"].labels == ("board", "epic")
+
+
+# frob:ticket T-1254
+class TestV2WriteTicket:
+    def test_write_then_load_v2_mode(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_then_load_v2_mode  # noqa: E501
+        (tmp_path / "tickets" / "T-0099").mkdir(parents=True)
+        (tmp_path / "tickets" / "T-0099" / "ticket.md").write_text(
+            _serialize_ticket(_ticket("T-0099"))
+        )
+        assert _store_mode(tmp_path) == "v2"
+
+        ticket = _ticket()
+        written = write_ticket(tmp_path, ticket)
+        assert written.is_ok
+        assert v2_ticket_path(tmp_path, "T-0001").exists()
+
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok.keys() == {"T-0001", "T-0099"}
+        assert loaded.danger_ok["T-0001"].title == ticket.title
+
+    def test_ticket_dir_named_by_id_not_slug(self, tmp_path: Path) -> None:
+        """Design section 1: the directory name IS the id, never a
+        slugified title -- a retitle must never rename the path."""
+        (tmp_path / "tickets" / "T-0001").mkdir(parents=True)
+        (tmp_path / "tickets" / "T-0001" / "ticket.md").write_text(
+            _serialize_ticket(_ticket())
+        )
+        ticket = _ticket(title="A Completely Different Title")
+        written = write_ticket(tmp_path, ticket)
+        assert written.is_ok
+        assert v2_ticket_dir(tmp_path, "T-0001") == tmp_path / "tickets" / "T-0001"
+        assert v2_ticket_path(tmp_path, "T-0001").exists()
+
+    def test_write_all_v2_prunes_removed_ticket(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_store.py::write_all kind="unit"
+        (tmp_path / "tickets" / "T-0001").mkdir(parents=True)
+        (tmp_path / "tickets" / "T-0001" / "ticket.md").write_text(
+            _serialize_ticket(_ticket())
+        )
+        (tmp_path / "tickets" / "T-0002").mkdir(parents=True)
+        (tmp_path / "tickets" / "T-0002" / "ticket.md").write_text(
+            _serialize_ticket(_ticket("T-0002"))
+        )
+        assert _store_mode(tmp_path) == "v2"
+
+        result = write_all(tmp_path, {"T-0001": _ticket()})
+        assert result.is_ok
+        assert v2_ticket_path(tmp_path, "T-0001").exists()
+        assert not v2_ticket_dir(tmp_path, "T-0002").exists()
 
 
 class TestMigrateToLedger:
@@ -648,6 +807,27 @@ class TestSetDoneReport:
         assert body.count("## Done report") == 1
         assert "second, corrected attempt" in body
         assert "first attempt" not in body
+
+    def test_v2_mode_writes_done_report_md_not_body(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestSetDoneReport.test_v2_mode_writes_done_report_md_not_body  # noqa: E501
+        d = tmp_path / "tickets" / "T-0001"
+        d.mkdir(parents=True)
+        (d / "ticket.md").write_text(_serialize_ticket(_ticket_evidence()))
+        assert _store_mode(tmp_path) == "v2"
+
+        result = set_done_report(
+            tmp_path, "T-0001", why="v2 done report", base_ref="does-not-exist"
+        )
+        assert result.is_ok
+        # ticket.md's own body is untouched -- no '## Done report' spliced in.
+        assert "## Done report" not in result.danger_ok.body
+        assert result.danger_ok.body == _ticket_evidence().body
+
+        report_text = read_done_report(tmp_path, "T-0001")
+        assert report_text is not None
+        assert "## Done report" in report_text
+        assert "v2 done report" in report_text
+        assert "### Evidence" in report_text
 
 
 # frob:ticket T-0357

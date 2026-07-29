@@ -1871,3 +1871,124 @@ class TestAddAcceptance:
         result = add_acceptance(tmp_path, ticket_id, ["  ", "", "real one"])
         assert result.is_ok
         assert [c.text for c in result.danger_ok.acceptance] == ["real one"]
+
+
+# frob:ticket T-1257
+class TestV2IndexCache:
+    """Design section 6's derived `.frob/tickets-index.json`: a hit skips
+    re-parsing every `ticket.md`, a stale/missing cache transparently
+    falls back to a full glob+parse (never silently stale data)."""
+
+    def _v2_ticket(self, tmp_path: Path, ticket_id: str = "T-0001") -> None:
+        d = tmp_path / "tickets" / ticket_id
+        d.mkdir(parents=True)
+        (d / "ticket.md").write_text(
+            _serialize_ticket(_ticket(ticket_id=ticket_id))
+        )
+
+    def test_second_load_reads_from_index_cache(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets.py::TestV2IndexCache.test_second_load_reads_from_index_cache  # noqa: E501
+        from frob.tickets._store import _index_path, load_all
+
+        self._v2_ticket(tmp_path)
+        first = load_all(tmp_path)
+        assert first.is_ok
+        index_path = _index_path(tmp_path)
+        assert index_path.exists()
+
+        second = load_all(tmp_path)
+        assert second.is_ok
+        assert second.danger_ok.keys() == {"T-0001"}
+        assert second.danger_ok["T-0001"].id == "T-0001"
+
+    def test_stale_index_falls_back_to_fresh_parse(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets.py::TestV2IndexCache.test_stale_index_falls_back_to_fresh_parse  # noqa: E501
+        from frob.tickets._store import load_all
+
+        self._v2_ticket(tmp_path, "T-0001")
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok.keys() == {"T-0001"}
+
+        # A NEW ticket file appears after the cache was written -- the
+        # path set no longer matches the cached entry set, so this must
+        # be a miss, never a stale hit that omits T-0002.
+        self._v2_ticket(tmp_path, "T-0002")
+        loaded_again = load_all(tmp_path)
+        assert loaded_again.is_ok
+        assert loaded_again.danger_ok.keys() == {"T-0001", "T-0002"}
+
+    def test_missing_index_never_raises(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets.py::TestV2IndexCache.test_missing_index_never_raises  # noqa: E501
+        from frob.tickets._store import load_all
+
+        self._v2_ticket(tmp_path)
+        assert not (tmp_path / ".frob" / "tickets-index.json").exists()
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok.keys() == {"T-0001"}
+
+
+# frob:ticket T-1257
+class TestV2StateTransitions:
+    """Design section 4.4: cycle-time/velocity mining derived purely from
+    `git log --follow` diff hunks on a v2-mode ticket's own `state:`
+    field, no separate event log required."""
+
+    def _repo(self, tmp_path: Path) -> Path:
+        import subprocess
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=str(root), check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=str(root),
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test"], cwd=str(root), check=True
+        )
+        return root
+
+    def _commit_ticket(
+        self, root: Path, ticket: Ticket, message: str
+    ) -> None:
+        import subprocess
+
+        d = root / "tickets" / ticket.id
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "ticket.md").write_text(_serialize_ticket(ticket))
+        subprocess.run(["git", "add", "-A"], cwd=str(root), check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", message], cwd=str(root), check=True
+        )
+
+    def test_transitions_mined_oldest_first(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets.py::TestV2StateTransitions.test_transitions_mined_oldest_first  # noqa: E501
+        from frob.tickets._store import v2_state_transitions
+
+        root = self._repo(tmp_path)
+        self._commit_ticket(
+            root, _ticket(state=TicketState.QUEUED), "file T-0001"
+        )
+        self._commit_ticket(
+            root, _ticket(state=TicketState.IN_PROGRESS), "start T-0001"
+        )
+        self._commit_ticket(root, _ticket(state=TicketState.DONE), "close T-0001")
+
+        transitions = v2_state_transitions(root, "T-0001")
+        assert [state for _, _, state in transitions] == [
+            "queued",
+            "in-progress",
+            "done",
+        ]
+        # oldest-first: the first commit's sha/date precede the last's.
+        assert len(transitions) == 3
+
+    def test_no_history_returns_empty_tuple(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets.py::TestV2StateTransitions.test_no_history_returns_empty_tuple  # noqa: E501
+        from frob.tickets._store import v2_state_transitions
+
+        root = self._repo(tmp_path)
+        assert v2_state_transitions(root, "T-9999") == ()

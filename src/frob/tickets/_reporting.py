@@ -85,11 +85,14 @@ from frob.tickets._models import (
 )
 from frob.tickets._models import _split_scope_entries as _normalize_scope_entries
 from frob.tickets._store import (
+    _store_mode,
     atomic_write,
     attachments_dir,
     ledger_lock,
     slugify,
     tickets_dir,
+    v2_attachments_dir,
+    write_done_report,
     write_ticket,
 )
 from frob.tickets._worktree_guard import enforce_worktree_lease
@@ -300,6 +303,37 @@ def _capture_done_report_claims(
     )
 
 
+# frob:ticket T-1254
+# frob:tests tests/unit/test_ticket_store.py::TestSetDoneReport.test_v2_mode_writes_done_report_md_not_body  # noqa: E501
+def _store_done_report(
+    root: Path, ticket_id: str, ticket: Ticket, report: str
+) -> Result[Ticket, TicketError]:
+    """`set_done_report`'s mode-dispatched write, split out so the caller
+    stays a thin compose-then-store body (T-1254): v1 (single/dir) mode
+    splices `report` into `ticket.body`'s '## Done report' section via
+    `replace_done_report_section` and writes the whole ticket back through
+    `write_ticket`; v2 mode instead writes `report` to `tickets/T-####/
+    done-report.md` (`write_done_report`, design section 1) and leaves
+    `ticket.body` untouched entirely -- the ticket's own frontmatter/
+    description never contends with a concurrent scope/evidence change to
+    the SAME ticket the way a shared-body splice would. Returns the
+    ticket as it now stands (unchanged for v2, with the spliced body for
+    v1) so the caller can log/return it without re-deriving which mode
+    ran."""
+    if _store_mode(root) == "v2":
+        report_write = write_done_report(root, ticket_id, report)
+        if report_write.is_err:
+            return Err(report_write.danger_err)
+        return Ok(ticket)
+    updated = ticket.model_copy(
+        update={"body": replace_done_report_section(ticket.body, report)}
+    )
+    write_result = write_ticket(root, updated)
+    if write_result.is_err:
+        return Err(write_result.danger_err)
+    return Ok(updated)
+
+
 # frob:ticket T-0458
 # frob:ticket T-0754
 # frob:ticket T-0832
@@ -429,12 +463,10 @@ def set_done_report(
             return Err(loaded.danger_err)
         ticket = loaded.danger_ok
         report = compose_done_report(why, changed_lines, ticket.evidence, claims)
-        updated = ticket.model_copy(
-            update={"body": replace_done_report_section(ticket.body, report)}
-        )
-        write_result = write_ticket(root, updated)
-        if write_result.is_err:
-            return Err(write_result.danger_err)
+        stored = _store_done_report(root, ticket_id, ticket, report)
+        if stored.is_err:
+            return Err(stored.danger_err)
+        updated = stored.danger_ok
     _log.info(
         "tickets: %s Done report set (%d evidence id(s), %d changed line(s)%s)",
         ticket_id,
@@ -714,8 +746,15 @@ def attach(
 def _next_attachment_path(
     root: Path, ticket_id: str, caption: str, suffix: str
 ) -> Path:
-    """The next `NN-slug.ext` attachment path under the ticket's attachment dir."""
-    dest_dir = attachments_dir(root, ticket_id)
+    """The next `NN-slug.ext` attachment path under the ticket's attachment
+    dir -- `tickets/T-####/attachments/` in v2 mode (design section 8's
+    self-contained layout), else the legacy shared `tickets/attachments/
+    <id>/` side-channel."""
+    dest_dir = (
+        v2_attachments_dir(root, ticket_id)
+        if _store_mode(root) == "v2"
+        else attachments_dir(root, ticket_id)
+    )
     existing = sorted(dest_dir.glob("[0-9][0-9]-*")) if dest_dir.exists() else []
     next_index = len(existing) + 1
     return dest_dir / f"{next_index:02d}-{slugify(caption)}{suffix}"
@@ -724,7 +763,16 @@ def _next_attachment_path(
 def _record_attachment(
     root: Path, ticket: Ticket, dest_path: Path, caption: str, sha256: str
 ) -> Result[Attachment, AttachError]:
-    """Append the written attachment to `ticket` and persist the ticket."""
+    """Append the written attachment to `ticket` and persist the ticket.
+
+    `Attachment.path` is always stored relative to `tickets_dir(root)`, in
+    BOTH modes -- `frob.gates`' COV004 sha-verification reconstructs the
+    absolute path as `Path("tickets") / attachment.path`
+    (`src/frob/gates/__init__.py`), a convention this module must not
+    silently break for v2 tickets. v2's own attachment dir
+    (`tickets/T-####/attachments/`) already nests under `tickets_dir`, so
+    the stored value naturally comes out as `T-####/attachments/NN-x.ext`
+    with no v2-specific branch needed here."""
     rel_path = str(dest_path.relative_to(tickets_dir(root)))
     attachment = Attachment(path=rel_path, caption=caption, sha256=sha256)
     updated = ticket.model_copy(

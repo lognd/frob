@@ -51,6 +51,7 @@ from frob.tickets._models import (
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import (
     _parse_ledger,
+    _store_mode,
     archive_path,
     ledger_digest,
     ledger_lock,
@@ -722,6 +723,99 @@ def _check_squash_conflicted(
         )
         return Err(unwound.danger_err if unwound.is_err else LandError.SquashConflict)
     return Ok(None)
+
+
+# frob:ticket T-1258
+# frob:doc docs/design/ledger-v2.md#5-merge-story-the-frob-ledger-driver-retired
+# frob:tests tests/test_ticket_land.py::TestLedgerV2LandMergeStory.test_disjoint_v2_tickets_land_with_no_custom_merge  # noqa: E501
+def _v2_effective_scope(ticket: Ticket) -> Ticket:
+    """v2-mode land treats a ticket's own `tickets/<id>/` directory as
+    always in scope (design section 1's file-per-ticket layout), mirroring
+    the v1 "tickets.md is always in scope" convention (agent-playbook.md
+    section 4) -- returns a scope-widened COPY of `ticket` (never mutates
+    the original) so the existing v1 out-of-scope conflict auto-resolver
+    (`_auto_resolve_out_of_scope_conflicts`) can be reused VERBATIM for
+    v2-mode merges/squash-applies instead of a parallel scope-matching
+    implementation. Idempotent: a second call on an already-widened ticket
+    is a no-op (the glob is only appended once)."""
+    own_glob = f"tickets/{ticket.id}/*"
+    if own_glob in ticket.scope:
+        return ticket
+    return ticket.model_copy(update={"scope": (*ticket.scope, own_glob)})
+
+
+# frob:ticket T-1258
+# frob:doc docs/design/ledger-v2.md#5-merge-story-the-frob-ledger-driver-retired
+# frob:tests tests/test_ticket_land.py::TestLedgerV2LandMergeStory.test_same_ticket_conflict_surfaces_loudly_no_splice  # noqa: E501
+def _check_squash_conflicted_v2(
+    root: Path, worktree: Path, ticket: Ticket, branch_name: str, pre_land_tip: str
+) -> Result[None, LandError]:
+    """v2-mode counterpart to `_check_squash_conflicted`: no tickets.md/
+    tickets-archive.md carve-out is needed here (those files do not exist
+    in v2 mode) -- any conflict OUTSIDE the ticket's own `tickets/<id>/`
+    directory is auto-resolved by taking root's side (`keep="ours"`, same
+    convention `_check_squash_conflicted` uses); anything left conflicted
+    is a genuine same-ticket-file conflict and is surfaced loudly as an
+    ORDINARY git conflict, per design section 5's explicit "no
+    `splice_ledger`-class resolution needed" contract (AC3) -- never
+    silently resolved by picking a side."""
+    widened = _v2_effective_scope(ticket)
+    resolved = _auto_resolve_out_of_scope_conflicts(root, widened, keep="ours")
+    if resolved.is_err:
+        unwound = _verified_reset_root(root, pre_land_tip, ticket.id)
+        return Err(unwound.danger_err if unwound.is_err else resolved.danger_err)
+    remaining = resolved.danger_ok
+    if remaining:
+        unwound = _verified_reset_root(root, pre_land_tip, ticket.id)
+        _log.error(
+            "land: %s squash-apply onto %s conflicts in scoped file(s) "
+            "(v2 mode, no ledger splice applies): %s -- resolve manually "
+            "(cd %s && git merge --squash %s), commit, then retry "
+            "`frob ticket land %s --worktree %s`",
+            ticket.id,
+            root,
+            sorted(remaining),
+            root,
+            branch_name,
+            ticket.id,
+            worktree,
+        )
+        return Err(unwound.danger_err if unwound.is_err else LandError.SquashConflict)
+    return Ok(None)
+
+
+# frob:ticket T-1258
+# frob:doc docs/design/ledger-v2.md#5-merge-story-the-frob-ledger-driver-retired
+# frob:tests tests/test_ticket_land.py::TestLedgerV2LandMergeStory.test_disjoint_v2_tickets_land_with_no_custom_merge  # noqa: E501
+def _squash_and_splice_ledger_v2(
+    root: Path,
+    worktree: Path,
+    ticket: Ticket,
+    final_id: str,
+    branch_name: str,
+    pre_land_tip: str,
+) -> Result[None, LandError]:
+    """v2-mode counterpart to `_squash_and_splice_ledger` (design section
+    5): `git merge --squash --no-commit` the worktree's finalized branch
+    onto `root`, exactly like v1, but performs NO ledger splice at all --
+    disjoint `tickets/T-####/` directories are ordinary git objects the
+    squash-merge already stages correctly on its own, so there is nothing
+    left to splice, no `ledger_lock` critical section is needed, and the
+    monofile-specific TICK005 terminal-state regression sweep does not
+    apply (a v2-mode analog of that sweep is out of THIS ticket's scope --
+    see its Done report for the follow-up filed). `final_id` is accepted
+    only for call-shape parity with `_squash_and_splice_ledger` (a v2-mode
+    draft finalization renumbers the directory itself, upstream of this
+    call, so there is no id-scoped splice left to perform here)."""
+    del final_id
+    squash = run_argv(
+        ["git", "-C", str(root), "merge", "--squash", "--no-commit", branch_name]
+    )
+    if squash.is_err:
+        return Err(LandError.GitFailed)
+    return _check_squash_conflicted_v2(
+        root, worktree, ticket, branch_name, pre_land_tip
+    )
 
 
 # frob:ticket T-0907
@@ -1674,8 +1768,19 @@ def _land_squash_apply(
         return Err(LandError.GitFailed)
     branch_name = branch.danger_ok
 
-    squashed = _squash_and_splice_ledger(
-        root, worktree, ticket, final_id, branch_name, pre_land_tip
+    # frob:ticket T-1258
+    # Ledger v2 design section 5: a v2-mode `root` (any `tickets/T-####/
+    # ticket.md` present) needs no ledger splice at all -- the squash-merge
+    # already stages disjoint ticket directories correctly on its own.
+    v2_mode = _store_mode(root) == "v2"
+    squashed = (
+        _squash_and_splice_ledger_v2(
+            root, worktree, ticket, final_id, branch_name, pre_land_tip
+        )
+        if v2_mode
+        else _squash_and_splice_ledger(
+            root, worktree, ticket, final_id, branch_name, pre_land_tip
+        )
     )
     if squashed.is_err:
         return Err(squashed.danger_err)
@@ -1724,7 +1829,7 @@ def _land_squash_apply(
             dry_run=False,
             wip_committed=wip_committed,
             merged_main_into_worktree=did_merge,
-            ledger_spliced=True,
+            ledger_spliced=not v2_mode,
             unowned_deletions=(),
             commit_sha=sha_str,
             files_changed=files,

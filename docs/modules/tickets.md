@@ -330,6 +330,9 @@ def set_done_report(root: Path, ticket_id: str, *, why: str,
     # capture runs BEFORE the lock is taken, since those are read-only and
     # previously serialized every other concurrent ticket mutation on this
     # ledger behind up to two 600s `frob check --ticket` subprocess spawns.
+    # T-1254: in v2-mode repos this writes tickets/T-####/done-report.md
+    # (write_done_report) instead of splicing into body -- see "v2 backend"
+    # under Storage internals below.
 def base_ref_resolvable(root: Path, base_ref: str) -> bool | None
     # T-0887: bounded git rev-parse check of whether base_ref resolves to a
     # real commit in root's clone. True/False when root is a real git
@@ -2346,10 +2349,71 @@ AttachError = TicketError | ClipboardError
 <!-- frob:describes src/frob/tickets/_store.py::atomic_write -->
 <!-- frob:describes src/frob/tickets/_store.py::ledger_lock -->
 <!-- frob:describes src/frob/tickets/_store.py::iter_raw_ledger_frontmatter -->
+<!-- frob:describes src/frob/tickets/_store.py::v2_ticket_dir -->
+<!-- frob:describes src/frob/tickets/_store.py::v2_ticket_path -->
+<!-- frob:describes src/frob/tickets/_store.py::v2_done_report_path -->
+<!-- frob:describes src/frob/tickets/_store.py::v2_attachments_dir -->
+<!-- frob:describes src/frob/tickets/_store.py::write_done_report -->
+<!-- frob:describes src/frob/tickets/_store.py::read_done_report -->
 
 `frob/tickets/_store.py` implements the single-file-ledger-vs-legacy-dir
 backend switch described under Storage above; `frob/tickets/__init__.py`
 (the Public API) is the only caller.
+
+### v2 backend (T-1254, docs/design/ledger-v2.md section 1)
+
+A THIRD backend alongside `single`/`dir`: one directory per ticket,
+`tickets/T-####/`, holding `ticket.md` (frontmatter + body, same shape
+`_serialize_ticket`/`_parse_ticket_file` already produce/consume for
+legacy dir mode) plus a `done-report.md` split OUT of the body, plus a
+self-contained `attachments/` directory. `_store_mode` detects it FIRST
+(any `tickets/T-*/ticket.md` present) so it takes priority over a stray
+`tickets.md`/legacy `tickets/*.md` left behind mid-migration; v1 (single
+mode) is still every fresh repo's default until a separate migration
+ticket flips it -- this backend is additive, not a replacement, in this
+ticket's scope.
+
+`write_ticket`'s v2 branch takes the per-ticket `ticket_lock` (not the
+whole-ledger `ledger_lock`) so two callers writing DIFFERENT ticket ids
+never contend -- the structural fix docs/design/ledger-v2.md's incident
+museum traces every ledger-churn race back to. `load_all`/`write_all` gain
+matching v2 branches (glob `tickets/T-*/ticket.md`, prune stale
+directories on a wholesale replace) alongside their existing single/dir
+branches.
+
+```python
+# frob/tickets/_store.py
+def v2_ticket_dir(root: Path, ticket_id: str) -> Path
+    # The tickets/T-####/ directory a v2-mode ticket owns -- the directory
+    # name IS the id, never a slugified title (a retitle never renames it).
+def v2_ticket_path(root: Path, ticket_id: str) -> Path
+    # tickets/T-####/ticket.md -- the frontmatter+body file.
+def v2_done_report_path(root: Path, ticket_id: str) -> Path
+    # tickets/T-####/done-report.md -- the Done report, split OUT of
+    # ticket.md's body so it is an independently mergeable/lockable write.
+def v2_attachments_dir(root: Path, ticket_id: str) -> Path
+    # tickets/T-####/attachments/ -- the self-contained attachment layout
+    # (design section 8's open question, resolved in favor of self-
+    # contained), distinct from the legacy shared attachments_dir().
+def write_done_report(root: Path, ticket_id: str, report_text: str) -> Result[None, TicketError]
+    # v2-mode only: atomically writes report_text to done-report.md, held
+    # under ticket_lock (not ledger_lock) since it only touches one ticket.
+def read_done_report(root: Path, ticket_id: str) -> str | None
+    # v2-mode only: done-report.md's raw text, or None if it does not
+    # exist yet.
+```
+
+`frob.tickets._reporting.set_done_report` branches on `_store_mode`: in
+`v2` mode it calls `write_done_report` instead of splicing a `## Done
+report` section into `ticket.body` via `replace_done_report_section` --
+the ticket's own frontmatter/description is left untouched. `attach`'s
+`_next_attachment_path`/`_record_attachment` route through
+`v2_attachments_dir` in v2 mode; `Attachment.path` is still stored
+relative to `tickets_dir(root)` in BOTH modes (never relative to the
+ticket's own directory), matching `frob.gates`' COV004 sha-verification
+convention (`Path("tickets") / attachment.path`) -- v2's own attachment
+dir already nests under `tickets_dir`, so no COV004-side change was
+needed.
 
 ```python
 # frob/tickets/_store.py
@@ -2379,8 +2443,12 @@ def write_archive(root: Path, tickets: dict[str, Ticket]) -> Result[None, Ticket
 def attachments_dir(root: Path, ticket_id: str) -> Path
     # tickets/attachments/<id>/ for a given ticket (both storage modes).
 def store_mode(root: Path) -> str
-    # Which backend a repo uses: 'single' if tickets.md exists, 'dir' if
-    # only legacy tickets/*.md files exist, else 'single' (fresh-repo default).
+    # Which backend a repo uses: 'v2' if any tickets/T-####/ticket.md
+    # directory exists (ledger v2, docs/design/ledger-v2.md section 1 --
+    # checked FIRST, taking priority over a stray legacy tickets.md/
+    # tickets/*.md left behind mid-migration), else 'single' if tickets.md
+    # exists, else 'dir' if only legacy tickets/*.md files exist, else
+    # 'single' (fresh-repo default).
 def serialize_ticket(ticket: Ticket) -> str
     # Renders a Ticket to legacy ---frontmatter + body (dir-mode file text).
 def parse_ticket_file(path: Path) -> Result[Ticket, TicketError]

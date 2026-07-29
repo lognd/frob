@@ -29,6 +29,12 @@ from frob.process._lock import (
     derived_state_write_lock,
     held_registry_keys,
 )
+from frob.tickets._store import (
+    _allocator_lock_path,
+    _ticket_lock_path,
+    allocator_lock,
+    ticket_lock,
+)
 
 
 # frob:ticket T-0859
@@ -407,3 +413,156 @@ class TestProcessRegistryCanonicalKey:
                 "differently-spelled but equivalent root as already held "
                 "(T-0933 canonical-key regression, reverse direction)"
             )
+
+
+# frob:ticket T-1253
+class TestTicketLock:
+    """Exercises `frob.tickets._store.ticket_lock` (ledger v2 design section
+    3): a per-ticket-id lock that must let two DIFFERENT ticket ids proceed
+    fully concurrently while still serializing two callers on the SAME id,
+    and must not deadlock on same-thread reentry."""
+
+    # frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_lock_path_is_per_ticket_id  # noqa: E501
+    def test_lock_path_is_per_ticket_id(self, tmp_path: Path) -> None:
+        """Two different ticket ids resolve to two different lock file
+        paths, both under `.frob/tickets/`."""
+        path_a = _ticket_lock_path(tmp_path, "T-0001")
+        path_b = _ticket_lock_path(tmp_path, "T-0002")
+        assert path_a != path_b
+        assert path_a.parent == tmp_path / ".frob" / "tickets"
+        assert path_a.name == "T-0001.lock"
+
+    # frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_two_different_ticket_ids_do_not_block_each_other  # noqa: E501
+    def test_two_different_ticket_ids_do_not_block_each_other(
+        self, tmp_path: Path
+    ) -> None:
+        """GIVEN two callers each hold `ticket_lock` for different ticket
+        ids WHEN both proceed concurrently THEN neither blocks the other --
+        proven by both entering their critical section inside the SAME
+        overlapping window, not merely "no exception raised"."""
+        entered = threading.Event()
+        both_overlapped = threading.Event()
+        barrier = threading.Barrier(2)
+
+        def worker_a() -> None:
+            barrier.wait()
+            with ticket_lock(tmp_path, "T-1001"):
+                entered.set()
+                # Give worker_b a chance to also enter its own (different)
+                # ticket's lock while this one is still held.
+                both_overlapped.wait(timeout=5)
+                time.sleep(0.05)
+
+        def worker_b() -> None:
+            barrier.wait()
+            entered.wait(timeout=5)
+            with ticket_lock(tmp_path, "T-1002"):
+                both_overlapped.set()
+
+        t_a = threading.Thread(target=worker_a)
+        t_b = threading.Thread(target=worker_b)
+        t_a.start()
+        t_b.start()
+        t_a.join(timeout=10)
+        t_b.join(timeout=10)
+        assert both_overlapped.is_set(), (
+            "worker_b (different ticket id) never entered its own "
+            "ticket_lock while worker_a's (different id) hold was still "
+            "outstanding -- ticket_lock is serializing across DIFFERENT "
+            "ticket ids, which it must never do"
+        )
+
+    # frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_same_id_from_two_threads_serializes  # noqa: E501
+    def test_same_id_from_two_threads_serializes(self, tmp_path: Path) -> None:
+        """Two threads racing for `ticket_lock` on the SAME ticket id never
+        overlap -- a real cross-thread mutual-exclusion check."""
+        active = 0
+        max_active = 0
+        lock = threading.Lock()
+        barrier = threading.Barrier(2)
+
+        def worker() -> None:
+            nonlocal active, max_active
+            barrier.wait()
+            with ticket_lock(tmp_path, "T-2000"):
+                with lock:
+                    active += 1
+                    max_active = max(max_active, active)
+                time.sleep(0.05)
+                with lock:
+                    active -= 1
+
+        threads = [threading.Thread(target=worker) for _ in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=10)
+        assert max_active == 1
+
+    # frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_reentrant_same_id_in_same_thread_does_not_deadlock  # noqa: E501
+    def test_reentrant_same_id_in_same_thread_does_not_deadlock(
+        self, tmp_path: Path
+    ) -> None:
+        """A caller already holding `ticket_lock` for id X that acquires it
+        again (same thread, reentrant call) must not deadlock (mirrors
+        `derived_state_lock`'s reentrancy discipline, T-0933/T-0982
+        lineage)."""
+        with ticket_lock(tmp_path, "T-3000"):
+            with ticket_lock(tmp_path, "T-3000"):
+                pass
+
+
+# frob:ticket T-1253
+class TestAllocatorLock:
+    """Exercises `frob.tickets._store.allocator_lock` (ledger v2 design
+    section 3): the one remaining genuinely shared resource, guarding only
+    next-id computation."""
+
+    # frob:tests tests/unit/test_process_lock.py::TestAllocatorLock.test_lock_file_created_under_frob_dir  # noqa: E501
+    def test_lock_file_created_under_frob_dir(self, tmp_path: Path) -> None:
+        assert _allocator_lock_path(tmp_path) == (
+            tmp_path / ".frob" / "tickets-allocator.lock"
+        )
+        with allocator_lock(tmp_path):
+            pass
+        assert _allocator_lock_path(tmp_path).exists()
+
+    # frob:tests tests/unit/test_process_lock.py::TestAllocatorLock.test_two_concurrent_allocations_get_distinct_ids  # noqa: E501
+    def test_two_concurrent_allocations_get_distinct_ids(self, tmp_path: Path) -> None:
+        """GIVEN two callers both call the id allocator concurrently WHEN
+        both request a next id THEN they receive distinct ids (interleaving
+        regression test, mirroring T-1090's
+        `test_two_concurrent_finalize_draft_calls_get_distinct_ids` shape)."""
+        counter = {"next": 1}
+        allocated: list[int] = []
+        alloc_lock = threading.Lock()
+        barrier = threading.Barrier(2)
+
+        def allocate_one() -> None:
+            barrier.wait()
+            with allocator_lock(tmp_path):
+                # Simulate a read-increment-write sequence with a window
+                # wide enough that an unlocked race would very likely
+                # produce a duplicate.
+                current = counter["next"]
+                time.sleep(0.02)
+                counter["next"] = current + 1
+                with alloc_lock:
+                    allocated.append(current)
+
+        threads = [threading.Thread(target=allocate_one) for _ in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=10)
+        assert sorted(allocated) == [1, 2], (
+            f"expected two distinct allocated ids, got {allocated!r} -- "
+            "allocator_lock failed to serialize the read-increment-write "
+            "sequence (T-1090 regression shape)"
+        )
+
+    # frob:tests tests/unit/test_process_lock.py::TestAllocatorLock.test_reentrant_in_same_thread_does_not_deadlock  # noqa: E501
+    def test_reentrant_in_same_thread_does_not_deadlock(self, tmp_path: Path) -> None:
+        with allocator_lock(tmp_path):
+            with allocator_lock(tmp_path):
+                pass

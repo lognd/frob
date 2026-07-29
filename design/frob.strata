@@ -2720,6 +2720,14 @@ store tickets_ledger : trusted {
     attr interface=is_valid_ticket_ref;
     attr interface=iter_raw_ledger_frontmatter;
     attr interface=commit_ticket_ledger_change;
+    attr interface=allocator_lock;
+    attr interface=ticket_lock;
+    attr interface=read_done_report;
+    attr interface=v2_attachments_dir;
+    attr interface=v2_done_report_path;
+    attr interface=v2_ticket_dir;
+    attr interface=v2_ticket_path;
+    attr interface=write_done_report;
 }
 
 // T-0956: names the SAME single-writer arbiter the five SYS203/
@@ -2800,6 +2808,7 @@ cache graph_cache of graphlang {
 // touching every capability the product itself has, not an
 // under-specified catch-all.
 // frob:doc docs/modules/strata.md#modeled-_package_root-restrictions-264-finding-follow-up-t-1079-closed
+// frob:ticket T-1253
 // frob:ticket T-1227
 node testsuite : trusted {
     clearance Internal;
@@ -2931,6 +2940,7 @@ node testsuite : trusted {
     attr interface=TestAggregateDemand;
     attr interface=TestAlarms;
     attr interface=TestAll;
+    attr interface=TestAllocatorLock;
     attr interface=TestAllowConfig;
     attr interface=TestAmbiguousLivenessGuard;
     attr interface=TestAnalyzeProject;
@@ -2959,6 +2969,7 @@ node testsuite : trusted {
     attr interface=TestArchiveRefusesDuringInFlightWork;
     attr interface=TestArchiveResurrection;
     attr interface=TestArchiveSpliceDiscipline;
+    attr interface=TestArchiveV2;
     attr interface=TestAssumeReviewDates;
     attr interface=TestAssumes;
     attr interface=TestAssumptionLedger;
@@ -3627,6 +3638,7 @@ node testsuite : trusted {
     attr interface=TestLedgerLock;
     attr interface=TestLedgerLockSpansWholesaleOperations;
     attr interface=TestLedgerNotDoc;
+    attr interface=TestLedgerV2LandMergeStory;
     attr interface=TestLegacyCapabilityAliases;
     attr interface=TestLegacyCoreCacheDrift;
     attr interface=TestLibraryModeForeignlessDischarge;
@@ -4001,6 +4013,7 @@ node testsuite : trusted {
     attr interface=TestRenderer;
     attr interface=TestRenumberMigratesLeaseEndToEnd;
     attr interface=TestRenumberOneRaceWithConcurrentNew;
+    attr interface=TestRenumberOneV2;
     attr interface=TestRenumberRewritesLedgerProse;
     attr interface=TestReplaceDoneReportSection;
     attr interface=TestReplayEvidenceFromDoneReport;
@@ -4274,6 +4287,7 @@ node testsuite : trusted {
     attr interface=TestTicketLeasePin;
     attr interface=TestTicketList;
     attr interface=TestTicketListShowDoableLoadErrors;
+    attr interface=TestTicketLock;
     attr interface=TestTicketMigrate;
     attr interface=TestTicketNewErrors;
     attr interface=TestTicketNewEvidence;
@@ -4372,6 +4386,12 @@ node testsuite : trusted {
     attr interface=TestUtilityHubVulnLitmus;
     attr interface=TestUtilization;
     attr interface=TestUvLockSync;
+    attr interface=TestV2Attachments;
+    attr interface=TestV2DoneReport;
+    attr interface=TestV2IndexCache;
+    attr interface=TestV2StateTransitions;
+    attr interface=TestV2StoreMode;
+    attr interface=TestV2WriteTicket;
     attr interface=TestValidateRegistryKinds;
     attr interface=TestValidateWaiverFields;
     attr interface=TestVerbShapedContinuationProse;
@@ -5153,6 +5173,7 @@ node testsuite : trusted {
     attr interface=test_xref_json;
     attr interface=test_xref_no_files_nonzero;
     attr interface=test_xref_shows_definition;
+    attr interface=v2_repo;
     attr interface=xref_project;
 }
 

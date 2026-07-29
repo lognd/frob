@@ -39,9 +39,14 @@ from typani.result import Err, Ok, Result
 from frob.gitio import current_branch, run_argv
 from frob.logging import get_logger
 from frob.tickets._journal import _clear_intent, _write_intent
-from frob.tickets._land_finalize import _land_finalize_and_close, _land_squash_apply
+from frob.tickets._land_finalize import (
+    _land_finalize_and_close,
+    _land_squash_apply,
+    _v2_effective_scope,
+)
 from frob.tickets._land_merge import (
     _abort_merge,
+    _auto_resolve_out_of_scope_conflicts,
     _merge_main_into_worktree,
     _porcelain_dirty,
     _restore_lock_version_only_drift,
@@ -66,6 +71,7 @@ from frob.tickets._models import (
     LandReport,
     Ticket,
 )
+from frob.tickets._store import _store_mode
 
 # T-0577: same posix-only degradation as `frob.tickets._store`'s
 # `ledger_lock` -- `_land_lock` degrades to a documented no-op (see its
@@ -1086,6 +1092,60 @@ def _land_precheck(
     return Ok((ticket, main_branch.danger_ok))
 
 
+# frob:ticket T-1258
+# frob:doc docs/design/ledger-v2.md#5-merge-story-the-frob-ledger-driver-retired
+# frob:tests tests/test_ticket_land.py::TestLedgerV2LandMergeStory.test_disjoint_v2_tickets_land_with_no_custom_merge  # noqa: E501
+def _merge_main_into_worktree_v2(
+    worktree: Path, ticket: Ticket, main_branch: str
+) -> Result[bool, LandError]:
+    """v2-mode counterpart to `_merge_main_into_worktree` (design section
+    5): a plain `git merge --no-commit --no-ff` -- no `tickets.md`/
+    `tickets-archive.md` splice at all, since disjoint `tickets/T-####/`
+    directories are ordinary git objects that merge cleanly on their own
+    (AC2: two branches editing DIFFERENT ticket directories produce zero
+    conflicts, no custom driver invoked). Any conflict outside the
+    ticket's own directory is auto-resolved by taking main's side (mirrors
+    `_merge_main_into_worktree`'s `keep="theirs"` convention); a conflict
+    INSIDE the ticket's own directory (two branches both editing the SAME
+    ticket) is left conflicted and surfaced loudly (AC3), never
+    resolved by picking a side."""
+    merged = run_argv(
+        ["git", "-C", str(worktree), "merge", "--no-commit", "--no-ff", main_branch]
+    )
+    if merged.is_err:
+        return Err(LandError.GitFailed)
+    if (
+        merged.danger_ok.returncode == 0
+        and "up to date" in merged.danger_ok.stdout.lower()
+    ):
+        return Ok(False)
+
+    widened = _v2_effective_scope(ticket)
+    resolved = _auto_resolve_out_of_scope_conflicts(worktree, widened, keep="theirs")
+    if resolved.is_err:
+        _abort_merge(worktree)
+        return Err(resolved.danger_err)
+    remaining = resolved.danger_ok
+    if remaining:
+        _abort_merge(worktree)
+        _log.error(
+            "land: %s merging %s into %s conflicts in scoped file(s) "
+            "(v2 mode, no ledger splice applies): %s -- resolve manually "
+            "(cd %s && git merge %s), commit, then retry "
+            "`frob ticket land %s --worktree %s`",
+            ticket.id,
+            main_branch,
+            worktree,
+            sorted(remaining),
+            worktree,
+            main_branch,
+            ticket.id,
+            worktree,
+        )
+        return Err(LandError.MergeConflict)
+    return Ok(True)
+
+
 def _land_merge_stage(
     root: Path,
     worktree: Path,
@@ -1097,13 +1157,22 @@ def _land_merge_stage(
     """wip-commit, merge main into the worktree, and check for unowned
     deletions; returns `(wip_committed, did_merge, dry_run_report)` where
     `dry_run_report` is the early-return report for a clean dry run, else
-    `None`."""
+    `None`.
+
+    T-1258: dispatches to the v2-mode merge path (`_merge_main_into_
+    worktree_v2`, no ledger splice) whenever `root` is in v2-mode storage
+    (`_store_mode(root) == "v2"`); a v1 (monofile) `root` keeps the
+    existing `_merge_main_into_worktree` splice path unchanged."""
     wip = _wip_commit(worktree, ticket_id, dry_run=dry_run)
     if wip.is_err:
         return Err(wip.danger_err)
     wip_committed = wip.danger_ok
 
-    merged = _merge_main_into_worktree(root, worktree, ticket, main_branch_name)
+    merged = (
+        _merge_main_into_worktree_v2(worktree, ticket, main_branch_name)
+        if _store_mode(root) == "v2"
+        else _merge_main_into_worktree(root, worktree, ticket, main_branch_name)
+    )
     if merged.is_err:
         return Err(merged.danger_err)
     did_merge = merged.danger_ok

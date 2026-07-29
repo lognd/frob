@@ -15,12 +15,17 @@ from frob.logging import get_logger
 from frob.tickets._leases import read_all_leases
 from frob.tickets._models import Ticket, TicketError, TicketQueue, TicketState
 from frob.tickets._store import (
+    _store_mode,
+    git_mv_dir,
     ledger_digest,
     ledger_lock,
     ledger_path,
     load_all,
     load_archive,
     migrate_to_ledger,
+    ticket_lock,
+    v2_archive_dir,
+    v2_ticket_dir,
     write_all,
     write_archive,
 )
@@ -146,7 +151,17 @@ def archive(root: Path, *, force: bool = False) -> Result[int, TicketError]:
     second call with nothing newly done/dropped moves nothing and returns
     Ok(0). Returns the number of tickets moved. See the comment block
     directly above this function for the full T-0633/T-0764/T-0843
-    locking and live-lease-refusal rationale."""
+    locking and live-lease-refusal rationale.
+
+    T-1256: a v2-mode repo (`_store_mode(root) == "v2"`) dispatches to
+    `archive_v2` instead -- design section 4.3's plain `git mv
+    tickets/T-#### tickets/archive/T-####` per ticket, in place of this
+    function's whole-ledger read-modify-write of two monofiles. Checked
+    FIRST, before `enforce_worktree_lease` even runs, since `archive_v2`
+    does its own lease check (mirroring `renumber_one`'s T-1255
+    dispatch)."""
+    if _store_mode(root) == "v2":
+        return archive_v2(root, force=force)
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
@@ -199,6 +214,74 @@ def _refuse_archive_if_leased(
         ", ".join(leased_to_archive),
     )
     return Err(TicketError.ArchiveLiveLeaseExists)
+
+
+# frob:ticket T-1256
+# frob:doc docs/design/ledger-v2.md#43-archive-as-git-mv
+# frob:tests tests/test_ticket_land.py::TestArchiveV2.test_archive_moves_directory_via_git_mv_no_content_rewrite  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestArchiveV2.test_archive_v2_regression_two_sided_divergence_no_clobber  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestArchiveV2.test_archived_v2_ticket_still_resolves_as_blocker  # noqa: E501
+def archive_v2(root: Path, *, force: bool = False) -> Result[int, TicketError]:
+    """v2-mode `archive` (design section 4.3): `git mv tickets/T-####
+    tickets/archive/T-####` per done/dropped ticket, zero content rewrite --
+    no `ticket.md`/`done-report.md` byte changes, so there is no destination
+    FILE being rewritten for two divergent branches' archive sweeps to
+    clobber (the T-0959 failure mode structurally impossible here, not
+    merely guarded). Idempotent, same contract as `archive`: nothing
+    done/dropped and still active returns `Ok(0)`.
+
+    Each move is taken under that ticket's own `ticket_lock` (design
+    section 3), not a single whole-tree lock -- concurrent archives of
+    DIFFERENT tickets never contend, and a `git mv` of one ticket's
+    directory can never race a write to another ticket's directory."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    active_loaded = load_all(root)
+    if active_loaded.is_err:
+        return Err(active_loaded.danger_err)
+    active = active_loaded.danger_ok
+
+    to_archive = {
+        tid: t
+        for tid, t in active.items()
+        if t.state in (TicketState.DONE, TicketState.DROPPED)
+    }
+    if not to_archive:
+        _log.info("tickets: archive_v2 -- nothing to move")
+        return Ok(0)
+
+    if not force:
+        guard = _refuse_archive_if_leased(root, to_archive)
+        if guard.is_err:
+            return Err(guard.danger_err)
+
+    moved = 0
+    for ticket_id in sorted(to_archive):
+        with ticket_lock(root, ticket_id):
+            old_dir = v2_ticket_dir(root, ticket_id)
+            if not old_dir.is_dir():
+                _log.debug(
+                    "tickets: archive_v2 skipping %s -- already moved "
+                    "(concurrent archive won the race)",
+                    ticket_id,
+                )
+                continue
+            new_dir = v2_archive_dir(root, ticket_id)
+            if new_dir.exists():
+                _log.error(
+                    "tickets: archive_v2: %s already exists at destination %s",
+                    ticket_id,
+                    new_dir,
+                )
+                return Err(TicketError.DuplicateId)
+            move_result = git_mv_dir(root, old_dir, new_dir)
+            if move_result.is_err:
+                return Err(move_result.danger_err)
+            moved += 1
+
+    _log.info("tickets: archived %d ticket(s) (v2, git mv)", moved)
+    return Ok(moved)
 
 
 # frob:ticket T-0889
