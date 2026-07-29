@@ -2931,6 +2931,7 @@ node testsuite : trusted {
     attr interface=TestAntiUnify;
     attr interface=TestAppendEntry;
     attr interface=TestApplyManagedBlocks;
+    attr interface=TestApplyPlan;
     attr interface=TestApplyReleaseBumpForLand;
     attr interface=TestApplySyncInterface;
     attr interface=TestApplyTierAAndReverify;
@@ -2999,7 +3000,9 @@ node testsuite : trusted {
     attr interface=TestBuildGroupTemplate;
     attr interface=TestBuildIncremental;
     attr interface=TestBuildIndexForFiles;
+    attr interface=TestBuildMoveOps;
     attr interface=TestBuildNatives;
+    attr interface=TestBuildPlan;
     attr interface=TestBuildServer;
     attr interface=TestCCppNamespace;
     attr interface=TestCacheDesugar;
@@ -3090,6 +3093,7 @@ node testsuite : trusted {
     attr interface=TestCleanupObligationGate;
     attr interface=TestClearIntent;
     attr interface=TestClearRatchetEntry;
+    attr interface=TestCli;
     attr interface=TestCliCommandTableGenerator;
     attr interface=TestCliEvidenceEnforcementEndToEnd;
     attr interface=TestCliStartRecordsGateCompatibleDigest;
@@ -3419,6 +3423,7 @@ node testsuite : trusted {
     attr interface=TestFindCrates;
     attr interface=TestFindDuplicates;
     attr interface=TestFindImportingNodes;
+    attr interface=TestFindPythonFiles;
     attr interface=TestFindVitestProjects;
     attr interface=TestFindsTokens;
     attr interface=TestFingerprintBindingResolution;
@@ -3713,6 +3718,7 @@ node testsuite : trusted {
     attr interface=TestModeQualifiedFsStaleDesign;
     attr interface=TestModelsAreFrozen;
     attr interface=TestModuleDependencyCycles;
+    attr interface=TestModuleToPath;
     attr interface=TestMultiAceDenyOverridesAllow;
     attr interface=TestMultipleRunnersPerLanguage;
     attr interface=TestMutableDefaultArg;
@@ -3867,6 +3873,7 @@ node testsuite : trusted {
     attr interface=TestPiiVulnLitmus;
     attr interface=TestPlace001Gate;
     attr interface=TestPlanObligations;
+    attr interface=TestPlanProperties;
     attr interface=TestPlannedStateAutoAdvanceOnLand;
     attr interface=TestPollPostLand;
     attr interface=TestPollRebaseBot;
@@ -4002,6 +4009,7 @@ node testsuite : trusted {
     attr interface=TestResolveRatchetSeverity;
     attr interface=TestResolveRunner;
     attr interface=TestResolveStream;
+    attr interface=TestResolveSymbol;
     attr interface=TestResourceContentionViolations;
     attr interface=TestResourceDirectives;
     attr interface=TestResourceLeaseManager;
@@ -4044,6 +4052,7 @@ node testsuite : trusted {
     attr interface=TestRunLoggingChecks;
     attr interface=TestRunLspChecks;
     attr interface=TestRunPytestDirectlyStripsLeaseEnv;
+    attr interface=TestRunRefactor;
     attr interface=TestRunSmellChecks;
     attr interface=TestRunSocketDaemon;
     attr interface=TestRunSrpChecks;
@@ -4058,6 +4067,7 @@ node testsuite : trusted {
     attr interface=TestScaffoldConformanceStatus;
     attr interface=TestScaffoldPoolCli;
     attr interface=TestScaffoldRunner;
+    attr interface=TestScanReferences;
     attr interface=TestScanTextForFingerprints;
     attr interface=TestScanTreeLockArg;
     attr interface=TestScanTreeMultipleLockfiles;
@@ -4359,6 +4369,7 @@ node testsuite : trusted {
     attr interface=TestVerdictCacheRulesFingerprintInvalidation;
     attr interface=TestVerdictRoundTrip;
     attr interface=TestVerifiedResetRoot;
+    attr interface=TestVerify;
     attr interface=TestVerifyOneBucketPassingRoutesToIndividualReverify;
     attr interface=TestVerticalIsolation;
     attr interface=TestVetRunner;

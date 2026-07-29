@@ -694,7 +694,7 @@ User directive 2026-07-29: design/frob.strata is 5588 lines and monolithic. _des
 ```yaml
 id: T-1197
 title: 'refactor: reference-rewrite engine (resolve/plan/apply/verify pipeline)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -706,6 +706,53 @@ scope:
 - src/frob/refactor/**
 - docs/commands/refactor.md
 - tests/test_refactor.py
+evidence:
+- tests/test_refactor.py::TestRunRefactor::test_rename_succeeds_and_commits
+- tests/test_refactor.py::TestVerify::test_import_resolution_passes_clean_files
+- tests/test_refactor.py::TestScanReferences::test_auto_alias_on_call_site_name_collision
+- tests/test_refactor.py::TestRunRefactor::test_verify_failure_rolls_back
+- tests/test_refactor.py::TestApplyPlan::test_apply_then_rollback_restores_tree
+- tests/test_refactor.py::TestApplyPlan::test_overlapping_ops_refuse_before_write
+- tests/test_refactor.py::TestApplyPlan::test_apply_failed_on_write_error_reports_apply_failed
+- tests/test_refactor.py::TestRunRefactor::test_apply_failure_recovers_clean_precommit_tree
+- tests/test_refactor.py::TestScanReferences::test_semicolon_joined_from_import_refuses_rewrite
+- tests/test_refactor.py::TestScanReferences::test_unresolved_attribute_style_reference_surfaces
+- tests/test_refactor.py::TestVerify::test_check_delta_uses_current_interpreter
+- tests/test_refactor.py::TestVerify::test_import_resolution_catches_dangling_reference
+- tests/test_refactor.py::TestVerify::test_import_resolution_local_import_resolves
+reviews:
+- verdict: reject
+  reviewer: review-pass
+  findings: "Reviewer findings requiring rework before re-close:\n\n1. BLOCKING: src/frob/refactor/_apply.py:79-107\
+    \ -- overlapping/same-line\n   RewriteOps silently clobber each other; each op\
+    \ computed against\n   ORIGINAL source, sorted by start_line descending, so two\
+    \ ops sharing a\n   start_line means the second applied overwrites the first wholesale\
+    \ with\n   no warning, and verify often still passes. Also _scan.py:264-277\n\
+    \   _import_op replaces the whole [lineno, end_lineno] span, silently\n   deleting\
+    \ other code sharing the physical line (e.g. semicolon-joined\n   statements).\
+    \ Fix: detect overlapping/duplicate line ranges across ops\n   targeting the same\
+    \ file and REFUSE with a typani Result error (not an\n   exception), at plan-time\
+    \ or apply-time. Add tests for same-line\n   multi-ref and semicolon-joined cases.\n\
+    \n2. src/frob/refactor/_verify.py:112 -- verify_check_delta shells out to\n  \
+    \ bare `frob check --delta`, which per playbook sec 2 can be a stale\n   global\
+    \ binary. Invoke the current interpreter's frob (sys.executable\n   -m frob) or\
+    \ the repo venv's frob, version-consistent with the running\n   code. Add/adjust\
+    \ a test.\n\n3. BLOCKING: verify_import_resolution is ast.parse-only (a stand-in)\
+    \ while\n   the ticket promises import-graph resolution. Implement real import\n\
+    \   resolution for touched modules (frob.graph rebuild + resolve check per\n \
+    \  ticket body), or, if genuinely out of reach this session, rename the\n   function\
+    \ honestly (verify_syntax), disclose the limitation explicitly\n   in the CLI\
+    \ report and docs/commands/refactor.md, make pytest-collect\n   verification non-skippable\
+    \ by default, and file a follow-up ticket for\n   real import resolution. Prefer\
+    \ implementing it for real.\n\n4. No test exercises apply_plan's OSError failure\
+    \ path or run_refactor's\n   pre-commit reset-and-clean recovery (_apply.py:124-126,\n\
+    \   _transaction.py:269-276). Add a real test (e.g. monkeypatched write\n   failure\
+    \ mid-file-set) asserting the tree is restored.\n\n5. The unresolved attribute-style-reference\
+    \ path (_scan.py:151-181\n   _handle_import) has zero coverage. Add a test with\
+    \ `import\n   old.module` + `old.module.qualname(...)` usage asserting `unresolved`\n\
+    \   populates and surfaces in the report."
+  commit: 2320155238aa75f5cc285253230cbb437486ecf0
+  at: '2026-07-29'
 acceptance:
 - text: 'GIVEN a Python symbol renamed via `frob refactor rename` WHEN every import
 
@@ -716,7 +763,12 @@ acceptance:
     pre-refactor baseline stamp shows zero new findings (allowing for the
 
     same finding relocated to the new symref)'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestRunRefactor::test_rename_succeeds_and_commits
+  - tests/test_refactor.py::TestVerify::test_import_resolution_passes_clean_files
+  - tests/test_refactor.py::TestScanReferences::test_auto_alias_on_call_site_name_collision
+  - tests/test_refactor.py::TestRunRefactor::test_verify_failure_rolls_back
+  - tests/test_refactor.py::TestApplyPlan::test_apply_then_rollback_restores_tree
 - text: 'GIVEN a rename target whose destination name collides with something
 
     already imported at a call site WHEN the refactor applies THEN that call
@@ -724,7 +776,12 @@ acceptance:
     site gets an auto-generated import alias, and the disclosed report names
 
     every alias generated'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestRunRefactor::test_rename_succeeds_and_commits
+  - tests/test_refactor.py::TestVerify::test_import_resolution_passes_clean_files
+  - tests/test_refactor.py::TestScanReferences::test_auto_alias_on_call_site_name_collision
+  - tests/test_refactor.py::TestRunRefactor::test_verify_failure_rolls_back
+  - tests/test_refactor.py::TestApplyPlan::test_apply_then_rollback_restores_tree
 - text: 'GIVEN a refactor whose apply phase cannot complete every planned rewrite
 
     WHEN it detects this THEN it refuses and rolls back via `git reset --hard`
@@ -732,7 +789,12 @@ acceptance:
     to its own pre-transaction commit, never leaving a half-moved symbol, and
 
     never touching refs/stash'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestRunRefactor::test_rename_succeeds_and_commits
+  - tests/test_refactor.py::TestVerify::test_import_resolution_passes_clean_files
+  - tests/test_refactor.py::TestScanReferences::test_auto_alias_on_call_site_name_collision
+  - tests/test_refactor.py::TestRunRefactor::test_verify_failure_rolls_back
+  - tests/test_refactor.py::TestApplyPlan::test_apply_then_rollback_restores_tree
 threat: null
 component: null
 ```
@@ -765,6 +827,114 @@ resolve/plan/apply/verify transaction pipeline for `frob refactor`:
   the shared pipeline; frob-owned DSL/waiver/registry/evidence rewriting
   is out of scope (children 2 and 3 extend this pipeline's reference-kind
   inventory, they do not reimplement resolve/plan/apply/verify).
+
+## Done report
+
+Rework in response to reviewer rejection (all five findings fixed, two
+were BLOCKING):
+
+1. (BLOCKING) apply_plan now detects overlapping/duplicate line ranges
+   across RewriteOps targeting the same file and refuses with
+   Err(RefactorError.OverlappingRewrites) before any write --
+   _find_overlapping_ops in _apply.py. scan_references applies the same
+   discipline one phase earlier for the semicolon-joined case:
+   _shares_line_with_sibling_statement detects when a from-import shares
+   its physical line with another statement and reports it via
+   `unresolved` instead of emitting a destructive whole-span rewrite op.
+   New tests: TestApplyPlan.test_overlapping_ops_refuse_before_write,
+   TestScanReferences.test_semicolon_joined_from_import_refuses_rewrite.
+
+2. verify_check_delta now invokes `sys.executable -m frob check --delta`
+   instead of a bare `frob` on PATH (agent-playbook.md sec 2 -- bare frob
+   can be a stale global install). New test:
+   TestVerify.test_check_delta_uses_current_interpreter (monkeypatches
+   guarded_subprocess_run and asserts the exact argv prefix).
+
+3. (BLOCKING) verify_import_resolution now performs real import-graph
+   resolution: for every touched file's absolute `from <local module>
+   import <name>` statement, it confirms `<name>` is actually defined at
+   that module's top level (function/class/assignment/re-exported
+   import), not merely that the file parses. Scope is disclosed
+   explicitly in the function's own docstring and docs/commands/
+   refactor.md: repo-owned modules under src/ only, absolute imports
+   only -- third-party/stdlib and relative imports are out of v1's
+   static-AST reach and are never flagged. `repo_root=None` preserves the
+   old syntax-only fallback for a caller with no enclosing repo, and the
+   VerifyOutcome.detail string always discloses which mode ran (never
+   silently claims full resolution when it didn't happen). Also fixed
+   _handle_import's attribute-style-reference matcher, which only ever
+   matched a single-Name hop and so silently missed every dotted,
+   non-aliased `import pkg.mod` usage (`pkg.mod.greet()` is
+   Attribute(Attribute(Name,'mod'),'greet'), not Attribute(Name,'greet'))
+   -- it now walks the full dotted attribute chain. New tests:
+   TestVerify.test_import_resolution_catches_dangling_reference,
+   TestVerify.test_import_resolution_local_import_resolves,
+   TestScanReferences.test_unresolved_attribute_style_reference_surfaces.
+
+4. Added a real test for apply_plan's OSError failure path
+   (monkeypatched Path.write_text) and run_refactor's pre-commit
+   reset-and-clean recovery, asserting the tree is restored to the
+   pre-transaction sha with an empty `git status --porcelain`. New
+   tests: TestApplyPlan.test_apply_failed_on_write_error_reports_apply_failed,
+   TestRunRefactor.test_apply_failure_recovers_clean_precommit_tree.
+
+5. Added coverage for the unresolved attribute-style-reference path
+   (`import old.module` + `old.module.qualname(...)` usage), asserting
+   `unresolved` populates with the exact dotted reference and file.
+   TestScanReferences.test_unresolved_attribute_style_reference_surfaces
+   (also required the _handle_import dotted-chain fix under finding 3 to
+   actually pass, not just exist).
+
+Also: run_refactor now propagates apply_plan's real error value
+(OverlappingRewrites vs. ApplyFailed) instead of collapsing every
+apply-phase failure into ApplyFailed. docs/commands/refactor.md updated
+to describe all of the above (Apply/Verify sections, per-symbol
+reference blocks) rather than leaving the stale "a stand-in" prose.
+
+tests/test_refactor.py: 32 tests total (11 new), all pass:
+`uv run pytest tests/test_refactor.py -p no:cacheprovider -q` -> 32
+passed. `uv run ruff check src/frob/refactor/ tests/test_refactor.py`
+clean under both the PATH ruff and `uv run ruff` (project-pinned).
+`uv run frob check --ticket T-1197 --budget 100` shows no new
+src/frob/refactor or tests/test_refactor.py findings beyond the
+already-waived TEST003 (no CLI integration entrypoint, pre-existing,
+out of this ticket's scope per its declared scope excluding
+src/frob/_cli_parsers/** and src/frob/__main__.py).
+
+### Changed
+```
+ docs/commands/refactor.md         | 283 ++++++++++++++
+ src/frob/refactor/__init__.py     |  63 +++
+ src/frob/refactor/_apply.py       | 178 +++++++++
+ src/frob/refactor/_cli.py         | 113 ++++++
+ src/frob/refactor/_models.py      | 211 ++++++++++
+ src/frob/refactor/_resolve.py     | 108 +++++
+ src/frob/refactor/_scan.py        | 377 ++++++++++++++++++
+ src/frob/refactor/_transaction.py | 315 +++++++++++++++
+ src/frob/refactor/_verify.py      | 255 ++++++++++++
+ tests/test_refactor.py            | 802 ++++++++++++++++++++++++++++++++++++++
+ tickets.md                        | 178 ++++++++-
+ 11 files changed, 2879 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/test_refactor.py::TestRunRefactor::test_rename_succeeds_and_commits` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestVerify::test_import_resolution_passes_clean_files` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestScanReferences::test_auto_alias_on_call_site_name_collision` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestRunRefactor::test_verify_failure_rolls_back` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestApplyPlan::test_apply_then_rollback_restores_tree` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestApplyPlan::test_overlapping_ops_refuse_before_write` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestApplyPlan::test_apply_failed_on_write_error_reports_apply_failed` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestRunRefactor::test_apply_failure_recovers_clean_precommit_tree` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestScanReferences::test_semicolon_joined_from_import_refuses_rewrite` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestScanReferences::test_unresolved_attribute_style_reference_surfaces` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestVerify::test_check_delta_uses_current_interpreter` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestVerify::test_import_resolution_catches_dangling_reference` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestVerify::test_import_resolution_local_import_resolves` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 13 passed (from 13 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1198 -->
 ```yaml
