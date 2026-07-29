@@ -271,6 +271,21 @@ threat: null
 component: null
 ```
 Full-repo pessimistic capability audit (2026-07-20, 7 read-only auditors). North-Star: if frob check / a ticket-close / a strata proof passes, the thing it claims must ACTUALLY hold. The audit found the North-Star is violated in concrete ways across subsystems. Each subsystem audit gets an umbrella child holding its full findings table; each HIGH finding gets an actionable child. Findings files live in the audit run; this epic is the durable tracked home so the audit itself does not become an orphaned document (the exact failure mode that motivated it). Consolidation in progress as the 7 auditors land: tickets/testing (evidence integrity), strata (vacuous proofs), graph/edges, gates-accounting, gates-quality/security, vet (lexical resolution), lang/check/docs.
+
+## Done report
+
+Epic verification close: all 18 children (the seven subsystem audit umbrellas and their HIGH-finding leaves) landed and archived across the drive. The North-Star mechanisms the 2026-07-20 audit demanded are now live and error-tier where earned: close-time evidence reverification (T-0417) makes a ticket's green claims re-checked at close; TICK011 (T-1129) makes disclosed-but-unticketed cuts a finding; TEST016 mutation evidence blocks bug/security lands whose tests kill nothing; the check-coverage registry meta-test keeps every registered rule wired (T-0964/T-1010 generated-verified); evidence node ids resolve against real collections with honest failure (T-1161); and the promoted-at-zero error-tier roster (SEC110, PII010/012, PERF001-004, ARCH001/101/102/103, DOC007, OPAQUE001, dup-enforce) means a green frob check now makes the quality claim the audit found missing. Verified on current main: full check reports 0 errors with every remaining warning family individually accounted (TEST005 strategy pending a user decision, tracked outside this epic). No code change in this close.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 8117 warning(s), 680 waived
+- error-findings: none (measured, zero errors)
 <!-- ticket:T-0802 -->
 ```yaml
 id: T-0802
