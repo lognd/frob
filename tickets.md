@@ -4404,3 +4404,48 @@ file-level finding has no symref) -- not every file on this list needs a
 structural split; a disposition is a valid, honest outcome where a real
 split boundary would fragment a genuinely cohesive module (T-1074's own
 precedent for the 7 files it dispositioned rather than split).
+
+<!-- ticket:T-1271 -->
+```yaml
+id: T-1271
+title: 'cli hygiene: no hidden-argument hell, maximally informative output, mined
+  from real agent usage'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-29'
+priority: high
+parent: T-1238
+tier: ticket
+sprint: null
+scope:
+- src/frob/_cli_parsers/**
+- src/frob/app/**
+- docs/**
+- tests/**
+acceptance:
+- text: 'GIVEN any enum-valued flag receives an invalid value THEN the error lists
+    every valid value inline (today: frob ticket list --status open yields ''open''
+    is not a valid TicketState with no valid-values list)'
+  evidence: []
+- text: GIVEN a command emits repeated advisory warnings (scope-closure on ticket
+    new can flood thousands of lines) THEN they collapse to a counted summary with
+    a --verbose escape hatch -- signal is never drowned
+  evidence: []
+- text: GIVEN a read-only invocation (check --ticket for review, show, brief) THEN
+    it never requires a lease or mutates state -- reviewers repeatedly could not re-verify
+    gate claims because check --ticket demands a lease
+  evidence: []
+- text: GIVEN a multi-step workflow (close needs start, done-report, evidence, accepts)
+    THEN each refusal names the exact next command AND a single porcelain verb exists
+    that sequences the happy path; hidden optional arguments that change behavior
+    (e.g. renumber's positional-only contract) are documented in --help with examples
+  evidence: []
+- text: GIVEN the audit lands THEN a short cli-hygiene principles doc exists in docs/design/
+    and a checklist test (or gate rule) verifies new parsers against it (every flag
+    help string states its default; no flag silently changes another flag's meaning)
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-07-29: no hidden optional argument hell; intuitive and maximally informative -- no noise, nothing missing; mine what agents ACTUALLY do. Evidence from this drive's own agent/coordinator usage: (1) --status open cryptic enum error; (2) ticket new scope-closure warning floods (5000+ lines in one invocation) drowning the created-id line; (3) frob check --ticket lease requirement blocked all four reviewers from re-verifying gate claims read-only; (4) ticket renumber had no --next and its usage was guessable only from error text; (5) the close dance (start -> done-report -> evidence -> accepts -> close) was discovered by error-chasing across five invocations -- each error WAS informative (good pattern, keep) but no porcelain wraps the sequence; (6) positive examples to preserve: evidence-rejection errors name the cache-refresh remedy, TICK002 names its exact fix command. Method: also mine .frob spawn/telemetry if present and the agent-playbook's accumulated workarounds for further real-usage pain points before designing.
