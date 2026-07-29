@@ -595,3 +595,96 @@ GIVEN a v2-mode ticket with attachments
 WHEN an attachment is added
 THEN it is written under `tickets/T-####/attachments/`, resolving the
 open question in design section 8 in favor of the self-contained layout.
+
+<!-- ticket:T-draft-d8653bfe -->
+```yaml
+id: T-draft-d8653bfe
+title: 'ledger v2: renumber via git mv + multi-file reference rewrite'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+blocked_by:
+- T-draft-4ae257ca
+parent: T-1136
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_new_renumber.py
+- src/frob/tickets/_draft_finalize.py
+- src/frob/tickets/_store.py
+- tests/test_tickets_collision.py
+acceptance:
+- text: 'Ledger v2 design (docs/design/ledger-v2.md section 4.1) needs renumber
+
+    (and finalize-draft) to operate on the v2 tree: `git mv tickets/<old>
+
+    tickets/<new>` plus rewriting the moved ticket''s own `id:` field, plus a
+
+    multi-file reference-rewrite pass reusing T-1125''s
+
+    `_rewrite_body_prose_references` matching core, re-pointed at a glob over
+
+    `tickets/**/*.md` instead of one ledger''s rendered text. Blocked by the
+
+    store-backend ticket (needs v2 file layout to exist first).'
+  evidence: []
+- text: 'GIVEN a v2-mode draft ticket directory `tickets/T-draft-<hex>/`
+
+    WHEN it is renumbered to a real id
+
+    THEN `git mv` relocates the directory, the frontmatter `id:` field is
+
+    updated, and the operation is a single small commit touching only the
+
+    renamed directory (no other ticket''s file is touched unless it actually
+
+    cited the old id).'
+  evidence: []
+- text: 'GIVEN another ticket''s body prose cites the draft id being renumbered
+
+    WHEN the renumber runs
+
+    THEN that citation is rewritten to the final id in the same operation
+
+    (reusing the T-1125 rewrite engine), and a post-renumber `frob doctor`
+
+    sweep finds zero dangling references to the old id.'
+  evidence: []
+- text: 'GIVEN two ticket directories are both being finalized in one land
+
+    WHEN their per-ticket locks are acquired for the git-mv + rewrite
+
+    THEN they are acquired in sorted-by-id order (no lock-ordering deadlock),
+
+    verified by a concurrent regression test mirroring T-1090''s shape.'
+  evidence: []
+threat: null
+component: null
+```
+Ledger v2 design (docs/design/ledger-v2.md section 4.1) needs renumber
+(and finalize-draft) to operate on the v2 tree: `git mv tickets/<old>
+tickets/<new>` plus rewriting the moved ticket's own `id:` field, plus a
+multi-file reference-rewrite pass reusing T-1125's
+`_rewrite_body_prose_references` matching core, re-pointed at a glob over
+`tickets/**/*.md` instead of one ledger's rendered text. Blocked by the
+store-backend ticket (needs v2 file layout to exist first).
+
+GIVEN a v2-mode draft ticket directory `tickets/T-draft-<hex>/`
+WHEN it is renumbered to a real id
+THEN `git mv` relocates the directory, the frontmatter `id:` field is
+updated, and the operation is a single small commit touching only the
+renamed directory (no other ticket's file is touched unless it actually
+cited the old id).
+
+GIVEN another ticket's body prose cites the draft id being renumbered
+WHEN the renumber runs
+THEN that citation is rewritten to the final id in the same operation
+(reusing the T-1125 rewrite engine), and a post-renumber `frob doctor`
+sweep finds zero dangling references to the old id.
+
+GIVEN two ticket directories are both being finalized in one land
+WHEN their per-ticket locks are acquired for the git-mv + rewrite
+THEN they are acquired in sorted-by-id order (no lock-ordering deadlock),
+verified by a concurrent regression test mirroring T-1090's shape.
