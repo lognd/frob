@@ -1584,3 +1584,24 @@ threat: null
 component: null
 ```
 Resolve bare backticked identifiers within the doc's anchored module scope; support file.py::symbol and rust path.rs::fn shapes; handle line-wrapped backtick spans; flag renamed-to-private mentions. Cite src/frob/gates/_docptr.py:8-33,103,220. Ref: gate-gap class 2 in docs/audits/docs-staleness-2026-07-29.md.
+
+<!-- ticket:T-1229 -->
+```yaml
+id: T-1229
+title: negative-existence claims -- bind absence-claims to a ticket via frob:until,
+  flag unbound ones
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: high
+parent: T-1226
+tier: ticket
+sprint: null
+scope:
+- src/frob/graph/**
+- src/frob/gates/**
+threat: null
+component: null
+```
+A directive (e.g. frob:until T-####) binds not-yet-built prose to a ticket; when the ticket closes/archives the claim goes stale. Unbound absence-claims ('does not exist yet' heuristics) get flagged for binding. The sweep found ~20 shipped-but-documented-as-absent instances (docs/audits/docs-staleness-2026-07-29.md, 'Negative-existence claims' section). Ref: gate-gap class 3.
