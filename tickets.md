@@ -834,7 +834,7 @@ blocked_by:
 - T-1197
 - T-1199
 - T-1200
-- T-draft-d6ca9da7
+- T-1267
 parent: T-1197
 tier: ticket
 sprint: null
@@ -3674,9 +3674,9 @@ those. Do not simply delete the fallback without a collector upgrade: per
 T-0552's own Done report, that would regress real existing C/C++
 TEST001-004 coverage to zero rather than to a disclosed-degraded state.
 
-<!-- ticket:T-draft-d6ca9da7 -->
+<!-- ticket:T-1267 -->
 ```yaml
-id: T-draft-d6ca9da7
+id: T-1267
 title: 'refactor: prose/doc-anchor carrier (docstring, docs/**, anchor-slug rewrite)'
 state: queued
 kind: feature
@@ -3871,7 +3871,7 @@ touch `frob:*` DSL directive targets (T-1199's scope) or the Python
 import/call-site rewrite (T-1197's scope).
 
 ## Failure log
-- 2026-07-29 attempt 1: duplicate creation (same command re-run while diagnosing scope-closure warnings); superseded by T-draft-d6ca9da7
+- 2026-07-29 attempt 1: duplicate creation (same command re-run while diagnosing scope-closure warnings); superseded by T-1267
 
 ## Drop reason
-- 2026-07-29: duplicate: same frob ticket new invocation was run twice while diagnosing docs/** scope-closure warnings; superseded by T-draft-d6ca9da7 (identical content)
+- 2026-07-29: duplicate: same frob ticket new invocation was run twice while diagnosing docs/** scope-closure warnings; superseded by T-1267 (identical content)
