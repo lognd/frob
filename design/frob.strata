@@ -2659,6 +2659,7 @@ store tickets_ledger : trusted {
     attr interface=record_review;
     attr interface=recover_done_report_why;
     attr interface=release_lease;
+    attr interface=rename_lease;
     attr interface=render_changed_block;
     attr interface=render_claims_block;
     attr interface=render_evidence_block;
@@ -3951,6 +3952,7 @@ node testsuite : trusted {
     attr interface=TestReleaseGateCoherence;
     attr interface=TestReleaseRunner;
     attr interface=TestReleaseSyncRunner;
+    attr interface=TestRenameLease;
     attr interface=TestRenderAuditMatrix;
     attr interface=TestRenderChangedBlock;
     attr interface=TestRenderContainmentReport;
@@ -3960,6 +3962,7 @@ node testsuite : trusted {
     attr interface=TestRenderLintGate;
     attr interface=TestRenderScopeBreadthSummary;
     attr interface=TestRenderer;
+    attr interface=TestRenumberMigratesLeaseEndToEnd;
     attr interface=TestRenumberOneRaceWithConcurrentNew;
     attr interface=TestRenumberRewritesLedgerProse;
     attr interface=TestReplaceDoneReportSection;

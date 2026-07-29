@@ -445,6 +445,70 @@ def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     return Ok(None)
 
 
+# frob:ticket T-1173
+# frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
+# frob:tests tests/test_ticket_leases.py::TestRenameLease.test_rename_migrates_the_lease_file_and_updates_its_ticket_id_field kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestRenameLease.test_rename_is_a_no_op_when_no_lease_exists_for_old_id kind="unit"  # noqa: E501
+def rename_lease(root: Path, old_id: str, new_id: str) -> Result[None, LeaseError]:
+    """Migrate `old_id`'s cross-worktree lease file (if any) to `new_id`
+    (T-1173): `renumber_one`'s draft-to-final rename rewrites the ticket's
+    id everywhere in the ledger and code references, but the lease side-
+    channel (T-0473) is keyed by ticket id too -- left un-renamed, a
+    worktree that held the draft's lease (`frob ticket start
+    T-draft-XXXXXXXX`) looks lease-less the moment `frob ticket land`
+    renumbers it to a real id in the SAME worktree, and a subsequent `frob
+    check --ticket T-####` there spuriously reports "no recorded lease"
+    even though the worktree genuinely holds the ticket.
+
+    A missing old-id lease file (the common case for a ticket that never
+    entered `IN_PROGRESS`, or whose lease was already released before this
+    rename ran) is not an error -- this is always safe to call
+    unconditionally on every `renumber_one`, mirroring `release_lease`'s
+    same missing-file tolerance. Best-effort like `record_lease`/
+    `release_lease`: a `root` with no shared git dir, an unreadable/
+    malformed old record, or an OS-level write/rename failure, degrades to
+    a logged warning and `Ok(None)` rather than failing the renumber it
+    rides along with.
+
+    Rewrites the record's own `ticket_id` FIELD to `new_id`, not just the
+    file's name -- a bare filesystem rename alone would leave the OLD id
+    embedded in the JSON body, so a reader that trusts the parsed record's
+    `ticket_id` over the path it came from (as `read_all_leases` does)
+    would still report the stale id."""
+    resolved = leases_dir(root)
+    if resolved.is_err:
+        return Ok(None)
+    leases_root = resolved.danger_ok
+    old_path = _lease_path(leases_root, old_id)
+    if not old_path.exists():
+        return Ok(None)
+    try:
+        record = _LeaseRecord.model_validate_json(old_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        _log.warning(
+            "tickets: could not read lease %s to rename to %s: %s",
+            old_id,
+            new_id,
+            exc,
+        )
+        return Ok(None)
+    renamed = record.model_copy(update={"ticket_id": new_id})
+    new_path = _lease_path(leases_root, new_id)
+    try:
+        new_path.write_text(renamed.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        old_path.unlink()
+    except OSError as exc:
+        _log.warning(
+            "tickets: could not rename lease %s -> %s: %s", old_id, new_id, exc
+        )
+        return Ok(None)
+    _log.info("tickets: %s lease renamed -> %s", old_id, new_id)
+    # T-0773 round 2: same as `record_lease`/`release_lease` -- no explicit
+    # cache invalidation needed, the next `read_all_leases` call sees the
+    # old path gone and the new path present in the directory listing.
+    return Ok(None)
+
+
 # frob:ticket T-1054
 # frob:doc docs/modules/tickets.md#start-transition-auto-commit-t-1054
 # frob:tests tests/test_ticket_leases.py::TestCommitStartTransition.test_commits_dirty_ledger_with_expected_message kind="unit"  # noqa: E501

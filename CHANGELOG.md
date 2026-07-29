@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.275.0] - unreleased
+
+- T-1173: bug: cross-worktree lease not renamed when a draft ticket is renumbered at land
+
 ## [0.274.0] - unreleased
 
 - T-1186: arch: split tickets/_land.py (4973 lines) -- T-1171 residue

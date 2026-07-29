@@ -29,16 +29,26 @@ import pytest
 
 from frob.app.config import AppConfig
 from frob.app.ticket_runner import run as ticket_run
-from frob.tickets import TicketState, load_all, transition
+from frob.tickets import (
+    TicketState,
+    finalize_draft_for_land,
+    load_all,
+    new_ticket,
+    renumber_one,
+    transition,
+)
 from frob.tickets._leases import (
     LEASE_TTL_SECONDS,
+    _lease_path,
     _LeaseRecord,
     _list_agent_worktrees,
     leases_dir,
     read_all_leases,
+    rename_lease,
     resolve_lease,
     sweep_worktrees,
 )
+from frob.tickets._models import Origin, TicketKind, TicketSpec
 
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
@@ -577,7 +587,9 @@ class TestCommitTicketLedgerChange:
 
         assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
 
-        result = commit_ticket_ledger_change(repo, "T-0001", "chore(tickets): drop T-0001")
+        result = commit_ticket_ledger_change(
+            repo, "T-0001", "chore(tickets): drop T-0001"
+        )
         assert result.is_ok
 
         status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
@@ -590,7 +602,9 @@ class TestCommitTicketLedgerChange:
         # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_op_when_ledger_already_clean  # noqa: E501
         from frob.tickets._leases import commit_ticket_ledger_change
 
-        result = commit_ticket_ledger_change(repo, "T-0001", "chore(tickets): drop T-0001")
+        result = commit_ticket_ledger_change(
+            repo, "T-0001", "chore(tickets): drop T-0001"
+        )
         assert result.is_ok
 
         status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
@@ -974,3 +988,147 @@ class TestLoadPositiveIntConfig:
 
         (tmp_path / "frob.toml").write_text("not valid toml [[[")
         assert load_positive_int_config(tmp_path, "some_key", 7) == 7
+
+
+# frob:ticket T-1173
+class TestRenameLease:
+    """T-1173: `renumber_one`'s draft-to-final rename must migrate the
+    cross-worktree lease file too, not just the ledger/code references --
+    otherwise a worktree that held the draft's lease looks lease-less the
+    moment `frob ticket land` renumbers it in that same worktree."""
+
+    def test_rename_migrates_the_lease_file_and_updates_its_ticket_id_field(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestRenameLease.test_rename_migrates_the_lease_file_and_updates_its_ticket_id_field  # noqa: E501
+        recorded_at = datetime.now(UTC).isoformat()
+        _write_lease(repo, "T-draft-deadbeef", repo, recorded_at=recorded_at)
+        resolved = leases_dir(repo)
+        assert resolved.is_ok
+        old_path = _lease_path(resolved.danger_ok, "T-draft-deadbeef")
+
+        result = rename_lease(repo, "T-draft-deadbeef", "T-0042")
+        assert result.is_ok
+
+        new_path = _lease_path(resolved.danger_ok, "T-0042")
+        assert not old_path.exists()
+        assert new_path.exists()
+        migrated = _LeaseRecord.model_validate_json(new_path.read_text())
+        # the id embedded in the record's own JSON body is rewritten too --
+        # a bare filesystem rename alone would leave the OLD id there,
+        # which a reader trusting the parsed record over its path (as
+        # read_all_leases does) would still report.
+        assert migrated.ticket_id == "T-0042"
+        assert migrated.scope == ("src/feature.py",)
+        assert migrated.worktree == str(repo)
+        assert migrated.branch == "main"
+        assert migrated.recorded_at == recorded_at
+
+    def test_rename_is_a_no_op_when_no_lease_exists_for_old_id(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestRenameLease.test_rename_is_a_no_op_when_no_lease_exists_for_old_id  # noqa: E501
+        result = rename_lease(repo, "T-draft-noexist", "T-0099")
+        assert result.is_ok
+
+        resolved = leases_dir(repo)
+        assert resolved.is_ok
+        assert not _lease_path(resolved.danger_ok, "T-0099").exists()
+
+
+# frob:ticket T-1173
+class TestRenumberMigratesLeaseEndToEnd:
+    """T-1173 regression, real draft+lease fixture end to end: a ticket
+    filed off the default branch (minting a provisional T-draft-XXXXXXXX
+    id), started IN_PROGRESS in that same worktree (recording its lease
+    under the draft id), then renumbered to a final id in the SAME
+    worktree (`renumber_one`/`finalize_draft_for_land`, exactly what
+    `frob ticket land` does) must leave the worktree still holding a
+    resolvable lease under the FINAL id -- the incident T-1172's close
+    hit: the lease was left behind under the old draft id, so a
+    subsequent `frob check --ticket <final-id>` in that same worktree saw
+    no recorded lease at all."""
+
+    def test_renumber_one_migrates_the_lease_the_worktree_still_holds(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestRenumberMigratesLeaseEndToEnd.test_renumber_one_migrates_the_lease_the_worktree_still_holds  # noqa: E501
+        (second_worktree / "src").mkdir(parents=True, exist_ok=True)
+        (second_worktree / "src" / "widget.py").write_text("# widget\n")
+        filed = new_ticket(
+            second_worktree,
+            TicketSpec(
+                title="off-branch widget",
+                kind=TicketKind.FEATURE,
+                origin=Origin.AGENT,
+                scope=("src/widget.py",),
+            ),
+        )
+        assert filed.is_ok
+        draft_id = filed.danger_ok.id
+        assert draft_id.startswith("T-draft-")
+
+        started = transition(second_worktree, draft_id, TicketState.PLANNED)
+        assert started.is_ok
+        started = transition(second_worktree, draft_id, TicketState.IN_PROGRESS)
+        assert started.is_ok
+
+        resolved = leases_dir(second_worktree)
+        assert resolved.is_ok
+        draft_lease_path = _lease_path(resolved.danger_ok, draft_id)
+        assert draft_lease_path.exists()
+
+        result = renumber_one(second_worktree, draft_id, "T-0777")
+        assert result.is_ok
+
+        final_lease_path = _lease_path(resolved.danger_ok, "T-0777")
+        assert not draft_lease_path.exists()
+        assert final_lease_path.exists()
+
+        # the worktree's own lease-resolution path now finds it under the
+        # final id -- the exact "no recorded lease" incident this closes.
+        all_leases = read_all_leases(second_worktree)
+        assert any(record.ticket_id == "T-0777" for record in all_leases)
+        assert not any(record.ticket_id == draft_id for record in all_leases)
+
+    def test_finalize_draft_for_land_migrates_the_lease_the_worktree_still_holds(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestRenumberMigratesLeaseEndToEnd.test_finalize_draft_for_land_migrates_the_lease_the_worktree_still_holds  # noqa: E501
+        (second_worktree / "src").mkdir(parents=True, exist_ok=True)
+        (second_worktree / "src" / "gadget.py").write_text("# gadget\n")
+        filed = new_ticket(
+            second_worktree,
+            TicketSpec(
+                title="off-branch gadget",
+                kind=TicketKind.FEATURE,
+                origin=Origin.AGENT,
+                scope=("src/gadget.py",),
+            ),
+        )
+        assert filed.is_ok
+        draft_id = filed.danger_ok.id
+        assert draft_id.startswith("T-draft-")
+
+        started = transition(second_worktree, draft_id, TicketState.PLANNED)
+        assert started.is_ok
+        started = transition(second_worktree, draft_id, TicketState.IN_PROGRESS)
+        assert started.is_ok
+
+        resolved = leases_dir(second_worktree)
+        assert resolved.is_ok
+        draft_lease_path = _lease_path(resolved.danger_ok, draft_id)
+        assert draft_lease_path.exists()
+
+        # `finalize_draft_for_land`'s land-path twin: id ceiling read fresh
+        # from `repo` (main), rename applied against `second_worktree`
+        # (the worktree actually holding the lease) -- exactly `frob
+        # ticket land`'s own call shape.
+        result = finalize_draft_for_land(second_worktree, draft_id, repo)
+        assert result.is_ok
+        final_id = result.danger_ok
+        assert not final_id.startswith("T-draft-")
+
+        final_lease_path = _lease_path(resolved.danger_ok, final_id)
+        assert not draft_lease_path.exists()
+        assert final_lease_path.exists()

@@ -30,6 +30,7 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 from frob.tickets._archive import _load_merged
+from frob.tickets._leases import rename_lease
 from frob.tickets._models import (
     RenumberReport,
     Ticket,
@@ -649,7 +650,7 @@ def renumber_one(
             active_digest=active_digest,
             archive_digest=archive_digest,
         )
-        return _finish_renumber(persisted, old_id, new_id, code_changes, report)
+        return _finish_renumber(persisted, old_id, new_id, code_changes, report, root)
 
 
 def _finish_renumber(
@@ -658,10 +659,16 @@ def _finish_renumber(
     new_id: str,
     code_changes: dict[Path, tuple[str, int]],
     report: RenumberReport,
+    root: Path,
 ) -> Result[RenumberReport, TicketError]:
-    """Propagate a persist failure, else log completion and return the report."""
+    """Propagate a persist failure, else migrate `old_id`'s cross-worktree
+    lease (if any) to `new_id` (T-1173), log completion, and return the
+    report. The lease rename runs AFTER the ledger persist succeeds --
+    never before -- so a persist failure never leaves a lease renamed to
+    an id the ledger itself never actually claimed."""
     if persisted.is_err:
         return Err(persisted.danger_err)
+    rename_lease(root, old_id, new_id)
     _log_renumber_done(old_id, new_id, code_changes, report)
     return Ok(report)
 

@@ -532,7 +532,7 @@ User directive 2026-07-28: the annoying errors are the ones whose fix is mechani
 id: T-1173
 title: 'bug: cross-worktree lease not renamed when a draft ticket is renumbered at
   land'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -543,10 +543,102 @@ sprint: null
 scope:
 - src/frob/tickets/_leases.py
 - src/frob/tickets/_new_renumber.py
+- tests/test_ticket_leases.py
+- docs/modules/tickets.md
+- design/frob.strata
+scope_changes:
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-1173's fix (rename_lease in _leases.py, wired into _new_renumber.py's
+    renumber_one) needs a real draft+lease regression test, added to the existing
+    tests/test_ticket_leases.py fixture file rather than a new one
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: T-1173's fix needed a docs/modules/tickets.md paragraph on the new rename_lease
+    lease-migration behavior (AFFECT001) and design/frob.strata interface-registry
+    entries for rename_lease/TestRenameLease/TestRenumberMigratesLeaseEndToEnd (SELFAUDIT001)
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: design/frob.strata
+  reason: T-1173's fix needed a docs/modules/tickets.md paragraph on the new rename_lease
+    lease-migration behavior (AFFECT001) and design/frob.strata interface-registry
+    entries for rename_lease/TestRenameLease/TestRenumberMigratesLeaseEndToEnd (SELFAUDIT001)
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_ticket_leases.py::TestRenameLease::test_rename_migrates_the_lease_file_and_updates_its_ticket_id_field
+- tests/test_ticket_leases.py::TestRenameLease::test_rename_is_a_no_op_when_no_lease_exists_for_old_id
+- tests/test_ticket_leases.py::TestRenumberMigratesLeaseEndToEnd::test_renumber_one_migrates_the_lease_the_worktree_still_holds
+- tests/test_ticket_leases.py::TestRenumberMigratesLeaseEndToEnd::test_finalize_draft_for_land_migrates_the_lease_the_worktree_still_holds
 threat: null
 component: null
 ```
 Observed while landing T-1165/T-1172 in the same worktree: frob ticket start T-draft-XXXXXXXX records a lease at .git/frob-leases/T-draft-XXXXXXXX.json. When the draft is renumbered to a real id (T-1172) at land time, the lease file is never renamed/migrated -- a subsequent frob check --ticket T-1172 in the SAME worktree that started it fails with 'no recorded lease', even though the worktree genuinely holds the ticket. Worked around by hand-copying the lease json with the new id; the renumber path should do this automatically.
+
+## Done report
+
+Fixed the bug: `renumber_one`'s draft-to-final id rewrite (called by
+`finalize_draft`/`finalize_draft_for_land`, i.e. every `frob ticket land`)
+rewrote the ledger and every code reference to the ticket's id, but never
+touched the cross-worktree lease file (T-0473's
+`<git-common-dir>/frob-leases/<ticket-id>.json`) -- left behind under the
+OLD draft id, so the same worktree that had just renumbered its own
+ticket looked lease-less to `frob check --ticket <final-id>` immediately
+afterward.
+
+Added src/frob/tickets/_leases.py::rename_lease(root, old_id, new_id):
+migrates the lease file to the new id's path AND rewrites the record's
+own `ticket_id` JSON field (a bare filesystem rename alone would leave
+the stale id embedded in the body, which read_all_leases trusts over the
+path it parsed from). Missing old-id lease is a no-op (mirrors
+release_lease's tolerance); a git-dir/read/write failure degrades to a
+logged warning, never fails the renumber.
+
+Wired into src/frob/tickets/_new_renumber.py::_finish_renumber (the
+single tail shared by renumber_one's persist path, which finalize_draft/
+finalize_draft_for_land both delegate through) -- runs strictly AFTER
+the ledger persist succeeds, so a persist failure never leaves a lease
+renamed to an id the ledger itself never actually claimed.
+
+Regression tests with real draft+lease fixtures (git worktree, off-
+default-branch new_ticket mints a draft id, transition to IN_PROGRESS
+records the lease, then renumber_one/finalize_draft_for_land renumbers
+it in that SAME worktree -- exactly the T-1172-close incident shape):
+TestRenumberMigratesLeaseEndToEnd covers both call paths. TestRenameLease
+unit-tests rename_lease directly (content-field rewrite, missing-lease
+no-op).
+
+Updated docs/modules/tickets.md's "Cross-worktree lease side-channel
+(T-0473)" section with a new paragraph and its "Public API" renumber_one
+entry, plus design/frob.strata's tickets_ledger/testsuite interface
+registries (rename_lease, TestRenameLease,
+TestRenumberMigratesLeaseEndToEnd) -- both needed to clear AFFECT001/
+SELFAUDIT001.
+
+Filed: none.
+Gates: frob check --ticket T-1173 clean (0 errors, 552 warnings, 682
+waived) after ruff format on the three touched files. frob test --base
+main: exit 0.
+
+### Changed
+```
+ tickets.md | 33 +++++++++++++++++++++++++++++++--
+ 1 file changed, 31 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_leases.py::TestRenameLease::test_rename_migrates_the_lease_file_and_updates_its_ticket_id_field` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestRenameLease::test_rename_is_a_no_op_when_no_lease_exists_for_old_id` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestRenumberMigratesLeaseEndToEnd::test_renumber_one_migrates_the_lease_the_worktree_still_holds` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestRenumberMigratesLeaseEndToEnd::test_finalize_draft_for_land_migrates_the_lease_the_worktree_still_holds` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 552 warning(s), 682 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1181 -->
 ```yaml

@@ -285,6 +285,10 @@ def renumber_one(root: Path, old_id: str, new_id: str, *,
     # guessed final id happened to already be taken. `RenumberReport.
     # occurrences` folds these prose-hit counts in alongside code-reference
     # hits. See `frob.tickets._new_renumber._rewrite_body_prose_references`.
+    # T-1173: also migrates old_id's cross-worktree lease file (if any) to
+    # new_id via `frob.tickets._leases.rename_lease`, AFTER the ledger
+    # persist succeeds -- see "Cross-worktree lease side-channel (T-0473)"
+    # above for why a draft-to-final rename needed this.
 def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]
     # Assigns draft_id its final T-#### id against the CURRENT merged view
     # and rewrites everything via renumber_one; a no-op returning draft_id
@@ -664,6 +668,28 @@ existence) that keeps a dead worktree's forgotten lease from wedging
 `doable` for everyone else forever; the fuller two-way reconciliation
 (dead in-progress ticket -> requeue, live worktree with no in-progress
 ticket -> flag/clean) is T-0476's job, not this one's.
+
+**Lease migration on renumber (T-1173).** The lease file is keyed by
+ticket id, but a `T-draft-XXXXXXXX` provisional id (T-0162) is exactly the
+kind of ticket most likely to hold a live lease at rename time -- a draft
+filed and started `IN_PROGRESS` in one worktree, then renumbered to its
+final `T-####` id by `frob ticket land` running in that SAME worktree.
+`frob.tickets._new_renumber.renumber_one` calls
+`frob.tickets._leases.rename_lease(root, old_id, new_id)` right after its
+ledger/code-reference rewrite persists (never before -- a persist failure
+must never leave a lease renamed to an id the ledger itself never
+actually claimed), which migrates `<old_id>.json` to `<new_id>.json`
+under the shared leases directory AND rewrites the record's own
+`ticket_id` field to match -- a bare filesystem rename alone would leave
+the stale id embedded in the JSON body, which `read_all_leases` trusts
+over the path it parsed the record from. Before this, a worktree that
+held the draft's lease looked lease-less the instant its own draft
+renumbered, and a subsequent `frob check --ticket <final-id>` in that
+same worktree spuriously reported no recorded lease at all, even though
+the worktree genuinely still held the ticket. A missing old-id lease
+file (the common case: a ticket that never entered `IN_PROGRESS`, or
+whose lease was already released before the rename ran) is not an error,
+mirroring `release_lease`'s same tolerance.
 
 ## Start-transition auto-commit (T-1054)
 
