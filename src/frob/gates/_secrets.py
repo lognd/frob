@@ -1052,6 +1052,7 @@ def _is_env_file(rel_path: str) -> bool:
 # frob:enforces CHK-GATE-SEC002
 # frob:enforces CHK-GATE-SEC003
 # frob:enforces CHK-GATE-SEC004
+# frob:enforces CHK-SUBSYS-GATES-QUALITY
 def secrets_gate(root: Path) -> tuple[Violation, ...]:
     """SEC001/SEC002/SEC003 (docs/modules/gates.md#rule-catalog): every
     git-tracked file scanned for real-looking provider credentials, plus a

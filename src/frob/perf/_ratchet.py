@@ -171,6 +171,7 @@ def load_ratchet_findings(root: Path) -> list[RatchetFinding]:
 # frob:tests tests/unit/perf/test_ratchet.py::TestRatchetViolations.test_findings_become_perf009_violations  # noqa: E501
 # frob:tests tests/unit/perf/test_ratchet.py::TestRatchetViolations.test_no_findings_file_is_zero_violations  # noqa: E501
 # frob:enforces CHK-GATE-PERF009
+# frob:enforces CHK-SUBSYS-PERF
 def ratchet_violations(root: Path) -> list[Violation]:
     """PERF009: one WARN-tier `Violation` per `load_ratchet_findings(root)`
     entry, named at `.frob/perf/ratchet_findings.json` itself (the finding

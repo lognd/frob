@@ -1290,6 +1290,8 @@ def _resolved_documented_srcs(root: Path, snapshot: GraphSnapshot) -> set[str]:
 # frob:ticket T-0553
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov001_waiver_does_not_blanket_suppress_sibling_symbol  # noqa: E501
 # frob:enforces CHK-GATE-COV001
+# frob:enforces CHK-THEME-PYTHON-ONLY
+# frob:enforces CHK-SUBSYS-LANG-CHECK-DOCS
 def _cov001(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """COV001: a public symbol has no explicit, *resolving* `frob:doc` edge.
 

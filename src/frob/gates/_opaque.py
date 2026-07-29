@@ -68,6 +68,7 @@ _log = get_logger(__name__)
 # frob:tests tests/test_vet.py::TestOpaqueIndirectionGate.test_opaque_gate_no_findings_on_empty_tracked_set  # noqa: E501
 # frob:tests tests/test_vet.py::TestOpaqueIndirectionGate.test_waived_finding_is_suppressed_and_reason_recorded  # noqa: E501
 # frob:enforces CHK-GATE-OPAQUE001
+# frob:enforces CHK-SUBSYS-VET
 # T-1087: two `docs/design/registry/supply-chain.yaml` entries whose
 # structural finding source is `frob.vet._capability_registry.
 # RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS` (native-extension import,

@@ -51,6 +51,8 @@ _ERROR_KINDS = frozenset({TicketKind.SECURITY, TicketKind.BUG})
 
 # frob:doc docs/modules/tickets.md#mutation-evidence-obligation-test016-t-0755
 # frob:enforces CHK-GATE-TEST016
+# frob:enforces CHK-THEME-EXISTENCE-NOT-PROOF
+# frob:enforces CHK-SUBSYS-TICKETS-TESTING
 # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_confirmatory_finding_is_warn_for_feature_kind  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_confirmatory_finding_is_error_for_security_kind  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_no_findings_no_violations  # noqa: E501
