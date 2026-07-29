@@ -981,3 +981,33 @@ threat: null
 component: null
 ```
 Root cause: gates/_debt_deprecated.py:596 calls deprecated_current_references per edge -> xref/__init__.py:125 (per-file parse+identifier walk) and exports/__init__.py:188 (second xref per symbol) -- 8 full repo scans for only 4 symbols, ~100 pct of the 17.9s stage. Fix: build one per-run index from a single pass (or from the snapshot + frob_core.referenced_names) and answer all symbols from it, collapsing the exports_consumers/xref double scan. Companion lint rule tracked on the sibling 'perf: PERF01x detectors' ticket: repo-scan API (xref/exports_consumers/iter_files) called inside a loop over symbols.
+
+<!-- ticket:T-1208 -->
+```yaml
+id: T-1208
+title: 'perf: strata sys gate ast-parses same 807 files twice (plus a third parse
+  elsewhere)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: high
+parent: T-1204
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/_selfconform.py
+- src/frob/strata/_code_binding.py
+acceptance:
+- text: 'GIVEN _reachable_local_files (_selfconform.py:1096) and check_import_conformance
+    (_code_binding.py:425) each independently ast.parse+ast.walk the same 807 python
+    files (builtins.compile x2421 = 3 parses/file) WHEN a (path, content-hash) ->
+    [(spec, line)] import-spec memo is shared for the run (or persisted alongside
+    symbols in cache.db), and the two per-node helper calls in the walk collapse into
+    one isinstance(Import/ImportFrom) filter THEN sys drops ~5-7s native (report candidate
+    #3, currently 23 pct + 23 pct of the sys profile)'
+  evidence: []
+threat: null
+component: null
+```
+Root cause: _selfconform.py:1079 _python_imports_with_lines_module and _code_binding.py:285 _python_imports_with_lines each do a full ast.parse+ast.walk of the same 807 files inside one sys run, and the walk itself calls two Python helpers per node (2.25M nodes). Fix: memoize (path, content-hash) -> [(spec, line)] for the run; replace the two per-node helper calls with one isinstance filter.
