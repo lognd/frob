@@ -816,3 +816,37 @@ threat: null
 component: null
 ```
 2026-07-29 incident (5th id-collision, first SINCE T-1090): coordinator filed a ticket on main (46a115c4, auto-committed); minutes later T-1170's land (17c6ca89) renumbered its residue draft to the SAME id, and the splice replaced the coordinator's block wholesale -- content lost from the live ledger (recovered from git history and refiled). T-1090's atomic allocation apparently guards concurrent new_ticket calls against a shared counter but the LAND-path renumber derived its next-id from the worktree's stale ledger view. Two independent guards per acceptance: allocation-from-current-main under lock, and a splice-level id/title-mismatch refusal (defense in depth, T-0959 style).
+
+<!-- ticket:T-1180 -->
+```yaml
+id: T-1180
+title: 'coverage pipeline: flake-tolerant end-to-end -- serial rerun of failures,
+  stale-data cleanup, deflation guard before stamp'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-29'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- Makefile
+- src/frob/testing/**
+- src/frob/gates/**
+- tests/test_coverage.py
+acceptance:
+- text: GIVEN make coverage WHEN the parallel suite has failures THEN the failed tests
+    are re-run once serially without coverage-halting, and only still-failing tests
+    fail the target -- load-sensitive flakes (the four known self-model/serve-watch
+    specimens) no longer block combine/xml/stamp
+  evidence: []
+- text: GIVEN combine runs THEN stale .coverage* files from prior aborted runs are
+    removed first and the combine reports consuming every fresh worker file; a coverage.xml
+    whose module-coverage fraction is below a sanity floor refuses to stamp (extending
+    TEST011's deflation heuristic into a hard pre-stamp guard)
+  evidence: []
+threat: null
+component: null
+```
+Three consecutive coverage runs failed to produce a trustworthy coverage.xml on 2026-07-28/29: (1) corrupted coverage shim broke combine silently; (2+3) four load-sensitive tests (three strata self-model + serve-watch tick, all pass in isolation, verified twice) fail only under xdist+coverage parallelism and halt the recipe before combine; a manual combine then consumed 2 of 7 data files (stale-file skip). The TEST005 bucket (~600 warnings) cannot be honestly recounted until this pipeline is deterministic. Also route the notification-exit-code mismatch to the record: background make reported exit 0 twice while make actually failed -- do not trust bg exit codes for make pipelines, read the output tail.
