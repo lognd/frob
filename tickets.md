@@ -766,7 +766,7 @@ alias name or a refusal).
 ```yaml
 id: T-draft-e578bd64
 title: 'refactor: prose/doc-anchor carrier (docstring, docs/**, anchor-slug rewrite)'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -849,6 +849,9 @@ import/call-site rewrite (T-1197's scope).
 
 ## Failure log
 - 2026-07-29 attempt 1: duplicate creation (same command re-run while diagnosing scope-closure warnings); superseded by T-draft-d6ca9da7
+
+## Drop reason
+- 2026-07-29: duplicate: same frob ticket new invocation was run twice while diagnosing docs/** scope-closure warnings; superseded by T-draft-d6ca9da7 (identical content)
 <!-- ticket:T-draft-d6ca9da7 -->
 ```yaml
 id: T-draft-d6ca9da7
