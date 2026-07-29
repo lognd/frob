@@ -1842,6 +1842,8 @@ kind: feature
 origin: human
 created: '2026-07-28'
 priority: medium
+blocked_by:
+- T-1164
 parent: null
 tier: ticket
 sprint: null
@@ -1871,7 +1873,6 @@ Declaring a real owns="tickets.md" (or similar) on each would need:
 
 This ticket is that verification + the owns= declarations themselves,
 so the five SYS205:tickets_ledger waivers can finally be dropped too.
-
 <!-- ticket:T-1159 -->
 ```yaml
 id: T-1159
