@@ -68,7 +68,10 @@ def _cfg(base: Path, ours: Path, theirs: Path, *, path: Path) -> AppConfig:
 
 
 class TestMergeDriverHandler:
-    """`_merge_driver` against synthetic %O/%A/%B files -- no git subprocess."""
+    """`_merge_driver` against synthetic %O/%A/%B files -- no git subprocess.
+
+    frob:ticket T-1165
+    """
 
     def test_disjoint_ids_both_survive_the_splice(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_merge_driver.py::TestMergeDriverHandler.test_disjoint_ids_both_survive_the_splice  # noqa: E501
@@ -162,6 +165,104 @@ class TestMergeDriverHandler:
         with pytest.raises(SystemExit) as exc:
             _merge_driver(tmp_path, cfg)
         assert exc.value.code == 1
+
+    def test_base_o_arg_prevents_wrong_side_merge_via_live_driver(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_merge_driver.py::TestMergeDriverHandler.test_base_o_arg_prevents_wrong_side_merge_via_live_driver  # noqa: E501
+        # frob:ticket T-1165
+        # T-1165 (T-1154 follow-up): T-1154 fixed this exact wrong-side-merge
+        # tiebreak for `land`'s own internal splice call, but
+        # `_merge_driver` (the LIVE `git merge` entry point) discarded
+        # git's own %O merge-base argument entirely -- a real `git merge`
+        # through the registered driver had no such protection. Reproduce
+        # T-1154's tie shape (both sides at state=done, same evidence
+        # count -- richness tied) directly at the merge-driver's own
+        # base/ours/theirs file boundary: `ours` makes a real content edit
+        # since `base`, `theirs` is byte-identical to `base` (no edit at
+        # all). Pre-T-1165 (base_text never threaded through, so
+        # `_resolve_divergence` always fell back to `_newer`'s tier-3
+        # `b`-wins tiebreak) this reverted `ours`'s real edit in favor of
+        # `theirs`'s untouched copy -- exactly the incident T-1154's Done
+        # report named as "observed live during T-1154's own worktree
+        # warm-up".
+        root = tmp_path / "root"
+        root.mkdir()
+        atomic_write(ledger_path(root), "# Tickets\n\n")
+        created = new_ticket(root, _spec("Shared ticket"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(root, tid, TicketState.PLANNED).is_ok
+        assert transition(root, tid, TicketState.IN_PROGRESS).is_ok
+        loaded = load_all(root)
+        ticket = loaded.danger_ok[tid]
+        ticket = ticket.model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": ticket.body + "\n## Done report\n\nevidence attached\n",
+            }
+        )
+        assert write_ticket(root, ticket).is_ok
+        assert transition(root, tid, TicketState.DONE).is_ok
+        base_text = ledger_path(root).read_text()
+
+        # `ours`: a real content edit since base (the T-1143 shape -- an
+        # evidence-path migration inside the Done report text), same
+        # state/evidence count as base, so richness alone cannot tell
+        # ours and theirs apart without the base-aware tiebreak.
+        ours_text = base_text.replace(
+            "evidence attached", "evidence attached (src/parse/mod.py)"
+        )
+        # `theirs`: byte-identical to base -- no edit at all.
+        theirs_text = base_text
+
+        base = tmp_path / "base.md"
+        ours = tmp_path / "ours.md"
+        theirs = tmp_path / "theirs.md"
+        base.write_text(base_text)
+        ours.write_text(ours_text)
+        theirs.write_text(theirs_text)
+
+        _merge_driver(root, _cfg(base, ours, theirs, path=root))
+
+        result_text = ours.read_text()
+        assert "src/parse/mod.py" in result_text, (
+            "ours's real content edit was reverted in favor of theirs's "
+            "untouched copy -- the %O base argument was not threaded "
+            "through to splice_ledger (T-1165 regression)"
+        )
+
+    def test_missing_base_file_degrades_to_newer_only_tiebreak(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_merge_driver.py::TestMergeDriverHandler.test_missing_base_file_degrades_to_newer_only_tiebreak  # noqa: E501
+        # frob:ticket T-1165
+        # A base (%O) path git failed to populate (or that vanished before
+        # we read it) must degrade to the pre-T-1165 `_newer`-only
+        # tiebreak, never raise or refuse the merge -- git always supplies
+        # %O for a registered driver, but this is a defensive posture, not
+        # a documented failure mode.
+        root = tmp_path / "root"
+        root.mkdir()
+        atomic_write(ledger_path(root), "# Tickets\n\n")
+        created = new_ticket(root, _spec("Shared ticket"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        ours_text = ledger_path(root).read_text()
+        assert transition(root, tid, TicketState.PLANNED).is_ok
+        theirs_text = ledger_path(root).read_text()
+
+        base = tmp_path / "does-not-exist.md"
+        ours = tmp_path / "ours.md"
+        theirs = tmp_path / "theirs.md"
+        ours.write_text(ours_text)
+        theirs.write_text(theirs_text)
+
+        _merge_driver(root, _cfg(base, ours, theirs, path=root))
+
+        result_text = ours.read_text()
+        assert "state: planned" in result_text
+        assert "state: queued" not in result_text
 
 
 @pytest.fixture
