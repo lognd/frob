@@ -3589,6 +3589,7 @@ node testsuite : trusted {
     attr interface=TestLattice;
     attr interface=TestLayeringConfig;
     attr interface=TestLayeringViolations;
+    attr interface=TestLazyRunnerRunAttrs;
     attr interface=TestLcom4;
     attr interface=TestLeaseRpc;
     attr interface=TestLeaseShapeValidation;
@@ -3620,6 +3621,7 @@ node testsuite : trusted {
     attr interface=TestLiveTrackerCitationPrecheck;
     attr interface=TestLiveTrackerCitations;
     attr interface=TestLoadAllAndWriteTicket;
+    attr interface=TestLoadArchiveCache;
     attr interface=TestLoadGraph;
     attr interface=TestLoadIds;
     attr interface=TestLoadLayeringConfig;
@@ -3986,6 +3988,7 @@ node testsuite : trusted {
     attr interface=TestResolveLease;
     attr interface=TestResolveParamTypes;
     attr interface=TestResolveRatchetSeverity;
+    attr interface=TestResolveRunner;
     attr interface=TestResolveStream;
     attr interface=TestResourceContentionViolations;
     attr interface=TestResourceDirectives;
@@ -4396,6 +4399,7 @@ node testsuite : trusted {
     attr interface=TestWriterTableTreeCountDeltas;
     attr interface=TestXrefRunner;
     attr interface=TestXxeFingerprint;
+    attr interface=TestYamlLoader;
     attr interface=TestZeroDeclaredRateFedCycle;
     attr interface=UV_LOCK;
     attr interface=cpp_file;

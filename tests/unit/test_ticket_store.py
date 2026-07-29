@@ -224,6 +224,66 @@ class TestArchiveLedger:
         assert "```yaml" in text
 
 
+class TestYamlLoader:
+    # frob:tests src/frob/tickets/_store.py::_yaml_loader kind="unit"
+    """Direct tests of `_yaml_loader`'s CSafeLoader/SafeLoader selection."""
+
+    def test_prefers_csafeloader_when_libyaml_present(self) -> None:
+        import yaml
+
+        from frob.tickets._store import _yaml_loader
+
+        if not yaml.__with_libyaml__:
+            pytest.skip("libyaml not installed in this environment")
+        assert _yaml_loader() is yaml.CSafeLoader
+
+    def test_falls_back_to_safeloader_without_libyaml(self, monkeypatch) -> None:
+        import yaml
+
+        from frob.tickets._store import _yaml_loader
+
+        monkeypatch.setattr(yaml, "__with_libyaml__", False)
+        assert _yaml_loader() is yaml.SafeLoader
+
+
+class TestLoadArchiveCache:
+    # frob:tests src/frob/tickets/_store.py::load_archive kind="unit"
+    """Direct tests of `load_archive`'s content-hash-keyed parsed cache."""
+
+    def test_skips_reparse_when_content_hash_unchanged(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        from frob.tickets import _store
+
+        write_archive(tmp_path, {"T-0003": _ticket(ticket_id="T-0003")})
+        first = load_archive(tmp_path)
+        assert first.is_ok
+
+        calls = {"n": 0}
+        original = _store._parse_ledger
+
+        def _counting_parse(text: str):
+            calls["n"] += 1
+            return original(text)
+
+        monkeypatch.setattr(_store, "_parse_ledger", _counting_parse)
+        second = load_archive(tmp_path)
+        assert second.is_ok
+        assert second.danger_ok.keys() == {"T-0003"}
+        assert calls["n"] == 0, "cache hit must not reparse the ledger text"
+
+    def test_reparses_when_archive_content_changes(self, tmp_path: Path) -> None:
+        write_archive(tmp_path, {"T-0004": _ticket(ticket_id="T-0004", title="One")})
+        first = load_archive(tmp_path)
+        assert first.is_ok
+        assert first.danger_ok["T-0004"].title == "One"
+
+        write_archive(tmp_path, {"T-0004": _ticket(ticket_id="T-0004", title="Two")})
+        second = load_archive(tmp_path)
+        assert second.is_ok
+        assert second.danger_ok["T-0004"].title == "Two"
+
+
 class TestAtomicWrite:
     def test_writes_text_content(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_store.py::atomic_write kind="unit"

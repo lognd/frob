@@ -43,6 +43,17 @@ gates-quality.md's T-0977 section): the resolve-dispatch-or-usage-error
 shape IS the dispatcher's one documented job above, not a separable
 concern.
 
+T-1216: `App.__call__` resolves and imports ONLY the one `*_runner`
+module the invoked subcommand needs (`_resolve_runner`), and
+`frob.app`'s package `__init__.py` resolves its `<name>_runner_run`
+re-export aliases lazily via `__getattr__` (PEP 562) rather than
+importing every runner module up front. Before this, `import frob.app`
+(triggered by every CLI invocation, since `frob.__main__` imports
+`App`/`AppConfig` from here) eagerly imported all ~30 runner modules
+regardless of which one subcommand actually ran, paying for
+`deploy_runner -> frob.strata -> frob.vet -> frob.gates`'s import graph
+even on a plain `frob ticket list`.
+
 ## Config
 
 <!-- frob:describes src/frob/app/config.py::Subcommand -->

@@ -44,30 +44,11 @@ _RUNNER_MODULE_NAMES = (
     "vet_runner",
     "xref_runner",
 )
-"""Every `frob.app.*_runner` module name, dispatched by `_dispatch_table`."""
-
-
-# frob:ticket T-1038
-def _import_runner_modules() -> dict[str, Callable[[AppConfig], None]]:
-    """Every uniform `frob.app.*_runner` module's `run` entry point, keyed by name.
-
-    `bind_runner` is excluded: its `run(argv: list)` takes a raw argv, not an
-    `AppConfig`, so `_dispatch_table` wires it up separately. `getattr`
-    (rather than static attribute access on the imported module) keeps this
-    a plain `str -> Callable` map for the type checker -- the alternative, a
-    `dict[str, ModuleType]`, makes every lookup below an unresolved-attribute
-    error since `ModuleType` has no `run` member.
-    """
-    import importlib
-
-    # frob:waive OPAQUE001 reason="T-1038: name ranges over the closed, \
-    # statically-declared _RUNNER_MODULE_NAMES tuple immediately above -- not \
-    # attacker- or config-controlled input; the runtime import/attr lookup is a \
-    # module-loading convenience over a fixed, auditable set, not an evasion surface"
-    return {
-        name: getattr(importlib.import_module(f"frob.app.{name}"), "run")
-        for name in _RUNNER_MODULE_NAMES
-    }
+"""Every `frob.app.*_runner` module name with a uniform `run(AppConfig)`
+entry point -- documents the full set `_SUBCOMMAND_RUNNER_NAMES` maps
+subcommands onto; not imported as a batch by anything else (T-1216:
+`_resolve_runner` imports exactly the one module a live invocation's
+subcommand actually needs)."""
 
 
 _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
@@ -107,21 +88,31 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
 }
 """Every subcommand handled by a uniform `*_runner.run(AppConfig)` entry point,
 mapped to the runner module name that serves it. `bind` is excluded: it takes
-a raw argv rather than an `AppConfig`, so `_dispatch_table` wires it up
+a raw argv rather than an `AppConfig`, so `App.__call__` wires it up
 separately."""
 
 
-# frob:ticket T-0021
-def _dispatch_table() -> dict[Subcommand, Callable[[AppConfig], None]]:
-    """Map each subcommand to the runner entry point that handles it."""
-    from frob.app import bind_runner
+# frob:ticket T-1216
+# frob:tests tests/unit/test_app_lazy_dispatch.py::TestResolveRunner.test_imports_only_the_requested_subcommands_module  # noqa: E501
+def _resolve_runner(subcommand: Subcommand) -> Callable[[AppConfig], None] | None:
+    """The single `frob.app.*_runner` module's `run` entry point that
+    `subcommand` dispatches to, importing ONLY that one module -- `None` if
+    `subcommand` has no uniform runner entry (unknown, or `bind`, which
+    `App.__call__` wires up separately since its `run` takes a raw argv, not
+    an `AppConfig`).
 
-    r = _import_runner_modules()
-    table: dict[Subcommand, Callable[[AppConfig], None]] = {
-        subcommand: r[name] for subcommand, name in _SUBCOMMAND_RUNNER_NAMES.items()
-    }
-    table[Subcommand.bind] = lambda _cfg: bind_runner.run([])
-    return table
+    T-1216: replaces the old `_dispatch_table()`/`_import_runner_modules()`
+    pair, which built a dict keyed by EVERY subcommand by importing EVERY
+    runner module (deploy/strata/vet/gates included) on every single
+    invocation, regardless of which one subcommand was actually requested --
+    the real source of the 632ms eager import chain `frob ticket list` used
+    to pay even though it never touches any of those modules."""
+    import importlib
+
+    name = _SUBCOMMAND_RUNNER_NAMES.get(subcommand)
+    if name is None:
+        return None
+    return getattr(importlib.import_module(f"frob.app.{name}"), "run")
 
 
 # frob:doc docs/modules/app.md#entry-point
@@ -132,12 +123,22 @@ class App:
 
     # frob:waive ARCH103 reason="T-0977: the CLI dispatch entrypoint's one job IS \
     # orchestration -- resolve subcommand, format the usage error, exit; splitting the \
-    # usage message out would add indirection with no cohesion gain, and the dispatch \
-    # table itself already lives in _dispatch_table()"
+    # usage message out would add indirection with no cohesion gain, and the per- \
+    # subcommand resolution itself already lives in _resolve_runner()"
     def __call__(self) -> None:
         # frob:ticket T-0021
+        # frob:ticket T-1216
         subcommand = self._cfg.subcommand
-        handler = _dispatch_table().get(subcommand) if subcommand else None
+        handler: Callable[[AppConfig], None] | None
+        if subcommand == Subcommand.bind:
+            from frob.app import bind_runner
+
+            def handler(_cfg: AppConfig) -> None:
+                bind_runner.run([])
+        elif subcommand is not None:
+            handler = _resolve_runner(subcommand)
+        else:
+            handler = None
         if handler is None:
             _log.error(
                 "usage: frob "

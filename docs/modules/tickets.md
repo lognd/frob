@@ -2318,6 +2318,7 @@ AttachError = TicketError | ClipboardError
 <!-- frob:describes src/frob/tickets/_store.py::archive_path -->
 <!-- frob:describes src/frob/tickets/_store.py::load_archive -->
 <!-- frob:describes src/frob/tickets/_store.py::write_archive -->
+<!-- frob:describes src/frob/tickets/_store.py::_yaml_loader -->
 <!-- frob:describes src/frob/tickets/_store.py::attachments_dir -->
 <!-- frob:describes src/frob/tickets/_store.py::_store_mode -->
 <!-- frob:describes src/frob/tickets/_store.py::_serialize_ticket -->
@@ -2347,6 +2348,15 @@ def archive_path(root: Path) -> Path
     # The tickets-archive.md path at the repo root (same ledger format).
 def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]
     # Every ticket in tickets-archive.md (empty dict if it doesn't exist yet).
+    # T-1206: cached in .frob/tickets-archive-cache.json, keyed by the
+    # archive file's own sha256 content hash (never mtime) -- an unchanged
+    # archive is never reparsed; any byte change invalidates the cache.
+def _yaml_loader() -> type[yaml.SafeLoader]
+    # T-1206: yaml.CSafeLoader (libyaml) when installed, else the
+    # pure-Python yaml.SafeLoader -- every frontmatter yaml.load call in
+    # this module goes through this instead of yaml.safe_load, since
+    # safe_load always forces the slower pure-Python loader even when the
+    # C extension is available. Same accepted-construct set either way.
 def write_archive(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]
     # Replaces tickets-archive.md wholesale (same ledger section format,
     # distinct header).

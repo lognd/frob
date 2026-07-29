@@ -28,12 +28,13 @@ from __future__ import annotations
 
 import hashlib
 import importlib
+import json
 import os
 import re
 import tempfile
 import threading
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from pathlib import Path
 from types import ModuleType
 
@@ -57,6 +58,28 @@ _log = get_logger(__name__)
 
 _FRONTMATTER_RE = re.compile(r"\A---\n(.*?\n)---\n(.*)\Z", re.DOTALL)
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
+
+
+# frob:ticket T-1206
+# frob:tests tests/unit/test_ticket_store.py::TestYamlLoader.test_prefers_csafeloader_when_libyaml_present  # noqa: E501
+# frob:tests tests/unit/test_ticket_store.py::TestYamlLoader.test_falls_back_to_safeloader_without_libyaml  # noqa: E501
+def _yaml_loader() -> type[yaml.SafeLoader]:
+    """The fastest safe YAML loader available: `yaml.CSafeLoader` (libyaml,
+    a C extension) when installed, else the pure-Python `yaml.SafeLoader`.
+
+    T-1206: every per-document `yaml.safe_load` call in this module
+    profiled at 67 pct of `load_queue`'s cost on the 1235+-document
+    `tickets-archive.md` ledger -- `yaml.safe_load` always uses the
+    pure-Python `SafeLoader` even when `yaml.__with_libyaml__` reports the
+    C extension is installed. Both loaders reject the exact same YAML
+    constructs (CSafeLoader is a C reimplementation of the same safe
+    subset, not a superset) -- so this swap is fail-open-preserving: a
+    malformed frontmatter block that raised `yaml.YAMLError` before still
+    raises the same error class through this loader."""
+    if yaml.__with_libyaml__:
+        return yaml.CSafeLoader
+    return yaml.SafeLoader
+
 
 # frob:ticket T-0162
 # `_TICKET_ID_RE`'s alternation matches BOTH a final sequential id (T-####)
@@ -291,7 +314,7 @@ def _parse_ticket_file(path: Path) -> Result[Ticket, TicketError]:
         _log.error("tickets: %s has no valid frontmatter block", path)
         return Err(TicketError.MalformedFrontmatter)
     try:
-        data = yaml.safe_load(match.group(1))
+        data = yaml.load(match.group(1), Loader=_yaml_loader())
     except yaml.YAMLError as exc:
         _log.error("tickets: %s frontmatter is not valid YAML: %s", path, exc)
         return Err(TicketError.MalformedFrontmatter)
@@ -344,7 +367,7 @@ def iter_raw_ledger_frontmatter(text: str) -> list[tuple[str, dict]]:
             )
             continue
         try:
-            data = yaml.safe_load(fence.group(1))
+            data = yaml.load(fence.group(1), Loader=_yaml_loader())
         except yaml.YAMLError as exc:
             _log.warning(
                 "tickets: %s frontmatter is not valid YAML, skipping in raw scan: %s",
@@ -370,7 +393,7 @@ def _parse_ledger(text: str) -> Result[dict[str, Ticket], TicketError]:
             _log.error("tickets: %s section has no ```yaml frontmatter", ticket_id)
             return Err(TicketError.MalformedFrontmatter)
         try:
-            data = yaml.safe_load(fence.group(1))
+            data = yaml.load(fence.group(1), Loader=_yaml_loader())
         except yaml.YAMLError as exc:
             _log.error("tickets: %s frontmatter is not valid YAML: %s", ticket_id, exc)
             return Err(TicketError.MalformedFrontmatter)
@@ -548,15 +571,119 @@ def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]:
     return Ok(tickets)
 
 
+# frob:ticket T-1206
+# The parsed-archive cache file: keyed by the archive's own content hash
+# (never mtime, T-1206 -- an mtime-only key survives a touch/checkout that
+# does not change bytes, but silently misses a same-second edit and is
+# unreliable across filesystems/git checkouts that do not preserve mtimes)
+# so a stale cache can never be read as fresh.
+_ARCHIVE_CACHE_REL = Path(".frob") / "tickets-archive-cache.json"
+
+
+def _archive_cache_path(root: Path) -> Path:
+    """The cache file `load_archive` reads/writes (`.frob/tickets-archive-
+    cache.json`), gitignored and safe to delete like the rest of `.frob/`."""
+    return root / _ARCHIVE_CACHE_REL
+
+
+# frob:ticket T-1206
+# frob:tests tests/unit/test_ticket_store.py::TestLoadArchiveCache.test_reparses_when_archive_content_changes  # noqa: E501
+# frob:tests tests/unit/test_ticket_store.py::TestLoadArchiveCache.test_skips_reparse_when_content_hash_unchanged  # noqa: E501
+def _read_archive_cache(
+    cache_path: Path, digest: str
+) -> Result[dict[str, Ticket], TicketError] | None:
+    """The cached parse of `tickets-archive.md` if `cache_path` exists AND
+    its recorded digest matches `digest` exactly (content-hash keyed, never
+    mtime -- T-1206), else `None` meaning "caller must parse fresh".
+
+    A cache hit that fails to deserialize (corrupt/foreign-format file, a
+    schema change across a `frob` upgrade) is treated the SAME as a miss --
+    logged and ignored -- rather than propagated as an error, since this
+    cache is purely a speed optimization derived from the archive file
+    itself, never a source of truth in its own right."""
+    if not cache_path.exists():
+        return None
+    try:
+        raw = json.loads(cache_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        _log.warning("tickets: archive cache unreadable, reparsing (%s)", exc)
+        return None
+    if not isinstance(raw, dict) or raw.get("digest") != digest:
+        return None
+    try:
+        tickets = {
+            ticket_id: Ticket.model_validate(data)
+            for ticket_id, data in raw.get("tickets", {}).items()
+        }
+    except ValidationError as exc:
+        _log.warning(
+            "tickets: archive cache failed to deserialize, reparsing (%s)", exc
+        )
+        return None
+    _log.debug("tickets: archive cache hit (digest %s)", digest)
+    return Ok(tickets)
+
+
+def _write_archive_cache(
+    cache_path: Path, digest: str, tickets: dict[str, Ticket]
+) -> None:
+    """Best-effort write of the parsed archive to `cache_path`, keyed by
+    `digest`. Never raises: a failed cache write only costs the NEXT
+    load's speedup, not correctness, so it is logged and swallowed rather
+    than surfaced as a `load_archive` error."""
+    payload = {
+        "digest": digest,
+        "tickets": {
+            ticket_id: ticket.model_dump(mode="json")
+            for ticket_id, ticket in tickets.items()
+        },
+    }
+    try:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp_name = tempfile.mkstemp(
+            dir=str(cache_path.parent), prefix=".tickets-archive-cache-"
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                json.dump(payload, handle)
+            os.replace(tmp_name, cache_path)
+        except BaseException:
+            with suppress(OSError):
+                os.unlink(tmp_name)
+            raise
+    except OSError as exc:
+        _log.warning("tickets: failed to write archive cache, skipping (%s)", exc)
+
+
 # frob:doc docs/modules/tickets.md#storage-internals
+# frob:ticket T-1206
 def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]:
     """Every ticket in `tickets-archive.md` as an id -> Ticket map (empty if
     the archive does not exist yet -- a fresh repo has never archived
-    anything)."""
+    anything).
+
+    T-1206: the archive is append-mostly and can grow into the thousands
+    of documents, so re-running `_parse_ledger` (1235+ `yaml.load` calls at
+    the time this was measured) on every `frob ticket doable`/`list`/`check`
+    invocation dominates queue-loading cost even after the CSafeLoader
+    swap. This caches the parsed result under `.frob/tickets-archive-
+    cache.json`, keyed by the archive file's own sha256 content hash
+    (`ledger_digest`, never mtime -- an mtime-based key would treat a
+    content-identical `git checkout` or same-second edit as either a false
+    hit or a false miss) -- an unchanged archive is never reparsed, and any
+    byte change invalidates the cache on the very next read."""
     path = archive_path(root)
     if not path.exists():
         return Ok({})
-    return _parse_ledger(path.read_text(encoding="utf-8"))
+    digest = ledger_digest(path)
+    cache_path = _archive_cache_path(root)
+    cached = _read_archive_cache(cache_path, digest)
+    if cached is not None:
+        return cached
+    parsed = _parse_ledger(path.read_text(encoding="utf-8"))
+    if parsed.is_ok:
+        _write_archive_cache(cache_path, digest, parsed.danger_ok)
+    return parsed
 
 
 # frob:doc docs/modules/tickets.md#storage-internals

@@ -1214,7 +1214,7 @@ User directive 2026-07-29: we should never run make coverage manually; frob must
 id: T-1206
 title: 'perf: tickets archive YAML on pure-Python loader -- CSafeLoader + parsed-archive
   cache'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -1224,6 +1224,26 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/tickets/_store.py
+- tests/unit/test_ticket_store.py
+- docs/modules/tickets.md
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: T-1206 CSafeLoader/cache change needs its own test file and updates the
+    storage-internals doc anchor
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: T-1206 CSafeLoader/cache change needs its own test file and updates the
+    storage-internals doc anchor
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/unit/test_ticket_store.py::TestYamlLoader::test_prefers_csafeloader_when_libyaml_present
+- tests/unit/test_ticket_store.py::TestYamlLoader::test_falls_back_to_safeloader_without_libyaml
+- tests/unit/test_ticket_store.py::TestLoadArchiveCache::test_skips_reparse_when_content_hash_unchanged
+- tests/unit/test_ticket_store.py::TestLoadArchiveCache::test_reparses_when_archive_content_changes
 acceptance:
 - text: 'GIVEN load_queue parses the tickets-archive.md ledger (1235+ yaml documents)
     WHEN yaml.safe_load is replaced with yaml.CSafeLoader (with pure-python SafeLoader
@@ -1231,11 +1251,72 @@ acceptance:
     .frob/ THEN frob ticket doable drops from ~2.33s toward ~0.5-0.8s and every frob
     check that resolves blockers/joins the archive drops ~1.5-2s (report section ''Ranked
     PERF ticket candidates'' #1)'
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_store.py::TestYamlLoader::test_prefers_csafeloader_when_libyaml_present
+  - tests/unit/test_ticket_store.py::TestYamlLoader::test_falls_back_to_safeloader_without_libyaml
+  - tests/unit/test_ticket_store.py::TestLoadArchiveCache::test_skips_reparse_when_content_hash_unchanged
+  - tests/unit/test_ticket_store.py::TestLoadArchiveCache::test_reparses_when_archive_content_changes
 threat: null
 component: null
 ```
 Root cause: src/frob/tickets/_store.py:347 and :373 call yaml.safe_load per document (1235 docs/load_queue) with the pure-python SafeLoader even though libyaml/CSafeLoader is installed and unused (yaml.__with_libyaml__ True). 67 pct of the _load_inputs profile. Fix: switch to yaml.CSafeLoader, and since the archive is append-mostly, add a content-hash-keyed cache of the parsed archive in .frob/ invalidated on file hash change. Companion lint rule (do not duplicate here -- covered by the sibling 'perf: PERF01x detectors' ticket): 'yaml.safe_load/yaml.load without C loader in non-test code'.
+
+## Done report
+
+Changed:
+src/frob/tickets/_store.py::_yaml_loader
+src/frob/tickets/_store.py::_parse_ticket_file
+src/frob/tickets/_store.py::iter_raw_ledger_frontmatter
+src/frob/tickets/_store.py::_parse_ledger
+src/frob/tickets/_store.py::load_archive
+src/frob/tickets/_store.py::_archive_cache_path
+src/frob/tickets/_store.py::_read_archive_cache
+src/frob/tickets/_store.py::_write_archive_cache
+
+Evidence:
+tests/unit/test_ticket_store.py::TestYamlLoader.test_prefers_csafeloader_when_libyaml_present
+tests/unit/test_ticket_store.py::TestYamlLoader.test_falls_back_to_safeloader_without_libyaml
+tests/unit/test_ticket_store.py::TestLoadArchiveCache.test_skips_reparse_when_content_hash_unchanged
+tests/unit/test_ticket_store.py::TestLoadArchiveCache.test_reparses_when_archive_content_changes
+
+Measured (repo's own tickets-archive.md, 1235+ documents):
+- `frob ticket doable`, baseline (pre-fix, HEAD): 1.96s / 1.97s / 2.04s
+- `frob ticket doable`, after fix, cold cache: 0.85s
+- `frob ticket doable`, after fix, warm cache: 0.58s / 0.59s / 0.60s
+Baseline matches the ticket's ~2.33s reference figure; warm-cache result
+(~0.58-0.60s) lands inside the ticket's ~0.5-0.8s target, cold-cache
+result (0.85s, CSafeLoader-only benefit before any cache hit) is close
+behind it.
+
+Filed: none
+
+Gates: `frob check --ticket T-1206 --only affect_drift --only prework
+--only scope --only test` clean (0 errors; remaining warnings are
+pre-existing debt outside this ticket's scope: TEST003 on
+src/frob/tomlio.py and strata-core/src/parse, TEST006 missing coverage
+stamp, TEST014 stop()-name ambiguity across unrelated modules).
+`ruff check`/`ruff format`/`ty check` clean on touched files.
+`frob test --base main` exit=0 (10 selected python tests).
+
+### Changed
+```
+ docs/modules/tickets.md         |  10 +++
+ src/frob/tickets/_store.py      | 139 ++++++++++++++++++++++++++++++++++++++--
+ tests/unit/test_ticket_store.py |  60 +++++++++++++++++
+ tickets.md                      |  29 ++++++++-
+ 4 files changed, 229 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_store.py::TestYamlLoader::test_prefers_csafeloader_when_libyaml_present` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestYamlLoader::test_falls_back_to_safeloader_without_libyaml` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestLoadArchiveCache::test_skips_reparse_when_content_hash_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestLoadArchiveCache::test_reparses_when_archive_content_changes` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 2 error(s), 532 warning(s), 679 waived
+- error-findings: PRE001@tickets/T-1206, SELFAUDIT001@design
 
 <!-- ticket:T-1207 -->
 ```yaml
@@ -1512,7 +1593,7 @@ Root cause: arch/_python.py:782/637 _py_build_module/_py_build_function run 3 se
 id: T-1216
 title: 'perf: lazy per-subcommand runner import in frob.app -- drop eager deploy/strata/vet/gates
   import chain'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -1523,6 +1604,33 @@ sprint: null
 scope:
 - src/frob/app/__init__.py
 - src/frob/app/app.py
+- tests/unit/test_app_lazy_exports.py
+- tests/unit/test_app_lazy_dispatch.py
+- docs/modules/app.md
+scope_changes:
+- op: add
+  glob: tests/unit/test_app_lazy_exports.py
+  reason: T-1216 adds two dedicated unit test files for the lazy __getattr__/resolve_runner
+    behavior
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: tests/unit/test_app_lazy_dispatch.py
+  reason: T-1216 adds two dedicated unit test files for the lazy __getattr__/resolve_runner
+    behavior
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: docs/modules/app.md
+  reason: T-1216 changes App's dispatch mechanism (_resolve_runner replaces _dispatch_table),
+    doc anchor needs updating
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_accessing_one_alias_does_not_import_the_others
+- tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_unknown_attribute_still_raises_attribute_error
+- tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_imports_only_the_requested_subcommands_module
+- tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_unknown_subcommand_returns_none
 acceptance:
 - text: GIVEN src/frob/app/__init__.py:14 imports every runner eagerly so 'frob ticket
     list' pays the deploy -> strata (417ms, incl strata._threat 280ms) -> vet._capability
@@ -1530,11 +1638,98 @@ acceptance:
     user on a quiet run) WHEN the package init dispatches subcommands via importlib/getattr
     lazily per app.py's own docstring THEN CLI invocations that do not touch deploy/strata/vet/gates
     save ~0.3-0.5s startup (report 'CLI startup' section)
-  evidence: []
+  evidence:
+  - tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_accessing_one_alias_does_not_import_the_others
+  - tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_unknown_attribute_still_raises_attribute_error
+  - tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_imports_only_the_requested_subcommands_module
+  - tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_unknown_subcommand_returns_none
 threat: null
 component: null
 ```
 Root cause: app/__init__.py:14 eagerly imports every runner; app.py's docstring already describes a dynamic importlib/getattr entrypoint that the package init does not follow. Fix: make __init__.py's dispatch table match app.py's documented lazy-import design so unrelated subcommands (e.g. ticket list) never pull in frob.deploy/frob.strata/frob.vet/frob.gates.
+
+## Done report
+
+Changed:
+src/frob/app/__init__.py::__getattr__
+src/frob/app/__init__.py (_RUNNER_RUN_MODULES table; removed the eager
+runner-module import block and the 31 `<name>_runner_run = <name>_runner.run`
+assignments)
+src/frob/app/app.py::_resolve_runner
+src/frob/app/app.py (removed `_dispatch_table`/`_import_runner_modules`;
+`App.__call__` now calls `_resolve_runner` per subcommand)
+
+Evidence:
+tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs.test_accessing_one_alias_does_not_import_the_others
+tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs.test_unknown_attribute_still_raises_attribute_error
+tests/unit/test_app_lazy_dispatch.py::TestResolveRunner.test_imports_only_the_requested_subcommands_module
+tests/unit/test_app_lazy_dispatch.py::TestResolveRunner.test_unknown_subcommand_returns_none
+
+Measured (`frob ticket list --state queued`, direct `.venv/bin/python3 -m
+frob ...` invocations to remove `uv run`'s own wrapper noise from the
+comparison):
+- wall clock, baseline (HEAD): 0.66s / 0.68s / 0.72s / 0.79s
+- wall clock, after fix: 0.43s / 0.44s / 0.46s / 0.54s / 0.56s
+- `python -X importtime -m frob ticket list --state queued`: baseline
+  shows `frob.deploy` (cumulative 234165us, pulling in the full
+  `frob.strata` chain within it) imported eagerly during package init;
+  after the fix, `frob.deploy` never appears in the trace at all for this
+  subcommand -- confirmed via `builtins.__import__` tracing that the old
+  import site was `frob/app/__init__.py`'s top-level `from frob.app import
+  (... deploy_runner ...)` block, now gone.
+
+Residual cost NOT covered by this ticket's scope: `frob.app.telemetry.
+record_cli_event` (called from every `timed_call`, i.e. after every CLI
+invocation regardless of subcommand) calls `redact_command`, which imports
+`frob.gates._secrets` for its `_redact`/`_scan_line` helpers -- and that
+submodule's own parent package, `frob.gates/__init__.py`, eagerly imports
+its full stage roster as a side effect. Traced (via `builtins.__import__`
+instrumentation) to fire AFTER the command's own output, inside
+`timed_call`'s `finally` block. This is a separate root cause in
+`src/frob/app/telemetry.py`/`src/frob/gates/_secrets.py`, outside T-1216's
+declared scope (`src/frob/app/__init__.py`, `src/frob/app/app.py`) --
+filed as ticket T-1318 (renumbers on land) rather than fixed
+here.
+
+Filed: T-1318 (perf: telemetry redact_command pulls in the whole
+frob.gates package via frob.gates._secrets)
+
+Gates: `frob check --ticket T-1216 --only affect_drift --only prework
+--only scope --only test` clean (0 errors; remaining warnings are
+pre-existing debt: TEST003 on src/frob/tomlio.py and strata-core/src/parse,
+TEST006 missing coverage stamp, TEST014 stop()-name ambiguity across
+unrelated modules, and SCOPE002 doc-anchor-closure notes for the many
+OTHER runner modules docs/modules/app.md#runners describes, none touched
+by this ticket). `ruff check`/`ruff format`/`ty check` clean on touched
+files. `frob test --base main` exit=0 (17 selected python tests, including
+`tests/integration/test_interfaces.py::TestInterfaces::test_app_runner_map`,
+a real subprocess `frob map` invocation confirming dispatch still works
+end to end).
+
+### Changed
+```
+ docs/modules/app.md                  |  11 +++
+ docs/modules/tickets.md              |  10 +++
+ src/frob/app/__init__.py             | 143 ++++++++++++++++--------------
+ src/frob/app/app.py                  |  77 +++++++++--------
+ src/frob/tickets/_store.py           | 139 +++++++++++++++++++++++++++--
+ tests/unit/test_app_lazy_dispatch.py |  45 ++++++++++
+ tests/unit/test_app_lazy_exports.py  |  54 ++++++++++++
+ tests/unit/test_ticket_store.py      |  60 +++++++++++++
+ tickets.md                           | 163 +++++++++++++++++++++++++++++++++--
+ 9 files changed, 589 insertions(+), 113 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_accessing_one_alias_does_not_import_the_others` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_unknown_attribute_still_raises_attribute_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_imports_only_the_requested_subcommands_module` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_unknown_subcommand_returns_none` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 3 error(s), 411 warning(s), 678 waived
+- error-findings: OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py, SELFAUDIT001@design
 
 <!-- ticket:T-1217 -->
 ```yaml
@@ -7056,3 +7251,46 @@ threat: null
 component: null
 ```
 User question 2026-07-29 answered by the staleness sweep: the ~140 silent doc misses trace to six gate blind spots (T-1227..T-1232) PLUS this seventh systemic one the audit named but no ticket owned -- DRIFT001 verifies freshness of attention (digest vs last ack), and frob ack clears it with no proof the prose was re-verified. Waivers require reason=; acks do not. Principle: move every machine-checkable claim class from ack-based trust to content-verified proof (the DOCENUM/pointer work), and make the residual human vouches auditable (reason + digest delta + date), refusable when empty. Interacts with T-1137's anti-goal (no auto-discharge): the fix engine must never auto-ack, and this ticket makes a hand-ack itself carry evidence.
+
+<!-- ticket:T-1318 -->
+```yaml
+id: T-1318
+title: 'perf: telemetry redact_command pulls in the whole frob.gates package via frob.gates._secrets'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/telemetry.py
+- src/frob/gates/_secrets.py
+threat: null
+component: null
+```
+found while working T-1216: after T-1216 removed frob.app's eager
+deploy/strata/vet/gates import chain, one gates import still survives on
+EVERY CLI invocation regardless of subcommand: `frob.app.telemetry.
+timed_call`'s `finally` block always calls `record_cli_event`, which calls
+`redact_command`, which does `from frob.gates._secrets import _redact,
+_scan_line` -- and `frob.gates._secrets`'s own parent package,
+`frob.gates/__init__.py`, eagerly imports its entire stage roster (pii,
+arch, dup, vet._capability, testing, ...) as a side effect of that single
+submodule import. Measured on `frob ticket list --state queued`: this
+residual chain alone costs ~257ms cumulative importtime (frob.gates line
+in `python -X importtime`), all AFTER the command's real output has
+already been produced (it fires in telemetry's post-command bookkeeping,
+not the command itself).
+
+Root cause: redaction-worthy secret-scanning logic
+(`_redact`/`_scan_line`) lives inside `frob.gates._secrets`, a submodule
+of the heavy `frob.gates` aggregator package, rather than in a small
+standalone module with no heavy siblings. Fix: extract `_redact`/
+`_scan_line` (or whatever subset `redact_command` actually needs) into a
+lightweight module outside `frob.gates` (e.g. `frob.security._redact` or
+similar) that both `frob.gates._secrets` and `frob.app.telemetry` import,
+so telemetry's per-invocation redaction never drags in the rest of the
+gates stage roster. Out of T-1216's scope (src/frob/app/__init__.py,
+src/frob/app/app.py only) -- filed as a follow-up.
