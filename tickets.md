@@ -1312,3 +1312,23 @@ threat: null
 component: null
 ```
 Derived-state auto-refresh sweep 2026-07-29: the globally installed frob (uv tool) went stale at 0.9.0 while the repo advanced to 0.277.0, causing wrong gate numbers for anyone invoking bare frob -- a documented recurring papercut. Detection belongs in frob itself: version floor in frob.toml, checked at CLI startup (cheap), doctor finding with the exact uv tool upgrade frob remedy.
+
+<!-- ticket:T-1219 -->
+```yaml
+id: T-1219
+title: 'perf: migrate tree-extraction layer to frob_core (Rust)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: high
+parent: null
+tier: epic
+sprint: null
+scope:
+- src/frob/lang/**
+- frob-core/**
+threat: null
+component: null
+```
+Umbrella epic: migrate the Python-side tree-sitter tree-extraction layer (frob.lang._extract.extract, _walk_python, _common.walk) into frob_core (PyO3/Rust), per the report's Rust-migration-candidates ranking. This is the largest single native-cost family measured (perf 38 pct, clones 69 pct, deprecated 76 pct, dead_symbols 88 pct, opaque 92 pct, sys ~50 pct -- summed ~40-50s native per full check) and is not covered by frob_core today (existing kernels consume the token lists this layer produces). 4 children: tree-extraction kernel, capability-scan resolver, arch metrics single-pass walk export, and an interim zero-Rust tree-sitter Query step for comment/docstring spans. New FFI boundaries must satisfy FFI001/FFI002 (src/frob/gates/_ffi_boundary.py).
