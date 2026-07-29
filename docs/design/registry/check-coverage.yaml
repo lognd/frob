@@ -1105,17 +1105,29 @@ concern_family_entries:
   - id: "CHK-THEME-PYTHON-ONLY"
     name: "Python-only enforcement: COV/DOC/DRIFT/INV and the binding-aware capability resolver silently no-op for TS/Rust/C/C++"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-1193"
-    cross_refs: []
+    # T-1193 close 2026-07-29: run_check_cpp/rust/ts all call _run_gates
+    # (T-0554), so the COV/DOC/DRIFT families execute for every pipeline
+    # over the language-agnostic graph; reviewer-verified non-vacuous
+    # (tree-sitter grammars produce real non-Python graph nodes).
+    disposition: "handled_by:COV001"
+    cross_refs: ["T-0554"]
   - id: "CHK-THEME-FAIL-OPEN"
     name: "Fail-open on the unknown: unparseable file, source-unavailable dependency, unknown-language change, missing tool, second lockfile, non-UTF-8 doc all silently skip/pass rather than fail-closed"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-1193"
-    cross_refs: []
+    # T-1193 close 2026-07-29: last two residues verified handled --
+    # every lockfile scanned (T-0400, _find_all_lockfiles polyglot
+    # tests) and non-UTF-8 docs skipped with a disclosed warning
+    # (T-0402); the earlier clauses landed as PARSE001/002, NATIVE001,
+    # tool-unavailable ToolResults.
+    disposition: "handled_by:PARSE001"
+    cross_refs: ["T-0400", "T-0402"]
   - id: "CHK-THEME-GITIGNORED-TRUST"
     name: "Gitignored-local trust: coverage/stamp/baseline/prework signals live in .frob/ (gitignored), so CI cannot verify the one behavioral gate that exists"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-1193"
+    # T-1193 close 2026-07-29: residue confirmed real (ci.yml self-gate
+    # is non-blocking, stamp/baseline unverifiable in CI) and repointed
+    # to its dedicated child.
+    disposition: "deferred:T-1265"
     cross_refs: []
   - id: "CHK-SUBSYS-TICKETS-TESTING"
     name: "tickets + testing: evidence means a test EXISTS, never passed/covers; a red or unrelated test closes any ticket; land re-runs nothing"
@@ -1135,18 +1147,30 @@ concern_family_entries:
   - id: "CHK-SUBSYS-GATES-ACCOUNTING"
     name: "gates: accounting -- verifies procedural existence, not code quality; DRIFT001 sig facet blind to body rewrites; TS/C/C++ frob:tests need no execution"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-1193"
-    cross_refs: []
+    # T-1193 close 2026-07-29: DRIFT001 body-blindness fixed (T-0556,
+    # _facets_for_ref unions body into every ack; regression test trips
+    # on body-only rewrites); TS retired via the real vitest collector
+    # (T-0730); the remaining C/C++ structural-fallback clause repoints
+    # to its dedicated child.
+    disposition: "deferred:T-1266"
+    cross_refs: ["T-0556"]
   - id: "CHK-SUBSYS-LANG-CHECK-DOCS"
     name: "lang + check + docs: doc/coverage/drift gates run ONLY in the Python pipeline; parse/IO failure silently erases a file's whole obligation set; COV001 is WARN-only"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-1193"
-    cross_refs: []
+    # T-1193 close 2026-07-29: same mechanism as CHK-THEME-PYTHON-ONLY
+    # (T-0554 wires _run_gates into every language pipeline); the
+    # parse-failure clause is PARSE001/002's landed disclosure.
+    disposition: "handled_by:COV001"
+    cross_refs: ["T-0554"]
   - id: "CHK-SUBSYS-GRAPH-EDGES"
     name: "graph + edges: load_graph only re-hashes already-cached files (incomplete snapshot on a new file); a non-UTF-8 .md hard-crashes frob check"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-1193"
-    cross_refs: []
+    # T-1193 close 2026-07-29: _first_added_file forces CacheStale for
+    # any never-ingested source OR doc file, and non-UTF-8 docs skip
+    # with a disclosed warning instead of crashing (both T-0402, with
+    # regression tests bound via frob:tests on load_graph).
+    disposition: "handled_by:PARSE001"
+    cross_refs: ["T-0402"]
   - id: "CHK-SUBSYS-PERF"
     name: "performance + caching: ~168s CPU is redundant parsing (frob.lang._parse uncached, tree re-walked ~7x/run, 17 gates GIL-serialized)"
     source_doc: "docs/audits/README.md"
