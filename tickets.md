@@ -10173,3 +10173,34 @@ attr keyword, so a real `.strata` file can actually author
 Not touched by T-1314: strata-core grammar/Rust changes are outside that
 ticket's declared scope (src/frob/gates/_sys.py, src/frob/strata/
 _compliance.py, docs, tests only).
+
+<!-- ticket:T-1326 -->
+```yaml
+id: T-1326
+title: 'land guard: catch frob:waive deletions in COMMITTED branch history, not just
+  uncommitted state'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-29'
+priority: high
+blocked_by:
+- T-1323
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/tickets/_land_merge.py
+- tests/test_ticket_land.py
+acceptance:
+- text: GIVEN a branch commit that deletes an out-of-scope undeclared frob:waive line
+    WHEN frob ticket land runs THEN it refuses before merge naming file and rule
+  evidence: []
+- text: GIVEN the same deletion but owned by a landing ticket's scope or properly
+    declared THEN land proceeds
+  evidence: []
+threat: tampering
+component: null
+```
+T-1323's land-precheck guard (_check_uncommitted_waive_deletions) only inspects git diff HEAD (uncommitted worktree state) -- the exact incident mechanism. Reviewer finding at T-1323 approval: a frob:waive deletion COMMITTED to the branch before land is invisible to it, leaving a laundering vector (an agent or tool commits the deletion mid-ticket and it rides the merge). Extend the guard to also scan git diff merge-base..HEAD for single-line frob:waive deletions, applying the same scope-ownership and (tightened) Done-report declaration logic; a deletion neither owned by a landing ticket's scope nor declared is an ERROR-tier refusal. Also consider the multi-line/continuation waiver blind spot flagged MINOR in the same review (mirror of WAIVE004's own single-line scope) -- either cover it or scope the docstring honestly.
