@@ -21,11 +21,17 @@ WHY and the recovery recipes.
 1. ONE named worktree per series (`.claude/worktrees/<slug>`), reused for
    every ticket in the series. `EnterWorktree`, fallback
    `git worktree add <path> main`. Verify base == current main tip; merge
-   main if stale (sec 1).
+   main if stale (sec 1). `uv run frob ticket work T-XXXX` (T-1175)
+   collapses this step plus step 2 plus `start` into one command for a
+   SINGLE ticket's own worktree (`--worktree PATH` to override the
+   default `.claude/worktrees/<id-lowercased>`); for a multi-ticket
+   SERIES worktree, still cut it by hand once with `EnterWorktree`/`git
+   worktree add` and use plain `uv run frob ticket start T-XXXX` for the
+   second and later tickets in that same worktree.
 2. `uv run frob natives build` in the worktree BEFORE anything else --
    missing natives = mass phantom findings, not real drift (NATIVE001
    exists but do not wait to hit it). ALWAYS `uv run frob`, never bare
-   `frob`.
+   `frob`. (`frob ticket work`, step 1, already does this for you.)
 3. Long frob verbs (`land`, `done-report`, `check`, `test`) MUST be run
    foreground with the Bash TOOL-level parameter `timeout: 600000` PLUS a
    shell-level `timeout 540 ...` wrapper. A project PreToolUse hook DENIES
@@ -36,10 +42,16 @@ WHY and the recovery recipes.
    real files via `uv run frob ticket scope` before working (sec 4). If
    `ticket start` refuses on a lease collision, skip to the next series
    item and retry later; report anything still blocked -- never wait idle.
-5. Before every land: `uv run frob fmt` on touched files (an unwrapped
-   over-length directive is an E501 error on main), and
-   `uv run frob sys sync-interface --check` -- SYS104 is mandatory, so any
-   public-surface change must sync `design/frob.strata` in the SAME land.
+5. `uv run frob ticket land` (T-1175) now absorbs `frob fmt` on the
+   worktree, `frob sys sync-interface` (writes the fix, not `--check`),
+   and the T-1138 Tier-A deterministic auto-fix handlers automatically,
+   BEFORE its own merge -- any file one of these three rewrites becomes
+   an ordinary uncommitted change, swept into `land`'s existing
+   pre-merge wip-commit like anything else. You do not need to run any
+   of the three by hand before landing any more; still worth running
+   `uv run frob fmt --check`/`uv run frob sys sync-interface --check`
+   mid-ticket if you want to see drift EARLY rather than wait for land
+   to fix it silently.
 6. Evidence: pytest node ids in `file::Class::method` form, bound to
    acceptance indices via `--accepts N` (sec 5). Every `frob:tests` edge
    uses the dotted `Class.method` form, never pytest `::` form. New public
@@ -53,10 +65,18 @@ WHY and the recovery recipes.
    T-1125 rewrites prose citations automatically, but VERIFY the real id
    exists on main before citing it in your final report. A disclosed cut
    with no ticket is a TICK011 finding -- file it or state why not.
-9. Verify EVERY land is an ancestor of main (`git merge-base
-   --is-ancestor <hash> main`) and the ticket state is done ON MAIN before
-   counting it landed. Remove the worktree only after all lands verify
-   (sec 9, 12b).
+9. `uv run frob ticket land` (T-1175) prints its own `LAND-PROOF:` line
+   after every real (non-dry-run) land -- `commit=<sha>
+   is_ancestor_of_main=True/False state_on_main=<state>
+   verified=True/False` -- the exact two checks (`git merge-base
+   --is-ancestor <hash> main` + the ticket's state on main) this step
+   used to ask you to run by hand. Read that line rather than re-deriving
+   it; `verified=True` is what "landed" means here. `--finish` runs the
+   SAME check internally and, only if it passes, removes `--worktree` for
+   you (`git worktree remove`) -- use it once every ticket in the series
+   has landed and verified, instead of a manual `git worktree remove`
+   loop; a series worktree with more tickets still to land should NOT
+   pass `--finish` on an early one.
 10. ASCII only. No emojis. No Co-Authored-By lines. End your turn only
     with the full series report: per ticket, the land hash, evidence
     bound, and residue with verified real ids.

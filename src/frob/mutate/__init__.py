@@ -150,8 +150,8 @@ class _Mutator(ast.NodeTransformer):
     # frob:ticket T-1038
     # frob:waive AFFECT001 reason="T-1038: OPAQUE001 hardening -- added a reasoned \
     # frob:waive comment above the existing type(node.op) dynamic-key call; the \
-    # documented single-mutation-per-call contract and behavior are unchanged, \
-    # nothing for docs/modules/mutate.md#public-api to update"
+    # documented single-mutation-per-call contract and behavior are unchanged, nothing \
+    # for docs/modules/mutate.md#public-api to update"
     def visit_BinOp(self, node: ast.BinOp):  # noqa: N802
         # frob:doc docs/modules/mutate.md#public-api
         self.generic_visit(node)
@@ -167,8 +167,8 @@ class _Mutator(ast.NodeTransformer):
     # frob:ticket T-1038
     # frob:waive AFFECT001 reason="T-1038: OPAQUE001 hardening -- added a reasoned \
     # frob:waive comment above the existing type(node.op) dynamic-key call; the \
-    # documented single-mutation-per-call contract and behavior are unchanged, \
-    # nothing for docs/modules/mutate.md#public-api to update"
+    # documented single-mutation-per-call contract and behavior are unchanged, nothing \
+    # for docs/modules/mutate.md#public-api to update"
     def visit_BoolOp(self, node: ast.BoolOp):  # noqa: N802
         # frob:doc docs/modules/mutate.md#public-api
         self.generic_visit(node)

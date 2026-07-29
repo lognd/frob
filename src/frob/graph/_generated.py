@@ -49,10 +49,10 @@ GENERATED_MARKER_RE = re.compile(
 # frob:tests tests/test_graph.py::TestGeneratedSource.test_is_generated_source_detects_do_not_edit_and_at_markers  # noqa: E501
 # frob:tests tests/test_graph.py::TestGeneratedSource.test_is_generated_source_false_for_hand_authored_file  # noqa: E501
 # frob:tests tests/test_graph.py::TestGeneratedSource.test_is_generated_source_false_for_missing_file  # noqa: E501
-# frob:waive AFFECT001 reason="T-1062: EXHAUST001 hardening -- widened a narrow \
-# except OSError to except Exception around the same read-and-scan body; the \
-# documented 'read failure is not generated' contract and behavior are unchanged, \
-# nothing for docs/modules/graph.md#generated-file-marker to update"
+# frob:waive AFFECT001 reason="T-1062: EXHAUST001 hardening -- widened a narrow except \
+# OSError to except Exception around the same read-and-scan body; the documented 'read \
+# failure is not generated' contract and behavior are unchanged, nothing for \
+# docs/modules/graph.md#generated-file-marker to update"
 def is_generated_source(root: Path, path: str) -> bool:
     """True if the file at repo-relative `path` carries a recognized
     generated-file marker (`GENERATED_MARKER_RE`) within its first lines.

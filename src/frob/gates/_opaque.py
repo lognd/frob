@@ -79,9 +79,8 @@ _log = get_logger(__name__)
 # frob:enforces SC-DETECTION-PROC-MACRO-BUILDRS
 # frob:waive AFFECT001 reason="T-1038: this docstring edit is the disposition-count \
 # update itself (93 -> 90-fixed-or-waived/3-deferred) already fully told by the \
-# docstring text; docs/modules/gates.md#public-api's own OPAQUE001 entry describes \
-# the rule's mechanism, not its live promotion status, so nothing there needs to \
-# change"
+# docstring text; docs/modules/gates.md#public-api's own OPAQUE001 entry describes the \
+# rule's mechanism, not its live promotion status, so nothing there needs to change"
 def opaque_gate(root: Path) -> tuple[Violation, ...]:
     """OPAQUE001: every git-tracked, language-recognized source file
     scanned for `RUNTIME_OPAQUE_CONSTRUCTS` sites (T-0665). WARN-tier

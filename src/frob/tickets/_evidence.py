@@ -30,25 +30,22 @@ module scope.
 """
 # frob:waive ARCH102 reason="the naming/usage clustering heuristic groups these 26 \
 # exports into 4 clusters by surface-level name prefix and direct call edges \
-# (transition/reverify_*/guard-shaped names vs evidence/cmd_evidence-shaped names \
-# vs render_*/compute_*/base_ref_resolvable Done-report helpers vs replay_evidence_ \
-# from_done_report's own recovery path); the module docstring above already names \
-# the real cohesion -- every one of these functions feeds or guards the SAME DONE- \
-# transition decision (evidence recorded here, verified here, guard chain that \
-# decides closability lives here) -- coupled by the shared TicketQueue/Ticket state \
-# machine this family exists to enforce, not by call-graph adjacency alone; same \
-# T-1103/T-1108 precedent as frob.tickets.__init__'s own ARCH102 waiver for the \
-# identical reason (one deliberately centralized concern, not several bolted \
-# together)"
+# (transition/reverify_*/guard-shaped names vs evidence/cmd_evidence-shaped names vs \
+# render_*/compute_*/base_ref_resolvable Done-report helpers vs replay_evidence_ \
+# from_done_report's own recovery path); the module docstring above already names the \
+# real cohesion -- every one of these functions feeds or guards the SAME DONE- \
+# transition decision (evidence recorded here, verified here, guard chain that decides \
+# closability lives here) -- coupled by the shared TicketQueue/Ticket state machine \
+# this family exists to enforce, not by call-graph adjacency alone; same T-1103/T-1108 \
+# precedent as frob.tickets.__init__'s own ARCH102 waiver for the identical reason \
+# (one deliberately centralized concern, not several bolted together)"
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/tickets/_evidence.py's \
-# exclusivity-vocabulary hits are source-level design-rationale prose \
-# (docstrings describing already-implemented internal behavior, \
-# verifiable by reading the code they annotate) rather than a separate \
-# cross-module contract needing its own tracked invariant; disposed as a \
-# calibration batch, not claim-by-claim -- module prose carried verbatim \
-# from frob.tickets.__init__ (T-1152 split, same INV006-on-split-modules \
-# precedent as 0abc4e3a/T-1151)"
+# src/frob/tickets/_evidence.py's exclusivity-vocabulary hits are source-level \
+# design-rationale prose (docstrings describing already-implemented internal behavior, \
+# verifiable by reading the code they annotate) rather than a separate cross-module \
+# contract needing its own tracked invariant; disposed as a calibration batch, not \
+# claim-by-claim -- module prose carried verbatim from frob.tickets.__init__ (T-1152 \
+# split, same INV006-on-split-modules precedent as 0abc4e3a/T-1151)"
 
 from __future__ import annotations
 
@@ -912,16 +909,15 @@ def _run_evidence_command(
     return Ok(completed)
 
 
-# frob:waive DUP001 reason="dup grouped this tiny kind-in-allowlist guard \
-# clause with several unrelated small validators across the repo \
-# (src/frob/gates/invariants.py, src/frob/strata/_elaborate.py, \
-# src/frob/tickets/_land.py, src/frob/tickets/_scope.py) purely on the \
-# generic 'check membership, log, return Err/Ok' shape (rung=r2, low \
-# precision on functions this small) -- each guards a completely \
-# different domain-specific allowlist, not a copy of this one; surfaced \
-# fresh by the T-1152 evidence-family module split (file-identity is part \
-# of the dup pairing key), same false-positive class as the T-0861 \
-# DEBT001/DEPR001/TEST010 precedent"
+# frob:waive DUP001 reason="dup grouped this tiny kind-in-allowlist guard clause with \
+# several unrelated small validators across the repo (src/frob/gates/invariants.py, \
+# src/frob/strata/_elaborate.py, src/frob/tickets/_land.py, \
+# src/frob/tickets/_scope.py) purely on the generic 'check membership, log, return \
+# Err/Ok' shape (rung=r2, low precision on functions this small) -- each guards a \
+# completely different domain-specific allowlist, not a copy of this one; surfaced \
+# fresh by the T-1152 evidence-family module split (file-identity is part of the dup \
+# pairing key), same false-positive class as the T-0861 DEBT001/DEPR001/TEST010 \
+# precedent"
 def _check_cmd_evidence_kind(
     ticket_id: str, kind: TicketKind
 ) -> Result[None, TicketError]:

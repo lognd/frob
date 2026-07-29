@@ -390,6 +390,11 @@ class AppConfig(BaseModel):
     # `frob ticket land <id> --push`: after a real (non-dry-run) land
     # succeeds, push root's current branch to its upstream remote.
     ticket_land_push: bool = False
+    # frob:ticket T-1175
+    # `frob ticket land <id> --finish`: after a real land verifies clean
+    # (proof line: commit is-ancestor-of-main + ticket state on main),
+    # remove --worktree.
+    ticket_land_finish: bool = False
     ticket_worktree: Path | None = None
     # frob:ticket T-0474
     # `frob ticket start <id> --foreground` -- run the pre-work sweep
@@ -942,6 +947,8 @@ class AppConfig(BaseModel):
             "ticket_skip_mutation_evidence",
             "ticket_close_skip_mutation_evidence",
             "ticket_land_push",
+            # frob:ticket T-1175
+            "ticket_land_finish",
             "ticket_close_strict",
             "ticket_foreground",
             "ticket_steal",

@@ -84,6 +84,7 @@ from ._lifecycle import (
     _spawn_background_sweep,
     _start,
     _sweep_cmd,
+    _work,
 )
 from ._mutate import (
     _accept,
@@ -260,6 +261,7 @@ __all__ = [
     "_tier",
     "_verify_ids_passing",
     "_verify_one_bucket_passing",
+    "_work",
     "_write_release_bump",
 ]
 
@@ -283,6 +285,7 @@ def _ticket_dispatch_table() -> dict:
         "doable": _doable,
         "plan": _plan,
         "start": _start,
+        "work": _work,
         "requeue": _requeue,
         "sweep": _sweep_cmd,
         "reconcile": _reconcile_cmd,

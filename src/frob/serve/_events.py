@@ -151,9 +151,9 @@ class _EventBus:
 # resolver cannot fully bound past the broad except OSError below"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above -- \
 # json.loads' JSONDecodeError is now explicitly caught inline (T-1062)"
-# frob:waive AFFECT001 reason="T-1062: EXHAUST001/002 hardening -- added an \
-# explicit inline except for a malformed frame's JSONDecodeError/UnicodeDecodeError, \
-# which now retries the read loop instead of letting it escape; the documented \
+# frob:waive AFFECT001 reason="T-1062: EXHAUST001/002 hardening -- added an explicit \
+# inline except for a malformed frame's JSONDecodeError/UnicodeDecodeError, which now \
+# retries the read loop instead of letting it escape; the documented \
 # Timeout/Unreachable/Ok error-shape contract and behavior are unchanged, nothing for \
 # docs/modules/serve.md#subscribepush-events-t-1096 to update"
 def subscribe_and_wait(

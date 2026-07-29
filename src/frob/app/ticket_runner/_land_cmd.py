@@ -21,6 +21,7 @@ from pathlib import Path
 from typani.result import Err, Ok
 
 from frob.app.config import AppConfig
+from frob.gitio import run_argv
 from frob.logging import get_logger
 from frob.process._guard import ProcessGuardError
 
@@ -31,6 +32,210 @@ from ._verify import (
 )
 
 _log = get_logger("frob.app.ticket_runner")
+
+
+# frob:ticket T-1175
+def _absorb_pre_land_fixes(worktree: Path, ticket_id: str) -> None:
+    """`frob ticket land`'s T-1175 absorption step: run `frob fmt`
+    (directive canonicalization), `frob sys sync-interface` (interface=
+    drift), and the T-1138 Tier-A deterministic auto-fix handlers against
+    `worktree`, BEFORE `land()`'s own merge/wip-commit runs. Any file one
+    of these three rewrites becomes an ordinary uncommitted change in
+    `worktree`, picked up by `land()`'s existing `_do_wip_commit` step
+    exactly like a change the agent typed by hand -- no new commit path,
+    no new subsystem, per the T-1175 absorb-not-add directive. Every step
+    here is IN-PROCESS (no `frob fmt`/`frob sys sync-interface` subprocess
+    spawn) -- `format_paths`/`sync_interface_report`/`apply_sync_
+    interface`/`apply_tier_a_fixes` are the exact functions those CLI
+    commands themselves call, reused directly. Best-effort: any one step's
+    own failure (a design root that does not resolve, an unloadable
+    queue) is logged and skipped rather than refusing the land -- these
+    are auto-fix conveniences, not a land precondition."""
+    from frob.gates._fix_engine import apply_tier_a_fixes
+    from frob.gates._fmt_directives import format_paths, read_line_length
+    from frob.graph import build_graph
+    from frob.strata._sync_interface import (
+        apply_sync_interface,
+        sync_interface_report,
+    )
+    from frob.tickets import load_active
+
+    limit = read_line_length(worktree)
+    fmt_report = format_paths(worktree, check_only=False, limit=limit)
+    if fmt_report.changes:
+        _log.info(
+            "ticket land: %s pre-land frob fmt canonicalized %d file(s)",
+            ticket_id,
+            len(fmt_report.changes),
+        )
+
+    if (worktree / "design").is_dir():
+        sync_result = sync_interface_report(worktree, "design")
+        if sync_result.is_err:
+            _log.warning(
+                "ticket land: %s pre-land sys sync-interface skipped: %s",
+                ticket_id,
+                sync_result.danger_err,
+            )
+        elif sync_result.danger_ok.has_drift:
+            written = apply_sync_interface(worktree, sync_result.danger_ok)
+            _log.info(
+                "ticket land: %s pre-land sys sync-interface wrote %d file(s)",
+                ticket_id,
+                len(written),
+            )
+
+    snapshot_result = build_graph(worktree, worktree / ".frob" / "cache.db")
+    queue_result = load_active(worktree)
+    if snapshot_result.is_err or queue_result.is_err:
+        _log.warning(
+            "ticket land: %s pre-land Tier-A fixes skipped (graph or "
+            "queue load failed)",
+            ticket_id,
+        )
+        return
+    applied = apply_tier_a_fixes(
+        worktree, snapshot_result.danger_ok, queue_result.danger_ok
+    )
+    if applied:
+        _log.info(
+            "ticket land: %s pre-land Tier-A fixes applied %d fix(es)",
+            ticket_id,
+            len(applied),
+        )
+
+
+# frob:ticket T-1175
+def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
+    """T-1175's machine-checkable on-main proof line: after a real
+    (non-dry-run, `Ok`) land, verify and print `commit_sha` is an ancestor
+    of `root`'s `main` AND the ticket's state on `main` is a terminal
+    state (done/dropped) -- the exact two checks playbook section 0 step 9
+    already asks every agent to run by hand
+    (`git merge-base --is-ancestor <hash> main`, then re-`show` the ticket).
+    Printed as one grep-able `LAND-PROOF:` line, and the combined
+    `verified` bool is also RETURNED so `--finish` can gate worktree
+    removal on it without re-deriving either check itself."""
+    from frob.tickets import TicketState, load_all
+
+    is_ancestor = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "merge-base",
+            "--is-ancestor",
+            report.commit_sha,
+            "main",
+        ]
+    )
+    ancestor_ok = is_ancestor.is_ok and is_ancestor.danger_ok.returncode == 0
+
+    state_desc = "unknown"
+    loaded = load_all(root)
+    if loaded.is_ok:
+        ticket = loaded.danger_ok.get(report.final_id)
+        if ticket is not None:
+            state_desc = ticket.state.value
+    state_ok = state_desc in (TicketState.DONE.value, TicketState.DROPPED.value)
+    verified = ancestor_ok and state_ok
+
+    _log.info(
+        "LAND-PROOF: ticket=%s commit=%s is_ancestor_of_main=%s "
+        "state_on_main=%s verified=%s",
+        report.final_id,
+        report.commit_sha,
+        ancestor_ok,
+        state_desc,
+        verified,
+    )
+    return verified
+
+
+# frob:ticket T-1175
+def _finish_worktree(root: Path, worktree: Path, ticket_id: str) -> None:
+    """`frob ticket land --finish`'s worktree-removal half: `git -C root
+    worktree remove <worktree>`, called ONLY after `_print_land_proof` has
+    already verified the land -- this function itself does no re-
+    verification, it trusts its caller (`_land`) to have gated on
+    `ancestor_ok and state_ok` first. Run from `root` (the primary
+    checkout `worktree` belongs to), not from an arbitrary cwd -- `git
+    worktree remove` resolves its target against the repo the invoking
+    working copy belongs to, so an unrelated cwd can spuriously report
+    "not a working tree" even for a real, live worktree path. A failed
+    removal (uncommitted stray files, a stale lock) is logged at ERROR but
+    does not raise -- the land itself already fully succeeded by this
+    point, so a cleanup failure is reported separately rather than
+    unwinding anything (playbook section 12b: never force-remove a
+    worktree the mechanical way, surface it instead)."""
+    removed = run_argv(["git", "-C", str(root), "worktree", "remove", str(worktree)])
+    if removed.is_err or removed.danger_ok.returncode != 0:
+        detail = removed.danger_err if removed.is_err else removed.danger_ok.stderr
+        _log.error(
+            "ticket land --finish: %s could not remove worktree %s: %s -- "
+            "remove it by hand once any stray files are resolved",
+            ticket_id,
+            worktree,
+            detail,
+        )
+        return
+    _log.info("ticket land --finish: %s removed worktree %s", ticket_id, worktree)
+
+
+# frob:ticket T-1003
+def _resolve_land_root(root: Path, worktree: Path, ticket_id: str) -> Path:
+    """T-1003 (churn item 4): `root` is `(cfg.ticket_path or Path(".")).
+    resolve()` -- the invoker's cwd. `land()` itself now resolves the SAME
+    "root defaulted to inside --worktree" shape internally, but this CLI
+    wrapper's own `root` local is used AGAIN after `land()` returns, for
+    `_report_land_result`/`_push_after_land`/`_print_land_proof`/`_finish_
+    worktree` -- resolving it here too (same shared helper, not a re-
+    implementation) keeps those post-land steps pointed at the real
+    primary checkout instead of silently reporting against/pushing
+    from/removing the worktree path that was never actually landed onto."""
+    from frob.tickets._land import _resolve_primary_checkout
+
+    if root.resolve() != worktree.resolve():
+        return root
+    resolved_root = _resolve_primary_checkout(worktree)
+    if resolved_root is None or resolved_root == worktree.resolve():
+        return root
+    _log.info(
+        "ticket land: %s root defaulted to the cwd inside --worktree (%s) "
+        "-- resolved the primary checkout %s from its git common dir "
+        "instead (T-1003), no manual cd required",
+        ticket_id,
+        root,
+        resolved_root,
+    )
+    return resolved_root
+
+
+# frob:ticket T-1175
+def _finish_land_after_success(
+    root: Path, worktree: Path, report, cfg: AppConfig
+) -> None:  # noqa: ANN001
+    """`_land`'s post-success tail (T-1175, split out of `_land` itself to
+    stay under ARCH001's line budget): print the `LAND-PROOF:` line for a
+    real (non-dry-run) land, then, if `--finish` was passed, remove
+    `worktree` -- but ONLY when the proof actually verified. A dry run
+    prints nothing here (there is nothing durable yet to prove or
+    finish)."""
+    assert cfg.ticket_id is not None  # narrows for the type checker; enforced above
+    if report.dry_run:
+        return
+    verified = _print_land_proof(root, report)
+    if not cfg.ticket_land_finish:
+        return
+    if not verified:
+        _log.error(
+            "ticket land --finish: %s LAND-PROOF did not verify -- "
+            "worktree %s left in place",
+            cfg.ticket_id,
+            worktree,
+        )
+        sys.exit(1)
+    _finish_worktree(root, worktree, cfg.ticket_id)
 
 
 def _require_land_args(cfg: AppConfig) -> None:
@@ -469,35 +674,20 @@ def _land(root: Path, cfg: AppConfig) -> None:
     -- no separate `run_tests` parameter at the land layer (review round 2
     fix #3: derive from D-05's own real run instead of a duplicate one)."""
     from frob.tickets import land
-    from frob.tickets._land import _resolve_primary_checkout
 
     _require_land_args(cfg)
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced above
     assert cfg.ticket_worktree is not None
     worktree = cfg.ticket_worktree
 
-    # T-1003 (churn item 4): `root` here is `(cfg.ticket_path or Path("."))
-    # .resolve()` -- the invoker's cwd. `land()` itself now resolves the
-    # SAME "root defaulted to inside --worktree" shape internally (see its
-    # own T-1003 doc), but this CLI wrapper's own `root` local is used
-    # AGAIN after `land()` returns, for `_report_land_result`/
-    # `_push_after_land` -- resolving it here too (same shared helper,
-    # not a re-implementation) keeps those post-land steps pointed at the
-    # real primary checkout instead of silently reporting against/pushing
-    # from the worktree path that was never actually landed onto.
-    if root.resolve() == worktree.resolve():
-        resolved_root = _resolve_primary_checkout(worktree)
-        if resolved_root is not None and resolved_root != worktree.resolve():
-            _log.info(
-                "ticket land: %s root defaulted to the cwd inside "
-                "--worktree (%s) -- resolved the primary checkout %s from "
-                "its git common dir instead (T-1003), no manual cd "
-                "required",
-                cfg.ticket_id,
-                root,
-                resolved_root,
-            )
-            root = resolved_root
+    # T-1175: fmt/sync-interface/Tier-A-fix absorption runs BEFORE land's
+    # own merge, in dry-run and real mode alike (a dry run should preview
+    # the exact same landed state a real run would produce) -- any file
+    # rewritten here becomes an ordinary uncommitted change `land()`'s own
+    # wip-commit step already picks up, so this needs no separate commit.
+    _absorb_pre_land_fixes(worktree, cfg.ticket_id)
+
+    root = _resolve_land_root(root, worktree, cfg.ticket_id)
 
     if cfg.ticket_skip_mutation_evidence:
         _log.warning(
@@ -539,6 +729,8 @@ def _land(root: Path, cfg: AppConfig) -> None:
 
     if cfg.ticket_land_push:
         _push_after_land(root, report)
+
+    _finish_land_after_success(root, worktree, report, cfg)
 
 
 # frob:ticket T-0631

@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 
 from frob.app.config import AppConfig
+from frob.gitio import run_argv
 from frob.logging import get_logger
 from frob.process._guard import EXEC_KILL_SWITCH_ENV, exec_enabled
 
@@ -246,6 +247,152 @@ def _refuse_if_foreign_live_lease(root: Path, ticket_id: str, *, steal: bool) ->
         ticket_id,
     )
     sys.exit(1)
+
+
+# frob:ticket T-1175
+def _default_work_worktree(root: Path, ticket_id: str) -> Path:
+    """The default `.claude/worktrees/<slug>` path `frob ticket work`
+    creates/reuses for `ticket_id` when `--worktree` is not given (T-1175):
+    the ticket id lowercased (`T-1175` -> `t-1175`), matching this repo's
+    own dispatch-worktree naming convention (`.claude/worktrees/w21-...`
+    series slugs, `t-####` per-ticket slugs) closely enough to be
+    predictable without colliding with a hand-named series worktree."""
+    return root / ".claude" / "worktrees" / ticket_id.lower()
+
+
+# frob:ticket T-1175
+def _run_git_or_exit(argv: list[str], *, ticket_id: str, error_template: str) -> None:
+    """Spawn `argv` via `run_argv`; `sys.exit(1)` with `error_template %
+    (ticket_id, detail)` (a spawn-level error, or stderr, whichever
+    applies) on any non-zero/`Err` outcome. Shared by `_worktree_add_or_
+    reuse`/`_ensure_worktree_fresh` (T-1175) so each stays a single
+    decision (did the one git spawn it cares about succeed) instead of
+    also carrying this same error-formatting branch inline (ARCH103)."""
+    spawned = run_argv(argv)
+    if spawned.is_ok and spawned.danger_ok.returncode == 0:
+        return
+    detail = spawned.danger_err if spawned.is_err else spawned.danger_ok.stderr
+    _log.error(error_template, ticket_id, detail)
+    sys.exit(1)
+
+
+# frob:ticket T-1175
+def _worktree_add_or_reuse(root: Path, worktree: Path, ticket_id: str) -> None:
+    """`frob ticket work`'s worktree half (T-1175, playbook section 0 step
+    1): if `worktree` does not exist on disk yet, `git worktree add` it on
+    a fresh branch cut from `root`'s CURRENT local `main` tip (plain `git
+    worktree add ... main`, never touching `origin` -- the exact form
+    section 1's T-1030 root-cause note already documents as immune to the
+    stale-origin-tip bug a dispatch-harness worktree tool can otherwise
+    hit). If it already exists, this is a no-op here -- freshness is
+    `_ensure_worktree_fresh`'s job, run unconditionally right after this
+    either way, so a REUSED worktree gets the exact same freshness
+    guarantee a FRESH one already has by construction."""
+    if worktree.exists():
+        return
+    worktree.parent.mkdir(parents=True, exist_ok=True)
+    branch = ticket_id.lower()
+    _run_git_or_exit(
+        [
+            "git",
+            "-C",
+            str(root),
+            "worktree",
+            "add",
+            str(worktree),
+            "-b",
+            branch,
+            "main",
+        ],
+        ticket_id=ticket_id,
+        error_template="ticket work: %s could not create worktree: %s",
+    )
+    _log.info(
+        "ticket work: %s created worktree %s (branch %s)", ticket_id, worktree, branch
+    )
+
+
+# frob:ticket T-1175
+def _ensure_worktree_fresh(worktree: Path, ticket_id: str) -> None:
+    """`frob ticket work`'s freshness half (T-1175, playbook section 0 step
+    1 / section 1's `git merge main` + tip-verification warm-up): merge
+    `worktree`'s local `main` into HEAD -- a no-op ("Already up to date")
+    for a worktree this call just created fresh off `main`'s own tip, and
+    the real fix for a REUSED worktree that has gone stale since its last
+    session. A merge conflict here is refused loudly rather than resolved
+    silently -- `frob ticket work` is not the ledger-splice recovery path
+    (docs/guides/agent-playbook.md#10-ledger-conflict-splice-guidance)."""
+    _run_git_or_exit(
+        ["git", "-C", str(worktree), "merge", "main", "--no-edit"],
+        ticket_id=ticket_id,
+        error_template=(
+            "ticket work: %s could not merge main: %s -- resolve by hand "
+            "(see docs/guides/agent-playbook.md#10-ledger-conflict-splice-"
+            "guidance for tickets.md conflicts specifically)"
+        ),
+    )
+
+
+# frob:ticket T-1175
+def _build_natives_for_work(worktree: Path, ticket_id: str) -> None:
+    """`frob ticket work`'s natives-build half (T-1175, playbook section 0
+    step 2): build every declared `[[native]]` crate into `worktree`'s own
+    venv via `frob.natives.build_natives` -- the in-process function
+    `frob natives build`'s own CLI wraps, not a subprocess re-invocation of
+    the CLI, so this needs no `guarded_subprocess_run` exec-guard plumbing.
+    `NoNatives` (a project with no declared native crates) is not an
+    error -- most tickets in most repos never touch this at all."""
+    from frob.natives import NativesError, build_natives
+
+    result = build_natives(worktree)
+    if result.is_err:
+        if result.danger_err is NativesError.NoNatives:
+            return
+        _log.error(
+            "ticket work: %s natives build failed: %s",
+            ticket_id,
+            result.danger_err.value,
+        )
+        sys.exit(1)
+    report = result.danger_ok
+    if not report.ok:
+        _log.error(
+            "ticket work: %s natives build reported failing crate(s) -- see "
+            "the `frob natives build` output above for detail",
+            ticket_id,
+        )
+        sys.exit(1)
+
+
+# frob:ticket T-1175
+def _work(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket work <id> [--worktree PATH]` (T-1175): the one-verb
+    replacement for playbook section 0 steps 1-2 plus `start` -- create or
+    reuse the ticket's own worktree, merge `main` into it for freshness,
+    build natives, then run the exact same `_start` transition+sweep
+    `frob ticket start` already runs, now against the worktree instead of
+    whatever `root` happened to be. `--worktree` overrides the default
+    `.claude/worktrees/<id-lowercased>` path (`_default_work_worktree`) for
+    a caller that wants a differently-named or differently-located
+    worktree; `--foreground`/`--steal` pass through to `_start` unchanged.
+    Every step here is a REUSE of existing machinery (worktree add/merge
+    via plain git, `build_natives`, `_start`) -- no new subsystem, per the
+    T-1175 user directive this ticket implements verbatim."""
+    if cfg.ticket_id is None:
+        _log.error("frob ticket work requires <id>")
+        sys.exit(1)
+
+    worktree = (
+        cfg.ticket_worktree or _default_work_worktree(root, cfg.ticket_id)
+    ).resolve()
+    _worktree_add_or_reuse(root, worktree, cfg.ticket_id)
+    _ensure_worktree_fresh(worktree, cfg.ticket_id)
+    _build_natives_for_work(worktree, cfg.ticket_id)
+
+    _log.info(
+        "ticket work: %s worktree ready at %s -- starting", cfg.ticket_id, worktree
+    )
+    _start(worktree, cfg)
 
 
 def _start(root: Path, cfg: AppConfig) -> None:

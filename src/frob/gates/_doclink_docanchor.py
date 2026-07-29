@@ -25,12 +25,12 @@ that file. Both are pure read-only scans over `snapshot`/the doc tree,
 with no shared runtime state between them beyond the doc-file-reading
 posture itself."""
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_doclink_docanchor.py's exclusivity-vocabulary hits are \
-# source-level design-rationale prose (docstrings and comments describing \
-# already-implemented internal behavior, verifiable by reading the code they annotate) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim -- module prose split verbatim \
-# from the pre-T-1170 gates/__init__.py monolith"
+# src/frob/gates/_doclink_docanchor.py's exclusivity-vocabulary hits are source-level \
+# design-rationale prose (docstrings and comments describing already-implemented \
+# internal behavior, verifiable by reading the code they annotate) rather than a \
+# separate cross-module contract needing its own tracked invariant; disposed as a \
+# calibration batch, not claim-by-claim -- module prose split verbatim from the \
+# pre-T-1170 gates/__init__.py monolith"
 
 from __future__ import annotations
 

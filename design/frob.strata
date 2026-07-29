@@ -356,6 +356,7 @@ node cli : trusted {
     attr interface=_tier;
     attr interface=_verify_ids_passing;
     attr interface=_verify_one_bucket_passing;
+    attr interface=_work;
     attr interface=_write_release_bump;
     attr interface=ack_runner_run;
     attr interface=append_event;
@@ -2889,6 +2890,7 @@ node testsuite : trusted {
     attr interface=TY_NOTE;
     attr interface=TY_OUTPUT;
     attr interface=TY_SIMPLE;
+    attr interface=TestAbsorbPreLandFixes;
     attr interface=TestAbstractionOpportunityDiscriminators;
     attr interface=TestAcceptsCliWiring;
     attr interface=TestAck;
@@ -3196,6 +3198,7 @@ node testsuite : trusted {
     attr interface=TestDeepNestingExemption;
     attr interface=TestDefaultBranchEdgeCases;
     attr interface=TestDefaultPoolDir;
+    attr interface=TestDefaultWorkWorktree;
     attr interface=TestDeletedRegistry;
     attr interface=TestDenominatorFullyDispositioned;
     attr interface=TestDeploySecretGoldens;
@@ -3560,6 +3563,7 @@ node testsuite : trusted {
     attr interface=TestLandIntent;
     attr interface=TestLandInternalEnvThroughHook;
     attr interface=TestLandNotFound;
+    attr interface=TestLandProofAndFinish;
     attr interface=TestLandPushCliWiring;
     attr interface=TestLandRebuildNativesFn;
     attr interface=TestLandRefusesOnTerminalStateRegression;
@@ -4367,6 +4371,7 @@ node testsuite : trusted {
     attr interface=TestWipCommit;
     attr interface=TestWipCommitNormalizationOnlyDirty;
     attr interface=TestWlHash;
+    attr interface=TestWork;
     attr interface=TestWorkingDiff;
     attr interface=TestWorktree;
     attr interface=TestWorktreeGuardWiredIntoMutations;

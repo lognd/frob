@@ -38,16 +38,15 @@ either exists yet at its own module scope.
 # every one of these functions records caller-authored narrative or structured \
 # evidence onto an EXISTING ticket after filing, not by call-graph adjacency alone; \
 # same T-1103/T-1152 precedent as frob.tickets.__init__'s own ARCH102 waiver for the \
-# identical reason (one deliberately centralized concern, not several bolted \
-# together)"
+# identical reason (one deliberately centralized concern, not several bolted together)"
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/tickets/_reporting.py's exclusivity-vocabulary hits are source-level \
-# design-rationale prose (docstrings describing already-implemented internal \
-# behavior, verifiable by reading the code they annotate) rather than a separate \
-# cross-module contract needing its own tracked invariant; disposed as a \
-# calibration batch, not claim-by-claim -- module prose carried verbatim from \
-# frob.tickets.__init__ (T-1171 split, same INV006-on-split-modules precedent as \
-# 0abc4e3a/T-1151 and T-1152's own _evidence.py split)"
+# design-rationale prose (docstrings describing already-implemented internal behavior, \
+# verifiable by reading the code they annotate) rather than a separate cross-module \
+# contract needing its own tracked invariant; disposed as a calibration batch, not \
+# claim-by-claim -- module prose carried verbatim from frob.tickets.__init__ (T-1171 \
+# split, same INV006-on-split-modules precedent as 0abc4e3a/T-1151 and T-1152's own \
+# _evidence.py split)"
 
 from __future__ import annotations
 
@@ -252,15 +251,14 @@ def compose_done_report(
 
 
 # frob:ticket T-0976
-# frob:waive DUP001 reason="T-1171 split-induced false positive: the DUP001 \
-# template similarity heuristic matches this function's shape against \
+# frob:waive DUP001 reason="T-1171 split-induced false positive: the DUP001 template \
+# similarity heuristic matches this function's shape against \
 # frob.vet._capability._ts_single_substitution_identifier (a TypeScript \
-# single-substitution AST helper) purely on control-flow/hole-arity \
-# resemblance -- the two functions share no domain, no data type, and no \
-# call relationship (Done-report claims capture vs TS grammar parsing); \
-# this function moved verbatim from frob.tickets.__init__ (pre-existing, \
-# unwaived there because the pre-move DUP scan never paired it against \
-# this particular vet-module sibling) and carries no new logic"
+# single-substitution AST helper) purely on control-flow/hole-arity resemblance -- the \
+# two functions share no domain, no data type, and no call relationship (Done-report \
+# claims capture vs TS grammar parsing); this function moved verbatim from \
+# frob.tickets.__init__ (pre-existing, unwaived there because the pre-move DUP scan \
+# never paired it against this particular vet-module sibling) and carries no new logic"
 def _capture_done_report_claims(
     ticket_id: str,
     ticket: Ticket,

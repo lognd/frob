@@ -1,0 +1,234 @@
+"""T-1175: `frob ticket work` (worktree create/reuse + freshness + natives +
+start, in one verb) and `frob ticket land`'s absorbed fmt/sync-interface/
+Tier-A-fix pre-land step plus its `LAND-PROOF:` line and `--finish`
+worktree removal.
+
+Real git subprocesses (matching tests/test_ticket_land.py's own style) --
+`work`/`land --finish` are themselves thin orchestration over real `git
+worktree` commands, so the fixture reproduces the real shape rather than
+mocking it away.
+"""
+
+from __future__ import annotations
+
+import subprocess
+from pathlib import Path
+
+import pytest
+
+from frob.app.config import AppConfig
+from frob.app.ticket_runner import _work
+from frob.app.ticket_runner._land_cmd import (
+    _absorb_pre_land_fixes,
+    _finish_worktree,
+    _print_land_proof,
+)
+from frob.app.ticket_runner._lifecycle import _default_work_worktree
+from frob.tickets import Origin, TicketKind, TicketSpec, TicketState, new_ticket
+from frob.tickets._land import land
+from frob.tickets._store import atomic_write, ledger_path, load_all, write_ticket
+
+
+# frob:waive DUP001 reason="the run/git-init/commit-all trio is an established \
+# real-git-fixture idiom this test module family repeats (tests/test_ticket_land.py, \
+# tests/test_tickets_collision.py, tests/test_ticket_leases.py, \
+# tests/test_ticket_merge_driver.py, tests/test_ticket_reconcile.py, ... all carry \
+# byte-identical copies already, none of them waived) -- extracting a shared conftest \
+# helper is a real, independent cleanup outside T-1175's own scope, not something to \
+# fold into this ticket's own land"
+def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        argv, cwd=str(cwd), check=True, capture_output=True, text=True
+    )
+
+
+# frob:waive DUP001 reason="see _run's identical DUP001 waiver immediately above -- \
+# same established fixture idiom, same real cleanup-later disposition"
+def _git_init(root: Path, *, branch: str = "main") -> None:
+    root.mkdir(parents=True, exist_ok=True)
+    _run(["git", "init", "-q", "-b", branch], root)
+    _run(["git", "config", "user.email", "test@example.com"], root)
+    _run(["git", "config", "user.name", "Test"], root)
+
+
+# frob:waive DUP001 reason="see _run's identical DUP001 waiver above -- same \
+# established fixture idiom, same real cleanup-later disposition"
+def _commit_all(root: Path, message: str) -> None:
+    _run(["git", "add", "-A"], root)
+    _run(["git", "commit", "-q", "-m", message], root)
+
+
+def _spec(title: str) -> TicketSpec:
+    return TicketSpec(title=title, kind=TicketKind.FEATURE, origin=Origin.AGENT)
+
+
+@pytest.fixture
+def repo(tmp_path: Path) -> Path:
+    """A main checkout with an initialized ledger and one committed file."""
+    main_repo = tmp_path / "main"
+    _git_init(main_repo)
+    atomic_write(ledger_path(main_repo), "# Tickets\n\n")
+    (main_repo / "src").mkdir()
+    (main_repo / "src" / "feature.py").write_text("# landed feature\n")
+    # T-1175's own `.claude/worktrees/<id>` default must not itself show up
+    # as an untracked change in `main`'s own working tree (real repos
+    # gitignore `.claude/worktrees/`, matching this repo's own .gitignore).
+    (main_repo / ".gitignore").write_text(".claude/\n")
+    _commit_all(main_repo, "init")
+    return main_repo
+
+
+# frob:ticket T-1175
+class TestDefaultWorkWorktree:
+    def test_slug_is_lowercased_ticket_id_under_dot_claude_worktrees(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestDefaultWorkWorktree.test_slug_\
+        # is_lowercased_ticket_id_under_dot_claude_worktrees
+        result = _default_work_worktree(tmp_path, "T-1175")
+        assert result == tmp_path / ".claude" / "worktrees" / "t-1175"
+
+
+# frob:ticket T-1175
+class TestWork:
+    def test_creates_worktree_merges_main_and_starts_ticket(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestWork.test_creates_worktree_mer\
+        # ges_main_and_starts_ticket
+        created = new_ticket(repo, _spec("Work verb"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        cfg = AppConfig(ticket_command="work", ticket_id=tid, ticket_foreground=True)
+        _work(repo, cfg)
+
+        worktree = _default_work_worktree(repo, tid)
+        assert worktree.is_dir()
+        assert (worktree / "src" / "feature.py").read_text() == "# landed feature\n"
+
+        loaded = load_all(worktree)
+        assert loaded.is_ok
+        ticket = loaded.danger_ok[tid]
+        assert ticket.state == TicketState.IN_PROGRESS
+
+    def test_reuses_an_existing_worktree_and_merges_main_for_freshness(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestWork.test_reuses_an_existing_w\
+        # orktree_and_merges_main_for_freshness
+        created = new_ticket(repo, _spec("Work verb reuse"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        worktree = _default_work_worktree(repo, tid)
+        _run(["git", "worktree", "add", str(worktree), "-b", tid.lower(), "main"], repo)
+
+        # `main` gains a commit AFTER the worktree was cut -- a stale
+        # worktree the freshness merge must catch up.
+        (repo / "src" / "later.py").write_text("# added after worktree cut\n")
+        _commit_all(repo, "add later.py")
+
+        cfg = AppConfig(ticket_command="work", ticket_id=tid, ticket_foreground=True)
+        _work(repo, cfg)
+
+        assert (worktree / "src" / "later.py").is_file()
+        loaded = load_all(worktree)
+        assert loaded.is_ok
+        assert loaded.danger_ok[tid].state == TicketState.IN_PROGRESS
+
+
+# frob:ticket T-1175
+class TestAbsorbPreLandFixes:
+    """T-1175's `_absorb_pre_land_fixes` -- the `frob fmt` half is exercised
+    directly here (a real non-canonical `frob:` directive, `format_paths`'s
+    own `TestFormatPaths.test_write_mode_rewrites_file` shape); the sys
+    sync-interface/Tier-A-fix halves are no-ops on a `design/`-less
+    fixture repo and are covered by their own dedicated suites
+    (tests/unit/strata/test_sync_interface.py, tests/test_gates.py's
+    TestFixEngineTierA) -- this test's job is only that `land`'s new
+    absorption step actually reaches `format_paths` and rewrites a real
+    file, not re-proving those two modules' own behavior."""
+
+    def test_fmt_half_canonicalizes_a_non_canonical_directive(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_fmt_ha\
+        # lf_canonicalizes_a_non_canonical_directive
+        target = repo / "src" / "noncanon.py"
+        original = (
+            '# frob:waive R reason="this reason is intentionally long so '
+            'it overflows the line-length limit and must be wrapped"\n'
+        )
+        target.write_text(original)
+        # `format_paths` walks via `frob.excludes.iter_files`'s git-ls-files
+        # fast path in a real git repo -- an untracked file needs staging
+        # first for the same reason a genuine WIP-but-uncommitted ticket
+        # change would already be `git add`-ed by the time land runs.
+        _run(["git", "add", "-A"], repo)
+
+        _absorb_pre_land_fixes(repo, "T-0001")
+
+        rewritten = target.read_text()
+        assert rewritten != original
+        for line in rewritten.splitlines():
+            assert len(line) <= 88
+
+
+# frob:ticket T-1175
+class TestLandProofAndFinish:
+    """T-1175's `_print_land_proof`/`_finish_worktree` -- land's own
+    `frob.tickets.land()` (permissive, matching test_ticket_land.py's own
+    direct-call style) produces the real `LandReport` these two helpers
+    consume; the CLI wrapper (`_land`) just wires them in after a real
+    (non-dry-run) `Ok` result, T-1175's own actual new code lives here."""
+
+    def _land_a_real_ticket(self, repo: Path) -> tuple[str, Path, object]:
+        created = new_ticket(repo, _spec("Land proof"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        work_cfg = AppConfig(
+            ticket_command="work", ticket_id=tid, ticket_foreground=True
+        )
+        _work(repo, work_cfg)
+        worktree = _default_work_worktree(repo, tid)
+
+        loaded = load_all(worktree)
+        ticket = loaded.danger_ok[tid]
+        ticket = ticket.model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": ticket.body + "\n## Done report\n\nevidence attached\n",
+            }
+        )
+        assert write_ticket(worktree, ticket).is_ok
+        _run(["git", "add", "-A"], worktree)
+        _run(["git", "commit", "-q", "-m", "wt: done report"], worktree)
+
+        result = land(repo, tid, worktree, dry_run=False)
+        assert result.is_ok, result.err
+        return tid, worktree, result.danger_ok
+
+    def test_proof_verifies_a_real_land(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_proof_\
+        # verifies_a_real_land
+        _tid, _worktree, report = self._land_a_real_ticket(repo)
+        assert _print_land_proof(repo, report) is True
+
+    def test_finish_removes_the_worktree(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_finish\
+        # _removes_the_worktree
+        tid, worktree, report = self._land_a_real_ticket(repo)
+        assert _print_land_proof(repo, report) is True
+
+        _finish_worktree(repo, worktree, tid)
+
+        assert not worktree.exists()
+        worktree_list = _run(["git", "worktree", "list"], repo).stdout
+        assert str(worktree) not in worktree_list

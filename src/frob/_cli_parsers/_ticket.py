@@ -306,6 +306,36 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         "(T-0835); invalidates that worktree's lease for close/land",
     )
 
+    # frob:ticket T-1175
+    ticket_work_p = ticket_sub.add_parser(
+        "work",
+        help="one-verb worktree setup: create/reuse the ticket's worktree, "
+        "merge main for freshness, build natives, then start (replaces "
+        "playbook section 0 steps 1-2 plus start)",
+    )
+    ticket_work_p.add_argument("ticket_id", metavar="id")
+    ticket_work_p.add_argument(
+        "--worktree",
+        dest="ticket_worktree",
+        metavar="PATH",
+        default=None,
+        help="worktree path to create/reuse (default: "
+        ".claude/worktrees/<id-lowercased>)",
+    )
+    ticket_work_p.add_argument(
+        "--foreground",
+        dest="ticket_foreground",
+        action="store_true",
+        help="run the pre-work sweep synchronously instead of backgrounding it",
+    )
+    ticket_work_p.add_argument(
+        "--steal",
+        dest="ticket_steal",
+        action="store_true",
+        help="override a refusal caused by another worktree's live lease "
+        "(T-0835); invalidates that worktree's lease for close/land",
+    )
+
     ticket_sweep_p = ticket_sub.add_parser(
         "sweep", help="re-record the pre-work sweep (after widening scope)"
     )
@@ -341,6 +371,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         ticket_plan_p,
         ticket_requeue_p,
         ticket_start_p,
+        ticket_work_p,
         ticket_sweep_p,
         ticket_reconcile_p,
         ticket_migrate_p,
@@ -433,6 +464,20 @@ def _add_ticket_land_parser(ticket_sub):
             "made), push root's current branch to its upstream remote. "
             "Never pushes on a dry run, and never pushes if landing "
             "itself failed."
+        ),
+    )
+    # frob:ticket T-1175
+    ticket_land_p.add_argument(
+        "--finish",
+        dest="ticket_land_finish",
+        action="store_true",
+        help=(
+            "T-1175: after a real (non-dry-run) land verifies clean "
+            "(commit is an ancestor of main and the ticket's state on "
+            "main is done/dropped), `git worktree remove` --worktree. "
+            "Never removes on a dry run, a failed land, or a failed "
+            "verify -- the worktree branch is always the recovery path "
+            "(playbook section 12b) unless the land is proven landed."
         ),
     )
     return ticket_land_p
