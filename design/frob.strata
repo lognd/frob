@@ -2606,6 +2606,7 @@ store tickets_ledger : trusted {
     attr interface=renumber;
     attr interface=renumber_one;
     attr interface=replace_done_report_section;
+    attr interface=replay_evidence_from_done_report;
     attr interface=resolve_lease;
     attr interface=reverify_close_guard;
     attr interface=reverify_cmd_evidence;

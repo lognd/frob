@@ -2771,6 +2771,31 @@ scope:
 - src/frob/tickets/**
 - docs/modules/tickets.md
 - tests/test_tickets.py
+- tests/test_tickets_cmd_evidence.py
+- tests/test_tickets_tiers.py
+- design/frob.strata
+scope_changes:
+- op: add
+  glob: tests/test_tickets_cmd_evidence.py
+  reason: T-1152's own plan requires re-pointing frob:tests directives in any tests/*.py
+    file referencing a moved evidence-family symbol, plus fixing the design/frob.strata
+    SELFAUDIT001 interface= gap the split surfaced
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: tests/test_tickets_tiers.py
+  reason: T-1152's own plan requires re-pointing frob:tests directives in any tests/*.py
+    file referencing a moved evidence-family symbol, plus fixing the design/frob.strata
+    SELFAUDIT001 interface= gap the split surfaced
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: design/frob.strata
+  reason: T-1152's own plan requires re-pointing frob:tests directives in any tests/*.py
+    file referencing a moved evidence-family symbol, plus fixing the design/frob.strata
+    SELFAUDIT001 interface= gap the split surfaced
+  actor: logan
+  at: '2026-07-28'
 threat: null
 component: null
 ```

@@ -134,10 +134,14 @@ class TestDoableLeafOnly:
 
 class TestCloseOpenDescendantGuard:
     """An EPIC/STORY refuses to transition to DONE while any descendant
-    (via the `parent` chain) is still open (T-0715)."""
+    (via the `parent` chain) is still open (T-0715).
+
+    frob:ticket T-1152
+    """
 
     def test_epic_close_refused_with_open_descendant(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::transition kind="unit"
+        # frob:tests src/frob/tickets/_evidence.py::transition kind="unit"
+        # frob:ticket T-1152
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -158,7 +162,8 @@ class TestCloseOpenDescendantGuard:
         assert result.danger_err == TicketError.OpenDescendant
 
     def test_epic_close_allowed_once_descendant_done(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::transition kind="unit"
+        # frob:tests src/frob/tickets/_evidence.py::transition kind="unit"
+        # frob:ticket T-1152
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -184,7 +189,8 @@ class TestCloseOpenDescendantGuard:
         assert result.danger_ok.state is TicketState.DONE
 
     def test_plain_ticket_close_unaffected_by_guard(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/__init__.py::transition kind="unit"
+        # frob:tests src/frob/tickets/_evidence.py::transition kind="unit"
+        # frob:ticket T-1152
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
