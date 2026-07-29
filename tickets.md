@@ -5054,3 +5054,35 @@ threat: null
 component: null
 ```
 REFILE: the original filing (commit 46a115c4, first allocated id clobbered by a concurrent land's renumber -- see the sibling id-allocation bug ticket) recorded the 2026-07-29 incident: the coordinator's T-0329 epic close wrote the ledger uncommitted (close is not in T-1130's new/drop/fail set), a concurrent agent land preflight ran git reset --hard in root, and the close silently vanished -- caught only by T-1131's doctor stale-lease scan. Extend commit_ticket_ledger_change to every remaining ledger-writing verb: close, done-report, evidence add, requeue, and any mutation verbs still uncommitted. Closes the reset-eats-uncommitted-coordinator-work class (T-0948 lineage) at the verb layer.
+
+<!-- ticket:T-1179 -->
+```yaml
+id: T-1179
+title: 'land: draft renumbering allocated an id already taken on main, clobbering
+  a main-side block (T-1090 gap on the land path)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-29'
+priority: critical
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- tests/test_tickets_collision.py
+acceptance:
+- text: GIVEN a worktree land whose draft renumbering runs WHEN main has allocated
+    new ids since the worktree's last merge THEN renumbering reads the id ceiling
+    from CURRENT main (not the worktree's stale view) under the ledger lock, and a
+    would-be collision with any existing main-side id is impossible by construction,
+    proven by a regression test reproducing the 2026-07-29 shape
+  evidence: []
+- text: GIVEN the splice THEN a landing block may never overwrite a different-titled
+    existing block under the same id -- a detected id/title mismatch refuses the land
+    loudly instead of silently replacing content
+  evidence: []
+threat: null
+component: null
+```
+2026-07-29 incident (5th id-collision, first SINCE T-1090): coordinator filed a ticket on main (46a115c4, auto-committed); minutes later T-1170's land (17c6ca89) renumbered its residue draft to the SAME id, and the splice replaced the coordinator's block wholesale -- content lost from the live ledger (recovered from git history and refiled). T-1090's atomic allocation apparently guards concurrent new_ticket calls against a shared counter but the LAND-path renumber derived its next-id from the worktree's stale ledger view. Two independent guards per acceptance: allocation-from-current-main under lock, and a splice-level id/title-mismatch refusal (defense in depth, T-0959 style).
