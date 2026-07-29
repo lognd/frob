@@ -4592,7 +4592,7 @@ class TestInvariantGate:
         violations = invariant_gate((inv,), snap, tests)
         assert any(v.rule == "INV001" for v in violations)
 
-    # frob:tests src/frob/gates/__init__.py::invariant_gate
+    # frob:tests src/frob/gates/_inv.py::invariant_gate
     # frob:ticket T-0543
     def test_inv001_passes_with_collected_evidence(self, tmp_path: Path) -> None:
         """The evidence test lives in the SAME FILE as the invariant's
@@ -4618,7 +4618,7 @@ class TestInvariantGate:
         violations = invariant_gate((inv,), snap, tests)
         assert violations == ()
 
-    # frob:tests src/frob/gates/__init__.py::_invariant_evidence_proves_anchor
+    # frob:tests src/frob/gates/_inv.py::_invariant_evidence_proves_anchor
     # frob:ticket T-0543
     def test_inv001_collected_but_unbound_evidence_warns_inv005(
         self, tmp_path: Path
@@ -4645,7 +4645,7 @@ class TestInvariantGate:
         assert not any(v.rule == "INV001" for v in violations)
         assert any(v.rule == "INV005" for v in violations)
 
-    # frob:tests src/frob/gates/__init__.py::_evidence_binds_to_symrefs
+    # frob:tests src/frob/gates/_inv.py::_evidence_binds_to_symrefs
     # frob:ticket T-0543
     def test_inv001_passes_via_explicit_tests_edge_to_anchor(
         self, tmp_path: Path
@@ -4698,7 +4698,7 @@ class TestInvariantGate:
 
 
 class TestInv003Gate:
-    # frob:tests src/frob/gates/__init__.py::inv003_gate
+    # frob:tests src/frob/gates/_inv.py::inv003_gate
     def test_exclusivity_claim_without_marker_warns(self, tmp_path: Path) -> None:
         # T-0509: INV003 is scoped to INV003_SPEC_DIRS (docs/modules,
         # docs/strata), not all of docs/**.md -- fixture must live there.
@@ -4827,7 +4827,7 @@ class TestInv003Gate:
 
 
 class TestInv004Gate:
-    # frob:tests src/frob/gates/__init__.py::inv004_gate
+    # frob:tests src/frob/gates/_inv.py::inv004_gate
     def test_section_with_normative_language_and_no_invariant_is_advisory(
         self, tmp_path: Path
     ) -> None:
@@ -4949,7 +4949,7 @@ class TestInv006Gate:
     docstring/comment guarantee claims were entirely outside either
     doc-only gate's reach)."""
 
-    # frob:tests src/frob/gates/__init__.py::inv006_gate
+    # frob:tests src/frob/gates/_inv.py::inv006_gate
     # frob:ticket T-0408
     def test_exclusivity_claim_in_source_without_anchor_warns(
         self, tmp_path: Path

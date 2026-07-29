@@ -227,7 +227,7 @@ User directive 2026-07-28: the annoying errors are the ones whose fix is mechani
 id: T-1188
 title: 'arch: split remaining ~7 gate families out of src/frob/gates/__init__.py (7309
   lines) -- T-1187 residue'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -239,6 +239,24 @@ scope:
 - src/frob/gates/**
 - docs/modules/gates.md
 - tests/test_gates.py
+- design/frob.strata
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: frob sys sync-interface wrote gates node interface entries for the three
+    INV006/INV003 constants this split relocated to _inv.py
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_gates.py::TestInvariantGate::test_inv001_no_evidence
+- tests/test_gates.py::TestInvariantGate::test_inv001_passes_with_collected_evidence
+- tests/test_gates.py::TestInvariantGate::test_inv001_collected_but_unbound_evidence_warns_inv005
+- tests/test_gates.py::TestInvariantGate::test_inv002_no_anchor
+- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
+- tests/test_gates.py::TestInv004Gate::test_section_with_normative_language_and_no_invariant_is_advisory
+- tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_in_source_without_anchor_warns
+- tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_with_bound_invariant_anchor_is_silent
+- tests/test_gates.py::TestInv006SplitAssist::test_finds_carried_waiver_for_verbatim_moved_claim
 threat: null
 component: null
 ```
@@ -263,6 +281,58 @@ Still remaining, in the same one-family-per-land shape:
 
 Re-filed (not re-derived from scratch) rather than letting T-1187 close
 with silent residue, per TICK011.
+
+## Done report
+
+Extracted the INV00x invariant-coverage gate family (invariant_gate/INV001-
+INV002-INV005, inv003_gate, inv004_gate, inv006_gate, plus all their private
+helpers and the INV003_SPEC_DIRS/INV006_SRC_DIRS/INV006_SRC_SUFFIXES
+constants) out of gates/__init__.py into a new src/frob/gates/_inv.py
+(636 -> module lines), mirroring _sys.py's T-1187 precedent: the four gate
+functions stay re-exported from frob.gates unchanged, everything else is
+private to the new module.
+
+Two generic evidence-matching helpers (_evidence_collected,
+_node_id_matches_symref) stay in __init__.py, shared with the TEST00x
+family still living there -- _inv.py imports them via a function-local
+import (not module-level) specifically to avoid a __init__ <-> _inv
+circular import, since __init__ itself imports _inv at its own import
+time.
+
+`frob sys sync-interface` picked up the three relocated constants as
+newly-scanned public symbols on the `gates` design node (SYS104) and wrote
+the missing `attr interface=` entries into design/frob.strata; scope was
+extended to include that file for the same reason. Doc-linked frob:tests/
+frob:describes directives referencing these six symbols in
+docs/modules/gates.md and tests/test_gates.py were repointed from
+`gates/__init__.py::<name>` to `gates/_inv.py::<name>`.
+
+gates/__init__.py: 7310 -> 6669 lines (still well above the 800-line
+threshold; ~6 families + the run_gates spine remain per T-1188's own
+residue list -- this is one family per the established discipline, not
+the terminal split).
+
+### Changed
+```
+ tickets.md | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestInvariantGate::test_inv001_no_evidence` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInvariantGate::test_inv001_passes_with_collected_evidence` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInvariantGate::test_inv001_collected_but_unbound_evidence_warns_inv005` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInvariantGate::test_inv002_no_anchor` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv004Gate::test_section_with_normative_language_and_no_invariant_is_advisory` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_in_source_without_anchor_warns` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_with_bound_invariant_anchor_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv006SplitAssist::test_finds_carried_waiver_for_verbatim_moved_claim` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 9 passed (from 9 evidence id(s))
+- gates: 0 error(s), 730 warning(s), 672 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1189 -->
 ```yaml
@@ -357,6 +427,7 @@ unwaived TEST findings again (TEST006 aside, which only ever clears via
 
 ## Drop reason
 - 2026-07-29: not reproducible: the TEST003/TEST014 findings from T-0204's close-time measurement (taken under wave-22 landing concurrency) do not exist on current main -- verified by the w23-fixes agent via full foreground scoped checks (gate:TEST 0 errors) and direct reads of the cited modules' existing frob:tests edges; transient-measurement class
+
 <!-- ticket:T-1191 -->
 ```yaml
 id: T-1191
@@ -406,6 +477,7 @@ hoist/memoize the loop-invariant call) or add a reasoned
 
 ## Drop reason
 - 2026-07-29: not reproducible: the PERF005/PERF008 findings from T-0204's close-time measurement do not exist on current main -- verified via full foreground scoped checks (gate:PERF 0 errors) and structural-termination reading of the one named function; transient-measurement class
+
 <!-- ticket:T-1192 -->
 ```yaml
 id: T-1192

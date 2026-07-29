@@ -751,6 +751,9 @@ node gates : trusted {
     attr interface=GateError;
     attr interface=GateReport;
     attr interface=GateStats;
+    attr interface=INV003_SPEC_DIRS;
+    attr interface=INV006_SRC_DIRS;
+    attr interface=INV006_SRC_SUFFIXES;
     attr interface=Invariant;
     attr interface=InvariantError;
     attr interface=NORMATIVE_CLAIM_PATTERNS;

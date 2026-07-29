@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.276.0] - unreleased
+
+- T-1188: arch: split remaining ~7 gate families out of src/frob/gates/__init__.py (7309 lines) -- T-1187 residue
+
 ## [0.275.0] - unreleased
 
 - T-1173: bug: cross-worktree lease not renamed when a draft ticket is renumbered at land

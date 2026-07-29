@@ -483,17 +483,10 @@
     "src/frob/fuzz/_stamp.py::load_fuzz_stamp": "59f77948964df233af7ee6df5560c50f1b4e08f77523fd8b2364fda6547e72df",
     "src/frob/fuzz/_stamp.py::stamp_fuzz": "9c505b642805f515ce8da6ad4b5c6a55cc0c6a81a1478075d0f26bfc124c296a",
     "src/frob/gates/__init__.py::GateOrderDriftError": "7951e2f8d9da31891f06b5cbfa014f85bcc20246e47d0673d4fb430d6b40e1f9",
-    "src/frob/gates/__init__.py::INV003_SPEC_DIRS": "54109236b9c5717785cb603ffd1ec33ff62533e568a26590704e72a10b624e7e",
-    "src/frob/gates/__init__.py::INV006_SRC_DIRS": "e68dbcf72ad7bcc7499c9305c1f92fa43b71c020a5af4827eaa0e364fc8dec73",
-    "src/frob/gates/__init__.py::INV006_SRC_SUFFIXES": "2058015f176b8b4044379ba949fa87b5564ff31e98e9262b8bfbbbb42d3706fa",
     "src/frob/gates/__init__.py::affect_drift_gate": "3be02584d6478757d23a1dcf709cfa881cb28e13627c7c9a4ffb91bff32c3ab1",
     "src/frob/gates/__init__.py::coverage_gate": "fbb174c7bb93a7836cf6d6e3b3881f8cabe9ee2cb07604bd57bc204683474300",
     "src/frob/gates/__init__.py::drift_gate": "5c212d52c12a13920ee34ad607ff4d2367a47d7d7f940927aae71563b733a8e4",
     "src/frob/gates/__init__.py::evidence_covers_scope": "0b51203d0ff4e37830ddea56708947cf909cde9d9d8b64cba872defa996266f0",
-    "src/frob/gates/__init__.py::inv003_gate": "14e00b0157ebcb219f147e711a416d35ba3b0254063a0ffc701485776ae30b71",
-    "src/frob/gates/__init__.py::inv004_gate": "3fcdb93435385b377a7e1f26befa99635c613f179c8dd8698f9c41269dc96902",
-    "src/frob/gates/__init__.py::inv006_gate": "b83a1e3f177da2d2a96141ecf27c3d8003b06a804ad1a0c060b839e904ff2441",
-    "src/frob/gates/__init__.py::invariant_gate": "db80869313057d3f514f93b4764e8349d29a1e2ab5e5dced51ade8e5cdedba61",
     "src/frob/gates/__init__.py::perf_gate": "3174d8cf254b718239831717f877642fe1d95f121d51e41f93091e102b8f4930",
     "src/frob/gates/__init__.py::prework_gate": "0910de3b28246fcbca2fc1a84697bd960cbdabffaeaba7b9aafc2c1cfbb6ab2d",
     "src/frob/gates/__init__.py::release_gate": "7de1b3c1408bc14ad91416a21d56ad92242ae44e631b046ba3a965469dfcc9ca",
@@ -571,6 +564,13 @@
     "src/frob/gates/_gate_cache.py::evaluate_cacheable_gate": "edef6d4469821521c8de83f1df534346b40525212c80b41f64433a05036cba13",
     "src/frob/gates/_gate_cache.py::extra_key": "b7c9959e957f3034f89c958429d1810294ba89d012e58f1edfef8765367f1eea",
     "src/frob/gates/_gate_cache.py::invalidate": "04fbcd19cdded6a0a280e13469150b12c4c48982bd88c0ff7d1bcd899ce96bc1",
+    "src/frob/gates/_inv.py::INV003_SPEC_DIRS": "54109236b9c5717785cb603ffd1ec33ff62533e568a26590704e72a10b624e7e",
+    "src/frob/gates/_inv.py::INV006_SRC_DIRS": "e68dbcf72ad7bcc7499c9305c1f92fa43b71c020a5af4827eaa0e364fc8dec73",
+    "src/frob/gates/_inv.py::INV006_SRC_SUFFIXES": "2058015f176b8b4044379ba949fa87b5564ff31e98e9262b8bfbbbb42d3706fa",
+    "src/frob/gates/_inv.py::inv003_gate": "14e00b0157ebcb219f147e711a416d35ba3b0254063a0ffc701485776ae30b71",
+    "src/frob/gates/_inv.py::inv004_gate": "3fcdb93435385b377a7e1f26befa99635c613f179c8dd8698f9c41269dc96902",
+    "src/frob/gates/_inv.py::inv006_gate": "b83a1e3f177da2d2a96141ecf27c3d8003b06a804ad1a0c060b839e904ff2441",
+    "src/frob/gates/_inv.py::invariant_gate": "db80869313057d3f514f93b4764e8349d29a1e2ab5e5dced51ade8e5cdedba61",
     "src/frob/gates/_inv006_split_assist.py::find_carried_waiver": "5f615291efb57b07845d0c401b2a7d87871f123018a73c58245405d6f6911f52",
     "src/frob/gates/_lang_conformance.py::lang_conformance_gate": "39dbe48b9e5dd8c93a6abfa14d9100ad749dbfe3c734a915bb503a4a185fe417",
     "src/frob/gates/_lang_conformance.py::project_lang_conformance_gate": "f5e3b17778206d1ee73cde5d6f955bae9cae450f28b7c929347b943b0401d305",
@@ -1874,5 +1874,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.275.0"
+  "version": "0.276.0"
 }

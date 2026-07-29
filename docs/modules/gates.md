@@ -1596,7 +1596,7 @@ EXHAUST001/002's own carve-out).
 <!-- frob:describes src/frob/gates/__init__.py::coverage_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::scope_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::prework_gate -->
-<!-- frob:describes src/frob/gates/__init__.py::invariant_gate -->
+<!-- frob:describes src/frob/gates/_inv.py::invariant_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::test_gate -->
 <!-- frob:describes src/frob/gates/_coverage.py::stamp_coverage -->
 <!-- frob:describes src/frob/gates/_coverage.py::load_coverage -->
@@ -2466,7 +2466,7 @@ plus a policy rule or property test, never a one-off fix.
 
 <!-- frob:describes src/frob/gates/invariants.py::find_exclusivity_claims -->
 <!-- frob:describes src/frob/gates/invariants.py::EXCLUSIVITY_CLAIM_PATTERNS -->
-<!-- frob:describes src/frob/gates/__init__.py::inv003_gate -->
+<!-- frob:describes src/frob/gates/_inv.py::inv003_gate -->
 
 INV001/INV002 close the loop for invariants that already got written down
 in `invariants/INV-###.md`. INV003 catches the earlier failure mode: prose
@@ -2527,7 +2527,7 @@ for T-0515's further calibration of that residual.
 
 <!-- frob:describes src/frob/gates/invariants.py::find_normative_claims -->
 <!-- frob:describes src/frob/gates/invariants.py::NORMATIVE_CLAIM_PATTERNS -->
-<!-- frob:describes src/frob/gates/__init__.py::inv004_gate -->
+<!-- frob:describes src/frob/gates/_inv.py::inv004_gate -->
 
 INV003 is a per-CLAIM lint: one specific exclusivity assertion needs one
 specific bound invariant. INV004 is the INVERSE, FILE-level signal: a
@@ -2581,8 +2581,8 @@ as a further follow-up ticket rather than hand-closed in this pass.
 
 ### INV005 (T-0543)
 
-<!-- frob:describes src/frob/gates/__init__.py::_invariant_evidence_proves_anchor -->
-<!-- frob:describes src/frob/gates/__init__.py::_evidence_binds_to_symrefs -->
+<!-- frob:describes src/frob/gates/_inv.py::_invariant_evidence_proves_anchor -->
+<!-- frob:describes src/frob/gates/_inv.py::_evidence_binds_to_symrefs -->
 
 INV001 only asks whether an invariant's evidence list contains AT LEAST
 ONE item that resolves to a collected test node id (or a loaded policy
