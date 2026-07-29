@@ -6979,7 +6979,7 @@ increases, and how regressions below the new floor are caught.
 id: T-1316
 title: 'docs: T-1233 residue -- cve.md/index.md stale T-0147 framing, fuzz.md default
   and --budget claims'
-state: queued
+state: in-progress
 kind: docs
 origin: agent
 created: '2026-07-29'
