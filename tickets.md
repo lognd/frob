@@ -1039,3 +1039,35 @@ threat: null
 component: null
 ```
 Root cause: gates/_pii_structural/__init__.py:141 _scan_one_python_file does one ast.parse (good) but ~8 separate full ast.walk passes per file. Fix: one walk that buckets nodes (Assign/Call/ClassDef/Str/Attribute...) into a per-file NodeIndex; each sub-scan consumes its bucket instead of re-walking. Companion lint rule on the sibling PERF01x-detectors ticket: '>1 ast.walk(tree) over the same tree in one function family'.
+
+<!-- ticket:T-1210 -->
+```yaml
+id: T-1210
+title: 'perf: vet capability comment/docstring spans recomputed per file per gate
+  -- tree-sitter Query + sorted-span bisect'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: T-1204
+tier: ticket
+sprint: null
+scope:
+- src/frob/vet/_capability.py
+acceptance:
+- text: 'GIVEN _comment_byte_spans/_docstring_byte_spans (per-node Python recursion)
+    are recomputed independently by sys and opaque, and _fully_in_any_span does an
+    O(candidates x spans) linear any() over an unsorted span tuple (7.8M genexpr steps
+    in sys alone) WHEN spans are sorted once and containment uses bisect, and spans
+    are cached per (path, content-hash) for the run so sys and opaque share them THEN
+    sys+opaque drop ~4-5s native combined (report candidate #5). NOTE: computing spans
+    via a tree-sitter Query in C rather than Python recursion is covered by the sibling
+    EPIC B child ''tree-sitter Query captures for comment/docstring spans (interim,
+    zero-Rust)'' -- this ticket covers only the sort+bisect containment fix and the
+    per-run cache, not the extraction mechanism itself'
+  evidence: []
+threat: null
+component: null
+```
+Root cause: vet/_capability.py:212/:286 recompute comment/docstring byte spans per file per gate via Python recursion (12 pct of sys + 92 pct of opaque), and :244 _fully_in_any_span is a linear any() over an unsorted span tuple per candidate. Fix here: sort spans once, bisect for containment, and cache spans per (path, content-hash) so sys and opaque share one computation. The extraction-mechanism half of this candidate (Query captures replacing the Python recursion) is EPIC B's job, not this ticket's -- see that child to avoid two owners for the same code.
