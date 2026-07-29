@@ -3977,7 +3977,7 @@ owns-without-runs_as fixture proving no blast-radius view/gap fires.
 id: T-1165
 title: 'gates: wire git merge-driver''s %O merge-base into splice_ledger''s base_text
   (T-1154 follow-up)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -3992,7 +3992,6 @@ threat: null
 component: null
 ```
 T-1154 fixed the wrong-side-merge tie-break in _merge_ledger_tickets/splice_ledger by threading a base_text (true 3-way merge-base) param through, and wired it into frob ticket land's own tickets-archive.md splice via _true_merge_base. The frob ticket merge-driver CLI entry point (_land_cmd.py::_merge_driver) already receives git's own %O merge-base argument (cfg.ticket_merge_base) but discards it -- splice_ledger is called with only ours/theirs text. Thread ticket_merge_base's file content through as splice_ledger's new base_text param so a live git merge (not just frob ticket land's own internal merge step) gets the same wrong-side-merge protection. Concretely observed live during T-1154's own worktree warm-up: a bare (stale, non-uv-run) frob ticket merge-driver invocation reverted T-1111 from done to queued via exactly this unfixed tie-break.
-
 <!-- ticket:T-1166 -->
 ```yaml
 id: T-1166
