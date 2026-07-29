@@ -2,7 +2,13 @@
 
 from pathlib import Path
 
-from frob.exports import ExportsError, exports_consumers, exports_package
+from frob.exports import (
+    ExportsError,
+    ExportsResult,
+    ModuleExports,
+    exports_consumers,
+    exports_package,
+)
 
 
 class TestExportsPackage:
@@ -95,6 +101,44 @@ class TestExportsPackage:
         assert "from mypkg.mod import" in text
         assert "__all__" in text
         assert "Alpha" in text
+
+    def test_as_text_skips_module_with_no_symbols(self):
+        # frob:tests src/frob/exports/__init__.py::ExportsResult.as_text kind="unit"
+        # `exports_package` never produces a zero-symbol `ModuleExports`
+        # (`_module_exports` filters it to `None` first) -- but `as_text`
+        # is public API over `ExportsResult`, which a caller can build
+        # directly, so construct one by hand to exercise `as_text`'s "not
+        # mod.symbols -- continue" branch: no `from empty import ...` line
+        # should be emitted for it.
+        result = ExportsResult(
+            package_dir="mypkg",
+            modules=[
+                ModuleExports(module="mypkg.alpha", symbols=["foo"]),
+                ModuleExports(module="mypkg.empty", symbols=[]),
+            ],
+        )
+        text = result.as_text()
+        assert "from mypkg.alpha import" in text
+        assert "mypkg.empty" not in text
+
+    def test_as_text_aliases_duplicate_symbol_names(self, tmp_path):
+        # frob:tests src/frob/exports/__init__.py::ExportsResult.as_text kind="unit"
+        # Two modules exporting the same symbol name exercise `as_text`'s
+        # duplicate-aliasing branch (`mod_short_symbol` aliasing), not just
+        # the no-duplicates path every other as_text test takes.
+        pkg = self._make_pkg(
+            tmp_path,
+            {
+                "alpha.py": "def widget(): ...\n",
+                "beta.py": "def widget(): ...\n",
+            },
+        )
+        result = exports_package(pkg)
+        text = result.danger_ok.as_text()
+        assert "widget as alpha_widget" in text
+        assert "widget as beta_widget" in text
+        assert '"alpha_widget"' in text
+        assert '"beta_widget"' in text
 
     def test_classes_included(self, tmp_path):
         pkg = self._make_pkg(

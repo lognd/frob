@@ -4464,7 +4464,9 @@ node testsuite : trusted {
     attr interface=test_as_json;
     attr interface=test_as_json_round_trips_groups;
     attr interface=test_as_text;
+    attr interface=test_as_text_cross_file_filters_and_reports_skipped;
     attr interface=test_as_text_no_commits_short_circuit;
+    attr interface=test_as_text_no_definition_no_usages;
     attr interface=test_as_text_renders_breaking_section_and_labels;
     attr interface=test_as_text_singular_commit_count;
     attr interface=test_below_level_filter;
@@ -4511,6 +4513,7 @@ node testsuite : trusted {
     attr interface=test_collect_locals_py_empty_for_body_with_no_bindings;
     attr interface=test_collect_locals_py_method_includes_typed_default_param;
     attr interface=test_collect_locals_py_with_tuple_target;
+    attr interface=test_collect_source_files_skips_hidden_directory;
     attr interface=test_commit_entry_from_block_non_conventional_is_unknown_type;
     attr interface=test_commit_entry_from_block_too_short_is_none;
     attr interface=test_commit_entry_from_block_with_refs_and_body;
@@ -4595,8 +4598,12 @@ node testsuite : trusted {
     attr interface=test_extra_patterns_from_config;
     attr interface=test_extra_patterns_missing_toml;
     attr interface=test_extract_docstrings;
+    attr interface=test_extract_docstrings_non_python_file_returns_empty;
+    attr interface=test_extract_docstrings_parse_failure_returns_empty;
+    attr interface=test_extract_docstrings_symbol_filter_narrows_to_one_method;
     attr interface=test_extract_imports_tree_and_path;
     attr interface=test_find_docs_dir;
+    attr interface=test_find_docs_dir_not_found_returns_none;
     attr interface=test_find_duplicates_no_cross_run_leak;
     attr interface=test_find_duplicates_second_call_is_memo_hit;
     attr interface=test_finds_counterexample_for_non_equivalent_functions;
@@ -4796,6 +4803,8 @@ node testsuite : trusted {
     attr interface=test_outline_shows_line_numbers;
     attr interface=test_outline_unsupported_exits_nonzero;
     attr interface=test_overview;
+    attr interface=test_overview_no_keyword_match_falls_back_to_all_entries;
+    attr interface=test_overview_symbol_keyword_narrows_match;
     attr interface=test_paint_verbatim_when_disabled;
     attr interface=test_paint_wraps_when_enabled;
     attr interface=test_parse_clang;
@@ -4872,13 +4881,18 @@ node testsuite : trusted {
     attr interface=test_py_missing_symbol_no_definition;
     attr interface=test_py_outline_as_json;
     attr interface=test_py_outline_as_text;
+    attr interface=test_py_outline_as_text_hides_private_and_shows_docs;
     attr interface=test_py_outline_classes;
+    attr interface=test_py_outline_dedupes_repeated_import_root;
+    attr interface=test_py_outline_doc_with_no_period_uses_80_char_fallback;
     attr interface=test_py_outline_function_line;
     attr interface=test_py_outline_functions;
     attr interface=test_py_outline_imports;
     attr interface=test_py_outline_lines;
     attr interface=test_py_outline_methods;
+    attr interface=test_py_outline_nested_class_method_has_no_top_level_owner;
     attr interface=test_py_outline_ok;
+    attr interface=test_py_outline_parse_failed_when_source_over_size_cap;
     attr interface=test_py_outline_signature_includes_return;
     attr interface=test_py_usage_context_is_line_text;
     attr interface=test_py_usages_include_calls;
@@ -4987,6 +5001,7 @@ node testsuite : trusted {
     attr interface=test_scan_tier1_matches_expected;
     attr interface=test_scope_exit_does_not_leak_across_scopes;
     attr interface=test_search;
+    attr interface=test_search_tracks_heading_and_joins_surrounding_lines;
     attr interface=test_second_call_with_same_args_is_memo_hit;
     attr interface=test_self_loop;
     attr interface=test_serialize_py_body_renames_locals_and_normalizes_literals;
@@ -5034,6 +5049,7 @@ node testsuite : trusted {
     attr interface=test_text_mentions_c_py_as_caller;
     attr interface=test_text_mentions_deep_nest_file;
     attr interface=test_text_mentions_long_func_file;
+    attr interface=test_text_search_finds_usages_in_strata_file;
     attr interface=test_text_shows_another_at_line_7;
     attr interface=test_text_shows_deep_nesting;
     attr interface=test_text_shows_defined;

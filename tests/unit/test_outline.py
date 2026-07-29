@@ -188,3 +188,126 @@ def test_unsupported_language(tmp_path):
     result = outline_file(f)
     assert result.is_err
     assert result.danger_err == OutlineError.UnsupportedLanguage
+
+
+# ---------------------------------------------------------------------------
+# Parse-failure and privacy/doc-rendering branches (T-1302)
+# ---------------------------------------------------------------------------
+
+
+def test_py_outline_parse_failed_when_source_over_size_cap(tmp_path):
+    # frob:tests src/frob/outline/__init__.py::outline_file kind="unit"
+    # A file over frob.lang's 8 MiB size cap makes `parse_file` return
+    # `Err(LangError.FileTooLarge)` -- a non-UnsupportedLanguage error --
+    # which exercises `_parse_for_outline`'s "any other LangError maps to
+    # OutlineError.ParseFailed" branch and `outline_file`'s own
+    # `parsed_pair.is_err` propagation branch, distinct from the
+    # UnsupportedLanguage path `test_unsupported_language` covers.
+    f = tmp_path / "huge.py"
+    f.write_bytes(b"x = 1\n" * (2 * 1024 * 1024))  # well over 8 MiB
+    result = outline_file(f)
+    assert result.is_err
+    assert result.danger_err == OutlineError.ParseFailed
+
+
+def test_py_outline_as_text_hides_private_and_shows_docs(tmp_path):
+    # frob:tests src/frob/outline/__init__.py::ModuleOutline.as_text kind="unit"
+    # Exercises the private-function/private-class/private-method hidden
+    # branches of `_functions_as_text`/`_classes_as_text`, plus the
+    # `fn.doc`/`m.doc` doc-line-append branches -- none of which the
+    # existing docstring-free py_sample fixture reaches.
+    src = (
+        b'"""module doc."""\n'
+        b"def visible(x: int) -> str:\n"
+        b'    """Visible function doc."""\n'
+        b"    return str(x)\n"
+        b"\n"
+        b"def _hidden():\n"
+        b"    pass\n"
+        b"\n"
+        b"class Visible:\n"
+        b"    def method(self):\n"
+        b'        """Visible method doc."""\n'
+        b"        pass\n"
+        b"\n"
+        b"    def _hidden_method(self):\n"
+        b"        pass\n"
+        b"\n"
+        b"class _Hidden:\n"
+        b"    def anything(self):\n"
+        b"        pass\n"
+    )
+    f = tmp_path / "priv.py"
+    f.write_bytes(src)
+    outline = outline_file(f).danger_ok
+
+    default_text = outline.as_text()
+    assert "visible" in default_text
+    assert "Visible function doc." in default_text
+    assert "Visible method doc." in default_text
+    assert "_hidden" not in default_text
+    assert "_Hidden" not in default_text
+    assert "private -- use --all to show" in default_text
+
+    full_text = outline.as_text(include_private=True)
+    assert "_hidden" in full_text
+    assert "_Hidden" in full_text
+    assert "_hidden_method" in full_text
+    assert "private -- use --all to show" not in full_text
+
+
+def test_py_outline_nested_class_method_has_no_top_level_owner(tmp_path):
+    # frob:tests src/frob/outline/__init__.py::outline_file kind="unit"
+    # `_build_classes` only tracks TOP-LEVEL classes (qualname has no "."),
+    # so a method on a nested class has an owner qualname `_assign_functions`
+    # cannot resolve -- exercises the `cls is not None` branch's False side
+    # (the method is silently dropped, not crashed on) instead of always
+    # hitting the True/found side every other outline test exercises.
+    src = (
+        b"class Outer:\n"
+        b"    class Inner:\n"
+        b"        def nested_method(self):\n"
+        b"            pass\n"
+        b"\n"
+        b"    def outer_method(self):\n"
+        b"        pass\n"
+    )
+    f = tmp_path / "nested.py"
+    f.write_bytes(src)
+    outline = outline_file(f).danger_ok
+    names = {c.name for c in outline.classes}
+    assert names == {"Outer"}
+    outer = next(c for c in outline.classes if c.name == "Outer")
+    method_names = {m.name for m in outer.methods}
+    assert "outer_method" in method_names
+    assert "nested_method" not in method_names
+
+
+def test_py_outline_doc_with_no_period_uses_80_char_fallback(tmp_path):
+    # frob:tests src/frob/outline/__init__.py::outline_file kind="unit"
+    # A docstring with no "." at all exercises `_first_doc_line`'s
+    # `0 < idx < 80` False branch (idx == -1 here), falling through to the
+    # first-80-chars truncation instead of the sentence-split path every
+    # other outline test's dot-terminated docstrings take.
+    long_no_period = "x" * 120
+    src = (
+        f'def f():\n    """{long_no_period}"""\n    pass\n'.encode()
+    )
+    f = tmp_path / "nodoc_period.py"
+    f.write_bytes(src)
+    outline = outline_file(f).danger_ok
+    fn = next(fn for fn in outline.functions if fn.name == "f")
+    assert fn.doc == long_no_period[:80]
+    assert len(fn.doc) == 80
+
+
+def test_py_outline_dedupes_repeated_import_root(tmp_path):
+    # frob:tests src/frob/outline/__init__.py::outline_file kind="unit"
+    # Two imports sharing the same top-level dotted segment ("os") exercise
+    # `_dedupe_imports`'s "already seen -- skip" branch, not just its
+    # first-time-append branch.
+    src = b"import os\nimport os.path\n\ndef f():\n    pass\n"
+    f = tmp_path / "dup_imports.py"
+    f.write_bytes(src)
+    outline = outline_file(f).danger_ok
+    assert outline.imports.count("os") == 1

@@ -62,3 +62,15 @@ class TestLoadManifest:
         result = load_manifest(manifest_path)
         assert result.is_err
         assert result.danger_err is FleetError.ManifestMalformed
+
+    # frob:tests tests/unit/fleet/test_manifest.py::TestLoadManifest.test_load_manifest_schema_invalid  # noqa: E501
+    def test_load_manifest_schema_invalid(self, tmp_path: Path) -> None:
+        """Valid TOML that does not fit `RepoEntry`'s schema (missing the
+        required `path` field) must still return `Err(ManifestMalformed)`
+        via the pydantic-`ValidationError` catch -- distinct from the
+        TOML-parse failure path `test_load_manifest_malformed` covers."""
+        manifest_path = tmp_path / "fleet.toml"
+        manifest_path.write_text('[[repo]]\nname = "a"\n')
+        result = load_manifest(manifest_path)
+        assert result.is_err
+        assert result.danger_err is FleetError.ManifestMalformed

@@ -5,6 +5,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from typani import Err
+
 from frob.fleet import FleetError, FleetManifest, RepoEntry, route_ticket
 from frob.tickets import Origin, Priority, TicketKind, TicketSpec
 
@@ -76,3 +78,31 @@ class TestRouteTicket:
         assert result.is_err
         assert result.danger_err is FleetError.RouteFailed
         assert not (repo_dir / "tickets.md").exists()
+
+    def test_route_ticket_new_ticket_failure_wrapped(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """Any `frob.tickets.new_ticket` failure (a locked/malformed
+        ledger, an unleased worktree, ...) must surface as
+        `Err(RouteFailed)` -- `route_ticket`'s own generic wrapping of
+        whatever `new_ticket` reports, not a passthrough of its specific
+        error or a bare exception."""
+        repo_dir = tmp_path / "target-repo"
+        _init_git_repo(repo_dir)
+        manifest = FleetManifest(repos=(RepoEntry(name="target", path=repo_dir),))
+        spec = TicketSpec(
+            title="x", kind=TicketKind.BUG, origin=Origin.AGENT, priority=Priority.LOW
+        )
+
+        from frob import fleet as fleet_mod
+        from frob.tickets import TicketError
+
+        monkeypatch.setattr(
+            fleet_mod,
+            "new_ticket",
+            lambda root, spec: Err(TicketError.MalformedFrontmatter),  # noqa: ARG005
+        )
+
+        result = route_ticket(manifest, "target", spec)
+        assert result.is_err
+        assert result.danger_err is FleetError.RouteFailed

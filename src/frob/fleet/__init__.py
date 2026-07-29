@@ -113,6 +113,7 @@ class FleetReport(BaseModel):
 # frob:tests tests/unit/fleet/test_manifest.py::TestLoadManifest.test_load_manifest_ok
 # frob:tests tests/unit/fleet/test_manifest.py::TestLoadManifest.test_load_manifest_missing  # noqa: E501
 # frob:tests tests/unit/fleet/test_manifest.py::TestLoadManifest.test_load_manifest_malformed  # noqa: E501
+# frob:tests tests/unit/fleet/test_manifest.py::TestLoadManifest.test_load_manifest_schema_invalid  # noqa: E501
 def load_manifest(path: Path) -> Result[FleetManifest, FleetError]:
     """Parse `[[repo]] name/path` rows out of `path` (a `fleet.toml`-shaped
     file); `Err(ManifestNotFound)` when `path` is missing, `Err
@@ -159,6 +160,16 @@ def _rebase_relative_paths(
 
 
 # frob:ticket T-0573
+# frob:tests tests/unit/fleet/test_status.py::TestCollectStatus.test_collect_status_ok
+# frob:tests \
+# tests/unit/fleet/test_status.py::TestCollectStatus.test_git_branch_and_dirty_kill_swi\
+# tch_refuses_without_spawning
+# frob:tests \
+# tests/unit/fleet/test_status.py::TestCollectStatus.test_git_branch_and_dirty_subproce\
+# ss_raises
+# frob:tests \
+# tests/unit/fleet/test_status.py::TestCollectStatus.test_git_branch_and_dirty_clean_tr\
+# ee_stays_not_dirty
 def _git_branch_and_dirty(repo_path: Path) -> tuple[str | None, bool]:
     """`(current branch name or None, has-uncommitted-changes)` for
     `repo_path`, via a bare `git status --porcelain=v1 -b`; a `None` branch
@@ -196,6 +207,16 @@ def _git_branch_and_dirty(repo_path: Path) -> tuple[str | None, bool]:
 
 
 # frob:ticket T-0573
+# frob:tests tests/unit/fleet/test_status.py::TestCollectStatus.test_collect_status_ok
+# frob:tests \
+# tests/unit/fleet/test_status.py::TestCollectStatus.test_gate_summary_probe_kill_switc\
+# h_refuses_without_spawning
+# frob:tests \
+# tests/unit/fleet/test_status.py::TestCollectStatus.test_gate_summary_probe_subprocess\
+# _raises
+# frob:tests \
+# tests/unit/fleet/test_status.py::TestCollectStatus.test_gate_summary_probe_non_json_o\
+# utput
 def _gate_summary_probe(repo_path: Path) -> GateSummary:
     """Fast `frob check --json` subprocess probe: severity-bucketed
     violation counts for `repo_path`. Any failure (missing `frob` on PATH,
@@ -254,6 +275,9 @@ def _check_probe_argv(repo_path: Path) -> list[str]:
 
 
 # frob:ticket T-0573
+# frob:tests \
+# tests/unit/fleet/test_status.py::TestCollectStatus.test_count_diagnostics_ignores_unk\
+# nown_severities
 def _count_diagnostics(payload: dict) -> tuple[int, int]:
     """`(error_count, warn_count)` from a real `frob check --json` payload
     (`frob.check.CheckResult.as_json`'s schema: `{"path", "results": [
@@ -275,6 +299,12 @@ def _count_diagnostics(payload: dict) -> tuple[int, int]:
 
 
 # frob:ticket T-0573
+# frob:tests \
+# tests/unit/fleet/test_status.py::TestCollectStatus.test_doable_count_missing_ledger_r\
+# eturns_zero
+# frob:tests \
+# tests/unit/fleet/test_status.py::TestCollectStatus.test_doable_count_delegates_to_tic\
+# kets_api
 def _doable_count(repo_path: Path) -> int:
     """Repo's own `frob ticket doable` count via `frob.tickets`' public API
     directly (no subprocess) -- 0 (logged, not raised) when the repo has no
@@ -345,6 +375,9 @@ def rollup(manifest: FleetManifest, *, probe_gates: bool = True) -> FleetReport:
 # frob:tests tests/unit/fleet/test_route.py::TestRouteTicket.test_route_ticket_ok
 # frob:tests tests/unit/fleet/test_route.py::TestRouteTicket.test_route_ticket_unknown_repo  # noqa: E501
 # frob:tests tests/unit/fleet/test_route.py::TestRouteTicket.test_route_ticket_not_frob_enabled  # noqa: E501
+# frob:tests \
+# tests/unit/fleet/test_route.py::TestRouteTicket.test_route_ticket_new_ticket_failure_\
+# wrapped
 def route_ticket(
     manifest: FleetManifest, repo_name: str, spec: TicketSpec
 ) -> Result[str, FleetError]:

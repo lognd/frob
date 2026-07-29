@@ -7,6 +7,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from typani import Err, Ok
+
 from frob import fleet as fleet_mod
 from frob.fleet import (
     FleetManifest,
@@ -16,6 +18,7 @@ from frob.fleet import (
     collect_status,
     rollup,
 )
+from frob.tickets import TicketQueue
 
 
 class _FakeCompleted:
@@ -152,6 +155,106 @@ class TestCollectStatus:
         summary = fleet_mod._gate_summary_probe(tmp_path)
         assert not spawned
         assert summary == GateSummary()
+
+    def test_git_branch_and_dirty_subprocess_raises(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """A raised `OSError` (e.g. `git` not installed) from the guarded
+        spawn degrades to the same best-effort `(None, False)` fallback as
+        any other probe failure -- never propagates."""
+
+        def fake_run(*args, **kwargs):  # noqa: ANN001, ARG001
+            raise OSError("git not found")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+        branch, dirty = fleet_mod._git_branch_and_dirty(tmp_path)
+        assert branch is None
+        assert dirty is False
+
+    def test_git_branch_and_dirty_clean_tree_stays_not_dirty(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """Porcelain output with only `#`-prefixed header lines (no file
+        rows) must leave `dirty` False -- the loop's non-header branch is
+        never taken."""
+
+        def fake_run(cmd, **kwargs):  # noqa: ANN001, ARG001
+            return _FakeCompleted("# branch.head main\n# branch.ab +0 -0\n")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+        branch, dirty = fleet_mod._git_branch_and_dirty(tmp_path)
+        assert branch == "main"
+        assert dirty is False
+
+    def test_gate_summary_probe_subprocess_raises(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """A raised `OSError`/`TimeoutExpired` from the guarded `frob
+        check` spawn degrades to a zeroed `GateSummary`, matching every
+        other probe-failure path."""
+
+        def fake_run(*args, **kwargs):  # noqa: ANN001, ARG001
+            raise subprocess.TimeoutExpired(cmd="frob check", timeout=1)
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+        summary = fleet_mod._gate_summary_probe(tmp_path)
+        assert summary == GateSummary()
+
+    def test_gate_summary_probe_non_json_output(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """Non-JSON stdout (a crashed/misbehaving `frob check --json`)
+        must not raise -- it degrades to a zeroed `GateSummary` that still
+        carries the real `exit_code` through."""
+
+        def fake_run(cmd, **kwargs):  # noqa: ANN001, ARG001
+            return _FakeCompleted("not json at all", returncode=2)
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+        summary = fleet_mod._gate_summary_probe(tmp_path)
+        assert summary == GateSummary(exit_code=2)
+
+    def test_count_diagnostics_ignores_unknown_severities(self) -> None:
+        """A severity other than `"error"`/`"warning"` (e.g. `"info"`)
+        must be skipped without affecting either count."""
+        payload = {
+            "results": [
+                {
+                    "diagnostics": [
+                        {"severity": "info"},
+                        {"severity": "error"},
+                    ]
+                }
+            ]
+        }
+        errors, warns = fleet_mod._count_diagnostics(payload)
+        assert (errors, warns) == (1, 0)
+
+    def test_doable_count_missing_ledger_returns_zero(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """A malformed/unreadable ledger must yield `0`, logged not raised
+        -- a broken ledger is not the fleet rollup's problem to fail on."""
+        from frob.tickets import TicketError
+
+        monkeypatch.setattr(
+            fleet_mod,
+            "load_queue",
+            lambda root: Err(TicketError.MalformedFrontmatter),  # noqa: ARG005
+        )
+        assert fleet_mod._doable_count(tmp_path) == 0
+
+    def test_doable_count_delegates_to_tickets_api(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """A repo with an actual ledger: `_doable_count` reflects
+        `frob.tickets.doable`'s own count, no subprocess involved."""
+        empty_queue = TicketQueue(tickets={})
+        monkeypatch.setattr(fleet_mod, "load_queue", lambda root: Ok(empty_queue))  # noqa: ARG005, E501
+        monkeypatch.setattr(
+            fleet_mod, "doable", lambda queue, root: [object(), object()]
+        )  # noqa: ARG005, E501
+        assert fleet_mod._doable_count(tmp_path) == 2
 
 
 class TestRollup:
