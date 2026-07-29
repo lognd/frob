@@ -1802,3 +1802,41 @@ threat: null
 component: null
 ```
 T-0969 diagnosis: the recipe's trailing frob clean -y deletes .pytest_cache (clean/_rules.py:30) destroying --last-failed evidence, and tier-1 .coverage.* rule (rule line 27) may nuke mid-run fragments -- one subset run ended with 27 data files where a single test file generates 34, unresolved.
+
+<!-- ticket:T-1238 -->
+```yaml
+id: T-1238
+title: 'EPIC cli regrouping: verb groups to shrink the top-level surface -- frob explore
+  first'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-29'
+priority: high
+parent: null
+tier: epic
+sprint: null
+scope:
+- src/frob/_cli_parsers/**
+- src/frob/app/**
+- src/frob/__main__.py
+- docs/**
+- tests/**
+acceptance:
+- text: 'GIVEN frob --help THEN the top level presents a small set of verb groups
+    (target: under ~15 entries) with subcommands grouped by intent, every old invocation
+    either still working or aliased with a pointer, and the grouped help readable
+    by a first-time user'
+  evidence: []
+- text: GIVEN frob explore THEN map/outline/xref/docs-search live as its subcommands,
+    un-deprecated (frob:deprecated markers and sunset warnings removed), with their
+    standalone deprecated top-level forms aliased through a transition window
+  evidence: []
+- text: GIVEN the regrouping design doc THEN it proposes the full grouping taxonomy
+    for every current top-level command with a migration/alias policy, before any
+    group beyond explore is implemented
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-07-29: frob is intimidating; group everything together. First concrete slice: the T-0580-deprecated navigation commands (map/outline/xref/docs-search) regroup into frob explore instead of being deleted -- this SUPERSEDES the 2026-10-01 sunset (T-0802 dropped with this epic as the reason). Design phase first for the full taxonomy (candidate buckets to evaluate, not prescribe: explore/navigation, quality/check+test+fix, tickets, design/sys+strata, supply-chain/vet, ops/release+registry+natives+doctor+clean, serve/perf tooling); un-deprecation of the explore members includes removing the docs 'Kept commands'/deprecation drift the 2026-07-29 staleness sweep catalogued. Children to file at design time: taxonomy design doc, explore group implementation, alias/transition machinery, help-surface rework, docs/index updates.
