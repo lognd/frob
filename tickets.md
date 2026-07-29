@@ -10362,3 +10362,31 @@ threat: tampering
 component: null
 ```
 T-1323's land-precheck guard (_check_uncommitted_waive_deletions) only inspects git diff HEAD (uncommitted worktree state) -- the exact incident mechanism. Reviewer finding at T-1323 approval: a frob:waive deletion COMMITTED to the branch before land is invisible to it, leaving a laundering vector (an agent or tool commits the deletion mid-ticket and it rides the merge). Extend the guard to also scan git diff merge-base..HEAD for single-line frob:waive deletions, applying the same scope-ownership and (tightened) Done-report declaration logic; a deletion neither owned by a landing ticket's scope nor declared is an ERROR-tier refusal. Also consider the multi-line/continuation waiver blind spot flagged MINOR in the same review (mirror of WAIVE004's own single-line scope) -- either cover it or scope the docstring honestly.
+
+<!-- ticket:T-1327 -->
+```yaml
+id: T-1327
+title: 'mutate: stale mutation-backup journal restore clobbers live in-progress edits'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-29'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/mutate/**
+- tests/test_mutate_journal.py
+acceptance:
+- text: GIVEN a mutation journal whose recorded pre-mutation hash no longer matches
+    the on-disk file WHEN restore runs THEN the file is left untouched and the stale
+    entry is dropped with a WARNING naming the file
+  evidence: []
+- text: GIVEN a crash mid-mutation with an accurate journal THEN restore still works
+    as today
+  evidence: []
+threat: null
+component: null
+```
+Observed 2026-07-29 in worktree w26-strata-t1203 during T-1203: a frob check / mutation-testing run emitted 'WARNING: mutate: restored stale mutation-backup journal' and the restore CLOBBERED two uncommitted in-progress edits to src/frob/strata/_mutation_audit.py (the file under active development, not a mutation target of the run). The agent caught it only by noticing unexpected file content, redid the edits, and committed defensively. The T-0857 crash-safe journal exists to restore mutants after a crash -- but a STALE journal (from an earlier run, or another worktree context) must never win over newer on-disk content. Fix direction: the restore path must verify the journal entry's recorded pre-mutation content hash still matches the CURRENT file before restoring (mismatch = the file moved on legitimately -> skip restore, log, and drop the stale entry), and the journal should be invalidated at the start of any run that did not crash.
