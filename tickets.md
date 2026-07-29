@@ -257,7 +257,7 @@ unowned residue -- is what this pass could honestly complete.
 ```yaml
 id: T-0397
 title: 'AUDIT REMEDIATION EPIC: North-Star integrity -- every green must be earned'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -271,7 +271,6 @@ threat: null
 component: null
 ```
 Full-repo pessimistic capability audit (2026-07-20, 7 read-only auditors). North-Star: if frob check / a ticket-close / a strata proof passes, the thing it claims must ACTUALLY hold. The audit found the North-Star is violated in concrete ways across subsystems. Each subsystem audit gets an umbrella child holding its full findings table; each HIGH finding gets an actionable child. Findings files live in the audit run; this epic is the durable tracked home so the audit itself does not become an orphaned document (the exact failure mode that motivated it). Consolidation in progress as the 7 auditors land: tickets/testing (evidence integrity), strata (vacuous proofs), graph/edges, gates-accounting, gates-quality/security, vet (lexical resolution), lang/check/docs.
-
 <!-- ticket:T-0802 -->
 ```yaml
 id: T-0802
