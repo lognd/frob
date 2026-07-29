@@ -1099,3 +1099,30 @@ threat: null
 component: null
 ```
 Root cause: gates/_secrets.py:932 _scan_line loops 33 compiled patterns via finditer per line; _fake_marker_reason (:676) also runs a regex against every line and its predecessor regardless of hits. Fix: one combined alternation regex over the whole file text, offset->line via bisect, defer per-pattern/_fake_marker_reason logic to actual hits. Companion lint rule on the sibling PERF01x-detectors ticket: 're.finditer with a pattern-list loop inside a per-line loop'.
+
+<!-- ticket:T-1212 -->
+```yaml
+id: T-1212
+title: 'perf: dup_spawn _entry_occurrences re-scans occurrences per (def, entry) pair
+  -- index once per file'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: T-1204
+tier: ticket
+sprint: null
+scope:
+- src/frob/perf/_dup_spawn.py
+acceptance:
+- text: 'GIVEN _entry_occurrences (perf/_dup_spawn.py:195) re-scans occurrences for
+    every (def, entry) pair (44,124 calls, 44.6s profiled, called from _def_violations
+    x12702) WHEN occurrences are indexed once per file ({entry -> [spans]}) before
+    the def loop, reusing the existing _index_file_occurrences shape from perf/_effect_summaries.py:717
+    THEN perf drops ~4-5s native off its 19.1s stage (report candidate #7)'
+  evidence: []
+threat: null
+component: null
+```
+Root cause: perf/_dup_spawn.py:195 _entry_occurrences is re-invoked per (def, entry) pair instead of building an index once per file. Fix: reuse the _index_file_occurrences pattern (perf/_effect_summaries.py:717) that already exists in this package -- build {entry -> [spans]} once, consume it in the def loop. No-duplication: this is the same indexing shape already implemented elsewhere in perf/, just not shared here.
