@@ -230,7 +230,7 @@ User directive 2026-07-28: the annoying errors are the ones whose fix is mechani
 id: T-1193
 title: 'post-audit residual themes: multi-language obligation gates, fail-open residue,
   gitignored-trust CI story (T-0397 successor)'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-29'
