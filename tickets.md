@@ -1747,3 +1747,30 @@ threat: null
 component: null
 ```
 T-0969 diagnosis 2026-07-29: fresh coverage RAISED TEST005 to 1357; staleness was not the inflation. Loss A: CLI subprocesses measure nothing (relative source vs child cwd) and strand data files in child cwds (626 stranded, 100% of 120 sampled empty). Loss B: ProcessPoolExecutor gate workers unrecorded. Verified experiment: corrected rc moved excludes.py 51->97, doctor 33->86, 81 of 103 zero-modules gained data; merged count 1357->1175 from a partial subset alone.
+
+<!-- ticket:T-1236 -->
+```yaml
+id: T-1236
+title: 'coverage deflation guard: canary modules, not just join fraction'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-29'
+priority: high
+parent: T-0969
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- tests/**
+- docs/**
+acceptance:
+- text: 'GIVEN a coverage run that lost subprocess or pool-worker data THEN the stamp
+    is refused: guard checks fraction-of-known-modules-with-nonzero-coverage and named
+    canaries (src/frob/__main__.py nonzero while system tests exist), not only module_join_fraction
+    which reads ~1.0 under source=-inflated zeros'
+  evidence: []
+threat: null
+component: null
+```
+T-1180's deflation floor stamped three deflated runs clean because source= makes every unexecuted file appear at 0% so the join fraction stays high. Structural blind spot found by the T-0969 diagnosis 2026-07-29.
