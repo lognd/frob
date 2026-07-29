@@ -4329,7 +4329,7 @@ write_ticket and the bare `subprocess` module object itself).
 id: T-draft-86650510
 title: 'fix: tickets/__init__.py missing _run_evidence_command re-export after T-1152
   evidence-family split'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -4340,6 +4340,13 @@ sprint: null
 scope:
 - src/frob/tickets/__init__.py
 - tests/test_tickets_evidence_cli.py
+- src/frob/tickets/_evidence.py
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: the fix re-exports a symbol from this module
+  actor: logan
+  at: '2026-07-28'
 threat: null
 component: null
 ```
