@@ -74,6 +74,11 @@ from frob.tickets._evidence import (
     # own late `from frob.tickets import _check_evidence_resolution` (T-1103's
     # documented load-time-circular-import workaround) resolves against this
     # package attribute; not referenced by name elsewhere in this module.
+    _run_evidence_command,  # noqa: F401 -- re-exported: tests/test_tickets_evidence_cli.py's
+    # TestRunEvidenceCommandNoShell imports this directly off the package
+    # (`from frob.tickets import _run_evidence_command`), predating the
+    # T-1152 evidence-family split; not referenced by name elsewhere in
+    # this module.
     add_cmd_evidence,
     add_evidence,
     base_ref_resolvable,
