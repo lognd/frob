@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.265.0] - unreleased
+
+- T-1170: arch: split remaining ~11 gate families out of src/frob/gates/__init__.py (8349 lines) -- T-1159 residue
+
 ## [0.264.0] - unreleased
 
 - T-1161: doctor/testing: detect root-venv entrypoint shebangs pointing outside this venv; collector must fail loudly, not emit 6219 COV003s

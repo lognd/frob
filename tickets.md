@@ -138,6 +138,7 @@ Epic verification close (re-applied: the first close was wiped uncommitted by a 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-0395 -->
 ```yaml
 id: T-0395
@@ -4641,7 +4642,7 @@ enforcing function.
 id: T-1170
 title: 'arch: split remaining ~11 gate families out of src/frob/gates/__init__.py
   (8349 lines) -- T-1159 residue'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -4653,6 +4654,25 @@ scope:
 - src/frob/gates/**
 - docs/modules/gates.md
 - tests/test_gates.py
+- src/frob/gates/_fix_engine.py
+- design/frob.strata
+scope_changes:
+- op: add
+  glob: src/frob/gates/_fix_engine.py
+  reason: lazy cross-module import of _doc_anchor_slugs must repoint at its new home
+    src/frob/gates/_doclink_docanchor.py after the T-1170 split
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001/SYS104 interface= sync for new gates/_doclink_docanchor.py
+    module
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
+- tests/test_gates.py::TestDocanchorGate::test_resolvable_heading_and_explicit_anchor_pass
+- tests/test_gates.py::TestFixEngineTierA::test_doc002_unique_fuzzy_candidate_rewritten_and_reverifies_clean
 threat: null
 component: null
 ```
@@ -4698,6 +4718,49 @@ land" the way this one was, not one giant ticket -- but re-filing T-1159
 itself (re-titled to name only the STILL-remaining families) is simplest
 and avoids re-deriving the acceptance criteria/discipline notes from
 scratch.
+
+## Done report
+
+Extracted the DOC001/DOC002 doclink/docanchor gate family (doclink_gate,
+docanchor_gate, and their private helpers -- doclink config/obligated-set/
+crawl/hint, the DOC001 violation builder, anchor-slug resolution, the
+DOC002 violation/mismatch-message builders, and the per-edge anchor
+checker) verbatim into src/frob/gates/_doclink_docanchor.py
+(gates/__init__.py 8401 -> 8128 lines), following the T-1072/T-1140/
+T-1159 one-family-per-land discipline: directives carried intact, a
+top-level (not lazy) import back into __init__.py matching the
+_decisions_compliance precedent, design/frob.strata interface= synced
+via frob sys sync-interface.
+
+Three cross-module private helpers needed explicit re-export rather than
+staying opaque-private: _doclink_config/_obligated_docs (consumed by a
+docblock-fence scan still in __init__.py) and _docanchor_check_edge
+(consumed by a doc-completeness check still in __init__.py) are named in
+the new module's __all__ and imported at __init__.py's top level.
+_doc_anchor_slugs (consumed by _fix_engine.py's DOC002 Tier-A auto-fix
+handler via a lazy call-time import) was repointed to import directly
+from its new home instead of routing back through frob.gates, avoiding
+an unnecessary re-export.
+
+Requeued the remaining ~10 families honestly as residue: T-1174
+(re-titled to name only what's still remaining after this land, per
+TICK011 -- budget for this wave allowed exactly one cohesive family).
+
+### Changed
+```
+ tickets.md | 67 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 65 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDocanchorGate::test_resolvable_heading_and_explicit_anchor_pass` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierA::test_doc002_unique_fuzzy_candidate_rewritten_and_reverifies_clean` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 935 warning(s), 497 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1171 -->
 ```yaml
@@ -4829,29 +4892,47 @@ Observed while landing T-1165/T-1172 in the same worktree: frob ticket start T-d
 <!-- ticket:T-1174 -->
 ```yaml
 id: T-1174
-title: 'tickets: complete the auto-commit family -- close/done-report/evidence/requeue
-  transitions commit like start/new/drop/fail'
+title: 'arch: split remaining ~10 gate families out of src/frob/gates/__init__.py
+  (8128 lines) -- T-1170 residue'
 state: queued
-kind: bug
+kind: feature
 origin: human
 created: '2026-07-29'
-priority: high
+priority: medium
 parent: null
 tier: ticket
 sprint: null
 scope:
-- src/frob/tickets/**
-- tests/test_ticket_leases.py
-acceptance:
-- text: GIVEN any ledger-writing ticket verb run on main WHEN it completes THEN its
-    transition is committed automatically (T-1130's commit_ticket_ledger_change, --no-commit
-    opt-out), so no concurrent land preflight reset can ever discard a completed verb's
-    write
-  evidence: []
+- src/frob/gates/**
+- docs/modules/gates.md
+- tests/test_gates.py
 threat: null
 component: null
 ```
-Live incident 2026-07-29: the coordinator's T-0329 epic close wrote the ledger uncommitted (close is not in T-1130's new/drop/fail set), a concurrent agent land preflight ran git reset --hard in root, and the close silently vanished -- caught only by T-1131's doctor stale-lease scan. Extend commit_ticket_ledger_change to every remaining ledger-writing verb: close, done-report, evidence add, requeue, kind/priority/scope mutations if any remain uncommitted. This closes the reset-eats-uncommitted-coordinator-work class (T-0948 incident lineage) at the verb layer.
+T-1170 extracted ONE cohesive family (DOC001/DOC002 -- `doclink_gate`/
+`docanchor_gate` plus their private helpers) into
+`src/frob/gates/_doclink_docanchor.py` (gates/__init__.py 8401 -> 8128
+lines), one-family-per-land per the T-1072/T-1140/T-1159 discipline.
+Budget did not allow the other ~10 remaining families this drive's own
+ticket named. gates/__init__.py is still 8128 lines, well above the
+large-file threshold.
+
+Still remaining, in the same one-family-per-land shape:
+- SYS00x/DOC003 (sys_gate + helpers, ~600 lines)
+- DUP00x (dup_gate + helpers, ~500 lines)
+- FUZZ00x (fuzz_gate)
+- INV00x (inv006_gate + helpers)
+- TEST00x (test policy loading + TEST00x gate family)
+- REL00x (release-bump/debt gate wiring)
+- PERF (perf gate wiring, distinct from frob.perf's own module)
+- COV00x (coverage gate family)
+- SCOPE/PREWORK (scope_gate, prework_gate)
+- the run_gates spine itself (_assemble_gate_report, _build_jobs,
+  run_gates) -- likely stays in __init__.py as the module's own
+  orchestration root, but worth an explicit decision at design time
+
+Re-filed (not re-derived from scratch) rather than letting T-1170 close
+with silent residue, per TICK011.
 
 <!-- ticket:T-1175 -->
 ```yaml

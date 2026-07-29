@@ -7627,7 +7627,7 @@ class TestSeverityOverrides:
 
 class TestDoclinkGate:
     def test_orphan_doc_is_error_and_linked_docs_pass(self, tmp_path):
-        # frob:tests src/frob/gates/__init__.py::doclink_gate kind="unit"
+        # frob:tests src/frob/gates/_doclink_docanchor.py::doclink_gate kind="unit"
         from frob.gates import doclink_gate
         from frob.graph import build_graph
 
@@ -7665,7 +7665,7 @@ class TestDoclinkGate:
         assert {v.file for v in violations} == {"docs/brand_new.md"}
 
     def test_orphan_hint_does_not_point_at_missing_docs_root(self, tmp_path):
-        # frob:tests src/frob/gates/__init__.py::doclink_gate kind="unit"
+        # frob:tests src/frob/gates/_doclink_docanchor.py::doclink_gate kind="unit"
         # T-0231: default roots=["docs/index.md", "README.md"] but neither
         # exists in this repo (sibling-repo "lithos" precedent, 256 hits) --
         # the hint must not blindly name docs/index.md as if it were there.
@@ -7691,7 +7691,7 @@ class TestDocanchorGate:
         return build_graph(root, root / ".frob" / "cache.db").danger_ok
 
     def test_resolvable_heading_and_explicit_anchor_pass(self, tmp_path):
-        # frob:tests src/frob/gates/__init__.py::docanchor_gate kind="unit"
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docanchor_gate kind="unit"
         from frob.gates import docanchor_gate
 
         root = tmp_path / "repo"
@@ -7726,7 +7726,7 @@ class TestDocanchorGate:
         assert any("nonexistent-slug" in v.message for v in violations)
 
     def test_unresolvable_anchor_reports_slug_and_nearest_match(self, tmp_path):
-        # frob:tests src/frob/gates/__init__.py::_anchor_mismatch_message kind="unit"
+        # frob:tests src/frob/gates/_doclink_docanchor.py::_anchor_mismatch_message kind="unit"
         from frob.gates import docanchor_gate
 
         root = tmp_path / "repo"
@@ -7843,7 +7843,7 @@ class TestFixEngineTierA:
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/gates/_fix_engine.py::fix_doc002_unique_slug kind="unit"
-        # frob:tests src/frob/gates/__init__.py::docanchor_gate kind="unit"
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docanchor_gate kind="unit"
         from frob.gates import apply_tier_a_fixes, docanchor_gate
         from frob.tickets import TicketQueue
 

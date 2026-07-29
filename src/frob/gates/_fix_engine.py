@@ -183,11 +183,14 @@ def fix_doc002_unique_slug(root: Path, snapshot: GraphSnapshot) -> list[FixAppli
     rewrite is never available there), per this ticket's own acceptance
     criterion.
 
-    Calls back through `frob.gates._doc_anchor_slugs` (lazy, call-time,
-    same pattern the split gate modules already use) rather than
-    importing at module load time, since `frob.gates.__init__` imports
-    this module -- a top-level import back would cycle."""
-    from frob.gates import _doc_anchor_slugs
+    Calls back through `frob.gates._doclink_docanchor._doc_anchor_slugs`
+    (lazy, call-time, same pattern the split gate modules already use)
+    rather than importing at module load time, since `frob.gates.__init__`
+    imports this module -- a top-level import back would cycle. T-1170
+    moved `_doc_anchor_slugs` out of `gates/__init__.py` into
+    `gates/_doclink_docanchor.py`; this import follows it to its new
+    home rather than routing back through the parent package."""
+    from frob.gates._doclink_docanchor import _doc_anchor_slugs
 
     applied: list[FixApplied] = []
     slug_cache: dict[str, set[str] | None] = {}

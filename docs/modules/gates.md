@@ -1582,8 +1582,8 @@ EXHAUST001/002's own carve-out).
 <!-- frob:describes src/frob/gates/__init__.py::dup_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::release_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::fuzz_gate -->
-<!-- frob:describes src/frob/gates/__init__.py::doclink_gate -->
-<!-- frob:describes src/frob/gates/__init__.py::docanchor_gate -->
+<!-- frob:describes src/frob/gates/_doclink_docanchor.py::doclink_gate -->
+<!-- frob:describes src/frob/gates/_doclink_docanchor.py::docanchor_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::run_gates -->
 <!-- frob:describes src/frob/gates/_baseline.py::stamp_baseline -->
 <!-- frob:describes src/frob/gates/_baseline.py::load_baseline -->
@@ -2848,9 +2848,13 @@ guess, never a waiver insertion):
   (`<file>#<slug>`) whose slug does not resolve (DOC002) but
   fuzzy-matches (`difflib.get_close_matches`, cutoff 0.6 -- difflib's own
   conventional "plausible typo/rename" threshold) EXACTLY ONE real
-  heading/`<a id>` slug in `<file>` is rewritten to that slug. Zero or
-  MORE THAN ONE candidate above cutoff is left entirely alone -- an
-  ambiguous or absent match has no single correct rewrite to make
+  heading/`<a id>` slug in `<file>` is rewritten to that slug. T-1170:
+  its lazy call-time slug lookup now imports `_doc_anchor_slugs` from
+  `frob.gates._doclink_docanchor` (its new home after the DOC001/DOC002
+  gate family split out of `gates/__init__.py`) rather than from the
+  parent package directly -- same lazy-import shape, no behavior change.
+  Zero or MORE THAN ONE candidate above cutoff is left entirely alone --
+  an ambiguous or absent match has no single correct rewrite to make
   automatically, so it stays a normal DOC002 finding (the assisted
   fix-it path, not this ticket's own scope).
 - **`fix_tick002_renumber`**: TICK002 (a `T-draft-*` id that survived

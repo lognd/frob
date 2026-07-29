@@ -771,10 +771,14 @@ node gates : trusted {
     attr interface=_DeclaredSurface;
     attr interface=_FieldSignature;
     attr interface=_UNWAIVABLE_RULES;
+    attr interface=_doc_anchor_slugs;
+    attr interface=_docanchor_check_edge;
+    attr interface=_doclink_config;
     attr interface=_is_data_structure;
     attr interface=_is_email_shaped;
     attr interface=_load_declared_surface;
     attr interface=_match_waiver;
+    attr interface=_obligated_docs;
     attr interface=_redact;
     attr interface=_scan_python_ddl;
     attr interface=_scan_python_email_values;

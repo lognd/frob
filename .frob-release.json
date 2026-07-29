@@ -488,8 +488,6 @@
     "src/frob/gates/__init__.py::INV006_SRC_SUFFIXES": "2058015f176b8b4044379ba949fa87b5564ff31e98e9262b8bfbbbb42d3706fa",
     "src/frob/gates/__init__.py::affect_drift_gate": "3be02584d6478757d23a1dcf709cfa881cb28e13627c7c9a4ffb91bff32c3ab1",
     "src/frob/gates/__init__.py::coverage_gate": "fbb174c7bb93a7836cf6d6e3b3881f8cabe9ee2cb07604bd57bc204683474300",
-    "src/frob/gates/__init__.py::docanchor_gate": "c42559cd1fae6c91936f804bc558ed2d3f5fd49bbd3955b96675bb566fdaef20",
-    "src/frob/gates/__init__.py::doclink_gate": "bebbc03bdfb637a3724784dfda8eb4fbb98e52d9b6709f7a4b8616a2cdf773f2",
     "src/frob/gates/__init__.py::drift_gate": "5c212d52c12a13920ee34ad607ff4d2367a47d7d7f940927aae71563b733a8e4",
     "src/frob/gates/__init__.py::dup_gate": "348767371865b24a22fb12108de3ce79757bb30707c3302772a503838fc78d65",
     "src/frob/gates/__init__.py::evidence_covers_scope": "0b51203d0ff4e37830ddea56708947cf909cde9d9d8b64cba872defa996266f0",
@@ -545,6 +543,8 @@
     "src/frob/gates/_docblocks.py::doc005_gate": "537d82106e7cdbe1f9553e865aa62cac07a136df0c01bd2edadc7082c1960be1",
     "src/frob/gates/_docblocks.py::generate_cli_command_table": "19308e55747c3896b245ccdd587caa2291dfa027a9519265a6c5c0da4834f454",
     "src/frob/gates/_docblocks.py::sync_cli_command_table": "9c460dc928444f19b6020472d81bd6300f82b288d35a4e2acf9774e99a325a65",
+    "src/frob/gates/_doclink_docanchor.py::docanchor_gate": "c42559cd1fae6c91936f804bc558ed2d3f5fd49bbd3955b96675bb566fdaef20",
+    "src/frob/gates/_doclink_docanchor.py::doclink_gate": "bebbc03bdfb637a3724784dfda8eb4fbb98e52d9b6709f7a4b8616a2cdf773f2",
     "src/frob/gates/_docptr.py::doc006_gate": "34982d65c649e8682213661fe1cdc674f96061865b2a33e0654f21b981cd89c4",
     "src/frob/gates/_exclude_hazard.py::exclude_hazard_gate": "6e3505c56c11b17ba244b1e111c1bba69666b59e6c5a678e73e648632c0c6bc0",
     "src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate": "6c7ec22130f8c90cb92b90d3fce38a0199edfb4b091febd3589ca43fcd1008d1",
@@ -1869,5 +1869,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.264.0"
+  "version": "0.265.0"
 }
