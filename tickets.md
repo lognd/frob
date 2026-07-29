@@ -5260,7 +5260,7 @@ machinery or file a removal ticket instead of writing a fake test for it
 ```yaml
 id: T-1276
 title: 'TEST005 burn-down: src/frob/app (115 findings, 63 at 0.0%)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -5339,7 +5339,6 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 (no live caller, no CLI/API entry point), route it to the DEAD gate / dup
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
-
 <!-- ticket:T-1277 -->
 ```yaml
 id: T-1277
