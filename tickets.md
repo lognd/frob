@@ -2096,3 +2096,28 @@ threat: null
 component: null
 ```
 Rows: CMPL-GDPR-CHAPTERS (process, already out_of_scope), CMPL-GDPR-ARTICLES, CMPL-CCPA-CORE-RIGHTS (process, already out_of_scope), CMPL-CPRA-ADDED-RIGHTS (process, already out_of_scope). GDPR already has 3 real RegulationEntry units (ERASURE/RETENTION/BASIS) -- confirm CMPL-GDPR-ARTICLES's handled_by:COMPLIANCE005 is not just riding the disposition-string shape unrelated to those 3. Separately: COMPLIANCE_OUT_OF_SCOPE's CCPA entry justifies out_of_scope via 'PII010 catches it regardless of jurisdiction' -- once T-1242 lands exposure:public-web + a notice/consent RegulationEntry, revisit whether CCPA-CORE-RIGHTS's right-to-know/right-to-delete rights are now partially covered by that new mitigation and whether the out_of_scope reason still holds, or whether it should be split (right-to-know/notice now enforced, right-to-delete still process/out_of_scope).
+
+<!-- ticket:T-1247 -->
+```yaml
+id: T-1247
+title: 'compliance triage: NIST 800-53 + NIST-CSF + NIST 800-63 + SSDF rows'
+state: queued
+kind: security
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: T-1241
+tier: ticket
+sprint: null
+scope:
+- docs/design/registry/compliance.yaml
+- src/frob/strata/_compliance.py
+acceptance:
+- text: GIVEN this ticket closes WHEN each of the 3 rows is inspected THEN each carries
+    a follow-on ticket reference (for a/b/c) or an explicit out_of_scope reason recorded
+    in this ticket's body -- never left as a bare handled_by:COMPLIANCE005
+  evidence: []
+threat: null
+component: null
+```
+Rows: CMPL-NIST80053-FAMILIES, CMPL-NISTCSF-FUNCTIONS (process, already out_of_scope), CMPL-NIST80263-VOLUMES, CMPL-SSDF-PRACTICE-GROUPS. All 3 non-out_of_scope rows currently sit at handled_by:COMPLIANCE005 with no corresponding RegulationEntry in COMPLIANCE_CATALOG at all -- classify each: (a) enforceable via existing/extended strata vocabulary + new RegulationEntry, (b) needs new model vocabulary, (c) attestation-only, (d) out of scope with documented reason.
