@@ -6719,8 +6719,13 @@ def _run_process_gate(
     if level_name:
         from frob.logging.quiet import _stdout_stream_handlers
 
+        # T-1185: `logging.getLevelNamesMapping()` (dict lookup) replaces
+        # `getattr(logging, level_name)` (OPAQUE001 getattr-dynamic-name) --
+        # `level_name` is always one of `logging.getLevelNamesMapping()`'s own
+        # keys, written by `_stamp_worker_stdout_log_level_env` via
+        # `logging.getLevelName(...)`'s reverse, so the lookup can never miss.
         for handler in _stdout_stream_handlers():
-            handler.setLevel(getattr(logging, level_name))
+            handler.setLevel(logging.getLevelNamesMapping()[level_name])
     cpu_start = time.process_time()
     result = func(*args)
     return result, time.process_time() - cpu_start

@@ -305,6 +305,17 @@ PERF001 = "error"
 PERF002 = "error"
 PERF003 = "error"
 PERF004 = "error"
+# T-1185: OPAQUE001 (runtime-resolved capability indirection --
+# getattr/setattr/importlib.import_module/sys.modules-replacement with a
+# non-literal, statically-unresolvable name) -- T-1038 fixed-or-waived 90
+# of the original 93 sites; the last 3 (gates/__init__.py's log-level
+# getattr, gates/_docblocks.py's DOC004 parser-plugin import/getattr,
+# both out of T-1038's own scope that wave) are disposed in this same
+# land (one real fix, two reasoned waivers). 0 unwaived findings remain
+# repo-wide, so this promotion does not immediately red the build --
+# same promote-at-zero posture as SEC110 (T-0973)/PII010/PII012
+# (T-0971)/ARCH001 (T-0976)/PERF001-004 (T-0972) above.
+OPAQUE001 = "error"
 # frob-zone-end gates.severity T-1002
 
 [testing]

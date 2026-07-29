@@ -141,7 +141,7 @@
       "ref": "src/frob/gates/_fmt_directives.py::canonicalize_text"
     },
     {
-      "digest": "6f945b999f6254c961848b0eab43690e820b025b15a991a6c02cc9c2d7f128f9",
+      "digest": "d1ad0661c33dc758a6d7496819675d03be65d0866e5a3a43e358c07716963fe6",
       "facet": "body",
       "ref": "src/frob/gates/_opaque.py::opaque_gate"
     },

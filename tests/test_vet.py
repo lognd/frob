@@ -5545,7 +5545,9 @@ class TestOpaqueIndirectionGate:
         violations = opaque_gate(tmp_path)
         assert len(violations) == 1
         assert violations[0].rule == "OPAQUE001"
-        assert violations[0].severity == Severity.WARN
+        # T-1185: promoted WARN -> ERROR now that every named site is
+        # fixed-or-waived repo-wide (promote-at-zero posture).
+        assert violations[0].severity == Severity.ERROR
         assert violations[0].file == "pkg.py"
 
     def test_opaque_gate_no_findings_on_empty_tracked_set(self, tmp_path: Path) -> None:

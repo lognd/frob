@@ -110,7 +110,12 @@ def opaque_gate(root: Path) -> tuple[Violation, ...]:
             violations.append(
                 Violation(
                     rule="OPAQUE001",
-                    severity=Severity.WARN,
+                    # T-1185: promoted WARN -> ERROR now that every named
+                    # gates/** site (T-1038's original 90/93 plus this
+                    # ticket's last 3) is fixed-or-waived repo-wide, same
+                    # promote-at-zero posture as SEC110 (T-0973)/PII010/
+                    # PII012 (T-0971).
+                    severity=Severity.ERROR,
                     file=rel_path,
                     line=finding.line,
                     message=(

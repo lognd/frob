@@ -481,7 +481,7 @@ removed to confirm it is the specific mechanism suppressing the finding.
 id: T-1185
 title: 'arch: fix-or-waive the last 3 gates/** OPAQUE001 sites and promote to ERROR
   tier'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-29'
@@ -494,10 +494,83 @@ scope:
 - src/frob/gates/_docblocks.py
 - src/frob/gates/_opaque.py
 - frob.toml
+- tests/test_vet.py
+- frob.lock
+scope_changes:
+- op: add
+  glob: tests/test_vet.py
+  reason: T-1185's OPAQUE001 WARN->ERROR promotion in _opaque.py directly breaks tests/test_vet.py::TestOpaqueIndirectionGate.test_opaque_gate_emits_warn_severity_violation's
+    severity assertion; fixing it is a direct mechanical consequence of this ticket's
+    own in-scope change
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: frob.lock
+  reason: frob ack (DRIFT001 remedy) after opaque_gate's body changed (severity WARN->ERROR)
+    writes new digests here; same class as frob.toml already in scope
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_emits_warn_severity_violation
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_no_findings_on_empty_tracked_set
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_waived_finding_is_suppressed_and_reason_recorded
 threat: null
 component: null
 ```
 T-1038 fixed or waived 90 of the T-0665 first-turn-on 93-site OPAQUE001 set, but src/frob/gates/__init__.py:7536 (getattr) and src/frob/gates/_docblocks.py:396-397 (importlib.import_module/getattr) were out of T-1038's declared scope (owned by a concurrent sibling ticket that wave). Dispose those 3 the same way (real fix or reasoned frob:waive), then promote OPAQUE001 from Severity.WARN to Severity.ERROR in src/frob/gates/_opaque.py (opaque_gate's Violation construction) and add OPAQUE001 = "error" to frob.toml's [gates.severity] table, in the SAME land that zeroes the repo-wide unwaived count -- the T-0973/T-0976 promote-at-zero precedent T-1038's own Done report follows.
+
+## Done report
+
+Disposed T-1038's last 3 out-of-scope OPAQUE001 sites:
+- src/frob/gates/__init__.py:6723 (getattr(logging, level_name)): real fix
+  -- replaced with logging.getLevelNamesMapping()[level_name], a literal
+  dict lookup the static resolver can see through; level_name is always
+  one of that mapping's own keys (written by
+  _stamp_worker_stdout_log_level_env via logging.getLevelName's reverse).
+- src/frob/gates/_docblocks.py:391-392 (importlib.import_module +
+  getattr for the DOC004 console-parser plugin loader): reasoned
+  frob:waive OPAQUE001 on both lines -- dotted is a repo-owner-authored
+  frob.toml [[doc004.source]].parser config value, never untrusted input;
+  resolving it statically would defeat the plugin mechanism itself.
+
+Verified 0 unwaived OPAQUE001 findings repo-wide (`frob check --only
+opaque`, 0 errors/0 warnings/107 waived), then promoted OPAQUE001 from
+Severity.WARN to Severity.ERROR in _opaque.py's Violation construction
+AND added OPAQUE001 = "error" to frob.toml's [gates.severity] table in
+this same land, matching the SEC110 (T-0973)/PII010+PII012
+(T-0971)/ARCH001 (T-0976)/PERF001-004 (T-0972) promote-at-zero precedent.
+
+Fallout from the promotion: tests/test_vet.py::TestOpaqueIndirectionGate
+.test_opaque_gate_emits_warn_severity_violation asserted Severity.WARN
+directly -- updated the assertion to Severity.ERROR (kept the test's
+original name since T-0665/T-1038 cite that exact evidence node id by
+name; renaming it broke COV003/DRIFT002 against those closed tickets'
+recorded evidence). Added tests/test_vet.py and frob.lock to T-1185's
+scope (both direct, unavoidable consequences of the in-scope
+_opaque.py change: the test assertion and the frob ack digest refresh
+for opaque_gate's changed body).
+
+### Changed
+```
+ frob.lock                    |  2 +-
+ frob.toml                    | 11 +++++++++++
+ src/frob/gates/__init__.py   |  7 ++++++-
+ src/frob/gates/_docblocks.py |  9 +++++++++
+ src/frob/gates/_opaque.py    |  7 ++++++-
+ tests/test_vet.py            |  4 +++-
+ tickets.md                   | 23 +++++++++++++++++++++--
+ 7 files changed, 57 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_emits_warn_severity_violation` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_no_findings_on_empty_tracked_set` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_waived_finding_is_suppressed_and_reason_recorded` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 831 warning(s), 680 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1186 -->
 ```yaml

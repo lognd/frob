@@ -388,7 +388,16 @@ def _load_parser_factory(dotted: str):
         )
         return None
     try:
+        # frob:waive OPAQUE001 reason="T-1185: dotted is a repo-owner-authored \
+        # frob.toml [[doc004.source]].parser config value (docs/modules/gates.md's \
+        # DOC004 console-parser plugin surface), never externally/untrusted-input \
+        # controlled -- the whole point of this dotted-path indirection is loading a \
+        # repo-chosen parser callable by name; resolving it statically would defeat \
+        # the plugin mechanism entirely, not just move the opacity"
         module = importlib.import_module(module_name)
+        # frob:waive OPAQUE001 reason="T-1185: attr is the same repo-owner-authored \
+        # module:callable config value as module_name above -- same plugin-loading \
+        # justification, not a second independent opacity"
         return getattr(module, attr)
     except (ImportError, AttributeError) as exc:
         _log.warning("doc004: could not resolve parser %r: %s", dotted, exc)
