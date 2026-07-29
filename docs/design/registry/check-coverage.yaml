@@ -14,10 +14,10 @@
 #   concern_family_entries -- the docs/audits/ (2026-07-20, 7-auditor
 #     pessimistic pass) concern families: 5 cross-cutting themes plus
 #     8 per-subsystem verdicts (docs/audits/README.md). These are gaps
-#     frob does NOT yet enforce -- each is deferred:T-0397, the real,
-#     open (queued) audit-remediation epic tracking them, not a
-#     fabricated ticket. As T-0397's children close a concern down to
-#     a real gate rule, re-disposition that entry to handled_by:<rule>.
+#     landed mechanism now closes are handled_by:<rule>; genuinely
+#     open rows are deferred:T-1193 (the live successor -- never a
+#     fabricated ticket). As work closes a concern down to a real gate
+#     rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
 gate_rule_total: 267
 gate_rule_entries:
@@ -1095,65 +1095,65 @@ concern_family_entries:
   - id: "CHK-THEME-EXISTENCE-NOT-PROOF"
     name: "Existence != proof: evidence/doc edges/frob:tests/registry entries are checked for EXISTENCE, not truth (passed? covers? matches? enforced?)"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-0397"
+    disposition: "handled_by:TEST016"
     cross_refs: []
   - id: "CHK-THEME-QUALITY-NONBLOCKING"
     name: "Green makes no claim about code quality: the entire quality/security surface (PERF, PII010, SEC110, ARCH001, DUP, lower secrets) is WARN-only, exits 0"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-0397"
+    disposition: "deferred:T-0969"
     cross_refs: []
   - id: "CHK-THEME-PYTHON-ONLY"
     name: "Python-only enforcement: COV/DOC/DRIFT/INV and the binding-aware capability resolver silently no-op for TS/Rust/C/C++"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-0397"
+    disposition: "deferred:T-1193"
     cross_refs: []
   - id: "CHK-THEME-FAIL-OPEN"
     name: "Fail-open on the unknown: unparseable file, source-unavailable dependency, unknown-language change, missing tool, second lockfile, non-UTF-8 doc all silently skip/pass rather than fail-closed"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-0397"
+    disposition: "deferred:T-1193"
     cross_refs: []
   - id: "CHK-THEME-GITIGNORED-TRUST"
     name: "Gitignored-local trust: coverage/stamp/baseline/prework signals live in .frob/ (gitignored), so CI cannot verify the one behavioral gate that exists"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-0397"
+    disposition: "deferred:T-1193"
     cross_refs: []
   - id: "CHK-SUBSYS-TICKETS-TESTING"
     name: "tickets + testing: evidence means a test EXISTS, never passed/covers; a red or unrelated test closes any ticket; land re-runs nothing"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-0397"
+    disposition: "handled_by:TEST016"
     cross_refs: []
   - id: "CHK-SUBSYS-STRATA"
     name: "strata (proof engine): boundaries never bound to code; proofs pass vacuously when the dangerous flow is un-modeled; eval globally excused"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-0397"
+    disposition: "handled_by:SYS106"
     cross_refs: []
   - id: "CHK-SUBSYS-VET"
     name: "vet: approves code it never read (source-unavailable = empty caps); only the first lockfile scanned; CVE fingerprints + non-Python needles rename/whitespace-evadable"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-0397"
+    disposition: "handled_by:OPAQUE001"
     cross_refs: []
   - id: "CHK-SUBSYS-GATES-ACCOUNTING"
     name: "gates: accounting -- verifies procedural existence, not code quality; DRIFT001 sig facet blind to body rewrites; TS/C/C++ frob:tests need no execution"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-0397"
+    disposition: "deferred:T-1193"
     cross_refs: []
   - id: "CHK-SUBSYS-LANG-CHECK-DOCS"
     name: "lang + check + docs: doc/coverage/drift gates run ONLY in the Python pipeline; parse/IO failure silently erases a file's whole obligation set; COV001 is WARN-only"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-0397"
+    disposition: "deferred:T-1193"
     cross_refs: []
   - id: "CHK-SUBSYS-GRAPH-EDGES"
     name: "graph + edges: load_graph only re-hashes already-cached files (incomplete snapshot on a new file); a non-UTF-8 .md hard-crashes frob check"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-0397"
+    disposition: "deferred:T-1193"
     cross_refs: []
   - id: "CHK-SUBSYS-PERF"
     name: "performance + caching: ~168s CPU is redundant parsing (frob.lang._parse uncached, tree re-walked ~7x/run, 17 gates GIL-serialized)"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-0397"
+    disposition: "handled_by:PERF009"
     cross_refs: []
   - id: "CHK-SUBSYS-GATES-QUALITY"
     name: "gates: quality/security -- the entire quality surface is non-blocking (WARN); DUP fails open; frob:secret-fake suppresses real secrets with no accountability"
     source_doc: "docs/audits/README.md"
-    disposition: "deferred:T-0397"
+    disposition: "handled_by:SEC004"
     cross_refs: []

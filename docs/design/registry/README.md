@@ -65,11 +65,13 @@ entry families:
   it is the reflexive base case: "is this concern enforced" for an
   already-enforced concern is "yes, by itself").
 - `concern_family_entries` -- the `docs/audits/` (2026-07-20, 7-auditor
-  pessimistic pass) concern families frob does NOT yet enforce: 5
-  cross-cutting themes plus 8 per-subsystem verdicts, each
-  `deferred:T-0397` (the real, open audit-remediation epic tracking them).
-  As T-0397's children close a concern down to a real gate rule, that
-  entry's disposition moves from `deferred:T-0397` to
+  pessimistic pass) concern families: 5 cross-cutting themes plus 8
+  per-subsystem verdicts. Rows a landed mechanism closes carry
+  `handled_by:<rule id>`; rows with genuine residue carry
+  `deferred:<live successor ticket>` (currently T-1193; the original
+  audit epic T-0397 closed 2026-07-29 once its children shipped the
+  North-Star mechanisms). As work closes a concern down to a real gate
+  rule, that entry's disposition moves from `deferred:...` to
   `handled_by:<new rule id>` -- the registry's own drift-lock (REG001-007)
   then requires the new rule id to actually exist and fire, closing the
   loop the ticket's charter names: frob checking that things EXIST but not
