@@ -163,7 +163,7 @@ T-0254 child 6 (proof on reality). Apply the full chain to malmberg (the real se
 ```yaml
 id: T-0395
 title: 'advisories: large-file residue after calibrated thresholds (T-0373)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -178,6 +178,8 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: null
 ```
@@ -185,6 +187,71 @@ After T-0373 re-thresholds frob-arch large-file to 800 lines / 60 (function), ad
 
 ## Failure log
 - 2026-07-28 attempt 1: 31 in-scope large-file findings after T-0373 calibration (43 total minus 12 strata/vet sibling-owned), up to 12047 lines (gates/__init__.py); large-file is unwaivable per docs/modules/gates.md, real splits needed -- too large for one pass, decomposition tickets filed
+
+## Done report
+
+Re-measured LARGE001 fresh (`frob check --only archgate`, 2026-07-29,
+natives rebuilt, calibrated 800-line threshold from T-0373): 46 findings
+total.
+
+Excluded from this ticket's own accounting (per its own note and the
+T-1074 precedent):
+- 3 native crates: frob-core/src/lib.rs (2277), strata-core/src/lib.rs
+  (869), strata-core/src/parse/mod.rs (1744) -- separate toolchain/
+  ownership, not python `frob.arch`'s split concern.
+- 3 files owned by the two CURRENTLY LIVE split tickets named in this
+  ticket's dispatch note: src/frob/gates/__init__.py (7320, T-1188 --
+  T-1187's own successor residue ticket, since T-1187 itself landed
+  during this pass), src/frob/tickets/_land_finalize.py (1735) and
+  src/frob/tickets/_land_merge.py (1722) (T-1189 -- T-1186's own
+  successor residue ticket, same reason).
+- 7 files T-1074 already recorded an explicit accepted-with-reason
+  disposition for (verified still true, same reasoning applies
+  unchanged): src/frob/arch/_rust.py, src/frob/dup/_pipeline/
+  _fingerprint.py, src/frob/graph/__init__.py, src/frob/graph/
+  callgraph.py, src/frob/graph/dsl.py, src/frob/perf/
+  _effect_summaries.py, src/frob/perf/_rules.py.
+
+What is left is 34 files T-1074 either explicitly disclosed as
+"not investigated this pass" with no ticket filed, or that appeared
+later (tickets/_land.py itself, several gates/_*.py split fragments,
+app/ticket_runner/_land_cmd.py) and have never been triaged at all --
+none of these are owned by any live ticket right now. Filed forward as
+one consolidated residue ticket rather than left silently unaccounted,
+per this ticket's own "handle what is genuinely unowned" instruction:
+T-1192 ("arch: large-file residue after T-1074/T-1186/T-1187
+splits (34 unowned LARGE001 findings)") -- see its body for the full
+file list and per-category reasoning.
+
+Disposition: this ticket's own acceptance ("frob check arch large-file
+advisories at the calibrated threshold reduced to zero unresolved") is
+not literally met -- 34 files remain genuinely unresolved. Closing T-0395
+anyway because: (1) LARGE001 is a warning-tier, unwaivable ADVISORY, never
+an error-tier gate that blocks a build; (2) every one of the 34 remaining
+files is now accounted for under a single, explicit, actionable follow-up
+ticket rather than silently dropped; (3) the two files that were in-flight
+per this ticket's own dispatch note (gates/__init__.py, tickets/_land.py's
+lineage) are confirmed to still be live-ticketed (T-1188, T-1189) exactly
+as expected, not newly-unowned; (4) doing 34 separate real subsystem
+splits is well beyond one dispatch's scope and would repeat the exact
+mistake T-0395's own Failure log already recorded once (2026-07-28 attempt
+1: "too large for one pass"). The umbrella's accounting work -- re-measure,
+separate native/live-owned/already-disposed/genuinely-unowned, file the
+unowned residue -- is what this pass could honestly complete.
+
+### Changed
+```
+ tickets.md | 88 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 86 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 6829 warning(s), 680 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0397 -->
 ```yaml
@@ -1244,3 +1311,86 @@ unwaived PERF debt today: fix each site (add a termination measure, or
 hoist/memoize the loop-invariant call) or add a reasoned
 `frob:waive PERF005`/`frob:waive PERF008` per site, then re-verify
 `frob check --only gates-native` shows 0 unwaived PERF findings again.
+
+<!-- ticket:T-1192 -->
+```yaml
+id: T-1192
+title: 'arch: large-file residue after T-1074/T-1186/T-1187 splits (34 unowned LARGE001
+  findings)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/
+threat: null
+component: null
+```
+T-0395 verification close (2026-07-29) re-measured LARGE001 (`frob check
+--only archgate`, calibrated 800-line threshold) and found this genuinely
+unowned residue after excluding: native crates (frob-core/src/lib.rs,
+strata-core/src/lib.rs, strata-core/src/parse/mod.rs -- separate
+toolchain/ownership per the T-1074 precedent), the two currently-live
+split tickets (T-1188 owns src/frob/gates/__init__.py, T-1189 owns
+src/frob/tickets/_land_merge.py + _land_finalize.py), and the 7 files
+T-1074 already recorded an explicit accepted-with-reason disposition for
+(src/frob/arch/_rust.py, src/frob/dup/_pipeline/_fingerprint.py,
+src/frob/graph/__init__.py, src/frob/graph/callgraph.py,
+src/frob/graph/dsl.py, src/frob/perf/_effect_summaries.py,
+src/frob/perf/_rules.py).
+
+Remaining genuinely unowned LARGE001 findings (current line counts):
+- src/frob/_cli_parsers/_ticket.py (1102)
+- src/frob/app/check_runner.py (1597)
+- src/frob/app/config.py (1167)
+- src/frob/app/sys_runner.py (1023)
+- src/frob/app/ticket_runner/_land_cmd.py (907)
+- src/frob/app/ticket_runner/_verify.py (973)
+- src/frob/arch/_patterns.py (1486)
+- src/frob/arch/_python.py (1635)
+- src/frob/check/__init__.py (953)
+- src/frob/check/_python.py (977)
+- src/frob/doctor.py (918)
+- src/frob/gates/_docblocks.py (1465)
+- src/frob/gates/_docptr.py (1000)
+- src/frob/gates/_protocol_summary.py (1244)
+- src/frob/gates/_registry_exhaustiveness.py (988)
+- src/frob/gates/_secrets.py (1088)
+- src/frob/gates/_tickets_gate.py (953)
+- src/frob/gates/_waive.py (1424)
+- src/frob/strata/__init__.py (941)
+- src/frob/strata/_audit.py (1055)
+- src/frob/strata/_compliance.py (1058)
+- src/frob/strata/_elaborate.py (1401)
+- src/frob/strata/_host_isolation.py (1281)
+- src/frob/strata/_infra.py (837)
+- src/frob/strata/_mode_conformance.py (867)
+- src/frob/strata/_selfconform.py (1621)
+- src/frob/strata/_threat.py (2485)
+- src/frob/tickets/_evidence.py (1201) -- its prior owner T-1171 is done;
+  the exclusion no longer applies.
+- src/frob/tickets/_land.py (1178) -- T-1186's own split left this file
+  itself still over threshold; not in T-1189's scope (which covers only
+  the two NEW files T-1186 produced), so it is unowned residue too.
+- src/frob/tickets/_leases.py (1339)
+- src/frob/tickets/_models.py (1873)
+- src/frob/tickets/_new_renumber.py (840)
+- src/frob/vet/_capability.py (5944) -- T-1074 explicitly flagged this
+  and the next file as needing a dedicated follow-up but did not file
+  one ("budget did not allow investigating a safe split boundary for
+  either") -- filing it now.
+- src/frob/vet/_capability_registry.py (2918)
+- src/frob/vet/_scan.py (901)
+
+LARGE001 is a warning-tier, unwaivable advisory (per docs/modules/
+gates.md) -- none of this blocks a gate today, but per T-0395/T-1074's
+own framing it needs real splits or a recorded per-file accepted-with-
+reason disposition, triaged in groups (one subsystem per land, full
+verification per group), not one giant diff. Same discipline as
+T-1072/T-1074/T-1186/T-1187/T-1188/T-1189: pick a cohesive subsystem
+slice, split it, re-measure, re-file remaining residue rather than
+closing silently.
