@@ -1842,3 +1842,30 @@ threat: null
 component: null
 ```
 User directive 2026-07-29: frob is intimidating; group everything together. First concrete slice: the T-0580-deprecated navigation commands (map/outline/xref/docs-search) regroup into frob explore instead of being deleted -- this SUPERSEDES the 2026-10-01 sunset (T-0802 dropped with this epic as the reason). Design phase first for the full taxonomy (candidate buckets to evaluate, not prescribe: explore/navigation, quality/check+test+fix, tickets, design/sys+strata, supply-chain/vet, ops/release+registry+natives+doctor+clean, serve/perf tooling); un-deprecation of the explore members includes removing the docs 'Kept commands'/deprecation drift the 2026-07-29 staleness sweep catalogued. Children to file at design time: taxonomy design doc, explore group implementation, alias/transition machinery, help-surface rework, docs/index updates.
+
+<!-- ticket:T-1239 -->
+```yaml
+id: T-1239
+title: 'graph cache.db lock contention: schema application fails under parallel load
+  -- no such table: files'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-29'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/graph/cache.py
+- src/frob/process/**
+- tests/**
+acceptance:
+- text: 'GIVEN concurrent frob processes racing on a cold cache.db THEN schema application
+    retries/serializes instead of surfacing database is locked followed by no such
+    table: files unhandled-exception dispatch failures'
+  evidence: []
+threat: null
+component: null
+```
+Real CI/coverage-run failure reproduced 2026-07-29 in tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_fails_loud_with_sys004_when_strata_present: cache.db failed schema application: database is locked then ERROR main unhandled exception: no such table: files. Sibling of T-1224 (derived_state_write_lock contention) but distinct: sqlite schema-init race, fail-open into a broken half-initialized db.
