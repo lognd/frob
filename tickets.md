@@ -1071,3 +1071,31 @@ threat: null
 component: null
 ```
 Root cause: vet/_capability.py:212/:286 recompute comment/docstring byte spans per file per gate via Python recursion (12 pct of sys + 92 pct of opaque), and :244 _fully_in_any_span is a linear any() over an unsorted span tuple per candidate. Fix here: sort spans once, bisect for containment, and cache spans per (path, content-hash) so sys and opaque share one computation. The extraction-mechanism half of this candidate (Query captures replacing the Python recursion) is EPIC B's job, not this ticket's -- see that child to avoid two owners for the same code.
+
+<!-- ticket:T-1211 -->
+```yaml
+id: T-1211
+title: 'perf: secrets gate 33 regexes x finditer per line -- one combined-alternation
+  scan per file'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: T-1204
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_secrets.py
+acceptance:
+- text: 'GIVEN _scan_line runs 33 compiled patterns x finditer per line (544k lines,
+    17.97M finditer calls, 94 pct of the gate) plus _fake_marker_reason regex against
+    every line WHEN the whole file text is scanned once with one combined alternation
+    regex (named groups per provider), match offsets map to lines via a bisect line-offset
+    index, and per-pattern logic plus _fake_marker_reason only run on the rare hits
+    THEN secrets drops from 4.5s to well under 1s native (report candidate #6)'
+  evidence: []
+threat: null
+component: null
+```
+Root cause: gates/_secrets.py:932 _scan_line loops 33 compiled patterns via finditer per line; _fake_marker_reason (:676) also runs a regex against every line and its predecessor regardless of hits. Fix: one combined alternation regex over the whole file text, offset->line via bisect, defer per-pattern/_fake_marker_reason logic to actual hits. Companion lint rule on the sibling PERF01x-detectors ticket: 're.finditer with a pattern-list loop inside a per-line loop'.
