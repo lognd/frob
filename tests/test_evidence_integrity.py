@@ -34,7 +34,8 @@ from frob.tickets import (
     run_cmd_evidence,
     transition,
 )
-from frob.tickets._land import _newer, splice_ledger
+from frob.tickets._land import splice_ledger
+from frob.tickets._land_merge import _newer
 from frob.tickets._models import (
     TicketSpec,
     has_substantive_done_report,
@@ -802,7 +803,7 @@ class TestD12DeletionFilterBroadScope:
         # frob:tests \
         # tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope.test_deleti\
         # on_owned_rejects_bare_top_level_scope
-        from frob.tickets._land import _deletion_owned
+        from frob.tickets._land_merge import _deletion_owned
 
         assert _deletion_owned("src/frob/other/mod.py", ("src/",)) is False
 
@@ -810,7 +811,7 @@ class TestD12DeletionFilterBroadScope:
         # frob:tests \
         # tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope.test_deleti\
         # on_owned_accepts_narrow_scope
-        from frob.tickets._land import _deletion_owned
+        from frob.tickets._land_merge import _deletion_owned
 
         assert (
             _deletion_owned("src/frob/tickets/foo.py", ("src/frob/tickets/",)) is True
@@ -820,7 +821,7 @@ class TestD12DeletionFilterBroadScope:
         # frob:tests \
         # tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope.test_deleti\
         # on_owned_rejects_whole_tree_scope
-        from frob.tickets._land import _deletion_owned
+        from frob.tickets._land_merge import _deletion_owned
 
         assert _deletion_owned("anything/at/all.py", (".",)) is False
 

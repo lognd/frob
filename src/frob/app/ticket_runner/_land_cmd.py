@@ -864,7 +864,7 @@ def _merge_driver(root: Path, cfg: AppConfig) -> None:
     conflict for a human to resolve by hand, exactly as if no driver were
     registered."""
     from frob.tickets import splice_ledger
-    from frob.tickets._land import _archived_ids
+    from frob.tickets._land_merge import _archived_ids
 
     _require_merge_driver_args(cfg)
     assert cfg.ticket_merge_ours is not None  # narrows for the type checker

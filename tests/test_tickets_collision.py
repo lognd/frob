@@ -31,7 +31,7 @@ from frob.tickets import (
     new_ticket,
     renumber_one,
 )
-from frob.tickets._land import _splice_only_ticket
+from frob.tickets._land_merge import _splice_only_ticket
 from frob.tickets._models import Ticket, TicketError
 from frob.tickets._provisional import is_draft_id, mint_draft_id, on_default_branch
 from frob.tickets._store import atomic_write, ledger_path, load_all, write_all
@@ -609,7 +609,7 @@ class TestSpliceOnlyTicketIdTitleMismatchRefusal:
     def test_id_title_mismatch_is_refused_not_silently_overwritten(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_splice_only_ticket kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_splice_only_ticket kind="unit"
         main_ticket = Ticket(
             id="T-0042",
             title="Coordinator-filed ticket, unrelated to the land",
@@ -643,7 +643,7 @@ class TestSpliceOnlyTicketIdTitleMismatchRefusal:
     def test_same_id_same_title_still_resolves_via_newer(self, tmp_path: Path) -> None:
         """Control case: a genuine same-ticket divergence (title matches)
         must still resolve normally, not be caught by the mismatch guard."""
-        # frob:tests src/frob/tickets/_land.py::_splice_only_ticket kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_splice_only_ticket kind="unit"
         main_ticket = Ticket(
             id="T-0042",
             title="Same ticket, still in progress on main",

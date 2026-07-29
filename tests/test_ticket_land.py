@@ -32,6 +32,8 @@ from hypothesis import strategies as st
 from typani.result import Err, Ok, Result
 
 import frob.tickets._land as _land_mod
+import frob.tickets._land_finalize as _land_finalize_mod
+import frob.tickets._land_merge as _land_merge_mod
 from frob.gates import PreworkSweep, load_prework, record_prework, scope_digest
 from frob.gitio import GitError, ProcResult, run_argv
 from frob.graph import build_graph
@@ -44,7 +46,8 @@ from frob.tickets import (
     set_done_report,
     transition,
 )
-from frob.tickets._land import _splice_and_stage_archive, land, splice_ledger
+from frob.tickets._land import land, splice_ledger
+from frob.tickets._land_merge import _splice_and_stage_archive
 from frob.tickets._models import (
     AcceptanceCriterion,
     DoneReportClaims,
@@ -68,13 +71,19 @@ def _failing_run_argv(
     *,
     hard_err: bool = False,
 ) -> None:
-    """Patch `frob.tickets._land.run_argv` (the single import point every
-    helper in the module calls through) so any invocation matching
-    `should_fail` returns a git failure -- either a bad returncode
-    (`hard_err=False`) or an `Err(GitError...)` result (`hard_err=True`) --
-    while everything else delegates to the real `run_argv`. This is how a
-    real, hard-to-reproduce git subprocess failure (permission denial, disk
-    full, a corrupted ref) gets exercised deterministically."""
+    """Patch `run_argv` (the single import point every helper calls
+    through) so any invocation matching `should_fail` returns a git
+    failure -- either a bad returncode (`hard_err=False`) or an
+    `Err(GitError...)` result (`hard_err=True`) -- while everything else
+    delegates to the real `run_argv`. This is how a real, hard-to-reproduce
+    git subprocess failure (permission denial, disk full, a corrupted ref)
+    gets exercised deterministically.
+
+    T-1186 split `frob.tickets._land` into `_land`/`_land_merge`/
+    `_land_finalize` (each importing its own top-level `run_argv` name),
+    so this patches all three -- a patch of `_land_mod.run_argv` alone no
+    longer reaches call sites that moved into `_land_merge`/
+    `_land_finalize`."""
 
     def _fake(argv: Sequence[str], **kwargs: Any) -> Any:
         if should_fail(argv):
@@ -91,6 +100,8 @@ def _failing_run_argv(
         return run_argv(argv, **kwargs)
 
     monkeypatch.setattr(_land_mod, "run_argv", _fake)
+    monkeypatch.setattr(_land_merge_mod, "run_argv", _fake)
+    monkeypatch.setattr(_land_finalize_mod, "run_argv", _fake)
 
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
@@ -185,7 +196,7 @@ class TestSpliceLedger:
         assert "Theirs" in spliced.danger_ok
 
     def test_same_id_newer_state_wins(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_land.py::splice_ledger kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::splice_ledger kind="unit"
         created = new_ticket(tmp_path, _spec("Shared"))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -199,7 +210,7 @@ class TestSpliceLedger:
         assert "state: planned" in spliced.danger_ok
         assert "state: queued" not in spliced.danger_ok
 
-    # frob:tests src/frob/tickets/_land.py::splice_ledger kind="unit"
+    # frob:tests src/frob/tickets/_land_merge.py::splice_ledger kind="unit"
     def test_malformed_ours_propagates_as_err(self, tmp_path: Path) -> None:
         """A malformed `ours_text` (a ticket marker with no ```yaml
         frontmatter) must surface `_parse_ledger`'s error unchanged --
@@ -213,7 +224,7 @@ class TestSpliceLedger:
         spliced = splice_ledger(malformed_ours, theirs_text)
         assert spliced.is_err
 
-    # frob:tests src/frob/tickets/_land.py::splice_ledger kind="unit"
+    # frob:tests src/frob/tickets/_land_merge.py::splice_ledger kind="unit"
     def test_malformed_theirs_propagates_as_err(self, tmp_path: Path) -> None:
         """A malformed `theirs_text` must ALSO surface as `Err` -- the
         second `_parse_ledger` call's error path is exercised
@@ -232,7 +243,7 @@ class TestSpliceOnlyTicket:
     """`_splice_only_ticket` (T-0479) -- the ledger splice scoped to ONE
     ticket id, the fix for the T-0475 sibling-resurrection incident."""
 
-    # frob:tests src/frob/tickets/_land.py::_splice_only_ticket kind="unit"
+    # frob:tests src/frob/tickets/_land_merge.py::_splice_only_ticket kind="unit"
     def test_sibling_state_never_taken_from_worktree(self, tmp_path: Path) -> None:
         """Main has T-A queued (already requeued back from in-progress) and
         T-B queued. The worktree's stale copy still remembers T-A as
@@ -257,7 +268,7 @@ class TestSpliceOnlyTicket:
         assert transition(tmp_path, tid_b, TicketState.PLANNED).is_ok
         main_text = ledger_path(tmp_path).read_text()
 
-        spliced = _land_mod._splice_only_ticket(main_text, worktree_text, tid_b)
+        spliced = _land_merge_mod._splice_only_ticket(main_text, worktree_text, tid_b)
         assert spliced.is_ok
         from frob.tickets._store import _parse_ledger
 
@@ -267,7 +278,7 @@ class TestSpliceOnlyTicket:
         assert merged[tid_a].state == TicketState.QUEUED  # sibling untouched
         assert merged[tid_b].state == TicketState.PLANNED  # landed ticket's own block
 
-    # frob:tests src/frob/tickets/_land.py::_splice_only_ticket kind="unit"
+    # frob:tests src/frob/tickets/_land_merge.py::_splice_only_ticket kind="unit"
     def test_landed_tickets_own_divergence_still_resolved(self, tmp_path: Path) -> None:
         """If the SAME ticket id genuinely diverges between main and the
         worktree, `_newer` still resolves it (via the scoped splice) --
@@ -280,7 +291,7 @@ class TestSpliceOnlyTicket:
         assert transition(tmp_path, tid, TicketState.PLANNED).is_ok
         worktree_text = ledger_path(tmp_path).read_text()
 
-        spliced = _land_mod._splice_only_ticket(main_text, worktree_text, tid)
+        spliced = _land_merge_mod._splice_only_ticket(main_text, worktree_text, tid)
         assert spliced.is_ok
         assert "state: planned" in spliced.danger_ok
 
@@ -309,12 +320,12 @@ class TestSpliceOnlyTicket:
             # Simulate a render bug: silently omit every ticket's section.
             return "# Tickets\n\nCentral ledger managed by `frob ticket`.\n"
 
-        monkeypatch.setattr(_land_mod, "_render_ledger", _dropping_render)
-        spliced = _land_mod._splice_only_ticket(main_text, worktree_text, tid)
+        monkeypatch.setattr(_land_merge_mod, "_render_ledger", _dropping_render)
+        spliced = _land_merge_mod._splice_only_ticket(main_text, worktree_text, tid)
         assert spliced.is_err
         assert spliced.danger_err.name == "LedgerIntegrityViolation"
 
-    # frob:tests src/frob/tickets/_land.py::splice_ledger kind="unit"
+    # frob:tests src/frob/tickets/_land_merge.py::splice_ledger kind="unit"
     def test_whole_ledger_splice_never_regresses_a_sibling_from_done(
         self, tmp_path: Path
     ) -> None:
@@ -360,7 +371,7 @@ class TestSiblingDoneReportPreserved:
     carries a substantive Done report when the OTHER side has none, even
     for a sibling id it does not otherwise touch."""
 
-    # frob:tests src/frob/tickets/_land.py::_splice_only_ticket kind="unit"
+    # frob:tests src/frob/tickets/_land_merge.py::_splice_only_ticket kind="unit"
     def test_sibling_done_report_survives_landing_another_ticket(
         self, tmp_path: Path
     ) -> None:
@@ -392,7 +403,9 @@ class TestSiblingDoneReportPreserved:
 
         main_text = _render_ledger(merged)
 
-        spliced = _land_mod._splice_only_ticket(main_text, worktree_text, tid_landed)
+        spliced = _land_merge_mod._splice_only_ticket(
+            main_text, worktree_text, tid_landed
+        )
         assert spliced.is_ok
         from frob.tickets._store import _parse_ledger
 
@@ -401,7 +414,7 @@ class TestSiblingDoneReportPreserved:
         assert "## Done report" in parsed[tid_sibling].body
         assert parsed[tid_sibling].evidence == ("tests/test_x.py::test_ok",)
 
-    # frob:tests src/frob/tickets/_land.py::_splice_only_ticket kind="unit"
+    # frob:tests src/frob/tickets/_land_merge.py::_splice_only_ticket kind="unit"
     def test_sibling_requeue_on_main_still_wins_when_neither_side_has_a_done_report(
         self, tmp_path: Path
     ) -> None:
@@ -425,7 +438,9 @@ class TestSiblingDoneReportPreserved:
         assert transition(tmp_path, tid_sibling, TicketState.QUEUED).is_ok
         main_text = ledger_path(tmp_path).read_text()
 
-        spliced = _land_mod._splice_only_ticket(main_text, worktree_text, tid_landed)
+        spliced = _land_merge_mod._splice_only_ticket(
+            main_text, worktree_text, tid_landed
+        )
         assert spliced.is_ok
         from frob.tickets._store import _parse_ledger
 
@@ -785,7 +800,7 @@ class TestSpliceLedgerIdDropGuard:
             # Simulate a render bug: silently omit every ticket's section.
             return "# Tickets\n\nCentral ledger managed by `frob ticket`.\n"
 
-        monkeypatch.setattr(_land_mod, "_render_ledger", _dropping_render)
+        monkeypatch.setattr(_land_merge_mod, "_render_ledger", _dropping_render)
         spliced = splice_ledger(ours_text, theirs_text)
         assert spliced.is_err
         assert spliced.danger_err.name == "LedgerIntegrityViolation"
@@ -902,7 +917,9 @@ class TestSquashSpliceLedgerChurn:
         (wt / "src" / "widget.py").write_text("# race widget\n")
         _commit_all(wt, "add race widget")
 
-        real_run_argv = _land_mod.run_argv
+        # T-1186: `git merge --squash` now runs inside
+        # `_land_finalize._squash_and_splice_ledger`, not `_land.py`.
+        real_run_argv = _land_finalize_mod.run_argv
         injected: dict[str, Any] = {"done": False, "sibling_id": None}
 
         def _fake_run_argv(argv: Sequence[str], **kwargs: Any) -> Any:
@@ -926,7 +943,7 @@ class TestSquashSpliceLedgerChurn:
                 injected["done"] = True
             return result
 
-        monkeypatch.setattr(_land_mod, "run_argv", _fake_run_argv)
+        monkeypatch.setattr(_land_finalize_mod, "run_argv", _fake_run_argv)
 
         result = land(repo, tid, wt, dry_run=False)
         assert result.is_ok, result.err
@@ -991,7 +1008,8 @@ class TestWarnIfNativeStale:
         caplog: pytest.LogCaptureFixture,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_warn_if_native_stale kind="unit"
+        # frob:tests src/frob/tickets/_land_finalize.py::_warn_if_native_stale \
+        # kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-native", str(wt)], repo)
         created = new_ticket(wt, _spec("Grammar change", scope=("src/grammar.py",)))
@@ -1015,7 +1033,8 @@ class TestWarnIfNativeStale:
     def test_real_land_no_warning_when_native_fresh(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_warn_if_native_stale kind="unit"
+        # frob:tests src/frob/tickets/_land_finalize.py::_warn_if_native_stale \
+        # kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-native-fresh", str(wt)], repo)
         created = new_ticket(wt, _spec("Non-native change", scope=("src/other.py",)))
@@ -1268,7 +1287,7 @@ class TestArchiveResurrection:
     reintroduce an already-archived id."""
 
     def test_archived_id_never_resurrected(self, repo: Path) -> None:
-        # frob:tests src/frob/tickets/_land.py::splice_ledger kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::splice_ledger kind="unit"
         # Seed a ticket that exists (stale, still active) in the worktree's
         # ledger view, then archive it on MAIN after the branch point --
         # simulating a branch whose base predates the archive.
@@ -1340,7 +1359,8 @@ class TestArchiveSpliceDiscipline:
     def test_splice_and_stage_archive_merges_by_id_never_overwrites(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_splice_and_stage_archive kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_splice_and_stage_archive \
+        # kind="unit"
         # `authoritative_text` carries one id, `other_text` carries a
         # DISJOINT second id -- a wholesale overwrite (the pre-T-0959 bug)
         # would keep only one side; the splice must keep both.
@@ -1373,7 +1393,8 @@ class TestArchiveSpliceDiscipline:
     def test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_splice_and_stage_archive kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_splice_and_stage_archive \
+        # kind="unit"
         # The T-0959 id-integrity backstop: if the merge somehow produced a
         # result missing an id `authoritative_text` carried, refuse loudly
         # rather than silently staging a lossy result. Forced by making
@@ -1394,7 +1415,7 @@ class TestArchiveSpliceDiscipline:
         ) -> dict[str, Any]:
             return {}
 
-        monkeypatch.setattr(_land_mod, "_merge_ledger_tickets", _drop_everything)
+        monkeypatch.setattr(_land_merge_mod, "_merge_ledger_tickets", _drop_everything)
 
         result = _splice_and_stage_archive(checkout, authoritative_text, other_text)
         assert result.is_err
@@ -1403,7 +1424,8 @@ class TestArchiveSpliceDiscipline:
     def test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_splice_and_stage_archive kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_splice_and_stage_archive \
+        # kind="unit"
         # Two tickets that will be archived on MAIN, AFTER the worktree
         # branches off -- the exact T-0703 incident shape: the worktree's
         # warmup merge happens before the archive sweep, so its own
@@ -1481,8 +1503,8 @@ class TestArchiveSpliceDiscipline:
     def test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_merge_ledger_tickets kind="unit"
-        # frob:tests src/frob/tickets/_land.py::_resolve_divergence kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_merge_ledger_tickets kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_resolve_divergence kind="unit"
         # T-1154 (3rd occurrence of the wrong-side-merge class, see this
         # ticket's own Done report): a ticket archived on BOTH main and the
         # worktree, same state (done) and same richness (both carry a Done
@@ -1613,7 +1635,8 @@ class TestWipAddIgnoredPathFallback:
     end state without ever naming an ignored path in a pathspec."""
 
     def test_gitignored_frob_falls_back_and_still_lands(self, repo: Path) -> None:
-        # frob:tests src/frob/tickets/_land.py::_wip_add_excluding_frob kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_wip_add_excluding_frob \
+        # kind="unit"
         wt = repo.parent / "wt"
         _run(
             ["git", "worktree", "add", "-b", "feature-wip-ignored-frob", str(wt)], repo
@@ -1647,13 +1670,14 @@ class TestWipAddIgnoredPathFallback:
         assert landed_content == "# uncommitted change to snapshot\n"
 
     def test_is_ignored_path_refusal_matches_gits_fixed_message(self) -> None:
-        # frob:tests src/frob/tickets/_land.py::_is_ignored_path_refusal kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_is_ignored_path_refusal \
+        # kind="unit"
         stderr = (
             "The following paths are ignored by one of your .gitignore files:\n"
             ".frob\nhint: Use -f if you really want to add them.\n"
         )
-        assert _land_mod._is_ignored_path_refusal(stderr) is True
-        assert _land_mod._is_ignored_path_refusal("some other git error") is False
+        assert _land_merge_mod._is_ignored_path_refusal(stderr) is True
+        assert _land_merge_mod._is_ignored_path_refusal("some other git error") is False
 
 
 class TestWipCommitNormalizationOnlyDirty:
@@ -1666,7 +1690,7 @@ class TestWipCommitNormalizationOnlyDirty:
     def test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_do_wip_commit kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_do_wip_commit kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-wip-crlf", str(wt)], repo)
         created = new_ticket(wt, _spec("Wip crlf", scope=("src/wip_crlf.py",)))
@@ -2440,14 +2464,18 @@ class TestLandDeeperBranches:
         (wt / "src" / "l11.py").write_text("# l11\n")
         _commit_all(wt, "wip")
 
-        real_current_branch = _land_mod.current_branch
+        # T-1186: the worktree's own branch lookup this test targets lives
+        # in `_land_finalize._land_squash_apply` now, not `_land.py`'s
+        # `current_branch(root)` (that call is the MAIN repo's branch,
+        # always `repo` here -- never `wt`).
+        real_current_branch = _land_finalize_mod.current_branch
 
         def _fake(root: Path) -> Any:
             if str(root) == str(wt):
                 return Err(GitError.GitFailed)
             return real_current_branch(root)
 
-        monkeypatch.setattr(_land_mod, "current_branch", _fake)
+        monkeypatch.setattr(_land_finalize_mod, "current_branch", _fake)
         result = land(repo, tid, wt, dry_run=False)
         assert result.is_err
         assert result.danger_err == LandError.GitFailed
@@ -2539,8 +2567,10 @@ class TestLandCompleteness:
     def test_land_brings_tracked_edit_untracked_new_file_and_deletion(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_assert_land_complete kind="unit"
-        # frob:tests src/frob/tickets/_land.py::_worktree_full_changeset kind="unit"
+        # frob:tests src/frob/tickets/_land_finalize.py::_assert_land_complete \
+        # kind="unit"
+        # frob:tests src/frob/tickets/_land_finalize.py::_worktree_full_changeset \
+        # kind="unit"
         # `doomed.py` must exist BEFORE the worktree branches, so its
         # deletion has a real net effect relative to main (a file created
         # and deleted within the same branch history nets to "no change"
@@ -2593,7 +2623,8 @@ class TestLandCompleteness:
         monkeypatch: pytest.MonkeyPatch,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_assert_land_complete kind="unit"
+        # frob:tests src/frob/tickets/_land_finalize.py::_assert_land_complete \
+        # kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-incomplete", str(wt)], repo)
         created = new_ticket(wt, _spec("Incomplete", scope=("src/gadget2.py",)))
@@ -2609,7 +2640,7 @@ class TestLandCompleteness:
         # squash-apply never actually staged (the T-0448 incident, forced
         # deterministically instead of relying on a real patch-based land
         # to reproduce it).
-        real_changeset = _land_mod._worktree_full_changeset
+        real_changeset = _land_finalize_mod._worktree_full_changeset
 
         def _fake_changeset(worktree: Path, main_branch_name: str) -> Any:
             result = real_changeset(worktree, main_branch_name)
@@ -2617,7 +2648,9 @@ class TestLandCompleteness:
                 return result
             return Ok(result.danger_ok | {"src/phantom_dropped.py"})
 
-        monkeypatch.setattr(_land_mod, "_worktree_full_changeset", _fake_changeset)
+        monkeypatch.setattr(
+            _land_finalize_mod, "_worktree_full_changeset", _fake_changeset
+        )
 
         with caplog.at_level("ERROR", logger="frob.tickets._land"):
             result = land(repo, tid, wt, dry_run=False)
@@ -2637,8 +2670,9 @@ class TestLandCompleteness:
     def test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_worktree_full_changeset kind="unit"
-        # frob:tests src/frob/tickets/_land.py::_true_merge_base kind="unit"
+        # frob:tests src/frob/tickets/_land_finalize.py::_worktree_full_changeset \
+        # kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_true_merge_base kind="unit"
         """T-0761 regression: the real T-0640 incident. `land()` was invoked
         with `--worktree` pointing at the SAME checkout/branch `root` had
         checked out -- no distinct feature branch was ever created. A NEW
@@ -3078,7 +3112,7 @@ class TestUvLockSync:
                 )
             return run_argv(argv, **kwargs)
 
-        monkeypatch.setattr(_land_mod, "run_argv", _fake_run_argv)
+        monkeypatch.setattr(_land_finalize_mod, "run_argv", _fake_run_argv)
 
         def bump_version(root: Path, ticket: Any, final_id: str) -> Any:
             (root / "pyproject.toml").write_text(
@@ -3129,7 +3163,7 @@ class TestUvLockSync:
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
         # frob:tests tests/test_ticket_land.py::TestUvLockSync.test_worktree_side_lock_flap_auto_restored_before_wip_commit  # noqa: E501
-        # frob:tests src/frob/tickets/_land.py::_wip_commit kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_wip_commit kind="unit"
         """T-1003 (churn item 4): the T-0793 frob-version-only auto-restore
         applies to the WORKTREE's own `uv.lock` too, before the wip-commit
         dirty check -- not just `root`'s, as `test_dirty_lock_version_
@@ -3262,7 +3296,7 @@ class TestUvLockSync:
                 )
             return run_argv(argv, **kwargs)
 
-        monkeypatch.setattr(_land_mod, "run_argv", _fake_run_argv)
+        monkeypatch.setattr(_land_finalize_mod, "run_argv", _fake_run_argv)
 
         def bump_version(root: Path, ticket: Any, final_id: str) -> Any:
             (root / "pyproject.toml").write_text(
@@ -3601,7 +3635,8 @@ class TestLandRetryAfterFinalizeThenFail:
         self, repo: Path
     ) -> None:
         # frob:tests tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail.test_retry_after_finalize_then_squash_failure_lands_the_diff  # noqa: E501
-        # frob:tests src/frob/tickets/_land.py::_close_finalized_ticket kind="unit"
+        # frob:tests src/frob/tickets/_land_finalize.py::_close_finalized_ticket \
+        # kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-retry", str(wt)], repo)
         created = new_ticket(wt, _spec("Retry me", scope=("src/retried.py",)))
@@ -3713,7 +3748,8 @@ class TestLandRetryAfterFinalizeThenFail:
         self, repo: Path
     ) -> None:
         # frob:tests tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail.test_retry_when_still_queued_re_runs_the_ordinary_transition  # noqa: E501
-        # frob:tests src/frob/tickets/_land.py::_close_finalized_ticket kind="unit"
+        # frob:tests src/frob/tickets/_land_finalize.py::_close_finalized_ticket \
+        # kind="unit"
         """Sanity companion: the ordinary (non-retry) first-time land, where
         the ticket is NOT already done, still runs the real transition --
         the T-0795 fix only short-circuits when the ticket is ALREADY
@@ -4477,9 +4513,9 @@ class TestLandInternalEnvThroughHook:
         assert result.danger_ok.commit_sha is not None
 
     def test_land_internal_git_env_restores_prior_value(self) -> None:
-        # frob:tests src/frob/tickets/_land.py::_land_internal_git_env kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_land_internal_git_env kind="unit"
         os.environ.pop("FROB_LAND_INTERNAL", None)
-        with _land_mod._land_internal_git_env():
+        with _land_merge_mod._land_internal_git_env():
             assert (
                 os.environ.get("FROB_LAND_INTERNAL") == "1"
             )  # frob:waive SEC110 reason="synthetic test-only var this test itself sets"
@@ -4489,7 +4525,7 @@ class TestLandInternalEnvThroughHook:
             "prior-value"  # frob:waive SEC110 reason="synthetic test-only var this test itself sets"
         )
         try:
-            with _land_mod._land_internal_git_env():
+            with _land_merge_mod._land_internal_git_env():
                 assert (
                     os.environ.get("FROB_LAND_INTERNAL") == "1"
                 )  # frob:waive SEC110 reason="synthetic test-only var this test itself sets"
@@ -4505,7 +4541,7 @@ class TestGitFailureMessageCarriesStderr:
     stderr in the log line, not collapse to a bare `GitFailed`."""
 
     def test_describe_git_failure_includes_argv_and_stderr(self) -> None:
-        # frob:tests src/frob/tickets/_land.py::_describe_git_failure kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_describe_git_failure kind="unit"
         argv = ["git", "-C", "/tmp/repo", "commit", "-m", "x"]
         failed = Ok(
             ProcResult(
@@ -4515,15 +4551,15 @@ class TestGitFailureMessageCarriesStderr:
                 stderr="frob: refusing commit -- CHANGELOG.md is land-owned (T-0731)",
             )
         )
-        message = _land_mod._describe_git_failure(argv, failed)
+        message = _land_merge_mod._describe_git_failure(argv, failed)
         assert "git -C /tmp/repo commit -m x" in message
         assert "exit 1" in message
         assert "CHANGELOG.md is land-owned" in message
 
     def test_describe_git_failure_includes_spawn_error(self) -> None:
-        # frob:tests src/frob/tickets/_land.py::_describe_git_failure kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_describe_git_failure kind="unit"
         argv = ["git", "-C", "/tmp/repo", "commit", "-m", "x"]
-        message = _land_mod._describe_git_failure(argv, Err(GitError.GitFailed))
+        message = _land_merge_mod._describe_git_failure(argv, Err(GitError.GitFailed))
         assert "git -C /tmp/repo commit -m x" in message
         assert "spawn error" in message
 
@@ -4533,7 +4569,7 @@ class TestGitFailureMessageCarriesStderr:
         monkeypatch: pytest.MonkeyPatch,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_do_wip_commit kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_do_wip_commit kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-l8", str(wt)], repo)
         created = new_ticket(wt, _spec("Whatever", scope=("src/l8.py",)))
@@ -5170,7 +5206,7 @@ class TestVerifiedResetRoot:
         (repo / "scratch.txt").write_text("staged but never committed\n")
         _run(["git", "add", "scratch.txt"], repo)
 
-        result = _land_mod._verified_reset_root(repo, pre, "T-TEST")
+        result = _land_merge_mod._verified_reset_root(repo, pre, "T-TEST")
         assert result.is_ok, result.err
         assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == pre
         assert _status_ignoring_frob(repo) == ""
@@ -5185,7 +5221,7 @@ class TestVerifiedResetRoot:
         drifted_tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         assert drifted_tip != pre
 
-        result = _land_mod._verified_reset_root(repo, pre, "T-TEST")
+        result = _land_merge_mod._verified_reset_root(repo, pre, "T-TEST")
         assert result.is_err
         assert result.danger_err == LandError.GitFailed
         # NOT reset -- the drifted commit must still be there, untouched.
@@ -5243,17 +5279,22 @@ def _t0907_child_land(
     root: Path, ticket_id: str, worktree: Path, ready_path: Path
 ) -> None:
     """Multiprocessing target (module-level so `fork` can spawn it, T-0907):
-    monkeypatches `frob.tickets._land.run_argv` (this CHILD process's own
-    copy of the module, `fork` gives every child an independent
-    copy-on-write memory image) so that once `land()`'s squash-apply merge
-    onto `root` actually runs, it signals readiness (`ready_path`) and then
-    sleeps well past however long the parent needs to `SIGKILL` this
-    process -- reproducing "killed mid-staging" deterministically instead
-    of relying on timing luck against a real 580s coordinator timeout."""
+    monkeypatches `frob.tickets._land_finalize.run_argv` (this CHILD
+    process's own copy of the module, `fork` gives every child an
+    independent copy-on-write memory image) so that once `land()`'s
+    squash-apply merge onto `root` actually runs, it signals readiness
+    (`ready_path`) and then sleeps well past however long the parent needs
+    to `SIGKILL` this process -- reproducing "killed mid-staging"
+    deterministically instead of relying on timing luck against a real
+    580s coordinator timeout. T-1186: the squash-merge this patches now
+    runs inside `_land_finalize._squash_and_splice_ledger`, not
+    `_land.py` -- `land_mod.land` (the entry point actually invoked) still
+    lives in `_land.py`."""
 
     import frob.tickets._land as land_mod
+    import frob.tickets._land_finalize as land_finalize_mod
 
-    real_run_argv = land_mod.run_argv
+    real_run_argv = land_finalize_mod.run_argv
 
     def _patched(
         argv: Sequence[str], *, cwd: Path | None = None, timeout_s: int | float = 30.0
@@ -5264,7 +5305,7 @@ def _t0907_child_land(
             time.sleep(30)
         return result
 
-    setattr(land_mod, "run_argv", _patched)  # noqa: B010
+    setattr(land_finalize_mod, "run_argv", _patched)  # noqa: B010
     land_mod.land(root, ticket_id, worktree, dry_run=False)
 
 
@@ -5350,7 +5391,7 @@ class TestTick005LandRegressions:
         _make_closeable(tmp_path, tid)
         pre_text = ledger_path(tmp_path).read_text()
 
-        regressions = _land_mod._tick005_land_regressions(
+        regressions = _land_finalize_mod._tick005_land_regressions(
             pre_text, pre_text, frozenset()
         )
         assert regressions == ()
@@ -5375,7 +5416,7 @@ class TestTick005LandRegressions:
         ).is_ok
         post_text = ledger_path(tmp_path).read_text()
 
-        regressions = _land_mod._tick005_land_regressions(
+        regressions = _land_finalize_mod._tick005_land_regressions(
             pre_text, post_text, frozenset()
         )
         assert regressions == (tid,)
@@ -5398,7 +5439,7 @@ class TestTick005LandRegressions:
 
         # An archived id is exempt -- it is expected to be absent/stale in
         # the active ledger, not a regression.
-        regressions = _land_mod._tick005_land_regressions(
+        regressions = _land_finalize_mod._tick005_land_regressions(
             pre_text, post_text, frozenset({tid})
         )
         assert regressions == ()
@@ -5411,11 +5452,15 @@ class TestTick005LandRegressions:
         valid_text = ledger_path(tmp_path).read_text()
 
         assert (
-            _land_mod._tick005_land_regressions(malformed, valid_text, frozenset())
+            _land_finalize_mod._tick005_land_regressions(
+                malformed, valid_text, frozenset()
+            )
             == ()
         )
         assert (
-            _land_mod._tick005_land_regressions(valid_text, malformed, frozenset())
+            _land_finalize_mod._tick005_land_regressions(
+                valid_text, malformed, frozenset()
+            )
             == ()
         )
 
@@ -5441,7 +5486,7 @@ class TestLandRefusesOnTerminalStateRegression:
         pre_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
 
         monkeypatch.setattr(
-            _land_mod, "_tick005_land_regressions", lambda *a, **k: ("T-9999",)
+            _land_finalize_mod, "_tick005_land_regressions", lambda *a, **k: ("T-9999",)
         )
 
         result = land(repo, tid, wt, dry_run=False)
@@ -5666,7 +5711,7 @@ class TestUnionZoneMerge:
         # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_keyed_lines_union_composes  # noqa: E501
         ours = '# comment for A\nRULEA = "error"\n'
         theirs = '# comment for B\nRULEB = "warn"\n'
-        merged = _land_mod._union_keyed_chunks(
+        merged = _land_merge_mod._union_keyed_chunks(
             ours, theirs, re.compile(r"^(?P<key>[A-Za-z0-9]+)\s*=")
         )
         assert merged is not None
@@ -5677,7 +5722,7 @@ class TestUnionZoneMerge:
         # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_keyed_lines_union_refuses  # noqa: E501
         ours = 'RULEA = "error"\n'
         theirs = 'RULEA = "warn"\n'
-        merged = _land_mod._union_keyed_chunks(
+        merged = _land_merge_mod._union_keyed_chunks(
             ours, theirs, re.compile(r"^(?P<key>[A-Za-z0-9]+)\s*=")
         )
         assert merged is None
@@ -5696,7 +5741,7 @@ class TestUnionZoneMerge:
             "# frob-zone-end gates.severity T-1002\n"
         )
         _commit_all(repo, "conflict marker fixture")
-        resolved = _land_mod._resolve_union_zone_conflicts(repo, {"frob.toml"})
+        resolved = _land_merge_mod._resolve_union_zone_conflicts(repo, {"frob.toml"})
         assert resolved.is_ok
         assert resolved.danger_ok == frozenset()
         content = target.read_text()
@@ -5708,7 +5753,7 @@ class TestUnionZoneMerge:
         # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_append_only_union_concatenates  # noqa: E501
         ours = "## Remediation log (T-A)\nfixed thing A\n"
         theirs = "## Remediation log (T-B)\nfixed thing B\n"
-        merged = _land_mod._union_append_only(ours, theirs)
+        merged = _land_merge_mod._union_append_only(ours, theirs)
         assert "T-A" in merged and "T-B" in merged
 
 
@@ -5722,40 +5767,42 @@ class TestSyncGateRulesCallback:
 
     def test_sync_gate_rules_none_is_noop(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_none_is_noop  # noqa: E501
-        pre_land_tip = _land_mod._rev_parse(repo, "HEAD").danger_ok
-        result = _land_mod._apply_gate_rule_sync(repo, "T-0001", None, pre_land_tip)
+        pre_land_tip = _land_merge_mod._rev_parse(repo, "HEAD").danger_ok
+        result = _land_finalize_mod._apply_gate_rule_sync(
+            repo, "T-0001", None, pre_land_tip
+        )
         assert result.is_ok
         assert result.danger_ok is None
 
     def test_sync_gate_rules_applies_and_stages(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_applies_and_stages  # noqa: E501
-        pre_land_tip = _land_mod._rev_parse(repo, "HEAD").danger_ok
+        pre_land_tip = _land_merge_mod._rev_parse(repo, "HEAD").danger_ok
 
         def _fake_sync(_root: Path, _tip: str) -> Result[tuple[str, ...] | None, Any]:
             return Ok(("SOME001",))
 
-        result = _land_mod._apply_gate_rule_sync(
+        result = _land_finalize_mod._apply_gate_rule_sync(
             repo, "T-0001", _fake_sync, pre_land_tip
         )
         assert result.is_ok
         assert result.danger_ok == ("SOME001",)
         # no unwind happened -- HEAD is untouched by a no-op callback.
-        assert _land_mod._rev_parse(repo, "HEAD").danger_ok == pre_land_tip
+        assert _land_merge_mod._rev_parse(repo, "HEAD").danger_ok == pre_land_tip
 
     def test_sync_gate_rules_failure_unwinds(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_failure_unwinds  # noqa: E501
-        pre_land_tip = _land_mod._rev_parse(repo, "HEAD").danger_ok
+        pre_land_tip = _land_merge_mod._rev_parse(repo, "HEAD").danger_ok
 
         def _fake_sync(_root: Path, _tip: str) -> Result[tuple[str, ...] | None, Any]:
             return Err(_land_mod.LandError.GitFailed)
 
-        result = _land_mod._apply_gate_rule_sync(
+        result = _land_finalize_mod._apply_gate_rule_sync(
             repo, "T-0001", _fake_sync, pre_land_tip
         )
         assert result.is_err
         assert result.danger_err == _land_mod.LandError.GitFailed
         # the (no-op) unwind reset still leaves HEAD at pre_land_tip.
-        assert _land_mod._rev_parse(repo, "HEAD").danger_ok == pre_land_tip
+        assert _land_merge_mod._rev_parse(repo, "HEAD").danger_ok == pre_land_tip
 
 
 # frob:ticket T-0757
@@ -5836,8 +5883,8 @@ class TestNewerWinnerQualifiedPreferenceProperty:
         b = _synthetic_ticket(
             "T-X", terminal_state, has_report=b_report, evidence_count=b_evidence
         )
-        assert _land_mod._newer_winner(a, b) is b
-        assert _land_mod._newer_winner(b, a) is b
+        assert _land_merge_mod._newer_winner(a, b) is b
+        assert _land_merge_mod._newer_winner(b, a) is b
 
     # frob:tests tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty.test_strictly_higher_rank_poorer_side_always_wins  # noqa: E501
     @given(
@@ -5871,8 +5918,8 @@ class TestNewerWinnerQualifiedPreferenceProperty:
             has_report=False,
             evidence_count=poorer_evidence,
         )
-        assert _land_mod._newer_winner(richer, poorer) is poorer
-        assert _land_mod._newer_winner(poorer, richer) is poorer
+        assert _land_merge_mod._newer_winner(richer, poorer) is poorer
+        assert _land_merge_mod._newer_winner(poorer, richer) is poorer
 
     # frob:tests tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty.test_richer_side_wins_at_equal_or_lower_rank  # noqa: E501
     @given(
@@ -5905,5 +5952,5 @@ class TestNewerWinnerQualifiedPreferenceProperty:
             has_report=False,
             evidence_count=poorer_evidence,
         )
-        assert _land_mod._newer_winner(richer, poorer) is richer
-        assert _land_mod._newer_winner(poorer, richer) is richer
+        assert _land_merge_mod._newer_winner(richer, poorer) is richer
+        assert _land_merge_mod._newer_winner(poorer, richer) is richer

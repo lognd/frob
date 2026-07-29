@@ -30,7 +30,7 @@ from frob.tickets import (
     run_cmd_evidence,
     transition,
 )
-from frob.tickets._land import _validate_closeable
+from frob.tickets._land_merge import _validate_closeable
 from frob.tickets._models import TicketSpec
 from frob.tickets._store import write_ticket
 

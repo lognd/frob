@@ -351,10 +351,10 @@ def _tick005_merge_state_regression(
 
     archived_ids = frozenset()
     try:
-        from frob.tickets._land import _archived_ids
+        from frob.tickets._land_merge import _archived_ids
 
         archived_ids = _archived_ids(root)
-    except ImportError:  # pragma: no cover -- frob.tickets._land always ships
+    except ImportError:  # pragma: no cover -- frob.tickets._land_merge always ships
         _log.warning("tick005: could not import _archived_ids, treating as empty")
 
     violations: list[Violation] = []
