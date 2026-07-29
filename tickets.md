@@ -1371,3 +1371,32 @@ threat: null
 component: null
 ```
 Root cause and target: this is Rust-migration candidate #1 from the report, HIGH feasibility. tree-sitter has first-class Rust crates and tree-sitter-python/cpp/rust/typescript grammars exist as crates; kotlin (via tree-sitter-language-pack) stays Python-side for now. frob-core already has the pyo3/abi3 plumbing and .pyi convention; API shape mirrors existing kernels (plain lists/tuples over the FFI, consistent with dup/callgraph/arch kernels already shipped). This ticket SUBSUMES Rust-migration candidate #4 (identifier/xref index kernel): note explicitly in the design that leaf-identifier output from this kernel satisfies #4's need, so no second crate export is built purely for identifiers. Not blocked on anything -- this is the foundation the other EPIC B children (capability resolver, arch metrics walk) build on, but do not add a blocked_by edge for those; they are downstream consumers, this ticket's own scope does not require them to exist first.
+
+<!-- ticket:T-1221 -->
+```yaml
+id: T-1221
+title: 'rust: capability-scan resolver in frob_core -- import table + alias propagation
+  + candidate resolution'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: T-1219
+tier: ticket
+sprint: null
+scope:
+- src/frob/vet/_capability.py
+- frob-core/**
+acceptance:
+- text: 'GIVEN vet/_capability.py''s 5 Python recursions per file (import table walk,
+    alias walk, candidate walk, comment spans, docstring spans -- 37 pct of sys, est
+    ~8s native) are self-contained per-file functions of file bytes + a static needle
+    registry WHEN a frob_core export scan_python_capabilities(source: bytes) -> (candidates,
+    spans) replaces the Python recursions THEN sys''s capability-scan share drops
+    correspondingly and the vet CLI path speeds up proportionally'
+  evidence: []
+threat: null
+component: null
+```
+Root cause and target: Rust-migration candidate #2 from the report, MEDIUM-HIGH feasibility. Depends on candidate #1's tree access (the tree-extraction kernel), so this is a natural second crate export once that lands. Self-contained semantics make this a clean FFI boundary; respect FFI001/FFI002.
