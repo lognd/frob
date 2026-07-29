@@ -153,6 +153,12 @@ branch = true
 parallel = true
 relative_files = true
 source = ["src/frob"]
+# T-1235: gate families run in a ProcessPoolExecutor (forkserver/spawn) and
+# frob spawns daemon/CLI children in tests -- without these two settings that
+# execution is never recorded, deflating TEST005 (loss B of the 2026-07-29
+# attribution diagnosis).
+concurrency = ["multiprocessing", "thread"]
+sigterm = true
 
 [tool.coverage.paths]
 source = ["src/frob", "*/src/frob"]

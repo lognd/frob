@@ -113,15 +113,37 @@ playbook:
 # promoted from a WARN to a hard pre-stamp floor -- src/frob/gates/
 # _coverage.py's `stamp_coverage`), so a bad xml can no longer produce a
 # clean-looking stamp even if combine/xml themselves succeed.
+# T-1235: subprocess children run with cwd inside tmp fixture repos, so
+# COVERAGE_PROCESS_START must point at an rc whose `source`/`data_file`
+# are ABSOLUTE -- pyproject's relative `source = ["src/frob"]` resolves
+# against the child's cwd and measures nothing, stranding empty
+# .coverage.* files in child cwds (loss A of the 2026-07-29 attribution
+# diagnosis). The rc is generated fresh each run so $(CURDIR) is current.
 coverage: $(STAMP)
 	rm -f .coverage .coverage.*
 	$(MAKE) core
 	uv run frob doctor
-	COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml uv run pytest --cov=src/frob --cov-branch --cov-report= -q; \
+	mkdir -p .frob
+	printf '%s\n' \
+		'[run]' \
+		'branch = True' \
+		'parallel = True' \
+		'relative_files = True' \
+		'sigterm = True' \
+		'concurrency = multiprocessing, thread' \
+		'disable_warnings = no-data-collected' \
+		'source = $(CURDIR)/src/frob' \
+		'data_file = $(CURDIR)/.coverage' \
+		'[paths]' \
+		'source =' \
+		'    src/frob' \
+		'    */src/frob' \
+		> .frob/coverage-subprocess.rc
+	COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-report= -q --junitxml=.frob/last-coverage-run.xml; \
 	status=$$?; \
 	if [ $$status -ne 0 ]; then \
 		echo "coverage: parallel run had failures -- rerunning failed tests once, serially, without coverage-halting"; \
-		COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --last-failed; \
+		COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --last-failed --junitxml=.frob/last-coverage-rerun.xml; \
 		status=$$?; \
 	fi; \
 	uv run coverage combine; \
