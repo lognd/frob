@@ -49,14 +49,24 @@ class TestCheckCoverageRegistryFile:
             assert entry.disposition.kind is DispositionKind.HANDLED_BY
             assert entry.disposition.target in known
 
-    def test_concern_family_entries_are_deferred_to_open_ticket(self) -> None:
+    def test_concern_family_entries_are_deferred_or_handled(self) -> None:
+        """Every audit concern row is either deferred to a live successor
+        ticket or handled_by a real rule -- the exact progression the
+        registry README documents (rows started all-deferred:T-0397 and
+        move to handled_by as mechanisms land; the epic closed 2026-07-29
+        with 7 handled / 6 deferred:T-1193)."""
         registry_file = load_registry_dir(_REGISTRY_DIR, ("check-coverage.yaml",))[
             "check-coverage.yaml"
         ].danger_ok
         entries = registry_file.entry_lists["concern_family_entries"]
         assert len(entries) >= 5
         for entry in entries:
-            assert entry.disposition.kind is DispositionKind.DEFERRED
+            assert entry.disposition.kind in (
+                DispositionKind.DEFERRED,
+                DispositionKind.HANDLED_BY,
+            ), entry
+            if entry.disposition.kind is DispositionKind.DEFERRED:
+                assert entry.disposition.target.startswith("T-"), entry
 
     def test_no_malformed_entries(self) -> None:
         registry_file = load_registry_dir(_REGISTRY_DIR, ("check-coverage.yaml",))[

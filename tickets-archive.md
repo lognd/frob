@@ -41938,7 +41938,7 @@ evidence:
 - tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_is_in_registry_files
 - tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_loads_without_error
 - tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
-- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_concern_family_entries_are_deferred_to_open_ticket
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_concern_family_entries_are_deferred_or_handled
 - tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_no_malformed_entries
 - tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_audit_reports_exhausted
 - tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations
@@ -42018,7 +42018,7 @@ REG002 requires that rule id to actually exist and fire.
 - `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_is_in_registry_files` (pytest node id, verified passing when recorded)
 - `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_loads_without_error` (pytest node id, verified passing when recorded)
 - `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules` (pytest node id, verified passing when recorded)
-- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_concern_family_entries_are_deferred_to_open_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_concern_family_entries_are_deferred_or_handled` (pytest node id, verified passing when recorded)
 - `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_no_malformed_entries` (pytest node id, verified passing when recorded)
 - `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_audit_reports_exhausted` (pytest node id, verified passing when recorded)
 - `tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations` (pytest node id, verified passing when recorded)

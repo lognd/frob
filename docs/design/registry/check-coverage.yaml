@@ -1,7 +1,7 @@
 # frob:used-by src/frob/gates/_registry_exhaustiveness.py
 # frob:tests tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile.test_loads_without_error  # noqa: E501
 # frob:tests tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile.test_gate_rule_entries_match_live_known_rules  # noqa: E501
-# frob:tests tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile.test_concern_family_entries_are_deferred_to_open_ticket  # noqa: E501
+# frob:tests tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile.test_concern_family_entries_are_deferred_or_handled  # noqa: E501
 # frob:tests tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage.test_no_check_coverage_violations  # noqa: E501
 # T-0424: frob's own check-coverage as an exhaustible registry.
 # Loaded by the SAME unified model/gate T-0407 built (frob.registry +
