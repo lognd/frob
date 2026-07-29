@@ -1081,6 +1081,126 @@ class TestLanguageParityExclusion:
         assert "abstraction-opportunity" not in categories
 
 
+class TestCallThroughForwarderExclusion:
+    def test_distinct_named_self_forwarders_not_flagged(self, tmp_path):
+        # frob:tests src/frob/arch/_python.py::_is_call_through_forwarder_family
+        # frob:tests src/frob/arch/_python.py::_is_self_named_forwarder
+        # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
+        # The real `RenderWriter` shape (T-1182, refiled from the T-1083
+        # disposition): each method carries a DIFFERENT bare name
+        # (heading/good/warn) but its own body is a short call-through to
+        # an identically-named module-level counterpart -- own lineage,
+        # not a shared group name. `_signature_is_specific` alone would
+        # flag this group (verified: with the forwarder exclusion
+        # removed, this exact fixture flags), so the exclusion is the
+        # only thing suppressing it.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "elements.py").write_text(
+            "from __future__ import annotations\n"
+            "\n"
+            "def heading(text: str, color: bool) -> str:\n"
+            "    return text\n"
+            "\n"
+            "def good(text: str, color: bool) -> str:\n"
+            "    return text\n"
+            "\n"
+            "def warn(text: str, color: bool) -> str:\n"
+            "    return text\n"
+        )
+        (src_dir / "renderer.py").write_text(
+            "from __future__ import annotations\n"
+            "\n"
+            "from elements import heading, good, warn\n"
+            "\n"
+            "\n"
+            "class RenderWriter:\n"
+            "    def __init__(self, emit, color):\n"
+            "        self._emit = emit\n"
+            "        self.color = color\n"
+            "\n"
+            "    def heading(self, text: str) -> None:\n"
+            "        self._emit(heading(text, color=self.color))\n"
+            "\n"
+            "    def good(self, text: str) -> None:\n"
+            "        self._emit(good(text, color=self.color))\n"
+            "\n"
+            "    def warn(self, text: str) -> None:\n"
+            "        self._emit(warn(text, color=self.color))\n"
+        )
+        result = analyze_project(src_dir)
+        categories = {s.category for s in result.suggestions}
+        assert "abstraction-opportunity" not in categories
+
+    def test_group_with_one_non_self_named_member_still_flagged(self, tmp_path):
+        # frob:tests src/frob/arch/_python.py::_is_call_through_forwarder_family
+        # Three near-duplicate-bodied methods CLUSTER together (same
+        # shape, high body-similarity), but `good`/`warn` each mistakenly
+        # delegate to `heading` instead of their OWN name -- not real
+        # per-member forwarders, just three near-identical (and likely
+        # buggy) implementations. A group like this is exactly the
+        # unexplained-duplication case the detector exists to catch, so
+        # the forwarder exclusion must not suppress it.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "elements.py").write_text(
+            "from __future__ import annotations\n"
+            "\n"
+            "def heading(text: str, color: bool) -> str:\n"
+            "    return text\n"
+        )
+        (src_dir / "renderer.py").write_text(
+            "from __future__ import annotations\n"
+            "\n"
+            "from elements import heading\n"
+            "\n"
+            "\n"
+            "class RenderWriter:\n"
+            "    def __init__(self, emit, color):\n"
+            "        self._emit = emit\n"
+            "        self.color = color\n"
+            "\n"
+            "    def heading(self, text: str) -> None:\n"
+            "        self._emit(heading(text, color=self.color))\n"
+            "\n"
+            "    def good(self, text: str) -> None:\n"
+            "        self._emit(heading(text, color=self.color))\n"
+            "\n"
+            "    def warn(self, text: str) -> None:\n"
+            "        self._emit(heading(text, color=self.color))\n"
+        )
+        result = analyze_project(src_dir)
+        categories = {s.category for s in result.suggestions}
+        assert "abstraction-opportunity" in categories
+
+    def test_forwarder_helper_requires_self_named_short_body(self):
+        # frob:tests src/frob/arch/_python.py::_is_call_through_forwarder_family
+        # frob:tests src/frob/arch/_python.py::_is_self_named_forwarder
+        from frob.arch._python import (
+            _is_call_through_forwarder_family,
+            _is_self_named_forwarder,
+        )
+
+        assert _is_self_named_forwarder("heading", "self . _emit ( heading ( _v0 ) )")
+        assert not _is_self_named_forwarder("heading", "self . _emit ( warn ( _v0 ) )")
+        assert not _is_self_named_forwarder("heading", "")
+
+        # DIFFERENT names, each independently self-forwarding: excluded.
+        assert _is_call_through_forwarder_family(
+            [
+                ("a.py", "heading", "heading ( _v0 )"),
+                ("a.py", "good", "good ( _v0 )"),
+            ]
+        )
+        # One member's body does not mention its own name: not excluded.
+        assert not _is_call_through_forwarder_family(
+            [
+                ("a.py", "heading", "heading ( _v0 )"),
+                ("a.py", "good", "stripped = _v0 . strip ( ) upper = stripped . upper ( )"),
+            ]
+        )
+
+
 class TestCheckRegistryExclusion:
     def test_check_and_run_checks_names_not_flagged(self, tmp_path):
         # frob:tests src/frob/arch/_python.py::_is_check_registry_family

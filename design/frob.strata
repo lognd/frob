@@ -2991,6 +2991,7 @@ node testsuite : trusted {
     attr interface=TestCacheModule;
     attr interface=TestCallGraph;
     attr interface=TestCallGraphBounds;
+    attr interface=TestCallThroughForwarderExclusion;
     attr interface=TestCanaryLevelValidation;
     attr interface=TestCanonicalAndNormalize;
     attr interface=TestCanonicalLinesMutantKiller;

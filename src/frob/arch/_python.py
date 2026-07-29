@@ -1511,6 +1511,65 @@ def _abstraction_group_evidence(
     return _near_duplicate_cluster(members_with_body)
 
 
+#: T-1182 (refiled from the T-1083 disposition, w20-arch a8085d7f): the
+#: token budget a call-through forwarder's serialized body
+#: (`_body_fingerprint`/`_serialize_py_body`) may spend before it no
+#: longer reads as "single statement". `RenderWriter.heading`'s body --
+#: `self . _emit ( heading ( _v0 , color = self . color ) )` -- is 14
+#: tokens; this is a generous but still narrow ceiling meant to admit
+#: exactly that shape (one attribute-chain call wrapping one delegated
+#: call, at most a couple of keyword arguments), not an arbitrary
+#: multi-statement body that merely happens to mention its own name.
+# frob:waive PII012 reason="'token' here means a normalized body-fingerprint lexical \
+# token (_serialize_py_body's output), not a credential/auth token -- a name-signature \
+# false positive, same class as frob.outline's existing PII012 waiver for its own \
+# unrelated lexical-token vocabulary"
+_FORWARDER_BODY_TOKEN_LIMIT = 20
+
+
+def _is_self_named_forwarder(fname: str, body_fp: str) -> bool:
+    """Whether one member's serialized body `body_fp` (`_body_fingerprint`)
+    is a short, single-statement call-through to a symbol sharing its OWN
+    bare name `fname` (T-1182) -- e.g. `RenderWriter.heading`'s body
+    `self . _emit ( heading ( _v0 , color = self . color ) )` delegates to
+    the module-level `frob.render._elements.heading` it shadows
+    (T-0448/T-0460's vocabulary-namespace convention). Short
+    (`_FORWARDER_BODY_TOKEN_LIMIT`) AND self-referential are both
+    required: a long body that happens to mention its own name somewhere
+    is not a pure forwarder, and a short body that never mentions its own
+    name is not delegating to its own lineage at all."""
+    if not body_fp:
+        return False
+    tokens = body_fp.split(" ")
+    return len(tokens) <= _FORWARDER_BODY_TOKEN_LIMIT and fname in tokens
+
+
+def _is_call_through_forwarder_family(
+    members_with_body: list[tuple[str, str, str]],
+) -> bool:
+    """Whether a shared-signature `members_with_body` group (T-1182,
+    refiled from the T-1083 disposition) consists ENTIRELY of call-through
+    forwarders rather than an accidental duplication: every member
+    independently satisfies `_is_self_named_forwarder` -- its own body is a
+    short, single-statement delegation to an identically-named symbol it
+    shadows. Unlike `_is_language_parity_family`/`_is_check_registry_family`,
+    this is NOT a same-name-across-the-group check: `RenderWriter`'s
+    `heading`/`subhead`/`good`/`warn`/`muted` group shares a signature
+    under FIVE DIFFERENT names, each independently forwarding to its own
+    identically-named module-level counterpart (its own lineage) --
+    the point is that every member is a thin shadow of SOME same-named
+    symbol, not that the group shares one common name. A group with even
+    one member whose body is not itself a short self-named forwarder is
+    never excluded here -- that member is unexplained real duplication,
+    exactly what this detector exists to catch."""
+    if len(members_with_body) < 2:
+        return False
+    return all(
+        _is_self_named_forwarder(fname, body_fp)
+        for _, fname, body_fp in members_with_body
+    )
+
+
 def _check_abstraction_opportunities(
     all_sigs: list[tuple[str, str, tuple[str, ...], str, str]],
     all_dispatch_refs: dict[str, set[str]],
@@ -1540,7 +1599,10 @@ def _check_abstraction_opportunities(
     builder return-type convention (`_is_gate_rule_builder_family`,
     T-1141, filed from T-1114), or all `frob.process`/`frob.check`'s own
     check-stage-runner return-type convention
-    (`_is_tool_result_builder_family`, T-1144, filed from T-1124)."""
+    (`_is_tool_result_builder_family`, T-1144, filed from T-1124). The
+    evidence subset (`flagged`, post body-similarity clustering) is also
+    checked against `_is_call_through_forwarder_family` (T-1182, refiled
+    from the T-1083 disposition) -- see that function's own docstring."""
     groups: dict[tuple[tuple[str, ...], str], list[tuple[str, str, str]]] = defaultdict(
         list
     )
@@ -1565,5 +1627,9 @@ def _check_abstraction_opportunities(
             continue
         flagged = _abstraction_group_evidence(ptypes, ret, members_with_body)
         if len(flagged) < 2:
+            continue
+        # T-1182: checked against `flagged` (the evidence subset), not
+        # the raw group -- see `_is_call_through_forwarder_family`.
+        if _is_call_through_forwarder_family(flagged):
             continue
         _emit_abstraction_suggestion(ptypes, ret, flagged, out)
