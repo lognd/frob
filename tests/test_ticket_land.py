@@ -1604,6 +1604,58 @@ class TestWipCommit:
         assert landed_content == "# uncommitted change to snapshot\n"
 
 
+# frob:ticket T-1184
+class TestWipAddIgnoredPathFallback:
+    """T-1184: `_wip_add_excluding_frob`'s `:!.frob` pathspec trips git
+    2.34.1's "explicitly named ignored path" refusal the moment `.frob` IS
+    actually gitignored (the normal real-repo case) -- the fallback
+    (add-everything, then unstage `.frob` separately) must reach the same
+    end state without ever naming an ignored path in a pathspec."""
+
+    def test_gitignored_frob_falls_back_and_still_lands(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land.py::_wip_add_excluding_frob kind="unit"
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-wip-ignored-frob", str(wt)], repo
+        )
+        created = new_ticket(wt, _spec("Wip ignored frob", scope=("src/wip_ig.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+
+        # `.frob/` is gitignored (the normal real-repo case) -- naming it in
+        # a negated pathspec is what trips the T-1184 refusal.
+        (wt / ".gitignore").write_text(".frob/\n")
+        (wt / "src" / "wip_ig.py").write_text("# committed baseline\n")
+        _commit_all(wt, "wip ignored-frob ticket bits")
+
+        # Scratch state under `.frob/` (as `land()`'s own lock/bookkeeping
+        # writes leave behind) plus a real uncommitted change to snapshot.
+        (wt / ".frob").mkdir(exist_ok=True)
+        (wt / ".frob" / "scratch.txt").write_text("frob-local state\n")
+        (wt / "src" / "wip_ig.py").write_text("# uncommitted change to snapshot\n")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+        assert report.wip_committed is True
+
+        wt_log = _run(["git", "log", "--oneline"], wt).stdout
+        assert "wip: pre-land snapshot" in wt_log
+
+        landed_content = (repo / "src" / "wip_ig.py").read_text()
+        assert landed_content == "# uncommitted change to snapshot\n"
+
+    def test_is_ignored_path_refusal_matches_gits_fixed_message(self) -> None:
+        # frob:tests src/frob/tickets/_land.py::_is_ignored_path_refusal kind="unit"
+        stderr = (
+            "The following paths are ignored by one of your .gitignore files:\n"
+            ".frob\nhint: Use -f if you really want to add them.\n"
+        )
+        assert _land_mod._is_ignored_path_refusal(stderr) is True
+        assert _land_mod._is_ignored_path_refusal("some other git error") is False
+
+
 class TestWipCommitNormalizationOnlyDirty:
     """T-0847: a worktree that is `_porcelain_dirty` purely because of a
     line-ending normalization status line (WSL/autocrlf phantom-modified)

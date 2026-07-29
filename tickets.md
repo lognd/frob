@@ -2327,7 +2327,7 @@ with silent residue, per TICK011.
 id: T-1184
 title: 'land: _do_wip_commit''s negated :!.frob pathspec aborts git add outright on
   git 2.34.1'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-29'
@@ -2337,6 +2337,23 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/tickets/_land.py
+- tests/test_ticket_land.py
+- design/frob.strata
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: COV002/SCOPE002 need the new fallback tests bound to T-1184's own file
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: design/frob.strata
+  reason: sys sync-interface (SYS104) had to add TestWipAddIgnoredPathFallback to
+    the testsuite interface node
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_ticket_land.py::TestWipAddIgnoredPathFallback::test_gitignored_frob_falls_back_and_still_lands
+- tests/test_ticket_land.py::TestWipAddIgnoredPathFallback::test_is_ignored_path_refusal_matches_gits_fixed_message
 threat: null
 component: null
 ```
@@ -2363,6 +2380,33 @@ fixed inline there only because it structurally blocked completing that
 land; filing this ticket to track the fix on its own record and note any
 test-fixture-repo defense-in-depth this drops (T-1006's original bare-
 fixture case, if any test exercises a non-gitignored .frob/ specifically).
+
+## Done report
+
+Evidence-close only: the fix for git 2.34.1's `:!.frob` ignored-path
+refusal already landed inside T-1179's commit 1440fac6 as
+`_wip_add_excluding_frob` (add-then-unstage fallback, guarded by
+`_is_ignored_path_refusal`). Verified the landed behavior is present at
+src/frob/tickets/_land.py:1844-1893 unchanged, and added two focused
+pytest node ids: one end-to-end `land()` case that gitignores `.frob/`
+(the real-repo trigger condition) and asserts the wip commit still
+succeeds via the fallback path, and one direct unit test on
+`_is_ignored_path_refusal`'s message matching. Both pass.
+
+### Changed
+```
+ tickets.md | 32 +++++++++++++++++++++++++++++++-
+ 1 file changed, 31 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestWipAddIgnoredPathFallback::test_gitignored_frob_falls_back_and_still_lands` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestWipAddIgnoredPathFallback::test_is_ignored_path_refusal_matches_gits_fixed_message` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 496 warning(s), 573 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1185 -->
 ```yaml

@@ -4359,6 +4359,7 @@ node testsuite : trusted {
     attr interface=TestWeaknessesRegistryFile;
     attr interface=TestWindowsEntries;
     attr interface=TestWindowsHostIsolation;
+    attr interface=TestWipAddIgnoredPathFallback;
     attr interface=TestWipCommit;
     attr interface=TestWipCommitNormalizationOnlyDirty;
     attr interface=TestWlHash;
