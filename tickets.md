@@ -514,7 +514,7 @@ another) rather than one ticket trying to move the whole file at once.
 id: T-1187
 title: 'arch: split remaining ~8 gate families out of src/frob/gates/__init__.py (7960
   lines) -- T-1183 residue'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -526,6 +526,20 @@ scope:
 - src/frob/gates/**
 - docs/modules/gates.md
 - tests/test_gates.py
+- docs/strata/surface.md
+scope_changes:
+- op: add
+  glob: docs/strata/surface.md
+  reason: T-1187's sys_gate split leaves this doc's frob:describes edge pointing at
+    the old __init__.py location; a 1-line symref fix, same class as the tests/test_gates.py
+    fixes already in scope
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_gates.py::TestSysGate::test_noop_no_design_dir
+- tests/test_gates.py::TestSysGate::test_sys001_dangling
+- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_selfconform_violation
+- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
 threat: null
 component: null
 ```
@@ -550,4 +564,92 @@ Still remaining, in the same one-family-per-land shape:
   orchestration root, but worth an explicit decision at design time
 
 Re-filed (not re-derived from scratch) rather than letting T-1183 close
+with silent residue, per TICK011.
+
+## Done report
+
+Extracted the SYS00x/DOC003/SELFAUDIT001 family (sys_gate + its private
+helpers: _load_systems/_load_test_config, _design_dir, _sys001-004,
+_selfaudit_violation(s), _claims_markers and friends, _log_sys_gate_summary)
+into src/frob/gates/_sys.py, following the _fuzz.py (T-1183) precedent.
+gates/__init__.py: 7960 -> 7309 lines. sys_gate and _load_test_config are
+re-exported from frob.gates unchanged; _DEFAULT_DESIGN_DIR, _claims_markers,
+and _design_dir are also re-exported (tests/test_gates.py's direct-call
+surface plus _waive_comments.py's existing `from frob.gates import
+_design_dir` cross-reference).
+
+DRIFT002 fallout from the move (5 tests/test_gates.py `frob:tests` comments
+plus one docs/strata/surface.md `frob:describes` marker pointing at the
+old __init__.py::sys_gate location) fixed by updating the symref text in
+place, same as T-1183's precedent for _fuzz.py. docs/strata/surface.md was
+not in T-1187's original scope; added it via `frob ticket scope --add`
+(SCOPE001's own suggested remedy) since the 1-line fix is a direct,
+unavoidable consequence of this ticket's own file move, not new work.
+
+Only ONE family extracted this land (one-family-per-land discipline
+continues); the other 7 named in T-1187's body (INV00x, TEST00x, REL00x,
+PERF, COV00x, SCOPE/PREWORK, run_gates spine) are still outstanding.
+Re-filed as a fresh residue ticket per TICK011 rather than closed silently.
+
+### Changed
+```
+ docs/strata/surface.md     |   2 +-
+ src/frob/gates/__init__.py | 659 +------------------------------------------
+ src/frob/gates/_sys.py     | 690 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/test_gates.py        |  10 +-
+ tickets.md                 |  16 +-
+ 5 files changed, 718 insertions(+), 659 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestSysGate::test_noop_no_design_dir` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSysGate::test_sys001_dangling` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_selfconform_violation` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 672 warning(s), 679 waived
+- error-findings: none (measured, zero errors)
+
+<!-- ticket:T-1188 -->
+```yaml
+id: T-1188
+title: 'arch: split remaining ~7 gate families out of src/frob/gates/__init__.py (7309
+  lines) -- T-1187 residue'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- docs/modules/gates.md
+- tests/test_gates.py
+threat: null
+component: null
+```
+T-1187 extracted ONE more cohesive family (SYS00x/DOC003/SELFAUDIT001 --
+sys_gate plus its private helpers) into src/frob/gates/_sys.py
+(gates/__init__.py 7960 -> 7309 lines), continuing the
+T-1072/T-1140/T-1159/T-1170/T-1174/T-1183/T-1187 one-family-per-land
+discipline. Budget did not allow the other ~7 remaining families this
+ticket's own body named. gates/__init__.py is still 7309 lines, well
+above the large-file threshold.
+
+Still remaining, in the same one-family-per-land shape:
+- INV00x (inv006_gate + helpers, inv003_gate/inv004_gate/invariant_gate)
+- TEST00x (test policy loading + TEST00x gate family)
+- REL00x (release-bump/debt gate wiring)
+- PERF (perf gate wiring, distinct from frob.perf's own module)
+- COV00x (coverage gate family)
+- SCOPE/PREWORK (scope_gate, prework_gate)
+- the run_gates spine itself (_assemble_gate_report, _build_jobs,
+  run_gates) -- likely stays in __init__.py as the module's own
+  orchestration root, but worth an explicit decision at design time
+
+Re-filed (not re-derived from scratch) rather than letting T-1187 close
 with silent residue, per TICK011.

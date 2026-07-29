@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.273.0] - unreleased
+
+- T-1187: arch: split remaining ~8 gate families out of src/frob/gates/__init__.py (7960 lines) -- T-1183 residue
+
 ## [0.272.0] - unreleased
 
 - T-1183: arch: split remaining ~9 gate families out of src/frob/gates/__init__.py (8015 lines) -- T-1174 residue

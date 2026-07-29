@@ -527,7 +527,7 @@ once that surface exists.
 <!-- frob:describes src/frob/strata/_design_load.py::DesignIds -->
 <!-- frob:describes src/frob/strata/_design_load.py::DesignLoadError -->
 <!-- frob:describes src/frob/strata/_design_load.py::DEFAULT_DESIGN_DIR -->
-<!-- frob:describes src/frob/gates/__init__.py::sys_gate -->
+<!-- frob:describes src/frob/gates/_sys.py::sys_gate -->
 
 Three `frob:` comment directives (`frob.graph.dsl`'s verb table) bind a
 code symbol to a design construct id, the same shape as `frob:ticket`/

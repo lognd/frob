@@ -9789,7 +9789,7 @@ boundary b_login endorse f_login : foreign -> authenticated when "jwt_verified"
 
 
 class TestSysGate:
-    # frob:tests src/frob/gates/__init__.py::sys_gate kind="unit"
+    # frob:tests src/frob/gates/_sys.py::sys_gate kind="unit"
     def test_noop_no_design_dir(self, tmp_path: Path) -> None:
         _write(tmp_path, "src/a.py", "def f(): pass\n")
         snapshot = _snapshot(tmp_path)
@@ -10153,7 +10153,7 @@ class TestSelfAuditGate:
     `frob.strata.check_self_conformance`, which `tests/unit/strata/
     test_selfconform.py` already covers at the pure-function level."""
 
-    # frob:tests src/frob/gates/__init__.py::sys_gate kind="unit"
+    # frob:tests src/frob/gates/_sys.py::sys_gate kind="unit"
     # invariant spec: [INV-041](invariants/INV-041.md)
     def test_selfaudit001_folds_selfconform_violation(self, tmp_path: Path) -> None:
         """GIVEN a node declaring a `code=` glob over a file that exercises
@@ -10177,7 +10177,7 @@ class TestSelfAuditGate:
         assert "SYS100" in selfaudit[0].message
         assert "widget" in selfaudit[0].message
 
-    # frob:tests src/frob/gates/__init__.py::sys_gate kind="unit"
+    # frob:tests src/frob/gates/_sys.py::sys_gate kind="unit"
     def test_selfaudit001_clean_model_no_violations(self, tmp_path: Path) -> None:
         """GIVEN a design model whose declared `may` capabilities are
         exactly what the bound code exercises WHEN `sys_gate` runs THEN it
@@ -10197,7 +10197,7 @@ class TestSelfAuditGate:
         violations = sys_gate(tmp_path, snapshot)
         assert _by_rule(violations, "SELFAUDIT001") == []
 
-    # frob:tests src/frob/gates/__init__.py::sys_gate kind="unit"
+    # frob:tests src/frob/gates/_sys.py::sys_gate kind="unit"
     def test_selfaudit001_suppressed_on_design_load_error(self, tmp_path: Path) -> None:
         """A `.strata` file that fails to parse suppresses SELFAUDIT001
         entirely (matches DOC003/SYS001's suppression posture) -- a broken
@@ -10213,7 +10213,7 @@ class TestSelfAuditGate:
         assert _by_rule(violations, "SELFAUDIT001") == []
         assert _by_rule(violations, "SYS004") != []
 
-    # frob:tests src/frob/gates/__init__.py::sys_gate kind="unit"
+    # frob:tests src/frob/gates/_sys.py::sys_gate kind="unit"
     def test_selfaudit001_folds_mode_conformance_violation(
         self, tmp_path: Path
     ) -> None:
