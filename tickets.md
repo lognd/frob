@@ -1460,3 +1460,32 @@ threat: null
 component: null
 ```
 Root cause and target: this is the interim zero-Rust step noted under Rust-migration candidate #1 ('use tree-sitter Query captures (C speed) for comment/docstring/identifier extraction from Python'), and it is the mechanism half of PERF-epic child T-1210 (report candidate #5). Split of ownership: this ticket owns the span-EXTRACTION mechanism (Query captures replacing Python recursion) since it is the natural home for a tree-sitter-API-level change; T-1210 owns the sort+bisect containment fix and the per-run cache for the resulting spans, and its acceptance criteria explicitly defer the mechanism to this ticket to avoid two owners writing to the same function. Do not duplicate the containment/caching acceptance criteria here -- see T-1210.
+
+<!-- ticket:T-1224 -->
+```yaml
+id: T-1224
+title: 'bug: clones stage serializes on exclusive derived_state_write_lock -- concurrent
+  frob stalls dup pipeline'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/process/_lock.py
+- src/frob/dup/**
+acceptance:
+- text: GIVEN the clones profile observed a 240s fcntl.flock wait on derived_state_write_lock
+    (src/frob/process/_lock.py:372) caused by a concurrent frob process contending
+    for .frob derived-state writes WHEN the dup pipeline's locking is made finer-grained
+    or read-shared (design decides the mechanism) THEN concurrent frob invocations
+    (e.g. a sweep and a second check) do not block each other's clones stage on derived-state
+    writes for the full stage duration
+  evidence: []
+threat: null
+component: null
+```
+Root cause: src/frob/process/_lock.py:372 derived_state_write_lock is a single exclusive flock guarding the dup pipeline's derived-state writes; any concurrent frob process (sweep, second check) contending for it stalls the clones stage for its entire duration -- observed as a 240s flock wait during profiling (excluded from the report's compute shares as an artifact of concurrent profiling, but the underlying serialization is real and reproducible under any real concurrent frob usage). Fix: finer-grained locking (e.g. per-file or per-shard) or a read-shared lock mode for readers, design TBD.
