@@ -3875,3 +3875,36 @@ import/call-site rewrite (T-1197's scope).
 
 ## Drop reason
 - 2026-07-29: duplicate: same frob ticket new invocation was run twice while diagnosing docs/** scope-closure warnings; superseded by T-1267 (identical content)
+
+<!-- ticket:T-1269 -->
+```yaml
+id: T-1269
+title: 'ticket land --plan: atomic design-phase land with automatic draft finalization'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-29'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- src/frob/_cli_parsers/_ticket.py
+- docs/**
+- tests/**
+acceptance:
+- text: 'GIVEN a planner worktree containing only docs plus ledger changes (no closeable
+    worked ticket) WHEN frob ticket land --plan --worktree PATH runs THEN it performs
+    the whole chain atomically: merge via the ledger driver, finalize EVERY incoming
+    draft id to the next free real ids in one allocator-locked ledger write (cross-references
+    rewritten), verify TICK gate clean, and commit -- one command, one commit for
+    the finalization, no hand-assigned ids'
+  evidence: []
+- text: GIVEN any failure mid-chain THEN the operation unwinds completely (no half-merged
+    ledger, no partially-renumbered drafts) and names the manual remedy
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-07-29: renumbering must be atomic and automatic. Evidence from this drive: landing four design-phase planner worktrees required a guarded plain git merge (FROB_LAND_INTERNAL=1) plus 15 hand-assigned frob ticket renumber calls across 4 batches, because frob ticket land (T-0176) requires a closeable ticket and its draft-finalization path only runs for worked-ticket lands. Also fix the stale TICK002 remedy text that still says 'once T-0176 lands' (it landed). Builds on the existing finalize_draft_for_land machinery (_draft_finalize.py) and the T-0162 id allocator; ledger-v2 (T-1255 renumber child) later absorbs the same behavior for the file-per-ticket store.
