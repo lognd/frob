@@ -924,11 +924,17 @@ acceptance:
 - text: 'GIVEN an unchanged file THEN its coverage is never recomputed: per-file coverage
     keyed by content hash, full-suite runs reserved for cold start or explicit --full'
   evidence: []
+- text: 'GIVEN any frob-enabled repo on any OS (Linux, macOS, Windows) WHEN coverage
+    refresh is needed THEN a frob-native command (frob coverage or frob test --coverage)
+    performs the whole orchestration -- subprocess rc generation, pytest invocation,
+    combine, xml, stamp -- in Python with no Makefile or shell dependency; make coverage
+    becomes a thin optional wrapper calling it (user directive 2026-07-29: portable,
+    not just this project and not just Linux)'
+  evidence: []
 threat: null
 component: null
 ```
 User directive 2026-07-29: we should never run make coverage manually; frob must never consume stale data or retread work that should be cached. Today coverage.xml is a hand-refreshed artifact: TEST011 warns it predates tracked changes and TEST005 findings are computed from it anyway (the attribution-inflation problem T-0969 is untangling). Design: treat coverage like the graph cache -- a derived artifact frob owns, refreshed incrementally from the touched-set (the affects closure already exists in frob.graph.affects), merged per-file keyed by content hash, with the freshness contract enforced by the gate rather than a Makefile comment. Interacts with T-0969 (attribution fix defines what honest data is) and the CI gitignored-trust child under T-1193 (CI needs the same no-stale contract). Related: the profiler found process-pool workers re-derive per-file artifacts every run -- same no-retread principle, separate ticket in the perf tree.
-
 <!-- ticket:T-1206 -->
 ```yaml
 id: T-1206
@@ -2058,3 +2064,35 @@ threat: null
 component: null
 ```
 Rows: CMPL-SOC2-CATEGORIES, CMPL-SOC2-CC-FAMILIES, CMPL-PCIDSS-REQUIREMENTS, CMPL-HIPAA-ADMIN-STANDARDS (process, already out_of_scope), CMPL-HIPAA-PHYSICAL-STANDARDS (advisory, already out_of_scope), CMPL-HIPAA-TECHNICAL-STANDARDS. HIPAA-BAA already has a real RegulationEntry+mitigation (baa_attestation) in COMPLIANCE_CATALOG -- confirm CMPL-HIPAA-TECHNICAL-STANDARDS's handled_by:COMPLIANCE005 is not just a disposition string riding on that unrelated coincidence. For each of the 4 non-out_of_scope rows (SOC2 x2, PCI-DSS, HIPAA-TECHNICAL) classify: (a) enforceable now via existing/extended strata attr vocabulary + new RegulationEntry, (b) needs new model vocabulary, (c) attestation-only (dated artifact + expiry gate, like baa_attestation), (d) genuinely out of scope with a documented reason -- no row left silently riding on the COMPLIANCE005-self-reference shape T-1244 (gate-vacuity child) is closing.
+
+<!-- ticket:T-1246 -->
+```yaml
+id: T-1246
+title: 'compliance triage: GDPR + CCPA/CPRA rows -- classify against real coverage,
+  revisit CCPA out_of_scope post exposure:public-web'
+state: queued
+kind: security
+origin: human
+created: '2026-07-29'
+priority: medium
+blocked_by:
+- T-1242
+parent: T-1241
+tier: ticket
+sprint: null
+scope:
+- docs/design/registry/compliance.yaml
+- src/frob/strata/_compliance.py
+acceptance:
+- text: GIVEN this ticket closes WHEN CMPL-GDPR-ARTICLES is inspected THEN its handled_by
+    target is confirmed to be a real GDPR-* RegulationEntry set (or a follow-on ticket
+    is filed for the gap)
+  evidence: []
+- text: GIVEN T-1242 has landed exposure:public-web WHEN COMPLIANCE_OUT_OF_SCOPE's
+    CCPA entry is re-read THEN its reason is either reaffirmed with an updated review
+    date or replaced by a partial handled_by split, never left silently stale
+  evidence: []
+threat: null
+component: null
+```
+Rows: CMPL-GDPR-CHAPTERS (process, already out_of_scope), CMPL-GDPR-ARTICLES, CMPL-CCPA-CORE-RIGHTS (process, already out_of_scope), CMPL-CPRA-ADDED-RIGHTS (process, already out_of_scope). GDPR already has 3 real RegulationEntry units (ERASURE/RETENTION/BASIS) -- confirm CMPL-GDPR-ARTICLES's handled_by:COMPLIANCE005 is not just riding the disposition-string shape unrelated to those 3. Separately: COMPLIANCE_OUT_OF_SCOPE's CCPA entry justifies out_of_scope via 'PII010 catches it regardless of jurisdiction' -- once T-1242 lands exposure:public-web + a notice/consent RegulationEntry, revisit whether CCPA-CORE-RIGHTS's right-to-know/right-to-delete rights are now partially covered by that new mitigation and whether the out_of_scope reason still holds, or whether it should be split (right-to-know/notice now enforced, right-to-delete still process/out_of_scope).
