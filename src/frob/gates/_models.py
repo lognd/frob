@@ -280,6 +280,14 @@ class GateError(ErrorSet):
     WorktreeLeaseViolation = (
         "FROB_WORKTREE is leased to a different worktree than this command's cwd"
     )
+    # T-1180: `stamp_coverage`'s hard pre-stamp floor (TEST011's deflation
+    # heuristic, promoted from WARN-advisory to a stamp-time refusal) --
+    # coverage.xml joined too small a fraction of known modules to trust,
+    # e.g. a run that silently dropped subprocess coverage.
+    CoverageDeflated = (
+        "coverage.xml module-join fraction is below the deflation floor; "
+        "refusing to stamp -- re-run: make coverage"
+    )
 
 
 # frob:doc docs/modules/gates.md#error-types

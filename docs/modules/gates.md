@@ -1579,7 +1579,7 @@ EXHAUST001/002's own carve-out).
 <!-- frob:describes src/frob/gates/_prework.py::load_prework -->
 <!-- frob:describes src/frob/gates/__init__.py::scope_digest -->
 <!-- frob:describes src/frob/gates/_decisions_compliance.py::decisions_gate -->
-<!-- frob:describes src/frob/gates/__init__.py::dup_gate -->
+<!-- frob:describes src/frob/gates/_dup.py::dup_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::release_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::fuzz_gate -->
 <!-- frob:describes src/frob/gates/_doclink_docanchor.py::doclink_gate -->
@@ -1630,6 +1630,14 @@ rather than cached unsoundly.
   `frob-coverage.lock.json` so the committed lock and the TEST012 gate's
   live comparison agree about what counts as a module (e.g. scaffold
   `.j2` templates), instead of the lock permanently drifting.
+- `stamp_coverage`'s T-1180 deflation floor -- when called with a
+  `snapshot`, refuses to write `.frob/coverage-stamp`/`frob-coverage.
+  lock.json` at all (`Err(GateError.CoverageDeflated)`) whenever the
+  filtered `CoverageData.module_join_fraction` falls below the same 0.5
+  floor TEST011 only warns about (`_DEFLATION_FLOOR`, `frob.gates.
+  _coverage`) -- promoting that WARN-advisory heuristic into a hard
+  pre-stamp gate, since a run that silently dropped subprocess coverage
+  used to stamp clean and only get flagged after the fact.
 - `load_stamp` -- the raw `.frob/coverage-stamp` document, or `None` if
   never stamped/unreadable; TEST006 compares it against live file hashes.
 - `load_prework` -- the recorded pre-work sweep for a ticket, or `None` if
@@ -3030,6 +3038,9 @@ class GateError(ErrorSet):
     GraphUnavailable = "Graph build failed; gates cannot run"
     GitFailed        = "git diff/merge-base failed"
     NoTicketContext  = "Scope gate requested but no active ticket resolved"
+    # T-1180: stamp_coverage's hard pre-stamp deflation floor -- see the
+    # "Public API" section above.
+    CoverageDeflated = "coverage.xml module-join fraction is below the deflation floor"
 
 class PolicyError(ErrorSet):
     MalformedRule = "Policy rule failed schema validation"

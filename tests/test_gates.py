@@ -13,6 +13,7 @@ import pytest
 
 from frob.gates import (
     GateConfig,
+    GateError,
     PreworkSweep,
     Severity,
     SystemSpec,
@@ -6748,6 +6749,7 @@ class TestTestGate:
 
 
 # frob:ticket T-0545
+# frob:ticket T-1180
 class TestCoverageLoad:
     def test_missing_coverage_xml(self, tmp_path: Path) -> None:
         result = load_coverage(tmp_path)
@@ -7081,6 +7083,62 @@ class TestCoverageLoad:
         assert not (tmp_path / "frob-coverage.lock.json").is_relative_to(
             tmp_path / ".frob"
         )
+
+    # frob:ticket T-1180
+    def test_stamp_coverage_refuses_below_deflation_floor(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::stamp_coverage
+        # T-1180: extends TEST011's WARN-only deflation heuristic into a
+        # hard stamp-time refusal -- a coverage.xml that joins too few of
+        # the known modules (subprocess coverage silently dropped, the
+        # `make coverage` incident this ticket exists for) must not stamp
+        # at all, not stamp-then-warn. Needs >= _DEFLATION_MIN_KNOWN_MODULES
+        # (20) known modules -- below that, the floor is sample-size noise
+        # (see the sibling test below) and is deliberately skipped.
+        for i in range(24):
+            _write(tmp_path, f"src/frob/pkg/m{i}.py", "def helper(x):\n    return x\n")
+        # Only 1 of 24 known modules shows up in coverage.xml -- well below
+        # the 0.5 floor.
+        xml = """<?xml version="1.0"?>
+<coverage>
+  <packages>
+    <package>
+      <classes>
+        <class filename="src/frob/pkg/m0.py" line-rate="0.9">
+          <lines><line number="2" hits="1" branch="false"/></lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+"""
+        (tmp_path / "coverage.xml").write_text(xml)
+        snap = _snapshot(tmp_path)
+        result = stamp_coverage(tmp_path, snap)
+        assert result.is_err
+        assert result.danger_err == GateError.CoverageDeflated
+        # Neither the stamp nor the lock was written.
+        assert not (tmp_path / ".frob" / "coverage-stamp").exists()
+        assert not (tmp_path / "frob-coverage.lock.json").exists()
+
+    # frob:ticket T-1180
+    def test_stamp_coverage_deflation_floor_skipped_below_min_known_modules(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::stamp_coverage
+        # T-1180: a tiny repo/fixture (a handful of known modules, as most
+        # of this repo's own system-test fixtures are) can legitimately
+        # have a near-zero join fraction with no deflation involved --
+        # there was only ever one module to begin with. Below
+        # `_DEFLATION_MIN_KNOWN_MODULES` this must still stamp normally,
+        # exactly like pre-T-1180 behavior (the regression this test
+        # guards: T-1180's first landed version broke several existing
+        # small-fixture system tests this exact way).
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        (tmp_path / "coverage.xml").write_text("<coverage></coverage>")
+        snap = _snapshot(tmp_path)
+        result = stamp_coverage(tmp_path, snap)
+        assert result.is_ok
+        assert (tmp_path / ".frob" / "coverage-stamp").exists()
 
     # frob:ticket T-0997
     def test_stamp_coverage_lock_excludes_graph_excluded_modules(
@@ -9236,7 +9294,7 @@ class TestOptInGates:
 
     # invariant spec: [INV-011](invariants/INV-011.md)
     def test_dup_gate_off_by_default(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/__init__.py::dup_gate
+        # frob:tests src/frob/gates/_dup.py::dup_gate
         from frob.gates import dup_gate
 
         _write(tmp_path, "src/a.py", "def foo():\n    return 1\n")
@@ -9282,7 +9340,7 @@ class TestOptInGates:
         gate -- a planted alpha-renamed clone (compute_total/compute_sum,
         identical after R3 canonicalization) must fail the gate when one
         side is touched."""
-        # frob:tests src/frob/gates/__init__.py::dup_gate
+        # frob:tests src/frob/gates/_dup.py::dup_gate
         from frob.dup import _core as dup_core
         from frob.gates import dup_gate
 
@@ -9364,7 +9422,7 @@ class TestOptInGates:
         frob-core unavailable must emit a blocking DUP003 ERROR, not
         silently return no violations -- a requested-but-unavailable
         control fails CLOSED."""
-        # frob:tests src/frob/gates/__init__.py::dup_gate
+        # frob:tests src/frob/gates/_dup.py::dup_gate
         import frob.dup as dup_module
         from frob.gates import dup_gate
 

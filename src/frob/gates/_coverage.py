@@ -474,7 +474,92 @@ def exclude_filtered_coverage(
     )
 
 
+# T-1180: extends TEST011's `_TEST011_JOIN_FLOOR` (WARN-advisory, in
+# `frob.gates`) into a hard, stamp-time refusal here -- three consecutive
+# `make coverage` runs produced a coverage.xml that stamped clean despite
+# deflated/dropped subprocess data, because TEST011 only warns AFTER the
+# fact, once a bad stamp is already on disk and TEST005 is already trusting
+# it. Same threshold as TEST011 by design (one floor, not two to keep in
+# sync); duplicated as a constant here (not imported from `frob.gates`,
+# which imports FROM this module) rather than risk a circular import.
+_DEFLATION_FLOOR = 0.5
+
+# T-1180: a real, tiny repo (or the many test fixtures that build a
+# one-or-two-file snapshot and call `stamp_coverage` against a deliberately
+# minimal/empty `coverage.xml` to exercise unrelated behavior -- e.g.
+# `tests/system/test_cli_check.py::test_only_gates_passes_once_bound_and_
+# tested`) can legitimately have `module_join_fraction == 0.0` with no
+# deflation involved: there is nothing to "drop" when there was only ever
+# one module to begin with. The floor only means something once there are
+# enough known modules that a near-zero join fraction can only plausibly
+# come from a run that silently failed to merge, not from a small sample
+# size -- below this count, skip the check entirely (pre-T-1180 behavior:
+# still stamps, still refreshes the lock from whatever joined).
+_DEFLATION_MIN_KNOWN_MODULES = 20
+
+
+# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refuses_below_deflation_floor  # noqa: E501
+# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_deflation_floor_skipped_below_min_known_modules  # noqa: E501
+def _filtered_coverage_or_deflated(
+    root: Path, snapshot: GraphSnapshot
+) -> Result[CoverageData | None, GateError]:
+    """`stamp_coverage`'s T-1180 pre-stamp check, split out to keep
+    `stamp_coverage` itself under ARCH001's line threshold.
+
+    Loads and `[graph] exclude`-filters `coverage.xml` against `snapshot`,
+    then refuses (`Err(GateError.CoverageDeflated)`) when
+    `module_join_fraction` falls below `_DEFLATION_FLOOR` -- the same
+    signal TEST011 only warns about, promoted here to a hard refusal so a
+    deflated coverage.xml can never produce a clean-looking stamp. Skipped
+    entirely below `_DEFLATION_MIN_KNOWN_MODULES` known `.py` modules (see
+    that constant's docstring -- a small repo/fixture's low join fraction
+    is sample-size noise, not deflation). A `load_coverage` failure
+    degrades to `Ok(None)` (stamp still proceeds, just without the lock
+    refresh) rather than blocking the stamp on a parse problem unrelated
+    to deflation.
+    """
+    loaded = load_coverage(root, snapshot)
+    if loaded.is_err:
+        _log.warning(
+            "stamp_coverage: could not load coverage.xml to check the "
+            "deflation floor (%s); stamping without the lock refresh",
+            loaded.danger_err,
+        )
+        return Ok(None)
+    # T-0997: filter through `[graph] exclude` (the same filter
+    # `frob.gates`' TEST012 gate applies to the LIVE CoverageData it
+    # diffs against) before writing the lock -- otherwise this write
+    # path and the gate-time read path disagree about what counts
+    # as a "module", and TEST012 permanently flags every excluded
+    # path (e.g. `src/frob/scaffold/data/**`'s .j2 templates,
+    # 22 of them observed) as drift no re-stamp can ever clear.
+    filtered = exclude_filtered_coverage(loaded.danger_ok, snapshot)
+    known_python_modules = sum(
+        1 for p in _known_repo_paths(root, snapshot) if p.endswith(".py")
+    )
+    if known_python_modules < _DEFLATION_MIN_KNOWN_MODULES:
+        _log.debug(
+            "stamp_coverage: only %d known .py module(s) (< %d) -- "
+            "skipping the T-1180 deflation floor as sample-size noise",
+            known_python_modules,
+            _DEFLATION_MIN_KNOWN_MODULES,
+        )
+        return Ok(filtered)
+    if filtered.module_join_fraction < _DEFLATION_FLOOR:
+        _log.error(
+            "stamp_coverage: refusing to stamp -- coverage.xml only "
+            "joins %.0f%% of known modules (floor %.0f%%), looks "
+            "deflated (e.g. subprocess coverage not merged); "
+            "re-run: make coverage",
+            filtered.module_join_fraction * 100,
+            _DEFLATION_FLOOR * 100,
+        )
+        return Err(GateError.CoverageDeflated)
+    return Ok(filtered)
+
+
 # frob:doc docs/modules/gates.md#public-api
+# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refuses_below_deflation_floor  # noqa: E501
 def stamp_coverage(
     root: Path, snapshot: GraphSnapshot | None = None
 ) -> Result[Unit, GateError]:
@@ -487,6 +572,16 @@ def stamp_coverage(
     per-module numbers (`load_coverage` needs it to map line hits onto
     modules/symbols); a caller with no snapshot handy still gets a stamp,
     just without a lock refresh.
+
+    T-1180: when a `snapshot` IS supplied, this also checks the same
+    `module_join_fraction` deflation signal TEST011 warns about, but as a
+    hard pre-stamp floor -- a coverage.xml that joined too small a share of
+    known modules (the fingerprint of a run that silently dropped
+    subprocess coverage) is refused outright (`Err(GateError.
+    CoverageDeflated)`, no stamp/lock written at all) rather than stamped
+    and only flagged after the fact. No snapshot means no floor check
+    (same as the pre-existing lock-refresh skip) -- the caller opted out of
+    graph-aware checks entirely.
     """
     leased = enforce_worktree_lease(root)
     if leased.is_err:
@@ -496,6 +591,13 @@ def stamp_coverage(
     if source_sha is None:
         _log.error("stamp_coverage: no readable coverage.xml at %s", xml_path)
         return Err(GateError.WriteFailed)
+
+    filtered: CoverageData | None = None
+    if snapshot is not None:
+        checked = _filtered_coverage_or_deflated(root, snapshot)
+        if checked.is_err:
+            return Err(checked.danger_err)
+        filtered = checked.danger_ok
 
     file_hashes = _collect_file_hashes(root)
     stamp = {"source_sha": source_sha, "file_hashes": file_hashes}
@@ -511,24 +613,8 @@ def stamp_coverage(
         len(file_hashes),
         source_sha[:8],
     )
-    if snapshot is not None:
-        loaded = load_coverage(root, snapshot)
-        if loaded.is_ok:
-            # T-0997: filter through `[graph] exclude` (the same filter
-            # `frob.gates`' TEST012 gate applies to the LIVE CoverageData it
-            # diffs against) before writing the lock -- otherwise this write
-            # path and the gate-time read path disagree about what counts
-            # as a "module", and TEST012 permanently flags every excluded
-            # path (e.g. `src/frob/scaffold/data/**`'s .j2 templates,
-            # 22 of them observed) as drift no re-stamp can ever clear.
-            filtered = exclude_filtered_coverage(loaded.danger_ok, snapshot)
-            write_coverage_lock(root, filtered)
-        else:
-            _log.warning(
-                "stamp_coverage: could not refresh %s (%s); stamp still written",
-                _LOCK_REL,
-                loaded.danger_err,
-            )
+    if filtered is not None:
+        write_coverage_lock(root, filtered)
     return Ok(Unit())
 
 

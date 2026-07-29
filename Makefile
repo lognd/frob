@@ -85,15 +85,50 @@ playbook:
 # rebuild is a cheap no-op only in wall-clock terms if unchanged -- maturin
 # still re-links -- but it is what restores what `uv sync` just removed)
 # before pytest runs at all.
+# T-1180: three consecutive real runs of this target failed to produce a
+# trustworthy coverage.xml -- a corrupted shim broke combine silently once,
+# and four load-sensitive tests (three strata self-model + serve-watch
+# tick; all pass in isolation, verified repeatedly) failed only under
+# xdist+coverage parallelism and halted the recipe before combine/xml/stamp
+# ever ran. Two changes fix this without weakening the actual pass/fail
+# signal:
+#   (1) a parallel-run failure no longer halts the recipe -- failed tests
+#       are re-run ONCE, serially (no xdist, so a load-sensitive flake gets
+#       a fair single-threaded shot), with coverage appended rather than
+#       restarted; only tests still failing after that rerun fail the
+#       target. combine/xml/stamp always run afterward regardless of
+#       status, so a genuine flake can no longer block them.
+#   (2) stale `.coverage.*` worker files from a PRIOR (separate) run are
+#       always removed before this run's pytest even starts, so `coverage
+#       combine` below only ever sees fresh files this exact invocation
+#       produced -- the incident this fixes was a manual combine, run
+#       without that upfront `rm`, silently skipping leftover files from
+#       an earlier halted attempt ("2 of 7 data files" consumed). The
+#       serial rerun below appends (`--cov-append`) onto the SAME
+#       invocation's data rather than starting a second one, so there is
+#       no window between the parallel pass and the serial rerun where a
+#       second `rm` could race a still-warm worker file.
+# `frob check --stamp-coverage` itself now refuses to stamp when the
+# resulting coverage.xml looks deflated (TEST011's join-fraction heuristic,
+# promoted from a WARN to a hard pre-stamp floor -- src/frob/gates/
+# _coverage.py's `stamp_coverage`), so a bad xml can no longer produce a
+# clean-looking stamp even if combine/xml themselves succeed.
 coverage: $(STAMP)
 	rm -f .coverage .coverage.*
 	$(MAKE) core
 	uv run frob doctor
-	COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml uv run pytest --cov=src/frob --cov-branch --cov-report= -q
-	uv run coverage combine
-	uv run coverage xml
-	uv run frob check --stamp-coverage
-	uv run frob clean -y
+	COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml uv run pytest --cov=src/frob --cov-branch --cov-report= -q; \
+	status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "coverage: parallel run had failures -- rerunning failed tests once, serially, without coverage-halting"; \
+		COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --last-failed; \
+		status=$$?; \
+	fi; \
+	uv run coverage combine; \
+	uv run coverage xml; \
+	uv run frob check --stamp-coverage; \
+	uv run frob clean -y; \
+	exit $$status
 
 # T-0484: incremental coverage for the common "one small change" loop --
 # `make coverage` above always re-runs the WHOLE suite under coverage, so

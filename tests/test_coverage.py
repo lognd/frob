@@ -192,3 +192,73 @@ class TestCoverageTargetNativesGuard:
         guard is present in the dry-run output before its own pytest
         invocation."""
         self._assert_guard_precedes_pytest(self._dry_run("coverage-fast"))
+
+
+class TestCoverageTargetFlakeTolerance:
+    """T-1180: `make coverage` must not let a load-sensitive parallel-run
+    flake halt the recipe before combine/xml/stamp -- a failed first pass
+    gets exactly one serial (non-xdist) rerun of just the failed tests,
+    appended onto the same coverage data, and only a test still failing
+    after that rerun fails the target. Asserted against the real dry-run
+    recipe text (`make -n coverage`, nothing executed) so a regression that
+    drops the rerun, or lets the first pass's exit code halt the recipe
+    early, fails this test without ever running the (slow, playbook-6b-
+    forbidden-for-a-sub-agent) real target."""
+
+    def _dry_run(self) -> str:
+        result = subprocess.run(
+            ["make", "-n", "coverage"],
+            cwd=_REPO_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout
+
+    def test_first_pass_failure_does_not_abort_the_recipe(self) -> None:
+        """The first `pytest --cov` invocation's exit status is captured
+        into a shell variable rather than left to `make`'s default
+        stop-on-nonzero behavior -- `; \\` continuation into `status=$?`
+        immediately after it, not a bare recipe line of its own."""
+        output = self._dry_run()
+        first_pytest_idx = output.index("pytest --cov")
+        # the line immediately following the first pytest invocation must
+        # capture its exit status rather than being a fresh `make` recipe
+        # line (which would abort the whole recipe on nonzero exit).
+        tail = output[first_pytest_idx:]
+        assert "status=$?" in tail
+
+    def test_rerun_is_serial_and_scoped_to_last_failed(self) -> None:
+        """The rerun disables xdist parallelism (`-n 0` -- NOT `-p
+        no:xdist`, which pytest rejects here: `[tool.pytest.ini_options]
+        addopts` bakes in `-n auto`, and unloading the xdist plugin
+        entirely while `-n` is still in `addopts` makes `-n` an
+        unrecognized argument; `-n 0` overrides the count instead, xdist
+        plugin still loaded, worker count zero) and scopes to just the
+        failed tests (`--last-failed`), appending onto the same coverage
+        data (`--cov-append`) -- never a second full-suite parallel run."""
+        output = self._dry_run()
+        assert "-n 0" in output
+        assert "--last-failed" in output
+        assert "--cov-append" in output
+
+    def test_combine_xml_stamp_run_unconditionally_after_the_rerun(self) -> None:
+        """`coverage combine`, `coverage xml`, and `frob check
+        --stamp-coverage` all appear strictly AFTER the serial rerun
+        block, on lines that are not gated behind the captured `status`
+        (i.e. always reached, not just on success) -- the parallel-run
+        failure must never block them."""
+        output = self._dry_run()
+        rerun_idx = output.index("--last-failed")
+        combine_idx = output.index("coverage combine")
+        xml_idx = output.index("coverage xml")
+        stamp_idx = output.index("frob check --stamp-coverage")
+        assert rerun_idx < combine_idx < xml_idx < stamp_idx
+
+    def test_target_exit_reflects_final_status_not_always_zero(self) -> None:
+        """The recipe's own shell block ends with `exit $status` -- a test
+        still failing after the serial rerun must fail `make coverage`
+        itself, not be silently swallowed by combine/xml/stamp's own zero
+        exit codes."""
+        output = self._dry_run()
+        assert "exit $status" in output
