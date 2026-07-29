@@ -492,3 +492,106 @@ GIVEN a caller already holds `ticket_lock` for id X in the same thread
 WHEN it acquires `ticket_lock` for X again (reentrant call)
 THEN it does not deadlock (mirrors `derived_state_lock`'s reentrancy
 discipline, T-0933/T-0982 lineage).
+
+<!-- ticket:T-draft-4ae257ca -->
+```yaml
+id: T-draft-4ae257ca
+title: 'ledger v2: file-per-ticket store backend (ticket.md + done-report.md)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+blocked_by:
+- T-draft-53d33977
+parent: T-1136
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_store.py
+- src/frob/tickets/_models.py
+- src/frob/tickets/_reporting.py
+- tests/unit/test_ticket_store.py
+acceptance:
+- text: 'Ledger v2 design (docs/design/ledger-v2.md section 1) needs the actual
+
+    file-per-ticket store backend: `tickets/T-####/ticket.md` (frontmatter +
+
+    body, reusing the existing `_serialize_ticket`/`_parse_ticket_file`
+
+    per-file primitives) plus a NEW `done-report.md` split out of the body,
+
+    plus `_store_mode` gaining a third "v2" detection branch
+
+    (`tickets/*/ticket.md` present). Blocked by the lock-primitive ticket
+
+    since every write here must take the new per-ticket lock, not the
+
+    whole-ledger `ledger_lock`.'
+  evidence: []
+- text: 'Do NOT touch `tickets.md`/`_render_ledger`/`splice_ledger` in this
+
+    ticket -- v1 stays fully functional and is the default store mode until
+
+    the separate migration ticket flips the default. This ticket only adds
+
+    the v2 backend as an alternate, detectable mode alongside v1.'
+  evidence: []
+- text: 'GIVEN a repo with `tickets/T-0042/ticket.md` present
+
+    WHEN `_store_mode(root)` is called
+
+    THEN it returns "v2" (new third branch, existing single/dir detection
+
+    unchanged for repos without a v2 tree).'
+  evidence: []
+- text: 'GIVEN a v2-mode ticket
+
+    WHEN its Done report is written
+
+    THEN it is written to `tickets/T-####/done-report.md`, a file distinct
+
+    from `ticket.md`, and reading it back reproduces the same text
+
+    byte-for-byte.'
+  evidence: []
+- text: 'GIVEN a v2-mode ticket with attachments
+
+    WHEN an attachment is added
+
+    THEN it is written under `tickets/T-####/attachments/`, resolving the
+
+    open question in design section 8 in favor of the self-contained layout.'
+  evidence: []
+threat: null
+component: null
+```
+Ledger v2 design (docs/design/ledger-v2.md section 1) needs the actual
+file-per-ticket store backend: `tickets/T-####/ticket.md` (frontmatter +
+body, reusing the existing `_serialize_ticket`/`_parse_ticket_file`
+per-file primitives) plus a NEW `done-report.md` split out of the body,
+plus `_store_mode` gaining a third "v2" detection branch
+(`tickets/*/ticket.md` present). Blocked by the lock-primitive ticket
+since every write here must take the new per-ticket lock, not the
+whole-ledger `ledger_lock`.
+
+Do NOT touch `tickets.md`/`_render_ledger`/`splice_ledger` in this
+ticket -- v1 stays fully functional and is the default store mode until
+the separate migration ticket flips the default. This ticket only adds
+the v2 backend as an alternate, detectable mode alongside v1.
+
+GIVEN a repo with `tickets/T-0042/ticket.md` present
+WHEN `_store_mode(root)` is called
+THEN it returns "v2" (new third branch, existing single/dir detection
+unchanged for repos without a v2 tree).
+
+GIVEN a v2-mode ticket
+WHEN its Done report is written
+THEN it is written to `tickets/T-####/done-report.md`, a file distinct
+from `ticket.md`, and reading it back reproduces the same text
+byte-for-byte.
+
+GIVEN a v2-mode ticket with attachments
+WHEN an attachment is added
+THEN it is written under `tickets/T-####/attachments/`, resolving the
+open question in design section 8 in favor of the self-contained layout.
