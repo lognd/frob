@@ -52,7 +52,6 @@ class Lattice(BaseModel):
             return Ok(True)
         frontier = {low}
         seen: set[str] = set()
-        # frob:waive PERF003 reason="algorithm-inherent BFS over lattice pairs"
         while frontier:
             current = frontier.pop()
             seen.add(current)

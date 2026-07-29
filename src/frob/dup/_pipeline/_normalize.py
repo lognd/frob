@@ -243,7 +243,6 @@ def _abstract_guard_exit_bodies(tokens: tuple[str, ...]) -> tuple[str, ...]:
     n = len(tokens)
     out: list[str] = []
     i = 0
-    # frob:waive PERF003 reason="two-pointer token scan (i advances past each matched guard), O(n) total, not a cross join"  # noqa: E501
     while i < n:
         if tuple(tokens[i : i + 3]) == marker:
             j = i + 3

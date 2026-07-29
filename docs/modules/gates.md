@@ -1412,6 +1412,33 @@ than requiring a caller to prove the exact line changed; the query-side
 `frob graph affects <ref>` CLI (docs/modules/graph.md#affects) is the tool
 for a developer to see precisely what the gate is asking about.
 
+## DOCENUM001 (T-1227)
+
+<a id="docenum001-t-1227"></a>
+<!-- frob:describes src/frob/gates/_docenum.py::docenum001_gate -->
+
+`frob:enumerates` (`frob.graph.dsl`, code-side bare-target verb; markdown
+side `frob:enumerates <symref> members="..."` inside an HTML comment,
+`frob.graph.dsl._ENUMERATES_RE`) binds a doc span to a named collection
+literal and makes the doc author's claimed member list EXPLICIT content
+rather than free prose. DOCENUM001 (gate name `docenum001`, rides
+alongside DOC004/DOC005/DOC006 under the `docblocks` stage group)
+AST-diffs that claimed `members="..."` list against the literal's real
+members every run -- content-verified, ack-immune: unlike DRIFT001's
+digest-based staleness check, a doc's claimed text can be byte-identical
+to its last ack and still be wrong if the underlying collection changed
+and the ack was never re-run.
+
+Supported shapes: a module- or class-level `dict`/`set`/`tuple`/
+`frozenset` literal assignment, a `typing.Literal[...]` annotation, or an
+`ErrorSet`/`StrEnum`/`Enum` subclass. An unresolvable shape (e.g. an
+argparse `choices=[...]` list, or a computed value) is a disclosed WARN,
+never a silent pass.
+
+Every DOCENUM001 finding is `frob:waive DOCENUM001 reason="..."`-able via
+the normal source-level waiver path (the markdown anchor's own `origin`
+line carries the edge, same as every other doc-facing gate).
+
 ## EXHAUST001 EXHAUST002 (T-0688)
 
 <a id="exhaust001exhaust002-t-0688"></a>

@@ -366,7 +366,6 @@ def board_view(
     if label is not None:
         tickets = [t for t in tickets if label in t.labels]
     columns = []
-    # frob:waive PERF004 reason="one sorted() call per BOARD_STATES entry -- a fixed 6-iteration loop over the queue's own ticket count, not an unbounded hoisted-sort opportunity"  # noqa: E501
     for state in BOARD_STATES:
         in_state = sorted(
             (t for t in tickets if t.state is state), key=_doable_sort_key

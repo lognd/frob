@@ -144,7 +144,6 @@ def check_pii_catalog(model: KernelModel) -> tuple[PiiViolation, ...]:
     category, since the STRING-quoted grammar cannot validate this at
     parse time (module docstring)."""
     violations: list[PiiViolation] = []
-    # frob:waive PERF004 reason="one sort for deterministic order, not per-iteration"
     for node in sorted(model.nodes, key=lambda n: n.id):
         for tag in node_pii_tags(node):
             category = _pii_category(tag)

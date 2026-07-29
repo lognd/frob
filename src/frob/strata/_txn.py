@@ -195,7 +195,6 @@ def _missing_txn_boundary_violations(
         op_node = nodes_by_id.get(op_id)
         if op_node is None or _has_txn_boundary(op_node.attrs):
             continue
-        # frob:waive PERF004 reason="written_ids is this loop's own per-op distinct set, not a shared re-sort"  # noqa: E501
         stores = ", ".join(sorted(written_ids))
         _log.warning(
             "txn: REL300 op %s writes stores %s with no transactional boundary",

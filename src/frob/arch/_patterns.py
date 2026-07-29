@@ -727,7 +727,6 @@ def _check_scattered_construction(
     for name, files in sorted(constructions.items()):
         if len(files) < _MIN_SCATTERED_SITES:
             continue
-        # frob:waive PERF004 reason="files is this loop's own per-name distinct set, not a shared re-sort"  # noqa: E501
         first_file = sorted(files)[0]
         _emit(
             "scattered-construction",

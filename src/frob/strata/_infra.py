@@ -690,7 +690,6 @@ def _sticky_balancer_diagnostics(
         if not decl.sticky:
             continue
         downstream_ids = downstream_by_src.get(decl.id, set())
-        # frob:waive PERF004 reason="downstream_ids is this loop's own per-balancer distinct set, not a shared re-sort"  # noqa: E501
         for dst_id in sorted(downstream_ids):
             dst = nodes.get(dst_id)
             if dst is not None and _STATE_NONE in dst.attrs:

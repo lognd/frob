@@ -291,7 +291,6 @@ def _validate_scenario_trust_rewrite(
         )
         return Err(StrataError.UnknownReference)
     if rewrite.level not in trust_levels:
-        # frob:waive PERF004 reason="runs only on the fail-closed err path"
         _log.error(
             "scenario %s: trust level %r is not in the trust lattice %s",
             scenario.id,

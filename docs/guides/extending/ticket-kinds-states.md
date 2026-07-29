@@ -4,6 +4,8 @@
 
 ## What it is and where it lives
 
+<!-- frob:enumerates src/frob/tickets/_models.py::TicketState members="QUEUED,PLANNED,IN_PROGRESS,BLOCKED,DONE,DROPPED" -->
+<!-- frob:enumerates src/frob/tickets/_models.py::TicketKind members="FEATURE,BUG,SECURITY,UX,DOCS,INVARIANT,INCIDENT" -->
 `src/frob/tickets/_models.py` holds eight `StrEnum` registries. The three
 most relevant to this guide: `TicketState` (the six-state queue state
 machine: `queued`, `planned`, `in-progress`, `blocked`, `done`,

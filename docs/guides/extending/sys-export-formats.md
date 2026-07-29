@@ -4,6 +4,7 @@
 
 ## What it is and where it lives
 
+<!-- frob:enumerates src/frob/app/sys_runner.py::_EXPORT_FORMATS members="k8s,seccomp,iam" -->
 `frob sys export --format <fmt>` renders an elaborated `.strata` design
 model into an operational artifact. The registry is two-part: the render
 functions live in `src/frob/strata/_export.py` (`export_k8s_netpol`,

@@ -1440,7 +1440,6 @@ def check_catalog_completeness(
 
     cataloged = {entry.id for entry in catalog}
     excused = {entry.id for entry in out_of_scope}
-    # frob:waive PERF004 reason="one sort of the view's member set, not per-iteration"
     ordered_members = sorted(members)
     violations = [
         _catalog_violation(view, cwe_id)

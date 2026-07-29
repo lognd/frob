@@ -181,7 +181,6 @@ class TestProseOnlyRetrofitIntegrity:
                 if entry_id.startswith(prefix)
                 and entry["_source_file"] == registry_file
             }
-            # frob:waive PERF004 reason="matching is this prefix's own small (<=112) distinct entry set, formatted only for a failing assertion message; not a shared re-sort across the 3-item outer loop"  # noqa: E501
             matching_ids = sorted(matching)
             assert len(matching) == expected_count, (
                 f"{registry_file}::{prefix}*: expected {expected_count} entries, "

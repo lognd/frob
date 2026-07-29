@@ -58,6 +58,14 @@ _VERB_TABLE: dict[str, EdgeKind] = {
     "acquire": EdgeKind.ACQUIRE,
     "release": EdgeKind.RELEASE,
     "escapes": EdgeKind.ESCAPES,
+    # T-1227: `frob:enumerates <doc-anchor>` on a collection literal's own
+    # symbol -- the code-side half of the doc<->code enumeration binding,
+    # mirroring `frob:doc`'s bare-target, no-required-attrs shape exactly
+    # (the DOC/DESCRIBES pair's code->doc direction). The markdown-side
+    # half (`markdown_anchors`) carries the actual member CLAIM as a
+    # `members=` attribute; this code-side edge only records discoverable
+    # traceability from the symbol back to the doc that enumerates it.
+    "enumerates": EdgeKind.ENUMERATES,
 }
 
 _LINE_RE = re.compile(r"^frob:(?P<verb>\S+)(?:\s+(?P<rest>.*))?$")
@@ -136,6 +144,13 @@ _RESERVED_MARKER_VERBS = frozenset({"secret-fake", "used-by", "raises"})
 _DESCRIBES_RE = re.compile(
     r"<!--\s*frob:describes\s+(?P<symref>\S+)(?:\s+(?P<facet>sig|body|doc))?\s*-->"
 )
+# T-1227: `frob:enumerates`'s markdown-side form -- mirrors `_DESCRIBES_RE`'s
+# shape (bare `symref` target) but with a MANDATORY `members="a,b,c"`
+# attribute carrying the doc's own claimed member list (the CONTENT
+# DOCENUM001 AST-diffs against the collection literal's real members).
+_ENUMERATES_RE = re.compile(
+    r'<!--\s*frob:enumerates\s+(?P<symref>\S+)\s+members="(?P<members>[^"]*)"\s*-->'
+)
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 # T-0212: GitHub strips everything except word chars (unicode-aware, so
 # accented letters survive but emoji do not), hyphens, and spaces -- it
@@ -168,29 +183,41 @@ def dedupe_slug(slug: str, seen: dict[str, int]) -> str:
 
 # frob:doc docs/modules/graph.md#comment-dsl
 def markdown_anchors(doc_path: str, text: str) -> tuple[Edge, ...]:
-    """Extract `<!-- frob:describes ... -->` anchors bound to the nearest heading."""
+    """Extract `<!-- frob:describes ... -->` and `<!-- frob:enumerates ... -->`
+    anchors bound to the nearest heading (T-1227 adds the latter)."""
     edges: list[Edge] = []
     slug = "top"
     seen: dict[str, int] = {}
-    for line in text.splitlines():
+    for lineno, line in enumerate(text.splitlines(), start=1):
         heading = _HEADING_RE.match(line)
         if heading is not None:
             slug = dedupe_slug(slugify(heading.group(2)), seen)
             continue
-        match = _DESCRIBES_RE.search(line)
-        if match is None:
-            continue
-        facet = match.group("facet") or "sig"
-        edges.append(
-            Edge(
-                src=f"{doc_path}#{slug}",
-                kind=EdgeKind.DESCRIBES,
-                target=match.group("symref"),
-                origin=doc_path,
-                attrs={"facet": facet},
+        describes = _DESCRIBES_RE.search(line)
+        if describes is not None:
+            facet = describes.group("facet") or "sig"
+            edges.append(
+                Edge(
+                    src=f"{doc_path}#{slug}",
+                    kind=EdgeKind.DESCRIBES,
+                    target=describes.group("symref"),
+                    origin=doc_path,
+                    attrs={"facet": facet},
+                )
             )
-        )
-    _log.debug("%s: %d describes anchor(s)", doc_path, len(edges))
+            continue
+        enumerates = _ENUMERATES_RE.search(line)
+        if enumerates is not None:
+            edges.append(
+                Edge(
+                    src=f"{doc_path}#{slug}",
+                    kind=EdgeKind.ENUMERATES,
+                    target=enumerates.group("symref"),
+                    origin=f"{doc_path}:{lineno}",
+                    attrs={"members": enumerates.group("members")},
+                )
+            )
+    _log.debug("%s: %d describes/enumerates anchor(s)", doc_path, len(edges))
     return tuple(edges)
 
 

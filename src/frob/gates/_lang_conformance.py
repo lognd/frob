@@ -59,9 +59,21 @@ __all__ = ["lang_conformance_gate", "project_lang_conformance_gate"]
 # which would flag every config/asset file in a repo) -- the exact
 # languages the T-0406 acceptance criteria name (Kotlin/Swift/Go) plus a
 # few equally common general-purpose siblings.
+#
+# T-1234: kotlin (`.kt`/`.kts`) was one of the T-0406 acceptance-criteria
+# languages at the time this dict was written, but `frob.lang` gained a
+# real kotlin grammar registration in T-0723 (`frob.lang._walk_kotlin`,
+# `frob.lang.__init__._EXTENSION_TABLE` -- see `language_for_extension`).
+# Leaving `.kt`/`.kts` here would make LANG002 fire a false "frob has NO
+# grammar registration for this language at all" ERROR on any downstream
+# repo containing kotlin source, which is simply wrong once a grammar
+# exists -- this repo's own tree just happens to contain no `.kt`/`.kts`
+# files today, so the stale entries never actually fired here (the
+# "coincidentally right" behavior T-1234 was filed to close before some
+# future repo/file tripped it). Removed rather than left as dead weight:
+# any language added to this set that later gains real `frob.lang`
+# registration must be pulled out the same way, or LANG002 lies.
 _UNREGISTERED_CANDIDATE_LANGUAGES: dict[str, str] = {
-    ".kt": "kotlin",
-    ".kts": "kotlin",
     ".swift": "swift",
     ".go": "go",
     ".java": "java",
@@ -202,7 +214,6 @@ def _lang003_unsound_gaps(repo_root: Path) -> tuple[Violation, ...]:
         support = registry.get(language)
         if support is None:
             continue
-        # frob:waive PERF004 reason="support.facets is this loop's own per-language distinct mapping, not a shared re-sort"  # noqa: E501
         for facet_name, status in sorted(support.facets.items()):
             # NOT_APPLICABLE never needs a ticket -- it means the facet
             # genuinely does not apply (e.g. strata's DSL-vs-source-code

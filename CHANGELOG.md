@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.282.0] - unreleased
+
+- T-1234: fix LANG002 rationale text still naming kotlin as unregistered
+
 ## [0.281.0] - unreleased
 
 - T-1261: gates --fix Tier-A batch 2: fmt/registry-regen/release-sync/WAIVE004 handlers

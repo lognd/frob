@@ -315,7 +315,6 @@ def _check_non_exhaustive_enum_match(
                 category="non-exhaustive-enum-match",
                 severity="warning",
                 message=(
-                    # frob:waive PERF004 reason="missing is this loop's own per-match distinct set, not a shared re-sort"  # noqa: E501
                     f"match on `{enum_class}` is missing "
                     f"{sorted(missing)} and has no wildcard/default arm"
                 ),

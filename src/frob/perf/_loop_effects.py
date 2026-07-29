@@ -172,7 +172,6 @@ def _iter_loop_call_sites(root: Node) -> list[tuple[Node, Node]]:
             continue
         if node.type == "call" and current_loop is not None:
             hits.append((node, current_loop))
-        # frob:waive PERF003 reason="stack-based AST tree walk, one pass over nodes, not a cross join"  # noqa: E501
         stack.extend((child, current_loop) for child in node.children)
     return hits
 

@@ -288,6 +288,21 @@ def foo():  # noqa: N802 - rule-id naming convention
         for edge in edges:
             assert edge.src == f"{pf.path}::foo"
 
+    def test_enumerates_verb_binds_bare_doc_anchor_target(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        # T-1227: the code-side `frob:enumerates` verb -- bare target, no
+        # required attrs, mirroring `frob:doc`'s own wiring.
+        src = """# frob:enumerates docs/modules/graph.md#stage-groups
+_STAGE_GROUPS = {"a": 1, "b": 2}
+"""
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        edge = edges[0]
+        assert edge.kind.value == "enumerates"
+        assert edge.target == "docs/modules/graph.md#stage-groups"
+
     def test_directive_does_not_chain_upward_through_prior_trailing_comment(
         self, tmp_path: Path
     ) -> None:
@@ -522,6 +537,25 @@ Some text.
         text = "<!-- frob:describes src/foo.py::bar -->\n"
         edges = markdown_anchors("docs/foo.md", text)
         assert edges[0].attrs["facet"] == "sig"
+
+    def test_enumerates_edge_carries_claimed_members(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        # T-1227: the markdown-side `frob:enumerates` form.
+        text = (
+            "# Top Heading\n\n"
+            "## Stage Groups\n\n"
+            '<!-- frob:enumerates src/foo.py::_STAGE_GROUPS members="a,b,c" -->\n'
+            "Some prose.\n"
+        )
+        edges = markdown_anchors("docs/modules/graph.md", text)
+        assert len(edges) == 1
+        edge = edges[0]
+        assert edge.src == "docs/modules/graph.md#stage-groups"
+        assert edge.target == "src/foo.py::_STAGE_GROUPS"
+        assert edge.attrs["members"] == "a,b,c"
+        from frob.graph._models import EdgeKind
+
+        assert edge.kind == EdgeKind.ENUMERATES
 
 
 class TestSlugify:

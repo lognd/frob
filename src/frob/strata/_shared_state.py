@@ -153,7 +153,6 @@ def _shared_state_violations(model: KernelModel) -> list[SharedStateViolation]:
         node = nodes_by_id.get(node_id)
         if node is None or _is_shared_state_ok(node.attrs):
             continue
-        # frob:waive PERF004 reason="accessing is this loop's own per-node distinct set, not a shared re-sort"  # noqa: E501
         services = ", ".join(sorted(accessing))
         _log.warning(
             "shared_state: REL360 node %s is mutable state shared across "

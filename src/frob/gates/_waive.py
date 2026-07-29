@@ -475,6 +475,9 @@ _KNOWN_GATE_RULES = frozenset(
         # at ERROR from birth (the other ~700 live DOC006 findings stay
         # WARN, a separate burn-down) (frob.gates._docptr).
         "DOC007",
+        # T-1227: `frob:enumerates` doc-claimed member-list AST-diff, ack-
+        # immune (frob.gates._docenum).
+        "DOCENUM001",
         # T-0471: unpruned filesystem traversal (frob.gates._walk_lint).
         "WALK001",
         # T-0465: .git/info/exclude entry shadowing tracked source
@@ -961,7 +964,6 @@ def _waive003_violations(
             continue
         file, _, line_text = origin.rpartition(":")
         line = int(line_text) if line_text.isdigit() else 0
-        # frob:waive PERF004 reason="own distinct files set per (rule, origin) reach entry, not a shared re-sort"  # noqa: E501
         packages = ", ".join(sorted(files))
         _log.warning(
             "WAIVE003: %s frob:waive %s reaches %d packages: %s",

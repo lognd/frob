@@ -156,7 +156,6 @@ class TestLinkedGroupsResolveAndAreNavigable:
                 cross_refs = _cross_refs(entries[entry_id])
                 others = set(group) - {entry_id}
                 missing = others - cross_refs
-                # frob:waive PERF004 reason="test-file assertion message; missing/cross_refs are this loop's own per-entry distinct sets, not hot-path re-sort"  # noqa: E501
                 assert not missing, (
                     f"{entry_id} is missing cross_refs to {sorted(missing)} "
                     f"(has {sorted(cross_refs)})"

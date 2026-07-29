@@ -4,13 +4,15 @@
 
 ## What it is and where it lives
 
+<!-- frob:enumerates src/frob/graph/dsl.py::_VERB_TABLE members="doc,uses-contract,invariant,ticket,todo,waive,debt,deprecated,tests,decision,channel,boundary,secret,enforces,protocol,transition,requires,acquire,release,escapes,enumerates" -->
 `frob:<verb> <target> [key="value" ...]` is the in-source obligation
 language (`docs/modules/graph.md#comment-dsl`). Verbs map to `EdgeKind`
-values via `_VERB_TABLE` in `src/frob/graph/dsl.py`. Current verbs (20):
+values via `_VERB_TABLE` in `src/frob/graph/dsl.py`. Current verbs (21):
 `doc`, `uses-contract`, `invariant`, `ticket`, `todo`, `waive`, `debt`,
 `deprecated`, `tests`, `decision`, `channel`, `boundary`, `secret`,
 `enforces`, `protocol`, `transition`, `requires`, `acquire`, `release`,
-`escapes`.
+`escapes`, `enumerates` (T-1227 -- doc-claimed collection-member drift,
+see docs/modules/gates.md#docenum001-t-1227).
 Parsing is language-agnostic:
 `frob.lang`'s seven walkers (python, cpp, c, typescript/tsx, rust, kotlin,
 strata; `src/frob/lang/_extract.py:60`) strip comment delimiters first, so

@@ -166,7 +166,6 @@ def export_seccomp(model: KernelModel) -> str:
     profiles: dict[str, dict] = {}
     for node in sorted(model.nodes, key=lambda n: n.id):
         allowed = node_allowed_syscalls(node)
-        # frob:waive PERF004 reason="distinct allowed set per node, cannot hoist"
         profiles[node.id] = {
             "defaultAction": "SCMP_ACT_ERRNO",
             "syscalls": [

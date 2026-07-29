@@ -76,6 +76,7 @@ from frob.gates._debt_deprecated import (
 from frob.gates._decisions_compliance import compliance_gate, decisions_gate
 from frob.gates._design_invariants import inv007_violations, inv008_violations
 from frob.gates._docblocks import doc004_gate, doc005_gate
+from frob.gates._docenum import docenum001_gate
 from frob.gates._doclink_docanchor import (
     _docanchor_check_edge,
     docanchor_gate,
@@ -3602,7 +3603,6 @@ def _test014_ambiguous_convention(
             continue  # same leaf, but all in one file -- not the B6 shape
         for i, (symref_a, _, matched_a) in enumerate(entries):
             for symref_b, _, matched_b in entries[i + 1 :]:
-                # frob:waive PERF004 reason="differs per pair, fresh work not a re-sort"  # noqa: E501
                 shared = sorted(matched_a & matched_b)
                 if not shared:
                     continue
@@ -5707,10 +5707,15 @@ def _build_thread_jobs(
         # "docblocks" gate name -- same repo-wide doc-drift concern, same
         # `_docblocks` config surface it reuses (`_console_command_sources`/
         # `_console_trees`), no new stage-group registration needed.
+        # T-1227: DOCENUM001 (frob:enumerates member-list AST-diff) rides
+        # alongside DOC004/DOC005/DOC006 under the same "docblocks" gate
+        # name -- same repo-wide doc-drift concern, no new stage-group
+        # registration needed (DOC006's own precedent).
         "docblocks": lambda: (
             *doc004_gate(st.repo_root, st.snapshot),
             *doc005_gate(st.repo_root),
             *doc006_gate(st.repo_root, st.snapshot),
+            *docenum001_gate(st.repo_root, st.snapshot),
         ),
         "fuzz": lambda: fuzz_gate(st.root, st.snapshot),
         "release": lambda: release_gate(

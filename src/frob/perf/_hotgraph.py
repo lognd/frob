@@ -349,7 +349,6 @@ def build_section_index(modules: list[NormalizedModule]) -> SectionIndex:
             sections += _function_sections(module.path, "", func)
         for cls in module.classes:
             sections += _class_sections(module.path, cls)
-        # frob:waive PERF004 reason="sections is this loop's own per-module distinct list, not a shared re-sort"  # noqa: E501
         sections.sort(key=lambda s: s.start_line)
         index[module.path] = sections
         _log.debug(

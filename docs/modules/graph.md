@@ -437,6 +437,13 @@ for the full mechanics (dangling-backslash and CRLF handling included).
 | `frob:acquire <resource>` | enclosing function acquires that resource (T-0809) |
 | `frob:release <resource>` | enclosing function releases that resource (T-0809) |
 | `frob:escapes <resource>` | enclosing function transfers an unreleased resource out to its caller (T-0809) |
+| `frob:enumerates <doc-anchor>` | enclosing collection-literal symbol is member-list-verified at that doc anchor (T-1227) |
+
+`frob:enumerates <symref> members="a,b,c"` (T-1227) is the markdown-side
+counterpart: same HTML-comment anchor shape as `frob:describes`, but the
+mandatory `members=` attribute carries the doc author's claimed member
+list, AST-diffed against the collection literal's real members every
+check run (DOCENUM001, docs/modules/gates.md#docenum001-t-1227).
 
 Markdown side (doc anchors), in HTML comments; applies from the comment to
 the next heading of equal or higher level:
@@ -504,11 +511,12 @@ All pydantic `BaseModel`, `frozen=True`.
   digests, and source span.
 - `SymbolRecord.symref` -- the canonical `path::qualname` string key a
   record is stored under in `GraphSnapshot.symbols`.
+<!-- frob:enumerates src/frob/graph/_models.py::EdgeKind members="DOC,USES_CONTRACT,INVARIANT,TICKET,TODO,WAIVE,DEBT,DESCRIBES,TESTS,DECISION,CHANNEL,BOUNDARY,SECRET,ENFORCES,DEPRECATED,PROTOCOL,TRANSITION,REQUIRES,ACQUIRE,RELEASE,ESCAPES,ENUMERATES" -->
 - `EdgeKind` -- the closed set of typed relationships a `frob:` directive
-  or doc anchor can declare (21 members: doc, uses-contract, invariant,
+  or doc anchor can declare (22 members: doc, uses-contract, invariant,
   ticket, todo, waive, debt, describes, tests, decision, channel,
   boundary, secret, enforces, deprecated, protocol, transition, requires,
-  acquire, release, escapes).
+  acquire, release, escapes, enumerates -- T-1227).
 - `Edge` -- one directive/anchor's declared obligation between a src
   symbol/doc anchor and an opaque target.
 - `MalformedDirective` -- a `frob:` comment line that failed to parse,

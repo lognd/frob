@@ -618,7 +618,6 @@ def _resolve_edges_python(
         for name in names:
             candidates = by_name.get(name, ())
             matched_private = False
-            # frob:waive PERF003 reason="candidates are already partitioned per name via by_name; total work across all names is O(total candidates), not a cross join"  # noqa: E501
             for symref, _cand_path, is_private in candidates:
                 if symref == caller_symref:
                     continue

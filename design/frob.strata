@@ -694,6 +694,7 @@ node graphlang : trusted {
 // unfalsifiable claim -- exactly what SYS101 exists to catch.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 // frob:ticket T-0956
+// frob:ticket T-1227
 // frob:waive AFFECT001 reason="T-1113: mechanical interface= attr population (measured public-surface metadata for the new mandatory SYS104 check), not a behavioral/architectural change -- the cited affects()-closure doc does not describe this node's public surface and has nothing to update here."
 node gates : trusted {
     clearance Internal;
@@ -824,6 +825,7 @@ node gates : trusted {
     attr interface=doc005_gate;
     attr interface=doc006_gate;
     attr interface=docanchor_gate;
+    attr interface=docenum001_gate;
     attr interface=doclink_gate;
     attr interface=drift_gate;
     attr interface=dup_gate;
@@ -2791,6 +2793,7 @@ cache graph_cache of graphlang {
 // touching every capability the product itself has, not an
 // under-specified catch-all.
 // frob:doc docs/modules/strata.md#modeled-_package_root-restrictions-264-finding-follow-up-t-1079-closed
+// frob:ticket T-1227
 node testsuite : trusted {
     clearance Internal;
     code "tests/**";
@@ -3263,6 +3266,7 @@ node testsuite : trusted {
     attr interface=TestDoc006Waive;
     attr interface=TestDocFor;
     attr interface=TestDocanchorGate;
+    attr interface=TestDocenum001Gate;
     attr interface=TestDoclinkGate;
     attr interface=TestDocsRunner;
     attr interface=TestDocstringProseNotObservedLineLevel;

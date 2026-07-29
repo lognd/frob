@@ -363,7 +363,6 @@ class FactBase:
         reached_declarer = node_id in declaring_ids
         seen = {node_id}
         frontier = [node_id]
-        # frob:waive PERF003 reason="BFS closure over the flow graph, one pass over incoming edges, not a cross join"  # noqa: E501
         while frontier and not reached_declarer:
             cur = frontier.pop()
             for src in incoming.get(cur, ()):

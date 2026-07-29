@@ -353,6 +353,7 @@ for s in $(timeout 30 uv run frob check --only list); do
 done
 ```
 
+<!-- frob:enumerates src/frob/check/__init__.py::_STAGE_GROUPS members="lint,static,gates-fast,gates-native,gates-security" -->
 `uv run frob check --only list` prints the current stage-group names, one
 per line (`lint`, `static`, `gates-fast`, `gates-native`,
 `gates-security`) -- discover them this way rather than hardcoding the

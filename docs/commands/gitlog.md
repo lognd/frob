@@ -29,6 +29,7 @@ frob gitlog --json                    # machine-readable output
 
 ## Conventional commit types recognized
 
+<!-- frob:enumerates src/frob/gitlog/__init__.py::_TYPE_LABELS members="feat,fix,perf,refactor,docs,test,chore,ci,build,style,revert" -->
 `feat` / `fix` / `chore` / `refactor` / `perf` / `docs` / `test` / `ci` / `build` / `style` / `revert`
 
 Commits not matching this pattern are `unknown` type and excluded by default

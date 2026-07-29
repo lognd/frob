@@ -227,7 +227,6 @@ def _reachable(
     seen: set[str] = set()
     stack = [n for n in entrypoints if n in universe]
     seen.update(stack)
-    # frob:waive PERF003 reason="DFS forward-closure over the call graph, one pass over edges O(V+E), not a cross join"  # noqa: E501
     while stack:
         node = stack.pop()
         for callee in callgraph.calls.get(node, ()):

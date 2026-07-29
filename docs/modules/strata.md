@@ -227,7 +227,7 @@ a grammar change, out of this ticket's scope). `_waive.py::
 parse_waiver_expiry` is the in-scope substitute: an `expires:YYYY-MM-DD`
 substring embedded anywhere in the already-mandatory `reason` string,
 e.g. `waive "SYS105:net.connect" reason "tracked debt, expires:2026-12-
-31" ticket "T-1234";`. A SYS104/SYS105/SYS106 waiver with NO `expires:`
+31" ticket "T-9999";`. A SYS104/SYS105/SYS106 waiver with NO `expires:`
 marker, or one whose date has passed, is EXPIRED:
 `_selfconform.py::_apply_conformance_waiver_staleness` moves its finding
 back into `violations` (the underlying obligation re-fires, unchanged

@@ -48,15 +48,33 @@ class TestProjectLangConformanceGate:
 
     # frob:ticket T-0406
     def test_unregistered_language_file_fails(self, tmp_path: Path) -> None:
-        """A Kotlin file in a downstream repo -- a language frob has NO
-        grammar registration for at all -- fails LANG002 by name."""
-        (tmp_path / "Main.kt").write_text("fun main() {}\n", encoding="utf-8")
+        """A Swift file in a downstream repo -- a language frob has NO
+        grammar registration for at all -- fails LANG002 by name.
+
+        T-1234: was a `.kt` (kotlin) fixture until T-0723 gave kotlin a
+        real `frob.lang` grammar registration, which made this test's own
+        premise wrong (kotlin is no longer "a language frob has NO
+        grammar registration for at all"). Swift stays genuinely
+        unregistered, so it is the fixture now."""
+        (tmp_path / "Main.swift").write_text("func main() {}\n", encoding="utf-8")
         violations = project_lang_conformance_gate(tmp_path)
         lang002 = [v for v in violations if v.rule == "LANG002"]
         assert len(lang002) == 1
         assert lang002[0].severity is Severity.ERROR
-        assert "kotlin" in lang002[0].message
-        assert lang002[0].file == "Main.kt"
+        assert "swift" in lang002[0].message
+        assert lang002[0].file == "Main.swift"
+
+    # frob:ticket T-1234
+    def test_kotlin_file_no_longer_flagged_by_lang002(self, tmp_path: Path) -> None:
+        """A kotlin file must NOT fire LANG002 -- kotlin has had a real
+        `frob.lang` grammar registration since T-0723, so it is not one
+        of `_UNREGISTERED_CANDIDATE_LANGUAGES`'s "no coverage at all"
+        cases any more (the T-1234 regression: the dict still listed
+        `.kt`/`.kts` after the grammar landed)."""
+        (tmp_path / "Main.kt").write_text("fun main() {}\n", encoding="utf-8")
+        violations = project_lang_conformance_gate(tmp_path)
+        lang002 = [v for v in violations if v.rule == "LANG002"]
+        assert lang002 == []
 
     # frob:ticket T-0406
     def test_all_conformant_project_passes(self, tmp_path: Path) -> None:

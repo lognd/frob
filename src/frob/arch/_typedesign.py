@@ -92,7 +92,6 @@ def check_illegal_states_representable(
                         category="illegal-states-representable",
                         severity="suggestion",
                         message=(
-                            # frob:waive PERF004 reason="mentioned_bool/mentioned_other are this loop's own per-method distinct sets, not a shared re-sort"  # noqa: E501
                             f"`{cls.name}` guards `{sorted(mentioned_bool)}` against"
                             f" `{sorted(mentioned_other)}` at runtime in `{m.name}`"
                         ),

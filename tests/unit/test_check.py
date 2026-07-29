@@ -252,13 +252,13 @@ class TestDispatchCheckThreadsGateSelectors:
         cfg = AppConfig(
             check_path=tmp_path,
             check_type="cpp",
-            check_ticket="T-1234",
+            check_ticket="T-9999",
             check_base="origin/main",
             check_delta=True,
             check_skip_gates=True,
         )
         runner_mod._dispatch_check_cpp(cfg, tmp_path)
-        assert captured["ticket"] == "T-1234"
+        assert captured["ticket"] == "T-9999"
         assert captured["base"] == "origin/main"
         assert captured["delta"] is True
         assert captured["skip_gates"] is True

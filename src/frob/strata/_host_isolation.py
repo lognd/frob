@@ -592,7 +592,6 @@ def _shared_writable_path_violations(
     where at least one side's claim is write-capable."""
     owns_a = _owned_paths_by_user(nodes_a, manifests)
     owns_b = _owned_paths_by_user(nodes_b, manifests)
-    # frob:waive PERF004 reason="differs per pair, fresh work not a re-sort"
     shared_writable = sorted(
         path
         for path in (set(owns_a) & set(owns_b))

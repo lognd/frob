@@ -146,6 +146,18 @@ class EdgeKind(StrEnum):
     ACQUIRE = "acquire"
     RELEASE = "release"
     ESCAPES = "escapes"
+    # T-1227: `frob:enumerates` -- binds a doc span to a named collection
+    # literal (dict/set/tuple/Literal/ErrorSet/StrEnum) whose members the
+    # doc claims to enumerate. The code-side form (`_VERB_TABLE`, bare
+    # target = doc anchor, mirroring `DOC`'s own code->doc direction) is
+    # emitted from the collection literal's own symbol; the markdown-side
+    # form (`markdown_anchors`, mirroring `DESCRIBES`) is emitted from the
+    # doc anchor with an explicit `members="a,b,c"` attribute -- the
+    # doc-authored CLAIM the DOCENUM001 gate (`frob.gates._docenum`)
+    # AST-diffs against the literal's actual members at check time,
+    # independent of ack state (content-verified, ack-immune, unlike
+    # DRIFT001's digest-based staleness check).
+    ENUMERATES = "enumerates"
 
 
 # frob:doc docs/modules/graph.md#data-models

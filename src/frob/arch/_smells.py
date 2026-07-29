@@ -274,7 +274,6 @@ def check_data_clumps(module: NormalizedModule) -> list[ArchSuggestion]:
                 category="data-clumps",
                 severity="suggestion",
                 message=(
-                    # frob:waive PERF004 reason="group is this loop's own per-clump distinct set, not a shared re-sort"  # noqa: E501
                     f"keyword args {sorted(group)} passed together at"
                     f" {len(sites)} call sites (first: `{callee}`)"
                 ),

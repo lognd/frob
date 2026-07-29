@@ -130,7 +130,6 @@ def affects(
             if _dependents_of(snapshot, node) - visited:
                 truncated = True
             continue
-        # frob:waive PERF004 reason="_dependents_of(snapshot, node) is this loop's own per-node distinct set, not a shared re-sort"  # noqa: E501
         for dep in sorted(_dependents_of(snapshot, node)):
             if dep in visited:
                 continue

@@ -284,7 +284,6 @@ def unbound_constructs(
     }
     unbound: list[tuple[EdgeKind, str]] = []
     for kind in kinds:
-        # frob:waive PERF004 reason="ids_by_kind.get(kind, ...) is this loop's own per-kind distinct set, not a shared re-sort"  # noqa: E501
         for construct_id in sorted(ids_by_kind.get(kind, frozenset())):
             if construct_id not in bound[kind]:
                 unbound.append((kind, construct_id))

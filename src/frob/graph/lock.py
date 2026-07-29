@@ -155,7 +155,6 @@ def acknowledge(
             _log.warning("acknowledge: %r does not resolve to a symbol", ref)
             return Err(LockError.UnknownRef)
         record = record_result.danger_ok
-        # frob:waive PERF004 reason="_facets_for_ref(ref, snapshot) is this loop's own per-ref distinct set, not a shared re-sort"  # noqa: E501
         for facet in sorted(_facets_for_ref(ref, snapshot)):
             if facet == "body" and record.kind in _BODY_FACET_MEANINGLESS_KINDS:
                 _log.warning(
