@@ -1774,3 +1774,31 @@ threat: null
 component: null
 ```
 T-1180's deflation floor stamped three deflated runs clean because source= makes every unexecuted file appear at 0% so the join fraction stays high. Structural blind spot found by the T-0969 diagnosis 2026-07-29.
+
+<!-- ticket:T-1237 -->
+```yaml
+id: T-1237
+title: 'coverage forensics: persist failure list before frob clean destroys it'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-29'
+priority: high
+parent: T-0969
+tier: ticket
+sprint: null
+scope:
+- Makefile
+- src/frob/clean/**
+- docs/**
+- tests/**
+acceptance:
+- text: GIVEN a make coverage run with failures THEN the failing test ids survive
+    the recipe (junitxml or equivalent persisted under .frob/ before frob clean -y)
+    and the clean tier rules never delete mid-run .coverage.* fragments (investigate
+    the observed 34->27 fragment loss)
+  evidence: []
+threat: null
+component: null
+```
+T-0969 diagnosis: the recipe's trailing frob clean -y deletes .pytest_cache (clean/_rules.py:30) destroying --last-failed evidence, and tier-1 .coverage.* rule (rule line 27) may nuke mid-run fragments -- one subset run ended with 27 data files where a single test file generates 34, unresolved.
