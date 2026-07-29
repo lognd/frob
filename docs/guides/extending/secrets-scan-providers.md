@@ -50,7 +50,7 @@ pattern would be redundant.
    fixture` fails if a provider in `ALL_PROVIDERS` has no fixture proving
    the pattern actually matches something.
 3. If the provider issues fake/test-mode tokens that should not trip the
-   scanner in fixtures or docs, confirm `_looks_fake`/`_line_marks_fake`
+   scanner in fixtures or docs, confirm `_looks_fake`/`_fake_marker_reason`
    cover the new pattern's fake-token shape.
 
 ## Drift-locks that fire

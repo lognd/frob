@@ -39,7 +39,7 @@ truth. It is the quality oracle docs/modules/fuzz.md and the TEST family point a
 <!-- frob:describes src/frob/mutate/__init__.py::run_mutations -->
 
 ```python
-class MutateError(ErrorSet)      # fallible outcomes: ParseFailed, NoSource
+class MutateError(ErrorSet)      # fallible outcomes: ParseFailed, NoSource, ExecDisabled, JournalCollision
 class Mutant(BaseModel)          # one applied mutation: file, line, description
 class MutationResult(BaseModel)  # outcome of testing one function's mutants
     score -> float               # killed / total (1.0 when total == 0)

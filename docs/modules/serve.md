@@ -599,11 +599,13 @@ layer uses to talk to the T-1092 socket daemon above, transparently: a
 runner calls `query(root, method, params)` instead of computing a proxyable
 answer itself, and always gets back a `Result` -- `Ok(result)` on a daemon
 hit (render it exactly as the in-process path would have) or `Err(reason)`
-meaning "fall back to in-process, nothing user-visible happened". Today
-`frob perf hot --json` is the one CLI command wired through it (see
-"Proxied commands" below); every other query-shaped subcommand this ticket's
-epic (T-0321) names is a disclosed residual, not yet wired -- see "Scope
-cut" below.
+meaning "fall back to in-process, nothing user-visible happened". Five CLI
+commands are wired through it today: `frob perf hot --json`
+(`frob_perf_hot`), `frob graph query` (`frob_graph_query`), `frob graph
+affects` (`frob_affects`), `frob stats` (`frob_stats`), and `frob test`'s
+touched-set path (`frob_run_touched_tests`) (see "Proxied commands"
+below); every other query-shaped subcommand this ticket's epic (T-0321)
+names is a disclosed residual, not yet wired -- see "Scope cut" below.
 
 ### Decision tree
 
@@ -776,8 +778,8 @@ inside the RPC too, or reshaping a DIFFERENT payload per possible
 CLI payload with the RPC" mandate asked for, and no invocation shape
 touching a non-gate tool is proxied by this change. `frob ticket doable`
 specifically was left unwired again in T-1106: `src/frob/app/
-ticket_runner.py` was a CONTENDED file that wave (a
-sibling ticket's own scope), and T-1106's own scope was deliberately
+ticket_runner/` (now a package, not a single file) was a CONTENDED path
+that wave (a sibling ticket's own scope), and T-1106's own scope was deliberately
 narrowed to files with no such collision (`_daemon_proxy.py`,
 `graph_runner.py`, their tests) rather than risk a merge collision over
 a single additional wired command.

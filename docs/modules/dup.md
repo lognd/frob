@@ -286,6 +286,9 @@ class DupError(ErrorSet):
     CoreUnavailable      = "frob-core native extension is not installed"
     NotPure              = "Probe target has effects; observational probing refused"
     CacheCorrupt         = "dup cache unreadable; delete .frob/dup.db to rebuild"
+    NoGenerator          = "no frob.fuzz Arbitrary generator for a probe parameter"
+    SmtUnavailable       = "z3-solver not installed; install with: uv pip install frob[smt]"
+    SmtUnsupported       = "function body is outside R7's bounded int/bool subset"
     HoleCeilingExceeded  = "anti-unification template is >50% holes; not a meaningful generalization"
 ```
 
@@ -696,7 +699,7 @@ to, so its exact-match requirement is unaffected.
 - `frob.lang` (normalized tokens/trees), `frob.graph` (digests, purity
   facts, snapshot), `frob.gitio` (diff), `frob-core` (kernels),
   `frob.fuzz` generators for R6 (docs/modules/fuzz.md).
-- CLI: `frob dup [--all|--base REF] [--probe] [--json]`.
+- CLI: `frob dup [path] [--min-lines N] [--probe SYMREF_A SYMREF_B] [--json]`.
 - `frob check`: DUP001/DUP002 in the gates stage.
 
 ## Implementation notes (T-0001)
@@ -805,7 +808,7 @@ deviations, so nothing here is silently assumed done:
   wants R6 (docs/modules/dup.md's "opt-in `--probe` path").
   **`frob dup <path> --probe SYMREF_A SYMREF_B`** (T-0041/T-0192, landed
   in `src/frob/app/dup_runner.py`'s `_probe` and wired in
-  `src/frob/__main__.py`'s `_add_dup_parser`) is the CLI surface: it
+  `src/frob/_cli_parsers/_core.py`'s `_add_dup_parser`, T-1074) is the CLI surface: it
   loads/builds the `.frob/cache.db` graph snapshot for `<path>`, resolves
   both symrefs against it, calls `probe_equivalence` with a fixed
   30-second budget, prints `EQUIVALENT`/`DIFFER`, and exits 0 for

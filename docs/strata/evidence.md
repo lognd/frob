@@ -89,17 +89,19 @@ claim `trusted` at all.
 one soundness atom, `extraction_soundness`, with a fixed, hand-declared
 dependency rule (finer per-claim dependency inference is a later phase):
 
-- every `noflow` and `reach` claim's PROVED verdict depends on
-  `extraction_soundness` -- both are influence-path closures over the
-  model, and that closure is only as sound as the code's call/import graph
-  actually being what the model says it is;
+- every `noflow`, `reach`, `independent`, and `readers()` (SetEquality)
+  claim's PROVED verdict depends on `extraction_soundness` -- all are
+  influence-path closures over the model, and that closure is only as
+  sound as the code's call/import graph actually being what the model
+  says it is;
 - `bound` claims never depend on it in v0 -- they are arithmetic over
   declared quantities (rate, age, size, utilization), not path closures,
   so nothing about dynamic dispatch touches their proof.
 
 When a policy id in `evaluate_claims`'s `waived_policies` both appears in
 `compiled_policies` and declares `enables extraction_soundness`, every
-PROVED `noflow`/`reach` verdict downgrades to ASSUMED with `detail =
+PROVED `noflow`/`reach`/`independent`/`readers()` (SetEquality) verdict
+downgrades to ASSUMED with `detail =
 "soundness dependency extraction_soundness waived via <policy-id>"` (the
 lexicographically-first enabling policy id when several are waived) -- the
 verdict's `quantifier` is left unchanged (still `forall`), only the

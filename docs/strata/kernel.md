@@ -318,7 +318,7 @@ existing UTILIZATION bound: when any flow feeding the target declares
 direct inbound flows, if more than one), a verdict that would otherwise be
 PROVED is re-checked against compound monthly growth. Utilization at month
 `t` is `utilization0 * (1 + growth/100)^t`; the saturation date is the
-smallest `t` where that crosses `limit`. `GROWTH_HORIZON_MONTHS = 24`
+smallest `t` where that crosses `limit`. `_GROWTH_HORIZON_MONTHS = 24`
 (`_claims.py`, module-level constant) is the deny-by-default horizon: if
 saturation falls within 24 months of `evaluate_claims`'s `today`, the
 verdict flips from PROVED to REFUTED with detail `"saturates in N months

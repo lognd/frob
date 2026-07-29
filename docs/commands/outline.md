@@ -6,10 +6,11 @@ functions, signatures, line numbers, and first-sentence docstrings. No bodies.
 ## Usage
 
 ```
-frob outline <file-or-dir> [--json]
+frob outline <file-or-dir> [--json] [--all]
 ```
 
 When given a directory, falls back to `frob map` output for that directory.
+`--all` includes private (underscore-prefixed) symbols, hidden by default.
 
 ## Output (default)
 

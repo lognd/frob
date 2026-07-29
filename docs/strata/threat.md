@@ -394,7 +394,7 @@ keyed on `subject:`/`jurisdiction:`/`basis:` attrs and the `Pii` label
 rung -- opaque-string vocabulary an author must remember to attach by
 hand. `std.pii` adds the missing FIRST-CLASS layer underneath it: a
 `carries "<category>.<field>"` surface declaration (`strata-core/src/
-parse.rs::parse_node`/`parse_store`, the SAME STRING-quoted `code`/`may`
+parse/grammar_node.rs::parse_node`/`grammar_infra.rs::parse_store`, the SAME STRING-quoted `code`/`may`
 grammar shape T-0132 established) naming WHAT personal data a node/store
 actually holds, one attr per tag (`pii=<category>.<field>`,
 `_pii.py::_PII_PREFIX`) -- no new kernel primitive (charter law 1), just
@@ -545,7 +545,7 @@ flags the SHAPE of the vulnerability directly in a file's text, following
 exclusion lesson (a needle must not fire on a dotted method access that
 merely shares a name with a dangerous bare call).
 
-`CVE_FINGERPRINTS` (`src/frob/strata/_cve_fingerprint.py`) ships thirteen
+`CVE_FINGERPRINTS` (`src/frob/strata/_cve_fingerprint.py`) ships 18
 entries, each joined to an EXISTING `std.cwe` catalog id via `cwe_id` and
 cited by at least one REAL, independently-verified CVE -- `cve` is never
 hand-guessed from memory; every citation here was checked against a
@@ -583,8 +583,8 @@ genuine needle in a scanned language would be undetectable data, not a
 pattern-match capability, so it is omitted rather than shipped inert.
 
 **Wired into two operational paths, not test-only.** (1) `frob.vet.
-_capability.scan_directory_fingerprints` runs from `frob.vet._scan.
-_scan_source` the SAME way `scan_directory_capabilities` already does --
+_capability._scan_directory_fingerprints` runs from `frob.vet._scan.
+_scan_source` the SAME way `_scan_directory_capabilities` already does --
 a `frob vet` run over a dependency tree surfaces a VET006 finding (and a
 `"cve-fingerprint"` signal on the stored `PackageVerdict`) when a
 dependency's source matches a fingerprint's needle(s), independent of
@@ -600,7 +600,7 @@ security/quality families.
 **Self-match note (same class as T-0151/T-0158):** `_cve_fingerprint.py`
 stores every needle as a Python string literal, so scanning that file's
 OWN text would trivially "match" every fingerprint it defines regardless
-of what the file's code actually does; `scan_directory_capabilities`
+of what the file's code actually does; `_scan_directory_capabilities`
 excludes it from aggregation the same way it already excludes `_capability.
 py`/`_capability_registry.py` (`_is_self_path`).
 

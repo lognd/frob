@@ -43,7 +43,7 @@ has zero pending nodes," never a judgment call.
    `done` count against the denominator and confirms `done` means
    genuinely explored, not skipped.
 
-See `skills/exhaustive-research/SKILL.md` for the full doctrine and hard
+See `.claude/skills/exhaustive-research/SKILL.md` for the full doctrine and hard
 rules.
 
 ## Frontier store, by corpus

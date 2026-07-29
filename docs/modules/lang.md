@@ -1,14 +1,15 @@
 # frob.lang -- uniform tree-sitter parsing
 
-One sentence: a single `parse_file`/`ParsedFile` contract over five
-tree-sitter grammars (python, typescript/tsx, rust, c, cpp), so that
+One sentence: a single `parse_file`/`ParsedFile` contract over seven
+tree-sitter grammars (python, typescript/tsx, rust, c, cpp, kotlin) plus
+`.strata` (routed through strata-core, no tree-sitter grammar), so that
 `frob.graph` never has to know which language a source file is in.
 
 ## Public API
 
 ```python
 def parse_file(path: Path) -> Result[ParsedFile, LangError]
-def supported_languages() -> frozenset[str]   # {"python","typescript","rust","c","cpp"}
+def supported_languages() -> frozenset[str]   # {"python","typescript","rust","c","cpp","kotlin","strata"}
 ```
 
 Dispatch is by file extension:
@@ -20,7 +21,9 @@ Dispatch is by file extension:
 | `.tsx` | tsx | typescript |
 | `.rs` | rust | rust |
 | `.c`, `.h` | c | c |
-| `.cpp`, `.hpp`, `.cc`, `.hh` | cpp | cpp |
+| `.cpp`, `.hpp`, `.cc`, `.hh`, `.cxx` | cpp | cpp |
+| `.kt`, `.kts` | kotlin | kotlin |
+| `.strata` | (strata-core, no tree-sitter grammar) | strata |
 
 A file with tree-sitter recoverable syntax errors still yields the symbols
 tree-sitter could parse around the error (`ParseFailed` is reserved for a
@@ -87,6 +90,7 @@ the whole declaration and `body_tokens` is always `()`.
 | typescript | wrapped in an `export_statement` (`export`/`export default`); class members without an explicit `private`/`protected` `accessibility_modifier` default to public |
 | c | file-scope symbol without a `static` storage-class specifier |
 | cpp | file-scope symbol without `static`; class members are public unless the nearest preceding `access_specifier` in the enclosing `field_declaration_list` is `private`/`protected` (default access is `private` for `class`, `public` for `struct`, matching the language) |
+| kotlin | absence of a `private`/`protected`/`internal` visibility modifier (kotlin's own default visibility is `public`) |
 
 ## Comment extraction and binding
 
@@ -110,10 +114,11 @@ names the walker treats as comment-typed leaves.
 
 ## Per-language walker notes
 
-Each language has its own recursive-descent walker in `_extract.py`
-(`_walk_python`, `_walk_typescript`, `_walk_rust`, `_walk_c_family`
-shared by c/cpp) built on the shared `_common.py` primitives
-(`leaf_tokens`, `leading_doc_comment`, `strip_comment_delims`, `span_of`).
+Each language has its own recursive-descent walker (`_walk_python.py`,
+`_walk_typescript.py`, `_walk_rust.py`, `_walk_c.py`'s `_walk_c_family`
+shared by c/cpp, `_walk_kotlin.py`, `_walk_strata.py`) built on the shared
+`_common.py` primitives (`_leaf_tokens`, `_leading_doc_comment`,
+`_strip_comment_delims`, `_span_of`).
 Notable per-language handling:
 
 - **python**: `decorated_definition` is unwrapped to find the underlying
@@ -180,18 +185,18 @@ already-parsed tree.
 <!-- frob:describes src/frob/lang/_common.py::flatten_tree -->
 <!-- frob:describes src/frob/lang/_common.py::_iter_cpp_functions -->
 
-The shared, language-agnostic tree-sitter helpers the five walkers are
+The shared, language-agnostic tree-sitter helpers the seven walkers are
 built on -- kept in one place so the leaf-token/comment-delimiter/span
 logic is never re-derived per grammar.
 
-- `collapse_ws` -- whitespace-collapse doc text so reflow never perturbs it.
-- `leaf_tokens` -- ordered leaf text under a node, comments and byte-range
+- `_collapse_ws` -- whitespace-collapse doc text so reflow never perturbs it.
+- `_leaf_tokens` -- ordered leaf text under a node, comments and byte-range
   exclusions skipped (the sig/body token contract).
-- `strip_comment_delims` -- strip `//`, `///`, `/* */`, `/** */`, `#`, and
+- `_strip_comment_delims` -- strip `//`, `///`, `/* */`, `/** */`, `#`, and
   continuation `*` from one comment.
-- `leading_doc_comment` -- the contiguous comment block directly above a
+- `_leading_doc_comment` -- the contiguous comment block directly above a
   node, as doc text.
-- `span_of` -- 1-based inclusive `(start_line, end_line)`, folding the
+- `_span_of` -- 1-based inclusive `(start_line, end_line)`, folding the
   trailing-newline lexer artifact back onto the content line.
 - `_child_text` -- decode a node's text, `""` if absent.
 - `export_tree` -- a comment-stripped `TreeNode` snapshot of a subtree (for

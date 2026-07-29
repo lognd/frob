@@ -97,7 +97,7 @@ rather than an oversight.
 
 Charter law 1 holds here exactly as it does for `std.host`: `std.krb`
 adds nothing to `KernelModel`/`Node`. Every node-level clause desugars to
-a plain `Node.attrs` string via `src/frob/strata/_krb.py::krb_attrs` --
+a plain `Node.attrs` string via `src/frob/strata/_krb.py::_krb_attrs` --
 the ONE place that encoding is written, called from `_elaborate.py::
 _elaborate_node` the same way `host_attrs` is:
 
@@ -315,7 +315,7 @@ review-round REJECT fix.
   vocabulary extends.
 - `docs/strata/kernel.md#data-models` -- `Node`/`Flow`, the two kernel
   primitives every std.krb clause desugars into.
-- `src/frob/strata/_krb.py` -- `krb_attrs`, `krb_manifest_for`,
+- `src/frob/strata/_krb.py` -- `_krb_attrs`, `krb_manifest_for`,
   `krb_trust_flows`, `flow_authenticates_via`, `KrbManifest`,
   `KrbDelegationKind`, `KrbTrust`.
 - `tests/unit/strata/test_krb.py` -- unit coverage for the desugar/

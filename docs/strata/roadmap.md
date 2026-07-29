@@ -72,6 +72,20 @@ vulnerability class:
   inside the 24-month deny-by-default horizon. Goldens enforced in CI by
   `tests/unit/strata/test_litmus_chirp.py`.
 
+- **audit_vuln.strata / audit_hardened.strata** (T-0115 exhaustiveness
+  litmus, docs/strata/threat.md): `web`'s `may "sql"` fires an
+  undischarged CWE-89 (security) AND CWE-639 (quality, same capability
+  kind, different mitigation) obligation with no code change needed --
+  the vuln twin refutes both, the hardened twin discharges the security
+  leg (parameterization) while the quality leg's compliance-family
+  discharge is a separately tracked follow-up.
+- **deploy_secret.strata** (T-0136 exit criterion): surface-syntax twin
+  of `std.secrets`/`std.deploy` -- a `secret` construct's mandatory
+  issue/revoke/reads flow triad plus auto-generated `readers()`
+  SetEquality claim, an `on deploy { ... }` node contract reaching
+  `evaluate_deploy_contracts` end to end, and a credential AGE bound over
+  the secret's issue flow.
+
 Growth candidates (post-phase-5): a WhatsApp-shaped model (E2E encryption:
 `noflow(MessageBody -> Server)` with the server as a non-recipient) and a
 search-shaped model (batch index pipelines with freshness lag).
@@ -86,7 +100,7 @@ search-shaped model (batch index pipelines with freshness lag).
   the network); T-0707 added `registry_model` and `fleet`, and T-0440
   split `deploy`/`serve`/`mutate` off the former dup+frob-core utility-hub
   node into three standalone components with their own `may`/effects
-  declarations (13 components today, dup+frob-core now narrower: dup,
+  declarations (18 nodes today, dup+frob-core now narrower: dup,
   logging, process, gitlog, gitio, xref, outline, map, exports, perf,
   policy, release, scaffold, stats, bind, docs, fuzz, cycle, testing, cve,
   clean, render), the tickets ledger as an `append_only` git-tracked
@@ -102,16 +116,15 @@ search-shaped model (batch index pipelines with freshness lag).
   age is bounded), and `c_gates_reach_tickets` (the gate suite's findings
   can reach the layer that writes the ledger). Locked in CI by
   `tests/system/test_frob_self_model.py`.
-  - Grammar gap found while writing the model: the surface language's
-    `code=<glob>` (docs/strata/surface.md#code-binding-tier-2-v0-
-    implementation) and `may <capability>` (T-0079) are unreachable from
-    `.strata` source text today -- `strata-core`'s lexer only accepts
-    `[A-Za-z_][A-Za-z0-9_]*` IDENT tokens and `attr KEY=VAL` requires a
-    single IDENT value, so a glob like `src/frob/app/**` cannot be
-    written as an attr. Both features currently only work via a
-    hand-built `KernelModel` in Python (exactly how their own test
-    suites exercise them). Tracked as follow-up work, filed alongside
-    this ticket's Done report.
+  - Grammar gap found while writing the model (since fixed): at the time,
+    the surface language's `code=<glob>` (docs/strata/surface.md#code-
+    binding-tier-2-v0-implementation) and `may <capability>` (T-0079)
+    were unreachable from `.strata` source text -- `strata-core`'s lexer
+    only accepted `[A-Za-z_][A-Za-z0-9_]*` IDENT tokens and `attr
+    KEY=VAL` required a single IDENT value, so a glob like
+    `src/frob/app/**` could not be written as an attr. T-0132 closed this
+    gap: `code`/`may` now take STRING-quoted values directly in `.strata`
+    source (see docs/strata/surface.md's `node` grammar section).
 - Phase 5: `frob sys plan` files strata's own remaining work as tickets --
   the language plans its own completion.
 - T-0700 shipped access-modes + `resource`/`arbitrated_by` grammar
@@ -123,16 +136,14 @@ search-shaped model (batch index pipelines with freshness lag).
   (`frob.strata._access.resource_contention_violations` returns zero
   violations for `tickets_ledger`, its declared `lock` discharging every
   conflicting write/write pair among the five accessors). The five
-  `SYS203:tickets_ledger` waivers on those same nodes stay, though: SYS203
-  (`_contention.py::check_resource_contention`) is a SEPARATE, strictly
-  mode-blind check with no code path reading `Module.resources`/`access`
-  attrs at all (its own module docstring says so plainly) -- it fires on
-  any inbound Flow to a store regardless of what the newer SYS204 proof
-  establishes, so the waiver reasoning was rewritten to explain that
-  structural gap rather than promise a re-evaluation that the grammar
-  alone cannot deliver. Wiring SYS203 to consult the arbiter (a
-  `src/frob/strata/_contention.py` code change) remains a separate,
-  undischarged follow-up, out of this docs-only ticket's scope.
+  SYS203 (`_contention.py::check_resource_contention`) used to be a
+  SEPARATE, strictly mode-blind/arbiter-blind check with no code path
+  reading `Module.resources`/`access` attrs at all -- T-1025 wired it:
+  `check_resource_contention` now accepts an optional `module: Module |
+  None` and, when a store id is ALSO a resource id with a declared
+  `arbitrated_by`/`lock`, treats that store's shared-write finding as
+  discharged (the same posture SYS204 already establishes) instead of
+  firing unconditionally.
 - T-1076 split `src/frob/__main__.py`'s own `_add_*_parser` argparse
   builders out into a `src/frob/_cli_parsers/**` package (pure file
   reorganization, no behavior change, same T-1072/T-0989 pattern as the

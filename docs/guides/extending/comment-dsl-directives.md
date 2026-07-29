@@ -6,13 +6,16 @@
 
 `frob:<verb> <target> [key="value" ...]` is the in-source obligation
 language (`docs/modules/graph.md#comment-dsl`). Verbs map to `EdgeKind`
-values via `_VERB_TABLE` in `src/frob/graph/dsl.py`. Current verbs: `doc`,
-`uses-contract`, `invariant`, `ticket`, `todo`, `waive`, `debt`,
-`deprecated`, `tests`, `decision`, `channel`, `boundary`, `secret`.
+values via `_VERB_TABLE` in `src/frob/graph/dsl.py`. Current verbs (20):
+`doc`, `uses-contract`, `invariant`, `ticket`, `todo`, `waive`, `debt`,
+`deprecated`, `tests`, `decision`, `channel`, `boundary`, `secret`,
+`enforces`, `protocol`, `transition`, `requires`, `acquire`, `release`,
+`escapes`.
 Parsing is language-agnostic:
-`frob.lang`'s five walkers strip comment delimiters first, so `dsl.py`
-only ever sees the bare `frob:...` text regardless of `#`, `//`, or
-`/* */` origin.
+`frob.lang`'s seven walkers (python, cpp, c, typescript/tsx, rust, kotlin,
+strata; `src/frob/lang/_extract.py:60`) strip comment delimiters first, so
+`dsl.py` only ever sees the bare `frob:...` text regardless of `#`, `//`,
+or `/* */` origin.
 
 ### `frob:waive` vs `frob:debt` (T-0412)
 
@@ -145,7 +148,7 @@ join points because each continued line ends with a space before its `\`).
 1. Add the `EdgeKind` member in `src/frob/graph/_models.py`.
 2. Add the verb -> kind mapping to `_VERB_TABLE`.
 3. If the verb takes required attrs (like `tests` requiring a `kind=` in
-   `unit|integration|e2e`, see `_TESTS_KINDS`), add the attr validation in
+   `unit|integration|e2e|property`, see `_TESTS_KINDS`), add the attr validation in
    `_parse_line` (or wherever `_ATTR_RE` results are consumed for that verb)
    and a `MalformedDirective` reason string for the missing/bad-attr case.
 4. Add the corresponding gate consumer if the new verb needs enforcement

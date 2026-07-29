@@ -5,8 +5,9 @@ subsystem, under a single North-Star: **if `frob check` / a ticket-close / a
 strata proof passes, the thing it claims must actually hold.** The mandate was
 to find every way that is *false* -- pessimistically, with concrete repros.
 
-Remediation is tracked under **T-0397** (audit remediation epic); every HIGH
-finding gets an actionable child ticket. These findings files are the durable
+Remediation was tracked under **T-0397** (audit remediation epic, now
+CLOSED); its successor **T-1193** (post-audit residual themes, also
+CLOSED) picked up what remained. These findings files are the durable
 record (referenced here so they are not themselves orphaned -- the failure mode
 that motivated the audit).
 
@@ -22,15 +23,17 @@ that motivated the audit).
 | graph + edges | [graph.md](graph.md) | 2 | 12 | `load_graph` only re-hashes files already cached, so a newly-added file returns Ok on an incomplete snapshot; a non-UTF-8 `.md` hard-crashes `frob check`. Foundation-level "passes on an incomplete graph" holes. |
 | performance + caching | [perf.md](perf.md) | 5 | 12 | ~168s CPU is redundant parsing: `frob.lang._parse` uncached so each file parsed 2-6x, the 745k-node tree re-walked ~7x/run, 17 gates GIL-serialized so archgate(91.5s)+sys(77s) never overlap. Shared single-parse + parse-cache + process-pool is the fix (and the warm daemon T-0177). |
 | check performance (T-0928, end-to-end profile) | [check-performance.md](check-performance.md) | -- | -- | Discovered `frob.perf`'s own collectors (cProfile, StackSampler, heat) are blind to thread-pool/process-pool gate dispatch -- roughly half a profiled `frob check` run resolves to `heat`'s own "unattributed" bucket. Ranked wall-clock table anchored on `gate-summary` brackets instead: static-bucket, test, archgate, perf, sys top the list. Four follow-up tickets filed. |
-- [Coordination churn self-audit](coordination-churn.md) -- 2026-07 zero-drive retrospective: six recurring coordination frictions, each with a design-out (T-0999 epic)
 | gates: quality/security | [gates-quality.md](gates-quality.md) | 3 | 15 | The ENTIRE quality surface is non-blocking (WARN): perf smells, undeclared PII, god-classes, deep nesting all exit 0. DUP fails open (default-off + no-op without natives). `frob:secret-fake` suppresses real secrets with no accountability. |
+
+- [Coordination churn self-audit](coordination-churn.md) -- 2026-07 zero-drive retrospective: six recurring coordination frictions, each with a design-out (T-0999 epic)
 
 ## Convergence protocol
 
 This audit is NOT a one-shot. Standing loop per subsystem: **audit -> fix every
 finding the RIGHT way -> re-run the pessimistic auditor (still instructed to find
 10+) -> repeat until it comes back empty despite that instruction.** A subsystem
-is only "done" when a fresh pessimistic pass finds nothing. Tracked under T-0397.
+is only "done" when a fresh pessimistic pass finds nothing. Tracked under
+T-0397 (closed) and its T-1193 successor (closed).
 
 ## Cross-cutting themes
 

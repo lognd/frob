@@ -3,12 +3,11 @@
 
 Status: living reference. Feeds T-0330 (arch SOLID / senior-designer checks),
 T-0332 (hallmark->pattern + anti-pattern->escape recommender), and T-0341
-(conformance). Neither `docs/design/architecture-check-catalog.md` nor
-`docs/design/structural-linter-adversarial-hardening.md` exists in this
-worktree yet -- there is nothing in-repo to reconcile against beyond the
-T-0330/T-0332 ticket text quoted inline below where a lesson updates the
-plan described there. When those catalog docs land, re-run this
-reconciliation against their actual content.
+(conformance). `docs/design/architecture-check-catalog.md` now exists and
+its reconciliation is due; `docs/design/structural-linter-adversarial-
+hardening.md` still does not -- there is nothing in-repo to reconcile
+against for the latter beyond the T-0330/T-0332 ticket text quoted inline
+below where a lesson updates the plan described there.
 
 Method: built via the exhaustive-research frontier loop. Universe enumerated
 to 21 nodes before any source-hunting (SOLID x5 + SOLID-as-a-whole, DRY/AHA,

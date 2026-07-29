@@ -4,7 +4,11 @@ One sentence: `frob.arch.analyze_project` walks a source tree through
 `frob.lang`'s single grammar-dispatch mechanism and reports structural
 smells (long functions, god classes, high coupling, deep nesting, large
 files, and cross-file signature-abstraction opportunities) as advisory
-`ArchSuggestion`s -- it is a report, not a gate; nothing here fails a build.
+`ArchSuggestion`s -- most categories are advisory (nothing here fails a
+build for them), but ARCH101 (low-cohesion-class) and ARCH103
+(mixed-concern-function) are configured `severity="error"` in this repo's
+own `frob.toml` (T-0977/T-0990) and DO fail `frob check` here; other repos
+adopting `frob.arch` choose their own severities per category.
 
 ## Scope
 
@@ -46,6 +50,35 @@ has no `elif language == "..."` branch for them yet.
 | `primitive-obsession` (T-0621) | a function/method signature with 3+ raw `str`/`int`/`float` params -- written once against the normalized model | suggestion |
 | `parse-dont-validate` (T-0621) | a function that guards its one param then returns the SAME unrefined type instead of a refined one -- written once against the normalized model | suggestion |
 | `boolean-flag-param` (T-0621) | a public function/method with a bool param it branches on internally -- written once against the normalized model | suggestion |
+| `type-dispatch-smell` (T-0617) | an isinstance/type-tag dispatch chain (OCP family) | warning |
+| `non-exhaustive-enum-match` (T-0617) | an enum/literal match missing a member with no default arm (OCP family) | warning |
+| `unlogged-error-path` (T-0622) | an except/error-return branch with no logging call | warning |
+| `unlogged-boundary` (T-0622) | a process/network/file boundary crossing with no logging call | warning |
+| `print-as-diagnostic` (T-0622) | a `print`/`console.log`-style call used where a logger call belongs | suggestion |
+| `unhandled-result` (T-0623) | a `Result`/fallible-return value neither branched on nor propagated | warning |
+| `swallowed-exception` (T-0623) | a caught exception with no re-raise, log, or return-signal | warning |
+| `recoverable-error-wrong-signature` (T-0623) | a function that raises for an expected/recoverable condition instead of returning a typed error | suggestion |
+| `over-broad-except` (T-0623) | a bare or overly wide `except`/`catch` clause | warning |
+| `mutable-default-arg` (T-0624) | a mutable literal (list/dict/set) as a default parameter value | warning |
+| `feature-envy` (T-0624) | a method that reads another object's fields/methods far more than its own | suggestion |
+| `data-clumps` (T-0624) | the same group of params repeated across 3+ signatures | suggestion |
+| `magic-literal` (T-0624) | an unexplained numeric/string literal used as a business-logic constant | suggestion |
+| `dead-private-code` (T-0624) | a private symbol with no in-file caller | suggestion |
+| `deep-inheritance` (T-0624) | a class hierarchy deeper than a configured bound | suggestion |
+| `temporal-coupling` (T-0624) | methods that must be called in an undocumented required order | suggestion |
+| `module-dependency-cycle` (T-0625) | a module import cycle (Tarjan's algorithm over `frob.cycle.graph`) | warning |
+| `blocking-call-in-async` (T-0696) | a synchronous blocking call reachable from an `async def` | warning |
+| `nested-event-loop` (T-0696) | an event loop started from within an already-running event loop | warning |
+| `unawaited-coroutine` (T-0696) | a coroutine object created but never awaited | warning |
+| `async-zero-awaits` (T-0696) | an `async def` whose body contains no `await` at all | suggestion |
+| `sequential-independent-awaits` (T-1027) | 2+ sequential `await`s in one block where no earlier bound name is read by a later one (could run concurrently) | suggestion |
+| `lock-order-cycle` (T-0694) | two or more locks acquired in inconsistent order across call paths | warning |
+| `lock-identity-unresolved` (T-0694) | a lock object whose identity cannot be statically resolved (fail-closed) | warning |
+| `unguarded-shared-write` (T-0697) | a write to module/class-level mutable state reachable from 2+ thread/task dispatch points with no guarding lock | warning |
+| `gil-bound-in-threadpool` (T-0698) | CPU-bound work dispatched to a thread pool (GIL-limited) instead of a process pool | suggestion |
+| `ipc-overhead-in-processpool` (T-0698) | IO-bound work dispatched to a process pool, paying IPC/pickling overhead for no CPU-bound benefit | suggestion |
+| `errors-as-values-recommended` (T-0688) | a function whose may-raise set suggests a typed Result return would suit better than propagating exceptions | suggestion |
+| `cpp-noexcept-throws` (T-0687) | a `noexcept` C++ function reached by a may-throw/unresolved-callee call with no enclosing `catch (...)` | error |
 
 All thresholds are `analyze_project` keyword arguments with the defaults
 shown in the Public API section below; there is no `frob.toml` table for
@@ -1766,8 +1799,8 @@ for the gate-side detail (turn-on count, waiver shape).
 class ArchSuggestion(BaseModel):
     file: str
     line: int | None = None
-    category: ArchCategory   # one of the six rows in the table above
-    severity: ArchSeverity   # "warning" | "suggestion" | "info"
+    category: ArchCategory   # one of the 57 rows in the checks table above
+    severity: ArchSeverity   # "warning" | "suggestion" | "info" | "error"
     message: str
     detail: str | None = None
     # T-0289: set for checks about exactly one symbol (currently
@@ -1822,7 +1855,7 @@ calibrated values instead: `max_function_lines=60`, `max_class_methods=12`,
 `frob.toml`, or a `frob.toml` with no `[arch]` table, is not an error --
 `load_arch_config` just returns the calibrated defaults, same posture as
 every other per-section `frob.toml` reader in this codebase (e.g.
-`frob.gates._dup_config`).
+`frob.gates._dup._dup_config`, moved there by T-1174).
 
 T-0728 extends the same `[arch]` table with five more keys for T-0616's
 ARCH1xx SRP/cohesion family: `lcom4_min_methods` (default 6),

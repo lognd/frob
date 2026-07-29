@@ -6,11 +6,12 @@ top-level symbols. Fits an entire medium-sized codebase in ~200 tokens.
 ## Usage
 
 ```
-frob map [path] [--json] [--depth N]
+frob map [path] [--json] [--depth N] [--all]
 ```
 
 `path` defaults to the current directory. `--depth` limits directory recursion
-(default: unlimited).
+(default: unlimited). `--all` includes private (underscore-prefixed) symbols,
+hidden by default.
 
 ## Output (default)
 

@@ -14,10 +14,11 @@ Universal Scalability Law, and "The Tail at Scale" at the DESIGN level
 (QT-1, QT-3, LT-2) it goes one layer deeper -- the operational mechanics
 of applying them (the M/M/1 utilization-knee, USL's two coefficients in
 practice, tail amplification via fan-out) -- and cross-links back rather
-than duplicating the citation. `src/frob/perf/` (`_harness.py`, `_heat.py`,
-`_models.py`, `_profile.py`, `_rules.py`) is frob's existing performance
-tooling; entries below note where a strata-checkable obligation would sit
-relative to that module, without prescribing an implementation.
+than duplicating the citation. `src/frob/perf/` (18 modules today,
+including `_harness.py`, `_heat.py`, `_models.py`, `_profile.py`,
+`_rules.py`) is frob's existing performance tooling; entries below note
+where a strata-checkable obligation would sit relative to that module,
+without prescribing an implementation.
 
 Canonical anchor for the whole corpus: Brendan Gregg, *Systems
 Performance: Enterprise and the Cloud*, 2nd ed., Addison-Wesley, 2020
@@ -807,8 +808,9 @@ reconciles.
 - `docs/design/system-design-corpus.md` sec. 5.2 (Google SRE SLI/SLO/error
   budgets) -- this corpus's RED method (1.2) and latency-budget entry (5.4)
   are the metric-shape and decomposition companions to that SLO practice.
-- `src/frob/perf/` (`_harness.py`, `_heat.py`, `_models.py`, `_profile.py`,
-  `_rules.py`) -- existing frob performance tooling; the provable
+- `src/frob/perf/` (18 modules, including `_harness.py`, `_heat.py`,
+  `_models.py`, `_profile.py`, `_rules.py`) -- existing frob performance
+  tooling; the provable
   (presence) entries above are candidate obligations for `_rules.py`, not
   prescriptions for how it should be implemented.
 

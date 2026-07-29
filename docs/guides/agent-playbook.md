@@ -132,11 +132,12 @@ WHY and the recovery recipes.
    runs. A collection failure with `ModuleNotFoundError: strata_core` or
    `frob_core` in a fresh worktree is an environment artifact, not a
    regression -- run `make core` before concluding otherwise.
-   - `make core` is a from-scratch cargo build per worktree today (minutes,
-     not seconds). Sharing a prebuilt artifact across worktrees (a shared
-     `CARGO_TARGET_DIR`, or a wheel cache reused by `make core`) is
-     tracked separately, not yet implemented -- see T-0175's Done report
-     for what was investigated and why it was not built in this pass.
+   - T-0732 landed a shared, git-common-dir-keyed `CARGO_TARGET_DIR`
+     (`Makefile:197`, `frob natives build`'s own cache mechanism) so a
+     second/third worktree's `make core` reuses the first worktree's
+     compiled cargo artifacts instead of rebuilding from scratch -- warm
+     builds measure ~11s, not the multi-minute cold-build figure T-0175
+     originally measured before this landed.
 3. Use `uv run frob ...` for every invocation inside a worktree, never a
    globally-installed `frob` binary. The global tool may be a different
    version, or may not see gate-affecting source changes at all (next
@@ -396,7 +397,8 @@ timeout 110 uv run frob check --stamp-baseline --only drift --only coverage --on
   --only decisions --only tickets --only refs --only registry --only compliance \
   --only docblocks --only walk_lint --only excludehazard --only debt --only deprecated \
   --only render_lint --only parse_failures --only lang_conformance \
-  --only lang_project_conformance --only scope --only prework --only fmt --only affect_drift
+  --only lang_project_conformance --only scope --only prework --only fmt --only affect_drift \
+  --only ffi_boundary
 ```
 
 (`test` split out on its own because it is the single heaviest gate in

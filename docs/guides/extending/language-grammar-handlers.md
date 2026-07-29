@@ -4,15 +4,17 @@
 
 ## What it is and where it lives
 
-`frob.lang` parses five languages into a shared `RawSymbol`/comment model
+`frob.lang` parses seven languages into a shared `RawSymbol`/comment model
 that every other module (graph, gates, dup, vet, testing) builds on top
-of. The dispatch table is `_WALKERS` in `src/frob/lang/_extract.py`, keyed
+of. The dispatch table is `_WALKERS` in `src/frob/lang/_extract.py` (7
+keys: `python`, `typescript`, `tsx`, `rust`, `c`, `cpp`, `kotlin`), keyed
 by the tree-sitter language name and mapping to a `_walk_<lang>` function:
-`_walk_c` (also used for C++ and TSX via aliasing, see `_walk_cpp`/
-`_walk_tsx` wrappers), plus dedicated walker modules
-`src/frob/lang/_walk_python.py`, `_walk_rust.py`, `_walk_strata.py`,
-`_walk_typescript.py`. `extract()` looks up `_WALKERS[language]` and walks
-the tree-sitter root node into a `tuple[RawSymbol, ...]`.
+`_walk_c` (also used for C++ via the `_walk_cpp` wrapper; `tsx`'s
+`_walk_tsx` wrapper aliases `_walk_typescript`, not `_walk_c`), plus
+dedicated walker modules `src/frob/lang/_walk_python.py`, `_walk_rust.py`,
+`_walk_strata.py`, `_walk_typescript.py`, `_walk_kotlin.py`. `extract()`
+looks up `_WALKERS[language]` and walks the tree-sitter root node into a
+`tuple[RawSymbol, ...]`.
 
 ## Add-an-entry recipe (new language)
 
@@ -69,14 +71,14 @@ comment extraction to the shared `_extract_comments` path.
 ## Common mistakes
 
 - Writing a walker that emits `RawSymbol`s with a different field
-  convention than the other four (e.g. a `kind` string that doesn't match
+  convention than the other six (e.g. a `kind` string that doesn't match
   what `frob.graph`'s digest/edge code expects) -- every downstream
   consumer (digests, gates, dup) assumes uniform `RawSymbol` shape across
   languages; test against `frob.graph.build_graph` on a real fixture, not
   just the walker in isolation.
 - Forgetting the trailing-comment vs. preceding-comment binding rules
   `_extract_comments`/`_is_trailing_comment`/`_block_ends` already encode
-  for the other five languages -- a naive walker can silently bind a
+  for the other six languages -- a naive walker can silently bind a
   directive comment to the wrong symbol in edge cases (3+ stacked
   directive comments above a `def`, see the caveat in `_extract.py`'s
   `_extract_comments` docstring).

@@ -55,7 +55,7 @@ Comments are `//`; docs attach with `///` and are drift-checked once
 T-0136 adds `on deploy`, T-0154 adds `carries`, T-0172 adds `managed`,
 T-0174 adds `waive`)
 
-The construct actually implemented by `strata-core/src/parse.rs::parse_node`
+The construct actually implemented by `strata-core/src/parse/grammar_node.rs::parse_node`
 today is spelled `node`, not the future `component` shown in the sketch
 above (T-0059 renames it once `runs on`/`state` land). Its
 grammar, extended by T-0132 to admit `code`/`may`, by T-0136 to admit
@@ -84,7 +84,7 @@ STRING      := '"' char* '"'   // no escapes in v0; '"' and newline forbidden
 external, pure-config infrastructure (e.g. a Caddyfile-configured edge)
 declared to have no scannable code, so it needs no fake `code=` glob to be
 honestly modeled. `store` (below) accepts the identical bare `managed`
-marker for the same reason (`strata-core/src/parse.rs::parse_store`) --
+marker for the same reason (`strata-core/src/parse/grammar_infra.rs::parse_store`) --
 "component / store: nodes" (#key-construct-semantics), so both get it.
 Elaboration (`_elaborate.py::_elaborate_node`, `_infra.py::
 _elaborate_store`): one `"managed"` node attr, the same bare-marker
@@ -104,7 +104,7 @@ assumes."
 matching `code`'s glob+ requirement, per law 2), same STRING-not-IDENT
 reasoning as `code`/
 `may` (a `<category>.<field>` PII tag carries `.`, not a valid ident
-char). `strata-core/src/parse.rs::parse_store` accepts the identical
+char). `strata-core/src/parse/grammar_infra.rs::parse_store` accepts the identical
 `carries STRING+` clause -- a store is the most common PII resting place.
 Elaboration (`_elaborate.py::_elaborate_node`, `_infra.py::
 _elaborate_store`): each tag becomes one `pii=<tag>` attr, the same
@@ -118,14 +118,15 @@ surface analog of `frob:waive` for gate violations. `reason` is mandatory
 IN THE GRAMMAR -- a `waive` clause with no reason is a parse error, never
 a value that can exist without one. `RULE_ID` may carry a `RULE:SUBTARGET`
 sub-target (e.g. `"SYS100:fs-write"`) -- REQUIRED for multi-instance-per-
-node rule families (SYS100/SYS101/THREAT002/THREAT003; see `_waive.py::
-MULTI_INSTANCE_WAIVER_FAMILIES`) and rejected at elaborate time if
-missing. See `docs/strata/waive.md` for the matching/staleness algorithm,
+node rule families (26 ids today: SYS100/SYS101/SYS104/SYS105/SYS200-203/
+SYS205/THREAT002/THREAT003/REL200-201/REL220-222/REL270-272/REL370-372/
+REL380-383; see `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`) and rejected
+at elaborate time if missing. See `docs/strata/waive.md` for the matching/staleness algorithm,
 the sub-target requirement, and the WAIVED report format.
 
 **`code`/`may` on `store` (T-0166):** the identical `code STRING+` /
 `may STRING` clauses `node` has, now also accepted by
-`strata-core/src/parse.rs::parse_store` -- "component / store: nodes"
+`strata-core/src/parse/grammar_infra.rs::parse_store` -- "component / store: nodes"
 (#key-construct-semantics), the same reasoning `managed`/`carries` above
 already document for this construct. Before T-0166, `parse_store` had no
 `code`/`may` branch at all (a real, narrow grammar gap this ticket found:
@@ -147,7 +148,7 @@ exemption.
 
 **`errors_total`/`panics_contained_by`/`observe`/`on deploy` on `store`
 (T-0247):** the identical T-0070/T-0136 clauses `node` has, now also
-accepted by `strata-core/src/parse.rs::parse_store` -- the same
+accepted by `strata-core/src/parse/grammar_infra.rs::parse_store` -- the same
 "component / store: nodes" reasoning (#key-construct-semantics) T-0166
 already documents above for `code`/`may`. Before T-0247, `parse_store` had
 no branch for any of the four (the same kind of real, narrow grammar gap
@@ -195,7 +196,7 @@ until now.
 
 ### `secret` grammar (implemented; T-0136)
 
-`strata-core/src/parse.rs::parse_secret` implements the surface grammar
+`strata-core/src/parse/grammar_node.rs::parse_secret` implements the surface grammar
 `std.secrets` (below) previously only had as a Python-API vocabulary:
 
 ```
@@ -317,7 +318,7 @@ machinery that already existed before this ticket.
 **Surface grammar implemented (T-0136).** The `.strata` grammar's `secret X
 { issued_by Y; audience { ... }; lifetime T; revoke T' }` syntax (see the
 "`secret` grammar (implemented)" section above) is now wired end to end:
-`strata-core/src/parse.rs::parse_secret` -> `_ast.py::SecretDecl` ->
+`strata-core/src/parse/grammar_node.rs::parse_secret` -> `_ast.py::SecretDecl` ->
 `_elaborate.py::_elaborate_secrets` -> this module's `elaborate_secret`,
 unchanged. `std.secrets` is no longer a Python-API-only vocabulary.
 
@@ -346,7 +347,7 @@ onto parent/child tickets.
 <!-- frob:ticket T-0062 -->
 
 `refine ID into { (node_stmt | flow_stmt)* binds ID = ID }` is parsed in
-Rust (`strata-core/src/parse.rs::parse_refine`); exactly one `binds`
+Rust (`strata-core/src/parse/grammar_flow.rs::parse_refine`); exactly one `binds`
 clause is required and its left-hand id must equal the refine target, both
 enforced as parse errors with line/col, not defaults. The elaborator
 (`_elaborate.py::elaborate` -> `_elaborate_refines`) then flattens each
@@ -388,14 +389,13 @@ block into the kernel model:
 <!-- frob:describes src/frob/strata/_code_binding.py::ConformanceReport -->
 <!-- frob:describes src/frob/strata/_code_binding.py::ImportViolation -->
 
-The surface grammar's `code glob+` comp_item (`comp_item` above) is not
-yet lexed by `strata-core/src/parse/mod.rs` -- v0 binds code the same way
-`skew`/`fanout`/`growth` desugar (`kernel.md#capacity-semantics`): a node
-declares one or more `code=<glob>` attrs directly in the kernel model
-(Python API today; a first-class `code` keyword is a parser follow-up,
-not a kernel change, since the fact stays an opaque node attr either
-way). `bind_code` glob-matches every `.py` file under a scan root against
-every node's `code=` attrs:
+The surface grammar's `code glob+` comp_item (`comp_item` above) IS now
+lexed (`grammar_node.rs`/`grammar_infra.rs`'s `at_keyword("code")`
+branches) -- a node/store declares one or more `code=<glob>` attrs
+directly in `.strata` source, desugared the same way
+`skew`/`fanout`/`growth` are (`kernel.md#capacity-semantics`). `bind_code`
+glob-matches every `.py` file under a scan root against every node's
+`code=` attrs:
 
 - A file matched by exactly one node's glob is bound to that node.
 - A file matched by zero nodes is `FOREIGN` (charter law 2: "unclassified
@@ -452,10 +452,14 @@ a submodule (a plain attribute import) simply fails to resolve in-repo
 downstream (`resolve_local_import` returns None) and is not tracked,
 consistent with third-party/stdlib specifiers.
 
-**Not yet wired / v0 scope cuts (explicit, not oversights):**
+**Now wired (was a v0 scope cut, since landed):**
 
-- `frob check` SYS-gate surfacing of `ConformanceReport` (T-0080's SYS
-  gate family).
+- `frob check` SYS-gate surfacing of `ConformanceReport` -- SYS003
+  (`src/frob/gates/_sys.py::_sys003_one_model`) calls `bind_code` +
+  `check_import_conformance` directly.
+
+**Still-open v0 scope cuts (explicit, not oversights):**
+
 - Non-Python languages: C/C++ `#include` resolution already exists in
   `frob.lang.resolve_local_import`, but v0 only reads import lines for
   python via `ast`, since a general per-language "import statement -> line
@@ -666,7 +670,7 @@ per grammar production:
   -- target, nodes, flows, bind_to; see "Refinement" above for v0 semantics.
 
 **Capacity attrs (T-0066).** Three more flow/node properties desugar
-straight to an `attrs` entry inside `parse.rs` itself, with no dedicated
+straight to an `attrs` entry inside `grammar_flow.rs` itself, with no dedicated
 AST or kernel field (charter law 1; docs/strata/kernel.md#capacity-
 semantics):
 
@@ -757,7 +761,8 @@ mappings are cheap and change often, unlike the parser and closure kernels
 
 The second vocabulary: `store`/`cache`/`queue`/`cdn`/`balancer` are all
 pure sugar over `Node`/`Flow`/`Boundary` (charter law 1) -- the prover
-never learns any of these five words. Grammar (`strata-core/src/parse/mod.rs`,
+never learns any of these five words. Grammar
+(`strata-core/src/parse/grammar_infra.rs`,
 `parse_store`/`parse_cache`/`parse_queue`/`parse_cdn`/`parse_balancer`):
 
 ```

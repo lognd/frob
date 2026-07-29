@@ -27,15 +27,16 @@ for: declare `code "glob";`/`may "kind";` directly on `design/frob.strata`'s
 nodes, then reuse `bind_code` + `check_capability_conformance` (THREAT004)
 wherever they already express one of this ticket's three rules.
 
-One real, narrow grammar gap DOES remain and is not fixed here: `store`
-declarations (`strata-core/src/parse.rs::parse_store`) do not actually
-accept `code`/`may`, despite `docs/strata/surface.md`'s `store_prop :=
-node_prop | ...` line claiming otherwise. `design/frob.strata`'s
-`tickets_ledger` store therefore declares neither; the CODE that writes to
-it (`src/frob/tickets/**`) is folded into the `core` node's `code`/`may`
-instead, consistent with `core`'s existing `f_core_tickets: core ->
-tickets_ledger` flow. Fixing `parse_store` is a separately-filed,
-narrowly-scoped `strata-core` grammar ticket, not part of T-0150.
+This grammar gap has since been fixed (T-0166): `store` declarations
+(`strata-core/src/parse/grammar_infra.rs::parse_store`) now DO accept
+`code`/`may`, matching `docs/strata/surface.md`'s `store_prop :=
+node_prop | ...` line. Before T-0166, `design/frob.strata`'s
+`tickets_ledger` store declared neither; the CODE that wrote to it
+(`src/frob/tickets/**`) was folded into the `core` node's `code`/`may`
+instead as a workaround, consistent with `core`'s existing
+`f_core_tickets: core -> tickets_ledger` flow -- see
+`docs/strata/surface.md`'s `code`/`may` on `store` section for the
+current (post-T-0166) grammar.
 
 ## The three rules
 
@@ -50,13 +51,16 @@ detection THREAT004 already runs.
     conformance` (THREAT004) -- `_selfconform.py::_core_undeclared_
     violations` just relabels its `CapabilityViolation`s as SYS100. Zero
     new detection for this slice.
-  - eval/env/ffi/install-hook/fs-read: NEW code
-    (`_selfconform.py::_extended_kind_violations`). **Gap statement:**
-    `_effects.py::_KIND_MAP` is scoped, by its own docstring (T-0079), to
-    net/fs-write/exec only -- "eval/env/ffi/install-hook are vet-specific
-    dependency-vetting signals with no `may`-capability analog yet" -- so
-    THREAT004 structurally cannot see these kinds no matter what
-    `may` declares. `frob.vet._capability.scan_file_capabilities` (already
+  - eval/env/ffi/install-hook: NEW code
+    (`_selfconform.py::_extended_kind_violations`, `_EXTENDED_KINDS`).
+    **Gap statement:** `_effects.py::_KIND_MAP` (7 entries: net-connect,
+    net-listen, fs-write, fs-read, exec, env-read, env-write) covers
+    net/fs-write/fs-read/exec/env-read/env-write -- `env-read`/`env-write`
+    were promoted out of `_EXTENDED_KINDS` into `_KIND_MAP` by T-1075, but
+    bare `env` (a handful of registry entries like `sys.exit`/`os._exit`/
+    `signal.signal` with no tier-2 `may`-capability analog) stays extended
+    -- so THREAT004 structurally cannot see eval/env/ffi/install-hook no
+    matter what `may` declares. `frob.vet._capability.scan_file_capabilities` (already
     imported READ-ONLY by `_effects.py` for the other three kinds) is
     reused directly for these, joined against `Node.may` via
     `_effects.py::_declared_kinds` (reused, not reimplemented).
@@ -133,12 +137,13 @@ The same ticket gave `env` a matching `env-read`/`env-write` scanner
 split, but LEFT `env` in `_EXTENDED_KINDS` (env-read and env-write both
 added there) rather than moving it to `_KIND_MAP` -- env has no tier-2
 (THREAT004) `may`-declaration join at all yet, so there is nothing for a
-`_KIND_MAP` entry to feed. `_selfconform.py::_UNWIRED_ENV_MODE_ALIASES`
-folds `env-read`/`env-write` back to bare `env` before either SYS100 or
-SYS101 evaluates them, so an existing `may "env"` declaration keeps
-matching an env-read/env-write observation exactly as it matched bare
-`env` before the split -- a transitional shim, removed once env gets its
-own real tier-2 wiring (a follow-up ticket, not built in T-0771).
+`_KIND_MAP` entry to feed. T-1075 subsequently gave `env-read`/`env-write`
+their own real tier-2/THREAT004 wiring (promoted into `_KIND_MAP`, see
+above), which retired the transitional `_UNWIRED_ENV_MODE_ALIASES` shim
+this section used to describe -- it no longer exists. `env` itself
+(the bare, unqualified kind -- `sys.exit`/`os._exit`/`signal.signal`
+registry entries with no read/write split) stays in `_EXTENDED_KINDS`,
+separate from the env-read/env-write pair.
 
 <a id="fs-read-fs-write"></a>
 ## `fs-read`/`fs-write`: the read-only filesystem signal (T-0018, graphite adoption)
@@ -156,24 +161,26 @@ apologize for.
 vet._capability_registry`), patterned for real in all four scanned
 languages (Python `Path.read_text`/`read_bytes`/`json.load`; TypeScript
 `fs.readFile`/`readFileSync`; Rust `fs::read_to_string`/`fs::read`; C/C++
-`fread`/`fgets`) and added to `_EXTENDED_KINDS` alongside eval/env/ffi/
-install-hook -- SYS100 and SYS101 see it exactly like any other extended
-kind, no `_effects.py::_KIND_MAP` change needed. `DEFAULT_BENIGN_
+`fread`/`fgets`). It was originally added to `_EXTENDED_KINDS`, but has
+since been promoted into `_effects.py::_KIND_MAP` (`fs-read: fs.read`),
+so it is now THREAT004-delegated like `fs-write`/`exec`, not a
+SYS100-extended kind any more. `DEFAULT_BENIGN_
 CAPABILITIES` gained a matching `fs-read` entry so THREAT002 does not
 independently flag it (same "no CWE_CATALOG sink for local filesystem
 access on its own" reasoning as the existing `fs` entry).
 
 **Backward compatibility.** A pre-existing `may "fs"` declaration
 predates the split and meant "any real filesystem access" -- it must not
-go stale just because the only real access turns out to be reads.
-`_selfconform.py::_alias_legacy_fs_observations` implements this: SYS101's
-declared-vs-observed join (`_stale_design_violations`, via `_observed_
-all_kinds_by_node`) adds a bare `fs` alias to a node's observed set
-whenever `fs-read` is observed there. This is deliberately
-ONE-DIRECTIONAL and scoped to SYS101's `declared - observed` side only --
-NOT applied to SYS100's `observed - declared` side
-(`_extended_kind_violations`/`_core_undeclared_violations`), which would
-otherwise report both `fs-read` and its `fs` alias as separately
+go stale just because the only real access turns out to be reads. T-0717
+retired the old `_alias_legacy_fs_observations` bare-`fs`-aliasing hack
+that used to implement this (it no longer exists): `_stale_design_
+violations` now judges staleness per DECLARED ATOM via
+`expand_declared_kind` (any of the atom's modes observed discharges it) --
+a coarse `may "fs"` declaration discharges on EITHER `fs.read`/`fs.write`
+being observed, a natural consequence of the generic per-atom join rather
+than fs-specific special-casing. This is still scoped to SYS101's
+`declared - observed` side; SYS100's `observed - declared` side
+(`_extended_kind_violations`/`_core_undeclared_violations`) would
 undeclared for the SAME single read observation, a redundant duplicate
 finding for one real capability. A node that declares `may "fs-read"`
 specifically (the more honest, narrower signal for a genuinely read-only

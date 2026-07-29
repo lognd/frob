@@ -5,7 +5,7 @@ Find where a symbol is defined and every file that references it.
 ## Usage
 
 ```
-frob xref <symbol> [path] [--lang python|cpp] [--cross-file] [--json]
+frob xref <symbol> [path] [--lang python|cpp|c] [--cross-file] [--json]
 ```
 
 `path` defaults to the current directory. `<symbol>` can be a function name,

@@ -8,7 +8,7 @@ A `Scenario` is a named counterfactual rewrite of a strata model (node
 loss, rate surge, trust downgrade) under which every claim is re-checked
 (`docs/strata/kernel.md#scenario`). The rewrite variants are pydantic
 models in `src/frob/strata/_models.py`'s `Rewrite` union: `RemoveNode`,
-`ScaleRate`, `SetTrust`. Each rewrite kind has a matching `_apply_<kind>`
+`ScaleRate`, `SetTrust`, `AddFlow`. Each rewrite kind has a matching `_apply_<kind>`
 function in `src/frob/strata/_scenarios.py` (e.g. `_apply_remove`, which
 cascades deletions and logs at INFO). Claim re-evaluation after a rewrite
 is delegated to `_claims.py::evaluate_claims` -- `_scenarios.py` owns only
@@ -24,7 +24,8 @@ claims are proved/refuted/assumed identically to ordinary claims.
    rewritten model -- never mutates the input (`KernelModel` is frozen).
 3. Wire the new `_apply_<kind>` into the dispatch that walks a
    `Scenario.rewrites` tuple applying each in order.
-4. Add surface grammar support in `strata-core/src/parse/mod.rs` for the new
+4. Add surface grammar support in `strata-core/src/parse/grammar_policy.rs`
+   (post-T-1006 split out of the old monolithic parse.rs/mod.rs) for the new
    rewrite's `.strata` syntax (see
    `docs/guides/extending/strata-surface-grammar.md`).
 5. Add a litmus-style fixture pair or a direct `test_scenarios.py` case
@@ -47,7 +48,7 @@ claims are proved/refuted/assumed identically to ordinary claims.
 
 `ScaleRate` (an existing rewrite, used as the worked example) required:
 `_models.py` gained the frozen `ScaleRate` model (`flow_id`, `factor`);
-`_scenarios.py` gained `_apply_scale_rate`, which looks up the named
+`_scenarios.py` gained `_apply_scale`, which looks up the named
 `Flow`, multiplies its declared `rate` by `factor`, and returns a new
 `KernelModel` with that one `Flow` replaced (frozen-model "replace one
 field" convention, `model_copy(update=...)`); LINT003 (design-lint-rules

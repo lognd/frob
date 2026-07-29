@@ -425,6 +425,15 @@ for the full mechanics (dangling-backslash and CRLF handling included).
 | `frob:tests <pkg-path> kind="integration"` | enclosing test exercises that package's public boundary with real collaborators |
 | `frob:tests <system-id> kind="e2e"` | enclosing test drives that declared system end to end |
 | `frob:decision AD-###` | enclosing symbol implements that decision record (see docs/modules/decisions.md) |
+| `frob:debt RULE reason="..." ticket="T-####" [until="..."]` | a temporary, ticket-bound waiver of RULE at this site (T-0412) |
+| `frob:deprecated SINCE sunset="YYYY-MM-DD" ticket="T-####" [reason="..."]` | a still-callable public symbol with a ticket-bound sunset date (T-0576) |
+| `frob:channel <id>` | enclosing symbol binds to that strata Flow construct (T-0080) |
+| `frob:boundary <id>` | enclosing symbol binds to that strata Boundary construct (T-0080) |
+| `frob:secret <id>` | enclosing symbol binds to that strata secret-clearance construct (T-0080) |
+| `frob:enforces <concept-id>` | enclosing rule/detector declares which registry concept it enforces (T-0428) |
+| `frob:protocol ...` | typestate protocol declaration surface (T-0744) |
+| `frob:transition ...` | typestate transition declaration (T-0744) |
+| `frob:requires ...` | typestate precondition declaration (T-0744) |
 | `frob:acquire <resource>` | enclosing function acquires that resource (T-0809) |
 | `frob:release <resource>` | enclosing function releases that resource (T-0809) |
 | `frob:escapes <resource>` | enclosing function transfers an unreleased resource out to its caller (T-0809) |
@@ -459,11 +468,11 @@ subtree (whitespace- and formatting-insensitive):
 <!-- frob:describes src/frob/graph/digest.py::_digest_doc -->
 <!-- frob:describes src/frob/graph/digest.py::compute_digests -->
 
-- `digest_sig` -- the `sig` facet's hash: hashes a symbol's normalized
+- `_digest_sig` -- the `sig` facet's hash: hashes a symbol's normalized
   signature token stream.
-- `digest_body` -- the `body` facet's hash: hashes a symbol's normalized
+- `_digest_body` -- the `body` facet's hash: hashes a symbol's normalized
   implementation token stream (empty for class/const/type).
-- `digest_doc` -- the `doc` facet's hash: hashes a symbol's collapsed
+- `_digest_doc` -- the `doc` facet's hash: hashes a symbol's collapsed
   docstring text.
 - `compute_digests` -- convenience wrapper computing all three facets for
   one symbol in a single `Digests` value.
@@ -496,8 +505,10 @@ All pydantic `BaseModel`, `frozen=True`.
 - `SymbolRecord.symref` -- the canonical `path::qualname` string key a
   record is stored under in `GraphSnapshot.symbols`.
 - `EdgeKind` -- the closed set of typed relationships a `frob:` directive
-  or doc anchor can declare (doc, uses-contract, invariant, ticket, todo,
-  waive, describes, tests, decision).
+  or doc anchor can declare (21 members: doc, uses-contract, invariant,
+  ticket, todo, waive, debt, describes, tests, decision, channel,
+  boundary, secret, enforces, deprecated, protocol, transition, requires,
+  acquire, release, escapes).
 - `Edge` -- one directive/anchor's declared obligation between a src
   symbol/doc anchor and an opaque target.
 - `MalformedDirective` -- a `frob:` comment line that failed to parse,
@@ -605,9 +616,12 @@ class ParsedFile(BaseModel):    # frob.lang output
 
 ```python
 class LangError(ErrorSet):
-    UnsupportedLanguage = "File extension has no registered grammar"
-    ParseFailed         = "tree-sitter could not produce a usable tree"
-    IoFailed            = "File could not be read"
+    UnsupportedLanguage    = "File extension has no registered grammar"
+    ParseFailed            = "tree-sitter could not produce a usable tree"
+    IoFailed               = "File could not be read"
+    NativeParserUnavailable = "strata-core native extension unavailable in this install (T-0133)"
+    FileTooLarge           = "File exceeds the max parseable size (T-0893)"
+    ParseTimedOut          = "Parse did not finish inside the wall-clock budget (T-0893)"
 
 class GraphError(ErrorSet):
     CacheCorrupt    = "Cache file unreadable; delete .frob/cache.db to rebuild"
@@ -677,7 +691,7 @@ run measured ~0.5ms per `stat` under concurrent load. `build_graph` and
 invocation just to detect "nothing changed"; that is an open+read+close
 per file, every gate run. Both now check a stored `(mtime_ns, size)` pair
 first (`get_file_meta` / the `files` table's `mtime_ns`/`size` columns,
-schema 2) -- a single `os.stat` per file -- and only fall back to a full
+schema 3, `_SCHEMA_VERSION` in `src/frob/graph/cache.py`) -- a single `os.stat` per file -- and only fall back to a full
 content-hash read when that stat pair has actually moved. A `touch` with
 no real edit still avoids a reparse (`touch_file_stat` refreshes just the
 stat so the fast path applies again next time). `build_graph` also walks

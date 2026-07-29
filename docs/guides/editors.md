@@ -7,7 +7,7 @@ consumed directly by VSCode and, unmodified, by JetBrains IDEs via their
 TextMate Bundles feature. There is exactly one place the strata surface
 keyword vocabulary is spelled out for editors, and
 `tests/unit/test_strata_tmlanguage.py` drift-locks it bidirectionally
-against `strata-core/src/parse/mod.rs`'s own dispatch table, so a keyword added
+against `strata-core/src/parse/grammar_policy.rs`'s own dispatch table (post-T-1006 split out of the old monolithic parse.rs/mod.rs), so a keyword added
 to the parser without a matching grammar update fails CI instead of
 silently going unhighlighted (or, worse, a keyword removed from the parser
 lingering forever in the grammar).
@@ -19,7 +19,8 @@ TextMate tokenization only: it colors comments (`//`, `///`), string
 literals, numeric quantities with their units (`5 req/s`, `250 ms`,
 `4 KiB`, `15 %/month`), the top-level declaration keywords (`module`,
 `node`, `flow`, `boundary`, `store`, `cache`, `queue`, `cdn`, `balancer`,
-`policy`, `operation`, `scenario`, `secret`, `assert`, `assume`, `refine`),
+`policy`, `operation`, `scenario`, `secret`, `resource`, `assert`,
+`assume`, `refine`),
 the clause keywords used inside declaration bodies (`attr`, `capacity`,
 `trust`, `delivery`, `issued_by`, `endorsed_by`, and the rest -- see the
 grammar's `clause-keywords` pattern for the full list), the `->` arrow, and
@@ -68,6 +69,6 @@ pytest tests/unit/test_strata_tmlanguage.py -v
 
 The test extracts the construct-keyword dispatch table and the
 `at_keyword`/`expect_keyword` call sites directly from
-`strata-core/src/parse/mod.rs` and asserts they match the grammar's
+`strata-core/src/parse/grammar_policy.rs` and asserts they match the grammar's
 declaration- and clause-keyword patterns. If the parser's keyword
 vocabulary and the grammar disagree, this is the test that catches it.

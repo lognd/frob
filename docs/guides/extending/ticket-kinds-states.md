@@ -4,13 +4,17 @@
 
 ## What it is and where it lives
 
-`src/frob/tickets/_models.py` holds three `StrEnum` registries:
-`TicketState` (the six-state queue state machine: `queued`, `planned`,
-`in-progress`, `blocked`, `done`, `dropped`), `TicketKind` (what a ticket
-represents: `feature`, `bug`, `security`, `ux`, `docs`, `invariant`,
-`incident`), and `Stride` (STRIDE threat categories, used only on
-`kind=security` tickets: `spoofing`, `tampering`, `repudiation`,
-`info-disclosure`, `denial-of-service`, `elevation-of-privilege`). The
+`src/frob/tickets/_models.py` holds eight `StrEnum` registries. The three
+most relevant to this guide: `TicketState` (the six-state queue state
+machine: `queued`, `planned`, `in-progress`, `blocked`, `done`,
+`dropped`), `TicketKind` (what a ticket represents: `feature`, `bug`,
+`security`, `ux`, `docs`, `invariant`, `incident`), and `Stride` (STRIDE
+threat categories, used only on `kind=security` tickets: `spoofing`,
+`tampering`, `repudiation`, `info-disclosure`, `denial-of-service`,
+`elevation-of-privilege`). `TicketTier` (T-0715) is a separate registry
+governing the epic -> story -> ticket hierarchy: `epic`, `story`,
+`ticket` (default). The remaining four (`Priority`, `Origin`,
+`ScopeChangeOp`, `ReviewVerdict`) are out of this guide's scope. The
 full state machine diagram and transition rules live in
 `docs/modules/tickets.md#state-machine` -- this guide covers only how to
 add a new enum member; that doc is the reference for the machine itself.

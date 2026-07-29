@@ -85,7 +85,7 @@ The four components that make up the enforcement layer:
   the per-language runner registry, and worktree-correct git semantics via
   `frob.gitio`.
 - `docs/modules/perf.md` -- `frob.perf`: profiling (`frob perf profile`), symbol-
-  level heat-maps (`frob perf heat`), and the PERF001..PERF004 linear-scan
+  level heat-maps (`frob perf heat`), and the PERF001-008,PERF012 detection
   gates.
 - `docs/modules/serve.md` -- `frob.serve`: the `frob serve` MCP stdio adapter
   exposing doable tickets, stale docs, scope checks, and graph queries as
@@ -94,9 +94,9 @@ The four components that make up the enforcement layer:
 Two modules that support the above but are not yet fully re-platformed:
 
 - `docs/modules/lang.md` -- `frob.lang`: the tree-sitter parsing core (symbols +
-  comments, five languages) that `frob.graph` is built on.
+  comments, seven languages) that `frob.graph` is built on.
 - `docs/modules/dup.md` -- `frob.dup`: duplicate/clone detection, including the
-  0.2.0 smart-dup design (region-granular semantic clones, DUP001/DUP002
+  0.2.0 smart-dup design (region-granular semantic clones, DUP001/DUP002/DUP003
   gates).
 - `docs/modules/dup-sota-survey.md` -- T-0187 phase-1 survey: clone-detection
   state of the art dispositioned against `frob.dup` (26 techniques), the
@@ -163,21 +163,23 @@ obligation graph. Charter and component designs:
   (COPPA/GDPR/HIPAA + privacy-policy-as-claims) anti-patterns as
   conditional obligations with a three-part exhaustiveness proof
   (epic T-0109).
-- `docs/strata/selfconform.md` -- self-conformance: SYS100-102, the check
+- `docs/strata/selfconform.md` -- self-conformance: SYS100-106, the check
   that our own `src/frob/` capability surface actually matches what
   `design/frob.strata` declares (T-0150).
 
 ## Per-command references
 
-Kept commands, each with usage, real output, and a "why it exists" section:
+Each with usage, real output, and a "why it exists" section (`map`,
+`outline`, `xref` are DEPRECATED, sunset 2026-10-01, T-0580/T-0802 -- still
+documented since they still run until sunset):
 
 | Doc | Command |
 |---|---|
 | `docs/commands/scaffold.md` | `frob scaffold` |
 | `docs/commands/cycle.md` | `frob cycle` |
-| `docs/commands/outline.md` | `frob outline` |
-| `docs/commands/map.md` | `frob map` |
-| `docs/commands/xref.md` | `frob xref` |
+| `docs/commands/outline.md` | `frob outline` (deprecated) |
+| `docs/commands/map.md` | `frob map` (deprecated) |
+| `docs/commands/xref.md` | `frob xref` (deprecated) |
 | `docs/commands/exports.md` | `frob exports` |
 | `docs/commands/parse.md` | `frob parse` |
 | `docs/commands/gitlog.md` | `frob gitlog` |

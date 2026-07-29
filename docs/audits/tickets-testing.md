@@ -1,5 +1,11 @@
 # Audit: accounting & test-selection layer (frob.tickets + frob.testing)
 
+> **Status: SUPERSEDED.** This audit describes pre-T-0398 behavior.
+> `docs/audits/tickets-testing-round2.md` re-audited the same layer AFTER
+> the T-0398 evidence-integrity fix landed and is the current reference;
+> read this file only for the historical "what the gap looked like"
+> record, not as a description of present-day behavior.
+
 North-star: "if a ticket closes / a test-selection passes, the work was actually
 done and actually tested." Verdict up front: **the layer does NOT enforce the
 north-star.** It enforces a much weaker property -- "the ticket names at least

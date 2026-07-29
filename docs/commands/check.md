@@ -129,8 +129,8 @@ frob check --only list                 # print every stage-group name, one per l
 frob check --only lint                 # ruff + ty only (~1s on this repo)
 frob check --only static               # cycle/dup/arch/bind/exports (~18s)
 frob check --only gates-fast           # every thread-pool gate (~37s)
-frob check --only gates-native         # archgate/clones/perf (~15s)
-frob check --only gates-security       # sys/pii_structural/secrets/dead_symbols (~13s)
+frob check --only gates-native         # archgate/clones/perf/exhaustive_handling (~15s)
+frob check --only gates-security       # sys/pii_structural/secrets/dead_symbols/protocol_summary/opaque (~13s)
 ```
 
 `--only` accepts any stage name (`ruff`, `ty`, `cycle`, `dup`, `arch`, `bind`,
@@ -155,9 +155,9 @@ target on this repo:
 |------------------|-------------------------------------------------------------|
 | `lint`           | `ruff`, `ty`                                                 |
 | `static`         | `cycle`, `dup`, `arch`, `bind`, `exports`                     |
-| `gates-fast`     | every thread-pool gate (drift, coverage, invariant, test, policy, doclink, docanchor, fuzz, release, decisions, tickets, refs, registry, docblocks, walk_lint, excludehazard, debt, render_lint, parse_failures, lang_conformance, lang_project_conformance, scope, prework) |
-| `gates-native`   | `archgate`, `clones`, `perf` (process-pool CPU-bound gates)   |
-| `gates-security` | `sys`, `pii_structural`, `secrets`, `dead_symbols` (the remaining process-pool gates) |
+| `gates-fast`     | every thread-pool gate (drift, coverage, invariant, test, policy, doclink, docanchor, fuzz, release, decisions, tickets, refs, registry, compliance, docblocks, walk_lint, excludehazard, debt, deprecated, render_lint, parse_failures, lang_conformance, lang_project_conformance, scope, prework, fmt, affect_drift, ffi_boundary) |
+| `gates-native`   | `archgate`, `clones`, `perf`, `exhaustive_handling` (process-pool CPU-bound gates)   |
+| `gates-security` | `sys`, `pii_structural`, `secrets`, `dead_symbols`, `protocol_summary`, `opaque` (the remaining process-pool gates) |
 
 `frob check --only list` discovers the current group names (print one per
 line; `--json` wraps them as `{"stages": [...]}`) rather than hardcoding

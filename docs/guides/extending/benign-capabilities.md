@@ -87,8 +87,8 @@ over inventing a new `.strata` surface construct (a `benign "kind" reason
 design-model FACT about a node -- it says nothing about what a node does,
 only which catalog gaps this repo accepts, the same register `[graph].
 exclude`/`[vet.allow]`/`[[policy.*]]` already occupy in `frob.toml`. See
-[Threat catalog](threat-catalog.md#per-repo-benign-capability-declarations)
-for the full design rationale.
+[Per-repo declarations](#per-repo-declarations) below for the full design
+rationale.
 
 ```toml
 # frob.toml

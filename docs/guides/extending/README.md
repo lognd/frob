@@ -33,7 +33,7 @@ build.**
 
 - [Gate rule families](gate-rule-families.md) -- COV/TEST/DRIFT/SCOPE/PRE/DOC/PERF/SYS/WAIVE/...
 - [Comment DSL directives](comment-dsl-directives.md) -- `frob:ticket`/`tests`/`doc`/`waive`/`todo`/`invariant`/`channel`/`boundary`/`secret`
-- [Threat catalog](threat-catalog.md) -- `std.cwe` weaknesses, out-of-scope entries, benign capabilities, THREAT001-005
+- [Threat catalog](threat-catalog.md) -- `std.cwe` weaknesses, out-of-scope entries, benign capabilities, THREAT001-006
 - [Compliance registry](compliance-registry.md) -- regulations, COPPA/GDPR/HIPAA-style checks
 - [Capability registry](capability-registry.md) -- dangerous operations, per-language matrix
 - [CVE fingerprints](cve-fingerprints.md) -- CVEFP001
@@ -41,7 +41,7 @@ build.**
 - [Design-lint rules](design-lint-rules.md) -- LINT001-005
 - [Secrets-scan providers](secrets-scan-providers.md) -- the ALL_PROVIDERS drift-lock
 - [Prover claim kinds](prover-claim-kinds.md) -- NoFlow/Reach/BoundClaim/Independent/SetEquality
-- [Scenario kinds](scenario-kinds.md) -- RemoveNode/ScaleRate/SetTrust rewrites
+- [Scenario kinds](scenario-kinds.md) -- RemoveNode/ScaleRate/SetTrust/AddFlow rewrites
 - [Strata surface grammar](strata-surface-grammar.md) -- keywords + the tmLanguage drift-lock
 - [`[[test.runner]]` entries](test-runner-entries.md) -- frob.toml test routing
 - [Language grammar handlers](language-grammar-handlers.md) -- the `_WALKERS` dispatch
@@ -49,7 +49,7 @@ build.**
 - [Litmus fixtures](litmus-fixtures.md) -- `.strata` test-data mapping
 - [Ticket kinds/states](ticket-kinds-states.md) -- `TicketKind`/`TicketState`/`Stride`/`Origin`
 - [Benign capabilities](benign-capabilities.md) -- THREAT002 `may`-kind excuses
-- [Dup detector registry](dup-detector-registry.md) -- the R1-R7 rung ladder, DUP001/DUP002
+- [Dup detector registry](dup-detector-registry.md) -- the R1-R7 rung ladder, DUP001/DUP002/DUP003
 
 ## Known gaps (filed, not silently fixed)
 

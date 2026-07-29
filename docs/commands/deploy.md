@@ -229,8 +229,8 @@ the graceful-degrade gate.
   `docs/strata/host.md#hostmanifest`) and coexists with the HOST001/
   HOST002 isolation checks (T-0256, `docs/strata/host.md#movement-
   impossibility-proofs`) -- neither is redefined here.
-- Linux/systemd only. Windows (PowerShell) generation is a separate
-  future ticket (T-0264), not built here.
+- Linux/systemd is the primary target; Windows generation also shipped
+  (T-0264, `src/frob/deploy/_generate_windows.py`).
 - OS users do not yet join the trust lattice through any dedicated
   plumbing (T-0255's honesty note, inherited as-is): `runs_as` is read
   as a plain `HostManifest` field like any other field, never

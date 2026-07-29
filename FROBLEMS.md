@@ -1,7 +1,8 @@
 # FROBLEMS
 
-Local notes on frob tooling failures hit in this repo. Not tracked in git
-(.gitignore); durable items get tickets.
+Local notes on frob tooling failures hit in this repo. Tracked in git
+(despite `.gitignore`'s standard entry for it -- this repo's own copy is
+force-added); durable items get tickets.
 
 ## 2026-07-21: scope narrowing blocked by ScopeLeaseConflict (T-0485)
 

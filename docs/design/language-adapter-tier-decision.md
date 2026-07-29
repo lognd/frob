@@ -6,8 +6,8 @@
 
 Should frob's language-adapter surface (the per-language `*Adapter` family,
 e.g. `frob.arch._python.PythonAdapter`, T-0609) expand beyond the current
-Python/TypeScript-JS/Rust/C/C++ set
-(plus Kotlin grammar wired but its adapter still pending, T-0614) toward
+Python/TypeScript-JS/Rust/C/C++/Kotlin set (T-0614 shipped
+`frob.arch._kotlin.KotlinAdapter`) toward
 Go, Java, or C#, per the github.com Innovation Graph global metrics and
 the TIOBE index? Both indexes rank Java, Go, C# as the largest
 uncovered languages by global usage, then PHP/Ruby/Swift.
@@ -33,10 +33,9 @@ logand.app, malmberg), by inspecting each repo's `frob.toml`
 | malmberg | (not present in this checkout; not independently re-surveyed this pass) |
 
 No Go, Java, or C# source tree exists anywhere in the 8 repos actually
-checked out and inspected. The only near-term addition already
-committed to is Kotlin (T-0614, grammar wired, adapter implementation
-still open) -- and even that has no real consuming repo in the estate
-yet; it was speculative ahead of demand.
+checked out and inspected. Kotlin (T-0614, `KotlinAdapter` shipped) is
+already the newest addition -- and even that has no real consuming repo in
+the estate yet; it was speculative ahead of demand.
 
 ## Decision: none for now, stay demand-driven
 

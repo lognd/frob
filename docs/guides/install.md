@@ -491,6 +491,7 @@ perform -- rather than reimplementing lease-staleness logic a second time.
 Like a stale mutate-backup journal, a finding here DOES fold into the
 overall `healthy`/`remediation` verdict:
 
+<!-- frob:describes src/frob/doctor.py::scan_stale_ticket_leases -->
 ```bash
 frob doctor
 # ... ticket(s) stuck in-progress with no live lease: T-1050 -- run
@@ -522,6 +523,7 @@ now (a digest mismatch, the same "regenerate fresh, compare byte-
 identical" check `DEPLOY001` uses for deploy scripts), folds into an
 unhealthy verdict naming the single remedy:
 
+<!-- frob:describes src/frob/scaffold/_managed.py::scaffold_conformance_status -->
 ```bash
 frob scaffold apply
 ```
@@ -561,6 +563,7 @@ has since vanished. A finding folds into the overall `healthy`/
 `remediation` verdict, same class as a stale mutate-backup journal or
 malformed ticket edge:
 
+<!-- frob:describes src/frob/doctor.py::scan_venv_shims -->
 ```bash
 frob doctor
 # ... venv shim(s) shebang outside this venv: pytest (-> /other/worktree/

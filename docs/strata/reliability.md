@@ -51,7 +51,7 @@ flow f3 : a -> b {
 
 ### GRAMMAR-DATA CEILING, HONESTLY
 
-`timeout` is presence-only, no magnitude. `strata-core/src/parse/mod.rs`'s
+`timeout` is presence-only, no magnitude. `strata-core/src/parse/grammar_core.rs`'s
 generic `attr KEY=VALUE` clause only lexes an identifier VALUE (letters/
 `_`/digits, but never digit-led), so a real duration literal like `30s`
 cannot round-trip through today's surface grammar without a dedicated
@@ -194,7 +194,7 @@ node worker : trusted {
 
 Like `timeout`, `retry`/`backoff_jitter` are presence-only bare Flow
 attrs (no numeric magnitude -- the same digit-led-literal ceiling
-`strata-core/src/parse/mod.rs`'s generic `attr KEY=VALUE` clause imposes on
+`strata-core/src/parse/grammar_core.rs`'s generic `attr KEY=VALUE` clause imposes on
 `timeout`), so REL220/REL222 prove PRESENCE of a caller-declared
 backoff/jitter obligation and its code-level evidence, not a specific
 bound count/multiplier. `idempotency_key` is likewise a bare NODE marker
@@ -959,7 +959,7 @@ node ingest_queue : trusted {
 `retention=<value><unit>` convention `_compliance.py` establishes), not a
 bare presence-only marker -- this family genuinely needs a two-way
 distinction. The grammar's generic `attr KEY=IDENT` clause
-(`strata-core/src/parse.rs::Parser::parse_attrval`, already exercised by
+(`strata-core/src/parse/grammar_core.rs::Parser::parse_attrval`, already exercised by
 its own `attr delivery=at_least_once;` parser fixture) forces the
 underscore-joined spelling, not the hyphenated prose form.
 

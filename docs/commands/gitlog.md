@@ -24,7 +24,7 @@ frob gitlog --json                    # machine-readable output
 |-------|---------|
 | `major` | Breaking changes (`!`) + major version bump chores only |
 | `user` (default) | `feat`, `fix`, `perf`, `revert` -- user-visible changes |
-| `full` | All conventional types: feat, fix, perf, refactor, docs, test, chore, ci, build |
+| `full` | All conventional types: feat, fix, perf, refactor, docs, test, chore, ci, build, style, revert |
 | `changelog` | `feat` + `fix` + breaking -- release note format |
 
 ## Conventional commit types recognized

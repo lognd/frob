@@ -37,6 +37,15 @@ immediately.
 | obfuscation | decode-then-eval chains, high-entropy string blobs, minified-source-in-sdist mismatch |
 | embedded_code | large HTML/JS-shaped STRING LITERAL inside another language's source (T-0244: python's own grammar hides an embedded dashboard's markup/script from every needle table above) -- size + HTML/JS-signal heuristic over python `string` tree-sitter nodes; ALWAYS emitted for a region found (fail-closed), plus any typescript-needle hits over the region's own text |
 
+`CAPABILITY_KINDS` (`src/frob/vet/_capability_registry.py`) has grown
+beyond this table's 11 rows to ~24 entries: precise connect-vs-listen and
+read-vs-write variants of `net`/`env` (`net-connect`/`net-listen`/
+`net.connect`/`net.listen`, `env-read`/`env-write`/`env.read`/
+`env.write`), the normalized `fs` spelling of `fs-write`, and the
+c-cpp-excused-kind vocabulary (`sql`, `html_render`, `fetch_url`,
+`deserialize`, `client_storage`) also live there -- see
+`docs/guides/extending/capability-registry.md` for the full current list.
+
 `native` and `obfuscation` are capabilities in their own right: compiled
 code cannot be vetted statically and is therefore trusted only by explicit
 declaration (`native = ["pydantic-core"]`); obfuscation signals are never
@@ -50,26 +59,24 @@ npm is where the attack volume is (the 2024-2026 waves ran overwhelmingly
 through npm lifecycle scripts and typosquats), so the JS/TS path gets
 first-class treatment, not parity:
 
-- **All four lockfiles**: package-lock.json, pnpm-lock.yaml, yarn.lock,
-  bun.lockb (binary -- parsed via `bun bun.lockb` text dump adapter).
-- **Lifecycle scripts are the headline capability**: preinstall/install/
-  postinstall/prepare in any package.json in the tree map to
-  `install-hook` and are DENIED BY DEFAULT -- a lifecycle script needs an
-  explicit `[vet.allow]` entry naming it, mirroring the
-  `--ignore-scripts` discipline hardened orgs already run. vet also
-  verifies `ignore-scripts=true` is set in .npmrc when `[vet].enforce`
-  is on (belt and suspenders; VET-JS001).
-- **Dependency confusion (VET-JS002)**: any dependency whose name matches
-  an internal/scoped pattern (`[vet].internal_scopes`) but resolves to
-  the public registry, or whose registry URL differs between lockfile
-  entries, fails.
+- **package-lock.json and pnpm-lock.yaml today**; yarn.lock/bun.lockb are
+  a disclosed 0.2.x addition, not yet parsed
+  (`src/frob/vet/_lockfile.py`'s own module docstring).
+- **Lifecycle scripts are the headline capability (rule id `VET-JS`, not
+  `VET-JS001`)**: preinstall/install/postinstall/prepare in any
+  node_modules package.json map to `install-hook` and are DENIED BY
+  DEFAULT -- a lifecycle script needs an explicit `[vet.allow]` entry
+  naming it (`src/frob/vet/_lifecycle.py`,
+  `_scan._lifecycle_violations`). No separate `.npmrc`
+  `ignore-scripts=true` verification exists.
 - **Typosquat distance (VET-JS003)**: new dependency names within edit
   distance 1-2 of a top-N npm package (bundled list, refreshed with
   `--sync-advisories`) require explicit confirmation in [vet.allow].
 - **Non-registry sources (VET-JS004)**: git/http/file dependencies in
   the manifest are declarable-only, never silent.
-- **Integrity fields**: lockfile `integrity` shas are cross-checked
-  against scanned artifacts (feeds VET006).
+- **Not yet built**: dependency-confusion detection (a `VET-JS002`-style
+  check against `[vet].internal_scopes`) is disclosed future work, not
+  shipped -- `[vet].internal_scopes` does not exist as a config key today.
 
 ## Python, Rust, C/C++: same care, ecosystem-shaped
 
@@ -994,6 +1001,7 @@ class VetError(ErrorSet):
     SourceUnavailable   = "Package source not in local caches; rerun with --fetch"
     CacheCorrupt        = "vet cache unreadable; delete .frob/vet.db to rebuild"
     ConfigMalformed     = "frob.toml [vet]/[vet.allow] table is malformed"
+    CveMirrorInvalid    = "CVE mirror path is configured but missing or unreadable"
 
 # frob/vet/_ecosystem.py
 def python_rules(dep: Dependency, source_dir: Path, lockfile_name: str) -> list[Violation]
@@ -1019,7 +1027,7 @@ def decode_to_exec_signal(path: Path) -> bool
 def scan_directory_capabilities(source_dir: Path, *, max_files: int = 500) -> tuple[frozenset[str], bool]
 
 # frob/vet/_scan.py
-def scan_tree(root: Path, *, fetch: bool = True) -> Result[VetReport, VetError]
+def scan_tree(root: Path, *, fetch: bool = True, timeout: float | None = None, jobs: int = 1) -> Result[VetReport, VetError]
 
 # frob/vet/_supplychain.py (T-1088)
 def supply_chain_tree_violations(project_root: Path) -> list[Violation]

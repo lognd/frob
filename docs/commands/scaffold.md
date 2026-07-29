@@ -35,12 +35,12 @@ Run `frob scaffold list` to see the current registry.
 one `check` job per stack running lint -> typecheck -> test(+coverage) ->
 `frob check`. The `frob check` step is guarded: it installs frob via
 `uv tool install frob`, then only runs it if `frob graph --help` actually
-works, emitting a `::notice::` and skipping otherwise. This exists because
-frob is not yet published to PyPI (pre-0.1.0) -- `uv tool install frob`
-would otherwise install nothing or something stale, and a naive
-`frob check` step would red-herring CI with an unrelated failure. Once
-frob 0.1.0 ships, this starts enforcing automatically with no workflow
-edit required.
+works, emitting a `::notice::` and skipping otherwise. frob is published to
+PyPI (0.279.0 as of this writing, installed fleet-wide via `uv tool
+install frob`) and the guard now mostly protects against a target repo's
+own transient install/network hiccup rather than frob's own availability;
+a naive `frob check` step would otherwise red-herring CI with an unrelated
+failure in that case.
 
 `python-tool` and `pyo3-library` additionally get <!-- frob:waive DOC006 reason="a scaffold-generated file this command writes into the TARGET repo, not a path in this repo" -->`.github/workflows/release.yml`:
 triggered on `v*` tags, builds via `uv build` / `maturin build --release`,
@@ -176,10 +176,10 @@ all has nothing to be behind on), a `frob.toml`-bearing repo that is
 missing or stale on any managed block is reported unhealthy with
 `frob scaffold apply` named as the remedy.
 
-**Not built in this pass**: T-0735's planned `frob-natives-build`
-subcommand does not exist yet, so `makefile-core-shim`'s content is the
-literal T-0732 recipe verbatim rather than a call into that subcommand;
-T-0735 will update the one definition here once it lands. Per-sibling
+`frob natives build` (T-0735) is shipped (`_cli_parsers/_misc.py`) and
+`makefile-core-shim`'s content invokes it directly (`uv run frob natives
+build`, `src/frob/scaffold/_managed.py::_MAKEFILE_CORE_SHIM`) rather than
+inlining the old per-repo cargo recipe. Per-sibling
 adoption tickets (rolling `frob scaffold apply` out to the other repos in
 the estate) are filed at land time via the fleet route, not from this
 ticket's worktree.

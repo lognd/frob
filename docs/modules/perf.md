@@ -832,7 +832,7 @@ def load_artifact(root: Path, ref: str | None = None) -> Result[ProfileArtifact,
 def heat(artifact: ProfileArtifact, snapshot: GraphSnapshot) -> HeatReport
     # Pure join of pstats rows onto symbol spans.
 def perf_rules(snapshot: GraphSnapshot, files: Sequence[ParsedFile]) -> tuple[Violation, ...]
-    # PERF001..PERF007; pure; consumed by the policy gate stage.
+    # PERF001..PERF008,PERF012; pure; consumed by the policy gate stage.
 
 # frob/perf/_recursion.py
 def recursion_rules(snapshot: GraphSnapshot, files: Sequence[ParsedFile]) -> tuple[Violation, ...]
@@ -872,9 +872,10 @@ class HeatReport(BaseModel):       # frozen
     unattributed_s: float          # time outside any known symbol
 
 class PerfError(ErrorSet):
-    SpawnFailed   = "Profiled command could not be started"
-    NoArtifact    = "No profile artifact found; run frob perf profile first"
-    BadArtifact   = "pstats artifact unreadable"
+    SpawnFailed        = "Profiled command could not be started"
+    NoArtifact         = "No profile artifact found; run frob perf profile first"
+    BadArtifact        = "pstats artifact unreadable"
+    SketchStoreCorrupt = "hot-graph sketch store (.frob/hotgraph_sketches.db) unreadable"
 
 # frob/perf/_hotgraph.py -- language-neutral hit-stream contract + resolver
 UNATTRIBUTED_SECTION_ID: str            # sentinel section id, never dropped

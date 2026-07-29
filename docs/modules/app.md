@@ -153,6 +153,20 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
 <!-- frob:describes src/frob/app/cycle_runner.py::run -->
 <!-- frob:describes src/frob/app/map_runner.py::run -->
 <!-- frob:describes src/frob/app/agent_runner.py::run -->
+<!-- frob:describes src/frob/app/clean_runner.py::run -->
+<!-- frob:describes src/frob/app/debt_runner.py::run -->
+<!-- frob:describes src/frob/app/deploy_runner.py::run -->
+<!-- frob:describes src/frob/app/deprecated_runner.py::run -->
+<!-- frob:describes src/frob/app/doctor_runner.py::run -->
+<!-- frob:describes src/frob/app/fleet_runner.py::run -->
+<!-- frob:describes src/frob/app/fmt_runner.py::run -->
+<!-- frob:describes src/frob/app/natives_runner.py::run -->
+<!-- frob:describes src/frob/app/pool_runner.py::run -->
+<!-- frob:describes src/frob/app/registry_runner.py::run -->
+<!-- frob:describes src/frob/app/serve_runner.py::run -->
+<!-- frob:describes src/frob/app/sys_runner.py::run -->
+<!-- frob:describes src/frob/app/test_runner.py::run -->
+<!-- frob:describes src/frob/app/worktree_runner.py::run -->
 
 - `gitlog_runner.run` -- runs `frob.gitlog.git_log` over `cfg.gitlog_*` and
   prints text or JSON (docs/commands/gitlog.md).
@@ -204,6 +218,33 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
   tooling can inject the guard env mechanically; parses its own argv
   rather than taking `AppConfig`, dispatched the same way `bind_runner`
   is.
+- `clean_runner.run` -- `frob clean [--all|--deep] [-y]` (T-0457,
+  docs/modules/clean.md).
+- `debt_runner.run` -- `frob debt`: lists outstanding `frob:debt` entries (T-0412).
+- `deploy_runner.run` -- `frob deploy`: compiles `std.host` `HostManifest`
+  facts into Linux/systemd and Windows install/status/uninstall scripts
+  (T-0257/T-0264, docs/commands/deploy.md).
+- `deprecated_runner.run` -- `frob deprecated`: lists outstanding
+  `frob:deprecated` entries (T-0638).
+- `doctor_runner.run` -- `frob doctor`: native-extension/scaffold/ticket-
+  lease/venv-shim diagnosis (T-0319, docs/guides/install.md).
+- `fleet_runner.run` -- `frob fleet status`/`frob fleet route` (T-0573):
+  cross-repo status/gate rollup and ticket routing (docs/modules/fleet.md).
+- `fmt_runner.run` -- `frob fmt [path] [--check] [--json]` (T-0441):
+  directive canonicalization.
+- `natives_runner.run` -- `frob natives build`: frob-owned native crate
+  builds (T-0864/T-0735).
+- `pool_runner.run` -- `frob pool snapshot|clear` (T-0569): ratchet-pool
+  baseline commands over `frob.gates._ratchet`.
+- `registry_runner.run` -- `frob registry audit` (T-0407): per-registry-file
+  disposition accounting over `docs/design/registry/*.yaml`.
+- `serve_runner.run` -- `frob serve`: the stdio MCP adapter (docs/modules/serve.md).
+- `sys_runner.run` -- `frob sys`: strata design-model applications
+  (docs/commands/sys.md).
+- `test_runner.run` -- `frob test [--all] [--base REF] [--lang L]
+  [--fallback MODE]` (docs/modules/testing.md).
+- `worktree_runner.run` -- `frob worktree sweep` (T-0836): lease-aware
+  stale-worktree cleanup.
 
 ## Shared graph-snapshot helper (T-1085)
 

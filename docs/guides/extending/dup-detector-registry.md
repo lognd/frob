@@ -13,12 +13,14 @@ subtree hash, `_r3_fingerprint`, needs `frob_core`), R4 (winnowed
 fingerprints + statement-alignment verification, `_r4_fingerprint`), R5
 (Weisfeiler-Lehman dataflow-graph hashing, `_r5_fingerprint`), R6
 (`probe_equivalence`, opt-in behavioral probing, never in the default
-`find_clones` path), R7 (`probe_smt_equivalence`, bounded-SMT, also
-opt-in). `src/frob/dup/_rules.py` holds the two PURE gate-rule functions
-(`DUP001`, `DUP002`) that turn a computed `CloneReport` into
-`Violation`s -- `docs/modules/dup.md` is the authoritative, heavily
-anchored reference (37 `frob:doc` anchors already); this guide is
-deliberately thin, pointing there rather than duplicating it.
+`find_clones` path), R7 (`_probe_smt_equivalence`, bounded-SMT, also
+opt-in, `src/frob/dup/_pipeline/_smt.py`). `src/frob/dup/_rules.py` holds
+the two PURE gate-rule functions (`DUP001`, `DUP002`) that turn a computed
+`CloneReport` into `Violation`s; DUP003 (T-1174, "clone detection
+requested but unavailable" fail-closed case) is raised directly in
+`src/frob/gates/_dup.py`, not `_rules.py` -- `docs/modules/dup.md` is the
+authoritative, heavily anchored reference (37 `frob:doc` anchors already);
+this guide is deliberately thin, pointing there rather than duplicating it.
 
 ## Add-an-entry recipe (new rung)
 
@@ -26,7 +28,7 @@ deliberately thin, pointing there rather than duplicating it.
    cheaper than SMT? a language-specific rung?) -- rungs are ORDERED by
    cost and recall/precision tradeoff, not an unordered set; a new rung
    needs a documented position, not just an ad hoc bucket.
-2. Implement the fingerprinting function in `_pipeline.py` following the
+2. Implement the fingerprinting function in the `_pipeline/` package following the
    `_r<n>_fingerprint(state, ...)` signature convention -- pure, no I/O,
    operating on `frob.lang`'s already-parsed `RawSymbol` token/subtree
    data via `state: _FpState`.
@@ -70,7 +72,7 @@ R4 in `_fingerprint_symbol`'s pass and is gated the same
 ## Common mistakes
 
 - Adding a new rung's fingerprinting logic directly inside `_rules.py`
-  (the pure gate-rule layer) instead of `_pipeline.py` -- `_rules.py` is
+  (the pure gate-rule layer) instead of the `_pipeline/` package -- `_rules.py` is
   deliberately a thin filter-and-format pass over an ALREADY-COMPUTED
   `CloneReport`; fingerprinting belongs in the pipeline, matching-and-
   violation-formatting belongs in rules, and conflating them breaks the

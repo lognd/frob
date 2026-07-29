@@ -60,16 +60,13 @@ kind of it. It is not in `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`, so
 it takes the bare-rule waiver form: `waive "SYS103" reason "..." ticket
 "T-...";` -- same shape as SYS102's.
 
-### Known gap: registry cross-reference
+### Registry cross-reference (closed)
 
-`docs/design/registry/check-coverage.yaml`'s `CHK-GATE-SYS100`/
-`CHK-GATE-SYS101`/`CHK-GATE-SYS102` entries record each sibling rule as "a
-live, enforced gate rule". A matching `CHK-GATE-SYS103` entry (and the
-corresponding `frob:enforces CHK-GATE-SYS103` directive on
-`check_self_conformance`) was NOT added by T-0667: `docs/design/
-registry/**` is outside this ticket's declared `scope`. Filed as a
-follow-up so the registry cross-reference does not silently lag (see
-T-0667's Done report for the filed ticket id).
+`docs/design/registry/check-coverage.yaml` now carries a `CHK-GATE-SYS103`
+entry (`check-coverage.yaml:973`) alongside `CHK-GATE-SYS100`/
+`CHK-GATE-SYS101`/`CHK-GATE-SYS102`, and `_selfconform.py` carries the
+matching `frob:enforces CHK-GATE-SYS103` directive -- the follow-up filed
+against T-0667's registry-cross-reference gap has since landed.
 
 ### Modeled: `_PACKAGE_ROOT` restriction's 264-finding follow-up (T-1079, closed)
 

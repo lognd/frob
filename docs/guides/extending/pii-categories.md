@@ -55,9 +55,9 @@ PII_CATEGORIES: frozenset[str] = frozenset(
   defaults" precedent as the threat catalog's security/quality split
   ([threat-catalog.md](threat-catalog.md)) and mirrors the compliance
   catalog's baseline-vs-jurisdiction split
-  ([compliance-catalog.md](compliance-catalog.md)).
+  ([compliance-registry.md](compliance-registry.md)).
 
 ## See also
 
 - [Threat catalog](threat-catalog.md) -- the separate-views precedent.
-- [Compliance catalog](compliance-catalog.md)
+- [Compliance catalog](compliance-registry.md)

@@ -523,6 +523,7 @@ is heuristic-free -- it would have caught the T-0773 rev-parse-per-ticket-
 row incident the day it regressed, and does not depend on recognizing any
 particular code pattern.
 
+<!-- frob:describes src/frob/gitio.py::spawn_recorder -->
 ```python
 from frob.gitio import spawn_recorder
 
@@ -567,6 +568,7 @@ class TestingError(ErrorSet):
     CollectFailed  = "pytest --collect-only failed"
     CargoEnvUnavailable = "cargo test needs a Python>=3.11 dev environment frob could not find"
     UnroutedItem   = "A selected item's file matched zero or >1 same-language [[test.runner]] cwd"
+    NativeAuditFailed = "The native strata sys-audit invocation for a touched .strata selection could not load or evaluate the design model"
 ```
 
 ## Flake quarantine (T-0575)
@@ -792,8 +794,9 @@ first-class target, not an afterthought:
   annotations are ordinary tracked files, so worktree branches carry their
   own view and merge through git. Known seam: two worktrees can allocate
   the same sequential ticket id (T-0043 twice); `load_queue` detects the
-  collision post-merge as `DuplicateId` (the gate fails loudly), and a
-  `frob ticket renumber` remedy is tracked as ticket T-0162.
+  collision post-merge as `DuplicateId` (the gate fails loudly), and
+  `frob ticket renumber` (`src/frob/_cli_parsers/_ticket.py`) is the
+  shipped remedy.
 
 ## Design decisions
 

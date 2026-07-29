@@ -13,12 +13,14 @@ two axes:
    flag as a review checklist item, not a linter rule).
 
 Reconciled first against frob's existing implementation:
-`src/frob/perf/_rules.py` (PERF001-004, token-stream lexical rules over
-`frob.lang`'s position-free leaf-token stream), `src/frob/perf/_profile.py`
+`src/frob/perf/_rules.py` (PERF001-004,PERF012, token-stream lexical rules
+over `frob.lang`'s position-free leaf-token stream, plus PERF005-008
+described below), `src/frob/perf/_profile.py`
 (`profile_command`/`load_artifact` -- spawn-under-cProfile, content-addressed
 `.pstats` artifacts under `.frob/perf/`), `src/frob/perf/_harness.py` (runs a
 target under `cProfile` while preserving its real exit code, since
-`python -m cProfile` swallows `SystemExit`). Existing rules:
+`python -m cProfile` swallows `SystemExit`). Existing rules (PERF001-008,
+PERF012 -- there is no PERF009-011):
 
 | Rule | Smell | Scope |
 |---|---|---|
@@ -26,6 +28,10 @@ target under `cProfile` while preserving its real exit code, since
 | PERF002 | `.index()`/`.count()` call inside a loop | Python full; TS `.indexOf()` best-effort |
 | PERF003 | nested loops with an equality comparison joining the outer bound variable (O(n*m) join) | Python (token-heuristic, function-granularity) |
 | PERF004 | `sorted()`/`.sort()` call inside a loop | Python full |
+| PERF005/PERF006 | unreasoned recursion (no proven termination measure / unbounded depth), T-0290 | `frob.perf._recursion` |
+| PERF007 | an expensive call target invoked from 2+ top-level symbols with no shared cache (the "PERF META-GAP"), T-0413 | `frob.perf._redundancy` |
+| PERF008 | a loop whose body reaches a spawn/directory-walk effect with loop-invariant arguments, T-0775 | `frob.perf._loop_effects` |
+| PERF012 | a non-loop function reaching the SAME expensive spawn via two+ distinct call paths, T-0919 | `frob.perf._dup_spawn` |
 
 `perf_rules` is purely lexical/token-based (no cross-symbol resolution yet;
 `GraphSnapshot` is accepted but unused, reserved for a future join that

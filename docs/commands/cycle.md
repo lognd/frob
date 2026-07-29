@@ -5,7 +5,7 @@ Detect and explain dependency cycles in a codebase.
 ## Usage
 
 ```
-frob cycle <path> [--lang python|cpp] [--suggest]
+frob cycle <path> [--lang python|cpp|c] [--suggest]
 ```
 
 `<path>` is a file or directory. When a directory is given, all recognized source

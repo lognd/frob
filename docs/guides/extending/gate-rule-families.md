@@ -4,9 +4,13 @@
 
 ## What it is and where it lives
 
-`frob check` runs a fixed set of rule *families* (COV, TEST, DRIFT, SCOPE,
-PRE, DOC, PERF, SYS, THREAT, COMPLIANCE, WAIVE, INV, TODO, DEC, POL, DUP,
-FUZZ, REL, SEC, VET, LINT, CVEFP) -- see the full catalog table in
+`frob check` runs a fixed set of rule *families* -- `_KNOWN_GATE_RULES`
+(`src/frob/gates/_waive.py`) spans roughly 50 prefixes today (COV, TEST,
+DRIFT, SCOPE, PRE, DOC, PERF, SYS, THREAT, COMPLIANCE, WAIVE, INV, TODO,
+DEC, DUP, FUZZ, REL, SEC, VET, LINT, ARCH, AFFECT, CPPTHROW, DEAD, DEBT,
+DEPR, DSL, EXCL, EXHAUST, FFI, FMT, HOST, KRB, LANG, LARGE, NATIVE, OPAQUE,
+PARSE, PII, PLACE, PROTO, REF, REG, RELWAIVE, RENDER, SELFAUDIT, SYSWAIVE,
+TICK, VALGRIND, WALK, and more) -- see the full catalog table in
 `docs/modules/gates.md#rule-catalog`. Each family is one gate function
 living in `src/frob/gates/` (or, for strata-native families like THREAT,
 COMPLIANCE, LINT, CVEFP, in `src/frob/strata/`), returning a

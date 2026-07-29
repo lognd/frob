@@ -13,7 +13,7 @@ evidence test ids.
 ## Usage
 
 ```
-frob bind <path> [--json] [--list-bindings]
+frob bind <path> [--json] [--list-bindings] [--list-sources]
 ```
 
 ## Public API

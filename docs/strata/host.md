@@ -74,8 +74,9 @@ node api : trusted {
 
 `store` accepts the identical six clauses (a store is a node too,
 docs/strata/surface.md#key-construct-semantics) -- `strata-core/src/
-parse.rs`'s `parse_node`/`parse_store` implement them with matching
-shapes and matching doc comments.
+parse/grammar_node.rs`'s `parse_node` and `grammar_infra.rs`'s
+`parse_store` implement them with matching shapes and matching doc
+comments.
 
 ## Windows surface grammar
 
@@ -165,7 +166,7 @@ collide with PATH.
 Charter law 1 (a vocabulary is a pure function surface -> kernel facts)
 holds here exactly as it does for `code`/`may`/`carries`/`managed`:
 `std.host` adds nothing to `KernelModel`/`Node`. Each clause desugars to
-a plain `Node.attrs` string, in `src/frob/strata/_host.py::host_attrs`
+a plain `Node.attrs` string, in `src/frob/strata/_host.py::_host_attrs`
 -- the ONE place the encoding is written, imported by both
 `_elaborate.py::_elaborate_node` (node) and `_infra.py::
 _elaborate_store` (store) so the convention cannot desync between the
@@ -216,8 +217,9 @@ already read regardless of any platform gating before T-0261 existed.
 
 ### MODE/PORT validation (T-0270, deferred from T-0255)
 
-`strata-core/src/parse/mod.rs`'s grammar keeps `owns`' MODE and `listens`'
-PORT platform-agnostic atoms (a string, a number) -- the surface grammar
+`strata-core/src/parse/grammar_node.rs`/`grammar_infra.rs`'s grammar keeps
+`owns`' MODE and `listens`' PORT platform-agnostic atoms (a string, a
+number) -- the surface grammar
 has no notion of "which OS". Validation instead fires at elaborate/
 read-back time in `_host.py`, where the platform IS known
 (`HostPlatform.LINUX_SYSTEMD` today):
@@ -670,7 +672,7 @@ SYS200-203 above, using a NEW grammar surface rather than retrofitting
   T-0261 node/store symmetry) naming a shared resource by an opaque
   STRING id and its declared access mode: `read`, `append`, `alpha`,
   `write`, or `exclusive`. Desugars straight to an `access=<resource>:
-  <mode>` attr (`strata-core/src/parse.rs::parse_access_attr`, the
+  <mode>` attr (`strata-core/src/parse/grammar_core.rs::parse_access_attr`, the
   `bin_path` T-0629 direct-attr-push shape -- no new `NodeDecl`/
   `StoreDecl` field), read back by `_access.py::node_access_declarations`.
 - **`resource ID { arbitrated_by NODE | lock "NAME" }`** -- a top-level
@@ -842,7 +844,7 @@ in, since `.resources` is the only field either check reads off a
   vocabulary extends.
 - `docs/strata/surface.md#key-construct-semantics` -- "a store is a node
   too", the precedent every store-side clause here follows.
-- `src/frob/strata/_host.py` -- `host_attrs`, `host_manifest_for`,
+- `src/frob/strata/_host.py` -- `_host_attrs`, `host_manifest_for`,
   `HostManifest`, `HostOwns`, `HostAcl` (T-0261), `HostPlatform`.
 - `src/frob/strata/_host_isolation.py` -- HOST001/HOST002,
   `HostIsolationViolation`, `evaluate_host_isolation_waived`,

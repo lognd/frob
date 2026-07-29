@@ -32,6 +32,8 @@ pytest ... 2>&1 | frob parse pytest --exit-code $? --passthrough || exit 1
 | `clang` / `clang++` | GCC-format diagnostics | Strips ANSI codes |
 | `gcc` / `g++` | GCC-format diagnostics | Same as clang |
 | `junit` / `gtest` / `catch2` | JUnit XML | `pytest --junit-xml`, gtest `--gtest_output=xml`, Catch2 XML reporter |
+| `tsc` | Terminal output | Parses `tsc --noEmit` diagnostic lines |
+| `eslint` | JSON (`--format json`) | Per-file `messages` array (ruleId, severity, line, column) |
 
 ## Default output
 

@@ -6,11 +6,13 @@ maintenance tax. Full per-runner docs stay in docs/modules/app.md#runners
 and each command's own docs/commands/*.md page; this page is the tier
 ledger, not a duplicate of flag semantics.
 
-## Navigation commands -- DEPRECATED (T-0580)
+## Navigation commands -- DEPRECATED (T-0580 decision, T-0802 tracking ticket)
 
 `frob map`, `frob outline`, `frob xref`, and `frob docs --search` are
 deprecated as of 2026-07-23, sunset 2026-10-01 (`frob:deprecated` on each
-runner's `run`/`_run_search`, bound to T-0580). Rationale: across 1035 CLI
+runner's `run`/`_run_search`, bound to T-0802 -- the CLI's own `--help`
+text still cites T-0580, the original decision ticket, a citation
+mismatch not yet reconciled in code). Rationale: across 1035 CLI
 events in this session, map/outline/xref invocations were virtually all
 their own test suites (pytest tmp paths) -- zero organic use by the
 coordinator or the ~30 agents working this repo. Navigation is owned by
@@ -66,10 +68,10 @@ def exports_consumers(
     # every textual mention of the symbol name.
 ```
 
-This is a library-only surface today (`from frob.exports import
-exports_consumers`); no `frob exports --consumers` CLI flag exists yet --
-wiring one into `frob exports`'s parser/config/runner is out of this
-ticket's scope and tracked as a follow-on (see the drafted ticket below).
+A `frob exports --consumers` CLI flag now exists (T-0858,
+`src/frob/_cli_parsers/_core.py`), wired into `frob exports`'s parser/
+config/runner alongside the library-only surface (`from frob.exports
+import exports_consumers`) this section originally shipped with.
 Re-check organic `frob xref` telemetry again at the 2026-10-01 sunset
 before T-0802 executes it, per the caveat that most worktree telemetry
 dies with worktree removal (absence-of-evidence there is weak).
@@ -197,4 +199,6 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob xref` | [DEPRECATED, sunset 2026-10-01, see T-0580] find where a symbol is defined and every file that uses it |
 
 <!-- frob:generated-end cli-commands T-1011 -->
-None of these carry a `frob:deprecated` directive.
+All four (`map_runner.py`, `outline_runner.py`, `xref_runner.py`,
+`docs_runner.py`) carry a `frob:deprecated 2026-07-23 sunset="2026-10-01"
+ticket="T-0802"` directive.

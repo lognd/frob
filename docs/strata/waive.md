@@ -12,8 +12,8 @@ than recording the debt where it belongs. This is that channel.
 ## Surface syntax
 
 A `waive` clause lives ON THE NODE it excuses, inside the `node { ... }`
-block, alongside `may`/`code`/`carries` (`strata-core/src/parse/mod.rs`'s
-`parse_node`):
+block, alongside `may`/`code`/`carries` (`strata-core/src/parse/
+grammar_node.rs`'s `parse_node`):
 
 ```
 node checker : trusted {
@@ -47,8 +47,12 @@ pair it excuses).
 
 Any rule whose finding names the node it fired against: SYS100
 (undeclared interface), SYS101 (stale design), SYS102 (unmodeled code,
-`_selfconform.py`), THREAT002/THREAT003 (`_threat.py`), LINT001-005
-(`_lint.py`), PII001-004 (`_pii.py`), COMPLIANCE001/002 (`_compliance.py`).
+`_selfconform.py`), SYS104/SYS105 (bounded conformance waivers, T-0671),
+SYS200-SYS203, SYS205 (mode-conformance, T-1061), THREAT002/THREAT003
+(`_threat.py`), LINT001-005 (`_lint.py`), PII001-004 (`_pii.py`),
+COMPLIANCE001/002 (`_compliance.py`), REL200/201, REL220-222, REL270-272,
+REL370-372, REL380-383 (clock-ordering/starvation families), HOST001/
+HOST002, KRB001-004.
 
 Findings with no single owning node (a catalog-completeness gap, a
 CVE-fingerprint catalog drift check) cannot be targeted by a `waive`
@@ -70,7 +74,7 @@ not theoretical).
 
 The fix is a `RULE:SUBTARGET` form on the SAME `RULE_ID` string -- no new
 grammar keyword, just a documented convention `_waive.py::
-split_waiver_rule` parses:
+_split_waiver_rule` parses:
 
 ```
 node checker : trusted {
@@ -83,10 +87,12 @@ node payments : trusted {
 }
 ```
 
-`MULTI_INSTANCE_WAIVER_FAMILIES` (`_waive.py`) names the families that
-REQUIRE a sub-target: `SYS100`, `SYS101`, `THREAT002`, `THREAT003`, and
-(the same per-flow reasoning, one node can originate several flows)
-`REL200`/`REL201`, `REL220`/`REL221`/`REL222`, `REL270`/`REL271`/
+`MULTI_INSTANCE_WAIVER_FAMILIES` (`_waive.py`) names the 26 families that
+REQUIRE a sub-target: `SYS100`, `SYS101`, `SYS104`, `SYS105` (T-0671
+bounded conformance waivers), `THREAT002`, `THREAT003`, `SYS200`-`SYS203`,
+`SYS205` (T-1061 mode-conformance, one finding per resource/observation
+site), and (the same per-flow reasoning, one node can originate several
+flows) `REL200`/`REL201`, `REL220`/`REL221`/`REL222`, `REL270`/`REL271`/
 `REL272`, `REL370`/`REL371`/`REL372` (T-0657's CLOCK/ORDERING-
 ASSUMPTIONS family, `_clock_ordering.py`), and `REL380`/`REL381`/
 `REL382`/`REL383` (T-0703's STARVATION/THROUGHPUT family,
@@ -184,9 +190,9 @@ error class; staleness already covers it.
   _validate_waivers` (called from `elaborate()` before any other
   cross-declaration check) rejects a malformed waiver before a
   `KernelModel` can exist.
-- Sub-target parsing: `_waive.py::split_waiver_rule` (`"SYS100:exec"` ->
+- Sub-target parsing: `_waive.py::_split_waiver_rule` (`"SYS100:exec"` ->
   `("SYS100", "exec")`), `MULTI_INSTANCE_WAIVER_FAMILIES`,
-  `validate_waiver_fields` (the actual check `_validate_waivers` calls).
+  `_validate_waiver_fields` (the actual check `_validate_waivers` calls).
 - Matching/staleness: `_waive.py::apply_waivers` -- one generic algorithm
   shared by `check_self_conformance` (SYS100-102) and
   `evaluate_exhaustiveness` (everything else), matching on `(node, rule,

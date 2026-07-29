@@ -25,9 +25,10 @@ frob clean --json        # machine-readable report, either tier
   accumulate again (the concrete pain that motivated this ticket).
 - **`CleanTier.ALL`** (`frob clean --all`): tier 1 plus rebuildable build/
   test/lint output -- `build/`, `dist/`, `*.egg-info/`, each crate's
-  `target/`, `cmake-build-*/`, `.ruff_cache`, `.mypy_cache`, `htmlcov/`,
-  `coverage.xml`, the combined `.coverage`. Everything here regenerates
-  from a normal build/test run. `make clean` runs this tier.
+  `target/`, `cmake-build-*/`, `**/CMakeFiles`, `**/CMakeCache.txt`,
+  `.ruff_cache`, `.mypy_cache`, `htmlcov/`, `coverage.xml`, the combined
+  `.coverage`. Everything here regenerates from a normal build/test run.
+  `make clean` runs this tier.
 - **`CleanTier.DEEP`** (`frob clean --deep`): tier 2 plus frob's own state
   -- `.frob/` (graph cache, prework sweeps, journal, pytest collection
   cache) and `FROBLEMS.md`. The "reset to a clean checkout" button. If this

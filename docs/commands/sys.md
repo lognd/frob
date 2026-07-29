@@ -38,7 +38,8 @@ frob sys export --format seccomp                    # defaults to design/frob.st
 ```
 
 `frob sys --help` repeats this distinction inline as an epilog -- see
-`_add_sys_parser` in `src/frob/__main__.py`. All of the commands above
+`_add_sys_parser` in `src/frob/_cli_parsers/_misc.py` (moved from
+`__main__.py` by T-1074). All of the commands above
 were run against this worktree while writing this section; see the
 T-0167 Done report for the verified output.
 
