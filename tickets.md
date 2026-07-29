@@ -1992,3 +1992,42 @@ threat: null
 component: null
 ```
 User directive 2026-07-29: agents should receive a series of related tickets in one mission to avoid cold-start cost (worktree creation, playbook read, natives build, graph warm) being paid per ticket. The tier system (epic/story/ticket) and parent edges already express the grouping; frob ticket brief (T-0568) and frob ticket work already exist per-ticket. This adds the cluster form: dependency-ordered doable descendants of an epic/story as one mission with a union scope lease. Serial-cluster dispatch is already the coordinator practice (drive memory); this makes it a first-class frob verb instead of hand-assembled prompts.
+
+<!-- ticket:T-1244 -->
+```yaml
+id: T-1244
+title: 'compliance: COMPLIANCE005 verifies disposition strings exist, not that any
+  behavior is enforced -- close the drift/vacuity gap'
+state: queued
+kind: security
+origin: human
+created: '2026-07-29'
+priority: high
+parent: T-1241
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/_compliance.py
+- src/frob/gates/_decisions_compliance.py
+- docs/design/registry/EXHAUSTIVENESS-GATE.md
+acceptance:
+- text: GIVEN a CMPL-* row whose handled_by names a rule/RegulationEntry id that does
+    not exist anywhere in COMPLIANCE_CATALOG or the known gate rule set WHEN compliance_gate
+    runs THEN it fails loud with a named violation (mirrors COMPLIANCE004's caught_by
+    integrity check, applied to handled_by too)
+  evidence: []
+- text: GIVEN a repo with strata models that declare exposure:public-web or other
+    compliance-relevant attrs but evaluate_compliance is never invoked in the gate
+    pipeline WHEN frob check runs THEN this gap is either closed (evaluate_compliance
+    wired into the gate) or explicitly documented as a known non-goal with a named
+    compensating control -- not silently assumed covered by COMPLIANCE005's registry-only
+    check
+  evidence: []
+- text: GIVEN the real repo's own compliance.yaml and current wiring WHEN this ticket
+    closes THEN docs/design/registry/EXHAUSTIVENESS-GATE.md states plainly what compliance_gate
+    does and does not verify
+  evidence: []
+threat: null
+component: null
+```
+compliance_gate/COMPLIANCE005 currently only checks that each of the 17 CMPL_REGISTRY_UNIT_IDS carries SOME handled_by/out_of_scope disposition string (_check_cmpl_registry_unit_dispositions) -- it never verifies the named handled_by control (COMPLIANCE005 itself, self-referential for all 17) actually corresponds to a live RegulationEntry/mitigation predicate, and it is silent (empty tuple) on any repo with no compliance.yaml or no strata model at all (runs in ~0.01s -- confirm this is registry-presence-only, not model-driven). Two distinct problems to close: (a) generate-and-verify the registry against code the way the rule registry does -- every CMPL-* row's disposition must resolve to a real, named, currently-existing check function or RegulationEntry.id, not just a non-deferred string (a handled_by:COMPLIANCE005 that is self-referential for 17/27 rows is exactly the catalogued-not-enforced shape this epic exists to close); (b) confirm/document what happens on a repo with strata models present but this registry never wired to evaluate_compliance -- if compliance.yaml presence and evaluate_compliance model-checking are two independently-silent paths, name that gap explicitly rather than letting compliance_gate's green rely on registry-only checking.
