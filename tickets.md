@@ -1692,3 +1692,22 @@ threat: null
 component: null
 ```
 Fix every confirmed class-A + class-B finding in docs/audits/docs-staleness-2026-07-29.md, organized to land in a few batches: commands/, guides/, modules/, strata/, top-level. Acceptance: every finding line in the audit doc either fixed or explicitly re-verified-as-correct, and the two class-A warnings (docanchor/docblocks DOC006, DOC004) clear. Independent of the mechanism tickets -- content fixes need no new gates.
+
+<!-- ticket:T-1234 -->
+```yaml
+id: T-1234
+title: fix LANG002 rationale text still naming kotlin as unregistered
+state: queued
+kind: bug
+origin: human
+created: '2026-07-29'
+priority: low
+parent: T-1226
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_lang_conformance.py
+threat: null
+component: null
+```
+src/frob/gates/_lang_conformance.py:62-70 LANG002 rationale still names kotlin as unregistered (registered since T-0723). Behavior coincidentally right, rationale stale -- fix rationale text/logic.
