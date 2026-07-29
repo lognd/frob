@@ -926,3 +926,31 @@ threat: null
 component: null
 ```
 User directive 2026-07-29: we should never run make coverage manually; frob must never consume stale data or retread work that should be cached. Today coverage.xml is a hand-refreshed artifact: TEST011 warns it predates tracked changes and TEST005 findings are computed from it anyway (the attribution-inflation problem T-0969 is untangling). Design: treat coverage like the graph cache -- a derived artifact frob owns, refreshed incrementally from the touched-set (the affects closure already exists in frob.graph.affects), merged per-file keyed by content hash, with the freshness contract enforced by the gate rather than a Makefile comment. Interacts with T-0969 (attribution fix defines what honest data is) and the CI gitignored-trust child under T-1193 (CI needs the same no-stale contract). Related: the profiler found process-pool workers re-derive per-file artifacts every run -- same no-retread principle, separate ticket in the perf tree.
+
+<!-- ticket:T-1206 -->
+```yaml
+id: T-1206
+title: 'perf: tickets archive YAML on pure-Python loader -- CSafeLoader + parsed-archive
+  cache'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: high
+parent: T-1204
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_store.py
+acceptance:
+- text: 'GIVEN load_queue parses the tickets-archive.md ledger (1235+ yaml documents)
+    WHEN yaml.safe_load is replaced with yaml.CSafeLoader (with pure-python SafeLoader
+    fallback if libyaml absent) plus a content-hash-keyed parsed-archive cache in
+    .frob/ THEN frob ticket doable drops from ~2.33s toward ~0.5-0.8s and every frob
+    check that resolves blockers/joins the archive drops ~1.5-2s (report section ''Ranked
+    PERF ticket candidates'' #1)'
+  evidence: []
+threat: null
+component: null
+```
+Root cause: src/frob/tickets/_store.py:347 and :373 call yaml.safe_load per document (1235 docs/load_queue) with the pure-python SafeLoader even though libyaml/CSafeLoader is installed and unused (yaml.__with_libyaml__ True). 67 pct of the _load_inputs profile. Fix: switch to yaml.CSafeLoader, and since the archive is append-mostly, add a content-hash-keyed cache of the parsed archive in .frob/ invalidated on file hash change. Companion lint rule (do not duplicate here -- covered by the sibling 'perf: PERF01x detectors' ticket): 'yaml.safe_load/yaml.load without C loader in non-test code'.
