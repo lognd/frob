@@ -668,6 +668,21 @@ sprint: null
 scope:
 - src/frob/gates/_fix_engine.py
 - tests/test_gates.py
+- src/frob/gates/_waive.py
+- src/frob/release/**
+scope_changes:
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: WAIVE004 handler reads _waive.py's full-run detection; release-sync handler
+    calls existing release sync machinery
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/release/**
+  reason: WAIVE004 handler reads _waive.py's full-run detection; release-sync handler
+    calls existing release sync machinery
+  actor: logan
+  at: '2026-07-29'
 acceptance:
 - text: GIVEN an E501 finding on a line carrying a frob:waive comment WHEN --fix runs
     THEN frob fmt is invoked and the line re-verifies clean
@@ -704,3 +719,47 @@ existing four (promoting apply_tier_a_fixes's current positional-call
 list to a dict keyed by rule id, per docs/design/check-fix-engine.md's
 "Fix-handler protocol" section, so the fixability-registry-field ticket
 has a real table to scan).
+
+<!-- ticket:T-draft-2fcdab16 -->
+```yaml
+id: T-draft-2fcdab16
+title: 'gates --fix Tier-B transaction engine: apply-verify-rollback per fix'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: T-1137
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_fix_engine_tier_b.py
+- tests/test_gates.py
+acceptance:
+- text: GIVEN a Tier-B fix that applies cleanly WHEN its affected_gates and bound_tests
+    all re-verify clean THEN the fix is committed and reported as fixed
+  evidence: []
+- text: GIVEN a Tier-B fix that introduces a regression WHEN affected_gates or bound_tests
+    fail after applying THEN every touched file is restored byte-for-byte from its
+    pre-fix backup and a FixRolledBack record discloses which gate/test regressed
+  evidence: []
+- text: GIVEN N Tier-B fixes in one --fix invocation THEN each is applied and verified
+    sequentially, never batched, so a rollback never has to bisect more than one fix
+  evidence: []
+threat: null
+component: null
+```
+Build the Tier-B transactional fix engine per docs/design/check-fix-engine.md
+"Transaction / rollback model" section: new src/frob/gates/_fix_engine_tier_b.py
+with TIER_B_HANDLERS: dict[str, TierBHandler], a TierBFix model (backup
+bytes, affected_gates, bound_tests), and the apply-verify-commit-or-
+rollback engine itself (snapshot pre-fix bytes, apply, re-run affected
+gates + bound tests, restore from backup byte-for-byte on any regression,
+emit a disclosed FixRolledBack record naming what regressed). Ship
+sequential, per-fix verification -- never batched -- exactly as the design
+doc specifies. No concrete Tier-B handler is required to exist yet as
+part of THIS ticket's scope beyond one minimal reference handler proving
+the rollback path end-to-end (a synthetic/test-fixture rule is
+acceptable, or reuse whichever real Tier-B-shaped rule is cheapest to
+wire first -- implementer's judgment, disclose the choice in the Done
+report).
