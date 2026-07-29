@@ -688,3 +688,104 @@ GIVEN two ticket directories are both being finalized in one land
 WHEN their per-ticket locks are acquired for the git-mv + rewrite
 THEN they are acquired in sorted-by-id order (no lock-ordering deadlock),
 verified by a concurrent regression test mirroring T-1090's shape.
+
+<!-- ticket:T-draft-123962ab -->
+```yaml
+id: T-draft-123962ab
+title: 'ledger v2: archive via git mv, no content rewrite'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+blocked_by:
+- T-draft-4ae257ca
+parent: T-1136
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_archive.py
+- src/frob/tickets/_store.py
+- tests/test_ticket_land.py
+acceptance:
+- text: 'Ledger v2 design (docs/design/ledger-v2.md section 4.3) needs archive to
+
+    become a plain `git mv tickets/T-#### tickets/archive/T-####` per ticket,
+
+    with zero content rewrite -- eliminating the T-0959 archive-clobber
+
+    failure mode structurally rather than guarding it. Blocked by the
+
+    store-backend ticket.'
+  evidence: []
+- text: 'GIVEN a v2-mode ticket reaching state done or dropped
+
+    WHEN `frob ticket archive` runs
+
+    THEN its directory is `git mv`-ed to `tickets/archive/T-####/` with no
+
+    byte of `ticket.md`/`done-report.md` content rewritten (diff shows a pure
+
+    rename, verified via `git diff --stat` showing 0 insertions/deletions for
+
+    the moved files).'
+  evidence: []
+- text: 'GIVEN a v2-mode repo where one worktree''s archive tree predates another
+
+    branch''s newer archive sweep (the T-0959 shape)
+
+    WHEN both are merged
+
+    THEN there is no clobber possible -- each archived ticket is a disjoint
+
+    git path, so git''s own merge/rename detection handles the union with no
+
+    custom splice code, verified by a regression test reproducing the T-0959
+
+    incident''s two-sided-divergence shape against the v2 archive path and
+
+    asserting no block is lost.'
+  evidence: []
+- text: 'GIVEN `blocked_by`/`parent` references into an archived v2 ticket from an
+
+    active ticket
+
+    WHEN the referencing ticket is loaded
+
+    THEN the archived ticket still resolves (load path checks both
+
+    `tickets/*/ticket.md` and `tickets/archive/*/ticket.md`, mirroring
+
+    today''s `load_all` reading both tickets.md and tickets-archive.md).'
+  evidence: []
+threat: null
+component: null
+```
+Ledger v2 design (docs/design/ledger-v2.md section 4.3) needs archive to
+become a plain `git mv tickets/T-#### tickets/archive/T-####` per ticket,
+with zero content rewrite -- eliminating the T-0959 archive-clobber
+failure mode structurally rather than guarding it. Blocked by the
+store-backend ticket.
+
+GIVEN a v2-mode ticket reaching state done or dropped
+WHEN `frob ticket archive` runs
+THEN its directory is `git mv`-ed to `tickets/archive/T-####/` with no
+byte of `ticket.md`/`done-report.md` content rewritten (diff shows a pure
+rename, verified via `git diff --stat` showing 0 insertions/deletions for
+the moved files).
+
+GIVEN a v2-mode repo where one worktree's archive tree predates another
+branch's newer archive sweep (the T-0959 shape)
+WHEN both are merged
+THEN there is no clobber possible -- each archived ticket is a disjoint
+git path, so git's own merge/rename detection handles the union with no
+custom splice code, verified by a regression test reproducing the T-0959
+incident's two-sided-divergence shape against the v2 archive path and
+asserting no block is lost.
+
+GIVEN `blocked_by`/`parent` references into an archived v2 ticket from an
+active ticket
+WHEN the referencing ticket is loaded
+THEN the archived ticket still resolves (load path checks both
+`tickets/*/ticket.md` and `tickets/archive/*/ticket.md`, mirroring
+today's `load_all` reading both tickets.md and tickets-archive.md).
