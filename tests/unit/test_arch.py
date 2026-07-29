@@ -1033,6 +1033,53 @@ class TestLanguageParityExclusion:
         assert _language_tag("_ts_build_module") == "ts"
         assert _language_tag("_kt_build_module") == "kt"
 
+    def test_long_form_language_spellings_normalize_to_short_tag(self):
+        # frob:tests src/frob/arch/_python.py::_language_tag
+        # T-1181: python/typescript/kotlin/cplusplus long-form spellings
+        # (e.g. frob.testing._collect*.py's collect_python_tests/
+        # collect_typescript_tests/collect_kotlin_tests) must normalize to
+        # the SAME canonical short tag as their short-form counterpart so
+        # `_is_language_parity_family`'s distinctness check treats them as
+        # identity-equivalent, not as untagged/unknown segments.
+        from frob.arch._python import _language_tag
+
+        assert _language_tag("collect_python_tests") == "py"
+        assert _language_tag("collect_typescript_tests") == "ts"
+        assert _language_tag("collect_kotlin_tests") == "kt"
+        assert _language_tag("collect_cplusplus_tests") == "cpp"
+
+    def test_long_and_short_form_parity_group_not_flagged(self, tmp_path):
+        # frob:tests src/frob/arch/_python.py::_is_language_parity_family
+        # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
+        # A parity family mixing long-form (python/typescript/kotlin) and
+        # short-form (cpp) tags -- the T-1181 refile scenario -- must be
+        # recognized as genuinely distinct-per-language and excluded, the
+        # same as an all-short-form group already is.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "collectors.py").write_text(
+            "from __future__ import annotations\n"
+            "\n"
+            "class RawSymbol:\n"
+            "    pass\n"
+            "\n"
+            "def collect_python_tests(node: object) -> RawSymbol:\n"
+            "    return RawSymbol()\n"
+            "\n"
+            "def collect_typescript_tests(node: object) -> RawSymbol:\n"
+            "    sym = RawSymbol()\n"
+            "    return sym\n"
+            "\n"
+            "def collect_kotlin_tests(node: object) -> RawSymbol:\n"
+            "    return RawSymbol()\n"
+            "\n"
+            "def collect_cpp_tests(node: object) -> RawSymbol:\n"
+            "    return RawSymbol()\n"
+        )
+        result = analyze_project(src_dir)
+        categories = {s.category for s in result.suggestions}
+        assert "abstraction-opportunity" not in categories
+
 
 class TestCheckRegistryExclusion:
     def test_check_and_run_checks_names_not_flagged(self, tmp_path):

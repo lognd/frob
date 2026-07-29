@@ -351,7 +351,7 @@ Observed while landing T-1165/T-1172 in the same worktree: frob ticket start T-d
 id: T-1181
 title: 'arch: language-parity exclusion synonym map missing python/typescript/kotlin/cplusplus
   spellings'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-29'
@@ -362,16 +362,49 @@ sprint: null
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
+evidence:
+- tests/unit/test_arch.py::TestLanguageParityExclusion::test_long_form_language_spellings_normalize_to_short_tag
+- tests/unit/test_arch.py::TestLanguageParityExclusion::test_long_and_short_form_parity_group_not_flagged
 acceptance:
 - text: GIVEN same-signature groups whose member names differ only by language tag
     WHEN the language-parity family exclusion runs THEN the synonym map recognizes
     python/typescript/kotlin/cplusplus alongside the short forms, measured before/after
     on the T-1083 finding set
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestLanguageParityExclusion::test_long_form_language_spellings_normalize_to_short_tag
+  - tests/unit/test_arch.py::TestLanguageParityExclusion::test_long_and_short_form_parity_group_not_flagged
 threat: null
 component: null
 ```
 Refile from the w20-arch T-1083 disposition pass (draft died with the fail-log; full record on branch w20-arch commit a8085d7f): _is_language_parity_family's synonym map lacks the long-form language spellings, so genuinely-parity families with those tags escape the exclusion and pollute abstraction-opportunity counts.
+
+## Done report
+
+Extended _LANGUAGE_TAG_SYNONYMS mapping (python->py, typescript->ts,
+kotlin->kt, cplusplus->cpp) and folded it into _LANGUAGE_TAG_RE / a
+normalizing _language_tag so long-form language spellings resolve to the
+same canonical short tag as their short-form counterpart before
+_is_language_parity_family's distinctness check runs.
+
+Measured before/after via `frob check --only arch --json`, counting
+"abstraction-opportunity" occurrences: 66 -> 65 (frob.testing._collect*.py's
+collect_python_tests/collect_typescript_tests/collect_kotlin_tests/
+collect_cpp_tests family no longer false-positives).
+
+### Changed
+```
+ tickets.md | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_long_form_language_spellings_normalize_to_short_tag` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_long_and_short_form_parity_group_not_flagged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 453 warning(s), 678 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1182 -->
 ```yaml

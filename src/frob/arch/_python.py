@@ -1138,28 +1138,58 @@ def _is_dispatch_family(
 # guess at what "looks like a language tag".
 _LANGUAGE_TAGS = ("py", "rust", "kt", "ts", "cpp")
 
-#: Matches a language tag as an underscore-delimited token anywhere in a
-#: function name (`_LANGUAGE_TAG_RE.search("_kt_this_field_name")` ->
-#: `"kt"`) -- underscore-delimited on BOTH sides so `_ts_...`/`..._ts_...`
-#: match but an incidental substring like `results_summary` (no
-#: underscore before `ts`) does not. This is the STRUCTURAL rigor T-0360's
-#: own `_is_dispatch_family` docstring calls out (no raw text proximity):
-#: the tag must occupy a real name-segment boundary, not just appear
-#: somewhere in the string.
+#: T-1181 (refiled from the T-1083 disposition, w20-arch a8085d7f): a
+#: same-signature parity family sometimes spells its per-language segment
+#: out in FULL (`python`/`typescript`/`kotlin`/`cplusplus`) rather than
+#: `_LANGUAGE_TAGS`' short form (`collect_python_tests`/
+#: `collect_typescript_tests`/... in `frob.testing._collect*`) -- the short
+#: form alone never matches `python` as a whole underscore-delimited
+#: segment (it is not a substring of any short tag), so these genuinely-
+#: parity families fell through uncaught and polluted the abstraction-
+#: opportunity count as false positives. This maps each long form to its
+#: canonical short tag so `_language_tag` normalizes both spellings to the
+#: SAME identity before the distinctness check in
+#: `_is_language_parity_family` runs -- `rust`/`cpp` have no separate long
+#: form in this codebase's own naming convention, so they are omitted
+#: rather than guessed at.
+_LANGUAGE_TAG_SYNONYMS = {
+    "python": "py",
+    "typescript": "ts",
+    "kotlin": "kt",
+    "cplusplus": "cpp",
+}
+
+#: Matches a language tag (short OR long form, `_LANGUAGE_TAG_SYNONYMS`) as
+#: an underscore-delimited token anywhere in a function name
+#: (`_LANGUAGE_TAG_RE.search("_kt_this_field_name")` -> `"kt"`) --
+#: underscore-delimited on BOTH sides so `_ts_...`/`..._ts_...` match but
+#: an incidental substring like `results_summary` (no underscore before
+#: `ts`) does not. This is the STRUCTURAL rigor T-0360's own
+#: `_is_dispatch_family` docstring calls out (no raw text proximity): the
+#: tag must occupy a real name-segment boundary, not just appear somewhere
+#: in the string. Long forms are listed before short forms in the
+#: alternation so a longer match (e.g. `python`) is preferred where both
+#: could otherwise apply.
 _LANGUAGE_TAG_RE = re.compile(
-    r"(?:^|_)(?P<tag>" + "|".join(_LANGUAGE_TAGS) + r")(?:_|$)"
+    r"(?:^|_)(?P<tag>"
+    + "|".join((*_LANGUAGE_TAG_SYNONYMS, *_LANGUAGE_TAGS))
+    + r")(?:_|$)"
 )
 
 
 def _language_tag(fname: str) -> str | None:
-    """The single language tag (T-1068, `_LANGUAGE_TAGS`) `fname` carries as
-    an underscore-delimited prefix/infix segment, or `None` when it carries
-    none. `_LANGUAGE_TAG_RE.search` finds the FIRST such segment only --
-    good enough here since every real per-language walker name in this
-    codebase carries exactly one tag (`_kt_build_module`, never a name
-    combining two)."""
+    """The single language tag (T-1068 `_LANGUAGE_TAGS`, T-1181
+    `_LANGUAGE_TAG_SYNONYMS`) `fname` carries as an underscore-delimited
+    prefix/infix segment, normalized to its canonical short form (`python`
+    and `py` both return `"py"`), or `None` when it carries none.
+    `_LANGUAGE_TAG_RE.search` finds the FIRST such segment only -- good
+    enough here since every real per-language walker/collector name in
+    this codebase carries exactly one tag, never a name combining two."""
     m = _LANGUAGE_TAG_RE.search(fname)
-    return m.group("tag") if m else None
+    if not m:
+        return None
+    tag = m.group("tag")
+    return _LANGUAGE_TAG_SYNONYMS.get(tag, tag)
 
 
 def _is_language_parity_family(members: list[tuple[str, str]]) -> bool:
