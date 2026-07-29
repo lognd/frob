@@ -546,10 +546,26 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/refactor/**
-- src/frob/graph/dsl.py
-- src/frob/gates/_waive.py
-- src/frob/graph/lock.py
 - tests/test_refactor.py
+scope_changes:
+- op: remove
+  glob: src/frob/graph/dsl.py
+  reason: reads/calls into these modules but does not modify them; scope narrowed
+    to the new refactor carrier module
+  actor: logan
+  at: '2026-07-29'
+- op: remove
+  glob: src/frob/gates/_waive.py
+  reason: reads/calls into these modules but does not modify them; scope narrowed
+    to the new refactor carrier module
+  actor: logan
+  at: '2026-07-29'
+- op: remove
+  glob: src/frob/graph/lock.py
+  reason: reads/calls into these modules but does not modify them; scope narrowed
+    to the new refactor carrier module
+  actor: logan
+  at: '2026-07-29'
 acceptance:
 - text: 'GIVEN a symbol with a `frob:waive ARCH101 reason="..."` placed directly
 
