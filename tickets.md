@@ -4454,7 +4454,7 @@ User directive 2026-07-29: no hidden optional argument hell; intuitive and maxim
 ```yaml
 id: T-1272
 title: 'gates: waive COV006 dict-dispatch blind spot in TestWaivePresets'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-29'
