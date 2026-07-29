@@ -5090,3 +5090,52 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 (no live caller, no CLI/API entry point), route it to the DEAD gate / dup
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
+
+<!-- ticket:T-1282 -->
+```yaml
+id: T-1282
+title: 'TEST005 burn-down: src/frob/clean (10 findings, 6 at 0.0%)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: T-1273
+tier: ticket
+sprint: null
+scope:
+- src/frob/clean/**
+- tests/clean/**
+acceptance:
+- text: GIVEN the clean package at the 75%/70% floors WHEN frob check --only test
+    runs THEN it reports 0 TEST005 findings under src/frob/clean/**
+  evidence: []
+- text: GIVEN a 0.0%-branch symbol in clean WHEN it is judged dead code THEN it is
+    routed to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
+    filler test
+  evidence: []
+- text: GIVEN a new test added to close a clean TEST005 finding WHEN reviewed THEN
+    it asserts real behavior (inputs/outputs/side effects), not mere import/instantiation
+  evidence: []
+threat: null
+component: null
+```
+Package: src/frob/clean (or the listed root modules).
+TEST005 findings at current baseline: 10 total, 6 at exactly
+0.0% branch coverage (the priority tier -- dead-code or untested-entry-
+point candidates; judge each before writing a test).
+
+0.0%-branch symbols in this package:
+_models.py :: CleanReport.reclaimed_bytes
+_models.py :: CleanReport.count
+_rules.py :: tier_patterns
+_rules.py :: extra_patterns_from_config
+_core.py :: scan
+_core.py :: clean
+
+Work: for each finding, either (a) add a real behavioral test that
+exercises the branch/line paths (never assert-True filler, never a test
+that only imports the module), or (b) if a 0.0% symbol is confirmed dead
+(no live caller, no CLI/API entry point), route it to the DEAD gate / dup
+machinery or file a removal ticket instead of writing a fake test for it
+-- do not fabricate coverage.
