@@ -5260,7 +5260,7 @@ machinery or file a removal ticket instead of writing a fake test for it
 ```yaml
 id: T-1276
 title: 'TEST005 burn-down: src/frob/app (115 findings, 63 at 0.0%)'
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -5339,6 +5339,9 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 (no live caller, no CLI/API entry point), route it to the DEAD gate / dup
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
+
+## Failure log
+- 2026-07-29 attempt 1: baseline (115 findings/63 at 0.0pct) is stale: sampled 17 of the 63 listed 0.0-branch symbols via targeted pytest --cov runs (fleet_runner, gitlog_runner, arch_runner, vet_runner, dup_runner, natives_runner, deploy_runner, parse_runner, agent_runner, clean_runner, debt_runner, deprecated_runner, fmt_runner, pool_runner, worktree_runner, telemetry.py x9 fns) and all already show 68-100pct real branch coverage via existing dedicated tests (tests/test_debt_runner.py, tests/test_deprecated_runner.py, tests/test_pool_runner.py, tests/test_worktree_guard.py, tests/unit/test_app_runners_t0875_leaf_collision.py, tests/test_telemetry.py, tests/unit/test_fleet_runner.py, etc); a fresh full-suite coverage stamp (coordinator-only per playbook 6b -- confirmed empirically, a 540s-timeout scoped --cov run for the whole app package still SIGTERMed mid-write) is needed to re-derive the real remaining TEST005 list before further test-writing work in this ticket is worth doing
 <!-- ticket:T-1277 -->
 ```yaml
 id: T-1277
