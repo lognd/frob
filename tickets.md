@@ -2759,7 +2759,7 @@ confirmed with a second `--diff-filter=D` check).
 id: T-1152
 title: 'arch: extract tickets/__init__.py evidence/transition + done-report/review/drop/attach
   families + split _land.py -- T-1151 residue'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -2806,7 +2806,6 @@ moved prose trips it, watch for tests that monkeypatch a moved function
 via the PACKAGE attribute (tickets_mod.<name>) -- those need a late
 `from frob.tickets import <name>` inside the moved function body instead
 of a module-top-level binding.
-
 <!-- ticket:T-1154 -->
 ```yaml
 id: T-1154
