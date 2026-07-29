@@ -9250,6 +9250,13 @@ scope:
 - src/frob/gates/_fix_engine.py
 - tests/test_ticket_land.py
 - tests/test_gates.py
+- docs/modules/gates.md
+scope_changes:
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'scope-closure warnings: fix_engine frob:doc targets live there'
+  actor: logan
+  at: '2026-07-29'
 acceptance:
 - text: GIVEN a worktree with an uncommitted out-of-scope frob:waive deletion WHEN
     frob ticket land runs THEN the land refuses before merge with an error naming
