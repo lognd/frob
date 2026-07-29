@@ -1542,3 +1542,25 @@ threat: null
 component: null
 ```
 121-doc staleness sweep (docs/audits/docs-staleness-2026-07-29.md): 2 class-A gate-flagged findings, ~140 class-B silent misses, 6 gate-gap classes, a drift-lock candidate list, and one code-side bug. Every silent miss indicts a frob gate gap: each gap class becomes a mechanism ticket, plus a fix campaign for the doc content itself.
+
+<!-- ticket:T-1227 -->
+```yaml
+id: T-1227
+title: frob:enumerates directive + DOCENUM001 -- AST-diff doc-claimed collection members
+  vs actual
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: high
+parent: T-1226
+tier: ticket
+sprint: null
+scope:
+- src/frob/graph/**
+- src/frob/gates/**
+- docs/**
+threat: null
+component: null
+```
+Doc span binds to a named collection literal (dict/set/tuple/Literal/ErrorSet/StrEnum); gate AST-diffs claimed members vs actual at check time, independent of ack state. Acceptance: fires on the two known-stale check.md _STAGE_GROUPS tables pre-fix (regression corpus); the sweep's drift-lock candidate list (docs/audits/docs-staleness-2026-07-29.md, 'Drift-lock candidates' section) gets bound as the initial adoption wave. Ref: gate-gap class 1 in docs/audits/docs-staleness-2026-07-29.md.
