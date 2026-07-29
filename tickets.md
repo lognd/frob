@@ -1520,3 +1520,25 @@ threat: null
 component: null
 ```
 Companion detector ticket for EPIC A's fixes (T-1206 CSafeLoader, T-1207 repo-scan-in-loop, T-1209 multi-ast.walk, T-1211 regex-per-line): per repo convention, a perf root cause ships as both a .strata obligation and a PERF0xx lint rule, never as a fix-only patch. Four rules to add: (a) 'yaml.safe_load/yaml.load without C loader in non-test code'; (b) 'repo-scan API (xref/exports_consumers/iter_files) called inside a loop over symbols'; (c) '>1 ast.walk(tree) over the same tree in one function family'; (d) 're.finditer with a pattern-list loop inside a per-line loop'. Each needs a PERF01x id, a registry entry, and a regression-corpus fixture reproducing the exact pre-fix shape mined from the report (tickets/_store.py, gates/_debt_deprecated.py, gates/_pii_structural/__init__.py, gates/_secrets.py) so the rule is proven to fire before the corresponding EPIC A fix lands, and to keep firing as a regression guard after.
+
+<!-- ticket:T-1226 -->
+```yaml
+id: T-1226
+title: 'docs integrity: close the silent-miss classes from the 2026-07-29 staleness
+  sweep'
+state: queued
+kind: docs
+origin: human
+created: '2026-07-29'
+priority: high
+parent: null
+tier: epic
+sprint: null
+scope:
+- docs/**
+- src/frob/gates/**
+- src/frob/graph/**
+threat: null
+component: null
+```
+121-doc staleness sweep (docs/audits/docs-staleness-2026-07-29.md): 2 class-A gate-flagged findings, ~140 class-B silent misses, 6 gate-gap classes, a drift-lock candidate list, and one code-side bug. Every silent miss indicts a frob gate gap: each gap class becomes a mechanism ticket, plus a fix campaign for the doc content itself.
