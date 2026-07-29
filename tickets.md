@@ -7394,6 +7394,20 @@ scope:
 - tests/unit/perf/test_serial_pools.py
 - src/frob/tickets/_leases.py
 - .github/workflows/ci.yml
+- tests/test_tickets_leases.py
+- tests/test_ticket_leases.py
+scope_changes:
+- op: add
+  glob: tests/test_tickets_leases.py
+  reason: 'scope closure: _leases.py identity-fallback change must carry its lease
+    test file'
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: 'scope closure: second lease test file covering _leases.py symbols'
+  actor: logan
+  at: '2026-07-29'
 threat: null
 component: null
 ```
