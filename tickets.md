@@ -4915,3 +4915,34 @@ threat: null
 component: null
 ```
 User directive 2026-07-29: remove boilerplate agents hand-write. The 8-line INV006 calibration-batch waiver text has been copy-pasted 10+ times this drive (0abc4e3a lineage), and the T-1099 REF002 split-fragment text 7+ times. A preset is NOT a blanket waiver: each site still carries an explicit per-site directive naming rule + preset; the preset only deduplicates the REASON prose, which the NO DUPLICATION principle applies to as much as code. Reason-required stays intact -- a preset name must resolve to a real documented reason.
+
+<!-- ticket:T-1177 -->
+```yaml
+id: T-1177
+title: 'fix-engine: Tier-A auto-carry of split-carried waivers (T-1137 child; coordinator
+  decision recorded)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: T-1137
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- tests/test_gates.py
+acceptance:
+- text: GIVEN a module split moves prose verbatim from a file whose waiver covered
+    it (T-1134's find_carried_waiver detects the source) WHEN frob check --fix runs
+    THEN the carried waiver is applied automatically at the new site, citing the source
+    file and preset, and the fix report discloses every carry
+  evidence: []
+- text: GIVEN prose that is NOT a verbatim move from an already-waived source THEN
+    --fix never inserts any waiver (the no-auto-waive anti-goal stands for everything
+    else)
+  evidence: []
+threat: null
+component: null
+```
+Coordinator decision 2026-07-29 under user-delegated authority: carrying an EXISTING waiver whose prose moved verbatim preserves a prior explicit human disposition -- it is not a new waiver, so it does not violate T-1137's never-auto-waive anti-goal, which continues to bind for every other case. Evidence: 6+ hand-carries this drive (3 by the coordinator in one day, 0abc4e3a; 2 rust files missed and redded main). Builds directly on T-1134's detector; pairs with the preset ticket so the carried text is one reference, not a copy.
