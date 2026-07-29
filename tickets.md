@@ -359,7 +359,7 @@ unwaived TEST findings again (TEST006 aside, which only ever clears via
 id: T-1191
 title: 'perf: fix 4 unwaived PERF005/PERF008 findings found in T-0204 verification
   close'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-29'
@@ -397,7 +397,6 @@ unwaived PERF debt today: fix each site (add a termination measure, or
 hoist/memoize the loop-invariant call) or add a reasoned
 `frob:waive PERF005`/`frob:waive PERF008` per site, then re-verify
 `frob check --only gates-native` shows 0 unwaived PERF findings again.
-
 <!-- ticket:T-1192 -->
 ```yaml
 id: T-1192
