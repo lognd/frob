@@ -388,3 +388,107 @@ file-level finding has no symref) -- not every file on this list needs a
 structural split; a disposition is a valid, honest outcome where a real
 split boundary would fragment a genuinely cohesive module (T-1074's own
 precedent for the 7 files it dispositioned rather than split).
+
+<!-- ticket:T-draft-53d33977 -->
+```yaml
+id: T-draft-53d33977
+title: 'ledger v2: per-ticket lock + allocator lock primitives'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: T-1136
+tier: ticket
+sprint: null
+scope:
+- src/frob/process/_lock.py
+- src/frob/tickets/_store.py
+- tests/unit/test_process_lock.py
+- tests/test_tickets_ledger_concurrency.py
+acceptance:
+- text: 'Ledger v2 design (docs/design/ledger-v2.md section 3) needs a per-ticket
+
+    file lock plus a single tiny allocator lock, replacing the one repo-wide
+
+    `ledger_lock` that serializes every ticket-mutating verb today regardless
+
+    of which ticket(s) they touch. Generalizes the T-0933/T-0982 fix (a
+
+    process-registry reentrancy bug caused by one shared contended resource)
+
+    by removing the shared resource for the common case (one verb, one
+
+    ticket).'
+  evidence: []
+- text: 'Deliverables: a `ticket_lock(root, ticket_id)` context manager (per-ticket
+
+    flock, e.g. `tickets/T-####/.lock` or an flock on `ticket.md` itself) and
+
+    a separate `allocator_lock(root)` guarding only next-id computation. Both
+
+    must compose safely with the existing `ledger_lock` during the
+
+    compatibility window (section 7) -- do not remove `ledger_lock` yet, this
+
+    ticket only ADDS the new primitives alongside it.'
+  evidence: []
+- text: 'GIVEN two callers each hold `ticket_lock` for different ticket ids
+
+    WHEN both proceed concurrently
+
+    THEN neither blocks the other (verified with a real concurrent-thread
+
+    test, not just code inspection).'
+  evidence: []
+- text: 'GIVEN two callers both call the id allocator concurrently
+
+    WHEN both request a next id
+
+    THEN they receive distinct ids (interleaving regression test, mirroring
+
+    T-1090''s `test_two_concurrent_finalize_draft_calls_get_distinct_ids`
+
+    shape).'
+  evidence: []
+- text: 'GIVEN a caller already holds `ticket_lock` for id X in the same thread
+
+    WHEN it acquires `ticket_lock` for X again (reentrant call)
+
+    THEN it does not deadlock (mirrors `derived_state_lock`''s reentrancy
+
+    discipline, T-0933/T-0982 lineage).'
+  evidence: []
+threat: null
+component: null
+```
+Ledger v2 design (docs/design/ledger-v2.md section 3) needs a per-ticket
+file lock plus a single tiny allocator lock, replacing the one repo-wide
+`ledger_lock` that serializes every ticket-mutating verb today regardless
+of which ticket(s) they touch. Generalizes the T-0933/T-0982 fix (a
+process-registry reentrancy bug caused by one shared contended resource)
+by removing the shared resource for the common case (one verb, one
+ticket).
+
+Deliverables: a `ticket_lock(root, ticket_id)` context manager (per-ticket
+flock, e.g. `tickets/T-####/.lock` or an flock on `ticket.md` itself) and
+a separate `allocator_lock(root)` guarding only next-id computation. Both
+must compose safely with the existing `ledger_lock` during the
+compatibility window (section 7) -- do not remove `ledger_lock` yet, this
+ticket only ADDS the new primitives alongside it.
+
+GIVEN two callers each hold `ticket_lock` for different ticket ids
+WHEN both proceed concurrently
+THEN neither blocks the other (verified with a real concurrent-thread
+test, not just code inspection).
+
+GIVEN two callers both call the id allocator concurrently
+WHEN both request a next id
+THEN they receive distinct ids (interleaving regression test, mirroring
+T-1090's `test_two_concurrent_finalize_draft_calls_get_distinct_ids`
+shape).
+
+GIVEN a caller already holds `ticket_lock` for id X in the same thread
+WHEN it acquires `ticket_lock` for X again (reentrant call)
+THEN it does not deadlock (mirrors `derived_state_lock`'s reentrancy
+discipline, T-0933/T-0982 lineage).
