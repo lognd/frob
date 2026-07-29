@@ -769,3 +769,61 @@ Scope for this ticket: the split-specific pieces only --
   (not per whole split) per T-1135's transaction model.
 - Re-running T-1197/T-1199/T-1200's move/rewrite machinery per symbol
   moved, not reimplementing rewrite logic here.
+
+<!-- ticket:T-1202 -->
+```yaml
+id: T-1202
+title: 'refactor: alias-conflict policy'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+blocked_by:
+- T-1197
+parent: T-1197
+tier: ticket
+sprint: null
+scope:
+- src/frob/refactor/**
+- docs/commands/refactor.md
+- tests/test_refactor.py
+acceptance:
+- text: 'GIVEN an import-site name collision during a move/rename with no
+
+    --alias-conflict flag given WHEN the plan phase detects it THEN an
+
+    alias is auto-generated at the import site only and named in the
+
+    disclosed alias report'
+  evidence: []
+- text: 'GIVEN a destination-namespace collision (two same-named symbols would
+
+    land in the same module) WHEN the plan phase detects it THEN it refuses
+
+    under the default `error` policy, and only proceeds if `--alias-conflict
+
+    rename-dest` was explicitly passed'
+  evidence: []
+- text: 'GIVEN a completed refactor with at least one auto-generated alias WHEN
+
+    its report is printed THEN every alias appears in a distinct, clearly
+
+    labeled section of the report, never buried in the general rewrite list'
+  evidence: []
+threat: null
+component: null
+```
+Design: docs/design/refactor-verb.md (T-1135). T-1197's plan/apply
+pipeline needs an extension point for handling an import-site name
+collision when a destination name is already bound; this ticket owns
+that policy layer: the naming scheme for auto-generated aliases, the
+`--alias-conflict {error,rename-dest}` flag (default: error -- a
+destination-namespace collision is a hard refusal, never a silent
+auto-rename of the destination module's own symbol), and the disclosed
+alias report format (every auto-generated import alias named, so a human
+reviews it rather than discovering it later in a diff).
+
+Depends on T-1197 exposing the plan-phase hook this policy plugs into
+(a callback invoked once per detected collision, returning either an
+alias name or a refusal).
