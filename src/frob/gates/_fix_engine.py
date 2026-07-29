@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import difflib
 import re
+from collections.abc import Callable
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -394,8 +395,308 @@ def fix_tick002_renumber(root: Path, queue: TicketQueue) -> list[FixApplied]:
 
 
 # ---------------------------------------------------------------------------
+# FMT001 (T-1261): a diff-touched `frob:` directive comment line over the
+# project's configured line length -- `frob fmt` names itself as its own
+# remedy.
+# ---------------------------------------------------------------------------
+
+
+# frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+def fix_fmt001_directive_wrap(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
+    """Tier-A fix (T-1261): FMT001 already names its own remedy verbatim
+    (`run frob fmt <file>`) -- `format_paths` (`frob.gates._fmt_
+    directives`, T-0441) is already idempotent, so calling it in write
+    mode over `root` IS the fix; no new rewrite logic lives here.
+
+    Runs over the whole `root`, not diff-scoped the way FMT001 itself is
+    -- `format_paths` only ever rewrites a genuinely non-canonical
+    `frob:` directive run; a line that is already canonical anywhere else
+    in the tree is left byte-for-byte alone by construction, so widening
+    the scope from "diff-touched" to "whole tree" cannot make an
+    unrelated file worse, it only catches the SAME class of finding
+    wherever it lives (`snapshot` is accepted for signature uniformity
+    with its sibling Tier-A handlers; `format_paths` needs no graph
+    state)."""
+    from frob.gates._fmt_directives import format_paths, read_line_length
+
+    del snapshot  # signature uniformity only, format_paths needs no graph state
+    limit = read_line_length(root)
+    report = format_paths(root, check_only=False, limit=limit)
+    return [
+        FixApplied(
+            rule="FMT001",
+            file=change.path,
+            line=0,
+            detail=f"{change.path}: frob: directive comment(s) rewrapped to canonical form",  # noqa: E501
+        )
+        for change in report.changes
+    ]
+
+
+# ---------------------------------------------------------------------------
+# REG010 (T-1261): a live gate rule id with no `CHK-GATE-<rule>` entry in
+# check-coverage.yaml -- `frob registry audit --sync-gate-rules` names
+# itself as its own remedy.
+# ---------------------------------------------------------------------------
+
+
+# frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+def fix_reg010_registry_sync(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
+    """Tier-A fix (T-1261): REG010 already names its own remedy verbatim
+    (`frob registry audit --sync-gate-rules`) -- calls `sync_gate_rule_
+    entries` (`frob.registry._staleness`, the exact function that command
+    already wraps) directly against `docs/design/registry/check-
+    coverage.yaml`, filing one `CHK-GATE-<rule>` entry per live gate rule
+    the registry is missing one for. Idempotent: a rule already covered
+    is silently skipped, never duplicated (`missing_gate_rule_ids` is
+    recomputed fresh every call). REG008 (an entry claiming `handled_by:`
+    a rule with no matching `frob:enforces` edge in CODE) is a different,
+    genuinely Tier-C shape -- which rule's code should carry that
+    directive is a judgment call this handler does not guess at, so only
+    REG010 is wired here."""
+    from frob.registry._staleness import sync_gate_rule_entries
+
+    del snapshot  # signature uniformity only, this handler reads the yaml itself
+    registry_path = root / "docs" / "design" / "registry" / "check-coverage.yaml"
+    if not registry_path.is_file():
+        return []
+    from frob.gates._waive import known_gate_rule_ids
+
+    result = sync_gate_rule_entries(registry_path, known_gate_rule_ids())
+    if result.is_err or not result.danger_ok:
+        return []
+    added = result.danger_ok
+    rel = registry_path.relative_to(root).as_posix()
+    return [
+        FixApplied(
+            rule="REG010",
+            file=rel,
+            line=0,
+            detail=f"filed CHK-GATE-<rule> entries for: {', '.join(added)}",
+        )
+    ]
+
+
+# ---------------------------------------------------------------------------
+# REL002 (T-1261): a derived release artifact disagrees with `.frob-
+# release.json`'s authoritative version -- `frob release sync` names
+# itself as its own remedy.
+# ---------------------------------------------------------------------------
+
+
+# frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+def fix_rel002_release_sync(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
+    """Tier-A fix (T-1261): REL002 already names its own remedy verbatim
+    (`frob release sync`) -- regenerates `pyproject.toml`'s version,
+    `uv.lock`, and CHANGELOG.md's skeleton entry FROM `.frob-release.
+    json` (the ONE version authority), reusing the exact `frob.release`
+    functions `frob release sync`'s own CLI dispatches to
+    (`authoritative_version`/`rewrite_pyproject_version`/
+    `changelog_skeleton_entry`, plus `uv lock` via `frob.gitio.run_argv`).
+    Never writes `.frob-release.json` itself, only the three derived
+    artifacts -- T-1137's anti-goal that no handler treats the manifest
+    (or `frob.toml`/ratchet state) as a target it may write."""
+    from frob.gitio import run_argv
+    from frob.release import (
+        authoritative_version,
+        changelog_skeleton_entry,
+        rewrite_pyproject_version,
+    )
+
+    del snapshot  # signature uniformity only, this handler reads the manifest itself
+    version_result = authoritative_version(root)
+    if version_result.is_err:
+        return []
+    version = version_result.danger_ok
+
+    applied: list[FixApplied] = []
+    rewritten = rewrite_pyproject_version(root, version)
+    if rewritten.is_ok and rewritten.danger_ok:
+        applied.append(
+            FixApplied(
+                rule="REL002",
+                file="pyproject.toml",
+                line=0,
+                detail=f"version -> {version}",
+            )
+        )
+
+    if (root / "pyproject.toml").exists() and (root / "uv.lock").exists():
+        locked = run_argv(["uv", "lock"], cwd=root, timeout_s=120.0)
+        if locked.is_ok and locked.danger_ok.returncode == 0:
+            applied.append(
+                FixApplied(
+                    rule="REL002", file="uv.lock", line=0, detail=f"synced to {version}"
+                )
+            )
+
+    if changelog_skeleton_entry(root, version):
+        applied.append(
+            FixApplied(
+                rule="REL002",
+                file="CHANGELOG.md",
+                line=0,
+                detail=f"added skeleton entry for {version}",
+            )
+        )
+    return applied
+
+
+# ---------------------------------------------------------------------------
+# WAIVE004 (T-1261): a `frob:waive` matching zero findings -- ONLY ever
+# trustworthy on a genuine full, unscoped run (T-1133's own disclaimer);
+# this handler independently manufactures that full run itself rather
+# than trusting whatever scope the outer `--fix` invocation used.
+# ---------------------------------------------------------------------------
+
+#: A single-physical-line `# frob:waive RULE ...` (or `//` for non-Python
+#: sources) comment with NO trailing backslash continuation -- the only
+#: shape this handler ever deletes. A multi-line continued waiver (`\` at
+#: end of line, T-1134's own carried-waiver precedent) is left alone: Tier
+#: A never guesses which of several physical lines to remove from a
+#: continued directive.
+_WAIVE_SINGLE_LINE_RE = re.compile(r"^\s*(#|//)\s*frob:waive\s+(\S+)\b")
+
+
+def _is_single_line_waiver(line: str, rule: str) -> bool:
+    """True if `line` is a bare, non-continued `frob:waive <rule>` comment
+    line -- the one shape `fix_waive004_stale_waiver` ever deletes."""
+    if line.rstrip("\n").endswith("\\"):
+        return False
+    match = _WAIVE_SINGLE_LINE_RE.match(line)
+    return match is not None and match.group(2) == rule
+
+
+def _remove_waiver_line(path: Path, line: int, rule: str) -> bool:
+    """Delete 1-indexed `line` of `path` if it is a bare single-line
+    `frob:waive <rule>` comment (`_is_single_line_waiver`); a no-op
+    (returns `False`) otherwise -- the directive moved, is continued
+    across multiple lines, or was already removed by a prior run."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    lines = text.splitlines(keepends=True)
+    idx = line - 1
+    if idx < 0 or idx >= len(lines):
+        return False
+    if not _is_single_line_waiver(lines[idx], rule):
+        return False
+    del lines[idx]
+    path.write_text("".join(lines), encoding="utf-8")
+    return True
+
+
+# frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+def fix_waive004_stale_waiver(
+    root: Path,
+    snapshot: GraphSnapshot,
+    queue: TicketQueue,
+    *,
+    gates: frozenset[str] = frozenset(),
+    ticket: str | None = None,
+) -> list[FixApplied]:
+    """Tier-A fix (T-1261): delete a `frob:waive` directive that matches
+    ZERO findings on a genuine full, unscoped run (WAIVE004) -- mirroring
+    `frob.gates._waive`'s own "trust this only from a full run" caveat
+    (T-1133).
+
+    `gates`/`ticket` mirror `GateConfig`'s own scoping fields; both empty/
+    `None` (the default) means "full, unscoped" exactly as `_assemble_
+    gate_report`'s `full_unscoped_run = not cfg.gates and cfg.ticket is
+    None` already computes it. When either is set, this handler refuses
+    to act at all -- a scoped run's "0 findings" is indistinguishable
+    from "the gate that would have matched simply did not run this
+    time" (T-1133), so acting on it would risk deleting a waiver that is
+    still genuinely needed. `apply_tier_a_fixes`/`TIER_A_HANDLERS` always
+    call this with the defaults (a full run) -- the keyword params exist
+    so this refusal is directly testable without needing to thread CLI
+    scope state through the shared 3-arg Tier-A handler signature.
+
+    Independently RE-RUNS the gates suite itself (`run_gates`) rather
+    than trusting any violation set the caller may already have computed
+    -- the finding this handler acts on is always freshly sourced from a
+    genuine full run it manufactured itself, never a stale/ambient one."""
+    del queue  # signature uniformity only, this handler re-runs the gates itself
+    if gates or ticket is not None:
+        return []
+
+    from frob.gates import GateConfig, run_gates
+
+    result = run_gates(GateConfig(root=str(root), gates=gates, ticket=ticket))
+    if result.is_err:
+        return []
+
+    applied: list[FixApplied] = []
+    for violation in result.danger_ok.violations:
+        if violation.rule != "WAIVE004":
+            continue
+        target_rule = _waive004_target_rule(violation.message)
+        if target_rule is None:
+            continue
+        if _remove_waiver_line(root / violation.file, violation.line, target_rule):
+            applied.append(
+                FixApplied(
+                    rule="WAIVE004",
+                    file=violation.file,
+                    line=violation.line,
+                    detail=f"removed stale frob:waive {target_rule} (0 findings this run)",  # noqa: E501
+                )
+            )
+    return applied
+
+
+#: `_waive004_violations`' own message shape: `"WAIVE004: {src} frob:waive
+#: {rule} matches 0 findings..."` -- parsed back out rather than adding a
+#: new `Violation` field just for this handler (`Violation.message`
+#: already embeds every gate's remedy text by this repo's own convention,
+#: `_models.py`'s docstring).
+_WAIVE004_TARGET_RULE_RE = re.compile(r"frob:waive (\S+) matches 0 findings")
+
+
+def _waive004_target_rule(message: str) -> str | None:
+    """The waived rule id named in a WAIVE004 `Violation.message`, or
+    `None` if the message does not match the expected shape (defensive;
+    should not happen against this repo's own `_waive004_violations`)."""
+    match = _WAIVE004_TARGET_RULE_RE.search(message)
+    return match.group(1) if match else None
+
+
+# ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
+
+#: One rule id -> one Tier-A handler, uniform `(root, snapshot, queue) ->
+#: list[FixApplied]` call shape (T-1261 promotes `apply_tier_a_fixes`'s
+#: prior positional-call list to this explicit dict, keyed by rule id, per
+#: docs/design/check-fix-engine.md's "Fix-handler protocol" section -- so
+#: the fixability-registry-field ticket has a real table to introspect by
+#: name). A handler whose OWN signature differs (three take `(root,
+#: snapshot)`, one takes `(root, queue)`, `fix_waive004_stale_waiver` takes
+#: extra keyword-only scope params) is adapted here via a thin lambda,
+#: never by changing that handler's own signature -- T-1260's design-
+#: review advisory noted this inconsistency and deferred the minimal fix
+#: to this ticket; this dict IS that minimal fix, at the call-site layer
+#: only. Order matters: DOC007/DOC002/INV006-carry/FMT001/REG010/REL002
+#: are pure rewrites with no ledger interaction; TICK002 touches the
+#: ticket ledger; WAIVE004 runs LAST since it re-invokes the whole gates
+#: suite itself and should see every other handler's rewrites already
+#: applied, not a stale pre-fix tree.
+# frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+TIER_A_HANDLERS: dict[
+    str, Callable[[Path, GraphSnapshot, TicketQueue], list[FixApplied]]
+] = {
+    "DOC007": lambda root, snapshot, queue: fix_doc007_dotted_form(root, snapshot),
+    "DOC002": lambda root, snapshot, queue: fix_doc002_unique_slug(root, snapshot),
+    "INV006": lambda root, snapshot, queue: fix_inv006_carried_waiver(root, snapshot),
+    "FMT001": lambda root, snapshot, queue: fix_fmt001_directive_wrap(root, snapshot),
+    "REG010": lambda root, snapshot, queue: fix_reg010_registry_sync(root, snapshot),
+    "REL002": lambda root, snapshot, queue: fix_rel002_release_sync(root, snapshot),
+    "TICK002": lambda root, snapshot, queue: fix_tick002_renumber(root, queue),
+    "WAIVE004": lambda root, snapshot, queue: fix_waive004_stale_waiver(
+        root, snapshot, queue
+    ),
+}
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
@@ -404,21 +705,20 @@ def apply_tier_a_fixes(
     root: Path, snapshot: GraphSnapshot, queue: TicketQueue
 ) -> list[FixApplied]:
     """Apply every Tier-A deterministic fix this batch ships (T-1138,
-    T-1177): DOC007 dotted-form rewrite, DOC002 unique-anchor-slug
-    correction, INV006 split-carried-waiver auto-carry, TICK002 draft
-    renumber -- in that order (DOC007/DOC002/INV006-carry are pure
-    source-text rewrites with no ledger interaction; TICK002 touches the
-    ledger last so a source-text fix never races a concurrent renumber's
-    own prose rewrite). Returns every fix actually made; inserts no NEW
-    waiver, ever (INV006-carry only ever repeats an EXISTING human
+    T-1177, T-1261) via `TIER_A_HANDLERS`, in that dict's declared order
+    (DOC007/DOC002/INV006-carry/FMT001/REG010/REL002 are pure rewrites
+    with no ledger interaction; TICK002 touches the ledger; WAIVE004 runs
+    last so it re-invokes the gates suite over every other handler's own
+    rewrites already applied). Returns every fix actually made; inserts
+    no NEW waiver, ever (INV006-carry only ever repeats an EXISTING human
     disposition at a verbatim-moved site, T-1177's coordinator-decision
-    exception to the T-1137 never-auto-waive anti-goal), and skips
-    (rather than guesses at) anything requiring judgment -- an ambiguous
-    DOC002 candidate set or an already-correct DOC007 target is silently
-    a no-op for that one finding, not an error."""
+    exception to the T-1137 never-auto-waive anti-goal; WAIVE004 only
+    ever REMOVES a directive already proven dead by a fresh full run,
+    never adds one), and skips (rather than guesses at) anything
+    requiring judgment -- an ambiguous DOC002 candidate set or an
+    already-correct DOC007 target is silently a no-op for that one
+    finding, not an error."""
     applied: list[FixApplied] = []
-    applied.extend(fix_doc007_dotted_form(root, snapshot))
-    applied.extend(fix_doc002_unique_slug(root, snapshot))
-    applied.extend(fix_inv006_carried_waiver(root, snapshot))
-    applied.extend(fix_tick002_renumber(root, queue))
+    for handler in TIER_A_HANDLERS.values():
+        applied.extend(handler(root, snapshot, queue))
     return applied

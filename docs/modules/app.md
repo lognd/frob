@@ -198,7 +198,12 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
 - `check_runner.run` -- runs the full `frob check` tool pipeline
   (docs/commands/check.md); `cfg.check_budget` set (T-1004) routes to
   `_run_budgeted_check` instead, self-selecting `--only` stage groups to
-  fit the given second count.
+  fit the given second count. `cfg.check_fix` (T-1260) routes the
+  post-stage tail through `_apply_tier_a_and_reverify`: apply every
+  registered Tier-A auto-fix, re-run the gates stage once, and splice a
+  `fixed`/`rolled_back`/`fixits` `fix` report into the summary/JSON output
+  (docs/design/check-fix-engine.md) -- a plain `frob check` (no `--fix`)
+  is untouched by this, byte-identical to before T-1260.
 - `ack_runner.run` -- builds/loads the graph, acknowledges refs, writes the
   lock file (docs/modules/graph.md).
 - `ticket_runner.run` -- dispatches to the ticket subcommand named by

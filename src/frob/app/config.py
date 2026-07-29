@@ -166,6 +166,12 @@ class AppConfig(BaseModel):
     check_stamp_coverage: bool = False
     check_stamp_baseline: bool = False
     check_delta: bool = False
+    # frob:ticket T-1260
+    #: `frob check --fix`: apply every registered Tier-A deterministic
+    #: auto-fix, then re-run the union of affected gates once in this same
+    #: invocation. `False` (default) leaves `frob check` byte-identical to
+    #: before this flag existed (T-1260 acceptance criterion 2).
+    check_fix: bool = False
     # frob:ticket T-1004
     #: `frob check --budget N`: self-select and order stage chunks (the same
     #: `available_stages()` groups the playbook's chunked `--only` loop
@@ -918,6 +924,7 @@ class AppConfig(BaseModel):
             "check_stamp_coverage",
             "check_stamp_baseline",
             "check_delta",
+            "check_fix",
             "graph_json",
             "registry_sync_gate_rules",
             "debt_json",

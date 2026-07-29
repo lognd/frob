@@ -83,6 +83,20 @@ def _add_check_selection_args(check_p) -> None:
     check_p.add_argument("--json", dest="check_json", action="store_true")
     check_p.add_argument("--ticket", dest="check_ticket", metavar="ID")
     check_p.add_argument("--base", dest="check_base", metavar="REF")
+    # frob:ticket T-1260
+    check_p.add_argument(
+        "--fix",
+        dest="check_fix",
+        action="store_true",
+        help=(
+            "apply every registered Tier-A deterministic auto-fix "
+            "(frob.gates._fix_engine.apply_tier_a_fixes) then re-run the "
+            "union of affected gates once in this same invocation, "
+            "reporting fixed/rolled-back/fix-its; never writes a waiver, "
+            "never touches frob.toml or ratchet state (T-1137 design, "
+            "docs/design/check-fix-engine.md)"
+        ),
+    )
     check_p.add_argument(
         "--only",
         dest="check_only",

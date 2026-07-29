@@ -202,6 +202,20 @@ nothing to bisect).
   finding stays exactly as `frob check` (no `--fix`) already reports it,
   with a `FixIt` record additionally emitted (below).
 
+**T-1260 implementation note:** the "CLI orchestration layer" described
+above is `frob.app.check_runner._apply_tier_a_and_reverify`, called from
+`run` only when `cfg.check_fix` (the `--fix` flag,
+`src/frob/_cli_parsers/_check.py`) is set. It loads/builds the graph
+snapshot and ticket queue exactly as a normal `frob check` run does, calls
+`apply_tier_a_fixes` once, then re-runs the FULL gates stage once (rather
+than a per-rule-id gate subset -- the union computed at this v1's
+granularity is "the whole gates stage", since Tier A rules span several
+different gate families and there is no cheaper reliable way yet to
+select just the affected ones) and folds the residual per-fixed-rule
+violation count into the `fix_report` it returns. Tier B/C are not wired
+here (T-1261+); `fix_report["rolled_back"]`/`["fixits"]` are always `[]`
+for now, never a missing key.
+
 `--fix`'s own exit code/summary line reports three counts every run:
 fixed (Tier A applied + Tier B committed), rolled-back (Tier B reverted,
 with reasons), and fix-its emitted (Tier C, unresolved) -- never a bare

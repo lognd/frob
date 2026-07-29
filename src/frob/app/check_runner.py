@@ -558,7 +558,10 @@ def _run_stamp_coverage(root: Path) -> None:
 
 
 # frob:ticket T-0563
-def _report_check_result(cfg: AppConfig, result) -> None:  # noqa: ANN001
+# frob:ticket T-1260
+def _report_check_result(  # noqa: ANN001
+    cfg: AppConfig, result, fix_report: dict | None = None
+) -> None:
     """Emit `result` as JSON or colorized text per `cfg`, then exit 1 on errors.
 
     T-0563: routed through `frob.render`/`_log.info` instead of a bare
@@ -568,17 +571,61 @@ def _report_check_result(cfg: AppConfig, result) -> None:  # noqa: ANN001
     already restored the stdout handler to its pre-stage level (T-0202),
     so this is not gated by `-v`/`--json`-forced-quiet the way per-stage
     diagnostics are -- the summary/violations table always appears.
+
+    T-1260: `fix_report` is `None` for every non-`--fix` call (the default,
+    and the ONLY path a plain `frob check` ever takes -- byte-identical
+    output to before this ticket, acceptance criterion 2). When `--fix` was
+    passed, `fix_report` additionally carries a `"fix"` JSON key (fixed/
+    rolled_back/fixits, always present -- never a missing key, even when
+    nothing was fixed, acceptance criterion 1) or an extra text section.
     """
     if cfg.check_json:
-        _log.info(result.as_json())
+        _log.info(_result_as_json_with_fix(result, fix_report))
     else:
         from frob.logging.color import should_color
 
         renderer = Renderer.for_stream(sys.stdout)
-        renderer.line(result.as_text(color=should_color(sys.stdout)))
+        text = result.as_text(color=should_color(sys.stdout))
+        if fix_report is not None:
+            text = f"{text}\n\n{_fix_report_text(fix_report)}"
+        renderer.line(text)
 
     if result.total_errors > 0:
         sys.exit(1)
+
+
+def _result_as_json_with_fix(result, fix_report: dict | None) -> str:  # noqa: ANN001
+    """`result.as_json()`, with an additional top-level `"fix"` key spliced
+    in when `fix_report` is not `None` (T-1260). `CheckResult` itself
+    (`frob.check.__init__`) is out of this ticket's scope, so the `"fix"`
+    key is added HERE, at the JSON-string layer, rather than as a new
+    `CheckResult` field -- `--fix` is strictly additive to `frob check`'s
+    existing `--json` shape, never a reshape of it."""
+    if fix_report is None:
+        return result.as_json()
+    import json
+
+    payload = json.loads(result.as_json())
+    payload["fix"] = fix_report
+    return json.dumps(payload, indent=2)
+
+
+def _fix_report_text(fix_report: dict) -> str:
+    """The `--fix` summary block appended to `frob check --fix`'s
+    human-readable text output: how many fixes were applied, rolled back,
+    and left as Tier-C fix-its (T-1260's three-count acceptance shape;
+    rolled-back/fix-its are always `0`/`[]` until T-1261/a later Tier-B/C
+    batch populates them)."""
+    fixed = fix_report.get("fixed", [])
+    rolled_back = fix_report.get("rolled_back", [])
+    fixits = fix_report.get("fixits", [])
+    lines = [
+        f"## Fix summary  fixed={len(fixed)}  rolled_back={len(rolled_back)}  "
+        f"fix-its={len(fixits)}"
+    ]
+    for f in fixed:
+        lines.append(f"  fixed  [{f['rule']}] {f['file']}:{f['line']}  {f['detail']}")
+    return "\n".join(lines)
 
 
 def _run_auto_detected_stages(
@@ -1008,15 +1055,102 @@ def run(cfg: AppConfig) -> None:
     if stamp_mode_ran:
         return
 
+    if cfg.check_json and _try_check_delta_via_daemon(root, cfg):
+        return
+    _run_stages_and_report(cfg, root)
+
+
+# frob:ticket T-1260
+def _run_stages_and_report(cfg: AppConfig, root: Path) -> None:
+    """`run`'s stage-dispatch tail, split out to keep `run` itself under
+    ARCH001's function-length ceiling (T-1260): run every applicable stage,
+    apply `--fix`'s Tier-A pass when requested, then report."""
     if cfg.check_json:
-        if _try_check_delta_via_daemon(root, cfg):
-            return
         result = _run_all_stages(cfg, root)
     else:
         renderer = Renderer.for_stream(sys.stdout)
         with renderer.write.progress("frob check") as progress:
             result = _run_all_stages(cfg, root, progress=progress)
-    _report_check_result(cfg, result)
+    fix_report = None
+    if cfg.check_fix:
+        result, fix_report = _apply_tier_a_and_reverify(cfg, root, result)
+    _report_check_result(cfg, result, fix_report=fix_report)
+
+
+# frob:ticket T-1260
+def _apply_tier_a_and_reverify(
+    cfg: AppConfig, root: Path, result: CheckResult
+) -> tuple[CheckResult, dict]:
+    """`frob check --fix`: apply every registered Tier-A auto-fix
+    (`frob.gates._fix_engine.apply_tier_a_fixes`, T-1138/T-1177), then
+    re-run the gates stage ONCE so `result` reflects the post-fix state --
+    T-1260's CLI wiring of that engine. Returns `(updated_result,
+    fix_report)`: `fix_report` always carries `"fixed"`/`"rolled_back"`/
+    `"fixits"` keys (the latter two empty until Tier B/C land, T-1261+),
+    never a missing key, so `--fix --json` output shape never depends on
+    whether anything was actually fixed this run.
+
+    Absolute design constraints (docs/design/check-fix-engine.md): this
+    never writes a `frob:waive` directive, never touches `frob.toml` or
+    ratchet state, and applies nothing but the registered Tier-A handler
+    table `apply_tier_a_fixes` itself calls -- this function is a thin
+    CLI-facing wrapper, it does not add any fix logic of its own.
+    """
+    from frob.app._snapshot import load_or_build_snapshot
+    from frob.check._python import _run_gates
+    from frob.gates._fix_engine import apply_tier_a_fixes
+    from frob.tickets import TicketQueue, load_queue
+
+    snapshot = load_or_build_snapshot(root, log_context="check-fix")
+    queue_result = load_queue(root)
+    if queue_result.is_err:
+        _log.warning(
+            "check --fix: ticket queue unavailable (%s) -- the TICK002 "
+            "renumber handler was skipped this run; every other Tier-A "
+            "handler still ran",
+            queue_result.danger_err,
+        )
+        queue = TicketQueue(tickets={})
+    else:
+        queue = queue_result.danger_ok
+
+    applied = apply_tier_a_fixes(root, snapshot, queue)
+    fixed_rules = sorted({f.rule for f in applied})
+    fix_report: dict = {
+        "fixed": [f.model_dump() for f in applied],
+        "rolled_back": [],
+        "fixits": [],
+    }
+    if not fixed_rules:
+        return result, fix_report
+
+    rerun = _run_gates(
+        root,
+        ticket=cfg.check_ticket,
+        base=cfg.check_base,
+        gates=frozenset(),
+        delta=cfg.check_delta,
+    )
+    rerun_results = rerun if isinstance(rerun, list) else [rerun]
+    kept = [r for r in result.results if not r.tool.startswith("gate")]
+    updated = CheckResult(path=result.path, results=[*kept, *rerun_results])
+    fix_report["residual_by_rule"] = _residual_rule_counts(rerun_results, fixed_rules)
+    return updated, fix_report
+
+
+def _residual_rule_counts(
+    rerun_results: list, fixed_rules: list[str]
+) -> dict[str, int]:
+    """How many diagnostics with each of `fixed_rules`'s rule ids remain
+    across `rerun_results` -- the "affected rule re-verified clean"
+    evidence `_apply_tier_a_and_reverify`'s `fix_report` carries (a `0`
+    here for a given rule id is exactly what "re-verified clean" means)."""
+    counts = {rule: 0 for rule in fixed_rules}
+    for r in rerun_results:
+        for d in r.diagnostics:
+            if d.code in counts:
+                counts[d.code] += 1
+    return counts
 
 
 # frob:ticket T-1147

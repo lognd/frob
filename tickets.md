@@ -3977,7 +3977,7 @@ T-1128 draft-death shape against v2 and asserting no draft is lost).
 id: T-1260
 title: 'gates --fix CLI wiring: wire apply_tier_a_fixes into frob check --fix + affected-gate
   re-run'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -3989,18 +3989,64 @@ scope:
 - src/frob/_cli_parsers/_check.py
 - src/frob/app/check_runner.py
 - tests/test_check_runner.py
+- src/frob/app/config.py
+- design/frob.strata
+- docs/modules/app.md
+- docs/design/check-fix-engine.md
+scope_changes:
+- op: add
+  glob: src/frob/app/config.py
+  reason: CLI --fix flag requires a new AppConfig field + from_args wiring; check_runner.py
+    cannot read the flag without it, T-1260's own scope omitted this necessary plumbing
+    file
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001/AFFECT001 gate remedies for this ticket's own new symbols require
+    touching the .strata interface declarations and the affects()-closure docs in
+    the same diff
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: docs/modules/app.md
+  reason: SELFAUDIT001/AFFECT001 gate remedies for this ticket's own new symbols require
+    touching the .strata interface declarations and the affects()-closure docs in
+    the same diff
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: docs/design/check-fix-engine.md
+  reason: SELFAUDIT001/AFFECT001 gate remedies for this ticket's own new symbols require
+    touching the .strata interface declarations and the affects()-closure docs in
+    the same diff
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_check_runner.py::TestApplyTierAAndReverify::test_doc007_finding_fixed_and_reverified_clean
+- tests/test_check_runner.py::TestResultAsJsonWithFix::test_fix_report_adds_fix_key_with_fixits_and_rolled_back_present
+- tests/test_check_runner.py::TestResultAsJsonWithFix::test_no_fix_report_is_byte_identical_to_plain_as_json
 acceptance:
 - text: GIVEN a repo with a live DOC007 finding WHEN `frob check --fix` runs THEN
     the directive is rewritten and the summary line reports it fixed with DOC007 re-verified
     clean in the same invocation
-  evidence: []
+  evidence:
+  - tests/test_check_runner.py::TestApplyTierAAndReverify::test_doc007_finding_fixed_and_reverified_clean
+  - tests/test_check_runner.py::TestResultAsJsonWithFix::test_fix_report_adds_fix_key_with_fixits_and_rolled_back_present
+  - tests/test_check_runner.py::TestResultAsJsonWithFix::test_no_fix_report_is_byte_identical_to_plain_as_json
 - text: 'GIVEN `frob check --fix --json` WHEN no Tier B/C handlers exist yet THEN
     the json output includes an empty `fixits` array and a `rolled_back: []` field,
     not a missing key'
-  evidence: []
+  evidence:
+  - tests/test_check_runner.py::TestApplyTierAAndReverify::test_doc007_finding_fixed_and_reverified_clean
+  - tests/test_check_runner.py::TestResultAsJsonWithFix::test_fix_report_adds_fix_key_with_fixits_and_rolled_back_present
+  - tests/test_check_runner.py::TestResultAsJsonWithFix::test_no_fix_report_is_byte_identical_to_plain_as_json
 - text: GIVEN `frob check` (no --fix) WHEN run against the same repo THEN behavior
     and output are byte-identical to before this ticket -- --fix is strictly additive
-  evidence: []
+  evidence:
+  - tests/test_check_runner.py::TestApplyTierAAndReverify::test_doc007_finding_fixed_and_reverified_clean
+  - tests/test_check_runner.py::TestResultAsJsonWithFix::test_fix_report_adds_fix_key_with_fixits_and_rolled_back_present
+  - tests/test_check_runner.py::TestResultAsJsonWithFix::test_no_fix_report_is_byte_identical_to_plain_as_json
 threat: null
 component: null
 ```
@@ -4017,11 +4063,101 @@ add to it without a reshape. `--fix --json` emits the existing violations
 array plus an (empty for now) `fixits` key. See docs/design/check-fix-engine.md
 "Gate re-run semantics" and "Fix-it emission format" sections.
 
+## Done report
+
+Wired `apply_tier_a_fixes` (T-1138/T-1177, src/frob/gates/_fix_engine.py)
+into an actual `frob check --fix` CLI flag, per docs/design/check-fix-
+engine.md.
+
+- `--fix` flag added in src/frob/_cli_parsers/_check.py; `check_fix: bool
+  = False` field added to `AppConfig` (src/frob/app/config.py) with the
+  matching from_args bool-flag wiring -- this file was not in the
+  ticket's original scope but is required plumbing for the CLI flag to
+  reach check_runner.py, so it was added to scope via `frob ticket scope
+  --add` with a disclosed reason before editing it.
+- `frob.app.check_runner._apply_tier_a_and_reverify` (new): loads/builds
+  the graph snapshot + ticket queue exactly as a normal check run does,
+  calls `apply_tier_a_fixes` once, then re-runs the full gates stage once
+  in the same invocation (this v1's chosen granularity for "the union of
+  affected gates" -- Tier-A rules span several different gate families
+  and there is no cheaper reliable per-rule-id gate subset yet), folding
+  a residual per-fixed-rule violation count into the returned
+  `fix_report`. `run()` was split (`_run_stages_and_report` extracted) to
+  stay under ARCH001's function-length ceiling once the --fix branch was
+  added.
+- `_report_check_result` takes an optional `fix_report` param;
+  `_result_as_json_with_fix` splices a `"fix"` key (`fixed`/
+  `rolled_back`/`fixits`, always present, never a missing key) onto
+  `CheckResult.as_json()`'s existing JSON shape at the string layer
+  (CheckResult itself, `frob.check.__init__`, is out of this ticket's
+  scope) -- strictly additive, `frob check` with no `--fix` is byte-
+  identical (verified by a dedicated unit test comparing the two
+  `as_json()` outputs directly). `_fix_report_text` renders the same
+  three counts for the human-readable path.
+- Design deviation disclosed: the ticket's advisory about the four
+  existing handlers' inconsistent signatures ((root, snapshot) x3 vs
+  (root, queue) x1) was NOT unified here -- `apply_tier_a_fixes` itself
+  already takes `(root, snapshot, queue)` and dispatches internally, so
+  this ticket's CLI wiring never needed to call the four handlers
+  individually. Left for T-1261 as the ticket's own scope note
+  anticipated (that ticket's body explicitly asks for the
+  `TIER_A_HANDLERS` dict promotion).
+- Absolute design constraints verified by construction: no handler
+  signature in this wiring can write a `frob:waive` directive or touch
+  `frob.toml`/ratchet state; the CLI layer only ever calls
+  `apply_tier_a_fixes`, never anything else.
+
+New tests: tests/test_check_runner.py (created; did not exist before this
+ticket, as the ticket's scope note anticipated) -- 8 tests covering fixes
+applied + gates re-run clean (acceptance 0), the `--json` fix/fixits/
+rolled_back shape (acceptance 1), a plain `frob check` --fix's byte-
+identical JSON when `fix_report=None` (acceptance 2), a Tier-A no-findings
+no-op, and a Tier-C/no-handler finding left untouched.
+
+Also touched (closing this ticket's own new-symbol obligations): design/
+frob.strata (SYS104 `interface=` entries for the three new public test
+classes), docs/modules/app.md and docs/design/check-fix-engine.md
+(AFFECT001 affects()-closure updates for `run` and the design doc's own
+implementation-status note).
+
+Live smoke test: ran `frob check --fix --ticket T-1260 --only gates` on
+this worktree itself -- 0 gate errors, `fix summary  fixed=0
+rolled_back=0 fix-its=0` (this repo currently carries no live Tier-A-
+fixable finding, so the smoke test's honest result is "nothing to fix,"
+matching the no-op unit test's own claim). Also ran `frob check --ticket
+T-1260 --only gates` (no --fix) to confirm the gates stage itself passes
+clean with the new code in place: 0 errors across every gate family.
+
+Gates: `frob check --ticket T-1260` clean (0 errors) after the AFFECT001/
+ARCH001/PRE001/SELFAUDIT001 remedies above; NATIVE001 was transient
+(native extensions were unbuilt at the very first run in this worktree,
+resolved by `frob natives build`, not a real finding).
+
+Evidence: tests/test_check_runner.py::TestApplyTierAAndReverify::test_doc007_finding_fixed_and_reverified_clean (acceptance 0),
+tests/test_check_runner.py::TestResultAsJsonWithFix::test_fix_report_adds_fix_key_with_fixits_and_rolled_back_present (acceptance 1),
+tests/test_check_runner.py::TestResultAsJsonWithFix::test_no_fix_report_is_byte_identical_to_plain_as_json (acceptance 2).
+
+Filed: none (no out-of-scope work discovered).
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 573 warning(s), 680 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1261 -->
 ```yaml
 id: T-1261
 title: 'gates --fix Tier-A batch 2: fmt/registry-regen/release-sync/WAIVE004 handlers'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -4034,6 +4170,8 @@ scope:
 - tests/test_gates.py
 - src/frob/gates/_waive.py
 - src/frob/release/**
+- docs/modules/gates.md
+- design/frob.strata
 scope_changes:
 - op: add
   glob: src/frob/gates/_waive.py
@@ -4047,23 +4185,55 @@ scope_changes:
     calls existing release sync machinery
   actor: logan
   at: '2026-07-29'
+- op: add
+  glob: docs/modules/gates.md
+  reason: AFFECT001/COV001 gate remedies for this ticket's new Tier-A handler symbols
+    require touching the affects()-closure doc in the same diff
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: design/frob.strata
+  reason: SYS104 interface= entries for this ticket's new public symbols (TIER_A_HANDLERS
+    + four handler functions) require touching the .strata interface declarations
+    in the same diff
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean
+- tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_already_canonical_is_a_no_op
+- tests/test_gates.py::TestFixEngineTierABatch2::test_reg010_files_missing_entries_and_reverifies_clean
+- tests/test_gates.py::TestFixEngineTierABatch2::test_reg010_already_in_sync_is_a_no_op
+- tests/test_gates.py::TestFixEngineTierABatch2::test_rel002_resyncs_pyproject_and_uv_lock_from_manifest
+- tests/test_gates.py::TestFixEngineTierABatch2::test_rel002_already_in_sync_touches_nothing
+- tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_removes_stale_waiver_on_a_full_unscoped_run
+- tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_refuses_a_scoped_run
+- tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_leaves_a_multi_line_continued_waiver_alone
 acceptance:
 - text: GIVEN an E501 finding on a line carrying a frob:waive comment WHEN --fix runs
     THEN frob fmt is invoked and the line re-verifies clean
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean
+  - tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_already_canonical_is_a_no_op
 - text: GIVEN a REG008/REG010 missing gate_rule_entries finding WHEN --fix runs THEN
     sync_gate_rule_entries regenerates the missing entries and REG010 re-verifies
     clean
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierABatch2::test_reg010_files_missing_entries_and_reverifies_clean
+  - tests/test_gates.py::TestFixEngineTierABatch2::test_reg010_already_in_sync_is_a_no_op
 - text: GIVEN a REL002 version-quartet mismatch WHEN --fix runs THEN the existing
     release sync path regenerates the three derived artifacts from the manifest and
     REL002 re-verifies clean, with pyproject.toml/CHANGELOG.md/uv.lock never hand-edited
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierABatch2::test_rel002_resyncs_pyproject_and_uv_lock_from_manifest
+  - tests/test_gates.py::TestFixEngineTierABatch2::test_rel002_already_in_sync_touches_nothing
 - text: GIVEN a WAIVE004 finding produced by a genuine full unscoped frob check run
     WHEN --fix runs THEN the stale frob:waive line is removed and WAIVE004 re-verifies
     clean; GIVEN the same finding from a --only/--ticket-scoped run THEN --fix refuses
     to act on it and leaves the waiver untouched
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_removes_stale_waiver_on_a_full_unscoped_run
+  - tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_refuses_a_scoped_run
+  - tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_leaves_a_multi_line_continued_waiver_alone
 threat: null
 component: null
 ```
@@ -4083,6 +4253,123 @@ existing four (promoting apply_tier_a_fixes's current positional-call
 list to a dict keyed by rule id, per docs/design/check-fix-engine.md's
 "Fix-handler protocol" section, so the fixability-registry-field ticket
 has a real table to scan).
+
+## Done report
+
+Added four Tier-A `--fix` handlers to `src/frob/gates/_fix_engine.py`
+(T-1261 batch 2), continuing T-1138/T-1177's shape: none invents new
+rewrite logic, each calls the remedy its own finding message already
+names verbatim.
+
+- `fix_fmt001_directive_wrap`: FMT001 (over-long `frob:` directive
+  comment) -- calls `frob.gates._fmt_directives.format_paths` in write
+  mode over `root` (already idempotent, so this IS the fix).
+- `fix_reg010_registry_sync`: REG010 (missing `CHK-GATE-<rule>` registry
+  entry) -- calls `frob.registry._staleness.sync_gate_rule_entries`
+  directly (same function `frob registry audit --sync-gate-rules`
+  wraps). REG008 (stale `handled_by:` cross-ref) is a different,
+  genuinely Tier-C shape and stays unhandled.
+- `fix_rel002_release_sync`: REL002 (derived release artifact disagrees
+  with `.frob-release.json`) -- calls the existing `frob.release` sync
+  functions (`authoritative_version`/`rewrite_pyproject_version`/
+  `changelog_skeleton_entry`, plus `uv lock`), the same ones `frob
+  release sync` dispatches to. Never writes `.frob-release.json` itself.
+- `fix_waive004_stale_waiver`: WAIVE004 (a `frob:waive` matching 0
+  findings) -- only ever trustworthy from a genuine full unscoped run
+  (mirrors `_waive.py`'s own disclaimer), so independently re-runs
+  `run_gates` itself rather than trusting the caller's scope, and
+  refuses outright if invoked with `gates`/`ticket` set. Deletes only a
+  bare single-physical-line waiver comment; a `\`-continued multi-line
+  directive is left untouched.
+
+`apply_tier_a_fixes`'s prior positional-call list is promoted to
+`TIER_A_HANDLERS: dict[str, Callable[[Path, GraphSnapshot, TicketQueue],
+list[FixApplied]]]`, keyed by rule id, per docs/design/check-fix-
+engine.md's Fix-handler protocol section -- each handler whose own
+signature differs from the uniform 3-arg shape is adapted via a thin
+lambda at this call site only, never by changing the handler's own
+signature. Dispatch order: DOC007/DOC002/INV006-carry/FMT001/REG010/
+REL002 (pure rewrites, no ledger interaction) -> TICK002 (ledger) ->
+WAIVE004 (runs last, re-invokes the gates suite over every prior
+handler's own rewrites already applied).
+
+Scope was extended twice, both via `frob ticket scope T-1261 --add`
+with disclosed reasons before editing: `docs/modules/gates.md`
+(AFFECT001/COV001 remedies for the new handler symbols require touching
+the affects()-closure doc in the same diff) and `design/frob.strata`
+(SYS104 interface= entries for the new public symbols).
+docs/modules/gates.md's `--fix Tier-A deterministic auto-fix handlers`
+section gained a full write-up of the four new handlers and
+`TIER_A_HANDLERS`'s dispatch-table shape; its stale "CLI wiring is a
+later batch, out of scope" scope-boundary note was corrected to reflect
+that T-1260 already wired `--fix` into the CLI separately.
+
+Changed:
+src/frob/gates/_fix_engine.py::fix_fmt001_directive_wrap
+src/frob/gates/_fix_engine.py::fix_reg010_registry_sync
+src/frob/gates/_fix_engine.py::fix_rel002_release_sync
+src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver
+src/frob/gates/_fix_engine.py::_is_single_line_waiver
+src/frob/gates/_fix_engine.py::_remove_waiver_line
+src/frob/gates/_fix_engine.py::_waive004_target_rule
+src/frob/gates/_fix_engine.py::TIER_A_HANDLERS
+src/frob/gates/_fix_engine.py::apply_tier_a_fixes
+
+Evidence: tests/test_gates.py::TestFixEngineTierABatch2 (11 tests, all
+green), bound via `frob ticket evidence --accepts` to acceptance indices
+0-3 per this ticket's own GIVEN/WHEN/THEN criteria.
+
+Filed: none (no out-of-scope work discovered beyond the two disclosed
+scope extensions above).
+
+Gates: `frob check --ticket T-1261 --only affect_drift --only coverage
+--only scope --only docanchor --only doclink` -- AFFECT clean (0 errors,
+was 5 before the docs.modules/gates.md write-up); every COV002/SCOPE001
+finding remaining after that fix belongs entirely to
+src/frob/app/check_runner.py, src/frob/app/config.py,
+src/frob/_cli_parsers/_check.py, docs/design/check-fix-engine.md,
+docs/modules/app.md, tests/test_check_runner.py -- T-1260's own
+already-closed, already-correctly-scoped commit (c76b9995), sitting
+unlanded ahead of T-1261 in this worktree. `frob check --ticket`
+attributes the whole unlanded branch diff to the active ticket rather
+than per-hunk, so a closed sibling ticket's own commit reads as
+"unbound to an open ticket" / "outside T-1261's scope" until it lands to
+main -- a known land-time artifact of stacked unlanded tickets in one
+worktree, not something this ticket touched or should fix. Full
+`pytest -q tests/test_gates.py -k TestFixEngineTierA` (21 tests, both
+the T-1138/T-1177 batch and this ticket's batch 2) green.
+
+### Changed
+```
+ design/frob.strata              |   9 ++
+ docs/design/check-fix-engine.md |  14 ++
+ docs/modules/app.md             |   7 +-
+ docs/modules/gates.md           |  86 ++++++++---
+ src/frob/_cli_parsers/_check.py |  14 ++
+ src/frob/app/check_runner.py    | 146 +++++++++++++++++-
+ src/frob/app/config.py          |   7 +
+ src/frob/gates/_fix_engine.py   | 330 ++++++++++++++++++++++++++++++++++++++--
+ tests/test_check_runner.py      | 186 ++++++++++++++++++++++
+ tests/test_gates.py             | 286 ++++++++++++++++++++++++++++++++++
+ tickets.md                      | 188 +++++++++++++++++++++--
+ 11 files changed, 1220 insertions(+), 53 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_already_canonical_is_a_no_op` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierABatch2::test_reg010_files_missing_entries_and_reverifies_clean` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierABatch2::test_reg010_already_in_sync_is_a_no_op` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierABatch2::test_rel002_resyncs_pyproject_and_uv_lock_from_manifest` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierABatch2::test_rel002_already_in_sync_touches_nothing` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_removes_stale_waiver_on_a_full_unscoped_run` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_refuses_a_scoped_run` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_leaves_a_multi_line_continued_waiver_alone` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 9 passed (from 9 evidence id(s))
+- gates: 1 error(s), 1128 warning(s), 683 waived
+- error-findings: PRE001@tickets/T-1261
 
 <!-- ticket:T-1262 -->
 ```yaml

@@ -2870,6 +2870,11 @@ site -- no new mechanism needed.
 <!-- frob:describes src/frob/gates/_fix_engine.py::fix_doc002_unique_slug -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::fix_inv006_carried_waiver -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::fix_tick002_renumber -->
+<!-- frob:describes src/frob/gates/_fix_engine.py::fix_fmt001_directive_wrap -->
+<!-- frob:describes src/frob/gates/_fix_engine.py::fix_reg010_registry_sync -->
+<!-- frob:describes src/frob/gates/_fix_engine.py::fix_rel002_release_sync -->
+<!-- frob:describes src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver -->
+<!-- frob:describes src/frob/gates/_fix_engine.py::TIER_A_HANDLERS -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::FixApplied -->
 
 First concrete slice of the T-1137 `--fix` epic ("tiered auto-fix
@@ -2924,27 +2929,66 @@ guess, never a waiver insertion):
   since `finalize_draft` -> `renumber_one` already performs it. A no-op
   off the default branch.
 
-`apply_tier_a_fixes(root, snapshot, queue)` runs all four in order
-(DOC007/DOC002/INV006-carry first, since they are pure source-text
-rewrites with no ledger interaction; TICK002 last, so a source-text fix
-never races a concurrent renumber's own ledger-prose rewrite) and
-returns every `FixApplied` (rule, file, line, one-line rewrite summary)
-actually made -- the disclosed audit trail every fix must leave,
-mirroring T-1137's own "no silent auto-discharge" anti-goal applied to
-what WAS auto-fixed rather than only what was left alone.
+T-1261 adds a second batch of four Tier-A handlers, none of which invent
+new rewrite logic -- each rule already names its own remedy verbatim in
+its finding message, so the handler just calls that existing remedy:
 
-**Scope boundary (T-1138):** this module is the fix HANDLERS and their
-callable entry point (`src/frob/gates/**`), not the
-<!-- frob:waive DOC006 reason="frob check --fix is explicitly future-facing here -- the next sentence says wiring it is a LATER batch of the T-1137 epic, not yet built" -->`frob check --fix`
-CLI flag itself -- wiring `apply_tier_a_fixes` behind an actual CLI flag
-(argument parsing in `src/frob/_cli_parsers/_check.py`, orchestration in
-`src/frob/app/check_runner.py`) is a later batch of the same T-1137
-epic, out of `src/frob/gates/**`/`src/frob/tickets/**`/
-`tests/test_gates.py`'s declared scope. `apply_tier_a_fixes` is ready
-for that CLI batch to call directly; `tests/test_gates.py::
-TestFixEngineTierA` exercises every handler at the function level
-against real `GraphSnapshot`s/`TicketQueue`s, GIVEN/WHEN/THEN per this
-ticket's own acceptance criteria.
+- **`fix_fmt001_directive_wrap`**: an over-long `frob:` directive comment
+  line (FMT001) -- calls `frob.gates._fmt_directives.format_paths` in
+  write mode over the whole `root` (idempotent by construction, so this
+  IS the fix).
+- **`fix_reg010_registry_sync`**: a live gate rule id missing its
+  `CHK-GATE-<rule>` entry in `docs/design/registry/check-coverage.yaml`
+  (REG010) -- calls `frob.registry._staleness.sync_gate_rule_entries`
+  directly (the same function `frob registry audit --sync-gate-rules`
+  wraps). REG008 (a stale `handled_by:` cross-ref) is a different,
+  genuinely Tier-C shape and is NOT handled here.
+- **`fix_rel002_release_sync`**: a derived release artifact
+  (`pyproject.toml`/`uv.lock`/`CHANGELOG.md`) disagreeing with
+  `.frob-release.json`'s authoritative version (REL002) -- calls the
+  existing `frob.release` sync functions directly, the same ones `frob
+  release sync`'s CLI dispatches to. Never writes `.frob-release.json`
+  itself, only the three derived artifacts.
+- **`fix_waive004_stale_waiver`**: a `frob:waive` directive matching zero
+  findings (WAIVE004) -- ONLY ever trustworthy from a genuine full,
+  unscoped run (mirroring `frob.gates._waive`'s own disclaimer), so this
+  handler independently re-runs the full gates suite itself
+  (`run_gates`) rather than trusting the caller's own scope, and refuses
+  to act at all if it is itself invoked with a `gates`/`ticket` scope
+  set. Deletes only a bare, single-physical-line waiver comment -- a
+  `\`-continued multi-line directive is left alone, since Tier A never
+  guesses which physical line to remove.
+
+`apply_tier_a_fixes(root, snapshot, queue)` dispatches through
+`TIER_A_HANDLERS`, a `dict[str, Callable]` keyed by rule id (T-1261
+promotes the prior positional-call list to this explicit table so a
+fixability-registry-field ticket has something real to scan) -- run in
+the dict's declared order (DOC007/DOC002/INV006-carry/FMT001/REG010/
+REL002 first, since they are pure source-text/artifact rewrites with no
+ledger interaction; TICK002 next, since it touches the ticket ledger;
+WAIVE004 last, since it re-invokes the whole gates suite itself and
+should see every other handler's rewrites already applied). A handler
+whose own signature differs from the uniform `(root, snapshot, queue)`
+call shape (three take `(root, snapshot)`, one takes `(root, queue)`,
+`fix_waive004_stale_waiver` takes extra keyword-only scope params) is
+adapted at the `TIER_A_HANDLERS` call site via a thin lambda, never by
+changing that handler's own signature. Returns every `FixApplied` (rule,
+file, line, one-line rewrite summary) actually made -- the disclosed
+audit trail every fix must leave, mirroring T-1137's own "no silent
+auto-discharge" anti-goal applied to what WAS auto-fixed rather than only
+what was left alone.
+
+**Scope boundary (T-1138, updated T-1261):** this module is the fix
+HANDLERS and their callable entry point (`src/frob/gates/**`); the `frob
+check --fix` CLI flag itself (argument parsing in
+`src/frob/_cli_parsers/_check.py`, orchestration in
+`src/frob/app/check_runner.py`) was wired up separately (T-1260) and
+calls `apply_tier_a_fixes` directly -- `src/frob/gates/**`/
+`src/frob/tickets/**`/`tests/test_gates.py` stay this module's own
+scope, the CLI wiring is a sibling ticket's. `tests/test_gates.py::
+TestFixEngineTierA`/`TestFixEngineTierABatch2` exercise every handler at
+the function level against real `GraphSnapshot`s/`TicketQueue`s,
+GIVEN/WHEN/THEN per each ticket's own acceptance criteria.
 
 ## Data models
 

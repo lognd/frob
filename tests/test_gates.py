@@ -8281,6 +8281,297 @@ class TestFixEngineTierA:
         assert applied == []
 
 
+# frob:ticket T-1261
+class TestFixEngineTierABatch2:
+    """`frob.gates._fix_engine`'s Tier-A batch-2 `--fix` handlers
+    (T-1261): fmt/registry-regen/release-sync/WAIVE004. Each is a
+    GIVEN/WHEN/THEN acceptance criterion off this ticket's own body."""
+
+    # -- acceptance [0]: fmt invocation for a FMT001 finding -----------------
+
+    def test_fmt001_wraps_overlong_directive_line_and_reverifies_clean(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_fmt001_directive_wrap \
+        # kind="unit"
+        from frob.gates._fix_engine import fix_fmt001_directive_wrap
+        from frob.gates._fmt_directives import canonicalize_text, read_line_length
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        long_reason = "x" * 100
+        original = f'# frob:waive INV006 reason="{long_reason}"\ndef f():\n    pass\n'
+        (root / "src" / "m.py").write_text(original, encoding="utf-8")
+        limit = read_line_length(root)
+        assert any(len(line) > limit for line in original.splitlines())
+
+        applied = fix_fmt001_directive_wrap(root, self._snap(root))
+
+        assert len(applied) == 1
+        assert applied[0].rule == "FMT001"
+        assert applied[0].file == "src/m.py"
+
+        rewritten = (root / "src" / "m.py").read_text(encoding="utf-8")
+        assert all(len(line) <= limit for line in rewritten.splitlines())
+        # idempotent: canonicalize_text agrees this is already canonical
+        assert canonicalize_text(rewritten, path="src/m.py", limit=limit) == rewritten
+
+    def test_fmt001_already_canonical_is_a_no_op(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_fmt001_directive_wrap \
+        # kind="unit"
+        from frob.gates._fix_engine import fix_fmt001_directive_wrap
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        content = "# frob:ticket T-0001\ndef f():\n    pass\n"
+        (root / "src" / "m.py").write_text(content, encoding="utf-8")
+
+        applied = fix_fmt001_directive_wrap(root, self._snap(root))
+
+        assert applied == []
+        assert (root / "src" / "m.py").read_text(encoding="utf-8") == content
+
+    # -- acceptance [1]: REG010 missing gate_rule_entries regeneration ------
+
+    def test_reg010_files_missing_entries_and_reverifies_clean(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_reg010_registry_sync kind="unit"
+        from frob.gates._fix_engine import fix_reg010_registry_sync
+        from frob.registry._staleness import missing_gate_rule_ids
+
+        root = tmp_path / "repo"
+        registry_dir = root / "docs" / "design" / "registry"
+        registry_dir.mkdir(parents=True)
+        fixture = (
+            "schema_version: 1\n"
+            "gate_rule_total: 1\n"
+            "gate_rule_entries:\n"
+            '  - id: "CHK-GATE-REF001"\n'
+            '    name: "REF001 is a live, enforced gate rule"\n'
+            '    disposition: "handled_by:REF001"\n'
+            "    cross_refs: []\n"
+        )
+        registry_path = registry_dir / "check-coverage.yaml"
+        registry_path.write_text(fixture, encoding="utf-8")
+
+        monkeypatch.setattr(
+            "frob.gates._waive.known_gate_rule_ids",
+            lambda: frozenset({"REF001", "DOC007"}),
+        )
+
+        applied = fix_reg010_registry_sync(root, self._snap(root))
+
+        assert len(applied) == 1
+        assert applied[0].rule == "REG010"
+        assert applied[0].file == "docs/design/registry/check-coverage.yaml"
+        assert "DOC007" in applied[0].detail
+
+        assert (
+            missing_gate_rule_ids(registry_path, frozenset({"REF001", "DOC007"}))
+            == frozenset()
+        )
+
+    def test_reg010_already_in_sync_is_a_no_op(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_reg010_registry_sync kind="unit"
+        from frob.gates._fix_engine import fix_reg010_registry_sync
+
+        root = tmp_path / "repo"
+        registry_dir = root / "docs" / "design" / "registry"
+        registry_dir.mkdir(parents=True)
+        fixture = (
+            "schema_version: 1\n"
+            "gate_rule_total: 1\n"
+            "gate_rule_entries:\n"
+            '  - id: "CHK-GATE-REF001"\n'
+            '    name: "REF001 is a live, enforced gate rule"\n'
+            '    disposition: "handled_by:REF001"\n'
+            "    cross_refs: []\n"
+        )
+        (registry_dir / "check-coverage.yaml").write_text(fixture, encoding="utf-8")
+        monkeypatch.setattr(
+            "frob.gates._waive.known_gate_rule_ids", lambda: frozenset({"REF001"})
+        )
+
+        applied = fix_reg010_registry_sync(root, self._snap(root))
+        assert applied == []
+
+    # -- acceptance [2]: REL002 release sync --------------------------------
+
+    def test_rel002_resyncs_pyproject_and_uv_lock_from_manifest(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_rel002_release_sync kind="unit"
+        from frob.gates._fix_engine import fix_rel002_release_sync
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        (root / ".frob-release.json").write_text(
+            '{"version": "1.2.3", "api": {}}', encoding="utf-8"
+        )
+        (root / "pyproject.toml").write_text(
+            '[project]\nname = "demo"\nversion = "1.0.0"\n', encoding="utf-8"
+        )
+        # no uv.lock in this fixture -- `uv lock` is never invoked when the
+        # lockfile does not already exist, so this test stays hermetic
+        # (no real subprocess spawn).
+
+        applied = fix_rel002_release_sync(root, self._snap(root))
+
+        rules_files = {(a.rule, a.file) for a in applied}
+        assert ("REL002", "pyproject.toml") in rules_files
+        rewritten = (root / "pyproject.toml").read_text(encoding="utf-8")
+        assert 'version = "1.2.3"' in rewritten
+
+    def test_rel002_already_in_sync_touches_nothing(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_rel002_release_sync kind="unit"
+        from frob.gates._fix_engine import fix_rel002_release_sync
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        (root / ".frob-release.json").write_text(
+            '{"version": "1.2.3", "api": {}}', encoding="utf-8"
+        )
+        original = '[project]\nname = "demo"\nversion = "1.2.3"\n'
+        (root / "pyproject.toml").write_text(original, encoding="utf-8")
+
+        applied = fix_rel002_release_sync(root, self._snap(root))
+
+        assert not [a for a in applied if a.file == "pyproject.toml"]
+        assert (root / "pyproject.toml").read_text(encoding="utf-8") == original
+
+    # -- acceptance [3]: WAIVE004 full-run-verified stale-waiver removal ----
+
+    def test_waive004_removes_stale_waiver_on_a_full_unscoped_run(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # kind="unit"
+        from frob.gates._fix_engine import fix_waive004_stale_waiver
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        # REF001 (single-inbound-reference) never fires against a file with
+        # no cross-package references to it at all, so a REF001 waiver here
+        # is genuinely dead -- matches 0 findings on a real full run.
+        (root / "src" / "m.py").write_text(
+            '# frob:waive REF001 reason="genuinely dead waiver, T-1261 fixture"\n'
+            "def f():\n    return 1\n",
+            encoding="utf-8",
+        )
+        (root / "tickets.md").write_text("", encoding="utf-8")
+        snapshot = self._snap(root)
+
+        applied = fix_waive004_stale_waiver(root, snapshot, TicketQueue(tickets={}))
+
+        waive004_applied = [a for a in applied if a.rule == "WAIVE004"]
+        assert len(waive004_applied) == 1
+        rewritten = (root / "src" / "m.py").read_text(encoding="utf-8")
+        assert "frob:waive REF001" not in rewritten
+
+    def test_waive004_refuses_a_scoped_run(self, tmp_path: Path) -> None:
+        """`gates`/`ticket` set (a scoped run) refuses to act at all --
+        the waiver is left untouched, matching this ticket's own
+        acceptance criterion 3's second half."""
+        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # kind="unit"
+        from frob.gates._fix_engine import fix_waive004_stale_waiver
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        original = (
+            '# frob:waive REF001 reason="genuinely dead waiver, T-1261 fixture"\n'
+            "def f():\n    return 1\n"
+        )
+        (root / "src" / "m.py").write_text(original, encoding="utf-8")
+        (root / "tickets.md").write_text("", encoding="utf-8")
+        snapshot = self._snap(root)
+
+        applied_gates_scoped = fix_waive004_stale_waiver(
+            root, snapshot, TicketQueue(tickets={}), gates=frozenset({"refs"})
+        )
+        applied_ticket_scoped = fix_waive004_stale_waiver(
+            root, snapshot, TicketQueue(tickets={}), ticket="T-0001"
+        )
+
+        assert applied_gates_scoped == []
+        assert applied_ticket_scoped == []
+        assert (root / "src" / "m.py").read_text(encoding="utf-8") == original
+
+    def test_waive004_leaves_a_multi_line_continued_waiver_alone(
+        self, tmp_path: Path
+    ) -> None:
+        """A `\\`-continued waiver is never the single-line shape this
+        handler deletes -- Tier A never guesses which physical line of a
+        multi-line directive to remove."""
+        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # kind="unit"
+        from frob.gates._fix_engine import fix_waive004_stale_waiver
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        original = (
+            '# frob:waive REF001 reason="genuinely dead waiver, \\\n'
+            '# continued across two physical lines"\n'
+            "def f():\n    return 1\n"
+        )
+        (root / "src" / "m.py").write_text(original, encoding="utf-8")
+        (root / "tickets.md").write_text("", encoding="utf-8")
+        snapshot = self._snap(root)
+
+        applied = fix_waive004_stale_waiver(root, snapshot, TicketQueue(tickets={}))
+
+        assert not [a for a in applied if a.rule == "WAIVE004"]
+        assert (root / "src" / "m.py").read_text(encoding="utf-8") == original
+
+    # -- TIER_A_HANDLERS dict promotion --------------------------------------
+
+    def test_tier_a_handlers_dict_covers_every_batch_rule(self) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::TIER_A_HANDLERS kind="unit"
+        from frob.gates._fix_engine import TIER_A_HANDLERS
+
+        assert set(TIER_A_HANDLERS) == {
+            "DOC007",
+            "DOC002",
+            "INV006",
+            "FMT001",
+            "REG010",
+            "REL002",
+            "TICK002",
+            "WAIVE004",
+        }
+
+    def test_apply_tier_a_fixes_dispatches_through_the_handler_dict(
+        self, tmp_path: Path
+    ) -> None:
+        """`apply_tier_a_fixes` still discharges DOC007 the same way it
+        did before the T-1261 dict promotion -- the dispatch mechanism
+        changed, the observable behavior did not."""
+        # frob:tests src/frob/gates/_fix_engine.py::apply_tier_a_fixes kind="unit"
+        from frob.gates import apply_tier_a_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src" / "pkg").mkdir(parents=True)
+        (root / "src" / "pkg" / "mod.py").write_text(
+            "# frob:tests tests/test_mod.py::TestX::test_y\ndef real():\n    pass\n",
+            encoding="utf-8",
+        )
+        snapshot = self._snap(root)
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        assert any(a.rule == "DOC007" for a in applied)
+
+    def _snap(self, root: Path):
+        from frob.graph import build_graph
+
+        return build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+
 # frob:ticket T-0542
 # frob:ticket T-0543
 class TestCov002ScopeCoverage:

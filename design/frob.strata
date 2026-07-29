@@ -768,6 +768,7 @@ node gates : trusted {
     attr interface=SCOPED_RUN_FLAKY_RULE_IDS;
     attr interface=Severity;
     attr interface=SystemSpec;
+    attr interface=TIER_A_HANDLERS;
     attr interface=TestPolicy;
     attr interface=TrackedSnapshot;
     attr interface=Violation;
@@ -841,8 +842,12 @@ node gates : trusted {
     attr interface=find_normative_claims;
     attr interface=fix_doc002_unique_slug;
     attr interface=fix_doc007_dotted_form;
+    attr interface=fix_fmt001_directive_wrap;
     attr interface=fix_inv006_carried_waiver;
+    attr interface=fix_reg010_registry_sync;
+    attr interface=fix_rel002_release_sync;
     attr interface=fix_tick002_renumber;
+    attr interface=fix_waive004_stale_waiver;
     attr interface=fmt_gate;
     attr interface=format_paths;
     attr interface=fuzz_gate;
@@ -2925,6 +2930,7 @@ node testsuite : trusted {
     attr interface=TestApplyManagedBlocks;
     attr interface=TestApplyReleaseBumpForLand;
     attr interface=TestApplySyncInterface;
+    attr interface=TestApplyTierAAndReverify;
     attr interface=TestAptedSimilarity;
     attr interface=TestArchChecksReg008BurnDown;
     attr interface=TestArchComplexityAware;
@@ -3417,6 +3423,8 @@ node testsuite : trusted {
     attr interface=TestFingerprintScan;
     attr interface=TestFiringFromParsedSurfaceSource;
     attr interface=TestFixEngineTierA;
+    attr interface=TestFixEngineTierABatch2;
+    attr interface=TestFixReportText;
     attr interface=TestFixtureCoverageIsExhaustive;
     attr interface=TestFlagHelper;
     attr interface=TestFleetIntegration;
@@ -3993,6 +4001,7 @@ node testsuite : trusted {
     attr interface=TestResourceContentionViolations;
     attr interface=TestResourceDirectives;
     attr interface=TestResourceLeaseManager;
+    attr interface=TestResultAsJsonWithFix;
     attr interface=TestReverifyCli;
     attr interface=TestReverifyCloseGuard;
     attr interface=TestReverifyEvidenceForClose;
