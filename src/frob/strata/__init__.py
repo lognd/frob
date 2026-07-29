@@ -326,8 +326,10 @@ from frob.strata._native_staleness import (
     NATIVE_SOURCE_DIRS,
     StaleNative,
     check_native_staleness_or_exit,
+    native_unavailable_warning,
     stale_native_warning,
     stale_natives,
+    unimportable_natives,
 )
 from frob.strata._native_test import NativeAuditOutcome, run_native_sys_audit
 from frob.strata._observability import (
@@ -834,6 +836,8 @@ __all__ = [
     "check_legacy_capability_aliases",
     "check_native_staleness_or_exit",
     "check_privacy_policy",
+    "native_unavailable_warning",
+    "unimportable_natives",
     "check_regulation_catalog_completeness",
     "check_regulation_discharge",
     "check_circuit_breaker_obligations",

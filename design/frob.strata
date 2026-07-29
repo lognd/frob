@@ -1363,6 +1363,7 @@ node stratamod : trusted {
     attr interface=manifests_by_node;
     attr interface=merge_models;
     attr interface=mode_conflict;
+    attr interface=native_unavailable_warning;
     attr interface=node_access_declarations;
     attr interface=node_allowed_syscalls;
     attr interface=node_carries_pii;
@@ -1385,6 +1386,7 @@ node stratamod : trusted {
     attr interface=summarize;
     attr interface=sync_interface_report;
     attr interface=unbound_constructs;
+    attr interface=unimportable_natives;
 }
 
 // T-0707: the unified registry-entry model (T-0407, `frob.registry`) --
@@ -3632,6 +3634,7 @@ node testsuite : trusted {
     attr interface=TestMutationEvidenceViolations;
     attr interface=TestNaiveSurfaceGoldens;
     attr interface=TestNarrowClientUsage;
+    attr interface=TestNativeAvailabilityGate;
     attr interface=TestNativeCrashIsTypedResult;
     attr interface=TestNativeFingerprint;
     attr interface=TestNativeMissingFailsLoud;
@@ -4214,6 +4217,7 @@ node testsuite : trusted {
     attr interface=TestUndeclaredInterfaceFsReadAlias;
     attr interface=TestUndispatchedStale;
     attr interface=TestUnhandledResult;
+    attr interface=TestUnimportableNatives;
     attr interface=TestUninstall;
     attr interface=TestUnionZoneMerge;
     attr interface=TestUnknownFieldForwardCompat;

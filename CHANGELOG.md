@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.260.0] - unreleased
+
+- T-1148: check: detect missing/stale strata_core+frob_core natives and fail honestly (or auto-build) instead of 43 bogus DRIFT002s
+
 ## [0.259.0] - unreleased
 
 - T-1154: land: take main's side for ledger/archive files the ticket did not deliberately edit (wrong-side-merge corruption, 3rd occurrence)

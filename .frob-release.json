@@ -1399,8 +1399,10 @@
     "src/frob/strata/_native_staleness.py::NATIVE_SOURCE_DIRS": "1dcc7ed85b2ae14539ace14aefe3dc9f61c13cc9d0fac4820100b53c471d8680",
     "src/frob/strata/_native_staleness.py::StaleNative": "6de28eac4e1ade10ec60bff4447e184ff09ff2572244d75ad2a078e32c87b0f3",
     "src/frob/strata/_native_staleness.py::check_native_staleness_or_exit": "e6fd952c7815daf73832510fcee92c0ef5cef22141a82f6f6348627461f8bd0f",
+    "src/frob/strata/_native_staleness.py::native_unavailable_warning": "437ef112dc1e3a8915b5fd607d6f25d56da818bd8c7fcaecef5f08b2e613fe14",
     "src/frob/strata/_native_staleness.py::stale_native_warning": "68b6d17fa1c04345b3dec6838facfd360e242887d62b436413915e46966a993c",
     "src/frob/strata/_native_staleness.py::stale_natives": "bcdb7c1942b3b3a6021a00a236d7c4b25c25ed0c6405473b422608ec1e84d516",
+    "src/frob/strata/_native_staleness.py::unimportable_natives": "703f89fad4c622115f8dad5e19e478cd1e9d436f36b5bd8ce0f874459e141a40",
     "src/frob/strata/_obligation_proof.py::bound_endpoints": "ca1c93d5dae3d0617c4963212264f506d0091e83dc8d27f50a26ba5988947f59",
     "src/frob/strata/_obligation_proof.py::files_evidence_token": "b416cf7f5a61c953609a55dbc0c2fdc604cbaede45cd70f771f977afdb8d7347",
     "src/frob/strata/_obligation_proof.py::node_has_bound_code": "bee643d1fa99bc84ffe96db7f3f7fe4abb4e436cfecdc6d27e0500c29e26f25f",
@@ -1864,5 +1866,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.259.0"
+  "version": "0.260.0"
 }

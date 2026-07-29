@@ -16,8 +16,10 @@ import pytest
 from frob.strata._native_staleness import (
     NATIVE_SOURCE_DIRS,
     check_native_staleness_or_exit,
+    native_unavailable_warning,
     stale_native_warning,
     stale_natives,
+    unimportable_natives,
 )
 
 
@@ -420,3 +422,51 @@ class TestNativeStalenessBranchGaps:
         (tmp_path / source_dir).mkdir()  # exists, but empty -> _newest_mtime is None
 
         assert stale_natives(tmp_path) == ()
+
+
+# frob:ticket T-1148
+class TestUnimportableNatives:
+    """`unimportable_natives`/`native_unavailable_warning` (T-1148): a
+    declared native that fails to IMPORT right now (the sharper failure
+    than `stale_natives`' "built but older than source" case, and
+    distinct from `missing_natives`' "never built yet, that's fine"
+    posture) -- e.g. a root `uv sync` reinstalled the package without its
+    compiled extensions."""
+
+    def test_reports_a_declared_native_that_fails_to_import(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/strata/_native_staleness.py::unimportable_natives kind="unit"  # noqa: E501
+        _write_frob_toml(tmp_path, "frob_definitely_not_a_real_native_xyz")
+        broken = unimportable_natives(tmp_path)
+        assert len(broken) == 1
+        assert broken[0].name == "frob_definitely_not_a_real_native_xyz"
+
+    # frob:waive DUP001 reason="same _write_frob_toml/_fake_native_package fixture setup as TestStaleNatives.test_no_matching_source_dir_is_not_reported (shared helpers, T-1148 reuses them by design), but asserts a DIFFERENT function's contract (unimportable_natives, not stale_natives) -- the two functions answer genuinely different questions (import-failure vs mtime-staleness) and each needs its own direct regression"  # noqa: E501
+    def test_healthy_native_reports_nothing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/strata/_native_staleness.py::unimportable_natives kind="unit"  # noqa: E501
+        name = "fakenat_importable_ok"
+        _write_frob_toml(tmp_path, name)
+        _fake_native_package(tmp_path, name, b"\x00compiled")
+        monkeypatch.syspath_prepend(str(tmp_path))
+        importlib.invalidate_caches()
+
+        assert unimportable_natives(tmp_path) == ()
+
+    def test_no_declared_natives_reports_nothing(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/strata/_native_staleness.py::unimportable_natives kind="unit"  # noqa: E501
+        assert unimportable_natives(tmp_path) == ()
+
+    def test_warning_names_the_native_and_the_fix_command(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/strata/_native_staleness.py::native_unavailable_warning kind="unit"  # noqa: E501
+        _write_frob_toml(tmp_path, "frob_definitely_not_a_real_native_xyz")
+        warning = native_unavailable_warning(tmp_path)
+        assert warning is not None
+        assert "frob_definitely_not_a_real_native_xyz" in warning
+        assert "uv run frob natives build" in warning
+
+    def test_warning_is_none_when_nothing_broken(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/strata/_native_staleness.py::native_unavailable_warning kind="unit"  # noqa: E501
+        assert native_unavailable_warning(tmp_path) is None

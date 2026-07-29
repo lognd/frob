@@ -62,6 +62,7 @@ Two call sites (T-0248's plan):
 from __future__ import annotations
 
 import hashlib
+import importlib
 import importlib.util
 import json
 import sys
@@ -384,10 +385,89 @@ def check_native_staleness_or_exit(root: Path) -> None:
         sys.exit(1)
 
 
+# frob:doc docs/modules/gates.md#native001-t-1148
+# frob:tests tests/unit/strata/test_native_staleness.py::TestUnimportableNatives.test_reports_a_declared_native_that_fails_to_import  # noqa: E501
+# frob:tests tests/unit/strata/test_native_staleness.py::TestUnimportableNatives.test_healthy_native_reports_nothing  # noqa: E501
+def unimportable_natives(root: Path) -> tuple[NativeSpec, ...]:
+    """Every declared `[[native]]` under `root` that CANNOT be imported at
+    all right now -- distinct from `stale_natives`' "built but older than
+    its own source" case, and from `_artifact_mtime`'s quiet `None` for a
+    simply-unbuilt native (T-0333's `missing_natives` territory, which
+    treats "never built yet" as an ordinary local dev-setup step, not an
+    error). This function is for the SHARPER failure T-1148 exists to
+    name: a native that WAS built at some point (or is declared as a real
+    project dependency) but is unimportable RIGHT NOW in this environment
+    -- e.g. a root `uv sync` reinstalled the package without its compiled
+    extensions (the 2026-07-28 incident this ticket cites), or a `.so` was
+    deleted/corrupted. Import is attempted directly (`importlib.
+    import_module`, not just `find_spec`) because a partially-installed
+    extension can have a resolvable spec that still fails at actual import
+    time (a stub `.dist-info` with no matching compiled artifact, a
+    mismatched Python ABI tag) -- `find_spec`-only would miss exactly that
+    case. Any `ImportError`/`ModuleNotFoundError`/`ValueError` (the same
+    exception set `_artifact_mtime` already treats as "not usable") is
+    caught -- never lets an unrelated caller (a gate-loading pass) crash
+    just because a native happens to be broken; that IS the condition this
+    function exists to report, not propagate as an exception."""
+    root = Path(root)
+    loaded = load_natives(root)
+    if loaded.is_err:
+        _log.warning(
+            "unimportable_natives: could not load [[native]] entries (%s)",
+            loaded.danger_err,
+        )
+        return ()
+    broken: list[NativeSpec] = []
+    for spec in loaded.danger_ok:
+        try:
+            importlib.import_module(spec.name)
+        except (ImportError, ValueError) as exc:
+            _log.debug(
+                "unimportable_natives: import_module(%r) raised %s",
+                spec.name,
+                exc,
+            )
+            broken.append(spec)
+    if broken:
+        _log.warning(
+            "unimportable_natives: %d native(s) fail to import: %s",
+            len(broken),
+            [s.name for s in broken],
+        )
+    return tuple(broken)
+
+
+# frob:doc docs/modules/gates.md#native001-t-1148
+def native_unavailable_warning(root: Path) -> str | None:
+    """One human-readable LOUD warning naming every declared native under
+    `root` that fails to import right now (`unimportable_natives`) and the
+    fix command, or `None` if every declared native imports cleanly. This
+    is the single-source-of-truth message `gates/__init__.py`'s early
+    native-availability check (T-1148) surfaces as ONE `NATIVE001` gate
+    finding instead of letting the rest of the gate pipeline run and
+    misattribute the resulting cascade of resolver/graph failures to
+    design/doc drift (e.g. the T-1148 incident's 43 spurious DRIFT002 "no
+    candidates" errors, one per `design/frob.strata` node, when the real
+    cause was a completely missing `strata_core`)."""
+    broken = unimportable_natives(root)
+    if not broken:
+        return None
+    names = ", ".join(sorted({s.name for s in broken}))
+    return (
+        f"NATIVE UNAVAILABLE: declared native extension(s) [{names}] "
+        f"cannot be imported in this environment -- gate checks that "
+        f"depend on them (design/.strata loading, native-backed parsing) "
+        f"would otherwise fail with a cascade of misattributed errors "
+        f"instead of this one honest cause. Run: uv run frob natives build"
+    )
+
+
 __all__ = [
     "NATIVE_SOURCE_DIRS",
     "StaleNative",
     "check_native_staleness_or_exit",
+    "native_unavailable_warning",
     "stale_native_warning",
     "stale_natives",
+    "unimportable_natives",
 ]

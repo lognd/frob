@@ -7184,6 +7184,51 @@ class TestRunGates:
         assert "failed to load" in pre001.message
 
 
+# frob:ticket T-1148
+class TestNativeAvailabilityGate:
+    """T-1148: a declared `[[native]]` that fails to import must short-
+    circuit `run_gates` with ONE honest `NATIVE001` finding, never a
+    cascade of misattributed downstream errors (the 2026-07-28 incident's
+    43 spurious DRIFT002s)."""
+
+    def test_unimportable_native_short_circuits_run_gates_with_one_finding(
+        self, tmp_path: Path
+    ) -> None:
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[[native]]\nname = "frob_definitely_not_a_real_native_xyz"\n'
+            'build_cmd = "uv run frob natives build"\n',
+        )
+        cfg = GateConfig(root=str(tmp_path), base="main")
+        result = run_gates(cfg)
+        assert result.is_ok
+        report = result.danger_ok
+        assert len(report.violations) == 1
+        violation = report.violations[0]
+        assert violation.rule == "NATIVE001"
+        assert "frob_definitely_not_a_real_native_xyz" in violation.message
+        assert "uv run frob natives build" in violation.message
+        assert report.waived == ()
+
+    def test_every_native_importable_runs_the_normal_pipeline(
+        self, tmp_path: Path
+    ) -> None:
+        """No `[[native]]` declared at all (the common case for a repo with
+        no compiled extensions) must never trip the T-1148 short-circuit --
+        `run_gates` proceeds to its normal multi-gate pipeline exactly as
+        before this ticket."""
+        _git_init(tmp_path)
+        cfg = GateConfig(
+            root=str(tmp_path), base="main", gates=frozenset({"scope", "prework"})
+        )
+        result = run_gates(cfg)
+        assert result.is_ok
+        report = result.danger_ok
+        assert not any(v.rule == "NATIVE001" for v in report.violations)
+
+
 class TestRunJobsTimingAttribution:
     """T-0232: `_run_jobs` must attribute each job its OWN cost, not a
     number smeared across every job sharing the thread pool."""

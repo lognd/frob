@@ -2289,6 +2289,51 @@ def policy_gate(rules: tuple[PolicyRule, ...], snapshot: GraphSnapshot,
 def load_invariants(root: Path) -> Result[tuple[Invariant, ...], InvariantError]
 ```
 
+### NATIVE001 (T-1148)
+
+<!-- frob:describes src/frob/gates/__init__.py::_native_unavailable_report -->
+<!-- frob:describes src/frob/strata/_native_staleness.py::unimportable_natives -->
+<!-- frob:describes src/frob/strata/_native_staleness.py::native_unavailable_warning -->
+
+2026-07-28 incident: a root `uv sync` reinstalled `frob` without its
+compiled native extensions (`strata_core`/`frob_core`). The next `frob
+check` produced 43 `DRIFT002` "no candidates" errors, one per
+`design/frob.strata` node -- misattributed to design/doc drift, and only
+diagnosed via a coordinator's memory of the worktree-natives artifact
+(the same class of confusion `docs/guides/agent-playbook.md`'s "worktree
+natives artifact" note exists to short-circuit). The actual cause was one
+level up: `design/frob.strata` could not even be PARSED because
+`strata_core` failed to import, so every symbol/edge that would normally
+resolve through it looked dangling instead of "graph unavailable."
+
+`stale_natives` (T-0248) already compares a BUILT native's mtime/content
+against its own source tree, but deliberately treats a completely
+unbuilt/unimportable native as out of its scope (`_artifact_mtime`
+returns `None` for one, the same "nothing to compare against" posture
+`missing_natives`, T-0333's TEST-collection-side sibling, already takes)
+-- neither one names the "declared but currently unimportable" case with
+a single, fail-fast diagnostic before the rest of the gate pipeline runs.
+
+`frob.strata._native_staleness.unimportable_natives` closes that gap:
+for every declared `[[native]]`, attempt `importlib.import_module`
+directly (not just `find_spec`, since a partially-installed extension can
+resolve a spec that still fails at actual import time) and report every
+one that fails. `native_unavailable_warning` renders the human message
+(native names + `run: uv run frob natives build`).
+
+`run_gates`'s `_native_unavailable_report` (`frob.gates.__init__`) calls
+this FIRST, before `_load_inputs` builds the graph/design/ticket state
+every other gate depends on: if any declared native is unimportable, it
+short-circuits with a `GateReport` containing exactly ONE `NATIVE001`
+ERROR violation naming the broken native(s) and the fix command, and
+skips every other gate for that run entirely -- the misattributed
+cascade (DRIFT002 and anything else that would have looked at a graph
+built from a design file that could not even parse) never has a chance
+to fire. A healthy checkout (every declared native imports cleanly, or
+none are declared at all) is entirely unaffected: `_native_unavailable_
+report` returns `None` and `run_gates` proceeds through its normal
+pipeline exactly as before this ticket.
+
 ## Invariants
 
 <!-- frob:describes src/frob/gates/invariants.py::_Criticality -->

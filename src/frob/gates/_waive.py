@@ -308,6 +308,10 @@ _KNOWN_GATE_RULES = frozenset(
         "SYS002",
         "SYS003",
         "SYS004",
+        # T-1148: a declared `[[native]]` extension fails to import right
+        # now (`run_gates`'s early `_native_unavailable_report` short-
+        # circuit) -- see `frob.gates.__init__._native_unavailable_report`.
+        "NATIVE001",
         "SEC001",
         "SEC002",
         "SEC003",

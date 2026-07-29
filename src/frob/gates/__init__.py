@@ -8288,6 +8288,47 @@ def _run_combined_jobs(
     return _merge_canonical_order(raw), counts, timing
 
 
+# frob:ticket T-1148
+# frob:doc docs/modules/gates.md#native001-t-1148
+# frob:tests tests/test_gates.py::TestNativeAvailabilityGate.test_unimportable_native_short_circuits_run_gates_with_one_finding  # noqa: E501
+def _native_unavailable_report(root: Path) -> GateReport | None:
+    """T-1148: ONE `NATIVE001` `GateReport` naming every declared native
+    that fails to import right now under `root` (`frob.strata.
+    native_unavailable_warning`), or `None` when every declared native
+    imports cleanly. `run_gates` returns this in place of its normal
+    load-everything-then-run-every-gate pipeline the moment it is non-
+    `None`: a broken native cascades into dozens of misattributed
+    findings downstream (graph/design loading fails, so anchors and
+    edges that would normally resolve through it look dangling instead --
+    the 2026-07-28 incident's 43 spurious DRIFT002 "no candidates"
+    errors, one per `design/frob.strata` node, when the real cause was a
+    completely missing `strata_core`) -- reporting the ONE honest root
+    cause here, before any of that runs, is strictly more useful than
+    letting the cascade through. Imported inside the function body (not
+    at module level) to avoid a `frob.gates` <-> `frob.strata` import
+    cycle, the same discipline `_sys004_native_hint` already established
+    for this exact pair of modules."""
+    from frob.strata import native_unavailable_warning
+
+    warning = native_unavailable_warning(root)
+    if warning is None:
+        return None
+    _log.error("run_gates: %s", warning)
+    return GateReport(
+        violations=(
+            Violation(
+                rule="NATIVE001",
+                severity=Severity.ERROR,
+                file=str(root),
+                line=0,
+                message=f"NATIVE001: {warning}",
+            ),
+        ),
+        waived=(),
+        stats=GateStats(),
+    )
+
+
 # frob:doc docs/modules/gates.md#public-api
 # frob:doc docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602  # noqa: E501
 # frob:ticket T-0021
@@ -8303,7 +8344,12 @@ def run_gates(
     that leaves this at its `False` default (every existing `frob check`
     call), is unaffected: identical behavior to before this ticket. See
     `_gate_cache`'s module docstring for the full design and
-    `docs/modules/serve.md` for which call sites opt in and why."""
+    `docs/modules/serve.md` for which call sites opt in and why.
+
+    T-1148: before anything else, check that every declared native
+    extension actually imports (`_native_unavailable_report`) -- a broken
+    native fails ONCE, honestly, here, instead of cascading into dozens of
+    gates misattributing the same root cause to design/doc drift."""
     start_all = time.monotonic()
     selected = cfg.gates or _ALL_GATES
     _log.info(
@@ -8313,6 +8359,10 @@ def run_gates(
         sorted(selected),
         use_cache,
     )
+
+    native_report = _native_unavailable_report(_repo_root_for(Path(cfg.root)))
+    if native_report is not None:
+        return Ok(native_report)
 
     inputs_result = _load_inputs(cfg)
     if inputs_result.is_err:

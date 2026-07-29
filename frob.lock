@@ -91,7 +91,7 @@
       "ref": "src/frob/gates/__init__.py::prework_gate"
     },
     {
-      "digest": "36d8cded05be56a763c628d9cf938e1b25bcf6e0300e7ae248dd788f0d24967b",
+      "digest": "111521b5b70ebf9d00c48fe8ef72ba1668b9f194511d48bacba4769ff8fe0c30",
       "facet": "body",
       "ref": "src/frob/gates/__init__.py::run_gates"
     },
