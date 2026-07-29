@@ -92,6 +92,19 @@ class TestBuildNatives:
         assert result.is_err
         assert result.danger_err is NativesError.NoNatives
 
+    def test_unparseable_frob_toml_is_err_load_failed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/natives/_build.py::build_natives kind="unit"
+        # Proves the `load_natives(...).is_err` branch: a malformed
+        # frob.toml (unparseable TOML, not merely "no [[native]] entries")
+        # surfaces as `NativesError.LoadFailed`, distinct from the empty-
+        # declarations `NoNatives` case covered above.
+        (tmp_path / "frob.toml").write_text("this is not valid toml [[[")
+        result = build_natives(tmp_path)
+        assert result.is_err
+        assert result.danger_err is NativesError.LoadFailed
+
     def test_not_a_git_repo_is_err(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -246,6 +259,45 @@ class TestBuildNatives:
         assert not report.ok
         assert report.results[0].returncode == 1
         assert not report.results[0].ok
+
+    def test_crate_dir_outside_root_falls_back_to_absolute_display(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/natives/_build.py::build_natives kind="unit"
+        # Proves the `except ValueError` fallback in `_build_one_crate`:
+        # when the resolved crate directory is not actually underneath
+        # `root` (so `Path.relative_to` raises), the recorded
+        # `CrateBuildResult.crate_dir` falls back to the crate dir's
+        # absolute string form instead of propagating the exception.
+        # `_build_one_crate` is exercised directly since `build_natives`'s
+        # own `_crate_dir_for` always resolves a crate dir under `root` --
+        # this is a defensive branch for the private helper's own contract.
+        from frob.natives._build import _build_one_crate
+
+        outside_dir = tmp_path.parent / f"outside-crate-{tmp_path.name}"
+        outside_dir.mkdir()
+        (outside_dir / "Cargo.toml").write_text("[package]\nname = \"x\"\n")
+
+        class _Spec:
+            name = "strata_core"
+            language = "rust"
+
+        monkeypatch.setattr(
+            native_build_module,
+            "_resolve_buildable_crate",
+            lambda root, spec: outside_dir,
+        )
+        monkeypatch.setattr(
+            native_build_module,
+            "guarded_subprocess_run",
+            lambda args, **kwargs: Ok(_fake_completed(0, stdout="built")),
+        )
+
+        result = _build_one_crate(tmp_path, _Spec(), tmp_path / ".cargo-target")
+        assert result.is_ok
+        built = result.danger_ok
+        assert built is not None
+        assert built.crate_dir == str(outside_dir)
 
 
 # frob:ticket T-0864

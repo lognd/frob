@@ -4527,6 +4527,7 @@ node testsuite : trusted {
     attr interface=test_cpp_outline_imports;
     attr interface=test_cpp_outline_methods;
     attr interface=test_cpp_outline_ok;
+    attr interface=test_cross_edge_to_finished_component_does_not_affect_lowlink;
     attr interface=test_cve_module_end_to_end_over_mirror;
     attr interface=test_cwe_linkage_catalog_out_of_scope_and_unmapped;
     attr interface=test_cycle_detected_in_mini_project;
@@ -4605,7 +4606,11 @@ node testsuite : trusted {
     attr interface=test_generate_mutants_syntax_error_is_err;
     attr interface=test_get_logger_returns_named_logger;
     attr interface=test_git_log;
+    attr interface=test_git_log_include_non_conventional_keeps_unknown_type;
     attr interface=test_git_log_kill_switch_refuses_without_spawning;
+    attr interface=test_git_log_missing_git_binary_returns_empty_result;
+    attr interface=test_git_log_since_tag_form_uses_range_syntax;
+    attr interface=test_git_log_until_and_limit_filter_output;
     attr interface=test_granularity_keep_changelog;
     attr interface=test_granularity_keep_full_keeps_everything;
     attr interface=test_granularity_keep_major;
@@ -4899,6 +4904,8 @@ node testsuite : trusted {
     attr interface=test_reachable_is_deterministic;
     attr interface=test_reachable_matches_bfs_oracle;
     attr interface=test_reads_override;
+    attr interface=test_reclaimed_bytes_is_zero_for_no_matches;
+    attr interface=test_reclaimed_bytes_sums_matched_entries;
     attr interface=test_record_cli_event_shape;
     attr interface=test_record_ticket_event_shape;
     attr interface=test_recycled_pid_with_mismatched_starttime_is_treated_stale;

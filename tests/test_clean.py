@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from frob.clean import CleanTier, clean, extra_patterns_from_config, scan, tier_patterns
+from frob.clean._models import CleanReport
 
 
 def _git(root: Path, *args: str) -> None:
@@ -162,3 +163,20 @@ def test_clean_deep_removes_frob_state(repo: Path) -> None:
     assert not (repo / "FROBLEMS.md").exists()
     assert not (repo / "build").exists()
     assert not (repo / "coverage.xml").exists()
+
+
+# frob:tests tests/test_clean.py::test_reclaimed_bytes_sums_matched_entries
+def test_reclaimed_bytes_sums_matched_entries(repo: Path) -> None:
+    """`CleanReport.reclaimed_bytes` sums exactly the matched entries' sizes,
+    not the skipped-tracked ones -- proves the non-empty summation branch."""
+    # frob:tests src/frob/clean/_models.py::CleanReport.reclaimed_bytes kind="unit"
+    report = scan(repo, CleanTier.SAFE).danger_ok
+    assert report.reclaimed_bytes == sum(e.size_bytes for e in report.entries)
+    assert report.reclaimed_bytes > 0
+
+
+def test_reclaimed_bytes_is_zero_for_no_matches(tmp_path: Path) -> None:
+    """An empty `entries` list sums to `0`, not a crash -- proves
+    `reclaimed_bytes`'s zero-entries branch."""
+    report = CleanReport(tier=CleanTier.SAFE, dry_run=True, entries=[])
+    assert report.reclaimed_bytes == 0

@@ -71,6 +71,24 @@ def test_cycle_not_duplicated():
     assert len(cycles) == 1
 
 
+def test_cross_edge_to_finished_component_does_not_affect_lowlink():
+    # frob:tests src/frob/cycle/graph.py::find_cycles kind="unit"
+    # Proves _TarjanState._strongconnect's cross-edge branch: an edge from a
+    # still-open component to a node that is already indexed but no longer
+    # on the stack (a finished, earlier-popped SCC) must be ignored for
+    # lowlink purposes, not treated as a back-edge into the current
+    # component -- it would otherwise wrongly merge two separate cycles.
+    g = DependencyGraph()
+    g.add_edge("a", "b")
+    g.add_edge("b", "a")  # cycle 1: {a, b}, processed and popped first
+    g.add_edge("c", "d")
+    g.add_edge("d", "c")  # cycle 2: {c, d}
+    g.add_edge("c", "a")  # cross edge into the already-finished {a, b} SCC
+    cycles = find_cycles(g)
+    cycle_sets = {frozenset(c) for c in cycles}
+    assert cycle_sets == {frozenset({"a", "b"}), frozenset({"c", "d"})}
+
+
 def _recursive_strongconnect_would_crash(chain_length: int) -> bool:
     """Reproduce the pre-T-0952 native-recursion depth, one frame per chain edge.
 

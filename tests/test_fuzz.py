@@ -25,6 +25,7 @@ from frob.fuzz import (
     run_fuzz,
     stamp_fuzz,
 )
+from frob.fuzz._models import FuzzError
 from frob.gates._models import Severity
 from frob.graph import build_graph
 from frob.graph._models import (
@@ -130,6 +131,36 @@ class TestResolve:
 
         result = resolve(_Bare)
         assert result.is_err
+
+    def test_resolve_without_hypothesis_installed_is_no_generator(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`resolve`'s `HYPOTHESIS_AVAILABLE`-false guard reports
+        `Err(NoGenerator)` immediately, independent of whether hypothesis
+        is actually installed in this worktree."""
+        # frob:tests src/frob/fuzz/_arbitrary.py::resolve kind="unit"
+        import frob.fuzz._arbitrary as arbitrary_mod
+
+        monkeypatch.setattr(arbitrary_mod, "HYPOTHESIS_AVAILABLE", False)
+        result = arbitrary_mod.resolve(int)
+        assert result.is_err
+        assert result.danger_err == FuzzError.NoGenerator
+
+    @needs_hypothesis
+    def test_pydantic_derivation_failure_is_no_generator(self) -> None:
+        """A pydantic model whose field annotation cannot be resolved to a
+        hypothesis strategy makes `resolve` report `Err(NoGenerator)` via
+        the pydantic-derived branch, not raise -- proves
+        `_resolve_cascade`'s derived-failure path (`derived.is_ok` false)."""
+        # frob:tests src/frob/fuzz/_arbitrary.py::resolve kind="unit"
+        class _Unresolvable(BaseModel):
+            model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+            value: "_NoSuchType"  # type: ignore[name-defined]  # noqa: F821
+
+        result = resolve(_Unresolvable)
+        assert result.is_err
+        assert result.danger_err == FuzzError.NoGenerator
 
 
 class TestFuzzRegistry:
@@ -326,6 +357,36 @@ class TestStamp:
 
     def test_missing_stamp_is_none(self, tmp_path: Path) -> None:
         assert load_fuzz_stamp(tmp_path) is None
+
+    def test_malformed_json_stamp_is_none(self, tmp_path: Path) -> None:
+        """A stamp file with invalid JSON is `None`, not a crash -- proves
+        `load_fuzz_stamp`'s `(OSError, ValueError)` branch."""
+        # frob:tests src/frob/fuzz/_stamp.py::load_fuzz_stamp kind="unit"
+        stamp_path = tmp_path / ".frob" / "fuzz-stamp.json"
+        stamp_path.parent.mkdir(parents=True, exist_ok=True)
+        stamp_path.write_text("{not valid json")
+        assert load_fuzz_stamp(tmp_path) is None
+
+    def test_non_dict_json_stamp_is_none(self, tmp_path: Path) -> None:
+        """A stamp file holding valid JSON that is not an object (e.g. a
+        list) is `None` -- proves `load_fuzz_stamp`'s not-a-dict branch."""
+        stamp_path = tmp_path / ".frob" / "fuzz-stamp.json"
+        stamp_path.parent.mkdir(parents=True, exist_ok=True)
+        stamp_path.write_text("[1, 2, 3]")
+        assert load_fuzz_stamp(tmp_path) is None
+
+    def test_write_failure_returns_stamp_failed(self, tmp_path: Path) -> None:
+        """`stamp_fuzz` reports `Err(StampFailed)` rather than raising when
+        the stamp path cannot be written -- proves the `OSError` branch."""
+        # frob:tests src/frob/fuzz/_stamp.py::stamp_fuzz kind="unit"
+        blocking_file = tmp_path / ".frob"
+        blocking_file.write_text("not a directory")
+        results = (
+            FuzzResult(ref="a.py::f", body_digest="abc", examples=1, falsified=None),
+        )
+        outcome = stamp_fuzz(tmp_path, results)
+        assert outcome.is_err
+        assert outcome.danger_err == FuzzError.StampFailed
 
 
 # ---------------------------------------------------------------------------

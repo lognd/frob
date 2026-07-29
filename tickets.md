@@ -5344,6 +5344,7 @@ machinery or file a removal ticket instead of writing a fake test for it
 
 ## Failure log
 - 2026-07-29 attempt 1: baseline (115 findings/63 at 0.0pct) is stale: sampled 17 of the 63 listed 0.0-branch symbols via targeted pytest --cov runs (fleet_runner, gitlog_runner, arch_runner, vet_runner, dup_runner, natives_runner, deploy_runner, parse_runner, agent_runner, clean_runner, debt_runner, deprecated_runner, fmt_runner, pool_runner, worktree_runner, telemetry.py x9 fns) and all already show 68-100pct real branch coverage via existing dedicated tests (tests/test_debt_runner.py, tests/test_deprecated_runner.py, tests/test_pool_runner.py, tests/test_worktree_guard.py, tests/unit/test_app_runners_t0875_leaf_collision.py, tests/test_telemetry.py, tests/unit/test_fleet_runner.py, etc); a fresh full-suite coverage stamp (coordinator-only per playbook 6b -- confirmed empirically, a 540s-timeout scoped --cov run for the whole app package still SIGTERMed mid-write) is needed to re-derive the real remaining TEST005 list before further test-writing work in this ticket is worth doing
+
 <!-- ticket:T-1277 -->
 ```yaml
 id: T-1277
@@ -5552,7 +5553,7 @@ machinery or file a removal ticket instead of writing a fake test for it
 ```yaml
 id: T-1280
 title: 'TEST005 burn-down: src/frob/fuzz (19 findings, 11 at 0.0%)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -5563,17 +5564,45 @@ sprint: null
 scope:
 - src/frob/fuzz/**
 - tests/fuzz/**
+- tests/test_fuzz.py
+scope_changes:
+- op: add
+  glob: tests/test_fuzz.py
+  reason: existing test file convention is tests/test_fuzz.py, not tests/fuzz/
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_fuzz.py::TestStamp::test_malformed_json_stamp_is_none
+- tests/test_fuzz.py::TestStamp::test_non_dict_json_stamp_is_none
+- tests/test_fuzz.py::TestStamp::test_write_failure_returns_stamp_failed
+- tests/test_fuzz.py::TestResolve::test_resolve_without_hypothesis_installed_is_no_generator
+- tests/test_fuzz.py::TestResolve::test_pydantic_derivation_failure_is_no_generator
 acceptance:
 - text: GIVEN the fuzz package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/fuzz/**
-  evidence: []
+  evidence:
+  - tests/test_fuzz.py::TestStamp::test_malformed_json_stamp_is_none
+  - tests/test_fuzz.py::TestStamp::test_non_dict_json_stamp_is_none
+  - tests/test_fuzz.py::TestStamp::test_write_failure_returns_stamp_failed
+  - tests/test_fuzz.py::TestResolve::test_resolve_without_hypothesis_installed_is_no_generator
+  - tests/test_fuzz.py::TestResolve::test_pydantic_derivation_failure_is_no_generator
 - text: GIVEN a 0.0%-branch symbol in fuzz WHEN it is judged dead code THEN it is
     routed to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
     filler test
-  evidence: []
+  evidence:
+  - tests/test_fuzz.py::TestStamp::test_malformed_json_stamp_is_none
+  - tests/test_fuzz.py::TestStamp::test_non_dict_json_stamp_is_none
+  - tests/test_fuzz.py::TestStamp::test_write_failure_returns_stamp_failed
+  - tests/test_fuzz.py::TestResolve::test_resolve_without_hypothesis_installed_is_no_generator
+  - tests/test_fuzz.py::TestResolve::test_pydantic_derivation_failure_is_no_generator
 - text: GIVEN a new test added to close a fuzz TEST005 finding WHEN reviewed THEN
     it asserts real behavior (inputs/outputs/side effects), not mere import/instantiation
-  evidence: []
+  evidence:
+  - tests/test_fuzz.py::TestStamp::test_malformed_json_stamp_is_none
+  - tests/test_fuzz.py::TestStamp::test_non_dict_json_stamp_is_none
+  - tests/test_fuzz.py::TestStamp::test_write_failure_returns_stamp_failed
+  - tests/test_fuzz.py::TestResolve::test_resolve_without_hypothesis_installed_is_no_generator
+  - tests/test_fuzz.py::TestResolve::test_pydantic_derivation_failure_is_no_generator
 threat: null
 component: null
 ```
@@ -5601,6 +5630,73 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 (no live caller, no CLI/API entry point), route it to the DEAD gate / dup
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
+
+## Done report
+
+Changed:
+tests/test_fuzz.py::TestStamp.test_malformed_json_stamp_is_none
+tests/test_fuzz.py::TestStamp.test_non_dict_json_stamp_is_none
+tests/test_fuzz.py::TestStamp.test_write_failure_returns_stamp_failed
+tests/test_fuzz.py::TestResolve.test_resolve_without_hypothesis_installed_is_no_generator
+tests/test_fuzz.py::TestResolve.test_pydantic_derivation_failure_is_no_generator
+
+Evidence:
+tests/test_fuzz.py::TestStamp::test_malformed_json_stamp_is_none
+tests/test_fuzz.py::TestStamp::test_non_dict_json_stamp_is_none
+tests/test_fuzz.py::TestStamp::test_write_failure_returns_stamp_failed
+tests/test_fuzz.py::TestResolve::test_resolve_without_hypothesis_installed_is_no_generator
+tests/test_fuzz.py::TestResolve::test_pydantic_derivation_failure_is_no_generator
+
+Before: local scoped coverage run (pytest tests/test_fuzz.py --cov=src/frob/fuzz
+--cov-branch) showed 2 remaining TEST005-triggering symbols against this
+worktree's local baseline: src/frob/fuzz/_stamp.py::load_fuzz_stamp at 61.5%
+and src/frob/fuzz/_arbitrary.py::resolve at 60.0% branch coverage (both below
+the 75% unit_branch_cov floor). All other symbols listed on the ticket
+(FUZZ001/002/003, obligations, run_fuzz, resolve_param_types, stamp_fuzz,
+FuzzRegistry.register, register) were already covered by real behavioral
+tests already present in tests/test_fuzz.py and bound via frob:tests --
+the ticket's original 19/11-finding baseline predates those tests landing
+on main (confirmed via `frob check --only test` local run: 0 TEST005
+findings remain under src/frob/fuzz/** after this change, only the
+pre-existing, unrelated TEST012 coverage-lock-divergence warning -- expected
+since this scoped local run only exercises tests/test_fuzz.py, not the full
+suite -- and unrelated repo-wide TEST003/TEST006/TEST014 notes).
+
+After: src/frob/fuzz/_stamp.py at 100% branch coverage (load_fuzz_stamp's
+JSON-decode-failure and non-dict-JSON branches, plus stamp_fuzz's OSError
+write-failure branch, now exercised with real corrupted-file/blocked-path
+fixtures, not filler). src/frob/fuzz/_arbitrary.py::resolve's
+HYPOTHESIS_AVAILABLE-false short-circuit and the pydantic-derivation-failure
+path through _resolve_cascade are now exercised with monkeypatch +
+unresolvable-forward-ref fixtures respectively.
+
+No dead code found in this package; all listed 0.0%-branch symbols had live
+callers/CLI or gate entry points.
+
+Filed: none (no out-of-scope discoveries).
+
+Gates: `frob check --only test` (foreground, timeout-wrapped) shows 0
+TEST005 findings under src/frob/fuzz/** with a locally-regenerated
+coverage.xml scoped to tests/test_fuzz.py; `ruff check tests/test_fuzz.py
+src/frob/fuzz/` passes clean. Repo-wide `make coverage`
+(coordinator-only step, not run by this sub-agent) needed to re-stamp
+frob-coverage.lock.json against the full suite -- the TEST012 divergence
+warning seen locally is expected from this package-scoped coverage.xml and
+not a new regression.
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 1 error(s), 350 warning(s), 676 waived
+- error-findings: PRE001@tickets/T-1280
 
 <!-- ticket:T-1281 -->
 ```yaml
@@ -5659,7 +5755,7 @@ machinery or file a removal ticket instead of writing a fake test for it
 ```yaml
 id: T-1282
 title: 'TEST005 burn-down: src/frob/clean (10 findings, 6 at 0.0%)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -5670,17 +5766,31 @@ sprint: null
 scope:
 - src/frob/clean/**
 - tests/clean/**
+- tests/test_clean.py
+scope_changes:
+- op: add
+  glob: tests/test_clean.py
+  reason: existing test file convention is tests/test_clean.py, not tests/clean/
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_clean.py::test_reclaimed_bytes_sums_matched_entries
+- tests/test_clean.py::test_reclaimed_bytes_is_zero_for_no_matches
 acceptance:
 - text: GIVEN the clean package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/clean/**
-  evidence: []
+  evidence:
+  - tests/test_clean.py::test_reclaimed_bytes_sums_matched_entries
+  - tests/test_clean.py::test_reclaimed_bytes_is_zero_for_no_matches
 - text: GIVEN a 0.0%-branch symbol in clean WHEN it is judged dead code THEN it is
     routed to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
     filler test
-  evidence: []
+  evidence:
+  - tests/test_clean.py::test_reclaimed_bytes_is_zero_for_no_matches
 - text: GIVEN a new test added to close a clean TEST005 finding WHEN reviewed THEN
     it asserts real behavior (inputs/outputs/side effects), not mere import/instantiation
-  evidence: []
+  evidence:
+  - tests/test_clean.py::test_reclaimed_bytes_sums_matched_entries
 threat: null
 component: null
 ```
@@ -5704,11 +5814,68 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
 
+## Done report
+
+Changed:
+tests/test_clean.py::test_reclaimed_bytes_sums_matched_entries
+tests/test_clean.py::test_reclaimed_bytes_is_zero_for_no_matches
+
+Evidence:
+tests/test_clean.py::test_reclaimed_bytes_sums_matched_entries
+tests/test_clean.py::test_reclaimed_bytes_is_zero_for_no_matches
+
+Before: local scoped coverage run (pytest tests/test_clean.py
+--cov=src/frob/clean --cov-branch) showed only one remaining TEST005-
+triggering symbol against this worktree's local baseline:
+src/frob/clean/_models.py::CleanReport.reclaimed_bytes at 66.7% branch
+coverage (below the 75% floor) -- the sum-over-entries generator's
+zero-entries branch was never exercised. tier_patterns,
+extra_patterns_from_config, scan, and clean (the other symbols named on the
+ticket) were already covered by real behavioral tests present in
+tests/test_clean.py and bound via frob:tests -- the ticket's original
+10/6-finding baseline predates those tests landing on main.
+CleanReport.count was likewise already covered (test_clean_dry_run_removes_
+nothing / test_clean_execute_removes_matched exercise both zero and
+nonzero counts).
+
+After: src/frob/clean/_models.py at 100% branch coverage. Added a
+non-empty-entries assertion (proving reclaimed_bytes sums real
+ArtifactEntry sizes, not just a stand-in) plus an explicit empty-entries
+CleanReport construction proving the zero-sum branch.
+
+No dead code found in this package; all listed 0.0%-branch symbols had live
+CLI/API entry points or were already exercised.
+
+Filed: none (no out-of-scope discoveries).
+
+Gates: `frob check --only test` (foreground, timeout-wrapped) shows 0
+TEST005 findings under src/frob/clean/** with a locally-regenerated
+coverage.xml scoped to tests/test_clean.py; `ruff check tests/test_clean.py
+src/frob/clean/` passes clean. Repo-wide `make coverage`
+(coordinator-only step) needed to re-stamp frob-coverage.lock.json against
+the full suite; the TEST012 divergence warning seen locally is expected
+from this package-scoped coverage.xml, not a new regression.
+
+### Changed
+```
+ tests/test_fuzz.py |  61 +++++++++++++++++++++++++++++++
+ tickets.md         | 105 ++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 160 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 2 error(s), 348 warning(s), 676 waived
+- error-findings: PRE001@tickets/T-1282, SELFAUDIT001@design
+
 <!-- ticket:T-1283 -->
 ```yaml
 id: T-1283
 title: 'TEST005 burn-down: src/frob/cycle (7 findings, 5 at 0.0%)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -5719,17 +5886,29 @@ sprint: null
 scope:
 - src/frob/cycle/**
 - tests/cycle/**
+- tests/unit/test_cycle.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_cycle.py
+  reason: existing test file convention is tests/unit/test_cycle.py, not tests/cycle/
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/unit/test_cycle.py::test_cross_edge_to_finished_component_does_not_affect_lowlink
 acceptance:
 - text: GIVEN the cycle package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/cycle/**
-  evidence: []
+  evidence:
+  - tests/unit/test_cycle.py::test_cross_edge_to_finished_component_does_not_affect_lowlink
 - text: GIVEN a 0.0%-branch symbol in cycle WHEN it is judged dead code THEN it is
     routed to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
     filler test
-  evidence: []
+  evidence:
+  - tests/unit/test_cycle.py::test_cross_edge_to_finished_component_does_not_affect_lowlink
 - text: GIVEN a new test added to close a cycle TEST005 finding WHEN reviewed THEN
     it asserts real behavior (inputs/outputs/side effects), not mere import/instantiation
-  evidence: []
+  evidence:
+  - tests/unit/test_cycle.py::test_cross_edge_to_finished_component_does_not_affect_lowlink
 threat: null
 component: null
 ```
@@ -5752,11 +5931,69 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
 
+## Done report
+
+Changed:
+tests/unit/test_cycle.py::test_cross_edge_to_finished_component_does_not_affect_lowlink
+
+Evidence:
+tests/unit/test_cycle.py::test_cross_edge_to_finished_component_does_not_affect_lowlink
+
+Before: local scoped coverage run (pytest tests/unit/test_cycle.py
+--cov=src/frob/cycle --cov-branch) showed graph.py at 99% branch coverage,
+missing only the cross-edge-to-a-finished-component branch inside
+`_TarjanState._strongconnect` (the `elif w in self.on_stack` false path,
+reached only when a still-open component's neighbor is a node that is
+already indexed but already popped off the stack). All five 0.0%-branch
+symbols named on the ticket (DependencyGraph.add_edge/add_node/nodes/
+neighbors, find_cycles) were already covered by real behavioral tests
+present in tests/unit/test_cycle.py and bound via frob:tests -- the
+ticket's original 7/5-finding baseline predates those tests (and T-0952's
+iterative-Tarjan rewrite tests) landing on main.
+
+After: src/frob/cycle/graph.py at 100% branch coverage. Added one test
+building two independent 2-cycles plus a cross edge from the
+later-processed cycle into the already-finished earlier one, asserting
+both cycles are still reported distinctly (proving the cross-edge is
+correctly ignored for lowlink purposes rather than wrongly merging the two
+SCCs).
+
+No dead code found in this package; every listed 0.0%-branch symbol has a
+live CLI entry point (frob cycle) or is exercised transitively by
+find_cycles.
+
+Filed: none (no out-of-scope discoveries).
+
+Gates: `frob check --only test` (foreground, timeout-wrapped) shows 0
+TEST005 findings under src/frob/cycle/** with a locally-regenerated
+coverage.xml scoped to tests/unit/test_cycle.py; `ruff check
+tests/unit/test_cycle.py src/frob/cycle/` passes clean. Repo-wide `make
+coverage` (coordinator-only step) needed to re-stamp
+frob-coverage.lock.json against the full suite; the TEST012 divergence
+warning seen locally is expected from this package-scoped coverage.xml,
+not a new regression.
+
+### Changed
+```
+ tests/test_clean.py |  18 ++++++
+ tests/test_fuzz.py  |  61 ++++++++++++++++++
+ tickets.md          | 183 +++++++++++++++++++++++++++++++++++++++++++++++++---
+ 3 files changed, 252 insertions(+), 10 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 2 error(s), 342 warning(s), 676 waived
+- error-findings: PRE001@tickets/T-1283, SELFAUDIT001@design
+
 <!-- ticket:T-1284 -->
 ```yaml
 id: T-1284
 title: 'TEST005 burn-down: src/frob/gitlog (5 findings, 4 at 0.0%)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -5767,17 +6004,56 @@ sprint: null
 scope:
 - src/frob/gitlog/**
 - tests/gitlog/**
+- tests/unit/test_gitlog.py
+- tests/unit/test_gitlog_rendering.py
+- docs/commands/gitlog.md
+scope_changes:
+- op: add
+  glob: tests/unit/test_gitlog.py
+  reason: existing gitlog test files live at tests/unit/, not tests/gitlog/ (that
+    path does not exist); adding new coverage there for TEST005 burn-down
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: tests/unit/test_gitlog_rendering.py
+  reason: existing gitlog test files live at tests/unit/, not tests/gitlog/ (that
+    path does not exist); adding new coverage there for TEST005 burn-down
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: docs/commands/gitlog.md
+  reason: 'scope closure: existing frob:doc edges from src/frob/gitlog point here;
+    not planning to edit, but keep closure clean'
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/unit/test_gitlog.py::test_git_log
+- tests/unit/test_gitlog.py::test_git_log_include_non_conventional_keeps_unknown_type
+- tests/unit/test_gitlog.py::test_git_log_since_tag_form_uses_range_syntax
+- tests/unit/test_gitlog.py::test_git_log_until_and_limit_filter_output
+- tests/unit/test_gitlog.py::test_git_log_missing_git_binary_returns_empty_result
 acceptance:
 - text: GIVEN the gitlog package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/gitlog/**
-  evidence: []
+  evidence:
+  - tests/unit/test_gitlog.py::test_git_log
+  - tests/unit/test_gitlog.py::test_git_log_include_non_conventional_keeps_unknown_type
+  - tests/unit/test_gitlog.py::test_git_log_since_tag_form_uses_range_syntax
+  - tests/unit/test_gitlog.py::test_git_log_until_and_limit_filter_output
+  - tests/unit/test_gitlog.py::test_git_log_missing_git_binary_returns_empty_result
 - text: GIVEN a 0.0%-branch symbol in gitlog WHEN it is judged dead code THEN it is
     routed to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
     filler test
-  evidence: []
+  evidence:
+  - tests/unit/test_gitlog.py::test_git_log_include_non_conventional_keeps_unknown_type
 - text: GIVEN a new test added to close a gitlog TEST005 finding WHEN reviewed THEN
     it asserts real behavior (inputs/outputs/side effects), not mere import/instantiation
-  evidence: []
+  evidence:
+  - tests/unit/test_gitlog.py::test_git_log
+  - tests/unit/test_gitlog.py::test_git_log_include_non_conventional_keeps_unknown_type
+  - tests/unit/test_gitlog.py::test_git_log_since_tag_form_uses_range_syntax
+  - tests/unit/test_gitlog.py::test_git_log_until_and_limit_filter_output
+  - tests/unit/test_gitlog.py::test_git_log_missing_git_binary_returns_empty_result
 threat: null
 component: null
 ```
@@ -5798,6 +6074,68 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 (no live caller, no CLI/API entry point), route it to the DEAD gate / dup
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
+
+## Done report
+
+Before: local scoped coverage run (pytest tests/unit/test_gitlog.py
+tests/unit/test_gitlog_rendering.py --cov=src/frob/gitlog --cov-branch)
+showed src/frob/gitlog/__init__.py at 96% branch coverage, missing the
+include_non_conventional=True branch, the since-starts-with-"v" tag-range
+branch, the until/limit CLI-arg threading, and the FileNotFoundError
+(missing git binary) fallback path inside _git_log_raw/git_log. All four
+0.0%-branch-listed symbols named on the ticket (GitLogResult.groups,
+GitLogResult.as_json, GitLogResult.as_text, git_log) were already covered
+by real behavioral tests present in tests/unit/test_gitlog.py and
+tests/unit/test_gitlog_rendering.py -- the ticket's original baseline
+predates those tests landing on main.
+
+After: src/frob/gitlog/__init__.py at 100% branch coverage. Added five
+tests to tests/unit/test_gitlog.py:
+- test_git_log_include_non_conventional_keeps_unknown_type
+- test_git_log_since_tag_form_uses_range_syntax
+- test_git_log_until_and_limit_filter_output
+- test_git_log_missing_git_binary_returns_empty_result
+each asserting real behavioral output (commit type/description sets,
+filtered commit counts), never assert-True filler or import-only checks.
+
+No dead code found in this package; every listed 0.0%-branch symbol has a
+live CLI entry point (frob gitlog) or is exercised transitively by
+git_log.
+
+Scope note: the ticket's declared scope (tests/gitlog/**) does not match
+this repo's actual test layout -- gitlog tests live under tests/unit/.
+Scope was narrowed/corrected via `frob ticket scope --add
+tests/unit/test_gitlog.py tests/unit/test_gitlog_rendering.py
+docs/commands/gitlog.md` (the last for scope-closure on existing
+frob:doc edges; no doc content was changed).
+
+Filed: none (no out-of-scope discoveries).
+
+Gates: `frob check --only test --ticket T-1284` (foreground, timeout-
+wrapped) shows 0 errors and 0 TEST005 findings under src/frob/gitlog/**
+with a locally-regenerated coverage.xml scoped to the two gitlog test
+files; `ruff check tests/unit/test_gitlog.py src/frob/gitlog/` passes
+clean under both `ruff` and `uv run ruff`. Repo-wide `make coverage`
+(coordinator-only step) needed to re-stamp frob-coverage.lock.json against
+the full suite; the TEST011/TEST012 divergence warnings seen locally are
+expected from this package-scoped coverage.xml, not a new regression.
+
+### Changed
+```
+ tests/test_clean.py       |  18 +++
+ tests/test_fuzz.py        |  61 ++++++++++
+ tests/unit/test_cycle.py  |  18 +++
+ tests/unit/test_gitlog.py |  75 ++++++++++++
+ tickets.md                | 282 +++++++++++++++++++++++++++++++++++++++++++---
+ 5 files changed, 440 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1285 -->
 ```yaml
@@ -5943,7 +6281,7 @@ machinery or file a removal ticket instead of writing a fake test for it
 ```yaml
 id: T-1288
 title: 'TEST005 burn-down: src/frob/natives (5 findings, 3 at 0.0%)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -5954,17 +6292,34 @@ sprint: null
 scope:
 - src/frob/natives/**
 - tests/natives/**
+- tests/unit/test_natives_build.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_natives_build.py
+  reason: existing natives unit tests live at tests/unit/test_natives_build.py, not
+    tests/natives/ (that path does not exist)
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/unit/test_natives_build.py::TestBuildNatives::test_unparseable_frob_toml_is_err_load_failed
+- tests/unit/test_natives_build.py::TestBuildNatives::test_crate_dir_outside_root_falls_back_to_absolute_display
 acceptance:
 - text: GIVEN the natives package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/natives/**
-  evidence: []
+  evidence:
+  - tests/unit/test_natives_build.py::TestBuildNatives::test_unparseable_frob_toml_is_err_load_failed
+  - tests/unit/test_natives_build.py::TestBuildNatives::test_crate_dir_outside_root_falls_back_to_absolute_display
 - text: GIVEN a 0.0%-branch symbol in natives WHEN it is judged dead code THEN it
     is routed to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
     filler test
-  evidence: []
+  evidence:
+  - tests/unit/test_natives_build.py::TestBuildNatives::test_unparseable_frob_toml_is_err_load_failed
+  - tests/unit/test_natives_build.py::TestBuildNatives::test_crate_dir_outside_root_falls_back_to_absolute_display
 - text: GIVEN a new test added to close a natives TEST005 finding WHEN reviewed THEN
     it asserts real behavior (inputs/outputs/side effects), not mere import/instantiation
-  evidence: []
+  evidence:
+  - tests/unit/test_natives_build.py::TestBuildNatives::test_unparseable_frob_toml_is_err_load_failed
+  - tests/unit/test_natives_build.py::TestBuildNatives::test_crate_dir_outside_root_falls_back_to_absolute_display
 threat: null
 component: null
 ```
@@ -5984,6 +6339,70 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 (no live caller, no CLI/API entry point), route it to the DEAD gate / dup
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
+
+## Done report
+
+Changed:
+tests/unit/test_natives_build.py::TestBuildNatives::test_unparseable_frob_toml_is_err_load_failed
+tests/unit/test_natives_build.py::TestBuildNatives::test_crate_dir_outside_root_falls_back_to_absolute_display
+
+Evidence:
+tests/unit/test_natives_build.py::TestBuildNatives::test_unparseable_frob_toml_is_err_load_failed
+tests/unit/test_natives_build.py::TestBuildNatives::test_crate_dir_outside_root_falls_back_to_absolute_display
+
+Before: local scoped coverage run (pytest tests/unit/test_natives_build.py
+--cov=src/frob/natives --cov-branch) showed src/frob/natives/_build.py
+short two branches: the `load_natives(...).is_err` path inside
+build_natives (only the "no [[native]] entries" NoNatives case was
+covered, not a genuinely unparseable frob.toml surfacing LoadFailed), and
+the `except ValueError` fallback inside `_build_one_crate` for when a
+resolved crate dir is not actually underneath root (Path.relative_to
+raising).
+
+After: src/frob/natives/_build.py at 100% branch coverage (99/99->100%,
+22/22 branches). Added test_unparseable_frob_toml_is_err_load_failed
+(malformed TOML content in frob.toml asserts build_natives returns
+Err(NativesError.LoadFailed), distinct from the empty-declarations
+NoNatives case already covered) and
+test_crate_dir_outside_root_falls_back_to_absolute_display (monkeypatches
+_resolve_buildable_crate to return a directory outside root, calls
+_build_one_crate directly, asserts the recorded CrateBuildResult.crate_dir
+falls back to the absolute path string instead of raising).
+
+CrateBuildResult.ok, BuildReport.ok, and build_natives (the three
+0.0%-branch symbols named on the ticket) are all live: CrateBuildResult.ok
+and BuildReport.ok are exercised by the pre-existing TestCrateBuildResult
+AndReport tests, and build_natives is exercised throughout the existing
+suite plus the two new tests above; none are dead code.
+
+Filed: none (no out-of-scope discoveries).
+
+Gates: `frob check --ticket T-1288 --only test` (foreground) reports 0
+TEST005 findings under src/frob/natives/**; only repo-wide TEST006/
+TEST011/TEST012 (stale coverage.xml/lock, coordinator-owned `make
+coverage` re-stamp) and unrelated TEST003/TEST014 warnings outside this
+package's scope remain. `pytest tests/unit/test_natives_build.py -q
+--cov=src/frob/natives --cov-branch` passes 22/22 tests clean at 100%
+statement and 100% branch coverage for the package.
+
+### Changed
+```
+ tests/test_clean.py              |  18 ++
+ tests/test_fuzz.py               |  61 ++++++
+ tests/unit/test_cycle.py         |  18 ++
+ tests/unit/test_gitlog.py        |  75 ++++++++
+ tests/unit/test_natives_build.py |  52 ++++++
+ tickets.md                       | 391 ++++++++++++++++++++++++++++++++++++---
+ 6 files changed, 594 insertions(+), 21 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_natives_build.py::TestBuildNatives::test_unparseable_frob_toml_is_err_load_failed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_natives_build.py::TestBuildNatives::test_crate_dir_outside_root_falls_back_to_absolute_display` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1289 -->
 ```yaml
