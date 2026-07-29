@@ -974,11 +974,15 @@ def _waive003_violations(
 # WARNING tier, not ERROR: some rules are legitimately context-dependent
 # (a diff-scoped rule like SCOPE001/POLICY's diff-bound checks, or any
 # rule this run's `--only`/gate selection excluded) can show zero matches
-# for reasons that have nothing to do with the waiver being stale -- a
-# false WAIVE004 there is a known-flaky case, not a bug in the detector.
-# Trust WAIVE004 findings from a full, unscoped `frob check` run; a
-# scoped/`--only` run's WAIVE004 output should be read as advisory only.
-# A ratchet-to-error path via the T-0569/T-0594 waivable-warning pool is a
+# for reasons that have nothing to do with the waiver being stale.
+# T-1133: rather than emit those as a known-flaky advisory a caller must
+# mentally filter (the pre-T-1133 posture, ~400-447 such advisories per
+# scoped run this drive, each carrying its own "trust this only from a
+# full run" disclaimer baked into the message text), `_waive004_
+# violations` now skips entirely on any `--only`/`--ticket` scoped run
+# (`full_unscoped_run=False`) -- WAIVE004 only ever fires on a full,
+# unscoped `frob check`, where match-absence is actually meaningful. A
+# ratchet-to-error path via the T-0569/T-0594 waivable-warning pool is a
 # natural follow-up once the known-flaky set is characterized empirically,
 # not built in this pass (T-0753's mandate: WARNING-tier first).
 #
@@ -1030,6 +1034,8 @@ def _waive004_violations(
     all_violations: tuple[Violation, ...],
     snapshot: GraphSnapshot,
     rule_ids: frozenset[str],
+    *,
+    full_unscoped_run: bool = True,
 ) -> tuple[Violation, ...]:
     """WAIVE004: a `frob:waive` on a recognized rule id that matches ZERO
     findings in this run's full (pre-waiver) violation set -- the rule is
@@ -1047,7 +1053,22 @@ def _waive004_violations(
     gate self-suppresses or diff-scopes findings out of `all_violations`
     before this check ever runs, making a "0 findings" read permanently
     false regardless of whether the waiver is still needed.
-    """
+
+    T-1133: `full_unscoped_run=False` (the caller's `--only`/`--ticket`
+    scoped-run signal, `not cfg.gates and cfg.ticket is None` at the
+    `_assemble_gate_report` call site) short-circuits to `()` before any
+    per-edge work -- on a scoped run, "matches 0 findings" is
+    indistinguishable from "the gate that would have produced a match
+    simply did not run this time", so EVERY waiver on an excluded rule (or
+    a rule this diff's touched set happens not to cover) read as
+    permanently stale, ~400-447 advisories per scoped run this drive, each
+    carrying its own "trust this only from a full run" disclaimer baked
+    into the message text -- tribal knowledge every caller had to filter
+    by hand instead of the check simply not firing where it cannot be
+    trusted. Full, unscoped `frob check` behavior (T-1021's sweep depends
+    on it) is unchanged."""
+    if not full_unscoped_run:
+        return ()
     known = _KNOWN_GATE_RULES | rule_ids
     arch_categories = _unwaivable_channel_rules()
     violations_by_rule: dict[str, list[Violation]] = {}
@@ -1084,9 +1105,9 @@ def _waive004_violations(
                     f"WAIVE004: {edge.src} frob:waive {rule} matches 0 findings "
                     f"in this run -- the waiver may be pre-forgiving a future "
                     f"regression with no live issue behind it; confirm the site "
-                    f"still needs it, or remove the directive (known-flaky for "
-                    f"diff-scoped rules and any `--only`-excluded gate; trust "
-                    f"this only from a full, unscoped run)"
+                    f"still needs it, or remove the directive (T-1133: this "
+                    f"rule only fires on a full, unscoped run, so match-absence "
+                    f"here is meaningful, not a scoped-run artifact)"
                 ),
             )
         )

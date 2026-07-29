@@ -5255,8 +5255,6 @@ def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]
     return decision_gate(loaded.danger_ok, snapshot)
 
 
-
-
 # frob:ticket T-0788
 def _compliance005_violation(cv) -> Violation:  # noqa: ANN001
     """Convert one `frob.strata._compliance.ComplianceViolation` (COMPLIANCE005)
@@ -8339,8 +8337,17 @@ def _assemble_gate_report(
     # full pre-waiver violation set WAIVE003 does, for the same reason --
     # "how many findings does this waiver's rule produce right now" can only
     # be answered once job_violations are folded in.
+    # T-1133: only trustworthy on a full, unscoped run -- a `--only` gate
+    # selection (`cfg.gates`) or a `--ticket`-scoped diff (`cfg.ticket`)
+    # both make "0 findings" indistinguishable from "the gate/diff-scope
+    # that would have produced a match simply did not run this time".
     all_violations.extend(
-        _waive004_violations(tuple(all_violations), st.snapshot, st.rule_ids)
+        _waive004_violations(
+            tuple(all_violations),
+            st.snapshot,
+            st.rule_ids,
+            full_unscoped_run=not cfg.gates and cfg.ticket is None,
+        )
     )
     # T-0978: `frob:secret-fake` stays a reserved, graph-invisible marker
     # verb (T-0157 -- `frob.graph.dsl._RESERVED_MARKER_VERBS`), so it never

@@ -6061,6 +6061,29 @@ class TestTestGate:
         assert found[0].rule == "WAIVE004"
         assert "DOC001" in found[0].message
 
+    # frob:ticket T-1133
+    def test_waive004_suppressed_entirely_on_a_scoped_run(self) -> None:
+        """T-1133: `full_unscoped_run=False` (the `--only`/`--ticket`
+        scoped-run signal) must short-circuit to `()` even for a waiver
+        that would otherwise clearly read as stale (zero matching findings,
+        a real known rule) -- on a scoped run, "the gate did not run" and
+        "the waiver is stale" are indistinguishable, so the check must not
+        fire at all rather than emit an advisory a caller has to filter."""
+        # frob:tests tests/test_gates.py::TestTestGate.test_waive004_suppressed_entirely_on_a_scoped_run  # noqa: E501
+        from frob.gates import _waive004_violations
+        from frob.graph import Edge, EdgeKind, GraphSnapshot
+
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/a.py::helper",
+            target="COV001",
+            origin="src/a.py:2",
+            attrs={"reason": "x"},
+        )
+        snap = GraphSnapshot(root=".", symbols={}, edges=(waiver,))
+        found = _waive004_violations((), snap, frozenset(), full_unscoped_run=False)
+        assert found == ()
+
     def test_waive005_expired_until_is_error(self) -> None:
         """T-0753: `frob:waive`'s optional `until="YYYY-MM-DD"` boundary
         having passed forces a hard ERROR demanding re-review, mirroring
