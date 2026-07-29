@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.264.0] - unreleased
+
+- T-1161: doctor/testing: detect root-venv entrypoint shebangs pointing outside this venv; collector must fail loudly, not emit 6219 COV003s
+
 ## [0.263.0] - unreleased
 
 - T-1163: fix: CLI_WIRING_FILES still points at retired src/frob/app/ticket_runner.py

@@ -167,6 +167,7 @@ node cli : trusted {
     attr interface=DoctorReport;
     attr interface=GitError;
     attr interface=Hunk;
+    attr interface=MalformedTicketEdge;
     attr interface=NATIVE_EXTENSIONS;
     attr interface=NativeExtensionStatus;
     attr interface=ProcResult;
@@ -176,6 +177,8 @@ node cli : trusted {
     attr interface=SpawnRecorder;
     attr interface=Subcommand;
     attr interface=TELEMETRY_REL;
+    attr interface=VenvShimDrift;
+    attr interface=_accept;
     attr interface=_active_large_glob_warnings;
     attr interface=_add_ack_parser;
     attr interface=_add_agent_parser;
@@ -286,6 +289,7 @@ node cli : trusted {
     attr interface=_fail;
     attr interface=_filter_by_state;
     attr interface=_find_landing_commit;
+    attr interface=_flow;
     attr interface=_kind;
     attr interface=_label;
     attr interface=_land;
@@ -397,6 +401,7 @@ node cli : trusted {
     attr interface=record_ticket_event;
     attr interface=redact_command;
     attr interface=registry_runner_run;
+    attr interface=release_daemon_lease;
     attr interface=release_runner_run;
     attr interface=repo_root;
     attr interface=reset_common_dir_cache;
@@ -404,6 +409,9 @@ node cli : trusted {
     attr interface=run_argv;
     attr interface=run_diagnosis;
     attr interface=scaffold_runner_run;
+    attr interface=scan_malformed_ticket_edges;
+    attr interface=scan_stale_ticket_leases;
+    attr interface=scan_venv_shims;
     attr interface=serve_runner_run;
     attr interface=spawn_recorder;
     attr interface=stale_install_warning;
@@ -420,18 +428,12 @@ node cli : trusted {
     attr interface=ticket_runner_run;
     attr interface=timed_call;
     attr interface=tree_hash;
+    attr interface=try_daemon_lease;
     attr interface=verify_derived_state;
     attr interface=vet_runner_run;
     attr interface=walk_pruned;
     attr interface=working_diff;
     attr interface=xref_runner_run;
-    attr interface=_accept;
-    attr interface=_flow;
-    attr interface=MalformedTicketEdge;
-    attr interface=scan_malformed_ticket_edges;
-    attr interface=release_daemon_lease;
-    attr interface=scan_stale_ticket_leases;
-    attr interface=try_daemon_lease;
 }
 
 // graph+lang: src/frob/graph/**, src/frob/lang/**, src/frob/arch/**. Owns
@@ -1945,6 +1947,7 @@ node core : trusted {
     attr interface=put_fingerprint;
     attr interface=put_sketch;
     attr interface=put_verdict;
+    attr interface=python_collection_failure_detail;
     attr interface=python_coverage_targets;
     attr interface=quantile;
     attr interface=quarantine;
@@ -3244,6 +3247,7 @@ node testsuite : trusted {
     attr interface=TestDoctorMutateJournal;
     attr interface=TestDoctorScaffoldConformance;
     attr interface=TestDoctorStaleTicketLeases;
+    attr interface=TestDoctorVenvShims;
     attr interface=TestDoneReportClaimsModel;
     attr interface=TestDoneReportCli;
     attr interface=TestDoneReportHeadingImpersonation;
@@ -3862,6 +3866,7 @@ node testsuite : trusted {
     attr interface=TestPushAfterLand;
     attr interface=TestPytestExecutable;
     attr interface=TestPythonAdapter;
+    attr interface=TestPythonCollectionFailureDetail;
     attr interface=TestPythonCoverageTargets;
     attr interface=TestPythonForTree;
     attr interface=TestPythonNamespace;

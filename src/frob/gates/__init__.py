@@ -223,6 +223,7 @@ from frob.testing._collect import (
     collect_python_tests,
     collect_rust_tests,
     collect_ts_tests,
+    python_collection_failure_detail,
 )
 from frob.testing._models import CollectedTests
 from frob.tickets import Ticket, TicketQueue, TicketState, load_queue
@@ -1206,6 +1207,7 @@ def coverage_gate(
     active_ticket: str | None = None,
     diff_load_failed: bool = False,
     diff_load_no_repo: bool = False,
+    python_collection_failed: str | None = None,
 ) -> tuple[Violation, ...]:
     """COV001..COV007, PLACE001, and TODO001/TODO002/TODO003.
 
@@ -1231,6 +1233,13 @@ def coverage_gate(
     diff here -- there is structurally no touched set to enforce against,
     so COV002/TODO001 evaluate normally (against the empty diff, finding
     nothing) instead of firing the loud `_diff_load_failed_violation`.
+
+    T-1161: `python_collection_failed`, when not `None` (`frob.testing.
+    python_collection_failure_detail()`'s captured text, threaded through
+    `run_gates`' `_load_tests`), replaces `_cov003`'s normal per-evidence
+    sweep with ONE `_python_collection_failed_violation` -- the 2026-07-28
+    incident where a broken venv shim degraded into 6219 independently
+    "unresolved" COV003s instead of naming the one real collector failure.
     """
     violations: list[Violation] = []
     violations.extend(_cov001(root, snapshot))
@@ -1238,7 +1247,10 @@ def coverage_gate(
         violations.append(_diff_load_failed_violation("COV002", diff.base))
     else:
         violations.extend(_cov002(snapshot, queue, diff, active_ticket))
-    violations.extend(_cov003(queue, tests))
+    if python_collection_failed is not None:
+        violations.append(_python_collection_failed_violation(python_collection_failed))
+    else:
+        violations.extend(_cov003(queue, tests))
     violations.extend(_cov004(queue))
     violations.extend(_cov005(root, snapshot, diff))
     violations.extend(_cov006(root, snapshot))
@@ -1744,6 +1756,31 @@ def _cov003(queue: TicketQueue, tests: CollectedTests) -> tuple[Violation, ...]:
             if not _evidence_valid_for_ticket(evidence, ticket, tests)
         )
     return tuple(violations)
+
+
+# frob:ticket T-1161
+def _python_collection_failed_violation(detail: str) -> Violation:
+    """T-1161: the ONE `COV003` `Violation` `coverage_gate` reports in
+    place of `_cov003`'s normal per-evidence sweep when `collect_python_
+    tests` itself failed outright (the 2026-07-28 incident: a corrupted
+    `.venv/bin/pytest` shim broke `uv run pytest` entirely, and every one
+    of 6219 archived evidence ids independently "failed to resolve" with
+    no hint the real, single cause was a broken collector, not 6219 bad
+    evidence ids). `detail` is `frob.testing.python_collection_failure_
+    detail()`'s captured argv/exit-code/stderr-tail text."""
+    return Violation(
+        rule="COV003",
+        severity=Severity.ERROR,
+        file="pytest --collect-only",
+        line=0,
+        message=(
+            "COV003: pytest collection itself failed -- every Python "
+            "evidence id is unresolved as a consequence of this ONE root "
+            f"cause, not independently broken; run `frob doctor` (T-1161's "
+            "venv-shim shebang scan may name the fix) and re-run `uv run "
+            f"pytest --collect-only` by hand to confirm. {detail}"
+        ),
+    )
 
 
 def _missing_native_remedy(tests: CollectedTests) -> str:
@@ -6850,6 +6887,8 @@ class _GateInputs:
     diff_load_failed: bool = False
     # frob:ticket T-0719
     diff_load_no_repo: bool = False
+    # frob:ticket T-1161
+    python_collection_failed: str | None = None
 
 
 # frob:ticket T-0550
@@ -6907,7 +6946,7 @@ def _load_diff(root: Path, base: str) -> tuple[Diff, bool, bool]:
     return diff_result.danger_ok, False, False
 
 
-def _load_tests(root: Path) -> CollectedTests:
+def _load_tests(root: Path) -> tuple[CollectedTests, str | None]:
     """Collected pytest + cargo + vitest + ctest node ids, degrading each
     collector independently to an empty set on failure (a missing/broken
     toolchain must not halt the whole gates run -- but see `_cov003`: an
@@ -6915,12 +6954,23 @@ def _load_tests(root: Path) -> CollectedTests:
     violation, never a silent pass, T-0102). T-0730 adds `collect_ts_tests`
     (vitest) and `collect_cpp_tests` (ctest) alongside the pre-existing
     python/rust collectors (T-0587 built the collectors; this is where
-    `frob.gates` starts actually consuming their node ids)."""
+    `frob.gates` starts actually consuming their node ids).
+
+    T-1161: also returns the python collector's failure detail (`frob.
+    testing.python_collection_failure_detail()`, `None` when python
+    collection succeeded) alongside the merged `CollectedTests` -- `run_gates`
+    threads this into `coverage_gate` so a total pytest-collection failure
+    reports as ONE honest `COV003` instead of one per archived evidence id."""
     node_ids: set[str] = set()
 
     python_result = collect_python_tests(root)
+    python_collection_failed: str | None = None
     if python_result.is_err:
         _log.error("run_gates: pytest collection failed: %s", python_result.danger_err)
+        python_collection_failed = (
+            python_collection_failure_detail()
+            or f"collect_python_tests failed: {python_result.danger_err}"
+        )
     else:
         node_ids.update(python_result.danger_ok.node_ids)
 
@@ -6942,7 +6992,7 @@ def _load_tests(root: Path) -> CollectedTests:
     else:
         node_ids.update(cpp_result.danger_ok.node_ids)
 
-    return CollectedTests(node_ids=frozenset(node_ids))
+    return CollectedTests(node_ids=frozenset(node_ids)), python_collection_failed
 
 
 def _resolve_ticket(
@@ -7058,6 +7108,7 @@ def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _Gate
     test_policy, systems = _load_test_config(root)
     ticket, sweep = _resolve_ticket(root, cfg, queue)
     diff, diff_load_failed, diff_load_no_repo = _load_diff(root, cfg.base)
+    tests, python_collection_failed = _load_tests(root)
     return _GateInputs(
         root=root,
         repo_root=_repo_root_for(root),
@@ -7066,7 +7117,7 @@ def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _Gate
         queue=queue,
         lock=lock,
         diff=diff,
-        tests=_load_tests(root),
+        tests=tests,
         invariants=invariants,
         rules=tuple(rules),
         rule_ids=frozenset(r.id for r in rules),
@@ -7077,6 +7128,7 @@ def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _Gate
         sweep=sweep,
         diff_load_failed=diff_load_failed,
         diff_load_no_repo=diff_load_no_repo,
+        python_collection_failed=python_collection_failed,
     )
 
 
@@ -7355,6 +7407,7 @@ def _build_thread_jobs(
             st.ticket.id if st.ticket is not None else None,
             st.diff_load_failed,
             st.diff_load_no_repo,
+            st.python_collection_failed,
         ),
         "invariant": lambda: (
             *invariant_gate(st.invariants, st.snapshot, st.tests, st.rule_ids),

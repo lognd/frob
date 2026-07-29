@@ -8,6 +8,13 @@ collector's shape)."""
 # already-implemented internal behavior, verifiable by reading the code it annotates) \
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
+# frob:waive ARCH102 reason="T-1161 added python_collection_failure_detail, one more \
+# read accessor over this module's existing collect_python_tests/_run_collect_only \
+# outer-collection pair (it reads the exact module-level detail those two functions \
+# populate on failure) -- the naming/usage clustering heuristic cannot see that \
+# state-sharing coupling since it groups by name-prefix/direct-call edges, not by \
+# shared module-level state; splitting this one read accessor into its own module \
+# would separate it from the state it exists to read"
 
 from __future__ import annotations
 
@@ -25,7 +32,7 @@ from typani import Err, Ok
 from typani.result import Result
 
 from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs, walk_pruned
-from frob.gitio import GitError, ProcResult, run_argv
+from frob.gitio import GitError, ProcResult, excerpt, run_argv
 from frob.logging import get_logger
 from frob.testing._models import CollectedTests, NativeSpec, RunnerSpec
 from frob.testing._runners import (
@@ -37,6 +44,34 @@ from frob.testing._runners import (
 )
 
 _log = get_logger(__name__)
+
+# frob:ticket T-1161
+#: T-1161: human-readable detail (argv, exit code, stderr tail) for the most
+#: recent OUTER `collect_python_tests` collection failure, or `None` after a
+#: successful collection (or before any call). `collect_python_tests` keeps
+#: returning the same `Err(TestingError.CollectFailed)` its `Result` contract
+#: already promises (every existing caller's `.is_err` handling is
+#: unaffected) -- this module-level detail is a SEPARATE, additive read
+#: `frob.gates.coverage_gate`'s wiring consults right after seeing that Err,
+#: so it can report ONE honest `COV003`-adjacent finding naming the real
+#: collection failure instead of degrading into a flood of per-evidence
+#: `COV003`s (the 2026-07-28 incident this ticket fixes: a corrupted venv
+#: shim broke `uv run pytest` outright, and 6219 archived evidence ids each
+#: independently "failed to resolve" with no hint at the shared root cause).
+_last_python_collection_failure_detail: str | None = None
+
+
+# frob:doc docs/modules/testing.md#public-api
+def python_collection_failure_detail() -> str | None:
+    """The most recent OUTER `collect_python_tests` failure's detail
+    string (argv + exit code + stderr tail, T-1161), or `None` if the last
+    collection attempt succeeded (or none has run yet in this process).
+    Read by `frob.gates.coverage_gate`'s COV003 wiring immediately after
+    observing `collect_python_tests(...).is_err` to build one honest
+    finding instead of treating every archived evidence id as
+    independently unresolved."""
+    return _last_python_collection_failure_detail
+
 
 _CACHE_REL = Path(".frob") / "pytest-collect.json"
 _RUST_CACHE_REL = Path(".frob") / "cargo-collect.json"
@@ -280,10 +315,24 @@ def _store_cache(cache_path: Path, key: str, node_ids: frozenset[str]) -> None:
     )
 
 
+def _set_collection_failure_detail(detail: str | None) -> None:
+    """T-1161: record (or clear, `detail=None`) `_last_python_collection_
+    failure_detail` -- the single write point both `_run_collect_only`
+    (on failure) and `collect_python_tests` (on any success/cache-hit
+    path, so a stale failure detail can never outlive the run that
+    produced it) go through."""
+    global _last_python_collection_failure_detail
+    _last_python_collection_failure_detail = detail
+
+
 def _run_collect_only(cwd: Path) -> Result[frozenset[str], TestingError]:
     """Spawn `pytest --collect-only -q` in `cwd` and parse its stdout into
     node ids relative to `cwd` (the caller reroots them if `cwd` is not the
-    repo root, T-0317)."""
+    repo root, T-0317). T-1161: on failure, also records a human-readable
+    detail (argv/exit code/stderr tail) via `_set_collection_failure_detail`
+    for `python_collection_failure_detail`'s later read -- the `Result`
+    contract itself is unchanged, every existing caller keeps working
+    exactly as before."""
     # -o addopts= neutralizes the project's own addopts: a configured -q
     # would stack with ours into -qq, which switches --collect-only from
     # node ids to per-file counts (and -n auto adds xdist noise) -- the
@@ -295,6 +344,9 @@ def _run_collect_only(cwd: Path) -> Result[frozenset[str], TestingError]:
         _log.error(
             "collect_python_tests: pytest --collect-only failed to spawn in %s", cwd
         )
+        _set_collection_failure_detail(
+            f"{' '.join(argv)} (cwd={cwd}) failed to spawn: {spawned.danger_err}"
+        )
         return Err(TestingError.CollectFailed)
     result = spawned.danger_ok
     if result.returncode not in (0, _NO_TESTS_COLLECTED_EXIT):
@@ -302,6 +354,10 @@ def _run_collect_only(cwd: Path) -> Result[frozenset[str], TestingError]:
             "collect_python_tests: pytest --collect-only exited %d in %s",
             result.returncode,
             cwd,
+        )
+        _set_collection_failure_detail(
+            f"{' '.join(argv)} (cwd={cwd}) exited {result.returncode}\n"
+            f"stderr tail:\n{excerpt(result.stderr)}"
         )
         return Err(TestingError.CollectFailed)
     return Ok(
@@ -402,11 +458,13 @@ def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
     cached = _load_cache(cache_path, key)
     if cached is not None:
         _log.debug("collect_python_tests: cache hit, %d node id(s)", len(cached))
+        _set_collection_failure_detail(None)
         return Ok(CollectedTests(node_ids=cached, missing_natives=missing))
 
     collected = _run_collect_only(root)
     if collected.is_err:
         return Err(collected.danger_err)
+    _set_collection_failure_detail(None)
     node_ids = set(collected.danger_ok)
 
     for cwd_rel in _python_runner_cwds(root):
@@ -1264,4 +1322,5 @@ __all__ = [
     "collect_python_tests",
     "collect_rust_tests",
     "collect_ts_tests",
+    "python_collection_failure_detail",
 ]

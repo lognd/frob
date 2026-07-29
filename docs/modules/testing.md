@@ -219,6 +219,23 @@ function deleted -- `_run_one_language_selection`'s spawn-outcome path
 copy now. No behavior change (same truncation rule, same default line
 count).
 
+T-1161: `collect_python_tests` now additionally records a human-readable
+detail (spawned argv, exit code, `excerpt`-truncated stderr) whenever its
+OUTER `pytest --collect-only` fails, readable via the new
+`python_collection_failure_detail()`. The `Result[CollectedTests,
+TestingError]` return contract itself is unchanged -- this is a SEPARATE,
+additive module-level read, not a new failure shape -- so every existing
+caller's `.is_err` handling keeps working exactly as before.
+`frob.gates.coverage_gate`'s COV003 wiring is the first (and, for now,
+only) consumer: it reads this detail right after seeing
+`collect_python_tests(...).is_err` so a total pytest-collection failure
+reports as ONE honest finding instead of degrading into a flood of
+per-evidence COV003s (the 2026-07-28 incident: a corrupted `.venv/bin/
+pytest` shim -- see `docs/guides/install.md#venv-shim-shebang-scan-
+t-1161` -- broke `uv run pytest` outright, and 6219 archived evidence ids
+each independently "failed to resolve" with no hint at the shared root
+cause).
+
 <!-- frob:describes src/frob/gitio.py::repo_root -->
 <!-- frob:describes src/frob/gitio.py::working_diff -->
 <!-- frob:describes src/frob/gitio.py::current_branch -->
@@ -234,6 +251,7 @@ count).
 <!-- frob:describes src/frob/testing/_collect.py::collect_python_tests -->
 <!-- frob:describes src/frob/testing/_collect.py::collect_rust_tests -->
 <!-- frob:describes src/frob/testing/_collect.py::drop_collection_cache -->
+<!-- frob:describes src/frob/testing/_collect.py::python_collection_failure_detail -->
 <!-- frob:describes src/frob/testing/_runners.py::load_natives -->
 <!-- frob:describes src/frob/strata/_native_test.py::run_native_sys_audit -->
 <!-- frob:describes src/frob/strata/_native_test.py::NativeAuditOutcome -->

@@ -21,7 +21,7 @@
       "ref": "src/frob/arch/_smells.py::check_module_dependency_cycles"
     },
     {
-      "digest": "2a557f28ccfc904a4dea8ed376c59815ed239b70fd09d5d7238905f0aed970cf",
+      "digest": "6000914f42d8d5a66eb1cd62cf69cfe344a9ca5f03baf9fad4416235efa8ea14",
       "facet": "body",
       "ref": "src/frob/doctor.py::run_diagnosis"
     },
@@ -66,12 +66,12 @@
       "ref": "src/frob/gates/__init__.py::active_ticket"
     },
     {
-      "digest": "9266d8b8f892ba395240c701d468d3f5a0779e88815e176a0b7b85513e074b34",
+      "digest": "175a4f5ba49b06cf10a46d43f8554910cfd406adb02a7ddd289b31bbb542b625",
       "facet": "body",
       "ref": "src/frob/gates/__init__.py::coverage_gate"
     },
     {
-      "digest": "2e723b0affe9fb4c46163f4801fc117308eda1dede290bfb3d2eb725e481f7c4",
+      "digest": "fbb174c7bb93a7836cf6d6e3b3881f8cabe9ee2cb07604bd57bc204683474300",
       "facet": "sig",
       "ref": "src/frob/gates/__init__.py::coverage_gate"
     },

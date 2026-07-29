@@ -536,3 +536,63 @@ repo's genuine custom hook of the same name is drift.
 Per-sibling rollout across the estate (bootstrapping every other repo the
 same way this one was) is tracked via adoption tickets filed at land time
 through the fleet route, not enumerated here.
+
+## Venv shim shebang scan (T-1161)
+
+<!-- frob:describes src/frob/doctor.py::scan_venv_shims -->
+
+`frob doctor` also scans `.venv/bin/` for entrypoint scripts (`pytest`,
+`frob`, etc.) whose `#!` shebang line points at a python interpreter
+OUTSIDE this checkout's own venv (`DoctorReport.venv_shims`, a list of
+`VenvShimDrift`). This is the 2026-07-28 incident: a `uv` operation run
+from the wrong cwd (a sibling worktree) rewrote the ROOT venv's `pytest`
+shim shebang in place to point at that OTHER worktree's own
+`.venv/bin/python`; nothing failed at the time, but once that worktree was
+later removed, every `uv run pytest` in the root checkout broke with a
+dangling interpreter path -- and `collect_python_tests` (see
+`docs/modules/testing.md#public-api`) had no way to say WHY, only that
+collection failed, which cascaded into a flood of misattributed
+COV003s (see the next section) instead of naming the one real cause.
+
+The scan compares each shim's recorded shebang path (resolved) against
+this checkout's own resolved `.venv/bin` directory -- catching a shim
+pointed at a STILL-EXISTING but wrong venv too, not only one whose target
+has since vanished. A finding folds into the overall `healthy`/
+`remediation` verdict, same class as a stale mutate-backup journal or
+malformed ticket edge:
+
+```bash
+frob doctor
+# ... venv shim(s) shebang outside this venv: pytest (-> /other/worktree/
+# .venv/bin/python) -- run `uv sync --reinstall-package pytest` (repeat
+# per affected package name if the script name does not match its
+# distribution) or `make install-tool` to rebuild the whole venv
+```
+
+`frob doctor --json`'s `venv_shims` array carries one entry per drifted
+shim (`script`, `shebang_path`, `expected_venv_bin`). A tree with no
+`.venv/bin/` at all (not yet set up) contributes zero findings, not an
+error -- an ordinary not-yet-set-up state, not drift.
+
+## Honest pytest-collection failure in the coverage gate (T-1161)
+
+<!-- frob:describes src/frob/testing/_collect.py::python_collection_failure_detail -->
+
+The other half of the 2026-07-28 incident: when `collect_python_tests`
+itself fails outright (a broken venv shim above, a missing dependency, any
+reason `uv run pytest --collect-only` exits nonzero), the COVERAGE gate
+used to have no way to tell "the collector is broken" apart from "every
+one of these thousands of archived evidence ids independently stopped
+resolving" -- it degraded to an empty node-id set and let `COV003`
+(`docs/modules/gates.md#public-api`) fire once per unresolved evidence id,
+6219 times in the incident that motivated this fix.
+
+`collect_python_tests` now additionally records a human-readable failure
+detail (spawned argv, exit code, stderr tail) via a module-level
+`python_collection_failure_detail()` read (its `Result[CollectedTests,
+TestingError]` return contract is unchanged -- every existing caller's
+`.is_err` handling keeps working exactly as before). `run_gates` threads
+that detail into `coverage_gate`, which reports ONE `COV003` naming the
+real collection failure (with the stderr tail) instead of iterating every
+archived ticket's evidence ids and reporting each as independently
+unresolved.

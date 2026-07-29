@@ -384,9 +384,11 @@
     "src/frob/doctor.py::NATIVE_EXTENSIONS": "ffd76f39a459f41fcc3c55ee7e0faab4bf1714b127b00f3cd9646e89578c5448",
     "src/frob/doctor.py::NativeExtensionStatus": "fe9d34aedff7c69b12dc90075cf5a866902cc64f7115071e2569f63b141420da",
     "src/frob/doctor.py::REMEDIATION_HINT": "72cba9976f5df20853ad28c1ce4d321119df5f4c0588b11ec7e117f23e0801b6",
+    "src/frob/doctor.py::VenvShimDrift": "00f80ff840c7691bca333a85be8ed35bb00e1a456b6cc1e945c7b8f5f2f19c0c",
     "src/frob/doctor.py::run_diagnosis": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
     "src/frob/doctor.py::scan_malformed_ticket_edges": "6ce0127b57a6808dd573a11421e19d445c2b30a7df80cc5e6ead715ec2e15f19",
     "src/frob/doctor.py::scan_stale_ticket_leases": "8c4cb4195a857fba8b41f5870469e08785481bad36fa06310b1d5557a9176f4f",
+    "src/frob/doctor.py::scan_venv_shims": "a0a197ea0da07587194596e85515254b0bdf4d435ea488c7172c7bc03c58df7a",
     "src/frob/doctor.py::verify_derived_state": "49abd14b5828c5397700248137fe88c069f916fb8a465cab5b7ac92a61be3765",
     "src/frob/dup/_cache.py::get_fingerprint": "13d3a6a454e05691e443e7d8dc6ed772d0242112249fd8e098171317edde0f44",
     "src/frob/dup/_cache.py::get_verdict": "d8ef14a6a2df2d90d5587f8c97cc41ff1a9e4268d5aa8799df7f520c26e2df52",
@@ -485,7 +487,7 @@
     "src/frob/gates/__init__.py::INV006_SRC_DIRS": "e68dbcf72ad7bcc7499c9305c1f92fa43b71c020a5af4827eaa0e364fc8dec73",
     "src/frob/gates/__init__.py::INV006_SRC_SUFFIXES": "2058015f176b8b4044379ba949fa87b5564ff31e98e9262b8bfbbbb42d3706fa",
     "src/frob/gates/__init__.py::affect_drift_gate": "3be02584d6478757d23a1dcf709cfa881cb28e13627c7c9a4ffb91bff32c3ab1",
-    "src/frob/gates/__init__.py::coverage_gate": "2e723b0affe9fb4c46163f4801fc117308eda1dede290bfb3d2eb725e481f7c4",
+    "src/frob/gates/__init__.py::coverage_gate": "fbb174c7bb93a7836cf6d6e3b3881f8cabe9ee2cb07604bd57bc204683474300",
     "src/frob/gates/__init__.py::docanchor_gate": "c42559cd1fae6c91936f804bc558ed2d3f5fd49bbd3955b96675bb566fdaef20",
     "src/frob/gates/__init__.py::doclink_gate": "bebbc03bdfb637a3724784dfda8eb4fbb98e52d9b6709f7a4b8616a2cdf773f2",
     "src/frob/gates/__init__.py::drift_gate": "5c212d52c12a13920ee34ad607ff4d2367a47d7d7f940927aae71563b733a8e4",
@@ -1577,6 +1579,7 @@
     "src/frob/testing/_collect.py::collect_rust_tests": "b909adb58a2b450858645929fba4f4a51849b41b594decb77fe6c3f3f39872c2",
     "src/frob/testing/_collect.py::collect_ts_tests": "92e9d76ee1e54b2914386da2250b9ed245bf08186a3549af76af3faab6fb0d4f",
     "src/frob/testing/_collect.py::drop_collection_cache": "22f01b16e6e3d0cca3528a9b7ee2bef5e7f4a4944edc8bb6d73e29b630a30cb5",
+    "src/frob/testing/_collect.py::python_collection_failure_detail": "51e78cdd1f5894f488cd05cade058e432adf9c4317c3f95bf0354f4f1589e151",
     "src/frob/testing/_coverage_wait.py::CoverageWaitError": "b6edc0934bbc2ffb9b11259a4fe36b8dd33ee2fc7ccc2936dfca5e967e730db9",
     "src/frob/testing/_coverage_wait.py::CoverageWaitOutcome": "5c673dd2d06d7e5469a445522a8ad01c93cd0cc3757583ceef2b1d363c957fda",
     "src/frob/testing/_coverage_wait.py::SharedCoverageResult": "b06b24c2786b8d65a2715c34a0944991320dcdb1decf418cf232874b98bc27d8",
@@ -1866,5 +1869,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.263.0"
+  "version": "0.264.0"
 }

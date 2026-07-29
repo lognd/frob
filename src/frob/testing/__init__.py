@@ -16,6 +16,7 @@ from frob.testing._collect import (
     collect_rust_tests,
     collect_ts_tests,
     drop_collection_cache,
+    python_collection_failure_detail,
 )
 from frob.testing._coverage_wait import (
     CoverageWaitError,
@@ -94,6 +95,7 @@ __all__ = [
     "load_natives",
     "load_runners",
     "load_stability",
+    "python_collection_failure_detail",
     "python_coverage_targets",
     "quarantine",
     "quarantine_alarms",

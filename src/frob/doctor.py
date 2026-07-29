@@ -306,6 +306,103 @@ def _stale_ticket_leases_remediation(stale_ids: tuple[str, ...]) -> str:
     )
 
 
+# frob:ticket T-1161
+# frob:doc docs/guides/install.md#venv-shim-shebang-scan-t-1161
+class VenvShimDrift(BaseModel):
+    """One `.venv/bin/` entrypoint script whose shebang points at a
+    PYTHON INTERPRETER outside this checkout's own venv (T-1161, the
+    2026-07-28 incident): a `uv` operation run from a sibling worktree
+    rewrote the root venv's `pytest` shim to shebang at that worktree's
+    own `.venv/bin/python`; once that worktree was removed, every `uv run
+    pytest` in the root checkout broke with a dangling interpreter path,
+    and `collect_python_tests` misattributed the resulting failure into a
+    per-evidence COV003 flood instead of naming the real, single-cause
+    fault."""
+
+    model_config = {}
+
+    script: str
+    shebang_path: str
+    expected_venv_bin: str
+
+
+# frob:ticket T-1161
+# frob:doc docs/guides/install.md#venv-shim-shebang-scan-t-1161
+# frob:tests tests/system/test_cli_doctor.py::TestDoctorVenvShims.test_flags_shebang_outside_venv  # noqa: E501
+# frob:tests tests/system/test_cli_doctor.py::TestDoctorVenvShims.test_clean_shebang_reports_nothing  # noqa: E501
+# frob:tests tests/system/test_cli_doctor.py::TestDoctorVenvShims.test_no_venv_directory_reports_nothing  # noqa: E501
+def scan_venv_shims(root: Path) -> tuple[VenvShimDrift, ...]:
+    """Every `.venv/bin/*` script under `root` whose `#!` shebang line
+    resolves to a python interpreter OUTSIDE `root`'s own `.venv/bin/`
+    (T-1161). A `uv sync`/`uv pip install --python <other venv>` run from
+    the wrong cwd rewrites a shim's shebang absolute path in place with no
+    other visible symptom until the target interpreter later vanishes
+    (e.g. a sibling worktree is removed) -- this compares each shim's
+    recorded shebang path against `root`'s own resolved `.venv/bin`
+    directory rather than waiting for the interpreter to actually go
+    missing, so a shim pointed at a STILL-EXISTING but wrong venv is also
+    caught. A missing `.venv/bin` directory (no venv created yet)
+    contributes zero findings, not an error -- that is an ordinary
+    not-yet-set-up state, not drift."""
+    venv_bin = root / ".venv" / "bin"
+    if not venv_bin.is_dir():
+        return ()
+    try:
+        expected_bin = venv_bin.resolve()
+    except OSError:
+        _log.warning("doctor: could not resolve %s", venv_bin)
+        return ()
+    found: list[VenvShimDrift] = []
+    for entry in sorted(venv_bin.iterdir()):
+        if not entry.is_file() or entry.is_symlink():
+            continue
+        try:
+            with entry.open("rb") as fh:
+                first_line = fh.readline(4096)
+        except OSError:
+            continue
+        if not first_line.startswith(b"#!"):
+            continue
+        shebang_path = first_line[2:].decode("utf-8", errors="replace").strip()
+        if not shebang_path or "python" not in Path(shebang_path).name:
+            continue
+        shebang_dir = Path(shebang_path).parent
+        try:
+            resolved_shebang_dir = shebang_dir.resolve()
+        except OSError:
+            resolved_shebang_dir = shebang_dir
+        if resolved_shebang_dir != expected_bin:
+            found.append(
+                VenvShimDrift(
+                    script=entry.name,
+                    shebang_path=shebang_path,
+                    expected_venv_bin=str(expected_bin),
+                )
+            )
+    if found:
+        _log.warning(
+            "doctor: %d venv shim(s) shebang outside this venv: %s",
+            len(found),
+            [d.script for d in found],
+        )
+    return tuple(found)
+
+
+def _venv_shim_remediation(drifted: tuple[VenvShimDrift, ...]) -> str:
+    """Remediation hint naming each corrupted shim and the exact repair
+    command (T-1161): `uv sync --reinstall-package <dist>` rewrites that
+    script's shebang back to this venv's own interpreter, without
+    reinstalling every other dependency."""
+    names = ", ".join(f"{d.script} (-> {d.shebang_path})" for d in drifted)
+    packages = " ".join(sorted({d.script for d in drifted}))
+    return (
+        f"venv shim(s) shebang outside this venv: {names} -- run "
+        f"`uv sync --reinstall-package {packages}` (repeat per affected "
+        "package name if the script name does not match its distribution) "
+        "or `make install-tool` to rebuild the whole venv"
+    )
+
+
 def _sqlite_validity(data: bytes) -> str | None:
     """`None` if `data` starts with the SQLite magic header, else a short
     corruption detail string -- never raises on garbage bytes."""
@@ -539,7 +636,10 @@ class DoctorReport(BaseModel):
     wrong ledger row (the T-0380 incident), not disposable state.
     `stale_ticket_leases` (T-1131) is the same class again: a ticket id
     stuck `IN_PROGRESS` with no live lease (its worktree gone, the T-1050
-    incident) is a real stuck ticket, not disposable state."""
+    incident) is a real stuck ticket, not disposable state. `venv_shims`
+    (T-1161) is the same class once more: a `.venv/bin/` entrypoint
+    shebang pointing outside this venv is a real, silently broken
+    interpreter binding, not disposable cache churn."""
 
     model_config = {}
 
@@ -551,6 +651,7 @@ class DoctorReport(BaseModel):
     mutate_journals: list[StaleJournal] = []
     malformed_ticket_edges: list[MalformedTicketEdge] = []
     stale_ticket_leases: list[str] = []
+    venv_shims: list[VenvShimDrift] = []
     healthy: bool
     remediation: str | None = None
 
@@ -585,12 +686,13 @@ def _combined_remediation(
     stale_mutate_journals: tuple[StaleJournal, ...] = (),
     malformed_ticket_edges: tuple[MalformedTicketEdge, ...] = (),
     stale_ticket_leases: tuple[str, ...] = (),
+    venv_shims: tuple[VenvShimDrift, ...] = (),
 ) -> str | None:
     """The full remediation text for a `DoctorReport`: natives hint,
     derived-state hint, scaffold-conformance hint (T-0736), stale mutate-
     journal hint (T-0857), malformed-ticket-edge hint (T-1132), stale-
-    ticket-lease hint (T-1131), or all joined -- `None` only when every
-    part is clean."""
+    ticket-lease hint (T-1131), venv-shim hint (T-1161), or all joined --
+    `None` only when every part is clean."""
     parts = []
     if not natives_healthy:
         parts.append(REMEDIATION_HINT)
@@ -604,6 +706,8 @@ def _combined_remediation(
         parts.append(_malformed_edges_remediation(malformed_ticket_edges))
     if stale_ticket_leases:
         parts.append(_stale_ticket_leases_remediation(stale_ticket_leases))
+    if venv_shims:
+        parts.append(_venv_shim_remediation(venv_shims))
     return " | ".join(parts) if parts else None
 
 
@@ -628,22 +732,25 @@ def _diagnose_derived_state(resolved_root: Path):
 
 # frob:ticket T-1162
 def _collect_doctor_scans(resolved_root: Path):
-    """T-1162: pure I/O -- run the four unlocked doctor scans (scaffold
+    """T-1162: pure I/O -- run the five unlocked doctor scans (scaffold
     conformance, stale mutate-backup journals (T-0857), malformed ticket
-    edges (T-1132), stale ticket leases (T-1131)) and return
-    `(scaffold_blocks, scaffold_needs_apply, stale_mutate_journals,
-    malformed_ticket_edges, stale_ticket_leases)`."""
+    edges (T-1132), stale ticket leases (T-1131), venv-shim shebang drift
+    (T-1161)) and return `(scaffold_blocks, scaffold_needs_apply,
+    stale_mutate_journals, malformed_ticket_edges, stale_ticket_leases,
+    venv_shims)`."""
     scaffold_blocks = scaffold_conformance_status(resolved_root)
     scaffold_needs_apply = tuple(s for s in scaffold_blocks if not s.present or s.stale)
     stale_mutate_journals = list_stale_journals(resolved_root)
     malformed_ticket_edges = tuple(scan_malformed_ticket_edges(resolved_root))
     stale_ticket_leases = scan_stale_ticket_leases(resolved_root)
+    venv_shims = scan_venv_shims(resolved_root)
     return (
         scaffold_blocks,
         scaffold_needs_apply,
         stale_mutate_journals,
         malformed_ticket_edges,
         stale_ticket_leases,
+        venv_shims,
     )
 
 
@@ -661,14 +768,16 @@ def _log_doctor_diagnosis(
     stale_mutate_journals,
     malformed_ticket_edges,
     stale_ticket_leases,
+    venv_shims=(),
 ) -> None:
     """T-1162: pure I/O -- emit `run_diagnosis`'s single summary log line.
     Extracted verbatim so the report-building logic above it stays
-    decision/formatting only."""
+    decision/formatting only. `venv_shims` (T-1161) defaults to `()` so
+    existing positional callers are unaffected."""
     _log.info(
         "doctor: healthy=%s extensions=%s derived_state_corrupt=%s drift=%s "
         "scaffold_needs_apply=%s stale_mutate_journals=%s "
-        "malformed_ticket_edges=%s stale_ticket_leases=%s",
+        "malformed_ticket_edges=%s stale_ticket_leases=%s venv_shims=%s",
         healthy,
         extensions,
         [d.name for d in corrupt],
@@ -677,6 +786,7 @@ def _log_doctor_diagnosis(
         [s.target for s in stale_mutate_journals],
         [f"{e.ticket_id}.{e.field}" for e in malformed_ticket_edges],
         stale_ticket_leases,
+        [d.script for d in venv_shims],
     )
 
 
@@ -729,6 +839,15 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     the unlocked scans into `_collect_doctor_scans`, and the summary log
     line into `_log_doctor_diagnosis` -- this function is now their
     composition plus the `healthy`/`DoctorReport` decision and build.
+
+    T-1161: also scans `.venv/bin/` for entrypoint scripts whose shebang
+    points at a python interpreter outside THIS venv (`scan_venv_shims`,
+    the 2026-07-28 incident: a cross-worktree `uv` operation rewrote the
+    root venv's `pytest` shim shebang, and once the other worktree was
+    removed every `uv run pytest` broke with no direct diagnostic --
+    `collect_python_tests` only ever saw an opaque collection failure).
+    Any finding DOES make `healthy` False, same class as `mutate_journals`/
+    `malformed_ticket_edges`/`stale_ticket_leases` above.
     """
     resolved_root = root or Path.cwd()
     extensions = [_extension_status(name) for name in NATIVE_EXTENSIONS]
@@ -741,6 +860,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         stale_mutate_journals,
         malformed_ticket_edges,
         stale_ticket_leases,
+        venv_shims,
     ) = _collect_doctor_scans(resolved_root)
 
     healthy = (
@@ -750,6 +870,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         and not stale_mutate_journals
         and not malformed_ticket_edges
         and not stale_ticket_leases
+        and not venv_shims
     )
     report = DoctorReport(
         frob_version=_frob_version(),
@@ -760,6 +881,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         mutate_journals=list(stale_mutate_journals),
         malformed_ticket_edges=list(malformed_ticket_edges),
         stale_ticket_leases=list(stale_ticket_leases),
+        venv_shims=list(venv_shims),
         healthy=healthy,
         remediation=_combined_remediation(
             natives_healthy,
@@ -768,6 +890,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
             stale_mutate_journals,
             malformed_ticket_edges,
             stale_ticket_leases,
+            venv_shims,
         ),
     )
     _log_doctor_diagnosis(
@@ -779,5 +902,6 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         stale_mutate_journals,
         malformed_ticket_edges,
         stale_ticket_leases,
+        venv_shims,
     )
     return report

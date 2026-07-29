@@ -531,9 +531,7 @@ class TestDoctorStaleTicketLeases:
 
     @staticmethod
     def _git_init(root: Path) -> None:
-        subprocess.run(
-            ["git", "init", "-q", "-b", "main"], cwd=str(root), check=True
-        )
+        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=str(root), check=True)
         subprocess.run(
             ["git", "config", "user.email", "test@example.com"],
             cwd=str(root),
@@ -544,9 +542,7 @@ class TestDoctorStaleTicketLeases:
         )
         (root / ".gitkeep").write_text("")
         subprocess.run(["git", "add", "-A"], cwd=str(root), check=True)
-        subprocess.run(
-            ["git", "commit", "-q", "-m", "init"], cwd=str(root), check=True
-        )
+        subprocess.run(["git", "commit", "-q", "-m", "init"], cwd=str(root), check=True)
 
     # frob:tests src/frob/doctor.py
     # frob:waive PII012 reason="test name mirrors the run_diagnosis API symbol it exercises; repository self-check machinery, no person-related data anywhere in the test"  # noqa: E501
@@ -561,9 +557,7 @@ class TestDoctorStaleTicketLeases:
         assert report.healthy is True
 
     # frob:tests src/frob/doctor.py::scan_stale_ticket_leases
-    def test_scan_flags_in_progress_ticket_with_no_lease(
-        self, tmp_path: Path
-    ) -> None:
+    def test_scan_flags_in_progress_ticket_with_no_lease(self, tmp_path: Path) -> None:
         """A ticket whose `state:` was set to in-progress WITHOUT ever
         going through `transition` (so no lease was recorded -- the exact
         shape a lease-stamp ledger sync onto a checkout produces, per
@@ -634,9 +628,7 @@ class TestDoctorStaleTicketLeases:
         assert report.healthy is True
 
     # frob:tests src/frob/doctor.py::scan_stale_ticket_leases
-    def test_scan_degrades_to_empty_on_a_malformed_ledger(
-        self, tmp_path: Path
-    ) -> None:
+    def test_scan_degrades_to_empty_on_a_malformed_ledger(self, tmp_path: Path) -> None:
         """A ledger `reconcile` cannot even load (malformed frontmatter)
         must not crash `frob doctor` -- `scan_stale_ticket_leases` degrades
         to an empty tuple, logging a warning, so one broken ledger row
@@ -651,3 +643,72 @@ class TestDoctorStaleTicketLeases:
 
         report = run_diagnosis(tmp_path)
         assert report.stale_ticket_leases == []
+
+
+# frob:ticket T-1161
+class TestDoctorVenvShims:
+    """T-1161 (the 2026-07-28 incident): `frob doctor` scans `.venv/bin/`
+    entrypoint scripts for a shebang pointing at a python interpreter
+    OUTSIDE this checkout's own venv -- a cross-worktree `uv` operation
+    rewrote the root venv's `pytest` shim shebang in place, and once that
+    other worktree was removed every `uv run pytest` broke with no direct
+    diagnostic naming the real cause."""
+
+    @staticmethod
+    def _make_venv_bin(tmp_path: Path) -> Path:
+        venv_bin = tmp_path / ".venv" / "bin"
+        venv_bin.mkdir(parents=True)
+        return venv_bin
+
+    # frob:tests src/frob/doctor.py::scan_venv_shims
+    def test_flags_shebang_outside_venv(self, tmp_path: Path) -> None:
+        """A shim shebanged at a DIFFERENT (even if still-existing)
+        worktree's `.venv/bin/python` is flagged, with a remediation
+        naming the exact `uv sync --reinstall-package` repair command."""
+        from frob.doctor import run_diagnosis, scan_venv_shims
+
+        venv_bin = self._make_venv_bin(tmp_path)
+        other_python = tmp_path.parent / "other-worktree" / ".venv" / "bin" / "python"
+        pytest_shim = venv_bin / "pytest"
+        pytest_shim.write_text(f"#!{other_python}\nfrom pytest import main\nmain()\n")
+        pytest_shim.chmod(0o755)
+
+        drifted = scan_venv_shims(tmp_path)
+        assert len(drifted) == 1
+        assert drifted[0].script == "pytest"
+        assert drifted[0].shebang_path == str(other_python)
+
+        report = run_diagnosis(tmp_path)
+        assert report.healthy is False
+        assert len(report.venv_shims) == 1
+        assert report.remediation is not None
+        assert "uv sync --reinstall-package" in report.remediation
+        assert "pytest" in report.remediation
+
+    # frob:tests src/frob/doctor.py::scan_venv_shims
+    def test_clean_shebang_reports_nothing(self, tmp_path: Path) -> None:
+        """A shim shebanged at THIS venv's own `.venv/bin/python` (the
+        healthy, ordinary case) reports no drift and stays healthy."""
+        from frob.doctor import run_diagnosis, scan_venv_shims
+
+        venv_bin = self._make_venv_bin(tmp_path)
+        own_python = venv_bin / "python"
+        own_python.write_text("")
+        pytest_shim = venv_bin / "pytest"
+        pytest_shim.write_text(f"#!{own_python}\nfrom pytest import main\nmain()\n")
+        pytest_shim.chmod(0o755)
+
+        assert scan_venv_shims(tmp_path) == ()
+
+        report = run_diagnosis(tmp_path)
+        assert report.venv_shims == []
+        assert report.healthy is True
+
+    # frob:tests src/frob/doctor.py::scan_venv_shims
+    def test_no_venv_directory_reports_nothing(self, tmp_path: Path) -> None:
+        """A tree with no `.venv/bin/` at all (not yet set up) contributes
+        zero findings, not an error -- an ordinary not-yet-set-up state,
+        not drift."""
+        from frob.doctor import scan_venv_shims
+
+        assert scan_venv_shims(tmp_path) == ()

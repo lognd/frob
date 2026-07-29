@@ -1158,10 +1158,11 @@ class TestCoverageGate:
                 CollectedTests(node_ids=frozenset({"crate/src/lib.rs::tests::foo"}))
             ),
         )
-        merged = gates_mod._load_tests(tmp_path)
+        merged, python_collection_failed = gates_mod._load_tests(tmp_path)
         assert merged.node_ids == frozenset(
             {"tests/test_x.py::test_a", "crate/src/lib.rs::tests::foo"}
         )
+        assert python_collection_failed is None
 
         # A broken rust collector degrades to "no rust ids", not a crash and
         # not a wipe of the python ids already collected.
@@ -1170,8 +1171,71 @@ class TestCoverageGate:
             "collect_rust_tests",
             lambda root: Err(TestingError.CollectFailed),
         )
-        merged2 = gates_mod._load_tests(tmp_path)
+        merged2, python_collection_failed2 = gates_mod._load_tests(tmp_path)
         assert merged2.node_ids == frozenset({"tests/test_x.py::test_a"})
+        assert python_collection_failed2 is None
+
+    # frob:ticket T-1161
+    def test_load_tests_captures_python_collection_failure_detail(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-1161: when `collect_python_tests` itself fails, `_load_tests`
+        returns non-`None` failure detail alongside an empty python node-id
+        set -- the signal `coverage_gate` consumes to report ONE COV003
+        instead of one per archived evidence id."""
+        from typani import Err, Ok
+
+        import frob.gates as gates_mod
+        from frob.testing import TestingError
+
+        monkeypatch.setattr(
+            gates_mod,
+            "collect_python_tests",
+            lambda root: Err(TestingError.CollectFailed),
+        )
+        monkeypatch.setattr(
+            gates_mod, "python_collection_failure_detail", lambda: "exit 2\nstderr tail"
+        )
+        monkeypatch.setattr(
+            gates_mod,
+            "collect_rust_tests",
+            lambda root: Ok(CollectedTests(node_ids=frozenset())),
+        )
+        merged, python_collection_failed = gates_mod._load_tests(tmp_path)
+        assert merged.node_ids == frozenset()
+        assert python_collection_failed == "exit 2\nstderr tail"
+
+    # frob:ticket T-1161
+    def test_coverage_gate_reports_one_violation_on_python_collection_failure(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1161: `coverage_gate(..., python_collection_failed=...)` reports
+        exactly ONE COV003 naming the collection failure, never one per
+        archived evidence id (the 6219-COV003 incident)."""
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                f"T-{n:04d}": _ticket(
+                    ticket_id=f"T-{n:04d}",
+                    state=TicketState.DONE,
+                    evidence=("tests/x.py::t",),
+                )
+                for n in range(5)
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(
+            tmp_path,
+            snap,
+            queue,
+            diff,
+            tests,
+            python_collection_failed="exit 2\nstderr tail",
+        )
+        cov003 = [v for v in violations if v.rule == "COV003"]
+        assert len(cov003) == 1
+        assert "stderr tail" in cov003[0].message
 
     def test_cov004_missing_attachment(self, tmp_path: Path) -> None:
         from frob.tickets import Attachment
@@ -8674,7 +8738,7 @@ class TestNativeTestCollectors:
             "collect_cpp_tests",
             lambda root: Ok(CollectedTests(node_ids=frozenset({"build::MyTest"}))),
         )
-        merged = gates_mod._load_tests(tmp_path)
+        merged, python_collection_failed = gates_mod._load_tests(tmp_path)
         assert merged.node_ids == frozenset(
             {
                 "tests/test_x.py::test_a",
@@ -8683,6 +8747,7 @@ class TestNativeTestCollectors:
                 "build::MyTest",
             }
         )
+        assert python_collection_failed is None
 
         # A broken vitest collector degrades to "no ts ids", not a crash
         # and not a wipe of the other three languages' already-collected
@@ -8692,7 +8757,7 @@ class TestNativeTestCollectors:
             "collect_ts_tests",
             lambda root: Err(TestingError.CollectFailed),
         )
-        merged2 = gates_mod._load_tests(tmp_path)
+        merged2, python_collection_failed2 = gates_mod._load_tests(tmp_path)
         assert merged2.node_ids == frozenset(
             {
                 "tests/test_x.py::test_a",
@@ -8700,6 +8765,7 @@ class TestNativeTestCollectors:
                 "build::MyTest",
             }
         )
+        assert python_collection_failed2 is None
 
     # frob:ticket T-0730
     def test_ts_directive_resolves_via_real_vitest_node_id(
