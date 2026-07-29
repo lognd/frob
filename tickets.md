@@ -1489,3 +1489,34 @@ threat: null
 component: null
 ```
 Root cause: src/frob/process/_lock.py:372 derived_state_write_lock is a single exclusive flock guarding the dup pipeline's derived-state writes; any concurrent frob process (sweep, second check) contending for it stalls the clones stage for its entire duration -- observed as a 240s flock wait during profiling (excluded from the report's compute shares as an artifact of concurrent profiling, but the underlying serialization is real and reproducible under any real concurrent frob usage). Fix: finer-grained locking (e.g. per-file or per-shard) or a read-shared lock mode for readers, design TBD.
+
+<!-- ticket:T-1225 -->
+```yaml
+id: T-1225
+title: 'perf: PERF01x detectors from hot-graph root causes'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/perf/**
+acceptance:
+- text: GIVEN the 2026-07-29 hot-graph report identified 4 recurring anti-patterns
+    (yaml.safe_load/yaml.load without the C loader in non-test code; a repo-scan API
+    such as xref/exports_consumers/iter_files called inside a loop over symbols; more
+    than one ast.walk over the same tree within one function family; a re.finditer
+    pattern-list loop nested inside a per-line loop) WHEN each ships as a distinct
+    PERF01x rule id with a registry entry and a .strata obligation layer THEN each
+    rule fires on the exact pre-fix code shape it was mined from, backed by a regression
+    corpus fixture reproducing that shape (e.g. the pre-fix tickets/_store.py, gates/_debt_deprecated.py,
+    gates/_pii_structural/__init__.py, and gates/_secrets.py shapes) so a future regression
+    re-introducing the pattern is caught statically
+  evidence: []
+threat: null
+component: null
+```
+Companion detector ticket for EPIC A's fixes (T-1206 CSafeLoader, T-1207 repo-scan-in-loop, T-1209 multi-ast.walk, T-1211 regex-per-line): per repo convention, a perf root cause ships as both a .strata obligation and a PERF0xx lint rule, never as a fix-only patch. Four rules to add: (a) 'yaml.safe_load/yaml.load without C loader in non-test code'; (b) 'repo-scan API (xref/exports_consumers/iter_files) called inside a loop over symbols'; (c) '>1 ast.walk(tree) over the same tree in one function family'; (d) 're.finditer with a pattern-list loop inside a per-line loop'. Each needs a PERF01x id, a registry entry, and a regression-corpus fixture reproducing the exact pre-fix shape mined from the report (tickets/_store.py, gates/_debt_deprecated.py, gates/_pii_structural/__init__.py, gates/_secrets.py) so the rule is proven to fire before the corresponding EPIC A fix lands, and to keep firing as a regression guard after.
