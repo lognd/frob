@@ -1605,3 +1605,24 @@ threat: null
 component: null
 ```
 A directive (e.g. frob:until T-####) binds not-yet-built prose to a ticket; when the ticket closes/archives the claim goes stale. Unbound absence-claims ('does not exist yet' heuristics) get flagged for binding. The sweep found ~20 shipped-but-documented-as-absent instances (docs/audits/docs-staleness-2026-07-29.md, 'Negative-existence claims' section). Ref: gate-gap class 3.
+
+<!-- ticket:T-1230 -->
+```yaml
+id: T-1230
+title: non-python doc targets -- Makefile/frob.toml/pyproject/Rust layout edges into
+  the graph
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: T-1226
+tier: ticket
+sprint: null
+scope:
+- src/frob/graph/**
+- docs/**
+threat: null
+component: null
+```
+Doc edges to Makefile recipe/dep claims, frob.toml severity claims, pyproject entries, Rust file layout; builds on the multi-language graph. Relate to T-1193's python-only theme; check whether its children already cover part of this and cross-reference rather than duplicate. Ref: gate-gap class 4 in docs/audits/docs-staleness-2026-07-29.md.
