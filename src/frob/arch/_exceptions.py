@@ -181,6 +181,7 @@ def check_errors_as_values(module: NormalizedModule) -> list[ArchSuggestion]:
                 category="errors-as-values-recommended",
                 severity="suggestion",
                 message=(
+                    # frob:waive PERF004 reason="recoverable is this loop's own per-function distinct set, not a shared re-sort"  # noqa: E501
                     f"`{qualname}` may raise {sorted(recoverable)} with no "
                     "caller in this module visibly handling it"
                 ),

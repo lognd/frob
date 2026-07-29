@@ -3603,6 +3603,7 @@ def _test014_ambiguous_convention(
             continue  # same leaf, but all in one file -- not the B6 shape
         for i, (symref_a, _, matched_a) in enumerate(entries):
             for symref_b, _, matched_b in entries[i + 1 :]:
+                # frob:waive PERF004 reason="differs per pair, fresh work not a re-sort"  # noqa: E501
                 shared = sorted(matched_a & matched_b)
                 if not shared:
                     continue

@@ -116,6 +116,7 @@ def sorted_manifest_entries(model: KernelModel) -> tuple[ManifestEntry, ...]:
     see facts in the same order (determinism is what makes the digest
     and the generated bash byte-for-byte reproducible)."""
     entries: list[ManifestEntry] = []
+    # frob:waive PERF004 reason="sorted() is this loop's own iterable, not repeated"
     for node in sorted(model.nodes, key=lambda n: n.id):
         manifest = host_manifest_for(node)
         if manifest is None:

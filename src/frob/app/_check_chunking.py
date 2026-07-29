@@ -158,6 +158,7 @@ def _run_baseline_chunks(
                 _log.error("stamp-baseline failed: %s", err.value)
             sys.exit(1)
         report = result.danger_ok
+        # frob:waive PERF004 reason="chunk is this loop's own distinct member, not a shared re-sort"  # noqa: E501
         accumulated[",".join(sorted(chunk))] = [
             v.model_dump_json() for v in report.violations
         ]

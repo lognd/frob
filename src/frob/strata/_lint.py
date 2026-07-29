@@ -185,6 +185,7 @@ def check_lint_rate_limit(
     override (module docstring: a missing rate is a missing fact)."""
     nodes_by_id = {n.id: n for n in model.nodes}
     violations: list[LintViolation] = []
+    # frob:waive PERF004 reason="one sort for deterministic order, not per-iteration"
     for flow in sorted(model.flows, key=lambda f: f.id):
         src = nodes_by_id.get(flow.src)
         if src is None or src.trust != "foreign":

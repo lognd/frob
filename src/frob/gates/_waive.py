@@ -964,6 +964,7 @@ def _waive003_violations(
             continue
         file, _, line_text = origin.rpartition(":")
         line = int(line_text) if line_text.isdigit() else 0
+        # frob:waive PERF004 reason="own distinct files set per (rule, origin) reach entry, not a shared re-sort"  # noqa: E501
         packages = ", ".join(sorted(files))
         _log.warning(
             "WAIVE003: %s frob:waive %s reaches %d packages: %s",

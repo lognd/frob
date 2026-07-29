@@ -63,6 +63,7 @@ class _TarjanState:
         `graph.neighbors(v)` order, one recursive descent at a time, and each
         completed component is popped at the same point in that traversal.
         """
+        # frob:waive PERF003 reason="inherent to Tarjan SCC nested index-compare"
         self._visit(start)
         frames: list[tuple[str, Iterator[str]]] = [
             (start, iter(self.graph.neighbors(start)))

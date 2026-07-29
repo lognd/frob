@@ -17,6 +17,7 @@ _MAX_DISTANCE = 1
 # doc, not accidental drift onto a private helper"
 def _damerau_levenshtein(a: str, b: str) -> int:
     """Edit distance allowing insert/delete/substitute/transpose (OSA variant)."""
+    # frob:waive PERF003 reason="algorithm-inherent edit-distance DP nested scan"
     la, lb = len(a), len(b)
     d = [[0] * (lb + 1) for _ in range(la + 1)]
     for i in range(la + 1):

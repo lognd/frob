@@ -341,6 +341,7 @@ def _def_violations(
         for run in _split_clean_runs(clean_lines, all_effect_lines):
             if len(run) < 2:
                 continue
+            # frob:waive PERF004 reason="run is this loop's own per-run list, not a shared re-sort"  # noqa: E501
             line_list = ", ".join(str(n) for n in sorted(run))
             violations.append(
                 Violation(

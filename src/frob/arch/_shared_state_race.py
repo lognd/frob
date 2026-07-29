@@ -348,6 +348,7 @@ def _enclosing_lock_with(
     `lock-identity-unresolved` advisory)."""
     cur = node.parent
     while cur is not None:
+        # frob:waive PERF003 reason="ancestor-chain walk (bounded by AST nesting depth) over each with_statement's own small with-item list (bounded by items in one `with` clause) -- not a cross join over two large collections"  # noqa: E501
         if cur.type == "with_statement":
             for wc in cur.named_children:
                 if wc.type == "with_clause" and _with_clause_has_lock_item(

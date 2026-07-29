@@ -201,6 +201,7 @@ def _rust_namespaces(root: Path) -> tuple[frozenset[str], dict[str, str]]:
             if not isinstance(pattern, str):
                 continue
             # frob:waive WALK001 reason="Cargo workspace member glob (e.g. 'crates/*'), a single shallow level, not a recursive repo walk"  # noqa: E501
+            # frob:waive PERF004 reason="sorted() is this loop's own iterable, not repeated -- a fresh glob() per member pattern, evaluated once at loop entry"  # noqa: E501
             for member_dir in sorted(root.glob(pattern)):
                 if not member_dir.is_dir():
                     continue

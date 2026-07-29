@@ -346,6 +346,7 @@ def _waive007_comment_violations(
         from frob.gates import _site_from_edge_origin  # local: avoids circularity
 
         file, line = _site_from_edge_origin(edge.origin)
+        # frob:waive PERF004 reason="own distinct refs set per waive edge, not a shared re-sort"  # noqa: E501
         for ticket_id in sorted(refs):
             if ticket_id in queue.tickets:
                 continue

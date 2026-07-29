@@ -350,6 +350,7 @@ def check_over_broad_except(module: NormalizedModule) -> list[ArchSuggestion]:
                         symref=qualname,
                     )
                 )
+            # frob:waive PERF003 reason="func.raises is one function's own small raise-site list, not a scale-sensitive cross join"  # noqa: E501
             for r in func.raises:
                 if abs(r.line - c.line) > _ADJACENCY_WINDOW:
                     continue

@@ -206,6 +206,7 @@ def _duplicate_port_violations(
             by_port[port].append(node_id)
     violations: list[ResourceContentionViolation] = []
     for port, node_ids in sorted(by_port.items()):
+        # frob:waive PERF004 reason="node_ids is this loop's own per-port distinct set, not a shared re-sort"  # noqa: E501
         distinct = sorted(set(node_ids))
         if len(distinct) < 2:
             continue

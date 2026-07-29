@@ -97,6 +97,7 @@ def external_call_advisories(stream: HitStream, index: SectionIndex) -> list[Vio
         share = external_weight / total
         if share < _DOMINANCE_THRESHOLD:
             continue
+        # frob:waive PERF004 reason="edges is this loop's own per-section distinct set, not a shared re-sort"  # noqa: E501
         callee_names = ", ".join(sorted({callee for callee, _ in edges}))
         violations.append(
             Violation(

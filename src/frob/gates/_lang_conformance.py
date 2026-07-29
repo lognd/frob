@@ -214,6 +214,7 @@ def _lang003_unsound_gaps(repo_root: Path) -> tuple[Violation, ...]:
         support = registry.get(language)
         if support is None:
             continue
+        # frob:waive PERF004 reason="support.facets is this loop's own per-language distinct mapping, not a shared re-sort"  # noqa: E501
         for facet_name, status in sorted(support.facets.items()):
             # NOT_APPLICABLE never needs a ticket -- it means the facet
             # genuinely does not apply (e.g. strata's DSL-vs-source-code

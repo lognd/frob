@@ -389,6 +389,7 @@ def _writer_starvation_violations(
         has_alpha = any(mode == AccessMode.ALPHA for _node, mode in pairs)
         if not has_reader or has_alpha:
             continue
+        # frob:waive PERF004 reason="pairs is this loop's own per-resource distinct accessor list, not a shared re-sort"  # noqa: E501
         writers = sorted(
             node_id for node_id, mode in pairs if mode in _WRITE_LIKE_MODES
         )
