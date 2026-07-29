@@ -47,7 +47,8 @@ class TestRealDataflowGraphPerGrammar:
     def/use separation for every grammar `_BLOCK_LABELS` names."""
 
     def test_python_block_still_matches(self, tmp_path):
-        # frob:tests src/frob/dup/_pipeline/_callgraph.py::_real_dataflow_graph kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_callgraph.py::_real_dataflow_graph \
+        # kind="unit"
         path = _write(tmp_path, "m.py", "def add(a, b):\n    c = a + b\n    return c\n")
         tree = symbol_tree(path, (1, 3)).danger_ok
         block = _find_block(tree)
@@ -59,7 +60,8 @@ class TestRealDataflowGraphPerGrammar:
         assert adjacency
 
     def test_rust_block_matches_and_labels_def_use(self, tmp_path):
-        # frob:tests src/frob/dup/_pipeline/_callgraph.py::_real_dataflow_graph kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_callgraph.py::_real_dataflow_graph \
+        # kind="unit"
         path = _write(
             tmp_path,
             "m.rs",
@@ -75,7 +77,8 @@ class TestRealDataflowGraphPerGrammar:
         assert adjacency
 
     def test_typescript_statement_block_matches_and_labels_def_use(self, tmp_path):
-        # frob:tests src/frob/dup/_pipeline/_callgraph.py::_real_dataflow_graph kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_callgraph.py::_real_dataflow_graph \
+        # kind="unit"
         path = _write(
             tmp_path,
             "m.ts",
@@ -94,7 +97,8 @@ class TestRealDataflowGraphPerGrammar:
         assert adjacency
 
     def test_c_compound_statement_matches_and_labels_def_use(self, tmp_path):
-        # frob:tests src/frob/dup/_pipeline/_callgraph.py::_real_dataflow_graph kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_callgraph.py::_real_dataflow_graph \
+        # kind="unit"
         path = _write(
             tmp_path,
             "m.c",
@@ -110,7 +114,8 @@ class TestRealDataflowGraphPerGrammar:
         assert adjacency
 
     def test_cpp_compound_statement_matches_and_labels_def_use(self, tmp_path):
-        # frob:tests src/frob/dup/_pipeline/_callgraph.py::_real_dataflow_graph kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_callgraph.py::_real_dataflow_graph \
+        # kind="unit"
         path = _write(
             tmp_path,
             "m.cpp",
@@ -132,7 +137,8 @@ class TestRealDataflowGraphHonestFallback:
     not (yet) in `_BLOCK_LABELS`."""
 
     def test_unrecognized_grammar_label_returns_none(self):
-        # frob:tests src/frob/dup/_pipeline/_callgraph.py::_real_dataflow_graph kind="unit"
+        # frob:tests src/frob/dup/_pipeline/_callgraph.py::_real_dataflow_graph \
+        # kind="unit"
         unknown_tree = TreeNode(
             label="function_item",
             children=(TreeNode(label="body_expr", children=()),),

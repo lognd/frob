@@ -67,7 +67,8 @@ def _two_real_worktrees(tmp_path: Path) -> tuple[Path, Path]:
 class TestTreeDigest:
     def test_identical_hashes_produce_identical_digest(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestTreeDigest.test_identical_hashes_produce_identical_digest
+        # tests/test_coverage_wait_shared.py::TestTreeDigest.test_identical_hashes_prod\
+        # uce_identical_digest
         root1 = _make_repo(tmp_path, "repo1")
         root2 = _make_repo(tmp_path, "repo2")
         cache1 = root1 / ".frob" / "cache.db"
@@ -78,7 +79,8 @@ class TestTreeDigest:
 
     def test_differing_hashes_produce_differing_digest(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestTreeDigest.test_differing_hashes_produce_differing_digest
+        # tests/test_coverage_wait_shared.py::TestTreeDigest.test_differing_hashes_prod\
+        # uce_differing_digest
         root1 = _make_repo(tmp_path, "repo1")
         root2 = _make_repo(tmp_path, "repo2")
         (root2 / "src" / "pkg" / "mod.py").write_text(
@@ -94,13 +96,15 @@ class TestTreeDigest:
 class TestSharedStateDir:
     def test_two_worktrees_of_same_clone_share_one_dir(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestSharedStateDir.test_two_worktrees_of_same_clone_share_one_dir
+        # tests/test_coverage_wait_shared.py::TestSharedStateDir.test_two_worktrees_of_\
+        # same_clone_share_one_dir
         wt1, wt2 = _two_real_worktrees(tmp_path)
         assert shared_state_dir(wt1) == shared_state_dir(wt2)
 
     def test_no_git_falls_back_to_worktree_local(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestSharedStateDir.test_no_git_falls_back_to_worktree_local
+        # tests/test_coverage_wait_shared.py::TestSharedStateDir.test_no_git_falls_back\
+        # _to_worktree_local
         bare = tmp_path / "not_a_repo"
         bare.mkdir()
         assert shared_state_dir(bare) == bare / ".frob" / "frob-coverage-shared"
@@ -113,7 +117,8 @@ class TestCrossWorktreeSingleFlight:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight.test_identical_digest_worktrees_share_one_run
+        # tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight.test_identi\
+        # cal_digest_worktrees_share_one_run
         wt1, wt2 = _two_real_worktrees(tmp_path)
 
         run_count = 0
@@ -175,7 +180,8 @@ class TestCrossWorktreeSingleFlight:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight.test_differing_digest_worktrees_each_run_independently
+        # tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight.test_differ\
+        # ing_digest_worktrees_each_run_independently
         wt1, wt2 = _two_real_worktrees(tmp_path)
         # Make wt2's tracked content genuinely differ so its digest diverges
         # from wt1's.
@@ -277,7 +283,8 @@ class TestWorktreeLock:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestWorktreeLock.test_uses_daemon_lease_when_daemon_up
+        # tests/test_coverage_wait_shared.py::TestWorktreeLock.test_uses_daemon_lease_w\
+        # hen_daemon_up
         import frob.testing._coverage_wait as _cw
 
         root = _make_repo(tmp_path, "proj")
@@ -322,7 +329,8 @@ class TestWorktreeLock:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestWorktreeLock.test_falls_back_to_file_lock_when_no_daemon
+        # tests/test_coverage_wait_shared.py::TestWorktreeLock.test_falls_back_to_file_\
+        # lock_when_no_daemon
         import frob.testing._coverage_wait as _cw
 
         root = _make_repo(tmp_path, "proj")

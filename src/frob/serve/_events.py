@@ -76,8 +76,8 @@ DEFAULT_SUBSCRIBE_TIMEOUT_S = 60.0
 # frob:waive COV007 reason="T-1096: docs/modules/serve.md's Subscribe/push events \
 # section individually frob:describes this private class by name -- a deliberate \
 # architecture doc walking through the daemon-internal pub/sub design, not accidental \
-# doc-anchor drift onto a private helper, same pattern as this repo's other \
-# frob.serve internals (T-0529)"
+# doc-anchor drift onto a private helper, same pattern as this repo's other frob.serve \
+# internals (T-0529)"
 class _EventBus:
     """Per-daemon-process publish/subscribe registry: any thread may
     `publish` an event frame, and any thread may `subscribe` to receive

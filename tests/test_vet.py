@@ -5666,10 +5666,10 @@ class TestOpaqueIndirectionGate:
 
     def test_opaque_structural_construct_is_frozen(self) -> None:
         # frob:waive COV006 reason="confirmed exercised: the test mutates \
-        # RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS[0], an instance of the bound \
-        # class -- the best-effort callgraph only sees name( call tokens, \
-        # not indexed-constant attribute mutation; same disposition as the \
-        # evasion-taxonomy meta-test COV006 waivers"
+        # RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS[0], an instance of the bound class -- \
+        # the best-effort callgraph only sees name( call tokens, not indexed-constant \
+        # attribute mutation; same disposition as the evasion-taxonomy meta-test \
+        # COV006 waivers"
         # frob:tests src/frob/vet/_capability_registry.py::_OpaqueStructuralConstruct kind="unit"  # noqa: E501
         # T-1051: `_OpaqueStructuralConstruct.model_config = ConfigDict(
         # frozen=True)` (same immutability posture as `_OpaqueConstruct`
@@ -6347,7 +6347,8 @@ class TestSupplyChainUnpinnedDependencies:
     """T-1088: VET007, SC-ATTACK-UNPINNED-DEPENDENCIES."""
 
     def test_pyproject_caret_range_flagged(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_supplychain.py::_unpinned_dependency_violations kind="unit"
+        # frob:tests src/frob/vet/_supplychain.py::_unpinned_dependency_violations \
+        # kind="unit"
         from frob.vet._supplychain import _unpinned_dependency_violations
 
         (tmp_path / "pyproject.toml").write_text(
@@ -6400,7 +6401,8 @@ class TestSupplyChainInstallArtifacts:
     """T-1088: VET008, SC-DETECTION-PYTHON-INSTALL-ARTIFACTS."""
 
     def test_setup_py_absolute_data_files_flagged(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_supplychain.py::_python_install_artifact_violations kind="unit"
+        # frob:tests src/frob/vet/_supplychain.py::_python_install_artifact_violations \
+        # kind="unit"
         from frob.vet._supplychain import _python_install_artifact_violations
 
         (tmp_path / "setup.py").write_text(
@@ -6442,7 +6444,8 @@ class TestSupplyChainCiActionPin:
     """T-1088: VET009, SC-DETECTION-UNPINNED-CI-ACTION."""
 
     def test_workflow_branch_ref_flagged(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_supplychain.py::_unpinned_ci_action_violations kind="unit"
+        # frob:tests src/frob/vet/_supplychain.py::_unpinned_ci_action_violations \
+        # kind="unit"
         from frob.vet._supplychain import _unpinned_ci_action_violations
 
         workflows = tmp_path / ".github" / "workflows"
@@ -6477,7 +6480,8 @@ class TestSupplyChainOpaqueBinaryArtifact:
     """T-1088: VET010, SC-DETECTION-OPAQUE-BINARY-ARTIFACT."""
 
     def test_tracked_so_without_recipe_flagged(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_supplychain.py::_opaque_binary_artifact_violations kind="unit"
+        # frob:tests src/frob/vet/_supplychain.py::_opaque_binary_artifact_violations \
+        # kind="unit"
         from frob.vet._supplychain import _opaque_binary_artifact_violations
 
         blob_dir = tmp_path / "vendor"

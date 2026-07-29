@@ -133,8 +133,8 @@ def _latest_verdict(db_path: Path, ecosystem: str, name: str) -> PackageVerdict 
 # frob:tests \
 # tests/test_vet_containment.py::TestFetchCweForCve.test_cached_body_parses_cwe_ids
 # frob:tests \
-# tests/test_vet_containment.py::TestFetchCweForCve.\
-# test_expired_cache_entry_triggers_a_fresh_fetch
+# tests/test_vet_containment.py::TestFetchCweForCve.test_expired_cache_entry_triggers_a\
+# _fresh_fetch
 # frob:waive ARCH103 reason="T-0977: sqlite cache-read helper -- open, query, \
 # expiry-check, return-or-None; the expiry decision IS the cache-read concern this \
 # function exists for, not a separate one. Extracted T-1067 from two byte-identical \

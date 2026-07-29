@@ -15,13 +15,12 @@ actual `frob check --fix` CLI flag is a later batch of the same epic
 that CLI batch to call directly.
 """
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_fix_engine.py's \
-# exclusivity-vocabulary hits are source-level design-rationale prose \
-# (docstrings and comments describing already-implemented internal \
-# behavior, verifiable by reading the code they annotate) rather than a \
-# separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim -- new T-1138 \
-# module documenting its own tier contract"
+# src/frob/gates/_fix_engine.py's exclusivity-vocabulary hits are source-level \
+# design-rationale prose (docstrings and comments describing already-implemented \
+# internal behavior, verifiable by reading the code they annotate) rather than a \
+# separate cross-module contract needing its own tracked invariant; disposed as a \
+# calibration batch, not claim-by-claim -- new T-1138 module documenting its own tier \
+# contract"
 
 from __future__ import annotations
 

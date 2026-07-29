@@ -4810,11 +4810,11 @@ def _kt_property_name_and_value(node):  # noqa: ANN001, ANN201
 # frob:waive ARCH001 reason="one recursive dispatch over kotlin's three resolvable expression shapes (simple_identifier/navigation_expression/call_expression); each branch is a single named case, splitting further would multiply indirection without shrinking real complexity" ceiling="65"  # noqa: E501
 # frob:tests tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates.test_resolve_expr_text_returns_none_for_unbound_identifier  # noqa: E501
 # frob:invariant terminates reason="the navigation_expression branch recurses only \
-# into node.children[0] (its own base), and the call_expression branch recurses \
-# only into _kt_call_callee(node)'s result -- both a proper descendant of node one \
-# or more tree-sitter edges below it, in the finite parse tree; a lexical prover \
-# cannot see either descent is structurally smaller without dataflow" \
-# measure="tree-sitter AST depth under node, finite per parse"
+# into node.children[0] (its own base), and the call_expression branch recurses only \
+# into _kt_call_callee(node)'s result -- both a proper descendant of node one or more \
+# tree-sitter edges below it, in the finite parse tree; a lexical prover cannot see \
+# either descent is structurally smaller without dataflow" measure="tree-sitter AST \
+# depth under node, finite per parse"
 def _kt_resolve_expr_text(
     node,  # noqa: ANN001
     import_table: dict[str, str],
@@ -5335,7 +5335,9 @@ def _binding_fingerprints(
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
 # frob:ticket T-0153
-# frob:tests tests/test_vet.py::TestFingerprintBindingResolution.test_python_aliased_pickle_loads_still_matches
+# frob:tests \
+# tests/test_vet.py::TestFingerprintBindingResolution.test_python_aliased_pickle_loads_\
+# still_matches
 def _scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
     """The `frob.strata.CVE_FINGERPRINTS` entries whose needle(s) matched in
     `path`'s raw text, OR whose needle(s) match a binding-resolved

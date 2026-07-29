@@ -36,8 +36,8 @@
 // design-rationale/scope-cut prose (a docstring or comment describing \
 // already-implemented internal behavior, verifiable by reading the code it annotates) \
 // rather than a separate cross-module contract needing its own tracked invariant; \
-// disposed as a calibration batch, not claim-by-claim. Preserved verbatim across \
-// the T-1099 module split so the waived line's rationale still applies to the \
+// disposed as a calibration batch, not claim-by-claim. Preserved verbatim across the \
+// T-1099 module split so the waived line's rationale still applies to the \
 // (now-relocated) parser spine."
 
 use serde::Serialize;
@@ -59,12 +59,12 @@ include!("grammar_policy.rs");
 pub(crate) fn parse_source_impl(text: &str) -> String {
     // frob:doc docs/strata/surface.md#parser
     // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
-    // frob:waive AFFECT001 reason="T-1099 pure file-relocation refactor: the \
-    // diff moves this function's body verbatim from parse.rs to parse/mod.rs \
-    // (git sees the whole file as new, so the body reads as changed), no \
-    // grammar/JSON-surface behavior changed; docs/strata/surface.md#parser's \
-    // prose still accurately describes the unchanged behavior -- cargo tests \
-    // (137 passing, unchanged) are this refactor's safety net, not a doc edit"
+    // frob:waive AFFECT001 reason="T-1099 pure file-relocation refactor: the diff \
+    // moves this function's body verbatim from parse.rs to parse/mod.rs (git sees the \
+    // whole file as new, so the body reads as changed), no grammar/JSON-surface \
+    // behavior changed; docs/strata/surface.md#parser's prose still accurately \
+    // describes the unchanged behavior -- cargo tests (137 passing, unchanged) are \
+    // this refactor's safety net, not a doc edit"
     match lex(text).and_then(|toks| Parser::new(toks).parse_program()) {
         Ok(module) => json!({ "ok": module }).to_string(),
         Err(e) => json!({

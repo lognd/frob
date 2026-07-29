@@ -2386,11 +2386,11 @@ class _OpaqueConstruct(BaseModel):
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0665
 # frob:ticket T-1047
-# frob:waive AFFECT001 reason="T-1047 extended this tuple with 15 more \
-# entries (same shape as the existing ones); docs/modules/vet.md is outside \
-# T-1047's declared scope (src/frob/vet/**, src/frob/gates/_opaque.py, \
-# docs/design/registry/evasion.yaml, tests/test_vet.py) -- matches T-0665's \
-# own precedent for the identical situation on this same constant"
+# frob:waive AFFECT001 reason="T-1047 extended this tuple with 15 more entries (same \
+# shape as the existing ones); docs/modules/vet.md is outside T-1047's declared scope \
+# (src/frob/vet/**, src/frob/gates/_opaque.py, docs/design/registry/evasion.yaml, \
+# tests/test_vet.py) -- matches T-0665's own precedent for the identical situation on \
+# this same constant"
 # frob:enforces EVA-PY-R01
 # frob:enforces EVA-PY-R02
 # frob:enforces EVA-PY-R03

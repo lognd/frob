@@ -670,7 +670,13 @@ def _blast_radius_gaps_per_user(
     model: KernelModel,
 ) -> Result[tuple[list[FamilyGap], list[str]], StrataError]:
     """One compromised-user blast-radius scenario per `runs_as`
-    service user, in order."""
+    service user, in order.
+
+    Nodes that declare host constructs (`owns`/`acl`/`unit`/`listens`)
+    without a `runs_as` service-account claim have no real identity to
+    scan a compromised-user scenario against -- `runs_as=None` is
+    filtered out of the user set rather than treated as its own
+    "compromised-user:None" scenario (frob:ticket T-1164)."""
     gaps: list[FamilyGap] = []
     checked: list[str] = []
     users = sorted(
@@ -678,6 +684,7 @@ def _blast_radius_gaps_per_user(
             manifest.runs_as
             for node in model.nodes
             if (manifest := host_manifest_for(node)) is not None
+            and manifest.runs_as is not None
         }
     )
     for user in users:

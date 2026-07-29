@@ -67,14 +67,13 @@ class Subcommand(str, enum.Enum):
 
 
 # frob:doc docs/modules/app.md#config
-# frob:waive AFFECT001 reason="T-1150 added one new bool field (sys_check, \
-# frob sys sync-interface --check); the established convention here IS a \
-# short per-field paragraph (see the T-1004/T-1029/T-1057/T-1069/T-1130 \
-# precedents just above this attr), but docs/modules/app.md is not in \
-# T-1150's declared scope and adding it opened a scope-closure cascade \
-# over dozens of unrelated app/ symbols (SCOPE002, verified) -- disclosed \
-# deferral, not a convention change; a follow-up should add the T-1150 \
-# paragraph under its own scoped ticket"
+# frob:waive AFFECT001 reason="T-1150 added one new bool field (sys_check, frob sys \
+# sync-interface --check); the established convention here IS a short per-field \
+# paragraph (see the T-1004/T-1029/T-1057/T-1069/T-1130 precedents just above this \
+# attr), but docs/modules/app.md is not in T-1150's declared scope and adding it \
+# opened a scope-closure cascade over dozens of unrelated app/ symbols (SCOPE002, \
+# verified) -- disclosed deferral, not a convention change; a follow-up should add the \
+# T-1150 paragraph under its own scoped ticket"
 # frob:ticket T-0030
 # frob:ticket T-0085
 # frob:ticket T-0115
@@ -585,10 +584,9 @@ class AppConfig(BaseModel):
     @classmethod
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
         # frob:doc docs/modules/app.md#config
-        # frob:waive AFFECT001 reason="same T-1150 sys_check/scope-closure \
-        # disclosed deferral as this class's own AFFECT001 waiver above -- \
-        # this is the bool-field loop `sys_check` was added to, no separate \
-        # rationale needed"
+        # frob:waive AFFECT001 reason="same T-1150 sys_check/scope-closure disclosed \
+        # deferral as this class's own AFFECT001 waiver above -- this is the \
+        # bool-field loop `sys_check` was added to, no separate rationale needed"
         # frob:ticket T-0021
         # frob:ticket T-0085
         # frob:ticket T-0030

@@ -24,7 +24,8 @@ _SAMPLE_PY = (
 
 class TestWatchTick:
     def test_no_change_leaves_state_cached(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_serve_watch.py::TestWatchTick.test_no_change_leaves_state_cached
+        # frob:tests \
+        # tests/test_serve_watch.py::TestWatchTick.test_no_change_leaves_state_cached
         _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
         _git_init(tmp_path)
         _warm._invalidate(tmp_path)
@@ -37,7 +38,8 @@ class TestWatchTick:
         assert second_key == first_key
 
     def test_change_invalidates_and_prewarms(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_serve_watch.py::TestWatchTick.test_change_invalidates_and_prewarms
+        # frob:tests \
+        # tests/test_serve_watch.py::TestWatchTick.test_change_invalidates_and_prewarms
         _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
         _git_init(tmp_path)
         _warm._invalidate(tmp_path)
@@ -58,7 +60,9 @@ class TestWatchTick:
         assert cached_after.dirty_key == new_key
 
     def test_watch_tick_never_disagrees_with_pull_signal(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_serve_watch.py::TestWatchTick.test_watch_tick_never_disagrees_with_pull_signal
+        # frob:tests \
+        # tests/test_serve_watch.py::TestWatchTick.test_watch_tick_never_disagrees_with\
+        # _pull_signal
         # Differential harness (T-1094 acceptance [1]): across a
         # randomized sequence of edits, watch_tick's own "changed" verdict
         # must always agree with directly comparing two independent
@@ -89,7 +93,9 @@ class TestWatchTick:
 
 class TestWatchThread:
     def test_change_fires_on_change_callback(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_serve_watch.py::TestWatchThread.test_change_fires_on_change_callback
+        # frob:tests \
+        # tests/test_serve_watch.py::TestWatchThread.test_change_fires_on_change_callba\
+        # ck
         _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
         _git_init(tmp_path)
         _warm._invalidate(tmp_path)

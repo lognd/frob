@@ -43,8 +43,7 @@ def _start_daemon(root: Path, idle_timeout_s: float = 5.0) -> threading.Thread:
 
 class TestQuery:
     def test_no_daemon_env_bypass(self, root: Path, monkeypatch) -> None:
-        # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestQuery.test_no_daemon_env_bypass
+        # frob:tests tests/test_app_daemon_proxy.py::TestQuery.test_no_daemon_env_bypass
         monkeypatch.setenv("FROB_NO_DAEMON", "1")
         result = query(root, "frob_doable_tickets")
         assert result.is_err
@@ -62,8 +61,7 @@ class TestQuery:
         assert result.danger_err is ProxyReason.Unreachable
 
     def test_live_daemon_hit(self, root: Path) -> None:
-        # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestQuery.test_live_daemon_hit
+        # frob:tests tests/test_app_daemon_proxy.py::TestQuery.test_live_daemon_hit
         thread = _start_daemon(root)
         try:
             result = query(root, "frob_doable_tickets")
@@ -102,7 +100,8 @@ def _shutdown(root: Path, thread: threading.Thread) -> None:
 class TestEnsureDaemon:
     def test_spawns_when_nothing_recorded(self, root: Path, monkeypatch) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_spawns_when_nothing_recorded
+        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_spawns_when_nothing_rec\
+        # orded
         # No daemon is up, so the frob_version RPC finds nothing to answer
         # and ensure_daemon must spawn one.
         monkeypatch.setattr(_daemon_proxy, "_query_daemon_version", lambda r: None)
@@ -113,7 +112,8 @@ class TestEnsureDaemon:
 
     def test_noop_when_version_matches(self, root: Path, monkeypatch) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_noop_when_version_matches
+        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_noop_when_version_match\
+        # es
         monkeypatch.setattr(
             _daemon_proxy,
             "_query_daemon_version",
@@ -142,7 +142,8 @@ class TestEnsureDaemon:
 
     def test_version_handshake_end_to_end(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_version_handshake_end_to_end
+        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_version_handshake_end_t\
+        # o_end
         # A real running daemon (not mocked): frob_version RPC must report
         # this client's own version, so ensure_daemon must not spawn a
         # second, redundant daemon.
@@ -162,7 +163,8 @@ class TestDifferentialParity:
 
     def test_perf_hot_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_perf_hot_json_daemon_matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_perf_hot_json_dae\
+        # mon_matches_in_process
         pytest.importorskip("frob_core")
         project = tmp_path
         (project / ".frob").mkdir()
@@ -204,7 +206,8 @@ class TestDifferentialParity:
 
     def test_graph_affects_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_affects_json_daemon_matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_affects_jso\
+        # n_daemon_matches_in_process
         pytest.importorskip("frob_core")
         project = tmp_path
         (project / ".frob").mkdir()
@@ -252,7 +255,8 @@ class TestDifferentialParity:
 
     def test_graph_query_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_query_json_daemon_matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_query_json_\
+        # daemon_matches_in_process
         pytest.importorskip("frob_core")
         project = tmp_path
         (project / ".frob").mkdir()
@@ -293,7 +297,8 @@ class TestDifferentialParity:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_doable_tickets_json_daemon_matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_doable_tickets_js\
+        # on_daemon_matches_in_process
         pytest.importorskip("frob_core")
         project = tmp_path
         (project / ".frob").mkdir()
@@ -331,7 +336,8 @@ class TestDifferentialParity:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_check_delta_gates_only_json_daemon_matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_check_delta_gates\
+        # _only_json_daemon_matches_in_process
         # T-1147: the one narrow `frob check --only gates --delta --json`
         # shape `_try_check_delta_via_daemon` proxies -- everything else
         # (a mixed --only, no --delta, a non-python/polyglot project) must
@@ -390,7 +396,8 @@ class TestDifferentialParity:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_touched_tests_json_daemon_matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_touched_tests_jso\
+        # n_daemon_matches_in_process
         pytest.importorskip("frob_core")
         project = tmp_path
         (project / ".frob").mkdir()
@@ -445,7 +452,8 @@ class TestDifferentialParity:
 
     def test_exports_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_exports_json_daemon_matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_exports_json_daem\
+        # on_matches_in_process
         pytest.importorskip("frob_core")
         project = tmp_path
         (project / ".frob").mkdir()
@@ -488,7 +496,8 @@ class TestDifferentialParity:
 
     def test_stats_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_stats_json_daemon_matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_stats_json_daemon\
+        # _matches_in_process
         pytest.importorskip("frob_core")
         project = tmp_path
         (project / ".frob").mkdir()

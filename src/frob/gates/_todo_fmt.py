@@ -7,13 +7,12 @@ Kept together because both are diff/comment-scanning gates over the same
 gates (COV/TICK/SCOPE) and the invariant/decision gates that stayed behind.
 """
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_todo_fmt.py's \
-# exclusivity-vocabulary hits are source-level design-rationale prose \
-# (docstrings and comments describing already-implemented internal \
-# behavior, verifiable by reading the code they annotate) rather than a \
-# separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim -- module prose \
-# split verbatim from the pre-T-1077 gates/__init__.py monolith"
+# src/frob/gates/_todo_fmt.py's exclusivity-vocabulary hits are source-level \
+# design-rationale prose (docstrings and comments describing already-implemented \
+# internal behavior, verifiable by reading the code they annotate) rather than a \
+# separate cross-module contract needing its own tracked invariant; disposed as a \
+# calibration batch, not claim-by-claim -- module prose split verbatim from the \
+# pre-T-1077 gates/__init__.py monolith"
 
 from __future__ import annotations
 
@@ -74,8 +73,8 @@ def _todo002_edges(snapshot: GraphSnapshot, queue: TicketQueue) -> list[Violatio
 
 # frob:ticket T-0783
 # frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to run_argv (already \
-# Result-returning, checked via .is_err above) and data.get('project', {}).get(\
-# 'version') dict access on a dict tomllib.loads already produced inside the \
+# Result-returning, checked via .is_err above) and data.get('project', \
+# {}).get('version') dict access on a dict tomllib.loads already produced inside the \
 # caught try block; no unhandled raise path remains"
 def _pyproject_version_at(root: Path, sha: str) -> str | None:
     """The `project.version` string from `pyproject.toml` AS IT READ at

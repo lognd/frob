@@ -24,7 +24,8 @@ _SAMPLE_PY = (
 
 class TestEventBus:
     def test_publish_reaches_all_subscribers(self) -> None:
-        # frob:tests tests/test_serve_events.py::TestEventBus.test_publish_reaches_all_subscribers
+        # frob:tests \
+        # tests/test_serve_events.py::TestEventBus.test_publish_reaches_all_subscribers
         bus = _EventBus()
         _, q1 = bus.subscribe()
         _, q2 = bus.subscribe()
@@ -33,7 +34,9 @@ class TestEventBus:
         assert q2.get(timeout=2) == {"event": "graph-changed", "data": {"root": "x"}}
 
     def test_publish_before_any_subscriber_is_a_noop(self) -> None:
-        # frob:tests tests/test_serve_events.py::TestEventBus.test_publish_before_any_subscriber_is_a_noop
+        # frob:tests \
+        # tests/test_serve_events.py::TestEventBus.test_publish_before_any_subscriber_i\
+        # s_a_noop
         bus = _EventBus()
         bus.publish("graph-changed")  # must not raise
         sid, q = bus.subscribe()
@@ -41,7 +44,9 @@ class TestEventBus:
         bus.unsubscribe(sid)
 
     def test_unsubscribe_wakes_blocked_consumer(self) -> None:
-        # frob:tests tests/test_serve_events.py::TestEventBus.test_unsubscribe_wakes_blocked_consumer
+        # frob:tests \
+        # tests/test_serve_events.py::TestEventBus.test_unsubscribe_wakes_blocked_consu\
+        # mer
         bus = _EventBus()
         sid, q = bus.subscribe()
 
@@ -79,7 +84,9 @@ def _start_daemon(root: Path, idle_timeout_s: float = 5.0) -> threading.Thread:
 
 class TestSubscribeAndWait:
     def test_receives_graph_changed_after_edit(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_receives_graph_changed_after_edit
+        # frob:tests \
+        # tests/test_serve_events.py::TestSubscribeAndWait.test_receives_graph_changed_\
+        # after_edit
         _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
         _git_init(tmp_path)
         thread = _start_daemon(tmp_path, idle_timeout_s=10.0)
@@ -100,7 +107,9 @@ class TestSubscribeAndWait:
         thread.join(timeout=15)
 
     def test_times_out_with_no_matching_event(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_times_out_with_no_matching_event
+        # frob:tests \
+        # tests/test_serve_events.py::TestSubscribeAndWait.test_times_out_with_no_match\
+        # ing_event
         _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
         _git_init(tmp_path)
         thread = _start_daemon(tmp_path, idle_timeout_s=10.0)
@@ -115,7 +124,8 @@ class TestSubscribeAndWait:
         thread.join(timeout=15)
 
     def test_no_daemon_is_unreachable(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_no_daemon_is_unreachable
+        # frob:tests \
+        # tests/test_serve_events.py::TestSubscribeAndWait.test_no_daemon_is_unreachable
         _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
         _git_init(tmp_path)
         result = subscribe_and_wait(tmp_path, "graph-changed", timeout_s=1.0)
@@ -123,7 +133,9 @@ class TestSubscribeAndWait:
         assert result.danger_err == DaemonError.Unreachable
 
     def test_receives_coverage_fresh_on_stamp_write(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_receives_coverage_fresh_on_stamp_write
+        # frob:tests \
+        # tests/test_serve_events.py::TestSubscribeAndWait.test_receives_coverage_fresh\
+        # _on_stamp_write
         _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
         _git_init(tmp_path)
         thread = _start_daemon(tmp_path, idle_timeout_s=10.0)

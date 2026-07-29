@@ -208,13 +208,12 @@ class BenignCapability(BaseModel):
 #: it only takes effect for the quality loop, where it is a genuine gap in
 #: `QUALITY_CATALOG`'s vocabulary, not a security exemption.
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
-# frob:waive AFFECT001 reason="T-1075 added env.read/env.write entries, \
-# same shape as every other entry already in this tuple; docs/strata/threat.md \
-# is outside T-1075's declared scope (src/frob/strata/_effects.py, \
-# src/frob/vet/_capability_modes.py, extended to src/frob/strata/_selfconform.py, \
-# src/frob/strata/_threat.py, src/frob/vet/_capability_registry.py, and their \
-# test files) -- matches T-1047's own precedent for the identical situation on \
-# CAPABILITY_KINDS"
+# frob:waive AFFECT001 reason="T-1075 added env.read/env.write entries, same shape as \
+# every other entry already in this tuple; docs/strata/threat.md is outside T-1075's \
+# declared scope (src/frob/strata/_effects.py, src/frob/vet/_capability_modes.py, \
+# extended to src/frob/strata/_selfconform.py, src/frob/strata/_threat.py, \
+# src/frob/vet/_capability_registry.py, and their test files) -- matches T-1047's own \
+# precedent for the identical situation on CAPABILITY_KINDS"
 DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
     BenignCapability(
         kind="exec",

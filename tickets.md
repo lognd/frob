@@ -2831,6 +2831,7 @@ moved prose trips it, watch for tests that monkeypatch a moved function
 via the PACKAGE attribute (tickets_mod.<name>) -- those need a late
 `from frob.tickets import <name>` inside the moved function body instead
 of a module-top-level binding.
+
 <!-- ticket:T-1154 -->
 ```yaml
 id: T-1154
@@ -3222,7 +3223,7 @@ so the five SYS205:tickets_ledger waivers can finally be dropped too.
 id: T-1159
 title: 'arch: split remaining ~12 gate families out of src/frob/gates/__init__.py
   (8408 lines) -- T-1140 residue'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-28'
@@ -3234,17 +3235,121 @@ scope:
 - src/frob/gates/**
 - docs/modules/gates.md
 - tests/test_gates.py
+- tests/test_decisions.py
+- docs/modules/decisions.md
+- docs/design/registry/EXHAUSTIVENESS-GATE.md
+- design/frob.strata
+scope_changes:
+- op: add
+  glob: tests/test_decisions.py
+  reason: T-1159 verbatim-moves decisions_gate/compliance_gate to a new file; their
+    frob:tests/frob:describes back-references and AFFECT001-touched doc all need updating
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: docs/modules/decisions.md
+  reason: T-1159 verbatim-moves decisions_gate/compliance_gate to a new file; their
+    frob:tests/frob:describes back-references and AFFECT001-touched doc all need updating
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: docs/design/registry/EXHAUSTIVENESS-GATE.md
+  reason: T-1159 verbatim-moves decisions_gate/compliance_gate to a new file; their
+    frob:tests/frob:describes back-references and AFFECT001-touched doc all need updating
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: design/frob.strata
+  reason: sys sync-interface writes interface=compliance_gate (newly present in gates
+    __all__)
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/test_decisions.py::test_dec001_dangling_decision_edge
+- tests/test_gates.py::TestComplianceGate::test_compliance005_real_repo_registry_passes
 acceptance:
 - text: GIVEN src/frob/gates/__init__.py WHEN the remaining families (SCOPE/PREWORK,
     INV00x, TEST00x, DECISIONS, COMPLIANCE00x, SYS00x/DOC00x, DUP00x, REL00x, FUZZ00x,
     DOCLINK/DOCANCHOR, PERF, run_gates spine, COV00x) are extracted one cohesive family
     per land THEN gates/__init__.py drops below the 800-line large-file threshold
     with no public API change and all existing tests pass
-  evidence: []
+  evidence:
+  - tests/test_decisions.py::test_dec001_dangling_decision_edge
 threat: null
 component: null
 ```
 T-1140 extracted the TICK00x family (gates/__init__.py 9172 -> 8408) and disclosed the ~12 remaining families in its done report WITHOUT filing a residue ticket (fourth disclosed-cut-without-ticket incident -- T-1129's gate is the systemic fix; coordinator refiled this one). Same T-1072/T-1077/T-1140 discipline: verbatim moves, directives intact, lazy call-time imports, re-export only externally-called names, carried INV006 waivers, PII012 re-keys, and design/frob.strata interface= sync now via frob sys sync-interface (T-1150).
+
+## Done report
+
+Changed:
+src/frob/gates/_decisions_compliance.py (new: decisions_gate, compliance_gate, _compliance005_violation, verbatim move)
+src/frob/gates/__init__.py (removed the moved block; import + re-export decisions_gate/compliance_gate; __all__ += compliance_gate)
+tests/test_decisions.py (frob:tests back-reference updated to the new file path)
+docs/modules/decisions.md, docs/modules/gates.md (frob:describes anchors updated to the new file path)
+docs/design/registry/EXHAUSTIVENESS-GATE.md (AFFECT001: compliance_gate's own affects()-closure doc, one-sentence note on the new file location)
+design/frob.strata (sys sync-interface: +compliance_gate, newly present in gates.__all__)
+
+Extracted the DEC00x/COMPLIANCE00x family (decisions_gate, compliance_gate,
+_compliance005_violation) verbatim into a new module,
+src/frob/gates/_decisions_compliance.py, per the T-1072/T-1077/T-1140
+discipline this ticket's own Description names: byte-identical function
+bodies/docstrings/directives moved, lazy call-time imports preserved
+as-is, only decisions_gate + compliance_gate re-exported (verified by a
+repo-wide grep -- _compliance005_violation is never imported elsewhere),
+design/frob.strata synced via `frob sys sync-interface` (not hand-edited).
+gates/__init__.py: 8554 -> 8349 lines.
+
+One cohesive family per land, per the ticket's own instruction -- this
+land does DEC00x/COMPLIANCE00x only. The ~11 remaining families named in
+T-1159's own acceptance criterion (SCOPE/PREWORK, INV00x, TEST00x,
+SYS00x/DOC00x, DUP00x, REL00x, FUZZ00x, DOCLINK/DOCANCHOR, PERF, run_gates
+spine, COV00x) are NOT done -- gates/__init__.py is still 8349 lines,
+well above the acceptance criterion's 800-line target. Filed as residue:
+T-1170 ("arch: split remaining ~11 gate families out of
+src/frob/gates/__init__.py (8349 lines) -- T-1159 residue"), naming each
+remaining family and the same one-family-per-land discipline to follow.
+
+Evidence:
+tests/test_decisions.py::test_dec001_dangling_decision_edge
+tests/test_gates.py::TestComplianceGate::test_compliance005_real_repo_registry_passes
+15/15 relevant tests pass: `pytest tests/test_decisions.py tests/test_gates.py -k "Compliance or decision" -q` (measured: "...............  [100%]").
+Acceptance [0] left UNBOUND -- this land only partially satisfies it
+(one family of ~12, disclosed above and in the residue ticket), not a
+false claim of completion.
+
+Filed: T-1170 (residue for the remaining ~11 families)
+
+Gates: `frob check --ticket T-1159` chunked (gates-fast, gates-native,
+gates-security, lint, static) -- gates-native/gates-security/static all
+0 errors. gates-fast shows 2 PRE-EXISTING INV006 errors in
+strata-core/src/parse/grammar_flow.rs and lexer.rs -- neither file is
+touched by this diff, neither is in T-1159's scope, and they are absent
+from frob-ratchet.lock.json (unbaselined, unrelated to this ticket's
+work). lint shows pre-existing ruff-check/ruff-format findings entirely
+in unrelated files (src/frob/_cli_parsers/**, src/frob/tickets/__init__.py,
+src/frob/vet/**, src/frob/serve/_socketd.py, src/frob/doctor.py, none
+touched by this diff); my six touched files (src/frob/gates/
+_decisions_compliance.py, src/frob/gates/__init__.py, tests/
+test_decisions.py, docs/modules/decisions.md, docs/modules/gates.md,
+docs/design/registry/EXHAUSTIVENESS-GATE.md) are ruff-check/ruff-format
+clean.
+`uv run frob sys sync-interface` run and committed (compliance_gate
+newly exported) -- `--check` clean after.
+
+### Changed
+```
+ tickets.md | 101 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 98 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/test_decisions.py::test_dec001_dangling_decision_edge` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestComplianceGate::test_compliance005_real_repo_registry_passes` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1160 -->
 ```yaml
@@ -3549,7 +3654,7 @@ tests still pass.
 id: T-1164
 title: 'strata: blast-radius scan spuriously fires for nodes with no declared runs_as
   (None treated as a real compromised-user identity)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -3559,6 +3664,15 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/strata/_audit.py
+- tests/unit/strata/test_audit.py
+scope_changes:
+- op: add
+  glob: tests/unit/strata/test_audit.py
+  reason: regression test lives here per playbook evidence convention
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/unit/strata/test_audit.py::TestHostWiring::test_owns_without_runs_as_no_blast_radius_scenario
 threat: null
 component: null
 ```
@@ -3608,6 +3722,38 @@ Blocks T-1158 (`design/frob.strata`'s owns= declarations for the
 tickets_ledger writers cannot land clean until this is fixed -- `frob
 sys audit`/SELFAUDIT001 would go from 5 pre-existing unrelated gaps to
 15).
+
+## Done report
+
+Filtered `runs_as is None` out of `_blast_radius_gaps_per_user`'s per-user
+scenario set in `src/frob/strata/_audit.py`. A node declaring `owns`/`acl`
+with no `runs_as` service-account claim has a manifest (`host_manifest_for`
+is non-None once ANY std.host construct is present) but no real identity
+for a compromised-user blast-radius scenario -- the old comprehension let
+the bare `None` through, synthesizing a spurious "compromised-user:None"
+scenario and firing HOST-BLAST for every node reachable from a plain
+owns/acl declaration. This unblocks T-1158 (design/frob.strata's
+tickets_ledger owns= declarations).
+
+Added a regression test (`TestHostWiring::
+test_owns_without_runs_as_no_blast_radius_scenario`) with an
+owns-without-runs_as fixture proving no blast-radius view/gap fires.
+
+### Changed
+```
+ src/frob/strata/_audit.py       |  9 ++++++++-
+ tests/unit/strata/test_audit.py | 18 ++++++++++++++++++
+ tickets.md                      | 12 ++++++++++--
+ 3 files changed, 36 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_audit.py::TestHostWiring::test_owns_without_runs_as_no_blast_radius_scenario` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 52 error(s), 458 warning(s), 497 waived
+- error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:116, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:194, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:208, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:249, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:276, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:374, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:399, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:423, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:67, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:78, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:17, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:221, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:236, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:271, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:290, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:317, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:351, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:371, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:394, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:409, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:523, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:63, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:110, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:125, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:136, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:152, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:195, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:236, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:39, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:71, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_ticket.py:999, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/doctor.py:243, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/dup/_core.py:173, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/serve/_socketd.py:375, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/serve/_socketd.py:397, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/serve/_socketd.py:409, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/serve/_socketd.py:428, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/serve/_socketd.py:457, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/tickets/__init__.py:1968, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/vet/_capability.py:5338, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/vet/_supplychain.py:154, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/vet/_supplychain.py:168, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/vet/_supplychain.py:209, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/vet/_supplychain.py:267, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/vet/_supplychain.py:295, F401@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/tickets/__init__.py:111, F401@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/tickets/__init__.py:22, F401@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/tickets/__init__.py:23, F401@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/tickets/__init__.py:35, F401@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/tickets/__init__.py:46, INV006@strata-core/src/parse/grammar_flow.rs, INV006@strata-core/src/parse/lexer.rs
 
 <!-- ticket:T-1165 -->
 ```yaml
@@ -3835,3 +3981,66 @@ An earlier version of this ticket (T-1168, 11 different rules)
 was filed and then dropped as moot once main's own concurrent work
 resolved it -- this is a fresh, distinct finding (single rule,
 NATIVE001), not a re-file of the same one.
+
+<!-- ticket:T-1170 -->
+```yaml
+id: T-1170
+title: 'arch: split remaining ~11 gate families out of src/frob/gates/__init__.py
+  (8349 lines) -- T-1159 residue'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- docs/modules/gates.md
+- tests/test_gates.py
+threat: null
+component: null
+```
+T-1159 extracted the DEC00x/COMPLIANCE00x family (decisions_gate,
+compliance_gate, _compliance005_violation) into
+src/frob/gates/_decisions_compliance.py (gates/__init__.py 8554 -> 8349
+lines), one cohesive family per land per the standing discipline
+(T-1072/T-1077/T-1140 precedent: verbatim moves, directives intact, lazy
+call-time imports, re-export only externally-called names, carried
+INV006 waivers, PII012 re-keys, design/frob.strata interface= sync via
+frob sys sync-interface).
+
+Filed honestly per T-1129's own TICK011 gate (which this residue itself
+now enforces): T-1159's own acceptance criterion named ~12 remaining
+families (SCOPE/PREWORK, INV00x, TEST00x, SYS00x/DOC00x, DUP00x, REL00x,
+FUZZ00x, DOCLINK/DOCANCHOR, PERF, run_gates spine, COV00x) and this land
+only had budget for one. gates/__init__.py is still 8349 lines, well
+above the 800-line large-file threshold (ARCH102-adjacent) T-1159's
+acceptance criterion targets -- the remaining families are the real
+residue, not done.
+
+Follow-up work, in the same one-family-per-land shape T-1159 established:
+- SYS00x/DOC003 (sys_gate + helpers, ~600 lines, adjacent to the
+  COMPLIANCE family this land just moved -- natural next split)
+- DUP00x (dup_gate + helpers, ~500 lines)
+- FUZZ00x (fuzz_gate)
+- DOCLINK/DOCANCHOR (doclink_gate, docanchor_gate)
+- INV00x (inv006_gate + helpers -- note _inv006_split_assist.py already
+  holds T-1134's carry-waiver detector separately; the gate function
+  itself is still in __init__.py)
+- TEST00x (test policy loading + TEST00x gate family)
+- REL00x (release-bump/debt gate wiring)
+- PERF (perf gate wiring, distinct from frob.perf's own module)
+- COV00x (coverage gate family)
+- SCOPE/PREWORK (scope_gate, prework_gate)
+- the run_gates spine itself (_assemble_gate_report, _build_jobs,
+  run_gates) -- likely stays in __init__.py as the module's own
+  orchestration root, but worth an explicit decision at design time
+  rather than assuming
+
+Each remaining family should get its own ticket sized to "one cohesive
+land" the way this one was, not one giant ticket -- but re-filing T-1159
+itself (re-titled to name only the STILL-remaining families) is simplest
+and avoids re-deriving the acceptance criteria/discipline notes from
+scratch.

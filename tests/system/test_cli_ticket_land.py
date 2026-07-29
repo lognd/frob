@@ -33,11 +33,10 @@ class TestLandCLI:
     # frob:ticket T-1110
     def test_dry_run_reports_clean(self, tmp_path: Path) -> None:
         # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land kind="unit"
-        # frob:waive COV006 reason="confirmed exercised: this is a system test \
-        # that spawns the real frob CLI as a subprocess (run of ticket land) -- \
-        # the process boundary is structurally invisible to the in-process \
-        # best-effort callgraph, same class as this repo's other \
-        # subprocess-dispatch COV006 waivers"
+        # frob:waive COV006 reason="confirmed exercised: this is a system test that \
+        # spawns the real frob CLI as a subprocess (run of ticket land) -- the process \
+        # boundary is structurally invisible to the in-process best-effort callgraph, \
+        # same class as this repo's other subprocess-dispatch COV006 waivers"
         repo = tmp_path / "main"
         _init_repo(repo)
 

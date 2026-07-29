@@ -225,8 +225,7 @@ class TestCheckResultRendersUnavailableTool:
 # frob:ticket T-1022
 class TestToolCrashResult:
     def test_shape_is_a_failing_diagnostic(self) -> None:
-        # frob:tests src/frob/process/parsers/common.py::tool_crash_result \
-        # kind="unit"
+        # frob:tests src/frob/process/parsers/common.py::tool_crash_result kind="unit"
         from frob.process.parsers.common import tool_crash_result
 
         r = tool_crash_result("cargo-test", ValueError("boom"))

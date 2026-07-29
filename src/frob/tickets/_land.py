@@ -429,10 +429,10 @@ def _verified_reset_root(
 
 
 # frob:doc docs/modules/tickets.md#frob-ticket-land
-# frob:waive COV007 reason="T-1024: the land ordering rule this table is \
-# genuinely documented at the public frob:doc anchor (frob ticket land's \
-# own section) -- no separate public caller worth re-anchoring onto, same \
-# disposition as this module's other private-table waivers"
+# frob:waive COV007 reason="T-1024: the land ordering rule this table is genuinely \
+# documented at the public frob:doc anchor (frob ticket land's own section) -- no \
+# separate public caller worth re-anchoring onto, same disposition as this module's \
+# other private-table waivers"
 _STATE_RANK: dict[TicketState, int] = {
     TicketState.QUEUED: 0,
     TicketState.PLANNED: 1,

@@ -255,9 +255,8 @@ def tighten_deprecated_baseline(
                 symbol,
                 len(counts),
             )
-            # frob:waive PERF004 reason="counts is this loop's own per-symbol \
-            # distinct file-count set, sorted once at seed time; not a shared \
-            # re-sort"
+            # frob:waive PERF004 reason="counts is this loop's own per-symbol distinct \
+            # file-count set, sorted once at seed time; not a shared re-sort"
             entries.append(
                 DeprecatedBaselineEntry(
                     symbol=symbol,

@@ -1,5 +1,5 @@
-# frob:waive INV006 reason="T-1076 split of __main__.py's original T-0585 waiver: \
-# this module's help/docstring text carries incidental exclusivity-flavored wording \
+# frob:waive INV006 reason="T-1076 split of __main__.py's original T-0585 waiver: this \
+# module's help/docstring text carries incidental exclusivity-flavored wording \
 # (argparse help strings, scope-cut prose) inherited verbatim from __main__.py, not a \
 # new normative contract -- disposed as the same calibration batch, not claim-by-claim"
 """CLI parser builders: the full `frob ticket` subcommand tree.
@@ -146,12 +146,12 @@ def _add_ticket_new_parser(ticket_sub) -> None:
 
 # frob:ticket T-0030
 # frob:ticket T-1100
-# frob:waive AFFECT001 reason="T-1100 added a new read-only SUBCOMMAND \
-# (flow) to this parser registration function -- the bound \
-# agentic-workflow.md #skills/next and #skills/plan doc anchors describe \
-# the dispatch-loop/planning skills' USE of frob ticket doable/plan, an \
-# orthogonal concern this addition never touches; docs/modules/tickets.md \
-# (the doc this change IS actually about) was updated in the same diff"
+# frob:waive AFFECT001 reason="T-1100 added a new read-only SUBCOMMAND (flow) to this \
+# parser registration function -- the bound agentic-workflow.md #skills/next and \
+# #skills/plan doc anchors describe the dispatch-loop/planning skills' USE of frob \
+# ticket doable/plan, an orthogonal concern this addition never touches; \
+# docs/modules/tickets.md (the doc this change IS actually about) was updated in the \
+# same diff"
 def _add_ticket_query_parsers(ticket_sub) -> list:
     """Register the read-only `list`/`show`/`doable`/`board`/`epic`/
     `brief`/`flow` ticket subcommands."""
@@ -996,7 +996,10 @@ def _add_ticket_lifecycle_parsers(ticket_sub) -> list:
 
 
 # frob:ticket T-0030
-# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) does not trace this cross-package private import -- same class of gap as this repo's other cross-package DEAD001 waivers (T-1024 precedent)"
+# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
+# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
+# does not trace this cross-package private import -- same class of gap as this repo's \
+# other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_ticket_parser(sub) -> None:
     """Register the `frob ticket` subcommand and its arguments."""
     ticket_p = sub.add_parser("ticket", help="the statically-checkable ticket queue")

@@ -17,12 +17,12 @@ explicitly forbids.
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
 # frob:waive ARCH102 reason="T-0871 demoted child_text/iter_cpp_functions to \
-# _child_text/_iter_cpp_functions (frob-exports: genuinely private, used only \
-# within frob.lang's own walkers, never a cross-package import) -- the reduced \
-# public surface crossed the clustering heuristic's report threshold as a side \
-# effect of the demotion, not a new design problem; remaining exports \
-# (child_by_field/export_tree/flatten_tree) are the same shared tree-sitter \
-# primitives this module's docstring already scopes it to"
+# _child_text/_iter_cpp_functions (frob-exports: genuinely private, used only within \
+# frob.lang's own walkers, never a cross-package import) -- the reduced public surface \
+# crossed the clustering heuristic's report threshold as a side effect of the \
+# demotion, not a new design problem; remaining exports \
+# (child_by_field/export_tree/flatten_tree) are the same shared tree-sitter primitives \
+# this module's docstring already scopes it to"
 
 from __future__ import annotations
 

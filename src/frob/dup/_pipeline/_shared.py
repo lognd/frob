@@ -7,13 +7,12 @@ so they live here as the one shared home rather than being duplicated per
 submodule (NO DUPLICATION).
 """
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/dup/_pipeline/_shared.py's \
-# exclusivity-vocabulary hit is source-level design-rationale prose (a \
-# docstring or comment describing already-implemented internal behavior, \
-# verifiable by reading the code it annotates) rather than a separate \
-# cross-module contract needing its own tracked invariant; disposed as a \
-# calibration batch, not claim-by-claim -- module prose split from \
-# the pre-T-1086 monolith"
+# src/frob/dup/_pipeline/_shared.py's exclusivity-vocabulary hit is source-level \
+# design-rationale prose (a docstring or comment describing already-implemented \
+# internal behavior, verifiable by reading the code it annotates) rather than a \
+# separate cross-module contract needing its own tracked invariant; disposed as a \
+# calibration batch, not claim-by-claim -- module prose split from the pre-T-1086 \
+# monolith"
 
 from __future__ import annotations
 

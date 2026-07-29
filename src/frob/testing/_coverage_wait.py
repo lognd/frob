@@ -43,8 +43,8 @@ fresh?" check.
 # exclusivity-vocabulary hits ('only', 'never re-run') are source-level design- \
 # rationale prose describing already-implemented internal behavior (verifiable by \
 # reading tree_digest/_shared_coverage_lock/run_coverage_wait themselves), not a \
-# separate cross-module contract needing its own tracked invariant -- same \
-# disposition this repo already applies to src/frob/serve/_socketd.py and \
+# separate cross-module contract needing its own tracked invariant -- same disposition \
+# this repo already applies to src/frob/serve/_socketd.py and \
 # src/frob/app/_daemon_proxy.py (T-0585/T-1023/T-1093)"
 
 from __future__ import annotations

@@ -290,10 +290,10 @@ def sync_interface_report(
 
     design_root = root / design_dir
     results: list[FileSyncResult] = []
-    # frob:waive WALK001 reason="design_root (e.g. design/) is a small, \
-    # hand-authored .strata source subtree with no nested .git/.venv/node_modules/ \
-    # build/dist/target to prune -- excludes.walk_pruned would add a filter that \
-    # never fires here, not change behavior"
+    # frob:waive WALK001 reason="design_root (e.g. design/) is a small, hand-authored \
+    # .strata source subtree with no nested .git/.venv/node_modules/ build/dist/target \
+    # to prune -- excludes.walk_pruned would add a filter that never fires here, not \
+    # change behavior"
     for path in sorted(design_root.rglob("*.strata")):
         text = path.read_text(encoding="utf-8")
         if not _NODE_HEADER_RE.search(text) and "node " not in text:

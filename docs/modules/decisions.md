@@ -66,7 +66,7 @@ def load_lock(path): ...
 
 ## The DEC gates
 
-<!-- frob:describes src/frob/gates/__init__.py::decisions_gate -->
+<!-- frob:describes src/frob/gates/_decisions_compliance.py::decisions_gate -->
 
 Runs inside `frob check` (and `frob check --only decisions`) whenever a
 `decisions/` directory exists (opt-in by convention):

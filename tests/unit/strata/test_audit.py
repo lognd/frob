@@ -604,6 +604,24 @@ class TestHostWiring:
         assert "host:model" in report.views_checked
         assert not any(v.startswith("host:blast-radius:") for v in report.views_checked)
 
+    def test_owns_without_runs_as_no_blast_radius_scenario(self):
+        """T-1164 regression: a node declaring `owns`/`acl` with no
+        `runs_as` service-account claim has a manifest (`host_manifest_for`
+        returns non-None once ANY std.host construct is present) but no
+        real compromised-user identity -- `_blast_radius_gaps_per_user`
+        must not synthesize a spurious `host:blast-radius:None` scenario
+        from the bare `None` `runs_as` value. Mirrors `design/frob.strata`'s
+        `tickets_ledger` writer nodes (T-1158), which declare `owns` with
+        no `runs_as`."""
+        node = Node(id="writer", trust="trusted", attrs=("owns=/data/x:0644",))
+        model = KernelModel(nodes=(node,))
+        result = evaluate_exhaustiveness(model, known_rule_ids=_KNOWN_RULE_IDS)
+        assert result.is_ok
+        report = result.danger_ok
+        assert not any(v.startswith("host:blast-radius:") for v in report.views_checked)
+        assert not any(v == "host:blast-radius:None" for v in report.views_checked)
+        assert not any(g.rule == "HOST-BLAST" for g in report.gaps)
+
 
 # frob:ticket T-0630
 class TestCodeBoundWiring:

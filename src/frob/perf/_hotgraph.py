@@ -297,11 +297,11 @@ def _block_sections(
     return sections
 
 
-# frob:invariant terminates reason="recurses only into func.nested_functions, each \
-# one NormalizedFunction nesting level below the current func -- a lexical prover \
-# cannot see that a nested function's own subtree is structurally smaller without \
-# dataflow" measure="NormalizedFunction nesting depth under func, finite (bounded by \
-# the original parse's own finite AST depth)"
+# frob:invariant terminates reason="recurses only into func.nested_functions, each one \
+# NormalizedFunction nesting level below the current func -- a lexical prover cannot \
+# see that a nested function's own subtree is structurally smaller without dataflow" \
+# measure="NormalizedFunction nesting depth under func, finite (bounded by the \
+# original parse's own finite AST depth)"
 def _function_sections(
     file: str, qualname_prefix: str, func: NormalizedFunction
 ) -> list[Section]:

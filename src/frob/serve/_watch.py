@@ -58,13 +58,12 @@ correctness contract (the pull path still rechecks unconditionally) are
 unaffected either way.
 """
 # frob:waive INV006 reason="T-1023 INV006 burn-down disposition: this file's \
-# exclusivity-vocabulary hits ('only ever revalidated', 'never a stale answer, only \
-# a forgone optimization', 'only ... kernel-level events specifically') are \
-# source-level design-rationale/scope-cut prose describing already-implemented \
-# internal behavior, verifiable by reading the code it annotates, rather than a \
-# separate cross-module contract needing its own tracked invariant -- same \
-# calibration-batch disposition already applied to src/frob/serve/_socketd.py and \
-# src/frob/serve/_warm.py (T-0585)"
+# exclusivity-vocabulary hits ('only ever revalidated', 'never a stale answer, only a \
+# forgone optimization', 'only ... kernel-level events specifically') are source-level \
+# design-rationale/scope-cut prose describing already-implemented internal behavior, \
+# verifiable by reading the code it annotates, rather than a separate cross-module \
+# contract needing its own tracked invariant -- same calibration-batch disposition \
+# already applied to src/frob/serve/_socketd.py and src/frob/serve/_warm.py (T-0585)"
 
 from __future__ import annotations
 

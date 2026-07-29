@@ -88,10 +88,9 @@ _CONST_REF_PATTERN = re.compile(r"rule\s*=\s*([A-Z][A-Z0-9_]*)\b")
 #: scan (`src/frob/gates/**` and `src/frob/strata/**`).
 # frob:waive COV001 reason="a frob:doc anchor here would live in \
 # docs/modules/gates.md, whose own SCOPE002 closure (every OTHER symbol that \
-# monolithic shared doc file describes across the repo) is out of proportion \
-# to pull into T-1010's src/frob/gates/** + tests/test_gates.py scope for one \
-# constant -- this module's own docstring is the authoritative description; \
-# see T-1010's Done report"
+# monolithic shared doc file describes across the repo) is out of proportion to pull \
+# into T-1010's src/frob/gates/** + tests/test_gates.py scope for one constant -- this \
+# module's own docstring is the authoritative description; see T-1010's Done report"
 SCANNED_BASES: tuple[str, ...] = ("src/frob/gates", "src/frob/strata")
 
 #: Rule ids retired from the live registry: previously emitted (present at
@@ -102,13 +101,13 @@ SCANNED_BASES: tuple[str, ...] = ("src/frob/gates", "src/frob/strata")
 #: `generated_gate_rule_ids()`'s output is derived, not typed. Cite the
 #: retiring ticket in a comment alongside each entry, same convention as
 #: `_KNOWN_GATE_RULES` itself.
-# frob:waive COV001 reason="same doc-anchor scope-closure tension as \
-# SCANNED_BASES above -- see T-1010's Done report"
+# frob:waive COV001 reason="same doc-anchor scope-closure tension as SCANNED_BASES \
+# above -- see T-1010's Done report"
 RETIRED_RULE_IDS: frozenset[str] = frozenset()
 
 
-# frob:waive COV001 reason="same doc-anchor scope-closure tension as \
-# SCANNED_BASES above -- see T-1010's Done report"
+# frob:waive COV001 reason="same doc-anchor scope-closure tension as SCANNED_BASES \
+# above -- see T-1010's Done report"
 # frob:tests \
 # tests/test_gates.py::TestKnownGateRuleIds.test_scan_finds_a_synthetic_rule_id
 def scan_emitted_rule_ids(repo_root: Path) -> dict[str, str]:
@@ -127,12 +126,12 @@ def scan_emitted_rule_ids(repo_root: Path) -> dict[str, str]:
         base_dir = repo_root / base
         if not base_dir.is_dir():
             continue
-        # frob:waive PERF004 reason="sorts each SCANNED_BASES entry's own \
-        # distinct file list for deterministic first-occurrence ordering, \
-        # not a shared re-sort across iterations"
+        # frob:waive PERF004 reason="sorts each SCANNED_BASES entry's own distinct \
+        # file list for deterministic first-occurrence ordering, not a shared re-sort \
+        # across iterations"
         # frob:waive PERF008 reason="base_dir is freshly rebound per SCANNED_BASES \
-        # iteration, so each rglob('*.py') walks a DIFFERENT directory, not a \
-        # repeated identical walk -- a resolver argument-text-equality limit"
+        # iteration, so each rglob('*.py') walks a DIFFERENT directory, not a repeated \
+        # identical walk -- a resolver argument-text-equality limit"
         # frob:waive WALK001 reason="SCANNED_BASES are small, no vendor dirs to prune"
         for path in sorted(base_dir.rglob("*.py")):
             if path.name == "_rule_id_scan.py":
@@ -171,8 +170,8 @@ def scan_emitted_rule_ids(repo_root: Path) -> dict[str, str]:
     return found
 
 
-# frob:waive COV001 reason="same doc-anchor scope-closure tension as \
-# SCANNED_BASES above -- see T-1010's Done report"
+# frob:waive COV001 reason="same doc-anchor scope-closure tension as SCANNED_BASES \
+# above -- see T-1010's Done report"
 # frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_retired_id_stays_excluded
 def generated_gate_rule_ids(
     repo_root: Path, retired: frozenset[str] | None = None

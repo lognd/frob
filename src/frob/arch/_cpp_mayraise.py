@@ -53,10 +53,10 @@ tree-sitter approximation with fail-closed unknowns is the
 deliverable"), not a placeholder for something more precise landing
 later in THIS ticket."""
 # frob:waive INV006 reason="this module's 'only' occurrences are source-level \
-# design-rationale prose (the module docstring's scope/severity/soundness \
-# disclosures, mirroring frob.arch._ffi and frob.gates._exhaustive_handling's \
-# own module docstrings), verifiable by reading the function it annotates, not \
-# a separate cross-module contract needing its own tracked invariant"
+# design-rationale prose (the module docstring's scope/severity/soundness disclosures, \
+# mirroring frob.arch._ffi and frob.gates._exhaustive_handling's own module \
+# docstrings), verifiable by reading the function it annotates, not a separate \
+# cross-module contract needing its own tracked invariant"
 
 from __future__ import annotations
 
@@ -222,9 +222,9 @@ def _function_body_span(lines: list[str], sig_line_idx: int) -> tuple[int, int]:
     k = sig_line_idx
     n = len(lines)
     while k < n:
-        # frob:waive PERF002 reason="str.count on the loop's own \
-        # per-iteration line, a single per-line scan -- not a repeated \
-        # collection count with a pre-buildable index"
+        # frob:waive PERF002 reason="str.count on the loop's own per-iteration line, a \
+        # single per-line scan -- not a repeated collection count with a pre-buildable \
+        # index"
         opens = lines[k].count("{")
         depth += opens - lines[k].count("}")
         if opens:
@@ -442,9 +442,9 @@ def check_cpp_noexcept_violations(
                 line=func.line,
                 category="cpp-noexcept-throws",
                 severity="error",
-                # frob:waive PERF004 reason="each iteration sorts its own \
-                # per-function raise set for a deterministic message; not a \
-                # shared re-sort, nothing loop-invariant to hoist"
+                # frob:waive PERF004 reason="each iteration sorts its own per-function \
+                # raise set for a deterministic message; not a shared re-sort, nothing \
+                # loop-invariant to hoist"
                 message=(
                     f"cpp-noexcept-throws: `{func.name}` is noexcept but may "
                     f"throw {sorted(func.raises)} -- an escaping exception "

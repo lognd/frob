@@ -776,6 +776,7 @@ node gates : trusted {
     attr interface=arch_gate;
     attr interface=canonicalize_text;
     attr interface=clear_ratchet_entry;
+    attr interface=compliance_gate;
     attr interface=coverage_gate;
     attr interface=coverage_lock_diff;
     attr interface=cve_fingerprint_scan_gate;

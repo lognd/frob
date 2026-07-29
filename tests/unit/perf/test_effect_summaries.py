@@ -97,9 +97,14 @@ class TestEffectGraphSummaryUnknownDegradation:
         assert ("spawn", "(['git', 'status'], cwd=root)") in summary
 
 
-# frob:doc docs/modules/perf.md#duplicate-identical-subprocess-spawn-detector-perf012-t-0919
-# frob:tests tests/unit/perf/test_effect_summaries.py::TestSplatArgumentDegradesToUnknown.test_splat_argument_nested_in_a_literal_yields_an_unknown_member
-# frob:tests tests/unit/perf/test_effect_summaries.py::TestSplatArgumentDegradesToUnknown.test_plain_named_parameter_forward_is_not_treated_as_a_splat
+# frob:doc \
+# docs/modules/perf.md#duplicate-identical-subprocess-spawn-detector-perf012-t-0919
+# frob:tests \
+# tests/unit/perf/test_effect_summaries.py::TestSplatArgumentDegradesToUnknown.test_spl\
+# at_argument_nested_in_a_literal_yields_an_unknown_member
+# frob:tests \
+# tests/unit/perf/test_effect_summaries.py::TestSplatArgumentDegradesToUnknown.test_pla\
+# in_named_parameter_forward_is_not_treated_as_a_splat
 # frob:ticket T-1018
 class TestSplatArgumentDegradesToUnknown:
     """T-1018: a direct-effect call whose argument list contains a
@@ -156,10 +161,18 @@ class TestSplatArgumentDegradesToUnknown:
         assert any(kind == "spawn" for kind, _arg in summary)
 
 
-# frob:doc docs/modules/perf.md#shared-interprocedural-effect-summary-substrate-effectgraph-t-0922
-# frob:tests tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_lru_cache_decorated_symbol_is_memoized
-# frob:tests tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_undecorated_symbol_is_not_memoized
-# frob:tests tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_bare_cache_named_parameter_is_not_mistaken_for_a_decorator
+# frob:doc \
+# docs/modules/perf.md#shared-interprocedural-effect-summary-substrate-effectgraph-t-09\
+# 22
+# frob:tests \
+# tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_lru_cache_\
+# decorated_symbol_is_memoized
+# frob:tests \
+# tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_undecorate\
+# d_symbol_is_not_memoized
+# frob:tests \
+# tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_bare_cache\
+# _named_parameter_is_not_mistaken_for_a_decorator
 # frob:ticket T-1053
 class TestMemoizedCalleeDetection:
     """T-1053 lru_cache-blindness fix: `EffectGraph.is_memoized`/

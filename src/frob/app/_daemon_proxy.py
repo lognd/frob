@@ -41,12 +41,11 @@ this to produce the reference in-process answer to diff the daemon-served
 one against.
 """
 # frob:waive INV006 reason="T-1093: this file's exclusivity-vocabulary hit \
-# ('best-effort only' in query()'s docstring) is source-level design-rationale \
-# prose describing already-implemented internal behavior (verifiable by reading \
-# ensure_daemon/query themselves), not a separate cross-module contract needing \
-# its own tracked invariant -- same calibration-batch disposition this repo \
-# already applies to src/frob/serve/_socketd.py and src/frob/serve/__init__.py \
-# (T-0585/T-1023)"
+# ('best-effort only' in query()'s docstring) is source-level design-rationale prose \
+# describing already-implemented internal behavior (verifiable by reading \
+# ensure_daemon/query themselves), not a separate cross-module contract needing its \
+# own tracked invariant -- same calibration-batch disposition this repo already \
+# applies to src/frob/serve/_socketd.py and src/frob/serve/__init__.py (T-0585/T-1023)"
 
 from __future__ import annotations
 
@@ -71,11 +70,10 @@ _log = get_logger(__name__)
 _SPAWN_GRACE_S = 1.5
 _SPAWN_POLL_INTERVAL_S = 0.05
 # frob:waive DUP001 reason="T-1093/T-1105: this shutdown grace window mirrors \
-# _SPAWN_GRACE_S's shape (a short bounded poll loop) but measures a distinct \
-# thing -- an old daemon releasing its flock after a graceful frob_shutdown \
-# RPC, not a new one binding a socket -- and the two callers (ensure_daemon's \
-# skew path vs query's fresh-spawn path) would still need two constants even \
-# if the values matched"
+# _SPAWN_GRACE_S's shape (a short bounded poll loop) but measures a distinct thing -- \
+# an old daemon releasing its flock after a graceful frob_shutdown RPC, not a new one \
+# binding a socket -- and the two callers (ensure_daemon's skew path vs query's \
+# fresh-spawn path) would still need two constants even if the values matched"
 _SHUTDOWN_GRACE_S = 1.0
 
 
@@ -332,9 +330,9 @@ def try_daemon_lease(
     lease request itself errored -- the caller falls back to its own
     (e.g. file-lock) arbitration, exactly `query()`'s existing fallback
     contract."""
-    # frob:waive SEC110 reason="T-1126: FROB_NO_DAEMON is the same boolean \
-    # opt-out flag query() already carries this exact waiver for -- no \
-    # confidential value, just a bypass switch"
+    # frob:waive SEC110 reason="T-1126: FROB_NO_DAEMON is the same boolean opt-out \
+    # flag query() already carries this exact waiver for -- no confidential value, \
+    # just a bypass switch"
     if os.environ.get("FROB_NO_DAEMON") == "1":
         _log.info("daemon_proxy: FROB_NO_DAEMON=1, bypassing daemon lease")
         return Err(ProxyReason.Disabled)

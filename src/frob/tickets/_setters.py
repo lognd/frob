@@ -23,14 +23,12 @@ time, the same load-order-safe indirection `_doable.py` uses for
 before either name exists yet at its own module scope.
 """
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/tickets/_setters.py's \
-# exclusivity-vocabulary hits are source-level design-rationale prose \
-# (docstrings describing already-implemented internal behavior, \
-# verifiable by reading the code they annotate) rather than a separate \
-# cross-module contract needing its own tracked invariant; disposed as a \
-# calibration batch, not claim-by-claim -- module prose carried verbatim \
-# from frob.tickets.__init__ (T-1151 split, same INV006-on-split-modules \
-# precedent as 0abc4e3a)"
+# src/frob/tickets/_setters.py's exclusivity-vocabulary hits are source-level \
+# design-rationale prose (docstrings describing already-implemented internal behavior, \
+# verifiable by reading the code they annotate) rather than a separate cross-module \
+# contract needing its own tracked invariant; disposed as a calibration batch, not \
+# claim-by-claim -- module prose carried verbatim from frob.tickets.__init__ (T-1151 \
+# split, same INV006-on-split-modules precedent as 0abc4e3a)"
 
 from __future__ import annotations
 
@@ -446,10 +444,9 @@ def _build_flow_rows(
 # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_archived_ticket_still_counts_toward_landed  # noqa: E501
 # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_archived_ticket_still_counts_toward_filed  # noqa: E501
 # frob:waive AFFECT001 reason="T-1162 is a pure internal extraction \
-# (archive-merge/histogram/row-building helpers pulled out to cut the \
-# function under the 60-line ARCH threshold); behavior, inputs, outputs, \
-# and the documented contract are all unchanged, so docs/modules/ \
-# tickets.md's own content needs no edit"
+# (archive-merge/histogram/row-building helpers pulled out to cut the function under \
+# the 60-line ARCH threshold); behavior, inputs, outputs, and the documented contract \
+# are all unchanged, so docs/modules/ tickets.md's own content needs no edit"
 def ticket_flow(
     root: Path, queue: TicketQueue, *, today: date | None = None
 ) -> TicketFlowReport:

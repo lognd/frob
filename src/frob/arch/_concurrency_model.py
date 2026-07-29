@@ -247,10 +247,10 @@ def _executor_bindings(root: Node) -> dict[str, str]:
     return bindings
 
 
-# frob:invariant terminates reason="recurses only into a direct tree-sitter \
-# child one edge below the current node; a lexical prover cannot see that the child \
-# accessor is structurally smaller without dataflow" measure="tree-sitter AST depth \
-# under node, finite per parse"
+# frob:invariant terminates reason="recurses only into a direct tree-sitter child one \
+# edge below the current node; a lexical prover cannot see that the child accessor is \
+# structurally smaller without dataflow" measure="tree-sitter AST depth under node, \
+# finite per parse"
 def _walk_all(node: Node) -> Iterator[Node]:
     """Every node in `node`'s full subtree, descending through every
     boundary (functions, classes, nested scopes) -- used only by

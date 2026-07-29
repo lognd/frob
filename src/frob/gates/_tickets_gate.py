@@ -9,13 +9,12 @@ every `_tickN_*` helper stays private to this module.
 """
 
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_tickets_gate.py's \
-# exclusivity-vocabulary hits are source-level design-rationale prose \
-# (docstrings and comments describing already-implemented internal \
-# behavior, verifiable by reading the code they annotate) rather than a \
-# separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim -- module prose \
-# split verbatim from the pre-T-1140 gates/__init__.py monolith"
+# src/frob/gates/_tickets_gate.py's exclusivity-vocabulary hits are source-level \
+# design-rationale prose (docstrings and comments describing already-implemented \
+# internal behavior, verifiable by reading the code they annotate) rather than a \
+# separate cross-module contract needing its own tracked invariant; disposed as a \
+# calibration batch, not claim-by-claim -- module prose split verbatim from the \
+# pre-T-1140 gates/__init__.py monolith"
 from __future__ import annotations
 
 import difflib
@@ -321,10 +320,10 @@ def _tick005_ledger_at_ref(root: Path, ref: str) -> dict[str, Ticket] | None:
 # frob:ticket T-0537
 # frob:enforces CHK-GATE-TICK005
 # frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to \
-# _tick005_head_second_parent/_tick005_ledger_at_ref's own gitio.run_argv calls, \
-# which already return a typani Result (no exception path) that the resolver \
-# cannot statically see through; every locally fallible step here degrades via \
-# an explicit None/() check, not a bare propagation"
+# _tick005_head_second_parent/_tick005_ledger_at_ref's own gitio.run_argv calls, which \
+# already return a typani Result (no exception path) that the resolver cannot \
+# statically see through; every locally fallible step here degrades via an explicit \
+# None/() check, not a bare propagation"
 def _tick005_merge_state_regression(
     root: Path, queue: TicketQueue
 ) -> tuple[Violation, ...]:
@@ -564,17 +563,17 @@ _TICK011_VICINITY = 300
 #: ALL-CAPS/rule-id-shaped word, or a `namespace:RULE`-shaped identifier)
 #: rather than ordinary prose. Excluding on that token shape (not a fixed
 #: digit-lookback) is what actually clears the real false positives found.
-# frob:waive PII012 reason="'token' here means a lexical word/substring \
-# from a Done report's own prose (a whitespace-delimited chunk this rule \
-# checks the shape of), not a credential/auth token -- a name-signature \
-# false positive, same class as frob.gates._docptr's own existing PII012 \
-# waiver for its unrelated lexical-token vocabulary"
+# frob:waive PII012 reason="'token' here means a lexical word/substring from a Done \
+# report's own prose (a whitespace-delimited chunk this rule checks the shape of), not \
+# a credential/auth token -- a name-signature false positive, same class as \
+# frob.gates._docptr's own existing PII012 waiver for its unrelated lexical-token \
+# vocabulary"
 _TICK011_TECHNICAL_TOKEN_RE = re.compile(r"[A-Z]{2,}|:|\d")
 
 
-# frob:waive PII012 reason="'token' here means a lexical word/substring \
-# from a Done report's own prose, not a credential/auth token -- see \
-# _TICK011_TECHNICAL_TOKEN_RE's own waiver for the same false-positive class"
+# frob:waive PII012 reason="'token' here means a lexical word/substring from a Done \
+# report's own prose, not a credential/auth token -- see _TICK011_TECHNICAL_TOKEN_RE's \
+# own waiver for the same false-positive class"
 def _tick011_preceded_by_technical_token(text: str, start: int) -> bool:
     """Whether the whitespace-delimited word immediately before `text[
     start:]` looks like a technical token (a digit, a `namespace:NAME`
@@ -851,11 +850,11 @@ def _tick009_scope_breadth_nudges(
 
 # frob:ticket T-0714
 # frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to leases_dir's own \
-# Result-returning fallibility, already checked via .is_err below; no bare raise \
-# path is reachable from this function's locally-visible calls"
-# frob:waive EXHAUST002 reason="T-1056: json.JSONDecodeError is a ValueError \
-# subclass already covered by this function's own except (OSError, ValueError); \
-# the resolver does not perform subclass reasoning against the caught tuple"
+# Result-returning fallibility, already checked via .is_err below; no bare raise path \
+# is reachable from this function's locally-visible calls"
+# frob:waive EXHAUST002 reason="T-1056: json.JSONDecodeError is a ValueError subclass \
+# already covered by this function's own except (OSError, ValueError); the resolver \
+# does not perform subclass reasoning against the caught tuple"
 # frob:enforces CHK-GATE-TICK010
 def _tick010_stale_lease_report(root: Path) -> tuple[Violation, ...]:
     """TICK010 (T-0714): one WARN per cross-worktree lease file

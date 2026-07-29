@@ -125,8 +125,8 @@ class TestArchGateCppThrow:
     that channels at Severity.ERROR, not Severity.WARN."""
 
     # frob:tests \
-    # tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_may_throw_fires_c\
-    # ppthrow001_error
+    # tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_may_throw_fires_cppth\
+    # row001_error
     def test_noexcept_may_throw_fires_cppthrow001_error(self, tmp_path: Path) -> None:
         """A noexcept function calling a same-file throwing function with
         no catch fires CPPTHROW001 at Severity.ERROR, naming the site."""
@@ -158,8 +158,8 @@ class TestArchGateCppThrow:
         assert any(v.line == 5 for v in hits)
 
     # frob:tests \
-    # tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_with_catch_all_do\
-    # es_not_fire_cppthrow001
+    # tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_with_catch_all_does_n\
+    # ot_fire_cppthrow001
     def test_noexcept_with_catch_all_does_not_fire_cppthrow001(
         self, tmp_path: Path
     ) -> None:
@@ -186,8 +186,8 @@ class TestArchGateCppThrow:
         assert not [v for v in violations if v.rule == "CPPTHROW001"]
 
     # frob:tests \
-    # tests/test_arch_gate.py::TestArchGateCppThrow.test_cppthrow001_is_waivable_wi\
-    # th_reason
+    # tests/test_arch_gate.py::TestArchGateCppThrow.test_cppthrow001_is_waivable_with_r\
+    # eason
     def test_cppthrow001_is_waivable_with_reason(self, tmp_path: Path) -> None:
         """CPPTHROW001 still goes through the ordinary frob:waive path
         (ERROR severity does not make it unwaivable) -- a reasoned waiver
@@ -228,8 +228,7 @@ def _big_python_source(n_lines: int) -> str:
 # directory walk (frob.arch.analyze_project).
 class TestArchGateLargeFile:
     # frob:tests \
-    # tests/test_arch_gate.py::TestArchGateLargeFile.test_large_file_fires_large001\
-    # _warn
+    # tests/test_arch_gate.py::TestArchGateLargeFile.test_large_file_fires_large001_warn
     def test_large_file_fires_large001_warn(self, tmp_path: Path) -> None:
         """A production python file over max_file_lines fires LARGE001 at
         Severity.WARN (first-turn-on posture, matching ARCH001/ARCH1xx)."""
@@ -244,8 +243,7 @@ class TestArchGateLargeFile:
         assert any(v.file == "big.py" for v in hits)
 
     # frob:tests \
-    # tests/test_arch_gate.py::TestArchGateLargeFile.test_test_file_exempt_from_lar\
-    # ge001
+    # tests/test_arch_gate.py::TestArchGateLargeFile.test_test_file_exempt_from_large001
     def test_test_file_exempt_from_large001(self, tmp_path: Path) -> None:
         """A file under a `tests/` directory is exempt from LARGE001,
         same as it is from the underlying advisory large-file category
@@ -257,8 +255,8 @@ class TestArchGateLargeFile:
         assert not [v for v in violations if v.rule == "LARGE001"]
 
     # frob:tests \
-    # tests/test_arch_gate.py::TestArchGateLargeFile.test_single_file_mode_matches_\
-    # directory_walk
+    # tests/test_arch_gate.py::TestArchGateLargeFile.test_single_file_mode_matches_dire\
+    # ctory_walk
     def test_single_file_mode_matches_directory_walk(self, tmp_path: Path) -> None:
         """T-1102 acceptance [1]: `analyze_project` invoked directly on a
         single over-threshold file reports the exact same large-file

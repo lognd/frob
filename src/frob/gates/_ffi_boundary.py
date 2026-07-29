@@ -125,10 +125,10 @@ def _ffi001_violations(repo_root: Path) -> list[Violation]:
             missing = func.raises - declared_set
             if not missing:
                 continue
-            # frob:waive PERF004 reason="missing/declared_set differ every \
-            # iteration (each is this specific function's own raised/declared \
-            # set) -- there is nothing stable to hoist a sort of out of the \
-            # loop, matching T-0972's own precedent for this exact pattern in \
+            # frob:waive PERF004 reason="missing/declared_set differ every iteration \
+            # (each is this specific function's own raised/declared set) -- there is \
+            # nothing stable to hoist a sort of out of the loop, matching T-0972's own \
+            # precedent for this exact pattern in \
             # frob.arch._exceptions.check_errors_as_values"
             violations.append(
                 Violation(
