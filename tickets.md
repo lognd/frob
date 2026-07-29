@@ -1302,7 +1302,7 @@ T-1140 extracted the TICK00x family (gates/__init__.py 9172 -> 8408) and disclos
 ```yaml
 id: T-1160
 title: 'docs: document frob sys sync-interface in docs/commands/sys.md'
-state: queued
+state: done
 kind: docs
 origin: agent
 created: '2026-07-28'
@@ -1312,14 +1312,127 @@ tier: ticket
 sprint: null
 scope:
 - docs/commands/sys.md
+- src/frob/app/sys_runner.py
+- src/frob/strata/_sync_interface.py
+- src/frob/strata/_plan.py
+- src/frob/strata/_export.py
+- src/frob/strata/_sysdoc.py
+- src/frob/strata/_audit.py
+scope_changes:
+- op: add
+  glob: src/frob/app/sys_runner.py
+  reason: docs/commands/sys.md's frob:describes anchors (existing + the new sync-interface
+    section) name symbols in these modules; SCOPE002 requires each anchor target in
+    scope
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: src/frob/strata/_sync_interface.py
+  reason: docs/commands/sys.md's frob:describes anchors (existing + the new sync-interface
+    section) name symbols in these modules; SCOPE002 requires each anchor target in
+    scope
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: src/frob/strata/_plan.py
+  reason: docs/commands/sys.md's frob:describes anchors (existing + the new sync-interface
+    section) name symbols in these modules; SCOPE002 requires each anchor target in
+    scope
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: src/frob/strata/_export.py
+  reason: docs/commands/sys.md's frob:describes anchors (existing + the new sync-interface
+    section) name symbols in these modules; SCOPE002 requires each anchor target in
+    scope
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: src/frob/strata/_sysdoc.py
+  reason: docs/commands/sys.md's frob:describes anchors (existing + the new sync-interface
+    section) name symbols in these modules; SCOPE002 requires each anchor target in
+    scope
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: src/frob/strata/_audit.py
+  reason: docs/commands/sys.md's frob:describes anchors (existing + the new sync-interface
+    section) name symbols in these modules; SCOPE002 requires each anchor target in
+    scope
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- cmd:uv run frob sys sync-interface --check exit=0 sha256=0a692ca85d0b
 acceptance:
 - text: GIVEN docs/commands/sys.md WHEN a reader looks up sys subcommands THEN sync-interface
     (and its --check mode) is documented with the SYS104-mandatory upkeep rationale
-  evidence: []
+  evidence:
+  - cmd:uv run frob sys sync-interface --check exit=0 sha256=0a692ca85d0b
 threat: null
 component: null
 ```
 Refile of a T-1150 draft that died to ledger-restore cycles during its land (disclosed in the w18-strata3 done report): the new frob sys sync-interface subcommand landed (5103c0f1) but docs/commands/sys.md does not mention it.
+
+## Done report
+
+Added a `## frob sys sync-interface` section to `docs/commands/sys.md`,
+documenting the subcommand landed at 5103c0f1 (T-1150) that was never
+mentioned there (the T-1150 draft died to ledger-restore cycles during
+its land, per the w18-strata3 done report). Covers: what it does and why
+(SYS104 going mandatory at T-1113 turned `interface=` attrs into a
+hand-maintained mirror that redded main twice), default vs `--check`
+mode behavior/exit codes, the repo-root argument convention (matches
+`plan`/`doc`/`audit`), the text-editing strategy (in-place, brace-depth
+matched, never a full re-serialize), and `frob:describes` anchors for
+the public API (`sync_interface_report`/`apply_sync_interface`) and CLI
+wiring (`_run_sync_interface`/`_load_sync_interface_report`/
+`_finish_sync_interface`). Also bumped the file's intro line from "Four
+verbs" to "Five verbs" to list `sync-interface` alongside the other four.
+
+Docs-only ticket, no pytest surface of its own -- per agent-playbook.md
+section 5, the existing CLI-dispatch integration test is recorded as
+evidence: `tests/integration/test_interfaces.py::TestInterfaces::
+test_main_cli_dispatches`.
+
+Scope: extended from `docs/commands/sys.md` alone to also cover
+`src/frob/app/sys_runner.py`, `src/frob/strata/_sync_interface.py`,
+`src/frob/strata/_plan.py`, `src/frob/strata/_export.py`,
+`src/frob/strata/_sysdoc.py`, `src/frob/strata/_audit.py` -- SCOPE002
+requires every `frob:describes` anchor target in this doc file (both the
+new sync-interface anchors and every pre-existing anchor already in the
+file for plan/doc/export/audit) to be in-scope.
+
+`uv run frob sys sync-interface --check` (dogfooding the tool this
+ticket documents, SYS104 mandatory upkeep, agent-playbook.md): "sys
+sync-interface: no drift -- every interface= attr is current".
+
+Gates run (chunked, --ticket T-1160):
+- gates-fast: clean (0 errors) after the scope-add + sweep refresh.
+- gates-native: 5 pre-existing ARCH001/ARCH103 errors (check_runner.py
+  _try_check_delta_via_daemon, _close_cmd.py _fail, doctor.py
+  run_diagnosis, _setters.py ticket_flow) -- the same T-1162 baseline
+  findings seen on T-1157, none in files this ticket touches.
+- gates-security: clean (0 errors).
+- lint/static: ruff-check/ruff-format/ty failures are all pre-existing,
+  in files this ticket never touched; `docs/commands/sys.md` is markdown
+  (not ruff/ty scope) and `ruff check docs/commands/sys.md` reports "No
+  Python files found" / "All checks passed!".
+
+`git diff main --diff-filter=D --stat` is empty.
+
+### Changed
+```
+ tickets.md | 73 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 69 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1161 -->
 ```yaml
@@ -1482,3 +1595,68 @@ mechanism for the ticket_runner half of CLI wiring on any FEATURE ticket.
 Fix: update CLI_WIRING_FILES to the correct current path (e.g. a glob covering
 src/frob/app/ticket_runner/**, or the package's __init__.py) and re-verify T-0446's own
 tests still pass.
+
+<!-- ticket:T-1164 -->
+```yaml
+id: T-1164
+title: 'strata: blast-radius scan spuriously fires for nodes with no declared runs_as
+  (None treated as a real compromised-user identity)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/_audit.py
+threat: null
+component: null
+```
+`_audit.py::_blast_radius_gaps_per_user` (`src/frob/strata/_audit.py`)
+builds its per-user blast-radius scan set as:
+
+```
+users = sorted({
+    manifest.runs_as
+    for node in model.nodes
+    if (manifest := host_manifest_for(node)) is not None
+})
+```
+
+`host_manifest_for(node)` returns non-`None` the moment a node declares
+ANY std.host construct at all (`owns`/`acl`/`unit`/`listens`/`runs_as`
+per its own docstring) -- `manifest.runs_as` is independently optional
+and legitimately `None` when a node declares e.g. `owns` but no
+`runs_as` service-account claim. The comprehension above does not filter
+that out: a bare `None` lands in `users` as if it were a real
+compromised-user identity, and `build_compromised_user_scenario(model,
+None, "compromised-user:None")` then runs a full blast-radius scan
+treating "no declared service user" as its own reachability scenario,
+firing `HOST-BLAST` "influence path X -> Y with no boundary" for every
+node reachable from any node whose `owns`/`acl` claim (with no
+`runs_as`) triggered the manifest.
+
+Reproduced directly: `design/frob.strata`'s five `tickets_ledger`
+writer nodes (`cli`/`gates`/`fleet`/`core`/`serve`) never declared any
+std.host construct before T-1158. The moment T-1158 added `owns
+"tickets.md" "0644";` to close out the SYS205 waivers, `frob sys audit`
+went from 13 checked views (no blast-radius entry at all -- an empty
+`users` set) to 14, with a new `host:blast-radius:None` view firing 10
+new unwaived `HOST-BLAST` gaps, none of which existed, or were
+intended, before -- these nodes are plain trusted repo-internal
+components, not services running as any particular OS user, and "None"
+is not a real compromised-user identity to model a blast radius against.
+
+Fix: `_blast_radius_gaps_per_user` should exclude manifests whose
+`runs_as` is `None` from the `users` set (or otherwise skip the
+per-user scenario when there is no real declared service-account
+identity to scan against) -- a node declaring pure path ownership
+(`owns`/`acl`) with no `runs_as` has nothing for a "compromised user"
+scenario to represent.
+
+Blocks T-1158 (`design/frob.strata`'s owns= declarations for the
+tickets_ledger writers cannot land clean until this is fixed -- `frob
+sys audit`/SELFAUDIT001 would go from 5 pre-existing unrelated gaps to
+15).
