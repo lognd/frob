@@ -1869,3 +1869,29 @@ threat: null
 component: null
 ```
 Real CI/coverage-run failure reproduced 2026-07-29 in tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_fails_loud_with_sys004_when_strata_present: cache.db failed schema application: database is locked then ERROR main unhandled exception: no such table: files. Sibling of T-1224 (derived_state_write_lock contention) but distinct: sqlite schema-init race, fail-open into a broken half-initialized db.
+
+<!-- ticket:T-1240 -->
+```yaml
+id: T-1240
+title: investigate xdist worker hard-crash running SYS gate on full self-model
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_sys.py
+- src/frob/strata/**
+- tests/**
+acceptance:
+- text: 'GIVEN tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
+    under xdist parallel load THEN the worker completes (root cause found: OOM, recursion,
+    native crash?) or the test is isolated with a disclosed reason'
+  evidence: []
+threat: null
+component: null
+```
+Real CI/coverage-run failure 2026-07-29: xdist worker gw7 hard-crashed (no traceback) running the SYS gate over the full self-model. Reproduce under load, capture core/rss, fix or serialize.
