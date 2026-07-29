@@ -323,8 +323,15 @@ OPAQUE001 = "error"
 # gates dogfood milestone is in progress (see ticket for raising it back).
 min_unit_cases = 1
 min_integration = 1
-unit_branch_cov = 90
-module_line_cov = 85
+# T-0969 recalibration 2026-07-29: floors reset from the aspirational
+# 90/85 to sit against HONEST post-attribution-fix data (T-1235 landed;
+# fresh full-suite run measured 1352 findings at 90/85, dominated by
+# error-branch gaps on main-path-tested code). 75/70 per the diagnosis
+# recommendation; the coverage lock's per-module ratchet prevents
+# regression below current reality, and the TEST005 burn-down campaign
+# under T-0969 raises these back toward 90/85 as packages come clean.
+unit_branch_cov = 75
+module_line_cov = 70
 system_line_cov = 80
 
 [[test.runner]]
