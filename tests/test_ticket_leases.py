@@ -555,8 +555,8 @@ class TestCommitStartTransition:
         monkeypatch.setenv("FROB_AGENT", "1")
         result = commit_start_transition(repo, "T-0001")
         assert result.is_ok
-        # frob:waive SEC110 reason="asserting a test-set dispatch-context marker \
-        # is restored after the transition commit; plain env flag, nothing sensitive"
+        # frob:waive SEC110 reason="asserting a test-set dispatch-context marker is \
+        # restored after the transition commit; plain env flag, nothing sensitive"
         assert os.environ.get("FROB_AGENT") == "1"
 
         status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
@@ -706,6 +706,132 @@ class TestNewDropFailAutoCommit:
         loaded = load_all(repo)
         assert loaded.is_ok
         assert loaded.danger_ok["T-0001"].state == TicketState.QUEUED
+
+
+class TestCloseEvidenceDoneReportRequeueAutoCommit:
+    """T-1178: `frob ticket close`/`evidence`/`done-report`/`requeue` each
+    auto-commit their own ledger write via `commit_ticket_ledger_change`
+    (T-1130's family extended to every remaining ledger-writing verb) --
+    the 2026-07-29 T-0329 incident this closes: a coordinator's uncommitted
+    `close` write silently vanished under a concurrent land preflight's
+    `git reset --hard`, caught only by T-1131's doctor stale-lease scan.
+    """
+
+    def test_evidence_auto_commits(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCloseEvidenceDoneReportRequeueAutoCommit.test_evidence_auto_commits  # noqa: E501
+        ticket_run(
+            AppConfig(
+                ticket_command="evidence",
+                ticket_path=repo,
+                ticket_id="T-0001",
+                ticket_evidence_cmd="true",
+            )
+        )
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert status.stdout.strip() == ""
+        log = _run(["git", "log", "-1", "--pretty=%s"], repo)
+        assert log.stdout.strip() == "chore(tickets): record evidence for T-0001"
+
+    def test_evidence_no_commit_leaves_ledger_dirty(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCloseEvidenceDoneReportRequeueAutoCommit.test_evidence_no_commit_leaves_ledger_dirty  # noqa: E501
+        ticket_run(
+            AppConfig(
+                ticket_command="evidence",
+                ticket_path=repo,
+                ticket_id="T-0001",
+                ticket_evidence_cmd="true",
+                ticket_no_commit=True,
+            )
+        )
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert status.stdout.strip() != ""
+
+    def test_done_report_auto_commits(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCloseEvidenceDoneReportRequeueAutoCommit.test_done_report_auto_commits  # noqa: E501
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+        assert transition(repo, "T-0001", TicketState.IN_PROGRESS).is_ok
+        _commit_all(repo, "start T-0001")
+
+        ticket_run(
+            AppConfig(
+                ticket_command="done-report",
+                ticket_path=repo,
+                ticket_id="T-0001",
+                ticket_why="did the thing",
+            )
+        )
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert status.stdout.strip() == ""
+        log = _run(["git", "log", "-1", "--pretty=%s"], repo)
+        assert log.stdout.strip() == "chore(tickets): T-0001 Done report"
+
+    def test_close_auto_commits(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCloseEvidenceDoneReportRequeueAutoCommit.test_close_auto_commits  # noqa: E501
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+        assert transition(repo, "T-0001", TicketState.IN_PROGRESS).is_ok
+        _commit_all(repo, "start T-0001")
+
+        ticket_run(
+            AppConfig(
+                ticket_command="close",
+                ticket_path=repo,
+                ticket_id="T-0001",
+                ticket_evidence_cmd="true",
+            )
+        )
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert status.stdout.strip() == ""
+        log = _run(["git", "log", "-1", "--pretty=%s"], repo)
+        assert log.stdout.strip() == "chore(tickets): close T-0001"
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0001"].state == TicketState.DONE
+
+    def test_requeue_auto_commits(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCloseEvidenceDoneReportRequeueAutoCommit.test_requeue_auto_commits  # noqa: E501
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+        assert transition(repo, "T-0001", TicketState.IN_PROGRESS).is_ok
+        _commit_all(repo, "start T-0001")
+
+        ticket_run(
+            AppConfig(
+                ticket_command="requeue",
+                ticket_path=repo,
+                ticket_id="T-0001",
+            )
+        )
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert status.stdout.strip() == ""
+        log = _run(["git", "log", "-1", "--pretty=%s"], repo)
+        assert log.stdout.strip() == "chore(tickets): requeue T-0001"
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0001"].state == TicketState.QUEUED
+
+    def test_requeue_no_commit_leaves_ledger_dirty(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCloseEvidenceDoneReportRequeueAutoCommit.test_requeue_no_commit_leaves_ledger_dirty  # noqa: E501
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+        assert transition(repo, "T-0001", TicketState.IN_PROGRESS).is_ok
+        _commit_all(repo, "start T-0001")
+
+        ticket_run(
+            AppConfig(
+                ticket_command="requeue",
+                ticket_path=repo,
+                ticket_id="T-0001",
+                ticket_no_commit=True,
+            )
+        )
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert status.stdout.strip() != ""
 
 
 # frob:ticket T-1059

@@ -745,6 +745,36 @@ worktree, exactly like `commit_start_transition` already did before this
 ticket -- a worktree agent's own eventual close/land commits already
 absorb this the same way they always have.
 
+**T-1178: extended to `close`/`evidence`/`done-report`/`requeue`.** The
+original filing of this same family (commit 46a115c4) was itself the
+2026-07-29 incident T-1179 documents above: a coordinator's `close` wrote
+`tickets.md` UNCOMMITTED (`close` was not in T-1130's `new`/`drop`/`fail`
+set), a concurrent agent's `land` preflight ran `git reset --hard` in
+`root`, and the close silently vanished -- caught only by a doctor
+stale-lease scan (the T-0329 epic-close incident this closes, T-0948
+lineage). The remaining ledger-writing verbs now call
+`commit_ticket_ledger_change` exactly like `new`/`drop`/`fail`, each with
+its own `--no-commit` opt-out and commit message
+(`frob.app.ticket_runner._close_cmd._close` / `frob.app.ticket_runner.
+_verify._evidence` / `_verify._done_report` / `frob.app.ticket_runner.
+_lifecycle._requeue`):
+
+- `close` commits LAST, after any `--evidence`/`--evidence-cmd` applied
+  at close time plus the DONE transition -- `chore(tickets): close <id>`.
+- `evidence` commits its appended evidence id(s)/cmd-evidence entry --
+  `chore(tickets): record evidence for <id>`.
+- `done-report` commits the composed Done-report section --
+  `chore(tickets): <id> Done report`.
+- `requeue` commits its QUEUED transition -- `chore(tickets): requeue
+  <id>`.
+
+No ledger-writing verb dispatched through the CLI is left able to leave
+`tickets.md` dirty by default anymore -- every one of `new`/`start`/
+`drop`/`fail`/`close`/`evidence`/`done-report`/`requeue` now auto-commits
+(the CLI layer's own atomic-write guarantee; `frob.tickets` library calls
+made directly, bypassing the CLI, are unaffected and still leave the
+caller responsible for committing, exactly as before).
+
 ## Stale-worktree-cut warning (T-1059)
 
 T-1030 root-caused a recurring incident (fa606fe8, b3589c3e): dispatched

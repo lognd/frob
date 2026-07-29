@@ -57,6 +57,18 @@ def _evidence(root: Path, cfg: AppConfig) -> None:
         if cmd_result.is_err:
             sys.exit(1)
 
+    # frob:ticket T-1178
+    from frob.tickets._leases import commit_ticket_ledger_change
+
+    committed = commit_ticket_ledger_change(
+        root,
+        cfg.ticket_id,
+        f"chore(tickets): record evidence for {cfg.ticket_id}",
+        no_commit=cfg.ticket_no_commit,
+    )
+    if committed.is_err:
+        sys.exit(1)
+
 
 # frob:ticket T-0458
 def _resolve_done_report_why(cfg: AppConfig) -> str | None:
@@ -504,6 +516,18 @@ def _done_report(root: Path, cfg: AppConfig) -> None:
         cfg.ticket_id,
         len(ticket.evidence),
     )
+
+    # frob:ticket T-1178
+    from frob.tickets._leases import commit_ticket_ledger_change
+
+    committed = commit_ticket_ledger_change(
+        root,
+        cfg.ticket_id,
+        f"chore(tickets): {cfg.ticket_id} Done report",
+        no_commit=cfg.ticket_no_commit,
+    )
+    if committed.is_err:
+        sys.exit(1)
 
 
 # frob:ticket T-0737

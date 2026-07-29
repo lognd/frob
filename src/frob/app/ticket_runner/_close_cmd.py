@@ -489,6 +489,18 @@ def _close(root: Path, cfg: AppConfig) -> None:
 
     record_ticket_event(root, ticket_id=cfg.ticket_id, event="done")
 
+    # frob:ticket T-1178
+    from frob.tickets._leases import commit_ticket_ledger_change
+
+    committed = commit_ticket_ledger_change(
+        root,
+        cfg.ticket_id,
+        f"chore(tickets): close {cfg.ticket_id}",
+        no_commit=cfg.ticket_no_commit,
+    )
+    if committed.is_err:
+        sys.exit(1)
+
 
 # frob:ticket T-1005
 # frob:tests tests/test_ticket_reverify.py::TestReverifyCli.test_reruns_verification_and_refreshes_recap_state_unchanged  # noqa: E501

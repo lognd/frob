@@ -48,7 +48,11 @@ def _requeue(root: Path, cfg: AppConfig) -> None:
     IN_PROGRESS state + scope, this transition alone releases the lease --
     no separate lease-release step is needed. `--reason` is optional and,
     when given, is only logged (not persisted) -- requeue carries no
-    Done-report/evidence surface of its own to attach it to."""
+    Done-report/evidence surface of its own to attach it to.
+
+    T-1178: auto-commits the ledger change (parity with new/drop/fail's
+    T-1130 auto-commit) -- `--no-commit` (`cfg.ticket_no_commit`) opts
+    out."""
     from frob.tickets import TicketState, transition
 
     if cfg.ticket_id is None:
@@ -81,6 +85,18 @@ def _requeue(root: Path, cfg: AppConfig) -> None:
     from frob.app.telemetry import record_ticket_event
 
     record_ticket_event(root, ticket_id=cfg.ticket_id, event="requeued")
+
+    # frob:ticket T-1178
+    from frob.tickets._leases import commit_ticket_ledger_change
+
+    committed = commit_ticket_ledger_change(
+        root,
+        cfg.ticket_id,
+        f"chore(tickets): requeue {cfg.ticket_id}",
+        no_commit=cfg.ticket_no_commit,
+    )
+    if committed.is_err:
+        sys.exit(1)
 
 
 def _load_ticket_or_exit(root: Path, ticket_id: str, *, verb: str):  # noqa: ANN201

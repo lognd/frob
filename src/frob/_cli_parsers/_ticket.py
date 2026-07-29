@@ -277,6 +277,14 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
     )
     ticket_requeue_p.add_argument("ticket_id", metavar="id")
     ticket_requeue_p.add_argument("--reason", dest="ticket_reason", default=None)
+    # frob:ticket T-1178
+    ticket_requeue_p.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip T-1178's auto-commit of the requeue ledger change "
+        "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit)",
+    )
 
     ticket_start_p = ticket_sub.add_parser(
         "start",
@@ -504,6 +512,14 @@ def _add_ticket_close_parser(ticket_sub):
             "through real confirmatory evidence."
         ),
     )
+    # frob:ticket T-1178
+    ticket_close_p.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip T-1178's auto-commit of the close ledger change "
+        "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit)",
+    )
     return ticket_close_p
 
 
@@ -664,6 +680,14 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "acceptance criterion instead of only the ticket's flat evidence "
         "list",
     )
+    # frob:ticket T-1178
+    ticket_evidence_p.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip T-1178's auto-commit of the evidence ledger change "
+        "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit)",
+    )
 
     ticket_drop_p = ticket_sub.add_parser(
         "drop",
@@ -743,6 +767,14 @@ def _add_ticket_done_report_parser(ticket_sub):
         default="main",
         metavar="REF",
         help="base ref the auto-filled Changed section diffs against (default: main)",
+    )
+    # frob:ticket T-1178
+    ticket_done_report_p.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip T-1178's auto-commit of the done-report ledger change "
+        "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit)",
     )
     return ticket_done_report_p
 

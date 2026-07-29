@@ -3074,6 +3074,7 @@ node testsuite : trusted {
     attr interface=TestCliStartRecordsGateCompatibleDigest;
     attr interface=TestCliSysExport;
     attr interface=TestClipboardAttachOnNew;
+    attr interface=TestCloseEvidenceDoneReportRequeueAutoCommit;
     attr interface=TestCloseFailAfterMerge;
     attr interface=TestCloseFailureHintMutationEvidence;
     attr interface=TestCloseFromQueuedHint;
