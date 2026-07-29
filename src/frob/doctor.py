@@ -603,8 +603,85 @@ def _combined_remediation(
     return " | ".join(parts) if parts else None
 
 
+# frob:ticket T-1162
+def _diagnose_derived_state(resolved_root: Path):
+    """T-1162: pure I/O -- under `derived_state_lock(resolved_root,
+    exclusive=True)`, verify every `DERIVED_ARTIFACTS` fingerprint, detect
+    drift against the previous run's manifest, and stamp a fresh manifest
+    for the next run. Returns `(derived_state, corrupt, drift)`. See
+    `run_diagnosis`'s docstring (T-0879) for why the exclusive acquisition
+    here cannot self-deadlock."""
+    with derived_state_lock(resolved_root, exclusive=True):
+        derived_state = verify_derived_state(resolved_root)
+        corrupt = tuple(d for d in derived_state if d.present and not d.healthy)
+        drift = _detect_derived_state_drift(resolved_root, derived_state)
+        _write_drift_manifest(
+            resolved_root,
+            {d.name: d.fingerprint for d in derived_state if d.fingerprint is not None},
+        )
+    return derived_state, corrupt, drift
+
+
+# frob:ticket T-1162
+def _collect_doctor_scans(resolved_root: Path):
+    """T-1162: pure I/O -- run the four unlocked doctor scans (scaffold
+    conformance, stale mutate-backup journals (T-0857), malformed ticket
+    edges (T-1132), stale ticket leases (T-1131)) and return
+    `(scaffold_blocks, scaffold_needs_apply, stale_mutate_journals,
+    malformed_ticket_edges, stale_ticket_leases)`."""
+    scaffold_blocks = scaffold_conformance_status(resolved_root)
+    scaffold_needs_apply = tuple(s for s in scaffold_blocks if not s.present or s.stale)
+    stale_mutate_journals = list_stale_journals(resolved_root)
+    malformed_ticket_edges = tuple(scan_malformed_ticket_edges(resolved_root))
+    stale_ticket_leases = scan_stale_ticket_leases(resolved_root)
+    return (
+        scaffold_blocks,
+        scaffold_needs_apply,
+        stale_mutate_journals,
+        malformed_ticket_edges,
+        stale_ticket_leases,
+    )
+
+
+# frob:ticket T-1162
+# frob:waive PII012 reason="'diagnosis' here is repository-health machinery \
+# (frob doctor's own DoctorReport summary log), not a medical/health \
+# record about a person -- a name-signature false positive, same class as \
+# run_diagnosis's own existing PII surface"
+def _log_doctor_diagnosis(
+    healthy,
+    extensions,
+    corrupt,
+    drift,
+    scaffold_needs_apply,
+    stale_mutate_journals,
+    malformed_ticket_edges,
+    stale_ticket_leases,
+) -> None:
+    """T-1162: pure I/O -- emit `run_diagnosis`'s single summary log line.
+    Extracted verbatim so the report-building logic above it stays
+    decision/formatting only."""
+    _log.info(
+        "doctor: healthy=%s extensions=%s derived_state_corrupt=%s drift=%s "
+        "scaffold_needs_apply=%s stale_mutate_journals=%s "
+        "malformed_ticket_edges=%s stale_ticket_leases=%s",
+        healthy,
+        extensions,
+        [d.name for d in corrupt],
+        [d.name for d in drift],
+        [s.block_id for s in scaffold_needs_apply],
+        [s.target for s in stale_mutate_journals],
+        [f"{e.ticket_id}.{e.field}" for e in malformed_ticket_edges],
+        stale_ticket_leases,
+    )
+
+
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 # frob:tests tests/system/test_cli_doctor.py kind="integration"
+# frob:waive AFFECT001 reason="T-1162 is a pure internal extraction \
+# (I/O/scan/log helpers pulled out to cut the function under the 60-line \
+# ARCH threshold); behavior, inputs, outputs, and the documented contract \
+# are all unchanged, so docs/guides/install.md's own content needs no edit"
 def run_diagnosis(root: Path | None = None) -> DoctorReport:
     """Check every entry in `NATIVE_EXTENSIONS` for importability and
     fingerprint every entry in `DERIVED_ARTIFACTS` under `root` (T-0570),
@@ -643,26 +720,24 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     check` run), so the EXCLUSIVE acquisition here cannot self-deadlock
     against a SHARED holder in the same process. See
     `derived_state_lock`'s docstring for the shared/exclusive contract.
+
+    T-1162 split the locked derived-state pass into `_diagnose_derived_state`,
+    the unlocked scans into `_collect_doctor_scans`, and the summary log
+    line into `_log_doctor_diagnosis` -- this function is now their
+    composition plus the `healthy`/`DoctorReport` decision and build.
     """
     resolved_root = root or Path.cwd()
     extensions = [_extension_status(name) for name in NATIVE_EXTENSIONS]
     natives_healthy = all(ext.available for ext in extensions)
 
-    with derived_state_lock(resolved_root, exclusive=True):
-        derived_state = verify_derived_state(resolved_root)
-        corrupt = tuple(d for d in derived_state if d.present and not d.healthy)
-        drift = _detect_derived_state_drift(resolved_root, derived_state)
-        _write_drift_manifest(
-            resolved_root,
-            {d.name: d.fingerprint for d in derived_state if d.fingerprint is not None},
-        )
-
-    scaffold_blocks = scaffold_conformance_status(resolved_root)
-    scaffold_needs_apply = tuple(s for s in scaffold_blocks if not s.present or s.stale)
-
-    stale_mutate_journals = list_stale_journals(resolved_root)
-    malformed_ticket_edges = tuple(scan_malformed_ticket_edges(resolved_root))
-    stale_ticket_leases = scan_stale_ticket_leases(resolved_root)
+    derived_state, corrupt, drift = _diagnose_derived_state(resolved_root)
+    (
+        scaffold_blocks,
+        scaffold_needs_apply,
+        stale_mutate_journals,
+        malformed_ticket_edges,
+        stale_ticket_leases,
+    ) = _collect_doctor_scans(resolved_root)
 
     healthy = (
         natives_healthy
@@ -691,17 +766,14 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
             stale_ticket_leases,
         ),
     )
-    _log.info(
-        "doctor: healthy=%s extensions=%s derived_state_corrupt=%s drift=%s "
-        "scaffold_needs_apply=%s stale_mutate_journals=%s "
-        "malformed_ticket_edges=%s stale_ticket_leases=%s",
+    _log_doctor_diagnosis(
         healthy,
         extensions,
-        [d.name for d in corrupt],
-        [d.name for d in drift],
-        [s.block_id for s in scaffold_needs_apply],
-        [s.target for s in stale_mutate_journals],
-        [f"{e.ticket_id}.{e.field}" for e in malformed_ticket_edges],
+        corrupt,
+        drift,
+        scaffold_needs_apply,
+        stale_mutate_journals,
+        malformed_ticket_edges,
         stale_ticket_leases,
     )
     return report

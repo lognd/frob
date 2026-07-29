@@ -368,8 +368,76 @@ def sprint_velocity(
 _FLOW_TRAILING_DAYS = 3
 
 
+# frob:ticket T-1162
+def _load_flow_ticket_universe(root: Path, queue: TicketQueue) -> dict:
+    """T-1162: pure I/O -- merge `queue.tickets` with `tickets-archive.md`
+    (best-effort; logs and degrades to `{}` on a load failure rather than
+    blocking the whole report), the T-1142 fix so filed/landed counts
+    include already-archived tickets. Extracted from `ticket_flow`."""
+    archived = load_archive(root)
+    archive_tickets = archived.danger_ok if archived.is_ok else {}
+    if archived.is_err:
+        _log.warning(
+            "tickets: ticket_flow could not load tickets-archive.md (%s) -- "
+            "landed/filed counts for already-archived tickets are omitted "
+            "this run",
+            archived.danger_err,
+        )
+    return {**archive_tickets, **queue.tickets}
+
+
+# frob:ticket T-1162
+def _count_filed_by_day(all_tickets: dict) -> dict[date, int]:
+    """T-1162: pure formatting -- tally each ticket's `created` date into a
+    filed-per-day histogram. Extracted from `ticket_flow`."""
+    filed_by_day: dict[date, int] = {}
+    for ticket in all_tickets.values():
+        filed_by_day[ticket.created] = filed_by_day.get(ticket.created, 0) + 1
+    return filed_by_day
+
+
+# frob:ticket T-1162
+def _count_landed_by_day(root: Path, all_tickets: dict) -> dict[date, int]:
+    """T-1162: pure I/O -- mine `tickets.md`'s git history
+    (`_mine_done_transitions`) for done-transition commits across every
+    ticket id in `all_tickets` and tally them into a landed-per-day
+    histogram. Extracted from `ticket_flow`."""
+    transitions = _mine_done_transitions(root, tuple(all_tickets.keys()))
+    landed_by_day: dict[date, int] = {}
+    for transition in transitions:
+        day = transition.committed_at.date()
+        landed_by_day[day] = landed_by_day.get(day, 0) + 1
+    return landed_by_day
+
+
+# frob:ticket T-1162
+def _build_flow_rows(
+    filed_by_day: dict[date, int], landed_by_day: dict[date, int], today: date
+) -> list["TicketFlowRow"]:
+    """T-1162: pure formatting -- zero-filled `TicketFlowRow` per calendar
+    day from the earliest observed filing/landing event through `today`,
+    so a quiet day still gets a row instead of being skipped. Extracted
+    from `ticket_flow`."""
+    observed_days = list(filed_by_day) + list(landed_by_day) + [today]
+    earliest = min(observed_days)
+
+    rows: list[TicketFlowRow] = []
+    day = earliest
+    while day <= today:
+        rows.append(
+            TicketFlowRow(
+                day=day,
+                filed=filed_by_day.get(day, 0),
+                landed=landed_by_day.get(day, 0),
+            )
+        )
+        day += timedelta(days=1)
+    return rows
+
+
 # frob:ticket T-1100
 # frob:ticket T-1142
+# frob:ticket T-1162
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_filed_and_landed_counted_per_day  # noqa: E501
 # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_zero_activity_days_are_filled_not_sparse  # noqa: E501
@@ -377,6 +445,11 @@ _FLOW_TRAILING_DAYS = 3
 # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_eta_computed_when_queue_shrinking  # noqa: E501
 # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_archived_ticket_still_counts_toward_landed  # noqa: E501
 # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_archived_ticket_still_counts_toward_filed  # noqa: E501
+# frob:waive AFFECT001 reason="T-1162 is a pure internal extraction \
+# (archive-merge/histogram/row-building helpers pulled out to cut the \
+# function under the 60-line ARCH threshold); behavior, inputs, outputs, \
+# and the documented contract are all unchanged, so docs/modules/ \
+# tickets.md's own content needs no edit"
 def ticket_flow(
     root: Path, queue: TicketQueue, *, today: date | None = None
 ) -> TicketFlowReport:
@@ -416,45 +489,21 @@ def ticket_flow(
     covers a real fixed-size span instead of skipping silently over quiet
     days. Returns an all-zero, single-`today`-row report (no crash, no
     `NotFound`) for an empty queue, same no-error-case contract
-    `sprint_velocity` already keeps."""
+    `sprint_velocity` already keeps.
+
+    T-1162 split the archive-merge I/O into `_load_flow_ticket_universe`,
+    the filed/landed histograms into `_count_filed_by_day`/
+    `_count_landed_by_day`, and the row-building into `_build_flow_rows` --
+    this function is now their composition plus the trailing-window/
+    open-count decisions and the final report build."""
     from frob.tickets import _OPEN_STATES
 
-    archived = load_archive(root)
-    archive_tickets = archived.danger_ok if archived.is_ok else {}
-    if archived.is_err:
-        _log.warning(
-            "tickets: ticket_flow could not load tickets-archive.md (%s) -- "
-            "landed/filed counts for already-archived tickets are omitted "
-            "this run",
-            archived.danger_err,
-        )
-    all_tickets = {**archive_tickets, **queue.tickets}
-
-    filed_by_day: dict[date, int] = {}
-    for ticket in all_tickets.values():
-        filed_by_day[ticket.created] = filed_by_day.get(ticket.created, 0) + 1
-
-    transitions = _mine_done_transitions(root, tuple(all_tickets.keys()))
-    landed_by_day: dict[date, int] = {}
-    for transition in transitions:
-        day = transition.committed_at.date()
-        landed_by_day[day] = landed_by_day.get(day, 0) + 1
+    all_tickets = _load_flow_ticket_universe(root, queue)
+    filed_by_day = _count_filed_by_day(all_tickets)
+    landed_by_day = _count_landed_by_day(root, all_tickets)
 
     today = today if today is not None else date.today()
-    observed_days = list(filed_by_day) + list(landed_by_day) + [today]
-    earliest = min(observed_days)
-
-    rows: list[TicketFlowRow] = []
-    day = earliest
-    while day <= today:
-        rows.append(
-            TicketFlowRow(
-                day=day,
-                filed=filed_by_day.get(day, 0),
-                landed=landed_by_day.get(day, 0),
-            )
-        )
-        day += timedelta(days=1)
+    rows = _build_flow_rows(filed_by_day, landed_by_day, today)
 
     trailing = rows[-_FLOW_TRAILING_DAYS:] if rows else []
     trailing_net_rate = (

@@ -622,8 +622,67 @@ def _reverify(root: Path, cfg: AppConfig) -> None:
     )
 
 
+# frob:ticket T-1162
+def _load_ticket_for_fail(root: Path, ticket_id: str):
+    """T-1162: pure I/O -- load the queue and return the named ticket, or
+    `sys.exit(1)` (with a logged reason) on a load error or unknown id.
+    Extracted from `_fail` to isolate its I/O from the decision/formatting
+    steps that follow."""
+    from frob.tickets import load_queue
+
+    queue_result = load_queue(root)
+    if queue_result.is_err:
+        _log.error("fail failed: %s", queue_result.danger_err)
+        sys.exit(1)
+    ticket = queue_result.danger_ok.tickets.get(ticket_id)
+    if ticket is None:
+        _log.error("no ticket %s", ticket_id)
+        sys.exit(1)
+    return ticket
+
+
+# frob:ticket T-1162
+def _record_fail_entry(root: Path, ticket_id: str, ticket, summary: str) -> None:
+    """T-1162: pure I/O -- append a `FailureEntry` (attempt number derived
+    from the ticket's existing body) via `record_failure`, or `sys.exit(1)`
+    on error. Extracted from `_fail`."""
+    from frob.tickets import FailureEntry, record_failure
+
+    attempt = ticket.body.count("attempt ") + 1
+    entry = FailureEntry(date=date.today(), attempt=attempt, summary=summary)
+    result = record_failure(root, ticket_id, entry)
+    if result.is_err:
+        _log.error("fail failed: %s", result.danger_err)
+        sys.exit(1)
+    _log.info("%s: recorded failure attempt %d", ticket_id, attempt)
+
+
+# frob:ticket T-1162
+def _requeue_if_in_progress(root: Path, ticket_id: str, ticket) -> None:
+    """T-1162: decision (was the ticket IN_PROGRESS?) plus the I/O that
+    follows it -- requeue (IN_PROGRESS -> QUEUED) to release the
+    cross-worktree lease, per the T-1131 incident documented on `_fail`.
+    A ticket not IN_PROGRESS is left unchanged, matching pre-T-1131
+    behavior for that case."""
+    from frob.tickets import TicketState, transition
+
+    if ticket.state is not TicketState.IN_PROGRESS:
+        return
+    requeued = transition(root, ticket_id, TicketState.QUEUED)
+    if requeued.is_err:
+        _log.error(
+            "fail: %s failure log recorded but requeue failed (%s) -- "
+            "lease NOT released, needs manual attention",
+            ticket_id,
+            requeued.danger_err,
+        )
+        sys.exit(1)
+    _log.info("%s: requeued (in-progress -> queued), lease released", ticket_id)
+
+
 # frob:ticket T-1131
 # frob:ticket T-1130
+# frob:ticket T-1162
 def _fail(root: Path, cfg: AppConfig) -> None:
     """`frob ticket fail <id> --summary TEXT`: record a dead-end failure
     log entry, then requeue the ticket (T-1131).
@@ -645,50 +704,21 @@ def _fail(root: Path, cfg: AppConfig) -> None:
 
     T-1130: auto-commits the fail-log (plus any requeue transition) as ONE
     ledger change, the same way `start` auto-commits its own transition
-    (T-1054 parity) -- `--no-commit` (`cfg.ticket_no_commit`) opts out."""
-    from frob.tickets import (
-        FailureEntry,
-        TicketState,
-        load_queue,
-        record_failure,
-        transition,
-    )
+    (T-1054 parity) -- `--no-commit` (`cfg.ticket_no_commit`) opts out.
+
+    T-1162 split this into `_load_ticket_for_fail` (I/O),
+    `_record_fail_entry` (I/O), and `_requeue_if_in_progress`
+    (decision+I/O) -- this function is now their composition plus the
+    final ledger commit."""
     from frob.tickets._leases import commit_ticket_ledger_change
 
     if cfg.ticket_id is None or cfg.ticket_summary is None:
         _log.error("frob ticket fail requires <id> and --summary")
         sys.exit(1)
 
-    queue_result = load_queue(root)
-    if queue_result.is_err:
-        _log.error("fail failed: %s", queue_result.danger_err)
-        sys.exit(1)
-    ticket = queue_result.danger_ok.tickets.get(cfg.ticket_id)
-    if ticket is None:
-        _log.error("no ticket %s", cfg.ticket_id)
-        sys.exit(1)
-
-    attempt = ticket.body.count("attempt ") + 1
-    entry = FailureEntry(date=date.today(), attempt=attempt, summary=cfg.ticket_summary)
-    result = record_failure(root, cfg.ticket_id, entry)
-    if result.is_err:
-        _log.error("fail failed: %s", result.danger_err)
-        sys.exit(1)
-    _log.info("%s: recorded failure attempt %d", cfg.ticket_id, attempt)
-
-    if ticket.state is TicketState.IN_PROGRESS:
-        requeued = transition(root, cfg.ticket_id, TicketState.QUEUED)
-        if requeued.is_err:
-            _log.error(
-                "fail: %s failure log recorded but requeue failed (%s) -- "
-                "lease NOT released, needs manual attention",
-                cfg.ticket_id,
-                requeued.danger_err,
-            )
-            sys.exit(1)
-        _log.info(
-            "%s: requeued (in-progress -> queued), lease released", cfg.ticket_id
-        )
+    ticket = _load_ticket_for_fail(root, cfg.ticket_id)
+    _record_fail_entry(root, cfg.ticket_id, ticket, cfg.ticket_summary)
+    _requeue_if_in_progress(root, cfg.ticket_id, ticket)
 
     committed = commit_ticket_ledger_change(
         root,

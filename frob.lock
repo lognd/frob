@@ -21,6 +21,16 @@
       "ref": "src/frob/arch/_smells.py::check_module_dependency_cycles"
     },
     {
+      "digest": "2a557f28ccfc904a4dea8ed376c59815ed239b70fd09d5d7238905f0aed970cf",
+      "facet": "body",
+      "ref": "src/frob/doctor.py::run_diagnosis"
+    },
+    {
+      "digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
+      "facet": "sig",
+      "ref": "src/frob/doctor.py::run_diagnosis"
+    },
+    {
       "digest": "e7eba171efe15fc3946ef97a416c39b55af2def1f8df9eaf709ff50dce13a609",
       "facet": "body",
       "ref": "src/frob/gates/__init__.py::_fmt001_file"
@@ -509,6 +519,16 @@
       "digest": "4eb7d825600c3b257f34abf39502e99f15049e9190adb04f9b9fa2c08bad0304",
       "facet": "sig",
       "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
+    },
+    {
+      "digest": "009ddf428238bab8c27896e80e5f98e728039618f0c3d4c1c08fc6fb7a0f0bf1",
+      "facet": "body",
+      "ref": "src/frob/tickets/_setters.py::ticket_flow"
+    },
+    {
+      "digest": "9b27320b33ca48cfdde2896e81ca1425945211dc45fd157b2533604efa24f105",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_setters.py::ticket_flow"
     },
     {
       "digest": "16dd69d6531a3f4a287d539fc5112ea94ee69be195a8f410bae001955953fd6a",

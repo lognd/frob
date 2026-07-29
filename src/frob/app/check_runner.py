@@ -1490,6 +1490,69 @@ def run(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1147
+def _check_delta_daemon_eligible(root: Path, cfg: AppConfig) -> bool:
+    """T-1147/T-1162: pure decision -- True only for the one narrow `frob
+    check --only gates --delta --json` invocation shape (exactly `--only
+    gates`, no other tool stage or individual gate id mixed in, a single
+    detected project language of python only with no polyglot SKIPPED-line
+    siblings, no `deploy/` stage to append, and `--delta` itself set) where
+    the daemon's narrower gates-only RPC answer is already the complete
+    answer; see `_try_check_delta_via_daemon`'s docstring for the full
+    rationale this gate exists to encode."""
+    if cfg.check_only != ["gates"] or not cfg.check_delta:
+        return False
+    if (root / "deploy").is_dir():
+        return False
+    detected = _detected_types(root) or [detect_project_type(root)]
+    return detected == ["python"]
+
+
+# frob:ticket T-1162
+def _query_check_delta_daemon(root: Path, cfg: AppConfig) -> dict | None:
+    """T-1162: pure I/O -- ask the daemon proxy for `frob_check_delta` and
+    return its raw `check_result` payload, or `None` on any miss (RPC
+    error, or an older pre-T-1147 daemon answering without a `check_result`
+    key -- see `_try_check_delta_via_daemon`'s docstring for why the latter
+    must fall through rather than render)."""
+    from frob.app._daemon_proxy import query
+
+    proxied = query(
+        root,
+        "frob_check_delta",
+        {"ticket_id": cfg.check_ticket, "base": cfg.check_base or "main"},
+    )
+    if proxied.is_err:
+        return None
+    return proxied.danger_ok.get("check_result")
+
+
+# frob:ticket T-1162
+def _reconcile_daemon_check_result(check_result: dict, root: Path) -> dict:
+    """T-1162: pure formatting -- overwrite the daemon's own echoed
+    (absolute, daemon-resolved) `path` with this invocation's own `root` so
+    the daemon and in-process paths stay byte-identical (T-1147); the RPC's
+    echo differs from the CLI's in-process `CheckResult.path` (usually the
+    relative `cfg.check_path`) by resolution alone even when the underlying
+    gate run is identical."""
+    return {**check_result, "path": str(root)}
+
+
+# frob:ticket T-1162
+def _render_and_exit_on_daemon_errors(check_result: dict) -> None:
+    """T-1162: pure decision/I-O split -- log the reconciled check result as
+    JSON and `sys.exit(1)` if any gate diagnostic in it is error-severity,
+    mirroring the in-process `_report_check_result` exit contract."""
+    import json
+
+    _log.info(json.dumps(check_result, indent=2))
+    if any(
+        any(d.get("severity") == "error" for d in r.get("diagnostics", []))
+        for r in check_result["results"]
+    ):
+        sys.exit(1)
+
+
+# frob:ticket T-1147
 # frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_check_delta_gates_only_json_daemon_matches_in_process kind="unit"  # noqa: E501
 def _try_check_delta_via_daemon(root: Path, cfg: AppConfig) -> bool:
     """T-1147: for the one narrow `frob check --only gates --delta --json`
@@ -1513,52 +1576,22 @@ def _try_check_delta_via_daemon(root: Path, cfg: AppConfig) -> bool:
     complete answer -- this function is that detection, the second
     direction T-1147 investigated and chose.
 
+    T-1162 split this into `_check_delta_daemon_eligible` (decision),
+    `_query_check_delta_daemon` (I/O), `_reconcile_daemon_check_result`
+    (formatting), and `_render_and_exit_on_daemon_errors` (render/exit) --
+    this function is now just their composition.
+
     Returns `True` on a daemon hit (already rendered); `False` falls
     through to the normal in-process `_run_all_stages` path unchanged,
     same contract every other `_try_*_via_daemon` function in this
     codebase follows (T-1106/T-1128)."""
-    if cfg.check_only != ["gates"] or not cfg.check_delta:
-        return False
-    if (root / "deploy").is_dir():
-        return False
-    detected = _detected_types(root) or [detect_project_type(root)]
-    if detected != ["python"]:
+    if not _check_delta_daemon_eligible(root, cfg):
         return False
 
-    from frob.app._daemon_proxy import query
-
-    proxied = query(
-        root,
-        "frob_check_delta",
-        {"ticket_id": cfg.check_ticket, "base": cfg.check_base or "main"},
-    )
-    if proxied.is_err:
-        return False
-    payload = proxied.danger_ok
-    check_result = payload.get("check_result")
+    check_result = _query_check_delta_daemon(root, cfg)
     if check_result is None:
-        # T-1147: an older daemon (pre-widened RPC, version-skew window
-        # before `ensure_daemon`'s self-heal restarts it) answers the
-        # narrower pre-T-1147 shape with no `check_result` key at all --
-        # fall through to the in-process path rather than render a
-        # payload this invocation's `--json` caller never asked for.
         return False
 
-    # T-1147: the RPC always echoes its OWN (daemon-resolved, absolute)
-    # `root` back as `check_result["path"]` -- the CLI's own in-process
-    # `CheckResult.path` is whatever `cfg.check_path` literally was
-    # (usually the relative `"."` this function's own `root` argument
-    # carries), so the two differ by resolution alone even when the
-    # underlying gate run is identical. Overwrite with this call's own
-    # `root` (never the RPC's echo) to keep the two paths byte-identical.
-    check_result = {**check_result, "path": str(root)}
-
-    import json
-
-    _log.info(json.dumps(check_result, indent=2))
-    if any(
-        any(d.get("severity") == "error" for d in r.get("diagnostics", []))
-        for r in check_result["results"]
-    ):
-        sys.exit(1)
+    check_result = _reconcile_daemon_check_result(check_result, root)
+    _render_and_exit_on_daemon_errors(check_result)
     return True
