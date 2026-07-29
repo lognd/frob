@@ -419,3 +419,113 @@ threat: null
 component: null
 ```
 User directive 2026-07-29: design/frob.strata is 5588 lines and monolithic. _design_load.py (T-0080) already rglobs and loads every .strata file under design/, but elaboration produces one KernelModel PER FILE (DesignIds.models, one per file), so cross-file edges (flows/boundaries referencing nodes in another file) do not elaborate into one model today -- only merged id-surfaces (channels/boundaries/secrets/store_ids/resources) are unioned. Design question for the child design note: merge parsed Modules pre-elaboration into one KernelModel vs an explicit import/include construct in the surface grammar. Sibling ticket covers the attr interface= volume; splitting along component seams is only safe once cross-file references resolve.
+
+<!-- ticket:T-1197 -->
+```yaml
+id: T-1197
+title: 'refactor: reference-rewrite engine (resolve/plan/apply/verify pipeline)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: T-1135
+tier: ticket
+sprint: null
+scope:
+- src/frob/refactor/**
+- docs/commands/refactor.md
+- tests/test_refactor.py
+acceptance:
+- text: 'GIVEN a Python symbol renamed via `frob refactor rename` WHEN every import
+
+    and call site is rewritten THEN a fresh `pytest --collect-only` over the
+
+    repo shows no new collection error and `frob check --delta` against a
+
+    pre-refactor baseline stamp shows zero new findings (allowing for the
+
+    same finding relocated to the new symref)'
+  evidence: []
+- text: 'GIVEN a rename target whose destination name collides with something
+
+    already imported at a call site WHEN the refactor applies THEN that call
+
+    site gets an auto-generated import alias, and the disclosed report names
+
+    every alias generated'
+  evidence: []
+- text: 'GIVEN a refactor whose apply phase cannot complete every planned rewrite
+
+    WHEN it detects this THEN it refuses and rolls back via `git reset --hard`
+
+    to its own pre-transaction commit, never leaving a half-moved symbol, and
+
+    never touching refs/stash'
+  evidence: []
+threat: null
+component: null
+```
+Design: docs/design/refactor-verb.md (T-1135). Build the shared
+resolve/plan/apply/verify transaction pipeline for `frob refactor`:
+
+- Resolve phase: given a Python move/rename/split target, use frob.lang +
+  frob.graph to locate the symbol(s) unambiguously; refuse with no writes
+  if the target does not resolve or a destination name collision has no
+  --alias-conflict policy given (policy itself is T-1135's alias-conflict
+  child; this ticket just exposes the extension point).
+- Plan phase: build the full rewrite plan (import/call-site rewrites incl.
+  auto-alias on conflict, absolute-import form) before any file write.
+- Apply phase: AST-level move preserving formatting outside the moved
+  span; rewrite Python import/call sites; commit as one WIP commit in the
+  caller's own worktree (never git stash, per agent-playbook.md sec 1b).
+- Verify phase: import graph resolves (frob.graph rebuild + import
+  resolution check), pytest --collect-only succeeds with no new
+  collection error, frob check --delta against a pre-refactor baseline
+  stamp is diff-clean (identity-aware: a finding that moved with its
+  symref is not "new").
+- Rollback: any verify-phase failure does `git reset --hard` to the
+  pre-transaction commit inside the caller's own worktree (never touches
+  refs/stash) and prints the disclosed report (attempted rewrites, why it
+  could not complete).
+- New CLI verb `frob refactor move`/`frob refactor rename` (split is a
+  separate child), with docs/commands/refactor.md added following the
+  existing docs/commands/*.md per-command convention.
+- This ticket owns ONLY the Python-import/call-site reference kind and
+  the shared pipeline; frob-owned DSL/waiver/registry/evidence rewriting
+  is out of scope (children 2 and 3 extend this pipeline's reference-kind
+  inventory, they do not reimplement resolve/plan/apply/verify).
+
+<!-- ticket:T-1198 -->
+```yaml
+id: T-1198
+title: 'strata: eliminate attr interface= boilerplate (4236 of 5588 frob.strata lines)
+  via generated fragment or compact grammar'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/**
+- design/**
+- docs/**
+- tests/**
+acceptance:
+- text: 'GIVEN the interface surface of a node WHEN it is machine-derivable (sync_interface
+    already rewrites attr interface= lines to match code exactly) THEN the hand-authored
+    .strata file no longer carries one line per symbol: either a generated .strata
+    fragment (generate-and-verify like the rule registry) or a compact declaration
+    form (list/module-ref) the parser accepts, design decides'
+  evidence: []
+- text: GIVEN the migration lands THEN frob check --only sys findings are diff-clean
+    vs the inline-attr model and sync_interface round-trips idempotently on the new
+    form
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-07-29: 4236 of design/frob.strata's 5588 lines are attr interface=<symbol> lines, one symbol per line, maintained mechanically by frob.strata._sync_interface (which loads every .strata file and rewrites the attrs to match code exactly). The hand-authored design intent drowns in generated-shaped noise. Candidate designs for the design note: (a) generated sidecar fragment design/frob.interface.strata written by sync_interface and verified by the SYS gate (T-1008 generate-and-verify precedent); (b) grammar shorthand attr interface=[a, b, ...] or interface from <module-path> resolved at parse time; (c) move interface bindings out of the surface file entirely into the code-binding layer. Coordinate with T-1196 (multi-file split) -- a generated fragment is itself a second file, so the cross-file semantics land first or together.
