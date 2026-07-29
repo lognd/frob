@@ -931,6 +931,11 @@ acceptance:
     becomes a thin optional wrapper calling it (user directive 2026-07-29: portable,
     not just this project and not just Linux)'
   evidence: []
+- text: 'GIVEN a frob command whose gates need coverage data WHEN the freshness contract
+    says it is stale THEN the frob-native coverage refresh runs automatically inside
+    that command (touched-set only) -- the user never invokes a refresh verb, and
+    nothing cached is re-run (user directive 2026-07-29: minimal friction)'
+  evidence: []
 threat: null
 component: null
 ```
@@ -2172,3 +2177,30 @@ threat: null
 component: null
 ```
 Rows: CMPL-ASVS-CHAPTERS, CMPL-ASVS-REQUIREMENTS, CMPL-ASVS-LEVELS (advisory, already out_of_scope), CMPL-SAMM-FUNCTIONS (process, already out_of_scope), CMPL-SAMM-PRACTICES (process, already out_of_scope), CMPL-FEDRAMP-IMPACT-TIERS, CMPL-SLSA-BUILD-LEVELS. 4 non-out_of_scope rows all sit at handled_by:COMPLIANCE005 with no RegulationEntry backing. ASVS-REQUIREMENTS (286 leaf controls) and SLSA-BUILD-LEVELS are the most plausibly directly enforceable (ASVS overlaps existing security gates, SLSA build-level attestation overlaps supply-chain/provenance tooling if any exists in this repo) -- check for existing overlap with non-compliance gates (e.g. security/PII/secrets families) before proposing new work. Classify each: (a) enforceable via existing/extended vocabulary + new RegulationEntry, (b) needs new model vocabulary, (c) attestation-only, (d) out of scope with documented reason.
+
+<!-- ticket:T-1250 -->
+```yaml
+id: T-1250
+title: 'compliance triage: CMPL-FROB-CATALOG-ENTRIES row -- the 6 RegulationEntry
+  units counted against themselves'
+state: queued
+kind: security
+origin: human
+created: '2026-07-29'
+priority: low
+parent: T-1241
+tier: ticket
+sprint: null
+scope:
+- docs/design/registry/compliance.yaml
+- src/frob/strata/_compliance.py
+acceptance:
+- text: GIVEN this ticket closes WHEN CMPL-FROB-CATALOG-ENTRIES's disposition comment
+    is reviewed THEN it explicitly states it is verified via the 6 real COMPLIANCE_CATALOG
+    entries (not merely a non-deferred string), or is corrected if that claim does
+    not hold
+  evidence: []
+threat: null
+component: null
+```
+CMPL-FROB-CATALOG-ENTRIES (framework frob-std.compliance, leaf_count 6) is the meta-row counting COMPLIANCE_CATALOG's own 6 RegulationEntry units (COPPA, GDPR-ERASURE/RETENTION/BASIS, HIPAA-BAA, MINIMIZATION) as a denominator entry in the registry -- confirm its handled_by:COMPLIANCE005 disposition is not circular (a row about the catalog counted by a gate that only checks the row has a disposition string). Likely fine as-is since the 6 units ARE genuinely implemented with real RegulationEntry+mitigation each, but state that explicitly rather than leaving it riding the same generic handled_by:COMPLIANCE005 text as the 16 other under-enforced rows -- distinguish 'this row is fine because its 6 members are real' from 'this row has a disposition string'.
