@@ -87,7 +87,7 @@ T-0254 child 6 (proof on reality). Apply the full chain to malmberg (the real se
 ```yaml
 id: T-0329
 title: 'EPIC arch multi-language: normalized code model + Rust/TypeScript/Kotlin adapters'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-19'
@@ -116,7 +116,6 @@ threat: null
 component: null
 ```
 frob arch today has per-language walkers (_python.py, _cpp.py) only. To extend cleanly (not N copies of each check), introduce a NORMALIZED CODE MODEL: a language-agnostic view (module, class, function, method, param, branch, loop, call, import, override, field-access, return, raise/throw, catch) that each language adapter maps its tree-sitter grammar onto. Checks are written ONCE against the model; adapters supply per-grammar node-type maps. Then add adapters for TypeScript, Rust, Kotlin (Kotlin needs tree-sitter-kotlin added to frob.lang; ts/rust/cpp/c already parse via tree-sitter-language-pack). Language-specific checks (Rust must_use/ownership, TS any/strict-null) live in per-language extensions on top of the shared model. Acceptance: an arch check written once fires correctly across python+ts+rust+kotlin on equivalent code; Kotlin grammar wired; the existing python/cpp checks refactored onto the model with no regression. Children: normalized-model, ts-adapter, rust-adapter, kotlin-grammar+adapter.
-
 <!-- ticket:T-0395 -->
 ```yaml
 id: T-0395
