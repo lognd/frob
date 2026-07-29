@@ -84,6 +84,7 @@ from frob.gates._debt_deprecated import (
     list_debt,
     list_deprecated,
 )
+from frob.gates._decisions_compliance import compliance_gate, decisions_gate
 from frob.gates._design_invariants import inv007_violations, inv008_violations
 from frob.gates._docblocks import doc004_gate, doc005_gate
 from frob.gates._docptr import doc006_gate
@@ -5215,212 +5216,6 @@ def _load_test_config(root: Path) -> tuple[TestPolicy, tuple[SystemSpec, ...]]:
     return policy, _load_systems(doc)
 
 
-# frob:doc docs/modules/gates.md#public-api
-# frob:ticket T-0004
-# frob:ticket T-0894
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to the deferred \
-# imports of decision_gate/decisions_dir/load_decisions/path_ever_tracked, whose \
-# own call surfaces the resolver cannot follow through a function-local import; \
-# every locally-visible fallible operation in this gate (path checks, the two \
-# try/except blocks below) is already narrowly handled"
-# frob:enforces CHK-GATE-DEC000
-# frob:enforces CHK-GATE-DEC003
-def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
-    """DEC001/DEC002: decision records and their code anchors (T-0004).
-
-    Runs only when a `decisions/` directory exists (opt-in by convention).
-    A malformed record fails loudly rather than silently degrading, since
-    the record set is a contract surface like the ticket queue.
-
-    T-0894: a `decisions/` directory that was committed on this branch's
-    history and has since been deleted fires DEC003 (unwaivable, same
-    "adopted then deleted" family as REG012/COMPLIANCE006) instead of
-    silently degrading to the never-adopted empty-tuple posture.
-    """
-    from frob.gates._registry_exhaustiveness import path_ever_tracked
-    from frob.gates.decisions import decision_gate, decisions_dir, load_decisions
-
-    root = Path(root)
-    decisions_path = decisions_dir(root)
-    if not decisions_path.exists():
-        try:
-            rel_decisions = str(decisions_path.relative_to(root))
-        except ValueError:
-            rel_decisions = str(decisions_path)
-        if path_ever_tracked(root, rel_decisions):
-            _log.warning(
-                "decisions_gate: %s existed in HEAD's history but is now "
-                "deleted from the working tree (DEC003)",
-                decisions_path,
-            )
-            return (
-                Violation(
-                    rule="DEC003",
-                    severity=Severity.ERROR,
-                    file=rel_decisions,
-                    line=0,
-                    message=(
-                        f"DEC003: {rel_decisions} was previously committed "
-                        "on this branch but has been deleted -- a decision "
-                        "record set this repo has adopted cannot silently "
-                        "disappear back into 'never adopted' (T-0894); "
-                        "restore it or file a decision record explaining "
-                        "the removal"
-                    ),
-                ),
-            )
-        return ()
-    loaded = load_decisions(root)
-    if loaded.is_err:
-        return (
-            Violation(
-                rule="DEC000",
-                severity=Severity.ERROR,
-                file="decisions/",
-                line=0,
-                message=f"DEC000: decision records unreadable: {loaded.danger_err}",
-            ),
-        )
-    return decision_gate(loaded.danger_ok, snapshot)
-
-
-# frob:ticket T-0788
-def _compliance005_violation(cv) -> Violation:  # noqa: ANN001
-    """Convert one `frob.strata._compliance.ComplianceViolation` (COMPLIANCE005)
-    into a gate `Violation` -- the `docs/design/registry/compliance.yaml`
-    entry id doubles as the file location since the check has no source-line
-    concept of its own."""
-    return Violation(
-        rule=cv.rule,
-        severity=Severity.ERROR,
-        file="docs/design/registry/compliance.yaml",
-        line=0,
-        message=f"{cv.rule}: {cv.regulation}: {cv.detail}",
-    )
-
-
-# frob:ticket T-0788
-# frob:ticket T-0894
-# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#registry-exhaustiveness-drift-lock-t-0343  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_registered_in_known_gate_rules  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_fires_on_deferred_disposition  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_silent_on_handled_by_and_out_of_scope  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_missing_registry_dir_is_silent  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_real_repo_registry_passes  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance006_fires_on_deleted_registry_after_adoption  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance006_silent_on_never_adopted_registry  # noqa: E501
-# frob:enforces CHK-GATE-COMPLIANCE005
-# frob:enforces CHK-GATE-COMPLIANCE006
-# T-1020-followup: the 17 CMPL_REGISTRY_UNIT_IDS checkable-control units
-# T-0833 flipped to handled_by:COMPLIANCE005 -- compliance_gate (via
-# check_cmpl_registry) is their real enforcing site.
-# frob:enforces CMPL-SOC2-CATEGORIES
-# frob:enforces CMPL-SOC2-CC-FAMILIES
-# frob:enforces CMPL-PCIDSS-REQUIREMENTS
-# frob:enforces CMPL-HIPAA-TECHNICAL-STANDARDS
-# frob:enforces CMPL-GDPR-ARTICLES
-# frob:enforces CMPL-NIST80053-FAMILIES
-# frob:enforces CMPL-NIST80263-VOLUMES
-# frob:enforces CMPL-SSDF-PRACTICE-GROUPS
-# frob:enforces CMPL-ISO27002-THEMES
-# frob:enforces CMPL-ISO27002-CONTROLS
-# frob:enforces CMPL-CIS-CONTROLS
-# frob:enforces CMPL-CIS-SAFEGUARDS
-# frob:enforces CMPL-ASVS-CHAPTERS
-# frob:enforces CMPL-ASVS-REQUIREMENTS
-# frob:enforces CMPL-FEDRAMP-IMPACT-TIERS
-# frob:enforces CMPL-SLSA-BUILD-LEVELS
-# frob:enforces CMPL-FROB-CATALOG-ENTRIES
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to the deferred \
-# import of path_ever_tracked and check_cmpl_registry's own resolution, which the \
-# resolver cannot follow through a function-local import boundary; this function's \
-# own locally-visible fallible step (registry_dir existence) is a plain path check"
-def compliance_gate(
-    repo_root: Path, registry_dir: Path | None = None
-) -> tuple[Violation, ...]:
-    """COMPLIANCE005 (T-0788, closing the T-0607 gate-wiring gap): every
-    `frob.strata._compliance.CMPL_REGISTRY_UNIT_IDS` member present in
-    `docs/design/registry/compliance.yaml` must carry a `handled_by`/
-    `out_of_scope` disposition, never `deferred`/undispositioned --
-    `check_cmpl_registry` (`frob.strata._compliance`, built by T-0607) did
-    this check's real work already; this function is purely the `frob
-    check` dispatch T-0607 disclosed it could not add (`_KNOWN_GATE_RULES`
-    and this stage callback both lived outside T-0607's declared scope).
-    Silent (empty tuple) when `registry_dir` (defaults to `repo_root /
-    "docs/design/registry"`) has no `compliance.yaml` at all AND that path
-    was never committed on this branch's history -- a repo that genuinely
-    never adopted the compliance registry makes no COMPLIANCE005 claim.
-    T-0894: a repo that DID adopt it (the file was committed on HEAD's
-    history at some point) and then lost it -- deleted, whether by
-    accident or by a compliance-load-bearing-artifact removal attack --
-    fires COMPLIANCE006 instead of silently degrading to the
-    never-adopted posture; COMPLIANCE006 is in `_UNWAIVABLE_RULES`
-    (unlike COMPLIANCE005 itself, which stays waivable for a specific,
-    honest `frob:waive COMPLIANCE005 reason=...` temporary exception the
-    same way REG001-004 allow one -- deleting the registry entirely is a
-    different, higher-stakes claim than an individual undispositioned
-    entry, and gets no waiver escape hatch)."""
-    from frob.gates._registry_exhaustiveness import path_ever_tracked
-    from frob.strata import check_cmpl_registry
-
-    base = (
-        registry_dir
-        if registry_dir is not None
-        else (repo_root / "docs/design/registry")
-    )
-    compliance_yaml = base / "compliance.yaml"
-    if not compliance_yaml.is_file():
-        try:
-            rel_compliance = str(compliance_yaml.relative_to(repo_root))
-        except ValueError:
-            rel_compliance = str(compliance_yaml)
-        if path_ever_tracked(repo_root, rel_compliance):
-            _log.warning(
-                "compliance_gate: %s existed in HEAD's history but is now "
-                "deleted from the working tree (COMPLIANCE006)",
-                compliance_yaml,
-            )
-            return (
-                Violation(
-                    rule="COMPLIANCE006",
-                    severity=Severity.ERROR,
-                    file=rel_compliance,
-                    line=0,
-                    message=(
-                        f"COMPLIANCE006: {rel_compliance} was previously "
-                        "committed on this branch but has been deleted -- "
-                        "a compliance registry this repo has adopted "
-                        "cannot silently disappear back into 'never "
-                        "adopted' (T-0894); restore it or file a decision "
-                        "record explaining the removal"
-                    ),
-                ),
-            )
-        _log.info("compliance_gate: %s has no compliance.yaml, skipping", base)
-        return ()
-
-    result = check_cmpl_registry(base)
-    if result.is_err:
-        _log.error(
-            "compliance_gate: COMPLIANCE005 compliance.yaml at %s not loadable (%s)",
-            base,
-            result.danger_err,
-        )
-        return (
-            Violation(
-                rule="COMPLIANCE005",
-                severity=Severity.ERROR,
-                file="docs/design/registry/compliance.yaml",
-                line=0,
-                message=(
-                    f"COMPLIANCE005: compliance.yaml at {base} failed to "
-                    f"load ({result.danger_err}); fix the manifest"
-                ),
-            ),
-        )
-    return tuple(_compliance005_violation(cv) for cv in result.danger_ok)
-
-
 # ---------------------------------------------------------------------------
 # SYS001 / SYS002: strata directive <-> design binding (T-0080)
 # ---------------------------------------------------------------------------
@@ -8513,6 +8308,7 @@ __all__ = [
     "load_coverage_lock",
     "load_invariants",
     "mutation_evidence_violations",
+    "compliance_gate",
     "cve_fingerprint_scan_gate",
     "debt_gate",
     "decisions_gate",

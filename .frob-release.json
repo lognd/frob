@@ -485,9 +485,7 @@
     "src/frob/gates/__init__.py::INV006_SRC_DIRS": "e68dbcf72ad7bcc7499c9305c1f92fa43b71c020a5af4827eaa0e364fc8dec73",
     "src/frob/gates/__init__.py::INV006_SRC_SUFFIXES": "2058015f176b8b4044379ba949fa87b5564ff31e98e9262b8bfbbbb42d3706fa",
     "src/frob/gates/__init__.py::affect_drift_gate": "3be02584d6478757d23a1dcf709cfa881cb28e13627c7c9a4ffb91bff32c3ab1",
-    "src/frob/gates/__init__.py::compliance_gate": "60a1959b205e6503350e1f0dedc94eafc6950be1a1cda0a56a7776ac85bda27b",
     "src/frob/gates/__init__.py::coverage_gate": "2e723b0affe9fb4c46163f4801fc117308eda1dede290bfb3d2eb725e481f7c4",
-    "src/frob/gates/__init__.py::decisions_gate": "f6587969f349ac0a2128eb1568924bfa8d4cd498e9f366b56255a5266c75408a",
     "src/frob/gates/__init__.py::docanchor_gate": "c42559cd1fae6c91936f804bc558ed2d3f5fd49bbd3955b96675bb566fdaef20",
     "src/frob/gates/__init__.py::doclink_gate": "bebbc03bdfb637a3724784dfda8eb4fbb98e52d9b6709f7a4b8616a2cdf773f2",
     "src/frob/gates/__init__.py::drift_gate": "5c212d52c12a13920ee34ad607ff4d2367a47d7d7f940927aae71563b733a8e4",
@@ -526,6 +524,8 @@
     "src/frob/gates/_debt_deprecated.py::deprecated_gate": "334422b7d71296348532a230b57b678c5899fe76d5827d0d5ed493b69d3af433",
     "src/frob/gates/_debt_deprecated.py::list_debt": "e6dd2bcc2ebfd8f6cc8f8b7f80e68be6f217ca46ea509bf4c4382e47762fefc1",
     "src/frob/gates/_debt_deprecated.py::list_deprecated": "5235ed9e79eb0f7201ab2ca9574ffc1430fe0195baa56005bcbff7a32c938f7b",
+    "src/frob/gates/_decisions_compliance.py::compliance_gate": "60a1959b205e6503350e1f0dedc94eafc6950be1a1cda0a56a7776ac85bda27b",
+    "src/frob/gates/_decisions_compliance.py::decisions_gate": "f6587969f349ac0a2128eb1568924bfa8d4cd498e9f366b56255a5266c75408a",
     "src/frob/gates/_deprecated_baseline.py::BASELINE_REL": "737c39a07440357e7bf4aee9230925306f9e2399e7c7d32b7c597816ace39859",
     "src/frob/gates/_deprecated_baseline.py::DeprecatedBaselineEntry": "11e314f11f5eae421bc9247a54dcc9d3ad118b9dd8e06ed1d5feb0d482bab991",
     "src/frob/gates/_deprecated_baseline.py::DeprecatedBaselineEntry.file_counts": "59fca6a0cc0247b7b17fb2ff59d361abcec03ece90123b6d22d621db77caa6ef",
@@ -1866,5 +1866,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.260.0"
+  "version": "0.261.0"
 }

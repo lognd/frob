@@ -3198,7 +3198,7 @@ so the five SYS205:tickets_ledger waivers can finally be dropped too.
 id: T-1159
 title: 'arch: split remaining ~12 gate families out of src/frob/gates/__init__.py
   (8408 lines) -- T-1140 residue'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-28'
@@ -3210,17 +3210,121 @@ scope:
 - src/frob/gates/**
 - docs/modules/gates.md
 - tests/test_gates.py
+- tests/test_decisions.py
+- docs/modules/decisions.md
+- docs/design/registry/EXHAUSTIVENESS-GATE.md
+- design/frob.strata
+scope_changes:
+- op: add
+  glob: tests/test_decisions.py
+  reason: T-1159 verbatim-moves decisions_gate/compliance_gate to a new file; their
+    frob:tests/frob:describes back-references and AFFECT001-touched doc all need updating
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: docs/modules/decisions.md
+  reason: T-1159 verbatim-moves decisions_gate/compliance_gate to a new file; their
+    frob:tests/frob:describes back-references and AFFECT001-touched doc all need updating
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: docs/design/registry/EXHAUSTIVENESS-GATE.md
+  reason: T-1159 verbatim-moves decisions_gate/compliance_gate to a new file; their
+    frob:tests/frob:describes back-references and AFFECT001-touched doc all need updating
+  actor: logan
+  at: '2026-07-28'
+- op: add
+  glob: design/frob.strata
+  reason: sys sync-interface writes interface=compliance_gate (newly present in gates
+    __all__)
+  actor: logan
+  at: '2026-07-28'
+evidence:
+- tests/test_decisions.py::test_dec001_dangling_decision_edge
+- tests/test_gates.py::TestComplianceGate::test_compliance005_real_repo_registry_passes
 acceptance:
 - text: GIVEN src/frob/gates/__init__.py WHEN the remaining families (SCOPE/PREWORK,
     INV00x, TEST00x, DECISIONS, COMPLIANCE00x, SYS00x/DOC00x, DUP00x, REL00x, FUZZ00x,
     DOCLINK/DOCANCHOR, PERF, run_gates spine, COV00x) are extracted one cohesive family
     per land THEN gates/__init__.py drops below the 800-line large-file threshold
     with no public API change and all existing tests pass
-  evidence: []
+  evidence:
+  - tests/test_decisions.py::test_dec001_dangling_decision_edge
 threat: null
 component: null
 ```
 T-1140 extracted the TICK00x family (gates/__init__.py 9172 -> 8408) and disclosed the ~12 remaining families in its done report WITHOUT filing a residue ticket (fourth disclosed-cut-without-ticket incident -- T-1129's gate is the systemic fix; coordinator refiled this one). Same T-1072/T-1077/T-1140 discipline: verbatim moves, directives intact, lazy call-time imports, re-export only externally-called names, carried INV006 waivers, PII012 re-keys, and design/frob.strata interface= sync now via frob sys sync-interface (T-1150).
+
+## Done report
+
+Changed:
+src/frob/gates/_decisions_compliance.py (new: decisions_gate, compliance_gate, _compliance005_violation, verbatim move)
+src/frob/gates/__init__.py (removed the moved block; import + re-export decisions_gate/compliance_gate; __all__ += compliance_gate)
+tests/test_decisions.py (frob:tests back-reference updated to the new file path)
+docs/modules/decisions.md, docs/modules/gates.md (frob:describes anchors updated to the new file path)
+docs/design/registry/EXHAUSTIVENESS-GATE.md (AFFECT001: compliance_gate's own affects()-closure doc, one-sentence note on the new file location)
+design/frob.strata (sys sync-interface: +compliance_gate, newly present in gates.__all__)
+
+Extracted the DEC00x/COMPLIANCE00x family (decisions_gate, compliance_gate,
+_compliance005_violation) verbatim into a new module,
+src/frob/gates/_decisions_compliance.py, per the T-1072/T-1077/T-1140
+discipline this ticket's own Description names: byte-identical function
+bodies/docstrings/directives moved, lazy call-time imports preserved
+as-is, only decisions_gate + compliance_gate re-exported (verified by a
+repo-wide grep -- _compliance005_violation is never imported elsewhere),
+design/frob.strata synced via `frob sys sync-interface` (not hand-edited).
+gates/__init__.py: 8554 -> 8349 lines.
+
+One cohesive family per land, per the ticket's own instruction -- this
+land does DEC00x/COMPLIANCE00x only. The ~11 remaining families named in
+T-1159's own acceptance criterion (SCOPE/PREWORK, INV00x, TEST00x,
+SYS00x/DOC00x, DUP00x, REL00x, FUZZ00x, DOCLINK/DOCANCHOR, PERF, run_gates
+spine, COV00x) are NOT done -- gates/__init__.py is still 8349 lines,
+well above the acceptance criterion's 800-line target. Filed as residue:
+T-1170 ("arch: split remaining ~11 gate families out of
+src/frob/gates/__init__.py (8349 lines) -- T-1159 residue"), naming each
+remaining family and the same one-family-per-land discipline to follow.
+
+Evidence:
+tests/test_decisions.py::test_dec001_dangling_decision_edge
+tests/test_gates.py::TestComplianceGate::test_compliance005_real_repo_registry_passes
+15/15 relevant tests pass: `pytest tests/test_decisions.py tests/test_gates.py -k "Compliance or decision" -q` (measured: "...............  [100%]").
+Acceptance [0] left UNBOUND -- this land only partially satisfies it
+(one family of ~12, disclosed above and in the residue ticket), not a
+false claim of completion.
+
+Filed: T-1170 (residue for the remaining ~11 families)
+
+Gates: `frob check --ticket T-1159` chunked (gates-fast, gates-native,
+gates-security, lint, static) -- gates-native/gates-security/static all
+0 errors. gates-fast shows 2 PRE-EXISTING INV006 errors in
+strata-core/src/parse/grammar_flow.rs and lexer.rs -- neither file is
+touched by this diff, neither is in T-1159's scope, and they are absent
+from frob-ratchet.lock.json (unbaselined, unrelated to this ticket's
+work). lint shows pre-existing ruff-check/ruff-format findings entirely
+in unrelated files (src/frob/_cli_parsers/**, src/frob/tickets/__init__.py,
+src/frob/vet/**, src/frob/serve/_socketd.py, src/frob/doctor.py, none
+touched by this diff); my six touched files (src/frob/gates/
+_decisions_compliance.py, src/frob/gates/__init__.py, tests/
+test_decisions.py, docs/modules/decisions.md, docs/modules/gates.md,
+docs/design/registry/EXHAUSTIVENESS-GATE.md) are ruff-check/ruff-format
+clean.
+`uv run frob sys sync-interface` run and committed (compliance_gate
+newly exported) -- `--check` clean after.
+
+### Changed
+```
+ tickets.md | 101 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 98 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/test_decisions.py::test_dec001_dangling_decision_edge` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestComplianceGate::test_compliance005_real_repo_registry_passes` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1160 -->
 ```yaml
@@ -3811,3 +3915,66 @@ An earlier version of this ticket (T-1168, 11 different rules)
 was filed and then dropped as moot once main's own concurrent work
 resolved it -- this is a fresh, distinct finding (single rule,
 NATIVE001), not a re-file of the same one.
+
+<!-- ticket:T-1170 -->
+```yaml
+id: T-1170
+title: 'arch: split remaining ~11 gate families out of src/frob/gates/__init__.py
+  (8349 lines) -- T-1159 residue'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-28'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- docs/modules/gates.md
+- tests/test_gates.py
+threat: null
+component: null
+```
+T-1159 extracted the DEC00x/COMPLIANCE00x family (decisions_gate,
+compliance_gate, _compliance005_violation) into
+src/frob/gates/_decisions_compliance.py (gates/__init__.py 8554 -> 8349
+lines), one cohesive family per land per the standing discipline
+(T-1072/T-1077/T-1140 precedent: verbatim moves, directives intact, lazy
+call-time imports, re-export only externally-called names, carried
+INV006 waivers, PII012 re-keys, design/frob.strata interface= sync via
+frob sys sync-interface).
+
+Filed honestly per T-1129's own TICK011 gate (which this residue itself
+now enforces): T-1159's own acceptance criterion named ~12 remaining
+families (SCOPE/PREWORK, INV00x, TEST00x, SYS00x/DOC00x, DUP00x, REL00x,
+FUZZ00x, DOCLINK/DOCANCHOR, PERF, run_gates spine, COV00x) and this land
+only had budget for one. gates/__init__.py is still 8349 lines, well
+above the 800-line large-file threshold (ARCH102-adjacent) T-1159's
+acceptance criterion targets -- the remaining families are the real
+residue, not done.
+
+Follow-up work, in the same one-family-per-land shape T-1159 established:
+- SYS00x/DOC003 (sys_gate + helpers, ~600 lines, adjacent to the
+  COMPLIANCE family this land just moved -- natural next split)
+- DUP00x (dup_gate + helpers, ~500 lines)
+- FUZZ00x (fuzz_gate)
+- DOCLINK/DOCANCHOR (doclink_gate, docanchor_gate)
+- INV00x (inv006_gate + helpers -- note _inv006_split_assist.py already
+  holds T-1134's carry-waiver detector separately; the gate function
+  itself is still in __init__.py)
+- TEST00x (test policy loading + TEST00x gate family)
+- REL00x (release-bump/debt gate wiring)
+- PERF (perf gate wiring, distinct from frob.perf's own module)
+- COV00x (coverage gate family)
+- SCOPE/PREWORK (scope_gate, prework_gate)
+- the run_gates spine itself (_assemble_gate_report, _build_jobs,
+  run_gates) -- likely stays in __init__.py as the module's own
+  orchestration root, but worth an explicit decision at design time
+  rather than assuming
+
+Each remaining family should get its own ticket sized to "one cohesive
+land" the way this one was, not one giant ticket -- but re-filing T-1159
+itself (re-titled to name only the STILL-remaining families) is simplest
+and avoids re-deriving the acceptance criteria/discipline notes from
+scratch.

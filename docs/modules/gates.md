@@ -1255,7 +1255,7 @@ coordinator by the time this rule landed).
 
 ### COMPLIANCE005 (T-0788)
 
-<!-- frob:describes src/frob/gates/__init__.py::compliance_gate -->
+<!-- frob:describes src/frob/gates/_decisions_compliance.py::compliance_gate -->
 
 T-0607 built the pure check
 (`frob.strata._compliance._check_cmpl_registry_unit_dispositions`, the
@@ -1578,7 +1578,7 @@ EXHAUST001/002's own carve-out).
 <!-- frob:describes src/frob/gates/_coverage.py::load_stamp -->
 <!-- frob:describes src/frob/gates/_prework.py::load_prework -->
 <!-- frob:describes src/frob/gates/__init__.py::scope_digest -->
-<!-- frob:describes src/frob/gates/__init__.py::decisions_gate -->
+<!-- frob:describes src/frob/gates/_decisions_compliance.py::decisions_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::dup_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::release_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::fuzz_gate -->

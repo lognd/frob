@@ -187,7 +187,10 @@ The same `path_ever_tracked` signal backs the two sibling instances of
 this exact posture T-0894 also closed: `compliance_gate`'s `COMPLIANCE006`
 (a deleted `compliance.yaml`) and `decisions_gate`'s `DEC003` (a deleted
 `decisions/` directory) -- see `docs/modules/gates.md#compliance005-t-0788`
-and `docs/modules/decisions.md#the-dec-gates` respectively.
+and `docs/modules/decisions.md#the-dec-gates` respectively. T-1159: both
+gates now live in `src/frob/gates/_decisions_compliance.py` (split out of
+`frob.gates.__init__` verbatim, re-exported from `frob.gates` unchanged),
+not `frob.gates.__init__` directly.
 
 ## Honest first-turn-on state
 
