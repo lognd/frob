@@ -491,6 +491,16 @@
       "ref": "src/frob/tickets/__init__.py::transition"
     },
     {
+      "digest": "7737f16597759159bbb7870c0061491de6944237178c51d65d7c8e38a1914bd4",
+      "facet": "body",
+      "ref": "src/frob/tickets/_land.py::splice_ledger"
+    },
+    {
+      "digest": "e2d903a8d8049db7a1732853c334ed4e4029511926df136cffffc0a68f71175c",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_land.py::splice_ledger"
+    },
+    {
       "digest": "dc5a12ff3533ee754ecb0098cae066327233c6ec92d49ed73d8619394d585819",
       "facet": "body",
       "ref": "src/frob/tickets/_leases.py::read_all_leases"

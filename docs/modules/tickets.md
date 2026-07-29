@@ -1279,11 +1279,25 @@ def land(root: Path, ticket_id: str, worktree: Path, *,
     # drive. Defaults to `None` (skip) for the same cycle-avoidance reason;
     # `frob ticket land` supplies it by default
     # (`ticket_runner._land_sync_gate_rules_fn`).
-def splice_ledger(ours_text: str, theirs_text: str) -> Result[str, TicketError]
+def splice_ledger(ours_text: str, theirs_text: str, *,
+                   base_text: str | None = None) -> Result[str, TicketError]
     # Merge two tickets.md texts at the TICKET-ID level (newest state per
     # id wins) instead of git's line-level textual merge. T-0398 D-09: the
     # winning side's evidence is UNIONED with the losing side's (never
     # dropped) on a same-id divergence.
+    # T-1154: `base_text` (the true 3-way merge-base's ledger text, when
+    # the caller has one) sharpens a same-id divergence: whichever side is
+    # byte-identical to `base_text` made no deliberate edit and has no
+    # claim on the id, so the side that DID change wins outright, before
+    # ever falling back to the state-rank/richness tiebreak above. This is
+    # the fix for the wrong-side-merge corruption class (3rd occurrence):
+    # a worktree's untouched, merely-stale copy of a ticket main had since
+    # content-edited (e.g. an evidence-path migration inside an already-
+    # `done` block) used to tie on rank/richness and arbitrarily win.
+    # `frob ticket land`'s own `tickets-archive.md` splice
+    # (`_splice_and_stage_archive`) threads this through from the true
+    # `git merge-base`; `None` (the default) degrades to the pre-T-1154
+    # behavior unchanged.
 ```
 
 Order of operations, and why it is this order:

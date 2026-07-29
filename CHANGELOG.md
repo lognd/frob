@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.259.0] - unreleased
+
+- T-1154: land: take main's side for ledger/archive files the ticket did not deliberately edit (wrong-side-merge corruption, 3rd occurrence)
+
 ## [0.258.0] - unreleased
 
 - T-1134: gates: INV006 split-assist -- detect verbatim-moved claim prose and carry/suggest the source file's waiver

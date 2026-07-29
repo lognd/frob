@@ -52,6 +52,7 @@ from frob.tickets._store import (
     ledger_path,
     load_all,
     load_archive,
+    write_archive,
     write_ticket,
 )
 
@@ -1384,7 +1385,7 @@ class TestArchiveSpliceDiscipline:
         other_text = "# Tickets\n\n"
 
         def _drop_everything(
-            ours: dict[str, Any], theirs: dict[str, Any]
+            ours: dict[str, Any], theirs: dict[str, Any], **_kwargs: Any
         ) -> dict[str, Any]:
             return {}
 
@@ -1471,6 +1472,78 @@ class TestArchiveSpliceDiscipline:
         assert sibling_id in archived.danger_ok, (
             f"worktree's own archived sibling {sibling_id} was dropped by land (T-0959)"
         )
+
+    def test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_merge_ledger_tickets kind="unit"
+        # frob:tests src/frob/tickets/_land.py::_resolve_divergence kind="unit"
+        # T-1154 (3rd occurrence of the wrong-side-merge class, see this
+        # ticket's own Done report): a ticket archived on BOTH main and the
+        # worktree, same state (done) and same richness (both carry a Done
+        # report, same evidence count) -- so pre-T-1154, `_newer`'s tier-3
+        # fallback ties and arbitrarily picks `theirs` (the worktree side).
+        # Main then makes a REAL content edit to its own archived copy (the
+        # T-1143 shape: an evidence-path text migration inside the Done
+        # report) while the worktree's copy sits untouched since branch --
+        # unchanged-since-branch means the worktree made no deliberate edit
+        # and has no claim, so main's edit must survive the land, not be
+        # silently reverted.
+        from frob.tickets import archive
+
+        archived_ticket = new_ticket(
+            repo, _spec("Migrated evidence path", scope=("src/parse.py",))
+        )
+        assert archived_ticket.is_ok
+        aid = archived_ticket.danger_ok.id
+        _make_closeable(repo, aid)
+        assert transition(repo, aid, TicketState.DONE).is_ok
+        assert archive(repo).is_ok
+        _commit_all(repo, "archive the ticket that will later be content-edited")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-content-edit", str(wt)], repo)
+        # The worktree's own copy of the archived block is byte-identical
+        # to the merge-base at this point -- it never touches it.
+        wt_archive_before = archive_path(wt).read_text()
+
+        # Main makes a real, deliberate content edit to the SAME archived
+        # block -- same state, same evidence count (richness tied), only
+        # the Done-report text itself changes (the T-1143 shape: an
+        # evidence-path migration).
+        main_archived = load_archive(repo)
+        assert main_archived.is_ok
+        edited = main_archived.danger_ok[aid].model_copy(
+            update={
+                "body": main_archived.danger_ok[aid].body.replace(
+                    "evidence attached", "evidence attached (src/parse/mod.py)"
+                )
+            }
+        )
+        assert write_archive(repo, {**main_archived.danger_ok, aid: edited}).is_ok
+        _commit_all(repo, "main migrates the evidence path inside the archived block")
+        assert "src/parse/mod.py" in archive_path(repo).read_text()
+
+        # Land unrelated worktree work -- exercises the real land path's
+        # archive splice, not a hand-called unit helper.
+        created = new_ticket(
+            wt, _spec("Unrelated content-edit land", scope=("src/unrelated4.py",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "unrelated4.py").write_text("# unrelated\n")
+        _commit_all(wt, "unrelated worktree work")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+
+        post_land_archive = archive_path(repo).read_text()
+        assert "src/parse/mod.py" in post_land_archive, (
+            f"{aid}: main's evidence-path migration reverted by land "
+            "(T-1154 wrong-side-merge regression)"
+        )
+        assert wt_archive_before != post_land_archive
 
 
 class TestWipCommit:

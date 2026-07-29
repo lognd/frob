@@ -633,6 +633,7 @@ def splice_ledger(
     theirs_text: str,
     *,
     archived_ids: frozenset[str] = frozenset(),
+    base_text: str | None = None,
 ) -> Result[str, TicketError]:
     """Merge two `tickets.md` ledger texts at the ticket-id level, keeping the
     newest state per section (`_newer`) instead of trusting git's line-level
@@ -640,6 +641,14 @@ def splice_ledger(
     the same line" false-conflict class (T-0176), and the tiebreak for a
     genuine same-id divergence (e.g. one side closed a ticket the other
     side is still mid-editing).
+
+    T-1154: `base_text` (the true 3-way merge-base's ledger text, when the
+    caller has one -- e.g. `git merge-base`'s tickets.md) sharpens that
+    same-id tiebreak: a side unchanged since `base_text` never wins over a
+    side that made a real edit, closing the wrong-side-merge class
+    documented on `_merge_ledger_tickets`/`_resolve_divergence`. Optional
+    and unparseable/`None` degrades to the pre-T-1154 `_newer`-only
+    behavior, never a hard failure.
 
     T-0764: after the merge, refuses loudly (`Err(LedgerIntegrityViolation)`)
     if any id present on EITHER side vanished from the result without being
@@ -656,8 +665,12 @@ def splice_ledger(
     if theirs_parsed.is_err:
         return Err(theirs_parsed.danger_err)
     ours, theirs = ours_parsed.danger_ok, theirs_parsed.danger_ok
+    base = None
+    if base_text is not None:
+        base_parsed = _parse_ledger(base_text)
+        base = base_parsed.danger_ok if base_parsed.is_ok else None
 
-    merged = _merge_ledger_tickets(ours, theirs)
+    merged = _merge_ledger_tickets(ours, theirs, base=base)
     _drop_resurrected_ids(merged, archived_ids)
     _log.info(
         "tickets: land splice -- ours=%d theirs=%d merged=%d",
@@ -683,17 +696,57 @@ def splice_ledger(
 
 
 def _merge_ledger_tickets(
-    ours: dict[str, Ticket], theirs: dict[str, Ticket]
+    ours: dict[str, Ticket],
+    theirs: dict[str, Ticket],
+    *,
+    base: dict[str, Ticket] | None = None,
 ) -> dict[str, Ticket]:
     """Union `ours`/`theirs` by ticket id, keeping the newer state
-    (`_newer`) on any id present in both with a genuine divergence."""
+    (`_newer`) on any id present in both with a genuine divergence.
+
+    T-1154: when `base` (the true 3-way merge-base ledger, e.g. `git
+    merge-base`'s tickets.md/tickets-archive.md content) is given, a
+    same-id divergence is resolved by CHANGE-vs-BASE first, before ever
+    falling back to `_newer`'s richness/rank tiebreak: whichever side is
+    BYTE-IDENTICAL to `base[ticket_id]` made no deliberate edit at all and
+    has no claim on the id, so the side that DID change wins outright. This
+    is the fix for the wrong-side-merge corruption class (3rd occurrence,
+    see this ticket's own Done report): `_newer`'s tier-3 fallback ties on
+    same-rank/same-richness by construction (an unrelated content edit like
+    an evidence-path migration inside an already-`done` Done report changes
+    neither state nor evidence count) and then arbitrarily prefers `b`
+    (`theirs`) -- which used to let a worktree's untouched, merely-STALE
+    copy of a ticket main had since edited win the tie and revert main's
+    edit. Only when BOTH sides differ from `base` (a genuine divergence,
+    each side made its own edit) does this fall through to `_newer`
+    unchanged, exactly as before `base` existed. A `ticket_id` absent from
+    `base` (new on both sides, or `base` itself unavailable/unparseable)
+    also falls straight through to the pre-T-1154 `_newer` behavior."""
     merged: dict[str, Ticket] = dict(ours)
     for ticket_id, ticket in theirs.items():
         if ticket_id not in merged:
             merged[ticket_id] = ticket
         elif merged[ticket_id] != ticket:
-            merged[ticket_id] = _newer(merged[ticket_id], ticket)
+            merged[ticket_id] = _resolve_divergence(
+                merged[ticket_id], ticket, base.get(ticket_id) if base else None
+            )
     return merged
+
+
+# frob:ticket T-1154
+def _resolve_divergence(ours: Ticket, theirs: Ticket, base: Ticket | None) -> Ticket:
+    """T-1154: single-id conflict resolution used by `_merge_ledger_tickets`
+    -- prefer whichever of `ours`/`theirs` actually changed since `base`
+    (the true 3-way merge-base state for this id); fall back to `_newer`
+    when `base` is unavailable, or when both sides changed (a genuine
+    divergence `_newer`'s richness/rank tiebreak is the right tool for)."""
+    if base is not None:
+        ours_changed, theirs_changed = ours != base, theirs != base
+        if ours_changed and not theirs_changed:
+            return ours
+        if theirs_changed and not ours_changed:
+            return theirs
+    return _newer(ours, theirs)
 
 
 def _drop_resurrected_ids(
@@ -1381,11 +1434,28 @@ def _read_archive_text_or_empty(checkout: Path) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
+# frob:ticket T-1154
+def _read_text_at_ref(worktree: Path, ref: str, relative_path: str) -> str | None:
+    """`git show <ref>:<relative_path>` inside `worktree`, or `None` on any
+    failure (missing at that ref, non-zero exit) -- used to fetch a ledger/
+    archive file's content AT THE TRUE MERGE-BASE commit (T-1154), never a
+    hard failure since a merge-base-aware splice is a sharpening of the
+    existing `_newer` tiebreak, not a new hard requirement."""
+    result = run_argv(["git", "-C", str(worktree), "show", f"{ref}:{relative_path}"])
+    if result.is_err or result.danger_ok.returncode != 0:
+        return None
+    return result.danger_ok.stdout
+
+
 # frob:ticket T-0959
 # frob:tests tests/test_ticket_land.py::TestArchiveSpliceDiscipline.test_splice_and_stage_archive_merges_by_id_never_overwrites  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestArchiveSpliceDiscipline.test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish  # noqa: E501
 def _splice_and_stage_archive(
-    checkout: Path, authoritative_text: str, other_text: str
+    checkout: Path,
+    authoritative_text: str,
+    other_text: str,
+    *,
+    base_text: str | None = None,
 ) -> Result[str, LandError]:
     """Ledger-level splice of `tickets-archive.md` (T-0959), mirroring
     `_splice_and_stage`'s tickets.md discipline instead of trusting git's raw
@@ -1406,7 +1476,18 @@ def _splice_and_stage_archive(
     worktree's own warmup merge -- git's merge/checkout machinery for this
     file had no per-id awareness at all, unlike tickets.md's `_splice_and_
     stage`. Writes the merged text to `checkout`'s tickets-archive.md and
-    `git add`s it; never a bare copy of either side."""
+    `git add`s it; never a bare copy of either side.
+
+    T-1154: `base_text` (the true 3-way merge-base's tickets-archive.md,
+    when the caller has one) sharpens the per-id tiebreak the same way
+    `splice_ledger`'s own `base_text` does -- see `_merge_ledger_tickets`/
+    `_resolve_divergence`'s docstrings for the wrong-side-merge class this
+    closes (the direct fix for the T-1145/T-1143 incident this ticket's
+    Done report documents: a worktree's untouched, merely-stale archive
+    copy no longer beats a real content edit main made, e.g. an
+    evidence-path migration inside an already-`done` block, on a tied
+    state-rank/richness fallback). Optional and unparseable/`None` degrades
+    to the pre-T-1154 `_newer`-only behavior."""
     authoritative_parsed = _parse_ledger(authoritative_text)
     if authoritative_parsed.is_err:
         _log.error(
@@ -1426,7 +1507,11 @@ def _splice_and_stage_archive(
         )
         return Err(LandError.GitFailed)
     authoritative, other = authoritative_parsed.danger_ok, other_parsed.danger_ok
-    merged = _merge_ledger_tickets(authoritative, other)
+    base = None
+    if base_text is not None:
+        base_parsed = _parse_ledger(base_text)
+        base = base_parsed.danger_ok if base_parsed.is_ok else None
+    merged = _merge_ledger_tickets(authoritative, other, base=base)
 
     # T-0959: the id-integrity assertion the ticket calls for, extending the
     # T-0740 `_check_ledger_id_integrity` pattern to this file -- every id
@@ -1470,12 +1555,30 @@ def _merge_main_into_worktree(
     conflict via `splice_ledger` and any tickets-archive.md conflict via the
     T-0959 archive splice (`_splice_and_stage_archive`); any OTHER
     conflicted file aborts loudly. Returns whether a merge actually happened
-    (False = worktree was already up to date with main, a no-op)."""
+    (False = worktree was already up to date with main, a no-op).
+
+    T-1154: also resolves the true 3-way merge-base's tickets-archive.md
+    text (`_true_merge_base` + `_read_text_at_ref`, best-effort -- `None`
+    on any failure) and threads it into the archive splice as `base_text`,
+    so a same-id divergence prefers whichever side made a REAL edit over
+    whichever side is merely stale relative to the branch point -- see
+    `_merge_ledger_tickets`/`_resolve_divergence` for the wrong-side-merge
+    class this closes. tickets.md's own splice (`_splice_and_stage`) does
+    not need this: `ticket_id`-scoping (T-0479) already makes every sibling
+    id come from `main_text` untouched, so the archive file -- whose splice
+    is NOT scoped to one id -- is the one exposed to this class."""
     pre_text = _read_ledger_text_or_empty(worktree)
     main_text = _read_ledger_text_or_empty(root)
     # frob:ticket T-0959
     pre_archive_text = _read_archive_text_or_empty(worktree)
     main_archive_text = _read_archive_text_or_empty(root)
+    # frob:ticket T-1154
+    base_sha = _true_merge_base(worktree, main_branch)
+    base_archive_text = (
+        _read_text_at_ref(worktree, base_sha.danger_ok, "tickets-archive.md")
+        if base_sha.is_ok
+        else None
+    )
 
     merged = run_argv(
         ["git", "-C", str(worktree), "merge", "--no-commit", "--no-ff", main_branch]
@@ -1520,7 +1623,7 @@ def _merge_main_into_worktree(
     # root/main's copy (freshest, since only main ever archives) as the
     # authoritative side.
     archive_spliced = _splice_and_stage_archive(
-        worktree, main_archive_text, pre_archive_text
+        worktree, main_archive_text, pre_archive_text, base_text=base_archive_text
     )
     if archive_spliced.is_err:
         _abort_merge(worktree)
