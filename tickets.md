@@ -3977,7 +3977,7 @@ owns-without-runs_as fixture proving no blast-radius view/gap fires.
 id: T-1165
 title: 'gates: wire git merge-driver''s %O merge-base into splice_ledger''s base_text
   (T-1154 follow-up)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-28'
@@ -4510,9 +4510,9 @@ need a late `from frob.tickets import <name>` inside the moved function
 body instead of a module-top-level binding (two such hazards hit T-1152:
 write_ticket and the bare `subprocess` module object itself).
 
-<!-- ticket:T-draft-86650510 -->
+<!-- ticket:T-1172 -->
 ```yaml
-id: T-draft-86650510
+id: T-1172
 title: 'fix: tickets/__init__.py missing _run_evidence_command re-export after T-1152
   evidence-family split'
 state: in-progress
