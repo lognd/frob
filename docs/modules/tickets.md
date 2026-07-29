@@ -97,7 +97,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/_archive.py::migrate -->
 <!-- frob:describes src/frob/tickets/_new_renumber.py::renumber -->
 <!-- frob:describes src/frob/tickets/_new_renumber.py::renumber_one -->
-<!-- frob:describes src/frob/tickets/_new_renumber.py::finalize_draft -->
+<!-- frob:describes src/frob/tickets/_draft_finalize.py::finalize_draft -->
 <!-- frob:describes src/frob/tickets/_archive.py::archive -->
 <!-- frob:describes src/frob/tickets/_archive.py::load_active -->
 <!-- frob:describes src/frob/tickets/_provisional.py::on_default_branch -->

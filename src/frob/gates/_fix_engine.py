@@ -372,7 +372,7 @@ def fix_tick002_renumber(root: Path, queue: TicketQueue) -> list[FixApplied]:
     already performs it. A no-op off the default branch (TICK002 itself
     never fires there either)."""
     from frob.gates import on_default_branch
-    from frob.tickets._new_renumber import finalize_draft
+    from frob.tickets._draft_finalize import finalize_draft
 
     applied: list[FixApplied] = []
     if not on_default_branch(root):

@@ -106,7 +106,7 @@ class TestTwoCheckoutConcurrentFilingIncident:
     branches mint disjoint provisional ids so no coordination is needed."""
 
     def test_two_worktrees_file_concurrently_no_collision(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_new_renumber.py::finalize_draft kind="unit"
+        # frob:tests src/frob/tickets/_draft_finalize.py::finalize_draft kind="unit"
         # frob:tests src/frob/tickets/_provisional.py::on_default_branch kind="unit"
         # frob:tests src/frob/tickets/_provisional.py::is_draft_id kind="unit"
         main_repo = tmp_path / "main"
@@ -321,7 +321,7 @@ class TestRenumberRewritesLedgerProse:
     def test_finalize_draft_rewrites_a_sibling_ticket_done_report_prose(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_new_renumber.py::finalize_draft kind="unit"
+        # frob:tests src/frob/tickets/_draft_finalize.py::finalize_draft kind="unit"
         main_repo = tmp_path / "main"
         _git_init(main_repo)
         atomic_write(ledger_path(main_repo), "# Tickets\n\n")
@@ -550,7 +550,7 @@ class TestFinalizeDraftForLandMainFreshCeiling:
     def test_id_ceiling_reads_current_main_not_stale_worktree_view(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_new_renumber.py::finalize_draft_for_land \
+        # frob:tests src/frob/tickets/_draft_finalize.py::finalize_draft_for_land \
         # kind="unit"
         main_root = tmp_path / "main"
         main_root.mkdir()

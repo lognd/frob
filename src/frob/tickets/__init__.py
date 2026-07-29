@@ -67,6 +67,7 @@ from frob.tickets._doable import (
     scope_breadth_context,
     undispatched_stale,
 )
+from frob.tickets._draft_finalize import finalize_draft, finalize_draft_for_land
 from frob.tickets._evidence import (
     _check_evidence_resolution,  # noqa: F401 -- re-exported: `_new_renumber.new_ticket`'s
     # own late `from frob.tickets import _check_evidence_resolution` (T-1103's
@@ -146,8 +147,6 @@ from frob.tickets._mutation_evidence import (
     check_ticket_mutation_evidence,
 )
 from frob.tickets._new_renumber import (
-    finalize_draft,
-    finalize_draft_for_land,
     new_ticket,
     renumber,
     renumber_one,

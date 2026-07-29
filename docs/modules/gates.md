@@ -2916,12 +2916,13 @@ guess, never a waiver insertion):
 - **`fix_tick002_renumber`**: TICK002 (a `T-draft-*` id that survived
   onto the default branch) already prescribes its own remedy in its
   message; this performs exactly that renumber via `frob.tickets.
-  _new_renumber.finalize_draft` (the same function `frob ticket land`
-  calls) for every draft id in the queue while on the default branch --
-  no new renumber logic, just invoking the existing API surface.
-  Includes T-1125's prose-reference rewrite automatically, since
-  `finalize_draft` -> `renumber_one` already performs it. A no-op off
-  the default branch.
+  _draft_finalize.finalize_draft` (T-1192: moved from `_new_renumber`
+  into its own module as LARGE001 residue, same function `frob ticket
+  land` calls) for every draft id in the queue while on the default
+  branch -- no new renumber logic, just invoking the existing API
+  surface. Includes T-1125's prose-reference rewrite automatically,
+  since `finalize_draft` -> `renumber_one` already performs it. A no-op
+  off the default branch.
 
 `apply_tier_a_fixes(root, snapshot, queue)` runs all four in order
 (DOC007/DOC002/INV006-carry first, since they are pure source-text

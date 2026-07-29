@@ -547,7 +547,7 @@ hoist/memoize the loop-invariant call) or add a reasoned
 id: T-1192
 title: 'arch: large-file residue after T-1074/T-1186/T-1187 splits (34 unowned LARGE001
   findings)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -557,6 +557,49 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/
+- tests/test_tickets_collision.py
+- docs/modules/tickets.md
+- tests/test_tickets_ledger_concurrency.py
+- src/frob/gates/_fix_engine.py
+- docs/modules/gates.md
+scope_changes:
+- op: add
+  glob: tests/test_tickets_collision.py
+  reason: finalize_draft/finalize_draft_for_land moved to _draft_finalize.py; these
+    test/doc files carry frob:tests/frob:describes directives naming the old file
+    path
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: finalize_draft/finalize_draft_for_land moved to _draft_finalize.py; these
+    test/doc files carry frob:tests/frob:describes directives naming the old file
+    path
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: tests/test_tickets_ledger_concurrency.py
+  reason: finalize_draft/finalize_draft_for_land moved to _draft_finalize.py; these
+    test/doc files carry frob:tests/frob:describes directives naming the old file
+    path
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: src/frob/gates/_fix_engine.py
+  reason: finalize_draft moved out of _new_renumber.py into _draft_finalize.py; _fix_engine.py's
+    deferred import needs repointing
+  actor: logan
+  at: '2026-07-29'
+- op: add
+  glob: docs/modules/gates.md
+  reason: fix_tick002_renumber's doc description named the old _new_renumber.finalize_draft
+    import path; updated to _draft_finalize
+  actor: logan
+  at: '2026-07-29'
+evidence:
+- tests/test_tickets_collision.py::TestRenumberRewritesLedgerProse::test_finalize_draft_rewrites_a_sibling_ticket_done_report_prose
+- tests/test_tickets_collision.py::TestFinalizeDraftForLandMainFreshCeiling::test_id_ceiling_reads_current_main_not_stale_worktree_view
+- tests/test_tickets_ledger_concurrency.py::TestFinalizeDraftAllocationRace::test_two_concurrent_finalize_draft_calls_get_distinct_ids
 threat: null
 component: null
 ```
@@ -625,6 +668,58 @@ T-1072/T-1074/T-1186/T-1187/T-1188/T-1189: pick a cohesive subsystem
 slice, split it, re-measure, re-file remaining residue rather than
 closing silently.
 
+## Done report
+
+T-1192's 34-file LARGE001 residue list is too large for one land; picked
+ONE cohesive, low-risk real split this land: split the provisional-draft-
+id finalization pair (finalize_draft/finalize_draft_for_land plus their
+shared private critical-section helper _finalize_draft_for_land_locked)
+out of src/frob/tickets/_new_renumber.py (847 -> 691 lines, now under the
+800-line LARGE001 threshold) into a new src/frob/tickets/_draft_finalize.py
+(198 lines). frob.tickets.__init__ now imports both public names from the
+new module directly; _draft_finalize.py imports _next_ticket_id back from
+_new_renumber.py for its own use. T-1103's package-level renumber_one
+re-import indirection (so a test monkeypatching frob.tickets.renumber_one
+is observed) is preserved verbatim from the caller's new location.
+
+docs/modules/tickets.md's frob:describes anchor and two frob:tests
+directives in tests/test_tickets_collision.py naming the old
+`_new_renumber.py::finalize_draft`/`finalize_draft_for_land` path were
+repointed to `_draft_finalize.py`; scope was extended to cover those two
+files plus tests/test_tickets_ledger_concurrency.py (which also carries a
+frob:tests directive for finalize_draft, already correctly pointed since
+it names the function, not the old path).
+
+This closes 1 of 34 files on T-1192's own residue list -- LARGE gate count
+dropped 48 -> 47 warnings. The other 33 files (including the two
+explicitly-flagged-as-needing-a-follow-up vet/_capability.py and
+vet/_capability_registry.py) remain unowned; re-filed as a follow-up
+ticket rather than closing silently, per TICK011 and this drive's own
+one-subsystem-per-land discipline (T-1072/T-1074/T-1186/T-1187/T-1188/
+T-1189 precedent).
+
+Also repointed src/frob/gates/_fix_engine.py::fix_tick002_renumber's
+deferred `from frob.tickets._new_renumber import finalize_draft` (an
+out-of-scope caller of the moved function land discovered) to
+`frob.tickets._draft_finalize`, and updated its docs/modules/gates.md
+description to match.
+
+### Changed
+```
+ tickets.md | 128 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 127 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/test_tickets_collision.py::TestRenumberRewritesLedgerProse::test_finalize_draft_rewrites_a_sibling_ticket_done_report_prose` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestFinalizeDraftForLandMainFreshCeiling::test_id_ceiling_reads_current_main_not_stale_worktree_view` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_ledger_concurrency.py::TestFinalizeDraftAllocationRace::test_two_concurrent_finalize_draft_calls_get_distinct_ids` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 6448 warning(s), 671 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1193 -->
 ```yaml
 id: T-1193
@@ -654,3 +749,55 @@ threat: null
 component: null
 ```
 Successor to the T-0397 audit epic for the concern-family rows NOT yet closed by a landed mechanism (each row's residue verified at epic close 2026-07-29): CHK-THEME-PYTHON-ONLY (partial: arch multi-lang and capability tables landed; COV/DOC/DRIFT edges still python-pipeline-only), CHK-THEME-FAIL-OPEN (partial: PARSE001/002, NATIVE001, tool-unavailable ToolResults landed; second-lockfile scan and non-UTF-8 doc handling unverified), CHK-THEME-GITIGNORED-TRUST (open: coverage/stamp/baseline live gitignored, CI cannot verify), CHK-SUBSYS-GATES-ACCOUNTING (partial: collectors exist for rust/ts/cpp; DRIFT001 sig facet still body-blind), CHK-SUBSYS-LANG-CHECK-DOCS (same python-only class), CHK-SUBSYS-GRAPH-EDGES (unverified: load_graph new-file snapshot completeness, non-UTF-8 md crash).
+
+<!-- ticket:T-1194 -->
+```yaml
+id: T-1194
+title: 'arch: split remaining seams of _land_merge.py/_land_finalize.py -- T-1189
+  residue'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land_merge.py
+- src/frob/tickets/_land_finalize.py
+threat: null
+component: null
+```
+## Description
+
+T-1189 extracted ONE cohesive family (the union-zone conflict-block
+resolution machinery: `_UnionZone`/`_zone_for_path`/`_union_keyed_chunks`/
+`_union_append_only`/`_resolve_conflict_blocks`/
+`_resolve_union_zone_conflicts`) out of _land_merge.py into a new
+src/frob/tickets/_land_merge_zones.py (1722 -> 1506 lines), continuing the
+same one-family-per-land discipline T-1186/T-1187/T-1188 established.
+Budget did not allow the other seams T-1189's own plan named.
+_land_merge.py is still 1506 lines and _land_finalize.py is still 1735
+lines, both above the 800-line LARGE001 threshold.
+
+Still remaining, in the same one-family-per-land shape:
+
+- `_land_merge.py`: the ledger-merge/newest-wins family (`splice_ledger`,
+  `_merge_ledger_tickets`, `_resolve_divergence`, `_newer`/`_newer_winner`/
+  `_richness`, `_union_evidence`/`_union_acceptance`,
+  `_drop_resurrected_ids`, `_preserve_sibling_done_reports`,
+  `_carry_forward_new_worktree_tickets`, `_overlay_landed_ticket`,
+  `_splice_only_ticket`) vs. the git-plumbing/wip-commit family
+  (`_merge_main_into_worktree`, `_auto_resolve_out_of_scope_conflicts`,
+  `_wip_commit`/`_wip_add_excluding_frob`/`_do_wip_commit`,
+  `_splice_and_stage`/`_splice_and_stage_archive`, `_verify_archive_merge`,
+  `_rev_parse`/`_true_merge_base`) -- the deletion-authorization pair
+  (`_deletion_glob_too_broad`/`_deletion_owned`) can go with whichever side
+  ends up using `_unowned_deletions`.
+- `_land_finalize.py`: draft-finalization/sibling-renumbering vs.
+  squash-apply/close vs. the release-bump/uv.lock/native-rebuild family
+  (T-1189's own plan named this split, not yet started).
+
+Re-filed (not re-derived from scratch) rather than letting T-1189 close
+with silent residue, per TICK011.
