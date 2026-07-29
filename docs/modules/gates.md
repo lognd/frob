@@ -91,7 +91,7 @@ declaration).
 | REF003 | refs | a `frob:used-by <consumer>` declaration is dangling: the named consumer does not exist as a tracked file, or does not itself reference the declaring file back -- see "Anti-orphan file-reference gate" below |
 | DOC004 | docblocks | a fenced code block in a tracked `.md` doc references the project's OWN code surface (manifest-derived python/rust/ts namespaces) and either does not resolve (error, "stale") or resolves but carries no nearby `frob:doc`/`frob:describes`/`frob:tests` anchor (warn, "unbound") -- see "Unbound/stale doc code blocks" below |
 | DOC005 | docblocks | `README.md`'s command table is out of sync with the live top-level subcommand registry: a real subcommand has no table row (error, "missing"), a table row names a subcommand that no longer exists (error, "stale"), or a "N commands" prose count claim does not equal the live count (error) -- see "DOC005 README command-table drift-lock" below |
-| DOC006 | docblocks | (warn, T-0688 new-gate-at-WARN precedent) a doc's PROSE (inline code span or markdown link, not a fenced code block -- DOC004's territory) contains a pointer of a RECOGNIZED, mechanically resolvable shape (file/path, cli invocation, config reference, code symbol, doc-anchor link) that does not resolve, or a `frob:tests` directive's target uses pytest's `Class::method` collect-only separator where this graph wants a single `::` then a dotted `Class.method` qualname -- see "DOC006 doc-pointer resolution gate" below |
+| DOC006 | docblocks | (warn, T-0688 new-gate-at-WARN precedent) a doc's PROSE (inline code span or markdown link, not a fenced code block -- DOC004's territory) contains a pointer of a RECOGNIZED, mechanically resolvable shape (file/path, cli invocation, config reference, code symbol, doc-anchor link, `path.py::symbol`/`path.rs::fn`, or a bare identifier within its doc's anchored module scope -- T-1228) <!-- frob:waive DOC006 reason="path.py::symbol/path.rs::fn here are the KIND'S OWN illustrative placeholder shape, not real pointers" --> that does not resolve, or a `frob:tests` directive's target uses pytest's `Class::method` collect-only separator where this graph wants a single `::` then a dotted `Class.method` qualname -- see "DOC006 doc-pointer resolution gate" below |
 | EXCL001 | excludehazard | a `.git/info/exclude` entry shadows a git-tracked file or a directory containing tracked files -- see "EXCL001 (T-0465)" below |
 | PROTO001 | protocol_summary | (warn) a `frob:requires`/`frob:transition`-tagged symbol's `frob.graph.summary.compute_protocol_summaries` result is `poisoned` (an `UNRESOLVED_CALLEE` somewhere in its transitive call closure) -- see "PROTO001 (T-0813)" below |
 | PROTO002 | protocol_summary | (error) a `frob:requires` symbol's required state is never established anywhere reachable (or its summary is poisoned), and no language-excuse discharges it -- see "PROTO002/PROTO003 (T-0746)" below |
@@ -2188,10 +2188,11 @@ fires when a pointer of a known shape targets something that does not
 exist. An unrecognized/ambiguous token is never flagged -- that is the
 hardening.
 
-Five recognized pointer kinds, each detected in an inline code span or
-markdown link across every tracked `.md` file's PROSE (fenced code block
-bodies are DOC004's own territory and are skipped here, to avoid double-
-reporting the same token under two rule ids):
+Seven recognized pointer kinds (five original, plus two T-1228 additions
+below), each detected in an inline code span or markdown link across
+every tracked `.md` file's PROSE (fenced code block bodies are DOC004's
+own territory and are skipped here, to avoid double-reporting the same
+token under two rule ids):
 
 1. **FILE/PATH** -- a repo-relative path (contains `/`, or a well-known
    bare manifest basename: `frob.toml`, `pyproject.toml`, `Cargo.toml`,
@@ -2210,7 +2211,93 @@ reporting the same token under two rule ids):
    `anchor` must be a real heading/`<a id>` slug in it (the same resolver
    DOC002 uses for `frob:doc` edges).
 
-A sixth, source-level check rides alongside the doc-prose scan for the
+T-1228 adds two more recognized shapes:
+
+6. **FILE::SYMBOL** -- `` `path.py::qualname` `` / `` `path.rs::name` ``: <!-- frob:waive DOC006 reason="path.py::qualname and path.rs::name here are the KIND'S OWN illustrative placeholder shape, not real pointers" -->
+   a doc author naming WHICH file a symbol lives in explicitly (rather
+   than its importable dotted module path, kind 4's own territory). The
+   FILE half must be a tracked `.py`/`.rs` file (exact spelling or a
+   module-relative trailing-component shorthand, same posture as kind
+   1's `_is_tracked_path_suffix`); for a `.py` file the (optionally
+   dotted, one-level-conservative like kind 4) symbol half must be a real
+   top-level name defined there; for a `.rs` file it must be an item
+   declaration (`fn`/`struct`/`enum`/`trait`/`mod`/`const`/`static`/
+   `type`) somewhere in that one already-named file, `pub` optional --
+   round-3 (T-1228, real-corpus false positive): several genuine, real
+   functions (`parse_node`, `parse_store`, ...) are TRAIT-IMPL methods,
+   which never carry an explicit `pub` of their own even though they are
+   real and callable (visibility is inherited from the trait); since the
+   FILE is already pinned by the doc's own pointer, matching without
+   requiring `pub` is precise here, unlike the crate-wide `use` check
+   kind 2 reuses (where requiring `pub` matters to avoid matching an
+   unrelated same-named PRIVATE helper elsewhere in the crate).
+   Round-3 (T-1228, real-corpus false positive): a shorthand basename
+   (`_waive.py`, `_models.py`, no directory) is NOT unique in this repo --
+   16 tracked files end in `_models.py` alone -- so a shorthand FILE half
+   matching MORE THAN ONE tracked file is treated as unrecognized/
+   ambiguous and never flagged, rather than resolving against an
+   arbitrary one of the matches (which produced a real false positive:
+   `` `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES` `` resolved against the
+   wrong of two tracked `_waive.py` files).
+7. **BARE IDENTIFIER** -- a lone, code-shaped (`snake_case`/
+   `CONSTANT_CASE` or multi-hump `CamelCase`) backtick token, resolved
+   ONLY when `doc_path` is a genuinely **single-implementation-module**
+   doc: exactly ONE distinct python file carries a
+   `frob:doc <this-doc>#...` edge into it. A doc with two or more
+   distinct anchor files (every reference doc describing a whole module,
+   e.g. `docs/modules/gates.md` itself) is describing a SYSTEM, not one
+   file, and is out of scope entirely -- round-2 (T-1228, post-close
+   reject): the original "at least one anchor" scoping was, on this
+   repo's own corpus, effectively no scoping at all (nearly every
+   reference doc carries dozens of anchors, one per public symbol it
+   documents), producing ~1400 false positives on the real-corpus check
+   this ticket should have run before its first close. `docs/strata/**`
+   and `design/**` (the strata design language's own spec/system-design
+   prose) are excluded outright regardless of anchor count -- their
+   vocabulary (`two_phase_commit`, `capability_kind`, `RULE_ID`, ...) is
+   DSL terminology the strata grammar defines, not python identifiers,
+   even when shaped like one; `tickets.md`/`tickets-archive.md` (ticket-
+   ledger prose, which routinely quotes illustrative syntax examples, not
+   live pointers) are excluded from this kind and kind 6 alike. Even
+   within a qualifying single-anchor doc, a token first checked against
+   the WHOLE PROJECT's known symbol names, not just the one anchor file's
+   own -- a real cross-file mention (`AuditReport`, discussed in one
+   module's doc but defined in another) always resolves.
+
+   Round-3 (T-1228, still real-corpus false positives after round-2's
+   narrowing): even inside a genuinely single-anchor, non-spec doc,
+   "resolves to NO python symbol anywhere in the project" turned out to
+   be a common and entirely legitimate shape for a config/data FIELD name
+   (`bin_path`, `service_account`) or third-party/external-system
+   vocabulary (`SeDenyInteractiveLogonRight`, `ActiveDirectory`) -- none
+   of those are ever going to be top-level python symbols, so their
+   absence from the symbol table is not evidence of doc rot the way it is
+   for kind 4's dotted symbol. This kind is narrowed to the ONE signal
+   that IS unambiguous: a **private-name rename** -- the token doesn't
+   resolve as a real (public) name, but a leading-underscore twin
+   (`_name`) is a real top-level name in the doc's own anchor file. A
+   bare identifier with no matching name at all, public or private, is
+   silently skipped -- the same "unrecognized token, never flagged"
+   posture this gate's docstring commits to for every other kind.
+
+Both new kinds carry the same **private-name awareness**: when the
+identifier does not resolve but a leading-underscore twin (`_name`) is a
+real symbol at the same site, the violation message names the private
+spelling directly (`did it mean the private ..._name?`) -- the "public
+name renamed to private, doc never updated" class the docs-staleness
+audit's own bare-identifier sweep found repeatedly (`digest_sig` ->
+`_digest_sig`, `host_attrs` -> `_host_attrs`). The dotted CODE SYMBOL kind
+(4) carries the same awareness in its own violation message.
+
+The prose token scanner also now resolves **line-wrapped backtick
+spans**: commonmark treats a single embedded newline inside an inline
+code span as ordinary whitespace, so a span an editor hard-wrapped
+mid-token (`` `frob.gates.\n_docptr` `` split across two lines) still
+resolves as the same token written on one line. A span containing a
+BLANK line (a real paragraph break) is never treated as wrapped -- that
+is two unrelated stray backticks, not a genuine wrapped span.
+
+A ninth, source-level check rides alongside the doc-prose scan for the
 DRIFT002 dotted-vs-`::` confusion class (T-0940/T-0945): a `frob:tests`
 directive's target is itself a recognized, mechanically-checkable shape --
 `<file>::<qualname>` with exactly one `::` separating the file from a

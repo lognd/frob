@@ -358,3 +358,328 @@ class TestDoc006TestsTargetShape:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         found = [v for v in violations if v.rule == "DOC007"]
         assert not any("tests/test_mod.py::TestX.test_y" in v.message for v in found)
+
+
+class TestDoc006FileSymbol:
+    """Kind 6 (T-1228): `` `path.py::qualname` `` / `` `path.rs::name` ``
+    -- a doc author naming WHICH file a symbol lives in explicitly,
+    distinct from the dotted importable-module-path kind 4 already
+    covers."""
+
+    def test_py_missing_symbol_flagged(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "src/pkg/mod.py", "def real(): pass\n")
+        _write(tmp_path, "docs/guide.md", "See `src/pkg/mod.py::nonexistent` here.\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        found = _by_rule(violations, "docs/guide.md")
+        assert found
+        assert any("nonexistent" in v.message for v in found)
+
+    def test_py_real_symbol_passes(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "src/pkg/mod.py", "def real(): pass\n")
+        _write(tmp_path, "docs/guide.md", "See `src/pkg/mod.py::real` here.\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    def test_py_private_twin_noted_in_message(self, tmp_path: Path) -> None:
+        """The renamed-to-private awareness case: `digest_sig` was renamed
+        `_digest_sig` and the doc was never updated -- the violation
+        message should point at the real, private name."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "src/pkg/mod.py", "def _digest_sig(): pass\n")
+        _write(tmp_path, "docs/guide.md", "See `src/pkg/mod.py::digest_sig` here.\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        found = _by_rule(violations, "docs/guide.md")
+        assert found
+        assert any("_digest_sig" in v.message for v in found)
+
+    def test_rust_missing_fn_flagged(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "crate/src/lib.rs", "pub fn real() {}\n")
+        _write(tmp_path, "docs/guide.md", "See `crate/src/lib.rs::nonexistent` here.\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        found = _by_rule(violations, "docs/guide.md")
+        assert found
+        assert any("nonexistent" in v.message for v in found)
+
+    def test_rust_real_fn_passes(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "crate/src/lib.rs", "pub fn real_fn() {}\n")
+        _write(tmp_path, "docs/guide.md", "See `crate/src/lib.rs::real_fn` here.\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    def test_rust_non_pub_trait_impl_fn_passes(self, tmp_path: Path) -> None:
+        """T-1228 round-3: a real, currently-defined rust function that is
+        a TRAIT-IMPL method never carries its own explicit `pub` keyword
+        (visibility is inherited from the trait) -- real-corpus
+        verification found several genuine functions (`parse_node`,
+        `parse_store`, ...) flagged stale this way. Kind 6 is scoped to
+        one already-named file, so matching without `pub` is precise here,
+        unlike the crate-wide `use` check kind 2 reuses."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "crate/src/lib.rs",
+            "impl Visitor for Walker {\n    fn parse_node(&mut self) {}\n}\n",
+        )
+        _write(tmp_path, "docs/guide.md", "See `crate/src/lib.rs::parse_node` here.\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    def test_missing_file_flagged(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "docs/guide.md", "See `src/pkg/gone.py::real` here.\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        found = _by_rule(violations, "docs/guide.md")
+        assert found
+        assert any("gone.py" in v.message for v in found)
+
+    def test_ambiguous_basename_shorthand_not_flagged(self, tmp_path: Path) -> None:
+        """T-1228 round-3: a shorthand basename (`_mod.py`, no directory)
+        that matches TWO different tracked files cannot be resolved OR
+        refuted without guessing -- real-corpus verification found this
+        picked an arbitrary wrong match (`_waive.py::
+        MULTI_INSTANCE_WAIVER_FAMILIES` resolved against the wrong of two
+        tracked `_waive.py` files, flagging a real symbol as stale)."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "src/pkg_a/_mod.py", "def only_in_a(): pass\n")
+        _write(tmp_path, "src/pkg_b/_mod.py", "def only_in_b(): pass\n")
+        _write(tmp_path, "docs/guide.md", "See `_mod.py::only_in_b` here.\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+
+class TestDoc006BareIdentifier:
+    """Kind 7 (T-1228): a bare, code-shaped backtick identifier resolved
+    within the doc's OWN anchored module scope (a `frob:doc <this doc>#...`
+    edge somewhere in the tree) -- never fires on an unanchored doc."""
+
+    def _anchored_repo(self, tmp_path: Path, module_body: str, doc_body: str) -> None:
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            f"# frob:doc docs/guide.md#anchor\n{module_body}",
+        )
+        _write(tmp_path, "docs/guide.md", f"# Anchor\n\n{doc_body}")
+        _add_all(tmp_path)
+
+    def test_unanchored_doc_not_checked(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "src/pkg/mod.py", "def real_thing(): pass\n")
+        _write(tmp_path, "docs/guide.md", "See `nonexistent_thing` here.\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    def test_anchored_unresolved_without_twin_not_flagged(self, tmp_path: Path) -> None:
+        """T-1228 round-3: a code-shaped bare identifier that resolves to
+        NEITHER a public NOR a private name is silently skipped -- real-
+        corpus verification found this generic "doesn't exist" signal was
+        unhardenable (data/config field names and third-party vocabulary
+        are code-shaped and never top-level python symbols). Only the
+        private-name-rename signal (see `test_anchored_private_twin_noted`
+        below) is unambiguous enough to flag."""
+        self._anchored_repo(
+            tmp_path,
+            "def real_thing(): pass\n",
+            "See `nonexistent_thing` here.\n",
+        )
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    def test_anchored_real_name_passes(self, tmp_path: Path) -> None:
+        self._anchored_repo(
+            tmp_path,
+            "def real_thing(): pass\n",
+            "See `real_thing` here.\n",
+        )
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    def test_anchored_private_twin_noted(self, tmp_path: Path) -> None:
+        self._anchored_repo(
+            tmp_path,
+            "def _digest_sig(): pass\n",
+            "See `digest_sig` here.\n",
+        )
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        found = _by_rule(violations, "docs/guide.md")
+        assert found
+        assert any("_digest_sig" in v.message for v in found)
+
+    def test_plain_prose_word_not_flagged(self, tmp_path: Path) -> None:
+        """Even inside an anchored doc, a plain English backtick word
+        (no underscore, no multi-hump CamelCase) is not code-shaped and is
+        never checked -- the shape filter, not the anchor, is what keeps
+        this kind closed-set."""
+        self._anchored_repo(
+            tmp_path,
+            "def real_thing(): pass\n",
+            "See `result` here.\n",
+        )
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+
+class TestDoc006WrappedSpan:
+    """Line-wrapped backtick spans (T-1228): commonmark treats a single
+    embedded newline inside an inline code span as ordinary whitespace, so
+    a span an editor hard-wrapped mid-token still resolves as the SAME
+    token written on one line."""
+
+    def test_wrapped_backtick_span_resolves(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "src/pkg/mod.py", "def real(): pass\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "See `src/pkg/mod.py::\nreal` for it.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+
+class TestDoc006BareIdentifierNarrowing:
+    """T-1228 round-2 (post-close reject over ~1400 real-corpus false
+    positives): kind 7 is narrowed to genuinely single-implementation-
+    module docs, excludes spec-prose (`docs/strata/**`, `design/**`) and
+    ledger files outright, and resolves against the WHOLE project's
+    symbol table, not just the one anchor file."""
+
+    def test_multi_anchor_doc_not_checked(self, tmp_path: Path) -> None:
+        """A doc describing TWO modules (two distinct frob:doc anchor
+        files) is a reference/system doc, not a single-module doc -- kind
+        7 is out of scope for it entirely, even for an unresolved,
+        code-shaped bare identifier."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod_a.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_a(): pass\n",
+        )
+        _write(
+            tmp_path,
+            "src/pkg/mod_b.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_b(): pass\n",
+        )
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "# Anchor\n\nSee `nonexistent_thing` here.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    def test_spec_prose_doc_excluded(self, tmp_path: Path) -> None:
+        """A `docs/strata/**` page is spec/design-language prose -- its
+        vocabulary is DSL terminology, not python identifiers, even when
+        singly anchored and code-shaped."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/strata/spec.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(
+            tmp_path,
+            "docs/strata/spec.md",
+            "# Anchor\n\nSee `two_phase_commit` here.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/strata/spec.md")
+
+    def test_cross_file_real_symbol_passes(self, tmp_path: Path) -> None:
+        """A single-anchor doc mentioning a symbol defined in ANOTHER file
+        (not its own anchor file) is a real cross-file reference, not
+        stale drift -- resolved against the whole project's symbol table."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(tmp_path, "src/pkg/other.py", "class AuditReport:\n    pass\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "# Anchor\n\nSee `AuditReport` here.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    def test_absent_everywhere_without_twin_not_flagged(self, tmp_path: Path) -> None:
+        """T-1228 round-3: a single-anchor, non-spec doc's code-shaped bare
+        identifier that resolves NOWHERE in the project (not the anchor
+        file, not any other file, and no private twin either) is NOT
+        flagged -- real-corpus verification found "resolves nowhere" alone
+        is not a resolvable-or-refutable signal for this shape (config
+        field names, third-party vocabulary, ...)."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(tmp_path, "src/pkg/other.py", "def unrelated(): pass\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "# Anchor\n\nSee `totally_nonexistent_thing` here.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+
+class TestDoc006LedgerExclusion:
+    """T-1228 round-2: ticket-ledger prose (`tickets.md`/`tickets-archive.
+    md`) routinely quotes illustrative syntax examples that are never live
+    pointers -- excluded from BOTH new T-1228 kinds (kind 6 FILE::SYMBOL,
+    kind 7 BARE IDENTIFIER)."""
+
+    def test_ledger_file_symbol_placeholder_not_flagged(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "tickets.md",
+            "Use the `path.py::qualname` shape for a file::symbol pointer.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "tickets.md")
+
+    def test_ledger_bare_identifier_placeholder_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """Even a shape that WOULD be flagged (private-name-rename) in an
+        ordinary single-anchor doc is skipped in a ledger file -- the
+        ledger exclusion is checked before the private-twin resolution."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc tickets.md#anchor\ndef _digest_sig(): pass\n",
+        )
+        _write(
+            tmp_path,
+            "tickets.md",
+            "# Anchor\n\nSee `digest_sig` here.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "tickets.md")

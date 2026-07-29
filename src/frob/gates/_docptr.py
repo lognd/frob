@@ -69,6 +69,7 @@ gate, not DOC006's own `.md`-only nearby-line scan).
 
 from __future__ import annotations
 
+import bisect
 import re
 import tomllib
 from pathlib import Path, PurePosixPath
@@ -100,7 +101,7 @@ __all__ = ["doc006_gate"]
 # (fenced code block bodies are DOC004's territory, skipped here).
 # ---------------------------------------------------------------------------
 
-_BACKTICK_RE = re.compile(r"`([^`\n]{2,300})`")
+_BACKTICK_RE = re.compile(r"`([^`]{2,400}?)`")
 _MD_LINK_RE = re.compile(r"\]\(([^)\s#]+)(#[\w-]+)?\)")
 
 
@@ -121,11 +122,29 @@ def _blank_fenced_blocks(text: str) -> str:
 def _prose_tokens(text: str) -> list[tuple[int, str]]:
     """`(line_no, token)` for every inline backtick span and markdown-link
     target in prose text (1-indexed lines, matching every other gate in
-    this package)."""
+    this package).
+
+    T-1228: the backtick scan runs over the WHOLE text (not line-by-line)
+    so a span an editor line-wrapped mid-token -- commonmark treats a
+    single embedded newline inside an inline code span as ordinary
+    whitespace, so `` `frob.gates.\n_docptr` `` is the SAME token as
+    `` `frob.gates._docptr` `` written on one line -- still resolves. A
+    span containing a BLANK line (`\n\n`, a real paragraph break) is
+    rejected: that is two unrelated stray backticks, never a genuine
+    wrapped span, and the un-bounded content class would otherwise let a
+    single stray backtick swallow arbitrarily much following prose."""
     tokens: list[tuple[int, str]] = []
+    # PERF002: precompute newline offsets ONCE (not a `.count()` call per
+    # match) so per-match line lookup is a bisect, not an O(text) rescan.
+    newline_offsets = [i for i, ch in enumerate(text) if ch == "\n"]
+    for match in _BACKTICK_RE.finditer(text):
+        raw_token = match.group(1)
+        if "\n\n" in raw_token:
+            continue
+        line_no = bisect.bisect_right(newline_offsets, match.start()) + 1
+        token = " ".join(raw_token.split()) if "\n" in raw_token else raw_token
+        tokens.append((line_no, token))
     for line_no, line in enumerate(text.splitlines(), start=1):
-        for match in _BACKTICK_RE.finditer(line):
-            tokens.append((line_no, match.group(1)))
         for match in _MD_LINK_RE.finditer(line):
             target = match.group(1)
             if match.group(2):
@@ -695,6 +714,21 @@ def _config_violations(
 _DOTTED_SYMBOL_RE = re.compile(r"^[A-Za-z_][\w]*(?:\.[A-Za-z_][\w]*){2,}$")
 
 
+def _private_twin(names: set[str], name: str) -> str | None:
+    """T-1228 private-name awareness: whether `name` (public-looking,
+    already absent from `names`) has a leading-underscore TWIN actually
+    present in `names` -- the exact "renamed to private, doc never
+    updated" class the docs-staleness audit's bare-identifier sweep found
+    repeatedly (`digest_sig` -> `_digest_*`, `host_attrs` -> `_host_attrs`,
+    `GROWTH_HORIZON_MONTHS` -> `_GROWTH_HORIZON_MONTHS`). Returns the
+    private spelling to fold into the violation message, or `None` if no
+    such twin exists (an ordinary does-not-exist-at-all case)."""
+    if name.startswith("_"):
+        return None
+    twin = f"_{name}"
+    return twin if twin in names else None
+
+
 def _symbol_violations(
     doc_path: str,
     doc_lines: list[str],
@@ -797,12 +831,371 @@ def _symbol_violation_for_token(
         or _module_reexports(root, file_path, name)
     ):
         return None
+    twin = _private_twin(top_names, name)
+    detail = (
+        f"{token} does not resolve to a real symbol -- did it mean the "
+        f"private {module}.{twin}?"
+        if twin is not None
+        else f"{token} does not resolve to a real symbol"
+    )
+    return _doc006_violation(doc_path, line_no, "code symbol", detail)
+
+
+# ---------------------------------------------------------------------------
+# Kind 6: FILE::SYMBOL -- `path.py::qualname` / `path.rs::name` (T-1228)
+# ---------------------------------------------------------------------------
+
+# `<repo-relative-ish path ending .py/.rs>::<name>` -- deliberately does
+# NOT allow a second `::` in the symbol half (that shape is DOC007's own
+# pytest-collect-only-separator territory over `frob:tests` edges, not a
+# doc-prose pointer this kind should also claim).
+_FILE_SYMBOL_RE = re.compile(r"^([\w./\-]+\.(?:py|rs))::([A-Za-z_][\w.]*)$")
+
+
+def _resolve_tracked_file(
+    candidates: set[str], tracked: frozenset[str]
+) -> tuple[str | None, bool]:
+    """`(resolved_path, ambiguous)` for any candidate in `candidates` --
+    exact match first, then a tracked path's trailing-component match (the
+    same module-relative-shorthand posture `_is_tracked_path_suffix` gives
+    kind 1, reused here for the FILE half of `path::symbol`). `resolved_
+    path` is `None` when nothing matches OR when a shorthand matches MORE
+    THAN ONE distinct tracked file; `ambiguous` (only meaningful when
+    `resolved_path is None`) distinguishes those two `None` cases for the
+    caller, since they warrant different violations (a genuinely untracked
+    file vs. an unrecognized/ambiguous shape that is never flagged).
+
+    T-1228 round-3 fix: a shorthand basename like `_models.py`/`_waive.py`
+    is NOT unique in this repo -- 16 different tracked files end in
+    `_models.py` alone (`src/frob/refactor/_models.py`,
+    `src/frob/strata/_models.py`, ...). Picking the first arbitrary match
+    (a `frozenset` iteration order) produced a confirmed false positive:
+    `` `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES` `` resolved against
+    `src/frob/gates/_waive.py` (which doesn't define it) instead of
+    `src/frob/strata/_waive.py` (which does), flagging a real symbol as
+    stale. A suffix match against MORE THAN ONE distinct tracked file is
+    genuinely ambiguous -- this shape cannot be definitively resolved OR
+    refuted without guessing, so it is treated as unrecognized, same
+    posture as any other ambiguous token this gate skips."""
+    for candidate in candidates:
+        if candidate in tracked:
+            return candidate, False
+    for candidate in candidates:
+        suffix = "/" + candidate
+        matches = [t for t in tracked if t.endswith(suffix)]
+        if len(matches) == 1:
+            return matches[0], False
+        if len(matches) > 1:
+            return None, True
+    return None, False
+
+
+def _file_symbol_violations(
+    doc_path: str,
+    doc_lines: list[str],
+    tokens: list[tuple[int, str]],
+    tracked: frozenset[str],
+    symbol_names_by_path: dict[str, set[str]],
+    root: Path,
+) -> list[Violation]:
+    """Kind 6 (FILE::SYMBOL): `` `path.py::qualname` `` / `` `path.rs::name` ``
+    -- a shape doc authors reach for specifically to disambiguate WHICH
+    file a same-named symbol lives in (the dotted CODE SYMBOL kind only
+    resolves a symbol via its importable dotted module path, not a bare
+    filename). Python: the FILE half must be a tracked `.py` file and the
+    first segment of the (optionally dotted) symbol half a real top-level
+    name in it -- same one-level conservatism as kind 4 (a `Class.attr`
+    second segment is outside what this resolver can prove/refute, so it
+    is silently skipped). Rust: the FILE half must be a tracked `.rs` file
+    and the (always single, undotted) name an item declaration somewhere
+    in it (`_rust_item_defined_in_file`, `pub` optional -- see that
+    function's own module-level comment for why).
+
+    T-1228 round-2: `doc_path` in `_LEDGER_FILES` (a ticket ledger's own
+    illustrative syntax-example prose, never a live pointer) is excluded
+    up front, the same posture `_bare_identifier_violations` takes."""
+    if doc_path in _LEDGER_FILES:
+        return []
+    violations: list[Violation] = []
+    for line_no, token in tokens:
+        match = _FILE_SYMBOL_RE.match(token)
+        if match is None:
+            continue
+        file_part, symbol = match.group(1), match.group(2)
+        candidates = _path_candidates(doc_path, file_part)
+        resolved, ambiguous = _resolve_tracked_file(candidates, tracked)
+        if resolved is None:
+            if ambiguous:
+                # T-1228 round-3: a shorthand basename matching more than
+                # one tracked file cannot be resolved OR refuted without
+                # guessing -- unrecognized shape, never flagged.
+                continue
+            if _nearby_waived(doc_lines, line_no):
+                continue
+            violations.append(
+                _doc006_violation(
+                    doc_path,
+                    line_no,
+                    "file::symbol",
+                    f"{file_part!r} is not a tracked file",
+                )
+            )
+            continue
+        if _nearby_waived(doc_lines, line_no):
+            continue
+        if resolved.endswith(".py"):
+            violation = _py_file_symbol_violation(
+                doc_path, line_no, resolved, symbol, symbol_names_by_path
+            )
+        else:
+            violation = _rust_file_symbol_violation(
+                doc_path, line_no, resolved, symbol, root
+            )
+        if violation is not None:
+            violations.append(violation)
+    return violations
+
+
+def _py_file_symbol_violation(
+    doc_path: str,
+    line_no: int,
+    file_path: str,
+    symbol: str,
+    symbol_names_by_path: dict[str, set[str]],
+) -> Violation | None:
+    """The python half of `_file_symbol_violations`: whether `symbol`'s
+    FIRST dotted segment is a real top-level name defined in `file_path`."""
+    name = symbol.split(".", 1)[0]
+    top_names = symbol_names_by_path.get(file_path, set())
+    if name in top_names or name in ("__init__", "__all__"):
+        return None
+    twin = _private_twin(top_names, name)
+    detail = (
+        f"{file_path}::{symbol} does not resolve -- did it mean the "
+        f"private {file_path}::{twin}?"
+        if twin is not None
+        else f"{file_path}::{symbol} does not resolve to a real symbol"
+    )
+    return _doc006_violation(doc_path, line_no, "file::symbol", detail)
+
+
+#: T-1228 round-3: kind 6's rust check is scoped to ONE already-named file
+#: (unlike `frob.gates._docblocks_refs._rust_item_defined`'s crate-wide
+#: `use` check, where requiring `pub` avoids matching an unrelated
+#: same-named PRIVATE helper elsewhere in the crate) -- real-corpus
+#: verification found several genuine, currently-defined functions
+#: (`parse_node`, `parse_store`, ...) living as trait-impl methods, which
+#: never carry an explicit `pub` keyword of their own even though they are
+#: real and callable (visibility is inherited from the trait). Since the
+#: FILE is already pinned by the doc's own pointer, matching ANY `fn`/
+#: `struct`/`enum`/`trait`/`mod`/`const`/`static`/`type` item declaration
+#: (`pub` optional) in that one file is precise, not permissive.
+_RUST_ITEM_IN_FILE_RE_TMPL = (
+    r"\b(?:pub(?:\([^)]*\))?\s+)?(?:fn|struct|enum|trait|mod|const|static|type)\s+"
+    r"{name}\b"
+)
+
+
+def _rust_item_defined_in_file(root: Path, file_path: str, name: str) -> bool:
+    """Whether `file_path` textually declares an item named `name` -- see
+    `_RUST_ITEM_IN_FILE_RE_TMPL`'s docstring-comment for why this, unlike
+    `_rust_item_defined`, does not require `pub`."""
+    pattern = re.compile(_RUST_ITEM_IN_FILE_RE_TMPL.format(name=re.escape(name)))
+    try:
+        text = (root / file_path).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return False
+    return pattern.search(text) is not None
+
+
+def _rust_file_symbol_violation(
+    doc_path: str, line_no: int, file_path: str, symbol: str, root: Path
+) -> Violation | None:
+    """The rust half of `_file_symbol_violations`: whether `symbol` is an
+    item declaration somewhere in the single tracked file `file_path`."""
+    if "." in symbol:
+        return None  # not a recognized rust shape; never a resolvable claim
+    if _rust_item_defined_in_file(root, file_path, symbol):
+        return None
     return _doc006_violation(
         doc_path,
         line_no,
-        "code symbol",
-        f"{token} does not resolve to a real symbol",
+        "file::symbol",
+        f"{file_path}::{symbol} does not resolve to an item in that file",
     )
+
+
+# ---------------------------------------------------------------------------
+# Kind 7: BARE IDENTIFIER, resolved within the doc's own anchored module
+# scope (T-1228)
+# ---------------------------------------------------------------------------
+
+_BARE_IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_CAMEL_HUMP_RE = re.compile(r"^[A-Z][a-z0-9]+[A-Z]\w*$")
+
+
+def _looks_code_shaped_bare_identifier(token: str) -> bool:
+    """Whether a bare (undotted, un-pathed, un-bracketed) backtick token
+    is CODE-shaped enough to be worth resolving against an anchored
+    module's own symbol table at all -- the hardening that keeps this
+    kind from firing on ordinary English prose words wrapped in
+    backticks. Restricted to `snake_case`/`CONSTANT_CASE` (an embedded,
+    non-edge underscore) or multi-hump `CamelCase` (an initial capital
+    followed by a lowercase run then another capital) -- the two
+    identifier shapes the docs-staleness audit's own bare-identifier
+    findings (`digest_sig`, `host_attrs`, `GROWTH_HORIZON_MONTHS`,
+    `CycleError`) all share. A single ALL-CAPS acronym or a bare
+    Capitalized word (`URL`, `Cycle`) is deliberately NOT matched here --
+    both are common in prose/proper-noun use and are outside what this
+    conservative shape check can tell apart from a real symbol name."""
+    if _BARE_IDENT_RE.match(token) is None or len(token) < 3:
+        return False
+    if "_" in token.strip("_"):
+        return True
+    return _CAMEL_HUMP_RE.match(token) is not None
+
+
+def _anchor_modules_by_doc(root: Path, snapshot: GraphSnapshot) -> dict[str, set[str]]:
+    """`{doc_path: {python file paths}}` for every `frob:doc <doc_path>#...`
+    edge in the graph. The edge's ORIGIN (`path:line` of the `frob:doc`
+    directive itself, `_origin_site`) gives the anchoring file directly --
+    more robust than resolving the edge's `src` symref back through
+    `snapshot.symbols`, and it is the same origin-based convention
+    `_tests_target_shape_violations` already uses in this module for the
+    identical reason."""
+    mapping: dict[str, set[str]] = {}
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.DOC:
+            continue
+        doc_path = edge.target.partition("#")[0]
+        file_path, _ = _origin_site(edge.origin)
+        if not file_path.endswith(".py"):
+            continue
+        mapping.setdefault(doc_path, set()).add(file_path)
+    return mapping
+
+
+#: T-1228 round-2 (post-close reject): kind 7's ORIGINAL "any frob:doc
+#: anchor" scoping was not narrow at all -- a doc page describing a whole
+#: module (`docs/modules/gates.md`, `docs/modules/deploy.md`, ...) collects
+#: a `frob:doc` edge from EVERY public symbol in that module, so "has at
+#: least one anchor" was true for nearly every reference doc in the repo,
+#: producing ~1400 false positives on real-corpus verification (moved-
+#: module docstrings, cross-file symbol mentions, spec-DSL vocabulary).
+#: Genuinely single-module docs -- a small guide page anchored to exactly
+#: ONE implementation file -- are the only shape narrow enough that "not a
+#: symbol in that one file" is real signal rather than noise; a doc with
+#: two or more distinct anchor files is describing a SYSTEM, not one
+#: module, and bare identifiers in it are not this kind's business.
+_MAX_ANCHOR_MODULES_FOR_BARE_IDENTIFIER = 1
+
+#: T-1228 round-2: `docs/strata/**` and `design/**` are the strata design
+#: language's own spec/system-design prose -- their vocabulary
+#: (`two_phase_commit`, `capability_kind`, `RULE_ID`, ...) is DSL
+#: terminology the strata grammar defines, not python identifiers, even
+#: when `snake_case`/`CamelCase`-shaped. These pages are excluded from kind
+#: 7 outright rather than relying on the single-anchor-module narrowing
+#: alone to filter them (a design doc can easily carry exactly one stray
+#: `frob:doc` anchor and still be spec prose, not implementation prose).
+_SPEC_PROSE_DOC_PREFIXES = ("docs/strata/", "design/")
+
+#: T-1228 round-2: ticket-ledger files are an append-only historical
+#: record whose PROSE quotes illustrative syntax shapes (`path.py::
+#: qualname`, ...) -- never a live pointer into the current tree. Excluded
+#: from BOTH new T-1228 kinds (file::symbol and bare identifier); the
+#: five older kinds already tolerate `tickets.md` fine (its pre-existing
+#: file/path and cli-invocation findings are real, tracked drift on
+#: `main`), so this exclusion is scoped to these two kinds only, not the
+#: whole doc.
+_LEDGER_FILES = frozenset({"tickets.md", "tickets-archive.md"})
+
+
+def _all_project_symbol_names(
+    symbol_names_by_path: dict[str, set[str]],
+) -> frozenset[str]:
+    """The union of every top-level symbol name defined ANYWHERE in the
+    project (across every file `symbol_names_by_path` covers) -- T-1228
+    round-2's cross-file resolution for kind 7: a bare identifier that
+    isn't a top-level name in its doc's single anchor file but IS a real
+    symbol somewhere else in the project (`AuditReport`, defined in one
+    strata module but discussed in another's doc) is a genuine cross-
+    reference, not stale drift; only a name that resolves NOWHERE in the
+    project is real signal."""
+    names: set[str] = set()
+    for file_names in symbol_names_by_path.values():
+        names.update(file_names)
+    return frozenset(names)
+
+
+def _bare_identifier_violations(
+    doc_path: str,
+    doc_lines: list[str],
+    tokens: list[tuple[int, str]],
+    anchor_files: set[str],
+    symbol_names_by_path: dict[str, set[str]],
+    all_project_names: frozenset[str],
+    root: Path,
+) -> list[Violation]:
+    """Kind 7 (BARE IDENTIFIER): a code-shaped bare backtick token, checked
+    ONLY when `doc_path` is a genuinely SINGLE-implementation-module doc
+    (exactly one distinct `frob:doc` anchor file,
+    `_MAX_ANCHOR_MODULES_FOR_BARE_IDENTIFIER`) outside the spec-prose
+    exclusion (`_SPEC_PROSE_DOC_PREFIXES`) and ledger exclusion
+    (`_LEDGER_FILES`).
+
+    T-1228 round-3 (still real-corpus false positives after round-2's
+    single-anchor + whole-project-resolution narrowing: field names like
+    `bin_path`/`service_account`, and external-system vocabulary like
+    `SeDenyInteractiveLogonRight`/`ActiveDirectory`, are code-shaped and
+    resolve nowhere in the project's own python symbol table without
+    being stale doc pointers at all -- a data/config field or a third-
+    party name is never going to be a top-level python symbol, so
+    "resolves nowhere" is NOT a resolvable-or-refutable signal for this
+    shape the way it is for kind 4's dotted symbol). This kind is
+    narrowed to ONLY the one signal that IS definitively resolvable-or-
+    refutable: a **private-name rename** -- the identifier does not
+    resolve as a real name, but a leading-underscore TWIN (`_name`) is a
+    real top-level name in the SAME anchor file. That is unambiguous
+    evidence the doc is quoting a name that used to be public and got
+    renamed private, not a coincidental non-symbol vocabulary word. A
+    bare identifier with no matching name at all (public OR private) is
+    silently skipped, same posture as any other unrecognized token in
+    this gate."""
+    if doc_path in _LEDGER_FILES:
+        return []
+    if doc_path.startswith(_SPEC_PROSE_DOC_PREFIXES):
+        return []
+    if len(anchor_files) != _MAX_ANCHOR_MODULES_FOR_BARE_IDENTIFIER:
+        return []
+    violations: list[Violation] = []
+    for line_no, token in tokens:
+        if not _looks_code_shaped_bare_identifier(token):
+            continue
+        if _nearby_waived(doc_lines, line_no):
+            continue
+        if token in all_project_names:
+            continue
+        twin: str | None = None
+        resolved = False
+        for file_path in anchor_files:
+            names = symbol_names_by_path.get(file_path, set())
+            if _module_reexports(root, file_path, token):
+                resolved = True
+                break
+            candidate = _private_twin(names, token)
+            if candidate is not None:
+                twin = candidate
+        if resolved or twin is None:
+            continue
+        detail = (
+            f"{token!r} does not resolve in its doc's anchored module or "
+            f"anywhere else in the project -- did it mean the private "
+            f"{twin!r}?"
+        )
+        violations.append(
+            _doc006_violation(doc_path, line_no, "bare identifier", detail)
+        )
+    return violations
 
 
 # ---------------------------------------------------------------------------
@@ -921,6 +1314,51 @@ def _tracked_all_files(root: Path) -> frozenset[str]:
 # frob:tests \
 # tests/test_docptr_gate.py::TestDoc006Symbol.test_dunder_init_mid_chain_resolves_to_mo\
 # dule
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006FileSymbol.test_py_missing_symbol_flagged
+# frob:tests tests/test_docptr_gate.py::TestDoc006FileSymbol.test_py_real_symbol_passes
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006FileSymbol.test_py_private_twin_noted_in_message
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006FileSymbol.test_rust_missing_fn_flagged
+# frob:tests tests/test_docptr_gate.py::TestDoc006FileSymbol.test_rust_real_fn_passes
+# frob:tests tests/test_docptr_gate.py::TestDoc006FileSymbol.test_missing_file_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006FileSymbol.test_ambiguous_basename_shorthand_not\
+# _flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006FileSymbol.test_rust_non_pub_trait_impl_fn_passes
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006BareIdentifier.test_unanchored_doc_not_checked
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006BareIdentifier.test_anchored_unresolved_without_\
+# twin_not_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006BareIdentifier.test_anchored_real_name_passes
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006BareIdentifier.test_anchored_private_twin_noted
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006BareIdentifier.test_plain_prose_word_not_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006WrappedSpan.test_wrapped_backtick_span_resolves
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing.test_multi_anchor_doc_no\
+# t_checked
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing.test_spec_prose_doc_excl\
+# uded
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing.test_cross_file_real_sym\
+# bol_passes
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing.test_absent_everywhere_w\
+# ithout_twin_not_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006LedgerExclusion.test_ledger_file_symbol_placehol\
+# der_not_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006LedgerExclusion.test_ledger_bare_identifier_plac\
+# eholder_not_flagged
 def doc006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC006: doc-pointer resolution over a closed set of recognized,
     mechanically resolvable pointer shapes (see this module's docstring)
@@ -937,6 +1375,8 @@ def doc006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     frob_toml = _load_frob_toml(root)
     other_manifests = _load_toml_manifests(root)
     anchor_cache: dict[str, set[str] | None] = {}
+    doc_anchor_modules = _anchor_modules_by_doc(root, snapshot)
+    all_project_names = _all_project_symbol_names(symbol_names_by_path)
 
     violations: list[Violation] = list(_tests_target_shape_violations(snapshot))
     for doc_path in _tracked_md_files(root):
@@ -974,6 +1414,22 @@ def doc006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
                 namespaces.python,
                 module_map,
                 symbol_names_by_path,
+                root,
+            )
+        )
+        violations.extend(
+            _file_symbol_violations(
+                doc_path, doc_lines, tokens, tracked, symbol_names_by_path, root
+            )
+        )
+        violations.extend(
+            _bare_identifier_violations(
+                doc_path,
+                doc_lines,
+                tokens,
+                doc_anchor_modules.get(doc_path, set()),
+                symbol_names_by_path,
+                all_project_names,
                 root,
             )
         )
