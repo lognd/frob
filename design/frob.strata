@@ -2107,6 +2107,50 @@ node mutate : trusted {
     attr interface=write_journal;
 }
 
+// T-1329: `frob.refactor` -- the T-1197 reference-rewrite engine
+// (resolve/plan/apply/verify transactional pipeline). Landed without a
+// node binding (SYS102 + 4x SYS103 foreign fs capabilities, found by
+// T-1203's audit agent and re-confirmed by the T-1320 coverage run's
+// selfconform failures). `may` measured against the SYS103 findings:
+// `fs.read` (_resolve/_scan/_verify read source files to resolve and
+// verify rewrites) + `fs.write` (_apply writes the rewritten files --
+// the whole point of the engine). Git transaction commands route
+// through `frob.gitio.run_argv` (the `core` node's own exec capability,
+// reached via flow, not this node's) -- same "code owns the effect"
+// shape as mutate/natives above. Own node rather than folded into cli:
+// the CLI wiring for this package is deliberately unbuilt (TEST003
+// waiver on its interface node documents that), so the package IS the
+// capability boundary.
+// frob:ticket T-1329
+node refactor : trusted {
+    attr interface=AliasRecord;
+    attr interface=RefactorError;
+    attr interface=RefactorKind;
+    attr interface=RefactorPlan;
+    attr interface=RefactorReport;
+    attr interface=ResolvedSymbol;
+    attr interface=RewriteOp;
+    attr interface=SymbolRef;
+    attr interface=VerifyOutcome;
+    attr interface=add_refactor_parser;
+    attr interface=apply_plan;
+    attr interface=build_move_ops;
+    attr interface=build_plan;
+    attr interface=find_python_files;
+    attr interface=module_to_path;
+    attr interface=resolve_symbol;
+    attr interface=run_refactor;
+    attr interface=run_refactor_command;
+    attr interface=scan_references;
+    attr interface=verify_check_delta;
+    attr interface=verify_import_resolution;
+    attr interface=verify_pytest_collect;
+    clearance Internal;
+    code "src/frob/refactor/**";
+    may "fs.read";
+    may "fs.write";
+}
+
 // T-0864: `frob natives build` -- frob-owned `maturin develop` per
 // declared `[[native]]` rust crate, sharing one git-common-dir-keyed
 // `CARGO_TARGET_DIR` (T-0732's verified design, moved out of this repo's
@@ -2728,6 +2772,20 @@ store tickets_ledger : trusted {
     attr interface=v2_ticket_dir;
     attr interface=v2_ticket_path;
     attr interface=write_done_report;
+    // T-1329: SYS104 drift from the ledger-v2 chain (T-1254..T-1258) and
+    // the T-1251 seam split's re-export surface, caught by the T-1320
+    // coverage run's selfconform failures.
+    attr interface=_archived_ids;
+    attr interface=_commit_message;
+    attr interface=_deletion_owned;
+    attr interface=_validate_acceptance_bound;
+    attr interface=_validate_closeable;
+    attr interface=_validate_evidence_kind_consistency;
+    attr interface=archive_v2;
+    attr interface=git_mv_dir;
+    attr interface=renumber_one_v2;
+    attr interface=v2_archive_dir;
+    attr interface=v2_state_transitions;
 }
 
 // T-0956: names the SAME single-writer arbiter the five SYS203/

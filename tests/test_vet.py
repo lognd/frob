@@ -3826,6 +3826,43 @@ class TestFingerprintScan:
         matches = _scan_file_fingerprints(pkg)
         assert any(m.id == "FP-DESERIALIZE-YAML-001" for m in matches)
 
+    def test_yaml_load_with_explicit_loader_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_yaml_load_call_lacks_explicit_loader kind="unit"  # noqa: E501
+        # frob:ticket T-1329
+        # An explicit Loader= is FP-DESERIALIZE-YAML-001's own prescribed
+        # remediation (CVE-2017-18342 is the loader-LESS default) -- the
+        # substring needle alone fired on frob's own remediated
+        # tickets/_store.py calls after T-1206.
+        from frob.vet._capability import _scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "data = yaml.load(raw_bytes, Loader=yaml.CSafeLoader)\n"
+            "more = yaml.load(\n"
+            "    fence.group(1),\n"
+            "    Loader=_yaml_loader(),\n"
+            ")\n"
+        )
+        matches = _scan_file_fingerprints(pkg)
+        assert not any(m.id == "FP-DESERIALIZE-YAML-001" for m in matches)
+
+    def test_one_bare_yaml_load_among_remediated_calls_still_flags(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_yaml_load_call_lacks_explicit_loader kind="unit"  # noqa: E501
+        # frob:ticket T-1329
+        from frob.vet._capability import _scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "safe = yaml.load(raw, Loader=yaml.SafeLoader)\n"
+            "unsafe = yaml.load(other_bytes)\n"
+        )
+        matches = _scan_file_fingerprints(pkg)
+        assert any(m.id == "FP-DESERIALIZE-YAML-001" for m in matches)
+
     def test_no_match_on_clean_source(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
         from frob.vet._capability import _scan_file_fingerprints

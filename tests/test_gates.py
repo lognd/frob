@@ -12402,14 +12402,15 @@ class TestComplianceGate:
     # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance007_real_repo_registry_surfaces_known_gap  # noqa: E501
     def test_compliance007_real_repo_registry_surfaces_known_gap(self) -> None:
         """The honest "real repo scan" smoke test for COMPLIANCE007: this
-        repo's OWN `compliance.yaml` still has 16 CMPL units riding the
-        vacuous self-reference (T-1245-T-1249 own re-dispositioning them)
-        -- this is a real, currently-open, WARN-tier finding, not a
-        regression to suppress."""
+        repo's OWN `compliance.yaml` once had 16 CMPL units riding the
+        vacuous self-reference; T-1245..T-1249 re-dispositioned every one
+        (landed 2026-07-29), so the real-repo scan is now clean -- and
+        this assertion LOCKS it clean, so a future vacuous handled_by row
+        resurfaces as a test failure, not silent registry rot."""
         root = Path(__file__).resolve().parents[1]
         violations = compliance_gate(root)
         cmpl007 = [v for v in violations if v.rule == "COMPLIANCE007"]
-        assert len(cmpl007) == 16
+        assert cmpl007 == []
         assert all(v.severity == Severity.WARN for v in cmpl007)
 
     # frob:ticket T-0894

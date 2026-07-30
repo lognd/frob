@@ -12331,6 +12331,30 @@ tier: ticket
 sprint: null
 scope:
 - design/frob.strata
+- tests/test_gates.py
+- tests/test_vet.py
+- src/frob/vet/_capability.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: 'T-1320 coverage-run fallout: COMPLIANCE007 real-repo test expected the
+    16 vacuous rows T-1245..49 have since re-dispositioned; updating expectation to
+    0-and-locked'
+  actor: logan
+  at: '2026-07-30'
+- op: add
+  glob: tests/test_vet.py
+  reason: 'T-1320 coverage-run fallout: vet fingerprint real-repo test failure under
+    diagnosis, same batch'
+  actor: logan
+  at: '2026-07-30'
+- op: add
+  glob: src/frob/vet/_capability.py
+  reason: 'T-1320 fallout: FP-DESERIALIZE-YAML-001 needle false-positives on explicit-Loader
+    yaml.load calls (T-1206''s remediated shape); per-fingerprint refinement hook
+    added here'
+  actor: logan
+  at: '2026-07-30'
 threat: null
 component: null
 ```

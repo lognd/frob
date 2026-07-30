@@ -5334,6 +5334,78 @@ def _binding_fingerprints(
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
+# frob:ticket T-1329
+def _yaml_load_call_lacks_explicit_loader(
+    raw: bytes, comment_spans: tuple[ByteSpan, ...]
+) -> bool:
+    """Whether ANY `yaml.load(` call site in `raw` (outside comments/
+    docstrings) lacks an explicit `Loader=` keyword inside its argument
+    list. FP-DESERIALIZE-YAML-001's hazard (CVE-2017-18342) is the
+    loader-LESS `yaml.load()` default; a call passing `Loader=SafeLoader`/
+    `CSafeLoader` is the fingerprint's own prescribed remediation, so a
+    plain substring needle firing on it is a false positive (first hit:
+    frob's own `tickets/_store.py` after T-1206 switched safe_load ->
+    yaml.load(..., Loader=_yaml_loader()) for the C loader). Scans each
+    occurrence's argument text up to the balanced close-paren (bounded
+    window) for a `Loader` keyword; an unterminated window keeps whatever
+    argument text fit in it, so a pathological call still fails toward
+    loader-less (fail-closed)."""
+    needle = b"yaml.load("
+    idx = 0
+    while True:
+        idx = raw.find(needle, idx)
+        if idx == -1:
+            return False
+        end = idx + len(needle)
+        if _fully_in_any_span(idx, end, comment_spans):
+            idx = end
+            continue
+        depth = 1
+        pos = end
+        window_end = min(len(raw), end + 2000)
+        arg_end = window_end
+        while pos < window_end:
+            ch = raw[pos : pos + 1]
+            if ch == b"(":
+                depth += 1
+            elif ch == b")":
+                depth -= 1
+                if depth == 0:
+                    arg_end = pos
+                    break
+            pos += 1
+        args = raw[end:arg_end]
+        if b"Loader" not in args:
+            return True
+        idx = end
+
+
+#: fingerprint id -> extra confirmation callable(raw, comment_spans) -> bool,
+#: applied ON TOP of the plain substring needle match, same shape as
+#: `_SPECIAL_CHECKS` for capability needles (T-0151/T-0209). A fingerprint
+#: listed here only counts as matched when its callable ALSO returns True --
+#: for needles whose hazard is a specific CALL SHAPE the substring alone
+#: cannot discriminate (T-1329: `yaml.load(` with an explicit `Loader=` is
+#: the remediation, not the hazard).
+# frob:ticket T-1329
+_FINGERPRINT_REFINEMENTS: dict[str, Callable[[bytes, tuple[ByteSpan, ...]], bool]] = {
+    "FP-DESERIALIZE-YAML-001": _yaml_load_call_lacks_explicit_loader,
+}
+
+
+# frob:ticket T-1329
+def _fingerprint_refinement_confirms(
+    fingerprint_id: str, raw: bytes, comment_spans: tuple[ByteSpan, ...]
+) -> bool:
+    """True unless `fingerprint_id` has a `_FINGERPRINT_REFINEMENTS` entry
+    that rejects the match -- the default (no refinement registered) keeps
+    the plain needle semantics unchanged for every other fingerprint."""
+    refinement = _FINGERPRINT_REFINEMENTS.get(fingerprint_id)
+    if refinement is None:
+        return True
+    return refinement(raw, comment_spans)
+
+
 # frob:ticket T-0153
 # frob:tests \
 # tests/test_vet.py::TestFingerprintBindingResolution.test_python_aliased_pickle_loads_\
@@ -5368,7 +5440,11 @@ def _scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
     by_id: dict[str, CveFingerprint] = {}
     for entry in (*lexical, *binding):
         by_id[entry.id] = entry
-    matched = tuple(by_id.values())
+    matched = tuple(
+        entry
+        for entry in by_id.values()
+        if _fingerprint_refinement_confirms(entry.id, raw, comment_spans)
+    )
     if matched:
         _log.info(
             "vet: %s: cve fingerprints matched: %s",
