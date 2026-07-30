@@ -11717,7 +11717,7 @@ T-1206/T-1216 review 2026-07-29: both non-blocking APPROVE findings. Reviewer ve
 ```yaml
 id: T-1320
 title: Re-baseline TEST005 for src/frob/app before continuing T-1276
-state: in-progress
+state: done
 kind: docs
 origin: agent
 created: '2026-07-29'
