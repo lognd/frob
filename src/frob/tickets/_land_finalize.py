@@ -26,10 +26,9 @@ from typani.result import Err, Ok, Result
 
 from frob.gitio import current_branch, run_argv
 from frob.logging import get_logger
-from frob.tickets._land_merge import (
+from frob.tickets._land_git_ops import (
     _archived_ids,
     _auto_resolve_out_of_scope_conflicts,
-    _commit_message,
     _describe_git_failure,
     _land_internal_git_env,
     _porcelain_dirty,
@@ -41,6 +40,7 @@ from frob.tickets._land_merge import (
     _true_merge_base,
     _verified_reset_root,
 )
+from frob.tickets._land_merge import _commit_message
 from frob.tickets._models import (
     LandError,
     LandReport,
@@ -684,7 +684,7 @@ def _commit_finalize_writes(worktree: Path, final_id: str) -> Result[None, LandE
 # frob:ticket T-0907
 # frob:waive DUP002 reason="T-1186 split-induced false positive: this is the \
 # pre-existing, deliberate mirror-image counterpart to \
-# frob.tickets._land_merge._check_only_tickets_conflicted -- one checks conflicts \
+# frob.tickets._land_git_ops._check_only_tickets_conflicted -- one checks conflicts \
 # after squash-merging main INTO root (root=ours), the other after merging main INTO \
 # the worktree (worktree=theirs); the two already coexisted, unwaived, side by side in \
 # frob.tickets._land before T-1186's split moved them into separate modules, which is \

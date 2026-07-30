@@ -33,8 +33,8 @@ from typani.result import Err, Ok, Result
 
 import frob.tickets._land as _land_mod
 import frob.tickets._land_finalize as _land_finalize_mod
+import frob.tickets._land_git_ops as _land_git_ops_mod
 import frob.tickets._land_ledger_merge as _land_ledger_merge_mod
-import frob.tickets._land_merge as _land_merge_mod
 import frob.tickets._land_merge_zones as _land_merge_zones_mod
 from frob.gates import PreworkSweep, load_prework, record_prework, scope_digest
 from frob.gitio import GitError, ProcResult, run_argv
@@ -49,7 +49,7 @@ from frob.tickets import (
     transition,
 )
 from frob.tickets._land import land, splice_ledger
-from frob.tickets._land_merge import _splice_and_stage_archive
+from frob.tickets._land_git_ops import _splice_and_stage_archive
 from frob.tickets._models import (
     AcceptanceCriterion,
     DoneReportClaims,
@@ -106,7 +106,7 @@ def _failing_run_argv(
         return run_argv(argv, **kwargs)
 
     monkeypatch.setattr(_land_mod, "run_argv", _fake)
-    monkeypatch.setattr(_land_merge_mod, "run_argv", _fake)
+    monkeypatch.setattr(_land_git_ops_mod, "run_argv", _fake)
     monkeypatch.setattr(_land_finalize_mod, "run_argv", _fake)
 
 
@@ -322,7 +322,7 @@ class TestSpliceOnlyTicket:
         assert transition(tmp_path, tid_b, TicketState.PLANNED).is_ok
         main_text = ledger_path(tmp_path).read_text()
 
-        spliced = _land_merge_mod._splice_only_ticket(main_text, worktree_text, tid_b)
+        spliced = _land_git_ops_mod._splice_only_ticket(main_text, worktree_text, tid_b)
         assert spliced.is_ok
         from frob.tickets._store import _parse_ledger
 
@@ -345,7 +345,7 @@ class TestSpliceOnlyTicket:
         assert transition(tmp_path, tid, TicketState.PLANNED).is_ok
         worktree_text = ledger_path(tmp_path).read_text()
 
-        spliced = _land_merge_mod._splice_only_ticket(main_text, worktree_text, tid)
+        spliced = _land_git_ops_mod._splice_only_ticket(main_text, worktree_text, tid)
         assert spliced.is_ok
         assert "state: planned" in spliced.danger_ok
 
@@ -376,7 +376,7 @@ class TestSpliceOnlyTicket:
             return "# Tickets\n\nCentral ledger managed by `frob ticket`.\n"
 
         monkeypatch.setattr(_land_ledger_merge_mod, "_render_ledger", _dropping_render)
-        spliced = _land_merge_mod._splice_only_ticket(main_text, worktree_text, tid)
+        spliced = _land_git_ops_mod._splice_only_ticket(main_text, worktree_text, tid)
         assert spliced.is_err
         assert spliced.danger_err.name == "LedgerIntegrityViolation"
 
@@ -459,7 +459,7 @@ class TestSiblingDoneReportPreserved:
 
         main_text = _render_ledger(merged)
 
-        spliced = _land_merge_mod._splice_only_ticket(
+        spliced = _land_git_ops_mod._splice_only_ticket(
             main_text, worktree_text, tid_landed
         )
         assert spliced.is_ok
@@ -494,7 +494,7 @@ class TestSiblingDoneReportPreserved:
         assert transition(tmp_path, tid_sibling, TicketState.QUEUED).is_ok
         main_text = ledger_path(tmp_path).read_text()
 
-        spliced = _land_merge_mod._splice_only_ticket(
+        spliced = _land_git_ops_mod._splice_only_ticket(
             main_text, worktree_text, tid_landed
         )
         assert spliced.is_ok
@@ -1707,7 +1707,7 @@ class TestArchiveSpliceDiscipline:
     def test_splice_and_stage_archive_merges_by_id_never_overwrites(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land_merge.py::_splice_and_stage_archive \
+        # frob:tests src/frob/tickets/_land_git_ops.py::_splice_and_stage_archive \
         # kind="unit"
         # `authoritative_text` carries one id, `other_text` carries a
         # DISJOINT second id -- a wholesale overwrite (the pre-T-0959 bug)
@@ -1741,7 +1741,7 @@ class TestArchiveSpliceDiscipline:
     def test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/tickets/_land_merge.py::_splice_and_stage_archive \
+        # frob:tests src/frob/tickets/_land_git_ops.py::_splice_and_stage_archive \
         # kind="unit"
         # The T-0959 id-integrity backstop: if the merge somehow produced a
         # result missing an id `authoritative_text` carried, refuse loudly
@@ -1763,7 +1763,7 @@ class TestArchiveSpliceDiscipline:
         ) -> dict[str, Any]:
             return {}
 
-        monkeypatch.setattr(_land_merge_mod, "_merge_ledger_tickets", _drop_everything)
+        monkeypatch.setattr(_land_git_ops_mod, "_merge_ledger_tickets", _drop_everything)
 
         result = _splice_and_stage_archive(checkout, authoritative_text, other_text)
         assert result.is_err
@@ -1772,7 +1772,7 @@ class TestArchiveSpliceDiscipline:
     def test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land_merge.py::_splice_and_stage_archive \
+        # frob:tests src/frob/tickets/_land_git_ops.py::_splice_and_stage_archive \
         # kind="unit"
         # Two tickets that will be archived on MAIN, AFTER the worktree
         # branches off -- the exact T-0703 incident shape: the worktree's
@@ -1986,7 +1986,7 @@ class TestWipAddIgnoredPathFallback:
     end state without ever naming an ignored path in a pathspec."""
 
     def test_gitignored_frob_falls_back_and_still_lands(self, repo: Path) -> None:
-        # frob:tests src/frob/tickets/_land_merge.py::_wip_add_excluding_frob \
+        # frob:tests src/frob/tickets/_land_git_ops.py::_wip_add_excluding_frob \
         # kind="unit"
         wt = repo.parent / "wt"
         _run(
@@ -2021,14 +2021,14 @@ class TestWipAddIgnoredPathFallback:
         assert landed_content == "# uncommitted change to snapshot\n"
 
     def test_is_ignored_path_refusal_matches_gits_fixed_message(self) -> None:
-        # frob:tests src/frob/tickets/_land_merge.py::_is_ignored_path_refusal \
+        # frob:tests src/frob/tickets/_land_git_ops.py::_is_ignored_path_refusal \
         # kind="unit"
         stderr = (
             "The following paths are ignored by one of your .gitignore files:\n"
             ".frob\nhint: Use -f if you really want to add them.\n"
         )
-        assert _land_merge_mod._is_ignored_path_refusal(stderr) is True
-        assert _land_merge_mod._is_ignored_path_refusal("some other git error") is False
+        assert _land_git_ops_mod._is_ignored_path_refusal(stderr) is True
+        assert _land_git_ops_mod._is_ignored_path_refusal("some other git error") is False
 
 
 class TestWipCommitNormalizationOnlyDirty:
@@ -2041,7 +2041,7 @@ class TestWipCommitNormalizationOnlyDirty:
     def test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land_merge.py::_do_wip_commit kind="unit"
+        # frob:tests src/frob/tickets/_land_git_ops.py::_do_wip_commit kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-wip-crlf", str(wt)], repo)
         created = new_ticket(wt, _spec("Wip crlf", scope=("src/wip_crlf.py",)))
@@ -3094,7 +3094,7 @@ class TestLandCompleteness:
     ) -> None:
         # frob:tests src/frob/tickets/_land_finalize.py::_worktree_full_changeset \
         # kind="unit"
-        # frob:tests src/frob/tickets/_land_merge.py::_true_merge_base kind="unit"
+        # frob:tests src/frob/tickets/_land_git_ops.py::_true_merge_base kind="unit"
         """T-0761 regression: the real T-0640 incident. `land()` was invoked
         with `--worktree` pointing at the SAME checkout/branch `root` had
         checked out -- no distinct feature branch was ever created. A NEW
@@ -3585,7 +3585,7 @@ class TestUvLockSync:
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
         # frob:tests tests/test_ticket_land.py::TestUvLockSync.test_worktree_side_lock_flap_auto_restored_before_wip_commit  # noqa: E501
-        # frob:tests src/frob/tickets/_land_merge.py::_wip_commit kind="unit"
+        # frob:tests src/frob/tickets/_land_git_ops.py::_wip_commit kind="unit"
         """T-1003 (churn item 4): the T-0793 frob-version-only auto-restore
         applies to the WORKTREE's own `uv.lock` too, before the wip-commit
         dirty check -- not just `root`'s, as `test_dirty_lock_version_
@@ -4935,9 +4935,10 @@ class TestLandInternalEnvThroughHook:
         assert result.danger_ok.commit_sha is not None
 
     def test_land_internal_git_env_restores_prior_value(self) -> None:
-        # frob:tests src/frob/tickets/_land_merge.py::_land_internal_git_env kind="unit"
+        # frob:tests src/frob/tickets/_land_git_ops.py::_land_internal_git_env \
+        # kind="unit"
         os.environ.pop("FROB_LAND_INTERNAL", None)
-        with _land_merge_mod._land_internal_git_env():
+        with _land_git_ops_mod._land_internal_git_env():
             assert (
                 os.environ.get("FROB_LAND_INTERNAL") == "1"
             )  # frob:waive SEC110 reason="synthetic test-only var this test itself sets"
@@ -4947,7 +4948,7 @@ class TestLandInternalEnvThroughHook:
             "prior-value"  # frob:waive SEC110 reason="synthetic test-only var this test itself sets"
         )
         try:
-            with _land_merge_mod._land_internal_git_env():
+            with _land_git_ops_mod._land_internal_git_env():
                 assert (
                     os.environ.get("FROB_LAND_INTERNAL") == "1"
                 )  # frob:waive SEC110 reason="synthetic test-only var this test itself sets"
@@ -4963,7 +4964,8 @@ class TestGitFailureMessageCarriesStderr:
     stderr in the log line, not collapse to a bare `GitFailed`."""
 
     def test_describe_git_failure_includes_argv_and_stderr(self) -> None:
-        # frob:tests src/frob/tickets/_land_merge.py::_describe_git_failure kind="unit"
+        # frob:tests src/frob/tickets/_land_git_ops.py::_describe_git_failure \
+        # kind="unit"
         argv = ["git", "-C", "/tmp/repo", "commit", "-m", "x"]
         failed = Ok(
             ProcResult(
@@ -4973,15 +4975,16 @@ class TestGitFailureMessageCarriesStderr:
                 stderr="frob: refusing commit -- CHANGELOG.md is land-owned (T-0731)",
             )
         )
-        message = _land_merge_mod._describe_git_failure(argv, failed)
+        message = _land_git_ops_mod._describe_git_failure(argv, failed)
         assert "git -C /tmp/repo commit -m x" in message
         assert "exit 1" in message
         assert "CHANGELOG.md is land-owned" in message
 
     def test_describe_git_failure_includes_spawn_error(self) -> None:
-        # frob:tests src/frob/tickets/_land_merge.py::_describe_git_failure kind="unit"
+        # frob:tests src/frob/tickets/_land_git_ops.py::_describe_git_failure \
+        # kind="unit"
         argv = ["git", "-C", "/tmp/repo", "commit", "-m", "x"]
-        message = _land_merge_mod._describe_git_failure(argv, Err(GitError.GitFailed))
+        message = _land_git_ops_mod._describe_git_failure(argv, Err(GitError.GitFailed))
         assert "git -C /tmp/repo commit -m x" in message
         assert "spawn error" in message
 
@@ -4991,7 +4994,7 @@ class TestGitFailureMessageCarriesStderr:
         monkeypatch: pytest.MonkeyPatch,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        # frob:tests src/frob/tickets/_land_merge.py::_do_wip_commit kind="unit"
+        # frob:tests src/frob/tickets/_land_git_ops.py::_do_wip_commit kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-l8", str(wt)], repo)
         created = new_ticket(wt, _spec("Whatever", scope=("src/l8.py",)))
@@ -5628,7 +5631,7 @@ class TestVerifiedResetRoot:
         (repo / "scratch.txt").write_text("staged but never committed\n")
         _run(["git", "add", "scratch.txt"], repo)
 
-        result = _land_merge_mod._verified_reset_root(repo, pre, "T-TEST")
+        result = _land_git_ops_mod._verified_reset_root(repo, pre, "T-TEST")
         assert result.is_ok, result.err
         assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == pre
         assert _status_ignoring_frob(repo) == ""
@@ -5643,7 +5646,7 @@ class TestVerifiedResetRoot:
         drifted_tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         assert drifted_tip != pre
 
-        result = _land_merge_mod._verified_reset_root(repo, pre, "T-TEST")
+        result = _land_git_ops_mod._verified_reset_root(repo, pre, "T-TEST")
         assert result.is_err
         assert result.danger_err == LandError.GitFailed
         # NOT reset -- the drifted commit must still be there, untouched.
@@ -6191,7 +6194,7 @@ class TestSyncGateRulesCallback:
 
     def test_sync_gate_rules_none_is_noop(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_none_is_noop  # noqa: E501
-        pre_land_tip = _land_merge_mod._rev_parse(repo, "HEAD").danger_ok
+        pre_land_tip = _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok
         result = _land_finalize_mod._apply_gate_rule_sync(
             repo, "T-0001", None, pre_land_tip
         )
@@ -6200,7 +6203,7 @@ class TestSyncGateRulesCallback:
 
     def test_sync_gate_rules_applies_and_stages(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_applies_and_stages  # noqa: E501
-        pre_land_tip = _land_merge_mod._rev_parse(repo, "HEAD").danger_ok
+        pre_land_tip = _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok
 
         def _fake_sync(_root: Path, _tip: str) -> Result[tuple[str, ...] | None, Any]:
             return Ok(("SOME001",))
@@ -6211,11 +6214,11 @@ class TestSyncGateRulesCallback:
         assert result.is_ok
         assert result.danger_ok == ("SOME001",)
         # no unwind happened -- HEAD is untouched by a no-op callback.
-        assert _land_merge_mod._rev_parse(repo, "HEAD").danger_ok == pre_land_tip
+        assert _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok == pre_land_tip
 
     def test_sync_gate_rules_failure_unwinds(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_failure_unwinds  # noqa: E501
-        pre_land_tip = _land_merge_mod._rev_parse(repo, "HEAD").danger_ok
+        pre_land_tip = _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok
 
         def _fake_sync(_root: Path, _tip: str) -> Result[tuple[str, ...] | None, Any]:
             return Err(_land_mod.LandError.GitFailed)
@@ -6226,7 +6229,7 @@ class TestSyncGateRulesCallback:
         assert result.is_err
         assert result.danger_err == _land_mod.LandError.GitFailed
         # the (no-op) unwind reset still leaves HEAD at pre_land_tip.
-        assert _land_merge_mod._rev_parse(repo, "HEAD").danger_ok == pre_land_tip
+        assert _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok == pre_land_tip
 
 
 # frob:ticket T-0757

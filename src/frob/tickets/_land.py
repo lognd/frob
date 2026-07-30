@@ -44,7 +44,7 @@ from frob.tickets._land_finalize import (
     _land_squash_apply,
     _v2_effective_scope,
 )
-from frob.tickets._land_merge import (
+from frob.tickets._land_git_ops import (
     _abort_merge,
     _auto_resolve_out_of_scope_conflicts,
     _committed_out_of_scope_waive_deletions,
@@ -55,9 +55,9 @@ from frob.tickets._land_merge import (
     _true_merge_base,
     _uncommitted_out_of_scope_waive_deletions,
     _unowned_deletions,
-    _validate_closeable,
     _wip_commit,
 )
+from frob.tickets._land_merge import _validate_closeable
 
 # Re-exported for `frob.tickets.__init__`'s `from frob.tickets._land import
 # land, splice_ledger` -- T-1186 moved the implementation to
