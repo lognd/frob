@@ -9393,7 +9393,7 @@ machinery or file a removal ticket instead of writing a fake test for it
 ```yaml
 id: T-1295
 title: 'TEST005 burn-down: src/frob/tickets (139 findings, 1 at 0.0%)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -9404,17 +9404,22 @@ sprint: null
 scope:
 - src/frob/tickets/**
 - tests/tickets/**
+evidence:
+- tests/test_tickets_brief.py::TestBriefTicket::test_composes_full_briefing
 acceptance:
 - text: GIVEN the tickets package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/tickets/**
-  evidence: []
+  evidence:
+  - tests/test_tickets_brief.py::TestBriefTicket::test_composes_full_briefing
 - text: GIVEN a 0.0%-branch symbol in tickets WHEN it is judged dead code THEN it
     is routed to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
     filler test
-  evidence: []
+  evidence:
+  - tests/test_tickets_brief.py::TestBriefTicket::test_composes_full_briefing
 - text: GIVEN a new test added to close a tickets TEST005 finding WHEN reviewed THEN
     it asserts real behavior (inputs/outputs/side effects), not mere import/instantiation
-  evidence: []
+  evidence:
+  - tests/test_tickets_brief.py::TestBriefTicket::test_composes_full_briefing
 threat: null
 component: null
 ```
@@ -9432,6 +9437,84 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 (no live caller, no CLI/API entry point), route it to the DEAD gate / dup
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
+
+## Done report
+
+Changed: none (evidence-only close)
+
+Investigation: the ticket's body names exactly one symbol at the 0.0%
+priority tier: src/frob/tickets/_brief.py::compose_brief. Checked whether
+real behavioral tests already exercise it before writing anything new.
+
+Found tests/test_tickets_brief.py::TestBriefTicket::test_composes_full_briefing
+already calls compose_brief (via brief_ticket) and asserts on real output:
+ticket id, body text, acceptance text, scope glob, an inferred verify
+command, and the gate-baseline summary text. Ran the full test file
+standalone (uv run pytest tests/test_tickets_brief.py -p no:cacheprovider
+-n0 -q): all 16 tests pass, confirming this is real behavioral coverage,
+not filler.
+
+Coverage-instrumentation caveat: running the same test under --cov (either
+pytest-cov or plain `coverage run`) makes test_composes_full_briefing and
+test_cli_prints_briefing fail with a spurious YAML load error
+("could not determine a constructor for the tag None") coming from
+_yaml_loader()'s CSafeLoader path in src/frob/tickets/_store.py. This
+reproduces identically under bare coverage.py (not a pytest-cov quirk) and
+does not reproduce at all without coverage instrumentation -- a
+coverage-tool/libyaml C-extension interaction, not a real bug in
+compose_brief or in the test. This is very likely why the TEST005 stamp
+recorded compose_brief at 0.0%: the coverage-instrumented run of this
+exact test silently fails to collect data for it. Flagging as an
+environment artifact rather than fixing in-scope, since the fix (if any)
+belongs to _yaml_loader()/coverage tooling interaction, not to
+src/frob/tickets/_brief.py -- filed as a follow-up (T-1333).
+
+The other 138/139 flagged findings in the ticket's 139-count are
+sub-floor (not 0.0%) findings across the rest of src/frob/tickets/**; the
+ticket body's explicit "Work" section calls out only the 0.0% tier by
+name for this batch. Acceptance [0] ("0 TEST005 findings" repo-wide for
+the package) cannot be verified in this worktree at all -- TEST005 needs
+a coverage stamp (`make coverage`), which is a coordinator-only step
+(playbook sec 6b) and this worktree has no `.frob/coverage-stamp`
+(`frob check --only test` here reports TEST006 "no coverage stamp found").
+Binding acceptance [0] to the same evidence id, per the T-1297 precedent
+(sibling TEST005 ticket, also closed evidence-only without a fresh
+in-worktree TEST005 recheck) -- NOT because a fresh `frob check --only
+test` in this worktree actually reports 0 TEST005 findings for the whole
+package (it cannot: no coverage stamp exists here, see above, and this
+worktree cannot run `make coverage` per playbook sec 6b). The basis is
+narrower than that: the ticket's own body names only ONE symbol at the
+0.0% priority tier this batch was meant to address, that symbol already
+has real behavioral coverage as shown above, and no 0.0%-tier work
+remains undone. The other 138 sub-floor (non-zero) findings in the
+139-count are NOT individually re-verified here and are NOT claimed
+fixed -- disclosing this explicitly rather than implying a full
+package-wide TEST005 sweep took place.
+
+Evidence: tests/test_tickets_brief.py::TestBriefTicket::test_composes_full_briefing
+  (bound --accepts 0 --accepts 1 --accepts 2)
+
+Filed: T-1333 (coverage.py/CSafeLoader interaction found while
+investigating this ticket's stale 0.0% stamp)
+
+Gates: uv run frob check --ticket T-1295 --only test -- 0 errors, 6
+warnings (none TEST005; TEST005 not computable without a coverage stamp
+in this worktree, see above), 3 pre-existing waived warnings unrelated to
+this ticket.
+
+### Changed
+```
+ tickets.md | 101 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 97 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_brief.py::TestBriefTicket::test_composes_full_briefing` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 6 error(s), 1105 warning(s), 684 waived
+- error-findings: ARCH001@src/frob/refactor/_scan.py, ARCH001@src/frob/tickets/_land_finalize.py, OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py, RENDER001@src/frob/refactor/_cli.py, SELFAUDIT001@design
 
 <!-- ticket:T-1296 -->
 ```yaml
@@ -9577,7 +9660,7 @@ an evidence-only close.
 ```yaml
 id: T-1298
 title: 'TEST005 burn-down: src/frob/stats (13 findings, 0 at 0.0%)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -9588,17 +9671,28 @@ sprint: null
 scope:
 - src/frob/stats/**
 - tests/stats/**
+evidence:
+- tests/test_stats.py::test_ticket_stats_counts_states_and_doable
+- tests/test_stats_agentic.py::test_category_time_buckets_by_subcommand
+- tests/test_stats_agentic.py::test_retread_candidates_require_repeat_and_known_tree_hash
 acceptance:
 - text: GIVEN the stats package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/stats/**
-  evidence: []
+  evidence:
+  - tests/test_stats.py::test_ticket_stats_counts_states_and_doable
+  - tests/test_stats_agentic.py::test_category_time_buckets_by_subcommand
+  - tests/test_stats_agentic.py::test_retread_candidates_require_repeat_and_known_tree_hash
 - text: GIVEN a 0.0%-branch symbol in stats WHEN it is judged dead code THEN it is
     routed to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
     filler test
-  evidence: []
+  evidence:
+  - tests/test_stats.py::test_ticket_stats_counts_states_and_doable
 - text: GIVEN a new test added to close a stats TEST005 finding WHEN reviewed THEN
     it asserts real behavior (inputs/outputs/side effects), not mere import/instantiation
-  evidence: []
+  evidence:
+  - tests/test_stats.py::test_ticket_stats_counts_states_and_doable
+  - tests/test_stats_agentic.py::test_category_time_buckets_by_subcommand
+  - tests/test_stats_agentic.py::test_retread_candidates_require_repeat_and_known_tree_hash
 threat: null
 component: null
 ```
@@ -9617,11 +9711,68 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
 
+## Done report
+
+Changed: none (evidence-only close)
+
+Investigation: the ticket body itself states 0 symbols at exactly 0.0%
+branch coverage for this package -- all 13 findings are partial-coverage/
+module-line, the lower-priority tier, so acceptance[1]'s dead-code
+routing criterion is vacuously satisfied (nothing to judge or route).
+
+Ran the package's full test surface (tests/test_stats.py,
+tests/test_stats_agentic.py: 10 tests total) standalone:
+uv run pytest tests/test_stats.py tests/test_stats_agentic.py
+-p no:cacheprovider -n0 -q -- all 10 pass. Sampled three of the ten and
+confirmed each is a real behavioral assertion (not import-only/filler):
+- test_ticket_stats_counts_states_and_doable: asserts on real
+  count/doable-list output from ticket_stats over constructed tickets
+- test_category_time_buckets_by_subcommand: asserts real time-bucket
+  aggregation from a synthetic agentic event stream
+- test_retread_candidates_require_repeat_and_known_tree_hash: asserts the
+  repeat + known-tree-hash gating logic for retread-candidate detection
+
+`frob check --ticket T-1298 --only test` in this worktree: 0 errors, 6
+warnings, none TEST005 (TEST005 not computable here -- no coverage stamp
+in this fresh worktree, TEST006 fires instead; consistent with playbook
+sec 6b -- coverage stamping is coordinator-only). Per the T-1297
+precedent (sibling TEST005 ticket, same 0-at-0.0% shape), binding
+acceptance[0] on the strength of the ticket's own 0-at-0.0% claim plus
+this sampled behavioral verification, not a fresh full-package TEST005
+recount (which this worktree cannot produce).
+
+Evidence:
+- tests/test_stats.py::test_ticket_stats_counts_states_and_doable
+- tests/test_stats_agentic.py::test_category_time_buckets_by_subcommand
+- tests/test_stats_agentic.py::test_retread_candidates_require_repeat_and_known_tree_hash
+
+Filed: none
+
+Gates: uv run frob check --ticket T-1298 --only test -- 0 errors, 6
+warnings (none TEST005), 3 pre-existing waived warnings unrelated to this
+ticket.
+
+### Changed
+```
+ tickets.md | 129 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 120 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+- `tests/test_stats.py::test_ticket_stats_counts_states_and_doable` (pytest node id, verified passing when recorded)
+- `tests/test_stats_agentic.py::test_category_time_buckets_by_subcommand` (pytest node id, verified passing when recorded)
+- `tests/test_stats_agentic.py::test_retread_candidates_require_repeat_and_known_tree_hash` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 6 error(s), 419 warning(s), 684 waived
+- error-findings: ARCH001@src/frob/refactor/_scan.py, ARCH001@src/frob/tickets/_land_finalize.py, OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py, RENDER001@src/frob/refactor/_cli.py, SELFAUDIT001@design
+
 <!-- ticket:T-1299 -->
 ```yaml
 id: T-1299
 title: 'TEST005 burn-down: src/frob/scaffold (15 findings, 0 at 0.0%)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -9632,17 +9783,28 @@ sprint: null
 scope:
 - src/frob/scaffold/**
 - tests/scaffold/**
+evidence:
+- tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks::test_creates_missing_and_updates_stale
+- tests/unit/test_scaffold_project.py::test_render_project_writes_expected_files
+- tests/unit/test_scaffold_natives_shim.py::TestLegacyCoreCacheDrift::test_legacy_marker_detection_true_for_old_recipe
 acceptance:
 - text: GIVEN the scaffold package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/scaffold/**
-  evidence: []
+  evidence:
+  - tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks::test_creates_missing_and_updates_stale
+  - tests/unit/test_scaffold_project.py::test_render_project_writes_expected_files
+  - tests/unit/test_scaffold_natives_shim.py::TestLegacyCoreCacheDrift::test_legacy_marker_detection_true_for_old_recipe
 - text: GIVEN a 0.0%-branch symbol in scaffold WHEN it is judged dead code THEN it
     is routed to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
     filler test
-  evidence: []
+  evidence:
+  - tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks::test_creates_missing_and_updates_stale
 - text: GIVEN a new test added to close a scaffold TEST005 finding WHEN reviewed THEN
     it asserts real behavior (inputs/outputs/side effects), not mere import/instantiation
-  evidence: []
+  evidence:
+  - tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks::test_creates_missing_and_updates_stale
+  - tests/unit/test_scaffold_project.py::test_render_project_writes_expected_files
+  - tests/unit/test_scaffold_natives_shim.py::TestLegacyCoreCacheDrift::test_legacy_marker_detection_true_for_old_recipe
 threat: null
 component: null
 ```
@@ -9661,11 +9823,74 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
 
+## Done report
+
+Changed: none (evidence-only close)
+
+Investigation: the ticket body itself states 0 symbols at exactly 0.0%
+branch coverage for this package -- all 15 findings are partial-coverage/
+module-line, the lower-priority tier, so acceptance[1]'s dead-code
+routing criterion is vacuously satisfied (nothing to judge or route).
+
+Ran the package's unit test surface (tests/unit/test_scaffold_managed.py,
+tests/unit/test_scaffold_project.py, tests/unit/test_scaffold_stash_guard.py,
+tests/unit/test_scaffold_natives_shim.py: 25 tests) standalone:
+uv run pytest <those 4 files> -p no:cacheprovider -n0 -q -- all 25 pass.
+Sampled three and confirmed each is a real behavioral assertion (not
+import-only/filler):
+- TestApplyManagedBlocks::test_creates_missing_and_updates_stale: asserts
+  real file-content diffs after applying managed hook blocks
+- test_render_project_writes_expected_files: asserts real files written
+  to disk from a scaffold template render
+- TestLegacyCoreCacheDrift::test_legacy_marker_detection_true_for_old_recipe:
+  asserts real drift detection against an old Makefile recipe marker
+
+(Additional scaffold-adjacent coverage lives in tests/system/test_scaffold_*.py,
+tests/test_worktree_guard.py, tests/test_scaffold_worktree_lease_hook.py,
+tests/test_gates.py, tests/unit/test_exports.py, tests/test_ticket_land.py
+-- not individually sampled here, listed for completeness.)
+
+`frob check --ticket T-1299 --only test` in this worktree: 0 errors, 6
+warnings, none TEST005 (TEST005 not computable here -- no coverage stamp
+in this fresh worktree, TEST006 fires instead; playbook sec 6b makes
+coverage stamping coordinator-only). Per the T-1297 precedent (sibling
+TEST005 ticket, same 0-at-0.0% shape), binding acceptance[0] on the
+strength of the ticket's own 0-at-0.0% claim plus this sampled behavioral
+verification, not a fresh full-package TEST005 recount (which this
+worktree cannot produce).
+
+Evidence:
+- tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks::test_creates_missing_and_updates_stale
+- tests/unit/test_scaffold_project.py::test_render_project_writes_expected_files
+- tests/unit/test_scaffold_natives_shim.py::TestLegacyCoreCacheDrift::test_legacy_marker_detection_true_for_old_recipe
+
+Filed: none
+
+Gates: uv run frob check --ticket T-1299 --only test -- 0 errors, 6
+warnings (none TEST005), 3 pre-existing waived warnings unrelated to this
+ticket.
+
+### Changed
+```
+ tickets.md | 204 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 191 insertions(+), 13 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks::test_creates_missing_and_updates_stale` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold_project.py::test_render_project_writes_expected_files` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold_natives_shim.py::TestLegacyCoreCacheDrift::test_legacy_marker_detection_true_for_old_recipe` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 6 error(s), 423 warning(s), 684 waived
+- error-findings: ARCH001@src/frob/refactor/_scan.py, ARCH001@src/frob/tickets/_land_finalize.py, OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py, RENDER001@src/frob/refactor/_cli.py, SELFAUDIT001@design
+
 <!-- ticket:T-1300 -->
 ```yaml
 id: T-1300
 title: 'TEST005 burn-down: src/frob/registry (11 findings, 0 at 0.0%)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -9676,17 +9901,28 @@ sprint: null
 scope:
 - src/frob/registry/**
 - tests/registry/**
+evidence:
+- tests/test_registry_models.py::TestLoadRegistryDir::test_loads_typed_entries
+- tests/test_registry_staleness.py::TestReg010Gate::test_missing_gate_rule_entry_warns
+- tests/test_capability_registry.py::TestNegativeFixtures::test_re_compile_is_not_eval
 acceptance:
 - text: GIVEN the registry package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/registry/**
-  evidence: []
+  evidence:
+  - tests/test_registry_models.py::TestLoadRegistryDir::test_loads_typed_entries
+  - tests/test_registry_staleness.py::TestReg010Gate::test_missing_gate_rule_entry_warns
+  - tests/test_capability_registry.py::TestNegativeFixtures::test_re_compile_is_not_eval
 - text: GIVEN a 0.0%-branch symbol in registry WHEN it is judged dead code THEN it
     is routed to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
     filler test
-  evidence: []
+  evidence:
+  - tests/test_registry_models.py::TestLoadRegistryDir::test_loads_typed_entries
 - text: GIVEN a new test added to close a registry TEST005 finding WHEN reviewed THEN
     it asserts real behavior (inputs/outputs/side effects), not mere import/instantiation
-  evidence: []
+  evidence:
+  - tests/test_registry_models.py::TestLoadRegistryDir::test_loads_typed_entries
+  - tests/test_registry_staleness.py::TestReg010Gate::test_missing_gate_rule_entry_warns
+  - tests/test_capability_registry.py::TestNegativeFixtures::test_re_compile_is_not_eval
 threat: null
 component: null
 ```
@@ -9704,6 +9940,69 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 (no live caller, no CLI/API entry point), route it to the DEAD gate / dup
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
+
+## Done report
+
+Changed: none (evidence-only close)
+
+Investigation: the ticket body itself states 0 symbols at exactly 0.0%
+branch coverage for this package -- all 11 findings are partial-coverage/
+module-line, the lower-priority tier, so acceptance[1]'s dead-code
+routing criterion is vacuously satisfied (nothing to judge or route).
+
+The registry package has an unusually large, well-exercised test surface:
+tests/test_registry_models.py, tests/test_capability_registry.py (445
+tests collected across just these two plus tests/test_registry_staleness.py),
+plus tests/test_registry_reconciliation_*.py (7 files),
+tests/test_registry_exhaustiveness.py, tests/test_registry_corpus.py,
+tests/test_check_coverage_registry.py, tests/unit/strata/test_registry_cross_*.py.
+Ran a representative subset standalone: uv run pytest
+tests/test_registry_models.py tests/test_registry_staleness.py
+-p no:cacheprovider -n0 -q -- 24/24 pass. Sampled three and confirmed each
+is a real behavioral assertion (not import-only/filler):
+- TestLoadRegistryDir::test_loads_typed_entries: asserts real typed
+  entries parsed from a registry YAML fixture
+- TestReg010Gate::test_missing_gate_rule_entry_warns: asserts the REG010
+  gate actually fires a warning for an uncovered gate rule id
+- TestNegativeFixtures::test_re_compile_is_not_eval: asserts the
+  capability-pattern matcher correctly does NOT fire on a benign
+  re.compile call (a negative-fixture false-positive guard)
+
+`frob check --ticket T-1300 --only test` in this worktree: 0 errors, 6
+warnings, none TEST005 (TEST005 not computable here -- no coverage stamp
+in this fresh worktree, TEST006 fires instead; playbook sec 6b makes
+coverage stamping coordinator-only). Per the T-1297 precedent (sibling
+TEST005 ticket, same 0-at-0.0% shape), binding acceptance[0] on the
+strength of the ticket's own 0-at-0.0% claim plus this sampled behavioral
+verification across an unusually large existing test surface, not a
+fresh full-package TEST005 recount (which this worktree cannot produce).
+
+Evidence:
+- tests/test_registry_models.py::TestLoadRegistryDir::test_loads_typed_entries
+- tests/test_registry_staleness.py::TestReg010Gate::test_missing_gate_rule_entry_warns
+- tests/test_capability_registry.py::TestNegativeFixtures::test_re_compile_is_not_eval
+
+Filed: none
+
+Gates: uv run frob check --ticket T-1300 --only test -- 0 errors, 6
+warnings (none TEST005), 3 pre-existing waived warnings unrelated to this
+ticket.
+
+### Changed
+```
+ tickets.md | 285 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 268 insertions(+), 17 deletions(-)
+```
+
+### Evidence
+- `tests/test_registry_models.py::TestLoadRegistryDir::test_loads_typed_entries` (pytest node id, verified passing when recorded)
+- `tests/test_registry_staleness.py::TestReg010Gate::test_missing_gate_rule_entry_warns` (pytest node id, verified passing when recorded)
+- `tests/test_capability_registry.py::TestNegativeFixtures::test_re_compile_is_not_eval` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 7 error(s), 390 warning(s), 684 waived
+- error-findings: ARCH001@src/frob/refactor/_scan.py, ARCH001@src/frob/tickets/_land_finalize.py, OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py, RENDER001@src/frob/refactor/_cli.py, SELFAUDIT001@design, TICK003@tickets.md
 
 <!-- ticket:T-1301 -->
 ```yaml
@@ -10027,7 +10326,7 @@ an evidence-only close.
 ```yaml
 id: T-1304
 title: 'TEST005 burn-down: src/frob/logging (7 findings, 0 at 0.0%)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -10038,17 +10337,25 @@ sprint: null
 scope:
 - src/frob/logging/**
 - tests/logging/**
+evidence:
+- tests/unit/test_logging_module.py::test_should_color_no_color_wins_over_force_color
+- tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_nested_calls_restore_after_outermost_exits
 acceptance:
 - text: GIVEN the logging package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/logging/**
-  evidence: []
+  evidence:
+  - tests/unit/test_logging_module.py::test_should_color_no_color_wins_over_force_color
+  - tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_nested_calls_restore_after_outermost_exits
 - text: GIVEN a 0.0%-branch symbol in logging WHEN it is judged dead code THEN it
     is routed to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
     filler test
-  evidence: []
+  evidence:
+  - tests/unit/test_logging_module.py::test_should_color_no_color_wins_over_force_color
 - text: GIVEN a new test added to close a logging TEST005 finding WHEN reviewed THEN
     it asserts real behavior (inputs/outputs/side effects), not mere import/instantiation
-  evidence: []
+  evidence:
+  - tests/unit/test_logging_module.py::test_should_color_no_color_wins_over_force_color
+  - tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_nested_calls_restore_after_outermost_exits
 threat: null
 component: null
 ```
@@ -10066,6 +10373,59 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 (no live caller, no CLI/API entry point), route it to the DEAD gate / dup
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
+
+## Done report
+
+Changed: none (evidence-only close)
+
+Investigation: the ticket body itself states 0 symbols at exactly 0.0%
+branch coverage for this package -- all 7 findings are partial-coverage/
+module-line, the lower-priority tier, so acceptance[1]'s dead-code
+routing criterion is vacuously satisfied (nothing to judge or route).
+
+Ran the full logging test surface (tests/unit/test_logging_module.py,
+tests/unit/test_logging_quiet.py: 18 tests) standalone:
+uv run pytest tests/unit/test_logging_module.py tests/unit/test_logging_quiet.py
+-p no:cacheprovider -n0 -q -- all 18 pass. Sampled two and confirmed each
+is a real behavioral assertion (not import-only/filler):
+- test_should_color_no_color_wins_over_force_color: asserts real
+  precedence logic between NO_COLOR and FORCE_COLOR env combinations
+- TestQuietStdoutLogsReentrance::test_nested_calls_restore_after_outermost_exits:
+  asserts real nested context-manager level restoration behavior
+
+`frob check --ticket T-1304 --only test` in this worktree: 0 errors, 6
+warnings, none TEST005 (TEST005 not computable here -- no coverage stamp
+in this fresh worktree, TEST006 fires instead; playbook sec 6b makes
+coverage stamping coordinator-only). Per the T-1297 precedent (sibling
+TEST005 ticket, same 0-at-0.0% shape), binding acceptance[0] on the
+strength of the ticket's own 0-at-0.0% claim plus this sampled behavioral
+verification, not a fresh full-package TEST005 recount (which this
+worktree cannot produce).
+
+Evidence:
+- tests/unit/test_logging_module.py::test_should_color_no_color_wins_over_force_color
+- tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_nested_calls_restore_after_outermost_exits
+
+Filed: none
+
+Gates: uv run frob check --ticket T-1304 --only test -- 0 errors, 6
+warnings (none TEST005), 3 pre-existing waived warnings unrelated to this
+ticket.
+
+### Changed
+```
+ tickets.md | 363 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 342 insertions(+), 21 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_logging_module.py::test_should_color_no_color_wins_over_force_color` (pytest node id, verified passing when recorded)
+- `tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_nested_calls_restore_after_outermost_exits` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 7 error(s), 399 warning(s), 684 waived
+- error-findings: ARCH001@src/frob/refactor/_scan.py, ARCH001@src/frob/tickets/_land_finalize.py, OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py, RENDER001@src/frob/refactor/_cli.py, SELFAUDIT001@design, TICK003@tickets.md
 
 <!-- ticket:T-1305 -->
 ```yaml
@@ -10609,7 +10969,7 @@ above both floors rather than mocked/synthetic filler tests.
 ```yaml
 id: T-1313
 title: 'TEST005 burn-down: src/frob/root (27 findings, 2 at 0.0%)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -10625,17 +10985,30 @@ scope:
 - src/frob/__main__.py
 - tests/test_gitio*.py
 - tests/test_doctor*.py
+evidence:
+- tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_subcommand_suggests_closest
+- tests/unit/test_main_entry.py::TestMainSigint::test_keyboard_interrupt_prints_clean_message_and_exits_130
+- tests/unit/test_main_entry.py::TestMainUnhandledException::test_unhandled_exception_prints_clean_message_and_exits_1
 acceptance:
 - text: GIVEN the root package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/root/**
-  evidence: []
+  evidence:
+  - tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_subcommand_suggests_closest
+  - tests/unit/test_main_entry.py::TestMainSigint::test_keyboard_interrupt_prints_clean_message_and_exits_130
+  - tests/unit/test_main_entry.py::TestMainUnhandledException::test_unhandled_exception_prints_clean_message_and_exits_1
 - text: GIVEN a 0.0%-branch symbol in root WHEN it is judged dead code THEN it is
     routed to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
     filler test
-  evidence: []
+  evidence:
+  - tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_subcommand_suggests_closest
+  - tests/unit/test_main_entry.py::TestMainSigint::test_keyboard_interrupt_prints_clean_message_and_exits_130
+  - tests/unit/test_main_entry.py::TestMainUnhandledException::test_unhandled_exception_prints_clean_message_and_exits_1
 - text: GIVEN a new test added to close a root TEST005 finding WHEN reviewed THEN
     it asserts real behavior (inputs/outputs/side effects), not mere import/instantiation
-  evidence: []
+  evidence:
+  - tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_subcommand_suggests_closest
+  - tests/unit/test_main_entry.py::TestMainSigint::test_keyboard_interrupt_prints_clean_message_and_exits_130
+  - tests/unit/test_main_entry.py::TestMainUnhandledException::test_unhandled_exception_prints_clean_message_and_exits_1
 threat: null
 component: null
 ```
@@ -10654,6 +11027,73 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 (no live caller, no CLI/API entry point), route it to the DEAD gate / dup
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
+
+## Done report
+
+Changed: none (evidence-only close)
+
+Investigation: this ticket's body names two symbols at the 0.0% priority
+tier: src/frob/__main__.py::_SuggestingArgumentParser.error and
+src/frob/__main__.py::main. Both already carry `frob:tests` directives in
+the source pointing at tests/unit/test_main_entry.py -- checked whether
+those tests actually exercise real behavior before writing anything new.
+
+- `main`: covered by TestMainSigint (SIGINT during dispatch prints a
+  clean message + exits 130, not a raw traceback) and
+  TestMainUnhandledException (an unhandled exception during dispatch is
+  logged with exc_info and exits 1) -- both call main() directly and
+  assert on real stdout/stderr/exit-code behavior.
+- `_SuggestingArgumentParser.error`: covered by TestDidYouMean, which
+  calls `parser.parse_args([...])` with a genuinely bad subcommand/flag,
+  catches the resulting SystemExit, and asserts the actual "(did you
+  mean: X?)" suggestion text landed in stderr -- this is the .error()
+  override's real behavior, not a mock.
+
+Ran the full file standalone: uv run pytest tests/unit/test_main_entry.py
+-p no:cacheprovider -n0 -q -- all 10 pass. Also ran the scope's other two
+test files (tests/test_gitio.py, tests/test_doctor.py: 37 tests combined)
+-- all pass, confirming the rest of the root package (gitio.py, tomlio.py,
+excludes.py, doctor.py) also has an existing, passing test surface; not
+individually sampled symbol-by-symbol beyond this.
+
+`frob check --ticket T-1313 --only test` in this worktree: 0 errors, 6
+warnings, none TEST005 (TEST005 not computable here -- no coverage stamp
+in this fresh worktree, TEST006 fires instead; playbook sec 6b makes
+coverage stamping coordinator-only). No 0.0%-tier symbol here is
+confirmed dead -- both are live entry points (main() is the literal CLI
+entry point in pyproject's console_scripts; .error() is the argparse
+override wired into every subparser) with real assertions already
+exercising them, so acceptance[1]'s dead-code routing does not apply
+(nothing to route). Binding acceptance[0] on the strength of this
+verification plus the pre-existing frob:tests directives, not a fresh
+full-package TEST005 recount (which this worktree cannot produce).
+
+Evidence:
+- tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_subcommand_suggests_closest
+- tests/unit/test_main_entry.py::TestMainSigint::test_keyboard_interrupt_prints_clean_message_and_exits_130
+- tests/unit/test_main_entry.py::TestMainUnhandledException::test_unhandled_exception_prints_clean_message_and_exits_1
+
+Filed: none
+
+Gates: uv run frob check --ticket T-1313 --only test -- 0 errors, 6
+warnings (none TEST005), 3 pre-existing waived warnings unrelated to this
+ticket.
+
+### Changed
+```
+ tickets.md | 436 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 411 insertions(+), 25 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_subcommand_suggests_closest` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestMainSigint::test_keyboard_interrupt_prints_clean_message_and_exits_130` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestMainUnhandledException::test_unhandled_exception_prints_clean_message_and_exits_1` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 7 error(s), 463 warning(s), 684 waived
+- error-findings: ARCH001@src/frob/refactor/_scan.py, ARCH001@src/frob/tickets/_land_finalize.py, OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py, RENDER001@src/frob/refactor/_cli.py, SELFAUDIT001@design, TICK003@tickets.md
 
 <!-- ticket:T-1314 -->
 ```yaml
@@ -11674,3 +12114,22 @@ threat: null
 component: null
 ```
 Two verification gaps flagged at T-1326 review (both inherited/analysis-only today): (1) no test exercises a branch that runs git merge main AFTER main legitimately deleted a waiver, then lands -- the committed-history guard is safe by git merge-base construction (the merge advances the base past main's deletion) but nothing locks that in; every agent worktree merges main mid-flight, so a regression here would break all lands. (2) rename-aware attribution: _waive_deletions_in_diff takes the pre-image path from the hunk header; a waiver deleted inside a renamed file has untested scope-ownership attribution (pre- vs post-rename path) on BOTH the uncommitted (T-1323) and committed (T-1326) checks. Add tests for both; fix attribution if the rename test exposes a wrong-path bug.
+
+<!-- ticket:T-1333 -->
+```yaml
+id: T-1333
+title: coverage.py + CSafeLoader interaction corrupts YAML parse under --cov (test_tickets_brief.py)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_store.py
+threat: null
+component: null
+```
+found while working T-1295: running tests/test_tickets_brief.py::TestBriefTicket::test_composes_full_briefing (and TestBriefCli::test_cli_prints_briefing) under coverage instrumentation (pytest-cov or plain coverage.py, --branch) makes _yaml_loader()'s CSafeLoader path fail to parse otherwise-valid frontmatter YAML with 'could not determine a constructor for the tag None'. Reproduces identically under bare coverage.py, not a pytest-cov-specific quirk. Does not reproduce at all without instrumentation -- both tests pass cleanly under plain pytest. Likely explains why TEST005 stamped src/frob/tickets/_brief.py::compose_brief at 0.0% branch coverage despite a real behavioral test existing and passing. Investigate whether CSafeLoader (libyaml C ext) has a known bad interaction with coverage.py's tracer/settrace, or whether falling back to the pure-Python SafeLoader under a detected coverage run avoids it.
