@@ -12363,7 +12363,7 @@ T-1203's mutation-audit harness (src/frob/strata/_mutation_audit.py, SecondDetec
 id: T-1329
 title: 'design/frob.strata: model src/frob/refactor/** (SYS102/SYS103 unmodeled, pre-existing
   T-1197 gap)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-29'
