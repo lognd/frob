@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import ast
 import fnmatch
+import hashlib
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
@@ -282,6 +283,19 @@ def _relative_imports(
     return [(_join_dotted(prefix, alias.name), node.lineno) for alias in node.names]
 
 
+#: (path, content-sha256) -> [(spec, line)] memo shared for the whole
+#: process run (T-1208): `check_import_conformance` (via this function) and
+#: `_selfconform._reachable_local_files`'s BFS both walk the SAME ~800
+#: bound python files for their imports every `frob sys` invocation --
+#: keying on content hash (not just path) means a file edited mid-run
+#: (or a test fixture reused with different content at the same path)
+#: never serves a stale entry. Module-level and unbounded: a `frob sys`
+#: invocation is one short-lived process over a fixed file set, so the
+#: memo's lifetime is the run's lifetime, not something that needs
+#: eviction.
+_IMPORT_MEMO: dict[str, list[tuple[str, int]]] = {}
+
+
 def _python_imports_with_lines(path: Path, root: Path) -> list[tuple[str, int]]:
     """(absolute dotted specifier, 1-based line) for every python import in
     `path`, including relative imports resolved to their absolute in-repo
@@ -294,15 +308,43 @@ def _python_imports_with_lines(path: Path, root: Path) -> list[tuple[str, int]]:
     #code-binding-tier-2-v0-implementation); a general per-language "import
     statement -> line" walk belongs in `frob.lang`, out of this ticket's
     scope.
+
+    T-1208: memoized via `_IMPORT_MEMO` -- this is the single shared
+    parse+walk `_selfconform._reachable_local_files`'s BFS now calls
+    directly instead of re-parsing and re-walking the same file a second
+    time with its own duplicate extraction helper.
     """
-    tree = _parse_ast(path)
-    if tree is None:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        _log.warning(
+            "code binding: could not parse %s for import conformance: %s", path, exc
+        )
+        return []
+    key = f"{path}:{hashlib.sha256(text.encode('utf-8')).hexdigest()}"
+    cached = _IMPORT_MEMO.get(key)
+    if cached is not None:
+        return cached
+    try:
+        tree = ast.parse(text, filename=str(path))
+    except SyntaxError as exc:
+        _log.warning(
+            "code binding: could not parse %s for import conformance: %s", path, exc
+        )
+        _IMPORT_MEMO[key] = []
         return []
     file_dir = path.parent
     results: list[tuple[str, int]] = []
     for node in ast.walk(tree):
-        results.extend(_absolute_imports(node))
-        results.extend(_relative_imports(node, file_dir, root))
+        # T-1208: one isinstance(Import/ImportFrom) filter, not two
+        # unconditional per-node helper calls (_absolute_imports and
+        # _relative_imports each independently re-checked node's type).
+        if isinstance(node, ast.Import):
+            results.extend(_absolute_imports(node))
+        elif isinstance(node, ast.ImportFrom):
+            results.extend(_absolute_imports(node))
+            results.extend(_relative_imports(node, file_dir, root))
+    _IMPORT_MEMO[key] = results
     return results
 
 

@@ -164,10 +164,8 @@ from frob.vet._capability_modes import canonical_declared_kind, expand_declared_
 from ._code_binding import (
     FOREIGN,
     CodeBinding,
-    _absolute_imports,
     _node_code_globs,
-    _parse_ast,
-    _relative_imports,
+    _python_imports_with_lines,
     bind_code,
 )
 from ._effects import (
@@ -1058,38 +1056,26 @@ def _reachable_local_files(start_files: list[str], root: Path) -> frozenset[str]
     """BFS closure of every in-repo `.py` file reachable from `start_files`
     via resolved local python imports (`frob.lang.resolve_local_import`),
     visited-set guarded against import cycles -- SYS106's "reachable from
-    a bound node" side (module docstring's SYS106 section)."""
+    a bound node" side (module docstring's SYS106 section).
+
+    T-1208: calls `_code_binding._python_imports_with_lines` directly
+    (memoized there via `_IMPORT_MEMO`) instead of parsing `path` itself
+    and re-deriving imports with a local duplicate walk -- `check_import_
+    conformance` (SYS003) parses this SAME ~800-file set in the SAME `frob
+    sys` run, so sharing the one memo means the run parses each file once,
+    not twice."""
     visited: set[str] = set(start_files)
     queue: list[str] = list(start_files)
     while queue:
         rel = queue.pop()
         path = root / rel
-        tree = _parse_ast(path)
-        if tree is None:
-            continue
-        for spec, _line in _python_imports_with_lines_module(tree, path.parent, root):
+        for spec, _line in _python_imports_with_lines(path, root):
             dst = resolve_local_import(spec, "python", file_dir=path.parent, root=root)
             if dst is None or dst in visited:
                 continue
             visited.add(dst)
             queue.append(dst)
     return frozenset(visited)
-
-
-def _python_imports_with_lines_module(
-    tree: ast.Module, file_dir: Path, root: Path
-) -> list[tuple[str, int]]:
-    """Same extraction `_code_binding.py::_python_imports_with_lines` does
-    (reusing its `_absolute_imports`/`_relative_imports` helpers directly,
-    charter: no duplication), but over an ALREADY-parsed `tree` --
-    `_reachable_local_files`'s BFS parses each visited file once for
-    reachability and must not re-parse it a second time just to re-derive
-    imports."""
-    results: list[tuple[str, int]] = []
-    for node in ast.walk(tree):
-        results.extend(_absolute_imports(node))
-        results.extend(_relative_imports(node, file_dir, root))
-    return results
 
 
 # frob:tests tests/unit/strata/test_selfconform.py::TestBindingTotality.test_laundered_capable_file_fires  # noqa: E501
