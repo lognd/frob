@@ -811,23 +811,47 @@ def _unowned_deletions(
 _LAND_WAIVE_LINE_RE = re.compile(r"^\s*(#|//)\s*frob:waive\s+(\S+)\b")
 
 
-def _uncommitted_waive_deletions(
-    worktree: Path,
+def _waive_deletions_in_diff(
+    worktree: Path, diff_args: Sequence[str]
 ) -> Result[tuple[tuple[str, str], ...], LandError]:
-    """`(file, rule)` pairs for every `frob:waive` comment line the
-    worktree's UNCOMMITTED changes (against `HEAD`, i.e. before any
-    wip-commit) delete -- the T-1323 incident's own laundering path: a
-    dirty worktree's edits get wip-snapshot-committed and ride the merge
-    onto main, unattributed. Reading this straight off the working tree,
-    BEFORE `_wip_commit` runs, is what makes the refusal below fire
-    before the deletion is folded into a commit at all.
+    """`(file, rule)` pairs for every `frob:waive` comment line a `git
+    diff <diff_args> --no-color -U0` invocation in `worktree` reports as
+    DELETED -- the shared diff-parsing core both `_uncommitted_waive_
+    deletions` (T-1323, `diff_args=("HEAD",)`, the worktree's uncommitted
+    edits) and `_committed_waive_deletions` (T-1326, `diff_args=
+    (f"{merge_base}..HEAD",)`, the branch's already-committed history)
+    build on -- the same laundering shape, single-line `frob:waive`
+    deletion riding a merge unattributed, differs only in WHICH git rev
+    range is being inspected, not in how a deletion is recognized inside
+    it.
 
-    Parses a plain `git diff HEAD -U0` (0 lines of context, deterministic
-    unified-diff header shape) rather than the porcelain-name-only forms
-    `_unowned_deletions` uses -- a `frob:waive` line disappearing from an
-    otherwise-modified (not wholly deleted) file never shows up in a
-    `--diff-filter=D --name-only` listing, only inside the hunk body."""
-    diff = run_argv(["git", "-C", str(worktree), "diff", "HEAD", "--no-color", "-U0"])
+    Parses 0-context unified-diff hunks (deterministic header shape)
+    rather than the porcelain-name-only forms `_unowned_deletions` uses --
+    a `frob:waive` line disappearing from an otherwise-modified (not
+    wholly deleted) file never shows up in a `--diff-filter=D --name-only`
+    listing, only inside the hunk body.
+
+    SCOPED OUT (T-1326 reviewer-flagged MINOR at T-1323's own approval,
+    left unclosed here deliberately): `_LAND_WAIVE_LINE_RE` only matches a
+    SINGLE physical `# frob:waive ...`/`// frob:waive ...` line, mirroring
+    `frob.gates._fix_engine`'s own `_WAIVE_SINGLE_LINE_RE` scope exactly
+    (see that module for the authoritative waiver-comment grammar). A
+    multi-line/continuation waiver -- one whose `reason="..."` text wraps
+    onto a following physical line via a trailing backslash or a block
+    comment -- is invisible to this scan on EITHER side (uncommitted or
+    committed): only the FIRST physical line matches `_LAND_WAIVE_LINE_RE`
+    at all, so a deletion that removes just a continuation line (leaving
+    the `frob:waive RULE` line itself intact) is not detected as a waiver
+    deletion by this function, on top of and separate from `_deletion_
+    owned`'s down-stream scope-ownership question. Closing this requires
+    teaching the scan the SAME multi-line grammar `_fix_engine` parses
+    (a real continuation-aware state machine, not a regex tweak) -- out of
+    this ticket's scope (`_land.py`/`_land_merge.py`/`tests/
+    test_ticket_land.py` only); tracked as a follow-up rather than
+    silently left unnoted."""
+    diff = run_argv(
+        ["git", "-C", str(worktree), "diff", *diff_args, "--no-color", "-U0"]
+    )
     if diff.is_err or diff.danger_ok.returncode not in (0, 1):
         return Err(LandError.GitFailed)
     deletions: list[tuple[str, str]] = []
@@ -844,6 +868,41 @@ def _uncommitted_waive_deletions(
             if match is not None:
                 deletions.append((current_file, match.group(2)))
     return Ok(tuple(deletions))
+
+
+def _uncommitted_waive_deletions(
+    worktree: Path,
+) -> Result[tuple[tuple[str, str], ...], LandError]:
+    """`(file, rule)` pairs for every `frob:waive` comment line the
+    worktree's UNCOMMITTED changes (against `HEAD`, i.e. before any
+    wip-commit) delete -- the T-1323 incident's own laundering path: a
+    dirty worktree's edits get wip-snapshot-committed and ride the merge
+    onto main, unattributed. Reading this straight off the working tree,
+    BEFORE `_wip_commit` runs, is what makes the refusal below fire
+    before the deletion is folded into a commit at all. Thin wrapper
+    around `_waive_deletions_in_diff` with `diff_args=("HEAD",)`."""
+    return _waive_deletions_in_diff(worktree, ("HEAD",))
+
+
+def _committed_waive_deletions(
+    worktree: Path, merge_base: str
+) -> Result[tuple[tuple[str, str], ...], LandError]:
+    """`(file, rule)` pairs for every `frob:waive` comment line the
+    branch's own COMMITTED history (`merge_base..HEAD`) deletes -- the
+    T-1326 extension of T-1323's guard: `_uncommitted_waive_deletions`
+    only ever inspected the dirty worktree state at land time, so a
+    `frob:waive` deletion an agent or tool COMMITTED mid-ticket (rather
+    than leaving uncommitted) was invisible to it and rode the merge in
+    unattributed -- the reviewer-flagged laundering vector T-1323's own
+    approval left open. Thin wrapper around `_waive_deletions_in_diff`
+    with `diff_args=(f"{merge_base}..HEAD",)`; a deletion that happened
+    on `merge_base..HEAD` and was then RE-ADDED by a later commit in the
+    same range does not appear here, since a two-endpoint diff (like a
+    single uncommitted diff) only ever reports the NET change across the
+    whole range, never per-intermediate-commit churn -- exactly mirroring
+    how the uncommitted-state check already treats an add-then-remove
+    inside a single dirty worktree."""
+    return _waive_deletions_in_diff(worktree, (f"{merge_base}..HEAD",))
 
 
 def _waive_deletion_declared_in_done_report(body: str, file: str, rule: str) -> bool:
@@ -879,6 +938,35 @@ def _uncommitted_out_of_scope_waive_deletions(
     (`_waive_deletion_declared_in_done_report`) -- what `_land_precheck`
     refuses on, before any merge, per the T-1323 incident guard."""
     found = _uncommitted_waive_deletions(worktree)
+    if found.is_err:
+        return Err(found.danger_err)
+    out_of_scope = tuple(
+        (file, rule)
+        for file, rule in found.danger_ok
+        if not _deletion_owned(file, ticket.scope)
+        and not _waive_deletion_declared_in_done_report(ticket.body, file, rule)
+    )
+    return Ok(out_of_scope)
+
+
+# frob:ticket T-1326
+def _committed_out_of_scope_waive_deletions(
+    worktree: Path, ticket: Ticket, merge_base: str
+) -> Result[tuple[tuple[str, str], ...], LandError]:
+    """`(file, rule)` pairs from `_committed_waive_deletions` that are
+    NEITHER covered by `ticket.scope` (`_deletion_owned`, same D-12
+    precedent) NOR declared by `ticket.body`'s Done report (`_waive_
+    deletion_declared_in_done_report`) -- the committed-history mirror of
+    `_uncommitted_out_of_scope_waive_deletions` (T-1323), extended (T-1326)
+    to cover a `frob:waive` deletion the branch already COMMITTED before
+    land ran, not only one still sitting uncommitted in the worktree.
+    Identical ownership/declaration logic, applied against `merge_base..
+    HEAD` instead of `HEAD` vs. the working tree -- a deletion on MAIN's
+    side of `merge_base` (i.e. main deleted the waiver on its own branch,
+    not this ticket's branch) never appears in this range at all, so a
+    merge-base drift never counts against a landing ticket that did not
+    touch it."""
+    found = _committed_waive_deletions(worktree, merge_base)
     if found.is_err:
         return Err(found.danger_err)
     out_of_scope = tuple(

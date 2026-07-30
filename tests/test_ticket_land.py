@@ -1344,6 +1344,144 @@ class TestUncommittedWaiveDeletionRefusal:
         assert result.danger_err == LandError.OutOfScopeWaiveDeletion
 
 
+class TestCommittedWaiveDeletionRefusal:
+    """T-1326: extends the T-1323 guard from the worktree's UNCOMMITTED
+    state to its COMMITTED branch history (`merge-base..HEAD`) -- the
+    reviewer-flagged laundering gap left open at T-1323's own approval,
+    where a `frob:waive` deletion COMMITTED mid-ticket (rather than left
+    uncommitted) rode the merge unattributed."""
+
+    def test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        (repo / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="genuinely needed, not this ticket"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add other.py with a live PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-waive-committed-1", str(wt)], repo
+        )
+
+        created = new_ticket(wt, _spec("Unrelated ticket", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        # Deletion of the waiver comment is COMMITTED to the branch, not
+        # left dirty -- the exact laundering shape T-1323's own guard
+        # could not see (it only ever inspected `git diff HEAD`).
+        (wt / "src" / "other.py").write_text("def g():\n    pass\n")
+        _commit_all(wt, "unrelated cleanup that happens to drop a waiver")
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_err
+        assert result.danger_err == LandError.OutOfScopeWaiveDeletion
+        # Refused before any mutation: no merge attempt against main.
+        assert (repo / "src" / "other.py").read_text().count("frob:waive") == 1
+
+    def test_committed_in_scope_waive_deletion_is_allowed(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        (repo / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="stale, being removed by this ticket"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add other.py with a stale PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-waive-committed-2", str(wt)], repo
+        )
+
+        created = new_ticket(wt, _spec("Retire stale waiver", scope=("src/other.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "other.py").write_text("def g():\n    pass\n")
+        _commit_all(wt, "retire the stale PERF001 waiver, in scope")
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_ok, result.err
+
+    def test_committed_declared_in_done_report_waive_deletion_is_allowed(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        (repo / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="stale, being removed by this ticket"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add other.py with a stale PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-waive-committed-3", str(wt)], repo
+        )
+
+        created = new_ticket(wt, _spec("Unrelated ticket", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(wt, tid, TicketState.PLANNED).is_ok
+        assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
+        loaded = load_all(wt)
+        ticket = loaded.danger_ok[tid]
+        ticket = ticket.model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": (
+                    ticket.body
+                    + "\n## Done report\n\nAlso removed the stale "
+                    + "frob:waive PERF001 in src/other.py (found while "
+                    + "working this ticket).\n"
+                ),
+            }
+        )
+        assert write_ticket(wt, ticket).is_ok
+        (wt / "src" / "other.py").write_text("def g():\n    pass\n")
+        _commit_all(wt, "remove the stale waiver, declared in the Done report")
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_ok, result.err
+
+    def test_merge_base_drift_deletion_on_main_side_not_counted(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        # The waiver is deleted on MAIN's own side of the merge-base --
+        # never touched by the landing ticket's branch at all -- so it
+        # must NOT appear in the branch's `merge-base..HEAD` range and
+        # must NOT be counted against this land.
+        (repo / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="genuinely needed, unrelated"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add other.py with a live PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-waive-committed-4", str(wt)], repo
+        )
+
+        created = new_ticket(wt, _spec("Unrelated ticket", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+
+        # main deletes the waiver AFTER the branch point -- not part of
+        # the branch's own committed history.
+        (repo / "src" / "other.py").write_text("def g():\n    pass\n")
+        _commit_all(repo, "main-side: drop the PERF001 waiver, unrelated to the ticket")
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_ok, result.err
+
+
 class TestLedgerBothSidesAppend:
     """Incident class 2: main gets a new ticket appended AFTER the worktree
     branched, and the worktree independently appends its own new ticket --

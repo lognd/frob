@@ -47,10 +47,12 @@ from frob.tickets._land_finalize import (
 from frob.tickets._land_merge import (
     _abort_merge,
     _auto_resolve_out_of_scope_conflicts,
+    _committed_out_of_scope_waive_deletions,
     _merge_main_into_worktree,
     _porcelain_dirty,
     _restore_lock_version_only_drift,
     _rev_parse,
+    _true_merge_base,
     _uncommitted_out_of_scope_waive_deletions,
     _unowned_deletions,
     _validate_closeable,
@@ -873,6 +875,56 @@ def _check_uncommitted_waive_deletions(
     return Ok(None)
 
 
+# frob:ticket T-1326
+def _check_committed_waive_deletions(
+    worktree: Path, ticket: Ticket, ticket_id: str, main_branch: str
+) -> Result[None, LandError]:
+    """`Err(OutOfScopeWaiveDeletion)` if `worktree`'s branch history --
+    `git diff <merge-base>..HEAD`, i.e. commits ALREADY made on the
+    ticket's branch, not merely uncommitted worktree state -- deletes a
+    `frob:waive` directive whose file is neither in `ticket.scope` nor
+    declared by `ticket.body`'s Done report. Extends `_check_uncommitted_
+    waive_deletions` (T-1323) to close the reviewer-flagged laundering gap
+    left open at that ticket's approval: a `frob:waive` deletion COMMITTED
+    mid-ticket (an agent's own `git commit`, a tool, an earlier wip-commit
+    from a prior land attempt on this same branch) was invisible to a
+    check that only ever inspected `git diff HEAD`, so it rode the merge
+    in unattributed exactly like the uncommitted case T-1323 closed.
+
+    Runs at `_land_precheck` time, strictly before any git mutation, using
+    `_true_merge_base(worktree, main_branch)` to resolve the TRUE common
+    ancestor -- the same merge-base `_worktree_full_changeset` (T-0761)
+    already trusts -- so a `frob:waive` line deleted on MAIN's own side of
+    that ancestor (main dropped the waiver on ITS branch, never touched by
+    this ticket) never appears in `merge_base..HEAD` at all and is
+    correctly NOT counted against the landing ticket."""
+    merge_base = _true_merge_base(worktree, main_branch)
+    if merge_base.is_err:
+        return Err(merge_base.danger_err)
+    found = _committed_out_of_scope_waive_deletions(
+        worktree, ticket, merge_base.danger_ok
+    )
+    if found.is_err:
+        return Err(found.danger_err)
+    if found.danger_ok:
+        _log.error(
+            "land: %s refused -- branch history (commits since merge-base "
+            "%s) contains frob:waive deletion(s) outside scope %s and "
+            "undeclared by the Done report: %s. If intentional, add the "
+            "file to the ticket's scope or name it/the rule in the Done "
+            "report; if accidental, revert the offending commit on this "
+            "branch before retrying `frob ticket land %s --worktree %s`",
+            ticket_id,
+            merge_base.danger_ok,
+            list(ticket.scope),
+            [f"{file}:{rule}" for file, rule in found.danger_ok],
+            ticket_id,
+            worktree,
+        )
+        return Err(LandError.OutOfScopeWaiveDeletion)
+    return Ok(None)
+
+
 def _validate_scope_covered_preflight(
     ticket: Ticket, covers_scope: Callable[[Ticket], bool | None] | None
 ) -> Result[None, LandError]:
@@ -1025,30 +1077,14 @@ def _check_live_tracker_citations(
     return Err(LandError.LiveTrackerCited)
 
 
-def _land_precheck(
-    root: Path,
-    worktree: Path,
-    ticket_id: str,
-    *,
-    covers_scope: Callable[[Ticket], bool | None] | None = None,
-    skip_mutation_evidence: bool = False,
-) -> Result[tuple[Ticket, str], LandError]:
-    """Refuse on root/worktree being the same path (T-0795) or a dirty
-    main, load+validate the worktree's ticket is closeable (including,
-    T-0774, a `covers_scope` preflight simulation, T-0755's diff-scoped
-    mutation-evidence obligation, bypassable via `skip_mutation_evidence`,
-    and T-0854's live-tracker-citation preflight), and resolve main's
-    current branch name -- everything `land` must check BEFORE any git
-    mutation."""
+# frob:ticket T-1326
+def _load_ticket_for_land(worktree: Path, ticket_id: str) -> Result[Ticket, LandError]:
+    """Load `ticket_id` from `worktree`'s store, run `_validate_closeable`,
+    and run the uncommitted-waive-deletion check (T-1323) against it --
+    split out of `_land_precheck` purely to keep that function under the
+    ARCH001 line-count threshold once the T-1326 committed-history check
+    was added alongside it."""
     from frob.tickets import _load_one
-
-    same_path_check = _refuse_if_root_is_worktree(root, worktree, ticket_id)
-    if same_path_check.is_err:
-        return Err(same_path_check.danger_err)
-
-    dirty_check = _refuse_if_main_dirty(root, worktree, ticket_id)
-    if dirty_check.is_err:
-        return Err(dirty_check.danger_err)
 
     loaded = _load_one(worktree, ticket_id)
     if loaded.is_err:
@@ -1066,16 +1102,75 @@ def _land_precheck(
     if waive_deletion_check.is_err:
         return Err(waive_deletion_check.danger_err)
 
+    return Ok(ticket)
+
+
+# frob:ticket T-1326
+def _resolve_main_branch_for_land(
+    root: Path, worktree: Path, ticket: Ticket, ticket_id: str
+) -> Result[str, LandError]:
+    """Resolve `root`'s current branch name AND run `_check_committed_
+    waive_deletions` against it -- split out of `_land_precheck` purely to
+    keep that function under the ARCH001 line-count threshold; the two
+    steps are inseparable (the committed-waiver check needs the resolved
+    branch name to compute a true merge-base) so they are kept together
+    here rather than split further."""
+    main_branch = current_branch(root)
+    if main_branch.is_err:
+        return Err(LandError.GitFailed)
+    committed_waive_deletion_check = _check_committed_waive_deletions(
+        worktree, ticket, ticket_id, main_branch.danger_ok
+    )
+    if committed_waive_deletion_check.is_err:
+        return Err(committed_waive_deletion_check.danger_err)
+    return Ok(main_branch.danger_ok)
+
+
+def _land_precheck(
+    root: Path,
+    worktree: Path,
+    ticket_id: str,
+    *,
+    covers_scope: Callable[[Ticket], bool | None] | None = None,
+    skip_mutation_evidence: bool = False,
+) -> Result[tuple[Ticket, str], LandError]:
+    """Refuse on root/worktree being the same path (T-0795) or a dirty
+    main, load+validate the worktree's ticket is closeable (including,
+    T-0774, a `covers_scope` preflight simulation, T-0755's diff-scoped
+    mutation-evidence obligation, bypassable via `skip_mutation_evidence`,
+    and T-0854's live-tracker-citation preflight), and resolve main's
+    current branch name -- everything `land` must check BEFORE any git
+    mutation."""
+    same_path_check = _refuse_if_root_is_worktree(root, worktree, ticket_id)
+    if same_path_check.is_err:
+        return Err(same_path_check.danger_err)
+
+    dirty_check = _refuse_if_main_dirty(root, worktree, ticket_id)
+    if dirty_check.is_err:
+        return Err(dirty_check.danger_err)
+
+    loaded_ticket = _load_ticket_for_land(worktree, ticket_id)
+    if loaded_ticket.is_err:
+        return Err(loaded_ticket.danger_err)
+    ticket = loaded_ticket.danger_ok
+
+    # T-1326: main_branch is resolved here, ahead of its original position
+    # further down, purely so the committed-waiver check (which needs it
+    # to compute the true merge-base) can run in this same preflight
+    # pass, still strictly before any git mutation.
+    main_branch_resolved = _resolve_main_branch_for_land(
+        root, worktree, ticket, ticket_id
+    )
+    if main_branch_resolved.is_err:
+        return Err(main_branch_resolved.danger_err)
+    main_branch_name = main_branch_resolved.danger_ok
+
     scope_preflight = _validate_scope_covered_preflight(ticket, covers_scope)
     if scope_preflight.is_err:
         return Err(scope_preflight.danger_err)
 
-    main_branch = current_branch(root)
-    if main_branch.is_err:
-        return Err(LandError.GitFailed)
-
     live_tracker_check = _check_live_tracker_citations(
-        worktree, ticket, main_branch.danger_ok
+        worktree, ticket, main_branch_name
     )
     if live_tracker_check.is_err:
         return Err(live_tracker_check.danger_err)
@@ -1083,13 +1178,13 @@ def _land_precheck(
     mutation_check = _check_mutation_evidence(
         worktree,
         ticket,
-        main_branch.danger_ok,
+        main_branch_name,
         skip=skip_mutation_evidence,
     )
     if mutation_check.is_err:
         return Err(mutation_check.danger_err)
 
-    return Ok((ticket, main_branch.danger_ok))
+    return Ok((ticket, main_branch_name))
 
 
 # frob:ticket T-1258
