@@ -11727,11 +11727,14 @@ tier: ticket
 sprint: null
 scope:
 - tickets.md
+evidence:
+- cmd:uv run --frozen frob check --only test exit=0 sha256=5383529021de
 acceptance:
 - text: GIVEN main's HEAD WHEN make coverage + frob check --stamp-coverage runs THEN
     the TEST005 finding list for src/frob/app is re-derived and T-1276 is re-scoped
     or closed accordingly
-  evidence: []
+  evidence:
+  - cmd:uv run --frozen frob check --only test exit=0 sha256=5383529021de
 threat: null
 component: null
 ```
