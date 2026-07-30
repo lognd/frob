@@ -11717,7 +11717,7 @@ T-1206/T-1216 review 2026-07-29: both non-blocking APPROVE findings. Reviewer ve
 ```yaml
 id: T-1320
 title: Re-baseline TEST005 for src/frob/app before continuing T-1276
-state: queued
+state: in-progress
 kind: docs
 origin: agent
 created: '2026-07-29'
@@ -11756,7 +11756,6 @@ Work: coordinator runs `make coverage` + `frob check --stamp-coverage`
 against current main, re-derives the real TEST005 finding list for
 src/frob/app/**, and either re-scopes T-1276 (if requeued) with the
 current list, or closes it outright if the list is now empty.
-
 <!-- ticket:T-1321 -->
 ```yaml
 id: T-1321
