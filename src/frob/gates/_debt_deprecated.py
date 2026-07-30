@@ -18,18 +18,20 @@ release-blocking check in `run_gates`'s spine.
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass, field
 from pathlib import Path
 
-from frob.exports import exports_consumers
+from frob.exports import _IMPORT_LINE_RE
 from frob.gates._deprecated_baseline import (
     file_reference_counts,
     load_deprecated_baseline,
 )
 from frob.gates._models import DebtEntry, DeprecatedEntry, Severity, Violation
 from frob.graph import Edge, EdgeKind, GraphSnapshot
+from frob.lang import iter_identifiers, parse_file
 from frob.logging import get_logger
 from frob.tickets import TicketQueue
-from frob.xref import xref
+from frob.xref import _collect_source_files, _definition_symbols
 
 _log = get_logger(__name__)
 
@@ -508,19 +510,116 @@ def _looks_like_call(symbol: str, context: str) -> bool:
     return bool(re.search(rf"\b{re.escape(symbol)}\s*\(", context))
 
 
+@dataclass(frozen=True)
+class _DeprecatedRefIndex:
+    """T-1207: one repo-wide identifier index, built by a SINGLE pass over
+    every Python source file under a root, shared across every deprecated
+    symbol `_depr005_violations` answers in one gate run -- replacing the
+    prior per-symbol double full-repo scan (`exports_consumers` +
+    `xref`, each itself a full walk) that made DEPR005's cost grow
+    linearly with the number of baselined `frob:deprecated` symbols.
+
+    `identifier_hits[name]` is every `(file, line, context)` occurrence of
+    bare identifier `name` across the whole tree, in file-then-line order
+    (mirrors what a per-symbol `xref` call used to return, just gathered
+    for all names at once). `definition_sites[name]` is every `(file,
+    line)` where `name` is itself defined (function/class/method), and
+    `first_definition_file[name]` is the first such file in sorted file
+    order -- both needed to reproduce `xref`'s own-declaration and
+    own-defining-file exclusions without re-deriving them from a fresh
+    per-symbol `xref()` call."""
+
+    identifier_hits: dict[str, list[tuple[str, int, str]]] = field(default_factory=dict)
+    definition_sites: dict[str, set[tuple[str, int]]] = field(default_factory=dict)
+    first_definition_file: dict[str, str] = field(default_factory=dict)
+
+
+def _build_deprecated_ref_index(root: Path) -> _DeprecatedRefIndex:
+    """One full pass over every Python file under `root` (T-1207),
+    populating a `_DeprecatedRefIndex` that every baselined `frob:deprecated`
+    symbol in the run answers `deprecated_current_references` from --
+    instead of each symbol independently re-walking the whole tree via
+    `exports_consumers`+`xref` (the O(files * symbols) cost this ticket
+    exists to collapse to O(files + symbols))."""
+    index = _DeprecatedRefIndex()
+    for path in _collect_source_files(root, "python"):
+        try:
+            rel = str(path.relative_to(root)) if root.is_dir() else path.name
+        except ValueError:
+            rel = str(path)
+
+        ids_result = iter_identifiers(path)
+        if ids_result.is_ok:
+            try:
+                src_lines = path.read_bytes().decode(errors="replace").splitlines()
+            except OSError:
+                src_lines = []
+            for name, line in ids_result.danger_ok:
+                ctx = src_lines[line - 1] if 0 < line <= len(src_lines) else ""
+                index.identifier_hits.setdefault(name, []).append((rel, line, ctx))
+
+        parsed_result = parse_file(path)
+        if parsed_result.is_ok:
+            for sym in _definition_symbols(parsed_result.danger_ok.symbols):
+                _, _, name = sym.qualname.rpartition(".")
+                index.definition_sites.setdefault(name, set()).add((rel, sym.span[0]))
+                index.first_definition_file.setdefault(name, rel)
+    return index
+
+
+def _references_from_index(symbol: str, index: _DeprecatedRefIndex) -> frozenset[str]:
+    """`deprecated_current_references`'s answer for `symbol`, read from an
+    already-built `_DeprecatedRefIndex` (T-1207) rather than re-scanning the
+    tree -- see that function's docstring for the exact semantics this
+    reproduces."""
+    hits = index.identifier_hits.get(symbol, ())
+    def_sites = index.definition_sites.get(symbol, frozenset())
+    definition_file = index.first_definition_file.get(symbol)
+
+    refs: set[str] = set()
+    importing_files: set[str] = set()
+    for file, line, ctx in hits:
+        if (file, line) in def_sites:
+            continue
+        if not _IMPORT_LINE_RE.match(ctx):
+            continue
+        refs.add(f"{file}:{line}")
+        importing_files.add(file)
+
+    for file, line, ctx in hits:
+        if (file, line) in def_sites:
+            continue
+        if definition_file is not None and file == definition_file:
+            continue
+        if file not in importing_files:
+            continue
+        if not _looks_like_call(symbol, ctx):
+            continue
+        refs.add(f"{file}:{line}")
+    return frozenset(refs)
+
+
 # frob:doc docs/modules/gates.md#depr005-new-caller-baseline-ratchet-t-0639-redesigned-t-1052  # noqa: E501
 # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr005_reference_set_combines_consumers_and_xref kind="unit"  # noqa: E501
 # frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDeprecatedCurrentReferencesImportGating.test_unrelated_same_name_call_in_non_importing_file_is_excluded kind="unit"  # noqa: E501
 def deprecated_current_references(symbol: str, root: Path) -> frozenset[str]:
     """The current `file:line` reference set for bare identifier `symbol`
-    under `root` (T-0639, callgraph-resolved as of T-1052): the union of
-    `frob.exports.exports_consumers`'s file-level import-statement
-    consumers (T-0876) and `frob.xref.xref`'s Python-scoped, call-shaped
-    identifier usages (`_looks_like_call`) -- but a call-shaped usage only
-    counts when it falls in a file that itself imports `symbol` (i.e. is
-    also an `exports_consumers` hit for `symbol`), excluding any usage in
-    the symbol's own defining file (its declaration line and any purely
-    internal same-file mention are not a "new caller").
+    under `root` (T-0639, callgraph-resolved as of T-1052, index-backed as
+    of T-1207): the union of import-statement consumers (T-0876, what
+    `frob.exports.exports_consumers` used to answer standalone) and
+    Python-scoped, call-shaped identifier usages (`_looks_like_call`) --
+    but a call-shaped usage only counts when it falls in a file that
+    itself imports `symbol`, excluding any usage in the symbol's own
+    defining file (its declaration line and any purely internal same-file
+    mention are not a "new caller").
+
+    A standalone caller (this function, called directly rather than
+    through `_depr005_violations`'s shared index) still pays one full-repo
+    pass -- `_build_deprecated_ref_index` builds an index for every
+    identifier in one walk regardless of how many symbols will be looked
+    up against it, so a single-symbol call is exactly as expensive as
+    before; the win is `_depr005_violations` building the index ONCE and
+    answering every baselined symbol from it, instead of once per symbol.
 
     `frob.graph.callgraph.build_call_graph` itself never resolves an edge
     to a PUBLIC callee by design (T-0639's original design decision, see
@@ -535,26 +634,8 @@ def deprecated_current_references(symbol: str, root: Path) -> frozenset[str]:
     xref_runner import run` and a `run(...)` call site) -- T-1052's fix
     for the bare-short-name over-match that made nearly every `.run(` in
     the tree count as a caller of any `run`-named deprecated symbol."""
-    refs: set[str] = set()
-    consumers_result = exports_consumers(symbol, root, lang="python")
-    importing_files: set[str] = set()
-    if consumers_result.is_ok:
-        for consumer in consumers_result.danger_ok.consumers:
-            refs.add(f"{consumer.file}:{consumer.line}")
-            importing_files.add(consumer.file)
-    xref_result = xref(symbol, root, lang="python")
-    if xref_result.is_ok:
-        xr = xref_result.danger_ok
-        definition_file = xr.definition.file if xr.definition else None
-        for usage in xr.usages:
-            if definition_file is not None and usage.file == definition_file:
-                continue
-            if usage.file not in importing_files:
-                continue
-            if not _looks_like_call(symbol, usage.context):
-                continue
-            refs.add(f"{usage.file}:{usage.line}")
-    return frozenset(refs)
+    index = _build_deprecated_ref_index(root)
+    return _references_from_index(symbol, index)
 
 
 # frob:enforces CHK-GATE-DEPR005
@@ -583,7 +664,13 @@ def _depr005_violations(
 
     violations: list[Violation] = []
     baseline = load_deprecated_baseline(root)
-    for edge in _deprecated_edges(snapshot):
+    edges = _deprecated_edges(snapshot)
+    # T-1207: one repo-wide index, shared across every baselined symbol
+    # this loop answers, instead of a fresh full-repo scan per symbol --
+    # only built at all if there is at least one edge to look up (an empty
+    # `frob:deprecated` snapshot pays no index-build cost).
+    index: _DeprecatedRefIndex | None = None
+    for edge in edges:
         ticket_id = edge.attrs.get("ticket", "")
         target = queue.tickets.get(ticket_id)
         if target is None or target.state not in _OPEN_STATES:
@@ -592,8 +679,10 @@ def _depr005_violations(
         if entry is None:
             _log.debug("DEPR005: %s not yet baselined, skipping", edge.src)
             continue
+        if index is None:
+            index = _build_deprecated_ref_index(root)
         symbol = _bare_symbol_name(edge.src)
-        current_refs = deprecated_current_references(symbol, root)
+        current_refs = _references_from_index(symbol, index)
         current_counts = file_reference_counts(current_refs)
         baseline_counts = entry.file_counts()
         grown_files = sorted(
