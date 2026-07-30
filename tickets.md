@@ -12598,3 +12598,30 @@ release-bump/uv.lock/native-rebuild family. Not yet started.
 
 Re-filed (not re-derived from scratch) rather than letting T-1251 close
 with silent residue, per TICK011.
+
+<!-- ticket:T-1335 -->
+```yaml
+id: T-1335
+title: 'make coverage: stamp failure not propagated; stale fixture paths break coverage
+  xml'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-30'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- Makefile
+acceptance:
+- text: GIVEN a green suite but a failing stamp-coverage WHEN make coverage runs THEN
+    it exits nonzero naming the stamp failure
+  evidence: []
+- text: GIVEN combined coverage data containing a path with no importable source THEN
+    coverage.xml is still produced and the stamp proceeds
+  evidence: []
+threat: null
+component: null
+```
+Found during T-1320 (2026-07-30). Three defects in the coverage pipeline: (1) make coverage exits with PYTEST's status only -- a stamp-coverage failure after a green suite yields exit 0 (run 3 printed 'ERROR: stamp-coverage failed: WriteFailed' and still exited 0; only caught by reading the log). The stamp is the whole point of the target; its failure must fail the make. (2) coverage xml died on a stale 'src/demo/__init__.py' entry in the combined data (a test fixture package measured into .coverage via subprocess coverage), producing no coverage.xml at all; recovery was manual 'coverage xml -i'. Either pass ignore-errors in the Makefile or keep fixture paths out of the combined data (source filters in the generated coverage-subprocess.rc). (3) observational: one xdist worker crashed (gw11) on tests/unit/strata/test_conform_eval_needle.py's full-repo scan; the serial rerun caught it, but a repeatedly-crashing heavy test would silently halve coverage data -- consider marking the heaviest real-repo scans for the serial rerun lane. Relates to T-1236 (deflation canary) and T-1205 (coverage as managed derived state).
