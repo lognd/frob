@@ -11792,11 +11792,11 @@ is vindicated: the phantom findings are gone from the source.
 (no changed files detected)
 
 ### Evidence
-(no evidence recorded)
+- `cmd:uv run --frozen frob check --only test exit=0 sha256=5383529021de` (cmd evidence, exit=0)
 
 ### Captured claims
 - tests: 0 passed (from 0 evidence id(s))
-- gates: 9 error(s), 1273 warning(s), 686 waived
+- gates: 9 error(s), 1274 warning(s), 686 waived
 - error-findings: ARCH001@src/frob/gates/_debt_deprecated.py, ARCH001@src/frob/refactor/_scan.py, ARCH001@src/frob/tickets/_land_finalize.py, COV001@design/frob.strata, OPAQUE001@src/frob/app/__init__.py, OPAQUE001@src/frob/app/app.py, PERF003@src/frob/gates/_debt_deprecated.py, RENDER001@src/frob/refactor/_cli.py, TICK003@tickets.md
 <!-- ticket:T-1321 -->
 ```yaml
