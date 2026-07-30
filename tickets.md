@@ -12321,7 +12321,7 @@ T-1203's mutation-audit harness (src/frob/strata/_mutation_audit.py, SecondDetec
 id: T-1329
 title: 'design/frob.strata: model src/frob/refactor/** (SYS102/SYS103 unmodeled, pre-existing
   T-1197 gap)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-29'
@@ -12335,7 +12335,6 @@ threat: null
 component: null
 ```
 Found while working T-1203 (may-mutation audit): tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant and ::TestCoverageTotality::test_repo_unrestricted_scan_is_clean fail on main (pre-existing, unrelated to T-1203's diff) because src/frob/refactor/** (landed by T-1197) has no code= binding in design/frob.strata: SYS102 unmodeled-code plus 4x SYS103 coverage-totality findings on _apply.py/_resolve.py/_scan.py/_verify.py (fs-read/fs-write observed, FOREIGN to every node). Needs a real node (or code= glob on an existing one) added for src/frob/refactor/**, with may declarations matching its real fs-read/fs-write effects, and interface= attrs for its public surface (SYS104 will fire too once bound).
-
 <!-- ticket:T-1330 -->
 ```yaml
 id: T-1330
