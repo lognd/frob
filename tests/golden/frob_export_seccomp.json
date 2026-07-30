@@ -349,6 +349,38 @@
       }
     ]
   },
+  "refactor": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "access",
+          "brk",
+          "chmod",
+          "close",
+          "exit",
+          "exit_group",
+          "fstat",
+          "lstat",
+          "mkdir",
+          "mmap",
+          "munmap",
+          "open",
+          "openat",
+          "pread64",
+          "pwrite64",
+          "read",
+          "rename",
+          "rt_sigreturn",
+          "stat",
+          "truncate",
+          "unlink",
+          "write"
+        ]
+      }
+    ]
+  },
   "registry": {
     "defaultAction": "SCMP_ACT_ERRNO",
     "syscalls": [

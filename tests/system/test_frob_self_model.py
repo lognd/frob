@@ -150,7 +150,9 @@ class TestFrobSelfModel:
         obligation; `scripts_ops`'s `fs`/`fs-read` and
         `strata_core_native`/`frob_core_native`'s `ffi` do not).
         """
-        assert len(_model.nodes) == 20
+        # T-1329: +1 node = `refactor` (the T-1197 rewrite engine, modeled
+        # after landing unbound; SYS102 fallout from the T-1320 coverage run).
+        assert len(_model.nodes) == 21
         assert len(_model.flows) == 44
         assert len(_model.boundaries) == 1
         # T-0150: 3 original PROVED architecture claims + 3 `assume
