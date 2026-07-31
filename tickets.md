@@ -12879,6 +12879,21 @@ scope:
 - src/frob/gates/__init__.py
 - tests/test_gates_suppress.py
 - docs/modules/gates.md
+- pyproject.toml
+- uv.lock
+scope_changes:
+- op: add
+  glob: pyproject.toml
+  reason: 'T-1339 amendment: mypy is added as a non-gating diagnostic oracle, which
+    is a dev-dependency change'
+  actor: logan
+  at: '2026-07-31'
+- op: add
+  glob: uv.lock
+  reason: 'T-1339 amendment: mypy is added as a non-gating diagnostic oracle, which
+    is a dev-dependency change'
+  actor: logan
+  at: '2026-07-31'
 acceptance:
 - text: given a python line carrying a mypy type:ignore and an unsuppressed ty diagnostic
     on the same line, when the suppress gate runs, then SUPPRESS001 reports it naming
@@ -12900,7 +12915,6 @@ Direction support must be symmetric (mypy->ty AND ty->mypy), and per T-1339's DE
 Supersedes this ticket's third acceptance criterion as originally written ('a checker that is not configured ... reports nothing'). Reinterpret it as: a dialect with no available oracle produces no findings for that direction (a capability limit), NOT a dialect whose tool is merely unconfigured in the consuming project. Re-word the criterion in the same change.
 
 Detection only -- the fix is the sibling ticket.
-
 <!-- ticket:T-1341 -->
 ```yaml
 id: T-1341
