@@ -630,6 +630,9 @@
     "src/frob/gates/_secrets.py::CRITICAL_PROVIDERS": "988703fc743613c358ba60ffebe24e7ff68de9243434742d52037aa92be1ca22",
     "src/frob/gates/_secrets.py::fake_marker_staleness_gate": "1c7d11e0ac38df968c5cee385afe2c969586e739dd3c362751057efd1e67b7a8",
     "src/frob/gates/_secrets.py::secrets_gate": "b20f329f107939ac130179a60ec33ecae5d0e43c976114918b5bc1c821a5b06a",
+    "src/frob/gates/_suppress.py::SuppressionDialect": "3e0d7eb2a157929362ad7edb896061547668122cc746f835bb285932ac6e45d0",
+    "src/frob/gates/_suppress.py::suppress001_gate": "0a42ff506768e6504549cc9c337e8d0df2094579b17b12625689fa90529ceab7",
+    "src/frob/gates/_suppress.py::suppression_dialects": "b67c24daeeb4668b973210bd690aa891c5f23600da6a2eef8e9c66e38bac385d",
     "src/frob/gates/_sys.py::sys_gate": "97e404c968e25f99fb1a9e2b52983b2930330a1f0779ba2b9d5bd81bcdbcf475",
     "src/frob/gates/_taint_gate.py::taint_gate": "8eb1266f83ddfad99829c392afa9d623ce2365e1f607a0b4c004dac2543204c8",
     "src/frob/gates/_tickets_gate.py::tickets_gate": "151a5c8106999e9e13e65e15aef2837187687aa7310a7762ce24aaf82af05844",
@@ -1930,5 +1933,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.289.0"
+  "version": "0.290.0"
 }
