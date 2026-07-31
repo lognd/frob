@@ -1644,8 +1644,72 @@ silently skipped. FFI002 scans every `.py` file under the possibly-scoped
 `root`, test files excluded (`frob.excludes.is_test_file`, mirroring
 EXHAUST001/002's own carve-out).
 
+## SUPPRESS001 (T-1340)
+
+<a id="suppress001-t-1340"></a>
+<!-- frob:describes src/frob/gates/_suppress.py::suppress001_gate -->
+
+Phase 1 of T-1339's suppression-dialect compliance epic: a source line can
+carry one checker's suppression comment (mypy's `# type: ignore[code]`)
+while a DIFFERENT checker (`ty`) still errors on that exact line, because
+`ty` does not honour mypy's suppression dialect at all. The motivating
+incident -- two `ty` errors hand-fixed on `main`
+(`tests/test_fuzz.py:159`, `tests/test_tickets_collision.py:826`) -- were
+not real type defects, only dialect mismatches.
+
+**The goal is portability, not conformance** (T-1339's DESIGN AMENDMENT,
+binding): this repo gates on `ty`, but a downstream consumer type-checking
+frob's source with `mypy` must not eat spurious errors either, so a
+suppressed line should ideally carry every SUPPORTED dialect's
+suppression, including one this repo never runs as a gate.
+`SuppressionDialect.available` (see `suppression_dialects` below) therefore
+means "an oracle exists in THIS process to supply that dialect's real
+diagnostics" (a capability limit -- `shutil.which` resolving the tool on
+`PATH`), never "is this tool configured for this
+project". This supersedes T-1340's own acceptance criterion [2] as
+originally written ("a checker that is not configured in this project ..
+reports nothing"): the criterion is reworded to "a dialect with no
+available oracle produces no findings for that direction".
+
+Detection is EVIDENCE-DRIVEN, never a static mypy-code <-> ty-code mapping
+table (both codes are not 1:1 -- `name-defined` vs `unresolved-reference`,
+`attr-defined` vs `unresolved-attribute` -- a lossy table was explicitly
+rejected by both T-1339 and this ticket). `suppress001_gate` runs whichever
+of the `ty`/`mypy` oracles are available against `root`, then for every
+diagnostic a `reporting` dialect emits at `file:line`
+(`_suppress001_correlate`): if that line already carries a suppression
+covering `reporting`'s own rule code (bare, or a matching coded ignore),
+nothing fires; otherwise, if the line carries a DIFFERENT dialect's
+suppression comment, SUPPRESS001 fires naming both dialects and
+`reporting`'s own rule code (the diagnostic itself, never a lookup
+table). Each direction (mypy suppressed/ty unsuppressed, and the
+symmetric ty suppressed/mypy unsuppressed) falls out of the same loop
+with no direction hard-coded.
+
+`mypy` is a DEV DEPENDENCY here, used PURELY as a diagnostic oracle (this
+module's own `_mypy_diagnostics` oracle helper) -- `frob check` never gates on
+mypy's own exit code or diagnostics, only this gate's correlation of them
+against `ty`'s. `--warn-unused-ignores` is deliberately never passed to
+the oracle invocation (T-1339's watch item): this gate's evidence-driven
+design does not need it, and turning it on would produce unrelated noise
+from this repo's 17 pre-existing legacy mypy-only ignores that predate
+mypy running here at all. `--check-untyped-defs` IS passed, since mypy
+skips type-checking an untyped `def`'s body by default -- without it the
+oracle would silently miss most of a typical fixture function.
+
+A line with no suppression comment at all and a genuine unsuppressed
+diagnostic from either checker is NOT this gate's concern -- SUPPRESS001
+only ever fires on a cross-DIALECT mismatch, never on a bare, honestly
+unsuppressed type error (that is `ty`'s own gating job, or a downstream
+mypy user's).
+
+Detection only. The Tier-A auto-fix that WRITES the paired suppression is
+the sibling ticket T-1341 -- `suppress001_gate` never edits a source file.
+
 ## Public API
 
+<!-- frob:describes src/frob/gates/_suppress.py::SuppressionDialect -->
+<!-- frob:describes src/frob/gates/_suppress.py::suppression_dialects -->
 <!-- frob:describes src/frob/gates/_waive.py::SCOPED_RUN_FLAKY_RULE_IDS -->
 <!-- frob:describes src/frob/gates/__init__.py::run_gates -->
 <!-- frob:describes src/frob/gates/__init__.py::evidence_covers_scope -->

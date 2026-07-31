@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frob"
-version = "0.289.0"
+version = "0.290.0"
 description = "The enforcement layer for agentic development: obligation graph, ticket queue, and gates."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -76,6 +76,12 @@ dev = [
     "pytest-timeout>=2",
     "ruff>=0.8",
     "ty>=0.0.1a8",
+    # T-1340: mypy is a diagnostic ORACLE only -- SUPPRESS001
+    # (frob.gates._suppress) shells out to it to get real ground-truth
+    # mypy diagnostics for the ty->mypy suppression-portability direction.
+    # `ty` stays the sole gating checker; mypy's own exit code/diagnostics
+    # never gate `frob check` directly.
+    "mypy>=1.10",
 ]
 
 [tool.setuptools]

@@ -695,6 +695,7 @@ node graphlang : trusted {
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 // frob:ticket T-0956
 // frob:ticket T-1227
+// frob:ticket T-1340
 // frob:waive AFFECT001 reason="T-1113: mechanical interface= attr population (measured public-surface metadata for the new mandatory SYS104 check), not a behavioral/architectural change -- the cited affects()-closure doc does not describe this node's public surface and has nothing to update here."
 node gates : trusted {
     clearance Internal;
@@ -768,6 +769,7 @@ node gates : trusted {
     attr interface=SCANNED_BASES;
     attr interface=SCOPED_RUN_FLAKY_RULE_IDS;
     attr interface=Severity;
+    attr interface=SuppressionDialect;
     attr interface=SystemSpec;
     attr interface=TIER_A_HANDLERS;
     attr interface=TestPolicy;
@@ -904,6 +906,8 @@ node gates : trusted {
     attr interface=snapshot_ratchet;
     attr interface=stamp_baseline;
     attr interface=stamp_coverage;
+    attr interface=suppress001_gate;
+    attr interface=suppression_dialects;
     attr interface=sweep_ticket;
     attr interface=sys_gate;
     attr interface=taint_gate;
@@ -2870,6 +2874,7 @@ cache graph_cache of graphlang {
 // frob:doc docs/modules/strata.md#modeled-_package_root-restrictions-264-finding-follow-up-t-1079-closed
 // frob:ticket T-1253
 // frob:ticket T-1227
+// frob:ticket T-1340
 node testsuite : trusted {
     clearance Internal;
     code "tests/**";
@@ -3712,6 +3717,7 @@ node testsuite : trusted {
     attr interface=TestLegacyCoreCacheDrift;
     attr interface=TestLibraryModeForeignlessDischarge;
     attr interface=TestLifecycleScripts;
+    attr interface=TestLineSuppressions;
     attr interface=TestLinkedGroupsResolveAndAreNavigable;
     attr interface=TestLintCacheOrCapacity;
     attr interface=TestLintCacheOrCapacityUnitMismatch;
@@ -4066,6 +4072,7 @@ node testsuite : trusted {
     attr interface=TestRegulationCatalogCompleteness;
     attr interface=TestRegulationCaughtByIntegrity;
     attr interface=TestRejectedPairsStayUnlinked;
+    attr interface=TestRelativize;
     attr interface=TestReleaseBump;
     attr interface=TestReleaseBumpQuartetAtomicity;
     attr interface=TestReleaseGateCoherence;
@@ -4294,6 +4301,8 @@ node testsuite : trusted {
     attr interface=TestSupplyChainOpaqueBinaryArtifact;
     attr interface=TestSupplyChainRegistryFile;
     attr interface=TestSupplyChainUnpinnedDependencies;
+    attr interface=TestSuppress001Gate;
+    attr interface=TestSuppressionDialects;
     attr interface=TestSwallowedException;
     attr interface=TestSweepWorktreeCollisionIncident;
     attr interface=TestSweepWorktrees;

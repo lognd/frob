@@ -149,6 +149,11 @@ from frob.gates._refs import ref_gate
 from frob.gates._registry_exhaustiveness import registry_gate
 from frob.gates._render_lint import render_lint_gate
 from frob.gates._secrets import fake_marker_staleness_gate, secrets_gate
+from frob.gates._suppress import (
+    SuppressionDialect,
+    suppress001_gate,
+    suppression_dialects,
+)
 from frob.gates._sys import (  # noqa: F401 -- _DEFAULT_DESIGN_DIR/_claims_markers/_design_dir re-exported as tests/test_gates.py's + _waive_comments.py's monkeypatch/direct-call surface
     _DEFAULT_DESIGN_DIR,
     _claims_markers,
@@ -5053,6 +5058,7 @@ def _perf_gate_parse_files(root: Path, candidate_paths: list[str]) -> list[Parse
 
 _CACHE_REL = Path(".frob") / "cache.db"
 
+# frob:ticket T-1340
 _ALL_GATES = frozenset(
     {
         "drift",
@@ -5117,6 +5123,9 @@ _ALL_GATES = frozenset(
         # T-0690: FFI001/FFI002, the FFI-boundary exception-declaration
         # cross-check (frob.gates._ffi_boundary.ffi_boundary_gate).
         "ffi_boundary",
+        # T-1340: SUPPRESS001, evidence-driven suppression-dialect
+        # mismatch detection (frob.gates._suppress.suppress001_gate).
+        "suppress",
     }
 )
 
@@ -5483,6 +5492,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "exhaustive_handling",
     # frob:ticket T-0690
     "ffi_boundary",
+    # frob:ticket T-1340
+    "suppress",
 )
 
 # T-0839: import-time guard making the two constants' drift impossible to
@@ -5652,6 +5663,7 @@ def _build_jobs(
 
 
 # frob:ticket T-1049
+# frob:ticket T-1340
 def _build_thread_jobs(
     st: _GateInputs,
 ) -> dict[str, Callable[[], tuple[Violation, ...]]]:
@@ -5719,6 +5731,11 @@ def _build_thread_jobs(
             *docenum001_gate(st.repo_root, st.snapshot),
         ),
         "fuzz": lambda: fuzz_gate(st.root, st.snapshot),
+        # T-1340: SUPPRESS001, evidence-driven suppression-dialect
+        # mismatch detection -- I/O-bound (spawns ty/mypy oracle
+        # subprocesses), same thread-pool shape as "fuzz" above, not a
+        # CPU-bound _PROCESS_POOL_GATES candidate.
+        "suppress": lambda: suppress001_gate(st.root, st.snapshot),
         "release": lambda: release_gate(
             st.root, st.snapshot, st.ticket.id if st.ticket is not None else None
         ),
@@ -6662,6 +6679,9 @@ __all__ = [
     "scope_digest",
     "scope_gate",
     "secrets_gate",
+    "suppress001_gate",
+    "SuppressionDialect",
+    "suppression_dialects",
     "snapshot_ratchet",
     "stamp_baseline",
     "stamp_coverage",
