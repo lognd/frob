@@ -106,6 +106,7 @@ class TestCoverageXmlIgnoreErrors:
         assert len(xml_calls) == 2, xml_calls
         assert all("-i" in call for call in xml_calls), xml_calls
 
+    # frob:ticket T-1362
     def test_combine_then_xml_survives_a_stale_fixture_path(self, tmp_path):
         """Reproduction of the T-1320 incident via the same CLI the
         Makefile uses: coverage data referencing a source file that no
@@ -116,15 +117,22 @@ class TestCoverageXmlIgnoreErrors:
         stale_src = tmp_path / "gone.py"
         stale_src.write_text("y = 2\n", encoding="utf-8")
 
-        run_kwargs = {
-            "cwd": tmp_path,
-            "check": True,
-            "capture_output": True,
-            "text": True,
-        }
-        subprocess.run(["coverage", "run", "--branch", str(real_src)], **run_kwargs)
+        # kwargs are passed as literals at each call site (not via a
+        # dict-unpack) so `ty` can resolve subprocess.run's real overload
+        # from the literal `text=True`/`check=True` arguments.
         subprocess.run(
-            ["coverage", "run", "--branch", "--append", str(stale_src)], **run_kwargs
+            ["coverage", "run", "--branch", str(real_src)],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        subprocess.run(
+            ["coverage", "run", "--branch", "--append", str(stale_src)],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+            text=True,
         )
         # Tear down the fixture path AFTER measurement, exactly like the
         # T-1320 incident's ephemeral subprocess-test fixture.

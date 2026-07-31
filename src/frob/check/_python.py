@@ -655,7 +655,9 @@ def _run_gates(
     result = run_gates(cfg)
     if result.is_err:
         return _gates_error_result(result.danger_err, GateError)
-    return _gates_success_result(result.danger_ok, root=root, delta=delta)
+    return _gates_success_result(
+        result.danger_ok, root=root, delta=delta, ticket=ticket, gates=gates
+    )
 
 
 def _gates_error_result(err, gate_error_cls) -> ToolResult:  # noqa: ANN001
@@ -757,18 +759,87 @@ def _gate_summary_result(
     )
 
 
+# frob:ticket T-1351
+# frob:tests tests/unit/test_check.py::TestScopeDisclosure.test_only_names_the_gate_families_it_did_not_run  # noqa: E501
+# frob:tests tests/unit/test_check.py::TestScopeDisclosure.test_ticket_flag_notes_which_families_are_actually_diff_scoped  # noqa: E501
+# frob:tests tests/unit/test_check.py::TestScopeDisclosure.test_full_unfiltered_run_adds_no_disclosure  # noqa: E501
+def _scope_disclosure_note(
+    *, ticket: str | None, gates: frozenset[str], ran: frozenset[str]
+) -> str | None:
+    """T-1351 (the T-1293 false-close guard): the one line that must exist
+    whenever a scoped `frob check` invocation could otherwise be misread as
+    "the whole package is clean".
+
+    Two independent ways a clean-looking run under-covers what it looks
+    like it covers (both bit real invocations, T-1293 and T-1337):
+
+    1. `--only <subset>` (`gates`, a proper subset of every gate `frob
+       check` knows about) runs ONLY the named gate families -- every
+       other family's status is simply unknown this invocation, not clean.
+       T-1337 landed 2 new INV006 errors specifically because it verified
+       with `--only opaque --ticket T-1337`: gate:INV was never run, so
+       its errors were structurally invisible, not absent.
+    2. `--ticket T-XXXX` does NOT filter most gate families' violation
+       counts to the ticket's scope -- verified directly (T-1351): `gate:
+       TEST`/`gate:COV`'s COV001 etc. report the exact same repo-wide
+       counts with or without `--ticket`. Only `gate:SCOPE`/`gate:PREWORK`
+       and the diff-driven checks folded into `gate:COV` (COV002/TODO001)
+       and `gate:FMT`/`gate:AFFECT` are actually scoped to the ticket's
+       touched set. T-1293 read a scoped-looking "0 findings" as "my
+       package is clean" when the number shown was, in fact, repo-wide --
+       the opposite failure from the one `--only` causes, but the same
+       "a number that does not mean what the reader thinks it means"
+       shape (docs/guides/agent-playbook.md's "catalogued is not
+       enforced" lesson, generalized here).
+
+    Returns `None` when neither condition applies (a full, unscoped,
+    unfiltered run) -- there is nothing to disclose."""
+    from frob.gates import _ALL_GATES
+
+    lines: list[str] = []
+    not_run = sorted(_ALL_GATES - ran) if gates else []
+    if not_run:
+        lines.append(
+            f"NOTE: --only ran {len(ran)}/{len(_ALL_GATES)} gate famil"
+            f"(ies); NOT run this invocation (status unknown, not clean): "
+            f"{', '.join(not_run)}"
+        )
+    if ticket is not None:
+        lines.append(
+            f"NOTE: --ticket {ticket} scopes ONLY gate:SCOPE/gate:PREWORK "
+            "and the diff-driven checks inside gate:COV (COV002/TODO001) "
+            "and gate:FMT/gate:AFFECT to this ticket's touched set -- "
+            "every OTHER gate family's counts above are REPO-WIDE, not "
+            "filtered to this ticket; a clean count there is not proof "
+            "this ticket's own package is clean."
+        )
+    return "\n".join(lines) if lines else None
+
+
 # frob:ticket T-0420
 # frob:tests tests/unit/test_check.py::TestSummarySeverityHonesty.test_warn_only_gate_summary_splits_errors_and_warnings  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestRunGatesDelta.test_no_baseline_falls_back_to_full_set_with_warning  # noqa: E501
 # frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_reports_only_new_violation  # noqa: E501
-def _gates_success_result(report, *, root: Path, delta: bool) -> list[ToolResult]:  # noqa: ANN001
+def _gates_success_result(
+    report,  # noqa: ANN001
+    *,
+    root: Path,
+    delta: bool,
+    ticket: str | None = None,
+    gates: frozenset[str] = frozenset(),
+) -> list[ToolResult]:
     """`run_gates`'s report rendered as `frob check` stages (T-0420):
     one named `gate:<FAMILY>` `ToolResult` per rule family present, plus a
     trailing `gate-summary` totals+timing line -- replacing the single
     monolithic `gates` line that used to bury every family (and its own
     pass/FAIL signal) behind one combined count and timing blob.
     Delta-filtering (T-0095) still applies before grouping, so `--delta`
-    narrows both the per-family lines and the summary identically."""
+    narrows both the per-family lines and the summary identically.
+
+    T-1351: also appends a `gate:scope-note` stage (never blocking, never
+    itself a violation) whenever `--only`/`--ticket` narrowed this run in
+    a way that could be misread as a full clean pass -- see
+    `_scope_disclosure_note`."""
     violations, delta_note = (
         _apply_delta(root, report.violations)
         if delta
@@ -786,6 +857,18 @@ def _gates_success_result(report, *, root: Path, delta: bool) -> list[ToolResult
                 exit_code=0,
                 diagnostics=[Diagnostic(severity="warning", message=delta_note)],
                 summary=delta_note,
+            )
+        )
+    scope_note = _scope_disclosure_note(
+        ticket=ticket, gates=gates, ran=frozenset(report.stats.timing_s)
+    )
+    if scope_note is not None:
+        results.append(
+            ToolResult(
+                tool="gate:scope-note",
+                exit_code=0,
+                diagnostics=[Diagnostic(severity="warning", message=scope_note)],
+                summary=scope_note,
             )
         )
     results.append(

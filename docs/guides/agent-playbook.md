@@ -568,6 +568,49 @@ The coordinator, running at the top level, CAN wait on `make coverage`
 back to it -- so the full-suite stamp is a coordinator responsibility, not a
 sub-agent one.
 
+## 6c. A `--only`/`--ticket`-scoped "0 findings" is not a package-clean claim (T-1351)
+
+`frob check` now prints its own `gate:scope-note` line whenever `--only`
+and/or `--ticket` could make a clean-looking run be misread as "the whole
+package is clean" -- read it before reporting a burn-down package clean,
+not after. This exists because it already went wrong twice for real:
+
+- **T-1293**: a burn-down agent verified with `frob check --only test
+  --ticket T-1293`, saw "0 findings", and closed the ticket reporting its
+  package clean -- it had actually fixed 1 of 64 TEST005 findings. `--ticket`
+  does NOT filter most gate families' violation counts to the ticket's
+  scope (verified directly: `gate:TEST`, `gate:COV`'s COV001, etc. report
+  the exact same repo-wide counts with or without `--ticket`) -- only
+  `gate:SCOPE`/`gate:PREWORK` and the diff-driven checks folded into
+  `gate:COV` (COV002/TODO001) and `gate:FMT`/`gate:AFFECT` are actually
+  scoped to the ticket's touched set. A scoped-LOOKING "0 findings" from
+  any other gate is a repo-wide number, not a ticket-scoped one.
+- **T-1337**: an agent verified with `frob check --only opaque --ticket
+  T-1337` and landed 2 new INV006 errors it never saw, because `--only
+  opaque` never ran `gate:INV` at all -- absence of a result is not
+  evidence of a clean result.
+
+**The measurement protocol for a coverage-gated (TEST005/TEST006) burn-down
+specifically**: a package's real TEST005 count can only be trusted against
+a FULL, unscoped `make coverage` run's stamp (section 6b above: this is a
+coordinator-only step, not a sub-agent one) -- a `--ticket`-scoped or
+locally-scoped `pytest --cov=<subset>` run produces a `coverage.xml` that
+only measures that subset, and TEST005 silently SKIPS any symbol whose
+whole FILE has no coverage data at all (by design, to tell "never
+measured" apart from "measured and failing" -- see `_test005_symbols`'s
+docstring in `src/frob/gates/_coverage.py`) -- so a locally-scoped
+coverage run structurally cannot produce a trustworthy TEST005 count for
+anything outside what it measured, and will look emptier than reality
+everywhere else. Never substitute a scoped `pytest --cov` run for the
+full `make coverage` stamp when reporting a TEST005 burn-down number.
+
+To verify your own ticket's package is actually clean (not just "the
+subset I selected reported clean"): run the RELEVANT gate family
+unscoped (no `--only`, no `--ticket`) and read its `gate:<FAMILY>` line
+directly, or read `gate:scope-note`'s disclosure on a scoped run and
+confirm none of the families it lists as "not run"/"repo-wide, not
+filtered" are ones your claim depends on.
+
 ## 7. Waive discipline
 
 `frob:waive RULE-ID reason="..."` suppresses one specific violation and

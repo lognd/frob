@@ -1382,3 +1382,47 @@ class TestDerivedStateLockWiring:
         assert precheck_states == [True]
         assert stage_states == [True]
         assert spy.held is False
+
+
+class TestScopeDisclosure:
+    """T-1351 (the T-1293 false-close guard): a scoped `frob check`
+    invocation must say so, and say what it did not cover, rather than let
+    a clean-looking count be misread as "the whole package is clean"."""
+
+    # frob:ticket T-1351
+
+    def test_only_names_the_gate_families_it_did_not_run(self) -> None:
+        # frob:tests src/frob/check/_python.py::_scope_disclosure_note kind="unit"  # noqa: E501
+        from frob.check._python import _scope_disclosure_note
+        from frob.gates import _ALL_GATES
+
+        ran = frozenset({"opaque", "drift"})
+        note = _scope_disclosure_note(ticket=None, gates=ran, ran=ran)
+        assert note is not None
+        assert "--only" in note
+        # Every gate NOT in `ran` must be named -- this is exactly the
+        # T-1337 incident (INV006 invisible because gate:INV never ran).
+        for name in sorted(_ALL_GATES - ran):
+            assert name in note, f"{name} missing from the not-run disclosure"
+
+    def test_ticket_flag_notes_which_families_are_actually_diff_scoped(
+        self,
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_scope_disclosure_note kind="unit"  # noqa: E501
+        from frob.check._python import _scope_disclosure_note
+        from frob.gates import _ALL_GATES
+
+        note = _scope_disclosure_note(
+            ticket="T-1293", gates=frozenset(), ran=_ALL_GATES
+        )
+        assert note is not None
+        assert "T-1293" in note
+        assert "REPO-WIDE" in note
+
+    def test_full_unfiltered_run_adds_no_disclosure(self) -> None:
+        # frob:tests src/frob/check/_python.py::_scope_disclosure_note kind="unit"  # noqa: E501
+        from frob.check._python import _scope_disclosure_note
+        from frob.gates import _ALL_GATES
+
+        note = _scope_disclosure_note(ticket=None, gates=frozenset(), ran=_ALL_GATES)
+        assert note is None
