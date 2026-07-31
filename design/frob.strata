@@ -3223,6 +3223,7 @@ node testsuite : trusted {
     attr interface=TestComputeChangedLines;
     attr interface=TestConcurrencyModelMismatch;
     attr interface=TestConcurrentCache;
+    attr interface=TestConcurrentLeases;
     attr interface=TestConditionalGlob;
     attr interface=TestConditionalShapeDupPairing;
     attr interface=TestConditionalShapeNormalization;

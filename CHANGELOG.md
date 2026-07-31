@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.289.0] - unreleased
+
+- T-1347: frob ticket brief emits concurrent sibling leases so dispatch is one line
+
 ## [0.288.0] - unreleased
 
 - T-1327: mutate: stale mutation-backup journal restore clobbers live in-progress edits

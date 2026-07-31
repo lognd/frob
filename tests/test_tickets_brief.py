@@ -20,6 +20,7 @@ from frob.tickets import (
     brief_ticket,
 )
 from frob.tickets._brief import (
+    _concurrent_leases_section,
     _current_version,
     _gate_baseline_summary,
     _infer_verify_commands,
@@ -175,6 +176,29 @@ class TestCurrentVersion:
         assert _current_version(tmp_path) == "1.2.3"
 
 
+# frob:ticket T-1347
+class TestConcurrentLeases:
+    # frob:ticket T-1347
+    def test_lists_others(self) -> None:
+        # frob:tests tests/test_tickets_brief.py::TestConcurrentLeases.test_lists_others
+        mine = _ticket(ticket_id="T-0001", state=TicketState.IN_PROGRESS)
+        other = _ticket(
+            ticket_id="T-0002",
+            state=TicketState.IN_PROGRESS,
+            scope=("src/frob/foo.py",),
+        )
+        lines = _concurrent_leases_section(mine, (mine, other))
+        text = "\n".join(lines)
+        assert "T-0002" in text
+        assert "src/frob/foo.py" in text
+        assert "T-0001" not in text
+
+    # frob:ticket T-1347
+    def test_empty_when_no_other_in_progress_tickets(self) -> None:
+        mine = _ticket(ticket_id="T-0001", state=TicketState.IN_PROGRESS)
+        assert _concurrent_leases_section(mine, (mine,)) == ()
+
+
 # frob:ticket T-0568
 class TestBriefTicket:
     # frob:ticket T-0568
@@ -197,6 +221,28 @@ class TestBriefTicket:
         assert "tests/test_foo.py" in text
         assert "frob check --ticket T-0001" in text
         assert "no baseline stamped" in text
+        assert "Concurrency hazards" in text
+        assert "DirtyMain" in text
+
+    # frob:ticket T-1347
+    def test_concurrent_leases(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_concurrent_leases
+        _write(tmp_path, _ticket(ticket_id="T-0001", state=TicketState.IN_PROGRESS))
+        _write(
+            tmp_path,
+            _ticket(
+                ticket_id="T-0002",
+                state=TicketState.IN_PROGRESS,
+                scope=("src/frob/other.py",),
+            ),
+            slug="other-ticket",
+        )
+        result = brief_ticket(tmp_path, "T-0001")
+        assert result.is_ok, result.err
+        text = result.danger_ok
+        assert "Concurrent leases (do NOT touch)" in text
+        assert "T-0002" in text
+        assert "src/frob/other.py" in text
 
     # frob:ticket T-0568
     def test_unknown_ticket_not_found(self, tmp_path: Path) -> None:

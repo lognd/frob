@@ -168,16 +168,21 @@ def mutate_labels(
 
 
 # frob:ticket T-0568
+# frob:ticket T-1347
 # frob:doc docs/modules/tickets.md#frob-ticket-brief-t-0568
 # frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_composes_full_briefing
+# frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_concurrent_leases
 def brief_ticket(root: Path, ticket_id: str) -> Result[str, TicketError]:
     """`frob ticket brief <id>` (T-0568): compose the complete agent
     mission briefing text (`frob.tickets._brief.compose_brief`) for
     `ticket_id` -- replacing the ~400 words of hand-typed dispatch
-    boilerplate a coordinator otherwise repeats per ticket. `Err(NotFound)`
-    if `ticket_id` does not resolve."""
+    boilerplate a coordinator otherwise repeats per ticket, including
+    (T-1347) every OTHER in-progress ticket's id/title/scope resolved live
+    at brief time, so a coordinator never hand-writes the do-not-touch
+    list. `Err(NotFound)` if `ticket_id` does not resolve."""
     from frob.tickets import _load_one, leased_by, load_queue
     from frob.tickets._brief import compose_brief
+    from frob.tickets._models import TicketState
 
     loaded = _load_one(root, ticket_id)
     if loaded.is_err:
@@ -186,10 +191,17 @@ def brief_ticket(root: Path, ticket_id: str) -> Result[str, TicketError]:
 
     queue_result = load_queue(root)
     holders: tuple[tuple[str, str], ...] = ()
+    concurrent: tuple = ()
     if queue_result.is_ok:
-        holders = leased_by(queue_result.danger_ok, ticket, root)
+        queue = queue_result.danger_ok
+        holders = leased_by(queue, ticket, root)
+        concurrent = tuple(
+            t
+            for t in queue.tickets.values()
+            if t.id != ticket.id and t.state == TicketState.IN_PROGRESS
+        )
 
-    return Ok(compose_brief(root, ticket, holders))
+    return Ok(compose_brief(root, ticket, holders, concurrent))
 
 
 _LEADING_DONE_REPORT_HEADING_RE = re.compile(

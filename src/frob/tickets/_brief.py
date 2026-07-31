@@ -186,16 +186,102 @@ def _rel_land_rules(root: Path) -> str:
     return _REL_LAND_TEMPLATE.format(version=version or "unknown")
 
 
+# frob:ticket T-1347
+_CONCURRENCY_HAZARDS = (
+    "- Commit any new/changed test BEFORE running `frob ticket land` -- a "
+    "land killed mid-auto-fix can garble a source file, and the obvious "
+    "`git checkout -- <file>` recovery then silently discards uncommitted "
+    "work in OTHER files too (T-1338).",
+    "- A transient DirtyMain refusal from `frob ticket land` under "
+    "concurrency is EXPECTED (a sibling agent's land is in flight) -- "
+    "wait and retry; never touch main by hand to clear it.",
+)
+
+
+# frob:ticket T-1347
+# frob:tests tests/test_tickets_brief.py::TestConcurrentLeases.test_lists_others
+# frob:waive DUP001 reason="the DUP001 hits here are all rung=r2 95%-similar matches \
+# against unrelated modules (strata compliance-catalog test fixtures, \
+# frob.gates._coverage._module_join_fraction, frob.gates._refs._native_stub_pairs, \
+# frob.vet._containment._finding_for_pair) that share only the generic \
+# filter-then-format-a-list-of-lines shape, not this function's actual concern \
+# (rendering one ticket's do-not-touch scope entries); extracting a shared helper \
+# across those unrelated domains would not improve cohesion, it would just add an \
+# indirection with no real shared behavior"
+def _concurrent_leases_section(
+    ticket: Ticket, concurrent: tuple[Ticket, ...]
+) -> tuple[str, ...]:
+    """Lines for a "Concurrent leases (do NOT touch)" section (T-1347)
+    listing every OTHER in-progress ticket's id, title, and scope globs,
+    resolved live at brief time -- the one piece of a dispatch briefing a
+    coordinator otherwise had to hand-write per wave. Excludes `ticket`
+    itself; returns an empty tuple (no section) if `concurrent` is empty."""
+    others = tuple(t for t in concurrent if t.id != ticket.id)
+    if not others:
+        return ()
+    lines: list[str] = ["## Concurrent leases (do NOT touch)"]
+    for other in others:
+        globs = ", ".join(other.scope) if other.scope else "(no scope declared)"
+        lines.append(f"- {other.id} -- {other.title}: {globs}")
+    lines.append("")
+    return tuple(lines)
+
+
+# frob:ticket T-1347
+def _scope_and_leases_section(ticket: Ticket, lease_holders: tuple) -> tuple[str, ...]:
+    """Lines for `compose_brief`'s "Scope + leases" section (T-1347 split,
+    behavior unchanged): the declared scope globs, plus any active
+    `leased_by` collision against `ticket`'s own scope."""
+    lines: list[str] = ["## Scope + leases"]
+    if ticket.scope:
+        lines.extend(f"- {glob}" for glob in ticket.scope)
+    else:
+        lines.append("(no scope declared)")
+    if lease_holders:
+        lines.append("")
+        lines.append("Blocked by an active lease:")
+        for holder_id, glob in lease_holders:
+            lines.append(f"- {holder_id} holds {glob}")
+    lines.append("")
+    return tuple(lines)
+
+
+# frob:ticket T-1347
+def _playbook_hard_rules_section(root: Path) -> tuple[str, ...]:
+    """Lines for `compose_brief`'s "Playbook hard rules" section (T-1347
+    split, behavior unchanged): every parsed playbook section verbatim, or
+    empty if `root` has no playbook at all."""
+    sections = _load_playbook_sections(root)
+    if not sections:
+        return ()
+    lines: list[str] = ["## Playbook hard rules"]
+    for section in sections:
+        lines.append(f"### {section.number}. {section.title}")
+        lines.append(section.body)
+        lines.append("")
+    return tuple(lines)
+
+
 # frob:ticket T-0568
+# frob:ticket T-1347
 # frob:doc docs/modules/tickets.md#frob-ticket-brief-t-0568
 # frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_composes_full_briefing
+# frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_concurrent_leases
 # frob:ticket T-0601
-def compose_brief(root: Path, ticket: Ticket, lease_holders: tuple) -> str:
+def compose_brief(
+    root: Path,
+    ticket: Ticket,
+    lease_holders: tuple,
+    concurrent: tuple[Ticket, ...] = (),
+) -> str:
     """Render the complete T-0568 mission briefing for `ticket`: body +
     acceptance, scope + any colliding lease holders (`lease_holders`, the
-    `leased_by` result the caller already computed), the playbook's
-    hard-rule sections (`_load_playbook_sections`), inferred verify
-    commands (`_infer_verify_commands`), the gate-baseline summary
+    `leased_by` result the caller already computed), a "Concurrent leases
+    (do NOT touch)" section listing every OTHER in-progress ticket's id,
+    title, and scope globs (`concurrent`, T-1347 -- the single most
+    important thing a dispatched agent needs under concurrency), the
+    playbook's hard-rule sections (`_load_playbook_sections`), inferred
+    verify commands (`_infer_verify_commands`), the gate-baseline summary
     (`_gate_baseline_summary`), and the REL/land rules (`_rel_land_rules`)
     -- everything a dispatch prompt used to hand-type, in one call."""
     lines: list[str] = [f"# Mission briefing: {ticket.id} -- {ticket.title}", ""]
@@ -217,25 +303,14 @@ def compose_brief(root: Path, ticket: Ticket, lease_holders: tuple) -> str:
             lines.append(f"- [{i}] {status}: {item.text}")
         lines.append("")
 
-    lines.append("## Scope + leases")
-    if ticket.scope:
-        lines.extend(f"- {glob}" for glob in ticket.scope)
-    else:
-        lines.append("(no scope declared)")
-    if lease_holders:
-        lines.append("")
-        lines.append("Blocked by an active lease:")
-        for holder_id, glob in lease_holders:
-            lines.append(f"- {holder_id} holds {glob}")
+    lines.extend(_scope_and_leases_section(ticket, lease_holders))
+    lines.extend(_concurrent_leases_section(ticket, concurrent))
+
+    lines.append("## Concurrency hazards")
+    lines.extend(_CONCURRENCY_HAZARDS)
     lines.append("")
 
-    sections = _load_playbook_sections(root)
-    if sections:
-        lines.append("## Playbook hard rules")
-        for section in sections:
-            lines.append(f"### {section.number}. {section.title}")
-            lines.append(section.body)
-            lines.append("")
+    lines.extend(_playbook_hard_rules_section(root))
 
     lines.append("## Verify")
     for command in _infer_verify_commands(root, ticket):

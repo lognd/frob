@@ -13027,6 +13027,7 @@ threat: null
 component: null
 ```
 Found during T-1320 (2026-07-30). Three defects in the coverage pipeline: (1) make coverage exits with PYTEST's status only -- a stamp-coverage failure after a green suite yields exit 0 (run 3 printed 'ERROR: stamp-coverage failed: WriteFailed' and still exited 0; only caught by reading the log). The stamp is the whole point of the target; its failure must fail the make. (2) coverage xml died on a stale 'src/demo/__init__.py' entry in the combined data (a test fixture package measured into .coverage via subprocess coverage), producing no coverage.xml at all; recovery was manual 'coverage xml -i'. Either pass ignore-errors in the Makefile or keep fixture paths out of the combined data (source filters in the generated coverage-subprocess.rc). (3) observational: one xdist worker crashed (gw11) on tests/unit/strata/test_conform_eval_needle.py's full-repo scan; the serial rerun caught it, but a repeatedly-crashing heavy test would silently halve coverage data -- consider marking the heaviest real-repo scans for the serial rerun lane. Relates to T-1236 (deflation canary) and T-1205 (coverage as managed derived state).
+
 <!-- ticket:T-1336 -->
 ```yaml
 id: T-1336
@@ -13711,7 +13712,7 @@ Design questions to answer, not assume:
 ```yaml
 id: T-1347
 title: frob ticket brief emits concurrent sibling leases so dispatch is one line
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-31'
@@ -13722,10 +13723,30 @@ sprint: null
 scope:
 - src/frob/tickets/_brief.py
 - docs/modules/tickets.md
+- src/frob/tickets/_reporting.py
+- tests/test_tickets_brief.py
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_reporting.py
+  reason: brief_ticket wiring + its tests live in these files, needed to thread concurrent
+    in-progress tickets through
+  actor: logan
+  at: '2026-07-31'
+- op: add
+  glob: tests/test_tickets_brief.py
+  reason: brief_ticket wiring + its tests live in these files, needed to thread concurrent
+    in-progress tickets through
+  actor: logan
+  at: '2026-07-31'
+evidence:
+- tests/test_tickets_brief.py::TestConcurrentLeases::test_lists_others
+- tests/test_tickets_brief.py::TestBriefTicket::test_concurrent_leases
 acceptance:
 - text: given other tickets in progress, when frob ticket brief runs, then it lists
     their ids, titles, and scope globs under a do-not-touch heading
-  evidence: []
+  evidence:
+  - tests/test_tickets_brief.py::TestConcurrentLeases::test_lists_others
+  - tests/test_tickets_brief.py::TestBriefTicket::test_concurrent_leases
 threat: null
 component: tickets
 ```
@@ -13740,6 +13761,53 @@ PROPOSAL: brief emits a "Concurrent leases (do NOT touch)" section listing every
 Also worth folding in, from the same session's observations:
 - Note the interrupted-land hazard: commit new tests BEFORE running land, because a killed land can garble a file and the "git checkout --" recovery then eats uncommitted work (T-1338).
 - Note that transient DirtyMain refusals under concurrency are EXPECTED and the correct response is wait-and-retry, never touching main.
+
+## Done report
+
+frob ticket brief already assembled body+acceptance, scope+leases,
+playbook hard rules, verify commands, gate baseline, and REL/land rules,
+but omitted the one thing a coordinator still had to hand-type under
+concurrent dispatch: the scopes of OTHER in-progress tickets.
+
+Added a "Concurrent leases (do NOT touch)" section (compose_brief,
+_concurrent_leases_section) listing every OTHER in-progress ticket id,
+title, and scope globs, resolved live at brief time from the loaded
+TicketQueue (brief_ticket now filters queue.tickets.values() for
+state==IN_PROGRESS and id != the briefed ticket). Empty when no other
+ticket is in-progress -- no section printed.
+
+Also added a fixed "Concurrency hazards" section folding in the two
+hazards the ticket body named: commit new/changed tests BEFORE running
+frob ticket land (T-1338 garbled-file + git-checkout-eats-uncommitted-
+work incident), and that a transient DirtyMain refusal under concurrency
+is expected -- wait and retry, never touch main by hand.
+
+Split compose_brief Scope+leases and Playbook-hard-rules blocks into
+their own small helpers (_scope_and_leases_section,
+_playbook_hard_rules_section) to keep compose_brief under the ARCH001
+60-line threshold once the two new sections were added; behavior
+unchanged, same lines emitted in the same order.
+
+Scope widened from the original (_brief.py, docs/modules/tickets.md) to
+also include src/frob/tickets/_reporting.py (brief_ticket, the
+compose_brief caller wired to pass the concurrent-tickets tuple) and
+tests/test_tickets_brief.py (the test file for all of this), via frob
+ticket scope --add.
+
+### Changed
+```
+ tickets.md | 25 ++++++++++++++++++++++---
+ 1 file changed, 22 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_brief.py::TestConcurrentLeases::test_lists_others` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestBriefTicket::test_concurrent_leases` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 4 error(s), 589 warning(s), 706 waived
+- error-findings: INV006@src/frob/app/__init__.py, INV006@src/frob/app/app.py, SELFAUDIT001@design, TICK003@tickets.md
 
 <!-- ticket:T-1348 -->
 ```yaml

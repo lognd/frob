@@ -1103,6 +1103,19 @@ delegates to `frob.tickets._brief.compose_brief`, which assembles:
 - **Scope + leases** -- the declared scope globs, plus any active lease
   collision (`leased_by`) so the agent sees immediately if another
   in-progress ticket already holds an overlapping path.
+- **Concurrent leases (do NOT touch)** (T-1347) -- every OTHER in-progress
+  ticket's id, title, and scope globs, resolved live at brief time
+  (`frob.tickets._brief._concurrent_leases_section`). Under N-way
+  concurrent dispatch this is the single most important thing an agent
+  needs and previously the one piece of a dispatch prompt a coordinator
+  still had to hand-write; omitted entirely when no other ticket is
+  in-progress.
+- **Concurrency hazards** (T-1347) -- two fixed reminders: commit any
+  new/changed test BEFORE running `frob ticket land` (a killed
+  mid-auto-fix land can garble a file, and the obvious `git checkout --
+  <file>` recovery then silently discards uncommitted work elsewhere,
+  T-1338), and a transient DirtyMain refusal under concurrency is
+  expected -- wait and retry, never touch main by hand to clear it.
 - **Playbook hard rules** -- `frob.tickets._brief._parse_playbook_sections`
   parses every numbered `## N[letter]. Title` heading out of `docs/guides/
   agent-playbook.md` (a real markdown parse, not a hand-copied section
