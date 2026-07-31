@@ -310,6 +310,12 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             # frob.gates._PROCESS_POOL_GATES), the same shape as the rest of
             # this group, so it belongs here, not gates-native/-security.
             "ffi_boundary",
+            # T-1340: suppress (SUPPRESS001) was registered in
+            # frob.gates._ALL_GATES but never added to a _STAGE_GROUPS
+            # member -- same omission shape as ffi_boundary above. It is a
+            # thread-pool, sub-second gate, so it belongs in gates-fast;
+            # without this it is unreachable via `--only <group>`.
+            "suppress",
         }
     ),
     # frob:ticket T-0688

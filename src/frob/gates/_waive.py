@@ -165,6 +165,11 @@ _KNOWN_GATE_RULES = frozenset(
         # acceptance-policy-t-0756) -- distinct from SCOPE001 (a diff
         # actually touching an unscoped file).
         "SCOPE002",
+        # T-1340: suppression-dialect mismatch (a line carrying one
+        # checker's suppression while another configured checker reports
+        # an unsuppressed diagnostic on it). Registered here so the gate
+        # landed by T-1340 is waivable and known to TestKnownGateRuleIds.
+        "SUPPRESS001",
         "PRE001",
         "INV001",
         "INV002",
