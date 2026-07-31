@@ -14673,7 +14673,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-31'
-priority: medium
+priority: critical
 parent: null
 tier: ticket
 sprint: null
@@ -14724,7 +14724,6 @@ site-wide coverage.py behavior, consider whether combine ordering/dedup
 in the Makefile also plays a role (T-1335's own verification run combined
 176 files but skipped 280 -- worth understanding whether 280 "skipped"
 files were legitimate duplicates/empties or lost data).
-
 <!-- ticket:T-1354 -->
 ```yaml
 id: T-1354
