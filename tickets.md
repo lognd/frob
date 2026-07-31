@@ -13543,3 +13543,39 @@ PROPOSAL: brief emits a "Concurrent leases (do NOT touch)" section listing every
 Also worth folding in, from the same session's observations:
 - Note the interrupted-land hazard: commit new tests BEFORE running land, because a killed land can garble a file and the "git checkout --" recovery then eats uncommitted work (T-1338).
 - Note that transient DirtyMain refusals under concurrency are EXPECTED and the correct response is wait-and-retry, never touching main.
+
+<!-- ticket:T-1348 -->
+```yaml
+id: T-1348
+title: Land auto-fix phase must be transactional and leave a safe recovery path
+state: queued
+kind: bug
+origin: human
+created: '2026-07-31'
+priority: high
+parent: T-1344
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/gates/_fix_engine.py
+- docs/modules/tickets.md
+acceptance:
+- text: given a land killed mid-auto-fix, when the worktree is inspected, then no
+    source file is left half-rewritten
+  evidence: []
+- text: given a land killed mid-auto-fix, when an agent recovers, then it can identify
+    exactly which paths land rewrote without discarding its own uncommitted work
+  evidence: []
+threat: null
+component: tickets
+```
+Leaf of T-1344. Observed on T-1338 (2026-07-31): a "frob ticket land" run was killed by a timeout DURING its Tier-A auto-fix phase. That left a source file (src/frob/gates/_debt_deprecated.py) GARBLED -- a half-applied rewrite. The agent did the obvious thing, "git checkout -- <file>", which cleaned the garble but SILENTLY DESTROYED an uncommitted new test method in a different file it also reverted. It was caught only because a pytest count in a later run did not match expectations.
+
+Two distinct defects, both worth fixing:
+
+1. NON-ATOMIC AUTO-FIX. Land absorbs frob fmt, sync-interface, and the Tier-A fix handlers before its own merge. If it dies mid-phase the tree is left in a state that is neither before nor after. Make the auto-fix phase transactional: stage rewrites and commit them as one unit, or write through a temp-and-rename so a kill leaves the ORIGINAL intact. T-1262 covers a Tier-B apply-verify-rollback engine; this is the land-side gap and is not the same ticket.
+
+2. NO SAFE RECOVERY. After an interrupted land, an agent cannot distinguish "this file is garbled by the dead autofix" from "this file has my uncommitted work in it". Land should leave a recovery breadcrumb naming exactly which paths it rewrote (under .frob/), so recovery is targeted instead of a blanket checkout. Consider also auto-committing a wip snapshot BEFORE the auto-fix phase begins -- land already makes a pre-merge wip commit, so moving that earlier may fix this almost for free.
+
+Interim mitigation now in dispatch prompts: agents are told to commit new tests BEFORE running land. That is a workaround, not a fix -- it depends on every agent remembering.
