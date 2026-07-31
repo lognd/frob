@@ -14110,7 +14110,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-31'
-priority: high
+priority: critical
 parent: T-1344
 tier: ticket
 sprint: null
@@ -14135,6 +14135,17 @@ Observed failures this shape caused: a DirtyMain refusal costing a full retry cy
 
 PROPOSAL: "frob ticket land --queue" enqueues a verified worktree branch and returns immediately. A single serialized drainer merges queued branches onto main one at a time, running the post-merge gate check per merge. Agents then NEVER write to main directly.
 
+MEASURED EVIDENCE (2026-07-31, mined from .frob/telemetry.jsonl, 12,300 records) -- this is now the single most expensive operation in the tool:
+  ticket land   13.38 h total over 752 calls   (mean 78s when it succeeds)
+    succeeded   484 calls  10.46 h
+    FAILED      268 calls   2.92 h  <-- 36% failure rate, pure waste
+  For comparison: ALL `frob check` invocations combined cost 6.82 h over 1116 calls.
+  `ticket land` alone is ~60% of all frob wall-clock in the corpus, and its
+  failures alone (2.92 h) cost more than any other subcommand's total.
+The dominant failure mode is DirtyMain contention between concurrent agents --
+exactly what a merge queue eliminates by construction. This ticket is therefore
+the highest-value speed work in the repo, ahead of any gate optimization.
+
 Design questions to answer in the ticket, not assume:
 - Where does the queue live so it survives a crashed drainer (a git ref? a file under .frob/ with a lock?).
 - What happens when a queued branch no longer merges cleanly after an earlier queue entry lands -- reject back to the agent, or auto-rebase and re-verify?
@@ -14142,7 +14153,6 @@ Design questions to answer in the ticket, not assume:
 - Does this subsume the archived T-1058 stale-worktree-base hazard? If the drainer always merges current main, a stale base becomes detectable at enqueue.
 
 Preserve the existing LAND-PROOF contract: whatever the agent gets back must still let it prove commit + is_ancestor_of_main + state_on_main, or the verification discipline this repo depends on breaks.
-
 <!-- ticket:T-1346 -->
 ```yaml
 id: T-1346
@@ -14151,7 +14161,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-31'
-priority: high
+priority: critical
 parent: T-1344
 tier: ticket
 sprint: null
@@ -14178,12 +14188,24 @@ This is the root cause of THREE separate problems, not one:
 
 PROPOSAL: memoize gate results keyed on content digests. The key insight is that frob ALREADY maintains a per-symbol/per-file digest graph under .frob/ -- that is the project's founding premise -- so the cache key largely exists and is simply not used for gate results. Cache per (gate, gate-config, input-digest-set); a gate whose inputs are unchanged is served, not recomputed.
 
+MEASURED EVIDENCE (2026-07-31, mined from .frob/telemetry.jsonl, 12,300 records):
+  2.55 h of PROVABLY redundant re-runs -- identical `args_head` at identical
+  `tree_hash`, i.e. the same command over a byte-identical tree. Bare `check`
+  alone accounted for 45.8 min across 39 repeats; `check --only coverage` 6.8
+  min across 20; `check --only test` 5.0 min across 21.
+  The telemetry schema ALREADY records `tree_hash` per invocation, so this
+  redundancy is provable rather than heuristic -- and a digest-keyed cache
+  would eliminate all 2.55 h by construction, not by cleverness.
+  Full unscoped check measures 139.7s wall; the whole-tree scanners dominate
+  (sys 39s, perf 38s, arch 29s, clones 22s, pii 14s, coverage 13s, dead 11s).
+NOTE also that `ticket land` runs a post-merge check; at 13.38 h total land
+cost (see T-1345), making that check cheap is a large secondary win here.
+
 Design questions to answer, not assume:
 - Per-gate input sets must be declared HONESTLY. A gate that secretly reads frob.toml, the ledger, or a baseline file and is not keyed on it will serve stale results -- that is a correctness bug in the gate layer, strictly worse than being slow. Prefer fail-open (recompute) on any doubt.
 - Cross-file gates (dup/clones, dead_symbols, cycle) key on a SET of digests, not one file; verify the win survives that.
 - Where does the cache live, and is it safe for concurrent readers/writers across worktrees? .frob/ is gitignored, so CI cold-starts -- measure the cold path too.
 - Add a "--no-cache" escape hatch and make cache hits visible in output so a wrong result is diagnosable.
-
 <!-- ticket:T-1347 -->
 ```yaml
 id: T-1347
