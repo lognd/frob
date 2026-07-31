@@ -1,8 +1,12 @@
 """frob.mutate._journal: crash-safe backup journal for run_mutations
 (T-0857) -- journal write/idempotency/collision, byte-exact restore
-(CRLF fixture), and the crash-simulation regression this ticket exists
-for: a killed harness leaves a journal, the NEXT `run_mutations` call
-restores the original byte-exact before doing anything else."""
+(CRLF fixture), the crash-simulation regression this ticket exists
+for (a killed harness leaves a journal, the NEXT `run_mutations` call
+restores the original byte-exact before doing anything else), and the
+T-1327 stale-restore content-verification regression: a journal whose
+last-known on-disk content no longer matches what's actually on disk
+(a later legitimate run, or a live edit layered over a leftover mutant)
+must never be blindly restored over."""
 
 from __future__ import annotations
 
@@ -16,6 +20,7 @@ from frob.mutate import MutateError, run_mutations
 from frob.mutate._journal import (
     JournalError,
     list_stale_journals,
+    record_journal_progress,
     remove_journal,
     restore_stale_journals,
     write_journal,
@@ -107,8 +112,12 @@ def test_restore_stale_journals_is_byte_exact_crlf(tmp_path):
     # pid=_dead_pid() simulates the WRITING process having crashed --
     # restore_stale_journals only acts on journals whose writer is dead.
     assert write_journal(tmp_path, target, original, pid=_dead_pid()).is_ok
-    # simulate the crash: target now holds "mutant" content
-    target.write_bytes(b"def f(a, b):\r\n    return a - b\r\n")
+    # simulate the crash: target now holds "mutant" content, and the
+    # journal's own progress-tracking (T-1327) was kept in step with it,
+    # exactly as `run_mutations`' write loop would have done.
+    mutant = b"def f(a, b):\r\n    return a - b\r\n"
+    target.write_bytes(mutant)
+    record_journal_progress(tmp_path, target, mutant)
     restored = restore_stale_journals(tmp_path)
     assert restored == ("m.py",)
     assert target.read_bytes() == original
@@ -124,7 +133,9 @@ def test_restore_stale_journals_after_simulated_crash(tmp_path):
     target.write_bytes(original)
     write_journal(tmp_path, target, original, pid=_dead_pid())
     # a crash leaves the mutant on disk with no ordinary restore ever run
-    target.write_bytes(b"def add(a, b):\n    return a - b\n")
+    mutant = b"def add(a, b):\n    return a - b\n"
+    target.write_bytes(mutant)
+    record_journal_progress(tmp_path, target, mutant)
     assert list_stale_journals(tmp_path)
     restored = restore_stale_journals(tmp_path)
     assert restored == ("m.py",)
@@ -168,7 +179,9 @@ def test_recycled_pid_with_mismatched_starttime_is_treated_stale(tmp_path):
     target.write_bytes(original)
     write_journal(tmp_path, target, original, pid=os.getpid(), starttime="0")
     # simulate the "crash left a mutant" state
-    target.write_bytes(b"mutant left by the crashed (PID-recycled) writer\n")
+    mutant = b"mutant left by the crashed (PID-recycled) writer\n"
+    target.write_bytes(mutant)
+    record_journal_progress(tmp_path, target, mutant)
 
     # UNLIKE the live-pid-with-correct-starttime case above, this must be
     # recognized as stale and restored -- a bare PID-liveness check would
@@ -231,7 +244,9 @@ def test_run_mutations_restores_stale_journal_from_prior_crash(tmp_path):
     # dead PID, then leave the target in mutant form (as a killed
     # run_mutations call would).
     write_journal(tmp_path, target, original.encode("utf-8"), pid=_dead_pid())
-    target.write_text("def add(a, b):\n    return a - b\n", encoding="utf-8")
+    mutant = b"def add(a, b):\n    return a - b\n"
+    target.write_bytes(mutant)
+    record_journal_progress(tmp_path, target, mutant)
     assert list_stale_journals(tmp_path)
 
     result = run_mutations(
@@ -286,7 +301,9 @@ def test_pytest_session_start_restores_leftover_journal(tmp_path, monkeypatch):
     target.write_bytes(original)
     write_journal(tmp_path, target, original, pid=_dead_pid())
     # simulate the crash: the leftover mutant sits on disk, uncleaned
-    target.write_bytes(b"MUTANT LEFT BY CRASHED WORKER\n")
+    mutant = b"MUTANT LEFT BY CRASHED WORKER\n"
+    target.write_bytes(mutant)
+    record_journal_progress(tmp_path, target, mutant)
     assert list_stale_journals(tmp_path)
 
     monkeypatch.setattr(repo_conftest, "_REPO_ROOT", tmp_path)
@@ -357,3 +374,103 @@ def test_run_mutations_journal_collision_aborts_with_journal_collision_error(
     # the target was never touched -- the concurrent run's journal and its
     # backing bytes are the ones that must survive, untouched.
     assert target.read_text(encoding="utf-8") == original
+
+
+def test_record_journal_progress_tracks_last_written_content(tmp_path):
+    # frob:tests \
+    # tests/test_mutate_journal.py::test_record_journal_progress_tracks_last_written_co\
+    # ntent
+    # T-1327: `record_journal_progress` updates the journal's own
+    # "last known on-disk content" hash, without touching the recorded
+    # original bytes used for the eventual restore.
+    import json
+
+    original = b"original\n"
+    target = tmp_path / "m.py"
+    target.write_bytes(original)
+    write_journal(tmp_path, target, original, pid=_dead_pid())
+    journal_path = next((tmp_path / ".frob" / "mutate-backup").glob("*.json"))
+    before = json.loads(journal_path.read_text(encoding="utf-8"))
+    assert before["current_sha256"] == before["sha256"]
+
+    mutant = b"mutant bytes\n"
+    record_journal_progress(tmp_path, target, mutant)
+    after = json.loads(journal_path.read_text(encoding="utf-8"))
+    # the ORIGINAL backing bytes are untouched -- only the progress hash moved
+    assert after["content_b64"] == before["content_b64"]
+    assert after["sha256"] == before["sha256"]
+    import hashlib
+
+    assert after["current_sha256"] == hashlib.sha256(mutant).hexdigest()
+
+
+def test_restore_refuses_when_stale_journal_no_longer_matches_on_disk_content(
+    tmp_path,
+):
+    # frob:tests \
+    # tests/test_mutate_journal.py::test_restore_refuses_when_stale_journal_no_longer_m\
+    # atches_on_disk_content
+    # frob:tests src/frob/mutate/_journal.py::restore_stale_journals
+    # The T-1203 incident, reproduced directly: an earlier, unrelated
+    # mutation run crashed and left a stale journal for this file plus its
+    # mutant content on disk; a developer then made a LIVE, uncommitted
+    # edit on top of it (never noticing the leftover mutant underneath).
+    # A later, unrelated `restore_stale_journals` sweep (as
+    # `run_mutations`' own startup call performs, across every stale
+    # journal under root, not just its own target) must NOT clobber that
+    # live edit -- it must fail closed: skip the restore, drop the now-
+    # untrustworthy journal entry, and leave the live edit exactly as the
+    # developer left it.
+    original = b"def add(a, b):\n    return a + b\n"
+    target = tmp_path / "m.py"
+    target.write_bytes(original)
+    write_journal(tmp_path, target, original, pid=_dead_pid())
+    # the crash: the crashed run's mutant is what's actually on disk, and
+    # its journal progress is tracked accurately, matching a real crash.
+    mutant = b"def add(a, b):\n    return a - b\n"
+    target.write_bytes(mutant)
+    record_journal_progress(tmp_path, target, mutant)
+    assert list_stale_journals(tmp_path)
+
+    # the developer's live, uncommitted edit -- layered on top of the
+    # leftover mutant, never restored, never noticed.
+    live_edit = b"def add(a, b):\n    return a + b  # developer's live fix\n"
+    target.write_bytes(live_edit)
+
+    restored = restore_stale_journals(tmp_path)
+
+    # nothing was restored -- the live edit survives untouched.
+    assert restored == ()
+    assert target.read_bytes() == live_edit
+    # the stale, now-untrustworthy journal entry was dropped, not left
+    # behind to be silently retried (and silently fail the same way)
+    # forever.
+    assert list_stale_journals(tmp_path) == ()
+
+
+def test_restore_refuses_and_drops_a_legacy_journal_missing_current_sha256(tmp_path):
+    # frob:tests \
+    # tests/test_mutate_journal.py::test_restore_refuses_and_drops_a_legacy_journal_mis\
+    # sing_current_sha256
+    # A pre-T-1327 journal on disk (no `current_sha256` field at all) is
+    # just as unverifiable as a genuine mismatch -- fail closed the same
+    # way rather than trust it.
+    import json
+
+    original = b"original\n"
+    target = tmp_path / "m.py"
+    target.write_bytes(original)
+    write_journal(tmp_path, target, original, pid=_dead_pid())
+    journal_path = next((tmp_path / ".frob" / "mutate-backup").glob("*.json"))
+    data = json.loads(journal_path.read_text(encoding="utf-8"))
+    del data["current_sha256"]
+    journal_path.write_text(json.dumps(data), encoding="utf-8")
+
+    live_edit = b"whatever is here now\n"
+    target.write_bytes(live_edit)
+
+    restored = restore_stale_journals(tmp_path)
+
+    assert restored == ()
+    assert target.read_bytes() == live_edit
+    assert list_stale_journals(tmp_path) == ()

@@ -2101,6 +2101,7 @@ node mutate : trusted {
     attr interface=StaleJournal;
     attr interface=generate_mutants;
     attr interface=list_stale_journals;
+    attr interface=record_journal_progress;
     attr interface=remove_journal;
     attr interface=restore_stale_journals;
     attr interface=run_mutations;
@@ -5041,6 +5042,7 @@ node testsuite : trusted {
     attr interface=test_reclaimed_bytes_is_zero_for_no_matches;
     attr interface=test_reclaimed_bytes_sums_matched_entries;
     attr interface=test_record_cli_event_shape;
+    attr interface=test_record_journal_progress_tracks_last_written_content;
     attr interface=test_record_ticket_event_shape;
     attr interface=test_recycled_pid_with_mismatched_starttime_is_treated_stale;
     attr interface=test_redact_command_hides_recognizable_secret;
@@ -5063,6 +5065,8 @@ node testsuite : trusted {
     attr interface=test_resolve_local_import_maps_to_repo_relative;
     attr interface=test_resolve_manifest_paths_bad_output_expression_is_render_failed;
     attr interface=test_restore_and_list_skip_a_journal_owned_by_a_live_pid;
+    attr interface=test_restore_refuses_and_drops_a_legacy_journal_missing_current_sha256;
+    attr interface=test_restore_refuses_when_stale_journal_no_longer_matches_on_disk_content;
     attr interface=test_restore_stale_journals_after_simulated_crash;
     attr interface=test_restore_stale_journals_is_byte_exact_crlf;
     attr interface=test_retread_candidates_require_repeat_and_known_tree_hash;

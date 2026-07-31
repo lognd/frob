@@ -26,6 +26,7 @@ from frob.logging import get_logger
 from frob.mutate._journal import (
     JournalError,
     StaleJournal,
+    record_journal_progress,
     remove_journal,
     restore_stale_journals,
     write_journal,
@@ -507,6 +508,12 @@ def _run_mutants(
     survivors: list[Mutant] = []
     for mutation in mutants:
         target.write_text(mutation.source, encoding="utf-8")
+        # T-1327: keep the journal's "last known on-disk content" hash in
+        # step with what was actually just written, so a crash mid-mutant
+        # leaves a journal a LATER restore can verify against (rather
+        # than trusting the writer-dead check alone -- see
+        # frob.mutate._journal's stale-restore verification section).
+        record_journal_progress(root, target, mutation.source.encode("utf-8"))
         try:
             guarded = guarded_subprocess_run(
                 list(test_argv),

@@ -48,6 +48,29 @@ Design:
   liveness is checked with a signal-0 `os.kill` probe -- cheap, and
   correct in exactly the way a crash-recovery check needs: dead means
   gone, no lockfile or heartbeat protocol required.
+- STALE-RESTORE CONTENT VERIFICATION (T-1327): a dead/reused-PID writer
+  proves the journal's OWNING RUN is gone, but says nothing about whether
+  the on-disk file is still what that run actually left there. A restore
+  triggered by an unrelated LATER run (`run_mutations`' own startup sweep
+  restores every stale journal under `root`, not just its own target)
+  used to overwrite unconditionally -- observed clobbering two live,
+  uncommitted edits to a file that had been mutated and crash-abandoned
+  in an EARLIER, unrelated run, then further hand-edited by a developer
+  who never noticed the leftover mutant underneath (T-1203 incident). Every
+  journal entry now also records `current_sha256`: the sha256 of whatever
+  content this module itself last WROTE to `target` (the original, at
+  `write_journal` time; each mutant's bytes in turn, via
+  `record_journal_progress`, as `run_mutations` writes it). Restoring
+  first re-hashes the file CURRENTLY on disk and compares it against
+  `current_sha256` -- a match proves nothing has touched the file since
+  this module's own last write (the ordinary crash-recovery case: restore
+  proceeds exactly as before); a mismatch proves something else (a later
+  legitimate run, or -- the incident case -- a developer's live edit) has
+  since written the file, and restoring over it would destroy that content.
+  Fail CLOSED on a mismatch: skip the restore, log a WARNING naming the
+  file, and drop the now-untrustworthy journal entry rather than either
+  overwriting unverified content or leaving a phantom entry `frob doctor`
+  would keep reporting forever.
 - PID REUSE (a reviewer-caught gap in the first pass of this ticket): a
   signal-0 probe alone cannot tell "the original writer is still running"
   apart from "the OS recycled that PID number for an unrelated process
@@ -132,7 +155,14 @@ class _MutationJournalEntry(BaseModel):
     process-start timestamp at write time, `None` when `/proc` could not
     be read (non-Linux, or a sandboxed/restricted environment) -- see the
     module docstring's PID-reuse section for why this exists and what its
-    absence costs."""
+    absence costs. `current_sha256` (T-1327) is the sha256 of whatever
+    content this module itself last WROTE to the target -- `sha256` at
+    `write_journal` time, then each mutant's own bytes as
+    `record_journal_progress` is called in step with `run_mutations`'
+    write loop. A restore compares the file's CURRENT on-disk hash against
+    this field, not against `sha256`, since by the time a restore is
+    warranted the file legitimately holds mutant bytes, not the original
+    -- see the module docstring's stale-restore verification section."""
 
     model_config = {}
 
@@ -141,6 +171,7 @@ class _MutationJournalEntry(BaseModel):
     content_b64: str
     pid: int
     starttime: str | None = None
+    current_sha256: str | None = None
 
 
 # frob:doc docs/modules/mutate.md#crash-safe-backup-journal-t-0857
@@ -331,6 +362,11 @@ def write_journal(
         content_b64=base64.b64encode(original).decode("ascii"),
         pid=resolved_pid,
         starttime=resolved_starttime,
+        # T-1327: at write time the file on disk IS still the original
+        # (no mutant has been written yet), so the "last known on-disk"
+        # hash starts out identical to `sha256`; `record_journal_progress`
+        # advances it as each mutant is subsequently written.
+        current_sha256=sha256,
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = path.with_name(f"{path.name}.tmp{os.getpid()}")
@@ -344,6 +380,41 @@ def write_journal(
         tmp_path.unlink(missing_ok=True)
     _log.info("mutate: journaled pre-mutation bytes for %s to %s", target, path)
     return Ok(None)
+
+
+# frob:doc docs/modules/mutate.md#crash-safe-backup-journal-t-0857
+# frob:tests \
+# tests/test_mutate_journal.py::test_record_journal_progress_tracks_last_written_conten\
+# t \
+# kind="unit"  # noqa: E501
+def record_journal_progress(root: Path, target: Path, current: bytes) -> None:
+    """Update `target`'s journal entry's `current_sha256` (T-1327) to the
+    hash of `current` -- called by `run_mutations`' write loop immediately
+    after each mutant's bytes are written to disk, so the journal always
+    reflects exactly what this module itself last wrote there. Best-effort
+    and silent on any failure (missing/malformed journal, IO error): this
+    is bookkeeping for a LATER restore's verification, never something a
+    mutation run should abort over. A missing/unreadable journal here
+    simply means a subsequent restore falls back to its own
+    unverifiable-content handling (skip and drop, fail closed) rather than
+    silently trusting stale state."""
+    path = _journal_file(root, target)
+    entry = _read_journal_file(path)
+    if entry is None:
+        return
+    updated = entry.model_copy(
+        update={"current_sha256": hashlib.sha256(current).hexdigest()}
+    )
+    tmp_path = path.with_name(f"{path.name}.tmp{os.getpid()}")
+    try:
+        tmp_path.write_text(updated.model_dump_json(), encoding="utf-8")
+        os.replace(tmp_path, path)
+    except OSError as exc:
+        _log.warning(
+            "mutate: failed to record journal progress for %s: %s", target, exc
+        )
+    finally:
+        tmp_path.unlink(missing_ok=True)
 
 
 # frob:doc docs/modules/mutate.md#crash-safe-backup-journal-t-0857
@@ -428,6 +499,33 @@ def restore_stale_journals(root: Path) -> tuple[str, ...]:
             )
             continue
         target_path = _entry_target_path(root, entry)
+        # T-1327: the writer being dead only proves the OWNING RUN is
+        # gone -- it says nothing about whether the file it left behind
+        # is still that exact content. Verify the on-disk bytes still
+        # match what this module itself last wrote (`current_sha256`)
+        # before overwriting; a mismatch (a later legitimate run, or a
+        # developer's live edit layered on top of the leftover mutant --
+        # the T-1203 incident) means restoring would destroy content that
+        # is not this journal's to clobber. Fail CLOSED: skip, warn, and
+        # drop the now-untrustworthy entry rather than overwrite or leave
+        # a phantom entry `frob doctor` would keep reporting forever. A
+        # journal with no `current_sha256` at all (pre-T-1327 format) is
+        # equally unverifiable and handled the same way.
+        if entry.current_sha256 is None or (
+            target_path.exists()
+            and hashlib.sha256(target_path.read_bytes()).hexdigest()
+            != entry.current_sha256
+        ):
+            _log.warning(
+                "mutate: stale journal for %s no longer matches its last known "
+                "on-disk content -- the file was modified since this journal "
+                "was written (a later run, or a live edit); leaving it "
+                "untouched and dropping the stale entry (%s)",
+                entry.target,
+                path,
+            )
+            path.unlink(missing_ok=True)
+            continue
         try:
             target_path.parent.mkdir(parents=True, exist_ok=True)
             target_path.write_bytes(base64.b64decode(entry.content_b64))
@@ -455,6 +553,7 @@ __all__ = [
     "JournalError",
     "StaleJournal",
     "list_stale_journals",
+    "record_journal_progress",
     "remove_journal",
     "restore_stale_journals",
     "write_journal",

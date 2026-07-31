@@ -214,6 +214,58 @@ doctor` stays clean but a target keeps refusing with `JournalCollision`,
 inspect `.frob/mutate-backup/<hash>.json` by hand -- the recorded PID may
 have been reused.
 
+### Stale-restore content verification (T-1327)
+
+<!-- frob:describes src/frob/mutate/_journal.py::_MutationJournalEntry -->
+<!-- frob:describes src/frob/mutate/_journal.py::write_journal -->
+<!-- frob:describes src/frob/mutate/_journal.py::record_journal_progress -->
+<!-- frob:describes src/frob/mutate/_journal.py::restore_stale_journals -->
+
+A dead/reused-PID writer (the two sections above) proves the journal's
+OWNING RUN is gone -- it says nothing about whether the on-disk file is
+still what that run actually left there. `restore_stale_journals`
+restores EVERY stale journal found under `root`, not just the current
+run's own target, so a journal left by an earlier, wholly unrelated
+crashed run gets restored the moment any later `run_mutations` call
+starts. If a developer had, in the meantime, made a live, uncommitted
+edit directly on top of the leftover mutant (never noticing it was
+already corrupted), that restore silently destroyed the live edit --
+this happened for real (the T-1203 incident: two uncommitted edits to
+`src/frob/strata/_mutation_audit.py` clobbered by a stale journal from an
+unrelated run).
+
+Fix: every `_MutationJournalEntry` now also records `current_sha256` --
+the sha256 of whatever content this module itself last WROTE to the
+target. `write_journal` seeds it equal to the original bytes' own
+`sha256` (the file on disk still holds the original at that point);
+`record_journal_progress(root, target, current)` (called by
+`run_mutations`'s mutant-write loop immediately after each mutant's bytes
+land on disk) advances it in step, so the journal always reflects exactly
+what was last written there.
+
+`restore_stale_journals` re-hashes the file CURRENTLY on disk before
+overwriting it and compares that hash against `current_sha256`:
+
+- **Match** -- proves nothing has touched the file since this module's
+  own last write. This is the ordinary crash-recovery path and behaves
+  exactly as before T-1327: restore proceeds, the journal is removed.
+- **Mismatch** (including a pre-T-1327 journal with no `current_sha256`
+  field at all, or a target file that vanished and came back different)
+  -- proves a LATER legitimate run, or a live edit, has since written the
+  file. Fails CLOSED: the restore is skipped, a WARNING names the file,
+  and the now-untrustworthy journal entry is dropped -- never overwritten,
+  and never left behind to silently retry (and silently fail the same
+  way) on every subsequent `run_mutations` call.
+
+This is a pure ADDITION to the crash-recovery contract above: staleness
+(`_is_stale`, PID-liveness plus the starttime/PID-reuse check) still
+decides WHETHER a journal is even a restore candidate; content
+verification decides whether restoring it is actually safe. A journal
+that fails the content check is exactly as gone afterward as one that was
+successfully restored -- `frob doctor`'s `list_stale_journals` view will
+no longer report it, since the entry itself is deleted, not merely
+skipped for one run.
+
 ### Recursion guard (considered, not changed)
 
 The ticket that added this journal (T-0857) also asked whether any

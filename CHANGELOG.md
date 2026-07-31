@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.288.0] - unreleased
+
+- T-1327: mutate: stale mutation-backup journal restore clobbers live in-progress edits
+
 ## [0.287.0] - unreleased
 
 - T-1336: RENDER001 x4 + ARCH001 + COV007/COV001 residue in src/frob/refactor

@@ -12428,7 +12428,7 @@ against the branch.
 ```yaml
 id: T-1327
 title: 'mutate: stale mutation-backup journal restore clobbers live in-progress edits'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-29'
@@ -12439,18 +12439,103 @@ sprint: null
 scope:
 - src/frob/mutate/**
 - tests/test_mutate_journal.py
+- docs/modules/mutate.md
+scope_changes:
+- op: add
+  glob: docs/modules/mutate.md
+  reason: AFFECT001 requires this doc touched alongside the _MutationJournalEntry/write_journal/record_journal_progress/restore_stale_journals
+    changes; restored by section 10b's tickets.md-restore step, re-adding
+  actor: logan
+  at: '2026-07-31'
+evidence:
+- tests/test_mutate_journal.py::test_restore_refuses_when_stale_journal_no_longer_matches_on_disk_content
+- tests/test_mutate_journal.py::test_restore_refuses_and_drops_a_legacy_journal_missing_current_sha256
+- tests/test_mutate_journal.py::test_restore_stale_journals_is_byte_exact_crlf
+- tests/test_mutate_journal.py::test_run_mutations_restores_stale_journal_from_prior_crash
 acceptance:
 - text: GIVEN a mutation journal whose recorded pre-mutation hash no longer matches
     the on-disk file WHEN restore runs THEN the file is left untouched and the stale
     entry is dropped with a WARNING naming the file
-  evidence: []
+  evidence:
+  - tests/test_mutate_journal.py::test_restore_refuses_when_stale_journal_no_longer_matches_on_disk_content
+  - tests/test_mutate_journal.py::test_restore_refuses_and_drops_a_legacy_journal_missing_current_sha256
 - text: GIVEN a crash mid-mutation with an accurate journal THEN restore still works
     as today
-  evidence: []
+  evidence:
+  - tests/test_mutate_journal.py::test_restore_stale_journals_is_byte_exact_crlf
+  - tests/test_mutate_journal.py::test_run_mutations_restores_stale_journal_from_prior_crash
 threat: null
 component: null
 ```
 Observed 2026-07-29 in worktree w26-strata-t1203 during T-1203: a frob check / mutation-testing run emitted 'WARNING: mutate: restored stale mutation-backup journal' and the restore CLOBBERED two uncommitted in-progress edits to src/frob/strata/_mutation_audit.py (the file under active development, not a mutation target of the run). The agent caught it only by noticing unexpected file content, redid the edits, and committed defensively. The T-0857 crash-safe journal exists to restore mutants after a crash -- but a STALE journal (from an earlier run, or another worktree context) must never win over newer on-disk content. Fix direction: the restore path must verify the journal entry's recorded pre-mutation content hash still matches the CURRENT file before restoring (mismatch = the file moved on legitimately -> skip restore, log, and drop the stale entry), and the journal should be invalidated at the start of any run that did not crash.
+
+## Done report
+
+Root cause: `restore_stale_journals` proved only that a journal's WRITER
+was dead (`_is_stale`), never that the on-disk file it was about to
+overwrite still matched what that writer actually left behind. A stale
+journal from an earlier, unrelated crashed run gets restored at the start
+of ANY later `run_mutations` call, across every journal under root, not
+just the current run's own target -- so a file that was mutated,
+crash-abandoned, and later hand-edited by a developer (who never noticed
+the leftover mutant underneath) had those live edits silently destroyed
+by a later, wholly unrelated mutation run (the T-1203 incident).
+
+Fix: every journal entry now also records `current_sha256` -- the sha256
+of whatever content this module itself last WROTE to the target (the
+original at `write_journal` time, then each mutant's own bytes via the
+new `record_journal_progress`, called from `run_mutations`'s write loop
+in step with every mutant write). Restoring first re-hashes the file
+CURRENTLY on disk and compares it against `current_sha256`: a match
+proves nothing has touched the file since this module's own last write
+(the ordinary crash-recovery path, unchanged); a mismatch (or a
+pre-T-1327 journal with no `current_sha256` at all) proves something
+else has since written the file, and restoring over it would destroy
+content that is not this journal's to clobber. Fails CLOSED on a
+mismatch: skip the restore, log a WARNING naming the file, and drop the
+now-untrustworthy journal entry rather than overwrite unverified content
+or leave a phantom entry `frob doctor` would keep reporting forever.
+
+Proven with a direct reproduction of the T-1203 incident shape: a stale
+journal + accurately-tracked crash state, then a live edit layered on top
+of the leftover mutant before restore runs -- the live edit survives, and
+the stale entry is dropped. A second test covers the legacy-journal
+(missing `current_sha256`) case the same way. The two pre-existing crash-
+simulation tests (byte-exact CRLF restore, `run_mutations`'s own
+restore-then-continue path) were updated to call the new
+`record_journal_progress` at the point they simulate a crash, so they
+continue to exercise the ACCURATE-journal path acceptance criterion 1
+requires, rather than accidentally exercising the new mismatch path.
+
+`design/frob.strata` interface listing was regenerated via
+`frob sys sync-interface` to declare the new public
+`record_journal_progress` symbol and the three new test node ids; no
+other drift.
+
+Residue: none filed -- the fix is fully contained inside
+`src/frob/mutate/_journal.py` and `src/frob/mutate/__init__.py`, and no
+new gap was found outside this ticket's scope during the work.
+
+### Changed
+```
+ docs/modules/mutate.md       |  52 +++++++++++++++++
+ src/frob/mutate/__init__.py  |   7 +++
+ src/frob/mutate/_journal.py  | 101 +++++++++++++++++++++++++++++++-
+ tests/test_mutate_journal.py | 135 ++++++++++++++++++++++++++++++++++++++++---
+ tickets.md                   |  24 ++++++--
+ 5 files changed, 305 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+- `tests/test_mutate_journal.py::test_restore_refuses_when_stale_journal_no_longer_matches_on_disk_content` (pytest node id, verified passing when recorded)
+- `tests/test_mutate_journal.py::test_restore_refuses_and_drops_a_legacy_journal_missing_current_sha256` (pytest node id, verified passing when recorded)
+- `tests/test_mutate_journal.py::test_restore_stale_journals_is_byte_exact_crlf` (pytest node id, verified passing when recorded)
+- `tests/test_mutate_journal.py::test_run_mutations_restores_stale_journal_from_prior_crash` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 4 error(s), 400 warning(s), 687 waived
+- error-findings: INV006@src/frob/app/__init__.py, INV006@src/frob/app/app.py, SELFAUDIT001@design, TICK003@tickets.md
 
 <!-- ticket:T-1328 -->
 ```yaml

@@ -834,6 +834,7 @@
     "src/frob/mutate/_journal.py::JournalError": "fea8c9c33a88ab7fae7d0ff7806fd31b29e79dbf57b45a0c71d5685768ccd209",
     "src/frob/mutate/_journal.py::StaleJournal": "5524a3cb00e2be5acdf2e2da713adbfb902a9b606f76c80e85853dcfc0fd68c0",
     "src/frob/mutate/_journal.py::list_stale_journals": "e345c169d753290185c52c400ae5f6010788414eab8c8609db8536e4317d1a33",
+    "src/frob/mutate/_journal.py::record_journal_progress": "cedf6bfd4e9b0956507516ccc133839e96e78ab5e6ad08e6335025513a95c361",
     "src/frob/mutate/_journal.py::remove_journal": "766b00ad995132e5eb9e0d4512b35671320e8257c285efd2ae8bd3121426aff9",
     "src/frob/mutate/_journal.py::restore_stale_journals": "0c435c2dbba09a10b3880806fc0f76bb2ca3367a47f4f057373d30750474e743",
     "src/frob/mutate/_journal.py::write_journal": "a5f5096fee6d652515d8fa1c275c4ad783e54c67771f762b905e1a0d6d9e8df4",
@@ -1929,5 +1930,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.287.0"
+  "version": "0.288.0"
 }
