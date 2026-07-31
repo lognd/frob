@@ -92,9 +92,7 @@ class TestBuildNatives:
         assert result.is_err
         assert result.danger_err is NativesError.NoNatives
 
-    def test_unparseable_frob_toml_is_err_load_failed(
-        self, tmp_path: Path
-    ) -> None:
+    def test_unparseable_frob_toml_is_err_load_failed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/natives/_build.py::build_natives kind="unit"
         # Proves the `load_natives(...).is_err` branch: a malformed
         # frob.toml (unparseable TOML, not merely "no [[native]] entries")
@@ -276,7 +274,7 @@ class TestBuildNatives:
 
         outside_dir = tmp_path.parent / f"outside-crate-{tmp_path.name}"
         outside_dir.mkdir()
-        (outside_dir / "Cargo.toml").write_text("[package]\nname = \"x\"\n")
+        (outside_dir / "Cargo.toml").write_text('[package]\nname = "x"\n')
 
         class _Spec:
             name = "strata_core"

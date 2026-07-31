@@ -17,6 +17,8 @@ import subprocess
 from datetime import date
 from pathlib import Path
 
+from typani import Result
+
 from frob.gates import Severity, tickets_gate
 from frob.tickets import (
     Origin,
@@ -32,7 +34,7 @@ from frob.tickets import (
     renumber_one,
 )
 from frob.tickets._land_ledger_merge import _splice_only_ticket
-from frob.tickets._models import Ticket, TicketError
+from frob.tickets._models import RenumberReport, Ticket, TicketError
 from frob.tickets._provisional import is_draft_id, mint_draft_id, on_default_branch
 from frob.tickets._store import atomic_write, ledger_path, load_all, write_all
 
@@ -805,7 +807,7 @@ class TestRenumberOneV2:
         self._v2_ticket(tmp_path, "T-0001")
         self._v2_ticket(tmp_path, "T-0002")
 
-        results: list[object] = []
+        results: list[Result[RenumberReport, TicketError]] = []
 
         def _renumber_a() -> None:
             results.append(renumber_one(tmp_path, "T-0001", "T-0100"))
@@ -823,4 +825,4 @@ class TestRenumberOneV2:
         assert not thread_a.is_alive(), "renumber_one_v2 deadlocked (thread A)"
         assert not thread_b.is_alive(), "renumber_one_v2 deadlocked (thread B)"
         assert len(results) == 2
-        assert all(r.is_ok for r in results)  # type: ignore[attr-defined]
+        assert all(r.is_ok for r in results)

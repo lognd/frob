@@ -152,11 +152,15 @@ class TestResolve:
         hypothesis strategy makes `resolve` report `Err(NoGenerator)` via
         the pydantic-derived branch, not raise -- proves
         `_resolve_cascade`'s derived-failure path (`derived.is_ok` false)."""
+
         # frob:tests src/frob/fuzz/_arbitrary.py::resolve kind="unit"
         class _Unresolvable(BaseModel):
             model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
 
-            value: "_NoSuchType"  # type: ignore[name-defined]  # noqa: F821
+            # The unresolvable annotation IS the fixture: it is what makes
+            # `resolve` take the derived-failure branch. Suppressed for both
+            # checkers -- ty does not honor mypy's `type: ignore`.
+            value: "_NoSuchType"  # type: ignore[name-defined]  # noqa: F821  # ty: ignore[unresolved-reference]
 
         result = resolve(_Unresolvable)
         assert result.is_err

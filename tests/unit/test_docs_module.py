@@ -48,7 +48,7 @@ def test_search(tmp_path):
 def test_extract_docstrings_non_python_file_returns_empty(tmp_path):
     # frob:tests src/frob/docs/__init__.py::extract_docstrings kind="unit"
     src = tmp_path / "mod.rs"
-    src.write_text('/// A rust doc comment.\nfn foo() {}\n')
+    src.write_text("/// A rust doc comment.\nfn foo() {}\n")
     assert extract_docstrings(src) == []
 
 
@@ -64,10 +64,10 @@ def test_extract_docstrings_symbol_filter_narrows_to_one_method(tmp_path):
     src.write_text(
         '"""Module doc."""\n\n\n'
         "class Widget:\n"
-        '    def render(self):\n'
+        "    def render(self):\n"
         '        """Render it."""\n'
         "        pass\n\n"
-        '    def other(self):\n'
+        "    def other(self):\n"
         '        """Other thing."""\n'
         "        pass\n"
     )

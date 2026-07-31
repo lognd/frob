@@ -290,9 +290,7 @@ def test_py_outline_doc_with_no_period_uses_80_char_fallback(tmp_path):
     # first-80-chars truncation instead of the sentence-split path every
     # other outline test's dot-terminated docstrings take.
     long_no_period = "x" * 120
-    src = (
-        f'def f():\n    """{long_no_period}"""\n    pass\n'.encode()
-    )
+    src = f'def f():\n    """{long_no_period}"""\n    pass\n'.encode()
     f = tmp_path / "nodoc_period.py"
     f.write_bytes(src)
     outline = outline_file(f).danger_ok

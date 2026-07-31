@@ -1882,9 +1882,7 @@ class TestV2IndexCache:
     def _v2_ticket(self, tmp_path: Path, ticket_id: str = "T-0001") -> None:
         d = tmp_path / "tickets" / ticket_id
         d.mkdir(parents=True)
-        (d / "ticket.md").write_text(
-            _serialize_ticket(_ticket(ticket_id=ticket_id))
-        )
+        (d / "ticket.md").write_text(_serialize_ticket(_ticket(ticket_id=ticket_id)))
 
     def test_second_load_reads_from_index_cache(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets.py::TestV2IndexCache.test_second_load_reads_from_index_cache  # noqa: E501
@@ -1951,9 +1949,7 @@ class TestV2StateTransitions:
         )
         return root
 
-    def _commit_ticket(
-        self, root: Path, ticket: Ticket, message: str
-    ) -> None:
+    def _commit_ticket(self, root: Path, ticket: Ticket, message: str) -> None:
         import subprocess
 
         d = root / "tickets" / ticket.id
@@ -1969,9 +1965,7 @@ class TestV2StateTransitions:
         from frob.tickets._store import v2_state_transitions
 
         root = self._repo(tmp_path)
-        self._commit_ticket(
-            root, _ticket(state=TicketState.QUEUED), "file T-0001"
-        )
+        self._commit_ticket(root, _ticket(state=TicketState.QUEUED), "file T-0001")
         self._commit_ticket(
             root, _ticket(state=TicketState.IN_PROGRESS), "start T-0001"
         )

@@ -322,6 +322,15 @@ from frob.strata._models import (
     Verdict,
     Waiver,
 )
+from frob.strata._mutation_audit import (
+    DETECTABLE_KINDS,
+    EXPORT_DETECTABLE_KINDS,
+    MutationAuditReport,
+    MutationFinding,
+    SecondDetectorGap,
+    UndetectableCapabilityKind,
+    run_may_mutation_audit,
+)
 from frob.strata._native_staleness import (
     NATIVE_SOURCE_DIRS,
     StaleNative,
@@ -399,15 +408,6 @@ from frob.strata._secrets import (
     SecretExpansion,
     SecretSpec,
     elaborate_secret,
-)
-from frob.strata._mutation_audit import (
-    DETECTABLE_KINDS,
-    EXPORT_DETECTABLE_KINDS,
-    MutationAuditReport,
-    MutationFinding,
-    SecondDetectorGap,
-    UndetectableCapabilityKind,
-    run_may_mutation_audit,
 )
 from frob.strata._selfconform import (
     SYS_BINDING_TOTALITY,

@@ -64,9 +64,7 @@ def test_git_log_include_non_conventional_keeps_unknown_type(
     default_result = git_log(tmp_path, granularity="full")
     assert all(c.type != "unknown" for c in default_result.commits)
 
-    full_result = git_log(
-        tmp_path, granularity="full", include_non_conventional=True
-    )
+    full_result = git_log(tmp_path, granularity="full", include_non_conventional=True)
     assert any(c.type == "unknown" for c in full_result.commits)
 
 
