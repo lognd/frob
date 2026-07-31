@@ -76,8 +76,6 @@ def build_move_ops(
     return delete_op, append_op
 
 
-# frob:doc docs/commands/refactor.md#build_move_ops
-# frob:tests tests/test_refactor.py::TestApplyPlan.test_overlapping_ops_refuse_before_write  # noqa: E501
 def _find_overlapping_ops(
     ops: list[RewriteOp],
 ) -> tuple[RewriteOp, RewriteOp] | None:
@@ -130,6 +128,7 @@ def _apply_ops_to_file(file_path: Path, ops: list[RewriteOp]) -> None:
 
 # frob:doc docs/commands/refactor.md#apply_plan
 # frob:tests tests/test_refactor.py::TestApplyPlan.test_apply_then_rollback_restores_tree  # noqa: E501
+# frob:tests tests/test_refactor.py::TestApplyPlan.test_overlapping_ops_refuse_before_write  # noqa: E501
 def apply_plan(repo_root: Path, plan: RefactorPlan) -> Result[None, RefactorError]:
     """Splice every `RewriteOp` in `plan.all_ops` into its target file.
     Groups ops per file first so a file touched by both a move-op and

@@ -22,6 +22,7 @@ from pathlib import Path
 from frob.logging import get_logger
 from frob.refactor._models import RefactorKind, SymbolRef
 from frob.refactor._transaction import run_refactor
+from frob.render import Renderer
 
 _log = get_logger(__name__)
 
@@ -97,16 +98,17 @@ def run_refactor_command(args: argparse.Namespace) -> int:
         return 1
 
     report = result.danger_ok
-    print(f"refactor {args._refactor_kind.value}: success={report.success}")
+    renderer = Renderer.for_stream(sys.stdout)
+    renderer.line(f"refactor {args._refactor_kind.value}: success={report.success}")
     for alias in report.plan.aliases:
-        print(
+        renderer.line(
             f"  alias: {alias.file_path}: {alias.original_name} -> {alias.alias_name}"
         )
     for item in report.plan.unresolved:
-        print(f"  unresolved: {item}")
+        renderer.line(f"  unresolved: {item}")
     for outcome in report.verify_outcomes:
         status = "PASS" if outcome.passed else "FAIL"
-        print(f"  [{status}] {outcome.name}")
+        renderer.line(f"  [{status}] {outcome.name}")
     if report.rolled_back:
         print(f"rolled back to {report.pre_sha}", file=sys.stderr)
         return 1

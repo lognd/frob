@@ -58,6 +58,7 @@
     "design/frob.strata::frob.graphlang": "32f5366005c3a26165bf29056fced09015800f4d13928d60c4cf4ae7ccdb4313",
     "design/frob.strata::frob.mutate": "b0b5d4451dc0cdf8443946644758fba5f2c002eb7ab12ad4e9cb92bd4e41b720",
     "design/frob.strata::frob.natives": "6fe789d5a9684eac54a4a7651a94d2e18960900cb42aefaa6a6b2b25508c7ac2",
+    "design/frob.strata::frob.refactor": "f2291d95993efed1188e999f874c49d0ecdc77e1c0959cfc0143306c4268d845",
     "design/frob.strata::frob.registry": "166e6f12f0ad803671395456b63d15a433165c6e677b5fd41da64a1a88a1aa3f",
     "design/frob.strata::frob.registry_model": "b4e0f9d96b53ebb3d60602fd9523c8bd09fef5297eb156722f150457933529d6",
     "design/frob.strata::frob.scripts_ops": "2d8ade490d7dbb8a9e73ddc570fa7988c62579722c1711d7deba2568847bfae0",
@@ -1928,5 +1929,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.286.0"
+  "version": "0.287.0"
 }

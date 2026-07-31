@@ -2121,6 +2121,7 @@ node mutate : trusted {
 // the CLI wiring for this package is deliberately unbuilt (TEST003
 // waiver on its interface node documents that), so the package IS the
 // capability boundary.
+// frob:doc docs/commands/refactor.md#public-api
 // frob:ticket T-1329
 node refactor : trusted {
     attr interface=AliasRecord;

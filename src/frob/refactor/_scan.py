@@ -93,6 +93,46 @@ def _shares_line_with_sibling_statement(tree: ast.Module, node: ast.stmt) -> boo
     return False
 
 
+def _alias_collision_rewrite(
+    file_path: Path,
+    source: str,
+    tree: ast.Module,
+    node: ast.ImportFrom,
+    destination: SymbolRef,
+    new_name: str,
+    bound_as: str,
+    reason: str,
+) -> tuple[list[RewriteOp], AliasRecord]:
+    """Auto-alias rewrite for a single colliding `from`-import name (the
+    `alias_conflict == "error"` collision branch of `_handle_from_import`,
+    split out to keep that function under the ARCH001 line budget): binds
+    the destination leaf under a `_refactored`-suffixed alias instead of
+    the colliding name, and rewrites call sites to match."""
+    alias_name = f"{new_name}_refactored"
+    new_stmt = f"from {destination.module} import {new_name} as {alias_name}"
+    record = AliasRecord(
+        file_path=str(file_path),
+        original_name=new_name,
+        alias_name=alias_name,
+        reason=(
+            f"{new_name} already bound in {file_path}; call "
+            f"sites rewritten to use {alias_name}"
+        ),
+    )
+    ops = [_import_op(file_path, node, new_stmt, reason)]
+    ops.extend(
+        _rename_usages(
+            file_path,
+            source,
+            tree,
+            bound_as,
+            alias_name,
+            exclude_line=node.lineno,
+        )
+    )
+    return ops, record
+
+
 def _handle_from_import(
     file_path: Path,
     source: str,
@@ -128,30 +168,11 @@ def _handle_from_import(
             # in this file's scope -- auto-alias per the design doc's
             # alias-conflict policy (default: alias the call site, never
             # rename the destination module's own namespace).
-            alias_name = f"{new_name}_refactored"
-            new_stmt = f"from {destination.module} import {new_name} as {alias_name}"
-            aliases.append(
-                AliasRecord(
-                    file_path=str(file_path),
-                    original_name=new_name,
-                    alias_name=alias_name,
-                    reason=(
-                        f"{new_name} already bound in {file_path}; call "
-                        f"sites rewritten to use {alias_name}"
-                    ),
-                )
+            collision_ops, record = _alias_collision_rewrite(
+                file_path, source, tree, node, destination, new_name, bound_as, reason
             )
-            ops.append(_import_op(file_path, node, new_stmt, reason))
-            ops.extend(
-                _rename_usages(
-                    file_path,
-                    source,
-                    tree,
-                    bound_as,
-                    alias_name,
-                    exclude_line=node.lineno,
-                )
-            )
+            ops.extend(collision_ops)
+            aliases.append(record)
             continue
         new_stmt = _rebuild_from_import(node, old_ref, destination, dest_leaf)
         ops.append(_import_op(file_path, node, new_stmt, reason))

@@ -122,6 +122,12 @@ ticket rather than done here. Until that lands, exercise the engine via
 `frob.refactor.run_refactor` directly (Python) or the standalone
 `add_refactor_parser`/`run_refactor_command` functions.
 
+`run_refactor_command`'s human-facing report lines route through a
+`frob.render.Renderer` (T-1336), matching the sole-stdout convention every
+other `*_cli.py`/runner module in this repo uses (INV-RENDER-SOLE-STDOUT)
+-- the refusal path still writes to stderr via a plain `print(...,
+file=sys.stderr)`, which is outside the Renderer's stdout-only remit.
+
 ## Error handling
 
 `resolve_symbol`/`build_plan`/`run_refactor` all return
