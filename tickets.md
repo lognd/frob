@@ -13010,7 +13010,7 @@ state: queued
 kind: bug
 origin: agent
 created: '2026-07-30'
-priority: high
+priority: critical
 parent: null
 tier: ticket
 sprint: null
@@ -13027,7 +13027,6 @@ threat: null
 component: null
 ```
 Found during T-1320 (2026-07-30). Three defects in the coverage pipeline: (1) make coverage exits with PYTEST's status only -- a stamp-coverage failure after a green suite yields exit 0 (run 3 printed 'ERROR: stamp-coverage failed: WriteFailed' and still exited 0; only caught by reading the log). The stamp is the whole point of the target; its failure must fail the make. (2) coverage xml died on a stale 'src/demo/__init__.py' entry in the combined data (a test fixture package measured into .coverage via subprocess coverage), producing no coverage.xml at all; recovery was manual 'coverage xml -i'. Either pass ignore-errors in the Makefile or keep fixture paths out of the combined data (source filters in the generated coverage-subprocess.rc). (3) observational: one xdist worker crashed (gw11) on tests/unit/strata/test_conform_eval_needle.py's full-repo scan; the serial rerun caught it, but a repeatedly-crashing heavy test would silently halve coverage data -- consider marking the heaviest real-repo scans for the serial rerun lane. Relates to T-1236 (deflation canary) and T-1205 (coverage as managed derived state).
-
 <!-- ticket:T-1336 -->
 ```yaml
 id: T-1336
@@ -13887,3 +13886,34 @@ PROPOSALS (pick per implementation reality, do not assume):
 4. Document the measurement protocol in docs/guides/agent-playbook.md: how to measure a coverage-gated burn-down, and that a --ticket-scoped zero is not a package zero.
 
 BLOCKER ASSESSMENT: T-1335 is already open on "make coverage" (stamp failure not propagated, stale fixture paths break coverage xml). If the repo-wide coverage stamp is unreliable or unrefreshable by a worktree agent, then EVERY TEST005 burn-down ticket is unverifiable by the agent working it -- which makes T-1335 a blocker for the entire burn-down campaign rather than a side issue. Assess this and, if confirmed, record the dependency explicitly.
+
+<!-- ticket:T-1352 -->
+```yaml
+id: T-1352
+title: Bind INV-049 to clear the two INV006 errors T-1337 introduced in src/frob/app
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-31'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/app.py
+- src/frob/app/__init__.py
+- invariants/INV-049.md
+acceptance:
+- text: given an unscoped frob check, when gate:INV runs, then src/frob/app/app.py
+    and src/frob/app/__init__.py raise 0 INV006 findings
+  evidence: []
+threat: null
+component: app
+```
+T-1337's landed OPAQUE001 fix added docstrings to _import_runner_module / _import_runner_run_module asserting exclusivity (the closed if/elif import chains are the ONLY import path), with no frob:invariant edge anchored in either file. That is two live error-level INV006 findings on main.
+
+The fix is already written and committed in the T-1276 worktree (commit 4d2c5001): a new invariants/INV-049.md bound to both files. It binds a REAL invariant rather than waiving, which is the correct disposition -- the closed-domain property is exactly the kind of claim this repo wants statically enforced instead of asserted in prose.
+
+This is split out of T-1276 solely so it can LAND independently: T-1276's acceptance is a TEST005 count, which is unverifiable while the coverage stamp is broken (T-1335), so T-1276 must stay open -- but this invariant fix is coverage-independent and should not be held hostage to it.
+
+WHY THIS REACHED MAIN: T-1337 verified with 'frob check --only opaque --ticket T-1337' -- filtered by gate AND by ticket scope -- so INV006 was invisible to it. Same false-green mechanism as the T-1293 incident, different gate. T-1351 is the guard.
