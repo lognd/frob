@@ -13468,3 +13468,44 @@ Design questions to answer in the ticket, not assume:
 - Does this subsume the archived T-1058 stale-worktree-base hazard? If the drainer always merges current main, a stale base becomes detectable at enqueue.
 
 Preserve the existing LAND-PROOF contract: whatever the agent gets back must still let it prove commit + is_ancestor_of_main + state_on_main, or the verification discipline this repo depends on breaks.
+
+<!-- ticket:T-1346 -->
+```yaml
+id: T-1346
+title: Memoize gate results on content digests
+state: queued
+kind: feature
+origin: human
+created: '2026-07-31'
+priority: high
+parent: T-1344
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- src/frob/check/**
+- docs/modules/gates.md
+acceptance:
+- text: given an unchanged file set, when frob check re-runs, then unchanged gates
+    are served from cache and the run is materially faster
+  evidence: []
+- text: given a gate whose declared inputs changed, when frob check re-runs, then
+    that gate recomputes and never serves a stale result
+  evidence: []
+threat: null
+component: gates
+```
+Leaf of T-1344. "frob check" recomputes ~35 gates over the whole tree on every invocation. Measured on main 2026-07-31: sys 31.3s, perf 28.9s, arch 23.8s, clones 18.7s, pii_structural 12.4s, secrets 9.6s, coverage 8.9s, dead_symbols 8.7s, deprecated 7.9s, opaque 7.9s -- roughly 3 minutes of CPU per full run.
+
+This is the root cause of THREE separate problems, not one:
+1. Land timeouts: land must finish inside a 540s wrapper and a full re-check eats most of it (a land was killed mid-autofix by exactly this on T-1338).
+2. The stall pattern: agents background "frob check" and idle waiting BECAUSE it is slow (hit 6+ times historically, twice on 2026-07-31). A year of prompt-repetition has not fixed it; making the check fast removes the incentive.
+3. The concurrency ceiling: gates are CPU-bound, so N agents each running full checks saturate 12 cores at N~4 (observed load ~11).
+
+PROPOSAL: memoize gate results keyed on content digests. The key insight is that frob ALREADY maintains a per-symbol/per-file digest graph under .frob/ -- that is the project's founding premise -- so the cache key largely exists and is simply not used for gate results. Cache per (gate, gate-config, input-digest-set); a gate whose inputs are unchanged is served, not recomputed.
+
+Design questions to answer, not assume:
+- Per-gate input sets must be declared HONESTLY. A gate that secretly reads frob.toml, the ledger, or a baseline file and is not keyed on it will serve stale results -- that is a correctness bug in the gate layer, strictly worse than being slow. Prefer fail-open (recompute) on any doubt.
+- Cross-file gates (dup/clones, dead_symbols, cycle) key on a SET of digests, not one file; verify the win survives that.
+- Where does the cache live, and is it safe for concurrent readers/writers across worktrees? .frob/ is gitignored, so CI cold-starts -- measure the cold path too.
+- Add a "--no-cache" escape hatch and make cache hits visible in output so a wrong result is diagnosable.
