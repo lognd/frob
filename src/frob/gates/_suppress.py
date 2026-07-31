@@ -353,6 +353,7 @@ def _suppress001_correlate(
 # frob:tests \
 # tests/test_gates_suppress.py::TestSuppress001Gate.test_no_available_oracle_reports_no\
 # thing
+# frob:enforces CHK-GATE-SUPPRESS001
 def suppress001_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """SUPPRESS001: every evidence-driven suppression-dialect mismatch
     against `root` -- correlates whichever of `ty`/`mypy`'s diagnostics
