@@ -12625,3 +12625,34 @@ threat: null
 component: null
 ```
 Found during T-1320 (2026-07-30). Three defects in the coverage pipeline: (1) make coverage exits with PYTEST's status only -- a stamp-coverage failure after a green suite yields exit 0 (run 3 printed 'ERROR: stamp-coverage failed: WriteFailed' and still exited 0; only caught by reading the log). The stamp is the whole point of the target; its failure must fail the make. (2) coverage xml died on a stale 'src/demo/__init__.py' entry in the combined data (a test fixture package measured into .coverage via subprocess coverage), producing no coverage.xml at all; recovery was manual 'coverage xml -i'. Either pass ignore-errors in the Makefile or keep fixture paths out of the combined data (source filters in the generated coverage-subprocess.rc). (3) observational: one xdist worker crashed (gw11) on tests/unit/strata/test_conform_eval_needle.py's full-repo scan; the serial rerun caught it, but a repeatedly-crashing heavy test would silently halve coverage data -- consider marking the heaviest real-repo scans for the serial rerun lane. Relates to T-1236 (deflation canary) and T-1205 (coverage as managed derived state).
+
+<!-- ticket:T-1336 -->
+```yaml
+id: T-1336
+title: RENDER001 x4 + ARCH001 + COV007/COV001 residue in src/frob/refactor
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-31'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/refactor/**
+- design/frob.strata
+- docs/modules/refactor.md
+acceptance:
+- text: given frob check, when gate:RENDER runs, then src/frob/refactor/_cli.py raises
+    0 RENDER001 findings
+  evidence: []
+- text: given frob check, when gate:ARCH runs, then _handle_from_import is under the
+    60-line threshold
+  evidence: []
+- text: given frob check, when gate:COV runs, then the frob.refactor COV001 doc edge
+    and the _find_overlapping_ops COV007 are resolved
+  evidence: []
+threat: null
+component: refactor
+```
+Error-level gate residue confined to the refactor package: 4 RENDER001 bare prints in _cli.py (route through frob.render Renderer), ARCH001 _handle_from_import 63/60 lines in _scan.py, COV007 frob:doc on private _apply.py::_find_overlapping_ops, COV001 design/frob.strata:2125 frob.refactor public with no frob:doc edge.
