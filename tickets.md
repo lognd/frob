@@ -12773,3 +12773,39 @@ Motivating incident: two ty errors on main (tests/test_fuzz.py:159 unresolved-re
 DESIGN (decided, see leaves): pairing is EVIDENCE-DRIVEN, not static. The gate fires only where checker B emits an unsuppressed diagnostic on a line that already carries checker A's suppression. This avoids the two failure modes of naive static pairing: (a) mypy/ty rule codes are not 1:1 (name-defined vs unresolved-reference, attr-defined vs unresolved-attribute), so static pairing needs a lossy mapping table; (b) stamping suppressions onto lines the other checker never flagged just creates unused-suppression debt. Evidence-driven pairing needs NO mapping table -- the reporting checker's diagnostic carries the exact rule code to emit.
 
 Current population: 37 'type: ignore' lines, 20 already dual-dialect, 17 mypy-only, 6 ty-only. mypy is not a configured checker here (pyproject runs ruff + ty), so the mypy->ty direction is the live one and ty->mypy is latent until mypy is configured.
+
+<!-- ticket:T-1340 -->
+```yaml
+id: T-1340
+title: 'SUPPRESS001 detector: suppression-dialect registry + evidence-driven mismatch
+  detection'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-31'
+priority: high
+parent: T-1339
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_suppress.py
+- src/frob/gates/__init__.py
+- tests/test_gates_suppress.py
+- docs/modules/gates.md
+acceptance:
+- text: given a python line carrying a mypy type:ignore and an unsuppressed ty diagnostic
+    on the same line, when the suppress gate runs, then SUPPRESS001 reports it naming
+    both dialects and the reporting checker's rule code
+  evidence: []
+- text: given a line already carrying both dialects, when the suppress gate runs,
+    then it reports nothing
+  evidence: []
+- text: given a suppression for a checker that is not configured in this project,
+    when the suppress gate runs, then it reports nothing for that direction
+  evidence: []
+threat: null
+component: gates
+```
+Phase 1 of T-1339. Build a SuppressionDialect registry (name, comment syntax, rule-code grammar, how to tell if the tool is configured for this project) with python entries for ty, mypy, and ruff/noqa. Detection is EVIDENCE-DRIVEN: the gate correlates the diagnostics frob check already collects from each configured checker against the suppression comments present on the reporting line. Fire only when line L carries dialect A's suppression AND configured checker B reports an unsuppressed diagnostic at L. No static mypy-code -> ty-code mapping table -- the reporting diagnostic supplies the code.
+
+Direction support must be symmetric (mypy->ty and ty->mypy) but gated on the checker actually being configured; mypy is NOT configured in this repo today, so only mypy->ty is live here. Detection only -- the fix is the sibling ticket.
