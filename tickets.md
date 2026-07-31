@@ -12680,3 +12680,29 @@ threat: elevation-of-privilege
 component: app
 ```
 gate:OPAQUE errors: app/__init__.py:116 and app/app.py:115 importlib.import_module, app/__init__.py:107 class __getattr__ interception. These are the deliberate lazy-subcommand-dispatch mechanism (T-1318 adjacent). Either resolve statically or record a reasoned frob:waive OPAQUE001 naming the bounded module-name domain and where it is validated.
+
+<!-- ticket:T-1338 -->
+```yaml
+id: T-1338
+title: ARCH001 + PERF003 + PERF008 in gates/_debt_deprecated.py
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-31'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_debt_deprecated.py
+acceptance:
+- text: given frob check, when gate:ARCH runs, then _depr005_violations is under the
+    60-line threshold
+  evidence: []
+- text: given frob check, when gate:PERF runs, then _debt_deprecated.py raises 0 PERF003
+    and 0 PERF008 findings
+  evidence: []
+threat: null
+component: gates
+```
+Three co-located errors: ARCH001 _depr005_violations 74/60 lines (line 644), PERF003 nested loops with equality compare at line 592 (index the inner collection), PERF008 _build_deprecated_ref_index called inside a loop with loop-invariant args at line 683 (hoist/memoize -- it transitively fs-walks).
