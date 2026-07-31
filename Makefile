@@ -119,6 +119,40 @@ playbook:
 # against the child's cwd and measures nothing, stranding empty
 # .coverage.* files in child cwds (loss A of the 2026-07-29 attribution
 # diagnosis). The rc is generated fresh each run so $(CURDIR) is current.
+# T-1335: two silent-failure defects found during T-1320. (1) this recipe
+# used to exit with PYTEST's status only -- a `frob check --stamp-coverage`
+# failure AFTER a green suite (e.g. "ERROR: stamp-coverage failed:
+# WriteFailed") printed to stdout but still exited 0, so the stale/corrupt
+# stamp this whole target exists to refresh could go unrefreshed with
+# nobody the wiser. The stamp write's own exit status is now captured
+# (`stamp_status`) and folded into the recipe's final `exit` -- a pytest
+# failure still wins (existing behavior preserved) but a stamp failure
+# after a green suite now fails the make, with an ERROR line naming it.
+# (2) `coverage xml` used to die outright (no coverage.xml produced at
+# all) on a combined-data entry pointing at a torn-down test-fixture path
+# (observed: a subprocess-measured `src/demo/__init__.py` scaffold fixture
+# that no longer existed by combine time) -- `coverage xml` needs to
+# reopen each recorded source file to compute branch/line totals, and one
+# missing file aborted the whole report. `-i`/`--ignore-errors` (the same
+# flag the T-1320 manual recovery used, `coverage xml -i`) tells coverage
+# to skip a file it cannot re-read and still produce a report for
+# everything it can -- src/frob itself is never affected, only ephemeral
+# non-source fixture paths that were never real coverage targets to begin
+# with. (3) observational defect promoted to fixed: a repeatedly-crashing
+# xdist worker ("node down: Not properly terminated" in the pytest-xdist
+# log, confirmed reproducing live during this ticket's own verification
+# run -- 5 separate workers went down in one invocation) drops that
+# worker's ENTIRE coverage contribution, not just the specific test(s)
+# reported as failed -- a crash bypasses the `sigterm = true` handler that
+# would otherwise flush data on a clean termination. This is the same
+# "always understates, never overstates" asymmetry independently reported
+# against several real symbols during this ticket's investigation. The
+# parallel run's own log is now captured and grepped for "node down"; if
+# any worker crashed, the recipe escalates to a FULL serial rerun (not
+# just `--last-failed`) so every test's coverage is recaptured rather than
+# silently accepting a partial/deflated stamp. This is strictly more
+# expensive than the old `--last-failed`-only path, but only pays that
+# cost when a crash is actually detected.
 coverage: $(STAMP)
 	rm -f .coverage .coverage.*
 	$(MAKE) core
@@ -139,17 +173,28 @@ coverage: $(STAMP)
 		'    src/frob' \
 		'    */src/frob' \
 		> .frob/coverage-subprocess.rc
-	COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-report= -q --junitxml=.frob/last-coverage-run.xml; \
+	COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-report= -q --junitxml=.frob/last-coverage-run.xml > .frob/last-coverage-run.log 2>&1; \
 	status=$$?; \
-	if [ $$status -ne 0 ]; then \
+	cat .frob/last-coverage-run.log; \
+	if grep -q "node down" .frob/last-coverage-run.log; then \
+		echo "coverage: WARNING: an xdist worker crashed mid-run (node down) -- that worker's coverage data for EVERY test it executed, not only the ones reported failed, is silently gone (a crash bypasses coverage's own SIGTERM-triggered save); re-running the FULL suite serially (not just --last-failed) to recover complete data rather than accept a deflated stamp"; \
+		COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --junitxml=.frob/last-coverage-rerun.xml; \
+		status=$$?; \
+	elif [ $$status -ne 0 ]; then \
 		echo "coverage: parallel run had failures -- rerunning failed tests once, serially, without coverage-halting"; \
 		COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --last-failed --junitxml=.frob/last-coverage-rerun.xml; \
 		status=$$?; \
 	fi; \
 	uv run coverage combine; \
-	uv run coverage xml; \
-	uv run frob check --stamp-coverage; \
+	uv run coverage xml -i; \
+	if uv run frob check --stamp-coverage; then \
+		stamp_status=0; \
+	else \
+		stamp_status=$$?; \
+		echo "coverage: ERROR: stamp-coverage failed (exit $$stamp_status) -- make coverage is failing on this, not silently reporting success"; \
+	fi; \
 	uv run frob clean -y; \
+	if [ $$status -eq 0 ]; then status=$$stamp_status; fi; \
 	exit $$status
 
 # T-0484: incremental coverage for the common "one small change" loop --
@@ -198,7 +243,7 @@ coverage-fast: $(STAMP)
 			echo "$$targets" | COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml xargs uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q; \
 		fi; \
 		uv run coverage combine --append 2>/dev/null || uv run coverage combine; \
-		uv run coverage xml; \
+		uv run coverage xml -i; \
 		uv run frob check --stamp-coverage; \
 	fi
 

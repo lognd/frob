@@ -3251,6 +3251,7 @@ node testsuite : trusted {
     attr interface=TestCoverageTargetFlakeTolerance;
     attr interface=TestCoverageTargetNativesGuard;
     attr interface=TestCoverageTotality;
+    attr interface=TestCoverageXmlIgnoreErrors;
     attr interface=TestCppMayThrow;
     attr interface=TestCppSourceAccurateCollection;
     attr interface=TestCrashRetryIdempotencyJoin;
@@ -4256,6 +4257,7 @@ node testsuite : trusted {
     attr interface=TestStamp;
     attr interface=TestStampBaselineWorktreeLease;
     attr interface=TestStampCoverageWorktreeLease;
+    attr interface=TestStampFailurePropagation;
     attr interface=TestStampWorktreeLease;
     attr interface=TestStandaloneSiblingDraftSurvivesLand;
     attr interface=TestStartDaemon;
