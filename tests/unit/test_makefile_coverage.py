@@ -156,3 +156,73 @@ class TestCoverageXmlIgnoreErrors:
         xml_out = tmp_path / "coverage.xml"
         assert xml_out.exists()
         assert "real.py" in xml_out.read_text(encoding="utf-8")
+
+
+# frob:ticket T-1353
+class TestCombineRecoversDisjointSessions:
+    """T-1353: the `coverage:` recipe's crash-recovery shape is exactly two
+    separate pytest-cov sessions against the SAME `data_file` (an initial
+    parallel run, then a `--cov-append` rerun), unioned by one `coverage
+    combine` at the end. Several agents independently reported deflated
+    per-symbol numbers (a function's `def` line hit, every body line not)
+    that read like this union losing data rather than a crash simply
+    dropping it outright. This replays that exact two-session shape
+    directly against `coverage`'s own CLI (no pytest/xdist involved, so it
+    isolates combine's own behavior from any crash/flake in the suite
+    itself) and asserts the union recovers full coverage of BOTH halves --
+    a real regression here would mean the recipe's `--cov-append` +
+    `combine` shape cannot be trusted to recover a crashed worker's data
+    even when nothing crashes on replay."""
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestCombineRecoversDisjointSessions.test_two_disjoint_sessions_combine_to_full_coverage  # noqa: E501
+    def test_two_disjoint_sessions_combine_to_full_coverage(self, tmp_path):
+        """Session A covers only `branch_a`, session B (a separate
+        `coverage run`, `--append`) covers only `branch_b` of the SAME
+        module -- the union must report BOTH branches covered, not just
+        whichever session's data happened to combine last."""
+        mod = tmp_path / "mod.py"
+        mod.write_text(
+            "def pick(flag):\n"
+            "    if flag:\n"
+            "        return 'a'\n"
+            "    else:\n"
+            "        return 'b'\n",
+            encoding="utf-8",
+        )
+        driver_a = tmp_path / "drive_a.py"
+        driver_a.write_text(
+            "import mod\nassert mod.pick(True) == 'a'\n", encoding="utf-8"
+        )
+        driver_b = tmp_path / "drive_b.py"
+        driver_b.write_text(
+            "import mod\nassert mod.pick(False) == 'b'\n", encoding="utf-8"
+        )
+
+        # Session A: only the `if` branch runs.
+        subprocess.run(
+            ["coverage", "run", "--branch", str(driver_a)],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        # Session B: a SEPARATE invocation (like the recipe's serial
+        # recovery rerun), `--append`, only the `else` branch runs.
+        subprocess.run(
+            ["coverage", "run", "--branch", "--append", str(driver_b)],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        report = subprocess.run(
+            ["coverage", "report", "--show-missing", "mod.py"],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+        )
+        assert report.returncode == 0, report.stdout + report.stderr
+        # Both branch bodies (lines 3 and 5) must show as covered in the
+        # UNION -- a last-write-wins loss would report one of them missing.
+        assert "100%" in report.stdout, report.stdout

@@ -153,6 +153,63 @@ playbook:
 # silently accepting a partial/deflated stamp. This is strictly more
 # expensive than the old `--last-failed`-only path, but only pays that
 # cost when a crash is actually detected.
+# T-1353: root-caused the repeated "node down" crashes themselves (not
+# just their recovery). `addopts` defaults to `-n auto` (one worker per
+# core -- 12 on the investigation host); several tests in this suite
+# (`test_repo_unrestricted_scan_is_clean`, `test_sys_gate_zero_violations`,
+# `test_repo_design_and_declarations_are_self_conformant`, and similar
+# self-model/self-conformance tests) themselves spawn subprocess/
+# multiprocessing children to run frob's own gates against the repo, and
+# EVERY one of those children is independently coverage-instrumented via
+# `COVERAGE_PROCESS_START` (the T-0464 fix, needed to measure them at
+# all). Running `-n auto` workers, each of which may itself fan out
+# further coverage-traced subprocesses, oversubscribes this host's CPU
+# and memory well beyond `-n auto`'s own one-worker-per-core assumption
+# (confirmed live: 5+ workers went "node down" in a single invocation,
+# consistently, on a 12-core/23GB host) -- coverage tracing's own memory
+# and CPU overhead is exactly what `-n auto`'s sizing does not account
+# for. `COVERAGE_WORKERS` caps the PARALLEL phase specifically (the
+# serial recovery rerun already runs `-n 0`, unaffected) to a value with
+# real headroom for that fan-out; override on a bigger/smaller host with
+# `make coverage COVERAGE_WORKERS=N`. This does not by itself prove the
+# post-recovery merge is correct (see `_coverage.py`'s `load_coverage`/
+# `_symbol_branch` -- verified directly, and via a controlled two-phase
+# disjoint-test `--cov-append` + `coverage combine` replay of this exact
+# recipe shape, tests/unit/test_makefile_coverage.py) -- it addresses WHY
+# workers crash in the first place, so the expensive full-serial-rerun
+# fallback below is needed far less often.
+# T-1353 (part 2 -- why the serial recovery rerun's OWN merged data was
+# STILL wrong even after recovering from a crash): live-captured proof
+# (.frob/last-coverage-rerun's stdout during this ticket's investigation)
+# shows the serial (`-n 0`) recovery rerun above hitting `addopts`'
+# `--timeout=120 --timeout-method=thread` on `test_sys_gate_zero_
+# violations` (a whole-repo self-scan test, `check_self_conformance` in
+# its call chain -- one of this ticket's own reported-deflated symbols).
+# `--timeout-method=thread` does NOT forcibly kill the offending call on
+# fire -- it dumps a traceback in a watchdog thread while the ORIGINAL
+# call keeps running to completion in the background, un-killed. In the
+# PARALLEL phase that zombie thread only ever corrupts its own doomed
+# xdist worker (already handled: "node down" below). In THIS serial
+# phase there is only one process for the ENTIRE REST OF THE SUITE, so
+# that same zombie thread's later interference (observed: repeated
+# `ValueError: I/O operation on closed file` from `logging`, 31,468
+# occurrences in one captured run, starting at the timeout and continuing
+# to the recipe's end) corrupts shared interpreter state for every test
+# still to run in that one process -- exactly why symbols exercised
+# near/after the stuck test (`check_self_conformance`,
+# `check_process_bounds_obligations`) came out severely deflated (6.7%,
+# 88.9% measured directly -- see tests/unit/test_makefile_coverage.py's
+# `TestCombineRecoversDisjointSessions` for proof `coverage combine`
+# itself is NOT at fault here) even on a rerun where nothing "crashed" in
+# the node-down sense. `--timeout-method=signal` (SIGALRM, standard on
+# Linux) actually interrupts the stuck call via an exception raised IN
+# the main thread instead of a zombie watchdog -- passed on both `-n 0`
+# reruns below, where there is no xdist process boundary to contain a
+# thread-method timeout's fallout. `COVERAGE_WORKERS` (below) independently
+# reduces how often either rerun path is needed at all, by making the
+# initial parallel run's OWN OOM-driven crashes less likely in the first
+# place.
+COVERAGE_WORKERS ?= 4
 coverage: $(STAMP)
 	rm -f .coverage .coverage.*
 	$(MAKE) core
@@ -173,16 +230,16 @@ coverage: $(STAMP)
 		'    src/frob' \
 		'    */src/frob' \
 		> .frob/coverage-subprocess.rc
-	COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-report= -q --junitxml=.frob/last-coverage-run.xml > .frob/last-coverage-run.log 2>&1; \
+	COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-report= -q -n $(COVERAGE_WORKERS) --junitxml=.frob/last-coverage-run.xml > .frob/last-coverage-run.log 2>&1; \
 	status=$$?; \
 	cat .frob/last-coverage-run.log; \
 	if grep -q "node down" .frob/last-coverage-run.log; then \
 		echo "coverage: WARNING: an xdist worker crashed mid-run (node down) -- that worker's coverage data for EVERY test it executed, not only the ones reported failed, is silently gone (a crash bypasses coverage's own SIGTERM-triggered save); re-running the FULL suite serially (not just --last-failed) to recover complete data rather than accept a deflated stamp"; \
-		COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --junitxml=.frob/last-coverage-rerun.xml; \
+		COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --timeout-method=signal --junitxml=.frob/last-coverage-rerun.xml; \
 		status=$$?; \
 	elif [ $$status -ne 0 ]; then \
 		echo "coverage: parallel run had failures -- rerunning failed tests once, serially, without coverage-halting"; \
-		COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --last-failed --junitxml=.frob/last-coverage-rerun.xml; \
+		COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --timeout-method=signal --last-failed --junitxml=.frob/last-coverage-rerun.xml; \
 		status=$$?; \
 	fi; \
 	uv run coverage combine; \
