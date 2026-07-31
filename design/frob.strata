@@ -3368,6 +3368,8 @@ node testsuite : trusted {
     attr interface=TestDoctorGolden;
     attr interface=TestDoctorMalformedTicketEdges;
     attr interface=TestDoctorMutateJournal;
+    attr interface=TestDoctorRunnerHealthy;
+    attr interface=TestDoctorRunnerUnhealthy;
     attr interface=TestDoctorScaffoldConformance;
     attr interface=TestDoctorStaleTicketLeases;
     attr interface=TestDoctorVenvShims;

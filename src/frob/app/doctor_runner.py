@@ -22,8 +22,14 @@ _log = get_logger(__name__)
 # frob:ticket T-0319
 # frob:ticket T-0448
 # frob:ticket T-0563
+# frob:ticket T-1276
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 # frob:doc docs/modules/render.md#exemplar-frob-doctor
+# frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerHealthy.test_healthy_plain_prints_all_available_and_does_not_exit  # noqa: E501
+# frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerHealthy.test_healthy_json_emits_parseable_report  # noqa: E501
+# frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_plain_exits_1_and_prints_remediation  # noqa: E501
+# frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_no_remediation_prints_empty_not_none  # noqa: E501
+# frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_json_exits_1  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Render the `frob doctor` native-extension diagnosis; exits 1 when any
     extension is missing so `frob doctor` is scriptable as a preflight

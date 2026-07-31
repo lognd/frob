@@ -93,6 +93,8 @@ separately."""
 
 
 # frob:ticket T-1337
+# frob:invariant INV-049
+# invariant spec: [INV-049](invariants/INV-049.md)
 def _import_runner_module(name: str):  # noqa: ANN201 -- returns a module object
     """Import exactly the one `frob.app.<name>` runner module named by
     `name` (T-1337), dispatching through a closed if/elif chain of LITERAL

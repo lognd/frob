@@ -101,6 +101,8 @@ _RUNNER_RUN_MODULES: dict[str, str] = {
 
 
 # frob:ticket T-1337
+# frob:invariant INV-049
+# invariant spec: [INV-049](invariants/INV-049.md)
 def _import_runner_run_module(module_name: str) -> Any:
     """Import exactly the one `frob.app.<module_name>` runner module named
     by `module_name` (T-1337), dispatching through a closed if/elif chain
