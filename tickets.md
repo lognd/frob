@@ -14927,3 +14927,43 @@ Suggested acceptance: reproduce the exact conditions of T-1340's land (or
 audit its actual land invocation/log) to identify why `_resync_release_
 manifest` did not fire or did not stick, and add a regression test
 covering that specific path.
+
+<!-- ticket:T-1359 -->
+```yaml
+id: T-1359
+title: Make FMT001/REG010/REL002 Tier-A handlers' delegated writes crash-safe
+state: queued
+kind: bug
+origin: human
+created: '2026-07-31'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_fmt_directives.py
+- src/frob/registry/_staleness.py
+- src/frob/release/**
+threat: null
+component: null
+```
+T-1348 made every in-place file rewrite living directly in
+src/frob/gates/_fix_engine.py (DOC007/DOC002/INV006-carry rewrites,
+WAIVE004's waiver-line removal) crash-safe via atomic_write (temp file +
+fsync + os.replace). Three OTHER Tier-A handlers -- FMT001, REG010,
+REL002 -- delegate their actual disk writes to functions in different
+modules that were out of T-1348's declared scope:
+
+- FMT001 -> frob.gates._fmt_directives.format_paths (bare
+  path.write_text)
+- REG010 -> frob.registry._staleness.sync_gate_rule_entries (writes
+  check-coverage.yaml)
+- REL002 -> frob.release.rewrite_pyproject_version /
+  changelog_skeleton_entry (writes pyproject.toml / CHANGELOG.md)
+
+None of these route through a crash-safe write primitive today -- a land
+killed mid-FMT001/REG010/REL002 could still leave one of THESE files
+half-rewritten, the same T-1338 hazard class T-1348 closed for the other
+three handlers. Convert these three write sites to
+frob.tickets._store.atomic_write (or an equivalent local primitive) the
+same way T-1348 did for _fix_engine.py's own direct writes.
