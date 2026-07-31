@@ -1440,7 +1440,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-29'
-priority: high
+priority: critical
 parent: null
 tier: ticket
 sprint: null
@@ -1480,8 +1480,15 @@ acceptance:
 threat: null
 component: null
 ```
-User directive 2026-07-29: we should never run make coverage manually; frob must never consume stale data or retread work that should be cached. Today coverage.xml is a hand-refreshed artifact: TEST011 warns it predates tracked changes and TEST005 findings are computed from it anyway (the attribution-inflation problem T-0969 is untangling). Design: treat coverage like the graph cache -- a derived artifact frob owns, refreshed incrementally from the touched-set (the affects closure already exists in frob.graph.affects), merged per-file keyed by content hash, with the freshness contract enforced by the gate rather than a Makefile comment. Interacts with T-0969 (attribution fix defines what honest data is) and the CI gitignored-trust child under T-1193 (CI needs the same no-stale contract). Related: the profiler found process-pool workers re-derive per-file artifacts every run -- same no-retread principle, separate ticket in the perf tree.
+ESCALATED TO CRITICAL 2026-07-31. This ticket's absence caused the largest single failure of the 2026-07-31 drive; acceptance [1] describes the exact incident. Evidence, all from one day:
+- The repo-wide stamp sat 23 hours stale (2026-07-30 15:05) while ~8 tickets landed, and every TEST005 finding was computed from it and reported as current fact -- precisely what [1] forbids.
+- T-1293 was closed having fixed 1 of 64 findings, its agent reporting the package clean in good faith. Post-land re-measure showed 65 still outstanding.
+- The stamp does not merely lag, it UNDERSTATES coverage and so INFLATES findings. Measured: strata check_process_bounds_obligations stamp 6.7% / real 98%; check_self_conformance stamp 0.0% ("dead code") / real 95%; release authoritative_version showing def hits=1 with body hits=0, structurally impossible.
+- Four agents were sent to write tests for code that was already well covered, and four worktrees (T-1276, T-1281, T-1294, T-1296) had to be PARKED mid-flight once the measurement was found untrustworthy.
+- The coordinator had to run `make coverage` by hand to unblock them -- the exact manual step acceptance [0] and [4] exist to abolish.
+T-1335 (landed 2026-07-31) fixed the pipeline's SILENT FAILURE (exit 0 on a failed stamp write), so a bad refresh is now loud. T-1353 tracks the xdist symbol-level data drop that appears to be the underlying corruption. Neither makes the refresh automatic or incremental -- that is this ticket, and it is what stops the failure class rather than the instance.
 
+User directive 2026-07-29: we should never run make coverage manually; frob must never consume stale data or retread work that should be cached. Today coverage.xml is a hand-refreshed artifact: TEST011 warns it predates tracked changes and TEST005 findings are computed from it anyway (the attribution-inflation problem T-0969 is untangling). Design: treat coverage like the graph cache -- a derived artifact frob owns, refreshed incrementally from the touched-set (the affects closure already exists in frob.graph.affects), merged per-file keyed by content hash, with the freshness contract enforced by the gate rather than a Makefile comment. Interacts with T-0969 (attribution fix defines what honest data is) and the CI gitignored-trust child under T-1193 (CI needs the same no-stale contract). Related: the profiler found process-pool workers re-derive per-file artifacts every run -- same no-retread principle, separate ticket in the perf tree.
 <!-- ticket:T-1206 -->
 ```yaml
 id: T-1206
