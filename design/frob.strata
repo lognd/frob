@@ -3690,8 +3690,10 @@ node testsuite : trusted {
     attr interface=TestLandRebuildNativesFn;
     attr interface=TestLandRefusesOnTerminalStateRegression;
     attr interface=TestLandRefusesWhenRootIsWorktree;
+    attr interface=TestLandReleaseMonotonicityHelpers;
     attr interface=TestLandRepairMarker;
     attr interface=TestLandRetryAfterFinalizeThenFail;
+    attr interface=TestLandSquashHelpersMutationCoverage;
     attr interface=TestLandWorktreeResolvedAtArgParse;
     attr interface=TestLangConformanceGate;
     attr interface=TestLanguageCoverageDriftLock;

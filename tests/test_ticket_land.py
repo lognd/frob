@@ -6585,3 +6585,426 @@ class TestArchiveV2:
         assert merged["T-0400"].state == TicketState.DONE
         assert "T-0500" in merged
         assert merged["T-0500"].blocked_by == ("T-0400",)
+
+
+# frob:ticket T-1349
+class TestLandReleaseMonotonicityHelpers:
+    """T-1349: T-1334's move of the REL001 monotonicity family into
+    `_land_release.py` was landed with `--skip-mutation-evidence` on the
+    claim that pre-existing structural coverage (via the full `land()`
+    end-to-end tests elsewhere in this file) already proves these
+    functions correct. These tests exercise each leaf function directly to
+    kill the specific surviving mutants T-1349's mutation run found
+    (boolop/compare swaps on the error-guard and monotonicity checks) --
+    the exact claim mutation testing exists to falsify, not re-assert."""
+
+    def test_read_root_pyproject_version_ok_but_nonzero_returncode_is_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_read_root_pyproject_version_ok_but_nonzero_returncode_is_none  # noqa: E501
+        """Kills the `or` -> `and` mutant on `_read_root_pyproject_version`'s
+        error guard: `run_argv` succeeding (is_err=False) with a nonzero
+        `returncode` (e.g. `git show` reporting a bad revision/path) must
+        still read as "nothing to report" -- an `and` mutant would only
+        treat `is_err` alone as the guard and fall through here."""
+
+        def _fake_run_argv(argv: Sequence[str], **kwargs: Any) -> Any:
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv),
+                    returncode=128,
+                    stdout='version = "9.9.9"\n',
+                    stderr="fatal: bad revision",
+                )
+            )
+
+        monkeypatch.setattr(_land_release_mod, "run_argv", _fake_run_argv)
+        result = _land_release_mod._read_root_pyproject_version(tmp_path, "deadbeef")
+        assert result is None
+
+    def test_read_root_manifest_version_ok_but_nonzero_returncode_is_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_read_root_manifest_version_ok_but_nonzero_returncode_is_none  # noqa: E501
+        """Same `or` -> `and` mutant, on `_read_root_manifest_version`'s
+        identical guard shape."""
+
+        def _fake_run_argv(argv: Sequence[str], **kwargs: Any) -> Any:
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv),
+                    returncode=128,
+                    stdout='{"version": "9.9.9"}',
+                    stderr="fatal: bad revision",
+                )
+            )
+
+        monkeypatch.setattr(_land_release_mod, "run_argv", _fake_run_argv)
+        result = _land_release_mod._read_root_manifest_version(tmp_path, "deadbeef")
+        assert result is None
+
+    def test_monotonic_when_no_prior_version(self) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_monotonic_when_no_prior_version  # noqa: E501
+        """`pre_bump_version=None` is vacuously monotonic."""
+        assert _land_release_mod._release_bump_is_monotonic(None, "0.1.0") is True
+
+    def test_fallback_path_equal_versions_not_monotonic(self) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_fallback_path_equal_versions_not_monotonic  # noqa: E501
+        """Kills the `!=` -> `==` and `and` -> `or` mutants on the PEP-440
+        parse-failure fallback: two EQUAL non-numeric versions must not be
+        treated as monotonic (an `==` mutant would flip this, and an `or`
+        mutant would treat equal-but-not-greater as monotonic since the
+        left side of the fallback and-clause would already be enough)."""
+        assert (
+            _land_release_mod._release_bump_is_monotonic("nonnumeric", "nonnumeric")
+            is False
+        )
+
+    def test_fallback_path_lesser_version_not_monotonic(self) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_fallback_path_lesser_version_not_monotonic  # noqa: E501
+        """Kills the `>` -> other-comparator mutant on the same fallback:
+        a strictly LESSER non-numeric string must not be monotonic."""
+        assert (
+            _land_release_mod._release_bump_is_monotonic(
+                "zzz-nonnumeric", "aaa-nonnumeric"
+            )
+            is False
+        )
+
+    def test_fallback_path_greater_version_is_monotonic(self) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_fallback_path_greater_version_is_monotonic  # noqa: E501
+        """Positive complement of the two fallback tests above: a
+        genuinely greater non-numeric string IS monotonic."""
+        assert (
+            _land_release_mod._release_bump_is_monotonic(
+                "aaa-nonnumeric", "zzz-nonnumeric"
+            )
+            is True
+        )
+
+    def test_log_monotonicity_refusal_quartet_desync_requires_all_three_legs(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_log_monotonicity_refusal_quartet_desync_requires_all_three_legs  # noqa: E501
+        """Kills the `and` -> `or` mutant on `quartet_desynced`'s three-leg
+        check: a `pre_manifest_version` that is `None` (never observed at
+        `pre_land_tip`) must NOT be treated as desynced even though the
+        other two legs alone would satisfy an `or`-mutated check."""
+        with caplog.at_level("ERROR", logger="frob.tickets._land_release"):
+            _land_release_mod._log_monotonicity_refusal(
+                "T-9999", "0.2.0", "0.2.0", None
+            )
+        assert "INCOHERENT" not in caplog.text
+
+    def test_log_monotonicity_refusal_fires_on_genuine_desync(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_log_monotonicity_refusal_fires_on_genuine_desync  # noqa: E501
+        """Positive complement: all three legs present and manifest !=
+        pre-bump DOES fire the INCOHERENT message."""
+        with caplog.at_level("ERROR", logger="frob.tickets._land_release"):
+            _land_release_mod._log_monotonicity_refusal(
+                "T-9999", "0.3.0", "0.2.0", "0.1.0"
+            )
+        assert "INCOHERENT" in caplog.text
+
+    def test_sync_uv_lock_ok_but_nonzero_returncode_on_git_add_is_failed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_sync_uv_lock_ok_but_nonzero_returncode_on_git_add_is_failed  # noqa: E501
+        """Kills the `or` -> `and` mutant on `_sync_uv_lock_for_land`'s
+        `git add uv.lock` guard: `uv lock` itself succeeds, but the
+        subsequent `git add` returns `Ok` with a nonzero returncode (e.g.
+        `uv.lock` outside the repo's pathspec) -- must still refuse as
+        `GitFailed`, not fall through to the success-log path an `and`
+        mutant would take here."""
+        (tmp_path / "pyproject.toml").write_text('[project]\nversion = "0.1.0"\n')
+
+        def _fake_run_argv(argv: Sequence[str], **kwargs: Any) -> Any:
+            if tuple(argv) == ("uv", "lock"):
+                return Ok(
+                    ProcResult(argv=tuple(argv), returncode=0, stdout="", stderr="")
+                )
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv),
+                    returncode=128,
+                    stdout="",
+                    stderr="fatal: pathspec did not match",
+                )
+            )
+
+        monkeypatch.setattr(_land_release_mod, "run_argv", _fake_run_argv)
+        result = _land_release_mod._sync_uv_lock_for_land(tmp_path, "T-9999")
+        assert result.is_err
+        assert result.danger_err == LandError.GitFailed
+
+    def test_resync_release_manifest_ok_but_nonzero_returncode_on_git_add_is_failed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_resync_release_manifest_ok_but_nonzero_returncode_on_git_add_is_failed  # noqa: E501
+        """Kills the `or` -> `and` mutant on `_resync_release_manifest`'s
+        `git add .frob-release.json` guard: the manifest write itself
+        succeeds, but the subsequent `git add` returns `Ok` with a nonzero
+        returncode -- must still refuse as `ReleaseBumpFailed`, not fall
+        through to `Ok(None)` the way an `and` mutant would here."""
+        (tmp_path / ".frob-release.json").write_text(
+            '{"version": "0.1.0", "api": {}}\n'
+        )
+
+        def _fake_run_argv(argv: Sequence[str], **kwargs: Any) -> Any:
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv),
+                    returncode=128,
+                    stdout="",
+                    stderr="fatal: pathspec did not match",
+                )
+            )
+
+        monkeypatch.setattr(_land_release_mod, "run_argv", _fake_run_argv)
+        result = _land_release_mod._resync_release_manifest(tmp_path, "T-9999", "0.2.0")
+        assert result.is_err
+        assert result.danger_err == LandError.ReleaseBumpFailed
+
+
+# frob:ticket T-1349
+class TestLandSquashHelpersMutationCoverage:
+    """T-1349: same rationale as `TestLandReleaseMonotonicityHelpers` above,
+    for the squash-apply/close family T-1334 moved into `_land_squash.py`.
+    Each test targets one specific surviving mutant the T-1349 mutation
+    run found, not a re-assertion of "the tests cover it structurally"."""
+
+    def test_worktree_full_changeset_diff_ok_but_nonzero_returncode_is_failed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_worktree_full_changeset_diff_ok_but_nonzero_returncode_is_failed  # noqa: E501
+        """Kills the `or` -> `and` mutant on `_worktree_full_changeset`'s
+        diff guard: `git diff` succeeding at the process level (is_err=
+        False) with a nonzero returncode must still refuse as
+        `GitFailed`, not fall through to parsing `stdout`."""
+        root = tmp_path / "repo"
+        _git_init(root)
+        (root / "f.txt").write_text("x")
+        _commit_all(root, "init")
+        wt = tmp_path / "wt"
+        _run(["git", "worktree", "add", "-b", "feat-changeset", str(wt)], root)
+        (wt / "g.txt").write_text("y")
+        _commit_all(wt, "add g")
+
+        real_run_argv = _land_squash_mod.run_argv
+
+        def _fake_run_argv(argv: Sequence[str], **kwargs: Any) -> Any:
+            if "diff" in argv and "--name-only" in argv:
+                return Ok(
+                    ProcResult(
+                        argv=tuple(argv),
+                        returncode=129,
+                        stdout="",
+                        stderr="fatal: ambiguous argument",
+                    )
+                )
+            return real_run_argv(argv, **kwargs)
+
+        monkeypatch.setattr(_land_squash_mod, "run_argv", _fake_run_argv)
+        result = _land_squash_mod._worktree_full_changeset(wt, "main")
+        assert result.is_err
+        assert result.danger_err == LandError.GitFailed
+
+    def test_land_commit_details_diff_tree_fails_returns_empty_files(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_land_commit_details_diff_tree_fails_returns_empty_files  # noqa: E501
+        """Kills the `and` -> `or` mutant on `_land_commit_details`'s
+        `files` derivation: when `diff-tree` itself fails (`Err`), the
+        `and` guard must short-circuit to `()` without ever touching
+        `stat.danger_ok` -- an `or` mutant instead evaluates
+        `stat.danger_ok.returncode` unconditionally on the `Err` branch
+        and crashes."""
+
+        def _fake_run_argv(argv: Sequence[str], **kwargs: Any) -> Any:
+            if "rev-parse" in argv:
+                return Ok(
+                    ProcResult(
+                        argv=tuple(argv), returncode=0, stdout="deadbeef\n", stderr=""
+                    )
+                )
+            return Err(GitError.GitFailed)
+
+        monkeypatch.setattr(_land_squash_mod, "run_argv", _fake_run_argv)
+        sha_str, files = _land_squash_mod._land_commit_details(tmp_path)
+        assert sha_str == "deadbeef"
+        assert files == ()
+
+    def test_absorption_scoped_content_matches_worktree_head_err_is_false(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_absorption_scoped_content_matches_worktree_head_err_is_false  # noqa: E501
+        """Kills the `False` -> `True` negation mutant guarding
+        `_absorption_scoped_content_matches`'s `worktree_head` error path:
+        an unresolvable worktree HEAD must read as "not verified", never
+        a confirmed match."""
+        ticket = _ticket_from_spec("T-0001", _spec("t", scope=("x",)), ())
+        monkeypatch.setattr(
+            _land_squash_mod, "_rev_parse", lambda root, ref: Err(GitError.GitFailed)
+        )
+        result = _land_squash_mod._absorption_scoped_content_matches(
+            tmp_path, tmp_path, ticket
+        )
+        assert result is False
+
+    def test_absorption_scoped_content_matches_diff_ok_but_nonzero_is_false(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_absorption_scoped_content_matches_diff_ok_but_nonzero_is_false  # noqa: E501
+        """Kills both the `or` -> `and` mutant on the diff guard AND the
+        `False` -> `True` negation on its return: `git diff` succeeding at
+        the process level with a nonzero returncode must still read as
+        unverified (`False`)."""
+        ticket = _ticket_from_spec("T-0001", _spec("t", scope=("x",)), ())
+        monkeypatch.setattr(
+            _land_squash_mod, "_rev_parse", lambda root, ref: Ok("deadbeef")
+        )
+        monkeypatch.setattr(
+            _land_squash_mod,
+            "run_argv",
+            lambda argv, **kwargs: Ok(
+                ProcResult(
+                    argv=tuple(argv), returncode=1, stdout="", stderr="diff failed"
+                )
+            ),
+        )
+        result = _land_squash_mod._absorption_scoped_content_matches(
+            tmp_path, tmp_path, ticket
+        )
+        assert result is False
+
+    def test_absorption_verified_false_when_ticket_not_done(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_absorption_verified_false_when_ticket_not_done  # noqa: E501
+        """Kills the `and` -> `or` mutant on `_absorption_verified`'s
+        guard: a ticket loaded successfully but NOT yet `done` must
+        short-circuit to `False` WITHOUT ever consulting
+        `_absorption_scoped_content_matches` -- an `or` mutant instead
+        treats `is_err=False` alone as sufficient to skip the early
+        return, letting a not-done ticket fall through to whatever
+        `_absorption_scoped_content_matches` says."""
+        ticket = _ticket_from_spec("T-0001", _spec("t", scope=("x",)), ())
+        not_done = ticket.model_copy(update={"state": TicketState.QUEUED})
+        monkeypatch.setattr("frob.tickets._load_one", lambda root, tid: Ok(not_done))
+        # If the early-return guard is mutated away, this stub's `True`
+        # would leak through as the final result -- the real code must
+        # never reach it.
+        monkeypatch.setattr(
+            _land_squash_mod, "_absorption_scoped_content_matches", lambda *a: True
+        )
+        result = _land_squash_mod._absorption_verified(
+            tmp_path, tmp_path, ticket, "T-0001"
+        )
+        assert result is False
+
+    def test_absorption_verified_false_when_load_fails(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_absorption_verified_false_when_load_fails  # noqa: E501
+        """Complement of the above: a failed ledger load also returns
+        `False`, killing the `False` -> `True` negation mutant on the
+        shared early-return statement."""
+        ticket = _ticket_from_spec("T-0001", _spec("t", scope=("x",)), ())
+        monkeypatch.setattr("frob.tickets._load_one", lambda root, tid: Err("boom"))
+        result = _land_squash_mod._absorption_verified(
+            tmp_path, tmp_path, ticket, "T-0001"
+        )
+        assert result is False
+
+    def test_report_stacked_sibling_absorption_reports_real_land_not_dry_run(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_report_stacked_sibling_absorption_reports_real_land_not_dry_run  # noqa: E501
+        """Kills the literal `False` -> `True` negation mutants on
+        `_report_stacked_sibling_absorption`'s `dry_run=False` and
+        `natives_rebuilt=False` fields: an absorbed-land report always
+        describes a REAL (non-dry-run) land that rebuilt nothing new,
+        regardless of the caller's own dry-run status."""
+        monkeypatch.setattr(
+            _land_squash_mod, "_rev_parse", lambda root, ref: Ok("cafef00d")
+        )
+        report = _land_squash_mod._report_stacked_sibling_absorption(
+            tmp_path, "T-0001", "T-0001", True, True
+        )
+        assert report.dry_run is False
+        assert report.natives_rebuilt is False
+        assert report.ledger_spliced is False
+        assert report.commit_sha == "cafef00d"
+
+    def test_absorbed_land_report_none_when_staged_files_nonempty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_absorbed_land_report_none_when_staged_files_nonempty  # noqa: E501
+        """Kills the `or` -> `and` mutant on `_absorbed_land_report`'s
+        first guard: a NON-EMPTY staged set (a genuine partial squash,
+        not an absorbed no-op) must short-circuit to `None` even though
+        `_staged_files` itself succeeded (`is_err=False`) -- an `and`
+        mutant instead requires BOTH `is_err` and a truthy staged set,
+        so a successful-but-nonempty read wrongly falls through toward
+        `_absorption_verified`."""
+        ticket = _ticket_from_spec("T-0001", _spec("t", scope=("x",)), ())
+        monkeypatch.setattr(
+            _land_squash_mod,
+            "_staged_files",
+            lambda root: Ok(frozenset({"some/file.py"})),
+        )
+        # If the guard is mutated away, this stub's `True` would let
+        # execution reach `_report_stacked_sibling_absorption` instead of
+        # returning `None` -- assert it never does.
+        monkeypatch.setattr(_land_squash_mod, "_absorption_verified", lambda *a: True)
+        result = _land_squash_mod._absorbed_land_report(
+            tmp_path, tmp_path, ticket, "T-0001", "T-0001", True, True
+        )
+        assert result is None
+
+    def test_staged_files_diff_ok_but_nonzero_returncode_is_failed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_staged_files_diff_ok_but_nonzero_returncode_is_failed  # noqa: E501
+        """Kills the `or` -> `and` mutant on `_staged_files`'s diff guard:
+        `git diff --cached` succeeding at the process level with a
+        nonzero returncode must still refuse as `GitFailed`."""
+        monkeypatch.setattr(
+            _land_squash_mod,
+            "run_argv",
+            lambda argv, **kwargs: Ok(
+                ProcResult(
+                    argv=tuple(argv), returncode=1, stdout="", stderr="diff failed"
+                )
+            ),
+        )
+        result = _land_squash_mod._staged_files(tmp_path)
+        assert result.is_err
+        assert result.danger_err == LandError.GitFailed
+
+    def test_land_commit_details_rev_parse_ok_but_nonzero_returncode_is_no_sha(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_land_commit_details_rev_parse_ok_but_nonzero_returncode_is_no_sha  # noqa: E501
+        """Kills the `and` -> `or` mutant on `_land_commit_details`'s `sha`
+        derivation: `rev-parse` succeeding at the process level with a
+        nonzero returncode must still report `sha_str=None`, not the
+        (meaningless in this case) stdout an `or` mutant would accept."""
+
+        def _fake_run_argv(argv: Sequence[str], **kwargs: Any) -> Any:
+            if "rev-parse" in argv:
+                return Ok(
+                    ProcResult(
+                        argv=tuple(argv),
+                        returncode=128,
+                        stdout="stale-sha\n",
+                        stderr="fatal",
+                    )
+                )
+            return Ok(ProcResult(argv=tuple(argv), returncode=0, stdout="", stderr=""))
+
+        monkeypatch.setattr(_land_squash_mod, "run_argv", _fake_run_argv)
+        sha_str, files = _land_squash_mod._land_commit_details(tmp_path)
+        assert sha_str is None
