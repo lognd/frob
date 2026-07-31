@@ -1,8 +1,10 @@
 """T-0712: `frob.perf._ratchet`'s regression-ratchet check and its
 persisted findings round trip / gate-facing violations."""
+# frob:ticket T-1293
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from frob.perf._ratchet import (
@@ -64,6 +66,26 @@ class TestPersistRoundTrip:
         assert loaded == findings
 
     def test_missing_file_is_empty(self, tmp_path: Path) -> None:
+        assert load_ratchet_findings(tmp_path) == []
+
+    def test_malformed_json_is_empty_not_a_crash(self, tmp_path: Path) -> None:
+        """A file that is not valid JSON hits the `json.JSONDecodeError`
+        branch and fails open to `[]`, matching the "no run yet" case --
+        never a gate-crashing exception (frob:tests T-1293)."""
+        path = tmp_path / ".frob" / "perf" / "ratchet_findings.json"
+        path.parent.mkdir(parents=True)
+        path.write_text("{not valid json", encoding="utf-8")
+        assert load_ratchet_findings(tmp_path) == []
+
+    def test_wrong_schema_json_is_empty_not_a_crash(self, tmp_path: Path) -> None:
+        """Valid JSON that does not match `RatchetFinding`'s schema (a
+        required field missing) hits the `model_validate` `ValueError`
+        branch and fails open to `[]` (frob:tests T-1293)."""
+        path = tmp_path / ".frob" / "perf" / "ratchet_findings.json"
+        path.parent.mkdir(parents=True)
+        path.write_text(
+            json.dumps([{"section_key": "k1"}]), encoding="utf-8"
+        )
         assert load_ratchet_findings(tmp_path) == []
 
 

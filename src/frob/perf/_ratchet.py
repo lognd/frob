@@ -148,6 +148,8 @@ def save_ratchet_findings(root: Path, findings: list[RatchetFinding]) -> None:
 # frob:doc docs/modules/perf.md#regression-ratchet-t-0712
 # frob:tests tests/unit/perf/test_ratchet.py::TestPersistRoundTrip.test_save_then_load_round_trips  # noqa: E501
 # frob:tests tests/unit/perf/test_ratchet.py::TestPersistRoundTrip.test_missing_file_is_empty  # noqa: E501
+# frob:tests tests/unit/perf/test_ratchet.py::TestPersistRoundTrip.test_malformed_json_is_empty_not_a_crash  # noqa: E501
+# frob:tests tests/unit/perf/test_ratchet.py::TestPersistRoundTrip.test_wrong_schema_json_is_empty_not_a_crash  # noqa: E501
 def load_ratchet_findings(root: Path) -> list[RatchetFinding]:
     """`root/.frob/perf/ratchet_findings.json`'s findings, or `[]` when the
     file is missing/malformed (fail-open -- no `frob perf collect` run yet
