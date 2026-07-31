@@ -7613,7 +7613,7 @@ machinery or file a removal ticket instead of writing a fake test for it
 ```yaml
 id: T-1276
 title: 'TEST005 burn-down: src/frob/app (115 findings, 63 at 0.0%)'
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -7877,7 +7877,6 @@ behavior. The coordinator is re-stamping coverage separately.
 - tests: 5 passed (from 5 evidence id(s))
 - gates: 3 error(s), 5789 warning(s), 688 waived
 - error-findings: PII012@tests/unit/test_doctor_runner_t1276.py, PRE001@tickets/T-1276, TICK003@tickets.md
-
 <!-- ticket:T-1277 -->
 ```yaml
 id: T-1277
