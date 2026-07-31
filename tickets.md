@@ -13509,3 +13509,37 @@ Design questions to answer, not assume:
 - Cross-file gates (dup/clones, dead_symbols, cycle) key on a SET of digests, not one file; verify the win survives that.
 - Where does the cache live, and is it safe for concurrent readers/writers across worktrees? .frob/ is gitignored, so CI cold-starts -- measure the cold path too.
 - Add a "--no-cache" escape hatch and make cache hits visible in output so a wrong result is diagnosable.
+
+<!-- ticket:T-1347 -->
+```yaml
+id: T-1347
+title: frob ticket brief emits concurrent sibling leases so dispatch is one line
+state: queued
+kind: feature
+origin: human
+created: '2026-07-31'
+priority: high
+parent: T-1344
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_brief.py
+- docs/modules/tickets.md
+acceptance:
+- text: given other tickets in progress, when frob ticket brief runs, then it lists
+    their ids, titles, and scope globs under a do-not-touch heading
+  evidence: []
+threat: null
+component: tickets
+```
+Leaf of T-1344. Trivial, do this first -- it is the cheapest item in the epic.
+
+"frob ticket brief" already emits a complete mission briefing: description+plan, scope+leases, playbook hard rules, targeted verify commands, gate baseline, REL/land rules. On 2026-07-31 the coordinator was nonetheless hand-writing 40-line dispatch prompts that duplicated it, because brief was missing exactly ONE thing: the scopes of the OTHER tickets currently in flight.
+
+With 7 concurrent agents, the do-not-touch list is the single most important thing a dispatched agent needs and the only thing the coordinator must still supply by hand.
+
+PROPOSAL: brief emits a "Concurrent leases (do NOT touch)" section listing every OTHER in-progress ticket's id, title, and scope globs, resolved live at brief time. Then a dispatch prompt collapses to: "work T-XXXX; run frob ticket brief T-XXXX and follow it; playbook governs."
+
+Also worth folding in, from the same session's observations:
+- Note the interrupted-land hazard: commit new tests BEFORE running land, because a killed land can garble a file and the "git checkout --" recovery then eats uncommitted work (T-1338).
+- Note that transient DirtyMain refusals under concurrency are EXPECTED and the correct response is wait-and-retry, never touching main.
