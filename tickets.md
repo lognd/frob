@@ -13427,3 +13427,44 @@ ALSO NOTE (separate but related): the coordinator was hand-writing 40-line dispa
 CONSTRAINT DISCOVERED: memory is no longer the limit on agent count (.wslconfig now gives 23 GB + 24 GB swap). CPU is: 12 cores, load ~11 at only 4 agents, and land must finish inside a 540s wrapper. Practical ceiling ~7 concurrent agents. Every item below raises that ceiling by making the land path cheaper.
 
 T-1058 (worktree cut from stale origin/main -- a documented silent-revert cause) is ARCHIVED, not resolved in the active ledger; the playbook still carries a manual "git merge main first" step as the mitigation. Re-decide it under this epic if the merge queue does not subsume it.
+
+<!-- ticket:T-1345 -->
+```yaml
+id: T-1345
+title: 'Merge queue: agents enqueue verified branches, one drainer merges onto main'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-31'
+priority: high
+parent: T-1344
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- docs/modules/tickets.md
+- docs/guides/agent-playbook.md
+acceptance:
+- text: given two agents landing at once, when both enqueue, then both land in sequence
+    with neither refused for DirtyMain and neither writing to main directly
+  evidence: []
+- text: given a queued branch that no longer merges cleanly after an earlier entry
+    lands, when the drainer reaches it, then it is handled by a declared policy rather
+    than silently dropped
+  evidence: []
+threat: null
+component: tickets
+```
+Leaf of T-1344. THE highest-leverage item: today every agent landed onto one shared main checkout, so lands serialize by collision-and-retry rather than by design.
+
+Observed failures this shape caused: a DirtyMain refusal costing a full retry cycle (T-1336); an agent committing a SIBLING's uncommitted ledger churn to main twice just to clear DirtyMain (T-1337) -- inert that time, but the shape lets one agent commit another's half-finished work; and repeated multi-minute waits.
+
+PROPOSAL: "frob ticket land --queue" enqueues a verified worktree branch and returns immediately. A single serialized drainer merges queued branches onto main one at a time, running the post-merge gate check per merge. Agents then NEVER write to main directly.
+
+Design questions to answer in the ticket, not assume:
+- Where does the queue live so it survives a crashed drainer (a git ref? a file under .frob/ with a lock?).
+- What happens when a queued branch no longer merges cleanly after an earlier queue entry lands -- reject back to the agent, or auto-rebase and re-verify?
+- The gate check must run POST-merge to be meaningful; that is what makes throughput depend on the memoization leaf.
+- Does this subsume the archived T-1058 stale-worktree-base hazard? If the drainer always merges current main, a stale base becomes detectable at enqueue.
+
+Preserve the existing LAND-PROOF contract: whatever the agent gets back must still let it prove commit + is_ancestor_of_main + state_on_main, or the verification discipline this repo depends on breaks.
