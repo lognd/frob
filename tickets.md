@@ -14499,3 +14499,43 @@ DESIGN QUESTIONS -- answer, do not assume:
 - Whatever the answer, the LAND-PROOF contract and the existing splice/merge-driver behavior must survive intact.
 
 Interim mitigation, already in effect: coordinator dispatch prompts say to pass --finish only on a series' last land, and paused tickets keep their worktrees. Neither prevents this leak.
+
+<!-- ticket:T-1356 -->
+```yaml
+id: T-1356
+title: Scope-lease deadlock between two tickets sharing one worktree
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-31'
+priority: medium
+parent: T-1344
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_scope.py
+- docs/modules/tickets.md
+acceptance:
+- text: given a glob whose recorded evidence stays covered by a remaining narrower
+    glob, when scope --remove runs, then it is permitted
+  evidence: []
+- text: given two tickets in the same worktree, when one adds a scope glob the other
+    holds, then the operation is not refused as a lease conflict
+  evidence: []
+threat: null
+component: tickets
+```
+Leaf of T-1344. Discovered 2026-07-31 during the batched parallel drive.
+
+THE DEFECT: two tickets living in one worktree can deadlock on scope leases in a way that cannot be resolved through the CLI.
+
+OBSERVED: T-1276 held the glob `tests/unit/**`. A sibling ticket T-1352, in the SAME worktree, needed `tests/unit/test_app_lazy_exports.py` in scope. `frob ticket scope T-1352 --add ...` was refused with ScopeLeaseConflict because T-1276's broader glob covered it. The obvious remedy -- narrow T-1276's glob -- was ALSO refused: `frob ticket scope --remove` will not release any glob still covering recorded evidence, even when a narrower duplicate glob would remain in place and keep that evidence covered.
+
+So the two refusals compose into a deadlock with no CLI exit. The agent worked around it by recording evidence against the test files WITHOUT adding them to T-1352's declared scope (evidence recording has no scope-membership requirement, only a soft SCOPE002 warning). That worked, but it means the ticket's declared scope now understates what it actually touched -- the workaround erodes exactly the scope-accuracy guarantee the lease system exists to provide.
+
+WHAT TO FIX (assess each, do not assume):
+1. `scope --remove` should permit releasing a glob when the remaining globs still cover every recorded evidence path. The current check appears to test "is this glob covering evidence?" rather than "would removing it leave evidence uncovered?" -- the latter is the property that actually matters.
+2. Lease conflicts between tickets sharing a worktree are arguably not conflicts at all: the lease exists to stop CONCURRENT AGENTS colliding, and two tickets in one worktree have exactly one agent. Consider scoping lease checks to distinct worktrees/agents rather than distinct ticket ids.
+3. If the deadlock is genuinely unresolvable in some cases, the refusal message must say so and name the escape hatch, instead of leaving an agent to invent a workaround that quietly degrades scope accuracy.
+
+This matters more now that SERIES dispatch is standing policy -- multiple tickets per worktree is the normal case, not the exception, so this deadlock will recur.
