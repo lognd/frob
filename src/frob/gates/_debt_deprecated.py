@@ -660,7 +660,7 @@ def _depr005_edge_violations(
     symbol = _bare_symbol_name(edge.src)
     current_refs = _references_from_index(symbol, index)
     current_counts = file_reference_counts(current_refs)
-    baseline_counts = entry.file_counts()  # type: ignore[attr-defined]
+    baseline_counts = entry.file_counts()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     grown_files = sorted(
         file
         for file, count in current_counts.items()
