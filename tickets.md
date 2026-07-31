@@ -14766,3 +14766,50 @@ line (T-1341's own auto-fix, once it exists, would do this mechanically;
 until then it is a one-line manual fix). Found while working T-1340,
 outside T-1340's own declared scope (src/frob/gates/_suppress.py and
 friends only) -- filed rather than hand-patched.
+
+<!-- ticket:T-1358 -->
+```yaml
+id: T-1358
+title: T-1340 land desynced .frob-release.json from pyproject.toml, blocking all lands
+state: queued
+kind: bug
+origin: human
+created: '2026-07-31'
+priority: critical
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land_release.py
+threat: null
+component: null
+```
+Observed 2026-07-31 while landing T-1348: T-1340's land (commit b614d46b)
+bumped pyproject.toml's version 0.289.0 -> 0.290.0 but never updated
+.frob-release.json, which stayed at 0.289.0. This desynced the release
+quartet and refused (T-0992 monotonicity assertion, ReleaseBumpFailed)
+EVERY subsequent land that needed a version bump -- a repo-wide land
+outage, not a per-ticket issue.
+
+Repaired directly on main (commit b863249d, `frob release stamp`) since
+the fix is narrow (manifest version + T-1340's own unrecorded new-symbol
+hashes) and the pre-commit land-owned-file guard does not cover
+.frob-release.json (only CHANGELOG.md/uv.lock/pyproject.toml's version
+line) -- confirmed this repair does not need FROB_LAND_INTERNAL.
+
+ROOT CAUSE NOT YET DIAGNOSED: `_apply_release_bump`/`_resync_release_
+manifest` (src/frob/tickets/_land_release.py, T-1078) is SUPPOSED to
+force-resync the manifest to `new_version` in the SAME land step that
+bumps pyproject.toml, specifically to prevent this exact desync. T-1340's
+land commit shows only pyproject.toml/CHANGELOG.md changed, not
+.frob-release.json -- meaning either the resync step did not run, ran
+and failed silently, or T-1340 was landed via a path that bypasses
+`_apply_release_bump` entirely (a manual/coordinator squash rather than
+`frob ticket land`'s own CLI). Find out which, and if it is the former,
+this is a live regression in T-1078's own guarantee and needs a real fix,
+not just this one-off repair.
+
+Suggested acceptance: reproduce the exact conditions of T-1340's land (or
+audit its actual land invocation/log) to identify why `_resync_release_
+manifest` did not fire or did not stick, and add a regression test
+covering that specific path.
