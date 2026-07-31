@@ -12642,6 +12642,21 @@ scope:
 - src/frob/refactor/**
 - design/frob.strata
 - docs/modules/refactor.md
+- tests/test_refactor.py
+- tests/system/test_frob_self_model.py
+scope_changes:
+- op: add
+  glob: tests/test_refactor.py
+  reason: 'scope-closure: bound tests for _find_overlapping_ops/apply_plan and the
+    self-model strata test'
+  actor: logan
+  at: '2026-07-31'
+- op: add
+  glob: tests/system/test_frob_self_model.py
+  reason: 'scope-closure: bound tests for _find_overlapping_ops/apply_plan and the
+    self-model strata test'
+  actor: logan
+  at: '2026-07-31'
 acceptance:
 - text: given frob check, when gate:RENDER runs, then src/frob/refactor/_cli.py raises
     0 RENDER001 findings
@@ -12656,7 +12671,6 @@ threat: null
 component: refactor
 ```
 Error-level gate residue confined to the refactor package: 4 RENDER001 bare prints in _cli.py (route through frob.render Renderer), ARCH001 _handle_from_import 63/60 lines in _scan.py, COV007 frob:doc on private _apply.py::_find_overlapping_ops, COV001 design/frob.strata:2125 frob.refactor public with no frob:doc edge.
-
 <!-- ticket:T-1337 -->
 ```yaml
 id: T-1337
@@ -12672,6 +12686,19 @@ sprint: null
 scope:
 - src/frob/app/**
 - docs/modules/app.md
+- tests/test_ticket_reverify.py
+- tests/unit/test_app_lazy_dispatch.py
+scope_changes:
+- op: add
+  glob: tests/test_ticket_reverify.py
+  reason: 'scope-closure: bound tests for app runner dispatch'
+  actor: logan
+  at: '2026-07-31'
+- op: add
+  glob: tests/unit/test_app_lazy_dispatch.py
+  reason: 'scope-closure: bound tests for app runner dispatch'
+  actor: logan
+  at: '2026-07-31'
 acceptance:
 - text: given frob check, when gate:OPAQUE runs, then src/frob/app raises 0 OPAQUE001
     errors
@@ -12680,7 +12707,6 @@ threat: elevation-of-privilege
 component: app
 ```
 gate:OPAQUE errors: app/__init__.py:116 and app/app.py:115 importlib.import_module, app/__init__.py:107 class __getattr__ interception. These are the deliberate lazy-subcommand-dispatch mechanism (T-1318 adjacent). Either resolve statically or record a reasoned frob:waive OPAQUE001 naming the bounded module-name domain and where it is validated.
-
 <!-- ticket:T-1338 -->
 ```yaml
 id: T-1338
@@ -12695,6 +12721,13 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/_debt_deprecated.py
+- tests/test_gates_debt.py
+scope_changes:
+- op: add
+  glob: tests/test_gates_debt.py
+  reason: 'scope-closure: bound tests for deprecated-debt gate'
+  actor: logan
+  at: '2026-07-31'
 acceptance:
 - text: given frob check, when gate:ARCH runs, then _depr005_violations is under the
     60-line threshold
