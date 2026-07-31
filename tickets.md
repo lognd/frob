@@ -12772,7 +12772,18 @@ Motivating incident: two ty errors on main (tests/test_fuzz.py:159 unresolved-re
 
 DESIGN (decided, see leaves): pairing is EVIDENCE-DRIVEN, not static. The gate fires only where checker B emits an unsuppressed diagnostic on a line that already carries checker A's suppression. This avoids the two failure modes of naive static pairing: (a) mypy/ty rule codes are not 1:1 (name-defined vs unresolved-reference, attr-defined vs unresolved-attribute), so static pairing needs a lossy mapping table; (b) stamping suppressions onto lines the other checker never flagged just creates unused-suppression debt. Evidence-driven pairing needs NO mapping table -- the reporting checker's diagnostic carries the exact rule code to emit.
 
-Current population: 37 'type: ignore' lines, 20 already dual-dialect, 17 mypy-only, 6 ty-only. mypy is not a configured checker here (pyproject runs ruff + ty), so the mypy->ty direction is the live one and ty->mypy is latent until mypy is configured.
+Current population: 37 'type: ignore' lines, 20 already dual-dialect, 17 mypy-only, 6 ty-only.
+
+DESIGN AMENDMENT (2026-07-31, user, SUPERSEDES the configuration-gating decision above): the GOAL IS PORTABILITY, not conformance to whichever checker this repo happens to run. 'This repo runs ty, but that doesn't mean every repo runs ty; I just want anybody to be able to type-check the code.' A downstream consumer running mypy against frob's source must not eat spurious errors, so every suppressed line should carry EVERY supported dialect's suppression -- including for checkers this repo never runs.
+
+Consequences, all of which reverse earlier decisions:
+1. Do NOT gate a direction on the tool being configured in the consuming project. Silence-when-unconfigured was correct for a conformance goal and is WRONG for a portability goal -- it would leave frob's own source hostile to mypy users forever, since mypy never runs here.
+2. Do NOT drop the mypy dialect or migrate the 17 legacy mypy-only ignores away. They are load-bearing for downstream mypy users. The successor question posed in T-1342 is withdrawn.
+3. mypy becomes a DEV DEPENDENCY used purely as an ORACLE (user-sanctioned: 'If we need to get mypy purely for testing this capability, then we can go ahead and do so'). ty stays the gating checker; mypy is never a gate, only a source of ground-truth diagnostics.
+
+This amendment RESCUES the evidence-driven design rather than forcing a retreat to static pairing. The reason evidence-driven pairing looked impossible for an unconfigured checker is that nothing produced its diagnostics; installing mypy as an oracle produces exactly those diagnostics locally. So pairing stays evidence-driven and SYMMETRIC, still needs NO mypy-code <-> ty-code mapping table, and each dialect's suppression is written with that dialect's own rule code taken from that dialect's own diagnostic. Static pairing with a lossy mapping table remains rejected.
+
+Watch item for the oracle: mypy's --warn-unused-ignores must stay OFF, or be reconciled deliberately. Exact evidence-driven pairing should not produce unused ignores, but the 17 pre-existing legacy mypy ignores were written for a mypy that never ran and some may now be unused; treat any such finding as information, never as license to delete a suppression a downstream consumer may need.
 
 <!-- ticket:T-1340 -->
 ```yaml
@@ -12808,7 +12819,11 @@ component: gates
 ```
 Phase 1 of T-1339. Build a SuppressionDialect registry (name, comment syntax, rule-code grammar, how to tell if the tool is configured for this project) with python entries for ty, mypy, and ruff/noqa. Detection is EVIDENCE-DRIVEN: the gate correlates the diagnostics frob check already collects from each configured checker against the suppression comments present on the reporting line. Fire only when line L carries dialect A's suppression AND configured checker B reports an unsuppressed diagnostic at L. No static mypy-code -> ty-code mapping table -- the reporting diagnostic supplies the code.
 
-Direction support must be symmetric (mypy->ty and ty->mypy) but gated on the checker actually being configured; mypy is NOT configured in this repo today, so only mypy->ty is live here. Detection only -- the fix is the sibling ticket.
+Direction support must be symmetric (mypy->ty AND ty->mypy), and per T-1339's DESIGN AMENDMENT it is NOT gated on the checker being configured in the consuming project -- the goal is portability, so frob's source must satisfy mypy users even though this repo gates on ty. Add mypy as a dev dependency used purely as a diagnostic ORACLE (never a gate) so the ty->mypy direction has real evidence to correlate against; that is what keeps detection evidence-driven instead of forcing a lossy static code-mapping table.
+
+Supersedes this ticket's third acceptance criterion as originally written ('a checker that is not configured ... reports nothing'). Reinterpret it as: a dialect with no available oracle produces no findings for that direction (a capability limit), NOT a dialect whose tool is merely unconfigured in the consuming project. Re-word the criterion in the same change.
+
+Detection only -- the fix is the sibling ticket.
 
 <!-- ticket:T-1341 -->
 ```yaml
@@ -12841,3 +12856,31 @@ component: gates
 Phase 2 of T-1339, depends on the SUPPRESS001 detector. Add a Tier-A deterministic handler to frob.gates._fix_engine alongside the existing frob:tests/frob:doc/INV006 handlers, so it is picked up by apply_tier_a_fixes and therefore absorbed automatically by frob ticket land (same path frob fmt takes).
 
 Requirements: canonical deterministic comment order on the rewritten line (existing dual-dialect lines in this repo use 'type: ignore[...]  # noqa: ...  # ty: ignore[...]' -- confirm against the 20 already-paired lines and match them rather than inventing an order). Idempotent: both-present is a no-op. Never widen a coded suppression to a bare one. Preserve any trailing explanatory comment. Tier-A means deterministic and verifiable -- if the reporting diagnostic does not carry a rule code, do NOT guess, leave the finding for a human.
+
+<!-- ticket:T-1342 -->
+```yaml
+id: T-1342
+title: Backfill the 23 unpaired suppression lines and lock main at zero SUPPRESS001
+state: queued
+kind: feature
+origin: human
+created: '2026-07-31'
+priority: medium
+parent: T-1339
+tier: ticket
+sprint: null
+scope:
+- src/**
+- tests/**
+acceptance:
+- text: given frob check on main, when the suppress gate runs, then it reports 0 SUPPRESS001
+    findings
+  evidence: []
+threat: null
+component: gates
+```
+Phase 3 of T-1339, depends on both the detector and the Tier-A handler. Drive the existing population to zero via frob check --fix: 37 'type: ignore' lines exist, 20 already dual-dialect, 17 mypy-only, 6 ty-only. Expect far fewer than 23 actual findings, since evidence-driven detection only fires where the other checker genuinely reports -- the remaining unpaired lines are legitimately fine and MUST NOT be touched. Add a lock test so a regression reds main.
+
+WITHDRAWN by T-1339's DESIGN AMENDMENT (2026-07-31): the successor question originally posed here -- whether to migrate the 17 legacy mypy-only ignores to ty and drop the mypy dialect from this repo -- is answered NO and must not be pursued. The goal is portability: those mypy suppressions are load-bearing for downstream consumers who type-check frob with mypy, even though mypy never gates here. Do not delete or migrate a suppression for a checker this repo does not run.
+
+Expect this ticket's real work to GROW rather than shrink under the amendment: with mypy installed as an oracle, the ty->mypy direction now produces findings too, so lines carrying only a ty suppression will need mypy pairs added.
