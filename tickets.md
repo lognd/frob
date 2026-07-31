@@ -12809,3 +12809,35 @@ component: gates
 Phase 1 of T-1339. Build a SuppressionDialect registry (name, comment syntax, rule-code grammar, how to tell if the tool is configured for this project) with python entries for ty, mypy, and ruff/noqa. Detection is EVIDENCE-DRIVEN: the gate correlates the diagnostics frob check already collects from each configured checker against the suppression comments present on the reporting line. Fire only when line L carries dialect A's suppression AND configured checker B reports an unsuppressed diagnostic at L. No static mypy-code -> ty-code mapping table -- the reporting diagnostic supplies the code.
 
 Direction support must be symmetric (mypy->ty and ty->mypy) but gated on the checker actually being configured; mypy is NOT configured in this repo today, so only mypy->ty is live here. Detection only -- the fix is the sibling ticket.
+
+<!-- ticket:T-1341 -->
+```yaml
+id: T-1341
+title: 'Tier-A auto-fix handler: write the paired suppression in canonical order,
+  idempotently'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-31'
+priority: high
+parent: T-1339
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_fix_engine.py
+- tests/test_gates_fix_engine.py
+- docs/modules/gates.md
+acceptance:
+- text: given a SUPPRESS001 finding, when frob check --fix runs, then the paired suppression
+    is appended using the reporting checker's own rule code and the line then passes
+    both checkers
+  evidence: []
+- text: given frob check --fix runs twice, when the second run completes, then no
+    suppression comment was duplicated or reordered
+  evidence: []
+threat: null
+component: gates
+```
+Phase 2 of T-1339, depends on the SUPPRESS001 detector. Add a Tier-A deterministic handler to frob.gates._fix_engine alongside the existing frob:tests/frob:doc/INV006 handlers, so it is picked up by apply_tier_a_fixes and therefore absorbed automatically by frob ticket land (same path frob fmt takes).
+
+Requirements: canonical deterministic comment order on the rewritten line (existing dual-dialect lines in this repo use 'type: ignore[...]  # noqa: ...  # ty: ignore[...]' -- confirm against the 20 already-paired lines and match them rather than inventing an order). Idempotent: both-present is a no-op. Never widen a coded suppression to a bare one. Preserve any trailing explanatory comment. Tier-A means deterministic and verifiable -- if the reporting diagnostic does not carry a rule code, do NOT guess, leave the finding for a human.
