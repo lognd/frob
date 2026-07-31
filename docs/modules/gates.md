@@ -1792,6 +1792,30 @@ rather than cached unsoundly.
   _coverage`) -- promoting that WARN-advisory heuristic into a hard
   pre-stamp gate, since a run that silently dropped subprocess coverage
   used to stamp clean and only get flagged after the fact.
+- `write_coverage_lock`'s T-1363 downward-ratchet guard -- unless called
+  with `allow_decrease=True`, a module already present in the committed
+  `frob-coverage.lock.json` can only move up: a drop of more than
+  `_LOCK_TOLERANCE` points against the prior committed value is clamped
+  back to that prior value rather than written. Fixes a real incident
+  (2026-07-31): a failed/partial `make coverage` run rewrote committed
+  floors downward (e.g. `src/frob/app/__init__.py` 76.5% -> 16.2%), which
+  would have permanently lowered the repo's quality floor through a file
+  nobody reviews had it been committed. `stamp_coverage` always calls this
+  with the default (`allow_decrease=False`); a deliberate re-baseline
+  needs the explicit override, never a bare `make coverage` run.
+- `make coverage`'s T-1363 fix -- the `coverage:` recipe now writes the
+  combined `coverage xml` to a scratch path (`.frob/coverage.partial.xml`)
+  first and only promotes it to the real `coverage.xml` (and only calls
+  `frob check --stamp-coverage`, the sole writer of `.frob/coverage-stamp`
+  and `frob-coverage.lock.json`) when the pytest run's own exit status was
+  0. A nonzero exit (even after the recipe's own crash-recovery reruns)
+  leaves the previous `coverage.xml`, `.frob/coverage-stamp`, and
+  `frob-coverage.lock.json` completely untouched, printing an explicit
+  ERROR line naming the skip instead of silently promoting a failed run's
+  data -- the exact defect a real 2026-07-31 incident hit twice in one day
+  (a failing suite still overwrote a merely-wrong stamp with a near-empty
+  one, driving four cross-agent validation symbols to a uniform, false
+  0.0%).
 - `load_stamp` -- the raw `.frob/coverage-stamp` document, or `None` if
   never stamped/unreadable; TEST006 compares it against live file hashes.
 - `load_prework` -- the recorded pre-work sweep for a ticket, or `None` if

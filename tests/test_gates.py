@@ -6851,6 +6851,7 @@ class TestTestGate:
 
 # frob:ticket T-0545
 # frob:ticket T-1180
+# frob:ticket T-1363
 class TestCoverageLoad:
     def test_missing_coverage_xml(self, tmp_path: Path) -> None:
         result = load_coverage(tmp_path)
@@ -7184,6 +7185,68 @@ class TestCoverageLoad:
         assert not (tmp_path / "frob-coverage.lock.json").is_relative_to(
             tmp_path / ".frob"
         )
+
+    # frob:ticket T-1363
+    def test_write_coverage_lock_refuses_downward_ratchet(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::write_coverage_lock
+        # T-1363: a failed/partial run must never rewrite a committed
+        # coverage-ratchet floor downward -- e.g. the real 2026-07-31
+        # incident, src/frob/app/__init__.py 76.5% -> 16.2% from a failed
+        # `make coverage` run. `write_coverage_lock` clamps a big drop to
+        # the prior committed value unless `allow_decrease=True`.
+        from frob.gates import CoverageData, load_coverage_lock, write_coverage_lock
+
+        good = CoverageData(
+            source_sha="good",
+            symbol_branch={},
+            module_line={"src/frob/app/__init__.py": 76.5},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        assert write_coverage_lock(tmp_path, good).is_ok
+        bad = CoverageData(
+            source_sha="bad-partial-run",
+            symbol_branch={},
+            module_line={"src/frob/app/__init__.py": 16.2},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        result = write_coverage_lock(tmp_path, bad)
+        assert result.is_ok
+        lock = load_coverage_lock(tmp_path)
+        assert lock is not None
+        assert lock["module_line"]["src/frob/app/__init__.py"] == 76.5
+
+    # frob:ticket T-1363
+    def test_write_coverage_lock_allow_decrease_overrides_ratchet(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::write_coverage_lock
+        # T-1363: a deliberate re-baseline (allow_decrease=True) must still
+        # be able to lower the committed floor -- the ratchet guard only
+        # refuses an ACCIDENTAL drop from a failed/partial measurement.
+        from frob.gates import CoverageData, load_coverage_lock, write_coverage_lock
+
+        good = CoverageData(
+            source_sha="good",
+            symbol_branch={},
+            module_line={"src/frob/app/__init__.py": 76.5},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        assert write_coverage_lock(tmp_path, good).is_ok
+        deliberate = CoverageData(
+            source_sha="deliberate-rebaseline",
+            symbol_branch={},
+            module_line={"src/frob/app/__init__.py": 16.2},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        result = write_coverage_lock(tmp_path, deliberate, allow_decrease=True)
+        assert result.is_ok
+        lock = load_coverage_lock(tmp_path)
+        assert lock is not None
+        assert lock["module_line"]["src/frob/app/__init__.py"] == 16.2
 
     # frob:ticket T-1180
     def test_stamp_coverage_refuses_below_deflation_floor(self, tmp_path: Path) -> None:

@@ -613,9 +613,27 @@ def stamp_coverage(
     return Ok(Unit())
 
 
+# T-1363: `frob-coverage.lock.json` holds committed coverage-ratchet FLOORS
+# (docs/audits/gates-accounting.md B5) -- a failed/partial `make coverage`
+# run rewrote these downward twice in one day (src/frob/app/__init__.py
+# 76.5% -> 16.2%), which would have permanently lowered the repo's quality
+# floor through a file nobody reviews had it been committed. Any single
+# module dropping by more than `_LOCK_TOLERANCE` points in one
+# `write_coverage_lock` call is refused (unless `allow_decrease=True`)
+# rather than silently accepted -- a real, deliberate re-baseline still
+# goes through via the explicit override, but an accidental one from a bad
+# measurement cannot. Reuses `_LOCK_TOLERANCE` (not a second constant) since
+# it is the same "float noise vs. real drift" threshold `coverage_lock_diff`
+# already applies when reading this same lock back.
+
+
 # frob:doc docs/modules/gates.md#public-api
 # frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refreshes_committed_lock  # noqa: E501
-def write_coverage_lock(root: Path, data: CoverageData) -> Result[Unit, GateError]:
+# frob:tests tests/test_gates.py::TestCoverageLoad.test_write_coverage_lock_refuses_downward_ratchet  # noqa: E501
+# frob:tests tests/test_gates.py::TestCoverageLoad.test_write_coverage_lock_allow_decrease_overrides_ratchet  # noqa: E501
+def write_coverage_lock(
+    root: Path, data: CoverageData, *, allow_decrease: bool = False
+) -> Result[Unit, GateError]:
     """Write the committed `frob-coverage.lock.json` summary for `data` (T-0545).
 
     Deliberately rounds every percentage to 1 decimal and stores only
@@ -624,13 +642,43 @@ def write_coverage_lock(root: Path, data: CoverageData) -> Result[Unit, GateErro
     catch a claim a real CI run cannot reproduce. Rounding also keeps the
     committed file's diffs quiet across re-stamps with only float-noise
     differences.
+
+    T-1363: unless `allow_decrease=True` (an explicit, deliberate
+    re-baseline -- never the default a `make coverage` run passes), a
+    module already present in the committed lock can only ratchet UP: its
+    new percentage is clamped to `max(existing, new)` whenever the drop
+    exceeds `_LOCK_RATCHET_TOLERANCE` points, so a single bad/partial
+    measurement cannot silently lower a committed quality floor. A module
+    with no prior lock entry is written as-is (nothing to ratchet against
+    yet).
     """
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(GateError.WorktreeLeaseViolation)
+    rounded = {k: round(v, 1) for k, v in sorted(data.module_line.items())}
+    if not allow_decrease:
+        existing_lock = load_coverage_lock(root) or {}
+        existing_line: dict[str, float] = existing_lock.get("module_line", {})
+        clamped = 0
+        for module, existing_pct in existing_line.items():
+            new_pct = rounded.get(module)
+            if new_pct is None:
+                continue
+            if existing_pct - new_pct > _LOCK_TOLERANCE:
+                rounded[module] = existing_pct
+                clamped += 1
+        if clamped:
+            _log.warning(
+                "write_coverage_lock: refused a downward ratchet on %d "
+                "module(s) (drop > %.1f points) -- kept the prior committed "
+                "floor for each; pass allow_decrease=True for a deliberate "
+                "re-baseline",
+                clamped,
+                _LOCK_TOLERANCE,
+            )
     lock = {
         "source_sha": data.source_sha,
-        "module_line": {k: round(v, 1) for k, v in sorted(data.module_line.items())},
+        "module_line": rounded,
     }
     lock_path = root / _LOCK_REL
     try:

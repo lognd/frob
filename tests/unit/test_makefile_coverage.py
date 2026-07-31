@@ -23,7 +23,7 @@ def _recipe_tail() -> str:
     rather than a hand-copied reimplementation that could drift from it.
     """
     match = re.search(
-        r"^\tuv run coverage combine; \\\n(?:\t.*\\\n)*\texit \$\$status$",
+        r"^\tuv run coverage combine; \\\n(?:\t.*\\\n)*\texit \$\$stamp_status$",
         _MAKEFILE,
         re.MULTILINE,
     )
@@ -39,11 +39,19 @@ def _recipe_tail() -> str:
 def _run_fragment(
     tmp_path: Path, stub_bin: Path, env_extra: dict[str, str]
 ) -> subprocess.CompletedProcess[str]:
+    """Run the recipe tail seeded with `status=0` (green suite), the
+    scenario `TestStampFailurePropagation` exercises."""
+    return _run_fragment_with_status(tmp_path, stub_bin, 0, env_extra)
+
+
+# frob:ticket T-1363
+def _run_fragment_with_status(
+    tmp_path: Path, stub_bin: Path, status: int, env_extra: dict[str, str]
+) -> subprocess.CompletedProcess[str]:
+    """Run the recipe tail seeded with an arbitrary pytest-run `status`
+    (0 = green suite, nonzero = the T-1363 failed/partial-run scenario)."""
     env = {"PATH": f"{stub_bin}:/usr/bin:/bin", **env_extra}
-    # `status` is set by the pytest-run block earlier in the real recipe
-    # (not part of the sliced fragment); seed it as "green suite already
-    # passed" (status=0), the scenario both tests below exercise.
-    script = "status=0\n" + _recipe_tail()
+    script = f"status={status}\n" + _recipe_tail()
     return subprocess.run(
         ["bash", "-c", script],
         cwd=tmp_path,
@@ -91,6 +99,102 @@ class TestStampFailurePropagation:
         _write_stub(stub_bin, "uv", "exit 0\n")
         result = _run_fragment(tmp_path, stub_bin, {})
         assert result.returncode == 0, result.stdout + result.stderr
+
+
+# frob:ticket T-1363
+def _write_partial_xml_stub(stub_bin: Path, stamp_marker: Path) -> None:
+    """A `uv` stub that answers `coverage combine`/`coverage xml -o PATH`
+    for real (writing recognizable content to whatever `-o` path it is
+    given) and records whether `frob check --stamp-coverage` was ever
+    invoked, without actually touching any real coverage artifact itself."""
+    _write_stub(
+        stub_bin,
+        "uv",
+        f"""
+if [ "$2" = "coverage" ] && [ "$3" = "xml" ]; then
+  out=""
+  prev=""
+  for a in "$@"; do
+    if [ "$prev" = "-o" ]; then out="$a"; fi
+    prev="$a"
+  done
+  echo "PARTIAL_XML_FROM_THIS_RUN" > "$out"
+  exit 0
+fi
+if [ "$2" = "frob" ] && [ "$3" = "check" ]; then
+  touch {stamp_marker}
+  exit 0
+fi
+exit 0
+""",
+    )
+
+
+# frob:ticket T-1363
+class TestFailedRunNeverPromotesPartialData:
+    """`frob:tests` T-1363's acceptance criterion 0/1: a nonzero pytest
+    exit status must leave the previous `coverage.xml`, `.frob/
+    coverage-stamp`, and committed `frob-coverage.lock.json` completely
+    untouched -- the failed run's own data must never be promoted, even
+    though `coverage combine`/`coverage xml` still ran and produced
+    something. This reproduces the real 2026-07-31 incident: a `make
+    coverage` run that exited 2 (six failing tests) still overwrote good
+    stamp data with a near-empty measurement."""
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestFailedRunNeverPromotesPartialData.test_failed_run_leaves_coverage_xml_and_stamp_untouched  # noqa: E501
+    def test_failed_run_leaves_coverage_xml_and_stamp_untouched(self, tmp_path):
+        """A nonzero final `status` must exit nonzero without ever calling
+        `frob check --stamp-coverage` (the only writer of the stamp and the
+        committed lock), and must leave a pre-existing `coverage.xml`
+        byte-for-byte as it was."""
+        stub_bin = tmp_path / "bin"
+        stub_bin.mkdir()
+        stamp_marker = tmp_path / "stamp-coverage-was-called"
+        _write_partial_xml_stub(stub_bin, stamp_marker)
+
+        good_xml = tmp_path / "coverage.xml"
+        good_xml.write_text("OLD_GOOD_COVERAGE_XML\n", encoding="utf-8")
+        (tmp_path / ".frob").mkdir()
+        stamp_path = tmp_path / ".frob" / "coverage-stamp"
+        stamp_path.write_text('{"source_sha": "old-good-sha"}\n', encoding="utf-8")
+        lock_path = tmp_path / "frob-coverage.lock.json"
+        lock_path.write_text('{"source_sha": "old-good-sha"}\n', encoding="utf-8")
+
+        result = _run_fragment_with_status(tmp_path, stub_bin, 2, {})
+
+        assert result.returncode == 2, result.stdout + result.stderr
+        assert not stamp_marker.exists(), (
+            "frob check --stamp-coverage must never be invoked on a failed run"
+        )
+        assert good_xml.read_text(encoding="utf-8") == "OLD_GOOD_COVERAGE_XML\n"
+        assert (
+            stamp_path.read_text(encoding="utf-8") == '{"source_sha": "old-good-sha"}\n'
+        )
+        assert (
+            lock_path.read_text(encoding="utf-8") == '{"source_sha": "old-good-sha"}\n'
+        )
+        # The failed run's own data is still captured for inspection, just
+        # never promoted to the trusted paths.
+        partial = tmp_path / ".frob" / "coverage.partial.xml"
+        assert partial.read_text(encoding="utf-8") == "PARTIAL_XML_FROM_THIS_RUN\n"
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestFailedRunNeverPromotesPartialData.test_successful_run_still_promotes_coverage_xml  # noqa: E501
+    def test_successful_run_still_promotes_coverage_xml(self, tmp_path):
+        """Unchanged success path: `status=0` still promotes the combined
+        xml to the real `coverage.xml` and calls `frob check
+        --stamp-coverage` (no regression from the T-1363 guard)."""
+        stub_bin = tmp_path / "bin"
+        stub_bin.mkdir()
+        stamp_marker = tmp_path / "stamp-coverage-was-called"
+        _write_partial_xml_stub(stub_bin, stamp_marker)
+        (tmp_path / ".frob").mkdir()
+
+        result = _run_fragment_with_status(tmp_path, stub_bin, 0, {})
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert stamp_marker.exists()
+        good_xml = tmp_path / "coverage.xml"
+        assert good_xml.read_text(encoding="utf-8") == "PARTIAL_XML_FROM_THIS_RUN\n"
 
 
 class TestCoverageXmlIgnoreErrors:

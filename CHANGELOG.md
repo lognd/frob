@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.292.0] - unreleased
+
+- T-1363: A failed coverage run must not overwrite a good stamp or ratchet floors down
+
 ## [0.291.0] - unreleased
 
 - T-1348: Land auto-fix phase must be transactional and leave a safe recovery path

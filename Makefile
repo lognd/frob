@@ -243,7 +243,13 @@ coverage: $(STAMP)
 		status=$$?; \
 	fi; \
 	uv run coverage combine; \
-	uv run coverage xml -i; \
+	uv run coverage xml -i -o .frob/coverage.partial.xml; \
+	if [ $$status -ne 0 ]; then \
+		echo "coverage: ERROR: pytest run failed (exit $$status) -- leaving coverage.xml, .frob/coverage-stamp, and frob-coverage.lock.json untouched (T-1363: a failed/partial run must never overwrite good data); the failed run's own data was written to .frob/coverage.partial.xml for inspection only, never promoted"; \
+		uv run frob clean -y; \
+		exit $$status; \
+	fi; \
+	cp .frob/coverage.partial.xml coverage.xml; \
 	if uv run frob check --stamp-coverage; then \
 		stamp_status=0; \
 	else \
@@ -251,8 +257,7 @@ coverage: $(STAMP)
 		echo "coverage: ERROR: stamp-coverage failed (exit $$stamp_status) -- make coverage is failing on this, not silently reporting success"; \
 	fi; \
 	uv run frob clean -y; \
-	if [ $$status -eq 0 ]; then status=$$stamp_status; fi; \
-	exit $$status
+	exit $$stamp_status
 
 # T-0484: incremental coverage for the common "one small change" loop --
 # `make coverage` above always re-runs the WHOLE suite under coverage, so
