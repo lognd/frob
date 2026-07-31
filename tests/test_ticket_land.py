@@ -36,6 +36,8 @@ import frob.tickets._land_finalize as _land_finalize_mod
 import frob.tickets._land_git_ops as _land_git_ops_mod
 import frob.tickets._land_ledger_merge as _land_ledger_merge_mod
 import frob.tickets._land_merge_zones as _land_merge_zones_mod
+import frob.tickets._land_release as _land_release_mod
+import frob.tickets._land_squash as _land_squash_mod
 from frob.gates import PreworkSweep, load_prework, record_prework, scope_digest
 from frob.gitio import GitError, ProcResult, run_argv
 from frob.graph import build_graph
@@ -86,10 +88,12 @@ def _failing_run_argv(
     gets exercised deterministically.
 
     T-1186 split `frob.tickets._land` into `_land`/`_land_merge`/
-    `_land_finalize` (each importing its own top-level `run_argv` name),
-    so this patches all three -- a patch of `_land_mod.run_argv` alone no
-    longer reaches call sites that moved into `_land_merge`/
-    `_land_finalize`."""
+    `_land_finalize` (each importing its own top-level `run_argv` name);
+    T-1334 further split `_land_finalize` into `_land_finalize`/
+    `_land_squash`/`_land_release` (same pattern) -- so this patches all
+    five -- a patch of `_land_mod.run_argv` alone no longer reaches call
+    sites that moved into `_land_merge`/`_land_finalize`/`_land_squash`/
+    `_land_release`."""
 
     def _fake(argv: Sequence[str], **kwargs: Any) -> Any:
         if should_fail(argv):
@@ -108,6 +112,8 @@ def _failing_run_argv(
     monkeypatch.setattr(_land_mod, "run_argv", _fake)
     monkeypatch.setattr(_land_git_ops_mod, "run_argv", _fake)
     monkeypatch.setattr(_land_finalize_mod, "run_argv", _fake)
+    monkeypatch.setattr(_land_squash_mod, "run_argv", _fake)
+    monkeypatch.setattr(_land_release_mod, "run_argv", _fake)
 
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
@@ -975,9 +981,9 @@ class TestSquashSpliceLedgerChurn:
         (wt / "src" / "widget.py").write_text("# race widget\n")
         _commit_all(wt, "add race widget")
 
-        # T-1186: `git merge --squash` now runs inside
-        # `_land_finalize._squash_and_splice_ledger`, not `_land.py`.
-        real_run_argv = _land_finalize_mod.run_argv
+        # T-1334: `git merge --squash` now runs inside
+        # `_land_squash._squash_and_splice_ledger`, not `_land.py`.
+        real_run_argv = _land_squash_mod.run_argv
         injected: dict[str, Any] = {"done": False, "sibling_id": None}
 
         def _fake_run_argv(argv: Sequence[str], **kwargs: Any) -> Any:
@@ -1001,7 +1007,7 @@ class TestSquashSpliceLedgerChurn:
                 injected["done"] = True
             return result
 
-        monkeypatch.setattr(_land_finalize_mod, "run_argv", _fake_run_argv)
+        monkeypatch.setattr(_land_squash_mod, "run_argv", _fake_run_argv)
 
         result = land(repo, tid, wt, dry_run=False)
         assert result.is_ok, result.err
@@ -1066,7 +1072,7 @@ class TestWarnIfNativeStale:
         caplog: pytest.LogCaptureFixture,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        # frob:tests src/frob/tickets/_land_finalize.py::_warn_if_native_stale \
+        # frob:tests src/frob/tickets/_land_release.py::_warn_if_native_stale \
         # kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-native", str(wt)], repo)
@@ -1091,7 +1097,7 @@ class TestWarnIfNativeStale:
     def test_real_land_no_warning_when_native_fresh(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests src/frob/tickets/_land_finalize.py::_warn_if_native_stale \
+        # frob:tests src/frob/tickets/_land_release.py::_warn_if_native_stale \
         # kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-native-fresh", str(wt)], repo)
@@ -1763,7 +1769,9 @@ class TestArchiveSpliceDiscipline:
         ) -> dict[str, Any]:
             return {}
 
-        monkeypatch.setattr(_land_git_ops_mod, "_merge_ledger_tickets", _drop_everything)
+        monkeypatch.setattr(
+            _land_git_ops_mod, "_merge_ledger_tickets", _drop_everything
+        )
 
         result = _splice_and_stage_archive(checkout, authoritative_text, other_text)
         assert result.is_err
@@ -2028,7 +2036,9 @@ class TestWipAddIgnoredPathFallback:
             ".frob\nhint: Use -f if you really want to add them.\n"
         )
         assert _land_git_ops_mod._is_ignored_path_refusal(stderr) is True
-        assert _land_git_ops_mod._is_ignored_path_refusal("some other git error") is False
+        assert (
+            _land_git_ops_mod._is_ignored_path_refusal("some other git error") is False
+        )
 
 
 class TestWipCommitNormalizationOnlyDirty:
@@ -2890,14 +2900,14 @@ class TestLandDeeperBranches:
         # in `_land_finalize._land_squash_apply` now, not `_land.py`'s
         # `current_branch(root)` (that call is the MAIN repo's branch,
         # always `repo` here -- never `wt`).
-        real_current_branch = _land_finalize_mod.current_branch
+        real_current_branch = _land_squash_mod.current_branch
 
         def _fake(root: Path) -> Any:
             if str(root) == str(wt):
                 return Err(GitError.GitFailed)
             return real_current_branch(root)
 
-        monkeypatch.setattr(_land_finalize_mod, "current_branch", _fake)
+        monkeypatch.setattr(_land_squash_mod, "current_branch", _fake)
         result = land(repo, tid, wt, dry_run=False)
         assert result.is_err
         assert result.danger_err == LandError.GitFailed
@@ -2989,9 +2999,8 @@ class TestLandCompleteness:
     def test_land_brings_tracked_edit_untracked_new_file_and_deletion(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land_finalize.py::_assert_land_complete \
-        # kind="unit"
-        # frob:tests src/frob/tickets/_land_finalize.py::_worktree_full_changeset \
+        # frob:tests src/frob/tickets/_land_squash.py::_assert_land_complete kind="unit"
+        # frob:tests src/frob/tickets/_land_squash.py::_worktree_full_changeset \
         # kind="unit"
         # `doomed.py` must exist BEFORE the worktree branches, so its
         # deletion has a real net effect relative to main (a file created
@@ -3045,8 +3054,7 @@ class TestLandCompleteness:
         monkeypatch: pytest.MonkeyPatch,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        # frob:tests src/frob/tickets/_land_finalize.py::_assert_land_complete \
-        # kind="unit"
+        # frob:tests src/frob/tickets/_land_squash.py::_assert_land_complete kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-incomplete", str(wt)], repo)
         created = new_ticket(wt, _spec("Incomplete", scope=("src/gadget2.py",)))
@@ -3062,7 +3070,7 @@ class TestLandCompleteness:
         # squash-apply never actually staged (the T-0448 incident, forced
         # deterministically instead of relying on a real patch-based land
         # to reproduce it).
-        real_changeset = _land_finalize_mod._worktree_full_changeset
+        real_changeset = _land_squash_mod._worktree_full_changeset
 
         def _fake_changeset(worktree: Path, main_branch_name: str) -> Any:
             result = real_changeset(worktree, main_branch_name)
@@ -3071,7 +3079,7 @@ class TestLandCompleteness:
             return Ok(result.danger_ok | {"src/phantom_dropped.py"})
 
         monkeypatch.setattr(
-            _land_finalize_mod, "_worktree_full_changeset", _fake_changeset
+            _land_squash_mod, "_worktree_full_changeset", _fake_changeset
         )
 
         with caplog.at_level("ERROR", logger="frob.tickets._land"):
@@ -3092,7 +3100,7 @@ class TestLandCompleteness:
     def test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land_finalize.py::_worktree_full_changeset \
+        # frob:tests src/frob/tickets/_land_squash.py::_worktree_full_changeset \
         # kind="unit"
         # frob:tests src/frob/tickets/_land_git_ops.py::_true_merge_base kind="unit"
         """T-0761 regression: the real T-0640 incident. `land()` was invoked
@@ -3534,7 +3542,7 @@ class TestUvLockSync:
                 )
             return run_argv(argv, **kwargs)
 
-        monkeypatch.setattr(_land_finalize_mod, "run_argv", _fake_run_argv)
+        monkeypatch.setattr(_land_release_mod, "run_argv", _fake_run_argv)
 
         def bump_version(root: Path, ticket: Any, final_id: str) -> Any:
             (root / "pyproject.toml").write_text(
@@ -3718,7 +3726,7 @@ class TestUvLockSync:
                 )
             return run_argv(argv, **kwargs)
 
-        monkeypatch.setattr(_land_finalize_mod, "run_argv", _fake_run_argv)
+        monkeypatch.setattr(_land_release_mod, "run_argv", _fake_run_argv)
 
         def bump_version(root: Path, ticket: Any, final_id: str) -> Any:
             (root / "pyproject.toml").write_text(
@@ -5704,22 +5712,23 @@ def _t0907_child_land(
     root: Path, ticket_id: str, worktree: Path, ready_path: Path
 ) -> None:
     """Multiprocessing target (module-level so `fork` can spawn it, T-0907):
-    monkeypatches `frob.tickets._land_finalize.run_argv` (this CHILD
+    monkeypatches `frob.tickets._land_squash.run_argv` (this CHILD
     process's own copy of the module, `fork` gives every child an
     independent copy-on-write memory image) so that once `land()`'s
     squash-apply merge onto `root` actually runs, it signals readiness
     (`ready_path`) and then sleeps well past however long the parent needs
     to `SIGKILL` this process -- reproducing "killed mid-staging"
     deterministically instead of relying on timing luck against a real
-    580s coordinator timeout. T-1186: the squash-merge this patches now
-    runs inside `_land_finalize._squash_and_splice_ledger`, not
-    `_land.py` -- `land_mod.land` (the entry point actually invoked) still
-    lives in `_land.py`."""
+    580s coordinator timeout. T-1334: the squash-merge this patches now
+    runs inside `_land_squash._squash_and_splice_ledger` (T-1186 originally
+    put it in `_land_finalize`; T-1334 split that module further) --
+    `land_mod.land` (the entry point actually invoked) still lives in
+    `_land.py`."""
 
     import frob.tickets._land as land_mod
-    import frob.tickets._land_finalize as land_finalize_mod
+    import frob.tickets._land_squash as land_squash_mod
 
-    real_run_argv = land_finalize_mod.run_argv
+    real_run_argv = land_squash_mod.run_argv
 
     def _patched(
         argv: Sequence[str], *, cwd: Path | None = None, timeout_s: int | float = 30.0
@@ -5730,7 +5739,7 @@ def _t0907_child_land(
             time.sleep(30)
         return result
 
-    setattr(land_finalize_mod, "run_argv", _patched)  # noqa: B010
+    setattr(land_squash_mod, "run_argv", _patched)  # noqa: B010
     land_mod.land(root, ticket_id, worktree, dry_run=False)
 
 
@@ -5816,7 +5825,7 @@ class TestTick005LandRegressions:
         _make_closeable(tmp_path, tid)
         pre_text = ledger_path(tmp_path).read_text()
 
-        regressions = _land_finalize_mod._tick005_land_regressions(
+        regressions = _land_squash_mod._tick005_land_regressions(
             pre_text, pre_text, frozenset()
         )
         assert regressions == ()
@@ -5841,7 +5850,7 @@ class TestTick005LandRegressions:
         ).is_ok
         post_text = ledger_path(tmp_path).read_text()
 
-        regressions = _land_finalize_mod._tick005_land_regressions(
+        regressions = _land_squash_mod._tick005_land_regressions(
             pre_text, post_text, frozenset()
         )
         assert regressions == (tid,)
@@ -5864,7 +5873,7 @@ class TestTick005LandRegressions:
 
         # An archived id is exempt -- it is expected to be absent/stale in
         # the active ledger, not a regression.
-        regressions = _land_finalize_mod._tick005_land_regressions(
+        regressions = _land_squash_mod._tick005_land_regressions(
             pre_text, post_text, frozenset({tid})
         )
         assert regressions == ()
@@ -5877,13 +5886,13 @@ class TestTick005LandRegressions:
         valid_text = ledger_path(tmp_path).read_text()
 
         assert (
-            _land_finalize_mod._tick005_land_regressions(
+            _land_squash_mod._tick005_land_regressions(
                 malformed, valid_text, frozenset()
             )
             == ()
         )
         assert (
-            _land_finalize_mod._tick005_land_regressions(
+            _land_squash_mod._tick005_land_regressions(
                 valid_text, malformed, frozenset()
             )
             == ()
@@ -5911,7 +5920,7 @@ class TestLandRefusesOnTerminalStateRegression:
         pre_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
 
         monkeypatch.setattr(
-            _land_finalize_mod, "_tick005_land_regressions", lambda *a, **k: ("T-9999",)
+            _land_squash_mod, "_tick005_land_regressions", lambda *a, **k: ("T-9999",)
         )
 
         result = land(repo, tid, wt, dry_run=False)
@@ -6195,7 +6204,7 @@ class TestSyncGateRulesCallback:
     def test_sync_gate_rules_none_is_noop(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_none_is_noop  # noqa: E501
         pre_land_tip = _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok
-        result = _land_finalize_mod._apply_gate_rule_sync(
+        result = _land_release_mod._apply_gate_rule_sync(
             repo, "T-0001", None, pre_land_tip
         )
         assert result.is_ok
@@ -6208,7 +6217,7 @@ class TestSyncGateRulesCallback:
         def _fake_sync(_root: Path, _tip: str) -> Result[tuple[str, ...] | None, Any]:
             return Ok(("SOME001",))
 
-        result = _land_finalize_mod._apply_gate_rule_sync(
+        result = _land_release_mod._apply_gate_rule_sync(
             repo, "T-0001", _fake_sync, pre_land_tip
         )
         assert result.is_ok
@@ -6223,7 +6232,7 @@ class TestSyncGateRulesCallback:
         def _fake_sync(_root: Path, _tip: str) -> Result[tuple[str, ...] | None, Any]:
             return Err(_land_mod.LandError.GitFailed)
 
-        result = _land_finalize_mod._apply_gate_rule_sync(
+        result = _land_release_mod._apply_gate_rule_sync(
             repo, "T-0001", _fake_sync, pre_land_tip
         )
         assert result.is_err

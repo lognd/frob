@@ -20,7 +20,13 @@ into `frob.tickets._land_finalize` (following the verbatim-move pattern
 `_evidence.py`/`_reporting.py` set at T-1171) -- this module retains the
 land lock/repair-marker machinery, the `land()`/`_land_locked`
 orchestrator, and the pre-merge preflight validators, importing the
-split-out families back in explicitly.
+split-out families back in explicitly. T-1334 further split that single
+finalize stage into three: `_land_finalize` now holds only the draft-
+finalization/sibling-renumbering/close family, `frob.tickets._land_squash`
+holds the squash-apply/close family, and `frob.tickets._land_release`
+holds the release-bump/uv.lock/native-rebuild family -- this module now
+imports `_land_finalize_and_close` from `_land_finalize` and
+`_land_squash_apply`/`_v2_effective_scope` from `_land_squash` directly.
 """
 # frob:waive INV006 preset="split-carried-prose"
 
@@ -39,11 +45,7 @@ from typani.result import Err, Ok, Result
 from frob.gitio import current_branch, run_argv
 from frob.logging import get_logger
 from frob.tickets._journal import _clear_intent, _write_intent
-from frob.tickets._land_finalize import (
-    _land_finalize_and_close,
-    _land_squash_apply,
-    _v2_effective_scope,
-)
+from frob.tickets._land_finalize import _land_finalize_and_close
 from frob.tickets._land_git_ops import (
     _abort_merge,
     _auto_resolve_out_of_scope_conflicts,
@@ -64,6 +66,7 @@ from frob.tickets._land_merge import _validate_closeable
 # `frob.tickets._land_merge`; this module keeps the public import path
 # stable.
 from frob.tickets._land_merge import splice_ledger as splice_ledger  # noqa: E402
+from frob.tickets._land_squash import _land_squash_apply, _v2_effective_scope
 from frob.tickets._land_verify import (
     _reverify_done_report_claims_post_merge,
     _reverify_evidence_post_merge,

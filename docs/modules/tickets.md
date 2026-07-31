@@ -1338,10 +1338,10 @@ concurrent automation.
 
 <!-- frob:describes src/frob/tickets/_land.py::land -->
 <!-- frob:describes src/frob/tickets/_land_ledger_merge.py::splice_ledger -->
-<!-- frob:describes src/frob/tickets/_land_finalize.py::_assert_land_complete -->
-<!-- frob:describes src/frob/tickets/_land_finalize.py::_worktree_full_changeset -->
-<!-- frob:describes src/frob/tickets/_land_finalize.py::_apply_release_bump -->
-<!-- frob:describes src/frob/tickets/_land_finalize.py::_maybe_rebuild_natives -->
+<!-- frob:describes src/frob/tickets/_land_squash.py::_assert_land_complete -->
+<!-- frob:describes src/frob/tickets/_land_squash.py::_worktree_full_changeset -->
+<!-- frob:describes src/frob/tickets/_land_release.py::_apply_release_bump -->
+<!-- frob:describes src/frob/tickets/_land_release.py::_maybe_rebuild_natives -->
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_apply_release_bump_for_land -->
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_write_release_bump -->
 <!-- frob:describes src/frob/app/ticket_runner/__init__.py::_root_release_manifest -->
