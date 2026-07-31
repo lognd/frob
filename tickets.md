@@ -12739,3 +12739,37 @@ threat: null
 component: gates
 ```
 Three co-located errors: ARCH001 _depr005_violations 74/60 lines (line 644), PERF003 nested loops with equality compare at line 592 (index the inner collection), PERF008 _build_deprecated_ref_index called inside a loop with loop-invariant args at line 683 (hoist/memoize -- it transitively fs-walks).
+
+<!-- ticket:T-1339 -->
+```yaml
+id: T-1339
+title: Suppression-dialect compliance is automatic, never hand-maintained
+state: queued
+kind: feature
+origin: human
+created: '2026-07-31'
+priority: high
+parent: null
+tier: epic
+sprint: null
+scope:
+- src/frob/gates/**
+- docs/modules/gates.md
+acceptance:
+- text: given a line carrying one checker's suppression and an unsuppressed diagnostic
+    from another configured checker, when frob check runs, then SUPPRESS001 reports
+    it
+  evidence: []
+- text: given SUPPRESS001 findings, when frob check --fix runs, then the paired suppression
+    is written with the reporting checker's own rule code, in canonical order, idempotently
+  evidence: []
+threat: null
+component: gates
+```
+User directive (2026-07-31): 'auto-detect mypy waivers and make an additional ty waiver and vice-versa ... all this tool compliance stuff should be automatically handled rather than manually done.'
+
+Motivating incident: two ty errors on main (tests/test_fuzz.py:159 unresolved-reference, tests/test_tickets_collision.py:826 unresolved-attribute) were NOT type defects -- both lines already carried a mypy 'type: ignore' that ty does not honor. Both were hand-fixed. Per the systematize-friction mandate, repeated dev friction becomes tooling, not repeated hand-work.
+
+DESIGN (decided, see leaves): pairing is EVIDENCE-DRIVEN, not static. The gate fires only where checker B emits an unsuppressed diagnostic on a line that already carries checker A's suppression. This avoids the two failure modes of naive static pairing: (a) mypy/ty rule codes are not 1:1 (name-defined vs unresolved-reference, attr-defined vs unresolved-attribute), so static pairing needs a lossy mapping table; (b) stamping suppressions onto lines the other checker never flagged just creates unused-suppression debt. Evidence-driven pairing needs NO mapping table -- the reporting checker's diagnostic carries the exact rule code to emit.
+
+Current population: 37 'type: ignore' lines, 20 already dual-dialect, 17 mypy-only, 6 ty-only. mypy is not a configured checker here (pyproject runs ruff + ty), so the mypy->ty direction is the live one and ty->mypy is latent until mypy is configured.
