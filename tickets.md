@@ -13579,3 +13579,39 @@ Two distinct defects, both worth fixing:
 2. NO SAFE RECOVERY. After an interrupted land, an agent cannot distinguish "this file is garbled by the dead autofix" from "this file has my uncommitted work in it". Land should leave a recovery breadcrumb naming exactly which paths it rewrote (under .frob/), so recovery is targeted instead of a blanket checkout. Consider also auto-committing a wip snapshot BEFORE the auto-fix phase begins -- land already makes a pre-merge wip commit, so moving that earlier may fix this almost for free.
 
 Interim mitigation now in dispatch prompts: agents are told to commit new tests BEFORE running land. That is a workaround, not a fix -- it depends on every agent remembering.
+
+<!-- ticket:T-1349 -->
+```yaml
+id: T-1349
+title: Verify the mutation evidence T-1334 skipped on the split land modules
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-31'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land_release.py
+- src/frob/tickets/_land_squash.py
+- tests/test_ticket_land.py
+acceptance:
+- text: given the split land modules, when the mutation harness runs, then every surviving
+    mutant is either killed by a new test or individually justified by name
+  evidence: []
+threat: null
+component: tickets
+```
+T-1334 (split of _land_finalize.py into _land_squash.py + _land_release.py, landed 6687c6dd) was landed with "--skip-mutation-evidence" to get past a TEST016 EvidenceConfirmatoryOnly warning on the new src/frob/tickets/_land_release.py.
+
+The stated justification was reasonable as far as it goes: the code was MOVED, not newly authored, and the pre-existing tests already cover it structurally, so the mutation harness was flagging non-killed mutants on relocated code. That is the documented WARN-level shape.
+
+But it is still a strictness weakening applied to the LAND MACHINERY ITSELF -- the code path every other agent depends on to land work correctly, and the subject of repeated silent-regression incidents in this repo's history (dropped code, dropped ledger blocks, false-green lands). "The tests cover it structurally" is exactly the claim mutation testing exists to falsify, so accepting it unverified on this particular module is the least appropriate place to do so.
+
+WORK: run the mutation harness against src/frob/tickets/_land_release.py (and _land_squash.py, same split, same reasoning) and either
+  (a) confirm the surviving mutants are genuinely unmutable-semantics lines, and record that finding with the specific mutants named, or
+  (b) write the tests that kill them.
+Do NOT simply re-assert the structural-coverage claim -- the point of this ticket is to check it.
+
+Context: per this repo's standing rule, a completion claim needs a passing gate, not prose. See the "catalogued is not enforced" principle.
