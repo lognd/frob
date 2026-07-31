@@ -545,6 +545,7 @@
     "src/frob/gates/_fix_engine.py::FixApplied": "118127394ff1c3d576771cf12fd949714186471776c13ac5cc78b273414473cc",
     "src/frob/gates/_fix_engine.py::TIER_A_HANDLERS": "1b569d9e042f4acd3c83f4a9d42238f0edf12b9b2be7210be2108b2e917bbbe0",
     "src/frob/gates/_fix_engine.py::apply_tier_a_fixes": "9b7cbea88229792cadd5929dd11734844d6a78fc0a061b1019825cd994aec317",
+    "src/frob/gates/_fix_engine.py::clear_autofix_manifest": "b3dfeb490f20ededd6f239d9d9cee29df254d6e05eacf47b0e8b54c721866d66",
     "src/frob/gates/_fix_engine.py::fix_doc002_unique_slug": "7ef8d8ae7a08a3d93bc18dc16223b448c204ff22108ce82b571ff3a9bd779892",
     "src/frob/gates/_fix_engine.py::fix_doc007_dotted_form": "327da98ed7d5183d7687e61242a3ef58b030cd5fb58e4eb335b441e918bb0024",
     "src/frob/gates/_fix_engine.py::fix_fmt001_directive_wrap": "9450fd1fbe5a327ef7eca49e237ab4021c0ae262ecef771cb1b9aded75b18d7b",
@@ -553,6 +554,7 @@
     "src/frob/gates/_fix_engine.py::fix_rel002_release_sync": "31181170771dc605319e24b5efa733bb487cde4c1c8d94b306e353229f63618a",
     "src/frob/gates/_fix_engine.py::fix_tick002_renumber": "d3462147dd6790eedaa789114b5c65fcdf397f879de80e2dbb3ba770289490fe",
     "src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver": "29954815721f74b05183fc11779adf23391411d7ec01f1119ba4f4e0df6d97dd",
+    "src/frob/gates/_fix_engine.py::write_autofix_manifest": "8785d11019d9a8d702c7bf96707d07ced9b87c631c72e9a9923b505bf1ae5104",
     "src/frob/gates/_fmt_directives.py::FmtChange": "ea8741b398fe11d4690d8916903481776ec126dd2a6c5422ebd6f1f7e8fc9ac2",
     "src/frob/gates/_fmt_directives.py::FmtReport": "11a60528b9ef3d166ee7b3928901298283e5a50d65961937b22ba07fa6dc2c63",
     "src/frob/gates/_fmt_directives.py::canonicalize_text": "0c5ce61829cec8198bf968017b0e94cc2891613708c533f93413b0ed6ef9c127",
@@ -1933,5 +1935,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.290.0"
+  "version": "0.291.0"
 }

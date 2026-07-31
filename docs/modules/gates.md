@@ -3234,6 +3234,33 @@ audit trail every fix must leave, mirroring T-1137's own "no silent
 auto-discharge" anti-goal applied to what WAS auto-fixed rather than only
 what was left alone.
 
+**Crash-safety and recovery breadcrumb (T-1348).** `_absorb_pre_land_fixes`
+calls `apply_tier_a_fixes` BEFORE `frob ticket land`'s own pre-merge
+wip-commit (docs/modules/tickets.md#frob-ticket-land) ever runs -- a
+process killed anywhere in this window used to leave the tree in a state
+that was neither the pre-fix nor the post-fix original (T-1338: a killed
+land left `src/frob/gates/_debt_deprecated.py` GARBLED, and the obvious
+`git checkout -- <file>` recovery then silently destroyed an unrelated
+uncommitted test in a DIFFERENT file). Two independent fixes, both
+entirely inside this module:
+- Every handler that rewrites a file in place now routes through
+  `_write_text` (temp file + `fsync` + `os.replace` in the same
+  directory, reusing `frob.tickets._store.atomic_write`'s existing
+  T-0456 primitive) instead of a bare `path.write_text(...)` -- a kill at
+  any point up to and including immediately before the atomic rename
+  leaves the ORIGINAL file's bytes on disk, never a half-written one.
+- `apply_tier_a_fixes` writes `.frob/land-autofix-manifest.json`
+  (`write_autofix_manifest`) after EVERY handler completes, listing every
+  distinct file path rewritten so far in the current run, and clears it
+  (`clear_autofix_manifest`) only once the whole pass finishes. A process
+  killed partway through the handler loop leaves this manifest naming
+  exactly what Tier-A actually touched up to that point, so a recovering
+  agent diffs `git status` against it instead of a blanket `git checkout
+  --` that cannot tell "Tier-A rewrote this" from "my own uncommitted work
+  is in this other file" -- the exact ambiguity T-1338 turned into data
+  loss. See docs/modules/tickets.md#frob-ticket-land for how this sits
+  relative to `land()`'s own wip-commit step.
+
 **Scope boundary (T-1138, updated T-1261):** this module is the fix
 HANDLERS and their callable entry point (`src/frob/gates/**`); the `frob
 check --fix` CLI flag itself (argument parsing in

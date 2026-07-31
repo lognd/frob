@@ -25,6 +25,7 @@ that CLI batch to call directly.
 from __future__ import annotations
 
 import difflib
+import json
 import logging
 import re
 from collections.abc import Callable
@@ -36,11 +37,89 @@ from pydantic import BaseModel
 from frob.graph import EdgeKind, GraphSnapshot
 from frob.tickets import TicketQueue
 from frob.tickets._provisional import is_draft_id
+from frob.tickets._store import atomic_write
 
 if TYPE_CHECKING:
     from frob.gates import GateReport
 
 _log = logging.getLogger(__name__)
+
+
+# frob:ticket T-1348
+def _write_text(path: Path, text: str) -> bool:
+    """Crash-safe replacement for a bare `path.write_text(...)` (T-1348):
+    every Tier-A handler that rewrites a file IN PLACE routes through
+    this instead, so a process killed mid-write (the T-1338 incident --
+    `frob ticket land` timed out during its Tier-A auto-fix phase and
+    left `src/frob/gates/_debt_deprecated.py` GARBLED, a half-applied
+    rewrite) leaves the ORIGINAL file intact rather than truncated. Reuses
+    `frob.tickets._store.atomic_write` (temp file + fsync + `os.replace`
+    in the same directory, T-0456) rather than a second copy of the same
+    primitive. Returns whether the write actually landed -- callers that
+    unconditionally reported `True`/appended a `FixApplied` regardless of
+    this outcome would silently claim a rewrite that never happened; logs
+    and leaves the original untouched on the (should-never-happen) I/O
+    failure path instead of raising, matching every other handler's "no
+    rewrite is better than a bad one" posture."""
+    result = atomic_write(path, text)
+    if result.is_err:
+        _log.error(
+            "tier-a fixes: atomic write to %s failed, original left untouched: %s",
+            path,
+            result.danger_err,
+        )
+        return False
+    return True
+
+
+# frob:ticket T-1348
+def _autofix_manifest_path(root: Path) -> Path:
+    """Where `write_autofix_manifest`/`clear_autofix_manifest` (T-1348)
+    keep the Tier-A auto-fix recovery breadcrumb -- `.frob/` already holds
+    every other local, gitignored, cross-run scratch state this repo
+    keeps (baseline, cache.db, leases), so a killed-mid-autofix manifest
+    lives there rather than inventing a second convention."""
+    return root / ".frob" / "land-autofix-manifest.json"
+
+
+# frob:ticket T-1348
+# frob:doc docs/modules/tickets.md#frob-ticket-land
+# frob:tests tests/test_gates.py::TestAutofixManifest.test_write_then_clear_roundtrip
+def write_autofix_manifest(root: Path, applied: list[FixApplied]) -> None:
+    """Record `applied`'s distinct file paths, atomically, as the T-1348
+    recovery breadcrumb naming every path `apply_tier_a_fixes` has
+    rewritten SO FAR in the current run. `apply_tier_a_fixes` calls this
+    after every handler completes, not just once at the end, so a process
+    killed mid-loop (`frob ticket land`'s pre-land Tier-A phase, T-1175)
+    leaves a manifest on disk that is accurate as of the last handler that
+    finished -- a recovering agent diffs `git status` against this list
+    instead of a blanket `git checkout --` that can silently discard its
+    own uncommitted work in some OTHER file (the exact T-1338 incident).
+    A no-op write when `applied` is empty still records "a pass started
+    and touched nothing yet", which is itself useful signal; the file is
+    only ever removed by `clear_autofix_manifest`, on a SUCCESSFUL finish."""
+    paths = sorted({entry.file for entry in applied})
+    manifest = {
+        "rewritten_paths": paths,
+        "fix_count": len(applied),
+    }
+    _write_text(_autofix_manifest_path(root), json.dumps(manifest, indent=2) + "\n")
+
+
+# frob:ticket T-1348
+# frob:doc docs/modules/tickets.md#frob-ticket-land
+# frob:tests tests/test_gates.py::TestAutofixManifest.test_write_then_clear_roundtrip
+def clear_autofix_manifest(root: Path) -> None:
+    """Remove the T-1348 recovery breadcrumb (`write_autofix_manifest`)
+    after a Tier-A auto-fix pass finishes SUCCESSFULLY -- a completed pass
+    needs no recovery guidance, its rewrites are now ordinary uncommitted
+    changes like any other. A missing file is not an error (nothing to
+    clear, e.g. a fresh worktree that never ran Tier-A fixes yet)."""
+    path = _autofix_manifest_path(root)
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
@@ -112,8 +191,7 @@ def _rewrite_line_substring(path: Path, line: int, old: str, new: str) -> bool:
     if old not in lines[idx]:
         return False
     lines[idx] = lines[idx].replace(old, new, 1)
-    path.write_text("".join(lines), encoding="utf-8")
-    return True
+    return _write_text(path, "".join(lines))
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
@@ -321,7 +399,8 @@ def _fix_inv006_carried_waiver_for_file(
     if kind != "waiver":
         return None  # an invariant bind is not a waiver to carry
     comment_line = _INV006_LINE_COMMENT.get(suffix, "#") + " " + fixit
-    path.write_text(comment_line + "\n" + text, encoding="utf-8")
+    if not _write_text(path, comment_line + "\n" + text):
+        return None
     return FixApplied(
         rule="INV006",
         file=rel,
@@ -657,8 +736,7 @@ def _remove_waiver_line(path: Path, line: int, rule: str) -> bool:
     if not _is_single_line_waiver(lines[idx], rule):
         return False
     del lines[idx]
-    path.write_text("".join(lines), encoding="utf-8")
-    return True
+    return _write_text(path, "".join(lines))
 
 
 def _waive004_verified_candidates(
@@ -853,11 +931,24 @@ def apply_tier_a_fixes(
     never adds one), and skips (rather than guesses at) anything
     requiring judgment -- an ambiguous DOC002 candidate set or an
     already-correct DOC007 target is silently a no-op for that one
-    finding, not an error."""
+    finding, not an error.
+
+    T-1348: writes `write_autofix_manifest(root, applied)` (a recovery
+    breadcrumb under `.frob/`, see its own docstring) after EVERY handler
+    call, not just at the end -- if the CALLER (`frob ticket land`'s pre-
+    land absorption step, T-1175) is killed partway through this loop, the
+    manifest on disk still names every path a COMPLETED handler actually
+    rewrote, so a recovering agent can tell "land's autofix touched this"
+    from "this is my own uncommitted work" without a blanket `git checkout
+    --`. Cleared (`clear_autofix_manifest`) once the whole loop finishes
+    successfully, since a completed pass needs no recovery breadcrumb --
+    its rewrites are now ordinary uncommitted changes like any other."""
     applied: list[FixApplied] = []
     for rule_id, handler in TIER_A_HANDLERS.items():
         if rule_id in exclude:
             _log.info("tier-a fixes: %s excluded by caller", rule_id)
             continue
         applied.extend(handler(root, snapshot, queue))
+        write_autofix_manifest(root, applied)
+    clear_autofix_manifest(root)
     return applied

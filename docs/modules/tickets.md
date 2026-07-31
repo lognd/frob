@@ -1466,6 +1466,43 @@ Order of operations, and why it is this order:
    ever inspected what a wip-commit was about to capture. See
    docs/modules/gates.md's Tier-A section for the companion `WAIVE004`
    auto-fix guard this incident also produced.
+2.6. **Tier-A auto-fix crash recovery** (T-1348). Before `land()` (the
+   function documented by this numbered list) is ever called, `frob
+   ticket land`'s CLI layer (`_absorb_pre_land_fixes`, T-1175) already ran
+   `frob fmt`, `frob sys sync-interface`, and every Tier-A `--fix` handler
+   (`apply_tier_a_fixes`, `src/frob/gates/_fix_engine.py`) directly against
+   the worktree, on disk, with NO commit of any kind yet -- this step's
+   own wip-commit (step 3 below) is the FIRST commit that captures any of
+   it. A `frob ticket land` process killed during that window (a real
+   incident, T-1338: a timeout mid-Tier-A left
+   `src/frob/gates/_debt_deprecated.py` GARBLED, a half-applied rewrite,
+   and the obvious `git checkout -- <file>` recovery then silently
+   destroyed an unrelated uncommitted test in a DIFFERENT file) used to
+   leave the tree in a state that was neither the pre-fix nor the
+   post-fix original. T-1348 closes this two ways, entirely inside
+   `apply_tier_a_fixes` and its handlers (`src/frob/gates/_fix_engine.py`)
+   -- `_land.py`'s own step 3 wip-commit timing is UNCHANGED, since moving
+   it earlier would require reordering `_absorb_pre_land_fixes` and
+   `land()` at their call site (`src/frob/app/ticket_runner/_land_cmd.py`,
+   a different ticket's scope):
+   - Every Tier-A handler that rewrites a file in place now does so via
+     `_write_text` (temp file + `fsync` + `os.replace` in the same
+     directory, reusing `frob.tickets._store.atomic_write`'s existing
+     T-0456 primitive) instead of a bare `path.write_text(...)`. A kill at
+     ANY point up to and including the moment before the `os.replace`
+     swap leaves the ORIGINAL file's bytes on disk, untouched -- there is
+     no window in which the tracked path itself is half-written.
+   - `apply_tier_a_fixes` writes `.frob/land-autofix-manifest.json`
+     (`write_autofix_manifest`) after EVERY handler completes, not once at
+     the end, listing every distinct file path any handler has rewritten
+     SO FAR in the current run; it is cleared (`clear_autofix_manifest`)
+     only once the whole pass finishes successfully. A process killed
+     partway through the handler loop leaves this manifest naming exactly
+     what Tier-A actually touched up to that point -- a recovering agent
+     diffs `git status --porcelain` against the manifest's `rewritten_
+     paths` list instead of a blanket `git checkout --` that cannot tell
+     "Tier-A garbled this" from "my own uncommitted work is in this
+     other file", the exact ambiguity that caused the T-1338 data loss.
 3. **wip-commit** any uncommitted worktree changes (`wip: pre-land snapshot
    for <id>`) so nothing an agent forgot to commit is silently dropped by
    the merge that follows. T-1003: `worktree`'s own `uv.lock` frob-

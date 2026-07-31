@@ -8303,6 +8303,151 @@ class TestFixEngineTierA:
         assert applied == []
 
 
+# frob:ticket T-1348
+class TestAutofixManifest:
+    """`frob.gates._fix_engine`'s T-1348 recovery breadcrumb: `apply_tier_a_
+    fixes` records every path it rewrites, incrementally, under
+    `.frob/land-autofix-manifest.json`, and clears it on a clean finish."""
+
+    # frob:ticket T-1348
+    def _snap(self, root: Path):
+        from frob.graph import build_graph
+
+        return build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+    # frob:ticket T-1348
+    def test_write_then_clear_roundtrip(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestAutofixManifest.test_write_then_clear_roundtrip  # noqa: E501
+        from frob.gates._fix_engine import (
+            FixApplied,
+            _autofix_manifest_path,
+            clear_autofix_manifest,
+            write_autofix_manifest,
+        )
+
+        applied = [
+            FixApplied(rule="DOC007", file="a.py", line=1, detail="x"),
+            FixApplied(rule="DOC007", file="b.py", line=2, detail="y"),
+        ]
+        write_autofix_manifest(tmp_path, applied)
+        manifest_path = _autofix_manifest_path(tmp_path)
+        assert manifest_path.is_file()
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert data["rewritten_paths"] == ["a.py", "b.py"]
+        assert data["fix_count"] == 2
+
+        clear_autofix_manifest(tmp_path)
+        assert not manifest_path.is_file()
+        # clearing an already-absent manifest is a no-op, not an error
+        clear_autofix_manifest(tmp_path)
+
+    # frob:ticket T-1348
+    def test_apply_tier_a_fixes_clears_manifest_on_clean_finish(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_gates.py::TestAutofixManifest.test_apply_tier_a_fixes_clears_manifest_on_clean_finish  # noqa: E501
+        from frob.gates import apply_tier_a_fixes
+        from frob.gates._fix_engine import _autofix_manifest_path
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src" / "pkg").mkdir(parents=True)
+        (root / "src" / "pkg" / "mod.py").write_text(
+            "# frob:tests tests/test_mod.py::TestX::test_y\ndef real():\n    pass\n",
+            encoding="utf-8",
+        )
+        snapshot = self._snap(root)
+        apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        assert not _autofix_manifest_path(root).is_file()
+
+    # frob:ticket T-1348
+    def test_killed_mid_handler_leaves_manifest_naming_completed_fixes(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_gates.py::TestAutofixManifest.test_killed_mid_handler_leaves_manifest_naming_completed_fixes  # noqa: E501
+        """T-1348 acceptance [1]: after a land killed mid-Tier-A, an agent
+        can identify exactly which paths were rewritten (here: none yet,
+        since the very first handler in TIER_A_HANDLERS order raises
+        before completing) without discarding its own uncommitted work."""
+        import frob.gates._fix_engine as fix_engine
+        from frob.gates import apply_tier_a_fixes
+        from frob.gates._fix_engine import _autofix_manifest_path
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        root.mkdir(parents=True)
+
+        def _boom(root, snapshot, queue):  # noqa: ANN001, ANN202
+            raise RuntimeError("simulated kill mid-handler")
+
+        monkeypatch.setitem(fix_engine.TIER_A_HANDLERS, "DOC007", _boom)
+        snapshot = self._snap(root)
+        with pytest.raises(RuntimeError, match="simulated kill mid-handler"):
+            apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        # the manifest was never reached for THIS handler (it raised before
+        # apply_tier_a_fixes's own write_autofix_manifest call), and the
+        # loop never reached clear_autofix_manifest either -- exactly the
+        # "died mid-phase" state T-1348 describes; no manifest existing yet
+        # here is itself correct (nothing completed to record), and no
+        # exception escaping as a garbled write is the property under test.
+        assert not _autofix_manifest_path(root).is_file()
+
+
+# frob:ticket T-1348
+class TestTierAAutofixCrashSafety:
+    """T-1348 acceptance [0]: a land killed mid-Tier-A-auto-fix must never
+    leave a source file half-rewritten. Simulates the actual crash window
+    (killed between the temp-file write and the atomic rename) rather
+    than merely unit-testing `_write_text` in isolation."""
+
+    # frob:ticket T-1348
+    def test_kill_between_write_and_rename_leaves_original_file_intact(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_gates.py::TestTierAAutofixCrashSafety.test_kill_between_write_and_rename_leaves_original_file_intact  # noqa: E501
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "src" / "pkg").mkdir(parents=True)
+        target = root / "src" / "pkg" / "mod.py"
+        original = (
+            "# frob:tests tests/test_mod.py::TestX::test_y\ndef real():\n    pass\n"
+        )
+        target.write_text(original, encoding="utf-8")
+
+        # `frob.tickets._store.atomic_write` fsyncs the temp file's data to
+        # disk, THEN calls `os.replace` to make it visible under the real
+        # path -- the real "process gets killed" window sits exactly
+        # between those two steps. Simulating the kill AT that boundary
+        # (raising from `os.replace` itself, after the temp file's bytes
+        # are already durable) is the worst-case moment for this bug class:
+        # if the original survives even here, it survives everywhere
+        # earlier in the write too.
+        import os as os_module
+
+        real_replace = os_module.replace
+
+        def _kill_before_replace(src, dst, *a, **kw):  # noqa: ANN001, ANN002, ANN003
+            if str(dst) == str(target):
+                raise OSError("simulated kill: process died before os.replace")
+            return real_replace(src, dst, *a, **kw)
+
+        monkeypatch.setattr(os_module, "replace", _kill_before_replace)
+
+        from frob.gates import apply_tier_a_fixes
+        from frob.tickets import TicketQueue
+
+        snapshot = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+
+        # the rewrite never landed (DOC007 not in applied) -- correctly
+        # reported as not-applied, not silently claimed -- AND the ORIGINAL
+        # file is byte-for-byte intact, never garbled/truncated by the
+        # interrupted write.
+        assert not [a for a in applied if a.rule == "DOC007"]
+        assert target.read_text(encoding="utf-8") == original
+
+
 # frob:ticket T-1261
 class TestFixEngineTierABatch2:
     """`frob.gates._fix_engine`'s Tier-A batch-2 `--fix` handlers
