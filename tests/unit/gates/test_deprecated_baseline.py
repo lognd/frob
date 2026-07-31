@@ -306,6 +306,7 @@ class TestTighten:
         assert tightened.for_symbol("src/a.py::helper") is None
 
 
+# frob:ticket T-1338
 class TestDepr005ViolationsGrowth:
     """`deprecated_gate`'s DEPR005 branch (`_depr005_violations`, T-1052):
     fires on a per-file COUNT growth against the baseline, not a raw
@@ -381,3 +382,59 @@ class TestDepr005ViolationsGrowth:
         assert len(depr005) == 1
         assert depr005[0].file.endswith("growing.py")
         assert depr005[0].line == 1
+
+    def test_two_baselined_symbols_each_evaluated_independently(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1338: two DIFFERENT deprecated symbols, each with its own
+        baseline entry, in one gate run -- proves the repo-wide
+        `_DeprecatedRefIndex` built once and hoisted outside the eligible-
+        edge loop (T-1338's PERF008 fix) still resolves each symbol's own
+        reference set correctly and independently: one grows past its
+        baseline and fires, the other stays at its baselined count and
+        stays silent (kills a regression that shared state across symbols
+        incorrectly, e.g. reusing one symbol's reference set for another)."""
+        # frob:tests \
+        # tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth.tes\
+        # t_two_baselined_symbols_each_evaluated_independently
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def helper(x):\n"
+            '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
+            "    return x\n",
+        )
+        _write(
+            tmp_path,
+            "src/b.py",
+            "def other(x):\n"
+            '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
+            "    return x\n",
+        )
+        _write(tmp_path, "src/stable_caller.py", "from a import helper\nhelper(1)\n")
+        _write(
+            tmp_path,
+            "src/growing_caller.py",
+            "from b import other\nother(1)\nother(2)\n",
+        )
+        save_deprecated_baseline(
+            tmp_path,
+            DeprecatedBaselineLock(
+                entries=(
+                    DeprecatedBaselineEntry(
+                        symbol="src/a.py::helper",
+                        references=("src/stable_caller.py#2",),
+                    ),
+                    DeprecatedBaselineEntry(
+                        symbol="src/b.py::other",
+                        references=("src/growing_caller.py#2",),
+                    ),
+                )
+            ),
+        )
+        snap = _snapshot(tmp_path)
+        queue = _open_ticket_queue()
+        violations = deprecated_gate(snap, queue, tmp_path, current_date="2026-01-01")
+        depr005 = [v for v in violations if v.rule == "DEPR005"]
+        assert len(depr005) == 1
+        assert depr005[0].file.endswith("growing_caller.py")

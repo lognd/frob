@@ -571,31 +571,38 @@ def _references_from_index(symbol: str, index: _DeprecatedRefIndex) -> frozenset
     """`deprecated_current_references`'s answer for `symbol`, read from an
     already-built `_DeprecatedRefIndex` (T-1207) rather than re-scanning the
     tree -- see that function's docstring for the exact semantics this
-    reproduces."""
+    reproduces.
+
+    T-1338 (PERF003): a single pass over `hits` both collects import-line
+    references and buckets call-shaped candidates by their OWN file (a dict
+    keyed on `file`, `_looks_like_call`/`definition_file` already applied) --
+    the second pass then only iterates `importing_files` and looks each up
+    by that same key, instead of re-scanning the full `hits` list a second
+    time to re-derive which lines belong to which file (the O(n) rescan
+    PERF003 flagged as the nested-loop-shaped equality-join pattern)."""
     hits = index.identifier_hits.get(symbol, ())
     def_sites = index.definition_sites.get(symbol, frozenset())
     definition_file = index.first_definition_file.get(symbol)
 
     refs: set[str] = set()
     importing_files: set[str] = set()
+    call_candidates_by_file: dict[str, list[int]] = {}
     for file, line, ctx in hits:
         if (file, line) in def_sites:
             continue
-        if not _IMPORT_LINE_RE.match(ctx):
-            continue
-        refs.add(f"{file}:{line}")
-        importing_files.add(file)
-
-    for file, line, ctx in hits:
-        if (file, line) in def_sites:
+        if _IMPORT_LINE_RE.match(ctx):
+            refs.add(f"{file}:{line}")
+            importing_files.add(file)
             continue
         if definition_file is not None and file == definition_file:
             continue
-        if file not in importing_files:
-            continue
         if not _looks_like_call(symbol, ctx):
             continue
-        refs.add(f"{file}:{line}")
+        call_candidates_by_file.setdefault(file, []).append(line)
+
+    for file in importing_files:
+        for line in call_candidates_by_file.get(file, ()):
+            refs.add(f"{file}:{line}")
     return frozenset(refs)
 
 
@@ -638,6 +645,56 @@ def deprecated_current_references(symbol: str, root: Path) -> frozenset[str]:
     return _references_from_index(symbol, index)
 
 
+def _depr005_edge_violations(
+    edge: Edge, ticket_id: str, index: _DeprecatedRefIndex, entry: object
+) -> tuple[Violation, ...]:
+    """T-1338 (ARCH001): the per-edge body of `_depr005_violations` --
+    resolves `edge`'s current reference set against its already-loaded
+    baseline `entry` and returns one `Violation` per file whose resolved
+    reference COUNT exceeds what is baselined (see `_depr005_violations`'s
+    own docstring for the full DEPR005 semantics this reproduces).
+    Extracted so `_depr005_violations` itself stays under the long-function
+    threshold; `entry` is a `DeprecatedBaselineEntry` (typed loosely here to
+    avoid importing that private type just for an annotation)."""
+    violations: list[Violation] = []
+    symbol = _bare_symbol_name(edge.src)
+    current_refs = _references_from_index(symbol, index)
+    current_counts = file_reference_counts(current_refs)
+    baseline_counts = entry.file_counts()  # type: ignore[attr-defined]
+    grown_files = sorted(
+        file
+        for file, count in current_counts.items()
+        if count > baseline_counts.get(file, 0)
+    )
+    for grown_file in grown_files:
+        # frob:waive PERF004 reason="T-1115: grown_lines sorts the current reference \
+        # set's own line numbers for THIS grown_file only -- a different, \
+        # per-iteration distinct subset each time, not a shared re-sort hoistable out \
+        # of the loop"
+        grown_lines = sorted(
+            int(ref.rpartition(":")[2])
+            for ref in current_refs
+            if ref.rpartition(":")[0] == grown_file and ref.rpartition(":")[2].isdigit()
+        )
+        ref_line = grown_lines[0] if grown_lines else 1
+        _log.warning("DEPR005: %s gained new caller(s) in %s", edge.src, grown_file)
+        violations.append(
+            Violation(
+                rule="DEPR005",
+                severity=Severity.ERROR,
+                file=grown_file,
+                line=ref_line,
+                message=(
+                    f"DEPR005: {edge.src} is deprecated (ticket={ticket_id!r}) "
+                    f"but gained a new caller in {grown_file} absent from "
+                    f"frob-deprecated-baseline.lock.json; migrate off the "
+                    f"deprecated symbol instead of adopting it further"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
 # frob:enforces CHK-GATE-DEPR005
 # frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth.test_same_count_as_baseline_does_not_fire kind="unit"  # noqa: E501
 # frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth.test_growth_beyond_baseline_fires_at_the_right_file_and_line kind="unit"  # noqa: E501
@@ -659,18 +716,22 @@ def _depr005_violations(
     reference set is legacy, seeded rather than flagged --
     `tighten_deprecated_baseline` is what performs that seeding; this
     gate only ever reads what is already committed). Suppressed when
-    DEPR002 already fired for the same edge, same posture as DEPR003/004."""
+    DEPR002 already fired for the same edge, same posture as DEPR003/004.
+
+    T-1338 (PERF008): the eligible-edge filter (open ticket AND a baseline
+    entry) runs as its own pass BEFORE `_build_deprecated_ref_index` is
+    ever called, so the loop-invariant, transitively fs-walking index build
+    happens at most once, entirely outside any loop -- not merely memoized
+    behind an `if index is None` guard inside one (PERF008's syntactic
+    loop-invariant-call detector cannot see through that guard; hoisting
+    the call out of loop-body position is what actually satisfies it, and
+    it also means an all-ineligible-edges run never builds the index at
+    all, same as before)."""
     from frob.gates import _OPEN_STATES
 
-    violations: list[Violation] = []
     baseline = load_deprecated_baseline(root)
-    edges = _deprecated_edges(snapshot)
-    # T-1207: one repo-wide index, shared across every baselined symbol
-    # this loop answers, instead of a fresh full-repo scan per symbol --
-    # only built at all if there is at least one edge to look up (an empty
-    # `frob:deprecated` snapshot pays no index-build cost).
-    index: _DeprecatedRefIndex | None = None
-    for edge in edges:
+    eligible: list[tuple[Edge, str, object]] = []
+    for edge in _deprecated_edges(snapshot):
         ticket_id = edge.attrs.get("ticket", "")
         target = queue.tickets.get(ticket_id)
         if target is None or target.state not in _OPEN_STATES:
@@ -679,44 +740,18 @@ def _depr005_violations(
         if entry is None:
             _log.debug("DEPR005: %s not yet baselined, skipping", edge.src)
             continue
-        if index is None:
-            index = _build_deprecated_ref_index(root)
-        symbol = _bare_symbol_name(edge.src)
-        current_refs = _references_from_index(symbol, index)
-        current_counts = file_reference_counts(current_refs)
-        baseline_counts = entry.file_counts()
-        grown_files = sorted(
-            file
-            for file, count in current_counts.items()
-            if count > baseline_counts.get(file, 0)
-        )
-        for grown_file in grown_files:
-            # frob:waive PERF004 reason="T-1115: grown_lines sorts the current \
-            # reference set's own line numbers for THIS grown_file only -- a \
-            # different, per-iteration distinct subset each time, not a shared re-sort \
-            # hoistable out of the loop"
-            grown_lines = sorted(
-                int(ref.rpartition(":")[2])
-                for ref in current_refs
-                if ref.rpartition(":")[0] == grown_file
-                and ref.rpartition(":")[2].isdigit()
-            )
-            ref_line = grown_lines[0] if grown_lines else 1
-            _log.warning("DEPR005: %s gained new caller(s) in %s", edge.src, grown_file)
-            violations.append(
-                Violation(
-                    rule="DEPR005",
-                    severity=Severity.ERROR,
-                    file=grown_file,
-                    line=ref_line,
-                    message=(
-                        f"DEPR005: {edge.src} is deprecated (ticket={ticket_id!r}) "
-                        f"but gained a new caller in {grown_file} absent from "
-                        f"frob-deprecated-baseline.lock.json; migrate off the "
-                        f"deprecated symbol instead of adopting it further"
-                    ),
-                )
-            )
+        eligible.append((edge, ticket_id, entry))
+
+    if not eligible:
+        return ()
+
+    # T-1207/T-1338: one repo-wide index, built ONCE outside any loop, shared
+    # across every eligible edge below.
+    index = _build_deprecated_ref_index(root)
+
+    violations: list[Violation] = []
+    for edge, ticket_id, entry in eligible:
+        violations.extend(_depr005_edge_violations(edge, ticket_id, index, entry))
     return tuple(violations)
 
 
