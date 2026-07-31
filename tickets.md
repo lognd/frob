@@ -12656,3 +12656,27 @@ threat: null
 component: refactor
 ```
 Error-level gate residue confined to the refactor package: 4 RENDER001 bare prints in _cli.py (route through frob.render Renderer), ARCH001 _handle_from_import 63/60 lines in _scan.py, COV007 frob:doc on private _apply.py::_find_overlapping_ops, COV001 design/frob.strata:2125 frob.refactor public with no frob:doc edge.
+
+<!-- ticket:T-1337 -->
+```yaml
+id: T-1337
+title: OPAQUE001 x3 in src/frob/app lazy-dispatch (importlib + __getattr__)
+state: queued
+kind: security
+origin: agent
+created: '2026-07-31'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/**
+- docs/modules/app.md
+acceptance:
+- text: given frob check, when gate:OPAQUE runs, then src/frob/app raises 0 OPAQUE001
+    errors
+  evidence: []
+threat: elevation-of-privilege
+component: app
+```
+gate:OPAQUE errors: app/__init__.py:116 and app/app.py:115 importlib.import_module, app/__init__.py:107 class __getattr__ interception. These are the deliberate lazy-subcommand-dispatch mechanism (T-1318 adjacent). Either resolve statically or record a reasoned frob:waive OPAQUE001 naming the bounded module-name domain and where it is validated.
