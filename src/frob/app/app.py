@@ -92,7 +92,96 @@ a raw argv rather than an `AppConfig`, so `App.__call__` wires it up
 separately."""
 
 
+# frob:ticket T-1337
+def _import_runner_module(name: str):  # noqa: ANN201 -- returns a module object
+    """Import exactly the one `frob.app.<name>` runner module named by
+    `name` (T-1337), dispatching through a closed if/elif chain of LITERAL
+    `import` statements instead of `importlib.import_module`'s runtime
+    string computation. `name` is always one of `_RUNNER_MODULE_NAMES`
+    (`_resolve_runner`'s only caller looks it up from
+    `_SUBCOMMAND_RUNNER_NAMES`, itself a closed dict over that same
+    tuple) -- this chain enumerates that exact bounded domain so every
+    target module name is statically visible to `frob.vet._capability`'s
+    ordinary resolver (a literal `import` is exactly what it already
+    walks), instead of the OPAQUE001 fail-closed obligation firing on a
+    computed module-name string it cannot see through. Laziness is
+    preserved: only the one matching branch executes, so only that one
+    module (and its own import graph) is ever imported."""
+    if name == "ack_runner":
+        import frob.app.ack_runner as module
+    elif name == "arch_runner":
+        import frob.app.arch_runner as module
+    elif name == "check_runner":
+        import frob.app.check_runner as module
+    elif name == "clean_runner":
+        import frob.app.clean_runner as module
+    elif name == "cycle_runner":
+        import frob.app.cycle_runner as module
+    elif name == "debt_runner":
+        import frob.app.debt_runner as module
+    elif name == "deprecated_runner":
+        import frob.app.deprecated_runner as module
+    elif name == "deploy_runner":
+        import frob.app.deploy_runner as module
+    elif name == "doctor_runner":
+        import frob.app.doctor_runner as module
+    elif name == "docs_runner":
+        import frob.app.docs_runner as module
+    elif name == "dup_runner":
+        import frob.app.dup_runner as module
+    elif name == "exports_runner":
+        import frob.app.exports_runner as module
+    elif name == "fleet_runner":
+        import frob.app.fleet_runner as module
+    elif name == "fmt_runner":
+        import frob.app.fmt_runner as module
+    elif name == "gitlog_runner":
+        import frob.app.gitlog_runner as module
+    elif name == "graph_runner":
+        import frob.app.graph_runner as module
+    elif name == "map_runner":
+        import frob.app.map_runner as module
+    elif name == "mutate_runner":
+        import frob.app.mutate_runner as module
+    elif name == "natives_runner":
+        import frob.app.natives_runner as module
+    elif name == "outline_runner":
+        import frob.app.outline_runner as module
+    elif name == "parse_runner":
+        import frob.app.parse_runner as module
+    elif name == "perf_runner":
+        import frob.app.perf_runner as module
+    elif name == "pool_runner":
+        import frob.app.pool_runner as module
+    elif name == "registry_runner":
+        import frob.app.registry_runner as module
+    elif name == "release_runner":
+        import frob.app.release_runner as module
+    elif name == "scaffold_runner":
+        import frob.app.scaffold_runner as module
+    elif name == "serve_runner":
+        import frob.app.serve_runner as module
+    elif name == "stats_runner":
+        import frob.app.stats_runner as module
+    elif name == "sys_runner":
+        import frob.app.sys_runner as module
+    elif name == "test_runner":
+        import frob.app.test_runner as module
+    elif name == "ticket_runner":
+        import frob.app.ticket_runner as module
+    elif name == "vet_runner":
+        import frob.app.vet_runner as module
+    elif name == "xref_runner":
+        import frob.app.xref_runner as module
+    else:  # pragma: no cover -- unreachable: name always comes from the closed domain
+        raise AssertionError(
+            f"_import_runner_module: unknown runner module name {name!r}"
+        )
+    return module
+
+
 # frob:ticket T-1216
+# frob:ticket T-1337
 # frob:tests tests/unit/test_app_lazy_dispatch.py::TestResolveRunner.test_imports_only_the_requested_subcommands_module  # noqa: E501
 def _resolve_runner(subcommand: Subcommand) -> Callable[[AppConfig], None] | None:
     """The single `frob.app.*_runner` module's `run` entry point that
@@ -106,13 +195,17 @@ def _resolve_runner(subcommand: Subcommand) -> Callable[[AppConfig], None] | Non
     runner module (deploy/strata/vet/gates included) on every single
     invocation, regardless of which one subcommand was actually requested --
     the real source of the 632ms eager import chain `frob ticket list` used
-    to pay even though it never touches any of those modules."""
-    import importlib
+    to pay even though it never touches any of those modules.
 
+    T-1337: the module-name resolution itself now goes through
+    `_import_runner_module`'s closed if/elif chain of literal imports
+    instead of `importlib.import_module`, so this is statically resolvable
+    without regressing the lazy-import behavior this docstring already
+    pins."""
     name = _SUBCOMMAND_RUNNER_NAMES.get(subcommand)
     if name is None:
         return None
-    return getattr(importlib.import_module(f"frob.app.{name}"), "run")
+    return getattr(_import_runner_module(name), "run")
 
 
 # frob:doc docs/modules/app.md#entry-point

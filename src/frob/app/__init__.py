@@ -30,7 +30,6 @@ lazy design instead of contradicting it.
 
 from __future__ import annotations
 
-import importlib
 from typing import Any
 
 from frob.app._style import (
@@ -101,7 +100,103 @@ _RUNNER_RUN_MODULES: dict[str, str] = {
 }
 
 
+# frob:ticket T-1337
+def _import_runner_run_module(module_name: str) -> Any:
+    """Import exactly the one `frob.app.<module_name>` runner module named
+    by `module_name` (T-1337), dispatching through a closed if/elif chain
+    of LITERAL `import` statements instead of `importlib.import_module`'s
+    runtime string computation. `module_name` is always one of
+    `_RUNNER_RUN_MODULES`'s values (`__getattr__`'s only caller looks it up
+    from that closed dict) -- this chain enumerates that exact bounded
+    domain so every target module name is statically visible to
+    `frob.vet._capability`'s ordinary resolver (a literal `import` is
+    exactly what it already walks), instead of the OPAQUE001 fail-closed
+    obligation firing on a computed module-name string it cannot see
+    through. Laziness is preserved: only the one matching branch executes,
+    so only that one module (and its own import graph) is ever imported."""
+    if module_name == "ack_runner":
+        import frob.app.ack_runner as module
+    elif module_name == "arch_runner":
+        import frob.app.arch_runner as module
+    elif module_name == "bind_runner":
+        import frob.app.bind_runner as module
+    elif module_name == "check_runner":
+        import frob.app.check_runner as module
+    elif module_name == "clean_runner":
+        import frob.app.clean_runner as module
+    elif module_name == "cycle_runner":
+        import frob.app.cycle_runner as module
+    elif module_name == "debt_runner":
+        import frob.app.debt_runner as module
+    elif module_name == "deploy_runner":
+        import frob.app.deploy_runner as module
+    elif module_name == "docs_runner":
+        import frob.app.docs_runner as module
+    elif module_name == "doctor_runner":
+        import frob.app.doctor_runner as module
+    elif module_name == "dup_runner":
+        import frob.app.dup_runner as module
+    elif module_name == "exports_runner":
+        import frob.app.exports_runner as module
+    elif module_name == "fleet_runner":
+        import frob.app.fleet_runner as module
+    elif module_name == "gitlog_runner":
+        import frob.app.gitlog_runner as module
+    elif module_name == "graph_runner":
+        import frob.app.graph_runner as module
+    elif module_name == "map_runner":
+        import frob.app.map_runner as module
+    elif module_name == "mutate_runner":
+        import frob.app.mutate_runner as module
+    elif module_name == "outline_runner":
+        import frob.app.outline_runner as module
+    elif module_name == "parse_runner":
+        import frob.app.parse_runner as module
+    elif module_name == "perf_runner":
+        import frob.app.perf_runner as module
+    elif module_name == "pool_runner":
+        import frob.app.pool_runner as module
+    elif module_name == "registry_runner":
+        import frob.app.registry_runner as module
+    elif module_name == "release_runner":
+        import frob.app.release_runner as module
+    elif module_name == "scaffold_runner":
+        import frob.app.scaffold_runner as module
+    elif module_name == "serve_runner":
+        import frob.app.serve_runner as module
+    elif module_name == "stats_runner":
+        import frob.app.stats_runner as module
+    elif module_name == "sys_runner":
+        import frob.app.sys_runner as module
+    elif module_name == "test_runner":
+        import frob.app.test_runner as module
+    elif module_name == "ticket_runner":
+        import frob.app.ticket_runner as module
+    elif module_name == "vet_runner":
+        import frob.app.vet_runner as module
+    elif module_name == "xref_runner":
+        import frob.app.xref_runner as module
+    else:  # pragma: no cover -- unreachable: module_name always from closed domain
+        raise AssertionError(
+            f"_import_runner_run_module: unknown runner module name {module_name!r}"
+        )
+    return module
+
+
 # frob:ticket T-1216
+# frob:ticket T-1337
+# frob:waive OPAQUE001 reason="T-1337: this module-level __getattr__ resolves ONLY a \
+# '<name>_runner_run' alias present as a KEY in the closed, statically-declared \
+# _RUNNER_RUN_MODULES dict above (the 'module_name is None' check below) -- not an \
+# arbitrary attribute-interception surface; any name outside that closed set raises \
+# AttributeError immediately. The module-name resolution itself no longer calls \
+# importlib.import_module (see _import_runner_run_module's closed if/elif chain of \
+# literal imports, T-1337) -- only this construct-level finding (def __getattr__ is \
+# unconditionally opaque per RUNTIME_OPAQUE_CONSTRUCTS's literal_arg_index=None row, \
+# regardless of body) remains, and is bounded by _RUNNER_RUN_MODULES plus this \
+# function's own AttributeError-on-miss fallback. Pinned by the two frob:tests edges \
+# below (test_accessing_one_alias_does_not_import_the_others, \
+# test_unknown_attribute_still_raises_attribute_error)"
 # frob:tests tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs.test_accessing_one_alias_does_not_import_the_others  # noqa: E501
 # frob:tests tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs.test_unknown_attribute_still_raises_attribute_error  # noqa: E501
 def __getattr__(name: str) -> Any:
@@ -113,7 +208,7 @@ def __getattr__(name: str) -> Any:
     module_name = _RUNNER_RUN_MODULES.get(name)
     if module_name is None:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    module = importlib.import_module(f"frob.app.{module_name}")
+    module = _import_runner_run_module(module_name)
     run = module.run
     globals()[name] = run
     return run
