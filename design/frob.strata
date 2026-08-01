@@ -3588,6 +3588,7 @@ node testsuite : trusted {
     attr interface=TestGdprRetention;
     attr interface=TestGenerate;
     attr interface=TestGenerateFaultInjectionCases;
+    attr interface=TestGeneratedGateRuleIdsRetiredOverride;
     attr interface=TestGeneratedSource;
     attr interface=TestGitCommonDir;
     attr interface=TestGitFailureMessageCarriesStderr;
@@ -3848,6 +3849,7 @@ node testsuite : trusted {
     attr interface=TestMutateRunner;
     attr interface=TestMutateRunnerJson;
     attr interface=TestMutateScope;
+    attr interface=TestMutationEvidenceErrBranches;
     attr interface=TestMutationEvidencePrecheck;
     attr interface=TestMutationEvidenceViolations;
     attr interface=TestNaiveSurfaceGoldens;
@@ -4197,6 +4199,7 @@ node testsuite : trusted {
     attr interface=TestScaffoldConformanceStatus;
     attr interface=TestScaffoldPoolCli;
     attr interface=TestScaffoldRunner;
+    attr interface=TestScanEmittedRuleIdsBranches;
     attr interface=TestScanReferences;
     attr interface=TestScanTextForFingerprints;
     attr interface=TestScanTreeLockArg;
