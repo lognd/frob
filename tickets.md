@@ -5691,7 +5691,7 @@ The except-branch fallback is correct and should stay for genuinely malformed in
 id: T-1377
 title: 'Genuine daemon liveness probe: classify Live/NoSocket/Orphaned/Wedged instead
   of collapsing to None'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-01'
