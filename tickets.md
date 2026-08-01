@@ -5902,10 +5902,13 @@ sprint: null
 scope:
 - src/frob/app/_daemon_proxy.py
 - tests/test_app_daemon_proxy.py
+evidence:
+- tests/test_app_daemon_proxy.py::TestDaemonOptIn::test_unset_env_disables_the_daemon
 acceptance:
 - text: GIVEN no daemon environment variable is set WHEN a proxying frob command runs
     THEN it computes in-process and never spawns a daemon
-  evidence: []
+  evidence:
+  - tests/test_app_daemon_proxy.py::TestDaemonOptIn::test_unset_env_disables_the_daemon
 - text: GIVEN FROB_DAEMON=1 is set WHEN a proxying frob command runs THEN the daemon
     path is used exactly as before
   evidence: []
