@@ -6277,3 +6277,39 @@ that is the same systematize-the-footgun rule T-1381 itself came from.
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 3 error(s), 1714 warning(s), 697 waived
 - error-findings: E501@/home/logan/projects/frob/src/frob/tickets/_land.py:1231, F401@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:25, F841@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:215
+
+<!-- ticket:T-1384 -->
+```yaml
+id: T-1384
+title: frob ticket close must check the ticket's own doc/strata/REL obligations before
+  allowing the close
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+acceptance:
+- text: GIVEN a ticket whose change adds a public symbol with no frob:doc edge WHEN
+    frob ticket close runs THEN it refuses and names the missing edge
+  evidence: []
+- text: GIVEN a ticket whose change adds public test classes not declared on the testsuite
+    strata node WHEN close runs THEN it refuses and names the sync command
+  evidence: []
+- text: GIVEN a ticket whose change alters the public API WHEN close runs THEN it
+    refuses unless the REL001 bump is already taken
+  evidence: []
+threat: null
+component: null
+```
+Observed twice in a row 2026-08-01. T-1377/T-1379 closed clean, then the next unscoped run showed 23 errors that were entirely their own residue (COV001 doc edges, SELFAUDIT001/SYS104 testsuite declarations, DOC007/DRIFT002 directive-form typos, ARCH103, REL001) -- T-1380 had to be filed to carry it. T-1381 then closed clean and left the SAME three classes, needing T-1383.
+
+close already runs a gate sweep, but scoped to the ticket -- and gate:COV/SELFAUDIT/REL findings for newly added symbols are repo-wide, so a --ticket-scoped close sees zero and lets the ticket through. The residue only surfaces on the next unscoped run, by which time the ticket is closed and a follow-through ticket is the only honest option.
+
+close should evaluate the obligations the ticket's OWN diff creates -- every public symbol it added needs a frob:doc edge, every public test class it added needs a strata declaration, a changed public API needs its REL001 bump -- and refuse with the exact remedy, in the same shape as T-1381's stamp guard.
+
+This is the systematize-the-footgun rule: I hit it twice in one session and the tool could have caught both.
