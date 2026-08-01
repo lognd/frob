@@ -1170,7 +1170,14 @@ concern_family_entries:
     # on body-only rewrites); TS retired via the real vitest collector
     # (T-0730); the remaining C/C++ structural-fallback clause repoints
     # to its dedicated child.
-    disposition: "deferred:T-1266"
+    # T-1266 close 2026-08-01: the C/C++ clause is retired. The real
+    # ctest collector already cross-references compile_commands.json for
+    # unambiguous single-source targets (T-0886) and TEST013 already
+    # discloses the unresolved case (T-0552); neither had a gate-level
+    # test for c/cpp the way the TS retirement did, so T-1266 added
+    # test_cpp_directive_resolves_via_real_ctest_node_id rather than
+    # rebuilding a mechanism that was already correct.
+    disposition: "handled_by:TEST013"
     cross_refs: []
   - id: "CHK-SUBSYS-LANG-CHECK-DOCS"
     name: "lang + check + docs: doc/coverage/drift gates run ONLY in the Python pipeline; parse/IO failure silently erases a file's whole obligation set; COV001 is WARN-only"

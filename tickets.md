@@ -2068,7 +2068,7 @@ environment too.
 id: T-1266
 title: extend real ctest collector to retire c/cpp frob:tests structural fallback
   (T-1193 successor)
-state: in-progress
+state: done
 kind: security
 origin: agent
 created: '2026-07-29'
@@ -2080,6 +2080,14 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/testing/_collect.py
 - tests/test_gates.py
+- docs/design/registry/check-coverage.yaml
+scope_changes:
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: retire CHK-SUBSYS-GATES-ACCOUNTING's C/C++ clause now that the real ctest
+    collector plus TEST013 disclosure are proven at gate level
+  actor: logan
+  at: '2026-08-01'
 evidence:
 - tests/test_gates.py::TestNativeTestCollectors::test_cpp_directive_resolves_via_real_ctest_node_id
 - tests/test_gates.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge
