@@ -3552,6 +3552,7 @@ node testsuite : trusted {
     attr interface=TestFormattingInsensitivity;
     attr interface=TestFourWayCrossLanguageEquivalence;
     attr interface=TestFrobDaemonStatus;
+    attr interface=TestFrobDirNeverLeaksIntoGitAdd;
     attr interface=TestFrobExportsPolicyResidue;
     attr interface=TestFrobSelfModel;
     attr interface=TestFrobSelfModelPiiPosture;
@@ -4117,6 +4118,7 @@ node testsuite : trusted {
     attr interface=TestResolveParamTypes;
     attr interface=TestResolveRatchetSeverity;
     attr interface=TestResolveRunner;
+    attr interface=TestResolveRunnerDispatchTotality;
     attr interface=TestResolveStream;
     attr interface=TestResolveSymbol;
     attr interface=TestResourceContentionViolations;

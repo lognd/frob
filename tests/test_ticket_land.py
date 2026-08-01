@@ -225,6 +225,92 @@ def v2_repo(tmp_path: Path) -> Path:
     return main_repo
 
 
+# frob:ticket T-1331
+class TestFrobDirNeverLeaksIntoGitAdd:
+    """T-1331: `.frob/` scratch state (per-ticket locks, the T-1257 v2
+    index/archive cache files) must never become a TRACKED file via any
+    fixture's blanket `git add -A` (`_commit_all`) -- an un-gitignored
+    fixture repo previously let two branches each commit a DIFFERENT
+    `.frob/tickets-index.json` as a real tracked file, colliding as a raw
+    git add/add conflict at merge (`TestArchiveV2::
+    test_archive_v2_regression_two_sided_divergence_no_clobber`) or
+    tripping land's T-0463 completeness assertion (`LandError.
+    IncompleteLand`) once the squash-apply's target checkout came up
+    missing files the source checkout had committed. `_git_init` (T-1258)
+    fixed this by writing a `.gitignore` with `.frob/` into every fixture
+    repo from its very first commit; this locks that in as a regression
+    test tied to T-1331 specifically, independent of `_git_init`'s own
+    docstring."""
+
+    # frob:ticket T-1331
+    # frob:tests tests/test_ticket_land.py::TestFrobDirNeverLeaksIntoGitAdd.test_frob_scratch_files_are_gitignored_not_tracked kind="unit"  # noqa: E501
+    def test_frob_scratch_files_are_gitignored_not_tracked(
+        self, tmp_path: Path
+    ) -> None:
+        main_repo = tmp_path / "main"
+        _git_init(main_repo)
+        atomic_write(ledger_path(main_repo), "# Tickets\n\n")
+
+        # Simulate real frob scratch state a ticket operation would leave
+        # behind before any commit happens (T-1257's v2 index/archive
+        # cache files, a per-ticket lock file).
+        frob_dir = main_repo / ".frob"
+        frob_dir.mkdir()
+        (frob_dir / "tickets-index.json").write_text("{}")
+        (frob_dir / "tickets-archive-cache.json").write_text("{}")
+        (frob_dir / "some.lock").write_text("")
+
+        _commit_all(main_repo, "init")
+
+        tracked = _run(
+            ["git", "ls-files"], main_repo
+        ).stdout.splitlines()
+        assert not any(path.startswith(".frob/") for path in tracked), tracked
+
+        status = _run(["git", "status", "--porcelain"], main_repo).stdout
+        assert ".frob/" not in status
+
+    # frob:ticket T-1331
+    # frob:tests tests/test_ticket_land.py::TestFrobDirNeverLeaksIntoGitAdd.test_two_branches_with_divergent_frob_scratch_never_add_add_conflict  # noqa: E501
+    def test_two_branches_with_divergent_frob_scratch_never_add_add_conflict(
+        self, tmp_path: Path
+    ) -> None:
+        """The exact T-1331 incident shape: two independent checkouts each
+        write a DIFFERENT `.frob/tickets-index.json` before committing --
+        gitignoring `.frob/` means neither ever tracks the file, so
+        merging one into the other can never hit a real git add/add
+        conflict over it."""
+        main_repo = tmp_path / "main"
+        _git_init(main_repo)
+        atomic_write(ledger_path(main_repo), "# Tickets\n\n")
+        _commit_all(main_repo, "init")
+
+        clone = tmp_path / "clone"
+        _run(["git", "clone", "-q", str(main_repo), str(clone)], tmp_path)
+        _run(["git", "config", "user.email", "test@example.com"], clone)
+        _run(["git", "config", "user.name", "Test"], clone)
+
+        (main_repo / ".frob").mkdir()
+        (main_repo / ".frob" / "tickets-index.json").write_text('{"side": "main"}')
+        (main_repo / "src_a.py").write_text("# a\n")
+        _commit_all(main_repo, "main side")
+
+        (clone / ".frob").mkdir()
+        (clone / ".frob" / "tickets-index.json").write_text('{"side": "clone"}')
+        (clone / "src_b.py").write_text("# b\n")
+        _commit_all(clone, "clone side")
+
+        _run(["git", "fetch", "-q", str(main_repo), "main"], clone)
+        merge = subprocess.run(
+            ["git", "merge", "-q", "FETCH_HEAD", "-m", "merge"],
+            cwd=str(clone),
+            capture_output=True,
+            text=True,
+        )
+        assert merge.returncode == 0, merge.stdout + merge.stderr
+        assert "add/add" not in (merge.stdout + merge.stderr)
+
+
 # frob:ticket T-1194
 class TestSpliceLedger:
     """`splice_ledger` -- the id-level merge tickets.md conflicts always go

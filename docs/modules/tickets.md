@@ -2388,6 +2388,7 @@ AttachError = TicketError | ClipboardError
 <!-- frob:describes src/frob/tickets/_store.py::load_archive -->
 <!-- frob:describes src/frob/tickets/_store.py::write_archive -->
 <!-- frob:describes src/frob/tickets/_store.py::_yaml_loader -->
+<!-- frob:describes src/frob/tickets/_store.py::_coverage_tracer_active -->
 <!-- frob:describes src/frob/tickets/_store.py::attachments_dir -->
 <!-- frob:describes src/frob/tickets/_store.py::_store_mode -->
 <!-- frob:describes src/frob/tickets/_store.py::_serialize_ticket -->
@@ -2481,12 +2482,24 @@ def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]
     # T-1206: cached in .frob/tickets-archive-cache.json, keyed by the
     # archive file's own sha256 content hash (never mtime) -- an unchanged
     # archive is never reparsed; any byte change invalidates the cache.
+def _coverage_tracer_active() -> bool
+    # T-1333: True when sys.gettrace() is a coverage.py tracer (detected
+    # by the active tracer callable's __module__ starting with
+    # "coverage") -- both bare `coverage run` and pytest-cov install
+    # their tracer this same way. Used by _yaml_loader to avoid a known-
+    # bad CSafeLoader/coverage.py interaction (see below).
 def _yaml_loader() -> type[yaml.SafeLoader]
     # T-1206: yaml.CSafeLoader (libyaml) when installed, else the
     # pure-Python yaml.SafeLoader -- every frontmatter yaml.load call in
     # this module goes through this instead of yaml.safe_load, since
     # safe_load always forces the slower pure-Python loader even when the
     # C extension is available. Same accepted-construct set either way.
+    # T-1333: EXCEPT when _coverage_tracer_active() is True -- CSafeLoader
+    # has a known-bad interaction with an active coverage.py trace
+    # function that corrupts otherwise-valid frontmatter parses ("could
+    # not determine a constructor for the tag None"); this loader falls
+    # back to SafeLoader under a detected coverage run to avoid it,
+    # trading the T-1206 speed win for correctness for that run.
 def write_archive(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]
     # Replaces tickets-archive.md wholesale (same ledger section format,
     # distinct header).

@@ -404,6 +404,51 @@ class TestYamlLoader:
         monkeypatch.setattr(yaml, "__with_libyaml__", False)
         assert _yaml_loader() is yaml.SafeLoader
 
+    def test_detects_coverage_tracer_by_module_name(self, monkeypatch) -> None:
+        """T-1333: a `sys.gettrace()` callable whose `__module__` starts
+        with 'coverage' is recognized as a coverage.py tracer."""
+        import sys
+
+        from frob.tickets._store import _coverage_tracer_active
+
+        def fake_tracer(frame, event, arg):
+            return fake_tracer
+
+        fake_tracer.__module__ = "coverage.pytracer"
+
+        monkeypatch.setattr(sys, "gettrace", lambda: fake_tracer)
+        assert _coverage_tracer_active() is True
+
+    def test_no_active_tracer_is_not_coverage(self, monkeypatch) -> None:
+        """No active `sys.gettrace()` tracer means no coverage tracer."""
+        import sys
+
+        from frob.tickets._store import _coverage_tracer_active
+
+        monkeypatch.setattr(sys, "gettrace", lambda: None)
+        assert _coverage_tracer_active() is False
+
+    def test_falls_back_to_safeloader_under_active_coverage_tracer(
+        self, monkeypatch
+    ) -> None:
+        """T-1333: even with libyaml present, an active coverage.py tracer
+        forces the pure-Python SafeLoader to avoid the CSafeLoader
+        corruption bug."""
+        import sys
+
+        import yaml
+
+        from frob.tickets._store import _yaml_loader
+
+        def fake_tracer(frame, event, arg):
+            return fake_tracer
+
+        fake_tracer.__module__ = "coverage.pytracer"
+
+        monkeypatch.setattr(yaml, "__with_libyaml__", True)
+        monkeypatch.setattr(sys, "gettrace", lambda: fake_tracer)
+        assert _yaml_loader() is yaml.SafeLoader
+
 
 class TestLoadArchiveCache:
     # frob:tests src/frob/tickets/_store.py::load_archive kind="unit"
