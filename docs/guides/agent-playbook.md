@@ -413,6 +413,41 @@ selects `--only` groups for a normal check run, not the gate-only
 accumulator `--stamp-baseline` builds; use this explicit `--only` chunking
 for stamping a baseline specifically.
 
+## 3c. A verification that cannot fit the timeout is a COORDINATOR step
+
+Section 3b's foreground-`timeout` rule and section 6b's `make coverage`
+carve-out leave one trap open, and it has been walked into: a brief that
+asks a sub-agent for a verification which structurally cannot finish
+inside the ~100s foreground budget. The full unscoped suite (`uv run
+pytest -n 4` over the whole tree) is the common case; a full unscoped
+`frob check` is another. Section 3b forbids backgrounding it, and no
+timeout value makes it fit, so the agent is handed a required step with
+no sanctioned way to perform it.
+
+What happens next is improvisation, and it is expensive. The measured
+instance (2026-08-01, T-1392): an agent launched the full suite, watched
+it via ~40 successive reads of the growing log file, and narrated a
+percent-complete line after each one. It spent its context window on log
+tails instead of on the five failures it was dispatched to diagnose --
+the worst possible trade, and one that makes a weak fix likely.
+
+The rule, generalizing 6b beyond `make coverage`:
+
+- A dispatched sub-agent runs ONLY verifications that fit comfortably in
+  a foreground `timeout` -- the specific failing node ids, each touched
+  test FILE in full, and the test files covering any production module it
+  changed. One command per file.
+- Anything that cannot fit -- the full unscoped suite, `make coverage`, a
+  full unscoped `frob check` -- is a COORDINATOR step, run after the land,
+  never delegated.
+- If a command unexpectedly trips its timeout, REPORT that fact. Do not
+  background it, do not poll a log for it, and never narrate progress
+  percentages. Report a result or a blocker, nothing in between.
+
+Coordinators: do not write "run the full suite" into a dispatch brief.
+You own that step. Ask the agent for the scoped runs above, then measure
+unscoped yourself -- which you must do regardless, per section 6c.
+
 ## 4. Scope conventions
 
 - `tickets.md` is always in scope, implicitly, for any ticket -- the Done
