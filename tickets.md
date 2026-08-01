@@ -8090,6 +8090,7 @@ priority: medium
 blocked_by:
 - T-1398
 - T-1399
+- T-1401
 parent: null
 tier: ticket
 sprint: null
@@ -8108,7 +8109,6 @@ Successor to T-1276, which reached state=done on main against an unmet criterion
 Deliberately blocked on T-1398 and T-1399. Dispatching this before the join defect is fixed would repeat the failure mode already observed three times today -- agents finding well-tested code reported at 0.0 percent and being pushed toward filler tests. Do not start it until the measured count is trustworthy.
 
 Landed and verified by T-1276 before the false close, so this ticket does NOT need to redo them: _daemon_proxy lease paths, check_runner colorized formatter, and AppConfig.from_external/from_args.
-
 <!-- ticket:T-1401 -->
 ```yaml
 id: T-1401
