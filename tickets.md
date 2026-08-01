@@ -6107,7 +6107,8 @@ acceptance:
   - tests/unit/test_release_stamp_guard.py::TestStampRefusesUnbumped::test_refuses_when_api_changed_and_version_not_bumped
 - text: GIVEN the same state WHEN frob release stamp --allow-unbumped runs THEN it
     stamps and logs a loud justification-required override
-  evidence: []
+  evidence:
+  - tests/unit/test_release_stamp_guard.py::TestStampRefusesUnbumped::test_allow_unbumped_is_an_explicit_override
 - text: GIVEN the version HAS been bumped to at least the required level WHEN frob
     release stamp runs THEN it stamps exactly as before
   evidence: []
