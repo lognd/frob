@@ -5719,7 +5719,8 @@ acceptance:
   - tests/test_app_daemon_proxy.py::TestProbeDaemon::test_missing_socket_is_nosocket
 - text: GIVEN a daemon that is alive but not answering WHEN the proxy probes THEN
     it classifies Wedged and does NOT spawn a competing daemon
-  evidence: []
+  evidence:
+  - tests/test_app_daemon_proxy.py::TestProbeDaemon::test_silent_listener_is_wedged
 - text: GIVEN any unhealthy daemon state WHEN frob check runs THEN the liveness probe
     costs at most the probe budget, not send_request's 10s query timeout
   evidence: []
