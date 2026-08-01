@@ -5440,3 +5440,28 @@ threat: null
 component: null
 ```
 Found 2026-08-01 by the coordinator's full make coverage run, which the gates stage never exercises (frob check --only gates skips tests). Two distinct causes. (1) test_two_disjoint_sessions_combine_to_full_coverage and test_combine_then_xml_survives_a_stale_fixture_path spawn a nested 'coverage run' subprocess; under an outer make coverage the parent's COVERAGE_* environment leaks into the child and the nested run exits 1. The subprocess needs a coverage-clean env. (2) test_prefers_csafeloader_when_libyaml_present predates T-1333, which deliberately falls back to SafeLoader whenever a coverage tracer is active -- so the assertion is now false under coverage by design. The test must condition on the tracer the same way the fix does.
+
+<!-- ticket:T-1374 -->
+```yaml
+id: T-1374
+title: 'REG008: CHK-SUBSYS-GATES-ACCOUNTING repointed to TEST013 without a frob:enforces
+  edge'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/__init__.py
+- docs/design/registry/check-coverage.yaml
+acceptance:
+- text: GIVEN main WHEN tests/test_registry_exhaustiveness.py runs THEN test_no_reg008_findings_for_check_coverage_yaml
+    passes
+  evidence: []
+threat: null
+component: null
+```
+T-1266's close re-dispositioned CHK-SUBSYS-GATES-ACCOUNTING from deferred:T-1266 to handled_by:TEST013, but the enforcing implementation _test013_native_unverified only declares 'frob:enforces CHK-GATE-TEST013'. REG008 requires the enforcing rule to name every registry entry it discharges, so the row now reads as catalogued-but-unenforced. Same shape as the CHK-GATE-SUPPRESS001 fix. Deliberately NOT fixed inline on discovery: src/frob/gates/** and docs/** are both leased by in-flight agents (T-1371, T-1372).
