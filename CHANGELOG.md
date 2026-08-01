@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.298.0] - unreleased
+
+- T-1375: frob-coverage.lock.json was rewritten during a session where no run stamped it
+
 ## [0.297.0] - unreleased
 
 - T-1384: frob ticket close must check the ticket's own doc/strata/REL obligations before allowing the close

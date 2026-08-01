@@ -876,6 +876,7 @@ node gates : trusted {
     attr interface=load_decisions;
     attr interface=load_deprecated_baseline;
     attr interface=load_invariants;
+    attr interface=load_lock_audit_log;
     attr interface=load_prework;
     attr interface=load_ratchet_lock;
     attr interface=load_stamp;
@@ -4322,6 +4323,7 @@ node testsuite : trusted {
     attr interface=TestStoreWaivers;
     attr interface=TestStrataNativeParserUnavailable;
     attr interface=TestStrataTreeSitterEscapeHatchesUnsupported;
+    attr interface=TestSubprocessRcIsAbsoluteAndConcurrencyAware;
     attr interface=TestSubscribeAndWait;
     attr interface=TestSummarize;
     attr interface=TestSummarizeSeverity;
@@ -4904,6 +4906,7 @@ node testsuite : trusted {
     attr interface=test_long_chain_with_cycle_no_recursion_error;
     attr interface=test_long_chain_would_have_crashed_recursive_tarjan;
     attr interface=test_loop_invariant_spawning_callee_in_loop_is_flagged;
+    attr interface=test_makefile_coverage_recipe_never_escalates_clean_tier;
     attr interface=test_malformed_lines_are_skipped_not_raised;
     attr interface=test_malformed_record_is_err;
     attr interface=test_malformed_toml_defaults;
@@ -5161,6 +5164,7 @@ node testsuite : trusted {
     attr interface=test_rust_outline_functions;
     attr interface=test_rust_outline_methods;
     attr interface=test_rust_outline_ok;
+    attr interface=test_safe_tier_clean_preserves_frob_junitxml_forensics;
     attr interface=test_satisfies_unparseable_inputs_are_false;
     attr interface=test_scale_50_files_json;
     attr interface=test_scale_50_files_total_tokens_positive;

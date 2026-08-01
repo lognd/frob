@@ -29,8 +29,10 @@ CI run cannot reproduce.
 from __future__ import annotations
 
 import json
+import os
 import posixpath
 import xml.etree.ElementTree as ET
+from datetime import UTC, datetime
 from pathlib import Path
 
 from typani import Err, Ok
@@ -55,6 +57,15 @@ _LOCK_REL = Path("frob-coverage.lock.json")
 # drifted; coverage.xml's own line-rate float noise (rounding, differently
 # ordered subprocess merges) is well under this in practice.
 _LOCK_TOLERANCE = 2.0
+# T-1375: a per-worktree, gitignored (under `.frob/`) append-only audit trail
+# of every successful `write_coverage_lock` call -- a durable, on-disk record
+# that survives independent of any one terminal's scrollback. A committed
+# `frob-coverage.lock.json` changing with NO matching entry here (same
+# `source_sha`, a write in this worktree's own history) means the write did
+# NOT go through this module's own logged path -- an unattributed mutation,
+# not proof the numbers are wrong, but proof the CLAIM "an explicit
+# stamp_coverage call wrote this" cannot currently be verified for it.
+_LOCK_AUDIT_REL = Path(".frob") / "coverage-lock-audit.log"
 
 
 def _parse_line_el(line_el: ET.Element) -> tuple[int, tuple[int, int]] | None:
@@ -698,7 +709,38 @@ def write_coverage_lock(
         len(lock["module_line"]),
         data.source_sha[:8],
     )
+    _append_lock_audit_entry(root, data.source_sha, len(lock["module_line"]))
     return Ok(Unit())
+
+
+# frob:ticket T-1375
+def _append_lock_audit_entry(root: Path, source_sha: str, module_count: int) -> None:
+    """Best-effort append of one provenance line to `_LOCK_AUDIT_REL` after a
+    successful `write_coverage_lock` write (T-1375).
+
+    A durable, on-disk companion to the `_log.info` call above: log output
+    is only as durable as whatever terminal/session captured it, but this
+    file survives in the worktree across sessions, so `load_lock_audit_log`
+    can later confirm (or fail to confirm) that a given committed lock's
+    `source_sha` has a matching, logged write in THIS worktree's own
+    history. A write failure here is logged but never fails the lock write
+    itself -- the audit trail is a diagnostic aid, not a hard requirement
+    of stamping."""
+    audit_path = root / _LOCK_AUDIT_REL
+    entry = {
+        "written_at": datetime.now(UTC).isoformat(),
+        "pid": os.getpid(),
+        "source_sha": source_sha,
+        "module_count": module_count,
+    }
+    try:
+        audit_path.parent.mkdir(parents=True, exist_ok=True)
+        with audit_path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(entry, sort_keys=True) + "\n")
+    except OSError as exc:
+        _log.warning(
+            "_append_lock_audit_entry: could not append to %s: %s", audit_path, exc
+        )
 
 
 # frob:doc docs/modules/gates.md#public-api
@@ -712,6 +754,42 @@ def load_coverage_lock(root: Path) -> dict | None:
     except (OSError, ValueError) as exc:
         _log.warning("load_coverage_lock: %s unreadable: %s", lock_path, exc)
         return None
+
+
+# frob:doc docs/modules/gates.md#public-api
+def load_lock_audit_log(root: Path) -> tuple[dict, ...]:
+    """Every entry `_append_lock_audit_entry` has recorded in this worktree
+    (T-1375), oldest first; empty (never an error) if the file is missing,
+    unreadable, or contains a malformed line -- a malformed/missing audit
+    trail means "cannot confirm attribution", which callers should treat
+    the same as "no matching entry found", not a crash.
+
+    Use to check whether a given committed `frob-coverage.lock.json`'s
+    `source_sha` has a matching entry: `any(e["source_sha"] == lock
+    ["source_sha"] for e in load_lock_audit_log(root))` -- `False` means
+    the current lock content has no attributable `write_coverage_lock`
+    call logged in this worktree's own history.
+    """
+    audit_path = root / _LOCK_AUDIT_REL
+    if not audit_path.exists():
+        return ()
+    entries: list[dict] = []
+    try:
+        for line in audit_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                entries.append(json.loads(line))
+            except ValueError as exc:
+                _log.warning(
+                    "load_lock_audit_log: skipping malformed line in %s: %s",
+                    audit_path,
+                    exc,
+                )
+    except OSError as exc:
+        _log.warning("load_lock_audit_log: %s unreadable: %s", audit_path, exc)
+        return ()
+    return tuple(entries)
 
 
 # frob:doc docs/modules/gates.md#public-api
@@ -755,6 +833,7 @@ __all__ = [
     "exclude_filtered_coverage",
     "load_coverage",
     "load_coverage_lock",
+    "load_lock_audit_log",
     "load_stamp",
     "stamp_coverage",
     "write_coverage_lock",

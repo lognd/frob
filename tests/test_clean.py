@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -180,3 +181,58 @@ def test_reclaimed_bytes_is_zero_for_no_matches(tmp_path: Path) -> None:
     `reclaimed_bytes`'s zero-entries branch."""
     report = CleanReport(tier=CleanTier.SAFE, dry_run=True, entries=[])
     assert report.reclaimed_bytes == 0
+
+
+# frob:ticket T-1237
+# frob:tests tests/test_clean.py::test_safe_tier_clean_preserves_frob_junitxml_forensics
+def test_safe_tier_clean_preserves_frob_junitxml_forensics(repo: Path) -> None:
+    """T-1237's acceptance criterion 0: the `make coverage` recipe's
+    trailing `frob clean -y` (SAFE/tier-1, no `--all`/`--deep` -- verified
+    by `test_makefile_coverage_recipe_never_escalates_clean_tier` below)
+    must never destroy the `.frob/*.xml` junitxml forensics it wrote before
+    calling clean -- a failure's test-id list is the whole point of T-1237.
+    Tier 1 legitimately removes `.coverage.*` PARALLEL-RUN FRAGMENTS (they
+    are already consumed by `coverage combine` before clean ever runs in
+    the recipe), so this also pins that `.frob/`'s own contents are
+    entirely unaffected even though sibling `.coverage.*` fragments in the
+    repo root are fair game."""
+    (repo / ".frob").mkdir(exist_ok=True)
+    (repo / ".frob" / "last-coverage-run.xml").write_text("<testsuite/>")
+    (repo / ".frob" / "last-coverage-rerun.xml").write_text("<testsuite/>")
+
+    report = clean(repo, CleanTier.SAFE, dry_run=False).danger_ok
+
+    assert report.dry_run is False
+    # the forensics this ticket exists to preserve
+    assert (repo / ".frob" / "last-coverage-run.xml").exists()
+    assert (repo / ".frob" / "last-coverage-rerun.xml").exists()
+    # tier 1's OWN job (fragments already combined by the time clean runs
+    # in the real recipe) still executes normally
+    assert not (repo / ".coverage.host.12345.abcd").exists()
+
+
+# frob:ticket T-1237
+# frob:tests \
+# tests/test_clean.py::test_makefile_coverage_recipe_never_escalates_clean_tier
+def test_makefile_coverage_recipe_never_escalates_clean_tier() -> None:
+    """T-1237's acceptance criterion 0 (recipe-side half): the `coverage:`
+    Makefile recipe must invoke `frob clean` at its default (SAFE/tier-1)
+    severity, never `--all`/`--deep` -- either of those tiers would remove
+    `.frob/` itself (tier 3, `test_clean_deep_removes_frob_state`),
+    destroying the very junitxml forensics this ticket's other test
+    proves tier 1 preserves. Reads the real Makefile text so a future edit
+    that escalates the tier is caught here, not discovered as missing
+    forensics after the fact."""
+    repo_root = Path(__file__).resolve().parent.parent
+    makefile_text = (repo_root / "Makefile").read_text(encoding="utf-8")
+    coverage_recipe = re.search(
+        r"^coverage: \$\(STAMP\)\n(?:\t.*\n)*", makefile_text, re.MULTILINE
+    )
+    assert coverage_recipe is not None, "coverage: recipe not found in Makefile"
+    clean_invocations = re.findall(
+        r"uv run frob clean\b[^\n\\]*", coverage_recipe.group(0)
+    )
+    assert clean_invocations, "coverage: recipe never calls frob clean"
+    for invocation in clean_invocations:
+        assert "--all" not in invocation, invocation
+        assert "--deep" not in invocation, invocation

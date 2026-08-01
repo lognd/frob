@@ -359,3 +359,102 @@ class TestCombineRecoversDisjointSessions:
         # Both branch bodies (lines 3 and 5) must show as covered in the
         # UNION -- a last-write-wins loss would report one of them missing.
         assert "100%" in report.stdout, report.stdout
+
+
+def _generated_subprocess_rc(tmp_path: Path) -> str:
+    """Run the exact `printf` fragment the `coverage:` recipe uses to
+    build `.frob/coverage-subprocess.rc` and return its stdout.
+
+    Extracts the real `printf ... > .frob/coverage-subprocess.rc` block out
+    of the live Makefile text (mirroring `_recipe_tail`'s approach above) so
+    this test exercises the actual recipe, not a hand-copied reimplementation
+    that could silently drift from it.
+    """
+    match = re.search(
+        r"^\tprintf '%s\\n' \\\n(?:\t\t'.*'( \\)?\n)*"
+        r"\t\t> \.frob/coverage-subprocess\.rc$",
+        _MAKEFILE,
+        re.MULTILINE,
+    )
+    assert match is not None, "coverage-subprocess.rc printf block not found"
+    body = match.group(0)
+    # Drop the trailing `> .frob/coverage-subprocess.rc` redirect and run
+    # just the `printf` call itself, capturing stdout instead of the file.
+    # Unlike `_recipe_tail`, the line-continuation backslashes here are
+    # bash's OWN multi-line-command syntax (one `printf` call spanning
+    # several lines), not Makefile recipe-line escaping -- they must be
+    # preserved, only the leading Makefile recipe tab is Makefile-specific.
+    body = body.rsplit("\n", 1)[0]
+    lines = [line[1:] for line in body.splitlines()]
+    script = "\n".join(lines).replace("$(CURDIR)", str(tmp_path))
+    result = subprocess.run(
+        ["bash", "-c", script],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    return result.stdout
+
+
+# frob:ticket T-1235
+class TestSubprocessRcIsAbsoluteAndConcurrencyAware:
+    """`frob:tests` T-1235's acceptance criteria 0 and 1: the generated
+    `.frob/coverage-subprocess.rc` must use ABSOLUTE `source`/`data_file`
+    (a relative value resolves against a subprocess child's own cwd, not
+    the repo root, measuring nothing and stranding empty `.coverage.*`
+    files -- loss A of the 2026-07-29 attribution diagnosis), and both the
+    rc and `pyproject.toml`'s `[tool.coverage.run]` must declare
+    `concurrency = multiprocessing, thread` plus `sigterm = true` so
+    ProcessPoolExecutor gate workers are recorded (loss B)."""
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware.test_rc_uses_absolute_source_and_data_file  # noqa: E501
+    def test_rc_uses_absolute_source_and_data_file(self, tmp_path):
+        """The rc's `source =` and `data_file =` lines must be absolute
+        paths (rooted at the invoking `$(CURDIR)`), not the bare relative
+        `src/frob` that `pyproject.toml` itself uses."""
+        rc = _generated_subprocess_rc(tmp_path)
+        assert f"source = {tmp_path}/src/frob" in rc, rc
+        assert f"data_file = {tmp_path}/.coverage" in rc, rc
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware.test_rc_declares_multiprocessing_and_sigterm  # noqa: E501
+    def test_rc_declares_multiprocessing_and_sigterm(self, tmp_path):
+        """The rc must enable branch/parallel/relative_files, both
+        concurrency backends, `sigterm`, and the no-data-collected warning
+        suppression (subprocess children legitimately import-only, no-op
+        modules) -- any of these missing reproduces a real slice of the
+        2026-07-29 attribution loss."""
+        rc = _generated_subprocess_rc(tmp_path)
+        assert "branch = True" in rc, rc
+        assert "parallel = True" in rc, rc
+        assert "relative_files = True" in rc, rc
+        assert "sigterm = True" in rc, rc
+        assert "concurrency = multiprocessing, thread" in rc, rc
+        assert "disable_warnings = no-data-collected" in rc, rc
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware.test_rc_remaps_paths_back_to_source  # noqa: E501
+    def test_rc_remaps_paths_back_to_source(self, tmp_path):
+        """The rc's `[paths]` section must remap any `*/src/frob` prefix
+        (a subprocess child's own absolute path, e.g. under a tmp fixture)
+        back onto `src/frob` so `coverage combine` unions subprocess data
+        with the main run's data for the SAME module, not a distinct one."""
+        rc = _generated_subprocess_rc(tmp_path)
+        assert "[paths]" in rc, rc
+        assert "src/frob" in rc.split("[paths]", 1)[1], rc
+        assert "*/src/frob" in rc.split("[paths]", 1)[1], rc
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware.test_pyproject_declares_concurrency_and_sigterm  # noqa: E501
+    def test_pyproject_declares_concurrency_and_sigterm(self):
+        """`pyproject.toml`'s own `[tool.coverage.run]` (governing the
+        MAIN pytest-cov process, not just subprocess children) must ALSO
+        declare both concurrency backends and `sigterm` -- otherwise
+        in-process `ProcessPoolExecutor` gate-pool workers spawned by the
+        main run itself go unrecorded (loss B of the 2026-07-29 attribution
+        diagnosis), independent of the subprocess rc fixed above."""
+        import tomllib
+
+        data = tomllib.loads((_REPO_ROOT / "pyproject.toml").read_text("utf-8"))
+        run_cfg = data["tool"]["coverage"]["run"]
+        assert run_cfg["concurrency"] == ["multiprocessing", "thread"], run_cfg
+        assert run_cfg["sigterm"] is True, run_cfg

@@ -1358,7 +1358,7 @@ Require a dated status/superseded-by header on docs/audits/* (gate-checkable); c
 ```yaml
 id: T-1235
 title: 'coverage attribution fix: subprocess rc + multiprocessing concurrency'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-29'
@@ -1371,16 +1371,25 @@ scope:
 - pyproject.toml
 - tests/**
 - docs/**
+evidence:
+- tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_uses_absolute_source_and_data_file
+- tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_declares_multiprocessing_and_sigterm
+- tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_remaps_paths_back_to_source
+- tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_pyproject_declares_concurrency_and_sigterm
 acceptance:
 - text: GIVEN make coverage runs THEN a generated .frob/coverage-subprocess.rc (absolute
     source and data_file, branch/parallel/relative_files/sigterm true, concurrency
     multiprocessing+thread, disable_warnings no-data-collected, paths remap) is what
     COVERAGE_PROCESS_START points at, and zero .coverage.* files are stranded outside
     repo root after the run
-  evidence: []
+  evidence:
+  - tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_uses_absolute_source_and_data_file
+  - tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_declares_multiprocessing_and_sigterm
+  - tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_remaps_paths_back_to_source
 - text: GIVEN pyproject [tool.coverage.run] THEN concurrency multiprocessing+thread
     and sigterm true are set so in-process gate-pool execution is recorded
-  evidence: []
+  evidence:
+  - tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_pyproject_declares_concurrency_and_sigterm
 - text: GIVEN the corrected full run THEN previously-exercised-but-zero symbols (excludes.py,
     doctor.py, serve/, __main__.py) report real coverage and the TEST005 count reflects
     it
@@ -1389,6 +1398,68 @@ threat: null
 component: null
 ```
 T-0969 diagnosis 2026-07-29: fresh coverage RAISED TEST005 to 1357; staleness was not the inflation. Loss A: CLI subprocesses measure nothing (relative source vs child cwd) and strand data files in child cwds (626 stranded, 100% of 120 sampled empty). Loss B: ProcessPoolExecutor gate workers unrecorded. Verified experiment: corrected rc moved excludes.py 51->97, doctor 33->86, 81 of 103 zero-modules gained data; merged count 1357->1175 from a partial subset alone.
+
+## Done report
+
+The coverage-attribution fix this ticket calls for (absolute-path subprocess
+rc generation in the `coverage:` Makefile recipe, plus concurrency=
+multiprocessing,thread / sigterm=true in both the generated rc and
+pyproject.toml's [tool.coverage.run]) was already implemented on main --
+Makefile:116-232 and pyproject.toml:157-167 both carry T-1235 comment
+references and match the acceptance criteria exactly. No prior worktree had
+locked this configuration down with a test, so acceptance [0] and [1] were
+still UNBOUND despite the fix being live.
+
+Added TestSubprocessRcIsAbsoluteAndConcurrencyAware to
+tests/unit/test_makefile_coverage.py: it extracts the REAL printf block that
+builds .frob/coverage-subprocess.rc straight out of the Makefile text
+(mirroring the existing _recipe_tail helper's approach) and asserts absolute
+source/data_file paths, branch/parallel/relative_files/sigterm/concurrency/
+disable_warnings, and the [paths] remap section -- plus a direct
+tomllib-parsed assertion that pyproject.toml's [tool.coverage.run] declares
+the same concurrency/sigterm pair for the main (non-subprocess) process.
+This is a regression lock, not new production code: a future edit that
+silently drops the absolute-path fix or the concurrency settings now fails
+fast in ~1s instead of only being caught by a 1300+ TEST005 regression on
+the next full make coverage run.
+
+Acceptance [2] ("previously-exercised-but-zero symbols report real coverage
+and the TEST005 count reflects it") cannot be verified from a worktree: it
+requires a full, unscoped `make coverage` run, which is a coordinator-only
+step (playbook section 6b) -- a dispatched sub-agent cannot wait on it. This
+acceptance is left UNBOUND; the coordinator's next full make coverage +
+frob check --stamp-coverage pass is what closes it out. The T-0969 diagnosis
+already recorded (in the ticket body) a verified experiment run against this
+exact same fix showing excludes.py 51->97, doctor 33->86, 81 of 103
+zero-modules gaining data -- but that was measured before this ticket's own
+work, not a durable claim from this session, so it is not cited as this
+session's own evidence.
+
+`frob sys sync-interface` was run once mid-ticket (playbook section 0 step
+5 mentions it is safe to run early to catch drift), which wrote
+design/frob.strata to add the new test class's interface attr. That file
+is outside T-1235's declared scope (Makefile, pyproject.toml, tests/**,
+docs/**), so the edit was reverted -- `frob ticket land` absorbs this same
+sync-interface write automatically before its own merge (playbook section
+0 step 5), so the SELFAUDIT001 finding this leaves in a scoped `frob check`
+run is expected pre-land, not a real gap.
+
+### Changed
+```
+ tickets.md | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_uses_absolute_source_and_data_file` (pytest node id, verified passing when recorded)
+- `tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_declares_multiprocessing_and_sigterm` (pytest node id, verified passing when recorded)
+- `tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_remaps_paths_back_to_source` (pytest node id, verified passing when recorded)
+- `tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_pyproject_declares_concurrency_and_sigterm` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 1 error(s), 7685 warning(s), 696 waived
+- error-findings: SELFAUDIT001@design
 
 <!-- ticket:T-1236 -->
 ```yaml
@@ -1421,7 +1492,7 @@ T-1180's deflation floor stamped three deflated runs clean because source= makes
 ```yaml
 id: T-1237
 title: 'coverage forensics: persist failure list before frob clean destroys it'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-29'
@@ -1434,16 +1505,84 @@ scope:
 - src/frob/clean/**
 - docs/**
 - tests/**
+evidence:
+- tests/test_clean.py::test_safe_tier_clean_preserves_frob_junitxml_forensics
+- tests/test_clean.py::test_makefile_coverage_recipe_never_escalates_clean_tier
 acceptance:
 - text: GIVEN a make coverage run with failures THEN the failing test ids survive
     the recipe (junitxml or equivalent persisted under .frob/ before frob clean -y)
     and the clean tier rules never delete mid-run .coverage.* fragments (investigate
     the observed 34->27 fragment loss)
-  evidence: []
+  evidence:
+  - tests/test_clean.py::test_safe_tier_clean_preserves_frob_junitxml_forensics
+  - tests/test_clean.py::test_makefile_coverage_recipe_never_escalates_clean_tier
 threat: null
 component: null
 ```
 T-0969 diagnosis: the recipe's trailing frob clean -y deletes .pytest_cache (clean/_rules.py:30) destroying --last-failed evidence, and tier-1 .coverage.* rule (rule line 27) may nuke mid-run fragments -- one subset run ended with 27 data files where a single test file generates 34, unresolved.
+
+## Done report
+
+Investigated the recipe's forensics-preservation shape directly: the
+`coverage:` Makefile recipe writes junitxml under `.frob/last-coverage-
+run.xml` / `.frob/last-coverage-rerun.xml` BEFORE either of its two
+`frob clean -y` calls (Makefile:249,259) -- and both calls are bare `-y`
+with no `--all`/`--deep`, i.e. SAFE/tier-1 only. Tier 1's own pattern set
+(src/frob/clean/_rules.py's `_TIER1_PATTERNS`) never includes `.frob`
+itself (that is tier 3, `_TIER3_PATTERNS`, only reachable via `--deep`) --
+so the junitxml files this ticket is about were already structurally safe
+from the recipe's own clean call. No test previously locked this in,
+though: a future edit that escalated either `frob clean` invocation to
+`--all`/`--deep`, or that added `.frob` (or a subpattern of it) to the
+tier-1 allowlist, would silently destroy the forensics with nothing
+catching it before a real incident.
+
+Added two tests:
+- tests/test_clean.py::test_safe_tier_clean_preserves_frob_junitxml_forensics
+  -- direct proof that a SAFE-tier `clean()` call preserves `.frob/*.xml`
+  fixtures while still removing sibling `.coverage.*` fragments (tier 1's
+  own legitimate job).
+- tests/test_clean.py::test_makefile_coverage_recipe_never_escalates_clean_tier
+  -- reads the REAL Makefile `coverage:` recipe text and asserts every
+  `frob clean` invocation inside it omits `--all`/`--deep`, so a future
+  edit that widens the tier is caught here rather than discovered as
+  missing forensics.
+
+On the acceptance's second half (the "34->27 fragment loss, unresolved"
+investigation): traced the recipe's OWN command sequence and found no path
+where a `.coverage.*` fragment is deleted mid-run. The one `rm -f .coverage
+.coverage.*` in the recipe runs at the very TOP, before pytest starts
+(clearing STALE files from a prior separate invocation, not this run's
+fragments); the recipe's own `frob clean -y` calls run only AFTER `coverage
+combine`/`coverage xml` have already consumed every fragment from this
+run. This matches T-1353's already-landed finding (Makefile:150-176, same
+file) that fragment loss traces to xdist workers going "node down" under
+CPU/memory oversubscription (a crash bypasses coverage's own SIGTERM-
+triggered flush) -- not to `frob clean` or any other in-recipe deletion.
+I found no additional code path in src/frob/clean/** that could explain a
+mid-run loss beyond what T-1353 already fixed (COVERAGE_WORKERS capping +
+--timeout-method=signal). Not forcing a second fix for a root cause that
+does not reproduce against the current recipe text; if a future run still
+shows fragment loss with COVERAGE_WORKERS respected and no node-down in
+the log, that would need a fresh ticket with its own repro, not a
+speculative change here.
+
+### Changed
+```
+ tests/test_clean.py                  | 55 ++++++++++++++++++++
+ tests/unit/test_makefile_coverage.py | 99 ++++++++++++++++++++++++++++++++++++
+ tickets.md                           | 86 ++++++++++++++++++++++++++++---
+ 3 files changed, 234 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+- `tests/test_clean.py::test_safe_tier_clean_preserves_frob_junitxml_forensics` (pytest node id, verified passing when recorded)
+- `tests/test_clean.py::test_makefile_coverage_recipe_never_escalates_clean_tier` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 1 error(s), 7664 warning(s), 696 waived
+- error-findings: SELFAUDIT001@design
 
 <!-- ticket:T-1238 -->
 ```yaml
@@ -4530,7 +4669,7 @@ Partial progress is acceptable and expected; report honest before/after and file
 id: T-1354
 title: Investigate xdist coverage-merge dropping worktree_runner branch data (false
   TEST005 0.0%)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-31'
@@ -4564,6 +4703,9 @@ lost during the full-suite xdist coverage merge despite a passing,
 directly-verified dedicated test; either fix the merge, or extend
 TEST011's detection to catch this class of false 0.0% so a burn-down
 ticket does not spend effort re-testing already-covered code.
+
+## Drop reason
+- 2026-08-01: investigated directly (scoped xdist repro of the cited test showed 80 pct, matching the direct-run number, no merge defect reproduced) -- the false 0.0 pct is best explained by T-1353's already-mitigated node-down worker-crash class at full-suite scale, not a distinct code defect in src/frob/gates/_coverage.py's merge/attribution logic; extending TEST011 to catch this class filed as its own follow-up (T-1389), not forced into this investigation ticket
 
 <!-- ticket:T-1355 -->
 ```yaml
@@ -5736,7 +5878,7 @@ written at all.
 id: T-1375
 title: frob-coverage.lock.json was rewritten during a session where no run stamped
   it
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -5746,14 +5888,61 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/_coverage.py
+- tests/test_gates.py
+- docs/modules/gates.md
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: need a regression test for the new audit-log provenance mechanism
+  actor: logan
+  at: '2026-08-01'
+- op: add
+  glob: docs/modules/gates.md
+  reason: AFFECT001 requires updating the public-api doc for the new load_lock_audit_log
+    function and write_coverage_lock's audit-trail behavior
+  actor: logan
+  at: '2026-08-01'
+evidence:
+- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_an_audit_entry
+- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_audit_log_appends_across_calls
+- tests/test_gates.py::TestCoverageLoad::test_load_lock_audit_log_missing_file_returns_empty
 acceptance:
 - text: GIVEN a session WHEN frob-coverage.lock.json changes THEN the write is attributable
     to an explicit stamp_coverage call that succeeded
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_an_audit_entry
+  - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_audit_log_appends_across_calls
+  - tests/test_gates.py::TestCoverageLoad::test_load_lock_audit_log_missing_file_returns_empty
 threat: null
 component: null
 ```
 Observed 2026-08-01. After two make coverage runs that BOTH failed and both logged 'leaving coverage.xml, .frob/coverage-stamp, and frob-coverage.lock.json untouched (T-1363)', the working tree nevertheless showed frob-coverage.lock.json modified with 77 changed floors, several ratcheting sharply UP (src/frob/app/doctor_runner.py 0.0 -> 68.8, check_runner.py 21.6 -> 45.7, _daemon_proxy.py 22.5 -> 41.3). Neither run's log contains a 'stamp_coverage: stamped' or 'write_coverage_lock: locked N module(s)' line, and the only caller of write_coverage_lock is stamp_coverage, which the recipe skips on a nonzero status. So either a write path exists that does not log, or something outside the recipe (a concurrent agent worktree, a land, a plain frob check) can reach the ROOT lock. Either way the file changed without an attributable, logged, successful stamp -- which is exactly the trust property T-1363 was supposed to establish. The observed content was preserved for comparison at scratchpad/lock-unknown-provenance.json; the working copy was reverted rather than committed. NOTE the up-ratchets match the T-1354 false-0.0% symptom, so the data may well be GOOD -- the defect is that its provenance cannot be established, not necessarily its values.
+
+## Done report
+
+Refresh the captured gate-state claim after resyncing this series worktree onto main (T-1370/T-1384/T-1385/T-1386 landed since the original report was written). No code change: write_coverage_lock's provenance audit trail and its tests are unchanged from the original report; only the claim's baseline moved.
+
+### Changed
+```
+ design/frob.strata                   |   4 +
+ docs/modules/gates.md                |  17 ++
+ src/frob/gates/_coverage.py          |  79 ++++++++
+ tests/test_clean.py                  |  56 ++++++
+ tests/test_gates.py                  |  76 +++++++
+ tests/unit/test_makefile_coverage.py |  99 ++++++++++
+ tickets.md                           | 374 ++++++++++++++++++++++++++++++++++-
+ 7 files changed, 697 insertions(+), 8 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_an_audit_entry` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_audit_log_appends_across_calls` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageLoad::test_load_lock_audit_log_missing_file_returns_empty` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 2 error(s), 1114 warning(s), 700 waived
+- error-findings: COV001@src/frob/logging/handler.py, DOC002@src/frob/logging/handler.py
 
 <!-- ticket:T-1376 -->
 ```yaml
@@ -6784,3 +6973,132 @@ T-1377/T-1379/T-1381 residue class end to end (this was observed twice in
 one session: a `--ticket`-scoped close saw zero because these gate
 families are repo-wide, not ticket-scoped, and the residue only surfaced
 on the NEXT unscoped `frob check`).
+
+<!-- ticket:T-1388 -->
+```yaml
+id: T-1388
+title: land's Tier-A pre-fix pass touches out-of-scope _daemon_proxy.py, then self-blocks
+  on OutOfScopeWaiveDeletion
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land*.py
+threat: null
+component: null
+```
+Found while landing T-1237 (and earlier T-1235) in the coverage-integrity
+series worktree: every `frob ticket land <id> --worktree ...` invocation's
+own pre-land Tier-A auto-fix pass ("ticket land: T-1235/T-1237 pre-land
+Tier-A fixes applied 2 fix(es)") rewrites src/frob/app/_daemon_proxy.py
+(re-wrapping two frob:waive reason= comment blocks, ARCH103 at line ~135
+and SEC110 at line ~342) and stubs a CHANGELOG.md "## [0.295.0] -
+unreleased" entry, even though neither file is in the landing ticket's
+declared scope and neither ticket touched src/frob/app/**.
+
+That collateral edit then trips land's OWN OutOfScopeWaiveDeletion guard
+on the very same invocation:
+
+  ERROR: land: T-1237 refused -- worktree has uncommitted frob:waive
+  deletion(s) outside scope [...] and undeclared by the Done report:
+  ['src/frob/app/_daemon_proxy.py:ARCH103', 'src/frob/app/_daemon_proxy.py:SEC110']
+
+i.e. land's own Tier-A fixer creates the exact violation land's own
+scope guard then refuses on -- deterministic, reproduced twice in one
+session (T-1235's land attempt, then T-1237's, both against the same
+_daemon_proxy.py lines). Working around it by `git checkout --
+src/frob/app/_daemon_proxy.py CHANGELOG.md` before every land retry is
+a manual step every future ticket in this repo will hit the same way,
+since the Tier-A fixer re-triggers it every time land runs.
+
+Root cause not fully isolated (would require reading
+src/frob/tickets/_land*.py's Tier-A fixer dispatch, which is out of this
+series' declared scope -- Makefile, src/frob/clean/**, docs/**, tests/**
+only), but the shape strongly suggests either: (a) the Tier-A fmt fixer
+runs unscoped (whole repo) instead of restricted to the landing ticket's
+own touched-file set, or (b) _daemon_proxy.py's frob:waive reason=
+comments sit right at whatever line-length threshold `frob fmt` rewraps,
+so any repo-wide fmt pass touches it regardless of which ticket is
+landing.
+
+Suggested fix direction: scope the Tier-A pre-land auto-fix pass to the
+landing ticket's own scope globs (same set the OutOfScopeWaiveDeletion
+guard itself already checks against), so it structurally cannot produce
+a collateral out-of-scope edit for a DIFFERENT ticket to trip over.
+
+<!-- ticket:T-1389 -->
+```yaml
+id: T-1389
+title: 'TEST011: extend deflation detection to catch per-symbol false-0.0% coverage
+  under xdist worker loss'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_coverage.py
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+threat: null
+component: null
+```
+Investigated directly: reproduced the SAME test (tests/test_ticket_leases.py
+::TestWorktreeSweepCli::test_sweep_cli_prints_verdicts_and_summary) under a
+real xdist run (-n 4, the exact absolute-path subprocess rc T-1235 fixed:
+branch/parallel/relative_files/sigterm/concurrency all matching the real
+make coverage recipe) against the whole tests/test_ticket_leases.py file
+(45 tests, several workers). `coverage report -m` on the combined result
+shows src/frob/app/worktree_runner.py at 80% branch, matching the
+originally-cited direct-run number exactly -- no 0% false-negative
+reproduces at this scale. The merge machinery (combine + the [paths]
+remap) is not dropping this symbol's data in a smaller, controlled xdist
+run.
+
+This narrows the likely cause to a FULL-suite-scale-only effect, not a
+distinct bug in coverage.xml combine/attribution logic itself. The most
+likely explanation is the class T-1353 already root-caused and partially
+fixed in the same investigation window: under the full suite's `-n auto`
+(pre-T-1353) or even the now-capped `COVERAGE_WORKERS=4`, several tests in
+this repo (self-conformance/self-scan tests especially) spawn their own
+coverage-traced subprocess/multiprocessing children, oversubscribing
+CPU/memory and crashing xdist workers ("node down"); a crash bypasses
+`sigterm=true`'s flush and drops that ENTIRE worker's coverage
+contribution, not just its failed test(s). If `test_sweep_cli_prints_
+verdicts_and_summary` happened to land on a worker that later crashed in
+that specific full-suite run, its earlier-recorded coverage would be lost
+this exact way -- consistent with "a false 0.0% only in the full suite,
+never in isolation" and with T-1353's own measured symptom shape
+(severely deflated numbers for symbols near/after a stuck/crashed
+worker's tests).
+
+I cannot conclusively distinguish "this exact symbol got node-downed in
+that one run" from "a still-undiscovered distinct merge defect" without
+re-running the FULL, unscoped `make coverage` under load and inspecting
+which worker crashed and when that specific test executed -- both a
+coordinator-only step (playbook section 6b: a dispatched sub-agent cannot
+run/wait on `make coverage`) and, even if it could, backward-looking
+forensics on a run that already happened and was cleaned up. Per this
+series' guidance ("if the root cause turns out to be an environment
+artifact rather than a defect, say so plainly and drop"), dropping here:
+the evidence available points to an already-partially-mitigated
+environment/load artifact (T-1353's node-down class), not a fresh,
+reproducible defect in the merge code this ticket's scope (src/frob/
+gates/_coverage.py, Makefile) could fix.
+
+The ticket's OWN alternative plan item -- "extend TEST011's detection to
+catch this class of false 0.0%" -- is real, actionable follow-up work
+(a per-symbol deflation heuristic distinct from TEST011's current
+aggregate module_join_fraction check, which stays silent when only a
+handful of symbols are affected but the overall join fraction is fine).
+That is a genuine new detector design, not a small fix-in-place; filing
+it as its own ticket rather than forcing a half-designed version into
+this investigation ticket's close.

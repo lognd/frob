@@ -7339,6 +7339,82 @@ class TestCoverageLoad:
         assert lock is not None
         assert lock["module_line"]["src/frob/app/__init__.py"] == 16.2
 
+    # frob:ticket T-1375
+    def test_write_coverage_lock_records_an_audit_entry(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::write_coverage_lock
+        # frob:tests src/frob/gates/_coverage.py::load_lock_audit_log
+        # T-1375: a real incident found frob-coverage.lock.json modified
+        # with no matching "write_coverage_lock: locked N module(s)" line
+        # in either of two runs' logs -- log output alone was not durable
+        # enough to attribute the write after the fact. Every successful
+        # write_coverage_lock call must also append a durable, on-disk
+        # audit entry naming the SAME source_sha, so a later investigation
+        # can confirm (or fail to confirm) attribution without depending
+        # on which terminal happened to capture the log line.
+        from frob.gates import CoverageData, write_coverage_lock
+        from frob.gates._coverage import load_lock_audit_log
+
+        data = CoverageData(
+            source_sha="attributable-sha",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 55.5},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        assert write_coverage_lock(tmp_path, data).is_ok
+
+        entries = load_lock_audit_log(tmp_path)
+        assert len(entries) == 1
+        assert entries[0]["source_sha"] == "attributable-sha"
+        assert entries[0]["module_count"] == 1
+        assert isinstance(entries[0]["pid"], int)
+        assert "written_at" in entries[0]
+
+    # frob:ticket T-1375
+    def test_write_coverage_lock_audit_log_appends_across_calls(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::write_coverage_lock
+        # frob:tests src/frob/gates/_coverage.py::load_lock_audit_log
+        # T-1375: the audit trail is append-only across the worktree's own
+        # history -- a second successful write adds a second entry rather
+        # than overwriting the first, so a full write history survives for
+        # later investigation, not just the most recent write.
+        from frob.gates import CoverageData, write_coverage_lock
+        from frob.gates._coverage import load_lock_audit_log
+
+        first = CoverageData(
+            source_sha="first-sha",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 10.0},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        second = CoverageData(
+            source_sha="second-sha",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 20.0},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        assert write_coverage_lock(tmp_path, first).is_ok
+        assert write_coverage_lock(tmp_path, second).is_ok
+
+        entries = load_lock_audit_log(tmp_path)
+        assert [e["source_sha"] for e in entries] == ["first-sha", "second-sha"]
+
+    # frob:ticket T-1375
+    def test_load_lock_audit_log_missing_file_returns_empty(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_lock_audit_log
+        # T-1375: no audit file at all (e.g. a lock committed from another
+        # worktree, or written before this ticket's fix existed) reads as
+        # an empty history -- "cannot confirm attribution" -- never a crash.
+        from frob.gates._coverage import load_lock_audit_log
+
+        assert load_lock_audit_log(tmp_path) == ()
+
     # frob:ticket T-1180
     def test_stamp_coverage_refuses_below_deflation_floor(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::stamp_coverage

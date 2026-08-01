@@ -1730,6 +1730,7 @@ the sibling ticket T-1341 -- `suppress001_gate` never edits a source file.
 <!-- frob:describes src/frob/policy/__init__.py::policy_gate -->
 <!-- frob:describes src/frob/gates/invariants.py::load_invariants -->
 <!-- frob:describes src/frob/gates/_coverage.py::load_stamp -->
+<!-- frob:describes src/frob/gates/_coverage.py::load_lock_audit_log -->
 <!-- frob:describes src/frob/gates/_prework.py::load_prework -->
 <!-- frob:describes src/frob/gates/__init__.py::scope_digest -->
 <!-- frob:describes src/frob/gates/_decisions_compliance.py::decisions_gate -->
@@ -1803,6 +1804,22 @@ rather than cached unsoundly.
   nobody reviews had it been committed. `stamp_coverage` always calls this
   with the default (`allow_decrease=False`); a deliberate re-baseline
   needs the explicit override, never a bare `make coverage` run.
+- `write_coverage_lock`'s T-1375 durable attribution trail -- a real
+  incident found `frob-coverage.lock.json` modified with no matching
+  `write_coverage_lock: locked N module(s)` line in either of two
+  `make coverage` runs' logs; log output alone is not durable enough to
+  attribute a write after the fact (it only survives in whatever
+  terminal/session captured it). Every successful `write_coverage_lock`
+  call now also appends one JSON line to the per-worktree, gitignored
+  `.frob/coverage-lock-audit.log` (`written_at`, `pid`, `source_sha`,
+  `module_count`). `load_lock_audit_log(root)` reads that trail back
+  (oldest first, `()` if missing/unreadable/malformed); comparing a
+  committed lock's `source_sha` against the trail's entries answers
+  "was this write attributable to a logged `write_coverage_lock` call in
+  THIS worktree's own history" durably, independent of any one session's
+  scrollback. A write failure appending to the audit log is logged but
+  never fails the lock write itself -- the trail is a diagnostic aid, not
+  a hard requirement of stamping.
 - `make coverage`'s T-1363 fix -- the `coverage:` recipe now writes the
   combined `coverage xml` to a scratch path (`.frob/coverage.partial.xml`)
   first and only promotes it to the real `coverage.xml` (and only calls
