@@ -15788,7 +15788,7 @@ ticket to add the explicit partial-stamp representation.
 id: T-1365
 title: 'Clear main''s two gate errors: PII012 false positive and the TICK003 archive
   backlog'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -15799,6 +15799,13 @@ sprint: null
 scope:
 - tests/unit/test_doctor_runner_t1276.py
 - tickets.md
+- src/frob/app/doctor_runner.py
+scope_changes:
+- op: add
+  glob: src/frob/app/doctor_runner.py
+  reason: 'scope-closure: the waived test file''s frob:tests targets live here'
+  actor: logan
+  at: '2026-08-01'
 acceptance:
 - text: given main, when frob check --only gates runs, then gate:PII and gate:TICK
     report 0 errors
