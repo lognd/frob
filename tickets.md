@@ -4727,7 +4727,7 @@ DO NOT: make tips block or fail a command; add a tip whose advice is unmeasured 
 ```yaml
 id: T-1364
 title: Consider an explicit partial-stamp marker for coverage gates (T-1363 follow-up)
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-07-31'
@@ -4748,6 +4748,8 @@ scope_changes:
   at: '2026-08-01'
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_refuses_downward_ratchet
+- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_allow_decrease_overrides_ratchet
 threat: null
 component: null
 ```
@@ -4821,7 +4823,7 @@ test_main_cli_dispatches, verified passing (1 passed).
 - `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 1 passed (from 1 evidence id(s))
+- tests: 3 passed (from 3 evidence id(s))
 - gates: 0 error(s), 771 warning(s), 693 waived
 - error-findings: none (measured, zero errors)
 
