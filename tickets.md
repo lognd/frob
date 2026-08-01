@@ -6166,3 +6166,47 @@ partial write would rebaseline the very API it just rejected.
 - tests: 3 passed (from 3 evidence id(s))
 - gates: 9 error(s), 1654 warning(s), 698 waived
 - error-findings: AFFECT001@src/frob/app/release_runner.py, AFFECT001@src/frob/release/__init__.py, COV001@src/frob/release/__init__.py, COV005@src/frob/release/__init__.py, E501@/home/logan/projects/frob/src/frob/tickets/_land.py:1231, F401@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:25, F841@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:215, PRE001@tickets/T-1381, SELFAUDIT001@design
+
+<!-- ticket:T-1382 -->
+```yaml
+id: T-1382
+title: 'Decouple frob from the Makefile: make every workflow a first-class cross-platform
+  frob subcommand'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-01'
+priority: high
+parent: null
+tier: epic
+sprint: null
+scope:
+- src/frob/**
+- docs/**
+acceptance:
+- text: GIVEN a repo with no Makefile WHEN every documented frob workflow is run THEN
+    each works via a frob subcommand alone
+  evidence: []
+- text: GIVEN Windows (no make, no POSIX shell) WHEN the coverage workflow runs THEN
+    it works without shell quoting, backslash line continuations, or GNU-make syntax
+  evidence: []
+- text: GIVEN docs and agent guidance WHEN a workflow is described THEN it names the
+    frob subcommand, with make targets documented only as thin optional aliases
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-08-01: frob must be cross-project and cross-platform, so it cannot depend on a Makefile.
+
+Current state measured today: the Makefile is 528 lines and 21 call sites across src/frob/ reference it (src/frob/_cli_parsers/_core.py, testing/_collect_cpp.py, vet/_supplychain.py, vet/_capability_registry.py, natives/_build.py, strata/_native_staleness.py, scaffold/_managed.py, scaffold/project.py and others).
+
+The sharpest example is 'make coverage'. Its recipe is ~30 lines of GNU-make-escaped POSIX shell -- COVERAGE_PROCESS_START, a generated coverage rc, an xdist run, a 'node down' grep with a full serial re-run, coverage combine, a T-1363 status guard, then a stamp. None of that runs on Windows, and tests/unit/test_makefile_coverage.py has to slice the recipe text out of the Makefile with a regex and re-run it under bash just to test it -- which is itself evidence the logic is in the wrong place. It should be 'frob coverage', implemented in Python, with the Makefile target reduced to a one-line alias.
+
+Suggested decomposition (leaves to be filed as children):
+1. frob coverage -- own the whole recipe in Python, including worker-crash detection and the T-1363 never-promote-partial-data guard.
+2. frob build/natives -- replace 'make core' and the native build paths.
+3. Audit the 21 Makefile references; each is either a workflow to promote or a scaffold template to re-point.
+4. Path/shell portability sweep: no bash -c, no backslash continuations, no assumption of a POSIX shell in any code path.
+5. Docs + agent-playbook rewrite so guidance names frob subcommands first; keep make targets as documented optional aliases for muscle memory.
+
+Related: the user's standing preference is still to SUGGEST 'make <target>' where one exists, so this is about removing the DEPENDENCY, not deleting the Makefile.
