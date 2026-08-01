@@ -1492,7 +1492,7 @@ T-1180's deflation floor stamped three deflated runs clean because source= makes
 ```yaml
 id: T-1237
 title: 'coverage forensics: persist failure list before frob clean destroys it'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-29'
@@ -1583,7 +1583,6 @@ speculative change here.
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 1 error(s), 7664 warning(s), 696 waived
 - error-findings: SELFAUDIT001@design
-
 <!-- ticket:T-1238 -->
 ```yaml
 id: T-1238
