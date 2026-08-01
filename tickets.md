@@ -4658,7 +4658,7 @@ Disclosed cuts:
 ```yaml
 id: T-1356
 title: Scope-lease deadlock between two tickets sharing one worktree
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-31'
@@ -4792,7 +4792,6 @@ Disclosed cuts:
 - tests: 5 passed (from 5 evidence id(s))
 - gates: 4 error(s), 606 warning(s), 719 waived
 - error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w1-land/src/frob/tickets/_land.py:1231, F401@/home/logan/projects/frob/.claude/worktrees/w1-land/tests/unit/test_scope_lease_deadlock.py:25, F841@/home/logan/projects/frob/.claude/worktrees/w1-land/tests/unit/test_scope_lease_deadlock.py:216, SELFAUDIT001@design
-
 <!-- ticket:T-1358 -->
 ```yaml
 id: T-1358
