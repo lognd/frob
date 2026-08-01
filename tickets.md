@@ -5905,6 +5905,7 @@ scope:
 evidence:
 - tests/test_app_daemon_proxy.py::TestDaemonOptIn::test_unset_env_disables_the_daemon
 - tests/test_app_daemon_proxy.py::TestDaemonOptIn::test_frob_daemon_1_enables_the_daemon
+- tests/test_app_daemon_proxy.py::TestDaemonOptIn::test_no_daemon_still_wins_over_opt_in
 acceptance:
 - text: GIVEN no daemon environment variable is set WHEN a proxying frob command runs
     THEN it computes in-process and never spawns a daemon
