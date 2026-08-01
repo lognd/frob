@@ -5495,7 +5495,7 @@ Not fixed here, filed as T-1374: the fourth failure,
 id: T-1374
 title: 'REG008: CHK-SUBSYS-GATES-ACCOUNTING repointed to TEST013 without a frob:enforces
   edge'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -5506,6 +5506,14 @@ sprint: null
 scope:
 - src/frob/gates/__init__.py
 - docs/design/registry/check-coverage.yaml
+- tests/test_registry_exhaustiveness.py
+scope_changes:
+- op: add
+  glob: tests/test_registry_exhaustiveness.py
+  reason: the REG008 regression test is this ticket's only evidence and must be in
+    scope to satisfy covers_scope
+  actor: logan
+  at: '2026-08-01'
 evidence:
 - tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
 acceptance:
