@@ -8074,3 +8074,35 @@ Two defensible fixes, not mutually exclusive:
 Related: T-1398 (the TEST005 per-symbol join defect) means an unknown share of those 116 findings are themselves artifacts. Both must be fixed. A correct number that can still be falsely certified is no better than a wrong one.
 
 Immediate remediation owed regardless of the fix chosen: T-1276 is done-on-main against an unmet criterion and cannot be requeued (only in-progress tickets can). Its honest remainder -- roughly 50 unsampled app runner entrypoints -- needs a successor ticket so the work is not lost to the false close.
+
+<!-- ticket:T-1400 -->
+```yaml
+id: T-1400
+title: 'TEST005 burn-down: src/frob/app remainder after T-1276 false-close (116 findings,
+  ~50 unsampled runners)'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-01'
+priority: medium
+blocked_by:
+- T-1398
+- T-1399
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/**
+acceptance:
+- text: GIVEN the TEST005 join is fixed per T-1398 WHEN the app package is re-measured
+    THEN every remaining finding is triaged as either a genuine gap (closed with a
+    behavioral test) or an artifact (recorded, no test written)
+  evidence: []
+threat: null
+component: null
+```
+Successor to T-1276, which reached state=done on main against an unmet criterion (see T-1399). The work itself is real and unfinished: 116 TEST005 findings remain under src/frob/app/ and roughly 50 runner entrypoints were never sampled.
+
+Deliberately blocked on T-1398 and T-1399. Dispatching this before the join defect is fixed would repeat the failure mode already observed three times today -- agents finding well-tested code reported at 0.0 percent and being pushed toward filler tests. Do not start it until the measured count is trustworthy.
+
+Landed and verified by T-1276 before the false close, so this ticket does NOT need to redo them: _daemon_proxy lease paths, check_runner colorized formatter, and AppConfig.from_external/from_args.
