@@ -113,7 +113,7 @@ _elaborate_node` the same way `host_attrs` is:
 
 `trusts` is the ONE exception that also touches `KernelModel.flows`: a
 domain trust is a cross-realm RELATIONSHIP, not a single node's fact, so
-`_elaborate.py::_elaborate_module` additionally calls `_krb.py::
+`_elaborate.py::elaborate` additionally calls `_krb.py::
 krb_trust_flows(nodes)` after nodes are elaborated, which synthesizes one
 `Flow(id="krb-trust:<src>:<dst>", attrs=("krb_trust",))` per declared
 trust -- TWO flows (both directions) when `direction == "two-way"`, so a
@@ -311,7 +311,7 @@ review-round REJECT fix.
 
 - `docs/strata/host.md` -- `std.host`'s `HostManifest`/`runs_as`, the
   foundation this vocabulary's SPN binding builds on.
-- `docs/strata/surface.md#node-grammar-implemented-t-0132-closes-the-codemay-gap` -- the node grammar this
+- `docs/strata/surface.md#node-grammar-implemented-t-0132-closes-the-codemay-gap-t-0136-adds-on-deploy-t-0154-adds-carries-t-0172-adds-managed-t-0174-adds-waive` -- the node grammar this
   vocabulary extends.
 - `docs/strata/kernel.md#data-models` -- `Node`/`Flow`, the two kernel
   primitives every std.krb clause desugars into.

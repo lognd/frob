@@ -66,8 +66,10 @@ scripts/frob-telemetry-hook --tool pytest --duration-ms 4200 \
   --input "pytest -q tests/test_stats.py" --output "$(pytest -q 2>&1)"
 ```
 
-This appends the same `kind="tool"` shape by hand, so `frob stats
---agentic` sees shell-driven work the same way it sees harness-driven work.
+This appends the same `kind="tool"` shape by hand, so `frob stats` run with
+`FROB_STATS_AGENTIC=1` set (the agentic report is an env-var trigger, not
+yet a `--agentic` CLI flag -- see `frob.app.stats_runner._AGENTIC_ENV`)
+sees shell-driven work the same way it sees harness-driven work.
 
 ## Reading the report
 

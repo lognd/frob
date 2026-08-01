@@ -17,9 +17,10 @@ were not reachable from `.strata` SOURCE TEXT (citing a since-corrected
 claim in `design/frob.strata`'s own header) and invented a `frob.toml`
 mapping table instead. That belief was WRONG: T-0132 landed the
 STRING-quoted `code STRING+` / `may STRING` surface grammar in
-`strata-core/src/parse.rs::parse_node` well before this ticket's
-merge-base (`docs/strata/surface.md#node-grammar-implemented-t-0132-
-closes-the-code-may-gap-t-0136-adds-on-deploy`), and `_elaborate.py::
+`strata-core/src/parse/grammar_node.rs::parse_node` well before this ticket's
+merge-base
+(`docs/strata/surface.md#node-grammar-implemented-t-0132-closes-the-codemay-gap-t-0136-adds-on-deploy-t-0154-adds-carries-t-0172-adds-managed-t-0174-adds-waive`),
+and `_elaborate.py::
 _elaborate_node` has mapped both straight onto `Node.attrs`'s
 `code=<glob>` convention and `Node.may` since then. The corrected
 mechanism is exactly the one `_code_binding.py`/`_effects.py` were built

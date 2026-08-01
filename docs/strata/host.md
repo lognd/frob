@@ -793,7 +793,7 @@ channel. T-1061 closes it on both fronts:
   same as `_print_contention_report`); a SYS205 finding makes the whole
   audit exit nonzero, same as any other family.
 - **`frob check`'s SELFAUDIT001 gate**
-  (`src/frob/gates/__init__.py::_selfaudit_violations`) now folds SYS205
+  (`src/frob/gates/_sys.py::_selfaudit_violations`) now folds SYS205
   findings into the SAME wrapped `Violation` stream SYS100-103/SYS2xx/
   REL2xx already use -- suppressible the ordinary GATES-layer way too
   (`frob:waive SELFAUDIT001:<node> reason="..."`), same as any other
@@ -840,7 +840,7 @@ in, since `.resources` is the only field either check reads off a
   `ResourceContentionViolation`, `ResourceContentionReport`, SYS200-203.
 - `tests/unit/strata/test_contention.py` -- the SYS200-203 firing/clean
   litmus pairs (T-0699).
-- `docs/strata/surface.md#node-grammar-implemented-t-0132-closes-the-codemay-gap` -- the node/store grammar this
+- `docs/strata/surface.md#node-grammar-implemented-t-0132-closes-the-codemay-gap-t-0136-adds-on-deploy-t-0154-adds-carries-t-0172-adds-managed-t-0174-adds-waive` -- the node/store grammar this
   vocabulary extends.
 - `docs/strata/surface.md#key-construct-semantics` -- "a store is a node
   too", the precedent every store-side clause here follows.

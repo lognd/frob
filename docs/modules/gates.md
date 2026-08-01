@@ -488,8 +488,8 @@ package selection only; unlike PROTO001-004 it consumes neither
 transitive UNION sets with no per-exit ordering, which this check
 genuinely needs) -- it is a direct intraprocedural walk over each
 acquiring function's own `NormalizedFunction` body plus the T-0809
-resource-tracking DSL's own edges (`docs/modules/graph.md#resource-
-tracking-dsl-t-0809`).
+resource-tracking DSL's own edges
+(`docs/modules/graph.md#resource-tracking-dsl-t-0809`).
 
 Two independent sub-checks, both reported as `PROTO005`:
 
@@ -706,7 +706,7 @@ the preflight warned-and-skipped forever after, a detection check silently
 disabling itself. An unresolvable `base_ref` (or an ambiguous match AT that
 revision specifically) still degrades to `None`/skip, unchanged -- that
 remains a git-side "cannot tell" condition, not a registry-structure
-failure. `frob.tickets._done_transition_guard` runs this check
+failure. `frob.tickets._evidence._done_transition_guard` runs this check
 UNCONDITIONALLY on every `DONE` transition (both direct `frob ticket close`
 and `frob ticket land`'s finalize-and-close step, which calls the same
 `transition(..., DONE)` internally -- no separate land-time wiring needed,
@@ -2962,7 +2962,7 @@ property must be established by a real test, not an example". Both
 shapes existed only as PROSE two known incidents ever caught: T-0611 (a
 `TypeScriptAdapter` landed inside the deliberately tree_sitter-free
 `src/frob/arch/_normalized.py`, caught by a human reviewer reading the
-diff) and T-0682 (`frob.tickets._land._newer`'s qualified richness
+diff) and T-0682 (`frob.tickets._land_ledger_merge._newer`'s qualified richness
 ordering got fixed wrong in the opposite direction from the bug it was
 fixing, twice, because the property lived only in a reviewer's head).
 T-0757 extends the SAME `frob:invariant` directive with two OPTIONAL
@@ -2992,7 +2992,7 @@ requires a `frob:tests ... kind="property"` edge (T-0757 widens
 `frob.graph.dsl._TESTS_KINDS` to include `"property"`, joining `"unit"`/
 `"integration"`/`"e2e"`) reaching that same anchor, from either
 direction -- mirroring INV005's own either-side `TESTS`-edge walk
-(`frob.gates._evidence_binds_to_symrefs`). A bound test declared at any
+(`frob.gates._inv._evidence_binds_to_symrefs`). A bound test declared at any
 OTHER kind (or no bound test at all) does not satisfy it: the point is
 that the evidence must be declared as exercising the property SPACE (a
 comparator's ordering, a round-trip, a monotonicity claim), not one

@@ -14,7 +14,7 @@ corrects two things the ticket's "known debt" summary gets stale on:
   `frob-core/src/lib.rs::apted_similarity` (line 355) implements true
   postorder Zhang-Shasha tree edit distance over parent-index arrays
   (`build_postorder`, `keyroots`, `zhang_shasha_distance`). It is wired in
-  `_pipeline.py::_apted_similarity_for_pair` (line 531) via
+  `_pipeline/_callgraph.py::_apted_similarity_for_pair` via
   `frob.lang.symbol_tree` + `frob.lang._common.flatten_tree` for real
   subtree structure -- this is the *primary* R4 verification path.
   `frob_core::tree_edit_similarity` (statement-sequence Levenshtein, line
@@ -484,7 +484,7 @@ stage consuming existing `ClonePair.alignment` + `frob.lang.symbol_tree`.
 **Inputs already available:**
 - `frob.lang.symbol_tree(path, span)` + `_common.flatten_tree` -- the
   same `(labels, parents)` node-array pair `apted_similarity` already
-  consumes (`_pipeline.py::_apted_similarity_for_pair`, confirmed in
+  consumes (`_pipeline/_callgraph.py::_apted_similarity_for_pair`, confirmed in
   section 0).
 - `ClonePair.alignment: tuple[tuple[int,int],...]` -- matched line/
   statement pairs, already computed by the verifying rung.

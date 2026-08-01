@@ -145,7 +145,9 @@ are two independent PyO3 crates with no unifying workspace `Cargo.toml`
 no selection-side benefit). `run_selected` therefore allows several
 `[[test.runner]]` entries to share `language = "rust"`, one per crate, each
 scoped by its own `cwd`. Selected rust symrefs already carry their
-root-relative file path (`frob-core/src/dup_kernel.rs::tests.foo`,
+root-relative file path
+<!-- frob:waive DOC006 reason="illustrative example paths/test names (tests.foo, tests.bar are placeholders), not real pointers -- frob-core has no dup_kernel.rs and strata-core/src/parse.rs was later split into strata-core/src/parse/ (T-1099)" -->
+(`frob-core/src/dup_kernel.rs::tests.foo`,
 `strata-core/src/parse.rs::tests.bar` -- `collect_rust_tests` discovers both
 crates generically), so routing an item to the right runner is a prefix
 match: an item is owned by the one entry whose `cwd` prefixes its file path
@@ -231,8 +233,8 @@ only) consumer: it reads this detail right after seeing
 `collect_python_tests(...).is_err` so a total pytest-collection failure
 reports as ONE honest finding instead of degrading into a flood of
 per-evidence COV003s (the 2026-07-28 incident: a corrupted `.venv/bin/
-pytest` shim -- see `docs/guides/install.md#venv-shim-shebang-scan-
-t-1161` -- broke `uv run pytest` outright, and 6219 archived evidence ids
+pytest` shim -- see `docs/guides/install.md#venv-shim-shebang-scan-t-1161`
+-- broke `uv run pytest` outright, and 6219 archived evidence ids
 each independently "failed to resolve" with no hint at the shared root
 cause).
 

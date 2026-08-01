@@ -51,9 +51,7 @@ quantity    := number unit | number
 Comments are `//`; docs attach with `///` and are drift-checked once
 `.strata` joins `frob.lang` (T-0077).
 
-### `node` grammar (implemented; T-0132 closes the `code=`/`may` gap,
-T-0136 adds `on deploy`, T-0154 adds `carries`, T-0172 adds `managed`,
-T-0174 adds `waive`)
+### `node` grammar (implemented; T-0132 closes the `code=`/`may` gap, T-0136 adds `on deploy`, T-0154 adds `carries`, T-0172 adds `managed`, T-0174 adds `waive`)
 
 The construct actually implemented by `strata-core/src/parse/grammar_node.rs::parse_node`
 today is spelled `node`, not the future `component` shown in the sketch
@@ -318,7 +316,7 @@ machinery that already existed before this ticket.
 **Surface grammar implemented (T-0136).** The `.strata` grammar's `secret X
 { issued_by Y; audience { ... }; lifetime T; revoke T' }` syntax (see the
 "`secret` grammar (implemented)" section above) is now wired end to end:
-`strata-core/src/parse/grammar_node.rs::parse_secret` -> `_ast.py::SecretDecl` ->
+`strata-core/src/parse/grammar_node.rs::parse_secret` -> `_ast.py::_SecretDecl` ->
 `_elaborate.py::_elaborate_secrets` -> this module's `elaborate_secret`,
 unchanged. `std.secrets` is no longer a Python-API-only vocabulary.
 

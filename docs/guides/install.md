@@ -482,8 +482,8 @@ hand-dropped it. `frob ticket fail` itself now requeues automatically
 (T-1131, see `docs/modules/tickets.md#public-api`'s `record_failure`/
 `_fail` note) -- this scan is the safety net for every OTHER way a ticket
 can end up stuck this way (a lease-stamp ledger sync, a crashed agent that
-never ran `fail` at all, `docs/modules/tickets.md#frob-ticket-reconcile-
-t-0476`'s own "stale hold" anomaly class).
+never ran `fail` at all, `docs/modules/tickets.md#frob-ticket-reconcile-t-0476`'s
+own "stale hold" anomaly class).
 
 Reuses `frob.tickets._reconcile.reconcile(root, apply=False)` -- the SAME
 dry-run detection `frob ticket reconcile`/`frob ticket requeue <id>`
@@ -501,16 +501,16 @@ frob doctor
 
 `frob doctor` never requeues anything itself -- it only reports; the fix
 is `frob ticket requeue <id>` (one ticket) or `frob ticket reconcile
---apply` (every stale hold at once, see `docs/modules/tickets.md#frob-
-ticket-reconcile-t-0476` for the full reconcile design).
+--apply` (every stale hold at once, see
+`docs/modules/tickets.md#frob-ticket-reconcile-t-0476` for the full reconcile design).
 
 ## Scaffold managed-block conformance (T-0736)
 
 <!-- frob:describes src/frob/scaffold/_managed.py::scaffold_conformance_status -->
 
 `frob doctor` also reports whether the CURRENT repo is missing or behind
-on frob's managed boilerplate blocks (`docs/commands/scaffold.md#managed-
-blocks-t-0736`): the Makefile `core:` shim, standard `.gitignore`
+on frob's managed boilerplate blocks
+(`docs/commands/scaffold.md#managed-blocks-t-0736`): the Makefile `core:` shim, standard `.gitignore`
 entries, and the T-0431/T-0577 worktree-lease git hooks. This is opt-in
 on `frob.toml` existing under the repo root -- a bare directory (a
 `tmp_path` in a test, a repo that has never adopted frob at all) has

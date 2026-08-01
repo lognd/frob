@@ -1,5 +1,6 @@
 # frob refactor: transactional move/rename/split (T-1135 design)
 
+<!-- frob:waive DOC006 reason="design proposal (T-1135) for a not-yet-built CLI verb -- every `frob refactor` mention in this file names the proposed future command, not a shipped subcommand" -->
 One sentence: a new `frob refactor` verb that moves/renames/splits a Python
 symbol or module and rewrites every frob-owned reference and every prose
 mention atomically, refusing and rolling back rather than leaving a
@@ -28,6 +29,7 @@ drive concretely:
   edge whose target textually names a `path::qualname` that a move just
   invalidated.
 
+<!-- frob:waive DOC006 reason="design proposal (T-1135) -- names the not-yet-built future verb" -->
 `frob refactor` closes this by making the move ITSELF the unit of work:
 one command, one transaction, one disclosed report -- never a chain of
 manual greps.
@@ -42,7 +44,7 @@ parallel graph/parser/edge model.
    `RawComment`, `ParsedFile`, `SymbolKind`). Already used by every gate
    and by `frob.graph` to get symbol boundaries and comment text. The
    refactor verb's Python-first scope means it drives this the same way
-   `frob.graph.build` does today: parse, get symbol spans, get comment
+   `frob.graph.build_graph` does today: parse, get symbol spans, get comment
    text -- but Python only for v1 (see "Language boundary" below).
 2. **`frob.graph`** -- the indexed symbol+edge graph.
    - `frob.graph.dsl` (`_VERB_TABLE`, `_LINE_RE`, `_ATTR_RE`) is the
@@ -106,11 +108,14 @@ parallel graph/parser/edge model.
    import x` call sites never need to change); `frob:*` directives
    travel with the moved code; DRIFT002/AFFECT001 doc/test references
    to the old module path get updated; land incrementally, verified by
-   the full test suite after each chunk. `frob refactor split` is this
+   the full test suite after each chunk.
+<!-- frob:waive DOC006 reason="design proposal (T-1135) -- names the not-yet-built future verb" -->
+   `frob refactor split` is this
    exact manual playbook made mechanical and atomic, plus the
    directive/registry/evidence carrying this design adds on top.
 7. **No existing rename/move verb.** `frob.mutate` is mutation testing
    (unrelated name collision, not to be confused with this work).
+<!-- frob:waive DOC006 reason="design proposal (T-1135) -- names the not-yet-built future verb; docs/commands/refactor.md is explicitly noted as not yet added" -->
    `frob refactor` is new CLI surface (`docs/commands/refactor.md` to
    be added by child 1), following the existing `docs/commands/*.md`
    per-command doc convention (see `check.md`, `exports.md`, etc.).
@@ -323,9 +328,11 @@ as a single move/rename does.
   design pass -- child 3's own plan should open by locating it exactly
   (`src/frob/gates/_pii_structural/` was the closest hit found) before
   writing the repoint logic.
+<!-- frob:waive DOC006 reason="design proposal (T-1135) -- names the not-yet-built future verb" -->
 - Whether `frob refactor`'s scratch-transaction commit should be a
   distinct git commit the caller keeps (visible history of "the
   refactor's own WIP") or squashed away once verified -- affects how
   child 1's rollback recipe interacts with the playbook's own "one
+<!-- frob:waive DOC006 reason="design proposal (T-1135) -- names the not-yet-built future verb" -->
   clean commit per ticket" convention when `frob refactor` itself is run
   BY an agent mid-ticket rather than by a human directly.

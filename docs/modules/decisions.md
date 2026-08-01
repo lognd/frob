@@ -35,7 +35,7 @@ superseded_by: null       # AD-### when status is superseded
 <!-- frob:describes src/frob/gates/decisions.py::Decision -->
 <!-- frob:describes src/frob/gates/decisions.py::DecisionError -->
 
-- `DecisionStatus` -- the lifecycle state of an ADR (`proposed` |
+- `_DecisionStatus` -- the lifecycle state of an ADR (`proposed` |
   `accepted` | `superseded` | `deprecated`); only `accepted` carries the
   DEC002 anchoring obligation.
 - `Decision` -- one architecture decision record parsed from a

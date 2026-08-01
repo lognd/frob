@@ -121,6 +121,7 @@ opinion about. The equivalent of today's section 10b recipe becomes:
    shows only YOUR ticket's directory (plus your draft's, if any) --
    this is what git already gives you for free from disjoint paths, with
    zero bespoke code.
+<!-- frob:waive DOC006 reason="design proposal (T-1136, status: design only, no migration yet) -- tickets/T-XXXX/done-report.md is the proposed future file-per-ticket layout, not a file that exists under today's monofile ledger" -->
 2. Write the Done report: `frob ticket done-report T-XXXX` writes
    `tickets/T-XXXX/done-report.md` -- one file, one ticket, one writer.
    No other ticket's file is touched, so there is no sibling-preservation
@@ -279,7 +280,9 @@ whose blame is muddied by every OTHER ticket's concurrent edits sharing
 the same lines' surrounding context), `git log --follow --format=... --
 tickets/T-0042/ticket.md` gives a clean per-ticket history: queued ->
 planned -> in-progress -> done, each transition its own commit, with an
-accurate timestamp and author. A `frob ticket stats`/flow-mining command
+accurate timestamp and author.
+<!-- frob:waive DOC006 reason="design proposal (T-1136, status: design only) -- frob ticket stats is a proposed future flow-mining command over the proposed file-per-ticket layout; neither exists under today's monofile ledger" -->
+A `frob ticket stats`/flow-mining command
 becomes `git log` across `tickets/*/ticket.md` grouped by state-transition
 diff hunks (frontmatter `state:` line changed from X to Y) -- cycle time,
 throughput, WIP-by-state, all derivable from git history alone, no
@@ -300,6 +303,7 @@ ordinary text conflict to git, but are actually two INDEPENDENT edits
 that should both survive). `splice_ledger`'s whole job is being a
 smarter, ticket-aware substitute for git's own merge algorithm.
 
+<!-- frob:waive DOC006 reason="design proposal (T-1136, status: design only) -- these are example paths in the proposed future file-per-ticket layout, not files that exist under today's monofile ledger" -->
 Under ledger v2, two branches editing DIFFERENT tickets touch DIFFERENT
 files (`tickets/T-0042/ticket.md` vs `tickets/T-0099/ticket.md`) --
 git's own merge has ZERO conflict to resolve; this is the single most
@@ -310,6 +314,7 @@ digest guard, no splice function. The custom merge driver is retired
 replacement registered) because there is no longer a monofile path for
 it to attach to.
 
+<!-- frob:waive DOC006 reason="design proposal (T-1136, status: design only) -- example path in the proposed future file-per-ticket layout, not a file that exists under today's monofile ledger" -->
 The only genuine same-ticket conflict left (two branches BOTH editing
 `tickets/T-0042/ticket.md` -- e.g. two agents racing a scope change on
 the same ticket) is now an ORDINARY git conflict on one small file,
@@ -389,6 +394,7 @@ must deliver; it does not implement any of it.
    This makes the cutover a two-commit, `git revert`-able sequence
    rather than one irreversible rewrite.
 3. **Golden round-trip test**: migrate a fixture ledger (a checked-in
+<!-- frob:waive DOC006 reason="design proposal (T-1136, status: design only, no migration yet) -- this fixture does not exist yet, this section describes what a future migration ticket must add" -->
    `tests/fixtures/tickets/golden-monofile-ledger.md` covering: a
    done ticket with a Done report, a queued ticket with blocked_by, a
    ticket with attachments, an archived ticket, a draft-id ticket) to v2,

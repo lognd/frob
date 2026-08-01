@@ -81,8 +81,7 @@ set:
 - **DEPLOY003** -- the manifest declares something no script mutation
   implements (an incomplete install or uninstall).
 
-Full design narrative: `docs/strata/host.md#deploy002deploy003-
-conformance`.
+Full design narrative: `docs/strata/host.md#deploy002deploy003-conformance`.
 
 ## `frob deploy audit --vm`: the VM snapshot-diff harness
 
@@ -227,8 +226,8 @@ the graceful-degrade gate.
 
 - Builds on `HostManifest`/`host_manifest_for` (T-0255,
   `docs/strata/host.md#hostmanifest`) and coexists with the HOST001/
-  HOST002 isolation checks (T-0256, `docs/strata/host.md#movement-
-  impossibility-proofs`) -- neither is redefined here.
+  HOST002 isolation checks (T-0256,
+  `docs/strata/host.md#movement-impossibility-proofs`) -- neither is redefined here.
 - Linux/systemd is the primary target; Windows generation also shipped
   (T-0264, `src/frob/deploy/_generate_windows.py`).
 - OS users do not yet join the trust lattice through any dedicated

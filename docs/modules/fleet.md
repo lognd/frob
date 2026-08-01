@@ -54,6 +54,7 @@ severity-bucketed violation count parsed from one repo's `frob check
 
 ## Repo status
 
+<!-- frob:waive DOC006 reason="doable_count here names the real, current, public RepoStatus.doable_count pydantic field (src/frob/fleet/__init__.py) -- the bare-identifier resolver only tracks top-level defs/classes, not model fields, so it cannot see this one and false-suggests the unrelated private _doable_count() helper" -->
 `RepoStatus` (`name`, `path`, `branch`, `dirty`, `gates`, `doable_count`,
 `error`) is one repo's full collected row -- see Collect below.
 

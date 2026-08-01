@@ -692,8 +692,8 @@ proceeding -- do not commit through it.
 
 `tickets.md` is a shared, append-mostly ledger; concurrent worktrees can
 produce a merge conflict on it. Register the `frob ticket merge-driver`
-git merge driver once per clone (`docs/modules/tickets.md#git-merge-
-driver`) and any `git merge`/`pull`/`rebase` touching `tickets.md` auto-
+git merge driver once per clone (`docs/modules/tickets.md#git-merge-driver`)
+and any `git merge`/`pull`/`rebase` touching `tickets.md` auto-
 splices via `splice_ledger` instead of conflicting -- do this before
 touching a worktree, not after hitting the first conflict.
 

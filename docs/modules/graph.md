@@ -9,6 +9,7 @@ for Python, TypeScript, Rust, C, and C++.
 
 ## Symbol references
 
+<!-- frob:waive DOC006 reason="illustrative example of the path::Qualified.Name form, not a real pointer -- GraphStore.load is a made-up placeholder, not a claim that this file/symbol exists" -->
 Canonical form everywhere: `path::Qualified.Name`, e.g.
 `src/frob/graph/store.py::GraphStore.load`. Paths are repo-root-relative,
 POSIX separators. A bare `path` refers to the whole file.

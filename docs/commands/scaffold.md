@@ -119,8 +119,8 @@ Boilerplate that used to get fixed one repo at a time (the Makefile
 worktree-lease git hooks) is now defined ONCE, in
 `src/frob/scaffold/_managed.py`, and drift-checked/installed everywhere
 else -- the same "regenerate fresh, compare byte-identical" posture the
-deploy script<->model drift-lock (`docs/strata/host.md#the-deploy-
-generator`) already uses, applied to scaffold boilerplate instead of
+deploy script<->model drift-lock (`docs/strata/host.md#the-deploy-generator`)
+already uses, applied to scaffold boilerplate instead of
 generated deploy scripts.
 
 <!-- frob:describes src/frob/scaffold/_managed.py::apply_managed_blocks -->

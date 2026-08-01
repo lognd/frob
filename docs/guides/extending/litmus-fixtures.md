@@ -6,8 +6,9 @@
 
 A litmus fixture is a real `.strata` model proving a catalog family's
 rules actually fire on real source, not just in a hand-built
-`KernelModel` unit test (`docs/strata/threat.md#litmus-coverage-every-
-catalog-entry-fires-from-real-source-t-0145`). Two directories, two
+`KernelModel` unit test
+(`docs/strata/threat.md#litmus-coverage-every-catalog-entry-fires-from-real-source-t-0145`).
+Two directories, two
 different jobs:
 
 - `tests/unit/strata/litmus/*.strata` -- one VULN/HARDENED PAIR per
@@ -84,5 +85,5 @@ trip through `test_litmus_pii.py`, the same T-0145 discipline
 
 ## See also
 
-- `docs/strata/threat.md#litmus-coverage-every-catalog-entry-fires-from-
-  real-source-t-0145` -- the full litmus coverage design rationale.
+- `docs/strata/threat.md#litmus-coverage-every-catalog-entry-fires-from-real-source-t-0145`
+  -- the full litmus coverage design rationale.

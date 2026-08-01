@@ -724,7 +724,7 @@ human noticed the stray line and hand-committed it (the recurring
 had to be done manually).
 
 `frob.tickets._leases.commit_start_transition(root, ticket_id)` closes this
-the same way `frob.tickets._land._commit_finalize_writes` already owns
+the same way `frob.tickets._land_finalize._commit_finalize_writes` already owns
 land's own working-tree commits: called from `ticket_runner._start`
 immediately after `transition(root, ticket_id, IN_PROGRESS)` succeeds, it
 
@@ -827,8 +827,9 @@ worktrees can be cut from a stale base -- the dispatch harness's
 `EnterWorktree` tool defaults to branching from `origin/<default-branch>`
 rather than local `HEAD`, and this repo's `origin/main` regularly lags
 local `main` by dozens to hundreds of commits across a session. The
-playbook's warm-up step (`docs/guides/agent-playbook.md#1-worktree-warm-
-up`) is the manual fix; this is the mechanical detector that catches it at
+playbook's warm-up step
+(`docs/guides/agent-playbook.md#1-worktree-warm-up-do-this-first-every-time`)
+is the manual fix; this is the mechanical detector that catches it at
 `frob ticket start` time instead of relying on an agent to remember.
 
 `frob.tickets._leases.warn_if_worktree_stale(root, ticket_id, main_ref=
@@ -1020,6 +1021,7 @@ to touch the SAME three files no matter what scope was declared at filing
 time: the dispatch table (`src/frob/__main__.py`), the CLI flags it reads
 (`src/frob/app/config.py`), and the runner that implements it
 (`src/frob/app/ticket_runner/**`, a package since an earlier split of the
+<!-- frob:waive DOC006 reason="deliberately names the pre-split module as history -- explains WHY it is now a package; the file legitimately no longer exists under this name" -->
 original `src/frob/app/ticket_runner.py` module; T-1163 fixed
 `CLI_WIRING_FILES` to match after it had gone stale post-split) --
 `frob.tickets._models.CLI_WIRING_FILES`. T-0323 (the `merge-driver`
