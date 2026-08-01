@@ -1121,7 +1121,9 @@ def _branch_changed_files(
 
 
 # frob:ticket T-1355
+# frob:ticket T-1370
 def _find_leaked_tickets(
+    worktree: Path,
     landing_id: str,
     worktree_tickets: dict[str, Ticket],
     root_tickets: dict[str, Ticket],
@@ -1135,8 +1137,18 @@ def _find_leaked_tickets(
     landed done through its own separate `frob ticket land` call is
     terminal even if this worktree's pre-pull copy still shows it
     in-progress) and whose declared `scope` matches at least one path in
-    `changed_paths`."""
+    `changed_paths`.
+
+    T-1370: a sibling ticket LEASED TO THE SAME WORKTREE as `landing_id`
+    (`_scope._same_worktree_lease`, the exact T-1356 precedent this
+    mirrors) is never reported as leaked, no matter its state -- two
+    tickets sharing one series worktree is one agent landing its own
+    tickets back to back, not a real cross-agent leak. Without this, two
+    open siblings in the same worktree whose scopes overlap mutually
+    deadlock: landing either one refuses because the other is still
+    open, and there is no way to land either first."""
     from frob.tickets._models import TicketState, scope_matches
+    from frob.tickets._scope import _same_worktree_lease
 
     leaked: dict[str, list[str]] = {}
     for other_id, other in worktree_tickets.items():
@@ -1148,6 +1160,16 @@ def _find_leaked_tickets(
         if effective_state in (TicketState.DONE, TicketState.DROPPED):
             continue
         if not other.scope:
+            continue
+        if _same_worktree_lease(worktree, landing_id, other_id):
+            _log.info(
+                "land: %s cross-ticket leakage check exempting %s "
+                "(T-1370: both tickets are leased to the same worktree "
+                "-- one agent landing its own tickets back to back, not "
+                "a real cross-agent leak)",
+                landing_id,
+                other_id,
+            )
             continue
         hits = [
             path
@@ -1224,7 +1246,9 @@ def _check_cross_ticket_leakage(
     worktree_tickets, root_tickets = _load_leakage_ledgers(root, worktree, ticket.id)
     if worktree_tickets is None:
         return Ok(None)
-    leaked = _find_leaked_tickets(ticket.id, worktree_tickets, root_tickets, relevant)
+    leaked = _find_leaked_tickets(
+        worktree, ticket.id, worktree_tickets, root_tickets, relevant
+    )
     if not leaked:
         return Ok(None)
 

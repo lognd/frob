@@ -4654,6 +4654,7 @@ Disclosed cuts:
 - tests: 4 passed (from 4 evidence id(s))
 - gates: 2 error(s), 694 warning(s), 706 waived
 - error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w1-land/src/frob/tickets/_land.py:1229, SELFAUDIT001@design
+
 <!-- ticket:T-1356 -->
 ```yaml
 id: T-1356
@@ -4792,6 +4793,7 @@ Disclosed cuts:
 - tests: 5 passed (from 5 evidence id(s))
 - gates: 4 error(s), 606 warning(s), 719 waived
 - error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w1-land/src/frob/tickets/_land.py:1231, F401@/home/logan/projects/frob/.claude/worktrees/w1-land/tests/unit/test_scope_lease_deadlock.py:25, F841@/home/logan/projects/frob/.claude/worktrees/w1-land/tests/unit/test_scope_lease_deadlock.py:216, SELFAUDIT001@design
+
 <!-- ticket:T-1358 -->
 ```yaml
 id: T-1358
@@ -5413,11 +5415,12 @@ needing an override at all.
 - tests: 4 passed (from 4 evidence id(s))
 - gates: 5 error(s), 1594 warning(s), 697 waived
 - error-findings: E501@/home/logan/projects/frob/src/frob/tickets/_land.py:1231, F401@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:25, F841@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:215, PRE001@tickets/T-1369, SELFAUDIT001@design
+
 <!-- ticket:T-1370 -->
 ```yaml
 id: T-1370
 title: CrossTicketLeakage mutually deadlocks tickets sharing one series worktree
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -5428,15 +5431,62 @@ sprint: null
 scope:
 - src/frob/tickets/_land.py
 - tests/unit/test_land_cross_ticket_leakage.py
+evidence:
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_allow_cross_ticket_overrides_the_refusal
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_disjoint_worktree_with_no_other_open_ticket_lands_cleanly
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_leased_to_same_worktree_does_not_block
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_ticket_already_done_on_main_does_not_block
 acceptance:
 - text: GIVEN two complete tickets on one series branch whose scopes overlap WHEN
     either is landed THEN the guard does not refuse solely because the other sibling
     on the same branch is still open
-  evidence: []
+  evidence:
+  - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_leased_to_same_worktree_does_not_block
 threat: null
 component: null
 ```
 Hit live 2026-08-01 landing the w1-land series. T-1355's new CrossTicketLeakage guard refused T-1355 because T-1356 was open, and refused T-1356 because T-1355 was open -- a hard mutual deadlock with no CLI escape hatch (T-1369 wires the flag; this ticket is the guard logic itself). The guard has no notion of a series worktree, where several tickets legitimately share one branch and are landed back to back. It should treat siblings whose lease is held by the SAME worktree the way T-1356 taught frob ticket scope to -- as not-a-conflict -- and only refuse for tickets leased elsewhere or unleased. Recovery used this time: T-1358's land merged the whole branch, so the code reached main, and T-1355/T-1356 were closed directly on main after verifying all 19 tests pass there.
+
+## Done report
+
+_find_leaked_tickets (src/frob/tickets/_land.py) now exempts any sibling
+ticket whose cross-worktree lease (frob.tickets._leases, via
+_scope._same_worktree_lease -- the T-1356 precedent this mirrors) resolves
+to the SAME worktree as the ticket being landed. Two tickets sharing one
+series worktree are one agent landing its own tickets back to back, not a
+real cross-agent leak; a sibling leased to a genuinely DIFFERENT worktree
+still refuses exactly as before.
+
+Rewrote the body of the old test_refuses_when_sibling_ticket_still_open
+(whose fixture was, itself, exactly the same-worktree deadlock this
+ticket fixes -- kept the same function name so T-1355's own recorded
+evidence id still resolves) to construct a real two-worktree cross-agent
+leak instead, confirming the guard still refuses in that genuine case.
+Added test_sibling_leased_to_same_worktree_does_not_block for the new
+exemption. The other three existing tests are unaffected (no lease
+recorded for either ticket, or already-done state) and continue to pass
+unchanged.
+
+Note: land's own Tier-A pre-land auto-fix (frob fmt) reflows two frob:waive comment line-wraps in src/frob/app/_daemon_proxy.py, touching ARCH103 in src/frob/app/_daemon_proxy.py and SEC110 in src/frob/app/_daemon_proxy.py -- pre-existing repo-wide formatting drift, entirely outside this ticket's scope, unchanged in substance (same rule id, same reason text, just re-wrapped).
+
+### Changed
+```
+ src/frob/tickets/_land.py                    | 28 +++++++++++++-
+ tests/unit/test_land_cross_ticket_leakage.py | 49 ++++++++++++++++++++++++-
+ tickets.md                                   | 55 +++++++++++++++++++++++++++-
+ 3 files changed, 127 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_allow_cross_ticket_overrides_the_refusal` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_disjoint_worktree_with_no_other_open_ticket_lands_cleanly` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_leased_to_same_worktree_does_not_block` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_ticket_already_done_on_main_does_not_block` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 1 error(s), 483 warning(s), 696 waived
+- error-findings: AFFECT001@src/frob/app/_daemon_proxy.py
 
 <!-- ticket:T-1371 -->
 ```yaml
@@ -5559,6 +5609,7 @@ Not fixed here, filed as T-1374: the fourth failure,
 - tests: 3 passed (from 3 evidence id(s))
 - gates: 5 error(s), 1924 warning(s), 695 waived
 - error-findings: COV005@tests/unit/test_makefile_coverage.py, E501@/home/logan/projects/frob/src/frob/tickets/_land.py:1231, F401@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:25, F841@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:215, PRE001@tickets/T-1373
+
 <!-- ticket:T-1374 -->
 ```yaml
 id: T-1374
@@ -5733,6 +5784,7 @@ here and must happen on a green `make coverage` run.
 - tests: 3 passed (from 3 evidence id(s))
 - gates: 9 error(s), 2066 warning(s), 695 waived
 - error-findings: ARCH103@src/frob/app/_daemon_proxy.py, COV001@src/frob/app/_daemon_proxy.py, DOC007@src/frob/app/_daemon_proxy.py, DRIFT002@src/frob/app/_daemon_proxy.py, E501@/home/logan/projects/frob/src/frob/tickets/_land.py:1231, F401@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:25, F841@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:215, PRE001@tickets/T-1376, SELFAUDIT001@design
+
 <!-- ticket:T-1377 -->
 ```yaml
 id: T-1377
@@ -5849,6 +5901,7 @@ interactive work until T-1378 lands.
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-1378 -->
 ```yaml
 id: T-1378

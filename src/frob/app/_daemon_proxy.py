@@ -134,9 +134,9 @@ def probe_daemon(
 
 
 # frob:ticket T-1380
-# frob:waive ARCH103 reason="a socket health probe IS connect-send-recv plus the \
-# two failure decisions those calls can produce; splitting the recv loop away from \
-# the connect that must precede it would add indirection without separating a real \
+# frob:waive ARCH103 reason="a socket health probe IS connect-send-recv plus the two \
+# failure decisions those calls can produce; splitting the recv loop away from the \
+# connect that must precede it would add indirection without separating a real \
 # sub-concern, and the classification half is already extracted into \
 # _classify_version_reply"
 def _ask_version_over_socket(path: Path, timeout_s: float) -> bytes | DaemonLiveness:
@@ -342,9 +342,9 @@ def _daemon_enabled() -> bool:
     paid for that by default. `FROB_NO_DAEMON=1` still wins outright so
     existing scripts and the differential test are unaffected.
     """
-    # frob:waive SEC110 reason="T-1379: FROB_DAEMON/FROB_NO_DAEMON are boolean \
-    # feature flags (same shape as the existing FROB_AGENT/FROB_WORKTREE precedent \
-    # in frob.tickets._leases), neither carries a confidential value"
+    # frob:waive SEC110 reason="T-1379: FROB_DAEMON/FROB_NO_DAEMON are boolean feature \
+    # flags (same shape as the existing FROB_AGENT/FROB_WORKTREE precedent in \
+    # frob.tickets._leases), neither carries a confidential value"
     if os.environ.get("FROB_NO_DAEMON") == "1":
         return False
     return os.environ.get("FROB_DAEMON") == "1"

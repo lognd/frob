@@ -130,7 +130,39 @@ class TestCrossTicketLeakage:
 
     def test_refuses_when_sibling_ticket_still_open(self, repo: Path) -> None:
         # frob:tests src/frob/tickets/_land.py::_check_cross_ticket_leakage kind="unit"  # noqa: E501
-        wt, held_id, landing_id = self._seed_two_ticket_worktree(repo)
+        # T-1370: the genuine cross-AGENT leak the guard exists for -- the
+        # held ticket is leased to a DIFFERENT worktree (`wt2`, standing in
+        # for a different agent's own series) than the one landing (`wt`),
+        # so the T-1370 same-worktree exemption must NOT apply here.
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-a", str(wt)], repo)
+        wt2 = repo.parent / "wt2"
+        _run(["git", "worktree", "add", "-b", "other-agent", str(wt2)], repo)
+
+        held = new_ticket(wt2, _spec("Paused work", scope=("src/held.py",)))
+        assert held.is_ok
+        held_id = held.danger_ok.id
+        assert transition(wt2, held_id, TicketState.PLANNED).is_ok
+        # Leases held_id to wt2, NOT wt.
+        assert transition(wt2, held_id, TicketState.IN_PROGRESS).is_ok
+
+        # Simulate held_id's work (and its ledger entry) leaking onto
+        # wt's branch -- e.g. a bad merge -- despite being leased
+        # elsewhere: a real cross-agent leak, not legitimate sharing.
+        (wt / "src").mkdir(exist_ok=True)
+        (wt / "src" / "held.py").write_text(
+            "# leaked from a different agent's worktree\n"
+        )
+        held_ticket = load_all(wt2).danger_ok[held_id]
+        assert write_ticket(wt, held_ticket).is_ok
+        _commit_all(wt, f"{held_id}: leaked onto series-a")
+
+        landing = new_ticket(wt, _spec("Independent fix", scope=("src/fix.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "fix.py").write_text("# independent fix\n")
+        _commit_all(wt, f"{landing_id}: independent fix")
 
         result = land(repo, landing_id, wt, dry_run=False)
 
@@ -168,6 +200,21 @@ class TestCrossTicketLeakage:
 
         assert result.is_ok, result.err
         assert (repo / "src" / "solo.py").exists()
+
+    def test_sibling_leased_to_same_worktree_does_not_block(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"  # noqa: E501
+        # T-1370: the real deadlock -- two open tickets sharing ONE series
+        # worktree, both still `in-progress` (both leased to `wt`, via
+        # `transition`'s automatic T-0473 lease recording). Landing either
+        # one used to refuse solely because the sibling was still open;
+        # with the same-worktree-lease exemption, landing the ready one
+        # succeeds even though the sibling is untouched and open.
+        wt, held_id, landing_id = self._seed_two_ticket_worktree(repo)
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_ok, result.err
+        assert (repo / "src" / "fix.py").exists()
 
     def test_sibling_ticket_already_done_on_main_does_not_block(
         self, repo: Path
