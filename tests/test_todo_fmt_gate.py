@@ -166,6 +166,7 @@ class TestTodo001BareComment:
         assert len(violations) == 1
         assert violations[0].line == 2
 
+    # frob:waive PII012 reason="'token' here means the TODO/FIXME lexical marker this gate scans for, not a credential"  # noqa: E501
     def test_no_todo_token_no_violation(self) -> None:
         """An ordinary comment with neither deferral-marker token raises
         nothing."""

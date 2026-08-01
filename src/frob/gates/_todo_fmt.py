@@ -247,6 +247,7 @@ def _todo001_bare(snapshot: GraphSnapshot, diff: Diff) -> list[Violation]:
 # ltiline_block_is_skipped
 # frob:tests \
 # tests/test_todo_fmt_gate.py::TestTodo001BareComment.test_no_todo_token_no_violation
+# frob:waive PII012 reason="'token' here means the TODO/FIXME lexical marker this gate scans for, not a credential"  # noqa: E501
 def _todo001_bare_comment(file: str, comment) -> list[Violation]:  # noqa: ANN001
     """Every bare (not `frob:`-prefixed) todo/fixme line inside one comment,
     as TODO001 `Violation`s."""
