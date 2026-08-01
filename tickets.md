@@ -6228,10 +6228,13 @@ scope:
 - src/frob/release/__init__.py
 - docs/modules/release.md
 - design/frob.strata
+evidence:
+- tests/unit/test_release_stamp_guard.py::TestStampRefusesUnbumped::test_refuses_when_api_changed_and_version_not_bumped
 acceptance:
 - text: GIVEN main WHEN frob check --only gates runs THEN gate:COV and the SYS104
     self-audit report 0 errors
-  evidence: []
+  evidence:
+  - tests/unit/test_release_stamp_guard.py::TestStampRefusesUnbumped::test_refuses_when_api_changed_and_version_not_bumped
 threat: null
 component: null
 ```
