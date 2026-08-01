@@ -5554,3 +5554,27 @@ written at all.
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 4 error(s), 2051 warning(s), 695 waived
 - error-findings: E501@/home/logan/projects/frob/src/frob/tickets/_land.py:1231, F401@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:25, F841@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:215, PRE001@tickets/T-1374
+
+<!-- ticket:T-1375 -->
+```yaml
+id: T-1375
+title: frob-coverage.lock.json was rewritten during a session where no run stamped
+  it
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_coverage.py
+acceptance:
+- text: GIVEN a session WHEN frob-coverage.lock.json changes THEN the write is attributable
+    to an explicit stamp_coverage call that succeeded
+  evidence: []
+threat: null
+component: null
+```
+Observed 2026-08-01. After two make coverage runs that BOTH failed and both logged 'leaving coverage.xml, .frob/coverage-stamp, and frob-coverage.lock.json untouched (T-1363)', the working tree nevertheless showed frob-coverage.lock.json modified with 77 changed floors, several ratcheting sharply UP (src/frob/app/doctor_runner.py 0.0 -> 68.8, check_runner.py 21.6 -> 45.7, _daemon_proxy.py 22.5 -> 41.3). Neither run's log contains a 'stamp_coverage: stamped' or 'write_coverage_lock: locked N module(s)' line, and the only caller of write_coverage_lock is stamp_coverage, which the recipe skips on a nonzero status. So either a write path exists that does not log, or something outside the recipe (a concurrent agent worktree, a land, a plain frob check) can reach the ROOT lock. Either way the file changed without an attributable, logged, successful stamp -- which is exactly the trust property T-1363 was supposed to establish. The observed content was preserved for comparison at scratchpad/lock-unknown-provenance.json; the working copy was reverted rather than committed. NOTE the up-ratchets match the T-1354 false-0.0% symptom, so the data may well be GOOD -- the defect is that its provenance cannot be established, not necessarily its values.
