@@ -3269,6 +3269,7 @@ evidence:
 - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_commented_out_rule_literal_is_skipped
 - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_missing_scanned_base_directory_is_skipped_not_an_error
 - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_unresolved_const_ref_is_left_out
+- tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_const_ref_resolves_against_assignment_in_another_file
 acceptance:
 - text: GIVEN the gates package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/gates/**
