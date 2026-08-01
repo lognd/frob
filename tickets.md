@@ -6100,6 +6100,7 @@ evidence:
 - tests/unit/test_release_stamp_guard.py::TestStampRefusesUnbumped::test_allow_unbumped_is_an_explicit_override
 - tests/unit/test_release_stamp_guard.py::TestStampRefusesUnbumped::test_allows_when_version_is_bumped
 - tests/unit/test_release_stamp_guard.py::TestGuardIsOnByDefault::test_appconfig_default_does_not_allow_unbumped
+- tests/unit/test_release_stamp_guard.py::TestGuardIsOnByDefault::test_cli_without_the_flag_does_not_allow_unbumped
 acceptance:
 - text: GIVEN the public API changed since the last stamp AND the version has not
     been bumped WHEN frob release stamp runs THEN it refuses, names the required version,
