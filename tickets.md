@@ -7256,3 +7256,40 @@ The guard asks 'does another open ticket DECLARE this file in scope?' when the q
 Why this is critical rather than cosmetic: an override that must be passed on every single land is not a guard. It trains every agent to reach for --allow-cross-ticket reflexively, which is precisely how a genuine cross-ticket leak would reach main unnoticed. The T-1355 incident this guard was built to prevent is currently one habituated keystroke away from recurring.
 
 T-1370 fixed only the narrow same-worktree case (sibling leased to the same worktree). The false-positive class above is broader and survives that fix -- all seven lands measured here were AFTER T-1370 landed.
+
+<!-- ticket:T-1391 -->
+```yaml
+id: T-1391
+title: FMT001's Tier-A fix pass rewrites the whole tree, colliding with land scope
+  discipline
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_fix_engine.py
+- tests/test_gates_fix_engine.py
+acceptance:
+- text: 'GIVEN a land whose ticket scope excludes a file elsewhere in the tree carrying
+    a non-canonical frob: directive, WHEN land runs its Tier-A pre-fix pass, THEN
+    that out-of-scope file is left untouched'
+  evidence: []
+- text: GIVEN a frob check --fix invoked outside a land, WHEN the Tier-A FMT001 handler
+    runs, THEN its existing whole-tree behaviour is preserved
+  evidence: []
+threat: null
+component: null
+```
+fix_fmt001_directive_wrap (src/frob/gates/_fix_engine.py ~L491) calls format_paths over the entire root rather than the diff. Its docstring justifies this: widening scope 'cannot make an unrelated file worse' because format_paths only rewrites genuinely non-canonical directive runs.
+
+That reasoning is sound about file CONTENT and wrong about LAND SCOPE DISCIPLINE. A content-preserving rewrite of an out-of-scope file is still an out-of-scope WRITE, and land's own guards then reject the land that triggered it.
+
+Measured 2026-08-01 across two independent agent series: land's pre-fix pass mechanically rewrote frob:waive reason comments in src/frob/app/_daemon_proxy.py on lands that had nothing to do with that file. One agent was forced to widen T-1385's declared scope by a file purely to absorb the collateral edit -- corrupting that ticket's scope record to work around a tool defect. Another agent misdiagnosed it as its primary land blocker and reported four tickets as unlandable.
+
+The fix is to diff-scope the pass when it runs in a land context (FMT001 itself is already diff-scoped -- only this HANDLER widened it). Preserve whole-tree behaviour for a standalone frob check --fix.
+
+Note for whoever takes this: T-1341 is concurrently editing this same file to add an E501 suppression handler, and was briefed to resolve an FMT001-vs-noqa precedence question. Coordinate rather than racing it.
