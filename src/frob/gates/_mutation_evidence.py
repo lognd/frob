@@ -56,6 +56,7 @@ _ERROR_KINDS = frozenset({TicketKind.SECURITY, TicketKind.BUG})
 # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_confirmatory_finding_is_warn_for_feature_kind  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_confirmatory_finding_is_error_for_security_kind  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_no_findings_no_violations  # noqa: E501
+# frob:tests tests/gates/test_mutation_evidence_err_branches.py::TestMutationEvidenceErrBranches.test_exec_disabled_degrades_to_no_violations  # noqa: E501
 def mutation_evidence_violations(
     root: Path, ticket: Ticket, base_ref: str = "main"
 ) -> tuple[Violation, ...]:

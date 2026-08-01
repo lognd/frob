@@ -110,6 +110,10 @@ RETIRED_RULE_IDS: frozenset[str] = frozenset()
 # above -- see T-1010's Done report"
 # frob:tests \
 # tests/test_gates.py::TestKnownGateRuleIds.test_scan_finds_a_synthetic_rule_id
+# frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_commented_out_rule_literal_is_skipped  # noqa: E501
+# frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_missing_scanned_base_directory_is_skipped_not_an_error  # noqa: E501
+# frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_unresolved_const_ref_is_left_out  # noqa: E501
+# frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_const_ref_resolves_against_assignment_in_another_file  # noqa: E501
 def scan_emitted_rule_ids(repo_root: Path) -> dict[str, str]:
     """Statically enumerate every rule id constructed under
     `SCANNED_BASES` beneath `repo_root` (inline `rule="..."` literal, or
@@ -173,6 +177,7 @@ def scan_emitted_rule_ids(repo_root: Path) -> dict[str, str]:
 # frob:waive COV001 reason="same doc-anchor scope-closure tension as SCANNED_BASES \
 # above -- see T-1010's Done report"
 # frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_retired_id_stays_excluded
+# frob:tests tests/gates/test_rule_id_scan_branches.py::TestGeneratedGateRuleIdsRetiredOverride.test_default_retired_set_is_module_constant  # noqa: E501
 def generated_gate_rule_ids(
     repo_root: Path, retired: frozenset[str] | None = None
 ) -> frozenset[str]:
