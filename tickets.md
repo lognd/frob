@@ -4046,7 +4046,7 @@ Expect this ticket's real work to GROW rather than shrink under the amendment: w
 ```yaml
 id: T-1343
 title: COV006 WARN on test_app_lazy_dispatch.py subprocess-boundary test
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-31'
