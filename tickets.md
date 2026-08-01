@@ -1363,6 +1363,8 @@ kind: bug
 origin: agent
 created: '2026-07-29'
 priority: critical
+blocked_by:
+- T-1395
 parent: T-0969
 tier: ticket
 sprint: null
@@ -1460,7 +1462,6 @@ run is expected pre-land, not a real gap.
 - tests: 4 passed (from 4 evidence id(s))
 - gates: 1 error(s), 7685 warning(s), 696 waived
 - error-findings: SELFAUDIT001@design
-
 <!-- ticket:T-1236 -->
 ```yaml
 id: T-1236
@@ -3251,7 +3252,7 @@ behavior. The coordinator is re-stamping coverage separately.
 ```yaml
 id: T-1279
 title: 'TEST005 burn-down: src/frob/gates (179 findings, 12 at 0.0%)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -3301,7 +3302,6 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 (no live caller, no CLI/API entry point), route it to the DEAD gate / dup
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
-
 <!-- ticket:T-1281 -->
 ```yaml
 id: T-1281
