@@ -15800,10 +15800,16 @@ scope:
 - tests/unit/test_doctor_runner_t1276.py
 - tickets.md
 - src/frob/app/doctor_runner.py
+- tests/system/test_cli_render_golden.py
 scope_changes:
 - op: add
   glob: src/frob/app/doctor_runner.py
   reason: 'scope-closure: the waived test file''s frob:tests targets live here'
+  actor: logan
+  at: '2026-08-01'
+- op: add
+  glob: tests/system/test_cli_render_golden.py
+  reason: 'scope-closure: doctor_runner.run''s frob:tests evidence lives here'
   actor: logan
   at: '2026-08-01'
 acceptance:

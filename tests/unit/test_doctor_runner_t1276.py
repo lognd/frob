@@ -58,6 +58,7 @@ class TestDoctorRunnerHealthy:
     ) -> None:
         """A healthy report in plain mode prints the good-status line and
         returns normally (no `sys.exit`)."""
+        # frob:waive PII012 reason="'run_diagnosis' names the repository self-check API symbol this test patches; frob doctor inspects tooling, never person-related data"  # noqa: E501
         # `run_diagnosis` is imported lazily inside `run`; patch the source.
         import frob.doctor as doctor_mod
 
