@@ -5368,3 +5368,26 @@ threat: null
 component: null
 ```
 Hit live 2026-08-01 landing the w1-land series. T-1355's new CrossTicketLeakage guard refused T-1355 because T-1356 was open, and refused T-1356 because T-1355 was open -- a hard mutual deadlock with no CLI escape hatch (T-1369 wires the flag; this ticket is the guard logic itself). The guard has no notion of a series worktree, where several tickets legitimately share one branch and are landed back to back. It should treat siblings whose lease is held by the SAME worktree the way T-1356 taught frob ticket scope to -- as not-a-conflict -- and only refuse for tickets leased elsewhere or unleased. Recovery used this time: T-1358's land merged the whole branch, so the code reached main, and T-1355/T-1356 were closed directly on main after verifying all 19 tests pass there.
+
+<!-- ticket:T-1371 -->
+```yaml
+id: T-1371
+title: 'Drain EXHAUST001/EXHAUST002 to zero: unresolvable escapes and undeclared KeyError/TypeError'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/**
+acceptance:
+- text: GIVEN main WHEN frob check --only gates runs THEN gate:EXHAUST reports 0 EXHAUST001
+    and 0 EXHAUST002 warnings
+  evidence: []
+threat: null
+component: null
+```
+95 findings at drive start (62 EXHAUST001, 33 EXHAUST002). Each is either a real unhandled-exception path (fix the handling or add a catch-all) or a case for an explicit frob:raises declaration. Prefer declaring the truth over blanket except Exception where the escape is genuinely intended.
