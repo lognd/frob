@@ -5352,6 +5352,7 @@ evidence:
 - tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketReachesLand::test_land_receives_the_keyword[True]
 - tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketReachesLand::test_land_receives_the_keyword[False]
 - tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketReachesConfig::test_from_external_carries_the_flag
+- tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketFlagParsing::test_flag_sets_the_namespace_dest
 threat: null
 component: null
 ```
