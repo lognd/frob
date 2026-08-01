@@ -15782,3 +15782,27 @@ keeping over nothing. T-1363's Done report chose "keep nothing" over "keep and
 mark partial" for the first cut; if a future incident shows losing ANY partial
 signal is worse than the disclosed-missing-stamp status quo, revisit this
 ticket to add the explicit partial-stamp representation.
+
+<!-- ticket:T-1365 -->
+```yaml
+id: T-1365
+title: 'Clear main''s two gate errors: PII012 false positive and the TICK003 archive
+  backlog'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/unit/test_doctor_runner_t1276.py
+- tickets.md
+acceptance:
+- text: given main, when frob check --only gates runs, then gate:PII and gate:TICK
+    report 0 errors
+  evidence: []
+threat: null
+component: null
+```
