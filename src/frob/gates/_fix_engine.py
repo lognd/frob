@@ -25,9 +25,13 @@ that CLI batch to call directly.
 from __future__ import annotations
 
 import difflib
+import fnmatch
+import io
 import json
 import logging
 import re
+import tokenize
+import tomllib
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -35,12 +39,14 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel
 
 from frob.graph import EdgeKind, GraphSnapshot
+from frob.process._guard import guarded_subprocess_run
 from frob.tickets import TicketQueue
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import atomic_write
 
 if TYPE_CHECKING:
     from frob.gates import GateReport
+    from frob.gates._suppress import SuppressionDialect
 
 _log = logging.getLogger(__name__)
 
@@ -520,6 +526,379 @@ def fix_fmt001_directive_wrap(root: Path, snapshot: GraphSnapshot) -> list[FixAp
 
 
 # ---------------------------------------------------------------------------
+# SUPPRESS001 (T-1341, phase 2 of T-1339): write the reporting checker's
+# own paired suppression, in this repo's observed canonical order, onto
+# an evidence-driven dialect-mismatch line -- never a new judgment call,
+# only the ONE rewrite `suppress001_gate` (`frob.gates._suppress`) already
+# proves is correct: the reporting dialect's own rule code, verbatim.
+# ---------------------------------------------------------------------------
+
+#: This repo's own observed convention across every pre-existing dual-
+#: dialect suppression line (confirmed by grep against the mypy-then-ty
+#: paired-comment occurrences in src/tests at T-1341 authoring time):
+#: mypy's ignore comment first, noqa second, ty's ignore comment last. A
+#: line only ever carries the subset of these three it actually needs --
+#: this order is the SLOT order, not a requirement that all three be
+#: present.
+_CANONICAL_DIALECT_ORDER = ("mypy", "ruff", "ty")
+
+#: `suppress001_gate`'s own `Violation.message` shape (`_suppress001_
+#: violation` in `frob.gates._suppress`): "... carries a {other_dialect}
+#: suppression comment but {reporting_dialect} reports an unsuppressed
+#: {code!r} diagnostic ...". Parsed back out rather than adding a
+#: structured field to `Violation` just for this handler -- the same
+#: precedent `_WAIVE004_TARGET_RULE_RE` above already sets for this
+#: module.
+_SUPPRESS001_MESSAGE_RE = re.compile(
+    r"carries a \S+ suppression comment but (?P<reporting>\S+) reports an "
+    r"unsuppressed (?P<code>'[^']*'|\"[^\"]*\") diagnostic"
+)
+
+#: A line carrying a `frob:` directive comment anywhere in its trailing
+#: comment is `frob fmt`'s (FMT001's, `fix_fmt001_directive_wrap` above)
+#: territory exclusively, never this handler's: FMT001 already prefers
+#: backslash-continuation wrapping for an over-long directive, and its own
+#: `canonicalize_text` already treats an existing trailing noqa pragma
+#: (T-0985's own escape hatch) as deliberate and leaves it alone -- this
+#: handler must never manufacture a competing suppression on a line
+#: FMT001 also claims, or the two could double-fix or oscillate across
+#: repeated `--fix` runs. Skipping any line matching this outright
+#: (rather than trying to detect a genuine overlap) is the explicit
+#: precedence this handler commits to: SUPPRESS001 never touches a
+#: `frob:`-directive-bearing line, full stop.
+_FROB_DIRECTIVE_MARKER_RE = re.compile(r"frob:")
+
+
+def _parse_suppress001_message(message: str) -> tuple[str, str] | None:
+    """The `(reporting_dialect, code)` pair a `suppress001_gate` finding's
+    own message names, or `None` if the message does not match the
+    expected shape (defensive; should not happen against this repo's own
+    `_suppress001_violation`). The matched `code` group is always a
+    Python `repr()` of a plain rule-code string (`_suppress001_violation`
+    only ever formats `{code!r}` where `code` is a checker-reported rule
+    id -- word characters and hyphens, never a quote character itself),
+    so the surrounding quote characters are stripped directly rather than
+    routed through `ast.literal_eval`/`eval` (an unnecessary opaque
+    runtime-eval capability, per OPAQUE001, for input this simple and
+    already regex-constrained to a quoted run with no embedded quote)."""
+    match = _SUPPRESS001_MESSAGE_RE.search(message)
+    if match is None:
+        return None
+    quoted = match.group("code")
+    code = quoted[1:-1]
+    return match.group("reporting"), code
+
+
+def _find_comment_start(line: str) -> int | None:
+    """The column of the FIRST genuine trailing comment token on `line`
+    (a single physical source line, no newline), or `None` if it carries
+    no real comment -- tokenizes the DEDENTED line in isolation
+    (`tokenize` correctly refuses to treat a `#` inside a string literal
+    as a comment) and adds the stripped indentation back, so a line like
+    `x = "a # b"` is never mistaken for carrying a trailing comment."""
+    lstripped = line.lstrip()
+    indent = len(line) - len(lstripped)
+    try:
+        for tok in tokenize.generate_tokens(io.StringIO(lstripped + "\n").readline):
+            if tok.type == tokenize.COMMENT:
+                return indent + tok.start[1]
+    except (tokenize.TokenError, IndentationError, SyntaxError, ValueError):
+        return None
+    return None
+
+
+def _split_suppression_line(line: str) -> tuple[str, str, str]:
+    """`line` split into `(code_part, comment_text, newline)`:
+    `code_part` is everything before the first genuine trailing comment
+    (`_find_comment_start`), rstripped; `comment_text` is that comment
+    verbatim (empty if none); `newline` is the original line ending (`""`
+    or `"\\n"`), preserved so the rewrite never changes it."""
+    newline = "\n" if line.endswith("\n") else ""
+    body = line[: len(line) - len(newline)] if newline else line
+    comment_start = _find_comment_start(body)
+    if comment_start is None:
+        return body.rstrip(), "", newline
+    return body[:comment_start].rstrip(), body[comment_start:], newline
+
+
+def _merged_dialect_codes(
+    present: dict[str, set[str] | None], dialect: str, code: str
+) -> dict[str, set[str] | None]:
+    """`present` (a line's existing per-dialect suppression codes, from
+    `frob.gates._suppress._line_suppressions`) with `code` added under
+    `dialect` -- idempotent (a no-op if `code` is already covered) and
+    NEVER widens an existing bare suppression (`None`) to a coded one, per
+    this ticket's own acceptance: a bare comment already covers every
+    code, so leaving it bare is strictly more permissive, never less
+    correct."""
+    merged = dict(present)
+    if dialect in merged:
+        current = merged[dialect]
+        if current is None or code in current:
+            return merged
+        merged[dialect] = current | {code}
+    else:
+        merged[dialect] = {code}
+    return merged
+
+
+def _format_dialect_segment(dialect: str, codes: set[str] | None) -> str:
+    """The rendered `# ...` comment fragment for one dialect's `codes`
+    (`None` renders bare, matching each dialect's own bare-suppression
+    comment syntax) -- the inverse of `frob.gates._suppress._line_
+    suppressions`' own per-dialect regexes."""
+    joined = "" if codes is None else ",".join(sorted(codes))
+    if dialect == "mypy":
+        return "# type: ignore" if codes is None else f"# type: ignore[{joined}]"
+    if dialect == "ty":
+        return "# ty: ignore" if codes is None else f"# ty: ignore[{joined}]"
+    return "# noqa" if codes is None else f"# noqa: {joined}"
+
+
+def _strip_known_pragma_comments(
+    comment_text: str, dialects: dict[str, SuppressionDialect]
+) -> str:
+    """`comment_text` with every recognized dialect pragma
+    (`ty`/`mypy`/`ruff`'s own patterns) removed, leaving any OTHER
+    trailing prose comment intact -- preserves a genuinely human-written
+    explanatory comment sharing the line with a suppression, rather than
+    discarding it when this handler rebuilds the pragma block."""
+    remainder = comment_text
+    for dialect in dialects.values():
+        remainder = re.sub(dialect.pattern, "", remainder)
+    return remainder.strip()
+
+
+def _render_suppression_line(
+    code_part: str,
+    codes: dict[str, set[str] | None],
+    leftover: str,
+    newline: str,
+) -> str:
+    """Reassemble one source line from `code_part`, every dialect pragma
+    in `codes` (rendered in `_CANONICAL_DIALECT_ORDER`), and any
+    preserved `leftover` prose comment -- the single place this handler
+    ever produces final line text, so canonical order/spacing is
+    guaranteed uniform regardless of which dialect triggered the
+    rewrite."""
+    segments = [
+        _format_dialect_segment(dialect, codes[dialect])
+        for dialect in _CANONICAL_DIALECT_ORDER
+        if dialect in codes
+    ]
+    pieces = [code_part, *segments]
+    rendered = "  ".join(pieces)
+    if leftover:
+        rendered = f"{rendered}  {leftover}"
+    return rendered + newline
+
+
+def _ruff_per_file_ignores(root: Path) -> list[tuple[str, set[str]]]:
+    """`[tool.ruff.lint.per-file-ignores]` from `root/pyproject.toml`, as
+    `(glob, codes)` pairs -- an empty list if the file/section is
+    missing/unreadable (fail toward "nothing is pre-ignored", never
+    toward silently over-suppressing)."""
+    pyproject = root / "pyproject.toml"
+    try:
+        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError):
+        return []
+    section = (
+        data.get("tool", {}).get("ruff", {}).get("lint", {}).get("per-file-ignores", {})
+    )
+    if not isinstance(section, dict):
+        return []
+    return [
+        (str(pattern), {str(c) for c in codes})
+        for pattern, codes in section.items()
+        if isinstance(codes, list)
+    ]
+
+
+def _code_ignored_for_path(root: Path, rel_path: str, code: str) -> bool:
+    """True if ruff's own effective `per-file-ignores` configuration
+    already silences `code` at `rel_path` -- adding a `# noqa: E501` there
+    would be dead, no-op suppression noise (the T-1341 driver incident:
+    2493 of 2623 `# noqa: E501` comments repo-wide sat under `tests/**`,
+    where `E501` can never fire at all per this repo's own
+    `pyproject.toml`). Prefix-matched (`code.startswith(ignored)`) so a
+    broader category ignore (e.g. a bare `E5`) still covers `E501`,
+    mirroring ruff's own rule-selector prefix semantics."""
+    for pattern, codes in _ruff_per_file_ignores(root):
+        if fnmatch.fnmatch(rel_path, pattern) and any(
+            code.startswith(ignored) for ignored in codes
+        ):
+            return True
+    return False
+
+
+def _run_ruff_format(path: Path) -> None:
+    """Best-effort `ruff format <path>` delegation -- the coordinator-
+    directed fix for an over-long CODE line (a def/class signature):
+    `ruff format` already wraps these correctly and completely (verified:
+    it splits a >88-char `def` into one-parameter-per-line with a
+    trailing comma), so this handler defers to it entirely rather than
+    hand-rolling a signature wrapper that would duplicate the formatter
+    (this repo's NO DUPLICATION rule) and be fought by the next `ruff
+    format` run, which is authoritative for code layout. Errors are
+    logged and swallowed -- a failed format attempt must not abort the
+    whole SUPPRESS001 fix pass; the surviving-violation path below still
+    applies a suppression if the line is still too long afterward."""
+    try:
+        result = guarded_subprocess_run(
+            ["ruff", "format", str(path)], capture_output=True, text=True
+        )
+    except FileNotFoundError:
+        _log.warning("SUPPRESS001 auto-fix: ruff binary not found, skipping format")
+        return
+    if result.is_err:
+        _log.warning(
+            "SUPPRESS001 auto-fix: ruff format on %s failed: %s",
+            path,
+            result.danger_err,
+        )
+
+
+def _apply_one_suppress001_fix(
+    root: Path,
+    rel_file: str,
+    line_no: int,
+    reporting: str,
+    code: str,
+    dialects: dict[str, SuppressionDialect],
+    limit: int,
+) -> FixApplied | None:
+    """The single-line rewrite for one SUPPRESS001 finding: append
+    `reporting`'s own suppression for `code` in canonical order
+    (`_render_suppression_line`), then -- only if the rewritten line now
+    exceeds `limit` -- also add `# noqa: E501` UNLESS ruff's own
+    `per-file-ignores` configuration already silences `E501` at this path
+    (`_code_ignored_for_path`; adding one there would be dead-on-arrival
+    noise, the T-1341 driver's own incident). Returns `None` (a no-op) if
+    the file/line cannot be read, the line is `frob:`-directive-bearing
+    (FMT001's territory, never this handler's), or the finding's own
+    dialect/code is already covered (defensive; `suppress001_gate` should
+    never emit that combination in the first place)."""
+    path = root / rel_file
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    lines = text.splitlines(keepends=True)
+    idx = line_no - 1
+    if idx < 0 or idx >= len(lines):
+        return None
+    original_line = lines[idx]
+    code_part, comment_text, newline = _split_suppression_line(original_line)
+    if _FROB_DIRECTIVE_MARKER_RE.search(comment_text):
+        return None
+    present = _line_suppressions_for_fix(comment_text, dialects)
+    new_codes = _merged_dialect_codes(present, reporting, code)
+    if new_codes == present:
+        return None
+    leftover = _strip_known_pragma_comments(comment_text, dialects)
+    rendered = _render_suppression_line(code_part, new_codes, leftover, newline)
+
+    noqa_added = False
+    if "ruff" not in new_codes and len(rendered.rstrip("\n")) > limit:
+        if not _code_ignored_for_path(root, rel_file, "E501"):
+            new_codes = _merged_dialect_codes(new_codes, "ruff", "E501")
+            rendered = _render_suppression_line(code_part, new_codes, leftover, newline)
+            noqa_added = True
+
+    if rendered == original_line:
+        return None
+    lines[idx] = rendered
+    if not _write_text(path, "".join(lines)):
+        return None
+    detail = f"{original_line.rstrip(chr(10))!r} -> {rendered.rstrip(chr(10))!r}"
+    if noqa_added:
+        detail += " (+ noqa E501, line still over the configured limit after the fix)"
+    return FixApplied(rule="SUPPRESS001", file=rel_file, line=line_no, detail=detail)
+
+
+def _line_suppressions_for_fix(
+    comment_text: str, dialects: dict[str, SuppressionDialect]
+) -> dict[str, set[str] | None]:
+    """`frob.gates._suppress._line_suppressions` applied to just
+    `comment_text` (rather than a whole source line) -- a thin wrapper so
+    an empty `comment_text` short-circuits to `{}` without a redundant
+    regex pass."""
+    from frob.gates._suppress import _line_suppressions
+
+    if not comment_text:
+        return {}
+    return _line_suppressions(comment_text, dialects)
+
+
+# frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+# frob:tests \
+# tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_mypy_suppres\
+# sed_ty_unsuppressed_gets_paired_suppression kind="unit"
+# frob:tests \
+# tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_idempotent_s\
+# econd_fix_pass_is_a_no_op kind="unit"
+def fix_suppress001_paired_suppression(
+    root: Path, snapshot: GraphSnapshot
+) -> list[FixApplied]:
+    """Tier-A fix (T-1341, phase 2 of T-1339): for every SUPPRESS001
+    finding, append the reporting checker's own suppression for its own
+    reported rule code, in this repo's observed canonical order
+    (`_CANONICAL_DIALECT_ORDER`) -- never a guessed code, never a
+    cross-dialect code-mapping table (the exact static approach T-1339
+    rejected), only the rule code the finding's own reporting oracle
+    already supplied.
+
+    Ordering (coordinator-directed, T-1341): `ruff format` is delegated to
+    FIRST, for every file with a violation, before anything is written --
+    an over-long CODE line (a def/class signature) belongs to the
+    formatter (`_run_ruff_format`), never a hand-rolled wrapper. Only
+    after that does this handler re-run `suppress001_gate` (line numbers
+    may have shifted) and apply a suppression to whatever violation
+    SURVIVES formatting; if a suppressed line is STILL over the limit
+    afterward, `# noqa: E501` is added too, unless ruff's own
+    `per-file-ignores` config already silences `E501` at that path
+    (`_code_ignored_for_path` -- never write a no-op suppression).
+
+    Idempotent by construction, not by bookkeeping: once a line carries
+    both dialects' matching suppressions, the underlying diagnostic that
+    `suppress001_gate` correlates against is itself silenced for both
+    checkers, so a second `--fix` pass finds nothing left to fix on that
+    line at all. Never touches a line carrying a `frob:` directive
+    comment (FMT001's exclusive territory -- see
+    `_FROB_DIRECTIVE_MARKER_RE`'s own docstring for the precedence
+    rationale)."""
+    from frob.gates._fmt_directives import read_line_length
+    from frob.gates._suppress import suppress001_gate, suppression_dialects
+
+    violations = suppress001_gate(root, snapshot)
+    if not violations:
+        return []
+
+    for rel in sorted({v.file for v in violations}):
+        _run_ruff_format(root / rel)
+
+    violations = suppress001_gate(root, snapshot)
+    if not violations:
+        return []
+
+    dialects = suppression_dialects()
+    limit = read_line_length(root)
+    applied: list[FixApplied] = []
+    for violation in violations:
+        parsed = _parse_suppress001_message(violation.message)
+        if parsed is None:
+            continue
+        reporting, code = parsed
+        fix = _apply_one_suppress001_fix(
+            root, violation.file, violation.line, reporting, code, dialects, limit
+        )
+        if fix is not None:
+            applied.append(fix)
+    return applied
+
+
+# ---------------------------------------------------------------------------
 # REG010 (T-1261): a live gate rule id with no `CHK-GATE-<rule>` entry in
 # check-coverage.yaml -- `frob registry audit --sync-gate-rules` names
 # itself as its own remedy.
@@ -888,11 +1267,17 @@ def _waive004_target_rule(message: str) -> str | None:
 #: never by changing that handler's own signature -- T-1260's design-
 #: review advisory noted this inconsistency and deferred the minimal fix
 #: to this ticket; this dict IS that minimal fix, at the call-site layer
-#: only. Order matters: DOC007/DOC002/INV006-carry/FMT001/REG010/REL002
-#: are pure rewrites with no ledger interaction; TICK002 touches the
-#: ticket ledger; WAIVE004 runs LAST since it re-invokes the whole gates
-#: suite itself and should see every other handler's rewrites already
-#: applied, not a stale pre-fix tree.
+#: only. Order matters: DOC007/DOC002/INV006-carry/FMT001/SUPPRESS001/
+#: REG010/REL002 are pure rewrites with no ledger interaction; TICK002
+#: touches the ticket ledger; WAIVE004 runs LAST since it re-invokes the
+#: whole gates suite itself and should see every other handler's
+#: rewrites already applied, not a stale pre-fix tree. SUPPRESS001 runs
+#: immediately AFTER FMT001, never before -- both can act on an
+#: over-long line, and FMT001's directive-wrap gets first refusal
+#: (T-1341: SUPPRESS001 never touches a `frob:`-directive-bearing line
+#: at all, see `_FROB_DIRECTIVE_MARKER_RE`, so the two never actually
+#: collide on the same physical line in practice -- the ordering is
+#: still fixed explicitly rather than left to dict insertion accident).
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 TIER_A_HANDLERS: dict[
     str, Callable[[Path, GraphSnapshot, TicketQueue], list[FixApplied]]
@@ -901,6 +1286,9 @@ TIER_A_HANDLERS: dict[
     "DOC002": lambda root, snapshot, queue: fix_doc002_unique_slug(root, snapshot),
     "INV006": lambda root, snapshot, queue: fix_inv006_carried_waiver(root, snapshot),
     "FMT001": lambda root, snapshot, queue: fix_fmt001_directive_wrap(root, snapshot),
+    "SUPPRESS001": lambda root, snapshot, queue: fix_suppress001_paired_suppression(
+        root, snapshot
+    ),
     "REG010": lambda root, snapshot, queue: fix_reg010_registry_sync(root, snapshot),
     "REL002": lambda root, snapshot, queue: fix_rel002_release_sync(root, snapshot),
     "TICK002": lambda root, snapshot, queue: fix_tick002_renumber(root, queue),

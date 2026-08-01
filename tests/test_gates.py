@@ -8679,6 +8679,7 @@ class TestTierAAutofixCrashSafety:
 
 
 # frob:ticket T-1261
+# frob:ticket T-1341
 class TestFixEngineTierABatch2:
     """`frob.gates._fix_engine`'s Tier-A batch-2 `--fix` handlers
     (T-1261): fmt/registry-regen/release-sync/WAIVE004. Each is a
@@ -8930,6 +8931,7 @@ class TestFixEngineTierABatch2:
 
     def test_tier_a_handlers_dict_covers_every_batch_rule(self) -> None:
         # frob:tests src/frob/gates/_fix_engine.py::TIER_A_HANDLERS kind="unit"
+        # frob:ticket T-1341
         from frob.gates._fix_engine import TIER_A_HANDLERS
 
         assert set(TIER_A_HANDLERS) == {
@@ -8937,6 +8939,7 @@ class TestFixEngineTierABatch2:
             "DOC002",
             "INV006",
             "FMT001",
+            "SUPPRESS001",  # T-1341
             "REG010",
             "REL002",
             "TICK002",

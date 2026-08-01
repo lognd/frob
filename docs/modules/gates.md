@@ -1703,8 +1703,10 @@ only ever fires on a cross-DIALECT mismatch, never on a bare, honestly
 unsuppressed type error (that is `ty`'s own gating job, or a downstream
 mypy user's).
 
-Detection only. The Tier-A auto-fix that WRITES the paired suppression is
-the sibling ticket T-1341 -- `suppress001_gate` never edits a source file.
+Detection only -- `suppress001_gate` itself never edits a source file. The
+Tier-A auto-fix that WRITES the paired suppression is
+`fix_suppress001_paired_suppression` (T-1341), documented under "`--fix`:
+Tier-A deterministic auto-fix handlers (T-1138)" below.
 
 ## Public API
 
@@ -3163,6 +3165,7 @@ site -- no new mechanism needed.
 <!-- frob:describes src/frob/gates/_fix_engine.py::fix_reg010_registry_sync -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::fix_rel002_release_sync -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver -->
+<!-- frob:describes src/frob/gates/_fix_engine.py::fix_suppress001_paired_suppression -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::TIER_A_HANDLERS -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::FixApplied -->
 
@@ -3295,24 +3298,105 @@ its finding message, so the handler just calls that existing remedy:
   `LandError.OutOfScopeWaiveDeletion`) -- see
   docs/modules/tickets.md#frob-ticket-land.
 
+**`fix_suppress001_paired_suppression`** (T-1341, phase 2 of T-1339's
+suppression-dialect-portability epic): a SUPPRESS001 finding (`frob.
+gates._suppress.suppress001_gate`, phase 1) already names, in its own
+message, exactly which reporting checker (`ty`/`mypy`) reports an
+unsuppressed rule code on a line that carries a DIFFERENT dialect's
+suppression comment -- this handler appends the reporting checker's own
+code, in this repo's observed canonical order (confirmed against every
+pre-existing dual-dialect line at authoring time: mypy's `# type:
+ignore[...]` first, `# noqa: ...` second, `# ty: ignore[...]` last --
+`_CANONICAL_DIALECT_ORDER`), never a guessed or cross-dialect-mapped
+code. No structured field is added to `Violation` for this -- the
+reporting dialect/code is parsed back out of the finding's own message
+text (`_parse_suppress001_message`), the same precedent
+`_waive004_target_rule` already set for this module.
+
+Order of operations, because it changes the outcome (coordinator
+directive, T-1341): `ruff format` is delegated to FIRST, for every file
+carrying a violation, before anything is written --
+`_run_ruff_format`/`fix_suppress001_paired_suppression`'s own docstring
+explains why a hand-rolled signature wrapper is never written here: an
+over-long `def`/`class` line is `ruff format`'s own authoritative
+territory (verified: it already splits a >88-char signature into
+one-parameter-per-line with a trailing comma), and a frob-side wrapper
+would both duplicate that logic (this repo's NO DUPLICATION rule) and be
+fought by the very next `ruff format` run, which always wins. Only a
+violation that SURVIVES formatting (`suppress001_gate` is re-run
+afterward, since line numbers may have shifted) gets a suppression
+written at all. If the rewritten line is STILL over the configured limit
+after the dialect suppression is appended, `# noqa: E501` is added too --
+UNLESS ruff's own effective `[tool.ruff.lint.per-file-ignores]`
+configuration already silences `E501` at that path
+(`_code_ignored_for_path`, matched by glob against the same config
+`pyproject.toml` itself declares). This last check is the direct fix for
+the incident that motivated this ticket: a repo-wide grep at authoring
+time found 2623 hand-written `# noqa: E501` comments, 2493 of them on a
+`frob:`-directive comment line, and of the 1566 real E501 violations
+under `src/`, 1559 sat on a `tests/**`-adjacent or directive line where
+`E501` cannot fire at all under this repo's own per-file-ignores --
+writing a suppression there is dead noise, not a fix, so this handler
+refuses to write one.
+
+A pre-existing OTHER code already on the same pragma (e.g. `# noqa:
+F401`) is MERGED, never clobbered -- `_merged_dialect_codes` unions the
+code sets and `_format_dialect_segment` re-renders sorted, comma-joined
+(`E501,F401`), and never widens an existing BARE suppression (`#
+noqa`/`# type: ignore` with no bracketed code, already covering every
+code on that line) to a coded one -- a bare comment is strictly more
+permissive already. `_find_comment_start` locates the real trailing
+comment by tokenizing the (dedented) line rather than substring-searching
+it, so a `#`-shaped sequence living inside a string literal is never
+mistaken for a comment boundary; any OTHER trailing prose comment sharing
+the line is preserved verbatim (`_strip_known_pragma_comments`) rather
+than discarded when the pragma block is rebuilt.
+
+**Precedence with FMT001, explicitly (T-1341):** this handler never
+touches a line carrying a `frob:` directive marker anywhere in its
+trailing comment, full stop (`_FROB_DIRECTIVE_MARKER_RE`) -- that is
+`fix_fmt001_directive_wrap`'s exclusive territory. FMT001's own
+`canonicalize_text` already treats an existing trailing `# noqa` suffix
+on a directive line as a deliberate T-0985 escape hatch it leaves alone,
+so the two handlers could otherwise double-fix or oscillate across
+repeated `--fix` runs if SUPPRESS001 ever manufactured a competing noqa
+on the same line FMT001 also claims. In practice a SUPPRESS001 target
+line (python code with a type-checker suppression comment) and an FMT001
+target line (a bare `frob:` directive comment) are never the same
+physical line, so this guard is a structural belt-and-suspenders rather
+than something expected to fire often --
+`tests/test_gates_fix_engine.py::TestSuppress001FMT001Precedence` covers
+a synthetic line carrying both shapes at once and asserts the file is
+byte-identical after two consecutive `--fix` passes. `TIER_A_HANDLERS`
+runs SUPPRESS001 immediately after FMT001 for the same reason, fixed
+explicitly rather than left to dict-insertion accident.
+
+Idempotent by construction, not by bookkeeping: once a line carries both
+dialects' matching suppression comments, the underlying diagnostic
+`suppress001_gate` correlates against is itself silenced for BOTH
+checkers (a `# type: ignore[code]  # ty: ignore[code]` pair suppresses
+mypy and ty independently), so a second `--fix` pass finds no finding
+left on that line at all -- no separate "already fixed" tracking needed.
+
 `apply_tier_a_fixes(root, snapshot, queue)` dispatches through
 `TIER_A_HANDLERS`, a `dict[str, Callable]` keyed by rule id (T-1261
 promotes the prior positional-call list to this explicit table so a
 fixability-registry-field ticket has something real to scan) -- run in
-the dict's declared order (DOC007/DOC002/INV006-carry/FMT001/REG010/
-REL002 first, since they are pure source-text/artifact rewrites with no
-ledger interaction; TICK002 next, since it touches the ticket ledger;
-WAIVE004 last, since it re-invokes the whole gates suite itself and
-should see every other handler's rewrites already applied). A handler
-whose own signature differs from the uniform `(root, snapshot, queue)`
-call shape (three take `(root, snapshot)`, one takes `(root, queue)`,
-`fix_waive004_stale_waiver` takes extra keyword-only scope params) is
-adapted at the `TIER_A_HANDLERS` call site via a thin lambda, never by
-changing that handler's own signature. Returns every `FixApplied` (rule,
-file, line, one-line rewrite summary) actually made -- the disclosed
-audit trail every fix must leave, mirroring T-1137's own "no silent
-auto-discharge" anti-goal applied to what WAS auto-fixed rather than only
-what was left alone.
+the dict's declared order (DOC007/DOC002/INV006-carry/FMT001/
+SUPPRESS001/REG010/REL002 first, since they are pure source-text/artifact
+rewrites with no ledger interaction; TICK002 next, since it touches the
+ticket ledger; WAIVE004 last, since it re-invokes the whole gates suite
+itself and should see every other handler's rewrites already applied).
+SUPPRESS001 runs immediately after FMT001 specifically (see the
+precedence note above). A handler whose own signature differs from the
+uniform `(root, snapshot, queue)` call shape (four take `(root,
+snapshot)`, one takes `(root, queue)`, `fix_waive004_stale_waiver` takes
+extra keyword-only scope params) is adapted at the `TIER_A_HANDLERS` call
+site via a thin lambda, never by changing that handler's own signature.
+Returns every `FixApplied` (rule, file, line, one-line rewrite summary)
+actually made -- the disclosed audit trail every fix must leave,
+mirroring T-1137's own "no silent auto-discharge" anti-goal applied to
+what WAS auto-fixed rather than only what was left alone.
 
 **Crash-safety and recovery breadcrumb (T-1348).** `_absorb_pre_land_fixes`
 calls `apply_tier_a_fixes` BEFORE `frob ticket land`'s own pre-merge

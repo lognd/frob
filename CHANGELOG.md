@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.299.0] - unreleased
+
+- T-1341: Tier-A auto-fix handler: write the paired suppression in canonical order, idempotently
+
 ## [0.298.0] - unreleased
 
 - T-1375: frob-coverage.lock.json was rewritten during a session where no run stamped it
