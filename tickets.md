@@ -7293,3 +7293,42 @@ Measured 2026-08-01 across two independent agent series: land's pre-fix pass mec
 The fix is to diff-scope the pass when it runs in a land context (FMT001 itself is already diff-scoped -- only this HANDLER widened it). Preserve whole-tree behaviour for a standalone frob check --fix.
 
 Note for whoever takes this: T-1341 is concurrently editing this same file to add an E501 suppression handler, and was briefed to resolve an FMT001-vs-noqa precedence question. Coordinate rather than racing it.
+
+<!-- ticket:T-1392 -->
+```yaml
+id: T-1392
+title: 'Main''s test suite is red: 5 deterministic failures while frob check gates
+  read 0 errors'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: critical
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/unit/test_app_runners_batch5.py
+- tests/unit/perf/test_persist_run_cli.py
+- tests/test_coverage_wait_shared.py
+acceptance:
+- text: GIVEN a clean checkout of main WHEN the full pytest suite runs unscoped THEN
+    it exits 0 with no failures
+  evidence: []
+- text: GIVEN the suite is green WHEN make coverage runs THEN it completes and stamps
+    coverage.xml rather than refusing on a failed run
+  evidence: []
+threat: null
+component: null
+```
+Measured 2026-08-01 on main at 0.299.0. 'make coverage' fails at exit 2 because the pytest run fails. All five reproduce serially in 6s with -p no:randomly and empty addopts, so they are genuine, not xdist or ordering artifacts:
+
+  tests/unit/test_app_runners_batch5.py::TestReleaseRunner::test_stamp_err_result_exits_1
+  tests/unit/test_app_runners_batch5.py::TestStatsRunner::test_json_mode_prints_json
+  tests/unit/perf/test_persist_run_cli.py::TestPersistRunUnattributedExclusionAndWeightSum::test_only_attributed_section_persists_with_summed_weight
+  tests/unit/perf/test_persist_run_cli.py::TestHotSortKeyMetricSelection::test_by_p90_and_by_p50xcount_disagree_on_order
+  tests/test_coverage_wait_shared.py::TestWorktreeLock::test_uses_daemon_lease_when_daemon_up
+
+At least one is a landed-work regression: T-1381 added an 'allow_unbumped' keyword to the stamp() call in src/frob/app/release_runner.py:63, but the test's lambda stub was never updated, so it raises TypeError.
+
+The systemic point this ticket exists to record: main read 0 gate errors, 0 ruff errors and 0 ty diagnostics throughout, while the suite was red the entire time. Gate greenness is not suite greenness. This blocks T-1235, whose remaining acceptance criterion can only be discharged by a successful unscoped coverage run.
