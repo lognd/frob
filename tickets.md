@@ -6036,3 +6036,40 @@ closed tickets half-accounted:
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 3 error(s), 1802 warning(s), 697 waived
 - error-findings: E501@/home/logan/projects/frob/src/frob/tickets/_land.py:1231, F401@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:25, F841@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:215
+
+<!-- ticket:T-1381 -->
+```yaml
+id: T-1381
+title: frob release stamp must refuse to absorb an un-bumped API change
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/release/**
+- src/frob/app/release_runner.py
+acceptance:
+- text: GIVEN the public API changed since the last stamp AND the version has not
+    been bumped WHEN frob release stamp runs THEN it refuses, names the required version,
+    and writes nothing
+  evidence: []
+- text: GIVEN the same state WHEN frob release stamp --allow-unbumped runs THEN it
+    stamps and logs a loud justification-required override
+  evidence: []
+- text: GIVEN the version HAS been bumped to at least the required level WHEN frob
+    release stamp runs THEN it stamps exactly as before
+  evidence: []
+threat: null
+component: null
+```
+Hit by the coordinator 2026-08-01, in this exact order: REL001 said 'public API changed (minor) since 0.293.0; bump the version to >= 0.294.0, then run: frob release stamp'. Running 'frob release stamp' at the UNCHANGED 0.293.0 made REL001 go quiet -- because stamping rebaselines the recorded public API at whatever version is current. The gate was satisfied and the minor bump silently never happened. Caught only by noticing afterwards; reverted, bumped, re-stamped.
+
+The remedy text itself invites the mistake: it names bump-then-stamp as one instruction, and stamp alone is the half that appears to work.
+
+stamp already has everything needed to refuse: it computes the public-API diff against the recorded manifest, which is exactly what REL001 uses to decide the required bump level. It should compare the current version against that required level and refuse when it is short, with the same loud, justification-required override shape the repo already uses for --skip-mutation-evidence and --allow-cross-ticket.
+
+This is the standing systematize-friction rule: a footgun the tool can detect must be made impossible rather than left to reviewer attention.
