@@ -6216,7 +6216,7 @@ Related: the user's standing preference is still to SUGGEST 'make <target>' wher
 id: T-1383
 title: 'T-1381 follow-through: frob:doc edge on stamp and testsuite sync for the guard
   tests'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
