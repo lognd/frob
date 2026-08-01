@@ -5506,10 +5506,13 @@ sprint: null
 scope:
 - src/frob/gates/__init__.py
 - docs/design/registry/check-coverage.yaml
+evidence:
+- tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
 acceptance:
 - text: GIVEN main WHEN tests/test_registry_exhaustiveness.py runs THEN test_no_reg008_findings_for_check_coverage_yaml
     passes
-  evidence: []
+  evidence:
+  - tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
 threat: null
 component: null
 ```
