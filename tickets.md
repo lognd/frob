@@ -5891,7 +5891,7 @@ Until this is fixed, FROB_NO_DAEMON=1 is the correct default for interactive wor
 ```yaml
 id: T-1379
 title: Make the check daemon opt-in until its shutdown/leak/CPU defects are fixed
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
