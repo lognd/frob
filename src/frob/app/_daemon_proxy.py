@@ -289,6 +289,8 @@ def _shutdown_stale_daemon(root: Path) -> None:
 # frob:tests tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_version_handshake_end_to_end kind="unit"  # noqa: E501
 # frob:tests tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_restarts_on_version_skew kind="unit"  # noqa: E501
 # frob:tests tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_noop_when_version_matches kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_lease_t1276.py::TestEnsureDaemonLivenessBranches.test_wedged_does_not_spawn_a_rival kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_lease_t1276.py::TestEnsureDaemonLivenessBranches.test_orphaned_clears_socket_then_spawns kind="unit"  # noqa: E501
 def ensure_daemon(root: Path) -> None:
     """Ensure a live, version-matched daemon is running (or freshly
     starting) for `root`, self-healing a version-skewed one first (T-1093
@@ -421,6 +423,7 @@ class _LeaseConnection:
         self._buf = b""
 
     # frob:doc docs/modules/testing.md#t-1126-daemon-owned-coverage-lease-frob_lease_acquirefrob_lease_release  # noqa: E501
+    # frob:tests tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_round_trip_acquire_call_release_close kind="unit"  # noqa: E501
     def call(self, method: str, params: dict[str, Any] | None = None) -> dict:
         """Send one JSON-RPC request line and read one response line back."""
         import json
@@ -439,6 +442,7 @@ class _LeaseConnection:
         return json.loads(line.decode("utf-8"))
 
     # frob:doc docs/modules/testing.md#t-1126-daemon-owned-coverage-lease-frob_lease_acquirefrob_lease_release  # noqa: E501
+    # frob:tests tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_round_trip_acquire_call_release_close kind="unit"  # noqa: E501
     def close(self) -> None:
         """Close the connection -- the server's connection-liveness
         release (T-1097) frees any lease this connection still held,
@@ -449,6 +453,9 @@ class _LeaseConnection:
 # frob:doc docs/modules/testing.md#frobtesting_coverage_waitpy-t-0322-cross-worktree-layer-t-1095  # noqa: E501
 # frob:tests tests/test_coverage_wait_shared.py::TestWorktreeLock.test_uses_daemon_lease_when_daemon_up kind="unit"  # noqa: E501
 # frob:tests tests/test_coverage_wait_shared.py::TestWorktreeLock.test_falls_back_to_file_lock_when_no_daemon kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_round_trip_acquire_call_release_close kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_disabled_env_bypasses_lease kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_no_daemon_falls_back_unreachable kind="unit"  # noqa: E501
 def try_daemon_lease(
     root: Path,
     resource: str,
@@ -505,6 +512,7 @@ def try_daemon_lease(
 
 # frob:doc docs/modules/testing.md#t-1126-daemon-owned-coverage-lease-frob_lease_acquirefrob_lease_release  # noqa: E501
 # frob:tests tests/test_coverage_wait_shared.py::TestWorktreeLock.test_uses_daemon_lease_when_daemon_up kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_round_trip_acquire_call_release_close kind="unit"  # noqa: E501
 def release_daemon_lease(conn: _LeaseConnection, resource: str) -> None:
     """Explicitly free `resource` on `conn` (best-effort: a failure here
     is harmless -- `conn.close()`, always called right after by the

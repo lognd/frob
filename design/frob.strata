@@ -3225,6 +3225,7 @@ node testsuite : trusted {
     attr interface=TestCollectStatus;
     attr interface=TestCollectTsTests;
     attr interface=TestColor;
+    attr interface=TestColorizedLevelFormatter;
     attr interface=TestCombineRecoversDisjointSessions;
     attr interface=TestCommitStartTransition;
     attr interface=TestCommitTicketLedgerChange;
@@ -3304,6 +3305,7 @@ node testsuite : trusted {
     attr interface=TestD10CmdEvidenceReverify;
     attr interface=TestD11DedupedMatchRule;
     attr interface=TestD12DeletionFilterBroadScope;
+    attr interface=TestDaemonLease;
     attr interface=TestDaemonOptIn;
     attr interface=TestDataClumps;
     attr interface=TestDdlSchema;
@@ -3441,6 +3443,7 @@ node testsuite : trusted {
     attr interface=TestEnforceWorktreeLease;
     attr interface=TestEnforcesConformance;
     attr interface=TestEnsureDaemon;
+    attr interface=TestEnsureDaemonLivenessBranches;
     attr interface=TestEnsureReleaseQuartetCoherent;
     attr interface=TestEntrypointAllowlist;
     attr interface=TestEnvAccess;
@@ -3570,6 +3573,8 @@ node testsuite : trusted {
     attr interface=TestFrobSelfModelPiiPosture;
     attr interface=TestFrobTest;
     attr interface=TestFrobTomlCheckDefaults;
+    attr interface=TestFromArgs;
+    attr interface=TestFromExternal;
     attr interface=TestFullSequence;
     attr interface=TestFuzz001;
     attr interface=TestFuzz002;

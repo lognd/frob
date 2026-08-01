@@ -899,6 +899,12 @@ class _ColorizedLevelFormatter(logging.Formatter):
     # frob:doc docs/modules/app.md#runners
     # frob:ticket T-0588
     # frob:tests tests/system/test_cli_check.py::TestCheckBadCode.test_unused_import_output_mentions_error  # noqa: E501
+    # frob:tests tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_debug_passes_through_unchanged kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_info_passes_through_unchanged kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_warning_is_painted_yellow_when_color_on kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_error_is_painted_red_when_color_on kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_error_is_unpainted_when_color_off kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_critical_uses_the_error_branch_too kind="unit"  # noqa: E501
     def format(self, record: logging.LogRecord) -> str:
         """Format via `base`, then paint ERROR+ red / WARNING yellow when
         `color` is on; DEBUG/INFO pass through unchanged."""

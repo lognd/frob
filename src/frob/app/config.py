@@ -608,6 +608,13 @@ class AppConfig(BaseModel):
     # defined right above each loop -- not attacker- or externally-controlled input; \
     # this is the standard argparse-Namespace-to-model field-copy idiom, not an \
     # evasion surface"
+    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_missing_file_falls_back_to_defaults kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_reads_and_merges_tool_frob_table kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_subcommand_is_resolved_to_the_enum kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_no_color_flag_is_copied_when_present kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_string_field_from_the_first_copy_loop_is_carried kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_bool_flag_from_the_second_copy_loop_defaults_false kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_bool_flag_from_the_second_copy_loop_is_set_true kind="unit"  # noqa: E501
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
         # frob:doc docs/modules/app.md#config
         # frob:waive AFFECT001 reason="same T-1150 sys_check/scope-closure disclosed \
@@ -996,6 +1003,7 @@ class AppConfig(BaseModel):
         return cls(**d)
 
     @classmethod
+    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromArgs.test_delegates_to_from_external_with_pyproject_default kind="unit"  # noqa: E501
     def from_args(cls, args: argparse.Namespace) -> "AppConfig":
         # frob:doc docs/modules/app.md#config
         return cls.from_external(args, Path("pyproject.toml"))

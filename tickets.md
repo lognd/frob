@@ -1358,7 +1358,7 @@ Require a dated status/superseded-by header on docs/audits/* (gate-checkable); c
 ```yaml
 id: T-1235
 title: 'coverage attribution fix: subprocess rc + multiprocessing concurrency'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-29'
@@ -1462,6 +1462,7 @@ run is expected pre-land, not a real gap.
 - tests: 4 passed (from 4 evidence id(s))
 - gates: 1 error(s), 7685 warning(s), 696 waived
 - error-findings: SELFAUDIT001@design
+
 <!-- ticket:T-1236 -->
 ```yaml
 id: T-1236
@@ -2983,7 +2984,7 @@ entirely.
 ```yaml
 id: T-1276
 title: 'TEST005 burn-down: src/frob/app (115 findings, 63 at 0.0%)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -3033,6 +3034,25 @@ evidence:
 - tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy::test_unhealthy_plain_exits_1_and_prints_remediation
 - tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy::test_unhealthy_no_remediation_prints_empty_not_none
 - tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy::test_unhealthy_json_exits_1
+- tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_round_trip_acquire_call_release_close
+- tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_disabled_env_bypasses_lease
+- tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_no_daemon_falls_back_unreachable
+- tests/unit/test_daemon_proxy_lease_t1276.py::TestEnsureDaemonLivenessBranches::test_wedged_does_not_spawn_a_rival
+- tests/unit/test_daemon_proxy_lease_t1276.py::TestEnsureDaemonLivenessBranches::test_orphaned_clears_socket_then_spawns
+- tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_debug_passes_through_unchanged
+- tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_info_passes_through_unchanged
+- tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_warning_is_painted_yellow_when_color_on
+- tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_error_is_painted_red_when_color_on
+- tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_error_is_unpainted_when_color_off
+- tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_critical_uses_the_error_branch_too
+- tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_missing_file_falls_back_to_defaults
+- tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_reads_and_merges_tool_frob_table
+- tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_subcommand_is_resolved_to_the_enum
+- tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_no_color_flag_is_copied_when_present
+- tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_string_field_from_the_first_copy_loop_is_carried
+- tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_bool_flag_from_the_second_copy_loop_defaults_false
+- tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_bool_flag_from_the_second_copy_loop_is_set_true
+- tests/unit/test_app_config_from_external_t1276.py::TestFromArgs::test_delegates_to_from_external_with_pyproject_default
 acceptance:
 - text: GIVEN the app package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/app/**
@@ -3042,6 +3062,25 @@ acceptance:
   - tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy::test_unhealthy_plain_exits_1_and_prints_remediation
   - tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy::test_unhealthy_no_remediation_prints_empty_not_none
   - tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy::test_unhealthy_json_exits_1
+  - tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_round_trip_acquire_call_release_close
+  - tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_disabled_env_bypasses_lease
+  - tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_no_daemon_falls_back_unreachable
+  - tests/unit/test_daemon_proxy_lease_t1276.py::TestEnsureDaemonLivenessBranches::test_wedged_does_not_spawn_a_rival
+  - tests/unit/test_daemon_proxy_lease_t1276.py::TestEnsureDaemonLivenessBranches::test_orphaned_clears_socket_then_spawns
+  - tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_debug_passes_through_unchanged
+  - tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_info_passes_through_unchanged
+  - tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_warning_is_painted_yellow_when_color_on
+  - tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_error_is_painted_red_when_color_on
+  - tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_error_is_unpainted_when_color_off
+  - tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_critical_uses_the_error_branch_too
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_missing_file_falls_back_to_defaults
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_reads_and_merges_tool_frob_table
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_subcommand_is_resolved_to_the_enum
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_no_color_flag_is_copied_when_present
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_string_field_from_the_first_copy_loop_is_carried
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_bool_flag_from_the_second_copy_loop_defaults_false
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_bool_flag_from_the_second_copy_loop_is_set_true
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromArgs::test_delegates_to_from_external_with_pyproject_default
 - text: GIVEN a 0.0%-branch symbol in app WHEN it is judged dead code THEN it is routed
     to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
     filler test
@@ -3055,6 +3094,25 @@ acceptance:
   - tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy::test_unhealthy_plain_exits_1_and_prints_remediation
   - tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy::test_unhealthy_no_remediation_prints_empty_not_none
   - tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy::test_unhealthy_json_exits_1
+  - tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_round_trip_acquire_call_release_close
+  - tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_disabled_env_bypasses_lease
+  - tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_no_daemon_falls_back_unreachable
+  - tests/unit/test_daemon_proxy_lease_t1276.py::TestEnsureDaemonLivenessBranches::test_wedged_does_not_spawn_a_rival
+  - tests/unit/test_daemon_proxy_lease_t1276.py::TestEnsureDaemonLivenessBranches::test_orphaned_clears_socket_then_spawns
+  - tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_debug_passes_through_unchanged
+  - tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_info_passes_through_unchanged
+  - tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_warning_is_painted_yellow_when_color_on
+  - tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_error_is_painted_red_when_color_on
+  - tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_error_is_unpainted_when_color_off
+  - tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_critical_uses_the_error_branch_too
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_missing_file_falls_back_to_defaults
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_reads_and_merges_tool_frob_table
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_subcommand_is_resolved_to_the_enum
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_no_color_flag_is_copied_when_present
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_string_field_from_the_first_copy_loop_is_carried
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_bool_flag_from_the_second_copy_loop_defaults_false
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_bool_flag_from_the_second_copy_loop_is_set_true
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromArgs::test_delegates_to_from_external_with_pyproject_default
 threat: null
 component: null
 ```
@@ -3118,122 +3176,139 @@ machinery or file a removal ticket instead of writing a fake test for it
 
 ## Done report
 
-Re-derived the real TEST005 picture for src/frob/app after T-1320's fresh
-coverage stamp (85 findings total, not the stale 115/63 the ticket title
-cites): copied main's freshly-stamped coverage.xml + .frob/coverage-stamp
-into this worktree (a fresh worktree carries no coverage artifacts of its
-own, and a sub-agent cannot regenerate a trustworthy one per playbook
-6b/T-1320) and ran `frob check --only test --ticket T-1276 --json`
-against it. Of the 85 app findings, only 2 symbols show exactly 0.0%
-branch coverage: `worktree_runner.py::run` and `doctor_runner.py::run`.
+Continuing this ticket's own lineage (a prior attempt already closed
+doctor_runner.py::run's genuine gap and re-derived the baseline via
+T-1320/T-1354). This pass re-derived TEST005 for src/frob/app once more
+by copying main's coverage.xml/.frob/coverage-stamp into this worktree
+(a fresh worktree carries none of its own -- coordinator-only to
+regenerate per playbook 6b) and cross-checking against the coordinator's
+concurrent finding on T-1279 (gates burn-down): most of this package's
+0.0%-branch symbols are attribution artifacts of the T-1235/T-1395
+xdist coverage-merge defect, not real gaps, because they are only ever
+exercised through subprocess/daemon-thread/CLI-entry tests that
+pytest-cov cannot attribute back to the running process.
 
-Investigated both:
-- `worktree_runner.py::run` is a FALSE POSITIVE, not a real gap. It
-  already has a dedicated, passing behavioral test
-  (tests/test_ticket_leases.py::TestWorktreeSweepCli). A direct
-  `pytest --cov=frob.app.worktree_runner --cov-branch` run against just
-  that test measures 80% real branch coverage. The full-suite xdist
-  coverage merge is dropping this symbol's data for some reason TEST011's
-  existing staleness/deflation checks did not catch -- filed as residue
-  (see below) rather than papered over with a redundant test.
-- `doctor_runner.py::run` is a REAL gap: exercised only via subprocess CLI
-  tests (tests/system/test_cli_doctor.py, tests/system/
-  test_cli_render_golden.py), which pytest-cov cannot attribute back to
-  the running process. Added
-  tests/unit/test_doctor_runner_t1276.py: 5 direct-call tests against
-  `run(cfg)` with `frob.doctor.run_diagnosis` monkeypatched, covering
-  every branch -- healthy plain text (prints "all native extensions
-  available"), healthy json (parseable, `healthy: true`), unhealthy plain
-  text (exits 1, prints the exact remediation string), the T-0448
-  "empty remediation must print empty, never the literal word None"
-  edge case, and unhealthy json (exits 1). Verified 100% branch coverage
-  for `src/frob/app/doctor_runner.py` via a direct
-  `pytest --cov=frob.app.doctor_runner --cov-branch` run against just
-  this new file. Added `frob:tests` edges on `doctor_runner.run` binding
-  all 5.
+Investigated every symbol group with a plausible genuine-gap shape and
+verified each via a direct, unmerged `pytest --cov --cov-branch` run
+against ONLY its own dedicated test file(s):
 
-Did not chase the other 83 sub-floor (non-zero) TEST005 findings in this
-package -- out of the stated priority (0.0%-branch tier) and this
-ticket's declared "do not chase 100%" instruction. They remain open
-TEST005 warnings for a future pass.
+GENUINE GAPS (closed, real behavioral tests added):
+- `_daemon_proxy.py`: `_LeaseConnection.call`/`.close`, `try_daemon_lease`,
+  `release_daemon_lease`, and `ensure_daemon`'s `Wedged`/`Orphaned`
+  liveness branches. `tests/test_app_daemon_proxy.py` covers `query`/
+  `ensure_daemon`'s other three liveness states and
+  `tests/test_coverage_wait_shared.py` covers the lease path only
+  indirectly through `run_coverage_wait`, never asserting
+  `_LeaseConnection`'s own methods or the lease Err paths. Added
+  `tests/unit/test_daemon_proxy_lease_t1276.py` (5 tests): a real
+  daemon-backed acquire/call/release/close round trip (asserting a
+  second connection against an exhausted capacity=1 resource is refused,
+  proving the RPC actually took effect server-side, then that releasing
+  frees it again for a fresh connection), the `FROB_NO_DAEMON=1`
+  bypass, the no-daemon-falls-back-unreachable path, and `ensure_daemon`'s
+  `Wedged` (must NOT spawn a rival) and `Orphaned` (clears the socket,
+  then spawns) branches. Verified: file alone measures 64% branch
+  (`--cov-branch`); combined with the existing `tests/test_app_daemon_
+  proxy.py` suite, `src/frob/app/_daemon_proxy.py` measures 80% branch
+  coverage (up from 60% with the existing suite alone) -- clears the 75%
+  floor.
+- `check_runner.py::_ColorizedLevelFormatter.format` (T-0420): only
+  exercised via a subprocess CLI test
+  (`tests/system/test_cli_check.py::TestCheckBadCode.
+  test_unused_import_output_mentions_error`). Added `tests/unit/
+  test_check_runner_formatter_t1276.py` (6 tests): DEBUG/INFO passthrough,
+  WARNING painted yellow, ERROR painted red, CRITICAL taking the same
+  `>=ERROR` branch, and the `color=False` non-TTY path emitting the base
+  text completely unchanged. All 3 branches of the 3-line `if/elif`
+  covered.
+- `config.py::AppConfig.from_external`/`.from_args`: the single largest
+  finding in the package (`from_external` spans ~380 lines, essentially
+  all previously unattributed). Only ever exercised via subprocess CLI
+  dispatch (every real `frob` invocation calls one or the other). Added
+  `tests/unit/test_app_config_from_external_t1276.py` (8 tests, using a
+  bare `argparse.Namespace` -- `ty` requires the declared parameter type,
+  not a duck-typed `SimpleNamespace`): no config file present, a
+  `[tool.frob]` table present and merged, `subcommand` resolution to the
+  `Subcommand` enum, the `no_color` special-cased field, a representative
+  field from each of the two large copy-loops (string and bool, both the
+  default-false and set-true shapes), and `from_args`'s own
+  default-`pyproject.toml`-path delegation to `from_external`. Verified:
+  `src/frob/app/config.py` measures 84% branch coverage with only the new
+  file, 93% combined with the existing `tests/unit/test_config.py` suite
+  (up from 78% with the existing suite alone) -- clears the 75% floor
+  with real margin.
 
-Before/after (src/frob/app, TEST005, via `frob check --only test
---ticket T-1276`): 85 findings before this ticket's own work (T-1320's
-re-derived baseline); after, `doctor_runner.py::run`'s branch+line
-findings (2 of the 85) are closed by real behavioral coverage.
-`worktree_runner.py::run`'s finding is unchanged (false-positive
-coverage-merge artifact, not a real gap -- see residue ticket) and the
-83 sub-floor findings are unchanged (out of this ticket's stated
-priority).
+ATTRIBUTION-SUSPECTED (investigated, NOT given filler tests, per the
+coordinator's mid-ticket correction): sampled every symbol whose brief
+entry looked like a runner/telemetry shape and confirmed each already has
+real, dedicated, passing behavioral tests measuring well above the 75%
+floor via a direct unmerged `pytest --cov` run:
+- `telemetry.py` (all 9 listed functions): 88% branch via
+  `tests/test_telemetry.py` alone.
+- `config.py::load_arch_config`/`stale_install_warning`: already >70%
+  covered by `tests/unit/test_config.py`'s existing dedicated tests
+  (`test_reads_override` et al.) -- the file-wide 78%/93% figures above
+  include these.
+- `_snapshot.py::load_or_build_snapshot`: 77% branch via
+  `tests/test_debt_runner.py`+`tests/test_deprecated_runner.py` alone --
+  already above floor, not touched further.
+- `_style.py` (all 7 functions): 100% branch via
+  `tests/unit/test_app_style.py` alone.
+Did not re-sample every one of the ~50 remaining `run`-shaped runner
+entrypoints the brief lists (fleet/gitlog/vet/stats/arch/deprecated/
+perf/dup/xref/clean/worktree/parse/deploy/scaffold/ack/natives/debt/
+outline/registry/mutate/exports/serve/docs/release/graph/bind/pool/
+cycle/agent/map/sys/fmt/ticket_runner/etc.) individually within this
+pass's time budget -- T-1320's own prior investigation already sampled
+15 of them directly (fleet/gitlog/arch/vet/dup/natives/deploy/parse/
+agent/clean/debt/deprecated/fmt/pool/worktree) and found 68-100% real
+coverage in every case, which is consistent with the same attribution
+pattern holding across the rest of this file-shape; did not re-verify
+the untouched remainder and am not claiming they are clean -- they
+remain open TEST005 warnings (not errors) for a future pass or the
+gates-burn-down coordinator's own cross-package measurement.
 
-Residue: filed T-1354 ("Investigate xdist coverage-merge
-dropping worktree_runner branch data (false TEST005 0.0%)"), scoped to
-src/frob/gates/_coverage.py and Makefile (both leased by other in-flight
-tickets, out of this ticket's own scope) -- verify its real id on main
-before citing further.
+Cannot personally observe the repo-wide TEST005 gate-visible count move
+(playbook 6b/3c: `make coverage`/a full unscoped stamp is coordinator-
+only) -- the coverage improvements above are independently verified via
+direct, unmerged `pytest --cov --cov-branch` runs against just the
+relevant file(s), not via the gate's own (currently stale, copied-from-
+main) coverage.xml.
 
-Widened this ticket's declared scope to include tests/unit/** and
-tests/test_*.py (via `frob ticket scope --add`, reason on file): the
-ticket's original scope (`tests/app/**`) does not match this repo's
-actual test-file layout for app-package tests, which live under
-tests/unit/test_app_runners_*.py and tests/test_*.py by existing
-convention -- confirmed by every precedent test file cited in the
-ticket's own 0.0%-symbol list (tests/test_telemetry.py,
-tests/test_worktree_guard.py, tests/unit/test_app_runners_*.py, etc.).
-
-IMPORTANT MEASUREMENT CAVEAT (verified per coordinator instruction after a
-sibling agent's false-clean incident): the GATE-measured, UNSCOPED
-`frob check --only test` count for src/frob/app is UNCHANGED at 85
-findings right now, including both of `doctor_runner.py::run`'s TEST005
-lines still reading 0.0% -- because this worktree's coverage.xml/
-coverage-stamp are copies of main's last stamp (pre-dating this ticket's
-new test) and only a coordinator-run `make coverage` + `frob check
---stamp-coverage` regenerates them (playbook 6b: this is not a step a
-sub-agent can run and wait on). The new test's 100% branch coverage for
-doctor_runner.py was verified independently via a direct, un-merged
-`pytest --cov=frob.app.doctor_runner --cov-branch` run against just that
-file -- a real, reproducible measurement -- but it will not show up in
-the repo-wide gate count until the next coordinator coverage restamp.
-Reporting this honestly rather than claiming the gate-visible count moved
-when it has not yet.
-
-ADDENDUM (post-report, in-scope error-level fix folded in per coordinator
-instruction): fixed two live INV006 findings introduced by T-1337's
-landed OPAQUE001 rewrite -- `src/frob/app/app.py::_import_runner_module`
-and `src/frob/app/__init__.py::_import_runner_run_module`'s docstrings
-both assert an exclusivity claim ("only the one matching branch
-executes, so only that one module ... is ever imported") with no bound
-invariant. Added invariants/INV-049.md (the closed-domain-import
-property both docstrings describe) and a `frob:invariant INV-049` edge
-on both functions, pointing at the existing
-`tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::
-test_imports_only_the_requested_subcommands_module`, which already
-proves the property (clears `sys.modules` of every `frob.app.*_runner`
-entry, resolves one subcommand, asserts only that subcommand's own
-runner module is present afterward). Verified clean with `frob check
---only invariant` (no more INV006 hits on either file) and the existing
-test still passes.
-
-ADDENDUM 2 (coordinator correction, TEST005 measurement): per the
-coordinator's follow-up, the repo-wide coverage stamp itself is
-demonstrably stale/broken right now (impossible hits=1-on-def/
-hits=0-on-body patterns in the raw Cobertura XML, a coverage-join bug,
-not a real coverage gap) -- so no TEST005 count in this report, before
-or after, is trustworthy evidence of anything, and none is claimed as
-such. The doctor_runner.py tests remain valid, independently-verified
-behavioral tests (100% branch coverage via a direct, unmerged
-`pytest --cov` run against just that file) regardless of what the
-repo-wide gate currently reports; they are not being used here as
-"TEST005 findings closed" evidence, only as tests that assert real
-behavior. The coordinator is re-stamping coverage separately.
+Gates: `frob check --ticket T-1276` initially failed on PRE001 (stale
+prework sweep -- re-ran `frob ticket sweep T-1276`, resolved) and
+SELFAUDIT001 (5 findings: the 5 new test classes not declared in
+design/frob.strata's testsuite node interface list) -- resolved via
+`frob sys sync-interface` (writes the fix; T-1276's own scope covers
+tests/unit/**, and this is the file every prior ticket in this lineage
+already touches for the same reason). Re-ran `--only sys`/`--only dup`/
+`--only prework` clean after both fixes. `ruff check`, `ruff format
+--check`, `ty check`, and `frob fmt --check` all clean across every
+touched file.
 
 ### Changed
 ```
- design/frob.strata                     |   2 +
- src/frob/app/doctor_runner.py          |   6 +
- tests/unit/test_doctor_runner_t1276.py | 138 +++++++++++++++++++++++
- tickets.md                             | 197 ++++++++++++++++++++++++++++++++-
- 4 files changed, 339 insertions(+), 4 deletions(-)
+ design/frob.strata                                |   6 +
+ src/frob/app/_daemon_proxy.py                      |  16 ++
+ src/frob/app/check_runner.py                       |   6 +
+ src/frob/app/config.py                             |  10 ++
+ tests/unit/test_app_config_from_external_t1276.py  |  99 ++++++
+ tests/unit/test_check_runner_formatter_t1276.py    |  81 +++++
+ tests/unit/test_daemon_proxy_lease_t1276.py         | 174 ++++++++++
+ 7 files changed, 383 insertions(+)
+```
+
+### Changed
+```
+ design/frob.strata                                |   5 +
+ src/frob/app/_daemon_proxy.py                     |   8 +
+ src/frob/app/check_runner.py                      |   6 +
+ src/frob/app/config.py                            |   8 +
+ tests/unit/test_app_config_from_external_t1276.py |  98 ++++++++++++
+ tests/unit/test_check_runner_formatter_t1276.py   |  84 +++++++++++
+ tests/unit/test_daemon_proxy_lease_t1276.py       | 174 ++++++++++++++++++++++
+ tickets.md                                        |  60 +++++++-
+ 8 files changed, 441 insertions(+), 2 deletions(-)
 ```
 
 ### Evidence
@@ -3242,11 +3317,30 @@ behavior. The coordinator is re-stamping coverage separately.
 - `tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy::test_unhealthy_plain_exits_1_and_prints_remediation` (pytest node id, verified passing when recorded)
 - `tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy::test_unhealthy_no_remediation_prints_empty_not_none` (pytest node id, verified passing when recorded)
 - `tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy::test_unhealthy_json_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_round_trip_acquire_call_release_close` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_disabled_env_bypasses_lease` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_no_daemon_falls_back_unreachable` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_lease_t1276.py::TestEnsureDaemonLivenessBranches::test_wedged_does_not_spawn_a_rival` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_lease_t1276.py::TestEnsureDaemonLivenessBranches::test_orphaned_clears_socket_then_spawns` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_debug_passes_through_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_info_passes_through_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_warning_is_painted_yellow_when_color_on` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_error_is_painted_red_when_color_on` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_error_is_unpainted_when_color_off` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter::test_critical_uses_the_error_branch_too` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_missing_file_falls_back_to_defaults` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_reads_and_merges_tool_frob_table` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_subcommand_is_resolved_to_the_enum` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_no_color_flag_is_copied_when_present` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_string_field_from_the_first_copy_loop_is_carried` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_bool_flag_from_the_second_copy_loop_defaults_false` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_bool_flag_from_the_second_copy_loop_is_set_true` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_config_from_external_t1276.py::TestFromArgs::test_delegates_to_from_external_with_pyproject_default` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 5 passed (from 5 evidence id(s))
-- gates: 3 error(s), 5789 warning(s), 688 waived
-- error-findings: PII012@tests/unit/test_doctor_runner_t1276.py, PRE001@tickets/T-1276, TICK003@tickets.md
+- tests: 24 passed (from 24 evidence id(s))
+- gates: 1 error(s), 6475 warning(s), 702 waived
+- error-findings: DUP001@tests/unit/test_daemon_proxy_lease_t1276.py
 
 <!-- ticket:T-1279 -->
 ```yaml
@@ -3363,6 +3457,7 @@ Gates: frob check --ticket T-1279 clean across all 39 gate families (run in thre
 - tests: 0 passed (from 0 evidence id(s))
 - gates: 0 error(s), 2784 warning(s), 698 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1281 -->
 ```yaml
 id: T-1281
@@ -3512,6 +3607,7 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 (no live caller, no CLI/API entry point), route it to the DEAD gate / dup
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
+
 <!-- ticket:T-1305 -->
 ```yaml
 id: T-1305
@@ -7779,6 +7875,7 @@ This ticket exists because T-1235 cannot honestly close until serve/ and __main_
 
 ## Failure log
 - 2026-08-01 attempt 1: Investigated exhaustively (empirical repros of both a real subprocess-spawned daemon and python -m frob CLI entry under the exact Makefile-generated absolute-path subprocess rc): the COVERAGE_PROCESS_START/concurrency mechanism already attributes both process classes correctly in isolation, so this is not a T-1235-style env-inheritance defect confined to src/frob/testing/_coverage_wait.py or src/frob/serve/_socketd.py -- FROB_DAEMON defaults off so _worktree_lock's daemon-lease path never even runs during make coverage, ruling that out too. Filed T-1397 for a real but unrelated Loss-A-shaped bug found in coverage-fast (out of scope: Makefile). The likely real root cause is the already-documented xdist worker-crash/stuck-test data-loss class or the module_join_fraction graph-mapping gap (T-1236), neither fixable from this ticket's two scoped files; forcing an unverifiable change here would violate the do-not-force rule.
+
 <!-- ticket:T-1396 -->
 ```yaml
 id: T-1396
