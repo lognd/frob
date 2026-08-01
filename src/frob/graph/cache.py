@@ -310,31 +310,63 @@ def _recreate(conn: sqlite3.Connection, path: Path) -> sqlite3.Connection:
 
 
 # frob:ticket T-0141
+# frob:ticket T-1239
 def _apply_schema_with_recovery(
     conn: sqlite3.Connection, existing: int | None, path: Path
 ) -> sqlite3.Connection:
-    """Apply the schema; on a DatabaseError escaping the DDL, recreate once.
+    """Apply the schema; retry through lock contention, recreate on real corruption.
 
     `_read_schema_version`'s own "is this even sqlite" probe (`SELECT 1`)
     can pass on a file that is sqlite-shaped but has a corrupted table page
     (T-0141: this is what py3.12's libsqlite exposes that 3.11 did not) --
     `SELECT 1` never touches a btree page, so it can't see that damage. The
     DDL here is what actually reads the meta/files/symbols pages, so it is
-    the second and final place corruption can surface. A failure right
-    after recreation is a real error, not something to loop on, so the
-    retry's own DatabaseError propagates uncaught.
+    the second and final place corruption can surface.
+
+    T-1239: a "database is locked" `sqlite3.OperationalError` (busy_timeout
+    exhausted by a concurrent process's own schema-migration DDL, e.g. a
+    cold multi-agent build racing on the same brand-new `cache.db`) is NOT
+    corruption -- treating it as such (the pre-fix behavior, since
+    `OperationalError` subclasses `DatabaseError`) deleted and recreated a
+    file another process was mid-write on, and a THIRD process opening in
+    that same window could observe the half-rebuilt file between the
+    `DROP TABLE`/`CREATE TABLE` statements (`_apply_schema` is not one
+    transaction; sqlite DDL auto-commits per statement) as "no such table:
+    files". A lock timeout instead polls and re-checks the stored schema
+    version -- if the contending process already finished the migration,
+    this becomes a no-op; otherwise it retries the DDL itself. Every OTHER
+    `DatabaseError` (a genuinely corrupted page) still recreates once, and
+    that retry's own failure still propagates uncaught -- not something to
+    loop on.
     """
-    try:
-        _apply_schema(conn, existing, path)
-    except sqlite3.DatabaseError as exc:
-        _log.warning(
-            "cache.connect: %s failed schema application, recreating: %s",
-            path,
-            exc,
-        )
-        conn = _recreate(conn, path)
-        _apply_schema(conn, None, path)
-    return conn
+    deadline = time.monotonic() + _LOCK_TOTAL_TIMEOUT_SECONDS
+    while True:
+        try:
+            _apply_schema(conn, existing, path)
+            return conn
+        except sqlite3.OperationalError as exc:
+            if "locked" not in str(exc).lower():
+                raise
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise
+            _log.warning(
+                "cache.connect: %s locked during schema application, "
+                "retrying (up to %.0fs remaining)",
+                path,
+                remaining,
+            )
+            time.sleep(_LOCK_POLL_SECONDS)
+            conn, existing = _read_schema_version(conn, path)
+        except sqlite3.DatabaseError as exc:
+            _log.warning(
+                "cache.connect: %s failed schema application, recreating: %s",
+                path,
+                exc,
+            )
+            conn = _recreate(conn, path)
+            _apply_schema(conn, None, path)
+            return conn
 
 
 # frob:invariant INV-003

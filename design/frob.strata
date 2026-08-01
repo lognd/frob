@@ -4207,6 +4207,7 @@ node testsuite : trusted {
     attr interface=TestScenarioTouchedNodesMissingFlow;
     attr interface=TestSchemaDriftRebuild;
     attr interface=TestSchemaExtras;
+    attr interface=TestSchemaLockContentionRecovery;
     attr interface=TestScope002ClosureGate;
     attr interface=TestScopeCli;
     attr interface=TestScopeDigest;

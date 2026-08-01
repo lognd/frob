@@ -1386,6 +1386,93 @@ class TestCorruptCacheRecovery:
         assert row is not None and row[0] == str(graph_cache._SCHEMA_VERSION)
 
 
+# frob:ticket T-1239
+class TestSchemaLockContentionRecovery:
+    """`_apply_schema_with_recovery` must tell lock contention (a
+    concurrent process's own in-flight schema migration) apart from real
+    corruption (T-1239): before this fix, a "database is locked"
+    `OperationalError` -- caught by the pre-fix `except DatabaseError`,
+    since `OperationalError` subclasses it -- triggered a delete-and-
+    recreate exactly like real corruption, racing a concurrent writer and
+    surfacing as a THIRD process's "no such table: files"."""
+
+    # frob:tests src/frob/graph/cache.py::_apply_schema_with_recovery
+    def test_locked_error_retries_instead_of_recreating(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        cache = tmp_path / "cache.db"
+        conn = graph_cache._open(cache)
+        recreate_calls: list[Path] = []
+        real_recreate = graph_cache._recreate
+
+        def _spy_recreate(c, p):
+            recreate_calls.append(p)
+            return real_recreate(c, p)
+
+        monkeypatch.setattr(graph_cache, "_recreate", _spy_recreate)
+
+        calls = {"n": 0}
+        real_apply_schema = graph_cache._apply_schema
+
+        def _flaky_apply_schema(c, existing, p):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise sqlite3.OperationalError("database is locked")
+            return real_apply_schema(c, existing, p)
+
+        monkeypatch.setattr(graph_cache, "_apply_schema", _flaky_apply_schema)
+        monkeypatch.setattr(graph_cache, "_LOCK_POLL_SECONDS", 0.01)
+
+        result_conn = graph_cache._apply_schema_with_recovery(conn, None, cache)
+        try:
+            row = result_conn.execute(
+                "SELECT value FROM meta WHERE key = 'schema_version'"
+            ).fetchone()
+        finally:
+            result_conn.close()
+        assert row is not None and row[0] == str(graph_cache._SCHEMA_VERSION)
+        assert calls["n"] == 2, "expected exactly one retry after the locked error"
+        assert recreate_calls == [], (
+            "a lock-contention error must never trigger delete-and-recreate"
+        )
+
+    # frob:tests src/frob/graph/cache.py::_apply_schema_with_recovery
+    def test_non_locked_database_error_still_recreates(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        cache = tmp_path / "cache.db"
+        conn = graph_cache._open(cache)
+        recreate_calls: list[Path] = []
+        real_recreate = graph_cache._recreate
+
+        def _spy_recreate(c, p):
+            recreate_calls.append(p)
+            return real_recreate(c, p)
+
+        monkeypatch.setattr(graph_cache, "_recreate", _spy_recreate)
+
+        calls = {"n": 0}
+        real_apply_schema = graph_cache._apply_schema
+
+        def _corrupt_once_apply_schema(c, existing, p):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise sqlite3.DatabaseError("database disk image is malformed")
+            return real_apply_schema(c, existing, p)
+
+        monkeypatch.setattr(graph_cache, "_apply_schema", _corrupt_once_apply_schema)
+
+        result_conn = graph_cache._apply_schema_with_recovery(conn, None, cache)
+        try:
+            row = result_conn.execute(
+                "SELECT value FROM meta WHERE key = 'schema_version'"
+            ).fetchone()
+        finally:
+            result_conn.close()
+        assert row is not None and row[0] == str(graph_cache._SCHEMA_VERSION)
+        assert recreate_calls == [cache], "real corruption must still recreate once"
+
+
 class TestDuplicateSymrefs:
     # frob:tests src/frob/graph/__init__.py::build_graph
     def test_overload_and_property_setter_do_not_crash(self, tmp_path):
