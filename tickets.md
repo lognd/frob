@@ -4513,7 +4513,7 @@ ticket does not spend effort re-testing already-covered code.
 ```yaml
 id: T-1355
 title: land merges the whole branch diff, leaking a sibling ticket's work onto main
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-31'
@@ -4654,7 +4654,6 @@ Disclosed cuts:
 - tests: 4 passed (from 4 evidence id(s))
 - gates: 2 error(s), 694 warning(s), 706 waived
 - error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w1-land/src/frob/tickets/_land.py:1229, SELFAUDIT001@design
-
 <!-- ticket:T-1356 -->
 ```yaml
 id: T-1356
