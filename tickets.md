@@ -5974,10 +5974,20 @@ scope:
 - .frob-release.json
 - pyproject.toml
 - docs/modules/serve.md
+- tests/test_app_daemon_proxy.py
+scope_changes:
+- op: add
+  glob: tests/test_app_daemon_proxy.py
+  reason: the probe's evidence tests live here and covers_scope needs them in scope
+  actor: logan
+  at: '2026-08-01'
+evidence:
+- tests/test_app_daemon_proxy.py::TestProbeDaemon::test_dead_socket_file_is_orphaned
 acceptance:
 - text: GIVEN main WHEN frob check --only gates runs THEN gate:ARCH, gate:COV, gate:PRE
     and gate:SCOPE report 0 errors
-  evidence: []
+  evidence:
+  - tests/test_app_daemon_proxy.py::TestProbeDaemon::test_dead_socket_file_is_orphaned
 threat: null
 component: null
 ```
