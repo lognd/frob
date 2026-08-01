@@ -5432,10 +5432,13 @@ sprint: null
 scope:
 - tests/unit/test_makefile_coverage.py
 - tests/unit/test_ticket_store.py
+evidence:
+- tests/unit/test_makefile_coverage.py::TestCombineRecoversDisjointSessions::test_two_disjoint_sessions_combine_to_full_coverage
 acceptance:
 - text: GIVEN a full make coverage run WHEN the suite completes THEN tests/unit/test_makefile_coverage.py
     and tests/unit/test_ticket_store.py report no failures
-  evidence: []
+  evidence:
+  - tests/unit/test_makefile_coverage.py::TestCombineRecoversDisjointSessions::test_two_disjoint_sessions_combine_to_full_coverage
 threat: null
 component: null
 ```
