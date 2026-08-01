@@ -5391,3 +5391,27 @@ threat: null
 component: null
 ```
 95 findings at drive start (62 EXHAUST001, 33 EXHAUST002). Each is either a real unhandled-exception path (fix the handling or add a catch-all) or a case for an explicit frob:raises declaration. Prefer declaring the truth over blanket except Exception where the escape is genuinely intended.
+
+<!-- ticket:T-1372 -->
+```yaml
+id: T-1372
+title: 'Drain DOC006 to zero: unresolvable file::symbol and doc-anchor pointers'
+state: queued
+kind: docs
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/**
+- CHANGELOG.md
+acceptance:
+- text: GIVEN main WHEN frob check --only gates runs THEN gate:DOC reports 0 DOC006
+    warnings
+  evidence: []
+threat: null
+component: null
+```
+55 findings at drive start. Two shapes: file::symbol pointers naming symbols that no longer resolve (often renamed or made private), and doc-anchor links whose target heading does not exist. Fix the reference where the target still exists under a new name; waive with a reason only where the pointer documents genuine history (e.g. CHANGELOG entries naming since-deleted symbols).
