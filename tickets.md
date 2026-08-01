@@ -5653,7 +5653,7 @@ Observed 2026-08-01. After two make coverage runs that BOTH failed and both logg
 id: T-1376
 title: 'condition-coverage is never parsed: branch_pct is hit/not-hit, so TEST005
   measures the wrong thing'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
