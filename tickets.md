@@ -6041,7 +6041,7 @@ closed tickets half-accounted:
 ```yaml
 id: T-1381
 title: frob release stamp must refuse to absorb an un-bumped API change
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
