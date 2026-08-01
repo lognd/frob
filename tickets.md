@@ -5664,10 +5664,13 @@ sprint: null
 scope:
 - src/frob/gates/_coverage.py
 - tests/test_gates.py
+evidence:
+- tests/test_gates.py::TestConditionCoverageIsActuallyParsed::test_partial_condition_coverage_is_read_verbatim
 acceptance:
 - text: GIVEN a Cobertura line with condition-coverage='50% (1/2)' WHEN _parse_line_el
     runs THEN branch_pct is 50, not 100
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestConditionCoverageIsActuallyParsed::test_partial_condition_coverage_is_read_verbatim
 - text: GIVEN the repo's own coverage.xml WHEN every branch line is parsed THEN the
     produced branch_pct values include partial percentages, not only 0 and 100
   evidence: []
@@ -5685,7 +5688,6 @@ So symbol_branch is not branch coverage at all -- it is 'was this line hit'. Eve
 The fix is cond_cov.split('%')[0].strip(). Expect the corrected numbers to move DOWN for partially-covered code, which will surface TEST005 findings that were previously invisible -- the ratchet floors in frob-coverage.lock.json will need re-baselining against honest data, not clamped as a regression.
 
 The except-branch fallback is correct and should stay for genuinely malformed input; T-1371 added tests pinning it.
-
 <!-- ticket:T-1377 -->
 ```yaml
 id: T-1377
