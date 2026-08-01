@@ -5421,7 +5421,7 @@ component: null
 id: T-1373
 title: 'make coverage is red: nested coverage subprocess leak and the T-1333 CSafeLoader
   test'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
