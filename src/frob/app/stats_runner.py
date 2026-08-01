@@ -139,13 +139,44 @@ def _try_stats_via_daemon(root: Path, cfg: AppConfig) -> bool:
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
 # frob:tests tests/unit/test_app_style.py::test_stats_plain_stdout_has_no_ansi
+# frob:ticket T-1392
+# frob:waive AFFECT001 reason="T-1392: docs/modules/app.md's one-line \
+# `stats_runner.run` summary ('renders the delivery snapshot ... from \
+# frob.stats.collect') is still accurate -- this change only wraps the existing render \
+# in quiet_stdout_logs() for --json, an internal fix with no user-visible contract \
+# change; docs/** is also under an active T-1235 lease this ticket cannot touch \
+# (ScopeLeaseConflict)"
+def run(cfg: AppConfig) -> None:
+    """`frob stats [--json] [--agentic]`: every sibling `--json` runner
+    (`frob.app.gitlog_runner`, `frob.app.map_runner`, etc.) wraps its body
+    in `quiet_stdout_logs()` so INFO/DEBUG log lines (`frob.app.
+    _daemon_proxy`'s "computing X in-process", `frob.tickets`' loader
+    lines) never leak into `--json` stdout; `_run_body` had never been
+    given that wrapper, so plain `frob stats --json` produced invalid
+    JSON (T-1392)."""
+    import contextlib
+
+    from frob.logging import quiet_stdout_logs
+
+    ctx = quiet_stdout_logs() if cfg.stats_json else contextlib.nullcontext()
+    with ctx:
+        _run_body(cfg)
+
+
+# frob:ticket T-1392
 # frob:waive ARCH103 reason="T-0977: `frob stats` CLI entrypoint -- routes between the \
 # agentic and gated report modes and renders each; the mode-branch-then-render shape \
-# IS the runner's job, same as this module's sibling `frob.app.*_runner`s"
-def run(cfg: AppConfig) -> None:
-    """Render the delivery snapshot (queue health + commit cadence), or
-    the non-gated agentic time/token breakdown when `FROB_STATS_AGENTIC`
-    is set (T-0178)."""
+# IS the runner's job, same as this module's sibling `frob.app.*_runner`s (waiver \
+# moved from `run` onto `_run_body`, T-1392: `run` is now a thin quiet_stdout_logs \
+# wrapper, `_run_body` carries the branching logic the waiver's reason describes)"
+# frob:waive COV005 reason="T-1392: this IS the deliberate rebind COV005 flags, not an \
+# accidental one -- `run` (public) was split into a thin quiet_stdout_logs wrapper \
+# plus `_run_body` (private), and the ARCH103 waiver correctly followed the branching \
+# logic it was written about onto the new private helper rather than staying on the \
+# wrapper that no longer has that shape"
+def _run_body(cfg: AppConfig) -> None:
+    """The actual `frob stats` rendering logic, run under `run`'s
+    `quiet_stdout_logs()` wrapper when `--json` is set."""
     if _agentic_requested(cfg):
         _run_agentic(cfg)
         return

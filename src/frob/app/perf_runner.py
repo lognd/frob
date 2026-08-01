@@ -632,14 +632,18 @@ def _hot_json(cfg: AppConfig, root: Path, by: str) -> None:
 
 # frob:ticket T-0712
 # frob:ticket T-1093
+# frob:ticket T-1392
 def _hot(cfg: AppConfig) -> None:
     """`frob perf hot [--path DIR] [--top N] [--by p90|p50xcount] [--json]`:
     render T-0711's persisted sketch store, ranked by `--by` (default
     `p50xcount`) -- the query surface T-0712's plan calls for, reading
     the store directly with no live re-collection (a `frob perf collect`
     run is what populates it). The `--json` path is handled by `_hot_json`
-    (T-1093's daemon-proxy seam); this function still renders the default
-    table itself."""
+    (T-1093's daemon-proxy seam), wrapped in `_run_quiet_if_json` (T-1392:
+    unlike `_heat`/`_collect`, this call was never wrapped, so `frob.app.
+    _daemon_proxy`'s "computing frob_perf_hot in-process" INFO line leaked
+    into `--json` stdout and broke `json.loads` on the caller side); this
+    function still renders the default table itself."""
     from frob.perf._sketch_store import list_sketches
     from frob.stats._sketch import quantile, total_weight
 
@@ -647,7 +651,7 @@ def _hot(cfg: AppConfig) -> None:
     by = cfg.perf_by or "p50xcount"
 
     if cfg.perf_json:
-        _hot_json(cfg, root, by)
+        _run_quiet_if_json(cfg, lambda cfg: _hot_json(cfg, root, by))
         return
 
     rows = list_sketches(root)

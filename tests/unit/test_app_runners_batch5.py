@@ -606,7 +606,11 @@ class TestReleaseRunner:
 
         import frob.release as release_mod
 
-        monkeypatch.setattr(release_mod, "stamp", lambda root, snap, ver: Err("nope"))
+        monkeypatch.setattr(
+            release_mod,
+            "stamp",
+            lambda root, snap, ver, **kwargs: Err("nope"),
+        )
         cfg = AppConfig(release_command="stamp", release_path=tmp_path)
         with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
             release_run(cfg)

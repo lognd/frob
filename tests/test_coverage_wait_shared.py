@@ -292,6 +292,13 @@ class TestWorktreeLock:
         # hen_daemon_up
         import frob.testing._coverage_wait as _cw
 
+        # T-1379 made the daemon path opt-IN (FROB_DAEMON=1) rather than
+        # opt-out -- a live daemon socket alone no longer implies
+        # `_daemon_enabled()`, so this test (written under T-1126, before
+        # T-1379 shipped) must set the opt-in flag itself to exercise the
+        # lease path it names.
+        monkeypatch.setenv("FROB_DAEMON", "1")
+
         root = _make_repo(tmp_path, "proj")
         (root / ".frob").mkdir()
 
