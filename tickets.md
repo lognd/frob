@@ -5702,10 +5702,13 @@ sprint: null
 scope:
 - src/frob/app/_daemon_proxy.py
 - tests/test_app_daemon_proxy.py
+evidence:
+- tests/test_app_daemon_proxy.py::TestProbeDaemon::test_dead_socket_file_is_orphaned
 acceptance:
 - text: GIVEN a socket file whose daemon is gone WHEN the proxy probes THEN it classifies
     Orphaned, unlinks the socket, and spawns -- in well under a second
-  evidence: []
+  evidence:
+  - tests/test_app_daemon_proxy.py::TestProbeDaemon::test_dead_socket_file_is_orphaned
 - text: GIVEN a daemon that is alive but not answering WHEN the proxy probes THEN
     it classifies Wedged and does NOT spawn a competing daemon
   evidence: []
@@ -5727,7 +5730,6 @@ Three states need distinguishing, each with a different correct action:
 Also observed and in scope for a follow-up: the daemon leaks its multiprocessing forkserver and resource_tracker children on shutdown (four were left orphaned after SIGTERM), and a daemon whose socket file is deleted underneath it keeps running while being permanently unreachable -- it should notice its listening inode is gone and exit.
 
 Probe budget should be sub-second: this is a local unix-socket round trip, so 0.5s is already ~1000x headroom.
-
 <!-- ticket:T-1378 -->
 ```yaml
 id: T-1378
