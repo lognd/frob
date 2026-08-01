@@ -4286,10 +4286,13 @@ scope_changes:
     positives the landed slice introduced
   actor: logan
   at: '2026-08-01'
+evidence:
+- tests/test_todo_fmt_gate.py::TestTodo001BareComment::test_no_todo_token_no_violation
 acceptance:
 - text: given main, when frob check --only gates runs, then gate:PII and gate:TICK
     report 0 errors
-  evidence: []
+  evidence:
+  - tests/test_todo_fmt_gate.py::TestTodo001BareComment::test_no_todo_token_no_violation
 threat: null
 component: null
 ```
