@@ -5960,7 +5960,7 @@ lands and the daemon demonstrably beats the in-process path.
 id: T-1380
 title: 'T-1377/T-1379 follow-through: gate obligations for the new daemon-liveness
   code'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-01'
