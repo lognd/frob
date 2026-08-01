@@ -4482,6 +4482,8 @@ def _test010_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_fires_on_structural_only_edge  # noqa: E501
 # frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_silent_on_executed_edge  # noqa: E501
 # frob:enforces CHK-GATE-TEST013
+# frob:enforces CHK-SUBSYS-GATES-ACCOUNTING
+# frob:ticket T-1374
 def _test013_native_unverified(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """TEST013 (warn): a `frob:tests` edge's TEST001-004 credit rests solely
     on the c/cpp structural fallback (docs/audits/gates-accounting.md
