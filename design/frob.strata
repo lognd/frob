@@ -3542,6 +3542,8 @@ node testsuite : trusted {
     attr interface=TestFlowAuthVia;
     attr interface=TestFlowCompletenessGap;
     attr interface=TestFmt001Gate;
+    attr interface=TestFmt001MarkerEntries;
+    attr interface=TestFmt001ViolationsForRuns;
     attr interface=TestFmtRunnerRun;
     attr interface=TestFoldCommentRuns;
     attr interface=TestForkPoolHazards;
@@ -4219,6 +4221,7 @@ node testsuite : trusted {
     attr interface=TestSetDoneReportBaseRefFailsFast;
     attr interface=TestSetDoneReportClaims;
     attr interface=TestSetKind;
+    attr interface=TestSetManifestVersion;
     attr interface=TestSetPriority;
     attr interface=TestSetTier;
     attr interface=TestSeverityAndDegrade;
@@ -4401,6 +4404,8 @@ node testsuite : trusted {
     attr interface=TestTierField;
     attr interface=TestTiers;
     attr interface=TestTighten;
+    attr interface=TestTodo001BareComment;
+    attr interface=TestTodo002Edges;
     attr interface=TestToolCrashResult;
     attr interface=TestToolResult;
     attr interface=TestToolResultBuilderExclusion;
@@ -4869,6 +4874,7 @@ node testsuite : trusted {
     attr interface=test_load_artifact_missing_ref_is_err;
     attr interface=test_load_artifact_no_artifact_is_err;
     attr interface=test_load_decisions_parses_records;
+    attr interface=test_load_manifest_malformed_json_is_err;
     attr interface=test_load_manifest_missing_is_no_manifest;
     attr interface=test_load_manifest_reads_stamped_version;
     attr interface=test_log4shell_end_to_end_cwe_linkage_via_mirror;
@@ -5085,6 +5091,7 @@ node testsuite : trusted {
     attr interface=test_repo_excludes_litmus_strata_from_obligation_surface;
     attr interface=test_report_and_apply_are_the_tier_a_ready_entry_points;
     attr interface=test_required_version_and_satisfies;
+    attr interface=test_required_version_bad_previous_is_err;
     attr interface=test_reset_run_memo_activates_an_unbounded_scope;
     attr interface=test_resolve_local_import_maps_to_repo_relative;
     attr interface=test_resolve_manifest_paths_bad_output_expression_is_render_failed;
@@ -5132,6 +5139,7 @@ node testsuite : trusted {
     attr interface=test_rust_outline_functions;
     attr interface=test_rust_outline_methods;
     attr interface=test_rust_outline_ok;
+    attr interface=test_satisfies_unparseable_inputs_are_false;
     attr interface=test_scale_50_files_json;
     attr interface=test_scale_50_files_total_tokens_positive;
     attr interface=test_scan_bindings_finds_cpp_and_rust;

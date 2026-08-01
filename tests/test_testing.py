@@ -12,6 +12,8 @@ from typani import Err, Ok
 import frob.gates  # noqa: F401  (T-0634: import before frob.testing to break the frob.gates<->frob.testing circular-import ordering)
 from frob.gitio import Diff, Hunk, ProcResult, working_diff
 from frob.graph import build_graph
+from frob.strata import StrataError
+from frob.strata._native_test import run_native_sys_audit
 from frob.testing import (
     RunnerSpec,
     SelectConfig,
@@ -587,6 +589,34 @@ boundary b_login endorse f_login : foreign -> authenticated when "jwt_verified"
 
         assert result.is_err
         assert result.danger_err == TestingError.NativeAuditFailed
+
+    # frob:tests \
+    # tests/test_testing.py::TestNativeStrataAudit.test_malformed_repo_benign_config_fails
+    def test_malformed_repo_benign_config_fails(self, tmp_path: Path) -> None:
+        """A repo `frob.toml` with a `[[strata.benign_capabilities]]` entry
+        missing its required `kind` field surfaces as
+        `StrataError.MalformedBenignConfig` straight from
+        `run_native_sys_audit`'s `repo_benign.is_err` branch -- this is the
+        REJECT path (T-0598's deny-by-default excuse validation), not the
+        happy path every other case in this class exercises; a checker
+        that silently swallowed this and proceeded would defeat the
+        excuse-must-be-honest guarantee entirely."""
+        _write(tmp_path, "design/m.strata", self._MODEL)
+        _write(
+            tmp_path,
+            "frob.toml",
+            """
+            [[strata.benign_capabilities]]
+            reason = "missing kind on purpose"
+            caught_by = "none"
+            family = "security"
+            """,
+        )
+
+        result = run_native_sys_audit(tmp_path)
+
+        assert result.is_err
+        assert result.danger_err == StrataError.MalformedBenignConfig
 
 
 class TestWorktree:

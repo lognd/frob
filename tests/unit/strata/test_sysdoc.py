@@ -5,6 +5,8 @@ exhaustiveness-proof-the-point).
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from frob.strata import (
     CWE_CATALOG,
     Claim,
@@ -145,6 +147,53 @@ class TestRenderAuditMatrix:
         first = render_audit_matrix(model, "owasp-top-10")
         second = render_audit_matrix(model, "owasp-top-10")
         assert first.danger_ok == second.danger_ok
+
+    # frob:tests src/frob/strata/_sysdoc.py::render_audit_matrix kind="unit"
+    def test_root_given_binds_code_and_still_renders(self, tmp_path: Path):
+        """T-0630: passing `root` binds `model` against the real tree
+        (`bind_code`) before rendering -- a successful binding must not
+        change the happy-path outcome, just thread the discharge join
+        through. This is the untested `if root is not None` branch --
+        without it, a regression that silently stopped honoring `root`
+        (always taking the pre-T-0630 model-only path) would not be
+        caught by any test in this suite."""
+        (tmp_path / "web").mkdir()
+        (tmp_path / "web" / "handler.py").write_text("x = 1\n", encoding="utf-8")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="Web",
+                    trust="trusted",
+                    may=("html_render",),
+                    attrs=("code=web/**",),
+                ),
+            )
+        )
+        result = render_audit_matrix(model, "owasp-top-10", root=tmp_path)
+        assert result.is_ok
+        assert "FAILING:" in result.danger_ok
+
+    # frob:tests src/frob/strata/_sysdoc.py::render_audit_matrix kind="unit"
+    def test_ambiguous_code_binding_propagates_as_error(self, tmp_path: Path):
+        """A `root` whose real tree makes `bind_code` itself fail
+        (two nodes' `code=` globs both matching the same file) must
+        propagate `Err(AmbiguousCodeBinding)` from `render_audit_matrix`
+        rather than silently rendering a matrix with a missing/partial
+        join -- the fail-closed guarantee the docstring promises. This is
+        the checker's own REJECT path: a regression that swallowed this
+        and rendered anyway would defeat the whole point of binding
+        `root` in the first place."""
+        (tmp_path / "web").mkdir()
+        (tmp_path / "web" / "handler.py").write_text("x = 1\n", encoding="utf-8")
+        model = KernelModel(
+            nodes=(
+                Node(id="Web", trust="trusted", attrs=("code=web/**",)),
+                Node(id="WebToo", trust="trusted", attrs=("code=web/*.py",)),
+            )
+        )
+        result = render_audit_matrix(model, "owasp-top-10", root=tmp_path)
+        assert result.is_err
+        assert result.danger_err == StrataError.AmbiguousCodeBinding
 
 
 class TestAuditClaim:

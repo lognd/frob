@@ -7,6 +7,7 @@ End-to-end parse -> elaborate coverage lives in
 
 from __future__ import annotations
 
+from frob.strata._errors import StrataError
 from frob.strata._krb import krb_trust_flows
 from frob.strata._krb_movement import (
     KRB_MOVEMENT_CATALOG,
@@ -265,6 +266,24 @@ class TestKrbScen:
         model = KernelModel(nodes=(Node(id="app", trust="trusted", attrs=()),))
         scenario = build_compromised_krb_scenario(model, "does-not-exist", "compromise")
         assert scenario.is_err
+
+    # frob:tests src/frob/strata/_krb_movement.py::evaluate_krb_movement_waived \
+    # kind="unit"
+    def test_build_facts_failure_propagates_through_cross_realm(self):
+        """`evaluate_krb_movement_waived` composes KRB001-004 and must
+        propagate the FIRST underlying `Err` unchanged -- here,
+        `evaluate_cross_realm_containment`'s own `build_facts(model)` call
+        fails closed on a structurally invalid model (duplicate node ids,
+        constructed directly to bypass `parse_module`'s own validation).
+        This is the REJECT path: a regression that silently swallowed a
+        `build_facts` failure and returned an empty/vacuous waiver
+        application instead would defeat KRB004's whole fail-closed
+        guarantee."""
+        node = Node(id="dup", trust="trusted", attrs=("krb_realm=CORP.EXAMPLE",))
+        model = KernelModel(nodes=(node, node))
+        result = evaluate_krb_movement_waived(model)
+        assert result.is_err
+        assert result.danger_err is StrataError.DuplicateId
 
 
 class TestKrbCatalog:

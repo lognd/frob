@@ -16,6 +16,7 @@ from frob.release import (
     required_version,
     rewrite_pyproject_version,
     satisfies,
+    set_manifest_version,
     stamp,
 )
 
@@ -87,6 +88,59 @@ def test_required_version_and_satisfies():
     assert required_version("1.2.3", BumpClass.PATCH).danger_ok == "1.2.4"
     assert satisfies("2.0.0", "2.0.0")
     assert not satisfies("1.9.9", "2.0.0")
+
+
+# frob:ticket T-1281
+def test_load_manifest_malformed_json_is_err(tmp_path):
+    # frob:tests src/frob/release/__init__.py::load_manifest
+    manifest_path(tmp_path).write_text("{not valid json", encoding="utf-8")
+    result = load_manifest(tmp_path)
+    assert result.is_err
+    assert result.danger_err == ReleaseError.Malformed
+
+
+# frob:ticket T-1281
+def test_required_version_bad_previous_is_err():
+    # frob:tests src/frob/release/__init__.py::required_version
+    result = required_version("not-a-version", BumpClass.PATCH)
+    assert result.is_err
+    assert result.danger_err == ReleaseError.BadVersion
+
+
+# frob:ticket T-1281
+def test_satisfies_unparseable_inputs_are_false():
+    # frob:tests src/frob/release/__init__.py::satisfies
+    assert satisfies("garbage", "1.0.0") is False
+    assert satisfies("1.0.0", "garbage") is False
+
+
+# frob:ticket T-1281
+class TestSetManifestVersion:
+    """T-1078/T-1281: resync ONLY the manifest's version field, in place."""
+
+    def test_rewrites_version_preserving_api(self, tmp_path):
+        # frob:tests src/frob/release/__init__.py::set_manifest_version
+        _write(tmp_path, "def a(x: int) -> int:\n    return x\n")
+        stamp(tmp_path, _snap(tmp_path), "1.0.0")
+        original_api = load_manifest(tmp_path).danger_ok.api
+        result = set_manifest_version(tmp_path, "2.0.0")
+        assert result.danger_ok == "2.0.0"
+        updated = load_manifest(tmp_path).danger_ok
+        assert updated.version == "2.0.0"
+        assert updated.api == original_api
+
+    def test_no_manifest_is_err(self, tmp_path):
+        # frob:tests src/frob/release/__init__.py::set_manifest_version
+        result = set_manifest_version(tmp_path, "2.0.0")
+        assert result.is_err
+        assert result.danger_err == ReleaseError.NoManifest
+
+    def test_malformed_manifest_is_err(self, tmp_path):
+        # frob:tests src/frob/release/__init__.py::set_manifest_version
+        manifest_path(tmp_path).write_text("{not valid json", encoding="utf-8")
+        result = set_manifest_version(tmp_path, "2.0.0")
+        assert result.is_err
+        assert result.danger_err == ReleaseError.Malformed
 
 
 def test_breaking_change_in_0x_bumps_minor_not_to_1_0_0():

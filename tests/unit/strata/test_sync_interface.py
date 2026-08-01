@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from frob.strata import StrataError
 from frob.strata._code_binding import bind_code
 from frob.strata._elaborate import elaborate
 from frob.strata._parse import parse_module
@@ -116,6 +117,65 @@ class TestSyncInterfaceReport:
             i for i, line in enumerate(lines) if line.strip().startswith("node widget")
         )
         assert "attr interface=public_fn;" in lines[header_idx + 1]
+
+    # frob:tests \
+    # tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport.test_no_design_files_reports_empty
+    def test_no_design_files_reports_empty(self, tmp_path: Path):
+        """No `.strata` files at all under `design/` -- `Ok` with an empty
+        file list, the same vacuous-but-honest posture every other
+        design-loading entrypoint in this package takes, not an error."""
+        (tmp_path / "design").mkdir()
+        result = sync_interface_report(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.files == ()
+
+    # frob:tests \
+    # tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport.test_bad_design_file_propagates_load_error
+    def test_bad_design_file_propagates_load_error(self, tmp_path: Path):
+        """A `.strata` file that fails to parse surfaces as the
+        underlying `DesignLoadError.error`, not silently skipped or
+        folded into a clean report -- this is the REJECT path, distinct
+        from every other case in this class which are all drift-clean or
+        drift-dirty successes."""
+        _write_design(tmp_path, "design", "bad.strata", "this is not valid strata {{{")
+        result = sync_interface_report(tmp_path)
+        assert result.is_err
+
+    # frob:tests \
+    # tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport.test_ambiguous_code_binding_propagates_as_error
+    def test_ambiguous_code_binding_propagates_as_error(self, tmp_path: Path):
+        """Two nodes whose `code=` globs both match the same real file
+        make `bind_code` itself fail -- `sync_interface_report` must
+        propagate `Err(AmbiguousCodeBinding)` rather than silently
+        computing drift off a partial/missing binding."""
+        _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+        _write_design(
+            tmp_path,
+            "design",
+            "widget.strata",
+            "module widget\n"
+            "node widget : trusted {\n"
+            '    code "src/frob/widget/**";\n'
+            "}\n"
+            "node widget_too : trusted {\n"
+            '    code "src/frob/widget/*.py";\n'
+            "}\n",
+        )
+        result = sync_interface_report(tmp_path)
+        assert result.is_err
+        assert result.danger_err == StrataError.AmbiguousCodeBinding
+
+    # frob:tests \
+    # tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport.test_design_file_without_any_node_is_skipped
+    def test_design_file_without_any_node_is_skipped(self, tmp_path: Path):
+        """A `.strata` file present under `design/` but declaring no
+        `node` at all (module-only) is skipped, not reported as a
+        zero-node file result -- the `_NODE_HEADER_RE`/`"node "` early
+        `continue` guard."""
+        _write_design(tmp_path, "design", "empty.strata", "module empty\n")
+        result = sync_interface_report(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.files == ()
 
 
 def test_report_and_apply_are_the_tier_a_ready_entry_points(tmp_path: Path):

@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from frob.graph import GraphSnapshot
 from frob.strata import (
     DesignIds,
     KernelModel,
     Node,
+    StrataError,
     Verdict,
     elaborate,
     parse_module,
@@ -102,6 +105,42 @@ class TestPlanObligations:
         assert f"{MARKER_PREFIX}Web:CWE-79:threat" in markers
         ticket = next(t for t in result.tickets if t.marker.endswith(":threat"))
         assert ticket.title == "Discharge CWE-79 at Web"
+
+    # frob:tests src/frob/strata/_plan.py::plan_obligations kind="unit"
+    def test_root_given_binds_code_and_still_plans(self, tmp_path: Path):
+        """T-0630: passing `root` binds `model` against the real tree
+        (`bind_code`) once and threads it into the THREAT003 frontier --
+        a successful binding must not change the ticket set for a model
+        with no fired obligations. This is the untested `if root is not
+        None` branch: without it a regression that silently stopped
+        honoring `root` would go uncaught."""
+        (tmp_path / "web").mkdir()
+        (tmp_path / "web" / "handler.py").write_text("x = 1\n", encoding="utf-8")
+        model = KernelModel(
+            nodes=(Node(id="Web", trust="trusted", attrs=("code=web/**",)),)
+        )
+        result = plan_obligations(model, root=tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.tickets == ()
+
+    # frob:tests src/frob/strata/_plan.py::plan_obligations kind="unit"
+    def test_ambiguous_code_binding_propagates_as_error(self, tmp_path: Path):
+        """A `root` whose real tree makes `bind_code` itself fail (two
+        nodes' `code=` globs both matching the same file) must propagate
+        `Err(AmbiguousCodeBinding)` rather than silently planning tickets
+        off a partial/missing binding -- the fail-closed REJECT path the
+        docstring promises."""
+        (tmp_path / "web").mkdir()
+        (tmp_path / "web" / "handler.py").write_text("x = 1\n", encoding="utf-8")
+        model = KernelModel(
+            nodes=(
+                Node(id="Web", trust="trusted", attrs=("code=web/**",)),
+                Node(id="WebToo", trust="trusted", attrs=("code=web/*.py",)),
+            )
+        )
+        result = plan_obligations(model, root=tmp_path)
+        assert result.is_err
+        assert result.danger_err == StrataError.AmbiguousCodeBinding
 
 
 class TestClaimEvaluationSanity:
