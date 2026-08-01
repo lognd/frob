@@ -3304,6 +3304,59 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
 
+## Done report
+
+Changed:
+src/frob/gates/_mutation_evidence.py::mutation_evidence_violations (added frob:tests binding for the ExecDisabled Err branch)
+src/frob/gates/_rule_id_scan.py::scan_emitted_rule_ids (added frob:tests bindings for comment-skip, missing-base-dir, unresolved-const-ref branches)
+src/frob/gates/_rule_id_scan.py::generated_gate_rule_ids (added frob:tests binding for the default-retired-set path)
+tests/gates/__init__.py (new test package)
+tests/gates/test_mutation_evidence_err_branches.py (new: TestMutationEvidenceErrBranches)
+tests/gates/test_rule_id_scan_branches.py (new: TestScanEmittedRuleIdsBranches, TestGeneratedGateRuleIdsRetiredOverride)
+design/frob.strata (SELFAUDIT001/SYS104: declared the three new test classes in the testsuite interface)
+
+Investigation of the other 10 of 12 listed 0.0%-branch symbols
+(secrets_gate, parse_failure_gate, opaque_gate, scan_emitted_rule_ids's
+literal-scan path, scope_digest, prework_gate, test_gate, release_gate,
+perf_gate, run_gates) found each already has real, behavioral
+frob:tests-bound coverage of both clean and finding-producing branches
+in existing test files (tests/test_secrets_gate.py,
+tests/test_gates.py's TestParseFailureGate/TestKnownGateRuleIds/
+TestScopeDigest*/TestPreworkGate*/TestTestGate*/TestReleaseGate*/
+TestPerfGate*/TestRunGates* classes, tests/test_vet.py's
+TestOpaqueIndirectionGate). Their reported 0.0% is not explained by a
+missing test -- most plausibly the known subprocess/multiprocess
+coverage-attribution gap tracked by the concurrent T-1235/T-1395
+tickets (out of this ticket's src/frob/gates/** scope to fix). Rather
+than fabricate filler tests against already-tested functions to chase
+a number, I closed the two symbols with a genuine, verifiable test gap
+(the mutation_evidence Err branch, and three rule_id_scan branches)
+and filed T-1396 to continue auditing the remaining ~167 non-0.0%-tier
+TEST005 findings in src/frob/gates for real (non-attribution) gaps.
+
+Evidence:
+tests/gates/test_mutation_evidence_err_branches.py::TestMutationEvidenceErrBranches::test_exec_disabled_degrades_to_no_violations
+tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_commented_out_rule_literal_is_skipped
+tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_missing_scanned_base_directory_is_skipped_not_an_error
+tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_unresolved_const_ref_is_left_out
+tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_const_ref_resolves_against_assignment_in_another_file
+tests/gates/test_rule_id_scan_branches.py::TestGeneratedGateRuleIdsRetiredOverride::test_default_retired_set_is_module_constant
+(all verified: timeout 100 uv run pytest -q -p no:randomly -o addopts="" tests/gates/ tests/test_gates_mutation_evidence.py -- 10 passed)
+
+Filed: T-1396 (continuation: audit src/frob/gates' remaining ~167 TEST005 findings past the 0.0% priority tier for genuine, non-attribution gaps)
+
+Gates: frob check --ticket T-1279 clean across all 39 gate families (run in three --only chunks: prework, gates-security, static, plus a full --budget 100 pass) -- 0 errors. ruff check/format and ty check clean.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 2784 warning(s), 698 waived
+- error-findings: none (measured, zero errors)
 <!-- ticket:T-1281 -->
 ```yaml
 id: T-1281
