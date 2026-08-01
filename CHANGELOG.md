@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.296.0] - unreleased
+
+- T-1385: Logging handler holds a stale captured sys.stderr, polluting stderr assertions and crashing xdist workers
+
 ## [0.295.0] - unreleased
 
 

@@ -29,6 +29,8 @@ _log.info("did the thing: %s", detail)
 <!-- frob:describes src/frob/logging/color.py::paint -->
 <!-- frob:describes src/frob/logging/quiet.py::quiet_stdout_logs -->
 <!-- frob:describes src/frob/logging/quiet.py::stdout_log_level -->
+<!-- frob:describes src/frob/logging/handler.py::_LazyStdoutHandler -->
+<!-- frob:describes src/frob/logging/handler.py::_LazyStderrHandler -->
 
 ```python
 # frob/logging/logger.py
@@ -80,4 +82,14 @@ stdout_log_level(level: int) -> Iterator[None]
     # check`'s -v/-vv verbosity gating (WARNING default, INFO at -v, DEBUG
     # at -vv). Not reentrant/thread-safe like quiet_stdout_logs -- for a
     # single top-level CLI invocation, not concurrent library code.
+
+# frob/logging/handler.py
+class _LazyStdoutHandler(logging.StreamHandler)
+class _LazyStderrHandler(logging.StreamHandler)
+    # StreamHandlers whose `stream` property re-reads sys.stdout/sys.stderr
+    # on every access instead of caching the object dictConfig saw at
+    # config time -- so a later-substituted or closed capture stream (e.g.
+    # pytest's capsys/capfd across test boundaries) can never be emitted
+    # against (T-1385). config.toml's stdout/stderr handlers use these
+    # classes instead of bare logging.StreamHandler with a stream= key.
 ```

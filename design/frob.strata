@@ -3720,6 +3720,7 @@ node testsuite : trusted {
     attr interface=TestLattice;
     attr interface=TestLayeringConfig;
     attr interface=TestLayeringViolations;
+    attr interface=TestLazyLogHandlers;
     attr interface=TestLazyRunnerRunAttrs;
     attr interface=TestLcom4;
     attr interface=TestLeaseRpc;

@@ -13,16 +13,14 @@ below = "WARNING"
 show_level = true
 
 [handlers.stdout]
-class = "logging.StreamHandler"
+class = "frob.logging.handler._LazyStdoutHandler"
 formatter = "stdout_fmt"
-stream = "ext://sys.stdout"
 level = "DEBUG"
 filters = ["below_warning"]
 
 [handlers.stderr]
-class = "logging.StreamHandler"
+class = "frob.logging.handler._LazyStderrHandler"
 formatter = "stderr_fmt"
-stream = "ext://sys.stderr"
 level = "WARNING"
 
 [root]

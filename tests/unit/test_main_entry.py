@@ -1,5 +1,7 @@
-"""Unit tests for `frob.__main__`'s top-level entry point (T-0355) and CLI
-vocabulary normalization (T-0578)."""
+"""Unit tests for `frob.__main__`'s top-level entry point (T-0355), CLI
+vocabulary normalization (T-0578), and the lazy log stream handlers that
+keep this module's own stderr assertions from being polluted by a stale
+captured stream (T-1385)."""
 
 # frob:waive OPAQUE001 reason="T-1038: every setattr(...) in this file is \
 # monkeypatch-style test isolation (pytest fixtures reassigning a module/object \
@@ -8,9 +10,14 @@ vocabulary normalization (T-0578)."""
 
 from __future__ import annotations
 
+import io
+import logging
+import sys
+
 import pytest
 
 from frob import __main__ as main_module
+from frob.logging.handler import _LazyStderrHandler, _LazyStdoutHandler
 
 
 # frob:ticket T-0355
@@ -154,3 +161,46 @@ class TestVocabularyAliases:
             ["ticket", "done-report", "T-0001", "--body", "narrative"]
         )
         assert args.ticket_why == "narrative"
+
+
+# frob:ticket T-1385
+class TestLazyLogHandlers:
+    """`_LazyStdoutHandler`/`_LazyStderrHandler` must resolve sys.stdout/
+    sys.stderr live at emit time, never cache the stream dictConfig saw at
+    bind time -- otherwise a pytest capsys/capfd stream closed at test
+    teardown leaves a stale handle that raises on the next emit and
+    pollutes an unrelated test's captured stderr (T-1385)."""
+
+    @pytest.mark.parametrize(
+        ("handler_cls", "attr"),
+        [(_LazyStderrHandler, "stderr"), (_LazyStdoutHandler, "stdout")],
+        ids=["stderr", "stdout"],
+    )
+    def test_handler_follows_stream_swap_not_bind_time_capture(
+        self, monkeypatch, handler_cls, attr
+    ) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestLazyLogHandlers.test_handler_follows_stream_swap_not_bind_time_capture  # noqa: E501
+        handler = handler_cls()
+        first = io.StringIO()
+        monkeypatch.setattr(sys, attr, first)
+        assert handler.stream is first
+        second = io.StringIO()
+        monkeypatch.setattr(sys, attr, second)
+        assert handler.stream is second
+
+    def test_stderr_handler_never_emits_against_a_closed_captured_stream(
+        self, monkeypatch
+    ) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestLazyLogHandlers.test_stderr_handler_never_emits_against_a_closed_captured_stream  # noqa: E501
+        handler = _LazyStderrHandler()
+        stale = io.StringIO()
+        monkeypatch.setattr(sys, "stderr", stale)
+        stale.close()  # simulates a pytest capsys stream closed at teardown
+
+        live = io.StringIO()
+        monkeypatch.setattr(sys, "stderr", live)  # a later test's capture
+
+        record = logging.LogRecord("x", logging.WARNING, __file__, 1, "msg", (), None)
+        handler.emit(record)  # must resolve `live`, never the closed `stale`
+
+        assert "msg" in live.getvalue()

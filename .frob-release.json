@@ -813,6 +813,8 @@
     "src/frob/logging/color.py::should_color": "0d7acf1593a37caad345ca0f3862bef59fdf019b1001f2151d40037550f8fffd",
     "src/frob/logging/filter.py::_BelowLevelFilter.filter": "15d7122e708cdf51bbedc5e8d7e20a215e325a471d0db28b490f8524d3d8a1e5",
     "src/frob/logging/formatter.py::_FrobFormatter.format": "e18613d80343f4b8f434caf7af974dea4419aeb99c8560f4fd332d7590a3b8c4",
+    "src/frob/logging/handler.py::_LazyStderrHandler.stream": "35071002926d79b885bc931806481e8ca791392d124e135125325fa74685e509",
+    "src/frob/logging/handler.py::_LazyStdoutHandler.stream": "35071002926d79b885bc931806481e8ca791392d124e135125325fa74685e509",
     "src/frob/logging/logger.py::get_logger": "c5c21c2b72b1c4b5c72a233a5949b9122506f4e9b8aa71ce3c82bec4e3ec990c",
     "src/frob/logging/quiet.py::logger_levels": "e772faf020eb5e729eecd595405f785f599185b27dc055eebf241cfa5420e052",
     "src/frob/logging/quiet.py::quiet_stdout_logs": "7c08dc9c2b61222dc8f6a993df768ba849a2bbc44ec323068b12d2a45a587e2d",
@@ -1937,5 +1939,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.295.0"
+  "version": "0.296.0"
 }
