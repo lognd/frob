@@ -5886,3 +5886,34 @@ Measured 2026-08-01 alongside T-1377. Three separate defects, all observed direc
 3. It costs more than it saves on this box. With a daemon up, load average went from ~0.4 idle to 5-8 while a single frob check ran, and the proxied shape got SLOWER across repeated runs rather than warming up. The daemon's forkserver pool competes with the foreground check for the same cores, so on a 4-core WSL machine the proxy is a pessimization.
 
 Until this is fixed, FROB_NO_DAEMON=1 is the correct default for interactive work and the docs should say so. T-1377 removes the pathological stalls (10s probe, respawn storms) but does NOT make the daemon a win.
+
+<!-- ticket:T-1379 -->
+```yaml
+id: T-1379
+title: Make the check daemon opt-in until its shutdown/leak/CPU defects are fixed
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/_daemon_proxy.py
+- tests/test_app_daemon_proxy.py
+acceptance:
+- text: GIVEN no daemon environment variable is set WHEN a proxying frob command runs
+    THEN it computes in-process and never spawns a daemon
+  evidence: []
+- text: GIVEN FROB_DAEMON=1 is set WHEN a proxying frob command runs THEN the daemon
+    path is used exactly as before
+  evidence: []
+threat: null
+component: null
+```
+T-1378 documents three unfixed daemon defects: frob_shutdown is acknowledged but ignored (needed SIGKILL), the multiprocessing forkserver/resource_tracker children leak on exit, and the daemon's pool competes with the foreground check for CPU badly enough to be a pessimization on a 4-core WSL box (load 0.4 idle -> 5-8 during a single check, with repeated runs getting SLOWER rather than warming).
+
+Today the daemon is opt-OUT: it auto-spawns unless FROB_NO_DAEMON=1. That means any unsuspecting session pays those defects by default. T-1377 removed the pathological stalls but explicitly did not make the daemon a win.
+
+Flip the default to opt-IN (FROB_DAEMON=1) until T-1378 lands. FROB_NO_DAEMON=1 keeps working as an explicit bypass so existing scripts and the differential test are unaffected.
