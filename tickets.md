@@ -5954,3 +5954,31 @@ lands and the daemon demonstrably beats the in-process path.
 - tests: 3 passed (from 3 evidence id(s))
 - gates: 11 error(s), 1603 warning(s), 695 waived
 - error-findings: AFFECT001@src/frob/app/_daemon_proxy.py, ARCH103@src/frob/app/_daemon_proxy.py, COV001@src/frob/app/_daemon_proxy.py, COV005@src/frob/app/_daemon_proxy.py, DOC007@src/frob/app/_daemon_proxy.py, DRIFT002@src/frob/app/_daemon_proxy.py, E501@/home/logan/projects/frob/src/frob/tickets/_land.py:1231, F401@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:25, F841@/home/logan/projects/frob/tests/unit/test_scope_lease_deadlock.py:215, PRE001@tickets/T-1379, SELFAUDIT001@design
+
+<!-- ticket:T-1380 -->
+```yaml
+id: T-1380
+title: 'T-1377/T-1379 follow-through: gate obligations for the new daemon-liveness
+  code'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/_daemon_proxy.py
+- design/frob.strata
+- .frob-release.json
+- pyproject.toml
+- docs/modules/serve.md
+acceptance:
+- text: GIVEN main WHEN frob check --only gates runs THEN gate:ARCH, gate:COV, gate:PRE
+    and gate:SCOPE report 0 errors
+  evidence: []
+threat: null
+component: null
+```
+T-1377 (bounded liveness probe) and T-1379 (opt-in default) closed before their own gate obligations were fully discharged: the probe split into _ask_version_over_socket/_classify_version_reply needs frob:ticket edges to an OPEN ticket, the new public test classes needed a design/frob.strata sync, the public-API change needs a REL001 bump, and _ask_version_over_socket trips ARCH103 for mixing socket I/O with its own branch decisions. This ticket carries all of that so the closed tickets' work is not left half-accounted.
