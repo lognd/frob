@@ -4241,7 +4241,7 @@ ticket to add the explicit partial-stamp representation.
 id: T-1365
 title: 'Clear main''s two gate errors: PII012 false positive and the TICK003 archive
   backlog'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
