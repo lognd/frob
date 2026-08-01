@@ -3439,7 +3439,7 @@ src/frob/app/app.py only) -- filed as a follow-up.
 id: T-1319
 title: 'perf-land follow-ups: restore 4 runner doc anchors, exhaustive dispatch-totality
   test'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-29'
