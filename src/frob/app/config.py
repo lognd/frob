@@ -385,6 +385,12 @@ class AppConfig(BaseModel):
     # `frob ticket land <id> --skip-mutation-evidence` -- documented escape
     # hatch: a TEST016 confirmatory-only-evidence finding is logged but does
     # not refuse the land. For genuine false positives only.
+    # frob:ticket T-1381
+    # `frob release stamp --allow-unbumped` -- documented escape hatch for
+    # the T-1381 refusal. Stamping rebaselines the recorded public API at
+    # whatever version is current, so stamping an API change WITHOUT the
+    # bump silences REL001 and the release never happens.
+    release_allow_unbumped: bool = False
     ticket_skip_mutation_evidence: bool = False
     # frob:ticket T-1369
     # `frob ticket land <id> --allow-cross-ticket` -- documented escape
@@ -958,6 +964,8 @@ class AppConfig(BaseModel):
             # frob:ticket T-1150
             "sys_check",
             "ticket_dry_run",
+            # frob:ticket T-1381
+            "release_allow_unbumped",
             "ticket_skip_mutation_evidence",
             # frob:ticket T-1369
             "ticket_allow_cross_ticket",

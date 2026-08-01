@@ -75,6 +75,11 @@ class ReleaseError(ErrorSet):
     WorktreeLeaseViolation = (
         "FROB_WORKTREE is leased to a different worktree than this command's cwd"
     )
+    UnbumpedApiChange = (
+        "the public API changed but the version was not bumped -- stamping now "
+        "would rebaseline the API at the OLD version and silence REL001 without "
+        "the release ever happening"
+    )
 
 
 def _public_api(snapshot: GraphSnapshot) -> dict[str, str]:
@@ -116,8 +121,40 @@ def load_manifest(root: Path) -> Result[ReleaseManifest, ReleaseError]:
 # frob:doc docs/modules/release.md#public-api
 # frob:tests tests/test_release_worktree_lease.py::TestStampWorktreeLease.test_mismatched_lease_refuses  # noqa: E501
 # frob:tests tests/test_release_worktree_lease.py::TestStampWorktreeLease.test_no_lease_succeeds  # noqa: E501
-def stamp(
+# frob:ticket T-1381
+# frob:tests tests/unit/test_release_stamp_guard.py::TestStampRefusesUnbumped.test_refuses_when_api_changed_and_version_not_bumped  # noqa: E501
+# frob:tests tests/unit/test_release_stamp_guard.py::TestStampRefusesUnbumped.test_allows_when_version_is_bumped  # noqa: E501
+def _bump_shortfall(
     root: Path, snapshot: GraphSnapshot, version: str
+) -> tuple[str, str, str, str] | None:
+    """`(bump_class, previous_version, required_version, current_version)` when
+    `version` is short of what the API change demands, else `None`.
+
+    T-1381: this is the SAME computation REL001 uses to decide the required
+    bump, applied at the moment of stamping. Stamping rebaselines the
+    recorded API at whatever version is current, so without this check
+    `frob release stamp` at an un-bumped version silences REL001 and the
+    release silently never happens -- exactly the footgun that produced
+    this ticket.
+    """
+    previous = load_manifest(root)
+    if previous.is_err:
+        # Nothing to compare against: the first stamp cannot be under-bumped.
+        return None
+    manifest = previous.danger_ok
+    bump = diff_class(manifest, snapshot)
+    need = required_version(manifest.version, bump)
+    if need.is_err or satisfies(version, need.danger_ok):
+        return None
+    return (bump.name.lower(), manifest.version, need.danger_ok, version)
+
+
+def stamp(
+    root: Path,
+    snapshot: GraphSnapshot,
+    version: str,
+    *,
+    allow_unbumped: bool = False,
 ) -> Result[str, ReleaseError]:
     """Write the current public API + `version` to the tracked manifest
     (T-0507: refuses with `Err(WorktreeLeaseViolation)` if `FROB_WORKTREE`
@@ -126,6 +163,18 @@ def stamp(
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(ReleaseError.WorktreeLeaseViolation)
+    if not allow_unbumped:
+        shortfall = _bump_shortfall(root, snapshot, version)
+        if shortfall is not None:
+            _log.error(
+                "release: refusing to stamp -- public API changed (%s) since %s, "
+                "so the version must be >= %s (currently %s). Bump it first, then "
+                "stamp; stamping now would rebaseline the API at the OLD version "
+                "and silence REL001 without the release ever happening. Pass "
+                "allow_unbumped=True (`--allow-unbumped`) only with a reason.",
+                *shortfall,
+            )
+            return Err(ReleaseError.UnbumpedApiChange)
     manifest = ReleaseManifest(version=version, api=_public_api(snapshot))
     path = manifest_path(root)
     path.write_text(

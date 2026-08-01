@@ -259,6 +259,18 @@ def _add_release_parser(sub) -> None:
     release_stamp_p.add_argument(
         "--path", dest="release_path", metavar="DIR", default="."
     )
+    # frob:ticket T-1381
+    release_stamp_p.add_argument(
+        "--allow-unbumped",
+        dest="release_allow_unbumped",
+        action="store_true",
+        help=(
+            "T-1381 escape hatch: stamp even though the public API changed "
+            "without a matching version bump. Stamping rebaselines the "
+            "recorded API at the CURRENT version, so this silences REL001 "
+            "while the release never happens -- use only with a reason."
+        ),
+    )
     release_check_p = release_sub.add_parser(
         "check", help="verify the version bump covers the public-API change"
     )

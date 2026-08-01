@@ -23,7 +23,7 @@ def run(cfg: AppConfig) -> None:
 
     match cfg.release_command:
         case "stamp":
-            _stamp(root)
+            _stamp(root, cfg)
         case "check":
             _check(root)
         case "sync":
@@ -49,11 +49,23 @@ def _version(root: Path) -> str:
 
 
 # frob:ticket T-0562
-def _stamp(root: Path) -> None:
+# frob:ticket T-1381
+def _stamp(root: Path, cfg: AppConfig) -> None:
     from frob.release import stamp
 
     version = _version(root)
-    result = stamp(root, load_or_build_snapshot(root, log_context="release"), version)
+    if cfg.release_allow_unbumped:
+        _log.warning(
+            "release stamp: --allow-unbumped set -- stamping an API change at an "
+            "un-bumped version rebaselines REL001 against the OLD version "
+            "(justification required)"
+        )
+    result = stamp(
+        root,
+        load_or_build_snapshot(root, log_context="release"),
+        version,
+        allow_unbumped=cfg.release_allow_unbumped,
+    )
     if result.is_err:
         _log.error("release stamp failed: %s", result.danger_err)
         sys.exit(1)

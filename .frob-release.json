@@ -1028,7 +1028,7 @@
     "src/frob/release/__init__.py::rewrite_pyproject_version": "2f8b4af9f2a28277e5e4c37e4220b9ccba50906a50596bb3edd027eec81f182b",
     "src/frob/release/__init__.py::satisfies": "96bf71bc7e49cfd989d1314b27c47da286e525fe21f38f4829104d0dff750bf7",
     "src/frob/release/__init__.py::set_manifest_version": "93981fb90b3d1ae527c4883a76f2d43a997658c2a8dd782427d3f7e80ec65acc",
-    "src/frob/release/__init__.py::stamp": "671e6969a9ed515abd27810eec2f1dc9b90b0cd304d14561ff949bde9c2bbf36",
+    "src/frob/release/__init__.py::stamp": "039fd1d341dff3b858b63ad175685814eb18644c19e05b33e81e6f0926f3f973",
     "src/frob/render/_color.py::ColorFlag": "44a7f61bf7f217bfd87267daf039daa7646a19ede5c09cf21d910051d71cac3c",
     "src/frob/render/_color.py::resolve_color": "4ae7ef6dcf0c712e6d9f9c82802c94217331326dd162788aa64126a97014f9be",
     "src/frob/render/_elements.py::Status": "f652823de2640bd2750b8134158b37329808ffd82820bcc2916efba2c5e7c529",
@@ -1937,5 +1937,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.294.0"
+  "version": "0.295.0"
 }
