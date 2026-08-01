@@ -5316,7 +5316,7 @@ scope. Suggested acceptance: check `stamp(...)`'s return value in
 ```yaml
 id: T-1369
 title: wire --allow-cross-ticket CLI flag for frob ticket land
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-01'
