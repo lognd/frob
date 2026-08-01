@@ -5666,11 +5666,13 @@ scope:
 - tests/test_gates.py
 evidence:
 - tests/test_gates.py::TestConditionCoverageIsActuallyParsed::test_partial_condition_coverage_is_read_verbatim
+- tests/test_gates.py::TestConditionCoverageIsActuallyParsed::test_three_way_partial_is_not_snapped_to_an_extreme
 acceptance:
 - text: GIVEN a Cobertura line with condition-coverage='50% (1/2)' WHEN _parse_line_el
     runs THEN branch_pct is 50, not 100
   evidence:
   - tests/test_gates.py::TestConditionCoverageIsActuallyParsed::test_partial_condition_coverage_is_read_verbatim
+  - tests/test_gates.py::TestConditionCoverageIsActuallyParsed::test_three_way_partial_is_not_snapped_to_an_extreme
 - text: GIVEN the repo's own coverage.xml WHEN every branch line is parsed THEN the
     produced branch_pct values include partial percentages, not only 0 and 100
   evidence: []
