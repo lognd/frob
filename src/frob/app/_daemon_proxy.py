@@ -177,7 +177,7 @@ class ProxyReason(ErrorSet):
     """Why a query was NOT served by the daemon. Every value means "fall
     back to in-process, silently" -- none is a user-facing failure."""
 
-    Disabled = "FROB_NO_DAEMON=1 bypasses the daemon unconditionally"
+    Disabled = "the daemon is not enabled for this process (T-1379: opt-in)"
     Unreachable = "no live daemon socket answered for this root"
     RemoteError = "the daemon returned a JSON-RPC error for this query"
 
@@ -303,6 +303,27 @@ def ensure_daemon(root: Path) -> None:
     _spawn_daemon(root)
 
 
+# frob:ticket T-1379
+# frob:tests tests/test_app_daemon_proxy.py::TestDaemonOptIn::test_unset_env_disables_the_daemon  # noqa: E501
+# frob:tests tests/test_app_daemon_proxy.py::TestDaemonOptIn::test_frob_daemon_1_enables_the_daemon  # noqa: E501
+def _daemon_enabled() -> bool:
+    """Whether the daemon path may be used at all.
+
+    T-1379: opt-IN while T-1378's defects stand -- the daemon ignores a
+    `frob_shutdown` it acknowledged, leaks its multiprocessing children,
+    and its pool competes with the foreground check for CPU badly enough
+    to be a net pessimization. Opt-out meant every unsuspecting session
+    paid for that by default. `FROB_NO_DAEMON=1` still wins outright so
+    existing scripts and the differential test are unaffected.
+    """
+    # frob:waive SEC110 reason="T-1379: FROB_DAEMON/FROB_NO_DAEMON are boolean \
+    # feature flags (same shape as the existing FROB_AGENT/FROB_WORKTREE precedent \
+    # in frob.tickets._leases), neither carries a confidential value"
+    if os.environ.get("FROB_NO_DAEMON") == "1":
+        return False
+    return os.environ.get("FROB_DAEMON") == "1"
+
+
 # frob:doc docs/modules/serve.md#cli-daemon-proxy-t-1093
 # frob:tests tests/test_app_daemon_proxy.py::TestQuery.test_no_daemon_env_bypass kind="unit"  # noqa: E501
 # frob:tests tests/test_app_daemon_proxy.py::TestQuery.test_live_daemon_hit kind="unit"  # noqa: E501
@@ -318,11 +339,8 @@ def query(
     surfaced to the user as a daemon error, never a hang (T-1093 acceptance
     [1]): `send_request`'s own socket timeout bounds the worst case, and the
     one retry below is itself bounded by `_SPAWN_GRACE_S`."""
-    # frob:waive SEC110 reason="T-1093: FROB_NO_DAEMON is a boolean opt-out flag \
-    # (matches the existing FROB_AGENT/FROB_WORKTREE precedent in \
-    # frob.tickets._leases), carries no confidential value"
-    if os.environ.get("FROB_NO_DAEMON") == "1":
-        _log.info("daemon_proxy: FROB_NO_DAEMON=1, bypassing daemon for %s", method)
+    if not _daemon_enabled():
+        _log.info("daemon_proxy: daemon disabled, computing %s in-process", method)
         return Err(ProxyReason.Disabled)
 
     from frob.serve import DaemonError, send_request
@@ -425,8 +443,8 @@ def try_daemon_lease(
     # frob:waive SEC110 reason="T-1126: FROB_NO_DAEMON is the same boolean opt-out \
     # flag query() already carries this exact waiver for -- no confidential value, \
     # just a bypass switch"
-    if os.environ.get("FROB_NO_DAEMON") == "1":
-        _log.info("daemon_proxy: FROB_NO_DAEMON=1, bypassing daemon lease")
+    if not _daemon_enabled():
+        _log.info("daemon_proxy: daemon disabled, bypassing daemon lease")
         return Err(ProxyReason.Disabled)
 
     ensure_daemon(root)

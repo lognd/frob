@@ -42,6 +42,13 @@ def _start_daemon(root: Path, idle_timeout_s: float = 5.0) -> threading.Thread:
 
 
 class TestQuery:
+    @pytest.fixture(autouse=True)
+    def _opt_in(self, monkeypatch):
+        """T-1379 made the daemon opt-IN, so every test here that exercises
+        the daemon path must ask for it explicitly. The bypass test below
+        overrides this with FROB_NO_DAEMON, which still wins."""
+        monkeypatch.setenv("FROB_DAEMON", "1")
+
     def test_no_daemon_env_bypass(self, root: Path, monkeypatch) -> None:
         # frob:tests tests/test_app_daemon_proxy.py::TestQuery.test_no_daemon_env_bypass
         monkeypatch.setenv("FROB_NO_DAEMON", "1")
@@ -748,3 +755,38 @@ class TestProbeDaemonVersion:
         finally:
             server.close()
             thread.join(timeout=2)
+
+
+# frob:ticket T-1379
+class TestDaemonOptIn:
+    """T-1379: while T-1378's shutdown/leak/CPU defects stand, the daemon
+    must not engage unless explicitly asked for. Opt-out meant every
+    unsuspecting session paid for those defects by default."""
+
+    def test_unset_env_disables_the_daemon(self, tmp_path, monkeypatch):
+        """The default. Nothing set -> no daemon, no spawn."""
+        from frob.app._daemon_proxy import ProxyReason, query
+
+        monkeypatch.delenv("FROB_DAEMON", raising=False)
+        monkeypatch.delenv("FROB_NO_DAEMON", raising=False)
+        result = query(tmp_path, "frob_version")
+        assert result.is_err
+        assert result.danger_err is ProxyReason.Disabled
+
+    def test_frob_daemon_1_enables_the_daemon(self, monkeypatch):
+        """The opt-in must actually opt in -- a flag stuck off is as broken
+        as one stuck on."""
+        from frob.app import _daemon_proxy
+
+        monkeypatch.setenv("FROB_DAEMON", "1")
+        monkeypatch.delenv("FROB_NO_DAEMON", raising=False)
+        assert _daemon_proxy._daemon_enabled() is True
+
+    def test_no_daemon_still_wins_over_opt_in(self, monkeypatch):
+        """FROB_NO_DAEMON=1 remains an unconditional bypass, so existing
+        scripts and the differential test are unaffected."""
+        from frob.app import _daemon_proxy
+
+        monkeypatch.setenv("FROB_DAEMON", "1")
+        monkeypatch.setenv("FROB_NO_DAEMON", "1")
+        assert _daemon_proxy._daemon_enabled() is False
