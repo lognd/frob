@@ -3266,6 +3266,7 @@ scope:
 - tests/gates/**
 evidence:
 - tests/gates/test_mutation_evidence_err_branches.py::TestMutationEvidenceErrBranches::test_exec_disabled_degrades_to_no_violations
+- tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_commented_out_rule_literal_is_skipped
 acceptance:
 - text: GIVEN the gates package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/gates/**
