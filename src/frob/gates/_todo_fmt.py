@@ -34,6 +34,13 @@ _TODO_RE = re.compile(r"\b(TODO|FIXME)\b")
 
 
 # frob:enforces CHK-GATE-TODO002
+# frob:tests tests/test_todo_fmt_gate.py::TestTodo002Edges.test_open_ticket_no_violation
+# frob:tests \
+# tests/test_todo_fmt_gate.py::TestTodo002Edges.test_closed_ticket_fires_todo002
+# frob:tests \
+# tests/test_todo_fmt_gate.py::TestTodo002Edges.test_missing_ticket_fires_todo002
+# frob:tests \
+# tests/test_todo_fmt_gate.py::TestTodo002Edges.test_non_todo_edges_are_ignored
 def _todo002_edges(snapshot: GraphSnapshot, queue: TicketQueue) -> list[Violation]:
     """TODO002: `frob:todo` edges bound to a non-open (or missing) ticket.
 
@@ -99,13 +106,12 @@ def _pyproject_version_at(root: Path, sha: str) -> str | None:
 # frob:ticket T-0783
 # frob:tests \
 # tests/test_gates.py::TestCoverageGate.test_todo003_fires_after_version_bump_since_def\
-# erral_landed  # noqa: E501
+# erral_landed
 # frob:tests \
 # tests/test_gates.py::TestCoverageGate.test_todo003_silent_when_no_version_bump_since_\
-# deferral  # noqa: E501
+# deferral
 # frob:tests \
-# tests/test_gates.py::TestCoverageGate.test_todo003_silent_when_ticket_closes  # \
-# noqa: E501
+# tests/test_gates.py::TestCoverageGate.test_todo003_silent_when_ticket_closes
 # frob:enforces CHK-GATE-TODO003
 def _todo003_long_deferred(
     root: Path, snapshot: GraphSnapshot, queue: TicketQueue
@@ -229,6 +235,18 @@ def _todo001_bare(snapshot: GraphSnapshot, diff: Diff) -> list[Violation]:
 
 
 # frob:enforces CHK-GATE-TODO001
+# frob:tests tests/test_todo_fmt_gate.py::TestTodo001BareComment.test_bare_todo_fires
+# frob:tests \
+# tests/test_todo_fmt_gate.py::TestTodo001BareComment.test_frob_prefixed_line_is_not_ba\
+# re
+# frob:tests \
+# tests/test_todo_fmt_gate.py::TestTodo001BareComment.test_multiline_comment_flags_only\
+# _todo_lines
+# frob:tests \
+# tests/test_todo_fmt_gate.py::TestTodo001BareComment.test_frob_prefixed_line_inside_mu\
+# ltiline_block_is_skipped
+# frob:tests \
+# tests/test_todo_fmt_gate.py::TestTodo001BareComment.test_no_todo_token_no_violation
 def _todo001_bare_comment(file: str, comment) -> list[Violation]:  # noqa: ANN001
     """Every bare (not `frob:`-prefixed) todo/fixme line inside one comment,
     as TODO001 `Violation`s."""
@@ -326,6 +344,10 @@ def _fmt001_file(
 
 
 # frob:ticket T-0976
+# frob:tests \
+# tests/test_todo_fmt_gate.py::TestFmt001MarkerEntries.test_collects_only_marker_lines
+# frob:tests \
+# tests/test_todo_fmt_gate.py::TestFmt001MarkerEntries.test_no_marker_lines_yields_empty
 def _fmt001_marker_entries(
     lines: list[str], marker: str
 ) -> list[tuple[int, str, str, int]]:
@@ -346,6 +368,17 @@ def _fmt001_marker_entries(
 
 
 # frob:ticket T-0976
+# frob:tests \
+# tests/test_todo_fmt_gate.py::TestFmt001ViolationsForRuns.test_over_limit_touched_frob\
+# _line_fires
+# frob:tests \
+# tests/test_todo_fmt_gate.py::TestFmt001ViolationsForRuns.test_untouched_line_not_flag\
+# ged
+# frob:tests \
+# tests/test_todo_fmt_gate.py::TestFmt001ViolationsForRuns.test_non_frob_run_not_flagged
+# frob:tests \
+# tests/test_todo_fmt_gate.py::TestFmt001ViolationsForRuns.test_short_frob_line_not_fla\
+# gged
 def _fmt001_violations_for_runs(
     file: str,
     lines: list[str],
