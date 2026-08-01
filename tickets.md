@@ -7982,7 +7982,7 @@ pyproject.toml directly.
 id: T-1398
 title: 'TEST005''s per-symbol join is broken: file coverage is good, symbols report
   0.0% -- most of the 2889 findings are artifacts'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -8026,6 +8026,8 @@ Fix the join before any further TEST005 burn-down work is dispatched. T-1236's c
 
 Supersedes the hypothesis in failed T-1395 (xdist worker-crash data loss): the measured run had no worker crash, so crash-loss does not explain it.
 
+## Drop reason
+- 2026-08-01: Premise disproven. The T-1398 agent generated a real coverage.xml and ran load_coverage/_test005_symbols directly against it: the per-symbol join in _coverage.py is correct, and acceptance [0] is already true today. I independently confirmed the same by reading the raw XML -- __main__.py shows 0/133 lines hit and _socketd.py 0/264, so TEST005 reporting 0.0% is faithful to the measured data, not a join failure. My filing was based on frob-coverage.lock.json, which turns out to disagree with the coverage.xml from the very run it records. That lock-vs-report inconsistency is the real defect and is now T-1401, which also carries forward T-1398 acceptance [1] (module_join_fraction=0.53, 447 of 851 modules absent from the report).
 <!-- ticket:T-1399 -->
 ```yaml
 id: T-1399
