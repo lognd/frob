@@ -5495,7 +5495,7 @@ Not fixed here, filed as T-1374: the fourth failure,
 id: T-1374
 title: 'REG008: CHK-SUBSYS-GATES-ACCOUNTING repointed to TEST013 without a frob:enforces
   edge'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-01'
