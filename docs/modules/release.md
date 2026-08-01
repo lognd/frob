@@ -127,6 +127,24 @@ def required_version(previous, bump) -> Result[str, ReleaseError]
 def satisfies(current, minimum) -> bool
 ```
 
+## Stamp refuses an un-bumped API change (T-1381)
+
+`stamp` rebaselines the recorded public API at whatever version is current.
+That makes running it ALONE a footgun: REL001's remedy reads "bump the
+version to >= X, then run: frob release stamp", and the stamp half silences
+the gate on its own while the release never happens.
+
+So `stamp` now runs REL001's own computation -- `diff_class` against the
+recorded manifest, then `required_version` -- and returns
+`Err(ReleaseError.UnbumpedApiChange)` when the current version falls short,
+writing nothing at all. A partial write would rebaseline the very API it
+just rejected.
+
+Two cases deliberately pass through: a first-ever stamp (no manifest to be
+short of) and an already-adequate version. `--allow-unbumped`
+(`stamp(..., allow_unbumped=True)`) is the explicit, justification-required
+override, matching `--skip-mutation-evidence` and `--allow-cross-ticket`.
+
 ## Design notes
 
 - **Manifest is tracked text; the graph is derived.** The baseline lives in

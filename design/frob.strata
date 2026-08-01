@@ -3612,6 +3612,7 @@ node testsuite : trusted {
     attr interface=TestGraphWhy;
     attr interface=TestGroupGaps;
     attr interface=TestGrowthHorizon;
+    attr interface=TestGuardIsOnByDefault;
     attr interface=TestGuardedSubprocessRun;
     attr interface=TestHardRegression;
     attr interface=TestHardenedDischargesFromParsedSurfaceSource;
@@ -4294,6 +4295,7 @@ node testsuite : trusted {
     attr interface=TestStampBaselineWorktreeLease;
     attr interface=TestStampCoverageWorktreeLease;
     attr interface=TestStampFailurePropagation;
+    attr interface=TestStampRefusesUnbumped;
     attr interface=TestStampWorktreeLease;
     attr interface=TestStandaloneSiblingDraftSurvivesLand;
     attr interface=TestStartDaemon;

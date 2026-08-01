@@ -149,6 +149,7 @@ def _bump_shortfall(
     return (bump.name.lower(), manifest.version, need.danger_ok, version)
 
 
+# frob:doc docs/modules/release.md#stamp-refuses-an-un-bumped-api-change-t-1381
 def stamp(
     root: Path,
     snapshot: GraphSnapshot,
