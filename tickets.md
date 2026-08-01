@@ -7507,3 +7507,52 @@ threat: null
 component: null
 ```
 Found while working T-1392 (frob check --ticket T-1392 unscoped repo-wide gate:COV read 2 errors throughout). T-1385 landed _LazyStdoutHandler/_LazyStderrHandler and a sibling fix (eb6e4b23, 'fix(logging): point handler.py's frob:doc anchors at a section that exists') already repaired the DOC002 anchor-resolution half, but each class's public 'stream' property still has no frob:doc edge at all (COV001: src/frob/logging/handler.py::_LazyStdoutHandler.stream and ::_LazyStderrHandler.stream). Not in T-1392's scope and not touched by its diff -- either add a frob:doc anchor on each stream property (docs/modules/logging.md#public-api, matching the class-level anchor) or move the property to private if it was never meant to be part of the public surface.
+
+<!-- ticket:T-1395 -->
+```yaml
+id: T-1395
+title: 'Coverage attribution still misses daemon and CLI-entry processes: serve/ and
+  __main__.py remain 0.0%'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/testing/_coverage_wait.py
+- src/frob/serve/_socketd.py
+acceptance:
+- text: GIVEN a successful unscoped make coverage run WHEN the TEST005 report is read
+    THEN src/frob/serve/** symbols exercised by the daemon tests report non-zero branch
+    coverage
+  evidence: []
+- text: GIVEN the same run WHEN src/frob/__main__.py::main is read THEN it reports
+    non-zero branch coverage rather than 0.0%
+  evidence: []
+threat: null
+component: null
+```
+Measured on main 2026-08-01 after T-1235's subprocess-rc fix landed and make coverage completed green (exit 0, 851 files stamped, source_sha=de76e283).
+
+T-1235's fix demonstrably worked for one class of process: modules that were pinned at 0.0% now report real numbers --
+  src/frob/excludes.py::load_exclude_globs   6.7%  (was 0.0)
+  src/frob/excludes.py::is_excluded         50.0%  (was 0.0)
+  src/frob/doctor.py::scan_venv_shims        3.0%  (was 0.0)
+  src/frob/doctor.py::verify_derived_state  50.0%  (was 0.0)
+
+But two of the four module groups T-1235's own acceptance criterion names are STILL at exactly 0.0%:
+  src/frob/serve/_leases.py::ResourceLeaseManager.{acquire,release,release_holder}
+  src/frob/serve/_socketd.py::daemon_version
+  src/frob/__main__.py::main
+  src/frob/__main__.py::_SuggestingArgumentParser.error
+
+These share a property the fixed modules do not: they execute in a daemon or CLI-entry process that the subprocess rc does not reach. The daemon is spawned by the socket server, and __main__ runs as the console-script entry -- neither inherits COVERAGE_PROCESS_START the way the pytest-spawned subprocesses do.
+
+306 symbols repo-wide remain at exactly 0.0%, so this is not a rounding artifact.
+
+Related signal worth checking while here: load_coverage reports module_join_fraction=0.53, i.e. only about half of mapped modules join to the graph. T-1236's deflation guard exists for exactly this shape.
+
+This ticket exists because T-1235 cannot honestly close until serve/ and __main__.py attribute -- its criterion names them explicitly, and binding evidence to a half-satisfied criterion would be the false-close this queue has been bitten by before.
