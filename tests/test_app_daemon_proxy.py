@@ -104,7 +104,11 @@ class TestEnsureDaemon:
         # orded
         # No daemon is up, so the frob_version RPC finds nothing to answer
         # and ensure_daemon must spawn one.
-        monkeypatch.setattr(_daemon_proxy, "_query_daemon_version", lambda r: None)
+        monkeypatch.setattr(
+            _daemon_proxy,
+            "probe_daemon",
+            lambda r, **k: (_daemon_proxy.DaemonLiveness.NoSocket, None),
+        )
         spawned = []
         monkeypatch.setattr(_daemon_proxy, "_spawn_daemon", lambda r: spawned.append(r))
         ensure_daemon(root)
@@ -116,8 +120,11 @@ class TestEnsureDaemon:
         # es
         monkeypatch.setattr(
             _daemon_proxy,
-            "_query_daemon_version",
-            lambda r: _daemon_proxy._client_version(),
+            "probe_daemon",
+            lambda r, **k: (
+                _daemon_proxy.DaemonLiveness.Live,
+                _daemon_proxy._client_version(),
+            ),
         )
         spawned = []
         monkeypatch.setattr(_daemon_proxy, "_spawn_daemon", lambda r: spawned.append(r))
@@ -128,7 +135,9 @@ class TestEnsureDaemon:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_restarts_on_version_skew
         monkeypatch.setattr(
-            _daemon_proxy, "_query_daemon_version", lambda r: "0.0.0-stale"
+            _daemon_proxy,
+            "probe_daemon",
+            lambda r, **k: (_daemon_proxy.DaemonLiveness.VersionSkew, "0.0.0-stale"),
         )
         shutdown_calls = []
         spawned = []
@@ -149,10 +158,9 @@ class TestEnsureDaemon:
         # second, redundant daemon.
         thread = _start_daemon(root)
         try:
-            assert (
-                _daemon_proxy._query_daemon_version(root)
-                == _daemon_proxy._client_version()
-            )
+            liveness, version = _daemon_proxy.probe_daemon(root)
+            assert liveness is _daemon_proxy.DaemonLiveness.Live
+            assert version == _daemon_proxy._client_version()
         finally:
             _shutdown(root, thread)
 
@@ -565,3 +573,178 @@ def _env() -> dict[str, str]:
     import os
 
     return dict(os.environ)
+
+
+# frob:ticket T-1377
+class TestProbeDaemon:
+    """T-1377: socket-file existence is not liveness. These pin that each
+    unhealthy state is told APART -- collapsing them (the pre-T-1377
+    behavior) is what made an unhealthy daemon cost 10s per invocation and
+    spawn rivals it could never win against."""
+
+    @staticmethod
+    def _socket_dir(tmp_path):
+        (tmp_path / ".frob").mkdir(parents=True, exist_ok=True)
+        return tmp_path
+
+    def test_missing_socket_is_nosocket(self, tmp_path):
+        """Nothing there at all -- the spawn case."""
+        from frob.app._daemon_proxy import DaemonLiveness, probe_daemon
+
+        liveness, version = probe_daemon(self._socket_dir(tmp_path))
+        assert liveness is DaemonLiveness.NoSocket
+        assert version is None
+
+    def test_dead_socket_file_is_orphaned(self, tmp_path):
+        """A socket file that no process is listening on. This is the state
+        a crashed daemon leaves behind, and the one the old code could not
+        distinguish from 'no daemon'."""
+        import socket as _socket
+
+        from frob.app._daemon_proxy import DaemonLiveness, probe_daemon
+
+        root = self._socket_dir(tmp_path)
+        path = root / ".frob" / "daemon.sock"
+        # Bind (creating the file), then close WITHOUT listening/accepting.
+        sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+        sock.bind(str(path))
+        sock.close()
+        assert path.exists(), "the socket file must outlive its process"
+
+        liveness, version = probe_daemon(root)
+        assert liveness is DaemonLiveness.Orphaned
+        assert version is None
+
+    def test_silent_listener_is_wedged(self, tmp_path):
+        """A process IS listening but never answers. Spawning a rival here
+        is the harmful case: the singleton lock refuses it, so every later
+        invocation pays another failed spawn."""
+        import socket as _socket
+
+        from frob.app._daemon_proxy import DaemonLiveness, probe_daemon
+
+        root = self._socket_dir(tmp_path)
+        path = root / ".frob" / "daemon.sock"
+        server = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+        server.bind(str(path))
+        server.listen(1)
+        try:
+            liveness, version = probe_daemon(root, timeout_s=0.2)
+            assert liveness is DaemonLiveness.Wedged
+            assert version is None
+        finally:
+            server.close()
+
+    def test_probe_of_a_silent_listener_stays_within_budget(self, tmp_path):
+        """The POINT of T-1377: an unhealthy daemon must cost the probe
+        budget, not `send_request`'s 10s query timeout."""
+        import socket as _socket
+        import time
+
+        from frob.app._daemon_proxy import probe_daemon
+
+        root = self._socket_dir(tmp_path)
+        path = root / ".frob" / "daemon.sock"
+        server = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+        server.bind(str(path))
+        server.listen(1)
+        try:
+            started = time.monotonic()
+            probe_daemon(root, timeout_s=0.2)
+            elapsed = time.monotonic() - started
+        finally:
+            server.close()
+        # Generous ceiling: the claim is "sub-second, not 10s", and this
+        # must not flake on a loaded box the way a tight bound would.
+        assert elapsed < 3.0, f"probe took {elapsed:.2f}s, budget was 0.2s"
+
+    def test_orphaned_socket_is_unlinked(self, tmp_path):
+        """The orphan must be cleared, so the NEXT probe is a clean
+        NoSocket instead of another refused connect forever."""
+        import socket as _socket
+
+        from frob.app._daemon_proxy import (
+            DaemonLiveness,
+            _clear_orphaned_socket,
+            probe_daemon,
+        )
+
+        root = self._socket_dir(tmp_path)
+        path = root / ".frob" / "daemon.sock"
+        sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+        sock.bind(str(path))
+        sock.close()
+
+        assert probe_daemon(root)[0] is DaemonLiveness.Orphaned
+        _clear_orphaned_socket(root)
+        assert not path.exists()
+        assert probe_daemon(root)[0] is DaemonLiveness.NoSocket
+
+
+# frob:ticket T-1377
+class TestProbeDaemonVersion:
+    """`probe_daemon` must tell a version-matched daemon from a skewed one
+    against a REAL listener, not just a mocked seam -- the skew branch is
+    what decides between reusing a daemon and restarting it."""
+
+    @staticmethod
+    def _serve_one_version(path, version):
+        """A minimal listener that answers exactly one frob_version RPC."""
+        import json
+        import socket as _socket
+        import threading
+
+        server = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+        server.bind(str(path))
+        server.listen(1)
+
+        def _run():
+            try:
+                conn, _ = server.accept()
+                with conn:
+                    conn.recv(65536)
+                    conn.sendall(
+                        (
+                            json.dumps({"id": 1, "result": {"version": version}}) + "\n"
+                        ).encode("utf-8")
+                    )
+            except OSError:
+                pass
+
+        thread = threading.Thread(target=_run, daemon=True)
+        thread.start()
+        return server, thread
+
+    def test_matching_version_is_live(self, tmp_path):
+        from frob.app._daemon_proxy import (
+            DaemonLiveness,
+            _client_version,
+            probe_daemon,
+        )
+
+        (tmp_path / ".frob").mkdir(parents=True, exist_ok=True)
+        path = tmp_path / ".frob" / "daemon.sock"
+        server, thread = self._serve_one_version(path, _client_version())
+        try:
+            liveness, version = probe_daemon(tmp_path, timeout_s=2.0)
+            assert liveness is DaemonLiveness.Live
+            assert version == _client_version()
+        finally:
+            server.close()
+            thread.join(timeout=2)
+
+    def test_different_version_is_skew_not_live(self, tmp_path):
+        """The mutation that matters: flipping this comparison would make
+        every stale daemon look Live and never be restarted."""
+        from frob.app._daemon_proxy import DaemonLiveness, probe_daemon
+
+        (tmp_path / ".frob").mkdir(parents=True, exist_ok=True)
+        path = tmp_path / ".frob" / "daemon.sock"
+        server, thread = self._serve_one_version(path, "0.0.0-stale")
+        try:
+            liveness, version = probe_daemon(tmp_path, timeout_s=2.0)
+            assert liveness is DaemonLiveness.VersionSkew
+            assert version == "0.0.0-stale"
+        finally:
+            server.close()
+            thread.join(timeout=2)

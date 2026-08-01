@@ -49,6 +49,7 @@ one against.
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -75,6 +76,100 @@ _SPAWN_POLL_INTERVAL_S = 0.05
 # binding a socket -- and the two callers (ensure_daemon's skew path vs query's \
 # fresh-spawn path) would still need two constants even if the values matched"
 _SHUTDOWN_GRACE_S = 1.0
+# frob:ticket T-1377
+# Liveness is a LOCAL unix-socket round trip -- sub-millisecond when
+# healthy -- so half a second is already ~1000x headroom. It is deliberately
+# NOT `send_request`'s 10s query timeout: budgeting a health check like a
+# real query is what made an unhealthy daemon cost 10s on every single
+# `frob` invocation that proxies.
+_PROBE_TIMEOUT_S = 0.5
+
+
+class DaemonLiveness(ErrorSet):
+    """What a bounded probe actually found, so each distinct state can get
+    the distinct response it needs.
+
+    The pre-T-1377 code collapsed all four onto `None` ("spawn a
+    replacement"), which is right for exactly one of them and actively
+    harmful for `Wedged`.
+    """
+
+    Live = "a version-matched daemon answered the probe"
+    NoSocket = "no socket file exists for this root"
+    Orphaned = "a socket file exists but nothing is listening on it"
+    Wedged = "something is listening but did not answer a probe in budget"
+    VersionSkew = "a daemon answered but reports a different frob version"
+
+
+# frob:ticket T-1377
+# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon::test_missing_socket_is_nosocket  # noqa: E501
+# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon::test_dead_socket_file_is_orphaned  # noqa: E501
+# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon::test_silent_listener_is_wedged  # noqa: E501
+def probe_daemon(
+    root: Path, *, timeout_s: float = _PROBE_TIMEOUT_S
+) -> tuple[DaemonLiveness, str | None]:
+    """Classify the daemon for `root` in BOUNDED time: `(liveness, version)`.
+
+    Socket-file existence is not liveness -- a unix socket outlives the
+    process that bound it, which is precisely how a dead daemon kept
+    costing every caller a full 10s connect timeout. Only a real
+    connect-plus-answer round trip proves a daemon is serving.
+
+    Never raises: an unclassifiable failure reports `Wedged`, the
+    conservative answer, because that is the one state where spawning a
+    competing daemon makes things worse rather than better.
+    """
+    import socket as _socket
+
+    from frob.serve import socket_path
+
+    path = socket_path(root.resolve())
+    if not path.exists():
+        return (DaemonLiveness.NoSocket, None)
+    try:
+        with _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM) as sock:
+            sock.settimeout(timeout_s)
+            try:
+                sock.connect(str(path))
+            except (ConnectionRefusedError, FileNotFoundError):
+                # The file outlived its process: nothing is accepting on it.
+                return (DaemonLiveness.Orphaned, None)
+            except (TimeoutError, OSError):
+                return (DaemonLiveness.Wedged, None)
+            sock.sendall(b'{"id": 1, "method": "frob_version", "params": {}}\n')
+            buf = b""
+            while b"\n" not in buf:
+                chunk = sock.recv(65536)
+                if not chunk:
+                    # Accepted, then hung up without answering.
+                    return (DaemonLiveness.Wedged, None)
+                buf += chunk
+    except (TimeoutError, OSError):
+        return (DaemonLiveness.Wedged, None)
+    try:
+        payload = json.loads(buf.split(b"\n", 1)[0].decode("utf-8"))
+        version = payload.get("result", {}).get("version")
+    except (ValueError, AttributeError, UnicodeDecodeError):
+        return (DaemonLiveness.Wedged, None)
+    if not isinstance(version, str):
+        return (DaemonLiveness.Wedged, None)
+    if version != _client_version():
+        return (DaemonLiveness.VersionSkew, version)
+    return (DaemonLiveness.Live, version)
+
+
+# frob:ticket T-1377
+# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon::test_orphaned_socket_is_unlinked  # noqa: E501
+def _clear_orphaned_socket(root: Path) -> None:
+    """Unlink a socket file nothing is listening on, so the next probe is a
+    clean `NoSocket` rather than another refused connect."""
+    from frob.serve import socket_path
+
+    try:
+        socket_path(root.resolve()).unlink()
+        _log.info("daemon_proxy: unlinked orphaned socket for %s", root)
+    except OSError as exc:
+        _log.info("daemon_proxy: could not unlink orphaned socket: %s", exc)
 
 
 # frob:doc docs/modules/serve.md#cli-daemon-proxy-t-1093
@@ -136,23 +231,6 @@ def _spawn_daemon(root: Path) -> None:
     )
 
 
-def _query_daemon_version(root: Path) -> str | None:
-    """Ask a daemon that may already be running for `root` to self-report
-    its version via the `frob_version` RPC (T-1105), or `None` if none
-    answered (no daemon up, or an unreachable/malformed response) -- the
-    real protocol-level replacement for reading a sidecar meta file."""
-    from frob.serve import send_request
-
-    result = send_request(root, "frob_version")
-    if result.is_err:
-        return None
-    payload = result.danger_ok
-    if not isinstance(payload, dict):
-        return None
-    version = payload.get("version")
-    return version if isinstance(version, str) else None
-
-
 def _shutdown_stale_daemon(root: Path) -> None:
     """Ask the daemon already running for `root` to stop gracefully via the
     `frob_shutdown` RPC (T-1105) and wait (briefly, bounded by
@@ -190,14 +268,29 @@ def ensure_daemon(root: Path) -> None:
     """Ensure a live, version-matched daemon is running (or freshly
     starting) for `root`, self-healing a version-skewed one first (T-1093
     acceptance [1], T-1105). Version skew is detected via the daemon's own
-    `frob_version` RPC response (`_query_daemon_version`), not a sidecar
+    `frob_version` RPC response (`probe_daemon`, T-1377), not a sidecar
     meta file -- there is nothing here to go stale relative to whichever
     process actually happens to be running the daemon. Best-effort only
     and never raises: a caller that cannot get a daemon up simply finds no
     socket to connect to on the next `query()` call and falls back
     in-process, same as any other `Unreachable` case."""
-    daemon_version = _query_daemon_version(root)
-    if daemon_version is not None and daemon_version != _client_version():
+    # frob:ticket T-1377
+    liveness, daemon_version = probe_daemon(root)
+    if liveness is DaemonLiveness.Live:
+        return
+    if liveness is DaemonLiveness.Wedged:
+        # Something IS holding the socket. Spawning a rival is exactly
+        # wrong: `acquire_singleton_lock` refuses it, so every subsequent
+        # invocation pays another failed spawn. Bypass for this run.
+        _log.warning(
+            "daemon_proxy: daemon for %s is listening but did not answer a "
+            "%.2fs probe -- treating as wedged, NOT spawning a rival; this "
+            "run falls back in-process",
+            root,
+            _PROBE_TIMEOUT_S,
+        )
+        return
+    if liveness is DaemonLiveness.VersionSkew:
         _log.info(
             "daemon_proxy: version skew detected (daemon=%s, client=%s) for %s",
             daemon_version,
@@ -205,9 +298,9 @@ def ensure_daemon(root: Path) -> None:
             root,
         )
         _shutdown_stale_daemon(root)
-        daemon_version = None
-    if daemon_version is None:
-        _spawn_daemon(root)
+    elif liveness is DaemonLiveness.Orphaned:
+        _clear_orphaned_socket(root)
+    _spawn_daemon(root)
 
 
 # frob:doc docs/modules/serve.md#cli-daemon-proxy-t-1093
