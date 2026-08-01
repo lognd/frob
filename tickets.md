@@ -5326,6 +5326,30 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/_cli_parsers/_ticket.py
+- src/frob/app/config.py
+- tests/unit/test_ticket_runner_land_cmd_flags.py
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ticket.py
+  reason: the flag needs a parser argument, an AppConfig field and its from_external
+    mapping, plus a regression test
+  actor: logan
+  at: '2026-08-01'
+- op: add
+  glob: src/frob/app/config.py
+  reason: the flag needs a parser argument, an AppConfig field and its from_external
+    mapping, plus a regression test
+  actor: logan
+  at: '2026-08-01'
+- op: add
+  glob: tests/unit/test_ticket_runner_land_cmd_flags.py
+  reason: the flag needs a parser argument, an AppConfig field and its from_external
+    mapping, plus a regression test
+  actor: logan
+  at: '2026-08-01'
+evidence:
+- tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketReachesLand::test_land_receives_the_keyword[True]
 threat: null
 component: null
 ```
