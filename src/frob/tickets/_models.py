@@ -1669,6 +1669,13 @@ class LandError(ErrorSet):
         "worktree has an uncommitted frob:waive deletion outside the "
         "landing ticket's scope and Done report"
     )
+    # frob:ticket T-1355
+    CrossTicketLeakage = (
+        "the branch's committed changeset touches file(s) covered by a "
+        "DIFFERENT ticket's declared scope, and that ticket is still open "
+        "(not done/dropped) on main -- landing would silently carry a "
+        "sibling ticket's work onto main ahead of its own close"
+    )
 
 
 # frob:ticket T-0176

@@ -192,6 +192,82 @@ def _log_monotonicity_refusal(
         )
 
 
+# frob:ticket T-1358
+def _read_working_pyproject_version(root: Path) -> str | None:
+    """Read `pyproject.toml`'s `version = "..."` value straight off `root`'s
+    WORKING TREE (never a git object) -- the ground truth for whatever a
+    `bump_version` callback (or a stray worktree-carried squash-apply file)
+    actually left on disk, as opposed to `_read_root_pyproject_version`'s
+    pre-land git-object read. `None` if the file is missing or unparsable,
+    treated by `_ensure_release_quartet_coherent` as "nothing to compare"."""
+    path = root / "pyproject.toml"
+    if not path.exists():
+        return None
+    match = _LAND_PYPROJECT_VERSION_RE.search(path.read_text(encoding="utf-8"))
+    return match.group(1) if match else None
+
+
+# frob:ticket T-1358
+def _read_working_manifest_version(root: Path) -> str | None:
+    """Read `.frob-release.json`'s `version` field straight off `root`'s
+    WORKING TREE (never a git object) -- the write-side companion to
+    `_read_working_pyproject_version`, used by `_ensure_release_quartet_
+    coherent` to detect a manifest that is already staged/committed-stale
+    relative to `pyproject.toml`'s on-disk value. `None` if the manifest is
+    missing, unparsable, or has no string `version` field."""
+    path = root / ".frob-release.json"
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    version = data.get("version") if isinstance(data, dict) else None
+    return version if isinstance(version, str) else None
+
+
+# frob:ticket T-1358
+def _ensure_release_quartet_coherent(
+    root: Path, final_id: str
+) -> Result[None, LandError]:
+    """Unconditional, final coherence check between `pyproject.toml`'s
+    on-disk version and `.frob-release.json`'s on-disk version (T-1358):
+    closes the gap `_apply_release_bump`'s existing `_resync_release_
+    manifest` step left open -- that step only fires inside the `if
+    bumped.danger_ok is not None` branch, so a `bump_version` callback that
+    reports `Ok(None)` (e.g. because IT ALREADY wrote pyproject.toml/the
+    manifest itself, or believed no bump was needed) skips the resync
+    entirely, even if pyproject.toml's actual on-disk version has since
+    diverged from the manifest's (the exact T-1340 incident: pyproject.toml
+    bumped 0.289.0 -> 0.290.0, `.frob-release.json` left at 0.289.0,
+    blocking every subsequent land on the T-0992 monotonicity guard).
+
+    Called at the very end of `_apply_release_bump`, after every other
+    branch, regardless of whether a bump was reported at all -- this is a
+    structural guarantee ("the quartet is coherent when land finishes"),
+    not a bump-path-specific patch. `Ok(None)` (no-op) when either file is
+    unreadable/unparsable (nothing to compare) or the two versions already
+    agree; force-resyncs and stages `.frob-release.json` to pyproject.
+    toml's value otherwise. A resync failure here is `Err(LandError.
+    ReleaseBumpFailed)`, same fail-closed posture as every other release
+    step in this module -- caller unwinds via `_verified_reset_root`."""
+    pyproject_version = _read_working_pyproject_version(root)
+    manifest_version = _read_working_manifest_version(root)
+    if pyproject_version is None or manifest_version is None:
+        return Ok(None)
+    if pyproject_version == manifest_version:
+        return Ok(None)
+    _log.warning(
+        "land: %s release quartet incoherent after bump step "
+        "(pyproject.toml=%s, .frob-release.json=%s) -- force-resyncing "
+        "the manifest to pyproject.toml's on-disk version",
+        final_id,
+        pyproject_version,
+        manifest_version,
+    )
+    return _resync_release_manifest(root, final_id, pyproject_version)
+
+
 # frob:ticket T-1078
 def _resync_release_manifest(
     root: Path, final_id: str, new_version: str
@@ -266,29 +342,53 @@ def _apply_release_bump(
         unwound = _verified_reset_root(root, pre_land_tip, final_id)
         return Err(unwound.danger_err if unwound.is_err else bumped.danger_err)
     if bumped.danger_ok is not None:
-        new_version = bumped.danger_ok
-        if not _release_bump_is_monotonic(pre_bump_version, new_version):
-            _log_monotonicity_refusal(
-                final_id, new_version, pre_bump_version, pre_manifest_version
-            )
-            unwound = _verified_reset_root(root, pre_land_tip, final_id)
-            return Err(
-                unwound.danger_err if unwound.is_err else LandError.ReleaseBumpFailed
-            )
-        resynced = _resync_release_manifest(root, final_id, new_version)
-        if resynced.is_err:
-            unwound = _verified_reset_root(root, pre_land_tip, final_id)
-            return Err(unwound.danger_err if unwound.is_err else resynced.danger_err)
-        _log.info(
-            "land: %s REL001 version bump applied and staged: -> %s",
-            final_id,
-            bumped.danger_ok,
+        applied = _apply_reported_bump(
+            root, final_id, bumped.danger_ok, pre_bump_version, pre_manifest_version
         )
-        synced = _sync_uv_lock_for_land(root, final_id)
-        if synced.is_err:
+        if applied.is_err:
             unwound = _verified_reset_root(root, pre_land_tip, final_id)
-            return Err(unwound.danger_err if unwound.is_err else synced.danger_err)
+            return Err(unwound.danger_err if unwound.is_err else applied.danger_err)
+    # T-1358: unconditional final coherence check -- covers the gap the
+    # branch above leaves open (a `bump_version` callback reporting
+    # `Ok(None)` while pyproject.toml's on-disk version has already
+    # diverged from the manifest, e.g. a worktree-carried stale file, or a
+    # callback that wrote pyproject.toml itself without reporting it back
+    # through this return value) as well as defense-in-depth against the
+    # branch above's own resync silently not sticking.
+    coherent = _ensure_release_quartet_coherent(root, final_id)
+    if coherent.is_err:
+        unwound = _verified_reset_root(root, pre_land_tip, final_id)
+        return Err(unwound.danger_err if unwound.is_err else coherent.danger_err)
     return bumped
+
+
+# frob:ticket T-1358
+def _apply_reported_bump(
+    root: Path,
+    final_id: str,
+    new_version: str,
+    pre_bump_version: str | None,
+    pre_manifest_version: str | None,
+) -> Result[None, LandError]:
+    """The `bumped.danger_ok is not None` half of `_apply_release_bump`
+    (T-1358: split out to keep the parent under ARCH001's line threshold,
+    zero behavior change) -- monotonicity check, forced manifest resync,
+    and `uv.lock` re-sync, in that order, for a `bump_version` callback
+    that reported a real `new_version`."""
+    if not _release_bump_is_monotonic(pre_bump_version, new_version):
+        _log_monotonicity_refusal(
+            final_id, new_version, pre_bump_version, pre_manifest_version
+        )
+        return Err(LandError.ReleaseBumpFailed)
+    resynced = _resync_release_manifest(root, final_id, new_version)
+    if resynced.is_err:
+        return Err(resynced.danger_err)
+    _log.info(
+        "land: %s REL001 version bump applied and staged: -> %s",
+        final_id,
+        new_version,
+    )
+    return _sync_uv_lock_for_land(root, final_id)
 
 
 # frob:ticket T-1011

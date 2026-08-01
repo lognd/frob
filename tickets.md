@@ -4513,7 +4513,7 @@ ticket does not spend effort re-testing already-covered code.
 ```yaml
 id: T-1355
 title: land merges the whole branch diff, leaking a sibling ticket's work onto main
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-31'
@@ -4524,11 +4524,33 @@ sprint: null
 scope:
 - src/frob/tickets/_land.py
 - docs/modules/tickets.md
+- src/frob/tickets/_models.py
+- tests/unit/test_land_cross_ticket_leakage.py
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: add LandError.CrossTicketLeakage variant for the new preflight check
+  actor: logan
+  at: '2026-08-01'
+- op: add
+  glob: tests/unit/test_land_cross_ticket_leakage.py
+  reason: regression tests for the T-1355 cross-ticket leakage preflight
+  actor: logan
+  at: '2026-08-01'
+evidence:
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_refuses_when_sibling_ticket_still_open
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_allow_cross_ticket_overrides_the_refusal
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_disjoint_worktree_with_no_other_open_ticket_lands_cleanly
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_ticket_already_done_on_main_does_not_block
 acceptance:
 - text: given a worktree hosting two tickets where one is deliberately open, when
     the other lands, then the open ticket's committed work does not silently reach
     main
-  evidence: []
+  evidence:
+  - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_refuses_when_sibling_ticket_still_open
+  - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_allow_cross_ticket_overrides_the_refusal
+  - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_disjoint_worktree_with_no_other_open_ticket_lands_cleanly
+  - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_ticket_already_done_on_main_does_not_block
 threat: null
 component: tickets
 ```
@@ -4550,11 +4572,94 @@ DESIGN QUESTIONS -- answer, do not assume:
 
 Interim mitigation, already in effect: coordinator dispatch prompts say to pass --finish only on a series' last land, and paused tickets keep their worktrees. Neither prevents this leak.
 
+## Done report
+
+Implemented the "refuse loudly, force an explicit decision" design option
+from the ticket's design questions -- the other two (restrict the squash
+merge to scope; park paused work on a separate branch) both change land's
+core merge semantics or the standing series-worktree workflow itself,
+neither of which is a safe change to make unilaterally inside one leaf
+ticket's declared scope.
+
+Added `_check_cross_ticket_leakage` (src/frob/tickets/_land.py), run as a
+new step in `_land_precheck`, BEFORE any git mutation: diffs `worktree`'s
+branch against main's tip for committed files, then cross-references that
+changeset against every OTHER ticket in the worktree's own ledger (the one
+place that already knows about a same-worktree sibling ticket pre-merge --
+a still-open sibling generally does not exist in root's ledger at all
+until this land's own squash-splice would introduce it). Any changed file
+covered by another OPEN (non-terminal) ticket's declared scope refuses the
+land with `LandError.CrossTicketLeakage`, naming the sibling ticket and
+the exact leaked paths. Root's ledger is consulted as the authoritative
+source for TERMINAL state when it already knows the ticket (a ticket
+landed done through its own earlier `frob ticket land` call must not
+block an unrelated land just because the worktree's own pre-pull copy
+still shows in-progress). The ledger/archive files themselves are
+excluded from the leakage scan -- they are implicitly in every ticket's
+scope (`scope_matches`'s always-in-scope rule) and are expected to change
+on every land, so including them made the check false-positive on every
+single multi-ticket-worktree land regardless of any real leakage.
+
+Added `allow_cross_ticket` (default `False`) as the escape hatch for a
+genuinely intentional joint landing, threaded through `land()` ->
+`_land_locked` -> `_land_precheck`, mirroring `skip_mutation_evidence`'s
+existing pattern (runs and logs either way, never silently bypasses).
+
+Reproduced the real T-1352/T-1276 incident directly in a new test file
+(tests/unit/test_land_cross_ticket_leakage.py, real git fixture repos, no
+mocks -- test_ticket_land.py is owned by a concurrent agent so this had
+to be a new file): a worktree hosting two tickets, one committed and
+paused `in-progress`, one independent and ready to land -- confirms the
+refusal, the override, the no-op single-ticket case, and that an
+already-DONE-on-root sibling never blocks.
+
+Disclosed cuts:
+- `docs/modules/tickets.md` and `design/frob.strata` could not be updated
+  for this ticket: both files are currently leased by T-1358 (worked
+  earlier in this same series, left open per this dispatch's instruction
+  to stop after commit rather than close). `frob sys sync-interface`'s
+  own edit to design/frob.strata (registering the new TestCrossTicketLeakage
+  symbol) was reverted for the same reason. This produces one expected
+  SELFAUDIT001 finding (the new test class not yet in the design
+  interface) and contributes to three SCOPE001 findings (design/frob.strata
+  plus T-1358's own _land_release.py/test file, both present on this
+  shared branch but outside T-1355's declared scope) -- all resolve
+  automatically once T-1358 lands and its lease releases. This is exactly
+  the lease-deadlock class T-1356 (next in this series) is scoped to fix.
+- No CLI flag (`--allow-cross-ticket`) was wired for the new
+  `allow_cross_ticket` parameter -- CLI wiring lives in
+  src/frob/app/ticket_runner/_land_cmd.py and src/frob/_cli_parsers/**,
+  both outside T-1355's declared scope (src/frob/tickets/_land.py,
+  src/frob/tickets/_models.py, docs/modules/tickets.md). The library-level
+  override is fully functional and tested; a follow-up ticket should wire
+  the CLI flag.
+
+### Changed
+```
+ design/frob.strata                        |   3 +
+ docs/modules/tickets.md                   |  15 +++
+ src/frob/tickets/_land_release.py         | 140 ++++++++++++++++++----
+ tests/unit/test_land_release_coherence.py | 180 ++++++++++++++++++++++++++++
+ tickets.md                                | 191 +++++++++++++++++++++++++++++-
+ 5 files changed, 505 insertions(+), 24 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_refuses_when_sibling_ticket_still_open` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_allow_cross_ticket_overrides_the_refusal` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_disjoint_worktree_with_no_other_open_ticket_lands_cleanly` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_ticket_already_done_on_main_does_not_block` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 2 error(s), 694 warning(s), 706 waived
+- error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w1-land/src/frob/tickets/_land.py:1229, SELFAUDIT001@design
+
 <!-- ticket:T-1356 -->
 ```yaml
 id: T-1356
 title: Scope-lease deadlock between two tickets sharing one worktree
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-31'
@@ -4565,13 +4670,31 @@ sprint: null
 scope:
 - src/frob/tickets/_scope.py
 - docs/modules/tickets.md
+- tests/unit/test_scope_lease_deadlock.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_scope_lease_deadlock.py
+  reason: regression tests for T-1356 scope-lease deadlock fixes
+  actor: logan
+  at: '2026-08-01'
+evidence:
+- tests/unit/test_scope_lease_deadlock.py::TestRemoveKeepsEvidenceCoveredByRemainingScope::test_remove_permitted_when_narrower_glob_still_covers_evidence
+- tests/unit/test_scope_lease_deadlock.py::TestRemoveKeepsEvidenceCoveredByRemainingScope::test_remove_still_refused_when_evidence_would_be_orphaned
+- tests/unit/test_scope_lease_deadlock.py::TestRemoveKeepsEvidenceCoveredByRemainingScope::test_unit_helper_directly_permits_when_remaining_covers
+- tests/unit/test_scope_lease_deadlock.py::TestSameWorktreeLeaseIsNotAConflict::test_add_into_sibling_scope_same_worktree_is_permitted
+- tests/unit/test_scope_lease_deadlock.py::TestSameWorktreeLeaseIsNotAConflict::test_add_into_different_worktree_sibling_scope_still_refused
 acceptance:
 - text: given a glob whose recorded evidence stays covered by a remaining narrower
     glob, when scope --remove runs, then it is permitted
-  evidence: []
+  evidence:
+  - tests/unit/test_scope_lease_deadlock.py::TestRemoveKeepsEvidenceCoveredByRemainingScope::test_remove_permitted_when_narrower_glob_still_covers_evidence
+  - tests/unit/test_scope_lease_deadlock.py::TestRemoveKeepsEvidenceCoveredByRemainingScope::test_remove_still_refused_when_evidence_would_be_orphaned
+  - tests/unit/test_scope_lease_deadlock.py::TestRemoveKeepsEvidenceCoveredByRemainingScope::test_unit_helper_directly_permits_when_remaining_covers
 - text: given two tickets in the same worktree, when one adds a scope glob the other
     holds, then the operation is not refused as a lease conflict
-  evidence: []
+  evidence:
+  - tests/unit/test_scope_lease_deadlock.py::TestSameWorktreeLeaseIsNotAConflict::test_add_into_sibling_scope_same_worktree_is_permitted
+  - tests/unit/test_scope_lease_deadlock.py::TestSameWorktreeLeaseIsNotAConflict::test_add_into_different_worktree_sibling_scope_still_refused
 threat: null
 component: tickets
 ```
@@ -4590,11 +4713,92 @@ WHAT TO FIX (assess each, do not assume):
 
 This matters more now that SERIES dispatch is standing policy -- multiple tickets per worktree is the normal case, not the exception, so this deadlock will recur.
 
+## Done report
+
+Implemented both fixes named in "WHAT TO FIX" item 1 and item 2 (item 3,
+a clearer refusal message for a genuinely unresolvable deadlock, becomes
+moot once 1 and 2 close the deadlock's two actual causes).
+
+1. `_scope_remove_orphans_evidence` (src/frob/tickets/_scope.py) now takes
+   the REMAINING scope (every other still-declared glob) and only refuses
+   when NONE of those remaining globs still cover the evidence path --
+   previously it refused whenever the glob BEING removed covered evidence,
+   even when a narrower duplicate/overlapping glob would keep it covered
+   on its own. `_validate_scope_mutation` computes the final remaining
+   scope once (ticket.scope minus every glob in this same --remove call)
+   and passes it through. `remaining_scope=()` is the default, preserving
+   the exact old strict behavior for every existing caller that does not
+   pass it.
+
+2. `_scope_add_conflicts` now exempts a collision against a holder ticket
+   that is leased to the SAME worktree as the requesting ticket (new
+   `_same_worktree_lease` helper, using the existing cross-worktree lease
+   side-channel `read_all_leases` -- the one place that actually knows
+   which worktree a ticket is leased to). A genuine different-worktree
+   collision is unaffected and still refuses exactly as before; this can
+   only ever narrow the refusal, never invent leniency where the two
+   tickets are actually different agents.
+
+Reproduced both incident shapes directly in a new test file
+(tests/unit/test_scope_lease_deadlock.py -- test_ticket_land.py and
+test_tickets_scope_mutation.py are both outside this ticket's own concern
+or owned by concurrent work, so a new file matches the series' existing
+convention): a broad glob narrowed while a duplicate narrower glob keeps
+evidence covered (now permitted), the same removal with no remaining
+cover (still refused), and both same-worktree-exempt / different-worktree-
+still-refused shapes for the lease-conflict fix (the latter using a real
+git worktree, since the lease side-channel only activates against one).
+
+Disclosed cuts:
+- Item 3 of the ticket's "WHAT TO FIX" (a clearer refusal message naming
+  the escape hatch when the deadlock is genuinely unresolvable) was not
+  needed: fixes 1 and 2 together close both of this ticket's own
+  acceptance criteria's actual causes, leaving no case in scope where the
+  deadlock is still unresolvable through the CLI. If a THIRD deadlock
+  shape surfaces later, message clarity would still be worth revisiting
+  separately.
+- This ticket's own `frob check --ticket T-1356` run carries 6 SCOPE001
+  and 3 SELFAUDIT001 findings against files T-1355 (and T-1358)
+  committed earlier in this SAME series worktree (design/frob.strata,
+  src/frob/tickets/_land.py, _land_release.py, _models.py, and their
+  test files) -- none touched by this ticket's own diff. These are
+  exactly the cross-ticket-worktree-visibility artifact this ticket's own
+  fix targets (a `frob check --ticket` run, like `mutate_scope`, sees the
+  WHOLE branch's committed diff, not one ticket's own declared scope) and
+  resolve once T-1355/T-1358 land and this branch's history is no longer
+  shared. Confirmed each finding's file is outside T-1356's own scope by
+  inspection.
+
+### Changed
+```
+ design/frob.strata                           |   3 +
+ docs/modules/tickets.md                      |  15 ++
+ src/frob/tickets/_land.py                    | 279 ++++++++++++++++++++++++-
+ src/frob/tickets/_land_release.py            | 140 +++++++++++--
+ src/frob/tickets/_models.py                  |   7 +
+ tests/unit/test_land_cross_ticket_leakage.py | 187 +++++++++++++++++
+ tests/unit/test_land_release_coherence.py    | 180 ++++++++++++++++
+ tickets.md                                   | 297 ++++++++++++++++++++++++++-
+ 8 files changed, 1072 insertions(+), 36 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_scope_lease_deadlock.py::TestRemoveKeepsEvidenceCoveredByRemainingScope::test_remove_permitted_when_narrower_glob_still_covers_evidence` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scope_lease_deadlock.py::TestRemoveKeepsEvidenceCoveredByRemainingScope::test_remove_still_refused_when_evidence_would_be_orphaned` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scope_lease_deadlock.py::TestRemoveKeepsEvidenceCoveredByRemainingScope::test_unit_helper_directly_permits_when_remaining_covers` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scope_lease_deadlock.py::TestSameWorktreeLeaseIsNotAConflict::test_add_into_sibling_scope_same_worktree_is_permitted` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scope_lease_deadlock.py::TestSameWorktreeLeaseIsNotAConflict::test_add_into_different_worktree_sibling_scope_still_refused` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 4 error(s), 606 warning(s), 719 waived
+- error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w1-land/src/frob/tickets/_land.py:1231, F401@/home/logan/projects/frob/.claude/worktrees/w1-land/tests/unit/test_scope_lease_deadlock.py:25, F841@/home/logan/projects/frob/.claude/worktrees/w1-land/tests/unit/test_scope_lease_deadlock.py:216, SELFAUDIT001@design
+
 <!-- ticket:T-1358 -->
 ```yaml
 id: T-1358
 title: T-1340 land desynced .frob-release.json from pyproject.toml, blocking all lands
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-31'
@@ -4604,6 +4808,36 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/tickets/_land_release.py
+- tests/unit/test_land_release_coherence.py
+- docs/modules/tickets.md
+- design/frob.strata
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_release_coherence.py
+  reason: regression test for T-1358 quartet coherence fix
+  actor: logan
+  at: '2026-08-01'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'AFFECT001: _apply_release_bump changed, doc edge lives here'
+  actor: logan
+  at: '2026-08-01'
+- op: add
+  glob: design/frob.strata
+  reason: frob sys sync-interface touched this to register new test symbols
+  actor: logan
+  at: '2026-08-01'
+evidence:
+- tests/unit/test_land_release_coherence.py::TestReadWorkingVersions::test_reads_pyproject_version_from_disk
+- tests/unit/test_land_release_coherence.py::TestReadWorkingVersions::test_missing_pyproject_is_none
+- tests/unit/test_land_release_coherence.py::TestReadWorkingVersions::test_reads_manifest_version_from_disk
+- tests/unit/test_land_release_coherence.py::TestReadWorkingVersions::test_missing_manifest_is_none
+- tests/unit/test_land_release_coherence.py::TestReadWorkingVersions::test_malformed_manifest_is_none
+- tests/unit/test_land_release_coherence.py::TestEnsureReleaseQuartetCoherent::test_already_coherent_is_noop
+- tests/unit/test_land_release_coherence.py::TestEnsureReleaseQuartetCoherent::test_diverged_versions_force_resync
+- tests/unit/test_land_release_coherence.py::TestEnsureReleaseQuartetCoherent::test_missing_manifest_is_noop
+- tests/unit/test_land_release_coherence.py::TestApplyReleaseBumpCoherenceGuard::test_callback_reports_none_but_pyproject_already_diverged
+- tests/unit/test_land_release_coherence.py::TestApplyReleaseBumpCoherenceGuard::test_callback_reports_new_version_normally
 threat: null
 component: null
 ```
@@ -4636,6 +4870,70 @@ Suggested acceptance: reproduce the exact conditions of T-1340's land (or
 audit its actual land invocation/log) to identify why `_resync_release_
 manifest` did not fire or did not stick, and add a regression test
 covering that specific path.
+
+## Done report
+
+Investigated T-1340's land commit (b614d46b) directly: `git show --stat`
+confirms pyproject.toml/CHANGELOG.md/uv.lock changed but .frob-release.json
+did not, matching the reported desync exactly.
+
+Traced the bump path: `_apply_release_bump_for_land` (src/frob/app/
+ticket_runner/_land_cmd.py, out of this ticket's declared scope) writes
+pyproject.toml/CHANGELOG.md via `_write_release_bump`, then calls
+`frob.release.stamp(...)` to write `.frob-release.json` -- but its own
+return value is never checked. Downstream, inside this ticket's scope,
+`_apply_release_bump`'s existing T-1078 safety net
+(`_resync_release_manifest`) is ONLY invoked inside the `bumped.danger_ok
+is not None` branch. Root cause could not be pinned to one single
+mechanism with certainty from the historical commit alone (no log capture
+survives from that land run), but the structural gap is real and
+independently exploitable: any `bump_version` callback that reports
+`Ok(None)` -- because it believes no bump is needed, or because it wrote
+pyproject.toml itself without reporting the fact back through its return
+value -- skips the manifest-resync safety net entirely, even if
+pyproject.toml's on-disk version has already diverged from the manifest's.
+
+Fix (in scope, src/frob/tickets/_land_release.py only): added
+`_ensure_release_quartet_coherent`, an unconditional final coherence check
+inside `_apply_release_bump` -- run regardless of which branch executed,
+comparing pyproject.toml's on-disk version against `.frob-release.json`'s
+on-disk version and force-resyncing the manifest whenever they disagree.
+This closes the exact gap above as a structural guarantee ("the quartet is
+coherent whenever `_apply_release_bump` returns Ok"), not a one-off patch
+tied to a specific bump path. Split `_apply_reported_bump` out of
+`_apply_release_bump` to keep the parent under ARCH001's 60-line threshold
+after the addition.
+
+Disclosed cut: the actual silent-failure site inside
+`_apply_release_bump_for_land`'s unchecked `stamp(...)` call (src/frob/app/
+ticket_runner/_land_cmd.py) is OUTSIDE this ticket's declared scope
+(src/frob/tickets/_land_release.py only) and was not touched -- filing a
+follow-up ticket for that call site's own return-value check, since the
+new coherence guard is a safety net, not a substitute for fixing the
+original silent-drop.
+
+### Changed
+```
+ tickets.md | 70 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 68 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_land_release_coherence.py::TestReadWorkingVersions::test_reads_pyproject_version_from_disk` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_release_coherence.py::TestReadWorkingVersions::test_missing_pyproject_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_release_coherence.py::TestReadWorkingVersions::test_reads_manifest_version_from_disk` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_release_coherence.py::TestReadWorkingVersions::test_missing_manifest_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_release_coherence.py::TestReadWorkingVersions::test_malformed_manifest_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_release_coherence.py::TestEnsureReleaseQuartetCoherent::test_already_coherent_is_noop` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_release_coherence.py::TestEnsureReleaseQuartetCoherent::test_diverged_versions_force_resync` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_release_coherence.py::TestEnsureReleaseQuartetCoherent::test_missing_manifest_is_noop` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_release_coherence.py::TestApplyReleaseBumpCoherenceGuard::test_callback_reports_none_but_pyproject_already_diverged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_release_coherence.py::TestApplyReleaseBumpCoherenceGuard::test_callback_reports_new_version_normally` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: 0 error(s), 706 warning(s), 694 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1359 -->
 ```yaml
@@ -4978,3 +5276,72 @@ T-1265 made the ci.yml self-gate blocking and added a TEST012 check for frob-cov
 
 ## Drop reason
 - 2026-08-01: refiled on main so the registry row can cite a real ticket id
+
+<!-- ticket:T-1368 -->
+```yaml
+id: T-1368
+title: stamp() return value discarded in _apply_release_bump_for_land, can silently
+  drop .frob-release.json writes
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/ticket_runner/_land_cmd.py
+threat: null
+component: null
+```
+Found while working T-1358 (release-quartet desync land outage).
+
+`_apply_release_bump_for_land` (src/frob/app/ticket_runner/_land_cmd.py)
+calls `frob.release.stamp(root, fresh_snapshot.danger_ok, new_version)` to
+write `.frob-release.json` after bumping pyproject.toml/CHANGELOG.md, but
+never checks `stamp`'s `Result` return value -- a write failure there
+(e.g. `stamp`'s own `enforce_worktree_lease` refusal, or any future
+failure mode `stamp` grows) is silently swallowed, and the function
+proceeds to `git add .frob-release.json` regardless, staging whatever
+content (possibly stale) happens to be on disk.
+
+T-1358 added a defense-in-depth coherence check inside
+`_apply_release_bump` (src/frob/tickets/_land_release.py) that catches
+and repairs this class of desync after the fact, but the root silent-drop
+in `_land_cmd.py` itself is still live and outside T-1358's declared
+scope. Suggested acceptance: check `stamp(...)`'s return value in
+`_apply_release_bump_for_land` and propagate `Err` to
+`Err(LandError.ReleaseBumpFailed)` instead of discarding it.
+
+<!-- ticket:T-1369 -->
+```yaml
+id: T-1369
+title: wire --allow-cross-ticket CLI flag for frob ticket land
+state: queued
+kind: feature
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/ticket_runner/_land_cmd.py
+threat: null
+component: null
+```
+Found while working T-1355 (cross-ticket leakage preflight).
+
+`land()` (src/frob/tickets/_land.py) now accepts `allow_cross_ticket:
+bool = False`, the escape hatch for `_check_cross_ticket_leakage`'s new
+refusal (a multi-ticket series worktree landing one ticket while
+carrying a still-open sibling ticket's own committed work along with
+it). The library-level parameter is fully implemented and tested, but no
+CLI flag exists yet -- `frob ticket land` has no way to pass it through.
+
+Suggested acceptance: add `--allow-cross-ticket` to `frob ticket land`'s
+CLI (src/frob/app/ticket_runner/_land_cmd.py plus whatever argparse
+wiring src/frob/_cli_parsers/** needs), threaded to `land(...,
+allow_cross_ticket=...)`, with the same "logs a warning either way, never
+silent" posture `--skip-mutation-evidence` already has.

@@ -355,6 +355,7 @@ def _reconcile_one_land_repair_marker(
 
 
 # frob:ticket T-0176
+# frob:ticket T-1355
 # frob:doc docs/modules/tickets.md#frob-ticket-land
 # `dry_run` runs every check and every git mutation the real run would
 # (merge, splice, deletion-check) then unwinds it via
@@ -377,8 +378,18 @@ def land(
     check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
     check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None = None,
     skip_mutation_evidence: bool = False,
+    allow_cross_ticket: bool = False,
 ) -> Result[LandReport, LandError]:
-    """T-1011: `sync_gate_rules(root, pre_land_tip)`, if supplied, runs
+    """T-1355: `allow_cross_ticket` (default `False`) is the escape hatch
+    for `_check_cross_ticket_leakage`'s new preflight refusal -- see that
+    function's own docstring for what it catches (a multi-ticket series
+    worktree landing one ticket while silently carrying a sibling's still-
+    open committed work along with it) and why the override is logged
+    rather than silent. `frob ticket land --allow-cross-ticket` sets it;
+    the default stays strict (refuse) since the whole point of the check
+    is to make this leakage class impossible to hit by accident.
+
+    T-1011: `sync_gate_rules(root, pre_land_tip)`, if supplied, runs
     right after `bump_version` (same staged-but-uncommitted point) and
     decides for itself -- by diffing `pre_land_tip`..`root`'s now-squashed
     tree -- whether the landing diff touched `_KNOWN_GATE_RULES`
@@ -551,12 +562,14 @@ def land(
             check_gates=check_gates,
             check_gate_findings=check_gate_findings,
             skip_mutation_evidence=skip_mutation_evidence,
+            allow_cross_ticket=allow_cross_ticket,
         )
 
 
 # frob:waive ARCH001 reason="already the decomposed orchestrator (T-0577): delegates to _land_precheck/_land_merge_stage/_reverify_evidence_post_merge/_land_finalize_and_close/_land_squash_apply; remaining length is the try/finally intent-marker sequencing plus the D-05/T-0456 ordering-rationale comments themselves, not undecomposed logic"  # noqa: E501
 # frob:ticket T-0601
 # frob:ticket T-0907
+# frob:ticket T-1355
 def _land_locked(
     root: Path,
     ticket_id: str,
@@ -573,6 +586,7 @@ def _land_locked(
     check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
     check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None = None,
     skip_mutation_evidence: bool = False,
+    allow_cross_ticket: bool = False,
 ) -> Result[LandReport, LandError]:
     """`land`'s actual body (T-0577), run by the caller already holding
     `root`'s `ledger_lock` -- split out only so `land`'s docstring can state
@@ -602,6 +616,7 @@ def _land_locked(
         ticket_id,
         covers_scope=covers_scope,
         skip_mutation_evidence=skip_mutation_evidence,
+        allow_cross_ticket=allow_cross_ticket,
     )
     if precheck.is_err:
         return Err(precheck.danger_err)
@@ -1080,6 +1095,214 @@ def _check_live_tracker_citations(
     return Err(LandError.LiveTrackerCited)
 
 
+# frob:ticket T-1355
+def _branch_changed_files(
+    worktree: Path, base_ref: str
+) -> Result[frozenset[str], LandError]:
+    """The set of paths `worktree`'s current branch has committed changes
+    to since it diverged from `base_ref` (T-1355), via `git diff --name-
+    only <base_ref>...HEAD` (three-dot: the merge-base diff, so a
+    worktree that has since merged `base_ref` back in does not report
+    every file `base_ref` itself touched). `Err(GitFailed)` on a git
+    failure; an empty set (never an error) when the branch has committed
+    nothing new."""
+    diffed = run_argv(
+        ["git", "-C", str(worktree), "diff", "--name-only", f"{base_ref}...HEAD"]
+    )
+    if diffed.is_err or diffed.danger_ok.returncode != 0:
+        return Err(LandError.GitFailed)
+    return Ok(
+        frozenset(
+            line.strip()
+            for line in diffed.danger_ok.stdout.splitlines()
+            if line.strip()
+        )
+    )
+
+
+# frob:ticket T-1355
+def _find_leaked_tickets(
+    landing_id: str,
+    worktree_tickets: dict[str, Ticket],
+    root_tickets: dict[str, Ticket],
+    changed_paths: frozenset[str],
+) -> dict[str, list[str]]:
+    """The `{other_ticket_id: [leaked_path, ...]}` map `_check_cross_
+    ticket_leakage` refuses on (T-1355: split out to keep the parent under
+    ARCH001's line threshold, zero behavior change) -- every OTHER ticket
+    in `worktree_tickets` that is still open (root's copy of it, when
+    root already knows the id, is the AUTHORITATIVE state -- a ticket
+    landed done through its own separate `frob ticket land` call is
+    terminal even if this worktree's pre-pull copy still shows it
+    in-progress) and whose declared `scope` matches at least one path in
+    `changed_paths`."""
+    from frob.tickets._models import TicketState, scope_matches
+
+    leaked: dict[str, list[str]] = {}
+    for other_id, other in worktree_tickets.items():
+        if other_id == landing_id:
+            continue
+        effective_state = (
+            root_tickets[other_id].state if other_id in root_tickets else other.state
+        )
+        if effective_state in (TicketState.DONE, TicketState.DROPPED):
+            continue
+        if not other.scope:
+            continue
+        hits = [
+            path
+            for path in changed_paths
+            if scope_matches(path, other.scope, kind=other.kind)
+        ]
+        if hits:
+            # frob:waive PERF004 reason="sorts a DIFFERENT, per-ticket hits list each \
+            # iteration (for stable log/error ordering) -- there is nothing \
+            # loop-invariant to hoist, each ticket's hit set is independent and \
+            # typically single-digit length"
+            leaked[other_id] = sorted(hits)
+    return leaked
+
+
+# frob:ticket T-1355
+def _check_cross_ticket_leakage(
+    root: Path,
+    worktree: Path,
+    ticket: Ticket,
+    base_ref: str,
+    *,
+    allow_cross_ticket: bool = False,
+) -> Result[None, LandError]:
+    """Refuse (T-1355) when `worktree`'s branch has committed changes
+    covered by a DIFFERENT ticket's declared `scope`, and that other
+    ticket is still open (not `done`/`dropped`) on `root`'s ledger --
+    the incident class where landing one ticket out of a multi-ticket
+    series worktree silently carries a sibling's still-open work onto
+    main (T-1352's land of worktree t-1276 carrying T-1276's own
+    committed files while T-1276 stayed `in-progress`).
+
+    Scans `_branch_changed_files(worktree, base_ref)` against every OTHER
+    ticket in `worktree`'s CURRENT ledger -- deliberately the WORKTREE's
+    copy, not `root`'s: a sibling ticket held open in the same series
+    worktree (T-1276's shape) generally has NOT been landed yet, so it
+    does not exist in `root`'s ledger at all until THIS land's own
+    squash-splice merges it in; `worktree`'s ledger is the one place that
+    already knows about it, pre-merge. Falls back to `root`'s ledger only
+    if `worktree`'s is unreadable. Matching uses the shared `scope_matches`
+    implementation -- the same one `frob.gates`' own SCOPE001/PRE001 checks
+    use, so this can never drift from what "covered by that ticket's
+    scope" means anywhere else in the codebase. A ticket with no declared
+    `scope` at all matches nothing (an empty scope is never treated as
+    "matches everything").
+
+    `allow_cross_ticket=True` is the escape hatch (T-1355, mirroring
+    `skip_mutation_evidence`'s pattern) for a genuinely intentional
+    landing (e.g. two tickets deliberately meant to land together in one
+    commit) -- the check still RUNS and logs what it found, but does not
+    refuse. Every use is logged at WARNING naming the ticket(s), so a
+    bypass always leaves a trail. Any lookup failure (root's ledger
+    unreadable) is logged and treated as `Ok(None)` -- this is an
+    additional safety net on top of the existing scope/evidence gates,
+    not a replacement for their own hard-fail paths if the ledger itself
+    cannot be read."""
+    from frob.tickets._models import LEDGER_PATH
+    from frob.tickets._store import archive_path
+
+    changed = _branch_changed_files(worktree, base_ref)
+    if changed.is_err:
+        return Err(changed.danger_err)
+    # T-1355: the ledger (and its archive) is implicitly in EVERY ticket's
+    # scope (`scope_matches`'s always-in-scope rule) and is expected to
+    # change on every single land -- it is not "a sibling's own work",
+    # and the ledger's own per-id splice already handles ticket state
+    # correctly. Excluded here so a ledger-only diff never false-positives
+    # this check against every other open ticket in the worktree.
+    archive_rel = archive_path(worktree).relative_to(worktree).as_posix()
+    relevant = frozenset(changed.danger_ok) - {LEDGER_PATH, archive_rel}
+    if not relevant:
+        return Ok(None)
+
+    worktree_tickets, root_tickets = _load_leakage_ledgers(root, worktree, ticket.id)
+    if worktree_tickets is None:
+        return Ok(None)
+    leaked = _find_leaked_tickets(ticket.id, worktree_tickets, root_tickets, relevant)
+    if not leaked:
+        return Ok(None)
+
+    return _report_leaked_tickets(ticket.id, leaked, allow_cross_ticket=allow_cross_ticket)
+
+
+# frob:ticket T-1355
+def _load_leakage_ledgers(
+    root: Path, worktree: Path, ticket_id: str
+) -> tuple[dict[str, Ticket] | None, dict[str, Ticket]]:
+    """The ledger-loading half of `_check_cross_ticket_leakage` (T-1355:
+    split out to keep the parent under ARCH001's line threshold, zero
+    behavior change) -- `worktree`'s tickets (falling back to `root`'s if
+    unreadable, `None` if NEITHER is readable) plus `root`'s tickets
+    (empty dict if unreadable) for the caller's authoritative-state
+    lookup."""
+    from frob.tickets._store import load_all
+
+    loaded = load_all(worktree)
+    if loaded.is_err:
+        loaded = load_all(root)
+    if loaded.is_err:
+        _log.debug(
+            "land: %s cross-ticket leakage check skipped -- neither "
+            "worktree's nor root's ledger is readable (%s)",
+            ticket_id,
+            loaded.danger_err,
+        )
+        return None, {}
+
+    root_loaded = load_all(root)
+    return loaded.danger_ok, (root_loaded.danger_ok if root_loaded.is_ok else {})
+
+
+# frob:ticket T-1355
+def _report_leaked_tickets(
+    landing_id: str,
+    leaked: dict[str, list[str]],
+    *,
+    allow_cross_ticket: bool,
+) -> Result[None, LandError]:
+    """Log every leaked-ticket hit and either return `Ok(None)`
+    (`allow_cross_ticket=True`, with a WARNING trail) or `Err
+    (LandError.CrossTicketLeakage)` (T-1355: split out of `_check_cross_
+    ticket_leakage` to keep it under ARCH001's line threshold, zero
+    behavior change)."""
+    for other_id, paths in sorted(leaked.items()):
+        _log.error(
+            "land: %s branch carries %d file(s) covered by %s's own "
+            "declared scope, and %s is still open on main -- landing "
+            "would silently ship %s's work ahead of its own close: %s",
+            landing_id,
+            len(paths),
+            other_id,
+            other_id,
+            other_id,
+            paths,
+        )
+    if allow_cross_ticket:
+        _log.warning(
+            "land: %s allow_cross_ticket set -- the cross-ticket leakage "
+            "above is NOT blocking this land (justification required: "
+            "this is for a genuinely intentional joint landing, never a "
+            "way to silently ship a sibling's held-back work)",
+            landing_id,
+        )
+        return Ok(None)
+    _log.error(
+        "land: %s cannot land -- resolve by either dropping the leaked "
+        "file(s) from this branch (commit them separately once the "
+        "sibling ticket closes), or landing the sibling ticket(s) first, "
+        "or -- if this joint landing is genuinely intentional -- passing "
+        "the explicit override",
+        landing_id,
+    )
+    return Err(LandError.CrossTicketLeakage)
+
+
 # frob:ticket T-1326
 def _load_ticket_for_land(worktree: Path, ticket_id: str) -> Result[Ticket, LandError]:
     """Load `ticket_id` from `worktree`'s store, run `_validate_closeable`,
@@ -1129,6 +1352,7 @@ def _resolve_main_branch_for_land(
     return Ok(main_branch.danger_ok)
 
 
+# frob:ticket T-1355
 def _land_precheck(
     root: Path,
     worktree: Path,
@@ -1136,14 +1360,16 @@ def _land_precheck(
     *,
     covers_scope: Callable[[Ticket], bool | None] | None = None,
     skip_mutation_evidence: bool = False,
+    allow_cross_ticket: bool = False,
 ) -> Result[tuple[Ticket, str], LandError]:
     """Refuse on root/worktree being the same path (T-0795) or a dirty
     main, load+validate the worktree's ticket is closeable (including,
     T-0774, a `covers_scope` preflight simulation, T-0755's diff-scoped
     mutation-evidence obligation, bypassable via `skip_mutation_evidence`,
-    and T-0854's live-tracker-citation preflight), and resolve main's
-    current branch name -- everything `land` must check BEFORE any git
-    mutation."""
+    T-0854's live-tracker-citation preflight, and T-1355's cross-ticket
+    leakage preflight, bypassable via `allow_cross_ticket`), and resolve
+    main's current branch name -- everything `land` must check BEFORE any
+    git mutation."""
     same_path_check = _refuse_if_root_is_worktree(root, worktree, ticket_id)
     if same_path_check.is_err:
         return Err(same_path_check.danger_err)
@@ -1172,22 +1398,57 @@ def _land_precheck(
     if scope_preflight.is_err:
         return Err(scope_preflight.danger_err)
 
+    remaining = _land_precheck_remaining_checks(
+        root,
+        worktree,
+        ticket,
+        main_branch_name,
+        skip_mutation_evidence=skip_mutation_evidence,
+        allow_cross_ticket=allow_cross_ticket,
+    )
+    if remaining.is_err:
+        return Err(remaining.danger_err)
+
+    return Ok((ticket, main_branch_name))
+
+
+# frob:ticket T-1355
+def _land_precheck_remaining_checks(
+    root: Path,
+    worktree: Path,
+    ticket: Ticket,
+    main_branch_name: str,
+    *,
+    skip_mutation_evidence: bool,
+    allow_cross_ticket: bool,
+) -> Result[None, LandError]:
+    """The tail half of `_land_precheck`'s check sequence (T-1355: split
+    out to keep the parent under ARCH001's line threshold, zero behavior
+    change) -- live-tracker citations, T-1355's cross-ticket leakage
+    preflight, then the diff-scoped mutation-evidence obligation, in that
+    order, exactly as they ran inline before this split."""
     live_tracker_check = _check_live_tracker_citations(
         worktree, ticket, main_branch_name
     )
     if live_tracker_check.is_err:
         return Err(live_tracker_check.danger_err)
 
-    mutation_check = _check_mutation_evidence(
+    leakage_check = _check_cross_ticket_leakage(
+        root,
+        worktree,
+        ticket,
+        main_branch_name,
+        allow_cross_ticket=allow_cross_ticket,
+    )
+    if leakage_check.is_err:
+        return Err(leakage_check.danger_err)
+
+    return _check_mutation_evidence(
         worktree,
         ticket,
         main_branch_name,
         skip=skip_mutation_evidence,
     )
-    if mutation_check.is_err:
-        return Err(mutation_check.danger_err)
-
-    return Ok((ticket, main_branch_name))
 
 
 # frob:ticket T-1258

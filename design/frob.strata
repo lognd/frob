@@ -3017,6 +3017,7 @@ node testsuite : trusted {
     attr interface=TestAppendEntry;
     attr interface=TestApplyManagedBlocks;
     attr interface=TestApplyPlan;
+    attr interface=TestApplyReleaseBumpCoherenceGuard;
     attr interface=TestApplyReleaseBumpForLand;
     attr interface=TestApplySyncInterface;
     attr interface=TestApplyTierAAndReverify;
@@ -3275,6 +3276,7 @@ node testsuite : trusted {
     attr interface=TestCrossLanguageR5NowFires;
     attr interface=TestCrossLanguageR5WithLet;
     attr interface=TestCrossProcessPoolInheritance;
+    attr interface=TestCrossTicketLeakage;
     attr interface=TestCrossWorktreeLeaseVisibility;
     attr interface=TestCrossWorktreeSingleFlight;
     attr interface=TestCurrentBranch;
@@ -3431,6 +3433,7 @@ node testsuite : trusted {
     attr interface=TestEnforceWorktreeLease;
     attr interface=TestEnforcesConformance;
     attr interface=TestEnsureDaemon;
+    attr interface=TestEnsureReleaseQuartetCoherent;
     attr interface=TestEntrypointAllowlist;
     attr interface=TestEnvAccess;
     attr interface=TestEpicRollup;
@@ -4048,6 +4051,7 @@ node testsuite : trusted {
     attr interface=TestReadAllIntents;
     attr interface=TestReadAllLeasesSiblingProcessVisibility;
     attr interface=TestReadLineLength;
+    attr interface=TestReadWorkingVersions;
     attr interface=TestReadersExactSetClosure;
     attr interface=TestRealCallbackStaleWorktreeManifest;
     attr interface=TestRealDataflowGraphHonestFallback;
@@ -4089,6 +4093,7 @@ node testsuite : trusted {
     attr interface=TestReleaseGateCoherence;
     attr interface=TestReleaseRunner;
     attr interface=TestReleaseSyncRunner;
+    attr interface=TestRemoveKeepsEvidenceCoveredByRemainingScope;
     attr interface=TestRenameLease;
     attr interface=TestRenderAuditMatrix;
     attr interface=TestRenderChangedBlock;
@@ -4174,6 +4179,7 @@ node testsuite : trusted {
     attr interface=TestRustAdapter;
     attr interface=TestRustFilterPlaceholder;
     attr interface=TestRustNamespace;
+    attr interface=TestSameWorktreeLeaseIsNotAConflict;
     attr interface=TestScaffoldApplyCli;
     attr interface=TestScaffoldConformanceStatus;
     attr interface=TestScaffoldPoolCli;

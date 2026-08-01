@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.293.0] - unreleased
+
+- T-1358: T-1340 land desynced .frob-release.json from pyproject.toml, blocking all lands
+
 ## [0.292.0] - unreleased
 
 - T-1363: A failed coverage run must not overwrite a good stamp or ratchet floors down

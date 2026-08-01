@@ -1402,6 +1402,21 @@ def land(root: Path, ticket_id: str, worktree: Path, *,
     # drive. Defaults to `None` (skip) for the same cycle-avoidance reason;
     # `frob ticket land` supplies it by default
     # (`ticket_runner._land_sync_gate_rules_fn`).
+    # T-1358: `_apply_release_bump` (called from inside `land` for the
+    # `bump_version` step) now runs an UNCONDITIONAL final coherence check
+    # (`_ensure_release_quartet_coherent`) comparing pyproject.toml's
+    # on-disk version against `.frob-release.json`'s on-disk version,
+    # regardless of what `bump_version` itself reported back -- closing a
+    # gap the T-1078 resync left open: that resync only fires inside the
+    # `bumped.danger_ok is not None` branch, so a callback that reports
+    # `Ok(None)` (or a manifest write that silently failed) could still
+    # leave the quartet desynced (the real T-1340 incident: pyproject.toml
+    # bumped 0.289.0 -> 0.290.0 on main, `.frob-release.json` left at
+    # 0.289.0, blocking every subsequent land on the T-0992 monotonicity
+    # guard until a coordinator hand-reconciled). The new check force-
+    # resyncs the manifest to pyproject.toml's value whenever the two
+    # on-disk files disagree, as the very last step before `_apply_release_
+    # bump` returns.
 def splice_ledger(ours_text: str, theirs_text: str, *,
                    base_text: str | None = None) -> Result[str, TicketError]
     # Merge two tickets.md texts at the TICKET-ID level (newest state per

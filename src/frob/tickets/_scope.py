@@ -115,6 +115,17 @@ def _scope_add_conflicts(
             continue
         collision = scope_overlap_globs((glob,), holder.scope)
         if collision is not None:
+            if root is not None and _same_worktree_lease(root, ticket_id, holder.id):
+                _log.info(
+                    "tickets: %s --add %r exempted from %s's lease on %r "
+                    "(T-1356: both tickets are leased to the same worktree "
+                    "-- one agent, not a real cross-agent collision)",
+                    ticket_id,
+                    glob,
+                    holder.id,
+                    collision[1],
+                )
+                continue
             if new_file and collision[1] != glob:
                 _log.info(
                     "tickets: %s --add %r exempted from %s's lease on %r "
@@ -127,6 +138,54 @@ def _scope_add_conflicts(
                 continue
             return (holder.id, collision[1])
     return None
+
+
+# frob:ticket T-1356
+def _same_worktree_lease(root: Path, requesting_id: str, holder_id: str) -> bool:
+    """Whether `requesting_id` (the ticket asking for a new `--add` glob,
+    running from `root`) and `holder_id` (the ticket whose scope the glob
+    would collide with) are BOTH leased to the same worktree (T-1356) --
+    the standing-policy series-worktree case where two tickets share one
+    agent, not two agents genuinely racing to touch the same files. The
+    cross-worktree lease side-channel (`read_all_leases`) is the one place
+    that knows which worktree a ticket is actually leased to; a ticket with
+    no recorded lease at all (never `frob ticket start`-ed in ANY worktree,
+    or a stale/removed lease) never matches, so this can only ever narrow
+    an existing conflict, never invent a new exemption out of thin air.
+
+    `root` itself is resolved to its true git worktree top-level
+    (`frob.gitio.repo_root`, the same worktree-correct resolution `enforce_
+    worktree_lease` uses) rather than compared as a raw path, so a `root`
+    passed as a subdirectory of the worktree still matches correctly."""
+    from frob.gitio import repo_root
+    from frob.tickets._leases import read_all_leases
+
+    resolved_root = repo_root(root)
+    if resolved_root.is_err:
+        return False
+    root_worktree = str(resolved_root.danger_ok.resolve())
+
+    requesting_worktree: str | None = None
+    holder_worktree: str | None = None
+    for lease in read_all_leases(root):
+        if lease.ticket_id == requesting_id:
+            requesting_worktree = lease.worktree
+        elif lease.ticket_id == holder_id:
+            holder_worktree = lease.worktree
+    # T-1356: `requesting_id` is the ticket ACTIVELY running this CLI
+    # invocation FROM `root` -- if the lease side-channel has no record
+    # for it yet (e.g. its very first `scope --add` right after `start`,
+    # before any lease-recording write has landed), `root` itself IS its
+    # worktree; falling back to `root_worktree` here (rather than treating
+    # a missing self-lease as "no match") is what makes that common case
+    # work instead of a same-worktree exemption silently never firing on
+    # a brand-new ticket.
+    if requesting_worktree is None:
+        requesting_worktree = root_worktree
+    return (
+        holder_worktree is not None
+        and requesting_worktree == holder_worktree
+    )
 
 
 # frob:ticket T-0561
@@ -155,16 +214,47 @@ def _is_new_concrete_file_glob(glob: str, root: Path) -> bool:
     return not (root / glob).exists()
 
 
+def _evidence_paths_needing(glob: str, ticket: Ticket) -> tuple[str, ...]:
+    """Every evidence id's leading `path::` segment that `glob` covers
+    (T-1356: split out of `_scope_remove_orphans_evidence` so the
+    remaining-coverage check below can reuse the same "covered by glob"
+    test without duplicating the `path::`-split logic)."""
+    return tuple(
+        path
+        for entry in ticket.evidence
+        for path in (entry.split("::", 1)[0],)
+        if fnmatch.fnmatch(path, glob)
+    )
+
+
 # frob:ticket T-0455
-def _scope_remove_orphans_evidence(glob: str, ticket: Ticket) -> bool:
+# frob:ticket T-1356
+def _scope_remove_orphans_evidence(
+    glob: str, ticket: Ticket, remaining_scope: Sequence[str] = ()
+) -> bool:
     """Whether removing `glob` from `ticket.scope` would orphan already-
-    recorded evidence (T-0455 guardrail): any evidence id whose leading
-    `path::` segment `glob` currently covers."""
-    for entry in ticket.evidence:
-        path = entry.split("::", 1)[0]
-        if fnmatch.fnmatch(path, glob):
-            return True
-    return False
+    recorded evidence (T-0455 guardrail).
+
+    T-1356: the check that actually matters is whether evidence stays
+    COVERED after the removal, not whether `glob` itself happened to be
+    one of the globs covering it -- the pre-T-1356 behavior refused ANY
+    removal of a glob that covers evidence, even when `remaining_scope`
+    (the ticket's OTHER, still-declared globs) would keep covering that
+    same evidence on its own, producing an unresolvable deadlock with
+    `_scope_add_conflicts`'s own lease refusal (a real incident: `tests/
+    unit/**` could not be narrowed to release a path a sibling ticket
+    needed, because a duplicate/broader glob would have kept it covered
+    regardless). `remaining_scope=()` (the default, matching every
+    pre-T-1356 caller) preserves the exact prior strict behavior."""
+    needed = _evidence_paths_needing(glob, ticket)
+    if not needed:
+        return False
+    if not remaining_scope:
+        return True
+    return any(
+        not any(fnmatch.fnmatch(path, other) for other in remaining_scope)
+        for path in needed
+    )
 
 
 # frob:ticket T-0455
@@ -202,6 +292,10 @@ def _validate_scope_mutation(
     (`ScopeLeaseConflict`, `_scope_add_conflicts`) -- unless T-0561's
     narrow new-concrete-file carve-out applies (`root` must be given for
     that check to run at all)."""
+    # T-1356: the FINAL scope this call would leave behind, if every
+    # requested `remove` glob is accepted -- what actually matters for
+    # "does evidence stay covered", not scope-minus-one-glob-at-a-time.
+    remaining_scope = tuple(g for g in ticket.scope if g not in remove_globs)
     for glob in remove_globs:
         if glob not in ticket.scope:
             _log.error(
@@ -211,11 +305,13 @@ def _validate_scope_mutation(
                 ticket.scope,
             )
             return Err(TicketError.ScopeRemoveNotDeclared)
-        if _scope_remove_orphans_evidence(glob, ticket):
+        if _scope_remove_orphans_evidence(glob, ticket, remaining_scope):
             _log.error(
-                "tickets: %s cannot remove %r, covers recorded evidence",
+                "tickets: %s cannot remove %r, covers recorded evidence not "
+                "kept covered by the remaining scope %s",
                 ticket_id,
                 glob,
+                remaining_scope,
             )
             return Err(TicketError.ScopeRemoveOrphansEvidence)
     for glob in add_globs:
