@@ -6880,6 +6880,69 @@ class TestTestGate:
 # frob:ticket T-0545
 # frob:ticket T-1180
 # frob:ticket T-1363
+# frob:ticket T-1376
+class TestConditionCoverageIsActuallyParsed:
+    """T-1376: `branch_pct` must come from the REAL percentage, not
+    degrade to hit/not-hit. Before this, `split("(")[-1]` left "1/2)",
+    `int()` raised every time, and the except branch silently returned
+    `100 if hits > 0 else 0` -- so on this repo's own coverage.xml the
+    parser emitted only 0 and 100 while 1324 branch lines were partial."""
+
+    @staticmethod
+    def _el(**attrs: str):
+        import xml.etree.ElementTree as ET
+
+        return ET.Element("line", attrs)
+
+    # frob:tests src/frob/gates/_coverage.py::_parse_line_el kind="unit"
+    def test_partial_condition_coverage_is_read_verbatim(self):
+        """The regression that matters: a half-covered branch must read 50,
+        not round up to 100 just because the line was hit."""
+        from frob.gates._coverage import _parse_line_el
+
+        el = self._el(
+            number="9",
+            hits="1",
+            branch="true",
+            **{"condition-coverage": "50% (1/2)"},
+        )
+        assert _parse_line_el(el) == (9, (1, 50))
+
+    # frob:tests src/frob/gates/_coverage.py::_parse_line_el kind="unit"
+    def test_zero_and_full_condition_coverage_round_trip(self):
+        """The two extremes must survive the same path, so a fix that only
+        happens to work for 0/100 does not pass."""
+        from frob.gates._coverage import _parse_line_el
+
+        zero = self._el(
+            number="1",
+            hits="1",
+            branch="true",
+            **{"condition-coverage": "0% (0/2)"},
+        )
+        full = self._el(
+            number="2",
+            hits="4",
+            branch="true",
+            **{"condition-coverage": "100% (2/2)"},
+        )
+        assert _parse_line_el(zero) == (1, (1, 0))
+        assert _parse_line_el(full) == (2, (4, 100))
+
+    # frob:tests src/frob/gates/_coverage.py::_parse_line_el kind="unit"
+    def test_three_way_partial_is_not_snapped_to_an_extreme(self):
+        """A non-half partial, to catch any fix that special-cases 50."""
+        from frob.gates._coverage import _parse_line_el
+
+        el = self._el(
+            number="5",
+            hits="2",
+            branch="true",
+            **{"condition-coverage": "33% (1/3)"},
+        )
+        assert _parse_line_el(el) == (5, (2, 33))
+
+
 class TestCoverageLoad:
     def test_missing_coverage_xml(self, tmp_path: Path) -> None:
         result = load_coverage(tmp_path)

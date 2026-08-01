@@ -69,7 +69,14 @@ def _parse_line_el(line_el: ET.Element) -> tuple[int, tuple[int, int]] | None:
     branch_pct = 100 if hits > 0 else 0
     if is_branch and cond_cov:
         try:
-            branch_pct = int(cond_cov.split("(")[-1].split("%")[0].strip())
+            # frob:ticket T-1376
+            # The Cobertura value is "<pct>% (<covered>/<total>)", so the
+            # percentage is the text BEFORE the '%'. Splitting on '(' first
+            # (the pre-T-1376 form) yielded "1/2)", int() raised every time,
+            # and the except branch below silently degraded every branch
+            # line to hit/not-hit -- measured on this repo, the parser
+            # emitted only 0 and 100 while 1324 lines were genuinely partial.
+            branch_pct = int(cond_cov.split("%")[0].strip())
         except (ValueError, IndexError):
             branch_pct = 100 if hits > 0 else 0
     return number, (hits, branch_pct)
