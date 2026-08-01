@@ -5351,6 +5351,7 @@ scope_changes:
 evidence:
 - tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketReachesLand::test_land_receives_the_keyword[True]
 - tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketReachesLand::test_land_receives_the_keyword[False]
+- tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketReachesConfig::test_from_external_carries_the_flag
 threat: null
 component: null
 ```
