@@ -102,6 +102,7 @@ def _start_blockers(ticket: Ticket, queue: dict[str, Ticket]) -> list[str]:
 
 
 # frob:ticket T-0417
+# frob:ticket T-1384
 def _transition_guard(
     root: Path,
     ticket: Ticket,
@@ -112,6 +113,7 @@ def _transition_guard(
     reviewed: bool | None = None,
     mutation_evidence: bool | None = None,
     evidence_reverified: bool | None = None,
+    own_obligations_clean: bool | None = None,
 ) -> Result[None, TicketError]:
     """Enforce start-blocker and done-evidence preconditions for `to`."""
     if to == TicketState.IN_PROGRESS:
@@ -130,6 +132,7 @@ def _transition_guard(
             reviewed=reviewed,
             mutation_evidence=mutation_evidence,
             evidence_reverified=evidence_reverified,
+            own_obligations_clean=own_obligations_clean,
         )
     return Ok(None)
 
@@ -222,6 +225,7 @@ def _done_transition_structural_guard(
     return Ok(None)
 
 
+# frob:ticket T-1384
 def _done_transition_guard(
     root: Path,
     ticket: Ticket,
@@ -231,6 +235,7 @@ def _done_transition_guard(
     reviewed: bool | None = None,
     mutation_evidence: bool | None = None,
     evidence_reverified: bool | None = None,
+    own_obligations_clean: bool | None = None,
 ) -> Result[None, TicketError]:
     """Enforce DONE-transition preconditions: evidence + substantive Done
     report present, no cmd: evidence on a kind that disallows it, (T-0715)
@@ -257,23 +262,35 @@ def _done_transition_guard(
     cites `ticket.id` as its live tracker (`frob.tickets._live_tracker.
     live_tracker_citations`) -- the T-0605-orphaned-41-rows incident class.
 
-    `covers_scope`/`reviewed`/`mutation_evidence`/`evidence_reverified` are
-    injected, never computed here: answering "does an evidence id cover a
-    touched/scope symbol" needs the obligation graph (`frob.graph`) and the
-    `TESTS`-edge index `frob.testing`/`frob.gates` already build, answering
-    "is there an approve review naming HEAD" needs `git rev-parse` under
-    the caller's root, answering "did the bound evidence kill a mutant"
-    needs `frob.gates.mutation_evidence_violations`, and answering "does
-    the evidence still pass right now" needs a real test-runner spawn --
-    `frob.tickets` deliberately stays free of all four dependencies
-    (docs/rework.md cycle-avoidance -- `frob.gates`/`frob.app` are the
-    layers allowed to join graph/runner + tickets). `None` (the default,
-    matching every caller before D-02/T-0571/T-0844/T-0417) skips each
-    check entirely, so existing callers/tests are unaffected; a caller
-    with the needed context (`frob.gates.evidence_covers_scope`,
-    `has_approved_review_for_commit`, `frob.gates.mutation_evidence_
-    violations`, `frob.app.ticket_runner._reverify_evidence_for_close`, or
-    its own equivalent) opts in by passing an explicit `True`/`False`.
+    (T-1384, when the caller supplies `own_obligations_clean=False`) that
+    the ticket's OWN diff leaves no new-symbol `frob:doc` edge, testsuite
+    declaration, or REL001 bump outstanding -- see `TicketError.
+    OwnObligationsUnclean`'s docstring for the incident this closes
+    (T-1377/T-1379/T-1381 all closed clean and left exactly this residue
+    for the very next unscoped `frob check` to surprise-discover).
+
+    `covers_scope`/`reviewed`/`mutation_evidence`/`evidence_reverified`/
+    `own_obligations_clean` are injected, never computed here: answering
+    "does an evidence id cover a touched/scope symbol" needs the obligation
+    graph (`frob.graph`) and the `TESTS`-edge index `frob.testing`/
+    `frob.gates` already build, answering "is there an approve review
+    naming HEAD" needs `git rev-parse` under the caller's root, answering
+    "did the bound evidence kill a mutant" needs `frob.gates.mutation_
+    evidence_violations`, answering "does the evidence still pass right
+    now" needs a real test-runner spawn, and answering "does this diff's
+    own new-symbol doc/testsuite/REL001 obligations resolve" needs the
+    same `frob.gates` COV001/SELFAUDIT/REL machinery `frob check` itself
+    runs -- `frob.tickets` deliberately stays free of all five
+    dependencies (docs/rework.md cycle-avoidance -- `frob.gates`/
+    `frob.app` are the layers allowed to join graph/runner + tickets).
+    `None` (the default, matching every caller before D-02/T-0571/T-0844/
+    T-0417/T-1384) skips each check entirely, so existing callers/tests
+    are unaffected; a caller with the needed context (`frob.gates.
+    evidence_covers_scope`, `has_approved_review_for_commit`, `frob.gates.
+    mutation_evidence_violations`, `frob.app.ticket_runner._reverify_
+    evidence_for_close`, a `frob check --ticket`-scoped COV001/SELFAUDIT/
+    REL001 sweep over the ticket's own diff, or its own equivalent) opts
+    in by passing an explicit `True`/`False`.
     `live_tracker_citations`, by contrast, is a plain `git
     grep` under `root` (against `current_branch(root)` as the diff base,
     T-0854 rework's diff-aware exemption -- see the module docstring in
@@ -317,6 +334,15 @@ def _done_transition_guard(
             ticket.id,
         )
         return Err(TicketError.EvidenceNotPassing)
+    if own_obligations_clean is False:
+        _log.warning(
+            "tickets: %s cannot close, this ticket's own diff leaves a "
+            "new-symbol doc edge, testsuite declaration, or REL001 bump "
+            "outstanding -- run `frob check --delta` (or the named gate) "
+            "and resolve the finding(s) it names, then retry",
+            ticket.id,
+        )
+        return Err(TicketError.OwnObligationsUnclean)
     return _done_transition_diff_derived_guard(root, ticket)
 
 
@@ -404,8 +430,12 @@ def _recover_missing_evidence_for_done(
 # frob:tests tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_rejects_when_evidence_reverified_false  # noqa: E501
 # frob:tests tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_allows_when_evidence_reverified_true  # noqa: E501
 # frob:tests tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_permissive_when_evidence_reverified_none  # noqa: E501
+# frob:tests tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose.test_transition_rejects_when_own_obligations_clean_false  # noqa: E501
+# frob:tests tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose.test_transition_allows_when_own_obligations_clean_true  # noqa: E501
+# frob:tests tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose.test_transition_permissive_when_own_obligations_clean_none  # noqa: E501
 # frob:ticket T-0715
 # frob:ticket T-0417
+# frob:ticket T-1384
 def transition(
     root: Path,
     ticket_id: str,
@@ -415,6 +445,7 @@ def transition(
     reviewed: bool | None = None,
     mutation_evidence: bool | None = None,
     evidence_reverified: bool | None = None,
+    own_obligations_clean: bool | None = None,
 ) -> Result[Ticket, TicketError]:
     """Enforce the state machine; `done` also requires evidence and a
     substantive Done report, (D-02) an evidence id covering a touched/
@@ -422,10 +453,13 @@ def transition(
     (T-0571) an approve-verdict review record naming the current commit
     whenever the caller supplies `reviewed=False`, (T-0844) refuses on
     an unwaived ERROR-severity TEST016 confirmatory-only-evidence finding
-    whenever the caller supplies `mutation_evidence=False`, and (T-0417
+    whenever the caller supplies `mutation_evidence=False`, (T-0417
     N-02) refuses when a fresh re-run of the ticket's recorded evidence
     against the CURRENT tree no longer passes, whenever the caller
-    supplies `evidence_reverified=False` (see `_done_transition_guard`'s
+    supplies `evidence_reverified=False`, and (T-1384) refuses when the
+    ticket's own diff leaves a new-symbol doc/testsuite/REL001 obligation
+    outstanding, whenever the caller supplies
+    `own_obligations_clean=False` (see `_done_transition_guard`'s
     docstring for why these are injected rather than computed here)."""
     from frob.tickets import _TRANSITIONS, _load_ticket_and_queue, write_ticket
 
@@ -456,6 +490,7 @@ def transition(
         reviewed=reviewed,
         mutation_evidence=mutation_evidence,
         evidence_reverified=evidence_reverified,
+        own_obligations_clean=own_obligations_clean,
     )
     if guard.is_err:
         return Err(guard.danger_err)
@@ -479,6 +514,7 @@ def transition(
 # g_evidence
 # frob:tests \
 # tests/test_ticket_reverify.py::TestReverifyCloseGuard.test_refuses_non_done_ticket
+# frob:ticket T-1384
 def reverify_close_guard(
     root: Path,
     ticket_id: str,
@@ -487,6 +523,7 @@ def reverify_close_guard(
     reviewed: bool | None = None,
     mutation_evidence: bool | None = None,
     evidence_reverified: bool | None = None,
+    own_obligations_clean: bool | None = None,
 ) -> Result[Ticket, TicketError]:
     """`frob ticket reverify`'s (T-1005) state-machine half: re-run the
     EXACT SAME `_done_transition_guard` check `transition(..., TicketState.
@@ -494,15 +531,16 @@ def reverify_close_guard(
     present, no open descendants, no disallowed cmd: evidence, D-02
     covers_scope, T-0572 acceptance binding), T-0571 reviewed (when
     injected), T-0844 mutation_evidence (when injected), T-0417
-    evidence_reverified (when injected), and the two ALWAYS-run diff-
-    derived checks (T-0854 live-tracker citation, T-0756 new-gate-rule
-    acceptance) -- against a ticket that is ALREADY `done`, with NO write
-    and NO state transition attempted either way. This closes churn item 6
-    (docs/audits/coordination-churn.md): after a post-close send-back
-    (e.g. a TEST016 strengthening) lands new scope/evidence/done-report
-    edits on a done ticket, nothing could previously re-run close's own
-    verification suite (`close` itself refuses done->done via the state
-    machine; `start`/`sweep` both refuse a done ticket outright) -- lands
+    evidence_reverified (when injected), T-1384 own_obligations_clean
+    (when injected), and the two ALWAYS-run diff-derived checks (T-0854
+    live-tracker citation, T-0756 new-gate-rule acceptance) -- against a
+    ticket that is ALREADY `done`, with NO write and NO state transition
+    attempted either way. This closes churn item 6 (docs/audits/
+    coordination-churn.md): after a post-close send-back (e.g. a TEST016
+    strengthening) lands new scope/evidence/done-report edits on a done
+    ticket, nothing could previously re-run close's own verification
+    suite (`close` itself refuses done->done via the state machine;
+    `start`/`sweep` both refuse a done ticket outright) -- lands
     proceeded on trust in the stale recap alone.
 
     Refuses immediately (`TicketError.InvalidTransition`, matching the
@@ -510,11 +548,12 @@ def reverify_close_guard(
     `ticket.state is TicketState.DONE` -- reverify is specifically the
     post-close re-check, not a substitute for `close` on an in-progress
     ticket. `covers_scope`/`reviewed`/`mutation_evidence`/
-    `evidence_reverified` are injected exactly like `transition`'s own
-    parameters of the same names (the caller, `frob.app.ticket_runner.
-    _reverify`, computes them via the identical `_close_guards_for_ticket`
-    helper `_close` itself calls -- no duplicated guard-computation
-    logic, only the write/transition step is skipped here)."""
+    `evidence_reverified`/`own_obligations_clean` are injected exactly
+    like `transition`'s own parameters of the same names (the caller,
+    `frob.app.ticket_runner._reverify`, computes them via the identical
+    `_close_guards_for_ticket` helper `_close` itself calls -- no
+    duplicated guard-computation logic, only the write/transition step is
+    skipped here)."""
     from frob.tickets import _load_ticket_and_queue
 
     loaded = _load_ticket_and_queue(root, ticket_id)
@@ -538,6 +577,7 @@ def reverify_close_guard(
         reviewed=reviewed,
         mutation_evidence=mutation_evidence,
         evidence_reverified=evidence_reverified,
+        own_obligations_clean=own_obligations_clean,
     )
     if guard.is_err:
         return Err(guard.danger_err)

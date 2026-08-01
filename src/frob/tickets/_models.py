@@ -1617,6 +1617,20 @@ class TicketError(ErrorSet):
         "an epic/story ticket cannot close while a descendant ticket is "
         "still open; close or drop the descendant(s) first"
     )
+    # T-1384: `close` refuses (when the caller injects
+    # `own_obligations_clean=False`) while the ticket's OWN diff leaves a
+    # new public symbol with no `frob:doc` edge, a new public test class
+    # undeclared on its testsuite strata node, or a changed public API with
+    # no REL001 bump -- the T-1377/T-1379/T-1381 residue class (closed
+    # clean, then the very next unscoped `frob check` showed the closer's
+    # own COV001/SELFAUDIT/REL findings as a surprise). See
+    # `frob.tickets._done_transition_guard`'s `own_obligations_clean`
+    # parameter.
+    OwnObligationsUnclean = (
+        "this ticket's own diff leaves a new-symbol doc edge, testsuite "
+        "declaration, or REL001 bump outstanding; run `frob check --delta` "
+        "(or the named gate) and resolve the finding(s) it names, then retry"
+    )
 
 
 # frob:ticket T-0176

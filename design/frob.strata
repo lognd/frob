@@ -2878,6 +2878,7 @@ cache graph_cache of graphlang {
 // frob:ticket T-1227
 // frob:ticket T-1340
 // frob:ticket T-1363
+// frob:ticket T-1384
 node testsuite : trusted {
     clearance Internal;
     code "tests/**";
@@ -4359,6 +4360,7 @@ node testsuite : trusted {
     attr interface=TestT0417ReverifyEvidenceOnClose;
     attr interface=TestT0510Fingerprints;
     attr interface=TestT0844MutationEvidenceOnClose;
+    attr interface=TestT1384OwnObligationsOnClose;
     attr interface=TestTableTreeCountDeltas;
     attr interface=TestTaintFindings;
     attr interface=TestTaintGate;

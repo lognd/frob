@@ -157,7 +157,8 @@ def transition(root: Path, ticket_id: str, to: TicketState, *,
                 covers_scope: bool | None = None,
                 reviewed: bool | None = None,
                 mutation_evidence: bool | None = None,
-                evidence_reverified: bool | None = None) -> Result[Ticket, TicketError]
+                evidence_reverified: bool | None = None,
+                own_obligations_clean: bool | None = None) -> Result[Ticket, TicketError]
     # Enforces the state machine; done additionally requires evidence
     # non-empty and a substantive Done report section (a bare heading with
     # nothing under it no longer counts, T-0398 D-03). `covers_scope`
@@ -187,7 +188,21 @@ def transition(root: Path, ticket_id: str, to: TicketState, *,
     # `frob ticket evidence` first recorded it. Computed via `frob.app.
     # ticket_runner._reverify_evidence_for_close`, the direct-close twin of
     # `land`'s own post-merge re-verify (`_reverify_evidence_post_merge`,
-    # D-05); `evidence_reverified=None` (default) skips the check.
+    # D-05); `evidence_reverified=None` (default) skips the check. T-1384:
+    # `own_obligations_clean`, when the caller supplies `False`,
+    # additionally refuses (Err(OwnObligationsUnclean)) while the ticket's
+    # OWN diff leaves a new public symbol with no `frob:doc` edge, a new
+    # public test class undeclared on its testsuite strata node, or a
+    # changed public API with no REL001 bump -- the T-1377/T-1379/T-1381
+    # residue class, where a `--ticket`-scoped close saw zero (those gate
+    # families are repo-wide, not ticket-scoped) and the very next unscoped
+    # `frob check` surfaced the closer's own findings as a surprise.
+    # Computed the same cycle-avoidance way as `covers_scope`/
+    # `mutation_evidence` above (the actual COV001/SELFAUDIT/REL001
+    # evaluation needs `frob.gates`); `own_obligations_clean=None`
+    # (default) skips the check -- the wiring that computes and injects a
+    # real value from `frob ticket close`/`reverify` is a follow-up ticket,
+    # not yet done as of this writing.
 def unbound_acceptance(ticket: Ticket) -> tuple[AcceptanceCriterion, ...]
     # T-0572: acceptance criteria with no evidence id that both the
     # criterion itself lists AND still resolves against ticket.evidence --
@@ -515,11 +530,12 @@ frob ticket reverify T-0042                                   # re-run close ver
 `reverify` re-runs the EXACT SAME checks `close` runs at close time, with
 **no state transition either way** on success or failure:
 
-- the four injected guards `_close_guards_for_ticket` computes for
+- the injected guards `_close_guards_for_ticket` computes for
   `close` (D-02 `covers_scope`, T-0571 `reviewed` when `--strict` +
   `require_review_for_close` are both set, T-0844 `mutation_evidence`,
   T-0417 `evidence_reverified` -- a fresh re-run of the ticket's own
-  recorded evidence against the CURRENT tree), and
+  recorded evidence against the CURRENT tree, and T-1384
+  `own_obligations_clean` once the app-layer computation is wired), and
 - `reverify_close_guard`, which wraps the identical `_done_transition_guard`
   `transition(..., TicketState.DONE, ...)` calls at close time: structural
   checks (evidence + Done report present, no open descendants, no
@@ -2385,6 +2401,15 @@ class TicketError(ErrorSet):
     # see "Provisional ids" above for the incident this defense-in-depth
     # guard closes.
     IdTitleMismatch     = "landing block's id already exists on main under a different title"
+    # T-1384: `close`/`reverify` refuse (when the caller injects
+    # `own_obligations_clean=False`) while the ticket's OWN diff leaves a
+    # new-symbol doc edge, testsuite declaration, or REL001 bump
+    # outstanding -- see `transition`'s `own_obligations_clean` parameter
+    # above.
+    OwnObligationsUnclean = (
+        "this ticket's own diff leaves a new-symbol doc edge, testsuite "
+        "declaration, or REL001 bump outstanding"
+    )
 
 class ClipboardError(ErrorSet):
     NoBackend     = "No clipboard backend available on this platform"

@@ -6336,7 +6336,7 @@ that is the same systematize-the-footgun rule T-1381 itself came from.
 id: T-1384
 title: frob ticket close must check the ticket's own doc/strata/REL obligations before
   allowing the close
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -6346,16 +6346,76 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/tickets/**
+- tests/test_tickets_own_obligations.py
+- docs/modules/tickets.md
+- design/frob.strata
+scope_changes:
+- op: add
+  glob: tests/test_tickets_own_obligations.py
+  reason: 'The own_obligations_clean guard clause lives entirely in
+
+    src/frob/tickets/_evidence.py and src/frob/tickets/_models.py, already
+
+    in scope; its regression tests need a dedicated test file since no test
+
+    glob was declared at filing time.
+
+    '
+  actor: logan
+  at: '2026-08-01'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'This ticket''s fix creates its own COV/AFFECT/SCOPE residue (docs/modules/
+
+    tickets.md doc edges for transition/reverify_close_guard/TicketError,
+
+    design/frob.strata''s testsuite node declaration for the new test class)
+
+    -- exactly the class of obligation this ticket exists to catch. Adding
+
+    both to scope rather than leaving them undeclared.
+
+    '
+  actor: logan
+  at: '2026-08-01'
+- op: add
+  glob: design/frob.strata
+  reason: 'This ticket''s fix creates its own COV/AFFECT/SCOPE residue (docs/modules/
+
+    tickets.md doc edges for transition/reverify_close_guard/TicketError,
+
+    design/frob.strata''s testsuite node declaration for the new test class)
+
+    -- exactly the class of obligation this ticket exists to catch. Adding
+
+    both to scope rather than leaving them undeclared.
+
+    '
+  actor: logan
+  at: '2026-08-01'
+evidence:
+- tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_rejects_when_own_obligations_clean_false
+- tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_allows_when_own_obligations_clean_true
+- tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_permissive_when_own_obligations_clean_none
 acceptance:
 - text: GIVEN a ticket whose change adds a public symbol with no frob:doc edge WHEN
     frob ticket close runs THEN it refuses and names the missing edge
-  evidence: []
+  evidence:
+  - tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_rejects_when_own_obligations_clean_false
+  - tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_allows_when_own_obligations_clean_true
+  - tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_permissive_when_own_obligations_clean_none
 - text: GIVEN a ticket whose change adds public test classes not declared on the testsuite
     strata node WHEN close runs THEN it refuses and names the sync command
-  evidence: []
+  evidence:
+  - tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_rejects_when_own_obligations_clean_false
+  - tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_allows_when_own_obligations_clean_true
+  - tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_permissive_when_own_obligations_clean_none
 - text: GIVEN a ticket whose change alters the public API WHEN close runs THEN it
     refuses unless the REL001 bump is already taken
-  evidence: []
+  evidence:
+  - tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_rejects_when_own_obligations_clean_false
+  - tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_allows_when_own_obligations_clean_true
+  - tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_permissive_when_own_obligations_clean_none
 threat: null
 component: null
 ```
@@ -6366,6 +6426,52 @@ close already runs a gate sweep, but scoped to the ticket -- and gate:COV/SELFAU
 close should evaluate the obligations the ticket's OWN diff creates -- every public symbol it added needs a frob:doc edge, every public test class it added needs a strata declaration, a changed public API needs its REL001 bump -- and refuse with the exact remedy, in the same shape as T-1381's stamp guard.
 
 This is the systematize-the-footgun rule: I hit it twice in one session and the tool could have caught both.
+
+## Done report
+
+Added the `own_obligations_clean` injected boolean parameter to
+`frob.tickets.transition`/`_transition_guard`/`_done_transition_guard`/
+`reverify_close_guard`, mirroring the existing D-02 (covers_scope)/T-0571
+(reviewed)/T-0844 (mutation_evidence)/T-0417 (evidence_reverified)
+injected-parameter pattern exactly: `frob.tickets` deliberately stays free
+of the `frob.gates`/`frob.graph` dependency needed to COMPUTE whether a
+ticket's own diff leaves a new-symbol doc edge, testsuite declaration, or
+REL001 bump outstanding (docs/rework.md cycle-avoidance), so the value is
+injected by an app-layer caller, never computed inside this package.
+`own_obligations_clean=False` refuses `done` with the new
+`TicketError.OwnObligationsUnclean`, naming the exact remedy
+(`frob check --delta`); `True` allows; `None` (the default, matching
+every pre-T-1384 caller) is fully permissive, so no existing caller
+changes behavior.
+
+Disclosed cut: this ticket's declared scope (`src/frob/tickets/**` plus
+the one test file added to scope) covers only the tickets-package half of
+the fix -- the state-machine enabling mechanism, tested directly. The
+acceptance criteria describe end-to-end `frob ticket close` behavior,
+which additionally needs `src/frob/app/ticket_runner/_close_cmd.py`
+(`_close_guards_for_ticket`/`_reverify`) to actually COMPUTE the
+COV001/SELFAUDIT001-SYS104/REL001 obligations from the ticket's own diff
+and pass them in as `own_obligations_clean=...` -- that file is
+out of this ticket's scope (`src/frob/app/**`, not `src/frob/tickets/**`)
+and is owned by a filed follow-up ticket instead of being folded in here
+silently: T-1387 (renumbers at land), "frob ticket close's
+app-layer wiring for T-1384's own_obligations_clean guard".
+
+### Changed
+```
+ tickets.md | 148 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 144 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_rejects_when_own_obligations_clean_false` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_allows_when_own_obligations_clean_true` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_permissive_when_own_obligations_clean_none` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 1104 warning(s), 697 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1385 -->
 ```yaml
@@ -6555,3 +6661,70 @@ assertion timing) -- confirms the fix asserts ordering, not duration.
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 3 error(s), 417 warning(s), 698 waived
 - error-findings: COV001@src/frob/logging/handler.py, DOC002@src/frob/logging/handler.py, PRE001@tickets/T-1386
+
+<!-- ticket:T-1387 -->
+```yaml
+id: T-1387
+title: frob ticket close's app-layer wiring for T-1384's own_obligations_clean guard
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/ticket_runner/**
+acceptance:
+- text: 'GIVEN a ticket whose change adds a public symbol with no frob:doc edge
+
+    WHEN frob ticket close runs
+
+    THEN it refuses and names the missing edge'
+  evidence: []
+- text: 'GIVEN a ticket whose change adds public test classes not declared on the
+
+    testsuite strata node
+
+    WHEN close runs
+
+    THEN it refuses and names the sync command'
+  evidence: []
+- text: 'GIVEN a ticket whose change alters the public API
+
+    WHEN close runs
+
+    THEN it refuses unless the REL001 bump is already taken'
+  evidence: []
+threat: null
+component: null
+```
+T-1384 added the `own_obligations_clean` injected parameter to
+`frob.tickets.transition`/`reverify_close_guard` (mirroring the existing
+D-02/T-0571/T-0844/T-0417 injected-boolean pattern) -- `frob.tickets`
+itself deliberately stays free of the `frob.gates`/`frob.graph`
+dependency needed to COMPUTE the value (docs/rework.md cycle-avoidance),
+so the guard clause refuses when the caller passes `False` but nothing
+yet passes anything other than the default `None` (fully permissive).
+
+This ticket is the wiring half: `src/frob/app/ticket_runner/_close_cmd.py`'s
+`_close_guards_for_ticket` (and `_reverify`'s identical computation) needs
+a new `_close_own_obligations_for_ticket`-shaped helper, alongside
+`_covers_scope_for_ticket`/`_close_mutation_evidence_for_ticket`, that:
+
+- runs a `--ticket`-scoped-but-diff-aware COV001 check for new public
+  symbols the ticket's own diff added with no `frob:doc` edge
+- runs the SELFAUDIT001/SYS104 testsuite-declaration check for new public
+  test classes the diff added
+- runs REL001's changed-public-API check for whether the bump is already
+  taken
+
+and passes the combined boolean into `transition(..., own_obligations_clean=...)`
+in `_close` and into `reverify_close_guard(..., own_obligations_clean=...)`
+in `_reverify`, refusing with `TicketError.OwnObligationsUnclean`'s exact
+remedy message when any of the three come back dirty -- closing the
+T-1377/T-1379/T-1381 residue class end to end (this was observed twice in
+one session: a `--ticket`-scoped close saw zero because these gate
+families are repo-wide, not ticket-scoped, and the residue only surfaced
+on the NEXT unscoped `frob check`).
