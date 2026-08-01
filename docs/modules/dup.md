@@ -85,8 +85,10 @@ blowout and pinned it to these three rungs specifically.
 Getting `[dup].enforce=true` to actually fit the budget took two rounds.
 First, splitting R1/R2 (cheap, pure-Python) from R3-R5 via this flag
 wasn't sufficient by itself -- profiling the R1/R2-only path uncovered a
-genuine cross-process DEADLOCK (not just slowness): `find_clones` takes
-`derived_state_write_lock` unconditionally, but the "clones" gate runs in
+genuine cross-process DEADLOCK (not just slowness): `find_clones` used to
+take `derived_state_write_lock` unconditionally around its whole rung
+ladder (T-1224 moved this down to the individual cache writes -- see
+below), but the "clones" gate runs in
 a `ProcessPoolExecutor` worker (T-0415) while `frob check`'s main process
 holds the derived-state lock SHARED for the whole run, and the write
 lock's same-process reentrancy check couldn't see across the pool's fork
@@ -222,6 +224,23 @@ Two layers, one rule each:
 R6 verdicts additionally key on `corpus_epoch` (bumped when generator
 definitions change) so probe results outlive runs but never outlive the
 generators that produced them.
+
+**Locking granularity (T-1224).** `find_clones` no longer wraps its whole
+rung ladder in `frob.process._lock.derived_state_write_lock` -- profiling
+showed a standalone rebuild (e.g. `frob dup`, not nested inside a `frob
+check` run) taking that lock EXCLUSIVE for the entire computation (~34s+
+even warm), which serialized every concurrent reader (e.g. a sibling
+agent's `frob check`, holding the derived-state lock SHARED) against it
+for that whole duration -- observed as a ~240s `flock` wait under
+profiling with four concurrent agents. The rung computation itself only
+READS the snapshot and the fingerprint/verdict cache; the only on-disk
+mutation is `frob.dup._cache.put_fingerprint`/`put_verdict`. The lock is
+now taken individually inside those two functions, around just the
+`INSERT`/`DELETE` + `commit()` calls, so a standalone rebuild only blocks
+concurrent readers for the brief duration of an actual cache write, not
+for the whole clones stage. The nested (already-under-`frob check`)
+same-process no-op behavior from T-0918/T-0982 is unchanged -- it is
+consulted at each of these smaller call sites instead of once at the top.
 
 ## Public API
 

@@ -119,7 +119,8 @@ class TestSyncInterfaceReport:
         assert "attr interface=public_fn;" in lines[header_idx + 1]
 
     # frob:tests \
-    # tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport.test_no_design_files_reports_empty
+    # tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport.test_no_design_\
+    # files_reports_empty
     def test_no_design_files_reports_empty(self, tmp_path: Path):
         """No `.strata` files at all under `design/` -- `Ok` with an empty
         file list, the same vacuous-but-honest posture every other
@@ -130,7 +131,8 @@ class TestSyncInterfaceReport:
         assert result.danger_ok.files == ()
 
     # frob:tests \
-    # tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport.test_bad_design_file_propagates_load_error
+    # tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport.test_bad_design\
+    # _file_propagates_load_error
     def test_bad_design_file_propagates_load_error(self, tmp_path: Path):
         """A `.strata` file that fails to parse surfaces as the
         underlying `DesignLoadError.error`, not silently skipped or
@@ -142,7 +144,8 @@ class TestSyncInterfaceReport:
         assert result.is_err
 
     # frob:tests \
-    # tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport.test_ambiguous_code_binding_propagates_as_error
+    # tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport.test_ambiguous_\
+    # code_binding_propagates_as_error
     def test_ambiguous_code_binding_propagates_as_error(self, tmp_path: Path):
         """Two nodes whose `code=` globs both match the same real file
         make `bind_code` itself fail -- `sync_interface_report` must
@@ -166,7 +169,8 @@ class TestSyncInterfaceReport:
         assert result.danger_err == StrataError.AmbiguousCodeBinding
 
     # frob:tests \
-    # tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport.test_design_file_without_any_node_is_skipped
+    # tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport.test_design_fil\
+    # e_without_any_node_is_skipped
     def test_design_file_without_any_node_is_skipped(self, tmp_path: Path):
         """A `.strata` file present under `design/` but declaring no
         `node` at all (module-only) is skipped, not reported as a

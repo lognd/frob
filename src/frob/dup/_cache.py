@@ -28,6 +28,7 @@ from typani.unit import Unit
 from frob.dup._models import DupError
 from frob.graph.cache import _compute_fingerprint
 from frob.logging import get_logger
+from frob.process._lock import derived_state_write_lock
 
 _log = get_logger(__name__)
 
@@ -191,19 +192,27 @@ def get_fingerprint(root: Path, digest: str, rung: str) -> tuple[object, ...] | 
 
 
 # frob:doc docs/modules/dup.md#caching
+# frob:ticket T-1224
 def put_fingerprint(
     root: Path, digest: str, rung: str, payload: tuple[object, ...]
 ) -> Result[Unit, DupError]:
-    """Store `payload` for `digest`/`rung`, content-addressed (no staleness logic)."""
+    """Store `payload` for `digest`/`rung`, content-addressed (no staleness logic).
+
+    T-1224: the actual write is wrapped in `derived_state_write_lock` HERE,
+    not around all of `find_clones` -- see that function's docstring for
+    why the lock moved down to the individual write call sites.
+    """
     conn_r = _connect(root)
     if conn_r.is_err:
         return conn_r.map(lambda _: Unit())
     conn = conn_r.danger_ok
-    conn.execute(
-        "INSERT OR REPLACE INTO fingerprints (digest, rung, payload) VALUES (?, ?, ?)",
-        (digest, rung, json.dumps(payload)),
-    )
-    conn.commit()
+    with derived_state_write_lock(root):
+        conn.execute(
+            "INSERT OR REPLACE INTO fingerprints (digest, rung, payload) "
+            "VALUES (?, ?, ?)",
+            (digest, rung, json.dumps(payload)),
+        )
+        conn.commit()
     return Ok(Unit())
 
 
@@ -237,6 +246,7 @@ def get_verdict(
 # frob:tests tests/unit/test_dup_cache.py::TestVerdictRoundTrip.test_put_then_get_returns_same_payload  # noqa: E501
 # frob:tests tests/unit/test_dup_cache.py::TestVerdictRoundTrip.test_put_verdict_evicts_lru_rows_beyond_cache_entries  # noqa: E501
 # frob:tests tests/unit/test_dup_cache.py::TestVerdictRoundTrip.test_put_verdict_connect_error_is_propagated  # noqa: E501
+# frob:ticket T-1224
 def put_verdict(
     root: Path,
     d1: str,
@@ -246,28 +256,33 @@ def put_verdict(
     payload: tuple[object, ...],
     cache_entries: int,
 ) -> Result[Unit, DupError]:
-    """Store a pairwise verdict, then evict LRU rows beyond `cache_entries`."""
+    """Store a pairwise verdict, then evict LRU rows beyond `cache_entries`.
+
+    T-1224: the write + eviction are wrapped in `derived_state_write_lock`
+    HERE, not around all of `find_clones` -- see that function's docstring.
+    """
     lo, hi = (d1, d2) if d1 <= d2 else (d2, d1)
     conn_r = _connect(root)
     if conn_r.is_err:
         return conn_r.map(lambda _: Unit())
     conn = conn_r.danger_ok
-    conn.execute(
-        "INSERT OR REPLACE INTO verdicts "
-        "(d1, d2, method, corpus_epoch, payload, last_used) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (lo, hi, method, corpus_epoch, json.dumps(payload), time.time()),
-    )
-    (count,) = conn.execute("SELECT COUNT(*) FROM verdicts").fetchone()
-    if count > cache_entries:
-        overflow = count - cache_entries
+    with derived_state_write_lock(root):
         conn.execute(
-            "DELETE FROM verdicts WHERE rowid IN "
-            "(SELECT rowid FROM verdicts ORDER BY last_used ASC LIMIT ?)",
-            (overflow,),
+            "INSERT OR REPLACE INTO verdicts "
+            "(d1, d2, method, corpus_epoch, payload, last_used) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (lo, hi, method, corpus_epoch, json.dumps(payload), time.time()),
         )
-        _log.debug("dup cache: evicted %d LRU verdict row(s)", overflow)
-    conn.commit()
+        (count,) = conn.execute("SELECT COUNT(*) FROM verdicts").fetchone()
+        if count > cache_entries:
+            overflow = count - cache_entries
+            conn.execute(
+                "DELETE FROM verdicts WHERE rowid IN "
+                "(SELECT rowid FROM verdicts ORDER BY last_used ASC LIMIT ?)",
+                (overflow,),
+            )
+            _log.debug("dup cache: evicted %d LRU verdict row(s)", overflow)
+        conn.commit()
     return Ok(Unit())
 
 

@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import multiprocessing
+import multiprocessing.synchronize
+import time
 from pathlib import Path
 
 import pytest
 
 from frob.dup import _cache
+from frob.process._lock import derived_state_lock
 
 
 # frob:waive DEAD001 reason="pytest autouse fixture (T-0565): invoked by the test runner for every test in this module without ever appearing as a name/call token anywhere -- the one DEAD001 false-positive class build_reference_graph's sig_tokens+body_tokens broadening cannot see"  # noqa: E501
@@ -199,3 +203,73 @@ class TestConnectionReuse:
         # the underlying file survives -- _close_all only drops the
         # in-process handle, not the data.
         assert _cache.get_fingerprint(tmp_path, "d3", "r3") == ["z"]
+
+
+# frob:ticket T-1224
+def _simulate_standalone_rebuild_then_write(
+    root_str: str,
+    compute_seconds: float,
+    compute_started: "multiprocessing.synchronize.Event",
+    wrote: "multiprocessing.synchronize.Event",
+) -> None:
+    """Helper process (must be top-level to be picklable by
+    `multiprocessing.Process`, mirroring `tests/unit/test_process_lock.py`'s
+    `_hold_exclusive_then_signal` precedent): mimics a standalone
+    `find_clones` call's shape -- a long read/compute phase (no lock held)
+    followed by one real cache write (`put_fingerprint`, which DOES take a
+    real cross-process EXCLUSIVE `derived_state_write_lock` internally,
+    T-1224). Signals `compute_started` right before the sleep so the parent
+    can probe for an exclusive hold DURING the compute phase, and `wrote`
+    once the write has completed."""
+    compute_started.set()
+    time.sleep(compute_seconds)
+    _cache.put_fingerprint(Path(root_str), "digest-standalone", "r3", ("v",))
+    wrote.set()
+
+
+class TestWriteLockGranularity:
+    """T-1224: `derived_state_write_lock` is now taken individually inside
+    `put_fingerprint`/`put_verdict`, around just the write, rather than
+    around `find_clones`'s entire rung ladder. Before this fix, a
+    standalone rebuild held a real cross-process EXCLUSIVE lock for its
+    WHOLE computation, stalling any concurrent SHARED reader (e.g. a
+    sibling agent's `frob check`) for that whole duration (observed ~240s
+    under profiling with four concurrent agents). This test proves a
+    concurrent SHARED reader is NOT blocked during the standalone
+    rebuild's compute phase -- only (briefly) during its actual write."""
+
+    def test_shared_reader_not_blocked_during_standalone_compute_phase(
+        self, tmp_path: Path
+    ) -> None:
+        ctx = multiprocessing.get_context("spawn")
+        compute_started = ctx.Event()
+        wrote = ctx.Event()
+        compute_seconds = 2.0
+        proc = ctx.Process(
+            target=_simulate_standalone_rebuild_then_write,
+            args=(str(tmp_path), compute_seconds, compute_started, wrote),
+        )
+        start = time.monotonic()
+        proc.start()
+        try:
+            assert compute_started.wait(timeout=10), (
+                "helper process never signaled it started its compute phase"
+            )
+            # The helper is now mid-"compute" (sleeping, no lock held under
+            # T-1224's granular locking). A concurrent SHARED reader must be
+            # able to acquire `derived_state_lock` promptly here -- if this
+            # blocks until the helper's write (i.e. ~compute_seconds later),
+            # `derived_state_write_lock` has regressed to wrapping the whole
+            # rebuild again (the pre-T-1224 behavior this ticket fixes).
+            with derived_state_lock(tmp_path, exclusive=False):
+                acquired_after = time.monotonic() - start
+            assert acquired_after < (compute_seconds / 2), (
+                f"shared reader took {acquired_after:.2f}s to acquire during "
+                "the standalone rebuild's compute phase -- the exclusive "
+                "write lock appears to be held for the whole computation "
+                "again, not just the write (T-1224 regression)"
+            )
+            assert wrote.wait(timeout=10), "helper process never completed its write"
+        finally:
+            proc.join(timeout=10)
+        assert _cache.get_fingerprint(tmp_path, "digest-standalone", "r3") == ["v"]

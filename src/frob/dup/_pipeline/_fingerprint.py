@@ -75,7 +75,6 @@ from frob.dup._pipeline._shared import (
 from frob.dup._template import build_group_template
 from frob.gitio import Diff
 from frob.graph._models import GraphSnapshot, SymbolKind
-from frob.process._lock import derived_state_write_lock
 
 
 def _r3_fingerprint(
@@ -688,6 +687,7 @@ def _r5_groups(
 
 # frob:doc docs/modules/dup.md#public-api
 # frob:ticket T-0918
+# frob:ticket T-1224
 def find_clones(
     snapshot: GraphSnapshot, cfg: DupConfig, diff: Diff | None = None
 ) -> Result[CloneReport, DupError]:
@@ -698,12 +698,20 @@ def find_clones(
     verdicts are read/written through `frob.dup._cache` (content-addressed
     by body digest), so re-runs over an unchanged body/pair skip recompute.
 
-    T-0918: the fingerprint-cache rebuild below is wrapped in `frob.process.
-    _lock.derived_state_write_lock`, which takes a real cross-process
-    EXCLUSIVE `derived_state_lock` when called standalone but no-ops when
-    this process already holds the lock in another thread (e.g. nested
-    inside `frob check`'s SHARED hold) -- see that function's docstring
-    for the full reentrancy contract and its accepted soundness trade-off.
+    T-0918 used to wrap this entire rung ladder in `frob.process._lock.
+    derived_state_write_lock`, taking a real cross-process EXCLUSIVE
+    `derived_state_lock` for the WHOLE computation whenever called
+    standalone (no-op only when nested inside `frob check`'s SHARED
+    hold). T-1224: that serialized every concurrent reader (e.g. another
+    `frob check`'s SHARED hold) against a standalone rebuild for the
+    entire clones-stage duration (observed ~240s under profiling), even
+    though the only state this function actually MUTATES on disk is the
+    `frob.dup._cache` fingerprint/verdict cache -- the rung computation
+    itself is read-only against the snapshot and the cache. The lock is
+    now taken individually, only around each `frob.dup._cache.
+    put_fingerprint`/`put_verdict` call (see those functions), so a
+    standalone rebuild only blocks concurrent readers for the brief
+    duration of an actual cache write, not for the whole rung ladder.
     """
     if not _core.core_available():
         _log.warning(
@@ -713,14 +721,13 @@ def find_clones(
         return Err(DupError.CoreUnavailable)
 
     root = Path(snapshot.root)
-    with derived_state_write_lock(root):
-        touched = touched_refs(snapshot, diff) if diff is not None else None
-        state = _FpState(root=root, cfg=cfg)
-        for symref, record in snapshot.symbols.items():
-            _fingerprint_symbol(state, symref, record)
+    touched = touched_refs(snapshot, diff) if diff is not None else None
+    state = _FpState(root=root, cfg=cfg)
+    for symref, record in snapshot.symbols.items():
+        _fingerprint_symbol(state, symref, record)
 
-        groups = _all_rung_groups(state, snapshot, touched, cfg)
-        return Ok(_clone_report(state, groups))
+    groups = _all_rung_groups(state, snapshot, touched, cfg)
+    return Ok(_clone_report(state, groups))
 
 
 def _is_private_helper(record: Any) -> bool:

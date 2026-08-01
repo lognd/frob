@@ -591,7 +591,8 @@ boundary b_login endorse f_login : foreign -> authenticated when "jwt_verified"
         assert result.danger_err == TestingError.NativeAuditFailed
 
     # frob:tests \
-    # tests/test_testing.py::TestNativeStrataAudit.test_malformed_repo_benign_config_fails
+    # tests/test_testing.py::TestNativeStrataAudit.test_malformed_repo_benign_config_fa\
+    # ils
     def test_malformed_repo_benign_config_fails(self, tmp_path: Path) -> None:
         """A repo `frob.toml` with a `[[strata.benign_capabilities]]` entry
         missing its required `kind` field surfaces as

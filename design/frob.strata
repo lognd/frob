@@ -4544,6 +4544,7 @@ node testsuite : trusted {
     attr interface=TestWriteAllRefusesAStaleSnapshot;
     attr interface=TestWriteArchiveRefusesAStaleSnapshot;
     attr interface=TestWriteIntent;
+    attr interface=TestWriteLockGranularity;
     attr interface=TestWriteReleaseBump;
     attr interface=TestWriterStarvation;
     attr interface=TestWriterTableTreeCountDeltas;
