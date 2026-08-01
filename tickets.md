@@ -3475,6 +3475,15 @@ sprint: null
 scope:
 - src/frob/strata/**
 - tests/strata/**
+- tests/unit/strata/**
+scope_changes:
+- op: add
+  glob: tests/unit/strata/**
+  reason: 'scope typo: the ticket declared tests/strata/** but the real path is tests/unit/strata/**,
+    producing 12 SCOPE001 findings against genuinely in-scope test files; T-1235''s
+    tests/** lease previously blocked this correction and has now been released'
+  actor: logan
+  at: '2026-08-01'
 acceptance:
 - text: GIVEN the strata package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/strata/**
@@ -3503,7 +3512,6 @@ that only imports the module), or (b) if a 0.0% symbol is confirmed dead
 (no live caller, no CLI/API entry point), route it to the DEAD gate / dup
 machinery or file a removal ticket instead of writing a fake test for it
 -- do not fabricate coverage.
-
 <!-- ticket:T-1305 -->
 ```yaml
 id: T-1305
