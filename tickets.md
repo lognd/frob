@@ -5316,7 +5316,7 @@ scope. Suggested acceptance: check `stamp(...)`'s return value in
 ```yaml
 id: T-1369
 title: wire --allow-cross-ticket CLI flag for frob ticket land
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-01'
@@ -5343,7 +5343,6 @@ CLI (src/frob/app/ticket_runner/_land_cmd.py plus whatever argparse
 wiring src/frob/_cli_parsers/** needs), threaded to `land(...,
 allow_cross_ticket=...)`, with the same "logs a warning either way, never
 silent" posture `--skip-mutation-evidence` already has.
-
 <!-- ticket:T-1370 -->
 ```yaml
 id: T-1370
