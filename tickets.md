@@ -5723,7 +5723,8 @@ acceptance:
   - tests/test_app_daemon_proxy.py::TestProbeDaemon::test_silent_listener_is_wedged
 - text: GIVEN any unhealthy daemon state WHEN frob check runs THEN the liveness probe
     costs at most the probe budget, not send_request's 10s query timeout
-  evidence: []
+  evidence:
+  - tests/test_app_daemon_proxy.py::TestProbeDaemon::test_probe_of_a_silent_listener_stays_within_budget
 threat: null
 component: null
 ```
