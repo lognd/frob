@@ -1139,7 +1139,13 @@ concern_family_entries:
     # T-1193 close 2026-07-29: residue confirmed real (ci.yml self-gate
     # is non-blocking, stamp/baseline unverifiable in CI) and repointed
     # to its dedicated child.
-    disposition: "deferred:T-1265"
+    # T-1265 close 2026-08-01: closed the first half -- the ci.yml
+    # self-gate is now blocking and TEST012 verifies
+    # frob-coverage.lock.json, the one committed coverage channel. The
+    # stamp and delta baseline still live in gitignored .frob/ and are
+    # never restored in CI, so TEST005/TEST006 stay structurally inert
+    # there; repointed to T-1366 for that remainder.
+    disposition: "deferred:T-1366"
     cross_refs: []
   - id: "CHK-SUBSYS-TICKETS-TESTING"
     name: "tickets + testing: evidence means a test EXISTS, never passed/covers; a red or unrelated test closes any ticket; land re-runs nothing"

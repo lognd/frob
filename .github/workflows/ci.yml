@@ -40,8 +40,46 @@ jobs:
         run: uv run ty check src
       - name: Test
         run: uv run pytest -q
+      # T-1265 (CHK-THEME-GITIGNORED-TRUST successor): this used to swallow
+      # EVERY finding, ERROR-tier included, behind an unconditional
+      # `|| echo "::warning"` -- a real gate error (SUPPRESS001, INV006,
+      # PRE001, ...) never failed the build, only ever showed as a
+      # printed line a reviewer had to notice by hand. ERROR-tier findings
+      # now fail the job outright; only the swallow is gone, not the
+      # command -- a genuinely warning-only run still exits 0 on its own.
       - name: frob check (self-gate)
-        run: uv run frob check || echo "::warning::frob check reported findings"
+        run: uv run frob check
+      # T-1265: `.frob/coverage-stamp` and `.frob/baseline` are gitignored
+      # (.gitignore:21,:72) and never restored in a fresh CI checkout, so
+      # TEST005/006 (per-symbol/per-module coverage floors) are
+      # structurally inert here -- CI has no fresh coverage measurement to
+      # check them against, and `frob check` above cannot fail a job on a
+      # signal it never had. `frob-coverage.lock.json` (T-0545) is the one
+      # coverage-derived channel that IS committed and travels with the
+      # diff; TEST012 (its own drift check) is WARN-severity by design
+      # (frob.gates._coverage's `stamp_coverage` docstring), so it would
+      # not fail the self-gate step above even with the swallow removed.
+      # This step promotes exactly that one check to a hard CI failure --
+      # the narrowest of T-1265's three suggested fixes, chosen because it
+      # is the only one that needs no fresh .frob state to evaluate.
+      - name: frob-coverage.lock.json must not be missing or drifted (TEST012)
+        run: |
+          uv run frob check --only test --json > /tmp/frob-test-check.json
+          uv run python -c "
+          import json, sys
+          report = json.load(open('/tmp/frob-test-check.json'))
+          hits = [
+              d
+              for result in report.get('results', [])
+              for d in result.get('diagnostics', [])
+              if d.get('code') == 'TEST012'
+          ]
+          for d in hits:
+              print(f\"{d.get('file', '?')}: {d.get('message', '')}\")
+          if hits:
+              print('::error::frob-coverage.lock.json is missing or drifted (TEST012) -- run: make coverage')
+          sys.exit(1 if hits else 0)
+          "
 
   # Locks the T-0133 degrade contract: a bare `pip install`/`uv tool
   # install` of the frob wheel (NO frob-core, NO strata-core -- exactly what

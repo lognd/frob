@@ -1816,6 +1816,45 @@ rather than cached unsoundly.
   (a failing suite still overwrote a merely-wrong stamp with a near-empty
   one, driving four cross-agent validation symbols to a uniform, false
   0.0%).
+- T-1364 (considered, not built): an explicit `"partial": true` marker on
+  `.frob/coverage-stamp`, plus TEST005/TEST006 wording distinguishing
+  "stamp missing" from "stamp exists but was computed from a partial
+  run", for the case where a partial run's data is judged worth keeping
+  over nothing. T-1363 chose "keep nothing" (never promote a failed/
+  partial run's data at all) over "keep and mark partial" for its first
+  cut, and this is still sufficient: as long as some earlier good stamp
+  exists, a failed run leaves it untouched, and TEST006's
+  `_test006_missing` already discloses a genuinely-missing stamp as a
+  real violation rather than a false clean -- including the bootstrap
+  case (no stamp has ever existed and the very first `make coverage` run
+  also fails), which already reads as "no data," the acceptance
+  criterion T-1363/T-1364 actually cared about. Revisit this decision
+  only if a future incident shows losing an entire partial run's signal
+  (rather than falling back to the prior good stamp) is itself the worse
+  outcome -- e.g. a long stretch where every `make coverage` attempt
+  fails and TEST005/006 keep reporting against an increasingly stale
+  prior stamp with no partial-data signal ever surfaced. No such
+  incident has occurred as of this note.
+- T-1265 (CHK-THEME-GITIGNORED-TRUST successor -- a locally-green coverage
+  check proved nothing to CI or a reviewer): `.frob/coverage-stamp` and
+  `.frob/baseline` are gitignored (`.gitignore:21,:72`) and never restored
+  in a fresh `.github/workflows/ci.yml` checkout, so TEST005/006 are
+  structurally inert there -- CI has no fresh coverage measurement to
+  check them against, and cannot fail a job on a signal it never had.
+  This is disclosed, not silently accepted: the self-gate step's own
+  `|| echo "::warning::..."` swallow (which used to hide EVERY finding,
+  ERROR-tier gate violations included, behind a printed line nobody was
+  forced to read) is gone, so a real ERROR-tier finding now fails the
+  job outright; and `frob-coverage.lock.json` (T-0545) -- the one
+  coverage-derived channel that IS committed and travels with the diff --
+  gets its own dedicated CI step that greps the `--json` gate report for
+  TEST012 and fails hard on any hit, since TEST012 is WARN-severity by
+  design and would not otherwise move the self-gate step's exit code.
+  Running a fresh `make coverage` inside CI (so TEST005/006 become live
+  there too) was considered and deferred -- it adds real wall-clock and
+  flake surface to every PR for a floor the committed lock file already
+  covers at the module-aggregate level; revisit if `frob-coverage.
+  lock.json` alone proves too coarse in practice.
 - `load_stamp` -- the raw `.frob/coverage-stamp` document, or `None` if
   never stamped/unreadable; TEST006 compares it against live file hashes.
 - `load_prework` -- the recorded pre-work sweep for a ticket, or `None` if

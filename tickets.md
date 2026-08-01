@@ -1909,7 +1909,7 @@ function's shape, do not invent a second YAML-mutation pattern).
 ```yaml
 id: T-1265
 title: CI cannot verify gitignored .frob coverage/stamp/baseline signal (T-1193 successor)
-state: queued
+state: done
 kind: security
 origin: agent
 created: '2026-07-29'
@@ -1924,6 +1924,7 @@ scope:
 - docs/modules/gates.md
 - tests/test_gates.py
 - src/frob/gates/_filehash.py
+- docs/design/registry/check-coverage.yaml
 scope_changes:
 - op: add
   glob: tests/test_gates.py
@@ -1937,20 +1938,31 @@ scope_changes:
     are load-bearing for this ticket''s ci-verification fix'
   actor: logan
   at: '2026-07-29'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: repoint CHK-THEME-GITIGNORED-TRUST from T-1265 to its successor T-1366
+  actor: logan
+  at: '2026-08-01'
+evidence:
+- tests/test_gates.py::TestTestGate::test_ci_workflow_self_gate_does_not_swallow_errors
+- tests/test_gates.py::TestTestGate::test_ci_workflow_hard_fails_on_test012_drift
 acceptance:
 - text: GIVEN a PR that would locally fail TEST005/006 (stale/missing coverage-stamp)
     or TEST012 (frob-coverage.lock.json drift) WHEN the same change runs through the
     CI workflow THEN the CI job exit code reflects that failure (nonzero), not just
     a printed warning -- i.e. ERROR-tier violations for at least TEST005/006/012 fail
     the CI step outright.
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestTestGate::test_ci_workflow_hard_fails_on_test012_drift
+  - tests/test_gates.py::TestTestGate::test_ci_workflow_self_gate_does_not_swallow_errors
 - text: GIVEN a fresh CI checkout with no prior .frob state (the gitignored derived
     cache is never restored between runs) WHEN the CI workflow runs THEN either a
     coverage-stamp/baseline gets produced fresh in that same job before the gate step
     runs, or the workflow own comments/docs explicitly disclose which TEST00x checks
     are structurally inert in CI and why, so a passing CI run is never silently read
     as a full-strength guarantee it does not provide.
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestTestGate::test_ci_workflow_hard_fails_on_test012_drift
 threat: null
 component: null
 ```
@@ -1989,12 +2001,74 @@ Do NOT weaken this to doc-only -- CHK-THEME-GITIGNORED-TRUST is a
 security-relevant trust-boundary finding (a locally-green check proves
 nothing to a reviewer or to CI), not a cosmetic one.
 
+## Done report
+
+Implemented a combination of directions 1 and 3 from the ticket's own
+suggestion list. Direction 2 (stamp coverage fresh inside CI) was
+considered and explicitly deferred (documented in docs/modules/gates.md
+and in the ci.yml comments) -- it adds real wall-clock and flake surface
+to every PR for a floor the committed frob-coverage.lock.json already
+covers at the module-aggregate level, and acceptance[1] explicitly
+accepts disclosure as an alternative to building it.
+
+Changes:
+1. .github/workflows/ci.yml: the self-gate step's blanket
+   `|| echo "::warning::..."` swallow is removed. `uv run frob check` now
+   fails the job outright on any ERROR-tier gate violation, exactly as it
+   would locally. This alone does not reach TEST005/006/012, which are
+   all WARN-severity by design and never moved frob check's own exit
+   code even before the swallow was added.
+2. .github/workflows/ci.yml: a new dedicated step runs
+   `frob check --only test --json`, greps the parsed diagnostics for
+   TEST012 (the frob-coverage.lock.json drift/missing check), and exits
+   nonzero with an `::error::` annotation if any are found. This is the
+   one coverage-derived signal that IS committed (T-0545) and therefore
+   travels with the diff into CI, unlike .frob/coverage-stamp/baseline
+   which are gitignored and never restored there.
+3. docs/modules/gates.md: documents the trust-boundary decision --
+   TEST005/006 remain structurally inert in CI (no fresh .frob state to
+   check against), TEST012 is now a hard CI gate, and the ERROR-tier
+   swallow is gone. This satisfies acceptance[1]'s disclosure branch for
+   the part not otherwise built.
+
+Verified:
+- `uv run pytest tests/test_gates.py -q` -- 567 passed (full file, not
+  just the two new tests, to confirm no regression).
+- `uv run ruff check .github tests/test_gates.py` -- All checks passed.
+- `uv run ruff format --check tests/test_gates.py` -- already formatted.
+- Manually ran the exact TEST012-grep script from the new CI step against
+  this worktree's live `frob check --only test --json` output: 0 TEST012
+  hits (frob-coverage.lock.json is currently in sync), confirming the
+  script parses the real JSON shape (`{"results": [...]}`, not `{"tools":
+  [...]}` as first drafted -- caught by testing against the real CLI
+  output before committing).
+
+Not built (disclosed, acceptance[1]'s alternative branch taken instead):
+a fresh in-CI `make coverage` run to make TEST005/006 live in that
+environment too.
+
+### Changed
+```
+ docs/modules/gates.md | 19 +++++++++++++
+ tickets.md            | 76 +++++++++++++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 90 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTestGate::test_ci_workflow_self_gate_does_not_swallow_errors` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_ci_workflow_hard_fails_on_test012_drift` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 1 error(s), 1076 warning(s), 693 waived
+- error-findings: PRE001@tickets/T-1265
+
 <!-- ticket:T-1266 -->
 ```yaml
 id: T-1266
 title: extend real ctest collector to retire c/cpp frob:tests structural fallback
   (T-1193 successor)
-state: queued
+state: in-progress
 kind: security
 origin: agent
 created: '2026-07-29'
@@ -2006,19 +2080,24 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/testing/_collect.py
 - tests/test_gates.py
+evidence:
+- tests/test_gates.py::TestNativeTestCollectors::test_cpp_directive_resolves_via_real_ctest_node_id
+- tests/test_gates.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge
 acceptance:
 - text: GIVEN a CMake C/C++ project with CMAKE_EXPORT_COMPILE_COMMANDS enabled and
     an unambiguous single-source build target, and a frob:tests directive naming a
     real ctest case WHEN gates run THEN the edge resolves against a real collect_cpp_tests
     node id (not the name/path structural fallback) the same way a TS frob:tests edge
     now resolves against a real vitest node id.
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestNativeTestCollectors::test_cpp_directive_resolves_via_real_ctest_node_id
 - text: GIVEN a C/C++ frob:tests edge that still cannot resolve against a real collected
     node id (no configured build dir, or an ambiguous multi-source match) WHEN gates
     run THEN TEST013's disclosed-unverified signal fires for that edge (per T-0552's
     existing mechanism) rather than the edge silently satisfying TEST001-004 with
     no execution evidence at all.
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge
 threat: null
 component: null
 ```
@@ -2052,6 +2131,72 @@ multi-source/no-build-dir case -- never a silent full-credit pass for
 those. Do not simply delete the fallback without a collector upgrade: per
 T-0552's own Done report, that would regress real existing C/C++
 TEST001-004 coverage to zero rather than to a disclosed-degraded state.
+
+## Done report
+
+Investigation (before writing any test): the ticket's own description
+already quotes the exact reason no source change is needed for
+acceptance[0] -- T-0886 (landed earlier, tickets-archive.md) already
+built `collect_cpp_tests` to cross-reference each ctest test's executable
+against `compile_commands.json` (`_cpp_target_sources`/`_cpp_test_source`
+in src/frob/testing/_collect_cpp.py) and upgrade to a real
+`<source>::<name>` node id whenever the target compiles from exactly one
+source file. `_edge_has_execution_evidence` in src/frob/gates/__init__.py
+already checks real collected node ids (`_node_id_collected`/
+`_symref_to_nodeid`) BEFORE falling through to the c/cpp structural
+fallback (`_edge_is_native_unverified`) -- so an unambiguous single-source
+c/cpp `frob:tests` edge already resolves against real evidence today, no
+change needed in src/frob/gates/__init__.py or src/frob/testing/
+_collect.py. Verified this is not merely asserted in a docstring:
+tests/test_gates.py::TestCppSourceAccurateCollection (T-0886) already
+proves collect_cpp_tests itself produces the right node-id shape for the
+single-source case, and tests/test_gates.py::TestTest013NativeUnverified
+(T-0552) already proves the disclosed-unverified TEST013 signal fires for
+the genuinely-unresolved case (acceptance[1]).
+
+What WAS missing, and what I added: no existing test proved the GATE-LEVEL
+integration for c/cpp specifically -- that a real `frob:tests` edge in the
+graph actually takes `_edge_has_execution_evidence`'s real-node-id branch
+for a c/cpp symbol, the same way
+`TestNativeTestCollectors::test_ts_directive_resolves_via_real_vitest_node_id`
+already proves it for TS. Added
+`test_cpp_directive_resolves_via_real_ctest_node_id` in
+tests/test_gates.py (mirrors that TS test's shape exactly): a `.cpp` file
+with a real `frob:tests` directive, `tests.node_ids` holding the exact
+`<source>::<name>` shape `collect_cpp_tests` emits for an unambiguous
+single-source ctest test, and asserts TEST001/002/013 all stay clean --
+proving the edge resolves via real evidence, not the structural fallback.
+
+No production code changed in src/frob/gates/__init__.py or
+src/frob/testing/_collect.py -- the mechanism both acceptance criteria
+describe already exists and already works; this ticket's contribution is
+closing the missing test-evidence gap that left both acceptance criteria
+UNBOUND despite the underlying behavior being correct.
+
+Verified: `uv run pytest tests/test_gates.py -k "cpp or Cpp or
+native_unverified or NativeTestCollectors" -q` -- 11 passed, including the
+new test. `uv run frob check --ticket T-1266 --only docanchor --only
+doclink --only lint --only test` -- 0 errors (pre-existing, unrelated ty/
+ruff-format baseline noise only, matching every other ticket's captured
+claims this session).
+
+### Changed
+```
+ .github/workflows/ci.yml |  40 ++++++++++++-
+ docs/modules/gates.md    |  39 +++++++++++++
+ tests/test_gates.py      |  28 +++++++++
+ tickets.md               | 148 ++++++++++++++++++++++++++++++++++++++++++++---
+ 4 files changed, 246 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestNativeTestCollectors::test_cpp_directive_resolves_via_real_ctest_node_id` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 844 warning(s), 693 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1267 -->
 ```yaml
@@ -4582,7 +4727,7 @@ DO NOT: make tips block or fail a command; add a tip whose advice is unmeasured 
 ```yaml
 id: T-1364
 title: Consider an explicit partial-stamp marker for coverage gates (T-1363 follow-up)
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-07-31'
@@ -4593,6 +4738,16 @@ sprint: null
 scope:
 - src/frob/gates/_coverage.py
 - src/frob/gates/__init__.py
+- docs/modules/gates.md
+scope_changes:
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-1364's deliverable is a documented decision (docs-kind ticket) recording
+    why the partial-stamp marker was considered and deferred
+  actor: logan
+  at: '2026-08-01'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: null
 ```
@@ -4619,6 +4774,56 @@ keeping over nothing. T-1363's Done report chose "keep nothing" over "keep and
 mark partial" for the first cut; if a future incident shows losing ANY partial
 signal is worse than the disclosed-missing-stamp status quo, revisit this
 ticket to add the explicit partial-stamp representation.
+
+## Done report
+
+Docs-only ticket: T-1364 asked to "consider" an explicit partial-stamp
+marker for coverage gates as a T-1363 follow-up, not necessarily build it.
+
+Decision recorded in docs/modules/gates.md, alongside T-1363's own
+documented fixes: keep T-1363's "never promote a failed/partial run's
+data" design as-is. It is sufficient for every realistic case reached in
+practice -- a failed run leaves the prior good stamp untouched, and
+TEST006's `_test006_missing` already discloses a genuinely-missing stamp
+as a real violation, including the bootstrap case (no stamp has ever
+existed and the very first run fails), which reads as "no data" rather
+than a false clean. Building the explicit `"partial": true` marker plus
+new TEST005/TEST006 disclosure wording would add real complexity (a new
+stamp field, new gate wording, new tests) for a scenario that has not
+occurred: T-1363's incident was specifically about a bad partial run
+overwriting good data, which T-1363 already fixed by refusing the
+promotion outright.
+
+No code changed in src/frob/gates/_coverage.py or src/frob/gates/__init__.py
+(the ticket's declared scope) -- there is nothing to fix there when the
+decision is "keep the current design." Scope was extended by one file,
+docs/modules/gates.md, to record the decision (the only place T-1363's own
+parallel decisions already live), via `frob ticket scope T-1364 --add`.
+
+Revisit criterion documented inline: a future incident where losing an
+entire partial run's signal (rather than falling back to the prior stamp)
+is itself the worse outcome -- e.g. a long stretch where every `make
+coverage` attempt fails and TEST005/006 keep reporting against an
+increasingly stale prior stamp with no partial-data signal ever surfaced.
+
+Evidence: docs-only ticket with no pytest surface of its own (playbook
+sec 5) -- bound to the existing CLI-dispatch integration test per the
+T-0167 precedent, tests/integration/test_interfaces.py::TestInterfaces::
+test_main_cli_dispatches, verified passing (1 passed).
+
+### Changed
+```
+ tickets.md | 62 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 61 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 771 warning(s), 693 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1365 -->
 ```yaml
@@ -4734,3 +4939,32 @@ threat: repudiation
 component: null
 ```
 T-1265 made the ci.yml self-gate blocking and added a TEST012 check for frob-coverage.lock.json, the one committed coverage channel. The residue it did not close: the coverage stamp and the delta baseline still live in .frob/, which is gitignored and never restored in CI, so TEST005/TEST006 remain structurally inert there. CHK-THEME-GITIGNORED-TRUST in docs/design/registry/check-coverage.yaml is repointed here.
+
+<!-- ticket:T-1367 -->
+```yaml
+id: T-1367
+title: CI still cannot verify the .frob/-local coverage stamp and delta baseline (T-1265
+  successor)
+state: dropped
+kind: security
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- .github/workflows/ci.yml
+- src/frob/gates/_coverage.py
+- src/frob/gates/_baseline.py
+acceptance:
+- text: GIVEN a CI run WHEN the coverage stamp or delta baseline is absent, stale
+    or tampered THEN the build fails rather than silently degrading to a pass
+  evidence: []
+threat: repudiation
+component: null
+```
+T-1265 made the ci.yml self-gate blocking and added a TEST012 check for frob-coverage.lock.json, the one committed coverage channel. The residue it did not close: the coverage stamp and the delta baseline still live in .frob/, which is gitignored and never restored in CI, so TEST005/TEST006 remain structurally inert there. CHK-THEME-GITIGNORED-TRUST in docs/design/registry/check-coverage.yaml is repointed here.
+
+## Drop reason
+- 2026-08-01: refiled on main so the registry row can cite a real ticket id

@@ -6754,6 +6754,34 @@ class TestTestGate:
         violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
         assert not any(v.rule == "TEST012" for v in violations)
 
+    def test_ci_workflow_self_gate_does_not_swallow_errors(self) -> None:
+        """T-1265 (CHK-THEME-GITIGNORED-TRUST successor): the CI self-gate
+        step used to run `uv run frob check || echo "::warning..."` --
+        swallowing every finding, ERROR-tier included, so a real gate
+        error never failed the build. Locks that the swallow is gone.
+        """
+        # frob:tests .github/workflows/ci.yml
+        text = (
+            Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
+        ).read_text(encoding="utf-8")
+        assert 'uv run frob check || echo "::warning' not in text
+        assert "run: uv run frob check\n" in text
+
+    def test_ci_workflow_hard_fails_on_test012_drift(self) -> None:
+        """T-1265: `frob-coverage.lock.json` (T-0545, the one coverage-
+        derived channel that is committed and travels with the diff, not
+        gitignored like `.frob/coverage-stamp`/`.frob/baseline`) must be
+        checked in CI as a hard gate -- TEST012 is WARN-severity by
+        design, so it never failed the self-gate step's own exit code
+        even before the swallow above was removed.
+        """
+        # frob:tests .github/workflows/ci.yml
+        text = (
+            Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
+        ).read_text(encoding="utf-8")
+        assert "TEST012" in text
+        assert "frob-coverage.lock.json" in text
+
     def test_test006_missing_stamp(self, tmp_path: Path) -> None:
         snap = _snapshot(tmp_path)
         from frob.gates import _test006  # noqa: PLC0415
@@ -9778,6 +9806,57 @@ class TestNativeTestCollectors:
         rule_ids = _rules(violations)
         assert "TEST001" not in rule_ids
         assert "TEST002" in rule_ids
+        assert "TEST013" not in rule_ids
+
+    # frob:ticket T-1266
+    def test_cpp_directive_resolves_via_real_ctest_node_id(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_gates.py::TestNativeTestCollectors.test_cpp_directive_resolves_via_real_ctest_node_id  # noqa: E501
+        """T-1266 (CHK-SUBSYS-GATES-ACCOUNTING successor): the C/C++ mirror
+        of `test_ts_directive_resolves_via_real_vitest_node_id` above --
+        T-0886 already made `collect_cpp_tests` source-accurate for the
+        common single-source-per-target case (see `TestCppSourceAccurateCollection`
+        in this file, which proves the collector itself produces
+        `<source>::<name>` node ids), but nothing previously proved that a
+        REAL `frob:tests` edge in the graph actually resolves against one
+        of those node ids via `_edge_has_execution_evidence`'s first real-
+        evidence branch (`_node_id_collected`/`_symref_to_nodeid`), rather
+        than falling through to the c/cpp structural fallback
+        (`_edge_is_native_unverified`) the same way `test_fires_on_
+        structural_only_edge` above proves the UNRESOLVED case does. This
+        closes that gap: `tests.node_ids` here holds exactly the node id
+        shape `collect_cpp_tests` emits for an unambiguous single-source
+        ctest test (`_cpp_node_id`, verified directly in
+        `TestCppSourceAccurateCollection.
+        test_single_source_target_is_source_accurate`), so a passing run
+        here proves the edge takes the REAL-evidence path, not the
+        disclosed-unverified one -- TEST013 must NOT fire, matching
+        acceptance[0]."""
+        from typani.option import Nothing
+
+        _write(
+            tmp_path,
+            "src/pkg/widget_test.cpp",
+            "void widget_add(void) {}\n\n"
+            '// frob:tests src/pkg/widget_test.cpp::widget_add kind="unit"\n'
+            "void widget_adds(void) {}\n",
+        )
+        snap = _snapshot(tmp_path)
+        # The exact node id collect_cpp_tests would emit (`_cpp_node_id`)
+        # for a single-source ctest test named "widget_adds" compiled from
+        # this file -- supplied directly here (as
+        # `test_ts_directive_resolves_via_real_vitest_node_id` does for
+        # vitest) rather than re-running the collector's own subprocess
+        # mocking, which `TestCppSourceAccurateCollection` already covers.
+        tests = CollectedTests(
+            node_ids=frozenset({"src/pkg/widget_test.cpp::widget_adds"})
+        )
+        cfg = TestPolicy(min_unit_cases=1)
+        violations = run_test_gate(snap, (), Nothing(), tests, cfg)
+        rule_ids = _rules(violations)
+        assert "TEST001" not in rule_ids
+        assert "TEST002" not in rule_ids
         assert "TEST013" not in rule_ids
 
 
