@@ -3010,6 +3010,9 @@ node testsuite : trusted {
     attr interface=TestAll;
     attr interface=TestAllocatorLock;
     attr interface=TestAllowConfig;
+    attr interface=TestAllowCrossTicketFlagParsing;
+    attr interface=TestAllowCrossTicketReachesConfig;
+    attr interface=TestAllowCrossTicketReachesLand;
     attr interface=TestAmbiguousLivenessGuard;
     attr interface=TestAnalyzeProject;
     attr interface=TestAnalyzeProjectWiring;
@@ -3235,6 +3238,7 @@ node testsuite : trusted {
     attr interface=TestConcurrencyModelMismatch;
     attr interface=TestConcurrentCache;
     attr interface=TestConcurrentLeases;
+    attr interface=TestConditionCoverageIsActuallyParsed;
     attr interface=TestConditionalGlob;
     attr interface=TestConditionalShapeDupPairing;
     attr interface=TestConditionalShapeNormalization;
@@ -3297,6 +3301,7 @@ node testsuite : trusted {
     attr interface=TestD10CmdEvidenceReverify;
     attr interface=TestD11DedupedMatchRule;
     attr interface=TestD12DeletionFilterBroadScope;
+    attr interface=TestDaemonOptIn;
     attr interface=TestDataClumps;
     attr interface=TestDdlSchema;
     attr interface=TestDeadPrivateCode;
@@ -4003,6 +4008,8 @@ node testsuite : trusted {
     attr interface=TestPriorityRank;
     attr interface=TestPrivacyNotice;
     attr interface=TestPrivacyPolicy;
+    attr interface=TestProbeDaemon;
+    attr interface=TestProbeDaemonVersion;
     attr interface=TestProcFamilyNamingReconciliation;
     attr interface=TestProcessPathGating;
     attr interface=TestProcessPoolGates;

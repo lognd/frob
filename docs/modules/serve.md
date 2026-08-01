@@ -661,6 +661,41 @@ than relying on `flock` contention alone (which would just make the fresh
 spawn silently lose to the stale one it should be replacing). This closes
 the follow-on T-1093 disclosed (T-draft-8a56400c).
 
+### Daemon liveness (T-1377) and the opt-in switch (T-1379)
+
+A unix socket file outlives the process that bound it, so its existence is
+never evidence a daemon is serving. `probe_daemon` establishes liveness the
+only way that is real -- a bounded connect-plus-answer round trip -- and
+reports one of five `DaemonLiveness` states, each with a distinct correct
+response:
+
+| State | Meaning | Response |
+| --- | --- | --- |
+| `Live` | version-matched daemon answered | use it |
+| `NoSocket` | no socket file | spawn |
+| `Orphaned` | socket file present, connect refused | unlink it, then spawn |
+| `Wedged` | listening but no answer in budget | do NOT spawn a rival; run in-process |
+| `VersionSkew` | answered with a different version | graceful shutdown, then spawn |
+
+The probe budget (`_PROBE_TIMEOUT_S`, 0.5s) is deliberately NOT
+`send_request`'s 10s query timeout. Budgeting a health check like a real
+query is what previously made an unhealthy daemon cost up to 10 seconds on
+every proxying invocation, plus a spawn and a retry.
+
+`Wedged` is the state that most needs its own branch: something is holding
+the socket, so a spawned rival loses to `acquire_singleton_lock` and every
+later invocation pays another failed spawn. An unclassifiable probe failure
+reports `Wedged` deliberately, because that is where doing nothing is
+safest.
+
+The daemon is currently **opt-in**: `_daemon_enabled` requires
+`FROB_DAEMON=1`, and `FROB_NO_DAEMON=1` still wins outright. This is a
+safety default while T-1378 is open (the daemon acknowledges a
+`frob_shutdown` it then ignores, leaks its multiprocessing forkserver and
+resource_tracker children, and its pool competes with the foreground check
+for CPU badly enough to be a net pessimization). Revert to opt-out once
+T-1378 lands and the daemon demonstrably beats the in-process path.
+
 ### Proxied commands
 
 - `frob perf hot --json` -> `frob_perf_hot` -- the CLI's own in-process

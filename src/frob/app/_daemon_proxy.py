@@ -85,6 +85,7 @@ _SHUTDOWN_GRACE_S = 1.0
 _PROBE_TIMEOUT_S = 0.5
 
 
+# frob:doc docs/modules/serve.md#daemon-liveness-t-1377-and-the-opt-in-switch-t-1379
 class DaemonLiveness(ErrorSet):
     """What a bounded probe actually found, so each distinct state can get
     the distinct response it needs.
@@ -102,9 +103,11 @@ class DaemonLiveness(ErrorSet):
 
 
 # frob:ticket T-1377
-# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon::test_missing_socket_is_nosocket  # noqa: E501
-# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon::test_dead_socket_file_is_orphaned  # noqa: E501
-# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon::test_silent_listener_is_wedged  # noqa: E501
+# frob:ticket T-1380
+# frob:doc docs/modules/serve.md#daemon-liveness-t-1377-and-the-opt-in-switch-t-1379
+# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon.test_missing_socket_is_nosocket  # noqa: E501
+# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon.test_dead_socket_file_is_orphaned  # noqa: E501
+# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon.test_silent_listener_is_wedged  # noqa: E501
 def probe_daemon(
     root: Path, *, timeout_s: float = _PROBE_TIMEOUT_S
 ) -> tuple[DaemonLiveness, str | None]:
@@ -119,13 +122,28 @@ def probe_daemon(
     conservative answer, because that is the one state where spawning a
     competing daemon makes things worse rather than better.
     """
-    import socket as _socket
-
     from frob.serve import socket_path
 
     path = socket_path(root.resolve())
     if not path.exists():
         return (DaemonLiveness.NoSocket, None)
+    raw = _ask_version_over_socket(path, timeout_s)
+    if isinstance(raw, DaemonLiveness):
+        return (raw, None)
+    return _classify_version_reply(raw)
+
+
+# frob:ticket T-1380
+# frob:waive ARCH103 reason="a socket health probe IS connect-send-recv plus the \
+# two failure decisions those calls can produce; splitting the recv loop away from \
+# the connect that must precede it would add indirection without separating a real \
+# sub-concern, and the classification half is already extracted into \
+# _classify_version_reply"
+def _ask_version_over_socket(path: Path, timeout_s: float) -> bytes | DaemonLiveness:
+    """One bounded `frob_version` round trip: the raw reply bytes, or the
+    `DaemonLiveness` that the transport failure itself already proves."""
+    import socket as _socket
+
     try:
         with _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM) as sock:
             sock.settimeout(timeout_s)
@@ -133,19 +151,26 @@ def probe_daemon(
                 sock.connect(str(path))
             except (ConnectionRefusedError, FileNotFoundError):
                 # The file outlived its process: nothing is accepting on it.
-                return (DaemonLiveness.Orphaned, None)
+                return DaemonLiveness.Orphaned
             except (TimeoutError, OSError):
-                return (DaemonLiveness.Wedged, None)
+                return DaemonLiveness.Wedged
             sock.sendall(b'{"id": 1, "method": "frob_version", "params": {}}\n')
             buf = b""
             while b"\n" not in buf:
                 chunk = sock.recv(65536)
                 if not chunk:
                     # Accepted, then hung up without answering.
-                    return (DaemonLiveness.Wedged, None)
+                    return DaemonLiveness.Wedged
                 buf += chunk
     except (TimeoutError, OSError):
-        return (DaemonLiveness.Wedged, None)
+        return DaemonLiveness.Wedged
+    return buf
+
+
+# frob:ticket T-1380
+def _classify_version_reply(buf: bytes) -> tuple[DaemonLiveness, str | None]:
+    """A well-formed reply -> `Live` or `VersionSkew`; anything unreadable
+    -> `Wedged`, the conservative answer."""
     try:
         payload = json.loads(buf.split(b"\n", 1)[0].decode("utf-8"))
         version = payload.get("result", {}).get("version")
@@ -159,7 +184,7 @@ def probe_daemon(
 
 
 # frob:ticket T-1377
-# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon::test_orphaned_socket_is_unlinked  # noqa: E501
+# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon.test_orphaned_socket_is_unlinked  # noqa: E501
 def _clear_orphaned_socket(root: Path) -> None:
     """Unlink a socket file nothing is listening on, so the next probe is a
     clean `NoSocket` rather than another refused connect."""
@@ -304,8 +329,9 @@ def ensure_daemon(root: Path) -> None:
 
 
 # frob:ticket T-1379
-# frob:tests tests/test_app_daemon_proxy.py::TestDaemonOptIn::test_unset_env_disables_the_daemon  # noqa: E501
-# frob:tests tests/test_app_daemon_proxy.py::TestDaemonOptIn::test_frob_daemon_1_enables_the_daemon  # noqa: E501
+# frob:doc docs/modules/serve.md#daemon-liveness-t-1377-and-the-opt-in-switch-t-1379
+# frob:tests tests/test_app_daemon_proxy.py::TestDaemonOptIn.test_unset_env_disables_the_daemon  # noqa: E501
+# frob:tests tests/test_app_daemon_proxy.py::TestDaemonOptIn.test_frob_daemon_1_enables_the_daemon  # noqa: E501
 def _daemon_enabled() -> bool:
     """Whether the daemon path may be used at all.
 

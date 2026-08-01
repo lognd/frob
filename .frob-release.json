@@ -85,10 +85,12 @@
     "frob-core/src/lib.rs::wl_hash": "f345548ad8eb20215c8479a35f30dd915284b318ea06fd89a5b545e3f8a29320",
     "src/frob/__main__.py::_SuggestingArgumentParser.error": "53b25f4073b9c9cce74e1dbecd2fa27854cbfb9f06a7345555c38af52dc33fb3",
     "src/frob/__main__.py::main": "a87346f60f77c98d14a0c83f059fb1dbc7738bb54732a146f8793d55b5262976",
+    "src/frob/app/_daemon_proxy.py::DaemonLiveness": "cf03beed5b8d9c8b2df9c9a22482745ee5bc25786a0c1aaad21da1f80ab141b5",
     "src/frob/app/_daemon_proxy.py::ProxyReason": "086cf4f3d1b1990991d064130300e802372b63556e3a4bc4b78461736ee3ab95",
     "src/frob/app/_daemon_proxy.py::_LeaseConnection.call": "61371988b4bd37f5a4e840a484ce3c048cc98416bf8c35663e2c14934cdf1b2f",
     "src/frob/app/_daemon_proxy.py::_LeaseConnection.close": "97ac0dbd874943e5d645e2dd0b604924a2cc234b0370499c835e25a51922fc00",
     "src/frob/app/_daemon_proxy.py::ensure_daemon": "ba420f72117bcd6db756c95503fc099661cacae76cc3b64068770b660b143ff8",
+    "src/frob/app/_daemon_proxy.py::probe_daemon": "fb8289b5f847f5cdd960437a80946224e3f27b316bbd396612d69cbc5a93b7c4",
     "src/frob/app/_daemon_proxy.py::query": "c12ba23d9c19903308cd2fef2ad42b188420be459cf0287388a60cd09ccf1ca4",
     "src/frob/app/_daemon_proxy.py::release_daemon_lease": "0dc5bcfc523a8545886dee0f89486551a763c1345408237c954ae9ce4bf99e69",
     "src/frob/app/_daemon_proxy.py::try_daemon_lease": "3067c0323c04f8efb8058d7d5fe7e12f7602be29bf8226755fa77989085147f6",
@@ -1935,5 +1937,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.293.0"
+  "version": "0.294.0"
 }
