@@ -5415,3 +5415,28 @@ threat: null
 component: null
 ```
 55 findings at drive start. Two shapes: file::symbol pointers naming symbols that no longer resolve (often renamed or made private), and doc-anchor links whose target heading does not exist. Fix the reference where the target still exists under a new name; waive with a reason only where the pointer documents genuine history (e.g. CHANGELOG entries naming since-deleted symbols).
+
+<!-- ticket:T-1373 -->
+```yaml
+id: T-1373
+title: 'make coverage is red: nested coverage subprocess leak and the T-1333 CSafeLoader
+  test'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/unit/test_makefile_coverage.py
+- tests/unit/test_ticket_store.py
+acceptance:
+- text: GIVEN a full make coverage run WHEN the suite completes THEN tests/unit/test_makefile_coverage.py
+    and tests/unit/test_ticket_store.py report no failures
+  evidence: []
+threat: null
+component: null
+```
+Found 2026-08-01 by the coordinator's full make coverage run, which the gates stage never exercises (frob check --only gates skips tests). Two distinct causes. (1) test_two_disjoint_sessions_combine_to_full_coverage and test_combine_then_xml_survives_a_stale_fixture_path spawn a nested 'coverage run' subprocess; under an outer make coverage the parent's COVERAGE_* environment leaks into the child and the nested run exits 1. The subprocess needs a coverage-clean env. (2) test_prefers_csafeloader_when_libyaml_present predates T-1333, which deliberately falls back to SafeLoader whenever a coverage tracer is active -- so the assertion is now false under coverage by design. The test must condition on the tracer the same way the fix does.
