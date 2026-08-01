@@ -3710,7 +3710,7 @@ T-1257's acceptance criterion 3, not yet closed by that ticket).
 id: T-1331
 title: Pre-existing tests/test_ticket_land.py .frob/ leakage into git add -A causes
   IncompleteLand/merge-conflict failures
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-29'
