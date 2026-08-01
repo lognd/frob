@@ -453,6 +453,19 @@ def _add_ticket_land_parser(ticket_sub):
             "through real confirmatory evidence."
         ),
     )
+    # frob:ticket T-1369
+    ticket_land_p.add_argument(
+        "--allow-cross-ticket",
+        dest="ticket_allow_cross_ticket",
+        action="store_true",
+        help=(
+            "T-1355 escape hatch: do not let a CrossTicketLeakage finding "
+            "refuse the land. Use when the joint landing is genuinely "
+            "intentional -- a series worktree hosting several tickets on "
+            "one branch, or an open epic whose umbrella scope covers its "
+            "own leaf's files -- not to wave through a real sibling leak."
+        ),
+    )
     ticket_land_p.add_argument(
         "--push",
         dest="ticket_land_push",

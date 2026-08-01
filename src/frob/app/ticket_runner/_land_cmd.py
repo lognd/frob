@@ -716,6 +716,17 @@ def _land(root: Path, cfg: AppConfig) -> None:
             cfg.ticket_id,
         )
 
+    # frob:ticket T-1369
+    if cfg.ticket_allow_cross_ticket:
+        _log.warning(
+            "ticket land: %s --allow-cross-ticket set -- a CrossTicketLeakage "
+            "finding will be logged but will NOT refuse this land "
+            "(justification required: use only when the joint landing is "
+            "genuinely intentional, e.g. a series worktree or an open epic's "
+            "umbrella scope over its own leaf)",
+            cfg.ticket_id,
+        )
+
     # T-0919: one shared spawn feeds BOTH check_gates/check_gate_findings
     # below instead of each running its own full `frob check --ticket`.
     _shared_spawn = _shared_check_spawn_fn(worktree, cfg.ticket_id)
@@ -737,6 +748,7 @@ def _land(root: Path, cfg: AppConfig) -> None:
             worktree, cfg.ticket_id, spawn=_shared_spawn
         ),
         skip_mutation_evidence=cfg.ticket_skip_mutation_evidence,
+        allow_cross_ticket=cfg.ticket_allow_cross_ticket,
     )
     if result.is_err:
         _log.error("ticket land failed: %s", result.danger_err)

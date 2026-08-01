@@ -386,6 +386,13 @@ class AppConfig(BaseModel):
     # hatch: a TEST016 confirmatory-only-evidence finding is logged but does
     # not refuse the land. For genuine false positives only.
     ticket_skip_mutation_evidence: bool = False
+    # frob:ticket T-1369
+    # `frob ticket land <id> --allow-cross-ticket` -- documented escape
+    # hatch for T-1355's CrossTicketLeakage refusal. A series worktree
+    # legitimately hosts several tickets on one branch, and an open EPIC's
+    # umbrella scope legitimately covers its own leaves' files, so the
+    # refusal has false positives that would otherwise be unlandable.
+    ticket_allow_cross_ticket: bool = False
     # frob:ticket T-0844
     # `frob ticket close <id> --skip-mutation-evidence` -- the close-path
     # twin of `ticket_skip_mutation_evidence` above: a TEST016 confirmatory-
@@ -952,6 +959,8 @@ class AppConfig(BaseModel):
             "sys_check",
             "ticket_dry_run",
             "ticket_skip_mutation_evidence",
+            # frob:ticket T-1369
+            "ticket_allow_cross_ticket",
             "ticket_close_skip_mutation_evidence",
             "ticket_land_push",
             # frob:ticket T-1175
