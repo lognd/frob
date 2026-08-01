@@ -5707,6 +5707,7 @@ evidence:
 - tests/test_app_daemon_proxy.py::TestProbeDaemon::test_silent_listener_is_wedged
 - tests/test_app_daemon_proxy.py::TestProbeDaemon::test_probe_of_a_silent_listener_stays_within_budget
 - tests/test_app_daemon_proxy.py::TestProbeDaemon::test_orphaned_socket_is_unlinked
+- tests/test_app_daemon_proxy.py::TestProbeDaemon::test_missing_socket_is_nosocket
 acceptance:
 - text: GIVEN a socket file whose daemon is gone WHEN the proxy probes THEN it classifies
     Orphaned, unlinks the socket, and spawns -- in well under a second
@@ -5715,6 +5716,7 @@ acceptance:
   - tests/test_app_daemon_proxy.py::TestProbeDaemon::test_silent_listener_is_wedged
   - tests/test_app_daemon_proxy.py::TestProbeDaemon::test_probe_of_a_silent_listener_stays_within_budget
   - tests/test_app_daemon_proxy.py::TestProbeDaemon::test_orphaned_socket_is_unlinked
+  - tests/test_app_daemon_proxy.py::TestProbeDaemon::test_missing_socket_is_nosocket
 - text: GIVEN a daemon that is alive but not answering WHEN the proxy probes THEN
     it classifies Wedged and does NOT spawn a competing daemon
   evidence: []
