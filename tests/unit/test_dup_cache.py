@@ -241,6 +241,8 @@ class TestWriteLockGranularity:
     def test_shared_reader_not_blocked_during_standalone_compute_phase(
         self, tmp_path: Path
     ) -> None:
+        # frob:tests tests/unit/test_dup_cache.py::TestWriteLockGranularity.test_shared_reader_not_blocked_during_standalone_compute_phase  # noqa: E501
+        # frob:ticket T-1386
         ctx = multiprocessing.get_context("spawn")
         compute_started = ctx.Event()
         wrote = ctx.Event()
@@ -249,7 +251,6 @@ class TestWriteLockGranularity:
             target=_simulate_standalone_rebuild_then_write,
             args=(str(tmp_path), compute_seconds, compute_started, wrote),
         )
-        start = time.monotonic()
         proc.start()
         try:
             assert compute_started.wait(timeout=10), (
@@ -257,17 +258,22 @@ class TestWriteLockGranularity:
             )
             # The helper is now mid-"compute" (sleeping, no lock held under
             # T-1224's granular locking). A concurrent SHARED reader must be
-            # able to acquire `derived_state_lock` promptly here -- if this
-            # blocks until the helper's write (i.e. ~compute_seconds later),
-            # `derived_state_write_lock` has regressed to wrapping the whole
-            # rebuild again (the pre-T-1224 behavior this ticket fixes).
+            # able to acquire `derived_state_lock` promptly here -- assert
+            # the CAUSAL claim (the acquire happens before the helper's
+            # write completes) rather than a wall-clock bound: a duration
+            # threshold flakes under load (T-1386, observed 1.26s against a
+            # 1.0s bound on a busy box) even though the granularity fix
+            # itself is sound. If the acquire instead blocks until AFTER
+            # `wrote` fires, `derived_state_write_lock` has regressed to
+            # wrapping the whole rebuild again (the pre-T-1224 behavior
+            # this ticket fixes), not just the write.
             with derived_state_lock(tmp_path, exclusive=False):
-                acquired_after = time.monotonic() - start
-            assert acquired_after < (compute_seconds / 2), (
-                f"shared reader took {acquired_after:.2f}s to acquire during "
-                "the standalone rebuild's compute phase -- the exclusive "
-                "write lock appears to be held for the whole computation "
-                "again, not just the write (T-1224 regression)"
+                acquired_before_write = not wrote.is_set()
+            assert acquired_before_write, (
+                "shared reader did not acquire until AFTER the helper's "
+                "write completed -- the exclusive write lock appears to be "
+                "held for the whole computation again, not just the write "
+                "(T-1224 regression)"
             )
             assert wrote.wait(timeout=10), "helper process never completed its write"
         finally:
