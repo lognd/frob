@@ -1228,7 +1228,9 @@ def _check_cross_ticket_leakage(
     if not leaked:
         return Ok(None)
 
-    return _report_leaked_tickets(ticket.id, leaked, allow_cross_ticket=allow_cross_ticket)
+    return _report_leaked_tickets(
+        ticket.id, leaked, allow_cross_ticket=allow_cross_ticket
+    )
 
 
 # frob:ticket T-1355

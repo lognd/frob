@@ -22,8 +22,6 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-import pytest
-
 from frob.tickets import (
     Origin,
     TicketKind,
@@ -160,10 +158,7 @@ class TestRemoveKeepsEvidenceCoveredByRemainingScope:
             )
             is False
         )
-        assert (
-            _scope_remove_orphans_evidence("tests/unit/**", ticket, ())
-            is True
-        )
+        assert _scope_remove_orphans_evidence("tests/unit/**", ticket, ()) is True
 
 
 class TestSameWorktreeLeaseIsNotAConflict:
@@ -212,9 +207,7 @@ class TestSameWorktreeLeaseIsNotAConflict:
         atomic_write(ledger_path(repo), "# Tickets\n\n")
         _commit_all(repo, "init")
 
-        holder = _make_ticket(
-            repo, scope=("src/frob/gates/**",), state=TicketState.IN_PROGRESS
-        )
+        _make_ticket(repo, scope=("src/frob/gates/**",), state=TicketState.IN_PROGRESS)
         # Commit the holder's ticket so a worktree branched AFTER this
         # point actually sees it in its own local ledger -- mirroring how
         # a real second worktree only learns of a ticket via a shared

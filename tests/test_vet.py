@@ -5186,8 +5186,9 @@ class TestOsvAdapter:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/vet/_osv.py::_run_osv_scanner kind="unit"
-        from frob.vet import _osv
         from typani import Err
+
+        from frob.vet import _osv
 
         monkeypatch.setattr(
             _osv, "run_argv", lambda argv, timeout_s=60.0: Err("spawn failed")
@@ -5200,14 +5201,13 @@ class TestOsvAdapter:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/vet/_osv.py::_run_osv_scanner kind="unit"
-        from frob.vet import _osv
-        from frob.gitio import ProcResult
         from typani import Ok
 
+        from frob.gitio import ProcResult
+        from frob.vet import _osv
+
         def fake_run_argv(argv, timeout_s=60.0):
-            return Ok(
-                ProcResult(argv=argv, returncode=1, stdout="", stderr="boom")
-            )
+            return Ok(ProcResult(argv=argv, returncode=1, stdout="", stderr="boom"))
 
         monkeypatch.setattr(_osv, "run_argv", fake_run_argv)
         lockfile = tmp_path / "requirements.txt"
@@ -5220,15 +5220,14 @@ class TestOsvAdapter:
         # frob:tests src/frob/vet/_osv.py::_run_osv_scanner kind="unit"
         # osv-scanner exits non-zero WHEN IT FINDS VULNERABILITIES -- that
         # must be treated as real findings, never conflated with a crash.
-        from frob.vet import _osv
-        from frob.gitio import ProcResult
         from typani import Ok
+
+        from frob.gitio import ProcResult
+        from frob.vet import _osv
 
         def fake_run_argv(argv, timeout_s=60.0):
             return Ok(
-                ProcResult(
-                    argv=argv, returncode=1, stdout='{"results": []}', stderr=""
-                )
+                ProcResult(argv=argv, returncode=1, stdout='{"results": []}', stderr="")
             )
 
         monkeypatch.setattr(_osv, "run_argv", fake_run_argv)
@@ -5364,25 +5363,19 @@ class TestRegistryLookup:
                 ]
             }
         )
-        resolved, published = _parse_published(
-            "cargo", "serde", "latest", cargo_body
-        )
+        resolved, published = _parse_published("cargo", "serde", "latest", cargo_body)
         assert resolved == "1.0.130"  # first entry = latest
         assert published is not None
         assert published.year == 2022
 
-        resolved, published = _parse_published(
-            "cargo", "serde", "1.0.100", cargo_body
-        )
+        resolved, published = _parse_published("cargo", "serde", "1.0.100", cargo_body)
         assert resolved == "1.0.100"
         assert published is not None
         assert published.year == 2020
 
         # A pinned version absent from the registry's version list must
         # degrade to (None, None), never guess a neighboring entry.
-        resolved, published = _parse_published(
-            "cargo", "serde", "9.9.9", cargo_body
-        )
+        resolved, published = _parse_published("cargo", "serde", "9.9.9", cargo_body)
         assert resolved is None
         assert published is None
 
@@ -5410,11 +5403,7 @@ class TestRegistryLookup:
 
         cache_path = tmp_path / "vet.db"
         cached_body = json.dumps(
-            {
-                "releases": {
-                    "2.31.0": [{"upload_time_iso_8601": "2023-05-22T00:00:00"}]
-                }
-            }
+            {"releases": {"2.31.0": [{"upload_time_iso_8601": "2023-05-22T00:00:00"}]}}
         )
         ttl_cache_set(
             cache_path, _registry._CACHE_TABLE, "pypi:requests:2.31.0", cached_body

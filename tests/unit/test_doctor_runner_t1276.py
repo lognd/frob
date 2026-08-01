@@ -15,6 +15,7 @@ empty string, never the literal word "None").
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import pytest
 
@@ -23,9 +24,9 @@ from frob.app.config import AppConfig
 from frob.doctor import DoctorReport, NativeExtensionStatus
 
 
-def _cfg(**overrides) -> AppConfig:
+def _cfg(**overrides: object) -> AppConfig:
     """Minimal `AppConfig` for a `frob doctor` invocation."""
-    base = {
+    base: dict[str, Any] = {
         "subcommand": "doctor",
         "doctor_json": False,
         "color": "never",
@@ -41,7 +42,9 @@ def _report(*, healthy: bool, remediation: str | None) -> DoctorReport:
         extensions=[
             NativeExtensionStatus(name="frob_core", available=healthy, version="1.0"),
             NativeExtensionStatus(
-                name="strata_core", available=healthy, version="1.0" if healthy else None
+                name="strata_core",
+                available=healthy,
+                version="1.0" if healthy else None,
             ),
         ],
         healthy=healthy,
@@ -124,7 +127,9 @@ class TestDoctorRunnerUnhealthy:
         import frob.doctor as doctor_mod
 
         monkeypatch.setattr(
-            doctor_mod, "run_diagnosis", lambda: _report(healthy=False, remediation=None)
+            doctor_mod,
+            "run_diagnosis",
+            lambda: _report(healthy=False, remediation=None),
         )
         with pytest.raises(SystemExit):
             doctor_runner.run(_cfg())

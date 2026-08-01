@@ -83,9 +83,7 @@ class TestPersistRoundTrip:
         branch and fails open to `[]` (frob:tests T-1293)."""
         path = tmp_path / ".frob" / "perf" / "ratchet_findings.json"
         path.parent.mkdir(parents=True)
-        path.write_text(
-            json.dumps([{"section_key": "k1"}]), encoding="utf-8"
-        )
+        path.write_text(json.dumps([{"section_key": "k1"}]), encoding="utf-8")
         assert load_ratchet_findings(tmp_path) == []
 
 

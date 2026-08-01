@@ -262,9 +262,7 @@ class TestFrobDirNeverLeaksIntoGitAdd:
 
         _commit_all(main_repo, "init")
 
-        tracked = _run(
-            ["git", "ls-files"], main_repo
-        ).stdout.splitlines()
+        tracked = _run(["git", "ls-files"], main_repo).stdout.splitlines()
         assert not any(path.startswith(".frob/") for path in tracked), tracked
 
         status = _run(["git", "status", "--porcelain"], main_repo).stdout

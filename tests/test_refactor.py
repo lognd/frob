@@ -289,7 +289,9 @@ class TestApplyPlan:
         # No write happened -- the file is untouched.
         assert target.read_text(encoding="utf-8") == original
 
-    def test_apply_failed_on_write_error_reports_apply_failed(self, tmp_path, monkeypatch):
+    def test_apply_failed_on_write_error_reports_apply_failed(
+        self, tmp_path, monkeypatch
+    ):
         # frob:tests \
         # tests/test_refactor.py::TestApplyPlan.test_apply_failed_on_write_error_report\
         # s_apply_failed
@@ -644,7 +646,9 @@ class TestVerify:
             from typani import Ok
 
             return Ok(
-                subprocess.CompletedProcess(args=args, returncode=0, stdout="", stderr="")
+                subprocess.CompletedProcess(
+                    args=args, returncode=0, stdout="", stderr=""
+                )
             )
 
         monkeypatch.setattr(verify_mod, "guarded_subprocess_run", _fake_run)

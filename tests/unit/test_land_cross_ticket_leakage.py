@@ -19,7 +19,14 @@ from pathlib import Path
 
 import pytest
 
-from frob.tickets import Origin, TicketKind, TicketSpec, TicketState, new_ticket, transition
+from frob.tickets import (
+    Origin,
+    TicketKind,
+    TicketSpec,
+    TicketState,
+    new_ticket,
+    transition,
+)
 from frob.tickets._land import land
 from frob.tickets._models import LandError
 from frob.tickets._store import atomic_write, ledger_path, load_all, write_ticket
@@ -107,7 +114,9 @@ class TestCrossTicketLeakage:
         held_id = held.danger_ok.id
         assert transition(wt, held_id, TicketState.PLANNED).is_ok
         assert transition(wt, held_id, TicketState.IN_PROGRESS).is_ok
-        (wt / "src" / "held.py").write_text("# T-held's own work, deliberately paused\n")
+        (wt / "src" / "held.py").write_text(
+            "# T-held's own work, deliberately paused\n"
+        )
         _commit_all(wt, f"{held_id}: paused work in flight")
 
         landing = new_ticket(wt, _spec("Independent fix", scope=("src/fix.py",)))

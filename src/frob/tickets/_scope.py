@@ -182,10 +182,7 @@ def _same_worktree_lease(root: Path, requesting_id: str, holder_id: str) -> bool
     # a brand-new ticket.
     if requesting_worktree is None:
         requesting_worktree = root_worktree
-    return (
-        holder_worktree is not None
-        and requesting_worktree == holder_worktree
-    )
+    return holder_worktree is not None and requesting_worktree == holder_worktree
 
 
 # frob:ticket T-0561

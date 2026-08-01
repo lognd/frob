@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from types import SimpleNamespace
+from typing import TYPE_CHECKING, cast
 
 import pytest
 from typani.result import Ok
@@ -24,6 +25,9 @@ from frob.tickets._land_release import (
     _read_working_manifest_version,
     _read_working_pyproject_version,
 )
+
+if TYPE_CHECKING:
+    from frob.tickets._models import Ticket
 
 
 def _fake_run_argv(argv: list[str], **_kwargs: object):  # noqa: ANN201
@@ -50,6 +54,15 @@ class _FakeTicket:
     attributes `_apply_release_bump`'s callback contract touches."""
 
     title = "Do the thing"
+
+
+def _fake_ticket() -> Ticket:
+    """`_FakeTicket` typed as the `Ticket` the callee's signature declares.
+
+    The stand-in is deliberately structural, so the cast is the honest
+    way to say "only the callback contract's attributes are touched"
+    without dragging a full `Ticket` construction into these tests."""
+    return cast("Ticket", _FakeTicket())
 
 
 def _write_pyproject(root: Path, version: str) -> None:
@@ -155,7 +168,7 @@ class TestApplyReleaseBumpCoherenceGuard:
             return Ok(None)
 
         result = _apply_release_bump(
-            tmp_path, _FakeTicket(), "T-1358", bump_version, pre_land_tip="HEAD"
+            tmp_path, _fake_ticket(), "T-1358", bump_version, pre_land_tip="HEAD"
         )
 
         assert result.is_ok
@@ -172,7 +185,7 @@ class TestApplyReleaseBumpCoherenceGuard:
             return Ok("0.290.0")
 
         result = _apply_release_bump(
-            tmp_path, _FakeTicket(), "T-1358", bump_version, pre_land_tip="HEAD"
+            tmp_path, _fake_ticket(), "T-1358", bump_version, pre_land_tip="HEAD"
         )
 
         assert result.is_ok
