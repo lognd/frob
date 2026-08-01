@@ -35,6 +35,7 @@ class _LazyStdoutHandler(logging.StreamHandler):
         """Bind sys.stdout to satisfy the base constructor; reads use the property."""
         super().__init__(sys.stdout)
 
+    # frob:doc docs/modules/logging.md#public-api
     @property
     def stream(self) -> TextIO:  # type: ignore[override]
         """Return the CURRENT sys.stdout, never one captured at config time."""
@@ -53,6 +54,7 @@ class _LazyStderrHandler(logging.StreamHandler):
         """Bind sys.stderr to satisfy the base constructor; reads use the property."""
         super().__init__(sys.stderr)
 
+    # frob:doc docs/modules/logging.md#public-api
     @property
     def stream(self) -> TextIO:  # type: ignore[override]
         """Return the CURRENT sys.stderr, never one captured at config time."""
