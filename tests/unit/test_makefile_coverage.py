@@ -5,9 +5,25 @@ combined-data entry pointing at a torn-down source path."""
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 from pathlib import Path
+
+
+# frob:ticket T-1373
+def _coverage_clean_env() -> dict[str, str]:
+    """Environment for a NESTED `coverage` subprocess, with every
+    `COVERAGE_*` variable stripped.
+
+    T-1373: these tests drive real `coverage run` children. Under an outer
+    `make coverage` the parent's `COVERAGE_FILE`/`COVERAGE_PROCESS_START`
+    are inherited, so the child writes into -- and `--append`s onto -- the
+    parent's data file instead of its own tmp_path one, and exits 1. The
+    child must measure only itself.
+    """
+    return {k: v for k, v in os.environ.items() if not k.startswith("COVERAGE_")}
+
 
 #: T-1335: repo root, resolved the same way every other Makefile-adjacent
 #: test in this repo does (tests/unit/test_makefile_coverage.py -> repo
@@ -227,6 +243,7 @@ class TestCoverageXmlIgnoreErrors:
         subprocess.run(
             ["coverage", "run", "--branch", str(real_src)],
             cwd=tmp_path,
+            env=_coverage_clean_env(),
             check=True,
             capture_output=True,
             text=True,
@@ -234,6 +251,7 @@ class TestCoverageXmlIgnoreErrors:
         subprocess.run(
             ["coverage", "run", "--branch", "--append", str(stale_src)],
             cwd=tmp_path,
+            env=_coverage_clean_env(),
             check=True,
             capture_output=True,
             text=True,
@@ -246,7 +264,11 @@ class TestCoverageXmlIgnoreErrors:
         # now-missing gone.py entry -- -i/--ignore-errors is exactly what
         # the fixed Makefile recipe now passes.
         no_flag = subprocess.run(
-            ["coverage", "xml"], cwd=tmp_path, capture_output=True, text=True
+            ["coverage", "xml"],
+            cwd=tmp_path,
+            env=_coverage_clean_env(),
+            capture_output=True,
+            text=True,
         )
         assert no_flag.returncode != 0, (
             "fixture no longer reproduces the T-1320 failure"
@@ -254,7 +276,11 @@ class TestCoverageXmlIgnoreErrors:
         assert not (tmp_path / "coverage.xml").exists()
 
         with_flag = subprocess.run(
-            ["coverage", "xml", "-i"], cwd=tmp_path, capture_output=True, text=True
+            ["coverage", "xml", "-i"],
+            cwd=tmp_path,
+            env=_coverage_clean_env(),
+            capture_output=True,
+            text=True,
         )
         assert with_flag.returncode == 0, with_flag.stdout + with_flag.stderr
         xml_out = tmp_path / "coverage.xml"
@@ -306,6 +332,7 @@ class TestCombineRecoversDisjointSessions:
         subprocess.run(
             ["coverage", "run", "--branch", str(driver_a)],
             cwd=tmp_path,
+            env=_coverage_clean_env(),
             check=True,
             capture_output=True,
             text=True,
@@ -315,6 +342,7 @@ class TestCombineRecoversDisjointSessions:
         subprocess.run(
             ["coverage", "run", "--branch", "--append", str(driver_b)],
             cwd=tmp_path,
+            env=_coverage_clean_env(),
             check=True,
             capture_output=True,
             text=True,
@@ -323,6 +351,7 @@ class TestCombineRecoversDisjointSessions:
         report = subprocess.run(
             ["coverage", "report", "--show-missing", "mod.py"],
             cwd=tmp_path,
+            env=_coverage_clean_env(),
             capture_output=True,
             text=True,
         )

@@ -387,13 +387,22 @@ class TestYamlLoader:
     # frob:tests src/frob/tickets/_store.py::_yaml_loader kind="unit"
     """Direct tests of `_yaml_loader`'s CSafeLoader/SafeLoader selection."""
 
-    def test_prefers_csafeloader_when_libyaml_present(self) -> None:
+    # frob:ticket T-1373
+    def test_prefers_csafeloader_when_libyaml_present(self, monkeypatch) -> None:
+        """T-1373: this predates T-1333, which deliberately falls back to
+        `SafeLoader` whenever a coverage tracer is live -- so under `make
+        coverage` the unconditional assertion was false BY DESIGN. Pin the
+        no-tracer case explicitly instead of inheriting whichever tracer
+        the ambient run happens to have installed."""
+        import sys
+
         import yaml
 
         from frob.tickets._store import _yaml_loader
 
         if not yaml.__with_libyaml__:
             pytest.skip("libyaml not installed in this environment")
+        monkeypatch.setattr(sys, "gettrace", lambda: None)
         assert _yaml_loader() is yaml.CSafeLoader
 
     def test_falls_back_to_safeloader_without_libyaml(self, monkeypatch) -> None:
