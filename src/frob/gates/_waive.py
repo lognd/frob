@@ -217,6 +217,11 @@ _KNOWN_GATE_RULES = frozenset(
         # T-0755: a ticket's bound evidence killed zero mutants of a
         # diff-touched file it claims to cover -- confirmatory-only.
         "TEST016",
+        # T-1421/T-1427: a bug/security ticket's designated evidence test
+        # must have genuinely FAILED at its parent commit (the mechanical
+        # "the defect no longer reproduces" check); see
+        # `frob.gates._mutation_evidence.bug_repro_violations`.
+        "BUG002",
         "TODO001",
         "TODO002",
         # T-0783: a frob:todo edge bound to a still-open ticket whose

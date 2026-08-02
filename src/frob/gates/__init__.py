@@ -140,7 +140,10 @@ from frob.gates._models import (
     Violation,
     WaiverRef,
 )
-from frob.gates._mutation_evidence import mutation_evidence_violations
+from frob.gates._mutation_evidence import (
+    bug_repro_violations,
+    mutation_evidence_violations,
+)
 from frob.gates._opaque import opaque_gate
 from frob.gates._parse_failures import parse_failure_gate
 from frob.gates._pii_structural import pii_structural_gate
@@ -6668,6 +6671,7 @@ __all__ = [
     "load_coverage_lock",
     "load_invariants",
     "mutation_evidence_violations",
+    "bug_repro_violations",
     "compliance_gate",
     "cve_fingerprint_scan_gate",
     "debt_gate",

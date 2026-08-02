@@ -1043,6 +1043,8 @@ def _validate_scope_covered_preflight(
     return Ok(None)
 
 
+# frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_refuses_when_evidence_passes_at_parent  # noqa: E501
+# frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_succeeds_when_evidence_fails_at_parent  # noqa: E501
 def _check_mutation_evidence(
     worktree: Path,
     ticket: Ticket,
@@ -1052,7 +1054,14 @@ def _check_mutation_evidence(
 ) -> Result[None, LandError]:
     """T-0755: run the diff-scoped adversarial evidence obligation
     (`frob.gates.mutation_evidence_violations`) against `ticket`'s current
-    worktree tree.
+    worktree tree, and (T-1427) the bug/security-kind repro-at-parent
+    obligation (`frob.gates.bug_repro_violations`, BUG002, T-1421) --
+    complementary, not duplicative: TEST016 proves the diff is
+    mutation-detectable by its own bound evidence, BUG002 proves that same
+    evidence actually fails on the commit BEFORE the fix, closing the
+    "mutation-detectable but nothing calls it" gap TEST016 cannot see.
+    Both feed the SAME error/warn accounting and the SAME
+    `--skip-mutation-evidence` escape hatch below -- no parallel mechanism.
 
     A `security`/`bug`-kind ticket whose bound evidence killed zero
     mutants (TEST016 at ERROR severity, see `frob.gates._mutation_evidence`'s
@@ -1067,7 +1076,10 @@ def _check_mutation_evidence(
     empty-is-not-a-pass posture) and any other check failure are logged
     and treated as non-blocking -- this obligation augments the existing
     evidence gates, it does not replace their own hard-fail paths if the
-    mutation subsystem itself cannot run.
+    mutation subsystem itself cannot run. BUG002 is ERROR-always (only
+    ever fires for bug/security kind in the first place, see
+    `bug_repro_violations`'s own docstring), so it always contributes to
+    the same `errors` list below.
 
     `skip=True` (T-0755 reviewer round 2, `frob ticket land
     --skip-mutation-evidence`) is the documented escape hatch: the check
@@ -1077,14 +1089,16 @@ def _check_mutation_evidence(
     positive finding (e.g. a mutation-testing gap the reviewer has not yet
     closed), never a silent way to wave through real confirmatory
     evidence."""
-    from frob.gates import mutation_evidence_violations
+    from frob.gates import bug_repro_violations, mutation_evidence_violations
 
-    violations = mutation_evidence_violations(worktree, ticket, base_ref)
+    violations = mutation_evidence_violations(
+        worktree, ticket, base_ref
+    ) + bug_repro_violations(worktree, ticket, base_ref)
     if not violations:
         return Ok(None)
     errors = [v for v in violations if v.severity == "error"]
     for v in violations:
-        _log.warning("land: %s TEST016 %s", ticket.id, v.message)
+        _log.warning("land: %s %s %s", ticket.id, v.rule, v.message)
     if errors and skip:
         _log.warning(
             "land: %s --skip-mutation-evidence set -- %d ERROR-severity "

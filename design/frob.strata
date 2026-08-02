@@ -3228,6 +3228,7 @@ node testsuite : trusted {
     attr interface=TestCloseMutationEvidenceForTicket;
     attr interface=TestCloseOpenDescendantGuard;
     attr interface=TestCloseOwnObligationsForTicket;
+    attr interface=TestCloseRefusesBug002ShapeEndToEnd;
     attr interface=TestCloseRefusesOwnObligationsEndToEnd;
     attr interface=TestCloseRefusesT1276ShapeEndToEnd;
     attr interface=TestCloseSkipMutationEvidenceBypass;

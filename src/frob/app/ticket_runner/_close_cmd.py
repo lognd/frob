@@ -136,12 +136,20 @@ def _covers_scope_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
 
 
 # frob:ticket T-0844
+# frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_refuses_when_evidence_passes_at_parent  # noqa: E501
+# frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_succeeds_when_evidence_fails_at_parent  # noqa: E501
 def _close_mutation_evidence_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
     """T-0844: whether `ticket` carries an unwaived ERROR-severity TEST016
     confirmatory-only-evidence finding, mirroring `frob.tickets._land.
     _check_mutation_evidence`'s land-time computation
     (`frob.gates.mutation_evidence_violations`) so `frob ticket close` (the
-    direct, non-land path) is not exempt from the same obligation.
+    direct, non-land path) is not exempt from the same obligation. Also
+    runs (T-1427) the bug/security-kind repro-at-parent obligation
+    (`frob.gates.bug_repro_violations`, BUG002, T-1421) through the exact
+    same channel -- same call shape, same error/warn accounting, same
+    return contract, mirroring `_check_mutation_evidence`'s own T-1427
+    treatment on the land path so a `bug`/`security` ticket cannot close
+    directly any more than it can land without this check having run.
 
     There is no separate worktree/base_ref split on the close path the way
     `land` has (close runs against the CURRENT checkout, not a merge of a
@@ -152,20 +160,22 @@ def _close_mutation_evidence_for_ticket(root: Path, ticket) -> bool | None:  # n
     resolved -- "cannot verify" must never silently become "verified", but
     this check is additive to the pre-existing evidence gates (T-0755's own
     posture), so it degrades to a no-op rather than fail-closed here."""
-    from frob.gates import mutation_evidence_violations
+    from frob.gates import bug_repro_violations, mutation_evidence_violations
     from frob.gitio import current_branch
 
     branch = current_branch(root)
     if branch.is_err:
         _log.warning(
             "ticket close: %s could not resolve current branch, skipping "
-            "TEST016 mutation-evidence check",
+            "TEST016/BUG002 mutation-evidence checks",
             ticket.id,
         )
         return None
-    violations = mutation_evidence_violations(root, ticket, branch.danger_ok)
+    violations = mutation_evidence_violations(
+        root, ticket, branch.danger_ok
+    ) + bug_repro_violations(root, ticket, branch.danger_ok)
     for v in violations:
-        _log.warning("ticket close: %s TEST016 %s", ticket.id, v.message)
+        _log.warning("ticket close: %s %s %s", ticket.id, v.rule, v.message)
     errors = [v for v in violations if v.severity == "error"]
     return not errors if violations else None
 

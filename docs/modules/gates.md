@@ -801,16 +801,22 @@ pass, matching WAIVE001's existing "reason is mandatory" contract for
 every other waiver in this repo. Every waive (with or without a reason) is
 logged at `WARNING`, same visibility class as `--skip-mutation-evidence`.
 
-**Scope note (disclosed cut).** `bug_repro_violations` is built and
-tested (`tests/test_gates_mutation_evidence.py`, including the required
-both-directions regression pair reconstructing the T-1384/T-1391/T-1399
-shape) but, as of T-1421, has NO caller yet -- wiring it into `frob ticket
-land`/`frob ticket close` (mirroring TEST016's own
-`frob.tickets._land`/`frob.app.ticket_runner` callers) touches files
-outside this ticket's declared `scope` (`src/frob/gates/
-_mutation_evidence.py`, `tests/test_gates_mutation_evidence.py`,
-`docs/modules/gates.md` only). See this ticket's Done report for the
-filed follow-up.
+**Wired (T-1427).** `bug_repro_violations` is registered in
+`frob.gates._KNOWN_GATE_RULES` (`src/frob/gates/_waive.py`, its actual
+definition site -- `src/frob/gates/__init__.py` only imports/re-exports
+it) and called from the same two call sites TEST016's own
+`mutation_evidence_violations` uses: `frob.tickets._land.
+_check_mutation_evidence` (the `frob ticket land` precheck) and
+`frob.app.ticket_runner._close_cmd._close_mutation_evidence_for_ticket`
+(the direct `frob ticket close` CLI path, T-0844's precedent). Both call
+sites run TEST016 and BUG002 back to back against the SAME `(root,
+ticket, base_ref)` triple and merge their violations into one
+error/warn accounting and one `--skip-mutation-evidence` escape hatch --
+no parallel mechanism. `tests/unit/test_ticket_close_bug002_t1427.py`
+proves this end to end through the real `frob ticket close` entry point
+(both directions: refused when the designated evidence passes at the
+parent commit, permitted when it fails there), mirroring T-1410's own
+`TestCloseRefusesT1276ShapeEndToEnd` precedent shape.
 
 ### Waive boundary (T-0101, revised T-0289)
 
