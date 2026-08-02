@@ -674,8 +674,9 @@ class TestLargeFile:
         assert "large-file" in categories
 
     # frob:ticket T-0373
+    # frob:ticket T-1424
     # frob:tests src/frob/arch/__init__.py::analyze_project
-    # frob:tests src/frob/app/config.py::load_arch_config
+    # frob:tests src/frob/app/_config_meta.py::load_arch_config
     def test_calibrated_frob_toml_threshold_suppresses_600_line_flag(self, tmp_path):
         """T-0373: a 600-line file is flagged at analyze_project's own
         500-line default but NOT once frob.toml's [arch] max_file_lines=800

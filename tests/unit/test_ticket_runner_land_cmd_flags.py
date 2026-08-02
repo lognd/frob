@@ -30,8 +30,10 @@ def _parse(argv: list[str]) -> argparse.Namespace:
 
 
 class TestAllowCrossTicketFlagParsing:
-    # frob:tests src/frob/_cli_parsers/_ticket.py::_add_ticket_land_parser kind="unit"
+    # frob:tests src/frob/_cli_parsers/_ticket/_progress.py::_add_ticket_land_parser \
+    # kind="unit"
     # frob:ticket T-1369
+    # frob:ticket T-1424
     def test_flag_sets_the_namespace_dest(self) -> None:
         """`--allow-cross-ticket` lands on the dest AppConfig reads."""
         args = _parse(

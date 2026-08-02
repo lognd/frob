@@ -27,8 +27,10 @@ def _run(code: str) -> str:
 
 class TestResolveRunner:
     # frob:ticket T-1343
+    # frob:ticket T-1424
     def test_imports_only_the_requested_subcommands_module(self) -> None:
         # frob:tests src/frob/app/app.py::_resolve_runner kind="unit"
+        # frob:tests src/frob/app/app.py::_import_runner_module kind="unit"
         # frob:waive COV006 reason="T-1343: confirmed exercised -- this assertion \
         # drives _resolve_runner through a subprocess.run([sys.executable, -c, code]) \
         # child process, so the actual call lives inside a string literal executed \

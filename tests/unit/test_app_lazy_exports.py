@@ -25,8 +25,10 @@ def _run(code: str) -> str:
 
 
 class TestLazyRunnerRunAttrs:
+    # frob:ticket T-1424
     def test_accessing_one_alias_does_not_import_the_others(self) -> None:
         # frob:tests src/frob/app/__init__.py::__getattr__ kind="unit"
+        # frob:tests src/frob/app/__init__.py::_import_runner_run_module kind="unit"
         code = (
             "import sys\n"
             "import frob.app as app\n"

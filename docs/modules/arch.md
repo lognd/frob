@@ -1832,17 +1832,17 @@ covered by `tests/unit/test_arch.py::TestArchResultFormat`.
 ## Configuration: `frob.toml` `[arch]` table (T-0373)
 
 <a id="frob-toml-arch-config"></a>
-<!-- frob:describes src/frob/app/config.py::load_arch_config -->
-<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_MAX_FUNCTION_LINES -->
-<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_MAX_CLASS_METHODS -->
-<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_MAX_LOCAL_IMPORTS -->
-<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_MAX_NESTING_DEPTH -->
-<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_MAX_FILE_LINES -->
-<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_LCOM4_MIN_METHODS -->
-<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS -->
-<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS -->
-<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS -->
-<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS -->
+<!-- frob:describes src/frob/app/_config_meta.py::load_arch_config -->
+<!-- frob:describes src/frob/app/_config_meta.py::ARCH_DEFAULT_MAX_FUNCTION_LINES -->
+<!-- frob:describes src/frob/app/_config_meta.py::ARCH_DEFAULT_MAX_CLASS_METHODS -->
+<!-- frob:describes src/frob/app/_config_meta.py::ARCH_DEFAULT_MAX_LOCAL_IMPORTS -->
+<!-- frob:describes src/frob/app/_config_meta.py::ARCH_DEFAULT_MAX_NESTING_DEPTH -->
+<!-- frob:describes src/frob/app/_config_meta.py::ARCH_DEFAULT_MAX_FILE_LINES -->
+<!-- frob:describes src/frob/app/_config_meta.py::ARCH_DEFAULT_LCOM4_MIN_METHODS -->
+<!-- frob:describes src/frob/app/_config_meta.py::ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS -->
+<!-- frob:describes src/frob/app/_config_meta.py::ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS -->
+<!-- frob:describes src/frob/app/_config_meta.py::ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS -->
+<!-- frob:describes src/frob/app/_config_meta.py::ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS -->
 
 `analyze_project`'s keyword defaults above (30/12/8/4/500) are library
 fallbacks for a caller with no `frob.toml` in scope. `frob check`'s ARCH
