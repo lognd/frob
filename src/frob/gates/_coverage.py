@@ -424,10 +424,7 @@ def _scope_known_paths_to_coverage_roots(
     return frozenset(
         p
         for p in known_paths
-        if any(
-            p == r or p.startswith(f"{r}/") or r == ""
-            for r in normalized_roots
-        )
+        if any(p == r or p.startswith(f"{r}/") or r == "" for r in normalized_roots)
     )
 
 

@@ -304,9 +304,7 @@ class TestCacheLockRetry:
     rather than the bare sqlite exception."""
 
     # frob:tests src/frob/graph/cache.py::_with_lock_retry
-    def test_retries_then_succeeds_past_a_transient_lock(
-        self, monkeypatch
-    ) -> None:
+    def test_retries_then_succeeds_past_a_transient_lock(self, monkeypatch) -> None:
         calls = {"n": 0}
 
         def _flaky() -> str:

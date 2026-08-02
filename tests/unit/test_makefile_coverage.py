@@ -699,7 +699,11 @@ class TestSerialRerunHasABoundedDeadline:
             text=True,
             timeout=10,
         )
-        assert result.returncode == 124, (result.returncode, result.stdout, result.stderr)
+        assert result.returncode == 124, (
+            result.returncode,
+            result.stdout,
+            result.stderr,
+        )
 
 
 # frob:ticket T-1397
@@ -738,8 +742,7 @@ class TestCoverageFastUsesAbsoluteSubprocessRc:
         recipe = match.group(0)
         assert "$(MAKE) .frob/coverage-subprocess.rc" in recipe, recipe
         assert (
-            "COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc"
-            in recipe
+            "COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc" in recipe
         ), recipe
 
     # frob:tests tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc.test_rc_file_target_is_shared_not_duplicated  # noqa: E501

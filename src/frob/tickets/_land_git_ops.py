@@ -260,6 +260,39 @@ _COVERAGE_LOCK_PATH = "frob-coverage.lock.json"
 
 
 # frob:ticket T-1434
+def _merged_lock_doc(ours_text: str, theirs_text: str) -> dict | None:
+    """The elementwise-max merge of two coverage-lock JSON texts
+    (`_merge_coverage_lock_conflict`'s pure half): per module, the higher
+    of both sides' `module_line` percentage; `source_sha` from whichever
+    side carries more modules (proxy for the more complete run). `None`
+    when either side fails to parse as the expected
+    `{"source_sha": ..., "module_line": {...}}` shape."""
+    try:
+        ours_doc = json.loads(ours_text)
+        theirs_doc = json.loads(theirs_text)
+    except ValueError:
+        return None
+    ours_lines = ours_doc.get("module_line")
+    theirs_lines = theirs_doc.get("module_line")
+    if not isinstance(ours_lines, dict) or not isinstance(theirs_lines, dict):
+        return None
+    merged_lines: dict[str, float] = dict(ours_lines)
+    for module, theirs_pct in theirs_lines.items():
+        ours_pct = merged_lines.get(module)
+        if ours_pct is None or theirs_pct > ours_pct:
+            merged_lines[module] = theirs_pct
+    source_sha = (
+        ours_doc.get("source_sha")
+        if len(ours_lines) >= len(theirs_lines)
+        else theirs_doc.get("source_sha")
+    )
+    return {
+        "source_sha": source_sha,
+        "module_line": dict(sorted(merged_lines.items())),
+    }
+
+
+# frob:ticket T-1434
 # frob:tests tests/test_ticket_land.py::TestCoverageLockConflictMerges.test_conflicting_lock_merges_to_the_higher_of_both_sides  # noqa: E501
 def _merge_coverage_lock_conflict(cwd: Path, path: str) -> bool:
     """Resolve a genuine merge conflict on `frob-coverage.lock.json` by
@@ -299,29 +332,9 @@ def _merge_coverage_lock_conflict(cwd: Path, path: str) -> bool:
         return False
     if theirs.is_err or theirs.danger_ok.returncode != 0:
         return False
-    try:
-        ours_doc = json.loads(ours.danger_ok.stdout)
-        theirs_doc = json.loads(theirs.danger_ok.stdout)
-    except ValueError:
+    merged_doc = _merged_lock_doc(ours.danger_ok.stdout, theirs.danger_ok.stdout)
+    if merged_doc is None:
         return False
-    ours_lines = ours_doc.get("module_line")
-    theirs_lines = theirs_doc.get("module_line")
-    if not isinstance(ours_lines, dict) or not isinstance(theirs_lines, dict):
-        return False
-    merged_lines: dict[str, float] = dict(ours_lines)
-    for module, theirs_pct in theirs_lines.items():
-        ours_pct = merged_lines.get(module)
-        if ours_pct is None or theirs_pct > ours_pct:
-            merged_lines[module] = theirs_pct
-    source_sha = (
-        ours_doc.get("source_sha")
-        if len(ours_lines) >= len(theirs_lines)
-        else theirs_doc.get("source_sha")
-    )
-    merged_doc = {
-        "source_sha": source_sha,
-        "module_line": dict(sorted(merged_lines.items())),
-    }
     full_path = cwd / path
     try:
         full_path.write_text(

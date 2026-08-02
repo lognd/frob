@@ -344,9 +344,7 @@ def _write_archived_and_active(
             len(overlap),
             sorted(overlap),
         )
-    newly_archived = {
-        tid: t for tid, t in to_archive.items() if tid not in overlap
-    }
+    newly_archived = {tid: t for tid, t in to_archive.items() if tid not in overlap}
 
     if newly_archived:
         archive_write = write_archive(root, {**archived, **newly_archived})
@@ -359,8 +357,7 @@ def _write_archived_and_active(
         return Err(active_write.danger_err)
 
     _log.info(
-        "tickets: archived %d ticket(s) (%d already-archived duplicate(s) "
-        "collapsed)",
+        "tickets: archived %d ticket(s) (%d already-archived duplicate(s) collapsed)",
         len(newly_archived),
         len(overlap),
     )

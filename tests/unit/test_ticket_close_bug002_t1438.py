@@ -14,6 +14,12 @@ parent". This test proves the fix by checking what ref actually reaches
 merge-base commit (main's tip, the ticket's true starting point), not the
 feature branch's own name/tip (which would equal HEAD)."""
 
+# frob:waive OPAQUE001 reason="T-1438: every setattr(...) here is pytest monkeypatch \
+# with a LITERAL dotted-path string target (frob.gates.mutation_evidence_violations / \
+# bug_repro_violations), the standard test seam this suite already uses -- same \
+# disposition as test_ticket_close_bug002_t1427.py's file-level waiver; the mutated \
+# sites are restored by monkeypatch teardown and never escape the test process"
+
 from __future__ import annotations
 
 import subprocess
@@ -101,9 +107,7 @@ class TestCloseMutationEvidenceBaseRef:
         monkeypatch.setattr(
             "frob.gates.mutation_evidence_violations", _fake_mutation_violations
         )
-        monkeypatch.setattr(
-            "frob.gates.bug_repro_violations", _fake_bug_violations
-        )
+        monkeypatch.setattr("frob.gates.bug_repro_violations", _fake_bug_violations)
 
         from frob.app import ticket_runner
 

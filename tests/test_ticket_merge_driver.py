@@ -487,9 +487,7 @@ class TestMergeDriverViaRealGit:
         merge_head = _run(["git", "rev-parse", "MERGE_HEAD"], repo).stdout.strip()
         assert merge_head == main_tip
 
-        base_sha = _run(
-            ["git", "merge-base", "feature", "main"], repo
-        ).stdout.strip()
+        base_sha = _run(["git", "merge-base", "feature", "main"], repo).stdout.strip()
         ours_text = _run(["git", "show", "feature:tickets.md"], repo).stdout
         theirs_text = _run(["git", "show", f"{main_tip}:tickets.md"], repo).stdout
         base_text = _run(["git", "show", f"{base_sha}:tickets.md"], repo).stdout

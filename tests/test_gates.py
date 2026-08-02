@@ -2611,8 +2611,7 @@ class TestWireGate:
             for v in violations
         )
         assert any(
-            v.rule == "WIRE001" and "brand_new_helper" in v.message
-            for v in violations
+            v.rule == "WIRE001" and "brand_new_helper" in v.message for v in violations
         )
 
     # frob:ticket T-1430
@@ -8151,9 +8150,7 @@ class TestCoverageLoad:
             json.dumps(
                 {
                     "source_sha": "priorsha",
-                    "module_line": {
-                        f"src/frob/pkg/m{i}.py": 90.0 for i in range(24)
-                    },
+                    "module_line": {f"src/frob/pkg/m{i}.py": 90.0 for i in range(24)},
                 }
             )
         )
