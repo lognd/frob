@@ -3119,7 +3119,7 @@ T-1058 (worktree cut from stale origin/main -- a documented silent-revert cause)
 ```yaml
 id: T-1345
 title: 'Merge queue: agents enqueue verified branches, one drainer merges onto main'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-31'
