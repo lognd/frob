@@ -192,10 +192,10 @@ class TestSuppress001StringLiteralSafety:
         # frob:tests \
         # tests/test_gates_fix_engine.py::TestSuppress001StringLiteralSafety.test_hash_\
         # suppression_inside_string_literal_is_not_a_comment kind="unit"
-        # The marker is assembled rather than written literally. A bare
-        # suppression token in source -- in a string, a comment, or a
-        # directive line FMT001 happened to wrap mid-token -- trips ruff's
-        # own scanner, which then warns the directive is malformed. Building
+        # The marker is assembled rather than written out. A bare
+        # suppression marker in source -- inside a string, a comment, or a
+        # directive line FMT001 wrapped mid-word -- trips ruff's own
+        # scanner, which then warns the directive is malformed. Assembling
         # it keeps the runtime string byte-identical with nothing to misread.
         marker = "# " + "noqa: E501"
         line = f'x = "{marker} lives inside this string"  # type: ignore[name-defined]'
