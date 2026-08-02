@@ -75,6 +75,27 @@ class _DeployDecl(BaseModel):
     rollback_budget: Quantity
 
 
+# frob:doc docs/strata/surface.md#may-scope
+# frob:ticket T-1440
+class MayGrantDecl(BaseModel):
+    """A parsed `may "ATOM" [via "GLOB"[, "GLOB"...]]` clause (T-1440):
+    pairs each declared capability atom with the sub-glob surface it is
+    actually scoped to, narrowing the pre-T-1440 whole-node grant down to
+    the files that need it. `via=()` (the parser's default when the
+    `via` trailer is omitted) means "no scoping" -- the grant still
+    covers the whole node, preserving pre-T-1440 semantics for migration
+    (docs/strata/surface.md#may-scope). Carried ALONGSIDE the flat
+    `NodeDecl.may`/`StoreDecl.may` atom tuple (unchanged) rather than
+    replacing it, so the many existing kind-only `may` readers (seccomp/
+    syscall export, threat discharge, lint, ...) need no change; only the
+    per-file SYS100 join (`_effects.py`) reads this."""
+
+    model_config = ConfigDict(frozen=True)
+
+    atom: str
+    via: tuple[str, ...] = ()
+
+
 # frob:doc docs/strata/surface.md#parser
 class WaiverDecl(BaseModel):
     """A parsed `waive RULE reason="..." [ticket="T-XXXX"]` clause inside a
@@ -165,6 +186,10 @@ class NodeDecl(BaseModel):
     code: tuple[str, ...] = ()
     # `may "CAPABILITY"` atoms, T-0132; elaborated straight to Node.may
     may: tuple[str, ...] = ()
+    # `may "CAPABILITY" [via "GLOB"...]` grants, T-1440; elaborated
+    # straight to Node.may_grants -- see `MayGrantDecl` for why this is a
+    # parallel field rather than a `may` replacement.
+    may_grants: tuple[MayGrantDecl, ...] = ()
     # `on deploy { ... }`, T-0136; elaborated straight to Node.deploy
     deploy: _DeployDecl | None = None
     # `carries "PII_TAG"+`, T-0154; elaborated to `pii=<tag>` attrs
@@ -482,6 +507,9 @@ class StoreDecl(BaseModel):
     # `may "CAPABILITY"`, T-0166; lands directly on the elaborated `Node`'s
     # `may` field, same as `node`'s `may` clause (T-0132).
     may: tuple[str, ...] = ()
+    # `may "CAPABILITY" [via "GLOB"...]`, T-1440; same parallel-field
+    # convention as `NodeDecl.may_grants`.
+    may_grants: tuple[MayGrantDecl, ...] = ()
     # `waive RULE reason="..." [ticket="..."]`+, T-0250; elaborated straight
     # to Node.waives, same direct-mapping convention `node`'s T-0174 waive
     # clause uses -- a store is a node too (docs/strata/surface.md

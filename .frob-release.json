@@ -1201,6 +1201,7 @@
     "src/frob/strata/_ast.py::ForbidCall": "b7e47f754994f3e1fcb112d661506f9a7761974d3e79f7dac9f6e485143cd4f7",
     "src/frob/strata/_ast.py::ForbidImport": "bc9c5796618b390ae043cc1756bc63a7c97ae2b23ec379c3d5c0cbc5d07a2fe4",
     "src/frob/strata/_ast.py::KrbTrustDecl": "9b2bdd84a30d56d992dc22706dc1f37956103bf601a8dc7c0b3a3934c6ec2406",
+    "src/frob/strata/_ast.py::MayGrantDecl": "2f3dbf2590639db702f5e962013ddc3d1eb88f72bdb49e4dcdac7c5eb3ca31d0",
     "src/frob/strata/_ast.py::Mediate": "986c55c1494c883334819b1bf7e591c9c697fa12f69a269f20a89b6bf7f1193d",
     "src/frob/strata/_ast.py::Module": "24df940d4e0334bb4564141eae66f0e8b282d4f8d4fc81a1c237010c4154312c",
     "src/frob/strata/_ast.py::NodeDecl": "ef9cca606190e4a14db03829599052eafbd51e2668ff078a29ad155cbf41a058",
@@ -1430,6 +1431,7 @@
     "src/frob/strata/_models.py::Lattice": "e92c5f4ee39cf0097120167a95530eb0051706d5c7770fbaf4a404e57004d2ad",
     "src/frob/strata/_models.py::Lattice.elements": "c6b45ab896191116b867c181262e63264bf0cec152cae4bb9595ecb318732f61",
     "src/frob/strata/_models.py::Lattice.leq": "001d6e2bf8a296b9a4add6a5311565ba3d496593023f2e6955629e21ad44a2f0",
+    "src/frob/strata/_models.py::MayGrant": "6f1c7c7f3d0517025ad4fbb9e325602b321181c6da72f56bf2f4c1fd6364d8fc",
     "src/frob/strata/_models.py::Metric": "c1aca83d20e22ecf9ec230afeb5b71ba5e3714a22d8f3418c98a70cc3b95722b",
     "src/frob/strata/_models.py::NoFlow": "c9052cbaccd572ffb691445880fdae3f32a66f06f0f0ec34e08ffddab8f6b350",
     "src/frob/strata/_models.py::Node": "ceddf4960b1f3992de36e41167b8e78876dfd6b1eeaa795185318d5c2dbfa513",
@@ -1953,5 +1955,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.311.0"
+  "version": "0.312.0"
 }

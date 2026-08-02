@@ -41,6 +41,14 @@ impl Parser {
         let mut observe: Option<serde_json::Value> = None;
         let mut code: Vec<String> = Vec::new();
         let mut may: Vec<String> = Vec::new();
+        // T-1440: per-grant `via GLOB[, GLOB...]` surface, carried alongside
+        // the flat `may` atom list (kept for back-compat consumers that only
+        // care about kinds, e.g. seccomp/syscall export) so a SYS100-style
+        // per-file join can be built without touching every existing `may`
+        // reader. A via-less `may` still lands here with `via: []`, which
+        // Python-side join logic (docs/strata/surface.md#may-scope) treats
+        // as "whole node" -- unscoped, matching pre-T-1440 semantics exactly.
+        let mut may_grants: Vec<serde_json::Value> = Vec::new();
         let mut deploy: Option<serde_json::Value> = None;
         let mut carries: Vec<String> = Vec::new();
         let mut is_managed = false;
@@ -370,8 +378,28 @@ impl Parser {
                     // and `:`, neither a valid ident char. Repeatable via
                     // multiple `may "...";` statements; lands directly in
                     // `Node.may` (no attr encoding needed, unlike `code`).
+                    //
+                    // T-1440: an optional `via GLOB[, GLOB...]` trailer
+                    // scopes this ONE grant down to a subset of the node's
+                    // own `code` glob(s) instead of blessing the whole node
+                    // -- one or more STRING-quoted globs, comma-separated
+                    // (same STRING choice as `code`, globs carry `/`/`*`).
+                    // Omitting `via` entirely keeps the pre-T-1440 meaning
+                    // (whole-node grant) for migration; that is a parser-
+                    // level default (`via: []`), not a distinct keyword.
                     self.advance();
-                    may.push(self.expect_string("may capability")?);
+                    let atom = self.expect_string("may capability")?;
+                    let mut via: Vec<String> = Vec::new();
+                    if self.at_keyword("via") {
+                        self.advance();
+                        via.push(self.expect_string("may via glob")?);
+                        while self.at_symbol(',') {
+                            self.advance();
+                            via.push(self.expect_string("may via glob")?);
+                        }
+                    }
+                    may.push(atom.clone());
+                    may_grants.push(json!({"atom": atom, "via": via}));
                 } else if self.at_keyword("carries") {
                     // T-0154: `carries PII_TAG+` -- one or more STRING-
                     // quoted PII tags (e.g. "identifier.email"), the SAME
@@ -506,6 +534,7 @@ impl Parser {
             "observe": observe,
             "code": code,
             "may": may,
+            "may_grants": may_grants,
             "deploy": deploy,
             "carries": carries,
             "is_managed": is_managed,

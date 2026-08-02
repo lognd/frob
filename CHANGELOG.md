@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.312.0] - unreleased
+
+- T-1440: strata: scoped may clauses -- a capability grant must name its surface, not bless the whole node
+
 ## [0.311.0] - unreleased
 
 - T-1446: T-1420 delivered portion 3

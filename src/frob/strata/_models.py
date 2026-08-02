@@ -265,6 +265,26 @@ class DeployContract(BaseModel):
     rollback_budget: Quantity
 
 
+# frob:doc docs/strata/surface.md#may-scope
+# frob:ticket T-1440
+class MayGrant(BaseModel):
+    """One `may "ATOM" [via "GLOB"[, "GLOB"...]]` declaration on a node
+    (T-1440): `atom` is the same capability-atom string `Node.may` already
+    carries flat; `via` names the sub-glob(s) of the node's own `code`
+    binding this ONE grant actually covers. `via=()` means unscoped --
+    the pre-T-1440 whole-node meaning, kept for migration
+    (docs/strata/surface.md#may-scope). A capability kind can be granted
+    by more than one `MayGrant` (e.g. one scoped, one via-less on the same
+    kind); the per-file join (`_effects.py::_declared_kinds_for_file`)
+    takes the union of every grant whose `via` matches the file, or that
+    is via-less, for a given node."""
+
+    model_config = ConfigDict(frozen=True)
+
+    atom: str
+    via: tuple[str, ...] = ()
+
+
 # frob:doc docs/strata/waive.md#surface-syntax
 class Waiver(BaseModel):
     """One `waive RULE reason="..." [ticket="..."]` declared on a node
@@ -292,6 +312,11 @@ class Node(BaseModel):
     trust: str
     clearance: str = "Secret"  # max data label allowed to rest here
     may: tuple[str, ...] = ()  # capability atoms, e.g. "net.out:stripe.com"
+    # T-1440: per-grant `via` glob scoping, parallel to `may` (see
+    # `MayGrant`'s docstring for why this is not a `may` replacement). A
+    # via-less grant here still means "whole node", matching `may`'s
+    # pre-T-1440 semantics.
+    may_grants: tuple[MayGrant, ...] = ()
     attrs: tuple[str, ...] = ()  # opaque node attributes, e.g. "idempotent"
     capacity: Capacity | None = None
     # `users NUMBER` / `rate NUMBER UNIT`, T-0702 (docs/strata/kernel.md

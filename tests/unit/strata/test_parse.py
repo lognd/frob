@@ -89,6 +89,49 @@ class TestParseModule:
         assert result.danger_err is StrataError.ParseFailed
 
     # frob:tests src/frob/strata/_parse.py::parse_module kind="unit"
+    def test_may_via_scopes_a_grant_to_sub_globs(self):
+        # T-1440: `may ATOM via GLOB[, GLOB...]` -- one or more comma-
+        # separated STRING globs scope this grant below the node's own
+        # `code` binding; the flat `may` tuple is unchanged for kind-only
+        # readers, `may_grants` carries the (atom, via) pairing.
+        text = """
+        module m
+        node api : trusted {
+            code "src/app/**";
+            may "net.out" via "src/app/net.py", "src/app/client.py";
+            may "fs.write";
+        }
+        """
+        module = parse_module(text).danger_ok
+        node = module.nodes[0]
+        assert node.may == ("net.out", "fs.write")
+        assert len(node.may_grants) == 2
+        assert node.may_grants[0].atom == "net.out"
+        assert node.may_grants[0].via == ("src/app/net.py", "src/app/client.py")
+        # a via-less `may` still parses -- `via` defaults to `()`, the
+        # pre-T-1440 whole-node meaning kept for migration.
+        assert node.may_grants[1].atom == "fs.write"
+        assert node.may_grants[1].via == ()
+
+    # frob:tests src/frob/strata/_parse.py::parse_module kind="unit"
+    def test_may_via_also_parses_on_store(self):
+        # T-1440: `store` has its own `may` clause (grammar_infra.rs,
+        # T-0166); `via` must round-trip there too, not just on `node`.
+        text = """
+        module m
+        store db : trusted {
+            code "src/db/**";
+            may "fs.write" via "src/db/writer.py";
+        }
+        """
+        module = parse_module(text).danger_ok
+        store = module.stores[0]
+        assert store.may == ("fs.write",)
+        assert len(store.may_grants) == 1
+        assert store.may_grants[0].atom == "fs.write"
+        assert store.may_grants[0].via == ("src/db/writer.py",)
+
+    # frob:tests src/frob/strata/_parse.py::parse_module kind="unit"
     def test_parses_flow_with_all_properties_and_units(self):
         text = """
         module m

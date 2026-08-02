@@ -1078,6 +1078,7 @@ node stratamod : trusted {
     attr interface=DEFAULT_SECURITY_VIEWS;
     attr interface=DELIVERY_SEMANTICS;
     attr interface=DELIVERY_SEMANTICS_RULES;
+    attr interface=DETECTABLE_KINDS;
     attr interface=DISTRIBUTED_TXN_RULES;
     attr interface=DeliverySemanticsReport;
     attr interface=DeliverySemanticsViolation;
@@ -1087,13 +1088,7 @@ node stratamod : trusted {
     attr interface=DesignLoadError;
     attr interface=DistributedTxnReport;
     attr interface=DistributedTxnViolation;
-    attr interface=DETECTABLE_KINDS;
     attr interface=EXPORT_DETECTABLE_KINDS;
-    attr interface=MutationAuditReport;
-    attr interface=MutationFinding;
-    attr interface=SecondDetectorGap;
-    attr interface=UndetectableCapabilityKind;
-    attr interface=run_may_mutation_audit;
     attr interface=EXTRACTION_SOUNDNESS;
     attr interface=EffectPhase;
     attr interface=EffectReport;
@@ -1143,6 +1138,8 @@ node stratamod : trusted {
     attr interface=MARKER_PREFIX;
     attr interface=MESSAGE_SCHEMA_RULES;
     attr interface=MULTI_INSTANCE_WAIVER_FAMILIES;
+    attr interface=MayGrant;
+    attr interface=MayGrantDecl;
     attr interface=Mediate;
     attr interface=MessageSchemaReport;
     attr interface=MessageSchemaViolation;
@@ -1151,6 +1148,8 @@ node stratamod : trusted {
     attr interface=ModeConformanceViolation;
     attr interface=ModeObservation;
     attr interface=Module;
+    attr interface=MutationAuditReport;
+    attr interface=MutationFinding;
     attr interface=NATIVE_SOURCE_DIRS;
     attr interface=NativeAuditOutcome;
     attr interface=NoFlow;
@@ -1286,6 +1285,7 @@ node stratamod : trusted {
     attr interface=ScenarioDecl;
     attr interface=ScenarioResult;
     attr interface=ScopeSpec;
+    attr interface=SecondDetectorGap;
     attr interface=SecretExpansion;
     attr interface=SecretSpec;
     attr interface=SelfConformReport;
@@ -1319,6 +1319,7 @@ node stratamod : trusted {
     attr interface=TxnBoundaryReport;
     attr interface=TxnBoundaryViolation;
     attr interface=UNBOUND_REQUIRED_KINDS;
+    attr interface=UndetectableCapabilityKind;
     attr interface=VIEWS;
     attr interface=Verdict;
     attr interface=WaivedFinding;
@@ -1444,6 +1445,7 @@ node stratamod : trusted {
     attr interface=render_report;
     attr interface=require_analyzable;
     attr interface=resource_contention_violations;
+    attr interface=run_may_mutation_audit;
     attr interface=run_native_sys_audit;
     attr interface=scan_text_for_fingerprints;
     attr interface=stale_native_warning;
@@ -4300,6 +4302,7 @@ node testsuite : trusted {
     attr interface=TestScopeResolution;
     attr interface=TestScopeTestGaps;
     attr interface=TestScopeUnboundPreflightBeforeMerge;
+    attr interface=TestScopedMayViaConformance;
     attr interface=TestSecretElaboration;
     attr interface=TestSecretLabelViolations;
     attr interface=TestSecretsExhaustiveness;

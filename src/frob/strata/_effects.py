@@ -46,6 +46,7 @@ T-0695's `_concurrency.py` docstring reword.
 
 from __future__ import annotations
 
+import fnmatch
 from datetime import date
 from pathlib import Path
 
@@ -175,6 +176,41 @@ def _declared_kinds(node: Node) -> frozenset[str]:
     declared: set[str] = set()
     for atom in node.may:
         kind = canonical_declared_kind(_may_kind(atom))
+        declared |= expand_declared_kind(kind)
+    return frozenset(declared)
+
+
+def _via_matches(rel: str, via: tuple[str, ...]) -> bool:
+    """`True` if `rel` (a binding-relative file path) matches at least one
+    glob in `via` (T-1440), same `fnmatch.fnmatch` matcher `_code_binding.py`
+    already uses for a node's own `code` globs -- one shared matching
+    convention across both the node-level and grant-level glob surfaces."""
+    return any(fnmatch.fnmatch(rel, glob) for glob in via)
+
+
+# frob:doc docs/strata/surface.md#may-scope
+# frob:ticket T-1440
+# frob:tests \
+# tests/unit/strata/test_effects.py::TestScopedMayViaConformance.test_observation_outsi\
+# de_via_surface_is_a_violation kind="unit"
+def _declared_kinds_for_file(node: Node, rel: str) -> frozenset[str]:
+    """The precise capability kinds `node` declares that actually COVER
+    `rel` (T-1440's per-file SYS100 join): a grant with no `via` (the
+    pre-T-1440 shape, and the shape every legacy-constructed `Node` with an
+    empty `may_grants` still has) covers every file, exactly like
+    `_declared_kinds`; a grant WITH `via` covers only a file matching one of
+    its globs. `node.may_grants` empty entirely (a `Node` built directly,
+    bypassing the parser -- most unit-test fixtures) falls back to
+    `_declared_kinds`'s whole-node join unconditionally, so this is a
+    strict narrowing of that join, never a behavior change for anything
+    that predates T-1440."""
+    if not node.may_grants:
+        return _declared_kinds(node)
+    declared: set[str] = set()
+    for grant in node.may_grants:
+        if grant.via and not _via_matches(rel, grant.via):
+            continue
+        kind = canonical_declared_kind(_may_kind(grant.atom))
         declared |= expand_declared_kind(kind)
     return frozenset(declared)
 
@@ -342,7 +378,11 @@ def extract_effects(binding: CodeBinding, root: Path) -> tuple[ObservedEffect, .
 def _file_capability_violations(
     rel: str, owner: str, kinds: frozenset[str], root: Path
 ) -> list[CapabilityViolation]:
-    """Every undeclared-capability effect inside one bound file `rel`."""
+    """Every undeclared-capability effect inside one bound file `rel`,
+    against the ALREADY file-scoped `kinds` set the caller computed
+    (T-1440's `_declared_kinds_for_file`) -- this function itself stays
+    kind-only and `via`-unaware, matching every other join in this
+    module."""
     found: list[CapabilityViolation] = []
     for effect in _line_effects(root / rel, root):
         if effect.kind in kinds:
@@ -368,24 +408,35 @@ def _file_capability_violations(
 
 
 # frob:doc docs/strata/surface.md#code-binding-tier-2-v0-implementation
+# frob:doc docs/strata/surface.md#may-scope
 def check_capability_conformance(
     model: KernelModel, binding: CodeBinding, root: Path
 ) -> EffectReport:
     """Every observed net/fs/exec effect in `binding`'s bound code whose
-    owning node declares no `may` atom of the matching capability kind --
-    "undeclared capability effect" (T-0079), deny-by-default exactly like
-    `check_import_conformance`'s undeclared-import join."""
-    declared: dict[str, frozenset[str]] = {
-        node.id: _declared_kinds(node) for node in model.nodes
-    }
+    owning node declares no `may` grant covering BOTH the matching
+    capability kind AND that specific file -- "undeclared capability
+    effect" (T-0079), deny-by-default exactly like
+    `check_import_conformance`'s undeclared-import join.
+
+    T-1440: the join is now per-FILE, not per-node. A node's own kind-only
+    declared set (`_declared_kinds`, still used for `node_may_kinds`'s
+    seccomp/syscall export and every other kind-only reader) is no longer
+    what this join tests against -- `_declared_kinds_for_file` narrows it
+    per grant's `via` glob(s), so an observation in a file outside every
+    `via` surface stays a violation even though the node nominally holds
+    the capability elsewhere (acceptance clause 0), while a via-less grant
+    (or a node with no `may_grants` at all, the legacy/direct-construction
+    shape) still covers every file exactly as before (acceptance clause
+    1)."""
+    nodes_by_id: dict[str, Node] = {node.id: node for node in model.nodes}
     violations: list[CapabilityViolation] = []
     for rel in _sorted_owned_files(binding):
         owner = binding.owner[rel]
-        violations.extend(
-            _file_capability_violations(
-                rel, owner, declared.get(owner, frozenset()), root
-            )
+        node = nodes_by_id.get(owner)
+        kinds = (
+            frozenset[str]() if node is None else _declared_kinds_for_file(node, rel)
         )
+        violations.extend(_file_capability_violations(rel, owner, kinds, root))
     return EffectReport(violations=tuple(violations))
 
 

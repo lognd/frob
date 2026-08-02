@@ -66,7 +66,7 @@ node_prop   := "clearance" IDENT | "attr" ATTRVAL | "residence" IDENT
              | "capacity" quantity "replicas" INT ".." INT
              | "skew" "zipf" NUMBER | "errors_total"
              | "panics_contained_by" IDENT | "observe" observe_block
-             | "code" STRING+ | "may" STRING | "on" "deploy" deploy_block
+             | "code" STRING+ | "may" STRING ("via" STRING ("," STRING)*)? | "on" "deploy" deploy_block
              | "carries" STRING+ | "managed" | "waive" waive_clause
 waive_clause  := STRING "reason" STRING ("ticket" STRING)?
 deploy_block  := "{" deploy_prop (";" deploy_prop)* "}"
@@ -143,6 +143,63 @@ a store with `code`/`may` participates in tier-2 import conformance
 THREAT003 weakness obligations (`_threat.py::check_discharge_completeness`)
 exactly the way a code-modeled node's would -- no new join, no new
 exemption.
+
+<a id="may-scope"></a>
+
+### `may` scope (`via`, T-1440)
+
+A bare `may "ATOM"` grants the capability to the node's WHOLE `code`
+binding -- every file the node owns may exercise it. That reproduces the
+exact anti-pattern strata exists to kill on any broad node (a `testsuite`
+node binding `tests/**`, say): one `may "exec"` on the node lets EVERY
+file under it exec, not just the one test helper that actually needs to.
+T-1440 adds an optional per-grant scoping trailer:
+
+```
+may_clause := "may" STRING ("via" STRING ("," STRING)*)?
+```
+
+`via GLOB[, GLOB...]` names one or more sub-globs of the node's own
+`code` binding that THIS grant covers; a file the node owns but that
+none of the grant's `via` globs match does NOT get the capability from
+this grant (`SYS100`'s join is per-FILE, not per-node, as of T-1440 --
+`_effects.py::_declared_kinds_for_file`). Omitting `via` entirely keeps
+the pre-T-1440 whole-node meaning -- this is deliberate: it lets a
+mixed repo migrate node by node, grant by grant, rather than a flag day.
+Two grants of the same atom (one scoped, one not) may coexist on one
+node; the per-file join takes the union of every grant that either
+matches the file's `via` or carries no `via` at all.
+
+Parsed onto `NodeDecl.may_grants`/`StoreDecl.may_grants`
+(`MayGrantDecl`, `_ast.py`) ALONGSIDE the pre-existing flat
+`may: tuple[str, ...]` atom tuple -- `may` is unchanged and still the
+right thing to read for anything that only cares about capability KIND
+(seccomp/syscall export `_export.py::node_allowed_syscalls`, THREAT002/
+THREAT003 discharge, `_lint.py`'s risky-kind advisory, ...); only the
+per-file SYS100 join (`_effects.py::check_capability_conformance`) reads
+`may_grants`. Elaborates straight onto `Node.may_grants`
+(`MayGrant`, `_models.py`) the same direct-mapping convention `may`
+itself uses.
+
+**Not yet built (deliberately deferred, T-1440's own scope cut):**
+per-`via`-surface SYS101 staleness (a grant scoped to file A that only
+file B ever exercised should read as stale on A specifically, not
+merely "this kind is used somewhere on the node"); an advisory finding
+for a via-less `may` on a node whose `code` glob binds more than a
+threshold file count, escalatable to a hard error via a
+`[strata] require_may_scope` config knob; and argument-level scoping
+(e.g. `may "env.read" of "FROB_*"`, narrowing WHICH env vars/paths/hosts
+a grant covers, not just which files) as a natural follow-up once `via`
+itself has real usage to learn from. Each is its own follow-up ticket
+(T-1440's children) rather than bundled into the grammar/join landing --
+see `tickets.md` for their ids.
+
+**Migration note:** this repo's own `design/frob.strata` is deliberately
+NOT migrated to `via` by T-1440 itself -- every existing grant stays
+via-less (whole-node) so the repo stays green throughout; narrowing the
+real grants down to their actual observing files is its own follow-up
+ticket, using the mutation-audit scanner's existing per-file observation
+data (`_mutation_audit.py`) to find the real surface per kind.
 
 **`errors_total`/`panics_contained_by`/`observe`/`on deploy` on `store`
 (T-0247):** the identical T-0070/T-0136 clauses `node` has, now also

@@ -61,6 +61,10 @@ impl Parser {
         let mut is_managed = false;
         let mut code: Vec<String> = Vec::new();
         let mut may: Vec<String> = Vec::new();
+        // T-1440: per-grant `via GLOB[, GLOB...]` scoping, same shape as
+        // `parse_node`'s (`grammar_node.rs`) -- see the comment there for the
+        // full rationale.
+        let mut may_grants: Vec<serde_json::Value> = Vec::new();
         let mut waives: Vec<serde_json::Value> = Vec::new();
         let mut runs_as: Option<String> = None;
         let mut is_unit = false;
@@ -218,8 +222,21 @@ impl Parser {
                     // T-0166: `may CAPABILITY` -- same STRING-quoted
                     // capability atom shape T-0132 gave `node`. Lands
                     // directly in `Node.may` on elaboration, same as node.
+                    // T-1440: optional `via GLOB[, GLOB...]` trailer, same
+                    // shape/rationale as `parse_node` (`grammar_node.rs`).
                     self.advance();
-                    may.push(self.expect_string("may capability")?);
+                    let atom = self.expect_string("may capability")?;
+                    let mut via: Vec<String> = Vec::new();
+                    if self.at_keyword("via") {
+                        self.advance();
+                        via.push(self.expect_string("may via glob")?);
+                        while self.at_symbol(',') {
+                            self.advance();
+                            via.push(self.expect_string("may via glob")?);
+                        }
+                    }
+                    may.push(atom.clone());
+                    may_grants.push(json!({"atom": atom, "via": via}));
                 } else if self.at_keyword("carries") {
                     // T-0154: same `carries PII_TAG+` shape as `node`
                     // (parse_node) -- a store is the most common PII
@@ -360,6 +377,7 @@ impl Parser {
             "is_managed": is_managed,
             "code": code,
             "may": may,
+            "may_grants": may_grants,
             "waives": waives,
             "runs_as": runs_as,
             "is_unit": is_unit,

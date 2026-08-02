@@ -10,6 +10,7 @@ from pathlib import Path
 
 from frob.strata import (
     KernelModel,
+    MayGrant,
     Node,
     bind_code,
     check_capability_conformance,
@@ -144,6 +145,123 @@ class TestCheckCapabilityConformance:
                     trust="trusted",
                     attrs=("code=api/**",),
                     may=("fs.write:/tmp",),
+                ),
+            )
+        )
+        binding = bind_code(model, tmp_path).danger_ok
+        report = check_capability_conformance(model, binding, tmp_path)
+        assert report.violations == ()
+
+
+# frob:doc docs/strata/surface.md#may-scope
+class TestScopedMayViaConformance:
+    """T-1440: per-file SYS100 join -- a `may` grant with a `via` glob
+    covers only the files it names, not the whole node."""
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_observation_outside_via_surface_is_a_violation(self, tmp_path: Path):
+        # acceptance clause 0: a node with `may X via glob` still fires
+        # SYS100 for a file the glob does not cover, even though the node
+        # nominally holds capability X.
+        _write(tmp_path, "api/net.py", "requests.get('https://x')\n")
+        _write(tmp_path, "api/other.py", "requests.get('https://x')\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="Api",
+                    trust="trusted",
+                    attrs=("code=api/**",),
+                    may=("net.out",),
+                    may_grants=(MayGrant(atom="net.out", via=("api/net.py",)),),
+                ),
+            )
+        )
+        binding = bind_code(model, tmp_path).danger_ok
+        report = check_capability_conformance(model, binding, tmp_path)
+        assert [v.file for v in report.violations] == ["api/other.py"]
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_observation_inside_every_via_surface_is_clean(self, tmp_path: Path):
+        # acceptance clause 1: only files inside the via glob observe the
+        # kind -> the audit is green.
+        _write(tmp_path, "api/net.py", "requests.get('https://x')\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="Api",
+                    trust="trusted",
+                    attrs=("code=api/**",),
+                    may=("net.out",),
+                    may_grants=(MayGrant(atom="net.out", via=("api/net.py",)),),
+                ),
+            )
+        )
+        binding = bind_code(model, tmp_path).danger_ok
+        report = check_capability_conformance(model, binding, tmp_path)
+        assert report.violations == ()
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_via_less_grant_still_covers_the_whole_node(self, tmp_path: Path):
+        # migration semantics: a via-less `may` (via=()) keeps pre-T-1440
+        # whole-node meaning.
+        _write(tmp_path, "api/anywhere.py", "requests.get('https://x')\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="Api",
+                    trust="trusted",
+                    attrs=("code=api/**",),
+                    may=("net.out",),
+                    may_grants=(MayGrant(atom="net.out", via=()),),
+                ),
+            )
+        )
+        binding = bind_code(model, tmp_path).danger_ok
+        report = check_capability_conformance(model, binding, tmp_path)
+        assert report.violations == ()
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_legacy_node_with_no_may_grants_falls_back_to_whole_node(
+        self, tmp_path: Path
+    ):
+        # a `Node` built directly (no `may_grants` populated at all, the
+        # shape every pre-T-1440 fixture/caller still uses) must behave
+        # exactly as before -- kind-only, whole-node join.
+        _write(tmp_path, "api/anywhere.py", "requests.get('https://x')\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="Api",
+                    trust="trusted",
+                    attrs=("code=api/**",),
+                    may=("net.out",),
+                ),
+            )
+        )
+        binding = bind_code(model, tmp_path).danger_ok
+        report = check_capability_conformance(model, binding, tmp_path)
+        assert report.violations == ()
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_scoped_and_via_less_grants_of_different_kinds_compose(
+        self, tmp_path: Path
+    ):
+        # one scoped grant + one via-less grant of a DIFFERENT kind on the
+        # same node: the scoped grant's file-level narrowing must not
+        # leak into (or shrink) the via-less grant's whole-node coverage.
+        _write(tmp_path, "api/net.py", "requests.get('https://x')\n")
+        _write(tmp_path, "api/writer.py", "open('f').write('x')\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="Api",
+                    trust="trusted",
+                    attrs=("code=api/**",),
+                    may=("net.out", "fs.write"),
+                    may_grants=(
+                        MayGrant(atom="net.out", via=("api/net.py",)),
+                        MayGrant(atom="fs.write", via=()),
+                    ),
                 ),
             )
         )
