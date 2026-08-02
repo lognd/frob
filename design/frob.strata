@@ -813,6 +813,7 @@ node gates : trusted {
     attr interface=affect_drift_gate;
     attr interface=apply_tier_a_fixes;
     attr interface=arch_gate;
+    attr interface=bug_repro_violations;
     attr interface=canonicalize_text;
     attr interface=clear_autofix_manifest;
     attr interface=clear_ratchet_entry;
@@ -3106,6 +3107,10 @@ node testsuite : trusted {
     attr interface=TestBreadthPerf;
     attr interface=TestBriefCli;
     attr interface=TestBriefTicket;
+    attr interface=TestBug002Waiver;
+    attr interface=TestBugRepro;
+    attr interface=TestBugReproAtRef;
+    attr interface=TestBugReproViolations;
     attr interface=TestBuildClassToFile;
     attr interface=TestBuildContainmentReport;
     attr interface=TestBuildFacts;
@@ -3363,6 +3368,7 @@ node testsuite : trusted {
     attr interface=TestDerivedStateLock;
     attr interface=TestDerivedStateLockWiring;
     attr interface=TestDerivedStateWriteLock;
+    attr interface=TestDesignatedReproTest;
     attr interface=TestDetectCollectorFormat;
     attr interface=TestDetectProjectType;
     attr interface=TestDetectableKindsVocabulary;

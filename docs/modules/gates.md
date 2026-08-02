@@ -733,6 +733,85 @@ requires ONE qualifying criterion covering the ticket as a whole (not a
 1:1 criterion-per-rule-id mapping) when a diff introduces several rule ids
 in one change.
 
+### BUG002 (T-1421): a bug ticket must prove the defect no longer reproduces
+
+`frob.gates._mutation_evidence.bug_repro_violations` (same module as
+TEST016 above, not the `test_gate` snapshot pipeline -- same PERF posture:
+a real subprocess check, opted into per-caller, never run on every plain
+`frob check`). Fires ERROR for `bug`/`security`-kind tickets only.
+
+**The gap it closes, and why TEST016 does not already cover it.** TEST016
+proves a ticket's bound evidence is mutation-detectable against its OWN
+diff -- adversarial, not confirmatory, for the lines that changed. Five
+tickets in one session (T-1384, T-1399, T-1391, T-1239, T-1401) each
+passed TEST016, closed honestly, and left the defect they described live
+on `main`: in every case the new/changed code WAS mutation-detectable by
+its own unit tests, but nothing in production actually CALLED it (an added
+guard parameter no caller passed, a computed field nothing wired up). An
+absent caller has no mutant to kill or survive, so TEST016 structurally
+cannot see this class of gap. BUG002 is complementary, not a TEST016
+extension: it re-runs the ticket's own bound evidence against the commit
+BEFORE the ticket's changes and requires a genuine failure there -- proof
+the SAME test that passes at the fix would have caught the bug before it
+was fixed, which is a claim about the evidence's relationship to the
+CALLER path, not about the diff's own mutability.
+
+**Mechanism.** `_designated_repro_test` picks the FIRST pytest-node-id-
+shaped entry in `ticket.evidence` (deterministic, cheap -- the ticket's
+cost budget is ONE test at ONE prior commit, never the bound evidence set
+or the suite). `_bug_repro_outcome_at_ref` checks that test out via a
+plain `git worktree add --detach <scratch> <base_ref>` (no rebuild -- the
+checkout reuses the calling worktree's already-built native extensions and
+installed venv; `PYTHONPATH` is pointed at the checkout's own `src/` so
+the subprocess imports the PARENT COMMIT's Python source instead of the
+current editable install) and runs it there via the current interpreter.
+Exit 0 (the test PASSED at the parent) is the BUG002 violation: the
+evidence proves nothing about whether the fix mattered. Exit 1 (a genuine
+failure) is the expected, permitted case. Any other outcome -- a
+collection/import error (the common shape for a parent-commit change that
+also touched compiled native code the scratch checkout never rebuilt), a
+kill-switch refusal (`FROB_DISABLE_EXEC=1`), or a failed `git worktree
+add` -- degrades to NO VERDICT, never a false violation and never a false
+pass, mirroring TEST016's own `ExecDisabled` posture one function up in
+this same module.
+
+**Cost, measured**: for a small fixture repo and test file, one
+`_bug_repro_outcome_at_ref` call (worktree add + one `pytest` invocation +
+worktree remove) measured well under a second (`tests/test_gates_
+mutation_evidence.py::TestBugRepro`, two real end-to-end fixtures, no
+mocking of the outcome). For a real designated test in this repo (an
+already-built venv, no native rebuild needed), the added land-time cost is
+the single test file's own collection + run time -- one test, not the
+touched-file set TEST016 mutates.
+
+**Escape hatch, required and loud (T-1421 acceptance [2]).** `tickets.md`
+is excluded from `frob.graph.build_graph`'s doc/source file walk (`frob.
+graph._collect_files`'s `is_ledger` exclusion, so a Done report quoting
+`frob:waive`/`frob:describes` verbatim does not resurrect a phantom edge)
+-- a waiver comment physically placed in `tickets.md` can therefore never
+become a real `WAIVE` edge `frob.gates._waive`'s matching spine could find.
+BUG002's escape hatch is instead a plain regex scan of the ticket's OWN
+BODY TEXT for `frob:waive BUG002 reason="..."` (`_bug002_waiver_reason`) --
+the one place a bug ticket's own justification for "this genuinely cannot
+be reproduced in a test" naturally already lives (a nondeterministic
+crash, an environment the suite cannot create, a ledger/doc correction
+filed as `kind=bug`). A bare `frob:waive BUG002` with no parseable
+`reason=` is treated as ABSENT -- the check still runs -- never a silent
+pass, matching WAIVE001's existing "reason is mandatory" contract for
+every other waiver in this repo. Every waive (with or without a reason) is
+logged at `WARNING`, same visibility class as `--skip-mutation-evidence`.
+
+**Scope note (disclosed cut).** `bug_repro_violations` is built and
+tested (`tests/test_gates_mutation_evidence.py`, including the required
+both-directions regression pair reconstructing the T-1384/T-1391/T-1399
+shape) but, as of T-1421, has NO caller yet -- wiring it into `frob ticket
+land`/`frob ticket close` (mirroring TEST016's own
+`frob.tickets._land`/`frob.app.ticket_runner` callers) touches files
+outside this ticket's declared `scope` (`src/frob/gates/
+_mutation_evidence.py`, `tests/test_gates_mutation_evidence.py`,
+`docs/modules/gates.md` only). See this ticket's Done report for the
+filed follow-up.
+
 ### Waive boundary (T-0101, revised T-0289)
 
 `frob:waive` only ever suppresses entries in a `GateReport`'s `violations`
