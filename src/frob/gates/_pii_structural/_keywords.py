@@ -17,13 +17,15 @@ same discipline this table's own header comment documents."""
 from __future__ import annotations
 
 import ast
+import io
 import re
+import tokenize
 
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
 
 from ._python_fields import _is_data_structure_field_target
-from ._signatures import _field_name_hit, _FieldSignature
+from ._signatures import _camel_to_snake, _field_name_hit, _FieldSignature
 
 _log = get_logger(__name__)
 
@@ -414,24 +416,123 @@ def _scan_identifier_keywords(tree: ast.Module, rel_path: str) -> list[Violation
 _FROB_DIRECTIVE_RE = re.compile(r"^\s*frob:")
 
 
-def _scan_comment_keywords(text: str, rel_path: str) -> list[Violation]:
-    """PII012 over every `#`-comment line's word tokens matching a
+# frob:ticket T-1411
+def _extract_comments(text: str) -> list[tuple[int, str, bool]]:
+    """Every `#`-comment's `(lineno, comment_text_after_hash, is_trailing)`
+    in `text`. LEVEL 1 of T-1411's structural fix: uses the stdlib
+    `tokenize` module's `COMMENT` tokens (exact source extents) instead of
+    a line-oriented `line.find("#")` scan, so a `#` inside a string
+    literal -- the documented misread the old line-oriented scan conceded
+    -- is never misread as starting a comment.
+
+    `is_trailing` is True when real source text (not just whitespace)
+    precedes the `#` on its physical line -- i.e. the comment trails a
+    statement (`x = 1  # ...`) rather than standing alone on its own line
+    (`    # ...`). T-1411 round 2: a trailing comment is annotating the
+    statement it follows (the acceptance-driving case: `x = 1  # stores
+    the user ssn` -- `x` matches nothing, but the COMMENT is the only
+    place the datum is named), so it must keep firing unconditionally on
+    a keyword match, exactly as the pre-fix grep did. A standalone
+    comment is discussion, not an annotation of any particular statement,
+    so LEVEL 2's in-scope/reference-form gate applies to it alone (see
+    `_scan_comment_keywords`).
+
+    On a tokenize failure (a syntactically broken fragment `ast.parse`
+    nonetheless accepted, or similar), returns an empty list rather than
+    raising -- a scan that cannot lex a comment reports nothing rather
+    than guessing."""
+    lines = text.splitlines()
+    comments: list[tuple[int, str, bool]] = []
+    try:
+        for tok in tokenize.generate_tokens(io.StringIO(text).readline):
+            if tok.type == tokenize.COMMENT:
+                lineno, col = tok.start
+                source_line = lines[lineno - 1] if 0 <= lineno - 1 < len(lines) else ""
+                is_trailing = source_line[:col].strip() != ""
+                comments.append((lineno, tok.string[1:], is_trailing))
+    except (tokenize.TokenError, IndentationError, SyntaxError):
+        return []
+    return comments
+
+
+# frob:ticket T-1411
+def _in_scope_identifier_tokens(tree: ast.Module) -> frozenset[str]:
+    """Every lowercase, camelCase/underscore-split token appearing in any
+    real identifier bound or referenced in this file's AST (function/class
+    names, parameters, assignment targets, attribute accesses, import
+    names) -- LEVEL 2 of T-1411's structural fix: the symbol table a
+    comment word is checked against before it is allowed to fire, so a
+    `FIELD_SIGNATURES` word appearing only as ordinary English prose (no
+    identifier in this file plausibly named by it) cannot trigger PII012
+    on vocabulary alone. Uses the same `_camel_to_snake` normalization
+    `_field_name_hit` applies to identifiers, so `apiKey`/`api_key` add the
+    same `{"api", "key"}` tokens either way."""
+    tokens: set[str] = set()
+    for node in ast.walk(tree):
+        name: str | None = None
+        if isinstance(node, ast.Name):
+            name = node.id
+        elif isinstance(node, ast.arg):
+            name = node.arg
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            name = node.name
+        elif isinstance(node, ast.Attribute):
+            name = node.attr
+        elif isinstance(node, ast.alias):
+            name = node.asname or node.name
+        if name is None:
+            continue
+        lowered = _camel_to_snake(name).lower()
+        tokens.update(lowered.split("_"))
+    return frozenset(tokens)
+
+
+# frob:ticket T-1411
+def _is_comment_reference_form(comment: str, start: int, end: int) -> bool:
+    """Whether the comment word spanning `comment[start:end]` is written in
+    REFERENCE form -- backticked (`` `token` ``) or dotted (`self.token`,
+    `cfg.secret`) -- rather than as a plain English word in a sentence.
+    LEVEL 2 of T-1411's structural fix: a word can plausibly refer to a
+    real symbol either by matching an in-scope identifier
+    (`_in_scope_identifier_tokens`) or by being WRITTEN as a reference,
+    even to a symbol this file itself does not define (an attribute on an
+    imported object, for instance)."""
+    before = comment[start - 1] if start > 0 else ""
+    after = comment[end] if end < len(comment) else ""
+    return before in "`." or after == "`"
+
+
+def _scan_comment_keywords(
+    tree: ast.Module, text: str, rel_path: str
+) -> list[Violation]:
+    """PII012 over every `#`-comment's word tokens matching a
     `FIELD_SIGNATURES` name-kind keyword (T-0350 family 5), EXCLUDING
     `# frob:...` directive comments (`_FROB_DIRECTIVE_RE`, T-0539 -- see
-    its docstring), and `_PII012_REVIEWED_NON_PII` sites (T-0540). A plain
-    line-oriented scan of `#`-prefixed trailing text, not a full tokenizer
-    pass -- adequate for a comment-word suggestion signal and avoids
-    misreading a `#` inside a string literal as a comment only in the
-    rare case a string itself contains one, the same trade-off
-    `_secrets.py`'s line-oriented scanner already documents as an honest
-    limitation."""
+    its docstring) and `_PII012_REVIEWED_NON_PII` sites (T-0540).
+
+    T-1411 structural fix, two levels: comments are extracted via
+    `tokenize` (`_extract_comments`, LEVEL 1) so a `#` inside a string
+    literal is never misread as a comment. LEVEL 2 (T-1411 round 2)
+    distinguishes WHETHER THE COMMENT IS ANNOTATING DATA rather than
+    gating every comment uniformly: a TRAILING comment (`x = 1  # stores
+    the user ssn`) is annotating the statement it follows -- the comment
+    itself is the only place the datum is named, so it fires
+    unconditionally on a keyword match, exactly as before this ticket.
+    A STANDALONE comment (its own line, not trailing any statement) is
+    discussion, not an annotation of a specific datum, so it only fires
+    when the matched word plausibly REFERS to something -- it matches a
+    real identifier token in scope in this file
+    (`_in_scope_identifier_tokens`) or is written in reference form
+    (`_is_comment_reference_form`) -- rather than merely appearing as an
+    English word in a sentence. Both pre-existing trailing-comment tests
+    (`test_comment_keyword_fires`, `test_ordinary_comment_mentioning_
+    secret_still_fires`) still fire unchanged; a standalone rationale
+    comment using the same vocabulary as ordinary prose, with no
+    referenced identifier, does not."""
+    in_scope_tokens = _in_scope_identifier_tokens(tree)
     violations: list[Violation] = []
     seen: set[tuple[int, str]] = set()
-    for lineno, line in enumerate(text.splitlines(), start=1):
-        hash_index = line.find("#")
-        if hash_index < 0:
-            continue
-        comment = line[hash_index + 1 :]
+    for lineno, comment, is_trailing in _extract_comments(text):
         if _FROB_DIRECTIVE_RE.match(comment):
             continue
         for match in _COMMENT_WORD_RE.finditer(comment):
@@ -441,6 +542,13 @@ def _scan_comment_keywords(text: str, rel_path: str) -> list[Violation]:
                 continue
             if _is_pii012_reviewed_non_pii(rel_path, token):
                 continue
+            if not is_trailing:
+                token_lower = _camel_to_snake(token).lower()
+                plausibly_refers = token_lower in in_scope_tokens or (
+                    _is_comment_reference_form(comment, match.start(), match.end())
+                )
+                if not plausibly_refers:
+                    continue
             key = (lineno, token)
             if key in seen:
                 continue
@@ -457,5 +565,5 @@ def _scan_python_keyword_sweep(
     suggestion severity, reusing `FIELD_SIGNATURES` -- no hard fail on a
     bare name/comment word alone."""
     violations = _scan_identifier_keywords(tree, rel_path)
-    violations.extend(_scan_comment_keywords(text, rel_path))
+    violations.extend(_scan_comment_keywords(tree, text, rel_path))
     return tuple(violations)

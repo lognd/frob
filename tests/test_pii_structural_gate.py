@@ -486,6 +486,63 @@ class TestKeywordSweep:
         violations = _scan_python_keyword_sweep(tree, "example.py", src)
         assert any(v.rule == "PII012" for v in violations)
 
+    def test_standalone_prose_comment_with_no_referenced_identifier_does_not_fire(
+        self,
+    ) -> None:
+        """T-1411 round 2: a STANDALONE comment (its own line, not trailing
+        any statement) is discussion, not an annotation of a datum -- the
+        real incident this ticket exists for (a design-rationale comment
+        reading "a bare suppression token in source", inside a function
+        body, naming no in-scope identifier). It must not fire."""
+        # frob:tests src/frob/gates/_pii_structural/_keywords.py::_scan_comment_keywords  # noqa: E501
+        src = "def handler():\n    # a bare suppression token in source\n    pass\n"
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert violations == ()
+
+    def test_standalone_comment_in_reference_form_naming_real_field_fires(
+        self,
+    ) -> None:
+        """T-1411 round 2: a standalone comment is still allowed to fire
+        when it is written in REFERENCE form (backticked) and names a real
+        in-scope identifier -- "the `ssn` field is unencrypted" genuinely
+        refers to a real field, unlike ordinary prose."""
+        src = (
+            "def handler():\n"
+            "    ssn = fetch()\n"
+            "    # the `ssn` field is unencrypted\n"
+            "    return ssn\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert any(v.rule == "PII012" for v in violations)
+
+    def test_standalone_comment_matching_in_scope_identifier_fires(self) -> None:
+        """T-1411 round 2: a standalone comment also fires (without needing
+        backticks) when its keyword matches a real identifier bound
+        elsewhere in the same file -- "the token is stored unencrypted"
+        next to a real `token` variable is exactly what this rule should
+        catch."""
+        src = (
+            "def handler():\n"
+            "    token = fetch()\n"
+            "    # the token is stored unencrypted\n"
+            "    return token\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert any(v.rule == "PII012" for v in violations)
+
+    def test_hash_inside_string_literal_is_not_treated_as_comment(self) -> None:
+        """T-1411 LEVEL 1: `tokenize`-based comment extraction means a `#`
+        embedded inside a string literal is never misread as starting a
+        comment -- the documented limitation of the old line-oriented
+        `line.find("#")` scan."""
+        src = 'x = "a string with a # not a comment token inside"\n'
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert violations == ()
+
 
 class TestDeclaredSurfaceJoin:
     """T-0351: PII010/SEC110 findings joined against a loaded strata
