@@ -7542,7 +7542,7 @@ this investigation ticket's close.
 id: T-1390
 title: CrossTicketLeakage compares declared scope, not actual sibling changes -- every
   land needs --allow-cross-ticket
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -7572,7 +7572,6 @@ The guard asks 'does another open ticket DECLARE this file in scope?' when the q
 Why this is critical rather than cosmetic: an override that must be passed on every single land is not a guard. It trains every agent to reach for --allow-cross-ticket reflexively, which is precisely how a genuine cross-ticket leak would reach main unnoticed. The T-1355 incident this guard was built to prevent is currently one habituated keystroke away from recurring.
 
 T-1370 fixed only the narrow same-worktree case (sibling leased to the same worktree). The false-positive class above is broader and survives that fix -- all seven lands measured here were AFTER T-1370 landed.
-
 <!-- ticket:T-1391 -->
 ```yaml
 id: T-1391
