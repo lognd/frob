@@ -5969,6 +5969,9 @@ attachments:
 - path: attachments/T-1433/01-untitled.txt
   caption: ''
   sha256: df012c46187fdaed7c338acb221b46b17f32b4af14565adcb614bb9ef35ec4bf
+- path: attachments/T-1433/02-untitled.txt
+  caption: ''
+  sha256: df012c46187fdaed7c338acb221b46b17f32b4af14565adcb614bb9ef35ec4bf
 acceptance:
 - text: GIVEN a make coverage invocation whose serial rerun phase stops making progress
     WHEN the bounded deadline elapses THEN the run fails loudly with a diagnostic
@@ -6070,7 +6073,6 @@ genuinely unresolved, not just unresolved-and-waived.
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 1 error(s), 563 warning(s), 694 waived
 - error-findings: SELFAUDIT001@design
-
 <!-- ticket:T-1434 -->
 ```yaml
 id: T-1434
@@ -8331,3 +8333,32 @@ docstring/body edit will see a *false* DRIFT001 the very next default
 `frob check` unless they know to pass `FROB_NO_GATE_CACHE=1` -- which is
 undocumented in the agent playbook and easy to mistake for a real,
 unresolved drift finding.
+
+<!-- ticket:T-1455 -->
+```yaml
+id: T-1455
+title: COV004 attachment check shipped as an unconditional-fire stub
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-02'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/__init__.py
+- src/frob/strata/_effects.py
+- tests/test_gates.py
+- .gitattributes
+acceptance:
+- text: GIVEN an attachment whose file exists with a byte-exact sha256 WHEN the COV
+    gate runs THEN COV004 does not fire
+  evidence: []
+- text: GIVEN a missing or content-drifted attachment WHEN the COV gate runs THEN
+    COV004 fires
+  evidence: []
+threat: null
+component: null
+```
+Found 2026-08-02 by the first real frob ticket attach (T-1433 diagnostics): _cov004_one returned a Violation unconditionally -- no existence check, no sha comparison -- so every recorded attachment errored the COV gate even when byte-identical. Only the confirmatory direction (missing file fires) was tested, the exact TEST016 anti-pattern. Fixed: real existence+sha256 comparison, plus the discriminating regression test (matching sha is clean). Also bundled: OPAQUE001 false-positive restructure in strata/_effects.py (frozenset[str]() instantiation matches the container-dynamic-key-call shape; hoisted an annotated empty constant) and a .gitattributes -text pin on tickets/attachments/** so checkout-time CRLF conversion can never invalidate recorded attachment bytes.
