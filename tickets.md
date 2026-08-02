@@ -9317,6 +9317,14 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/_pii_structural/_keywords.py
+- tests/test_pii_structural_gate.py
+scope_changes:
+- op: add
+  glob: tests/test_pii_structural_gate.py
+  reason: the fix corrects two existing tests' expected outcomes; T-1235's tests/**
+    lease blocked registration and has now been released
+  actor: logan
+  at: '2026-08-01'
 acceptance:
 - text: GIVEN a comment using a FIELD_SIGNATURES word as ordinary prose with no correspondingly-named
     identifier in scope WHEN the PII gate runs THEN PII012 does not fire
@@ -9355,7 +9363,6 @@ CAPABILITY MUST NOT SHRINK. Do not delete keywords, do not drop the comment scan
 Precedent already in this file: _scan_comment_keywords deliberately skips "# frob:..." directive comments (_FROB_DIRECTIVE_RE, T-0539). So context-sensitive exclusion is an accepted shape here; this ticket generalises it from one hardcoded prefix to actual structure.
 
 Related: _PII012_REVIEWED_NON_PII (T-0540) is a manually-maintained (file, word) allowlist -- a symptom of the same defect. Every entry in it is a case where a human confirmed the word was prose, not a name. If Level 2 lands, most of that table should become unnecessary; check whether it can shrink, and report how much of it survives.
-
 <!-- ticket:T-1412 -->
 ```yaml
 id: T-1412
