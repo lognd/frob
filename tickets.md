@@ -10960,7 +10960,7 @@ zero-hit ratchet carve-out and the unjoined-module enumeration log.
 id: T-1406
 title: module_join_fraction denominator includes non-instrumentable repo-wide .py
   files, not just the --cov target
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
