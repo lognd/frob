@@ -1118,14 +1118,6 @@ gate_rule_entries:
     name: "BUG002 is a live, enforced gate rule"
     disposition: "handled_by:BUG002"
     cross_refs: []
-  - id: "CHK-GATE-WIRE001"
-    name: "WIRE001 is a live, enforced gate rule"
-    disposition: "handled_by:WIRE001"
-    cross_refs: []
-  - id: "CHK-GATE-WIRE002"
-    name: "WIRE002 is a live, enforced gate rule"
-    disposition: "handled_by:WIRE002"
-    cross_refs: []
 concern_family_total: 13
 concern_family_entries:
   - id: "CHK-THEME-EXISTENCE-NOT-PROOF"
