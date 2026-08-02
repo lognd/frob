@@ -5963,6 +5963,10 @@ scope_changes:
 evidence:
 - tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_both_serial_reruns_are_wrapped_in_a_bounded_timeout
 - tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_timeout_wrapping_kills_a_wedged_child_instead_of_hanging
+attachments:
+- path: attachments/T-1433/01-untitled.txt
+  caption: ''
+  sha256: df012c46187fdaed7c338acb221b46b17f32b4af14565adcb614bb9ef35ec4bf
 acceptance:
 - text: GIVEN a make coverage invocation whose serial rerun phase stops making progress
     WHEN the bounded deadline elapses THEN the run fails loudly with a diagnostic
@@ -6064,7 +6068,6 @@ genuinely unresolved, not just unresolved-and-waived.
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 1 error(s), 563 warning(s), 694 waived
 - error-findings: SELFAUDIT001@design
-
 <!-- ticket:T-1434 -->
 ```yaml
 id: T-1434
