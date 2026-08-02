@@ -11087,8 +11087,8 @@ id: T-1407
 title: Investigate why coverage.xml only ever joins ~53% of known modules even from
   a full make coverage run, and whether burn-down agents' scoped verification runs
   leave a stale coverage.xml a later frob check misreads as full-run data
-state: in-progress
-kind: bug
+state: done
+kind: docs
 origin: human
 created: '2026-08-01'
 priority: medium
@@ -11101,6 +11101,9 @@ scope:
 - docs/guides/agent-playbook.md
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- cmd:bash -c "grep -q '^## 6e' docs/guides/agent-playbook.md && grep -q 'T-1435'
+  tickets.md && grep -q '_scope_known_paths_to_coverage_roots' src/frob/gates/_coverage.py"
+  exit=0 sha256=e3b0c44298fc
 threat: null
 component: null
 ```
