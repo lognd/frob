@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.300.0] - unreleased
+
+- T-1391: FMT001's Tier-A fix pass rewrites the whole tree, colliding with land scope discipline
+
 ## [0.299.0] - unreleased
 
 - T-1341: Tier-A auto-fix handler: write the paired suppression in canonical order, idempotently

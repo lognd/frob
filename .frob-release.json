@@ -551,7 +551,7 @@
     "src/frob/gates/_fix_engine.py::clear_autofix_manifest": "b3dfeb490f20ededd6f239d9d9cee29df254d6e05eacf47b0e8b54c721866d66",
     "src/frob/gates/_fix_engine.py::fix_doc002_unique_slug": "7ef8d8ae7a08a3d93bc18dc16223b448c204ff22108ce82b571ff3a9bd779892",
     "src/frob/gates/_fix_engine.py::fix_doc007_dotted_form": "327da98ed7d5183d7687e61242a3ef58b030cd5fb58e4eb335b441e918bb0024",
-    "src/frob/gates/_fix_engine.py::fix_fmt001_directive_wrap": "9450fd1fbe5a327ef7eca49e237ab4021c0ae262ecef771cb1b9aded75b18d7b",
+    "src/frob/gates/_fix_engine.py::fix_fmt001_directive_wrap": "1b315b742f19d4711e81c022a37a36a787316a79de736af643361b494990cc8f",
     "src/frob/gates/_fix_engine.py::fix_inv006_carried_waiver": "c7076e6aeef11ba2582b512a8618cf6e4ef49ff30539c246e63afb7cb0cc3f5d",
     "src/frob/gates/_fix_engine.py::fix_reg010_registry_sync": "2d012f73d3d94915a44e8f0a7731e07833df2fa6a2cdba6b8566b8600e1922ff",
     "src/frob/gates/_fix_engine.py::fix_rel002_release_sync": "31181170771dc605319e24b5efa733bb487cde4c1c8d94b306e353229f63618a",
@@ -1941,5 +1941,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.299.0"
+  "version": "0.300.0"
 }

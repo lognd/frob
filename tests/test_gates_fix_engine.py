@@ -16,6 +16,7 @@ from frob.gates._fix_engine import (
     _code_ignored_for_path,
     _merged_dialect_codes,
     _split_suppression_line,
+    fix_fmt001_directive_wrap,
     fix_suppress001_paired_suppression,
 )
 from frob.graph._models import GraphSnapshot
@@ -242,3 +243,79 @@ class TestSuppress001FMT001Precedence:
         assert second == []
         assert after_first == original
         assert after_second == original
+
+
+class TestFmt001OnlyPathsLandScoping:
+    """T-1391: `fix_fmt001_directive_wrap`'s `only_paths` parameter --
+    the mechanism a land-context caller can use to restrict FMT001's
+    Tier-A pass to its own ticket's touched-file set, instead of the
+    whole tree, so a rewrite never lands as an out-of-scope write for a
+    file the landing ticket never declared."""
+
+    def test_only_paths_leaves_an_out_of_scope_file_untouched(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping.test_only_path\
+        # s_leaves_an_out_of_scope_file_untouched kind="unit"
+        """GIVEN a land whose ticket scope excludes a file elsewhere in
+        the tree carrying a non-canonical `frob:` directive, WHEN the
+        Tier-A FMT001 handler runs with `only_paths` set to the landing
+        ticket's own touched-file set, THEN that out-of-scope file is
+        left untouched -- while the in-scope file still gets fixed."""
+        long_reason = "x" * 100
+        non_canonical = (
+            f'# frob:waive INV006 reason="{long_reason}"\ndef f():\n    pass\n'  # noqa: E501
+        )
+        _write(tmp_path, "src/in_scope.py", non_canonical)
+        _write(tmp_path, "src/out_of_scope.py", non_canonical)
+
+        applied = fix_fmt001_directive_wrap(
+            tmp_path, _SNAPSHOT, only_paths=frozenset({"src/in_scope.py"})
+        )
+
+        assert [a.file for a in applied] == ["src/in_scope.py"]
+        in_scope_after = (tmp_path / "src" / "in_scope.py").read_text(encoding="utf-8")
+        out_of_scope_after = (tmp_path / "src" / "out_of_scope.py").read_text(
+            encoding="utf-8"
+        )
+        assert in_scope_after != non_canonical
+        assert out_of_scope_after == non_canonical
+
+    def test_only_paths_none_preserves_whole_tree_behaviour(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping.test_only_path\
+        # s_none_preserves_whole_tree_behaviour kind="unit"
+        """GIVEN a `frob check --fix` invoked outside a land (no
+        `only_paths` argument at all), WHEN the Tier-A FMT001 handler
+        runs, THEN its existing whole-tree behaviour is preserved -- both
+        files get fixed."""
+        long_reason = "x" * 100
+        non_canonical = (
+            f'# frob:waive INV006 reason="{long_reason}"\ndef f():\n    pass\n'  # noqa: E501
+        )
+        _write(tmp_path, "src/a.py", non_canonical)
+        _write(tmp_path, "src/b.py", non_canonical)
+
+        applied = fix_fmt001_directive_wrap(tmp_path, _SNAPSHOT)
+
+        assert {a.file for a in applied} == {"src/a.py", "src/b.py"}
+        for rel in ("src/a.py", "src/b.py"):
+            assert (tmp_path / rel).read_text(encoding="utf-8") != non_canonical
+
+    def test_only_paths_skips_nonexistent_path_without_error(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping.test_only_path\
+        # s_skips_nonexistent_path_without_error kind="unit"
+        """A caller's touched-file set can legitimately name a path that
+        no longer exists (deleted since the set was computed) -- this is
+        a silent no-op for that entry, never an error, matching the
+        no-guess Tier-A contract every other handler here follows."""
+        applied = fix_fmt001_directive_wrap(
+            tmp_path, _SNAPSHOT, only_paths=frozenset({"src/gone.py"})
+        )
+        assert applied == []

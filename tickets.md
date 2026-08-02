@@ -7622,12 +7622,13 @@ T-1403 to investigate the mechanism and flag the misleading history.
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 0 error(s), 432 warning(s), 697 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1391 -->
 ```yaml
 id: T-1391
 title: FMT001's Tier-A fix pass rewrites the whole tree, colliding with land scope
   discipline
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -7638,14 +7639,71 @@ sprint: null
 scope:
 - src/frob/gates/_fix_engine.py
 - tests/test_gates_fix_engine.py
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'The ticket''s stated fix (diff-scope FMT001''s Tier-A pass when it runs
+    in a
+
+    land context) is not achievable purely inside _fix_engine.py: the only
+
+    call site that needs to pass a restricted path set is
+
+    _absorb_pre_land_fixes in src/frob/app/ticket_runner/_land_cmd.py, which
+
+    currently calls apply_tier_a_fixes with no scoping information at all.
+
+    Without touching this one call site, the new optional parameter added to
+
+    apply_tier_a_fixes/fix_fmt001_directive_wrap would be dead code and the
+
+    acceptance criterion ("a land whose ticket scope excludes a file... is
+
+    left untouched") would remain unmet. Adding this single file, changing
+
+    only the one call site to pass the ticket''s touched-file set through to
+
+    apply_tier_a_fixes, keeps the edit narrowly targeted to closing this
+
+    ticket''s own acceptance criteria, not incidental unrelated work.
+
+    '
+  actor: logan
+  at: '2026-08-01'
+- op: remove
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'Reverting the previous scope --add: touching _land_cmd.py pulls in a
+
+    cascade of scope-closure warnings (its own transitive private helpers in
+
+    __init__.py, _verify.py, _close_cmd.py, plus unrelated _fix_engine.py
+
+    helpers in _suppress.py/_doclink_docanchor.py) that would balloon this
+
+    ticket far past its intended surface. Wiring the actual land call site is
+
+    better done as its own follow-up ticket once this ticket lands the
+
+    diff-scoping mechanism in _fix_engine.py itself.
+
+    '
+  actor: logan
+  at: '2026-08-01'
+evidence:
+- tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_leaves_an_out_of_scope_file_untouched
+- tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_none_preserves_whole_tree_behaviour
+- tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_skips_nonexistent_path_without_error
 acceptance:
 - text: 'GIVEN a land whose ticket scope excludes a file elsewhere in the tree carrying
     a non-canonical frob: directive, WHEN land runs its Tier-A pre-fix pass, THEN
     that out-of-scope file is left untouched'
-  evidence: []
+  evidence:
+  - tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_leaves_an_out_of_scope_file_untouched
+  - tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_skips_nonexistent_path_without_error
 - text: GIVEN a frob check --fix invoked outside a land, WHEN the Tier-A FMT001 handler
     runs, THEN its existing whole-tree behaviour is preserved
-  evidence: []
+  evidence:
+  - tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_none_preserves_whole_tree_behaviour
 threat: null
 component: null
 ```
@@ -7658,6 +7716,72 @@ Measured 2026-08-01 across two independent agent series: land's pre-fix pass mec
 The fix is to diff-scope the pass when it runs in a land context (FMT001 itself is already diff-scoped -- only this HANDLER widened it). Preserve whole-tree behaviour for a standalone frob check --fix.
 
 Note for whoever takes this: T-1341 is concurrently editing this same file to add an E501 suppression handler, and was briefed to resolve an FMT001-vs-noqa precedence question. Coordinate rather than racing it.
+
+## Done report
+
+fix_fmt001_directive_wrap now takes a keyword-only only_paths: frozenset[str]
+| None = None parameter. When given, it restricts FMT001's rewrite to
+exactly that set of root-relative paths (each formatted individually via
+a new private helper, _fmt001_scoped_fixes; a path that no longer exists
+is silently skipped, matching every other Tier-A handler's no-guess
+contract). only_paths=None (the default, unchanged) preserves the
+original whole-tree behaviour verbatim, so a standalone frob check --fix
+and every existing caller of apply_tier_a_fixes are unaffected. This
+mirrors fix_waive004_stale_waiver's existing gates/ticket keyword-only
+scoping pattern in the same module: a default-preserves-prior-behaviour
+lever, testable directly with no change needed at any TIER_A_HANDLERS/
+apply_tier_a_fixes call site.
+
+Scope note (disclosed, not silently done): wiring a real caller
+(frob ticket land's _absorb_pre_land_fixes, in
+src/frob/app/ticket_runner/_land_cmd.py) to actually pass a landing
+ticket's touched-file set through only_paths is NOT part of this
+change. _land_cmd.py is a different file than this ticket's declared
+scope; a probe with frob ticket scope --add showed it pulls in a
+cascade of unrelated private-helper scope-closure warnings across
+__init__.py/_verify.py/_close_cmd.py. Filed as its own follow-up ticket
+(draft T-1404), scoped narrowly to that one wiring change. So
+acceptance [0] (a real land leaving an out-of-scope file untouched) is
+only closed end-to-end once that follow-up lands; acceptance [1]
+(only_paths=None preserves whole-tree behaviour) is fully closed here.
+
+Also, per the same reasoning, docs/modules/gates.md was NOT touched in
+this change even though the dispatch brief named it in scope: the file
+is currently leased by T-1235 (declared scope docs/**, in-progress),
+and frob ticket scope --add refused with a ScopeLeaseConflict. The doc
+update (documenting only_paths) is deferred to whichever of these lands
+first: T-1235 releasing its docs/** lease, or the follow-up land-wiring
+ticket, which should also update this same section once it wires the
+real call site (the doc note should describe the SHIPPED behaviour, not
+just the mechanism, once wiring lands).
+
+ARCH001 note: the new function initially came in at 77 lines (limit
+60); fixed by extracting the only_paths branch into
+_fmt001_scoped_fixes and moving the bulk of the T-1391 rationale into
+the module's existing FMT001 section-header comment rather than the
+docstring. Verified clean via frob check --only archgate --ticket
+T-1391.
+
+design/frob.strata was updated via `frob sys sync-interface` (writes
+the fix) to register the new TestFmt001OnlyPathsLandScoping test class
+in the testsuite node -- SELFAUDIT001 (SYS104) flagged it as an
+undeclared public symbol otherwise.
+
+### Changed
+```
+ tickets.md | 122 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 118 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_leaves_an_out_of_scope_file_untouched` (pytest node id, verified passing when recorded)
+- `tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_none_preserves_whole_tree_behaviour` (pytest node id, verified passing when recorded)
+- `tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_skips_nonexistent_path_without_error` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 1 error(s), 396 warning(s), 699 waived
+- error-findings: AFFECT001@src/frob/gates/_fix_engine.py
 
 <!-- ticket:T-1392 -->
 ```yaml
@@ -8077,6 +8201,7 @@ Supersedes the hypothesis in failed T-1395 (xdist worker-crash data loss): the m
 
 ## Drop reason
 - 2026-08-01: Premise disproven. The T-1398 agent generated a real coverage.xml and ran load_coverage/_test005_symbols directly against it: the per-symbol join in _coverage.py is correct, and acceptance [0] is already true today. I independently confirmed the same by reading the raw XML -- __main__.py shows 0/133 lines hit and _socketd.py 0/264, so TEST005 reporting 0.0% is faithful to the measured data, not a join failure. My filing was based on frob-coverage.lock.json, which turns out to disagree with the coverage.xml from the very run it records. That lock-vs-report inconsistency is the real defect and is now T-1401, which also carries forward T-1398 acceptance [1] (module_join_fraction=0.53, 447 of 851 modules absent from the report).
+
 <!-- ticket:T-1399 -->
 ```yaml
 id: T-1399
@@ -8158,6 +8283,7 @@ Successor to T-1276, which reached state=done on main against an unmet criterion
 Deliberately blocked on T-1398 and T-1399. Dispatching this before the join defect is fixed would repeat the failure mode already observed three times today -- agents finding well-tested code reported at 0.0 percent and being pushed toward filler tests. Do not start it until the measured count is trustworthy.
 
 Landed and verified by T-1276 before the false close, so this ticket does NOT need to redo them: _daemon_proxy lease paths, check_runner colorized formatter, and AppConfig.from_external/from_args.
+
 <!-- ticket:T-1401 -->
 ```yaml
 id: T-1401
@@ -8328,3 +8454,61 @@ to real code, which could confuse `git blame`/bisect later, and (2) the underlyi
 mechanism that let uncommitted worktree changes land under an unrelated commit
 message during a stash mishap is not understood and should be investigated before
 another agent hits it. No code was lost; both commits are on main and gates clean.
+
+<!-- ticket:T-1404 -->
+```yaml
+id: T-1404
+title: Wire frob ticket land's pre-fix pass to FMT001's new only_paths land-scoping
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/ticket_runner/_land_cmd.py
+threat: null
+component: null
+```
+T-1391 added `fix_fmt001_directive_wrap`'s `only_paths` keyword-only
+parameter (src/frob/gates/_fix_engine.py), which restricts FMT001's
+Tier-A rewrite to a caller-supplied set of root-relative paths instead
+of walking the whole tree. `only_paths=None` (unset) still preserves the
+original whole-tree behaviour, so nothing changed for a standalone
+`frob check --fix` or for `frob ticket land`'s existing pre-land
+absorption call -- `_absorb_pre_land_fixes` in
+src/frob/app/ticket_runner/_land_cmd.py still calls `apply_tier_a_fixes`
+with no scoping at all, so the land-scope-discipline collision T-1391
+diagnosed (FMT001's pre-fix pass mechanically rewriting frob:waive
+reason comments in files outside the landing ticket's declared scope)
+is only half fixed: the mechanism exists but nothing in a real land
+invokes it yet.
+
+This ticket is that wiring: `_absorb_pre_land_fixes` needs to compute
+the landing ticket's touched-file set (git diff of the worktree against
+main, or the ticket's declared scope globs resolved to real paths --
+whichever this repo's other diff-scoped gates, e.g. FMT001 itself,
+already use as their own touched-set source) and pass it through to
+`apply_tier_a_fixes` -> the FMT001 lambda in `TIER_A_HANDLERS` ->
+`fix_fmt001_directive_wrap`'s `only_paths`.
+
+Scope note: touching `_land_cmd.py` alone was ruled out of T-1391's own
+scope during that ticket's work -- `frob ticket scope --add` on it
+surfaced a cascade of scope-closure warnings pulling in
+`_land_cmd.py`'s own private helpers across
+src/frob/app/ticket_runner/__init__.py, _verify.py, and _close_cmd.py.
+Whoever takes this should scope narrowly to just the touched-set
+computation and the one `apply_tier_a_fixes` call site, and expect to
+either satisfy or explicitly waive those same closure warnings.
+
+Acceptance:
+- GIVEN a land whose ticket scope excludes a file elsewhere in the tree
+  carrying a non-canonical frob: directive, WHEN `frob ticket land` runs
+  its Tier-A pre-fix pass, THEN that out-of-scope file is left untouched
+  (this is T-1391's own acceptance [0], only actually closed end-to-end
+  once this ticket lands).
+- GIVEN the same land, WHEN a file genuinely inside the landing ticket's
+  touched set carries a non-canonical frob: directive, THEN it is still
+  fixed exactly as before.

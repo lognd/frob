@@ -490,29 +490,88 @@ def fix_tick002_renumber(root: Path, queue: TicketQueue) -> list[FixApplied]:
 # FMT001 (T-1261): a diff-touched `frob:` directive comment line over the
 # project's configured line length -- `frob fmt` names itself as its own
 # remedy.
+#
+# T-1391: `format_paths` being content-preserving everywhere it does NOT
+# rewrite (a line already canonical anywhere else in the tree is left
+# byte-for-byte alone by construction) does not make a whole-tree write
+# SAFE from a land-scope-discipline standpoint -- a rewrite of a file
+# outside a ticket's declared scope is still an out-of-scope WRITE, and
+# land's own guards then reject the land that produced it (measured for
+# real: `frob:waive` reason comments in an unrelated file mechanically
+# rewritten by lands that never touched it, forcing one agent to widen
+# its own ticket's scope record just to absorb the collateral edit).
+# `fix_fmt001_directive_wrap`'s `only_paths` keyword restricts the
+# rewrite to a caller-supplied set of `root`-relative paths instead of
+# walking the whole tree; `only_paths=None` (the default) preserves the
+# original whole-tree behaviour verbatim -- what a standalone `frob
+# check --fix` still gets, and every existing caller until it opts in.
+# This mirrors `fix_waive004_stale_waiver`'s `gates`/`ticket` keyword-
+# only params below: a default-preserves-prior-behaviour scoping lever,
+# testable directly with no change needed at any `TIER_A_HANDLERS`/
+# `apply_tier_a_fixes` call site. Wiring a real caller (`frob ticket
+# land`'s pre-land absorption step, `src/frob/app/ticket_runner/
+# _land_cmd.py`, a different module) to actually pass its ticket's
+# touched-file set through `only_paths` is tracked as a follow-up,
+# outside this file's own scope.
 # ---------------------------------------------------------------------------
 
 
+def _fmt001_scoped_fixes(
+    root: Path, limit: int, only_paths: frozenset[str]
+) -> list[FixApplied]:
+    """`fix_fmt001_directive_wrap`'s `only_paths` branch: format each
+    named path individually (`format_paths` already accepts a single
+    file as its `root` argument) instead of walking the whole tree. A
+    named path that no longer exists (deleted since the caller's
+    touched-set was computed) or is a directory is silently skipped,
+    never an error -- the same no-guess Tier-A contract every other
+    handler here follows. Reports `rel` (relative to the REAL repo
+    `root`) rather than `format_paths`'s own per-call `change.path`,
+    which would otherwise read as "." when called against a single
+    file."""
+    from frob.gates._fmt_directives import format_paths
+
+    applied: list[FixApplied] = []
+    for rel in sorted(only_paths):
+        path = root / rel
+        if not path.is_file():
+            continue
+        report = format_paths(path, check_only=False, limit=limit)
+        applied.extend(
+            FixApplied(
+                rule="FMT001",
+                file=rel,
+                line=0,
+                detail=f"{rel}: frob: directive comment(s) rewrapped to canonical form",  # noqa: E501
+            )
+            for _change in report.changes
+        )
+    return applied
+
+
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
-def fix_fmt001_directive_wrap(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
+def fix_fmt001_directive_wrap(
+    root: Path,
+    snapshot: GraphSnapshot,
+    *,
+    only_paths: frozenset[str] | None = None,
+) -> list[FixApplied]:
     """Tier-A fix (T-1261): FMT001 already names its own remedy verbatim
     (`run frob fmt <file>`) -- `format_paths` (`frob.gates._fmt_
     directives`, T-0441) is already idempotent, so calling it in write
-    mode over `root` IS the fix; no new rewrite logic lives here.
-
-    Runs over the whole `root`, not diff-scoped the way FMT001 itself is
-    -- `format_paths` only ever rewrites a genuinely non-canonical
-    `frob:` directive run; a line that is already canonical anywhere else
-    in the tree is left byte-for-byte alone by construction, so widening
-    the scope from "diff-touched" to "whole tree" cannot make an
-    unrelated file worse, it only catches the SAME class of finding
-    wherever it lives (`snapshot` is accepted for signature uniformity
-    with its sibling Tier-A handlers; `format_paths` needs no graph
-    state)."""
+    mode IS the fix; no new rewrite logic lives here. `only_paths`, when
+    given, restricts the rewrite to exactly that set of `root`-relative
+    paths (see `_fmt001_scoped_fixes`, and this section's own T-1391
+    module comment above for the land-scope-discipline rationale);
+    `None` (the default) preserves the original whole-tree behaviour.
+    `snapshot` is accepted for signature uniformity with its sibling
+    Tier-A handlers; `format_paths` needs no graph state."""
     from frob.gates._fmt_directives import format_paths, read_line_length
 
     del snapshot  # signature uniformity only, format_paths needs no graph state
     limit = read_line_length(root)
+    if only_paths is not None:
+        return _fmt001_scoped_fixes(root, limit, only_paths)
     report = format_paths(root, check_only=False, limit=limit)
     return [
         FixApplied(

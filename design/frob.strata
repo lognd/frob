@@ -3558,6 +3558,7 @@ node testsuite : trusted {
     attr interface=TestFlowCompletenessGap;
     attr interface=TestFmt001Gate;
     attr interface=TestFmt001MarkerEntries;
+    attr interface=TestFmt001OnlyPathsLandScoping;
     attr interface=TestFmt001ViolationsForRuns;
     attr interface=TestFmtRunnerRun;
     attr interface=TestFoldCommentRuns;
