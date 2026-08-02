@@ -3560,8 +3560,6 @@ acceptance:
 - text: GIVEN a new test added to close a gates TEST005 finding WHEN reviewed THEN
     it asserts real behavior (inputs/outputs/side effects), not mere import/instantiation
   evidence: []
-threat: null
-component: null
 acceptance_amendments:
 - op: remove
   index: 0
@@ -3606,6 +3604,8 @@ acceptance_amendments:
     '
   actor: logan
   at: '2026-08-02'
+threat: null
+component: null
 ```
 Package: src/frob/gates (or the listed root modules).
 TEST005 findings at current baseline: 179 total, 12 at exactly

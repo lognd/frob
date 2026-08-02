@@ -3207,6 +3207,7 @@ node testsuite : trusted {
     attr interface=TestClaimDivergencePostMerge;
     attr interface=TestClaimEvaluationSanity;
     attr interface=TestClaimsMalformedAttrs;
+    attr interface=TestClassificationCsv;
     attr interface=TestCleanRunnerRun;
     attr interface=TestCleanupObligationGate;
     attr interface=TestClearIntent;
