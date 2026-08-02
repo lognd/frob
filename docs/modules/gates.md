@@ -96,6 +96,8 @@ declaration).
 | PROTO001 | protocol_summary | (warn) a `frob:requires`/`frob:transition`-tagged symbol's `frob.graph.summary.compute_protocol_summaries` result is `poisoned` (an `UNRESOLVED_CALLEE` somewhere in its transitive call closure) -- see "PROTO001 (T-0813)" below |
 | PROTO002 | protocol_summary | (error) a `frob:requires` symbol's required state is never established anywhere reachable (or its summary is poisoned), and no language-excuse discharges it -- see "PROTO002/PROTO003 (T-0746)" below |
 | PROTO003 | protocol_summary | (error) a `frob:transition` symbol's precondition state is never established anywhere reachable (or its summary is poisoned), and no language-excuse discharges it -- see "PROTO002/PROTO003 (T-0746)" below |
+| WIRE001 | wire | (error) a ticket's own diff adds a function/method/class with no non-test caller, a gate `rule="..."` literal absent from `_KNOWN_GATE_RULES`, or a CLI `dest=` absent from `_config_external.py`'s copy lists -- code that landed, passed every gate, and does nothing; see "WIRE001/WIRE002 (T-1428)" below |
+| WIRE002 | wire | (error, unwaivable) a `frob:waive WIRE001` present without a `follow_up="T-####"` attribute naming a real, still-open ticket -- see "WIRE001/WIRE002 (T-1428)" below |
 
 **T-0398 (evidence integrity) note on COV003**: COV003 only ever answers
 "does this evidence id resolve to a currently-collected test" -- it does
@@ -1827,6 +1829,78 @@ Detection only -- `suppress001_gate` itself never edits a source file. The
 Tier-A auto-fix that WRITES the paired suppression is
 `fix_suppress001_paired_suppression` (T-1341), documented under "`--fix`:
 Tier-A deterministic auto-fix handlers (T-1138)" below.
+
+## WIRE001/WIRE002 (T-1428)
+
+<a id="wire001-wire002-t-1428"></a>
+<!-- frob:describes src/frob/gates/_dead_symbols.py::wire_gate -->
+
+Five real instances in one session landed, passed every gate, closed
+honestly, and did nothing: `own_obligations_clean` (T-1384),
+`gate_claims_verified` (T-1399), `only_paths` (T-1391), `bug_repro_
+violations`/BUG002 (T-1421), and CLI `--amend`/`--remove` silently dropped
+by `AppConfig.from_external` (T-1422). Every one was disclosed honestly in
+its own Done report, with a follow-up ticket filed. The rule was still
+never checkable: a ticket declares a scope, and the new code and its call
+site almost always live in DIFFERENT modules, so working strictly inside
+scope produces an inert change by default, and unit tests calling the new
+code directly pass regardless.
+
+`DEAD001` (above) cannot see this class: it only reasons about PRIVATE
+symbols (exempting exactly the shape most of these instances took --
+`own_obligations_clean` and `bug_repro_violations` are both public), and
+it asks "does ANY private symbol in the whole tree have a caller", not
+"did THIS DIFF add something nothing outside its own tests reaches".
+WIRE001 asks the diff-scoped question `wire_gate` implements three of the
+four case shapes for, deliberately NOT via `build_reference_graph`/
+`build_call_graph` (this module's own DEAD001 substrate): both resolve an
+edge only when the CALLEE is private (`frob.graph.callgraph._resolve_
+edges`'s "never a public symbol" rule) -- exactly backwards here. Instead:
+
+- **A new function/method/class with no non-test caller** (T-1421's
+  shape): every symbol whose entire span sits inside this diff's added-
+  line hunks is a candidate; a repo-wide, deliberately best-effort TEXT
+  scan (`_is_reached_outside_diff_tests`) looks for its short name used
+  call-shaped in any non-test file other than its own definition line.
+  Biased toward NOT firing on ambiguity (an unrelated same-named function
+  elsewhere counts as "reached") -- a false "reached" costs nothing, a
+  false "unreached" wrongly blocks a build.
+- **A new gate rule id absent from `_KNOWN_GATE_RULES`** (T-1421's BUG002
+  shape): a `rule="XYZ001"` literal added by this diff whose id is not in
+  `frob.gates._waive._KNOWN_GATE_RULES`.
+- **A new CLI flag `dest=` absent from `_config_external.py`'s copy
+  lists** (T-1422's shape, called out as the hardest in this ticket's
+  brief): the wiring is a quoted string landing inside one of
+  `_build_external_config_kwargs`'s field-name tuples, never a call
+  token -- structurally invisible to any call-graph approach, general or
+  otherwise. Caught by a TARGETED string-membership check over
+  `src/frob/app/_config_external.py`'s current text, not by generalizing
+  the call-graph machinery to cover it.
+
+**Not implemented**: a new keyword-only parameter no call site passes
+(T-1384/T-1399/T-1391's shape) needs a signature-level before/after AST
+diff this ticket does not build; disclosed and filed as a follow-up
+(see this ticket's Done report for the id).
+
+**The escape hatch is a checkable obligation, not free-text prose**: a
+bare `frob:waive WIRE001 reason="..."` would suppress the finding through
+the same generic waiver machinery every other gate uses, with no
+guarantee anyone ever wires the code later -- exactly the "honest but
+unenforceable disclosure" this ticket exists to close. WIRE002 (error,
+unwaivable) fires whenever a `frob:waive WIRE001` is missing a
+`follow_up="T-####"` attribute, or `follow_up` names a ticket that does not
+exist or is already `done`/`dropped`:
+
+```python
+# frob:waive WIRE001 reason="public API for downstream consumers, wired \
+by the CLI subcommand landing in the same series" follow_up="T-1500"
+```
+
+WIRE001 itself stays ERROR-tier but ordinarily waivable (ceiling/package-
+prefix matching, same as every other waivable rule) -- WIRE002 is what
+makes the waiver's own content matter, so a two-phase landing is an
+enforced obligation bound to a real open ticket, not a note nobody has to
+act on.
 
 ## Public API
 

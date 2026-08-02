@@ -19,7 +19,7 @@
 #     fabricated ticket). As work closes a concern down to a real gate
 #     rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 272
+gate_rule_total: 274
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     name: "COV001 is a live, enforced gate rule"
@@ -501,6 +501,14 @@ gate_rule_entries:
   - id: "CHK-GATE-PROTO001"
     name: "PROTO001 is a live, enforced gate rule (frob:requires/frob:transition-tagged symbol's protocol summary poisoned by an unresolved callee, T-0813)"
     disposition: "handled_by:PROTO001"
+    cross_refs: []
+  - id: "CHK-GATE-WIRE001"
+    name: "WIRE001 is a live, enforced gate rule (a ticket's own diff adds a function/rule-id/CLI-dest nothing outside its own tests can reach, T-1428)"
+    disposition: "handled_by:WIRE001"
+    cross_refs: []
+  - id: "CHK-GATE-WIRE002"
+    name: "WIRE002 is a live, enforced gate rule (a frob:waive WIRE001 missing a follow_up naming a real, open ticket, T-1428)"
+    disposition: "handled_by:WIRE002"
     cross_refs: []
   - id: "CHK-GATE-TODO003"
     name: "TODO003 is a live, enforced gate rule"
@@ -1109,6 +1117,14 @@ gate_rule_entries:
   - id: "CHK-GATE-BUG002"
     name: "BUG002 is a live, enforced gate rule"
     disposition: "handled_by:BUG002"
+    cross_refs: []
+  - id: "CHK-GATE-WIRE001"
+    name: "WIRE001 is a live, enforced gate rule"
+    disposition: "handled_by:WIRE001"
+    cross_refs: []
+  - id: "CHK-GATE-WIRE002"
+    name: "WIRE002 is a live, enforced gate rule"
+    disposition: "handled_by:WIRE002"
     cross_refs: []
 concern_family_total: 13
 concern_family_entries:

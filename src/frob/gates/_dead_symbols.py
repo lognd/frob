@@ -50,12 +50,16 @@ a scope choice of convenience).
 
 from __future__ import annotations
 
+import re
 from pathlib import Path, PurePosixPath
 
 from frob.gates._models import Severity, Violation
+from frob.gates._waive import known_gate_rule_ids
+from frob.gitio import Diff
 from frob.graph import EdgeKind, GraphSnapshot, build_reference_graph
 from frob.lang import SymbolKind, supported_extensions
 from frob.logging import get_logger
+from frob.tickets import TicketQueue
 
 _log = get_logger(__name__)
 
@@ -213,4 +217,348 @@ def dead_symbol_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ..
         len(called_by_package),
         len(violations),
     )
+    return tuple(violations)
+
+
+# ---------------------------------------------------------------------------
+# WIRE001/WIRE002 (T-1428): a ticket's own diff adds code nothing outside its
+# own tests can reach.
+# ---------------------------------------------------------------------------
+#
+# DEAD001 above asks "does ANY private symbol in the tree have a caller".
+# WIRE001 asks a narrower, diff-scoped question that DEAD001 structurally
+# cannot answer: "does the symbol/rule-id/CLI-flag this DIFF just added have
+# a caller/registration OUTSIDE the diff's own test files" -- catching
+# PUBLIC additions too (DEAD001 exempts every public symbol by design), and
+# catching the "string in a list" wiring shape (a new gate rule id, a new
+# CLI flag's argparse `dest`) that never appears as a call token at all and
+# so is invisible to call-graph analysis of any kind, per this module's own
+# `build_reference_graph`/`build_call_graph` substrate (see
+# `_is_reached_outside_diff_tests`'s docstring for why a text scan, not the
+# call graph, is used here).
+#
+# Three of the four real-instance shapes this ticket names are implemented:
+#   1. a new function/method/class with no non-test caller (T-1421)
+#   2. a new gate rule id literal absent from `_KNOWN_GATE_RULES` (T-1421's
+#      BUG002)
+#   3. a new CLI flag `dest=` absent from `_config_external.py`'s copy
+#      lists (T-1422) -- the "string in a list" shape, handled by a
+#      TARGETED check, not the call graph (see module docstring on that
+#      function)
+# The fourth shape -- a new keyword-only parameter no call site passes
+# (T-1384/T-1399/T-1391) -- needs a signature-level before/after AST diff
+# this ticket does not build; disclosed in this ticket's Done report with a
+# follow-up ticket, per the acceptance note that regression tests need
+# reconstruct only two of the four shapes.
+
+_RULE_ID_LITERAL_RE = re.compile(r'rule\s*=\s*"([A-Z][A-Z0-9]{1,9}\d{3})"')
+_CLI_DEST_LITERAL_RE = re.compile(r'\bdest\s*=\s*"([a-z][a-z0-9_]*)"')
+_CLI_PARSER_DIR_PREFIX = "src/frob/_cli_parsers/"
+_CONFIG_EXTERNAL_PATH = "src/frob/app/_config_external.py"
+
+
+def _short_name(qualname: str) -> str:
+    """The final dotted component of a qualname (`Foo.bar` -> `bar`) --
+    what a bare call token in another file's source actually spells,
+    mirroring `frob.graph.callgraph._short_name`'s own definition (not
+    imported: that helper is private to a module this file does not
+    otherwise depend on, and the rule is a one-line string operation)."""
+    return qualname.rsplit(".", 1)[-1]
+
+
+def _hunks_by_file(diff: Diff) -> dict[str, list[tuple[int, int]]]:
+    """`diff.hunks` grouped by file -- the shared shape every WIRE001 sub-
+    check below indexes into, computed once per gate run."""
+    by_file: dict[str, list[tuple[int, int]]] = {}
+    for hunk in diff.hunks:
+        by_file.setdefault(hunk.file, []).append(hunk.span)
+    return by_file
+
+
+def _added_lines(
+    root: Path, hunks_by_file: dict[str, list[tuple[int, int]]]
+) -> dict[str, list[tuple[int, str]]]:
+    """Exact `(line_no, text)` pairs for every line inside one of this
+    diff's hunks, read from the CURRENT working-tree file content --
+    `Diff.hunks` records only new-file line SPANS (no text), so this
+    recovers what those spans cover without a second diff/text parser.
+    Skips a file the working tree no longer has (deleted since the diff
+    was computed) rather than raising."""
+    by_file: dict[str, list[tuple[int, str]]] = {}
+    for file, spans in hunks_by_file.items():
+        try:
+            lines = (root / file).read_text(encoding="utf-8").splitlines()
+        except (OSError, UnicodeDecodeError):
+            continue
+        for start, end in spans:
+            for lineno in range(start, end + 1):
+                if 1 <= lineno <= len(lines):
+                    by_file.setdefault(file, []).append((lineno, lines[lineno - 1]))
+    return by_file
+
+
+def _new_callable_records(
+    snapshot: GraphSnapshot, hunks_by_file: dict[str, list[tuple[int, int]]]
+) -> list:
+    """Every function/method/class whose ENTIRE span sits inside one of
+    this diff's added-line hunks -- the proxy this gate uses for "this
+    diff DEFINED this symbol" (as opposed to merely touching an existing
+    one, e.g. adding one line to an existing function body). A whole-body
+    rewrite of a pre-existing symbol would also match this proxy (a false
+    positive DEAD001 does not have, since DEAD001 asks about every private
+    symbol unconditionally rather than trying to tell "new" from
+    "rewritten") -- accepted because the alternative (a full parse-at-base-
+    revision diff) is materially more machinery for a WARN-adjacent-to-
+    ERROR gate that already has a `frob:waive WIRE001` escape hatch for a
+    genuine false positive."""
+    found = []
+    for record in snapshot.symbols.values():
+        if record.kind not in _CALLABLE_KINDS or not record.id.path.endswith(".py"):
+            continue
+        qualname = record.id.qualname
+        if _is_dunder(qualname) or _is_test_symbol(qualname):
+            continue
+        spans = hunks_by_file.get(record.id.path, ())
+        if any(h[0] <= record.span[0] and record.span[1] <= h[1] for h in spans):
+            found.append(record)
+    return found
+
+
+def _is_reached_outside_diff_tests(
+    root: Path, snapshot: GraphSnapshot, record, def_lines: frozenset[int]
+) -> bool:
+    """True if `record`'s short name appears, call-shaped, in any non-test
+    file in the snapshot other than on one of its own definition lines.
+
+    DELIBERATELY a text scan, not `build_reference_graph`/`build_call_graph`
+    (this module's own DEAD001 substrate): both of those resolve an edge
+    ONLY when the callee is PRIVATE (`_resolve_edges`'s "never a public
+    symbol" rule, `frob.graph.callgraph`) -- exactly backwards for WIRE001,
+    whose motivating instances (T-1384's `own_obligations_clean`, T-1421's
+    `bug_repro_violations`) are PUBLIC symbols DEAD001 exempts by design.
+    A bare short-name-plus-paren scan is strictly MORE permissive than a
+    real call-graph match (an unrelated same-named function elsewhere
+    counts as "reached" here), which is the correct bias for a gate that
+    must not over-fire: a false "reached" verdict costs nothing (WIRE001
+    just does not fire), a false "unreached" verdict wrongly blocks a
+    build. This mirrors `build_reference_graph`'s own module docstring
+    logic (broader recall over precision) rather than inventing a new
+    tradeoff."""
+    short = _short_name(record.id.qualname)
+    call_pattern = re.compile(rf"(?<![A-Za-z0-9_.]){re.escape(short)}\s*\(")
+    def_pattern = re.compile(rf"^\s*(async\s+def|def|class)\s+{re.escape(short)}\b")
+    for path in snapshot.file_hashes:
+        if not path.endswith(".py"):
+            continue
+        from frob.gates import _is_test_path
+
+        if _is_test_path(path):
+            continue
+        try:
+            lines = (root / path).read_text(encoding="utf-8").splitlines()
+        except (OSError, UnicodeDecodeError):
+            continue
+        for lineno, text in enumerate(lines, 1):
+            if path == record.id.path and lineno in def_lines:
+                continue
+            if def_pattern.match(text):
+                continue
+            if call_pattern.search(text):
+                return True
+    return False
+
+
+def _wire001_unwired_symbol_violations(
+    root: Path,
+    snapshot: GraphSnapshot,
+    hunks_by_file: dict[str, list[tuple[int, int]]],
+) -> list[Violation]:
+    """WIRE001 case 1: a new function/method/class this diff defines with
+    no non-test caller anywhere in the tree (see `_is_reached_outside_
+    diff_tests`)."""
+    violations: list[Violation] = []
+    for record in _new_callable_records(snapshot, hunks_by_file):
+        def_lines = frozenset(range(record.span[0], record.span[1] + 1))
+        if _is_reached_outside_diff_tests(root, snapshot, record, def_lines):
+            continue
+        violations.append(
+            Violation(
+                rule="WIRE001",
+                severity=Severity.ERROR,
+                file=record.id.path,
+                line=record.span[0],
+                symref=record.symref,
+                message=(
+                    f"WIRE001: {record.symref} is new in this diff and has no "
+                    "caller outside its own tests -- wire it, delete it, or "
+                    'frob:waive WIRE001 reason="..." follow_up="T-####" naming '
+                    "the open ticket that will wire it"
+                ),
+            )
+        )
+    return violations
+
+
+def _wire001_rule_id_violations(
+    added_lines: dict[str, list[tuple[int, str]]],
+) -> list[Violation]:
+    """WIRE001 case 2: a new `rule=<literal>` construction (a gate/check
+    emitting a fresh rule id) whose id is absent from `_KNOWN_GATE_RULES`
+    -- the gate fires findings under an id `frob:waive`/`WAIVE002`/tooling
+    has never heard of, T-1421's BUG002 shape."""
+    known = known_gate_rule_ids()
+    violations: list[Violation] = []
+    for file, lines in added_lines.items():
+        if not file.endswith(".py"):
+            continue
+        for lineno, text in lines:
+            match = _RULE_ID_LITERAL_RE.search(text)
+            if match is None:
+                continue
+            rule_id = match.group(1)
+            if rule_id in known:
+                continue
+            violations.append(
+                Violation(
+                    rule="WIRE001",
+                    severity=Severity.ERROR,
+                    file=file,
+                    line=lineno,
+                    message=(
+                        f"WIRE001: {file}:{lineno} emits rule={rule_id!r}, which "
+                        "is not in _KNOWN_GATE_RULES (src/frob/gates/_waive.py) "
+                        "-- add it there in the same diff, or "
+                        'frob:waive WIRE001 reason="..." follow_up="T-####" '
+                        "naming the open ticket that will register it"
+                    ),
+                )
+            )
+    return violations
+
+
+def _wire001_cli_dest_violations(
+    root: Path, added_lines: dict[str, list[tuple[int, str]]]
+) -> list[Violation]:
+    """WIRE001 case 3: a new CLI `add_argument(..., dest="foo")` under
+    `src/frob/_cli_parsers/**` whose `dest` string never appears in
+    `_config_external.py` -- T-1422's shape, and the one the ticket brief
+    calls out as invisible to the call graph entirely: the wiring is a
+    quoted string landing inside one of `_build_external_config_kwargs`'s
+    field-name tuples, never a call token. A targeted string-membership
+    check over `_config_external.py`'s CURRENT text (not a per-tuple
+    parse) is deliberately used instead of trying to locate the exact
+    copy-loop tuple -- the six tuples are an implementation detail of one
+    function this gate should not have to keep in lockstep with; "the dest
+    string appears anywhere in that file's source" is the same signal
+    `config.py`'s own in-file warning describes (a field is either copied
+    somewhere in that file, or it is silently dropped)."""
+    try:
+        config_external_text = (root / _CONFIG_EXTERNAL_PATH).read_text(
+            encoding="utf-8"
+        )
+    except (OSError, UnicodeDecodeError):
+        config_external_text = None
+    violations: list[Violation] = []
+    for file, lines in added_lines.items():
+        if not file.startswith(_CLI_PARSER_DIR_PREFIX) or not file.endswith(".py"):
+            continue
+        for lineno, text in lines:
+            match = _CLI_DEST_LITERAL_RE.search(text)
+            if match is None:
+                continue
+            dest = match.group(1)
+            if config_external_text is not None and f'"{dest}"' in config_external_text:
+                continue
+            violations.append(
+                Violation(
+                    rule="WIRE001",
+                    severity=Severity.ERROR,
+                    file=file,
+                    line=lineno,
+                    message=(
+                        f"WIRE001: {file}:{lineno} adds CLI dest={dest!r}, which "
+                        f"never appears in {_CONFIG_EXTERNAL_PATH} -- argparse "
+                        "parses it and AppConfig.from_external silently drops "
+                        "it before AppConfig(**d) (T-1422's shape); copy it "
+                        "into the matching field-name tuple there, or "
+                        'frob:waive WIRE001 reason="..." follow_up="T-####" '
+                        "naming the open ticket that will wire it"
+                    ),
+                )
+            )
+    return violations
+
+
+def _wire002_violations(snapshot: GraphSnapshot, queue: TicketQueue) -> list[Violation]:
+    """WIRE002: a `frob:waive WIRE001` present without a `follow_up="T-####"`
+    attribute naming a real, still-open ticket -- the escape hatch this
+    ticket's brief demands ("require naming WHO is expected to call it and
+    BY WHEN") turned into a checkable fact rather than free-text prose. A
+    missing `follow_up=`, an id that resolves to no ticket, or a ticket
+    already `done`/`dropped` all count -- an obligation that names nobody
+    accountable is not an obligation."""
+    from frob.gates import _OPEN_STATES, _edges_of_kind, _site_from_edge_origin
+
+    violations: list[Violation] = []
+    for edge in _edges_of_kind(snapshot, EdgeKind.WAIVE):
+        if edge.target != "WIRE001":
+            continue
+        follow_up = edge.attrs.get("follow_up")
+        ticket = queue.tickets.get(follow_up) if follow_up else None
+        if ticket is not None and ticket.state in _OPEN_STATES:
+            continue
+        file, line = _site_from_edge_origin(edge.origin)
+        if follow_up is None:
+            detail = 'is missing a follow_up="T-####" attribute'
+        elif ticket is None:
+            detail = f"names {follow_up!r}, which is not a real ticket id"
+        else:
+            detail = f"names {follow_up!r}, which is already {ticket.state.value}"
+        violations.append(
+            Violation(
+                rule="WIRE002",
+                severity=Severity.ERROR,
+                file=file,
+                line=line,
+                message=(
+                    f"WIRE002: frob:waive WIRE001 at {edge.src} {detail} -- a "
+                    "WIRE001 waiver must bind to a real, open follow-up ticket"
+                ),
+            )
+        )
+    return violations
+
+
+# frob:doc docs/modules/gates.md#rule-catalog
+# frob:ticket T-1428
+# frob:tests tests/test_gates.py::TestWireGate.test_new_public_function_with_no_caller_is_flagged  # noqa: E501
+# frob:tests tests/test_gates.py::TestWireGate.test_new_function_called_from_non_test_code_is_not_flagged  # noqa: E501
+# frob:tests tests/test_gates.py::TestWireGate.test_new_cli_dest_missing_from_config_external_is_flagged  # noqa: E501
+# frob:tests tests/test_gates.py::TestWireGate.test_new_cli_dest_present_in_config_external_is_not_flagged  # noqa: E501
+# frob:tests tests/test_gates.py::TestWireGate.test_new_rule_id_missing_from_known_gate_rules_is_flagged  # noqa: E501
+# frob:tests tests/test_gates.py::TestWireGate.test_new_rule_id_present_in_known_gate_rules_is_not_flagged  # noqa: E501
+# frob:tests tests/test_gates.py::TestWireGate.test_wire002_fires_when_follow_up_ticket_missing  # noqa: E501
+# frob:tests tests/test_gates.py::TestWireGate.test_wire002_fires_when_follow_up_ticket_is_closed  # noqa: E501
+# frob:tests tests/test_gates.py::TestWireGate.test_wire002_clean_when_follow_up_ticket_is_open  # noqa: E501
+# frob:enforces CHK-GATE-WIRE001
+# frob:enforces CHK-GATE-WIRE002
+def wire_gate(
+    root: Path, snapshot: GraphSnapshot, diff: Diff, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """WIRE001/WIRE002 (T-1428): refuse a ticket's own diff when it adds a
+    function/method/class, a gate rule id, or a CLI flag `dest` that
+    nothing outside the diff's own tests can reach -- the repeated "landed,
+    passed every gate, did nothing" defect this repo's own history names
+    (T-1384, T-1399, T-1391, T-1421, T-1422). ERROR-tier (unlike DEAD001's
+    advisory WARN): a diff-scoped inert addition is exactly the shape a
+    ticket close should refuse, not merely flag."""
+    hunks_by_file = _hunks_by_file(diff)
+    added_lines = _added_lines(root, hunks_by_file)
+    violations = [
+        *_wire001_unwired_symbol_violations(root, snapshot, hunks_by_file),
+        *_wire001_rule_id_violations(added_lines),
+        *_wire001_cli_dest_violations(root, added_lines),
+        *_wire002_violations(snapshot, queue),
+    ]
+    _log.info("wire_gate: %d violation(s)", len(violations))
     return tuple(violations)

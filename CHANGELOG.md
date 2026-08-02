@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.306.0] - unreleased
+
+- T-1428: WIRE001: refuse a ticket that adds code nothing outside its own tests can reach
+
 ## [0.305.0] - unreleased
 
 - T-1421: BUG002: a bug ticket must prove the defect no longer reproduces -- evidence must fail at the parent commit

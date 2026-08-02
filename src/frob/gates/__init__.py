@@ -71,7 +71,7 @@ from frob.gates._coverage import (
     exclude_filtered_coverage as _coverage_exclude_filtered_coverage,
 )
 from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
-from frob.gates._dead_symbols import dead_symbol_gate
+from frob.gates._dead_symbols import dead_symbol_gate, wire_gate
 from frob.gates._debt_deprecated import (
     _release_expired_deprecated_violations,
     _release_open_debt_violations,
@@ -5115,6 +5115,9 @@ _ALL_GATES = frozenset(
         "parse_failures",
         # T-0422: DEAD001, an unreferenced private symbol.
         "dead_symbols",
+        # T-1428: WIRE001/WIRE002, a ticket's own diff adding code nothing
+        # outside its own tests can reach.
+        "wire",
         # T-0405: LANG001, language-extension conformance drift-lock.
         "lang_conformance",
         # T-0406: LANG002/LANG003, per-project language conformance.
@@ -5453,6 +5456,7 @@ _PROCESS_POOL_GATES: frozenset[str] = frozenset(
         "pii_structural",
         "secrets",
         "dead_symbols",
+        "wire",
         "protocol_summary",
     }
 )
@@ -5495,6 +5499,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "render_lint",
     "parse_failures",
     "dead_symbols",
+    # frob:ticket T-1428
+    "wire",
     # frob:ticket T-0813
     "protocol_summary",
     # frob:ticket T-0788
@@ -5878,6 +5884,10 @@ def _build_process_jobs(st: _GateInputs) -> dict[str, _ProcessJob]:
         # T-0422: per-package build_call_graph calls are CPU-bound like the
         # rest of this pool (archgate/perf/sys), not I/O-bound.
         "dead_symbols": _ProcessJob(dead_symbol_gate, (st.root, st.snapshot)),
+        # T-1428: same CPU-bound-pool posture as dead_symbols above -- a
+        # repo-wide text scan (see wire_gate's own docstring for why it is
+        # a scan, not a call-graph query) plus a small waive-edge pass.
+        "wire": _ProcessJob(wire_gate, (st.root, st.snapshot, st.diff, st.queue)),
         # T-0813: same CPU-bound per-package build_call_graph posture as
         # dead_symbols above, plus a fixpoint pass over each package's
         # protocol-tagged symbols.

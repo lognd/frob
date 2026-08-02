@@ -928,6 +928,7 @@ node gates : trusted {
     attr interface=waive006_gate;
     attr interface=waive007_gate;
     attr interface=walk_lint_gate;
+    attr interface=wire_gate;
     attr interface=write_autofix_manifest;
     attr interface=write_coverage_lock;
 }
@@ -4610,6 +4611,7 @@ node testsuite : trusted {
     attr interface=TestWipAddIgnoredPathFallback;
     attr interface=TestWipCommit;
     attr interface=TestWipCommitNormalizationOnlyDirty;
+    attr interface=TestWireGate;
     attr interface=TestWlHash;
     attr interface=TestWork;
     attr interface=TestWorkingDiff;

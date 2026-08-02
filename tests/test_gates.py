@@ -2436,6 +2436,236 @@ class TestDeadSymbolGate:
         assert not any("_never_called" in v.message for v in violations)
 
 
+# frob:ticket T-1428
+class TestWireGate:
+    """T-1428: refuse a ticket's own diff when it adds a function with no
+    non-test caller, a gate rule id absent from `_KNOWN_GATE_RULES`, or a
+    CLI flag `dest` absent from `_config_external.py` -- the repeat
+    "landed, passed every gate, did nothing" defect (T-1384/T-1399/
+    T-1391/T-1421/T-1422)."""
+
+    # frob:ticket T-1428
+    def test_new_public_function_with_no_caller_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        # Reconstructs T-1421's shape: a new guard function, unit-tested
+        # directly, wired into nothing outside its own test.
+        from frob.gates._dead_symbols import wire_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def own_obligations_clean() -> bool:\n    return True\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_own_obligations_clean() -> None:\n"
+            "    assert own_obligations_clean()\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = next(
+            r for r in snap.symbols.values() if "own_obligations_clean" in r.symref
+        )
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        v = _first_rule(violations, "WIRE001")
+        assert v is not None
+        assert "own_obligations_clean" in v.message
+        assert v.severity == Severity.ERROR
+
+    # frob:ticket T-1428
+    def test_new_function_called_from_non_test_code_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        from frob.gates._dead_symbols import wire_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def own_obligations_clean() -> bool:\n    return True\n",
+        )
+        _write(
+            tmp_path,
+            "src/b.py",
+            "from a import own_obligations_clean\n\n\n"
+            "def caller() -> bool:\n"
+            "    return own_obligations_clean()\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = next(
+            r for r in snap.symbols.values() if "own_obligations_clean" in r.symref
+        )
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(
+            v.rule == "WIRE001" and "own_obligations_clean" in v.message
+            for v in violations
+        )
+
+    # frob:ticket T-1428
+    def test_new_rule_id_missing_from_known_gate_rules_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        # Reconstructs T-1421's BUG002 shape: a gate emits a rule id string
+        # that was never registered in _KNOWN_GATE_RULES.
+        from frob.gates._dead_symbols import wire_gate
+
+        _write(
+            tmp_path,
+            "src/gate.py",
+            "def test_new_gate() -> object:\n"
+            '    return Violation(rule="ZZZQ999", severity=1, file="x", line=1, message="m")\n',
+        )
+        snap = _snapshot(tmp_path)
+        diff = Diff(base="x", hunks=(Hunk(file="src/gate.py", span=(1, 2)),))
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert any(v.rule == "WIRE001" and "ZZZQ999" in v.message for v in violations)
+
+    # frob:ticket T-1428
+    def test_new_rule_id_present_in_known_gate_rules_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        from frob.gates._dead_symbols import wire_gate
+
+        _write(
+            tmp_path,
+            "src/gate.py",
+            "def new_gate() -> object:\n"
+            '    return Violation(rule="DEAD001", severity=1, file="x", line=1, message="m")\n',
+        )
+        snap = _snapshot(tmp_path)
+        diff = Diff(base="x", hunks=(Hunk(file="src/gate.py", span=(1, 2)),))
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(
+            v.rule == "WIRE001" and "DEAD001" in v.message for v in violations
+        )
+
+    # frob:ticket T-1428
+    def test_new_cli_dest_missing_from_config_external_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        # Reconstructs T-1422's shape: argparse parses a flag whose dest
+        # never made it into _config_external.py's copy lists.
+        from frob.gates._dead_symbols import wire_gate
+
+        _write(
+            tmp_path,
+            "src/frob/_cli_parsers/_misc.py",
+            'p.add_argument("--amend", dest="ticket_accept_amend_index")\n',
+        )
+        _write(tmp_path, "src/frob/app/_config_external.py", "# no fields wired\n")
+        snap = _snapshot(tmp_path)
+        diff = Diff(
+            base="x",
+            hunks=(Hunk(file="src/frob/_cli_parsers/_misc.py", span=(1, 1)),),
+        )
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        v = _first_rule(violations, "WIRE001")
+        assert v is not None
+        assert "ticket_accept_amend_index" in v.message
+
+    # frob:ticket T-1428
+    def test_new_cli_dest_present_in_config_external_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        from frob.gates._dead_symbols import wire_gate
+
+        _write(
+            tmp_path,
+            "src/frob/_cli_parsers/_misc.py",
+            'p.add_argument("--amend", dest="ticket_accept_amend_index")\n',
+        )
+        _write(
+            tmp_path,
+            "src/frob/app/_config_external.py",
+            '    "ticket_accept_amend_index",\n',
+        )
+        snap = _snapshot(tmp_path)
+        diff = Diff(
+            base="x",
+            hunks=(Hunk(file="src/frob/_cli_parsers/_misc.py", span=(1, 1)),),
+        )
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(
+            v.rule == "WIRE001" and "ticket_accept_amend_index" in v.message
+            for v in violations
+        )
+
+    # frob:ticket T-1428
+    def test_wire002_fires_when_follow_up_ticket_missing(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        from frob.gates._dead_symbols import wire_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            '# frob:waive WIRE001 reason="public API, wired later"\n'
+            "def own_obligations_clean() -> bool:\n"
+            "    return True\n",
+        )
+        snap = _snapshot(tmp_path)
+        diff = Diff(base="x", hunks=())
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        v = _first_rule(violations, "WIRE002")
+        assert v is not None
+        assert "follow_up" in v.message
+        assert v.severity == Severity.ERROR
+
+    # frob:ticket T-1428
+    def test_wire002_fires_when_follow_up_ticket_is_closed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        from frob.gates._dead_symbols import wire_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            '# frob:waive WIRE001 reason="wired later" follow_up="T-0001"\n'
+            "def own_obligations_clean() -> bool:\n"
+            "    return True\n",
+        )
+        snap = _snapshot(tmp_path)
+        diff = Diff(base="x", hunks=())
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.DONE)})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        v = _first_rule(violations, "WIRE002")
+        assert v is not None
+        assert "T-0001" in v.message
+
+    # frob:ticket T-1428
+    def test_wire002_clean_when_follow_up_ticket_is_open(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        from frob.gates._dead_symbols import wire_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            '# frob:waive WIRE001 reason="wired later" follow_up="T-0001"\n'
+            "def own_obligations_clean() -> bool:\n"
+            "    return True\n",
+        )
+        snap = _snapshot(tmp_path)
+        diff = Diff(base="x", hunks=())
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(v.rule == "WIRE002" for v in violations)
+
+
 # frob:ticket T-0813
 class TestProtocolSummaryGate:
     """T-0813: the production `mark_unresolved=True` wiring into

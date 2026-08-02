@@ -525,6 +525,16 @@ _KNOWN_GATE_RULES = frozenset(
         # targeting a perfectly real, matchable rule id. This was a listing
         # omission, not evidence DEAD001 was ever renamed or removed.
         "DEAD001",
+        # T-1428: a ticket's own diff adds a symbol, gate-rule-id literal,
+        # or CLI flag `dest` that nothing outside the diff's own tests can
+        # reach -- the repeat-offender "landed, passed every gate, did
+        # nothing" defect (`frob.gates._dead_symbols.wire_gate`).
+        "WIRE001",
+        # T-1428: a `frob:waive WIRE001` present but its `follow_up=`
+        # attribute is missing or does not name a real, still-open ticket
+        # -- the escape hatch must bind an enforced obligation, not just
+        # carry free-text prose nobody has to act on.
+        "WIRE002",
         # T-0813: the production `mark_unresolved=True` wiring into
         # `compute_protocol_summaries` (frob.gates._protocol_summary) --
         # a frob:requires/frob:transition-tagged symbol whose transitive
@@ -871,6 +881,11 @@ _UNWAIVABLE_RULES = frozenset(
         "COMPLIANCE006",
         "REG012",
         "DEC003",
+        # T-1428: WIRE002 is a finding ABOUT a `frob:waive WIRE001`'s own
+        # escape hatch being malformed/unbound -- waiving it away would
+        # let the exact honest-but-unenforceable disclosure this ticket
+        # exists to close back in through its own side door.
+        "WIRE002",
     }
 )
 

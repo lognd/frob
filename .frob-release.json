@@ -513,6 +513,7 @@
     "src/frob/gates/_coverage.py::write_coverage_lock": "cd6ea025a0ac5e32adf04a56d911b8534d641061e215e2c9325da8c6cb04c622",
     "src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate": "a7667099c722e4afaa5b0ec0fd40f6f917368267b0ae9afc8116a4f0fe34ddff",
     "src/frob/gates/_dead_symbols.py::dead_symbol_gate": "ccb75a1a6ec73b33e90b0e278ce29174ab50c40a60fd3da4e75867bee5a7eb97",
+    "src/frob/gates/_dead_symbols.py::wire_gate": "523a95fc23e85d4d1abc68457e0870b4f5c5d39641cf1aae67538de71ee8003a",
     "src/frob/gates/_debt_deprecated.py::debt_gate": "a376c0cb523fc3a01d0fee3db265624393127590531d12a8f63e851f3f5f82ee",
     "src/frob/gates/_debt_deprecated.py::deprecated_current_references": "06118ebfd993eb219fb2267897e312d8950c2cea041233b046d90f4fdda22e85",
     "src/frob/gates/_debt_deprecated.py::deprecated_gate": "334422b7d71296348532a230b57b678c5899fe76d5827d0d5ed493b69d3af433",
@@ -1946,5 +1947,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.305.0"
+  "version": "0.306.0"
 }
