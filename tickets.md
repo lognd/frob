@@ -4008,7 +4008,7 @@ Landed and verified by T-1276 before the false close, so this ticket does NOT ne
 ```yaml
 id: T-1404
 title: Wire frob ticket land's pre-fix pass to FMT001's new only_paths land-scoping
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -4018,6 +4018,9 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_out_of_scope_file_with_noncanonical_directive_is_left_untouched
+- tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_in_scope_file_with_noncanonical_directive_is_still_fixed
 threat: null
 component: null
 ```
@@ -4061,6 +4064,74 @@ Acceptance:
 - GIVEN the same land, WHEN a file genuinely inside the landing ticket's
   touched set carries a non-canonical frob: directive, THEN it is still
   fixed exactly as before.
+
+## Done report
+
+T-1404: T-1391 built `fix_fmt001_directive_wrap`'s `only_paths` keyword
+(restricting FMT001's Tier-A rewrite to a caller-supplied touched-file set)
+but wired no real caller to it -- `frob ticket land`'s pre-land absorption
+step (`_absorb_pre_land_fixes`, src/frob/app/ticket_runner/_land_cmd.py)
+still ran BOTH its raw `frob fmt` whole-tree call AND the generic Tier-A
+FMT001 handler unscoped, so either one could rewrite a `frob:` directive
+comment in a file entirely outside the landing ticket's own diff -- the
+land-scope-discipline collision T-1391 diagnosed but left half-fixed.
+
+Fix: `_land_touched_paths` (new, `src/frob/app/ticket_runner/_land_cmd.py`)
+computes the landing ticket's touched-file set from a real git diff
+against `main` (`frob.gitio.working_diff`, the same diff-scoped source
+FMT001's own gate already uses via `_fmt001_touched_lines` -- not the
+ticket's declared `scope` globs, which can both over- and under-match
+what actually changed). `_absorb_pre_land_fixes` now:
+
+1. Scopes the raw `frob fmt` pass to exactly the touched files (looping
+   `format_paths` per file) instead of walking the whole tree, when the
+   touched set can be computed.
+2. Excludes `"FMT001"` from the subsequent generic `apply_tier_a_fixes`
+   batch in that case, so the Tier-A handler does not redundantly re-walk
+   the whole tree right behind the scoped pass and reintroduce the same
+   out-of-scope rewrite.
+3. Falls back to the pre-T-1404 whole-tree behavior for BOTH steps when
+   `_land_touched_paths` returns `None` (diff computation failed) --
+   degrading gracefully, never silently skipping the fix.
+
+Two regression tests added to
+`tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes`:
+- `test_out_of_scope_file_with_noncanonical_directive_is_left_untouched`
+  (T-1404 acceptance [0]: an already-committed, untouched file elsewhere
+  in the tree with a non-canonical `frob:` directive is left
+  byte-identical)
+- `test_in_scope_file_with_noncanonical_directive_is_still_fixed`
+  (acceptance [1]: a file genuinely inside the landing ticket's touched
+  set is still fixed exactly as before, alongside an unrelated
+  already-committed file)
+
+Scope: src/frob/app/ticket_runner/_land_cmd.py, plus the test file --
+`apply_tier_a_fixes`/`fix_fmt001_directive_wrap` in
+src/frob/gates/_fix_engine.py were NOT modified; the existing `exclude=`
+and `only_paths=` keyword params (already built, already regression-
+tested by T-1391's own suite) were sufficient to wire this from the
+caller side alone, matching the ticket's own scope note about avoiding
+the wider `_fix_engine.py`/`ticket_runner` scope-closure cascade.
+
+### Changed
+```
+ src/frob/app/ticket_runner/_land_cmd.py   |    68 +-
+ src/frob/gates/_dead_symbols.py           |   251 +-
+ tests/test_gates.py                       |   203 +
+ tests/test_ticket_work_and_land_finish.py |    59 +
+ tickets-archive.md                        | 20772 ++++++++++++++++++++--------
+ tickets.md                                | 11411 ++-------------
+ 6 files changed, 17146 insertions(+), 15618 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_out_of_scope_file_with_noncanonical_directive_is_left_untouched` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_in_scope_file_with_noncanonical_directive_is_still_fixed` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 9 error(s), 370 warning(s), 695 waived
+- error-findings: AFFECT001@src/frob/gates/_dead_symbols.py, ARCH001@src/frob/app/ticket_runner/_land_cmd.py, ARCH103@src/frob/gates/_dead_symbols.py, COV003@tickets/T-1378, COV003@tickets/T-1406, COV003@tickets/T-1408, COV003@tickets/T-1419, COV003@tickets/T-1423, PERF004@src/frob/gates/_dead_symbols.py
 
 <!-- ticket:T-1405 -->
 ```yaml
@@ -4518,7 +4589,7 @@ T-1422's landed commit (frob ticket accept --amend/--remove) introduced src/frob
 ```yaml
 id: T-1430
 title: 'WIRE001: detect a new keyword-only parameter no call site passes'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-02'
@@ -4529,6 +4600,9 @@ sprint: null
 scope:
 - src/frob/gates/_dead_symbols.py
 - tests/test_gates.py
+evidence:
+- tests/test_gates.py::TestWireGate::test_new_kwonly_param_never_passed_is_flagged
+- tests/test_gates.py::TestWireGate::test_new_kwonly_param_passed_at_call_site_is_not_flagged
 threat: null
 component: null
 ```
@@ -4556,11 +4630,73 @@ before/after comparison against the diff's base revision (mirroring how
 src/frob/tickets/_new_gate_rule_acceptance.py already reads a symbol's
 text at a historical revision for a related purpose).
 
+## Done report
+
+T-1430: WIRE001's case 1 ("no non-test caller") cannot see the fourth
+real-instance shape T-1428's brief named -- a new KEYWORD-ONLY PARAMETER
+added to an EXISTING function's signature that no call site passes
+(T-1384's own_obligations_clean, T-1399's gate_claims_verified, T-1391's
+only_paths). The function itself already has a caller (it is not new), so
+case 1's "no non-test caller" check never fires; the new parameter
+specifically being unpassed is a narrower, signature-level question.
+
+Fix: `_wire001_new_kwonly_param_violations` (src/frob/gates/_dead_symbols.py)
+walks every function/method this diff TOUCHES but did not wholly define
+(`_touched_callable_records`, the complement of case 1's `_new_callable_
+records` proxy), reads the function's keyword-only parameter set from the
+CURRENT working-tree source (stdlib `ast.parse`, exact for this one
+question -- no need for `frob.lang`'s token-stream digest machinery here,
+unlike T-1431's relocation check) and from the diff's merge-base
+(`git show <base>:<path>`, same mechanism `_merge_base_body_match` already
+uses), and flags any name present now but absent at the base for which
+`_keyword_passed_outside_def` (a whole-tree `name=` keyword-argument text
+scan, mirroring `_is_reached_outside_diff_tests`'s bias) finds no call
+site anywhere.
+
+No new rule id: this is WIRE001's existing rule id, case 4 of the same
+gate -- no `_KNOWN_GATE_RULES`/registry change, no
+`docs/design/registry/check-coverage.yaml` denominator bump (verified:
+WIRE001/WIRE002 already carry their own `CHK-GATE-WIRE001`/`CHK-GATE-
+WIRE002` registry entries from T-1428; this ticket adds no new gate/rule,
+just a fourth detection case inside the same gate function).
+
+Two regression tests added to `tests/test_gates.py::TestWireGate`:
+- `test_new_kwonly_param_never_passed_is_flagged`
+- `test_new_kwonly_param_passed_at_call_site_is_not_flagged`
+
+Both use a real git repo fixture (same shape T-1431's tests use -- a real
+commit for the pre-change baseline, then an uncommitted signature change
+on a `work` branch) since the merge-base comparison needs a real sha to
+`git show` against.
+
+Scope: src/frob/gates/_dead_symbols.py, tests/test_gates.py -- both inside
+T-1430's declared scope.
+
+### Changed
+```
+ src/frob/app/ticket_runner/_land_cmd.py   |    68 +-
+ src/frob/gates/_dead_symbols.py           |   251 +-
+ tests/test_gates.py                       |   203 +
+ tests/test_ticket_work_and_land_finish.py |    59 +
+ tickets-archive.md                        | 20772 ++++++++++++++++++++--------
+ tickets.md                                | 11349 ++-------------
+ 6 files changed, 17083 insertions(+), 15619 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestWireGate::test_new_kwonly_param_never_passed_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestWireGate::test_new_kwonly_param_passed_at_call_site_is_not_flagged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 9 error(s), 878 warning(s), 694 waived
+- error-findings: AFFECT001@src/frob/gates/_dead_symbols.py, ARCH001@src/frob/app/ticket_runner/_land_cmd.py, ARCH103@src/frob/gates/_dead_symbols.py, COV003@tickets/T-1378, COV003@tickets/T-1406, COV003@tickets/T-1408, COV003@tickets/T-1419, COV003@tickets/T-1423, PERF004@src/frob/gates/_dead_symbols.py
+
 <!-- ticket:T-1431 -->
 ```yaml
 id: T-1431
 title: WIRE001 fires on relocated symbols, so every file split trips it
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-02'
@@ -4571,14 +4707,19 @@ sprint: null
 scope:
 - src/frob/gates/_dead_symbols.py
 - tests/test_gates.py
+evidence:
+- tests/test_gates.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged
+- tests/test_gates.py::TestWireGate::test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged
 acceptance:
 - text: GIVEN a diff that relocates a symbol into a new file without changing its
     reachability WHEN the wire gate runs THEN WIRE001 does not fire for that symbol
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged
 - text: GIVEN a diff that introduces a genuinely new symbol with no caller WHEN the
     wire gate runs THEN WIRE001 still fires exactly as today, proven by a regression
     test
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestWireGate::test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged
 threat: null
 component: null
 ```
@@ -4598,6 +4739,67 @@ THE FIX. Compare against the SYMBOL's prior existence, not the FILE's. A symbol 
 Two sub-cases worth handling deliberately rather than by accident: a symbol that is relocated AND changed in the same diff (still relocated -- the reachability question is unchanged unless the change is what removed its caller), and a symbol relocated into a file that also introduces genuinely new symbols (the new ones stay in scope).
 
 NOT IN SCOPE, and worth stating so it is not lost: the two findings above ARE real, pre-existing, test-only production symbols. Making WIRE001 relocation-aware does not make them reachable. They are a legitimate DEAD-family question about test-only helpers living in production modules, and if that is worth acting on it deserves its own ticket rather than being smuggled in here.
+
+## Done report
+
+T-1431: WIRE001 fired on a symbol a diff RELOCATES (a file split), because
+the diff-scoped hunk proxy `_new_callable_records` cannot distinguish "this
+diff DEFINED a symbol" from "this diff moved an existing symbol's whole
+span into a new file" -- both look identical to a per-file line-range
+check.
+
+Fix: `_merge_base_body_match` (src/frob/gates/_dead_symbols.py) asks, for
+each WIRE001 case-1 candidate that would otherwise fire, whether a
+same-SHORT-NAME `def`/`class` existed ANYWHERE in the tree at the diff's
+merge-base (`diff.base`, already the resolved sha `working_diff` computes)
+with the SAME body (or, for a body-less symbol, signature) digest. A
+`git grep` at the base revision finds name-match candidate paths cheaply;
+only those pay for a `git show <base>:<path>` blob read plus a real
+`frob.lang.parse_file` extraction (via a scratch temp file, since
+`parse_file` only reads from a real `Path`) to compare digests against the
+candidate's own `SymbolRecord.digests`. A digest match means the symbol was
+RELOCATED, not introduced, and WIRE001 stays silent about it; a genuinely
+new symbol (no prior name+digest match anywhere at the merge-base) still
+fires exactly as before -- proven by a regression test that puts a
+relocated symbol and a genuinely-new symbol in the SAME split-destination
+file and asserts only the new one fires.
+
+Two regression tests added to `tests/test_gates.py::TestWireGate`:
+- `test_relocated_symbol_via_file_split_is_not_flagged`
+- `test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged`
+
+Both use a real git repo fixture (`_git_init` + a real commit + branch +
+uncommitted split), since the relocation check needs a real merge-base sha
+to `git grep`/`git show` against -- the existing tests' synthetic
+`Diff(base="x", ...)` fixtures are untouched and still pass (a fake base
+ref makes `git grep`/`git show` fail cleanly, which `_merge_base_body_match`
+treats as "no match", i.e. no relocation-exemption -- verified no existing
+WIRE001 test regressed).
+
+Scope: src/frob/gates/_dead_symbols.py, tests/test_gates.py -- both inside
+T-1431's declared scope. No registry/gate-catalog changes (WIRE001's rule
+id itself is unchanged; this narrows an existing gate's false-positive
+surface, it does not add a new rule).
+
+### Changed
+```
+ src/frob/app/ticket_runner/_land_cmd.py   |    68 +-
+ src/frob/gates/_dead_symbols.py           |   251 +-
+ tests/test_gates.py                       |   203 +
+ tests/test_ticket_work_and_land_finish.py |    59 +
+ tickets-archive.md                        | 20772 ++++++++++++++++++++--------
+ tickets.md                                | 11000 ++-------------
+ 6 files changed, 16877 insertions(+), 15476 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestWireGate::test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 9 error(s), 878 warning(s), 694 waived
+- error-findings: AFFECT001@src/frob/gates/_dead_symbols.py, ARCH001@src/frob/app/ticket_runner/_land_cmd.py, ARCH103@src/frob/gates/_dead_symbols.py, COV003@tickets/T-1378, COV003@tickets/T-1406, COV003@tickets/T-1408, COV003@tickets/T-1419, COV003@tickets/T-1423, PERF004@src/frob/gates/_dead_symbols.py
 
 <!-- ticket:T-1432 -->
 ```yaml
@@ -4877,3 +5079,55 @@ threat: null
 component: null
 ```
 Observed 2026-08-02: after frob ticket archive ran on main (61 tickets moved to tickets-archive.md), every worktree cut before the archive fails to land: the frob-ledger merge driver unions ticket ids across base/ours/theirs, so blocks archived on main but still active in the worktree ledger are resurrected into tickets.md, and the next ledger write fails with DuplicateId (present in both active and archive). frob ticket archive inside the worktree also refuses (id collision), leaving no CLI path to repair; the only recovery is the playbook 10b restore recipe (checkout main's ledger wholesale, re-apply every worktree delta by hand via start/evidence/done-report), which was needed for the w1b-daemon series and costs 15+ commands per worktree. Fix: make the splice archive-aware -- a ticket id present in tickets-archive.md on either side ranks above any active-side copy and must be dropped from the active ledger during the splice (state-rank already exists; add archived as the top rank). Also give frob ticket archive an idempotent mode that collapses an active/archive duplicate to the archive copy instead of refusing, as the recovery path.
+
+<!-- ticket:T-1438 -->
+```yaml
+id: T-1438
+title: BUG002 close check resolves parent ref to the worktree's own branch, not the
+  ticket's real base
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-02'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/ticket_runner/_close_cmd.py
+- src/frob/gates/_mutation_evidence.py
+threat: null
+component: null
+```
+`frob ticket close`'s BUG002/mutation-evidence check
+(`_close_mutation_evidence_for_ticket`, src/frob/app/ticket_runner/_close_cmd.py)
+passes `current_branch(root)` as the "parent commit" ref to
+`bug_repro_violations`/`_bug_repro_outcome_at_ref`
+(src/frob/gates/_mutation_evidence.py). In a dispatched worktree agent's
+normal flow, `current_branch(root)` is the WORKTREE'S OWN branch (e.g.
+"w1c-wire"), which by the time `close` runs already carries the ticket's
+own fix commit at its tip -- `git worktree add --detach <scratch>
+<branch-name>` then checks out the FIX, not the pre-fix parent, so the
+designated repro test trivially "passes at parent" for every single
+bug-kind ticket closed this way, and BUG002 refuses every close with a
+false EvidenceConfirmatoryOnly (TEST016) error.
+
+Reproduced directly on T-1431 (2026-08-02): manually diffing the ticket's
+own fix out of the working tree and re-running the bound evidence test
+against the true parent commit (the merge-base with main, 2ecd9401) shows
+it genuinely FAILS there and passes with the fix restored -- the evidence
+is real, but `close`'s own base-ref resolution cannot see that because it
+resolves to the wrong ref (its own branch tip, not the ticket's
+merge-base-with-main).
+
+`land`'s own precheck (referenced in this function's docstring,
+`_land_precheck`) apparently has the same `current_branch(root)`-as-base-
+ref pattern -- worth checking whether it has the same defect or whether
+land's flow differs enough (merge target vs. worktree branch) to avoid it;
+not verified here, out of T-1431's scope.
+
+Fix direction: BUG002/close should resolve the ticket's actual base
+(`cfg.ticket_base_ref`, default "main", or the true git merge-base of
+HEAD against it) rather than the worktree's own branch name, mirroring
+how `working_diff` already computes `_merge_base(root, base)` for the
+scope/wire gates.

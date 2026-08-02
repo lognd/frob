@@ -2507,6 +2507,209 @@ class TestWireGate:
             for v in violations
         )
 
+    # frob:ticket T-1431
+    def test_relocated_symbol_via_file_split_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        # T-1431: a LARGE001 file split moves a symbol verbatim into a new
+        # file. The diff-scoped hunk proxy sees it as "new" in the new
+        # file, but it existed (same body, same name, called only from its
+        # own test) at the merge-base under the OLD path -- WIRE001 must
+        # not fire.
+        from frob.gates._dead_symbols import wire_gate
+
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def own_obligations_clean() -> bool:\n    return True\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_own_obligations_clean() -> None:\n"
+            "    assert own_obligations_clean()\n",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "feat: add own_obligations_clean"],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "work"], cwd=tmp_path, check=True
+        )
+        # The "split": delete src/a.py, add the identical symbol under
+        # src/pkg/_a.py instead.
+        (tmp_path / "src" / "a.py").unlink()
+        _write(
+            tmp_path,
+            "src/pkg/_a.py",
+            "def own_obligations_clean() -> bool:\n    return True\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = next(
+            r
+            for r in snap.symbols.values()
+            if r.id.path == "src/pkg/_a.py" and "own_obligations_clean" in r.symref
+        )
+        diff = working_diff(tmp_path, "main").danger_ok
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert record.id.path == "src/pkg/_a.py"
+        assert not any(
+            v.rule == "WIRE001" and "own_obligations_clean" in v.message
+            for v in violations
+        )
+
+    # frob:ticket T-1431
+    def test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        # T-1431 acceptance [1]: relocation-awareness must not blanket-
+        # exempt a whole new file -- a symbol with no prior existence
+        # anywhere at the merge-base still fires, even sitting right next
+        # to a relocated one in the same new file.
+        from frob.gates._dead_symbols import wire_gate
+
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def own_obligations_clean() -> bool:\n    return True\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_own_obligations_clean() -> None:\n"
+            "    assert own_obligations_clean()\n",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "feat: add own_obligations_clean"],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "work"], cwd=tmp_path, check=True
+        )
+        (tmp_path / "src" / "a.py").unlink()
+        _write(
+            tmp_path,
+            "src/pkg/_a.py",
+            "def own_obligations_clean() -> bool:\n    return True\n\n\n"
+            "def brand_new_helper() -> bool:\n    return False\n",
+        )
+        snap = _snapshot(tmp_path)
+        diff = working_diff(tmp_path, "main").danger_ok
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(
+            v.rule == "WIRE001" and "own_obligations_clean" in v.message
+            for v in violations
+        )
+        assert any(
+            v.rule == "WIRE001" and "brand_new_helper" in v.message
+            for v in violations
+        )
+
+    # frob:ticket T-1430
+    def test_new_kwonly_param_never_passed_is_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        # T-1430 case 4: an EXISTING function (already has a non-test
+        # caller, so case 1 never fires) grows a new keyword-only
+        # parameter that no call site anywhere passes.
+        from frob.gates._dead_symbols import wire_gate
+
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def own_obligations_clean() -> bool:\n    return True\n",
+        )
+        _write(
+            tmp_path,
+            "src/b.py",
+            "from a import own_obligations_clean\n\n\n"
+            "def caller() -> bool:\n"
+            "    return own_obligations_clean()\n",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "feat: add own_obligations_clean"],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "work"], cwd=tmp_path, check=True
+        )
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def own_obligations_clean(*, strict: bool = False) -> bool:\n"
+            "    return True\n",
+        )
+        snap = _snapshot(tmp_path)
+        diff = working_diff(tmp_path, "main").danger_ok
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        v = _first_rule(violations, "WIRE001")
+        assert v is not None
+        assert "strict" in v.message
+        assert v.severity == Severity.ERROR
+
+    # frob:ticket T-1430
+    def test_new_kwonly_param_passed_at_call_site_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        from frob.gates._dead_symbols import wire_gate
+
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def own_obligations_clean() -> bool:\n    return True\n",
+        )
+        _write(
+            tmp_path,
+            "src/b.py",
+            "from a import own_obligations_clean\n\n\n"
+            "def caller() -> bool:\n"
+            "    return own_obligations_clean()\n",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "feat: add own_obligations_clean"],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "work"], cwd=tmp_path, check=True
+        )
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def own_obligations_clean(*, strict: bool = False) -> bool:\n"
+            "    return True\n",
+        )
+        _write(
+            tmp_path,
+            "src/b.py",
+            "from a import own_obligations_clean\n\n\n"
+            "def caller() -> bool:\n"
+            "    return own_obligations_clean(strict=True)\n",
+        )
+        snap = _snapshot(tmp_path)
+        diff = working_diff(tmp_path, "main").danger_ok
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(
+            v.rule == "WIRE001" and "strict" in v.message for v in violations
+        )
+
     # frob:ticket T-1428
     def test_new_rule_id_missing_from_known_gate_rules_is_flagged(
         self, tmp_path: Path

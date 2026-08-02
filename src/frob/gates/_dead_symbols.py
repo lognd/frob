@@ -50,14 +50,17 @@ a scope choice of convenience).
 
 from __future__ import annotations
 
+import ast
 import re
+import tempfile
 from pathlib import Path, PurePosixPath
 
 from frob.gates._models import Severity, Violation
 from frob.gates._waive import known_gate_rule_ids
-from frob.gitio import Diff
+from frob.gitio import Diff, run_argv
 from frob.graph import EdgeKind, GraphSnapshot, build_reference_graph
-from frob.lang import SymbolKind, supported_extensions
+from frob.graph.digest import compute_digests
+from frob.lang import SymbolKind, parse_file, supported_extensions
 from frob.logging import get_logger
 from frob.tickets import TicketQueue
 
@@ -237,7 +240,7 @@ def dead_symbol_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ..
 # `_is_reached_outside_diff_tests`'s docstring for why a text scan, not the
 # call graph, is used here).
 #
-# Three of the four real-instance shapes this ticket names are implemented:
+# All four real-instance shapes this ticket names are implemented:
 #   1. a new function/method/class with no non-test caller (T-1421)
 #   2. a new gate rule id literal absent from `_KNOWN_GATE_RULES` (T-1421's
 #      BUG002)
@@ -245,11 +248,13 @@ def dead_symbol_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ..
 #      lists (T-1422) -- the "string in a list" shape, handled by a
 #      TARGETED check, not the call graph (see module docstring on that
 #      function)
-# The fourth shape -- a new keyword-only parameter no call site passes
-# (T-1384/T-1399/T-1391) -- needs a signature-level before/after AST diff
-# this ticket does not build; disclosed in this ticket's Done report with a
-# follow-up ticket, per the acceptance note that regression tests need
-# reconstruct only two of the four shapes.
+#   4. a new keyword-only parameter added to an EXISTING function's
+#      signature that no call site passes (T-1384/T-1399/T-1391, T-1430)
+#      -- `_wire001_new_kwonly_param_violations` diffs the function's
+#      keyword-only parameter set at the diff's merge-base against its
+#      current set (stdlib `ast`, not the token-stream digest machinery
+#      T-1431's relocation check uses -- a plain name-set diff is exact
+#      here, no false-positive-from-body-rewrite risk to guard against).
 
 _RULE_ID_LITERAL_RE = re.compile(r'rule\s*=\s*"([A-Z][A-Z0-9]{1,9}\d{3})"')
 _CLI_DEST_LITERAL_RE = re.compile(r'\bdest\s*=\s*"([a-z][a-z0-9_]*)"')
@@ -369,18 +374,83 @@ def _is_reached_outside_diff_tests(
     return False
 
 
+def _merge_base_body_match(
+    root: Path, base: str, short: str, target_digest: str
+) -> bool:
+    """True if a `def`/`class` named `short` existed ANYWHERE in the tree at
+    `base` (the diff's merge-base sha) whose body (or, for a body-less
+    symbol, signature) digest equals `target_digest` -- the T-1431
+    relocation check. A `git grep` at the base revision finds candidate
+    `path:line` hits by name (cheap, no parse needed for the common "no
+    prior symbol by this name at all" case); only a name-match candidate
+    pays for a `git show` blob read plus a real `frob.lang.parse_file`
+    extraction to compare digests. Digest equality, not just a name match,
+    is required -- two unrelated symbols can share a short name."""
+    pattern = rf"^[[:space:]]*(async[[:space:]]+def|def|class)[[:space:]]+{short}\b"
+    grep = run_argv(
+        ("git", "-C", str(root), "grep", "-lE", pattern, base, "--", "*.py")
+    )
+    if grep.is_err or grep.danger_ok.returncode not in (0, 1):
+        # rc=1 means "no match" for git grep -- not an error, just empty.
+        return False
+    paths: set[str] = set()
+    for line in grep.danger_ok.stdout.splitlines():
+        if ":" not in line:
+            continue
+        # git grep -l on a revision spec prints "<rev>:<path>".
+        _, _, path = line.partition(":")
+        if path:
+            paths.add(path)
+    for path in paths:
+        show = run_argv(("git", "-C", str(root), "show", f"{base}:{path}"))
+        if show.is_err or show.danger_ok.returncode != 0:
+            continue
+        with tempfile.NamedTemporaryFile(
+            suffix=Path(path).suffix or ".py", mode="w", encoding="utf-8", delete=False
+        ) as handle:
+            handle.write(show.danger_ok.stdout)
+            tmp_path = Path(handle.name)
+        try:
+            parsed = parse_file(tmp_path)
+        finally:
+            tmp_path.unlink(missing_ok=True)
+        if parsed.is_err:
+            continue
+        for symbol in parsed.danger_ok.symbols:
+            if _short_name(symbol.qualname) != short:
+                continue
+            digests = compute_digests(symbol)
+            candidate = digests.body or digests.sig
+            if candidate == target_digest:
+                return True
+    return False
+
+
 def _wire001_unwired_symbol_violations(
     root: Path,
     snapshot: GraphSnapshot,
     hunks_by_file: dict[str, list[tuple[int, int]]],
+    diff: Diff,
 ) -> list[Violation]:
     """WIRE001 case 1: a new function/method/class this diff defines with
     no non-test caller anywhere in the tree (see `_is_reached_outside_
-    diff_tests`)."""
+    diff_tests`), EXCLUDING a symbol this diff merely RELOCATED (T-1431):
+    a file split (LARGE001) moves an existing symbol verbatim into a new
+    file, which makes it look "new" to the diff-scoped hunk proxy
+    (`_new_callable_records`) even though its reachability is unchanged.
+    `_merge_base_body_match` asks whether a same-named symbol with the
+    SAME body/sig digest already existed anywhere in the tree at the
+    diff's merge-base -- if so, this is a move, not an introduction, and
+    WIRE001 must stay silent about it (case 2/3, a genuinely NEW symbol
+    with no prior existence anywhere, still fires exactly as before)."""
     violations: list[Violation] = []
     for record in _new_callable_records(snapshot, hunks_by_file):
         def_lines = frozenset(range(record.span[0], record.span[1] + 1))
         if _is_reached_outside_diff_tests(root, snapshot, record, def_lines):
+            continue
+        target_digest = record.digests.body or record.digests.sig
+        short = _short_name(record.id.qualname)
+        if _merge_base_body_match(root, diff.base, short, target_digest):
             continue
         violations.append(
             Violation(
@@ -490,6 +560,162 @@ def _wire001_cli_dest_violations(
     return violations
 
 
+def _touched_callable_records(
+    snapshot: GraphSnapshot, hunks_by_file: dict[str, list[tuple[int, int]]]
+) -> list:
+    """Every function/method this diff TOUCHES (a hunk overlaps its span)
+    but did NOT wholly define (that is `_new_callable_records`'s own
+    proxy) -- the search space for WIRE001 case 4 (T-1430): a diff that
+    adds a new keyword-only PARAMETER to an EXISTING function's signature,
+    where the function itself already has callers so case 1's "no
+    non-test caller" check never fires, but the new parameter specifically
+    is never passed anywhere."""
+    new_ids = {record.id for record in _new_callable_records(snapshot, hunks_by_file)}
+    found = []
+    for record in snapshot.symbols.values():
+        if record.kind not in _CALLABLE_KINDS or not record.id.path.endswith(".py"):
+            continue
+        if record.kind is SymbolKind.CLASS:
+            continue
+        qualname = record.id.qualname
+        if _is_dunder(qualname) or _is_test_symbol(qualname):
+            continue
+        if record.id in new_ids:
+            continue
+        spans = hunks_by_file.get(record.id.path, ())
+        overlaps = any(
+            not (h[1] < record.span[0] or h[0] > record.span[1]) for h in spans
+        )
+        if overlaps:
+            found.append(record)
+    return found
+
+
+def _kwonly_param_names(source: str, short_name: str) -> frozenset[str] | None:
+    """Keyword-only parameter names of the first `def`/`async def` named
+    `short_name` in `source`, via the stdlib `ast` module (simpler and
+    more precise for this one question than re-deriving parameter
+    boundaries from `frob.lang`'s flat token streams). `None` if `source`
+    does not parse or defines no such function -- the caller treats that
+    as "no baseline to compare against", never a violation (this gate's
+    standing bias: a false "no new parameter" costs nothing, a false
+    positive wrongly blocks a build)."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name == short_name
+        ):
+            return frozenset(arg.arg for arg in node.args.kwonlyargs)
+    return None
+
+
+_KEYWORD_ARG_RE_CACHE: dict[str, re.Pattern[str]] = {}
+
+
+def _keyword_arg_pattern(name: str) -> re.Pattern[str]:
+    """`name=` as a call-site keyword argument (or a default in a
+    DIFFERENT function's signature -- accepted false-negative-shaped
+    noise per this gate's broad-recall bias), never `==`/`!=`/`<=`/`>=`.
+    Cached per name: the case-4 loop below re-checks the same handful of
+    parameter names across every file in the tree."""
+    cached = _KEYWORD_ARG_RE_CACHE.get(name)
+    if cached is None:
+        cached = re.compile(rf"(?<![=!<>]){re.escape(name)}\s*=(?!=)")
+        _KEYWORD_ARG_RE_CACHE[name] = cached
+    return cached
+
+
+def _keyword_passed_outside_def(
+    root: Path, snapshot: GraphSnapshot, record, def_lines: frozenset[int], name: str
+) -> bool:
+    """True if `name=` appears, keyword-argument-shaped, anywhere in the
+    tree OUTSIDE `record`'s own definition lines (which would otherwise
+    self-match the new parameter's own `def foo(*, name=...)` clause).
+    Mirrors `_is_reached_outside_diff_tests`'s whole-tree text-scan shape
+    and bias (broader recall over precision -- an unrelated same-named
+    keyword elsewhere in the tree counts as "passed", which is the safe
+    direction for a gate that must not over-fire)."""
+    pattern = _keyword_arg_pattern(name)
+    for path in snapshot.file_hashes:
+        if not path.endswith(".py"):
+            continue
+        try:
+            lines = (root / path).read_text(encoding="utf-8").splitlines()
+        except (OSError, UnicodeDecodeError):
+            continue
+        own_def_lines = def_lines if path == record.id.path else frozenset()
+        for lineno, text in enumerate(lines, 1):
+            if lineno in own_def_lines:
+                continue
+            if pattern.search(text):
+                return True
+    return False
+
+
+def _wire001_new_kwonly_param_violations(
+    root: Path,
+    diff: Diff,
+    snapshot: GraphSnapshot,
+    hunks_by_file: dict[str, list[tuple[int, int]]],
+) -> list[Violation]:
+    """WIRE001 case 4 (T-1430): a diff adds a new keyword-only parameter to
+    an EXISTING function/method's signature that no call site anywhere in
+    the tree passes -- the shape case 1 cannot see (the function itself
+    already has a caller, so "no non-test caller" never fires) and that
+    T-1384/T-1399/T-1391 each shipped for real. Compares the function's
+    keyword-only parameter set at the diff's merge-base (`diff.base`) --
+    read via `git show`, same mechanism as `_merge_base_body_match`'s
+    relocation check (T-1431) -- against its CURRENT set; any name present
+    now but absent at the base is a candidate, and fires only if
+    `_keyword_passed_outside_def` finds no call site passing it."""
+    violations: list[Violation] = []
+    for record in _touched_callable_records(snapshot, hunks_by_file):
+        short = _short_name(record.id.qualname)
+        try:
+            current_source = (root / record.id.path).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        current_kwonly = _kwonly_param_names(current_source, short)
+        if not current_kwonly:
+            continue
+        show = run_argv(
+            ("git", "-C", str(root), "show", f"{diff.base}:{record.id.path}")
+        )
+        if show.is_err or show.danger_ok.returncode != 0:
+            continue
+        base_kwonly = _kwonly_param_names(show.danger_ok.stdout, short)
+        if base_kwonly is None:
+            continue
+        new_names = sorted(current_kwonly - base_kwonly)
+        if not new_names:
+            continue
+        def_lines = frozenset(range(record.span[0], record.span[1] + 1))
+        for name in new_names:
+            if _keyword_passed_outside_def(root, snapshot, record, def_lines, name):
+                continue
+            violations.append(
+                Violation(
+                    rule="WIRE001",
+                    severity=Severity.ERROR,
+                    file=record.id.path,
+                    line=record.span[0],
+                    symref=record.symref,
+                    message=(
+                        f"WIRE001: {record.symref} adds keyword-only parameter "
+                        f"{name!r}, which no call site outside its own tests "
+                        "passes -- wire it, delete it, or "
+                        'frob:waive WIRE001 reason="..." follow_up="T-####" '
+                        "naming the open ticket that will wire it"
+                    ),
+                )
+            )
+    return violations
+
+
 def _wire002_violations(snapshot: GraphSnapshot, queue: TicketQueue) -> list[Violation]:
     """WIRE002: a `frob:waive WIRE001` present without a `follow_up="T-####"`
     attribute naming a real, still-open ticket -- the escape hatch this
@@ -534,6 +760,10 @@ def _wire002_violations(snapshot: GraphSnapshot, queue: TicketQueue) -> list[Vio
 # frob:ticket T-1428
 # frob:tests tests/test_gates.py::TestWireGate.test_new_public_function_with_no_caller_is_flagged  # noqa: E501
 # frob:tests tests/test_gates.py::TestWireGate.test_new_function_called_from_non_test_code_is_not_flagged  # noqa: E501
+# frob:tests tests/test_gates.py::TestWireGate.test_relocated_symbol_via_file_split_is_not_flagged  # noqa: E501
+# frob:tests tests/test_gates.py::TestWireGate.test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged  # noqa: E501
+# frob:tests tests/test_gates.py::TestWireGate.test_new_kwonly_param_never_passed_is_flagged  # noqa: E501
+# frob:tests tests/test_gates.py::TestWireGate.test_new_kwonly_param_passed_at_call_site_is_not_flagged  # noqa: E501
 # frob:tests tests/test_gates.py::TestWireGate.test_new_cli_dest_missing_from_config_external_is_flagged  # noqa: E501
 # frob:tests tests/test_gates.py::TestWireGate.test_new_cli_dest_present_in_config_external_is_not_flagged  # noqa: E501
 # frob:tests tests/test_gates.py::TestWireGate.test_new_rule_id_missing_from_known_gate_rules_is_flagged  # noqa: E501
@@ -556,9 +786,10 @@ def wire_gate(
     hunks_by_file = _hunks_by_file(diff)
     added_lines = _added_lines(root, hunks_by_file)
     violations = [
-        *_wire001_unwired_symbol_violations(root, snapshot, hunks_by_file),
+        *_wire001_unwired_symbol_violations(root, snapshot, hunks_by_file, diff),
         *_wire001_rule_id_violations(added_lines),
         *_wire001_cli_dest_violations(root, added_lines),
+        *_wire001_new_kwonly_param_violations(root, diff, snapshot, hunks_by_file),
         *_wire002_violations(snapshot, queue),
     ]
     _log.info("wire_gate: %d violation(s)", len(violations))

@@ -21,7 +21,7 @@ from pathlib import Path
 from typani.result import Err, Ok
 
 from frob.app.config import AppConfig
-from frob.gitio import run_argv
+from frob.gitio import run_argv, working_diff
 from frob.logging import get_logger
 from frob.process._guard import ProcessGuardError
 
@@ -34,7 +34,37 @@ from ._verify import (
 _log = get_logger("frob.app.ticket_runner")
 
 
+# frob:ticket T-1404
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_out_of_scope_file_with_noncanonical_directive_is_left_untouched  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_in_scope_file_with_noncanonical_directive_is_still_fixed  # noqa: E501
+def _land_touched_paths(worktree: Path, ticket_id: str) -> frozenset[str] | None:
+    """The landing ticket's touched-file set, root-relative -- `working_
+    diff(worktree, "main")`'s own hunk files, the same diff-scoped
+    touched-set source FMT001's own gate (`_fmt001_touched_lines`,
+    `frob.gates._todo_fmt`) already uses to decide which lines are "this
+    ticket's own", rather than the ticket's declared `scope` globs
+    resolved to real paths (a real diff is exact; a glob resolution can
+    both over- and under-match against what actually changed). `None`
+    when the diff cannot be computed (no merge-base, detached HEAD, a
+    `git` spawn failure) -- the caller degrades to the pre-T-1404 whole-
+    tree behaviour rather than guess at a touched set it cannot verify."""
+    diff_result = working_diff(worktree, "main")
+    if diff_result.is_err:
+        _log.warning(
+            "ticket land: %s could not compute touched-file set for the "
+            "pre-land FMT001 fix (%s) -- falling back to a whole-tree pass",
+            ticket_id,
+            diff_result.danger_err,
+        )
+        return None
+    return frozenset(hunk.file for hunk in diff_result.danger_ok.hunks)
+
+
 # frob:ticket T-1175
+# frob:ticket T-1404
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_fmt_half_canonicalizes_a_non_canonical_directive  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_out_of_scope_file_with_noncanonical_directive_is_left_untouched  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_in_scope_file_with_noncanonical_directive_is_still_fixed  # noqa: E501
 def _absorb_pre_land_fixes(worktree: Path, ticket_id: str) -> None:
     """`frob ticket land`'s T-1175 absorption step: run `frob fmt`
     (directive canonicalization), `frob sys sync-interface` (interface=
@@ -61,12 +91,32 @@ def _absorb_pre_land_fixes(worktree: Path, ticket_id: str) -> None:
     from frob.tickets import load_active
 
     limit = read_line_length(worktree)
-    fmt_report = format_paths(worktree, check_only=False, limit=limit)
-    if fmt_report.changes:
+    # T-1404: scoped to this ticket's own touched-file set
+    # (`_land_touched_paths`) when it can be computed -- the pre-T-1404
+    # whole-tree `format_paths(worktree, ...)` call rewrote ANY non-
+    # canonical `frob:` directive anywhere in the tree, including files
+    # entirely outside the landing ticket's own diff (the land-scope-
+    # discipline collision T-1391 diagnosed but did not wire a fix for).
+    # Falls back to the old whole-tree call when the touched set cannot
+    # be computed (`_land_touched_paths` returned `None`) -- degrading to
+    # the pre-T-1404 behaviour, never silently skipping the fix outright.
+    touched_paths = _land_touched_paths(worktree, ticket_id)
+    if touched_paths is None:
+        fmt_report = format_paths(worktree, check_only=False, limit=limit)
+        fmt_changed = len(fmt_report.changes)
+    else:
+        fmt_changed = 0
+        for rel in sorted(touched_paths):
+            path = worktree / rel
+            if not path.is_file():
+                continue
+            scoped_report = format_paths(path, check_only=False, limit=limit)
+            fmt_changed += len(scoped_report.changes)
+    if fmt_changed:
         _log.info(
             "ticket land: %s pre-land frob fmt canonicalized %d file(s)",
             ticket_id,
-            len(fmt_report.changes),
+            fmt_changed,
         )
 
     if (worktree / "design").is_dir():
@@ -110,10 +160,20 @@ def _absorb_pre_land_fixes(worktree: Path, ticket_id: str) -> None:
     # rather than a blanket exclude at this call site. `exclude=` itself
     # stays available (regression-tested, `tests/test_gates.py`) for a
     # future caller that needs it again.
+    #
+    # T-1404: FMT001 is excluded from this generic batch when the scoped
+    # fmt pass above already ran (`touched_paths is not None`) -- Tier-A's
+    # own FMT001 handler (`fix_fmt001_directive_wrap`, T-1391) has no
+    # scoping context here and would otherwise redundantly re-walk the
+    # WHOLE tree right after the scoped pass, reintroducing the exact
+    # out-of-scope rewrite this ticket closes. When the touched set could
+    # not be computed, FMT001 stays in the batch (unscoped, matching the
+    # pre-T-1404 fallback the scoped fmt pass above also took).
     applied = apply_tier_a_fixes(
         worktree,
         snapshot_result.danger_ok,
         queue_result.danger_ok,
+        exclude=("FMT001",) if touched_paths is not None else (),
     )
     if applied:
         _log.info(

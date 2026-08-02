@@ -176,6 +176,65 @@ class TestAbsorbPreLandFixes:
         for line in rewritten.splitlines():
             assert len(line) <= 88
 
+    # frob:ticket T-1404
+    def test_out_of_scope_file_with_noncanonical_directive_is_left_untouched(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_out_of\
+        # _scope_file_with_noncanonical_directive_is_left_untouched
+        # T-1404 acceptance [0]: a file elsewhere in the tree, already
+        # committed to `main` (never touched by this ticket's own diff),
+        # carrying a non-canonical `frob:` directive, must be left
+        # BYTE-IDENTICAL by the pre-land fix pass -- T-1391 built
+        # `only_paths` but wired no real caller to it, so this used to get
+        # rewritten by the whole-tree `frob fmt` pass regardless of scope.
+        out_of_scope = repo / "src" / "out_of_scope.py"
+        original = (
+            '# frob:waive R reason="this reason is intentionally long so '
+            'it overflows the line-length limit and must be wrapped"\n'
+        )
+        out_of_scope.write_text(original)
+        _commit_all(repo, "add out-of-scope file with a non-canonical directive")
+
+        # This ticket's own (unrelated) touched file.
+        in_scope = repo / "src" / "in_scope.py"
+        in_scope.write_text("def f():\n    return 1\n")
+        _run(["git", "add", "-A"], repo)
+
+        _absorb_pre_land_fixes(repo, "T-1404")
+
+        assert out_of_scope.read_text() == original
+
+    # frob:ticket T-1404
+    def test_in_scope_file_with_noncanonical_directive_is_still_fixed(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_in_sco\
+        # pe_file_with_noncanonical_directive_is_still_fixed
+        # T-1404 acceptance [1]: a file genuinely inside the landing
+        # ticket's own touched set still gets fixed exactly as before,
+        # even with an unrelated committed out-of-scope file also present.
+        out_of_scope = repo / "src" / "out_of_scope.py"
+        out_of_scope.write_text("def g():\n    return 2\n")
+        _commit_all(repo, "add an unrelated already-committed file")
+
+        target = repo / "src" / "noncanon.py"
+        original = (
+            '# frob:waive R reason="this reason is intentionally long so '
+            'it overflows the line-length limit and must be wrapped"\n'
+        )
+        target.write_text(original)
+        _run(["git", "add", "-A"], repo)
+
+        _absorb_pre_land_fixes(repo, "T-1404")
+
+        rewritten = target.read_text()
+        assert rewritten != original
+        for line in rewritten.splitlines():
+            assert len(line) <= 88
+
 
 # frob:ticket T-1175
 class TestLandProofAndFinish:
