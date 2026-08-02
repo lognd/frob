@@ -646,6 +646,43 @@ directly, or read `gate:scope-note`'s disclosure on a scoped run and
 confirm none of the families it lists as "not run"/"repo-wide, not
 filtered" are ones your claim depends on.
 
+## 6d. TEST005 reads `coverage.xml`, and `make coverage` DELETES it
+
+`make coverage`'s recipe ends with `frob clean -y`, which removes
+`coverage.xml` from the repo root. So the moment a coverage run finishes,
+the artifact the TEST005 gate reads is gone. Any `frob check` afterwards
+evaluates coverage against whatever is (or is not) on disk, which is why a
+TEST005 number taken casually after a run is not trustworthy.
+
+The run's real report survives at `.frob/coverage.partial.xml`. To inspect
+or re-measure, copy it back and delete your copy afterwards:
+
+```
+cp .frob/coverage.partial.xml coverage.xml
+timeout 540 uv run frob check --only test
+rm -f coverage.xml
+```
+
+**Do NOT substitute `frob-coverage.lock.json` for the report.** It is
+tempting -- it survives `frob clean`, so it is what is still on disk
+exactly when the real data is gone -- and that convenience is the trap.
+Its `module_line` map has been measured disagreeing with the
+`coverage.xml` of the very run whose `source_sha` it records: 81.2% logged
+for `src/frob/__main__.py` against a report showing 0 of 133 lines hit,
+65.1% for `src/frob/serve/_socketd.py` against 0 of 264. That defect is
+T-1401; until it closes, the lock is not evidence of anything.
+
+This is not hypothetical caution. A coordinator read those lock values as
+ground truth, concluded the per-symbol join was broken, and filed a
+critical ticket (T-1398) on a premise that thirty seconds with the raw XML
+would have disproved. The agent dispatched to fix it correctly tested the
+premise first, found the join working, and failed the ticket. T-1398 was
+then dropped.
+
+Rule: when a coverage claim matters, read `coverage.xml` -- the primary
+artifact -- and say which artifact you read. A derived record is never
+evidence for a defect in the thing it was derived from.
+
 ## 7. Waive discipline
 
 `frob:waive RULE-ID reason="..."` suppresses one specific violation and
