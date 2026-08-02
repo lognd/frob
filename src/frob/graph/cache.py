@@ -309,35 +309,78 @@ def _recreate(conn: sqlite3.Connection, path: Path) -> sqlite3.Connection:
     return _open(path)
 
 
+def _is_concurrent_meta_key_race(exc: sqlite3.IntegrityError) -> bool:
+    """True iff `exc` is the T-1416 "two processes migrated at once" signature.
+
+    A UNIQUE-constraint violation specifically on `meta.key` during schema
+    application means a concurrent process's own migration INSERT won the
+    race, not that the file is corrupt -- narrow enough that any OTHER
+    IntegrityError (a real constraint violation, or a UNIQUE hit on some
+    other column) still falls through to the recreate path.
+    """
+    msg = str(exc).lower()
+    return "unique constraint" in msg and "meta.key" in msg
+
+
+def _recreate_and_reapply(
+    conn: sqlite3.Connection, path: Path, exc: Exception
+) -> sqlite3.Connection:
+    """Delete-and-recreate `path`, then apply a fresh schema (T-0141 recovery)."""
+    _log.warning(
+        "cache.connect: %s failed schema application, recreating: %s", path, exc
+    )
+    conn = _recreate(conn, path)
+    _apply_schema(conn, None, path)
+    return conn
+
+
+def _poll_and_reread(
+    conn: sqlite3.Connection,
+    path: Path,
+    existing: int | None,
+    deadline: float,
+    why: str,
+) -> tuple[sqlite3.Connection, int | None]:
+    """Sleep one poll interval, then re-read the schema version (T-1239/T-1416).
+
+    Raises the caller's original exception (via bare `raise`) if `deadline`
+    has already passed -- a contending process that never finishes is a
+    real timeout, not something to poll on forever.
+    """
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise
+    _log.warning(
+        "cache.connect: %s %s, retrying (up to %.0fs remaining)",
+        path,
+        why,
+        remaining,
+    )
+    time.sleep(_LOCK_POLL_SECONDS)
+    return _read_schema_version(conn, path)
+
+
 # frob:ticket T-0141
 # frob:ticket T-1239
+# frob:ticket T-1416
 def _apply_schema_with_recovery(
     conn: sqlite3.Connection, existing: int | None, path: Path
 ) -> sqlite3.Connection:
-    """Apply the schema; retry through lock contention, recreate on real corruption.
+    """Apply the schema; retry through concurrency races, recreate on real corruption.
 
-    `_read_schema_version`'s own "is this even sqlite" probe (`SELECT 1`)
-    can pass on a file that is sqlite-shaped but has a corrupted table page
-    (T-0141: this is what py3.12's libsqlite exposes that 3.11 did not) --
-    `SELECT 1` never touches a btree page, so it can't see that damage. The
-    DDL here is what actually reads the meta/files/symbols pages, so it is
-    the second and final place corruption can surface.
-
-    T-1239: a "database is locked" `sqlite3.OperationalError` (busy_timeout
-    exhausted by a concurrent process's own schema-migration DDL, e.g. a
-    cold multi-agent build racing on the same brand-new `cache.db`) is NOT
-    corruption -- treating it as such (the pre-fix behavior, since
-    `OperationalError` subclasses `DatabaseError`) deleted and recreated a
-    file another process was mid-write on, and a THIRD process opening in
-    that same window could observe the half-rebuilt file between the
-    `DROP TABLE`/`CREATE TABLE` statements (`_apply_schema` is not one
-    transaction; sqlite DDL auto-commits per statement) as "no such table:
-    files". A lock timeout instead polls and re-checks the stored schema
-    version -- if the contending process already finished the migration,
-    this becomes a no-op; otherwise it retries the DDL itself. Every OTHER
-    `DatabaseError` (a genuinely corrupted page) still recreates once, and
-    that retry's own failure still propagates uncaught -- not something to
-    loop on.
+    `_read_schema_version`'s own "is this even sqlite" probe can pass on a
+    file that has a corrupted table page (T-0141); the DDL here is what
+    actually reads those pages, so it is the final place corruption
+    surfaces. Two known concurrency symptoms masquerade as `DatabaseError`
+    (both OperationalError and IntegrityError subclass it) and must NOT
+    recreate a cache another process is mid-write on: a lock-timeout
+    `OperationalError` (T-1239, a concurrent process's own migration DDL
+    still in flight) and a `meta.key` UNIQUE-constraint `IntegrityError`
+    (T-1416, two processes' migration INSERTs racing). Both poll and
+    re-read the stored schema version instead -- a no-op if the contender
+    already finished, a retry of the DDL otherwise. Every other
+    `DatabaseError` still recreates once, and that retry's own failure
+    still propagates uncaught.
     """
     deadline = time.monotonic() + _LOCK_TOTAL_TIMEOUT_SECONDS
     while True:
@@ -347,26 +390,21 @@ def _apply_schema_with_recovery(
         except sqlite3.OperationalError as exc:
             if "locked" not in str(exc).lower():
                 raise
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                raise
-            _log.warning(
-                "cache.connect: %s locked during schema application, "
-                "retrying (up to %.0fs remaining)",
-                path,
-                remaining,
+            conn, existing = _poll_and_reread(
+                conn, path, existing, deadline, "locked during schema application"
             )
-            time.sleep(_LOCK_POLL_SECONDS)
-            conn, existing = _read_schema_version(conn, path)
+        except sqlite3.IntegrityError as exc:
+            if not _is_concurrent_meta_key_race(exc):
+                return _recreate_and_reapply(conn, path, exc)
+            conn, existing = _poll_and_reread(
+                conn,
+                path,
+                existing,
+                deadline,
+                "hit a concurrent schema-migration race (UNIQUE on meta.key)",
+            )
         except sqlite3.DatabaseError as exc:
-            _log.warning(
-                "cache.connect: %s failed schema application, recreating: %s",
-                path,
-                exc,
-            )
-            conn = _recreate(conn, path)
-            _apply_schema(conn, None, path)
-            return conn
+            return _recreate_and_reapply(conn, path, exc)
 
 
 # frob:invariant INV-003

@@ -1472,6 +1472,96 @@ class TestSchemaLockContentionRecovery:
         assert row is not None and row[0] == str(graph_cache._SCHEMA_VERSION)
         assert recreate_calls == [cache], "real corruption must still recreate once"
 
+    # frob:tests src/frob/graph/cache.py::_apply_schema_with_recovery
+    def test_concurrent_meta_key_integrity_error_retries_instead_of_recreating(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-1416: "UNIQUE constraint failed: meta.key" is a second process's
+        schema-migration INSERT racing this one's, not corruption -- same
+        shape as T-1239's lock-contention case, one exception class over.
+        Must re-read the schema version and proceed, never recreate (which
+        would destroy the winner's just-written cache out from under it and
+        leave a concurrent reader observing "no such table: meta")."""
+        cache = tmp_path / "cache.db"
+        conn = graph_cache._open(cache)
+        recreate_calls: list[Path] = []
+        real_recreate = graph_cache._recreate
+
+        def _spy_recreate(c, p):
+            recreate_calls.append(p)
+            return real_recreate(c, p)
+
+        monkeypatch.setattr(graph_cache, "_recreate", _spy_recreate)
+
+        calls = {"n": 0}
+        real_apply_schema = graph_cache._apply_schema
+
+        def _racy_apply_schema(c, existing, p):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise sqlite3.IntegrityError("UNIQUE constraint failed: meta.key")
+            return real_apply_schema(c, existing, p)
+
+        monkeypatch.setattr(graph_cache, "_apply_schema", _racy_apply_schema)
+        monkeypatch.setattr(graph_cache, "_LOCK_POLL_SECONDS", 0.01)
+
+        result_conn = graph_cache._apply_schema_with_recovery(conn, None, cache)
+        try:
+            row = result_conn.execute(
+                "SELECT value FROM meta WHERE key = 'schema_version'"
+            ).fetchone()
+        finally:
+            result_conn.close()
+        assert row is not None and row[0] == str(graph_cache._SCHEMA_VERSION)
+        assert calls["n"] == 2, "expected exactly one retry after the race"
+        assert recreate_calls == [], (
+            "a concurrent meta.key UNIQUE-constraint race must never "
+            "trigger delete-and-recreate"
+        )
+
+    # frob:tests src/frob/graph/cache.py::_apply_schema_with_recovery
+    def test_non_meta_key_integrity_error_still_recreates(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """A genuinely corrupt db can still surface as an IntegrityError
+        that is NOT the concurrent meta.key signature -- that must still
+        recreate exactly as before T-1416, proving the new branch does not
+        widen into a blanket "never recreate on IntegrityError" rule."""
+        cache = tmp_path / "cache.db"
+        conn = graph_cache._open(cache)
+        recreate_calls: list[Path] = []
+        real_recreate = graph_cache._recreate
+
+        def _spy_recreate(c, p):
+            recreate_calls.append(p)
+            return real_recreate(c, p)
+
+        monkeypatch.setattr(graph_cache, "_recreate", _spy_recreate)
+
+        calls = {"n": 0}
+        real_apply_schema = graph_cache._apply_schema
+
+        def _corrupt_once_apply_schema(c, existing, p):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise sqlite3.IntegrityError("NOT NULL constraint failed: files.path")
+            return real_apply_schema(c, existing, p)
+
+        monkeypatch.setattr(graph_cache, "_apply_schema", _corrupt_once_apply_schema)
+
+        result_conn = graph_cache._apply_schema_with_recovery(conn, None, cache)
+        try:
+            row = result_conn.execute(
+                "SELECT value FROM meta WHERE key = 'schema_version'"
+            ).fetchone()
+        finally:
+            result_conn.close()
+        assert row is not None and row[0] == str(graph_cache._SCHEMA_VERSION)
+        assert recreate_calls == [cache], (
+            "an IntegrityError that is not the meta.key concurrency "
+            "signature must still recreate"
+        )
+
 
 class TestDuplicateSymrefs:
     # frob:tests src/frob/graph/__init__.py::build_graph

@@ -1463,6 +1463,7 @@ run is expected pre-land, not a real gap.
 - tests: 4 passed (from 4 evidence id(s))
 - gates: 1 error(s), 7685 warning(s), 696 waived
 - error-findings: SELFAUDIT001@design
+
 <!-- ticket:T-1236 -->
 ```yaml
 id: T-1236
@@ -9329,11 +9330,11 @@ acceptance:
 - text: GIVEN a STANDALONE prose or rationale comment (not trailing a data-bearing
     statement) using a FIELD_SIGNATURES word as ordinary English, with no reference
     form and no correspondingly-named identifier in scope WHEN the PII gate runs THEN
-    PII012 does not fire. NOTE this criterion originally omitted the standalone
-    qualifier, which asked for a capability regression -- a trailing comment on an
-    assignment whose prose says it stores an ssn names no matching identifier either,
-    and silencing it would drop the poorly-named-variable case the rule exists for.
-    Corrected before any fix landed.
+    PII012 does not fire. NOTE this criterion originally omitted the standalone qualifier,
+    which asked for a capability regression -- a trailing comment on an assignment
+    whose prose says it stores an ssn names no matching identifier either, and silencing
+    it would drop the poorly-named-variable case the rule exists for. Corrected before
+    any fix landed.
   evidence: []
 - text: GIVEN a comment naming a real in-scope identifier that holds person-related
     data WHEN the PII gate runs THEN PII012 still fires exactly as today, proven by
@@ -9381,6 +9382,7 @@ CAPABILITY MUST NOT SHRINK. Do not delete keywords, do not drop the comment scan
 Precedent already in this file: _scan_comment_keywords deliberately skips "# frob:..." directive comments (_FROB_DIRECTIVE_RE, T-0539). So context-sensitive exclusion is an accepted shape here; this ticket generalises it from one hardcoded prefix to actual structure.
 
 Related: _PII012_REVIEWED_NON_PII (T-0540) is a manually-maintained (file, word) allowlist -- a symptom of the same defect. Every entry in it is a case where a human confirmed the word was prose, not a name. If Level 2 lands, most of that table should become unnecessary; check whether it can shrink, and report how much of it survives.
+
 <!-- ticket:T-1412 -->
 ```yaml
 id: T-1412
@@ -9660,7 +9662,7 @@ than trying to close them inside one pass.
 id: T-1416
 title: 'cache.db recreate still fires on a concurrency IntegrityError: UNIQUE constraint
   on meta.key destroys a shared cache'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -9671,17 +9673,24 @@ sprint: null
 scope:
 - src/frob/graph/cache.py
 - tests/test_graph.py
+evidence:
+- tests/test_graph.py::TestSchemaLockContentionRecovery::test_concurrent_meta_key_integrity_error_retries_instead_of_recreating
+- tests/test_graph.py::TestSchemaLockContentionRecovery::test_non_meta_key_integrity_error_still_recreates
+- tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_unaffected_when_no_strata_files
 acceptance:
 - text: GIVEN two processes applying the cache schema concurrently WHEN one hits UNIQUE
     constraint failed on meta.key THEN it re-reads the schema version and proceeds,
     and no recreate occurs
-  evidence: []
+  evidence:
+  - tests/test_graph.py::TestSchemaLockContentionRecovery::test_concurrent_meta_key_integrity_error_retries_instead_of_recreating
 - text: GIVEN a genuinely corrupt cache.db WHEN the schema cannot be applied THEN
     the recreate path still runs exactly as today, proven by a regression test
-  evidence: []
+  evidence:
+  - tests/test_graph.py::TestSchemaLockContentionRecovery::test_non_meta_key_integrity_error_still_recreates
 - text: GIVEN the full suite under pytest -n 4 WHEN it runs THEN tests/system/test_cli_native_missing.py
     does not fail with no such table
-  evidence: []
+  evidence:
+  - tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_unaffected_when_no_strata_files
 threat: null
 component: null
 ```
@@ -9704,3 +9713,49 @@ Why this matters now, beyond the flake: make coverage runs the suite under xdist
 Fix direction, not prescriptive: treat IntegrityError on the meta table during schema application the same way T-1239 already treats a locked OperationalError -- as evidence another process got there first, so re-read the schema version and proceed rather than recreate. More generally, the recreate path should require positive evidence of corruption, never merely "an exception occurred while applying the schema". Recreating a shared cache is destructive to every concurrent reader and should be the last resort, not the default handler.
 
 Add a regression test that exercises concurrent schema application (two processes or two threads racing connect on a fresh cache.db) and asserts no recreate occurs and no reader observes a missing table. T-1239's own tests spy on _recreate; extend that pattern.
+
+## Done report
+
+A "UNIQUE constraint failed: meta.key" IntegrityError during schema
+application is two processes racing the same migration, not corruption:
+both raced past the existing != _SCHEMA_VERSION check, both DROP/CREATE
+TABLE'd, and both tried to INSERT the schema_version row into meta; the
+loser's INSERT hits the UNIQUE constraint. Since IntegrityError subclasses
+DatabaseError, it previously fell into the same recreate-on-any-
+DatabaseError bucket T-1239 already fixed for lock contention, destroying
+a cache another process just finished writing and leaving a concurrent
+reader to observe "no such table: meta" mid-recreate.
+
+_apply_schema_with_recovery now catches sqlite3.IntegrityError before the
+general DatabaseError branch, narrowed to the meta.key UNIQUE-constraint
+signature (_is_concurrent_meta_key_race), and re-reads the schema version
+and retries instead of recreating -- same recovery shape T-1239 already
+uses for a locked OperationalError. Any other IntegrityError (a real
+constraint violation not matching that signature) still recreates
+unchanged. The shared poll-then-reread and recreate-then-reapply steps
+were pulled into _poll_and_reread/_recreate_and_reapply helpers to keep
+_apply_schema_with_recovery under the ARCH001 60-line threshold after
+adding the new branch.
+
+Verified per the coordinator's exact repro command:
+tests/system/test_cli_native_missing.py and tests/system/test_frob_self_model.py
+now pass together under pytest -n 4 (7 passed, 34s) -- both were reported
+failing/crashing on main under xdist load.
+
+### Changed
+```
+ src/frob/graph/cache.py | 120 +++++++++++++++++++++++++++++++-----------------
+ tests/test_graph.py     |  90 ++++++++++++++++++++++++++++++++++++
+ tickets.md              |  15 ++++--
+ 3 files changed, 180 insertions(+), 45 deletions(-)
+```
+
+### Evidence
+- `tests/test_graph.py::TestSchemaLockContentionRecovery::test_concurrent_meta_key_integrity_error_retries_instead_of_recreating` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestSchemaLockContentionRecovery::test_non_meta_key_integrity_error_still_recreates` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_unaffected_when_no_strata_files` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 457 warning(s), 697 waived
+- error-findings: none (measured, zero errors)
