@@ -10758,7 +10758,7 @@ Every one of these deletions is a direct, mechanical consequence of splitting th
 id: T-1403
 title: 'Investigate: T-1390 worktree changes landed on main under an unrelated commit
   message (c2fd45da)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -10796,7 +10796,6 @@ to real code, which could confuse `git blame`/bisect later, and (2) the underlyi
 mechanism that let uncommitted worktree changes land under an unrelated commit
 message during a stash mishap is not understood and should be investigated before
 another agent hits it. No code was lost; both commits are on main and gates clean.
-
 <!-- ticket:T-1404 -->
 ```yaml
 id: T-1404
