@@ -1358,7 +1358,7 @@ Require a dated status/superseded-by header on docs/audits/* (gate-checkable); c
 ```yaml
 id: T-1235
 title: 'coverage attribution fix: subprocess rc + multiprocessing concurrency'
-state: in-progress
+state: queued
 kind: bug
 origin: agent
 created: '2026-07-29'
@@ -1462,7 +1462,6 @@ run is expected pre-land, not a real gap.
 - tests: 4 passed (from 4 evidence id(s))
 - gates: 1 error(s), 7685 warning(s), 696 waived
 - error-findings: SELFAUDIT001@design
-
 <!-- ticket:T-1236 -->
 ```yaml
 id: T-1236
