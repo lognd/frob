@@ -28,6 +28,8 @@ from frob.process._guard import ProcessGuardError
 from ._verify import (
     _check_gate_findings_fn,
     _check_gates_summary_fn,
+    _parse_error_findings_from_stdout,
+    _python_for_tree,
     _shared_check_spawn_fn,
 )
 
@@ -273,6 +275,205 @@ def _tier_a_pre_land_step(
             ticket_id,
             len(applied),
         )
+
+
+# frob:ticket T-1456
+_POST_LAND_SWEEP_BUDGET_S = 90
+
+
+# frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
+# frob:ticket T-1456
+def _unscoped_error_findings(
+    root: Path, ticket_id: str, *, budget: int = _POST_LAND_SWEEP_BUDGET_S
+) -> frozenset[tuple[str, str]] | None:
+    """Spawn an UNSCOPED, `--budget`-bounded `frob check` in `root` and
+    parse the `(rule_id, file)` error-identity set from it, reusing
+    `_parse_error_findings_from_stdout` (T-0846's shared parser -- no
+    second hand-typed copy of the `## Errors` section format). Unlike
+    `_check_gate_findings_fn`, this deliberately passes NO `--ticket`: the
+    whole point of T-1456's post-land sweep is catching residue OUTSIDE
+    any one ticket's own scope (a relocated waiver, drifted format, a
+    stale registry denominator) that a `--ticket`-scoped re-verification
+    structurally cannot see (playbook section 6c). `None` means
+    unmeasurable (refused spawn, timeout, unparsable output) -- the caller
+    treats that as "skip the sweep, do not compare a real set against a
+    guess," matching every other T-0846/T-0850 unmeasured-is-not-zero
+    convention in this module."""
+    from frob.app import ticket_runner as _ticket_runner
+
+    guarded = _ticket_runner.guarded_subprocess_run(
+        [_python_for_tree(root), "-m", "frob", "check", "--budget", str(budget)],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=budget + 30,
+        check=False,
+    )
+    if guarded.is_err:
+        _log.warning(
+            "ticket land: %s unscoped post-land sweep spawn refused (%s)",
+            ticket_id,
+            ProcessGuardError.ExecDisabled,
+        )
+        return None
+    result = guarded.danger_ok
+    return _parse_error_findings_from_stdout(ticket_id, result.stdout, result.returncode)
+
+
+# frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
+# frob:ticket T-1456
+def _apply_root_tier_a_fixes(root: Path, ticket_id: str) -> int:
+    """Run the T-1138 Tier-A deterministic auto-fix handlers against
+    `root`'s WHOLE tree (unscoped -- no `touched_paths`, mirroring
+    `_tier_a_pre_land_step`'s own body but without the FMT001-exclusion
+    logic that step's touched-set scoping needs) and return how many fixes
+    were applied. Best-effort: a graph/queue load failure is logged and
+    treated as zero fixes applied, never raised -- the caller's refusal
+    path already covers "nothing fixed the residue."""
+    from frob.gates._fix_engine import apply_tier_a_fixes
+    from frob.graph import build_graph
+    from frob.tickets import load_active
+
+    snapshot_result = build_graph(root, root / ".frob" / "cache.db")
+    queue_result = load_active(root)
+    if snapshot_result.is_err or queue_result.is_err:
+        _log.warning(
+            "ticket land: %s post-land Tier-A auto-fix skipped (graph or "
+            "queue load failed)",
+            ticket_id,
+        )
+        return 0
+    applied = apply_tier_a_fixes(root, snapshot_result.danger_ok, queue_result.danger_ok)
+    return len(applied)
+
+
+# frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
+# frob:ticket T-1456
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_absent_before_land_refuses_and_reverts  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_fixed_by_tier_a_lands_with_a_followup_commit  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_no_new_error_is_a_silent_no_op  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_unmeasurable_baseline_or_fresh_skips_the_sweep  # noqa: E501
+def _post_land_unscoped_error_sweep(
+    root: Path,
+    ticket_id: str,
+    final_id: str,
+    pre_land_sha: str,
+    baseline_findings: frozenset[tuple[str, str]] | None,
+) -> bool:
+    """T-1456: after `land()`'s squash-apply commit has already landed on
+    `root`, compare a fresh UNSCOPED error-finding identity set against
+    `baseline_findings` (the same identity set captured against `root`
+    BEFORE `land()` ran, at `pre_land_sha`). Every wave of this drive left
+    small unscoped residue on main a `--ticket`-scoped land verification
+    could not see -- waivers that did not travel with relocated prose,
+    format drift, a stale registry denominator, SELFAUDIT interface attrs
+    -- each only surfaced in the coordinator's NEXT full `frob check`. This
+    closes that gap mechanically: a NEW error (absent from the baseline)
+    is Tier-A-auto-fixed and committed as a follow-up if that resolves it,
+    or the land is UNDONE (`root` hard-reset back to `pre_land_sha`) and
+    refused with the exact finding list if it does not -- main's error
+    floor can no longer regress silently at land time.
+
+    Returns `True` if `root` is left in a landed state (clean, or fixed-
+    and-committed), `False` if the land was reverted and the caller must
+    refuse. Either `baseline_findings is None` (unmeasurable pre-land) or
+    an unmeasurable fresh scan is treated as "skip the sweep, do not
+    refuse a land over a comparison neither side could actually make" --
+    same unmeasured-is-not-zero posture `_check_gates_summary_fn`/
+    `_check_gate_findings_fn` already use."""
+    if baseline_findings is None:
+        _log.warning(
+            "ticket land: %s post-land unscoped sweep skipped -- pre-land "
+            "baseline was unmeasurable",
+            final_id,
+        )
+        return True
+
+    fresh = _unscoped_error_findings(root, ticket_id)
+    if fresh is None:
+        _log.warning(
+            "ticket land: %s post-land unscoped sweep skipped -- fresh "
+            "post-land scan was unmeasurable",
+            final_id,
+        )
+        return True
+
+    new_findings = fresh - baseline_findings
+    if not new_findings:
+        _log.info(
+            "ticket land: %s post-land unscoped sweep clean (0 new error(s) "
+            "vs the pre-land baseline of %d)",
+            final_id,
+            len(baseline_findings),
+        )
+        return True
+
+    _log.warning(
+        "ticket land: %s post-land unscoped sweep found %d new error(s) "
+        "absent before this land: %s -- attempting Tier-A auto-fix",
+        final_id,
+        len(new_findings),
+        sorted(new_findings),
+    )
+    fixed_count = _apply_root_tier_a_fixes(root, ticket_id)
+    if fixed_count:
+        add_argv = ["git", "-C", str(root), "add", "-A"]
+        added = run_argv(add_argv)
+        if added.is_ok and added.danger_ok.returncode == 0:
+            commit_argv = [
+                "git",
+                "-C",
+                str(root),
+                "commit",
+                "-m",
+                f"fix(land): {final_id} post-land Tier-A cleanup ({fixed_count} fix(es))",
+            ]
+            committed = run_argv(commit_argv)
+            if committed.is_err or committed.danger_ok.returncode != 0:
+                _log.error(
+                    "ticket land: %s post-land Tier-A fix commit failed -- "
+                    "%s left uncommitted in %s",
+                    final_id,
+                    fixed_count,
+                    root,
+                )
+
+    reverify = _unscoped_error_findings(root, ticket_id)
+    still_new = (
+        (reverify - baseline_findings) if reverify is not None else new_findings
+    )
+    if not still_new:
+        _log.info(
+            "ticket land: %s post-land Tier-A auto-fix resolved every new "
+            "error finding",
+            final_id,
+        )
+        return True
+
+    _log.error(
+        "ticket land: %s post-land unscoped sweep still shows %d new "
+        "error(s) after Tier-A auto-fix: %s -- reverting %s to its "
+        "pre-land state %s",
+        final_id,
+        len(still_new),
+        sorted(still_new),
+        root,
+        pre_land_sha,
+    )
+    reset = run_argv(["git", "-C", str(root), "reset", "--hard", pre_land_sha])
+    if reset.is_err or reset.danger_ok.returncode != 0:
+        _log.error(
+            "ticket land: %s post-land revert to %s FAILED in %s -- %s is "
+            "left landed with %d unresolved new error(s); manual repair "
+            "required: %s",
+            final_id,
+            pre_land_sha,
+            root,
+            root,
+            len(still_new),
+            sorted(still_new),
+        )
+    return False
 
 
 # frob:ticket T-1175
@@ -908,6 +1109,24 @@ def _land(root: Path, cfg: AppConfig) -> None:
             cfg.ticket_id,
         )
 
+    # frob:ticket T-1456
+    # T-1456: capture the pre-land unscoped baseline (the exact tip and
+    # error-identity set `_post_land_unscoped_error_sweep` compares
+    # against below) BEFORE `land()` runs -- this is `root`'s own tree,
+    # not `worktree`'s, and not a real `frob ticket land` precondition:
+    # a spawn refusal or unmeasurable scan here degrades to "skip the
+    # sweep" rather than blocking the land, matching this module's
+    # existing unmeasured-is-not-zero posture. Skipped outright for a
+    # `--dry-run` (nothing will actually land on `root`, so nothing to
+    # compare a post-land state against).
+    pre_land_findings: frozenset[tuple[str, str]] | None = None
+    pre_land_sha: str | None = None
+    if not cfg.ticket_dry_run:
+        rev = run_argv(["git", "-C", str(root), "rev-parse", "HEAD"])
+        if rev.is_ok and rev.danger_ok.returncode == 0:
+            pre_land_sha = rev.danger_ok.stdout.strip()
+        pre_land_findings = _unscoped_error_findings(root, cfg.ticket_id)
+
     # T-0919: one shared spawn feeds BOTH check_gates/check_gate_findings
     # below instead of each running its own full `frob check --ticket`.
     _shared_spawn = _shared_check_spawn_fn(worktree, cfg.ticket_id)
@@ -937,6 +1156,27 @@ def _land(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
 
     report = result.danger_ok
+
+    # frob:ticket T-1456
+    # T-1456: runs AFTER `land()`'s squash-apply commit has already landed
+    # on `root` (a real, non-dry-run success only -- `report.dry_run`
+    # means nothing actually mutated `root` to sweep) and BEFORE this
+    # land is reported/pushed/finished, so a reverted land is reported as
+    # a failure, never as a success followed by a silent rollback.
+    if not report.dry_run and pre_land_sha is not None:
+        swept = _post_land_unscoped_error_sweep(
+            root, cfg.ticket_id, report.final_id, pre_land_sha, pre_land_findings
+        )
+        if not swept:
+            _log.error(
+                "ticket land failed: %s post-land unscoped error sweep "
+                "found residue no Tier-A auto-fix could resolve -- %s "
+                "reverted to its pre-land state, land refused",
+                report.final_id,
+                root,
+            )
+            sys.exit(1)
+
     _report_land_result(root, report)
 
     if cfg.ticket_land_push:

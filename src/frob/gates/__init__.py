@@ -111,6 +111,7 @@ from frob.gates._fmt_directives import (
 from frob.gates._fuzz import fuzz_gate
 from frob.gates._gate_cache import evaluate_cacheable_gate
 from frob.gates._gate_cache import invalidate as invalidate_gate_cache
+from frob.gates._gate_cache import model_side_channel_key
 from frob.gates._inv import (  # noqa: F401 -- INV006_SRC_DIRS/INV006_SRC_SUFFIXES
     # re-exported as _fix_engine.py's direct `from frob.gates import ...` surface
     INV006_SRC_DIRS,
@@ -5600,6 +5601,7 @@ _CACHEABLE_GATES: frozenset[str] = frozenset(
 )
 
 
+# frob:ticket T-1454
 def _cacheable_gate_call(
     name: str, st: _GateInputs
 ) -> tuple[Callable[[GraphSnapshot], tuple[Violation, ...]], tuple[str, ...]]:
@@ -5609,21 +5611,42 @@ def _cacheable_gate_call(
     construction: both read from the same `st`, this one just takes
     `snapshot` as an explicit argument instead of closing over `st.snapshot`
     directly, so `_gate_cache.evaluate_cacheable_gate` can substitute a
-    `TrackedSnapshot` in its place."""
+    `TrackedSnapshot` in its place.
+
+    T-1454: every gate here that reads a SIDE INPUT beyond `st.snapshot`
+    (anything `TrackedSnapshot` cannot observe -- `st.lock`, `st.coverage`,
+    `st.tests`, `st.test_policy`, `st.rules`, `st.diff`, `st.queue`) folds
+    that input into its returned `extra` tuple via
+    `_gate_cache.model_side_channel_key`, so a change to the side input
+    ALONE (e.g. `frob ack` rewriting `frob.lock` without touching any
+    tracked source file's digest) forces a cache miss instead of serving a
+    result computed against the old side state. `parse_failures` and
+    `lang_conformance` have no side input beyond the snapshot (and no
+    snapshot at all, for `lang_conformance`) and correctly key on `()`."""
     from frob.policy import policy_gate
 
     current_date = date.today().isoformat()
     if name == "drift":
-        return (lambda snap: drift_gate(snap, st.lock), ())
+        return (
+            lambda snap: drift_gate(snap, st.lock),
+            (model_side_channel_key(st.lock),),
+        )
     if name == "test":
         return (
             lambda snap: test_gate(
                 snap, st.systems, st.coverage, st.tests, st.test_policy
             ),
-            (),
+            (
+                model_side_channel_key(
+                    st.systems, st.coverage, st.tests, st.test_policy
+                ),
+            ),
         )
     if name == "policy":
-        return (lambda snap: policy_gate(st.rules, snap, st.diff), ())
+        return (
+            lambda snap: policy_gate(st.rules, snap, st.diff),
+            (model_side_channel_key(st.rules, st.diff),),
+        )
     if name == "parse_failures":
         return (lambda snap: parse_failure_gate(snap), ())
     if name == "debt":
@@ -5635,12 +5658,15 @@ def _cacheable_gate_call(
                 current_date=current_date,
                 current_version=current_version,
             ),
-            (current_date, current_version),
+            (current_date, current_version, model_side_channel_key(st.queue)),
         )
     if name == "lang_conformance":
         return (lambda _snap: lang_conformance_gate(), ())
     if name == "affect_drift":
-        return (lambda snap: affect_drift_gate(snap, st.diff), ())
+        return (
+            lambda snap: affect_drift_gate(snap, st.diff),
+            (model_side_channel_key(st.diff),),
+        )
     raise AssertionError(f"_cacheable_gate_call: {name!r} not in _CACHEABLE_GATES")
 
 

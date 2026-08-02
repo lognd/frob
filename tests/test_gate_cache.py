@@ -17,9 +17,11 @@ from frob.gates._gate_cache import (
     evaluate_cacheable_gate,
     extra_key,
     invalidate,
+    model_side_channel_key,
 )
 from frob.graph import build_graph
-from frob.graph._models import GraphSnapshot
+from frob.graph._models import GraphSnapshot, LockEntry, LockFile
+from frob.graph.lock import write_lock
 
 
 def _write(root: Path, rel: str, text: str) -> Path:
@@ -96,6 +98,25 @@ class TestExtraKey:
         )
         assert extra_key(["T-0001"]) != extra_key(["T-0002"])
         assert extra_key([]) != extra_key(["T-0001"])
+
+
+class TestSideChannelKey:
+    """T-1454: `model_side_channel_key` must distinguish side-channel
+    inputs (e.g. `frob.lock`'s content) that `TrackedSnapshot` cannot
+    observe, since those never register as a touched FILE."""
+
+    def test_model_side_channel_key_changes_on_field_edit(self) -> None:
+        """frob:tests src/frob/gates/_gate_cache.py::model_side_channel_key"""
+        lock_a = LockFile(entries=(LockEntry(ref="a.py::f", facet="sig", digest="x"),))
+        lock_b = LockFile(entries=(LockEntry(ref="a.py::f", facet="sig", digest="y"),))
+        assert model_side_channel_key(lock_a) != model_side_channel_key(lock_b)
+
+    def test_model_side_channel_key_stable_for_equal_content(self) -> None:
+        """frob:tests src/frob/gates/_gate_cache.py::model_side_channel_key"""
+        entry = LockEntry(ref="a.py::f", facet="sig", digest="x")
+        lock_a = LockFile(entries=(entry,))
+        lock_b = LockFile(entries=(LockEntry(ref="a.py::f", facet="sig", digest="x"),))
+        assert model_side_channel_key(lock_a) == model_side_channel_key(lock_b)
 
 
 class TestEvaluateCacheableGate:
@@ -248,6 +269,49 @@ class TestRunGatesUseCache:
             (v.rule, v.file, v.line, v.message) for v in warm_second.violations
         )
         assert cold_fp == warm1_fp == warm2_fp
+
+    def test_ack_invalidates_cached_drift001(self, tmp_path: Path) -> None:
+        """T-1454 regression: a `frob ack` that rewrites `frob.lock` (with no
+        tracked SOURCE file digest changing) must invalidate a previously
+        cached DRIFT001 result on the very next cached `frob check` -- the
+        exact staleness the reporter observed workarounding with
+        `FROB_NO_GATE_CACHE=1`. frob:tests
+        src/frob/gates/__init__.py::_cacheable_gate_call"""
+        widget = '''class Widget:
+    """A widget."""
+
+    def render(self, value: int) -> str:
+        """Render the widget."""
+        return str(value)
+'''
+        _write(tmp_path, "src/a.py", widget)
+        _git_init(tmp_path)
+        ref = "src/a.py::Widget.render"
+
+        # Stale lock: DRIFT001 must fire and get cached.
+        stale_lock = LockFile(
+            entries=(LockEntry(ref=ref, facet="sig", digest="deadbeef"),)
+        )
+        assert write_lock(stale_lock, tmp_path / "frob.lock").is_ok
+
+        cfg = GateConfig(root=str(tmp_path), base="main", gates=frozenset({"drift"}))
+        stale_report = run_gates(cfg, use_cache=True).danger_ok
+        assert any(v.rule == "DRIFT001" for v in stale_report.violations)
+
+        # "frob ack": compute the real current digest and rewrite frob.lock
+        # -- no tracked source file changes, so this is exactly the
+        # side-channel-only edit the cache used to miss entirely.
+        snap = _snapshot(tmp_path)
+        real_digest = snap.symbols[ref].digests.sig
+        acked_lock = LockFile(
+            entries=(LockEntry(ref=ref, facet="sig", digest=real_digest),)
+        )
+        assert write_lock(acked_lock, tmp_path / "frob.lock").is_ok
+
+        acked_report = run_gates(cfg, use_cache=True).danger_ok
+        assert not any(v.rule == "DRIFT001" for v in acked_report.violations), (
+            "stale cached DRIFT001 served across a frob ack boundary (T-1454)"
+        )
 
 
 # frob:ticket T-0602

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.314.0] - unreleased
+
+- T-1454: T-1346 gate cache serves stale DRIFT001 result across a frob ack boundary
+
 ## [0.313.0] - unreleased
 
 - T-1458: arch: LARGE001 split of tickets _new_renumber v2 backend (T-1420 delivered portion 4)

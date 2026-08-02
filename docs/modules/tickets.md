@@ -2026,6 +2026,56 @@ Three gaps found in one real landing session, closed together:
   is offered anyway as an explicit, documented manual override, never set
   by `land` itself since it never needs it.
 
+## Post-land unscoped error sweep (T-1456)
+
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_unscoped_error_findings -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_apply_root_tier_a_fixes -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_post_land_unscoped_error_sweep -->
+
+Every wave of a busy drive left small unscoped residue on main a
+`--ticket`-scoped land verification could not see: a waiver that did not
+travel with a relocated block of prose (INV006/PII012 on a file split), a
+format drift, a stale registry denominator, a SELFAUDIT interface
+attribute for a store block. Each was invisible to `land`'s own T-0754/
+T-1410 claim-divergence machinery -- which compares SCOPED (`--ticket`)
+counts/identities -- and only surfaced in the coordinator's next full,
+unscoped `frob check`, forcing a hand-fix cycle between lands.
+
+`frob ticket land`'s CLI layer (`_land`, `_land_cmd.py`) now brackets the
+real `land()` call with an UNSCOPED, `--budget`-bounded (default 90s)
+error-identity sweep of `root`:
+
+1. **Before `land()` runs** (real, non-dry-run lands only): capture
+   `root`'s current `HEAD` (`pre_land_sha`) and an unscoped `(rule_id,
+   file)` error-finding set (`_unscoped_error_findings`, no `--ticket`
+   filter -- deliberately the opposite of `_check_gate_findings_fn`'s
+   scoped set) as the baseline. Either capture failing (a spawn refusal,
+   an unparsable run) degrades to `None`, never a guessed empty set.
+2. **After `land()` returns `Ok`** (the squash-apply commit has already
+   landed on `root`): `_post_land_unscoped_error_sweep` re-runs the same
+   unscoped scan and diffs it against the baseline. `new_findings = fresh
+   - baseline` is the residue THIS land's squash-apply introduced that no
+   `--ticket`-scoped check could have caught.
+3. **No new findings**: silent no-op, the common case.
+4. **New findings, Tier-A auto-fixable**: `_apply_root_tier_a_fixes` runs
+   the T-1138 deterministic auto-fix handlers against `root`'s whole tree
+   (unscoped, unlike the pre-land `_tier_a_pre_land_step`'s touched-set
+   scoping) and commits the result as a follow-up `fix(land): <id>
+   post-land Tier-A cleanup (...)` commit if it resolves every new
+   finding.
+5. **New findings NOT resolved by auto-fix**: refuse. `root` is hard-reset
+   back to `pre_land_sha` (`git reset --hard`), the exact finding list is
+   logged, and the CLI exits non-zero -- a landing that would have
+   regressed main's error floor never reaches it, and a reset FAILURE is
+   itself logged loudly (manual repair, rather than a silently landed
+   regression) instead of assumed to have succeeded.
+
+Either side of the comparison coming back unmeasurable (`None`) skips the
+sweep entirely rather than comparing a real set against a guess -- the
+same unmeasured-is-not-zero posture `_check_gates_summary_fn`/
+`_check_gate_findings_fn` (T-0832/T-0846) already use for the scoped
+claim-divergence check this complements, not replaces.
+
 ## Merge queue (T-1345, first portion)
 
 <!-- frob:describes src/frob/tickets/_land_queue.py::QueueEntry -->

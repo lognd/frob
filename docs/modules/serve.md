@@ -158,6 +158,7 @@ construction.
 <!-- frob:describes src/frob/gates/_gate_cache.py::TrackedSnapshot -->
 <!-- frob:describes src/frob/gates/_gate_cache.py::evaluate_cacheable_gate -->
 <!-- frob:describes src/frob/gates/_gate_cache.py::invalidate -->
+<!-- frob:describes src/frob/gates/_gate_cache.py::model_side_channel_key -->
 <!-- frob:describes src/frob/gates/__init__.py::run_gates -->
 
 `run_gates(cfg, use_cache=True)` -- the call `frob_check_delta` makes --
@@ -173,7 +174,9 @@ membership (its full path SET, not just the touched subset -- T-0602's
 "membership guard") is unchanged, closing the "a new file the gate would
 now also touch did not exist when its dependency set was last recorded"
 soundness hole, and (c) any non-file scalar input the gate also depends on
-(`debt`'s `current_date`/`current_version`) is unchanged. `TrackedSnapshot`
+(`debt`'s `current_date`/`current_version`, and -- as of T-1454 -- every
+cacheable gate's OTHER side inputs, folded in via `model_side_channel_key`;
+see below) is unchanged. `TrackedSnapshot`
 records the touched-file set by OBSERVING real reads through
 `.symbols`/`.edges`/`.file_hashes`/`.malformed`/`.parse_failures` during
 the gate's own run, rather than a hand-maintained per-gate file-selector
@@ -190,6 +193,26 @@ full design and `tests/test_gate_cache.py::TestColdDiffOracle` for the
 correctness property test: a cold (uncached) evaluation and a
 cache-aware evaluation from any prior cache state must agree, across
 random file edits, adds, removes, and scalar-extra changes.
+
+**T-1454: side-channel inputs beyond the snapshot now join the key.**
+`TrackedSnapshot` only observes reads through the `GraphSnapshot` surface
+-- it cannot see a cacheable gate's OTHER positional arguments, e.g.
+`drift_gate(snap, st.lock)`'s `st.lock` (the loaded `frob.lock`). A `frob
+ack` rewrites `frob.lock` without touching any tracked source file's
+digest, so the old key never changed and a stale pre-ack DRIFT001 result
+was served indefinitely -- reproduced and confirmed as a real bug, not a
+theoretical gap (the reporting session's only workaround was
+`FROB_NO_GATE_CACHE=1`). `frob.gates._gate_cache.model_side_channel_key(
+*models)` fingerprints one or more pydantic `BaseModel` side inputs via
+`model_dump_json`; `_cacheable_gate_call` (`frob.gates`) now folds each
+cacheable gate's own side input(s) into its returned `extra` tuple --
+`drift` -> `st.lock`, `test` -> `st.systems`/`st.coverage`/`st.tests`/
+`st.test_policy`, `policy` -> `st.rules`/`st.diff`, `debt` -> `st.queue`
+alongside its existing scalars, `affect_drift` -> `st.diff`
+(`parse_failures`/`lang_conformance` have no such input and stay keyed on
+`()`). `tests/test_gate_cache.py::TestRunGatesUseCache.
+test_ack_invalidates_cached_drift001` is the regression oracle for the
+reported case.
 
 `verify=True` is the correctness guarantee for the part that IS cached: it
 drops the warm cache (`invalidate`), re-runs `run_gates` fully cold, and

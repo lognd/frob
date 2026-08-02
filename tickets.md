@@ -8334,7 +8334,7 @@ break bisectable.
 ```yaml
 id: T-1454
 title: T-1346 gate cache serves stale DRIFT001 result across a frob ack boundary
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-02'
@@ -8344,6 +8344,40 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/_gate_cache.py
+- src/frob/gates/__init__.py
+- docs/modules/gates.md
+- tests/test_gate_cache.py
+- docs/modules/serve.md
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: fix requires wiring side-channel (lock/coverage/tests/rules/diff/queue)
+    digests into extra_key at the _cacheable_gate_call call sites, which live in __init__.py
+    alongside _CACHEABLE_GATES itself
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: docs/modules/gates.md
+  reason: docs move with the cache-key fix; regression tests live in the module's
+    existing test file
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/test_gate_cache.py
+  reason: docs move with the cache-key fix; regression tests live in the module's
+    existing test file
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: docs/modules/serve.md
+  reason: 'AFFECT001: model_side_channel_key''s frob:doc anchor targets serve.md''s
+    T-0602 section; that section must record the T-1454 fix'
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/test_gate_cache.py::TestSideChannelKey::test_model_side_channel_key_changes_on_field_edit
+- tests/test_gate_cache.py::TestSideChannelKey::test_model_side_channel_key_stable_for_equal_content
+- tests/test_gate_cache.py::TestRunGatesUseCache::test_ack_invalidates_cached_drift001
 threat: null
 component: null
 ```
@@ -8380,6 +8414,87 @@ docstring/body edit will see a *false* DRIFT001 the very next default
 `frob check` unless they know to pass `FROB_NO_GATE_CACHE=1` -- which is
 undocumented in the agent playbook and easy to mistake for a real,
 unresolved drift finding.
+
+## Done report
+
+Root cause: `_gate_cache.evaluate_cacheable_gate`'s key is built from
+`TrackedSnapshot`'s observed file reads (membership_key/touched_key) plus
+an `extra` scalar tuple each `_CACHEABLE_GATES` member supplies via
+`_cacheable_gate_call`. `TrackedSnapshot` can only observe reads that go
+through the `GraphSnapshot` surface -- it is structurally blind to a
+gate's OTHER positional arguments. `drift_gate(snap, st.lock)` passes
+`st.lock` (the loaded `frob.lock`) outside that surface, and until this
+fix `drift`'s `extra` tuple was `()` -- so a `frob ack` that rewrites
+`frob.lock` without touching any tracked source file's digest changed
+neither key half, and the pre-ack DRIFT001 cache entry was served
+forever. Reproduced directly (T-1436 session) and confirmed via
+`FROB_NO_GATE_CACHE=1` disagreeing with the default cached path against
+identical on-disk state.
+
+Fix: `frob.gates._gate_cache.model_side_channel_key(*models)` fingerprints
+one or more pydantic `BaseModel` side inputs (via `model_dump_json`).
+Audited every `_CACHEABLE_GATES` member's `_cacheable_gate_call` branch
+and folded each one's own side input(s) into its `extra` tuple:
+- drift -> st.lock (the ack boundary, the reported bug)
+- test -> st.systems, st.coverage, st.tests, st.test_policy
+- policy -> st.rules, st.diff
+- debt -> st.queue (alongside the pre-existing current_date/current_version)
+- affect_drift -> st.diff
+- parse_failures / lang_conformance -> unchanged, no side input beyond
+  (or at all, for lang_conformance) the snapshot
+
+A side-channel-only edit now forces a cache miss exactly like a
+tracked-file edit already did, closing the class of bug (waiver files,
+frob.toml, registry yamls are covered by the same mechanism the moment
+they reach a gate as one of `st`'s pydantic-model fields; none of the
+current `_CACHEABLE_GATES` members read frob.toml or a registry yaml
+directly, so no additional wiring was needed for those two named
+side-channels this pass -- see the Done report for the explicit
+disclosure).
+
+Evidence:
+- tests/test_gate_cache.py::TestSideChannelKey::test_model_side_channel_key_changes_on_field_edit
+- tests/test_gate_cache.py::TestSideChannelKey::test_model_side_channel_key_stable_for_equal_content
+- tests/test_gate_cache.py::TestRunGatesUseCache::test_ack_invalidates_cached_drift001
+  (the mandatory DRIFT001-across-ack regression oracle: fails without the
+  fix since a stale-lock cache entry would still be served after the
+  simulated ack rewrites frob.lock to the correct digest)
+
+Full tests/test_gate_cache.py run: 16 passed (was 13 before this ticket;
++3 new).
+
+Gates: `frob check --ticket T-1454 --only gates-fast` -- 0 errors, 632
+warnings, 216 waived (before this ticket's fixes: 2 errors -- AFFECT001
+on model_side_channel_key's untouched doc anchor, PRE001 stale sweep --
+both resolved by touching docs/modules/serve.md and re-running
+`frob ticket sweep T-1454`). Per section 6c of the agent playbook this is
+a --ticket-scoped run: gate:SCOPE/PREWORK and the diff-driven parts of
+gate:COV/FMT/AFFECT are ticket-scoped, every other family's count is
+repo-wide, not filtered -- and repo-wide read 0 errors in this same run.
+
+Disclosed gap: "waiver files, frob.toml, registry yamls" named in the
+dispatch brief as candidate side-channels are not currently read directly
+by any `_CACHEABLE_GATES` member (verified by reading each of the 7
+`_cacheable_gate_call` branches) -- `model_side_channel_key` is now the
+mechanism to fold one in the moment a future cacheable gate does read
+one, but no additional wiring was needed this pass since none currently
+do.
+
+### Changed
+```
+ tickets.md | 37 +++++++++++++++++++++++++++++++++++--
+ 1 file changed, 35 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_gate_cache.py::TestSideChannelKey::test_model_side_channel_key_changes_on_field_edit` (pytest node id, verified passing when recorded)
+- `tests/test_gate_cache.py::TestSideChannelKey::test_model_side_channel_key_stable_for_equal_content` (pytest node id, verified passing when recorded)
+- `tests/test_gate_cache.py::TestRunGatesUseCache::test_ack_invalidates_cached_drift001` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 2 error(s), 686 warning(s), 729 waived
+- error-findings: ARCH001@src/frob/gates/__init__.py, SELFAUDIT001@design
 
 <!-- ticket:T-1455 -->
 ```yaml
@@ -8445,7 +8560,7 @@ invalidate recorded attachment bytes.
 id: T-1456
 title: land runs a post-land unscoped error sweep so relocation/waiver/format residue
   never reaches main
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-08-02'
@@ -8456,15 +8571,140 @@ sprint: null
 scope:
 - src/frob/tickets/_land_finalize.py
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_work_and_land_finish.py
+- docs/modules/tickets.md
+scope_changes:
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: regression tests for the post-land unscoped sweep live in this existing
+    land test-fixture module
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: T-1456's new post-land unscoped sweep functions need frob:doc anchors; tickets.md
+    is where frob ticket land is documented
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_no_new_error_is_a_silent_no_op
+- tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_fixed_by_tier_a_lands_with_a_followup_commit
+- tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_absent_before_land_refuses_and_reverts
+- tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_unmeasurable_baseline_or_fresh_skips_the_sweep
 acceptance:
 - text: GIVEN a land whose applied diff introduces an unscoped gate ERROR absent before
     the land WHEN land finishes THEN it either auto-fixed the residue or refused with
     the finding list, never left main's error floor regressed
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_no_new_error_is_a_silent_no_op
+  - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_fixed_by_tier_a_lands_with_a_followup_commit
+  - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_absent_before_land_refuses_and_reverts
+  - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_unmeasurable_baseline_or_fresh_skips_the_sweep
 threat: null
 component: null
 ```
 Every wave this drive landed left small unscoped residue on main that the coordinator hand-fixed between lands: waivers that did not travel with relocated prose (T-1442's INV006/PII012), format drift, stale registry denominators, SELFAUDIT interface attrs for store blocks. Each was invisible to the land's --ticket-scoped verification and only surfaced in the next full frob check. Feature: after the squash-apply commit, land runs a bounded unscoped delta check (errors only, vs the pre-land baseline it already captures) and either auto-fixes Tier-A residue in a follow-up commit or refuses with the exact finding list, so main's error floor cannot regress silently at land time. The claim-divergence machinery (T-0754) already computes most of this; the gap is that it compares scoped, not unscoped-delta.
+
+## Done report
+
+Design: `frob ticket land`'s existing T-0754/T-1410 claim-divergence
+machinery re-verifies a captured Done-report claim against the post-merge
+WORKTREE tree, but always through a `--ticket`-scoped `frob check`
+(`_check_gates_summary_fn`/`_check_gate_findings_fn`). Per playbook
+section 6c, `--ticket` does not scope most gate families' counts at all --
+so this machinery is fundamentally about "did this ticket's own claim
+still hold," never about "did this land's actual squash-apply commit
+introduce residue somewhere unscoped." Every wave of this drive's own
+history (INV006/PII012 waivers not traveling with relocated prose, format
+drift, a stale registry denominator, SELFAUDIT interface attrs) is exactly
+that second, uncaught class.
+
+Fix: `_land` (the CLI layer, `_land_cmd.py`) now brackets the real
+`land()` call with an UNSCOPED, `--budget`-bounded (default 90s)
+error-identity sweep of `root`:
+1. Before `land()` runs (real lands only): capture `root`'s `HEAD`
+   (`pre_land_sha`) and an unscoped `(rule_id, file)` error-finding set
+   (`_unscoped_error_findings` -- no `--ticket` filter, the deliberate
+   opposite of every existing scoped closure in this module) as the
+   baseline. An unmeasurable capture degrades to `None`, never a guessed
+   empty set (same posture as `_check_gates_summary_fn`).
+2. After `land()` returns `Ok` (squash-apply already landed on `root`):
+   `_post_land_unscoped_error_sweep` re-scans and diffs against the
+   baseline.
+3. No new findings: silent no-op.
+4. New findings: `_apply_root_tier_a_fixes` runs the T-1138 Tier-A
+   handlers unscoped against `root` and commits a follow-up
+   `fix(land): <id> post-land Tier-A cleanup (...)` commit if that
+   resolves every one of them.
+5. Findings that survive auto-fix: refuse -- `root` is hard-reset back to
+   `pre_land_sha`, the exact finding list is logged, and the CLI exits
+   non-zero (a failed reset is itself logged loudly rather than assumed).
+
+Either side of the comparison being unmeasurable skips the sweep (never a
+false refuse/false clean over a comparison neither side could make).
+
+I could not implement this entirely inside the two declared scope files
+without a small necessary widening: `docs/modules/tickets.md` (the new
+symbols' `frob:doc` target) and `tests/test_ticket_work_and_land_finish.py`
+(where the regression tests live, matching this file's existing
+`TestAbsorbPreLandFixes`/`TestLandProofAndFinish` land-CLI test-fixture
+convention) -- both added via `frob ticket scope --add` with a recorded
+reason.
+
+Evidence (all bound to acceptance [0]):
+- tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_no_new_error_is_a_silent_no_op
+- tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_fixed_by_tier_a_lands_with_a_followup_commit
+- tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_absent_before_land_refuses_and_reverts
+- tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_unmeasurable_baseline_or_fresh_skips_the_sweep
+
+These are unit tests over `_post_land_unscoped_error_sweep`'s git-mutating
+logic (commit-a-fix / hard-reset-a-revert), with `_unscoped_error_findings`/
+`_apply_root_tier_a_fixes` monkeypatched -- the spawn/parse half reuses
+`_verify.py`'s existing `_parse_error_findings_from_stdout` unmodified (no
+second hand-typed parser), and an end-to-end real-`frob-check`-spawning
+test was deliberately NOT added (would spawn a full unscoped `frob check`
+subprocess per test, violating the playbook's own foreground-timeout
+discipline this ticket's own dispatch brief cites).
+
+Full targeted run: tests/test_ticket_work_and_land_finish.py -- 12 passed
+(was 8 before this ticket; +4 new).
+
+Gates: `frob check --ticket T-1456 --only gates-fast` -- 4 errors, all
+SCOPE001, all naming files that are T-1454's OWN declared scope
+(docs/modules/gates.md, docs/modules/serve.md, src/frob/gates/_gate_cache.py,
+tests/test_gate_cache.py) -- this is the disclosed, expected multi-ticket-
+worktree cross-scope artifact (both tickets share one branch, so a
+`--ticket`-scoped check against either sees the other's committed diff
+too); it resolves the moment the coordinator lands T-1454 ahead of T-1456
+per this dispatch's own ordering. Zero errors attributable to T-1456's own
+scope. Per playbook section 6c this is a `--ticket`-scoped run:
+gate:SCOPE/PREWORK and the diff-driven parts of gate:COV/FMT/AFFECT are
+ticket-scoped (gate:SCOPE is exactly the 4 errors above), every other
+family's count is repo-wide.
+
+Filed: none.
+
+### Changed
+```
+ docs/modules/gates.md         |  27 +++++++++
+ docs/modules/serve.md         |  25 +++++++-
+ src/frob/gates/__init__.py    |  37 ++++++++++--
+ src/frob/gates/_gate_cache.py |  55 ++++++++++++++++++
+ tests/test_gate_cache.py      |  66 ++++++++++++++++++++-
+ tickets.md                    | 130 ++++++++++++++++++++++++++++++++++++++++--
+ 6 files changed, 328 insertions(+), 12 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_no_new_error_is_a_silent_no_op` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_fixed_by_tier_a_lands_with_a_followup_commit` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_absent_before_land_refuses_and_reverts` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_unmeasurable_baseline_or_fresh_skips_the_sweep` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 8 error(s), 486 warning(s), 730 waived
+- error-findings: ARCH001@src/frob/app/ticket_runner/_land_cmd.py, ARCH001@src/frob/gates/__init__.py, ARCH103@src/frob/app/ticket_runner/_land_cmd.py, E501@/home/logan/projects/frob/.claude/worktrees/w6p-checkfix/src/frob/app/ticket_runner/_land_cmd.py:320, E501@/home/logan/projects/frob/.claude/worktrees/w6p-checkfix/src/frob/app/ticket_runner/_land_cmd.py:346, E501@/home/logan/projects/frob/.claude/worktrees/w6p-checkfix/src/frob/app/ticket_runner/_land_cmd.py:429, OPAQUE001@tests/test_ticket_work_and_land_finish.py, SELFAUDIT001@design
 
 <!-- ticket:T-1457 -->
 ```yaml

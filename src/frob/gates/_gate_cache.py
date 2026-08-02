@@ -383,6 +383,60 @@ def extra_key(values: Iterable[str]) -> str:
     return _hash_parts(values)
 
 
+# frob:doc \
+# docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
+# frob:ticket T-1454
+# frob:tests tests/test_gate_cache.py::TestSideChannelKey.test_model_side_channel_key_changes_on_field_edit  # noqa: E501
+# frob:tests tests/test_gate_cache.py::TestSideChannelKey.test_model_side_channel_key_stable_for_equal_content  # noqa: E501
+def model_side_channel_key(*models: object) -> str:
+    """Fingerprint one or more pydantic `BaseModel` (or model-tuple) SIDE
+    INPUTS a cacheable gate reads OUTSIDE the tracked `GraphSnapshot` --
+    `LockFile` (drift's `frob.lock`), `CoverageData`/`CollectedTests`/
+    `TestPolicy` (test), `Diff`/`tuple[Rule, ...]` (policy/affect_drift),
+    `TicketQueue` (debt), and any future side channel like it.
+
+    T-1454's root cause: `TrackedSnapshot` (this module) only observes
+    reads through the `GraphSnapshot` surface -- a gate's OTHER positional
+    arguments (e.g. `drift_gate(snap, st.lock)`'s `st.lock`) are invisible
+    to it entirely, so a `frob ack` that rewrites `frob.lock` without
+    touching any tracked SOURCE file's digest left a stale DRIFT001 result
+    served forever. Every `_CACHEABLE_GATES` member's non-snapshot argument
+    must be folded into its `extra` key via this helper (feeding
+    `extra_key`, not bypassing it) so a side-channel-only change forces a
+    miss exactly like a tracked-file change already does.
+
+    Each model is serialized via `model_dump_json` with sorted keys, which
+    is deterministic for equal content regardless of construction order
+    (pydantic v2's `model_dump_json` walks fields in declaration order, not
+    insertion order) -- two structurally-equal models always fold to the
+    same string, two structurally-different ones (almost) never collide by
+    construction of the underlying hash. A bare tuple/list of models (e.g.
+    `st.rules`) is accepted directly -- each element is dumped in turn."""
+    parts: list[str] = []
+    for m in models:
+        if isinstance(m, (tuple, list)):
+            for item in m:
+                parts.append(_dump_one(item))
+        else:
+            parts.append(_dump_one(m))
+    return _hash_parts(parts)
+
+
+# frob:ticket T-1454
+def _dump_one(item: object) -> str:
+    """`model_dump_json(exclude_none=False)` for a pydantic `BaseModel`, or
+    `repr()` as a last-resort fallback for a non-model side value -- never
+    raises, since a fallback that cannot serialize a field must still
+    produce SOME distinguishing string rather than crash gate evaluation."""
+    dump = getattr(item, "model_dump_json", None)
+    if callable(dump):
+        try:
+            return cast(str, dump())
+        except Exception:  # noqa: BLE001 - fall through to repr below
+            pass
+    return repr(item)
+
+
 # --- Cache storage -------------------------------------------------------
 
 
@@ -567,4 +621,5 @@ __all__ = [
     "evaluate_cacheable_gate",
     "extra_key",
     "invalidate",
+    "model_side_channel_key",
 ]

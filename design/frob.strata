@@ -889,6 +889,7 @@ node gates : trusted {
     attr interface=load_stamp;
     attr interface=local_parse001_violation;
     attr interface=marker_for;
+    attr interface=model_side_channel_key;
     attr interface=mutation_evidence_violations;
     attr interface=opaque_gate;
     attr interface=parse_failure_gate;
@@ -4077,6 +4078,7 @@ node testsuite : trusted {
     attr interface=TestPoolSnapshotCli;
     attr interface=TestPoolStatus;
     attr interface=TestPostArchiveReissueIncident;
+    attr interface=TestPostLandUnscopedSweep;
     attr interface=TestPredicates;
     attr interface=TestPrefilterPreservesRecall;
     attr interface=TestPreworkSweepBounds;
@@ -4341,6 +4343,7 @@ node testsuite : trusted {
     attr interface=TestShowBlocked;
     attr interface=TestShutdownReapsChildren;
     attr interface=TestSiblingDoneReportPreserved;
+    attr interface=TestSideChannelKey;
     attr interface=TestSigkillMidStaging;
     attr interface=TestSingleFileLedger;
     attr interface=TestSizeCapAndTimeout;

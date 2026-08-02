@@ -2001,6 +2001,33 @@ a background daemon must not out-compete the foreground work it serves.
 `run_gates` itself is now a one-line uncapped wrapper; its public
 signature and behavior are unchanged.
 
+**T-1454: side-channel inputs (`frob.lock`, coverage, rules, the ticket
+queue, ...) now join the cache key, closing a real stale-DRIFT001 bug.**
+`TrackedSnapshot` only observes reads through the `GraphSnapshot` surface
+(`.symbols`/`.edges`/`.file_hashes`/`.malformed`/`.parse_failures`) -- it
+was blind to a cacheable gate's OTHER positional arguments, e.g.
+`drift_gate(snap, st.lock)`'s `st.lock` (the loaded `frob.lock`). A `frob
+ack` rewrites `frob.lock` without touching any tracked SOURCE file's
+digest, so neither the membership key nor the touched-file key changed --
+the cache kept serving the pre-ack DRIFT001 finding indefinitely, workable
+around only via `FROB_NO_GATE_CACHE=1` (section 6 of
+`docs/guides/agent-playbook.md` still documents that workaround as a
+general "cached result looks impossibly stale" escape hatch, useful for
+any future gap of this same shape). `frob.gates._gate_cache.
+model_side_channel_key(*models)` fingerprints one or more pydantic
+`BaseModel` side inputs via `model_dump_json`; every `_CACHEABLE_GATES`
+member's `_cacheable_gate_call` branch now folds its OWN side input(s)
+into the `extra` tuple it returns (`drift` -> `st.lock`, `test` ->
+`st.systems`/`st.coverage`/`st.tests`/`st.test_policy`, `policy` ->
+`st.rules`/`st.diff`, `debt` -> `st.queue` alongside the existing
+`current_date`/`current_version` scalars, `affect_drift` -> `st.diff`) --
+`parse_failures` and `lang_conformance` have no side input beyond (or at
+all, for `lang_conformance`) the snapshot and correctly stay keyed on
+`()`. A side-channel-only edit now forces a miss exactly like a
+tracked-file edit already did; `tests/test_gate_cache.py::
+TestRunGatesUseCache.test_ack_invalidates_cached_drift001` is the
+regression oracle for the reported DRIFT001-across-ack case specifically.
+
 **What this does NOT yet cover.** `_CACHEABLE_GATES` only spans the
 thread-pool gates that read `st.snapshot` alone. The gates measured as the
 dominant CPU cost of a full `frob check` -- `sys`, `perf`, `arch`,
