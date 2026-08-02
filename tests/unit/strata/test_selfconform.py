@@ -1118,7 +1118,18 @@ class TestWaiverChannel:
         assert waived[0].capability == "net.connect"
 
 
+@pytest.mark.xdist_group(name="selfconform-full-repo-scan")
 class TestRealGateGreen:
+    """`xdist_group` (T-drafted for this suite-repair pass): this class
+    and `TestCoverageTotality` below both run a full, unrestricted
+    repo-tree capability scan (measured ~400MB peak RSS each, standalone)
+    -- pinning both to the SAME xdist worker keeps their peaks from
+    landing concurrently on two separate workers, which is the scenario
+    that reproduced a worker crash (gw1/gw0, different runs, same full-
+    suite `make coverage` shape) even though each test is individually
+    clean and fast in isolation. Sharing a group serializes the two
+    within that one worker instead of eliminating either scan's cost."""
+
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance \
     # kind="integration"
     def test_repo_design_and_declarations_are_self_conformant(self):
@@ -1229,7 +1240,12 @@ class TestModeQualifiedFsStaleDesign:
 class TestCoverageTotality:
     """SYS103 (SYS-COV, T-0667): a `FOREIGN` file the binding-aware
     scanner observes ANY capability in fires, on any root -- not just
-    `src/frob/` (docs/modules/strata.md#sys-cov-coverage-totality-sys103-t-0667)."""
+    `src/frob/` (docs/modules/strata.md#sys-cov-coverage-totality-sys103-t-0667).
+
+    `test_repo_unrestricted_scan_is_clean` below shares the
+    `selfconform-full-repo-scan` xdist group with `TestRealGateGreen` --
+    see that class's docstring for why (both run a ~400MB full-repo scan;
+    grouping keeps the two peaks off separate concurrent workers)."""
 
     # frob:tests src/frob/strata/_selfconform.py::_coverage_totality_violations kind="unit"  # noqa: E501
     def test_foreign_file_with_capability_fires_sys103(self, tmp_path: Path):
@@ -1345,6 +1361,7 @@ class TestCoverageTotality:
         assert any(v.rule == SYS_COVERAGE_TOTALITY for v in result.danger_ok.waived)
 
     # frob:tests src/frob/strata/_selfconform.py::_coverage_totality_violations kind="unit"  # noqa: E501
+    @pytest.mark.xdist_group(name="selfconform-full-repo-scan")
     def test_repo_unrestricted_scan_is_clean(self, monkeypatch: pytest.MonkeyPatch):
         """T-1079 (SYS103's 264-finding follow-up), STILL GREEN post-T-1091:
         `design/frob.strata` models `tests/**`/`scripts/**`/

@@ -35,10 +35,10 @@ INVENTORY = EXTENDING / "registry_of_registries.json"
 _REGISTRY_PROBES: dict[str, tuple[str, str]] = {
     "gate-rule-families": ("src/frob/gates/_models.py", r"class GateConfig"),
     "comment-dsl-directives": ("src/frob/graph/dsl.py", r"_VERB_TABLE"),
-    "threat-catalog": ("src/frob/strata/_threat.py", r"class WeaknessEntry"),
+    "threat-catalog": ("src/frob/strata/_threat_models.py", r"class WeaknessEntry"),
     "compliance-registry": ("src/frob/strata/_compliance.py", r"class RegulationEntry"),
     "capability-registry": (
-        "src/frob/vet/_capability_registry.py",
+        "src/frob/vet/_capability_registry/_matrix.py",
         r"DANGEROUS_OPERATIONS",
     ),
     "cve-fingerprints": (
@@ -61,7 +61,10 @@ _REGISTRY_PROBES: dict[str, tuple[str, str]] = {
         "tests/unit/strata/test_litmus_surface.py",
         r"class TestNaiveSurfaceGoldens",
     ),
-    "benign-capabilities": ("src/frob/strata/_threat.py", r"class BenignCapability"),
+    "benign-capabilities": (
+        "src/frob/strata/_threat_models.py",
+        r"class BenignCapability",
+    ),
     "ticket-kinds-states": ("src/frob/tickets/_models.py", r"class TicketState"),
     "dup-detector-registry": ("src/frob/dup/_rules.py", r"def DUP001"),
 }

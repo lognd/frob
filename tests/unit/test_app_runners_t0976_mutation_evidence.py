@@ -180,7 +180,7 @@ class TestCloseGuardsMutationEvidenceDowngrade:
         monkeypatch.setattr(
             ticket_runner,
             "_close_mutation_evidence_for_ticket",
-            lambda root, t: mutation_evidence,
+            lambda root, t, base_ref="main": mutation_evidence,
         )
         monkeypatch.setattr(
             ticket_runner, "_reverify_evidence_for_close", lambda root, t: None

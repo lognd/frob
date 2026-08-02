@@ -19,7 +19,7 @@
       "id": "threat-catalog",
       "title": "Threat catalog (weaknesses, out-of-scope, benign capabilities)",
       "guide": "docs/guides/extending/threat-catalog.md",
-      "anchor_file": "src/frob/strata/_threat.py",
+      "anchor_file": "src/frob/strata/_threat_models.py",
       "anchor_symbol": "WeaknessEntry"
     },
     {
@@ -33,7 +33,7 @@
       "id": "capability-registry",
       "title": "Capability registry, pattern tables, matrix cells",
       "guide": "docs/guides/extending/capability-registry.md",
-      "anchor_file": "src/frob/vet/_capability_registry.py",
+      "anchor_file": "src/frob/vet/_capability_registry/_matrix.py",
       "anchor_symbol": "DangerousOperation"
     },
     {
@@ -117,7 +117,7 @@
       "id": "benign-capabilities",
       "title": "Benign capabilities",
       "guide": "docs/guides/extending/benign-capabilities.md",
-      "anchor_file": "src/frob/strata/_threat.py",
+      "anchor_file": "src/frob/strata/_threat_models.py",
       "anchor_symbol": "BenignCapability"
     },
     {

@@ -89,7 +89,9 @@ def _bypass_other_close_guards(monkeypatch: pytest.MonkeyPatch, ticket_runner) -
         ticket_runner, "_covers_scope_for_ticket", lambda root, ticket: None
     )
     monkeypatch.setattr(
-        ticket_runner, "_close_mutation_evidence_for_ticket", lambda root, ticket: None
+        ticket_runner,
+        "_close_mutation_evidence_for_ticket",
+        lambda root, ticket, base_ref="main": None,
     )
     monkeypatch.setattr(
         ticket_runner, "_reverify_evidence_for_close", lambda root, ticket: None

@@ -5732,7 +5732,7 @@ class TestCloseSkipMutationEvidenceBypass:
         monkeypatch.setattr(
             ticket_runner,
             "_close_mutation_evidence_for_ticket",
-            lambda root, ticket: False,
+            lambda root, ticket, base_ref="main": False,
         )
         monkeypatch.setattr(
             ticket_runner, "_covers_scope_for_ticket", lambda root, ticket: None
@@ -5758,7 +5758,7 @@ class TestCloseSkipMutationEvidenceBypass:
         monkeypatch.setattr(
             ticket_runner,
             "_close_mutation_evidence_for_ticket",
-            lambda root, ticket: False,
+            lambda root, ticket, base_ref="main": False,
         )
         monkeypatch.setattr(
             ticket_runner, "_covers_scope_for_ticket", lambda root, ticket: None

@@ -137,7 +137,7 @@ testpaths = ["tests"]
 # docs/guides/testing.md#per-test-timeout-ci-hardening for the list;
 # T-draft-1770ceef tracks adding those overrides (out of this ticket's
 # docs/guides+config-only scope).
-addopts = "-q -n auto --timeout=120 --timeout-method=thread"
+addopts = "-q -n auto --dist=loadgroup --timeout=120 --timeout-method=thread"
 pythonpath = ["."]
 markers = [
     "slow: long-running system tests excluded from quick loops",
