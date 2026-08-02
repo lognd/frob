@@ -8465,6 +8465,56 @@ sprint: null
 scope:
 - src/frob/gates/_exhaustive_handling.py
 - src/frob/gates/_tickets.py
+- src/frob/gates/__init__.py
+- src/frob/gates/_decisions_compliance.py
+- src/frob/gates/_doclink_docanchor.py
+- src/frob/gates/_sys.py
+- src/frob/gates/_tickets_gate.py
+- src/frob/gates/_todo_fmt.py
+- src/frob/gates/_waive.py
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: EXHAUST001 to EXHAUST003 rename touches these gate modules' waive directives
+    and the rule allowlist; T-1279's stale lease previously blocked registration
+  actor: logan
+  at: '2026-08-01'
+- op: add
+  glob: src/frob/gates/_decisions_compliance.py
+  reason: EXHAUST001 to EXHAUST003 rename touches these gate modules' waive directives
+    and the rule allowlist; T-1279's stale lease previously blocked registration
+  actor: logan
+  at: '2026-08-01'
+- op: add
+  glob: src/frob/gates/_doclink_docanchor.py
+  reason: EXHAUST001 to EXHAUST003 rename touches these gate modules' waive directives
+    and the rule allowlist; T-1279's stale lease previously blocked registration
+  actor: logan
+  at: '2026-08-01'
+- op: add
+  glob: src/frob/gates/_sys.py
+  reason: EXHAUST001 to EXHAUST003 rename touches these gate modules' waive directives
+    and the rule allowlist; T-1279's stale lease previously blocked registration
+  actor: logan
+  at: '2026-08-01'
+- op: add
+  glob: src/frob/gates/_tickets_gate.py
+  reason: EXHAUST001 to EXHAUST003 rename touches these gate modules' waive directives
+    and the rule allowlist; T-1279's stale lease previously blocked registration
+  actor: logan
+  at: '2026-08-01'
+- op: add
+  glob: src/frob/gates/_todo_fmt.py
+  reason: EXHAUST001 to EXHAUST003 rename touches these gate modules' waive directives
+    and the rule allowlist; T-1279's stale lease previously blocked registration
+  actor: logan
+  at: '2026-08-01'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: EXHAUST001 to EXHAUST003 rename touches these gate modules' waive directives
+    and the rule allowlist; T-1279's stale lease previously blocked registration
+  actor: logan
+  at: '2026-08-01'
 acceptance:
 - text: GIVEN an EXHAUST001 finding whose only escape is an unresolvable (Unknown)
     callee WHEN the gate runs THEN it does not demand a catch-all handler under EXHAUST001,
@@ -8516,7 +8566,6 @@ Tune, do not remove: keep full strength on reports for tickets in the active win
 NOT IN SCOPE, recorded so nobody mistakes them for noise: TEST005's 1444, DOC006's 55, LARGE001's 52, EXHAUST002's 37 and COV007's 22 are real work. They stay. TICK009's 82 clear themselves as tickets close and scopes narrow.
 
 ACCEPTANCE NOTE for whoever implements: do not satisfy this by adding blanket waivers, lowering a threshold, or deleting a rule. The measure of success is that the findings which disappear are ones that were never actionable, and that a deliberately-introduced real violation of each tuned rule is still caught. Prove that with a regression test per rule.
-
 <!-- ticket:T-1403 -->
 ```yaml
 id: T-1403
