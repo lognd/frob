@@ -3,6 +3,8 @@ independence (docs/strata/kernel.md#scenario, T-0076)."""
 
 from __future__ import annotations
 
+from typani.result import Err
+
 from frob.strata import (
     BreachContract,
     Flow,
@@ -129,6 +131,72 @@ class TestContainmentBounds:
         )
         result = evaluate_breach_contracts(model)
         assert result.is_ok
+
+    def test_dimension_mismatched_bounds_fail_closed_with_unit_mismatch(self):
+        # frob:tests src/frob/strata/_breach.py::evaluate_breach_contracts kind="unit"
+        """`detect`/`revoke` in incompatible dimensions (seconds vs bytes)
+        must fail via `Quantity.leq`'s own `UnitMismatch`, not the
+        `IncompatibleContainmentBound` the value-comparison branch
+        produces -- the two are different error variants for a reason."""
+        model = KernelModel(
+            nodes=(
+                _node(
+                    "gateway",
+                    breach=BreachContract(
+                        detect=Quantity(value=1, unit="B"), revoke=_seconds(60)
+                    ),
+                ),
+            ),
+        )
+        result = evaluate_breach_contracts(model)
+        assert result.is_err
+        assert result.danger_err is StrataError.UnitMismatch
+
+
+class TestBreachContractsFactsAndScenarioErrors:
+    def test_build_facts_error_propagates_out_of_blast_radius(self, monkeypatch):
+        # frob:tests src/frob/strata/_breach.py::evaluate_breach_contracts kind="unit"
+        """A `build_facts` failure while computing blast radii must
+        propagate as `Err`, never be swallowed into an empty report."""
+        import frob.strata._breach as breach_mod
+
+        model = KernelModel(
+            nodes=(
+                _node(
+                    "gateway",
+                    breach=BreachContract(detect=_seconds(1), revoke=_seconds(2)),
+                ),
+            ),
+        )
+        monkeypatch.setattr(
+            breach_mod, "build_facts", lambda _model: Err(StrataError.MalformedLattice)
+        )
+        result = evaluate_breach_contracts(model)
+        assert result.is_err
+        assert result.danger_err is StrataError.MalformedLattice
+
+    def test_scenario_evaluation_error_propagates(self, monkeypatch):
+        # frob:tests src/frob/strata/_breach.py::evaluate_breach_contracts kind="unit"
+        """A failing `evaluate_scenarios` call must abort the breach report
+        with its own error, not a partially-built report."""
+        import frob.strata._breach as breach_mod
+
+        model = KernelModel(
+            nodes=(
+                _node(
+                    "gateway",
+                    breach=BreachContract(detect=_seconds(1), revoke=_seconds(2)),
+                ),
+            ),
+        )
+        monkeypatch.setattr(
+            breach_mod,
+            "evaluate_scenarios",
+            lambda *a, **k: Err(StrataError.RefinementViolation),
+        )
+        result = evaluate_breach_contracts(model)
+        assert result.is_err
+        assert result.danger_err is StrataError.RefinementViolation
 
 
 class TestBlastRadius:

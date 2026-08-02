@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from typani.error_set import ErrorSet
+from typani.result import Err
 
 from frob.strata import (
     elaborate,
@@ -13,6 +14,8 @@ from frob.strata import (
     generate_fault_injection_cases,
     parse_module,
 )
+from frob.strata._atomic import _join_saga_idempotency
+from frob.strata._errors import StrataError
 
 _AT_LEAST_ONCE = "delivery=at_least_once"
 
@@ -171,6 +174,96 @@ class TestGenerateFaultInjectionCases:
         module, _ = _elaborate(text)
         cases = generate_fault_injection_cases(module, {})
         assert cases == ()
+
+
+class TestJoinSagaIdempotencyNoCoordinators:
+    def test_empty_coordinator_ids_returns_model_unchanged(self):
+        # frob:tests src/frob/strata/_atomic.py::_join_saga_idempotency kind="unit"
+        """Calling the private join directly with no coordinator ids must
+        short-circuit and hand back the exact same model, never touching
+        `flows` -- the guard `evaluate_saga_contracts` normally applies
+        before ever reaching this helper (T-0075)."""
+        text = """
+        module m
+        node StoreA : trusted
+        node Slot : trusted
+        operation Reserve on StoreA {
+            modifies { Slot } on Ok;
+            modifies {} on Err;
+            atomic via StoreA
+        }
+        """
+        _, model = _elaborate(text)
+        result = _join_saga_idempotency(model, frozenset())
+        assert result is model
+
+
+class TestEvaluateSagaContractsFactsError:
+    def test_build_facts_error_is_propagated(self, monkeypatch):
+        # frob:tests src/frob/strata/_atomic.py::evaluate_saga_contracts kind="unit"
+        """When `build_facts` fails on the joined model, the error must
+        propagate through as `Err`, never be swallowed or replaced with an
+        empty diagnostics tuple."""
+        import frob.strata._atomic as atomic_mod
+
+        text = """
+        module m
+        node StoreA : trusted
+        node Coord : trusted { attr coordinator; }
+        node caller : trusted
+        node Slot : trusted
+        flow f1 : caller -> Coord
+        operation Reserve on StoreA {
+            modifies { Slot } on Ok;
+            modifies {} on Err;
+            atomic via Coord
+        }
+        """
+        module, model = _elaborate(text)
+        monkeypatch.setattr(
+            atomic_mod, "build_facts", lambda _model: Err(StrataError.MalformedLattice)
+        )
+        result = evaluate_saga_contracts(module, model)
+        assert result.is_err
+        assert result.danger_err is StrataError.MalformedLattice
+
+
+class TestEvaluateAtomicContractsSagaError:
+    def test_saga_error_short_circuits_before_fault_injection(self, monkeypatch):
+        # frob:tests src/frob/strata/_atomic.py::evaluate_atomic_contracts kind="unit"
+        """A failing `evaluate_saga_contracts` must abort `evaluate_atomic_
+        contracts` immediately -- `generate_fault_injection_cases` must
+        never be reached."""
+        import frob.strata._atomic as atomic_mod
+
+        text = """
+        module m
+        node StoreA : trusted
+        node Slot : trusted
+        operation Reserve on StoreA {
+            modifies { Slot } on Ok;
+            modifies {} on Err;
+            atomic via StoreA
+        }
+        """
+        module, model = _elaborate(text)
+        monkeypatch.setattr(
+            atomic_mod,
+            "evaluate_saga_contracts",
+            lambda _module, _model: Err(StrataError.MalformedLattice),
+        )
+        called = []
+        monkeypatch.setattr(
+            atomic_mod,
+            "generate_fault_injection_cases",
+            lambda *a, **k: called.append(1) or (),
+        )
+        result = evaluate_atomic_contracts(
+            module, model, error_sets={"Reserve": ReserveError}
+        )
+        assert result.is_err
+        assert result.danger_err is StrataError.MalformedLattice
+        assert called == []
 
 
 class TestEvaluateAtomicContracts:

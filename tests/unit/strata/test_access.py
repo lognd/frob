@@ -39,6 +39,22 @@ class TestNodeAccessDeclarations:
         )
 
     # frob:tests \
+    # tests/unit/strata/test_access.py::TestNodeAccessDeclarations.test_non_access_attr\
+    # _amid_access_attrs_is_skipped
+    def test_non_access_attr_amid_access_attrs_is_skipped(self):
+        """A non-`access=`-prefixed attr sitting alongside real `access=`
+        attrs must be skipped (the `continue` branch), not mistaken for a
+        malformed access declaration."""
+        node = Node(
+            id="writer",
+            trust="trusted",
+            attrs=("coordinator", "access=ledger_db:write"),
+        )
+        assert node_access_declarations(node) == (
+            NodeAccess(resource="ledger_db", mode=AccessMode.WRITE),
+        )
+
+    # frob:tests \
     # tests/unit/strata/test_access.py::TestNodeAccessDeclarations.test_no_access_attrs\
     # _is_empty
     def test_no_access_attrs_is_empty(self):

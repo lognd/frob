@@ -7,7 +7,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from frob.strata import KernelModel, Node, Waiver
+from typani.result import Err
+
+from frob.strata import KernelModel, Node, StrataError, Waiver
 from frob.strata._fallback import (
     REL_MISSING_FALLBACK,
     REL_UNPROVEN_FALLBACK,
@@ -148,3 +150,28 @@ class TestUnprovenFallback:
         assert not [
             v for v in result.danger_ok.violations if v.rule == REL_UNPROVEN_FALLBACK
         ]
+
+
+class TestBindCodeErrorPropagation:
+    def test_ambiguous_code_binding_error_propagates(self, tmp_path: Path, monkeypatch):
+        # frob:tests \
+        # tests/unit/strata/test_fallback.py::TestBindCodeErrorPropagation.test_ambiguo\
+        # us_code_binding_error_propagates
+        """`bind_code`'s `AmbiguousCodeBinding` must propagate unchanged out
+        of `check_fallback_obligations`, never be swallowed (deny by default, matching
+        every other REL-family entrypoint's discipline)."""
+        import frob.strata._fallback as fallback_mod
+
+        model = KernelModel(
+            nodes=(
+                Node(id="payments", trust="untrusted", attrs=("critical", "fallback")),
+            ),
+        )
+        monkeypatch.setattr(
+            fallback_mod,
+            "bind_code",
+            lambda _model, _root: Err(StrataError.AmbiguousCodeBinding),
+        )
+        result = check_fallback_obligations(model, tmp_path)
+        assert result.is_err
+        assert result.danger_err is StrataError.AmbiguousCodeBinding

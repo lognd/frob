@@ -8,7 +8,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from frob.strata import KernelModel, Node, Waiver
+from typani.result import Err
+
+from frob.strata import KernelModel, Node, StrataError, Waiver
 from frob.strata._circuit_breaker import (
     REL_MISSING_CIRCUIT_BREAKER,
     REL_UNPROVEN_CIRCUIT_BREAKER,
@@ -184,3 +186,32 @@ class TestUnprovenCircuitBreaker:
             for v in result.danger_ok.violations
             if v.rule == REL_UNPROVEN_CIRCUIT_BREAKER
         ]
+
+
+class TestBindCodeErrorPropagation:
+    def test_ambiguous_code_binding_error_propagates(self, tmp_path: Path, monkeypatch):
+        # frob:tests \
+        # tests/unit/strata/test_circuit_breaker.py::TestBindCodeErrorPropagation.test_\
+        # ambiguous_code_binding_error_propagates
+        """`bind_code`'s `AmbiguousCodeBinding` must propagate unchanged out
+        of `check_circuit_breaker_obligations`, never be swallowed (deny by default, matching
+        every other REL-family entrypoint's discipline)."""
+        import frob.strata._circuit_breaker as circuit_mod
+
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="payments",
+                    trust="untrusted",
+                    attrs=("external", "circuit_breaker"),
+                ),
+            ),
+        )
+        monkeypatch.setattr(
+            circuit_mod,
+            "bind_code",
+            lambda _model, _root: Err(StrataError.AmbiguousCodeBinding),
+        )
+        result = check_circuit_breaker_obligations(model, tmp_path)
+        assert result.is_err
+        assert result.danger_err is StrataError.AmbiguousCodeBinding

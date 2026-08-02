@@ -7,10 +7,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from frob.strata import Flow, KernelModel, Node, Waiver
+from typani.result import Err
+
+from frob.strata import Flow, KernelModel, Node, StrataError, Waiver
 from frob.strata._distributed_txn import (
     REL_MISSING_SAGA,
     REL_UNPROVEN_SAGA,
+    _multi_service_writers,
     check_distributed_txn_obligations,
 )
 
@@ -205,3 +208,56 @@ class TestUnprovenSaga:
         assert not [
             v for v in result.danger_ok.violations if v.rule == REL_UNPROVEN_SAGA
         ]
+
+
+class TestMultiServiceWritersSelfLoop:
+    def test_self_loop_flow_is_excluded_from_written_node_set(self):
+        # frob:tests src/frob/strata/_distributed_txn.py::_multi_service_writers \
+        # kind="unit"
+        """A flow whose `src == dst` (a self-loop) must never count as a
+        write to a distinct downstream node -- only genuine cross-node
+        flows accumulate toward the >=2-distinct-writes threshold."""
+        model = KernelModel(
+            nodes=(
+                Node(id="checkout", trust="trusted"),
+                Node(id="inventory_svc", trust="trusted"),
+            ),
+            flows=(
+                Flow(id="self", src="checkout", dst="checkout"),
+                Flow(id="f1", src="checkout", dst="inventory_svc"),
+            ),
+        )
+        writers = _multi_service_writers(model)
+        # Only one distinct downstream node (inventory_svc) -- below the
+        # >=2 threshold, so checkout must not appear at all.
+        assert "checkout" not in writers
+
+
+class TestBindCodeErrorPropagation:
+    def test_ambiguous_code_binding_error_propagates(self, tmp_path, monkeypatch):
+        # frob:tests \
+        # src/frob/strata/_distributed_txn.py::check_distributed_txn_obligations \
+        # kind="unit"
+        """`bind_code`'s `AmbiguousCodeBinding` must propagate unchanged,
+        never be swallowed into an empty/ok report (deny by default)."""
+        import frob.strata._distributed_txn as dtxn_mod
+
+        model = KernelModel(
+            nodes=(
+                Node(id="checkout", trust="trusted"),
+                Node(id="inventory_svc", trust="trusted"),
+                Node(id="billing_svc", trust="trusted"),
+            ),
+            flows=(
+                Flow(id="f1", src="checkout", dst="inventory_svc"),
+                Flow(id="f2", src="checkout", dst="billing_svc"),
+            ),
+        )
+        monkeypatch.setattr(
+            dtxn_mod,
+            "bind_code",
+            lambda _model, _root: Err(StrataError.AmbiguousCodeBinding),
+        )
+        result = check_distributed_txn_obligations(model, tmp_path)
+        assert result.is_err
+        assert result.danger_err is StrataError.AmbiguousCodeBinding

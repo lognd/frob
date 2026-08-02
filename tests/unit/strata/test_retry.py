@@ -8,7 +8,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from frob.strata import Flow, KernelModel, Node, Waiver
+from typani.result import Err
+
+from frob.strata import Flow, KernelModel, Node, StrataError, Waiver
 from frob.strata._retry import (
     REL_MISSING_BACKOFF,
     REL_NONIDEMPOTENT_RETRY,
@@ -260,3 +262,37 @@ class TestUnprovenBackoff:
         assert not [
             v for v in result.danger_ok.violations if v.rule == REL_UNPROVEN_BACKOFF
         ]
+
+
+class TestBindCodeErrorPropagation:
+    def test_ambiguous_code_binding_error_propagates(self, tmp_path: Path, monkeypatch):
+        # frob:tests \
+        # tests/unit/strata/test_retry.py::TestBindCodeErrorPropagation.test_ambiguous_\
+        # code_binding_error_propagates
+        """`bind_code`'s `AmbiguousCodeBinding` must propagate unchanged out
+        of `check_retry_obligations`, never be swallowed (deny by default, matching
+        every other REL-family entrypoint's discipline)."""
+        import frob.strata._retry as retry_mod
+
+        model = KernelModel(
+            nodes=(
+                Node(id="caller", trust="trusted"),
+                Node(id="worker", trust="trusted", attrs=("idempotent",)),
+            ),
+            flows=(
+                Flow(
+                    id="f1",
+                    src="caller",
+                    dst="worker",
+                    attrs=("retry", "backoff_jitter"),
+                ),
+            ),
+        )
+        monkeypatch.setattr(
+            retry_mod,
+            "bind_code",
+            lambda _model, _root: Err(StrataError.AmbiguousCodeBinding),
+        )
+        result = check_retry_obligations(model, tmp_path)
+        assert result.is_err
+        assert result.danger_err is StrataError.AmbiguousCodeBinding

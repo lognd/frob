@@ -7,7 +7,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from frob.strata import Flow, KernelModel, Node, Waiver
+from typani.result import Err
+
+from frob.strata import Flow, KernelModel, Node, StrataError, Waiver
 from frob.strata._clock_ordering import (
     REL_MISSING_ORDERING_STRATEGY,
     REL_UNPROVEN_ORDERING_STRATEGY,
@@ -256,3 +258,37 @@ class TestWallClockOnly:
             for v in result.danger_ok.violations
             if v.rule == REL_UNPROVEN_ORDERING_STRATEGY
         ]
+
+
+class TestBindCodeErrorPropagation:
+    def test_ambiguous_code_binding_error_propagates(self, tmp_path, monkeypatch):
+        # frob:tests \
+        # tests/unit/strata/test_clock_ordering.py::TestBindCodeErrorPropagation.test_a\
+        # mbiguous_code_binding_error_propagates
+        """`bind_code`'s `AmbiguousCodeBinding` must propagate unchanged out
+        of `check_clock_ordering_obligations`, never be swallowed (deny by
+        default, matching every other REL3xx entrypoint's discipline)."""
+        import frob.strata._clock_ordering as clock_mod
+
+        model = KernelModel(
+            nodes=(
+                Node(id="replica_a", trust="trusted"),
+                Node(id="replica_b", trust="trusted"),
+            ),
+            flows=(
+                Flow(
+                    id="f1",
+                    src="replica_a",
+                    dst="replica_b",
+                    attrs=("clock_dependent",),
+                ),
+            ),
+        )
+        monkeypatch.setattr(
+            clock_mod,
+            "bind_code",
+            lambda _model, _root: Err(StrataError.AmbiguousCodeBinding),
+        )
+        result = check_clock_ordering_obligations(model, tmp_path)
+        assert result.is_err
+        assert result.danger_err is StrataError.AmbiguousCodeBinding

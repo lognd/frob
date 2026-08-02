@@ -3077,6 +3077,7 @@ node testsuite : trusted {
     attr interface=TestBaselineDelta;
     attr interface=TestBenignCapability;
     attr interface=TestBindCode;
+    attr interface=TestBindCodeErrorPropagation;
     attr interface=TestBindRunner;
     attr interface=TestBindingErrorPropagation;
     attr interface=TestBindingTotality;
@@ -3089,6 +3090,7 @@ node testsuite : trusted {
     attr interface=TestBoundEndpoints;
     attr interface=TestBoundaryOffByOneT0984;
     attr interface=TestBounds;
+    attr interface=TestBreachContractsFactsAndScenarioErrors;
     attr interface=TestBreadthPerf;
     attr interface=TestBriefCli;
     attr interface=TestBriefTicket;
@@ -3467,6 +3469,7 @@ node testsuite : trusted {
     attr interface=TestEvalFiresCwe94;
     attr interface=TestEvalNeedleSelfMatch;
     attr interface=TestEvaluateAtomicContracts;
+    attr interface=TestEvaluateAtomicContractsSagaError;
     attr interface=TestEvaluateBreachContractsNoContracts;
     attr interface=TestEvaluateCacheableGate;
     attr interface=TestEvaluateCompliance;
@@ -3475,6 +3478,7 @@ node testsuite : trusted {
     attr interface=TestEvaluateLint;
     attr interface=TestEvaluateLintPropagatesEachRuleError;
     attr interface=TestEvaluatePii;
+    attr interface=TestEvaluateSagaContractsFactsError;
     attr interface=TestEvaluateSagaContractsJoin;
     attr interface=TestEvaluateSagaContractsNoSaga;
     attr interface=TestEvaluateScenarios;
@@ -3689,6 +3693,7 @@ node testsuite : trusted {
     attr interface=TestIsSelfPatternPath;
     attr interface=TestIsValidTicketRef;
     attr interface=TestIterRawLedgerFrontmatter;
+    attr interface=TestJoinSagaIdempotencyNoCoordinators;
     attr interface=TestKernelModel;
     attr interface=TestKeywordSweep;
     attr interface=TestKillSwitch;
@@ -3859,6 +3864,7 @@ node testsuite : trusted {
     attr interface=TestModuleDependencyCycles;
     attr interface=TestModuleToPath;
     attr interface=TestMultiAceDenyOverridesAllow;
+    attr interface=TestMultiServiceWritersSelfLoop;
     attr interface=TestMultipleRunnersPerLanguage;
     attr interface=TestMutableDefaultArg;
     attr interface=TestMutateLabels;
@@ -4223,6 +4229,7 @@ node testsuite : trusted {
     attr interface=TestScanTreeSourceUnavailableFailClosed;
     attr interface=TestScanTreeTimeout;
     attr interface=TestScanTreeWithLocalSource;
+    attr interface=TestScenarioEvaluationErrorPropagation;
     attr interface=TestScenarioHasBoundClaimNonMatchingBody;
     attr interface=TestScenarioModel;
     attr interface=TestScenarioResultModel;
