@@ -11851,6 +11851,7 @@ WHY IT MATTERS. The lock is the persisted ratchet floor: it is what survives the
 This ticket is about DURABILITY, not the clamp. T-1401's carve-out is correct and should not be changed. The question is why a successful stamp's write is not what ends up committed.
 
 Acceptance should be checkable end to end: run a coverage stamp, then confirm the committed lock's source_sha matches that run and that a module measured at zero in the report reads zero in the lock.
+
 <!-- ticket:T-1420 -->
 ```yaml
 id: T-1420
@@ -12008,7 +12009,7 @@ WHAT SUCCESS LOOKS LIKE. Reconstruct any one of the five tickets above as a fixt
 id: T-1422
 title: 'frob ticket accept can only append: add amend and remove for acceptance criteria,
   with a recorded reason'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-02'
@@ -12017,20 +12018,259 @@ parent: null
 tier: ticket
 sprint: null
 scope:
-- src/frob/app/ticket_runner/_metadata.py
 - src/frob/tickets/_models.py
 - tests/test_tickets_acceptance.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
+- src/frob/app/ticket_runner/_mutate.py
+- src/frob/app/ticket_runner/_query.py
+- src/frob/tickets/_accept.py
+- src/frob/tickets/__init__.py
+- src/frob/tickets/_reporting.py
+- docs/modules/tickets.md
+- src/frob/app/config.py
+scope_changes:
+- op: remove
+  glob: src/frob/app/ticket_runner/_metadata.py
+  reason: 'declared scope named a nonexistent src/frob/app/ticket_runner/_metadata.py
+
+    (no such path in the tree). The real CLI-flag registration for accept
+
+    lives at src/frob/_cli_parsers/_ticket/_metadata.py; the command
+
+    implementation lives in src/frob/app/ticket_runner/_mutate.py alongside
+
+    _scope/_accept; a new src/frob/tickets/_accept.py module holds the
+
+    amend/remove logic (T-0455''s _scope.py split pattern) wired through
+
+    frob/tickets/__init__.py; surfacing the amendment requires touching
+
+    show''s renderer (_query.py) and Done report composition (_reporting.py);
+
+    docs/modules/tickets.md documents the new verbs in the same change.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: 'declared scope named a nonexistent src/frob/app/ticket_runner/_metadata.py
+
+    (no such path in the tree). The real CLI-flag registration for accept
+
+    lives at src/frob/_cli_parsers/_ticket/_metadata.py; the command
+
+    implementation lives in src/frob/app/ticket_runner/_mutate.py alongside
+
+    _scope/_accept; a new src/frob/tickets/_accept.py module holds the
+
+    amend/remove logic (T-0455''s _scope.py split pattern) wired through
+
+    frob/tickets/__init__.py; surfacing the amendment requires touching
+
+    show''s renderer (_query.py) and Done report composition (_reporting.py);
+
+    docs/modules/tickets.md documents the new verbs in the same change.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/app/ticket_runner/_mutate.py
+  reason: 'declared scope named a nonexistent src/frob/app/ticket_runner/_metadata.py
+
+    (no such path in the tree). The real CLI-flag registration for accept
+
+    lives at src/frob/_cli_parsers/_ticket/_metadata.py; the command
+
+    implementation lives in src/frob/app/ticket_runner/_mutate.py alongside
+
+    _scope/_accept; a new src/frob/tickets/_accept.py module holds the
+
+    amend/remove logic (T-0455''s _scope.py split pattern) wired through
+
+    frob/tickets/__init__.py; surfacing the amendment requires touching
+
+    show''s renderer (_query.py) and Done report composition (_reporting.py);
+
+    docs/modules/tickets.md documents the new verbs in the same change.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/app/ticket_runner/_query.py
+  reason: 'declared scope named a nonexistent src/frob/app/ticket_runner/_metadata.py
+
+    (no such path in the tree). The real CLI-flag registration for accept
+
+    lives at src/frob/_cli_parsers/_ticket/_metadata.py; the command
+
+    implementation lives in src/frob/app/ticket_runner/_mutate.py alongside
+
+    _scope/_accept; a new src/frob/tickets/_accept.py module holds the
+
+    amend/remove logic (T-0455''s _scope.py split pattern) wired through
+
+    frob/tickets/__init__.py; surfacing the amendment requires touching
+
+    show''s renderer (_query.py) and Done report composition (_reporting.py);
+
+    docs/modules/tickets.md documents the new verbs in the same change.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/tickets/_accept.py
+  reason: 'declared scope named a nonexistent src/frob/app/ticket_runner/_metadata.py
+
+    (no such path in the tree). The real CLI-flag registration for accept
+
+    lives at src/frob/_cli_parsers/_ticket/_metadata.py; the command
+
+    implementation lives in src/frob/app/ticket_runner/_mutate.py alongside
+
+    _scope/_accept; a new src/frob/tickets/_accept.py module holds the
+
+    amend/remove logic (T-0455''s _scope.py split pattern) wired through
+
+    frob/tickets/__init__.py; surfacing the amendment requires touching
+
+    show''s renderer (_query.py) and Done report composition (_reporting.py);
+
+    docs/modules/tickets.md documents the new verbs in the same change.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: 'declared scope named a nonexistent src/frob/app/ticket_runner/_metadata.py
+
+    (no such path in the tree). The real CLI-flag registration for accept
+
+    lives at src/frob/_cli_parsers/_ticket/_metadata.py; the command
+
+    implementation lives in src/frob/app/ticket_runner/_mutate.py alongside
+
+    _scope/_accept; a new src/frob/tickets/_accept.py module holds the
+
+    amend/remove logic (T-0455''s _scope.py split pattern) wired through
+
+    frob/tickets/__init__.py; surfacing the amendment requires touching
+
+    show''s renderer (_query.py) and Done report composition (_reporting.py);
+
+    docs/modules/tickets.md documents the new verbs in the same change.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/tickets/_reporting.py
+  reason: 'declared scope named a nonexistent src/frob/app/ticket_runner/_metadata.py
+
+    (no such path in the tree). The real CLI-flag registration for accept
+
+    lives at src/frob/_cli_parsers/_ticket/_metadata.py; the command
+
+    implementation lives in src/frob/app/ticket_runner/_mutate.py alongside
+
+    _scope/_accept; a new src/frob/tickets/_accept.py module holds the
+
+    amend/remove logic (T-0455''s _scope.py split pattern) wired through
+
+    frob/tickets/__init__.py; surfacing the amendment requires touching
+
+    show''s renderer (_query.py) and Done report composition (_reporting.py);
+
+    docs/modules/tickets.md documents the new verbs in the same change.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'declared scope named a nonexistent src/frob/app/ticket_runner/_metadata.py
+
+    (no such path in the tree). The real CLI-flag registration for accept
+
+    lives at src/frob/_cli_parsers/_ticket/_metadata.py; the command
+
+    implementation lives in src/frob/app/ticket_runner/_mutate.py alongside
+
+    _scope/_accept; a new src/frob/tickets/_accept.py module holds the
+
+    amend/remove logic (T-0455''s _scope.py split pattern) wired through
+
+    frob/tickets/__init__.py; surfacing the amendment requires touching
+
+    show''s renderer (_query.py) and Done report composition (_reporting.py);
+
+    docs/modules/tickets.md documents the new verbs in the same change.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'declared scope named a nonexistent src/frob/app/ticket_runner/_metadata.py
+
+    (no such path in the tree). The real CLI-flag registration for accept
+
+    lives at src/frob/_cli_parsers/_ticket/_metadata.py; the command
+
+    implementation lives in src/frob/app/ticket_runner/_mutate.py alongside
+
+    _scope/_accept; a new src/frob/tickets/_accept.py module holds the
+
+    amend/remove logic (T-0455''s _scope.py split pattern) wired through
+
+    frob/tickets/__init__.py; surfacing the amendment requires touching
+
+    show''s renderer (_query.py) and Done report composition (_reporting.py);
+
+    docs/modules/tickets.md documents the new verbs in the same change.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_replaces_text_and_records_reason
+- tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_reason_containing_hash_colon_and_quotes_round_trips
+- tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_amend_replaces_text
+- tests/test_tickets_acceptance.py::TestAcceptanceAmendmentsSurfaced::test_show_renders_amendment_and_reason
+- tests/test_tickets_acceptance.py::TestAcceptanceAmendmentsSurfaced::test_done_report_renders_amendment_section
+- tests/test_tickets_acceptance.py::TestAcceptanceAmendmentsSurfaced::test_done_report_omits_section_when_no_amendments
+- tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_refuses_on_terminal_ticket
+- tests/test_tickets_acceptance.py::TestAmendAcceptance::test_remove_refuses_on_terminal_ticket
+- tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_preserves_existing_evidence_binding
+- tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_refuses_empty_reason
+- tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_refuses_out_of_range_index
+- tests/test_tickets_acceptance.py::TestAmendAcceptance::test_remove_drops_criterion_and_records_reason
+- tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_remove_drops_criterion
+- tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_amend_without_reason_exits_nonzero
+- tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_amend_and_remove_together_is_rejected
 acceptance:
 - text: GIVEN a ticket with a mis-specified acceptance criterion WHEN it is amended
     via the CLI with a reason THEN the new text replaces the old and the reason is
     recorded in the ledger, the way scope changes already record theirs
-  evidence: []
+  evidence:
+  - tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_replaces_text_and_records_reason
+  - tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_reason_containing_hash_colon_and_quotes_round_trips
+  - tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_amend_replaces_text
 - text: GIVEN an amended criterion WHEN the ticket is shown or its Done report rendered
     THEN the amendment and its reason are surfaced, never buried
-  evidence: []
+  evidence:
+  - tests/test_tickets_acceptance.py::TestAcceptanceAmendmentsSurfaced::test_show_renders_amendment_and_reason
+  - tests/test_tickets_acceptance.py::TestAcceptanceAmendmentsSurfaced::test_done_report_renders_amendment_section
+  - tests/test_tickets_acceptance.py::TestAcceptanceAmendmentsSurfaced::test_done_report_omits_section_when_no_amendments
 - text: GIVEN a ticket in a terminal state WHEN an amendment is attempted THEN it
     is refused
-  evidence: []
+  evidence:
+  - tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_refuses_on_terminal_ticket
+  - tests/test_tickets_acceptance.py::TestAmendAcceptance::test_remove_refuses_on_terminal_ticket
 threat: null
 component: null
 ```
@@ -12053,6 +12293,99 @@ WHAT TO BUILD. A supported way to amend acceptance, with the same discipline the
 Guard against the obvious abuse. Amending a criterion is a legitimate correction when the criterion was wrong; it is goalpost-moving when the criterion was right and the work fell short. The distinction cannot be fully automated, but the reason string makes it reviewable, and amendments should be surfaced -- in frob ticket show, and in the Done report -- rather than buried. Consider refusing an amendment on a ticket already in a terminal state.
 
 Then re-scope the ten burn-down tickets to triage-shaped acceptance, the shape already used on T-1400: every remaining finding is triaged as either a genuine gap closed with a behavioral test, or an artifact recorded with the covering test named. That is satisfiable, honest, and still forbids filler -- and it is what T-1418's classification is producing the input for.
+
+## Done report
+
+Added a supported way to correct or drop an acceptance criterion instead
+of the two workarounds that were actually used this session: hand-editing
+tickets.md (which corrupted the ledger for real -- a space-hash inside a
+plain YAML scalar started a comment and took the whole gate layer down)
+and filing a successor ticket to carry the same work under a new id.
+
+frob.tickets.amend_acceptance/remove_acceptance (src/frob/tickets/
+_accept.py, new module, same per-family split pattern _scope.py
+established for mutate_scope) both require a non-blank --reason, append
+an AcceptanceAmendmentEntry to the ticket's new acceptance_amendments
+audit tuple (old text always preserved, never edited/removed once
+written), and are refused outright on a ticket already DONE/DROPPED.
+Wired through `frob ticket accept <id> --amend INDEX --text TEXT
+(--reason TEXT | --reason-file PATH)` and `--remove INDEX (--reason TEXT
+| --reason-file PATH)` (frob.app.ticket_runner._mutate._accept_amend/
+_accept_remove), --reason-file routing text through a path per the
+backtick-in-inline-flag hazard this repo's hooks already reject.
+
+Surfaced in two places, never buried: `frob ticket show` prints an
+acceptance_amendments: block after the acceptance list
+(_query.py::_render_acceptance_amendments), and compose_done_report
+renders an "### Acceptance amendments" section whenever
+Ticket.acceptance_amendments is non-empty (_reporting.py), wired through
+set_done_report so a ticket's own Done report carries its amendment
+history automatically.
+
+Modelled the two real incidents named in the ticket body directly as
+tests: a mis-specified criterion (T-1411's criterion [0] shape, amend)
+and an unsatisfiable-by-construction criterion (the ten burn-down
+tickets' "0 findings under package X" shape, remove). A dedicated test
+also proves the ledger stays parseable after an amendment whose reason
+text contains a hash, colon, and quotes -- the exact class of input that
+broke tickets.md by hand.
+
+Named the abuse case plainly in docs/modules/tickets.md's new section:
+amending is a correction when the criterion was wrong, goalpost-moving
+when it was right and the work fell short; this cannot be automated,
+only made reviewable via the mandatory reason and the two surfacing
+points above.
+
+Scope drifted from the ticket's declared src/frob/app/ticket_runner/
+_metadata.py (no such file exists) to the real files this required --
+narrowed via `frob ticket scope` with a stated reason before touching
+anything, per playbook section 4.
+
+Out-of-scope discovery, filed as a draft (renumbers at land):
+T-1425 -- `frob sys sync-interface` only auto-rewrites `node`
+interface= blocks, silently skipping `store` blocks (e.g. tickets_ledger)
+even though the SELFAUDIT/SYS104 gate correctly flags drift on them; had
+to hand-add the 4 new interface= lines to design/frob.strata's store
+block since the tool itself reported "0 drifted" and refused to fix it.
+
+### Changed
+```
+ design/frob.strata                         |  12 ++
+ docs/modules/tickets.md                    |  74 +++++++
+ src/frob/_cli_parsers/_ticket/_metadata.py |  75 +++++--
+ src/frob/app/config.py                     |  14 ++
+ src/frob/app/ticket_runner/_mutate.py      | 132 +++++++++++-
+ src/frob/app/ticket_runner/_query.py       |  28 ++-
+ src/frob/tickets/__init__.py               |   7 +
+ src/frob/tickets/_accept.py                | 278 +++++++++++++++++++++++++
+ src/frob/tickets/_models.py                |  60 ++++++
+ src/frob/tickets/_reporting.py             |  60 +++++-
+ tests/test_tickets_acceptance.py           | 319 ++++++++++++++++++++++++++++-
+ tickets.md                                 | 286 +++++++++++++++++++++++++-
+ 12 files changed, 1311 insertions(+), 34 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_replaces_text_and_records_reason` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_reason_containing_hash_colon_and_quotes_round_trips` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_amend_replaces_text` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_acceptance.py::TestAcceptanceAmendmentsSurfaced::test_show_renders_amendment_and_reason` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_acceptance.py::TestAcceptanceAmendmentsSurfaced::test_done_report_renders_amendment_section` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_acceptance.py::TestAcceptanceAmendmentsSurfaced::test_done_report_omits_section_when_no_amendments` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_refuses_on_terminal_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_acceptance.py::TestAmendAcceptance::test_remove_refuses_on_terminal_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_preserves_existing_evidence_binding` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_refuses_empty_reason` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_acceptance.py::TestAmendAcceptance::test_amend_refuses_out_of_range_index` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_acceptance.py::TestAmendAcceptance::test_remove_drops_criterion_and_records_reason` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_remove_drops_criterion` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_amend_without_reason_exits_nonzero` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_amend_and_remove_together_is_rejected` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 15 passed (from 15 evidence id(s))
+- gates: 11 error(s), 645 warning(s), 708 waived
+- error-findings: ARCH001@src/frob/app/_config_external.py, DRIFT002@docs/guides/agentic-workflow.md, DRIFT002@docs/modules/arch.md, DRIFT002@tests/unit/test_arch.py, DRIFT002@tests/unit/test_ticket_runner_land_cmd_flags.py, INV006@src/frob/_cli_parsers/_ticket/__init__.py, INV006@src/frob/_cli_parsers/_ticket/_closeout.py, INV006@src/frob/_cli_parsers/_ticket/_progress.py, INV006@src/frob/_cli_parsers/_ticket/_query.py, INV006@src/frob/tickets/_accept.py, PRE001@tickets/T-1422
 
 <!-- ticket:T-1423 -->
 ```yaml
@@ -12150,3 +12483,41 @@ For ARCH001: split _build_external_config_kwargs properly. A 392-line argparse f
 For INV005: bind evidence that reaches INV-049's anchor, or explain why it cannot.
 
 Verify UNSCOPED before reporting: an unscoped frob check must be back to zero errors. A --ticket-scoped zero is not acceptable evidence for this ticket specifically, given that a scoped zero is what let the regression land.
+
+<!-- ticket:T-1425 -->
+```yaml
+id: T-1425
+title: frob sys sync-interface silently skips store blocks, only fixes node blocks
+state: queued
+kind: bug
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+threat: null
+component: null
+```
+`frob sys sync-interface` only auto-rewrites `node <id> { ... }` blocks
+(`_NODE_HEADER_RE` in src/frob/strata/_sync_interface.py matches literally
+`node\s+<id>...{`). A `store <id> : trusted { ... }` block declaring its
+own `interface=` attrs (e.g. design/frob.strata's `store tickets_ledger`)
+is silently skipped by both the report and the writer -- `sync_interface_
+report` returns 0 drift for it even when the gate:SELFAUDIT SYS104 check
+(`_interface_conformance_violations` in _selfconform.py, which iterates
+model nodes generically and does NOT skip stores) correctly flags missing
+symbols on it.
+
+Discovered working T-1422 (frob ticket accept --amend/--remove): adding
+`amend_acceptance`/`remove_acceptance`/`AcceptanceAmendmentEntry`/
+`AcceptanceAmendmentOp` to `frob.tickets.__all__` produced 4 real
+SELFAUDIT001 errors on the `tickets_ledger` store that `frob sys
+sync-interface` reported as "0 drifted" and refused to fix -- had to be
+hand-added to design/frob.strata instead, defeating the entire point of
+the mechanical sync tool for every store-typed node in the design.
+
+Fix: extend `_NODE_HEADER_RE` (or add a sibling `_STORE_HEADER_RE`) so
+`_sync_one_file`/`_rewrite_node_interface_block` also match `store <id> {`
+headers, the same way `_interface_conformance_violations` already treats
+them as first-class SYS104 subjects.

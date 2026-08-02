@@ -2800,6 +2800,15 @@ store tickets_ledger : trusted {
     attr interface=renumber_one_v2;
     attr interface=v2_archive_dir;
     attr interface=v2_state_transitions;
+    // T-1422: acceptance-amendment verbs (frob ticket accept --amend/
+    // --remove) -- `frob sys sync-interface` only auto-rewrites `node`
+    // interface= blocks (its `_NODE_HEADER_RE` matcher), not `store`
+    // blocks like this one, so these four are hand-added to match what
+    // it WOULD write; T-1425 files the store-support gap (renumbers at land).
+    attr interface=AcceptanceAmendmentEntry;
+    attr interface=AcceptanceAmendmentOp;
+    attr interface=amend_acceptance;
+    attr interface=remove_acceptance;
 }
 
 // T-0956: names the SAME single-writer arbiter the five SYS203/
@@ -2998,6 +3007,8 @@ node testsuite : trusted {
     attr interface=TY_SIMPLE;
     attr interface=TestAbsorbPreLandFixes;
     attr interface=TestAbstractionOpportunityDiscriminators;
+    attr interface=TestAcceptCliAmendRemove;
+    attr interface=TestAcceptanceAmendmentsSurfaced;
     attr interface=TestAcceptsCliWiring;
     attr interface=TestAck;
     attr interface=TestAckDrift;
@@ -3022,6 +3033,7 @@ node testsuite : trusted {
     attr interface=TestAllowCrossTicketReachesConfig;
     attr interface=TestAllowCrossTicketReachesLand;
     attr interface=TestAmbiguousLivenessGuard;
+    attr interface=TestAmendAcceptance;
     attr interface=TestAnalyzeProject;
     attr interface=TestAnalyzeProjectWiring;
     attr interface=TestAntiUnify;

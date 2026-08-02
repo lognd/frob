@@ -1155,6 +1155,49 @@ class ScopeChangeEntry(BaseModel):
     at: date
 
 
+# frob:ticket T-1422
+# frob:doc docs/modules/tickets.md#data-models
+class AcceptanceAmendmentOp(StrEnum):
+    """Whether an `acceptance_amendments` audit entry replaced a criterion's
+    text (T-1422) or removed it outright."""
+
+    REPLACE = "replace"
+    REMOVE = "remove"
+
+
+# frob:ticket T-1422
+# frob:doc docs/modules/tickets.md#data-models
+class AcceptanceAmendmentEntry(BaseModel):
+    """One append-only audit line for a `frob ticket accept --amend/--remove`
+    mutation (T-1422): the `frob ticket scope`/`ScopeChangeEntry` discipline
+    (T-0455) applied to acceptance criteria -- what index moved, which
+    direction, the OLD text (always recorded, even for a replace, so a
+    reviewer can see exactly what was overwritten), the NEW text (`None`
+    for a remove), why, who, and when. Never edited or removed once
+    written, only appended to.
+
+    The `reason` field is the entire point of this verb existing at all: an
+    amendment with no reason is indistinguishable from silently rewriting
+    history, which is exactly the hand-edit-the-ledger workaround this
+    ticket replaces. Amending is a legitimate correction when the criterion
+    was WRONG (mis-specified); it is goalpost-moving when the criterion was
+    RIGHT and the work fell short. This model cannot tell those two apart
+    -- only a human or reviewer reading `reason` against the diff can --
+    so it makes the change reviewable (mandatory reason, surfaced in `frob
+    ticket show` and the Done report) instead of pretending to adjudicate
+    it."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    op: AcceptanceAmendmentOp
+    index: int
+    old_text: str
+    new_text: str | None = None
+    reason: str
+    actor: str
+    at: date
+
+
 # frob:ticket T-0571
 # frob:doc docs/modules/tickets.md#data-models
 class ReviewVerdict(StrEnum):
@@ -1269,6 +1312,12 @@ class Ticket(BaseModel):
     # given/when/then acceptance criteria the reviewer verifies (T-0006),
     # each bound to the evidence id(s) that demonstrate it (T-0572)
     acceptance: tuple[AcceptanceCriterion, ...] = ()
+    # frob:ticket T-1422
+    # append-only audit trail of every `frob ticket accept --amend/--remove`
+    # mutation this ticket's `acceptance` has gone through (never edited,
+    # only appended) -- makes a weakened-to-force-a-close criterion visible
+    # instead of a silent hand-edit of the ledger.
+    acceptance_amendments: tuple[AcceptanceAmendmentEntry, ...] = ()
     # STRIDE category for kind=security tickets (T-0007)
     threat: Stride | None = None
     # frob:ticket T-0454
@@ -1531,6 +1580,17 @@ class TicketError(ErrorSet):
     # ScopeChangeEmpty/LabelChangeEmpty's "don't call this for nothing"
     # discipline.
     AcceptanceChangeEmpty = "accept requires at least one non-blank --criterion"
+    # T-1422: `frob ticket accept --amend/--remove` failure modes -- mirrors
+    # ScopeChangeReasonMissing/ScopeRemoveNotDeclared's "don't call this
+    # for nothing, and be accountable" discipline.
+    AcceptanceAmendIndexOutOfRange = (
+        "--amend/--remove index does not name an acceptance item"
+    )
+    AcceptanceAmendReasonMissing = "amend/remove requires a non-empty --reason"
+    AcceptanceAmendTextMissing = "--amend requires non-empty replacement --text"
+    AcceptanceAmendTerminalState = (
+        "cannot amend acceptance on a ticket already in a terminal (done/dropped) state"
+    )
     # T-0844: `close` (not just `land`) refuses a security/bug-kind ticket
     # whose bound evidence killed zero mutants (TEST016 at ERROR severity),
     # mirroring LandError.EvidenceConfirmatoryOnly -- see

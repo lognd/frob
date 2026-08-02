@@ -70,6 +70,7 @@ from frob.tickets._models import (
     DONE_REPORT_HEADING,
     DROP_REASON_HEADING,
     FAILURE_LOG_HEADING,
+    AcceptanceAmendmentEntry,
     Attachment,
     AttachmentSource,
     DoneReportClaims,
@@ -235,15 +236,25 @@ def compose_done_report(
     changed_lines: Sequence[str],
     evidence: Sequence[str],
     claims: DoneReportClaims | None = None,
+    acceptance_amendments: Sequence[AcceptanceAmendmentEntry] = (),
 ) -> str:
     """Compose a full '## Done report' section: the caller's narrative
     `why` plus AUTO-FILLED Changed (`render_changed_block`), Evidence
-    (`render_evidence_block`), and (T-0754, when `claims` is given) Captured
-    claims (`render_claims_block`) sections -- the mechanical parts are
-    always generated, never hand-typed, so they can never drift from what
-    frob, git, and a real test/gate run actually observed. `claims=None`
+    (`render_evidence_block`), (T-0754, when `claims` is given) Captured
+    claims (`render_claims_block`), and (T-1422, when `acceptance_
+    amendments` is non-empty) Acceptance amendments (`_render_acceptance_
+    amendments_block`) sections -- the mechanical parts are always
+    generated, never hand-typed, so they can never drift from what frob,
+    git, and a real test/gate run actually observed. `claims=None`
     (the default) omits the Captured claims section entirely, matching
-    every caller before T-0754.
+    every caller before T-0754; `acceptance_amendments=()` (the default)
+    omits the Acceptance amendments section entirely, matching every
+    caller before T-1422.
+
+    T-1422: a ticket whose acceptance was amended or had a criterion
+    removed carries that forward into its OWN Done report -- surfaced,
+    never buried, the same "never silent" posture `_render_acceptance_
+    amendments` gives `frob ticket show`.
 
     T-0826: if `why` itself already begins with a '## Done report' heading
     (case-insensitive, possibly preceded by blank lines -- e.g. an agent's
@@ -257,12 +268,41 @@ def compose_done_report(
     changed_block = render_changed_block(changed_lines)
     evidence_block = render_evidence_block(evidence)
     claims_section = f"\n\n{render_claims_block(claims)}" if claims is not None else ""
+    amendments_section = (
+        f"\n\n### Acceptance amendments\n"
+        f"{_render_acceptance_amendments_block(acceptance_amendments)}"
+        if acceptance_amendments
+        else ""
+    )
     return (
         f"{DONE_REPORT_HEADING}\n\n"
         f"{why_text}\n\n"
         f"### Changed\n{changed_block}\n\n"
-        f"### Evidence\n{evidence_block}{claims_section}\n"
+        f"### Evidence\n{evidence_block}{claims_section}{amendments_section}\n"
     )
+
+
+# frob:ticket T-1422
+def _render_acceptance_amendments_block(
+    acceptance_amendments: Sequence[AcceptanceAmendmentEntry],
+) -> str:
+    """The body of `compose_done_report`'s '### Acceptance amendments'
+    section (T-1422): one line per `AcceptanceAmendmentEntry`, oldest
+    first, naming the index, the operation, what changed, and -- always --
+    the recorded reason. Never called with an empty sequence (the caller
+    omits the whole section instead), so no "none" placeholder branch is
+    needed here, unlike `render_evidence_block`."""
+    lines = []
+    for entry in acceptance_amendments:
+        if entry.op.value == "replace":
+            change = f"{entry.old_text!r} -> {entry.new_text!r}"
+        else:
+            change = f"removed {entry.old_text!r}"
+        lines.append(
+            f"- [{entry.index}] {entry.op.value}: {change} "
+            f"(reason: {entry.reason}; {entry.actor}, {entry.at})"
+        )
+    return "\n".join(lines)
 
 
 # frob:ticket T-0976
@@ -474,7 +514,13 @@ def set_done_report(
         if loaded.is_err:
             return Err(loaded.danger_err)
         ticket = loaded.danger_ok
-        report = compose_done_report(why, changed_lines, ticket.evidence, claims)
+        report = compose_done_report(
+            why,
+            changed_lines,
+            ticket.evidence,
+            claims,
+            acceptance_amendments=ticket.acceptance_amendments,
+        )
         stored = _store_done_report(root, ticket_id, ticket, report)
         if stored.is_err:
             return Err(stored.danger_err)

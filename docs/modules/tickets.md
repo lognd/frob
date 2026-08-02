@@ -2358,7 +2358,81 @@ uses (`_new._parse_acceptance_file`, T-0737, reused rather than
 duplicated) -- mutually exclusive with repeated `--criterion TEXT` flags,
 giving both exits 1.
 
+### `frob ticket accept --amend`/`--remove` (T-1422)
+
+`frob ticket accept` could, until this ticket, only APPEND criteria. There
+was no supported way to correct a mis-specified one or drop one that was
+never satisfiable -- both cases occurred for real: T-1411's criterion [0]
+was mis-specified (a comment naming no in-scope identifier was ALSO
+matched by a poorly-named-variable's own trailing comment, so implementing
+it faithfully would have silenced the exact case the rule exists to
+catch), and ten burn-down tickets asserted "0 TEST005 findings under
+package X" against packages holding 100-400 findings -- unsatisfiable by
+construction, no single dispatch can close that. The only available
+workarounds were hand-editing `tickets.md` (which has corrupted the ledger
+for real -- a stray ` #` inside a plain YAML scalar starts a comment,
+truncating the mapping and taking every gate down as a hard failure) or
+filing a successor ticket just to carry the same acceptance forward under
+a new id.
+
+`frob.tickets.amend_acceptance(root, ticket_id, index, new_text, *,
+reason)` replaces `acceptance[index]`'s text with `new_text`; `frob.
+tickets.remove_acceptance(root, ticket_id, index, *, reason)` drops
+`acceptance[index]` outright. Both:
+
+- REQUIRE a non-blank `reason`, mirroring `mutate_scope`'s `ScopeChangeReasonMissing`
+  discipline exactly (`Err(TicketError.AcceptanceAmendReasonMissing)` if
+  blank). The reason is the entire point: an amendment with no reason is
+  indistinguishable from silently rewriting history, the same hand-edit
+  workaround this verb exists to replace.
+- Append an `AcceptanceAmendmentEntry` (`op`, `index`, `old_text`,
+  `new_text` (`None` for a remove), `reason`, `actor`, `at`) to the
+  ticket's `acceptance_amendments` tuple -- never edited or removed once
+  written, only appended to, same append-only audit discipline as
+  `ScopeChangeEntry`/`FailureEntry`. The OLD text is always preserved, so
+  the ledger keeps a full record of exactly what changed and why.
+- Are refused outright (`Err(TicketError.AcceptanceAmendTerminalState)`) on
+  a ticket already DONE or DROPPED -- amending acceptance after close is
+  exactly the "quietly move the goalposts after the fact" case this
+  ticket exists to make impossible.
+- Refuse an out-of-range `index`
+  (`Err(TicketError.AcceptanceAmendIndexOutOfRange)`).
+- Are held under `ledger_lock` end to end (T-0458 single-writer
+  invariant), same as every other mutation here.
+
+`amend_acceptance` carries forward any evidence already bound to the
+criterion unchanged -- amending the TEXT does not invalidate a binding a
+reviewer already made; rebind via `frob ticket evidence --accepts` if the
+binding itself needs re-verifying against the new wording.
+
+**The abuse case, named plainly.** Amending a criterion is a legitimate
+correction when the criterion was WRONG (mis-specified, like T-1411's
+[0]). It is goalpost-moving when the criterion was RIGHT and the work fell
+short. This mechanism cannot fully automate that distinction -- only a
+human or reviewer reading `reason` against the actual diff can. What it
+does instead is make the change REVIEWABLE rather than silent: a mandatory
+reason, permanently recorded, surfaced everywhere a reviewer looks (never
+buried) -- `frob ticket show` prints an `acceptance_amendments:` block
+after the acceptance list, and `compose_done_report` (`frob.tickets.
+_reporting`) renders an `### Acceptance amendments` section in the SAME
+Done report the amending ticket writes, whenever `Ticket.
+acceptance_amendments` is non-empty.
+
+CLI: `frob ticket accept <id> --amend INDEX --text TEXT (--reason TEXT |
+--reason-file PATH)` and `frob ticket accept <id> --remove INDEX (--reason
+TEXT | --reason-file PATH)` (`frob.app.ticket_runner._mutate._accept_
+amend`/`_accept_remove`, same "this command does nothing but forward"
+pattern as `_scope`/`_accept`'s append mode). `--reason-file` reads the
+reason verbatim from a path instead of the shell, same T-0737 rationale as
+`frob ticket scope --reason-file` (a backtick or `$(...)` in an inline
+`--reason` is expanded by the shell before frob ever sees it). `--amend`
+and `--remove` are mutually exclusive with each other and with the default
+append mode (`--criterion`/`--criterion-file`) in one invocation.
+
 ```python
+
+class AttachmentSource(BaseModel):
+    path: Path | None           # None means clipboard
 
 class AttachmentSource(BaseModel):
     path: Path | None           # None means clipboard

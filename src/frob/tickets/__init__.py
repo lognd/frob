@@ -43,6 +43,7 @@ from pathlib import Path
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
+from frob.tickets._accept import amend_acceptance, remove_acceptance
 from frob.tickets._archive import (
     _load_merged,
     archive,
@@ -104,6 +105,8 @@ from frob.tickets._leases import (
 from frob.tickets._models import (
     BOARD_STATES,
     PRIORITY_RANK,
+    AcceptanceAmendmentEntry,
+    AcceptanceAmendmentOp,
     AcceptanceCriterion,
     Attachment,
     AttachmentSource,
@@ -532,6 +535,8 @@ def _load_ticket_and_queue(
 
 
 __all__ = [
+    "AcceptanceAmendmentEntry",
+    "AcceptanceAmendmentOp",
     "AcceptanceCriterion",
     "Attachment",
     "AttachError",
@@ -566,6 +571,7 @@ __all__ = [
     "add_acceptance",
     "add_cmd_evidence",
     "add_evidence",
+    "amend_acceptance",
     "archive",
     "attach",
     "base_ref_resolvable",
@@ -590,6 +596,7 @@ __all__ = [
     "load_require_review_for_close",
     "mutate_labels",
     "mutate_scope",
+    "remove_acceptance",
     "set_component",
     "set_kind",
     "set_priority",

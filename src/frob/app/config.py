@@ -492,6 +492,20 @@ class AppConfig(BaseModel):
     # --acceptance` supported this before).
     ticket_accept_criterion: list[str] = []
     ticket_accept_criterion_file: Path | None = None
+    # frob:ticket T-1422
+    # `frob ticket accept <id> --amend INDEX --text TEXT --reason TEXT` --
+    # replace an existing criterion's text (a correction, not an append).
+    ticket_accept_amend_index: int | None = None
+    ticket_accept_amend_text: str | None = None
+    # frob:ticket T-1422
+    # `frob ticket accept <id> --remove INDEX --reason TEXT` -- drop an
+    # existing criterion outright (unsatisfiable-by-construction case).
+    ticket_accept_remove_index: int | None = None
+    # frob:ticket T-1422
+    # shared by --amend and --remove; same (--reason | --reason-file)
+    # mutual-exclusion shape as `ticket_scope_reason`/`ticket_scope_reason_file`.
+    ticket_accept_amend_reason: str | None = None
+    ticket_accept_amend_reason_file: Path | None = None
     # frob:ticket T-0454
     # `frob ticket board [--component NAME] [--label TAG] [--json]`.
     ticket_board_component: str | None = None

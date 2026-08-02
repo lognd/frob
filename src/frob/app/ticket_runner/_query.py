@@ -117,13 +117,37 @@ def _render_acceptance(ticket) -> str:  # noqa: ANN001
     evidence <id> <node-id> --accepts <index>`, without needing `--json`.
     Empty string (no extra lines) when the ticket declares no acceptance
     criteria at all, matching pre-T-0572 output exactly."""
-    if not ticket.acceptance:
+    if not ticket.acceptance and not ticket.acceptance_amendments:
         return ""
-    lines = ["\nacceptance:"]
+    lines = ["\nacceptance:"] if ticket.acceptance else []
     for i, item in enumerate(ticket.acceptance):
         status = f"bound({list(item.evidence)})" if item.evidence else "UNBOUND"
         lines.append(f"  [{i}] {status}: {item.text}")
+    lines.extend(_render_acceptance_amendments(ticket))
     return "\n".join(lines)
+
+
+# frob:ticket T-1422
+def _render_acceptance_amendments(ticket) -> list[str]:  # noqa: ANN001
+    """The `\\nacceptance_amendments: ...` lines `frob ticket show` appends
+    after the acceptance list (T-1422) -- never buried: every `--amend`/
+    `--remove` this ticket's acceptance has gone through, in order, with
+    its full reason. Empty list (no extra lines) when the ticket has no
+    recorded amendments, matching `_render_acceptance`'s own "nothing to
+    add" posture."""
+    if not ticket.acceptance_amendments:
+        return []
+    lines = ["\nacceptance_amendments:"]
+    for entry in ticket.acceptance_amendments:
+        if entry.op.value == "replace":
+            change = f"{entry.old_text!r} -> {entry.new_text!r}"
+        else:
+            change = f"removed {entry.old_text!r}"
+        lines.append(
+            f"  [{entry.index}] {entry.op.value}: {change} "
+            f"(reason: {entry.reason}; {entry.actor}, {entry.at})"
+        )
+    return lines
 
 
 # frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_doable_tickets_json_daemon_matches_in_process kind="unit"  # noqa: E501

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.304.0] - unreleased
+
+- T-1422: frob ticket accept can only append: add amend and remove for acceptance criteria, with a recorded reason
+
 ## [0.303.0] - unreleased
 
 - T-1270: arch: 32-file LARGE001 residue after T-1195 split

@@ -239,23 +239,143 @@ def _resolve_accept_criteria(cfg: AppConfig) -> list[str]:
     return list(cfg.ticket_accept_criterion)
 
 
+# frob:ticket T-1422
+def _resolve_accept_amend_reason(cfg: AppConfig) -> str | None:
+    """Resolve `frob ticket accept`'s `--amend`/`--remove` reason:
+    `--reason-file` wins if given (read verbatim -- T-0737 precedent,
+    same shape as `_resolve_scope_reason`), else the inline `--reason`
+    string. Exits 1 if both are given; returns `None` if neither is given
+    (the caller reports the "one is required" error)."""
+    if (
+        cfg.ticket_accept_amend_reason_file is not None
+        and cfg.ticket_accept_amend_reason
+    ):
+        _log.error(
+            "frob ticket accept: --reason and --reason-file are mutually exclusive"
+        )
+        sys.exit(1)
+    if cfg.ticket_accept_amend_reason_file is not None:
+        try:
+            return cfg.ticket_accept_amend_reason_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "ticket accept: could not read --reason-file %s: %s",
+                cfg.ticket_accept_amend_reason_file,
+                exc,
+            )
+            sys.exit(1)
+    return cfg.ticket_accept_amend_reason
+
+
+# frob:ticket T-1422
+def _accept_amend(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket accept <id> --amend INDEX --text TEXT (--reason TEXT |
+    --reason-file PATH)`: the ONLY thing this command does is resolve the
+    reason (`_resolve_accept_amend_reason`) and forward to `frob.tickets.
+    amend_acceptance` -- all validation (terminal-state refusal, index
+    range, reason requirement) lives there (T-1422, same "this command
+    does nothing but forward" pattern as `_scope`/`_accept`)."""
+    from frob.tickets import amend_acceptance
+
+    if cfg.ticket_accept_amend_text is None:
+        _log.error("frob ticket accept --amend requires --text TEXT")
+        sys.exit(1)
+    reason = _resolve_accept_amend_reason(cfg)
+    if not reason:
+        _log.error(
+            "frob ticket accept --amend requires --reason TEXT or --reason-file PATH"
+        )
+        sys.exit(1)
+
+    assert cfg.ticket_id is not None
+    assert cfg.ticket_accept_amend_index is not None
+    result = amend_acceptance(
+        root,
+        cfg.ticket_id,
+        cfg.ticket_accept_amend_index,
+        cfg.ticket_accept_amend_text,
+        reason=reason,
+    )
+    if result.is_err:
+        _log.error("accept --amend failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info(
+        "%s: acceptance[%d] amended: %s",
+        cfg.ticket_id,
+        cfg.ticket_accept_amend_index,
+        ticket.acceptance[cfg.ticket_accept_amend_index].text,
+    )
+
+
+# frob:ticket T-1422
+def _accept_remove(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket accept <id> --remove INDEX (--reason TEXT |
+    --reason-file PATH)`: the ONLY thing this command does is resolve the
+    reason and forward to `frob.tickets.remove_acceptance` -- all
+    validation lives there (T-1422, mirrors `_accept_amend`)."""
+    from frob.tickets import remove_acceptance
+
+    reason = _resolve_accept_amend_reason(cfg)
+    if not reason:
+        _log.error(
+            "frob ticket accept --remove requires --reason TEXT or --reason-file PATH"
+        )
+        sys.exit(1)
+
+    assert cfg.ticket_id is not None
+    assert cfg.ticket_accept_remove_index is not None
+    result = remove_acceptance(
+        root, cfg.ticket_id, cfg.ticket_accept_remove_index, reason=reason
+    )
+    if result.is_err:
+        _log.error("accept --remove failed: %s", result.danger_err)
+        sys.exit(1)
+    _log.info(
+        "%s: acceptance[%d] removed",
+        cfg.ticket_id,
+        cfg.ticket_accept_remove_index,
+    )
+
+
 # frob:ticket T-1029
+# frob:ticket T-1422
 def _accept(root: Path, cfg: AppConfig) -> None:
-    """`frob ticket accept <id> --criterion TEXT... | --criterion-file
-    PATH`: the ONLY thing this command does is resolve the criteria
-    (`_resolve_accept_criteria`) and forward to `frob.tickets.
-    add_acceptance` -- all validation lives there (T-1029, same "this
-    command does nothing but forward" pattern as `_scope`/`_label`)."""
+    """`frob ticket accept <id>`: dispatches to exactly one of three modes
+    on `cfg` -- `--amend INDEX` (`_accept_amend`, T-1422), `--remove
+    INDEX` (`_accept_remove`, T-1422), or the default append mode
+    (`_resolve_accept_criteria` + `frob.tickets.add_acceptance`, T-1029).
+    `--amend` and `--remove` are mutually exclusive with each other and
+    with plain `--criterion`/`--criterion-file` -- naming more than one
+    mode in a single invocation is ambiguous, not a "do all of them"
+    request."""
     from frob.tickets import add_acceptance
 
     if cfg.ticket_id is None:
         _log.error("frob ticket accept requires <id>")
         sys.exit(1)
 
+    modes_given = sum(
+        [
+            cfg.ticket_accept_amend_index is not None,
+            cfg.ticket_accept_remove_index is not None,
+        ]
+    )
+    if modes_given > 1:
+        _log.error("frob ticket accept: --amend and --remove are mutually exclusive")
+        sys.exit(1)
+    if cfg.ticket_accept_amend_index is not None:
+        _accept_amend(root, cfg)
+        return
+    if cfg.ticket_accept_remove_index is not None:
+        _accept_remove(root, cfg)
+        return
+
     criteria = _resolve_accept_criteria(cfg)
     if not criteria:
         _log.error(
-            "frob ticket accept requires --criterion TEXT or --criterion-file PATH"
+            "frob ticket accept requires --criterion TEXT or --criterion-file PATH "
+            "(or --amend INDEX / --remove INDEX)"
         )
         sys.exit(1)
 

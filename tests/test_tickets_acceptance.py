@@ -10,13 +10,14 @@ plumbing (`_close`/`_evidence`) without spawning a real pytest subprocess.
 from __future__ import annotations
 
 import logging
+from datetime import date
 from pathlib import Path
 
 import pytest
 from typani import Ok
 
 from frob.app.config import AppConfig
-from frob.app.ticket_runner import _close, _evidence
+from frob.app.ticket_runner import _accept, _close, _evidence
 from frob.testing._models import CollectedTests
 from frob.tickets import (
     Origin,
@@ -26,12 +27,15 @@ from frob.tickets import (
     TicketSpec,
     TicketState,
     add_evidence,
+    amend_acceptance,
+    drop_ticket,
     load_queue,
     new_ticket,
+    remove_acceptance,
     transition,
     unbound_acceptance,
 )
-from frob.tickets._models import AcceptanceCriterion
+from frob.tickets._models import AcceptanceAmendmentOp, AcceptanceCriterion
 
 
 def _patch_collect(monkeypatch: pytest.MonkeyPatch, node_ids: frozenset[str]) -> None:
@@ -462,3 +466,314 @@ class TestAcceptsCliWiring:
         ticket = load_queue(tmp_path).danger_ok.tickets["T-0001"]
         assert ticket.state == TicketState.DONE
         assert ticket.acceptance[0].evidence == ("tests/x.py::test_a",)
+
+
+def _seed_ticket(tmp_path: Path, acceptance: list[str]) -> str:
+    """Fixture helper for the T-1422 amend/remove tests below: a fresh
+    queued ticket with `acceptance` criteria attached, returning its id."""
+    created = new_ticket(
+        tmp_path,
+        TicketSpec(
+            title="amendment fixture",
+            kind=TicketKind.FEATURE,
+            origin=Origin.AGENT,
+            acceptance=acceptance,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+        ),
+    )
+    assert created.is_ok, created
+    return created.danger_ok.id
+
+
+class TestAmendAcceptance:
+    """`frob.tickets.amend_acceptance`/`remove_acceptance` (T-1422): the
+    supported alternative to hand-editing `tickets.md` for a criterion
+    that was WRONG (amend) or unsatisfiable by construction (remove),
+    modelled on the two real incidents named in T-1422's own body."""
+
+    def test_amend_replaces_text_and_records_reason(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_replaces_text_and_records_reason  # noqa: E501
+        # Models the T-1411 incident: criterion [0] was mis-specified (a
+        # trailing comment naming no in-scope identifier would have
+        # silenced the poorly-named-variable case PII012 exists for) and
+        # needed correcting, not appending-around.
+        ticket_id = _seed_ticket(
+            tmp_path,
+            [
+                "a comment naming no in-scope identifier must not fire PII012",
+                "second criterion",
+            ],
+        )
+        result = amend_acceptance(
+            tmp_path,
+            ticket_id,
+            0,
+            "a comment naming no in-scope identifier, INCLUDING a poorly "
+            "named variable's own trailing comment, must not fire PII012",
+            reason=(
+                "T-1411's original wording also matched a trailing comment "
+                "naming no identifier, which would have silenced the "
+                "poorly-named-variable case the rule exists for -- "
+                "mis-specified, not merely unmet"
+            ),
+        )
+        assert result.is_ok, result
+        updated = result.danger_ok
+        assert updated.acceptance[0].text.startswith(
+            "a comment naming no in-scope identifier, INCLUDING"
+        )
+        # the second, untouched criterion must survive unchanged
+        assert updated.acceptance[1].text == "second criterion"
+        assert len(updated.acceptance_amendments) == 1
+        entry = updated.acceptance_amendments[0]
+        assert entry.op is AcceptanceAmendmentOp.REPLACE
+        assert entry.index == 0
+        assert entry.old_text == (
+            "a comment naming no in-scope identifier must not fire PII012"
+        )
+        assert entry.new_text == updated.acceptance[0].text
+        assert "mis-specified" in entry.reason
+        assert entry.at == date.today()
+
+        # re-load from disk: the ledger write is durable, and the
+        # amendment is not lost on a round trip through YAML (hashes,
+        # colons, and quotes in the reason must survive verbatim).
+        reloaded = load_queue(tmp_path).danger_ok.tickets[ticket_id]
+        assert reloaded.acceptance_amendments[0].reason == entry.reason
+
+    def test_amend_preserves_existing_evidence_binding(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_preserves_existing_evidence_binding  # noqa: E501
+        ticket_id = _seed_ticket(tmp_path, ["first criterion"])
+        bound = add_evidence(
+            tmp_path,
+            ticket_id,
+            ["tests/x.py::test_a"],
+            collected=frozenset({"tests/x.py::test_a"}),
+            passed=frozenset({"tests/x.py::test_a"}),
+            accepts=[0],
+        )
+        assert bound.is_ok, bound
+        result = amend_acceptance(
+            tmp_path, ticket_id, 0, "first criterion, reworded", reason="typo fix"
+        )
+        assert result.is_ok, result
+        assert result.danger_ok.acceptance[0].evidence == ("tests/x.py::test_a",)
+
+    def test_amend_refuses_empty_reason(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_refuses_empty_reason  # noqa: E501
+        ticket_id = _seed_ticket(tmp_path, ["first criterion"])
+        result = amend_acceptance(tmp_path, ticket_id, 0, "new text", reason="   ")
+        assert result.is_err
+        assert result.danger_err == TicketError.AcceptanceAmendReasonMissing
+
+    def test_amend_refuses_out_of_range_index(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_refuses_out_of_range_index  # noqa: E501
+        ticket_id = _seed_ticket(tmp_path, ["first criterion"])
+        result = amend_acceptance(tmp_path, ticket_id, 5, "new text", reason="why")
+        assert result.is_err
+        assert result.danger_err == TicketError.AcceptanceAmendIndexOutOfRange
+
+    def test_amend_refuses_on_terminal_ticket(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_refuses_on_terminal_ticket  # noqa: E501
+        ticket_id = _seed_ticket(tmp_path, ["first criterion"])
+        dropped = drop_ticket(tmp_path, ticket_id, "superseded")
+        assert dropped.is_ok, dropped
+        result = amend_acceptance(
+            tmp_path, ticket_id, 0, "new text", reason="trying to sneak this in"
+        )
+        assert result.is_err
+        assert result.danger_err == TicketError.AcceptanceAmendTerminalState
+
+    def test_remove_drops_criterion_and_records_reason(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_remove_drops_criterion_and_records_reason  # noqa: E501
+        # Models the ten-burn-down-tickets incident: "0 TEST005 findings
+        # under package X" against 100-400 findings is unsatisfiable by
+        # construction, so it must be REMOVED (never silently
+        # weakened-in-place) with a reason, replaced by a triage-shaped
+        # criterion via a normal `frob ticket accept --criterion` append.
+        ticket_id = _seed_ticket(
+            tmp_path,
+            ["0 TEST005 findings under src/frob/strata", "unrelated criterion"],
+        )
+        result = remove_acceptance(
+            tmp_path,
+            ticket_id,
+            0,
+            reason=(
+                "unsatisfiable by construction: 196 findings, no single "
+                "dispatch can drive this to 0 -- replaced by triage-shaped "
+                "acceptance instead"
+            ),
+        )
+        assert result.is_ok, result
+        updated = result.danger_ok
+        assert len(updated.acceptance) == 1
+        assert updated.acceptance[0].text == "unrelated criterion"
+        assert len(updated.acceptance_amendments) == 1
+        entry = updated.acceptance_amendments[0]
+        assert entry.op is AcceptanceAmendmentOp.REMOVE
+        assert entry.index == 0
+        assert entry.old_text == "0 TEST005 findings under src/frob/strata"
+        assert entry.new_text is None
+        assert "unsatisfiable" in entry.reason
+
+    def test_remove_refuses_on_terminal_ticket(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_remove_refuses_on_terminal_ticket  # noqa: E501
+        ticket_id = _seed_ticket(tmp_path, ["first criterion"])
+        dropped = drop_ticket(tmp_path, ticket_id, "superseded")
+        assert dropped.is_ok, dropped
+        result = remove_acceptance(tmp_path, ticket_id, 0, reason="goalpost moving")
+        assert result.is_err
+        assert result.danger_err == TicketError.AcceptanceAmendTerminalState
+
+    def test_amend_reason_containing_hash_colon_and_quotes_round_trips(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_reason_containing_hash_colon_and_quotes_round_trips  # noqa: E501
+        # The ledger must remain parseable after an amendment whose text
+        # would break hand-typed YAML: a space-hash sequence starts a
+        # YAML comment in a plain scalar, which is exactly what corrupted
+        # tickets.md the first time this was attempted by hand (T-1422's
+        # own motivating incident). The CLI verb must escape this
+        # correctly, never merely reject it.
+        ticket_id = _seed_ticket(tmp_path, ["first criterion"])
+        tricky_reason = (
+            'mis-specified: PII012 #comment-lookalike, "quoted" and a '
+            "colon: like this -- see T-1411's criterion [0]"
+        )
+        result = amend_acceptance(
+            tmp_path,
+            ticket_id,
+            0,
+            "criterion text with a # hash and a colon: too",
+            reason=tricky_reason,
+        )
+        assert result.is_ok, result
+
+        reloaded = load_queue(tmp_path).danger_ok
+        assert ticket_id in reloaded.tickets
+        reloaded_ticket = reloaded.tickets[ticket_id]
+        assert reloaded_ticket.acceptance[0].text == (
+            "criterion text with a # hash and a colon: too"
+        )
+        assert reloaded_ticket.acceptance_amendments[0].reason == tricky_reason
+        # every OTHER ticket in the ledger must still parse too -- a
+        # malformed write here previously took the entire gate layer down.
+        assert reloaded.tickets  # ledger loaded at all, not "all gates skipped"
+
+
+class TestAcceptCliAmendRemove:
+    """`frob ticket accept <id> --amend/--remove` (T-1422): the CLI wiring
+    for `amend_acceptance`/`remove_acceptance`, mirroring `TestScopeCli`'s
+    coverage shape in tests/test_tickets_scope_mutation.py."""
+
+    def test_cli_amend_replaces_text(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove.test_cli_amend_replaces_text  # noqa: E501
+        ticket_id = _seed_ticket(tmp_path, ["first criterion"])
+        cfg = AppConfig(
+            ticket_command="accept",
+            ticket_id=ticket_id,
+            ticket_path=tmp_path,
+            ticket_accept_amend_index=0,
+            ticket_accept_amend_text="corrected criterion",
+            ticket_accept_amend_reason="was mis-specified",
+        )
+        _accept(tmp_path, cfg)
+        ticket = load_queue(tmp_path).danger_ok.tickets[ticket_id]
+        assert ticket.acceptance[0].text == "corrected criterion"
+        assert ticket.acceptance_amendments[0].reason == "was mis-specified"
+
+    def test_cli_remove_drops_criterion(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove.test_cli_remove_drops_criterion  # noqa: E501
+        ticket_id = _seed_ticket(tmp_path, ["only criterion"])
+        cfg = AppConfig(
+            ticket_command="accept",
+            ticket_id=ticket_id,
+            ticket_path=tmp_path,
+            ticket_accept_remove_index=0,
+            ticket_accept_amend_reason="unsatisfiable by construction",
+        )
+        _accept(tmp_path, cfg)
+        ticket = load_queue(tmp_path).danger_ok.tickets[ticket_id]
+        assert ticket.acceptance == ()
+        assert ticket.acceptance_amendments[0].op is AcceptanceAmendmentOp.REMOVE
+
+    def test_cli_amend_without_reason_exits_nonzero(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove.test_cli_amend_without_reason_exits_nonzero  # noqa: E501
+        ticket_id = _seed_ticket(tmp_path, ["first criterion"])
+        cfg = AppConfig(
+            ticket_command="accept",
+            ticket_id=ticket_id,
+            ticket_path=tmp_path,
+            ticket_accept_amend_index=0,
+            ticket_accept_amend_text="corrected criterion",
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _accept(tmp_path, cfg)
+        assert exc_info.value.code == 1
+
+    def test_cli_amend_and_remove_together_is_rejected(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove.test_cli_amend_and_remove_together_is_rejected  # noqa: E501
+        ticket_id = _seed_ticket(tmp_path, ["a", "b"])
+        cfg = AppConfig(
+            ticket_command="accept",
+            ticket_id=ticket_id,
+            ticket_path=tmp_path,
+            ticket_accept_amend_index=0,
+            ticket_accept_amend_text="x",
+            ticket_accept_remove_index=1,
+            ticket_accept_amend_reason="why",
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _accept(tmp_path, cfg)
+        assert exc_info.value.code == 1
+
+
+class TestAcceptanceAmendmentsSurfaced:
+    """Acceptance [1]: an amendment must be surfaced in `frob ticket show`
+    and the rendered Done report, never buried (T-1422)."""
+
+    def test_show_renders_amendment_and_reason(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAcceptanceAmendmentsSurfaced.test_show_renders_amendment_and_reason  # noqa: E501
+        from frob.app.ticket_runner._query import _render_acceptance
+
+        ticket_id = _seed_ticket(tmp_path, ["first criterion"])
+        amend_acceptance(
+            tmp_path, ticket_id, 0, "corrected criterion", reason="was mis-specified"
+        )
+        ticket = load_queue(tmp_path).danger_ok.tickets[ticket_id]
+        rendered = _render_acceptance(ticket)
+        assert "acceptance_amendments:" in rendered
+        assert "replace" in rendered
+        assert "was mis-specified" in rendered
+        assert "corrected criterion" in rendered
+
+    def test_done_report_renders_amendment_section(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAcceptanceAmendmentsSurfaced.test_done_report_renders_amendment_section  # noqa: E501
+        from frob.tickets import compose_done_report
+        from frob.tickets._models import AcceptanceAmendmentEntry
+
+        entry = AcceptanceAmendmentEntry(
+            op=AcceptanceAmendmentOp.REMOVE,
+            index=0,
+            old_text="0 TEST005 findings under src/frob/strata",
+            new_text=None,
+            reason="unsatisfiable by construction",
+            actor="agent",
+            at=date.today(),
+        )
+        report = compose_done_report(
+            "did the work",
+            [],
+            [],
+            acceptance_amendments=(entry,),
+        )
+        assert "### Acceptance amendments" in report
+        assert "unsatisfiable by construction" in report
+        assert "0 TEST005 findings under src/frob/strata" in report
+
+    def test_done_report_omits_section_when_no_amendments(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAcceptanceAmendmentsSurfaced.test_done_report_omits_section_when_no_amendments  # noqa: E501
+        from frob.tickets import compose_done_report
+
+        report = compose_done_report("did the work", [], [])
+        assert "### Acceptance amendments" not in report

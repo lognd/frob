@@ -136,19 +136,31 @@ def _add_ticket_label_parser(ticket_sub):
 
 # frob:ticket T-1029
 def _add_ticket_accept_parser(ticket_sub):
-    """Register `frob ticket accept <id> --criterion TEXT... |
-    --criterion-file PATH` -- append one or more acceptance criteria to an
-    EXISTING ticket (T-1029). Before this, `frob ticket new --acceptance`
-    was the only CLI path to attach a criterion at all, so a ticket that
-    needed one added after filing (T-0894's agent hit this closing a
-    new-gate-rule ticket) had to be hand-edited. `--criterion-file` reads
-    blank-line-separated blocks the same way `frob ticket new
-    --acceptance-file` does (T-0737's `_parse_acceptance_file`); the two
-    are mutually exclusive, same as every other `--x`/`--x-file` pair in
-    this module."""
+    """Register `frob ticket accept <id>` -- append (T-1029), amend, or
+    remove (T-1422) acceptance criteria on an EXISTING ticket. Exactly one
+    mode per invocation:
+
+    - append (default, unchanged since T-1029): `--criterion TEXT... |
+      --criterion-file PATH`.
+    - `--amend INDEX --text TEXT (--reason TEXT | --reason-file PATH)`:
+      replace criterion INDEX's text -- the supported correction for a
+      MIS-SPECIFIED criterion (T-1422), instead of hand-editing
+      `tickets.md`.
+    - `--remove INDEX (--reason TEXT | --reason-file PATH)`: drop
+      criterion INDEX outright -- the supported fix for a criterion that
+      is UNSATISFIABLE BY CONSTRUCTION (T-1422).
+
+    `--amend`/`--remove` both REQUIRE a reason, recorded in the ticket's
+    `acceptance_amendments` audit trail exactly the way `frob ticket
+    scope --add/--remove` already records scope changes (T-0455) --
+    the reason is the whole point: it is what makes a weakened criterion
+    reviewable instead of silently indistinguishable from one that was
+    always honest. Both are refused outright on a ticket already in a
+    terminal (done/dropped) state."""
     ticket_accept_p = ticket_sub.add_parser(
         "accept",
-        help="append acceptance criteria to an existing ticket (T-1029)",
+        help="append (T-1029), amend, or remove (T-1422) acceptance "
+        "criteria on an existing ticket",
     )
     ticket_accept_p.add_argument("ticket_id", metavar="id")
     ticket_accept_p.add_argument(
@@ -157,7 +169,7 @@ def _add_ticket_accept_parser(ticket_sub):
         action="append",
         default=[],
         metavar="TEXT",
-        help="acceptance criterion text (repeatable)",
+        help="acceptance criterion text (repeatable) -- appends",
     )
     ticket_accept_p.add_argument(
         "--criterion-file",
@@ -166,6 +178,45 @@ def _add_ticket_accept_parser(ticket_sub):
         help="read criteria verbatim from PATH, one per blank-line-separated "
         "block (T-0737's --acceptance-file convention); mutually exclusive "
         "with --criterion",
+    )
+    # frob:ticket T-1422
+    ticket_accept_p.add_argument(
+        "--amend",
+        dest="ticket_accept_amend_index",
+        type=int,
+        metavar="INDEX",
+        help="replace acceptance[INDEX]'s text with --text (T-1422); "
+        "requires --text and --reason/--reason-file",
+    )
+    ticket_accept_p.add_argument(
+        "--text",
+        dest="ticket_accept_amend_text",
+        metavar="TEXT",
+        help="the replacement criterion text for --amend",
+    )
+    ticket_accept_p.add_argument(
+        "--remove",
+        dest="ticket_accept_remove_index",
+        type=int,
+        metavar="INDEX",
+        help="drop acceptance[INDEX] outright (T-1422); requires "
+        "--reason/--reason-file",
+    )
+    ticket_accept_p.add_argument(
+        "--reason",
+        dest="ticket_accept_amend_reason",
+        metavar="TEXT",
+        help="why this --amend/--remove happened (recorded in the "
+        "ticket's acceptance_amendments audit trail); required for "
+        "either, unless --reason-file is given",
+    )
+    ticket_accept_p.add_argument(
+        "--reason-file",
+        dest="ticket_accept_amend_reason_file",
+        metavar="PATH",
+        help="read the --amend/--remove reason verbatim from PATH instead "
+        "of the shell (T-1422, T-0737 precedent); mutually exclusive with "
+        "--reason",
     )
     return ticket_accept_p
 
