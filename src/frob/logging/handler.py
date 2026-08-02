@@ -27,7 +27,6 @@ import sys
 from typing import TextIO
 
 
-# frob:doc docs/modules/logging.md#public-api
 class _LazyStdoutHandler(logging.StreamHandler):
     """StreamHandler that re-resolves sys.stdout on every emit, not at bind time."""
 
@@ -46,7 +45,6 @@ class _LazyStdoutHandler(logging.StreamHandler):
         """Discard the assignment; the stream is always resolved live via the getter."""
 
 
-# frob:doc docs/modules/logging.md#public-api
 class _LazyStderrHandler(logging.StreamHandler):
     """StreamHandler that re-resolves sys.stderr on every emit, not at bind time."""
 
