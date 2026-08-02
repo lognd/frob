@@ -30,3 +30,6 @@
 # lines above stay in force; removing them is the migration ticket's
 # final-cutover step (design section 7.4), not this ticket's -- see
 # docs/design/ledger-v2.md#7-reversible-migration-plan-design-for-the-child-ticket-not-built-here.
+
+# T-1433 incident: attachment shas are byte-exact; CRLF conversion breaks COV004
+tickets/attachments/** -text

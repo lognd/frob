@@ -1875,12 +1875,28 @@ def _cov004(queue: TicketQueue) -> tuple[Violation, ...]:
 
 
 # frob:enforces CHK-GATE-COV004
+# frob:ticket T-1455
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov004_matching_sha_is_clean
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov004_missing_attachment
 def _cov004_one(
     ticket: Ticket,
     attachment,  # noqa: ANN001
     path: Path,
 ) -> tuple[Violation, ...]:
-    """COV004 check for one attachment, resolved relative to the gate's root."""
+    """COV004 check for one attachment, resolved relative to the gate's root.
+
+    Fires only when the attachment file is missing or its sha256 no longer
+    matches the recorded digest. This function shipped as an
+    unconditional-fire stub (no existence/sha check at all) and sat
+    unnoticed until the first real `frob ticket attach` use on 2026-08-02
+    fired it on a byte-identical file."""
+    recorded = getattr(attachment, "sha256", "") or ""
+    try:
+        actual = hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        actual = None
+    if actual is not None and recorded and actual == recorded:
+        return ()
     return (
         Violation(
             rule="COV004",

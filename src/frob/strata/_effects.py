@@ -409,6 +409,7 @@ def _file_capability_violations(
 
 # frob:doc docs/strata/surface.md#code-binding-tier-2-v0-implementation
 # frob:doc docs/strata/surface.md#may-scope
+# frob:ticket T-1455
 def check_capability_conformance(
     model: KernelModel, binding: CodeBinding, root: Path
 ) -> EffectReport:
@@ -430,12 +431,11 @@ def check_capability_conformance(
     1)."""
     nodes_by_id: dict[str, Node] = {node.id: node for node in model.nodes}
     violations: list[CapabilityViolation] = []
+    no_kinds: frozenset[str] = frozenset()
     for rel in _sorted_owned_files(binding):
         owner = binding.owner[rel]
         node = nodes_by_id.get(owner)
-        kinds = (
-            frozenset[str]() if node is None else _declared_kinds_for_file(node, rel)
-        )
+        kinds = no_kinds if node is None else _declared_kinds_for_file(node, rel)
         violations.extend(_file_capability_violations(rel, owner, kinds, root))
     return EffectReport(violations=tuple(violations))
 

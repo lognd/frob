@@ -1262,6 +1262,37 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert any(v.rule == "COV004" for v in violations)
 
+    def test_cov004_matching_sha_is_clean(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The stub-regression case: an attachment whose file exists with a
+        byte-exact sha256 must NOT fire COV004. `_cov004_one` shipped as an
+        unconditional-fire stub, and only the missing-file (confirmatory)
+        direction above was tested, so the stub sat green until the first
+        real `frob ticket attach` fired it on an identical file."""
+        import hashlib
+
+        from frob.tickets import Attachment
+
+        snap = _snapshot(tmp_path)
+        payload = b"diagnostics text\n"
+        att_dir = tmp_path / "tickets" / "attachments" / "T-0003"
+        att_dir.mkdir(parents=True)
+        (att_dir / "01-x.txt").write_bytes(payload)
+        att = Attachment(
+            path="attachments/T-0003/01-x.txt",
+            caption="x",
+            sha256=hashlib.sha256(payload).hexdigest(),
+        )
+        queue = TicketQueue(
+            tickets={"T-0003": _ticket(ticket_id="T-0003", attachments=(att,))}
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        monkeypatch.chdir(tmp_path)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV004" for v in violations)
+
     def test_cov005_directive_rebound_to_private_symbol_flags(
         self, tmp_path: Path
     ) -> None:
