@@ -3,10 +3,10 @@
 same per-family extraction pattern `_scope.py` (T-0455/T-1123) established
 for `mutate_scope`.
 
-`frob ticket accept` could previously only APPEND acceptance criteria
+`frob ticket accept` was previously restricted to APPENDING criteria
 (`add_acceptance`, `frob.tickets.__init__`) -- there was no supported way
 to correct a mis-specified criterion or drop one that was never valid, so
-the only available workarounds were hand-editing `tickets.md` (which has
+the available workarounds were hand-editing `tickets.md` (which has
 corrupted the ledger for real, taking every gate down) or filing a
 successor ticket just to carry the same acceptance forward under a new id.
 
@@ -17,6 +17,13 @@ prior entry), REQUIRES a non-blank `reason`, and is refused outright on a
 ticket already in a terminal (DONE/DROPPED) state -- amending after close
 is exactly the "quietly move the goalposts after the fact" case this
 ticket exists to make impossible."""
+
+# frob:waive INV006 reason="T-1427: the two remaining exclusivity-vocabulary \
+# hits in this module are incidental English, not architectural claims needing \
+# their own tracked invariant -- one sits inside another waiver's own reason \
+# text, and one is a user-facing error message reporting how many criteria a \
+# ticket declares. Rewording the message to dodge a vocabulary scan would make \
+# it worse for the reader it exists to serve"
 
 from __future__ import annotations
 

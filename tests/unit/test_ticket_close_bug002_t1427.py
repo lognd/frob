@@ -17,6 +17,13 @@ test, mirroring T-1410's own precedent
 `guarded_subprocess_run` monkeypatch) of stubbing the external-process
 seam while still exercising the real wiring path."""
 
+# frob:waive OPAQUE001 reason="T-1427: every setattr(...) here is pytest \
+# monkeypatch test isolation, reassigning a module attribute by a name this \
+# test file itself spells out as a literal -- the two genuine external \
+# boundaries BUG002 crosses (a git worktree checkout and a pytest subprocess) \
+# plus TEST016 sibling guard. Deliberate test infrastructure over closed, \
+# statically-written targets, not dynamic attribute access over untrusted input"
+
 from __future__ import annotations
 
 from datetime import date
