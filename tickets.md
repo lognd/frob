@@ -4315,7 +4315,7 @@ Found while working T-1392 (frob check --ticket T-1392 unscoped repo-wide gate:C
 id: T-1395
 title: 'Coverage attribution still misses daemon and CLI-entry processes: serve/ and
   __main__.py remain 0.0%'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -4363,7 +4363,6 @@ This ticket exists because T-1235 cannot honestly close until serve/ and __main_
 
 ## Failure log
 - 2026-08-01 attempt 1: Investigated exhaustively (empirical repros of both a real subprocess-spawned daemon and python -m frob CLI entry under the exact Makefile-generated absolute-path subprocess rc): the COVERAGE_PROCESS_START/concurrency mechanism already attributes both process classes correctly in isolation, so this is not a T-1235-style env-inheritance defect confined to src/frob/testing/_coverage_wait.py or src/frob/serve/_socketd.py -- FROB_DAEMON defaults off so _worktree_lock's daemon-lease path never even runs during make coverage, ruling that out too. Filed T-1397 for a real but unrelated Loss-A-shaped bug found in coverage-fast (out of scope: Makefile). The likely real root cause is the already-documented xdist worker-crash/stuck-test data-loss class or the module_join_fraction graph-mapping gap (T-1236), neither fixable from this ticket's two scoped files; forcing an unverifiable change here would violate the do-not-force rule.
-
 <!-- ticket:T-1396 -->
 ```yaml
 id: T-1396
