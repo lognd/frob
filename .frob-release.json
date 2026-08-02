@@ -1807,13 +1807,13 @@
     "src/frob/tickets/_new_renumber.py::new_ticket": "8312328748bdfe956b33796a10ac3dd01aac842baf66fca4a8242f64e431b1a6",
     "src/frob/tickets/_new_renumber.py::renumber": "eb2063fb2de369d8fcffed391628f793f69702ff7d25265102d09a0aa14bc113",
     "src/frob/tickets/_new_renumber.py::renumber_one": "d67ae5ee6db0b02afea17c18b7793342d8b99a197bef31c4c1ce739a8277c3c4",
-    "src/frob/tickets/_new_renumber.py::renumber_one_v2": "de0ec5d1dcbd4f437c561d872305b857291be602765f562cb5d99eab951f1d4c",
     "src/frob/tickets/_provisional.py::DRAFT_PREFIX": "cc54a35e6c7d0d8fc9a0364bbefaf94dfc09c0e71920015cc63ff9261da0ca18",
     "src/frob/tickets/_provisional.py::is_draft_id": "c44d604f0cf5ba81fc148db33306d724e4bedab90f1e92a43c330f046560ab59",
     "src/frob/tickets/_provisional.py::mint_draft_id": "aaebcb78dd6575e3abb208ae91771c7f9623a108c566050297e6573305653113",
     "src/frob/tickets/_provisional.py::on_default_branch": "c2b5008828542ab1d72ff75028b2454039bc72ce6efc4b895276c7b7c40f3dc0",
     "src/frob/tickets/_reconcile.py::ReconcileReport": "6fcf1082746b1f61aaafacf99f15a9fbd20c963a30da6fdaea42e00fe8eacb0f",
     "src/frob/tickets/_reconcile.py::reconcile": "58835d71ad4e6042338e50dd303c4f966ed5023eaab07bd4c0831773d5073f2f",
+    "src/frob/tickets/_renumber_v2.py::renumber_one_v2": "de0ec5d1dcbd4f437c561d872305b857291be602765f562cb5d99eab951f1d4c",
     "src/frob/tickets/_reporting.py::brief_ticket": "56fe4788cff649f6af1962cc379f1103f50003a1454b5aaee63299e87e1c9e52",
     "src/frob/tickets/_reporting.py::compose_done_report": "d464b803df4208fc92ba2353874ea6a5cc05cb312c3fb60f274cfae0d3fd2e51",
     "src/frob/tickets/_reporting.py::drop_ticket": "24f39c4e6fe2d59a9debea717775383b9f635e0847e2b6e25d6f1ba124963276",
@@ -1955,5 +1955,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.312.0"
+  "version": "0.313.0"
 }

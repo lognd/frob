@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.313.0] - unreleased
+
+- T-1458: arch: LARGE001 split of tickets _new_renumber v2 backend (T-1420 delivered portion 4)
+
 ## [0.312.0] - unreleased
 
 - T-1440: strata: scoped may clauses -- a capability grant must name its surface, not bless the whole node

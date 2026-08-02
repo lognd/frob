@@ -715,7 +715,7 @@ class TestRenumberOneV2:
     def test_git_mv_renames_directory_and_rewrites_id_field(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_new_renumber.py::renumber_one_v2 kind="unit"
+        # frob:tests src/frob/tickets/_renumber_v2.py::renumber_one_v2 kind="unit"
         from frob.tickets._store import _store_mode, v2_ticket_dir, v2_ticket_path
 
         self._v2_ticket(tmp_path, "T-0042")
@@ -741,7 +741,7 @@ class TestRenumberOneV2:
 
     # frob:ticket T-1255
     def test_sibling_ticket_prose_citation_rewritten(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_new_renumber.py::renumber_one_v2 kind="unit"
+        # frob:tests src/frob/tickets/_renumber_v2.py::renumber_one_v2 kind="unit"
         self._v2_ticket(tmp_path, "T-0042")
         self._v2_ticket(
             tmp_path,
@@ -761,7 +761,7 @@ class TestRenumberOneV2:
 
     # frob:ticket T-1255
     def test_dry_run_mutates_nothing(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_new_renumber.py::renumber_one_v2 kind="unit"
+        # frob:tests src/frob/tickets/_renumber_v2.py::renumber_one_v2 kind="unit"
         from frob.tickets._store import v2_ticket_dir
 
         self._v2_ticket(tmp_path, "T-0042")
@@ -773,7 +773,7 @@ class TestRenumberOneV2:
 
     # frob:ticket T-1255
     def test_target_id_already_exists_is_duplicate_id(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_new_renumber.py::renumber_one_v2 kind="unit"
+        # frob:tests src/frob/tickets/_renumber_v2.py::renumber_one_v2 kind="unit"
         self._v2_ticket(tmp_path, "T-0042")
         self._v2_ticket(tmp_path, "T-0099")
         result = renumber_one(tmp_path, "T-0042", "T-0099")
@@ -782,7 +782,7 @@ class TestRenumberOneV2:
 
     # frob:ticket T-1255
     def test_unknown_old_id_is_not_found(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_new_renumber.py::renumber_one_v2 kind="unit"
+        # frob:tests src/frob/tickets/_renumber_v2.py::renumber_one_v2 kind="unit"
         self._v2_ticket(tmp_path, "T-0001")  # any v2 ticket, so mode is v2
         result = renumber_one(tmp_path, "T-9999", "T-0100")
         assert result.is_err

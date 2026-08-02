@@ -710,20 +710,22 @@ def v2_state_transitions(
 # frob:ticket T-1256
 # frob:doc docs/design/ledger-v2.md#43-archive-as-git-mv
 # frob:tests tests/test_ticket_land.py::TestArchiveV2.test_archive_moves_directory_via_git_mv_no_content_rewrite  # noqa: E501
-# frob:waive DUP002 reason="near-duplicate of _new_renumber._git_mv_ticket_dir by \
-# design -- _new_renumber already imports _load_merged FROM _archive, so importing \
-# this back from _new_renumber would cycle; a third shared-helper module for one \
-# ~15-line git-mv-with-rename-fallback is not worth the indirection, per the T-1255 \
-# precedent this mirrors"
+# frob:waive DUP002 reason="near-duplicate of _renumber_v2._git_mv_ticket_dir (T-1420 \
+# split of _new_renumber's v2 backend) by design -- _renumber_v2 already imports \
+# helpers back from _new_renumber, and _new_renumber already imports _load_merged FROM \
+# _archive, so importing this back from either would cycle; a third shared-helper \
+# module for one ~15-line git-mv-with-rename-fallback is not worth the indirection, \
+# per the T-1255 precedent this mirrors"
 def git_mv_dir(root: Path, old_dir: Path, new_dir: Path) -> Result[None, TicketError]:
     """`git mv old_dir new_dir` (design section 4.3's archive-as-rename) --
     falls back to a plain filesystem rename if `old_dir` is not yet tracked
     by git (e.g. a just-filed draft never `git add`ed), since a git-mv over
     an untracked path always fails even though the rename itself is
     perfectly safe. Shared by `archive_v2` (this ticket) and mirrors
-    `_new_renumber._git_mv_ticket_dir`'s identical shape -- kept as its own
-    copy here rather than imported, since `_new_renumber` already imports
-    FROM `_archive` (`_load_merged`) and a reverse import would cycle.
+    `frob.tickets._renumber_v2._git_mv_ticket_dir`'s identical shape -- kept
+    as its own copy here rather than imported, since `_renumber_v2` already
+    imports helpers back from `_new_renumber`, and `_new_renumber` already
+    imports FROM `_archive` (`_load_merged`), so a reverse import would cycle.
 
     Chain-review fix (found alongside T-1258, connected to
     T-1331): `git mv` on a DIRECTORY refuses with "No such file

@@ -5211,6 +5211,11 @@ evidence:
 - tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes
 - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
 - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_git_mv_renames_directory_and_rewrites_id_field
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_sibling_ticket_prose_citation_rewritten
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_dry_run_mutates_nothing
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_target_id_already_exists_is_duplicate_id
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_unknown_old_id_is_not_found
 threat: null
 component: null
 ```
@@ -5286,113 +5291,80 @@ lease and other concurrent tickets' scopes at filing time -- narrow scope via
 
 ## Done report
 
-This session resumed T-1420 in the existing .claude/worktrees/t-1420
-worktree. Before any split work could proceed, `frob check` failed
-outright: the section-1 `git merge main` warm-up combined this branch's
-still-active tickets.md entries (61 ids) with main's separately-archived
-tickets-archive.md changes for the SAME ids, producing a cross-file
-DuplicateId that hard-failed the ticket-queue load (`all gates were
-skipped`). Root cause: the ledger merge-driver splices conflicts WITHIN
-tickets.md but has no way to see that main independently moved these ids
-into tickets-archive.md while this branch's own tickets.md still carried
-them active. Repaired by removing the 61 stale active blocks from
-tickets.md (main's own tickets.md already has 0 of them; archive already
-holds the authoritative closed state for each) -- committed separately
-(7f4982dd) before any split work, since every gate was structurally
-unable to run until this was fixed. This is a NEW failure mode beyond the
-ones playbook section 10/10b document (those cover same-file conflicts
-and late-merge timing; this is a cross-file main-vs-branch archival
-divergence) -- worth a playbook addendum, flagging for the coordinator
-rather than filing a ticket myself (documentation-only, no scope glob
-fits it, and it is a one-off repair not a recurring code defect).
+WAVE6-R session (dedicated T-1420 lease). Warm-up: merged main
+(a776121c -> 90eff16c ancestor merge), `frob natives build` clean,
+`frob ticket start T-1420`.
 
-Two clean, gate-verified splits landed this session:
+Re-measured LARGE001 (`frob check --only archgate`) at session start: 48
+unwaived + 1 waived (49 total). Split
+src/frob/tickets/_new_renumber.py's already comment-delimited v2-mode
+git-mv renumber backend (`_v2_id_dir` through `renumber_one_v2`, T-1255
+family, 260 lines) verbatim to a new sibling _renumber_v2.py
+(989 -> 730 lines; new file 288 lines). `renumber_one` dispatches to
+`renumber_one_v2` via a local (not top-level) import to avoid a circular
+import, since `_renumber_v2` imports helpers back from `_new_renumber`
+(`_rewrite_body_prose_references`, `_scan_code_references`,
+`_log_renumber_dry_run`, `_log_renumber_done`). Repointed the 5
+frob:tests edges in tests/test_tickets_collision.py's TestRenumberOneV2
+class and the frob:waive DUP002 prose in _store.py's git_mv_dir that
+named the old module path. Commit a0037269.
 
-1. src/frob/gates/_sys.py (819 -> 537 lines): SELFAUDIT001 self-audit-at-
-   land family (_selfaudit_violations/_compliance_selfaudit_violations,
-   T-0756/T-1314, ~284 lines) moved verbatim into a new sibling
-   src/frob/gates/_sys_selfaudit.py (317 lines). sys_gate imports both
-   back unchanged. Commit a411377d.
+Verification: `pytest tests/test_tickets_collision.py` (24 passed,
+foreground). `frob check --only drift` 0 errors after the edge
+repoint (was 5 DRIFT002 before). `frob check --only archgate --only
+wire --only dead_symbols --only doclink --only docanchor --only fmt`:
+0 errors (gate:LARGE 0 errors, 47 warnings, 1 waived -- down from 48
+unwaived before this split).
 
-2. src/frob/gates/_dead_symbols.py (819 -> 216 lines): the WIRE001/
-   WIRE002 family (T-1428/T-1431, _short_name through wire_gate plus its
-   four literal-regex constants, ~594 lines) moved verbatim into a new
-   sibling src/frob/gates/_wire.py (633 lines), importing back
-   _CALLABLE_KINDS/_is_dunder/_is_test_symbol from _dead_symbols (both
-   gates share the dunder/test-symbol exemption logic). frob.gates.
-   __init__ now imports wire_gate from _wire. Commit d295a0c4.
+src/frob/vet/_capability.py (6070 lines, largest unwaived LARGE001 file
+repo-wide): per this session's brief, did NOT split it blind. Read the
+full symbol list (`grep -n '^def \|^class '`, 180 symbols) and found a
+clean per-language seam: a scanner core plus six self-contained
+per-language alias/binding-resolution families (Python, TypeScript,
+Rust, C, Kotlin) plus a tail aggregation/fingerprint/opaque-indirection
+layer -- the same shape T-1420's already-landed
+_capability_registry.py package split found in the sibling file. Wrote
+the full seam analysis (module boundaries, line ranges, what stays in
+the dispatcher, the one open question about the opaque-indirection
+family's placement) as a design ticket, parent T-1420, kind=feature,
+scope src/frob/vet/_capability.py + its two test files:
+T-1459 (real id assigned at land). Left QUEUED, not
+implemented -- per the brief's explicit instruction to design first and
+implement only if time remains and the design is unambiguous; this
+session's remaining time went to closing out the one small clean file
+on the list instead of starting a 6000-line six-language split without
+review.
 
-Both splits followed the section-checklist discipline: doc edges fixed
-in the same commit (docs/strata/host.md's _selfaudit_violations
-reference; docs/modules/gates.md's frob:describes wire_gate anchor),
-frob:tests edges in tests/test_gates.py repointed to the new file paths
-(3 for the compliance-selfaudit family, all of TestWireGate's for the
-wire split), FMT001 line-wraps applied via `frob fmt`, ruff check/format
-clean on every touched file. Per-split verification: scoped pytest on
-the moved test classes (all green), then `frob check --only archgate
---only wire --only dead_symbols --only drift --only doclink --only
-docanchor --only fmt` -- 0 errors both times (drift caught the stale
-frob:tests references before the fix, confirming the check actually
-exercises the edges). Confirmed no regression: WIRE001 did NOT fire on
-either relocation (both bodies moved with unchanged digests, carrying
-their directives intact) -- T-1431's relocation-awareness held as
-expected, no regression to report there.
+The Rust files (strata-core/src/lib.rs, strata-core/src/parse/**) and
+the other Python files on the ticket's scope list
+(src/frob/tickets/_models.py 1977 lines, _store.py 1576 lines) were NOT
+touched this session -- time was spent on natives warm-up, the merge,
+the _new_renumber split, and the capability design ticket. Not
+splitting them is a disclosed cut, not a silent one: none of the three
+have an obvious single clean seam the way _new_renumber.py's v2 block
+did (a quick read of _models.py's export list shows a much more tangled
+pydantic-model + validator + prose-rewrite mix than the tickets/ backend
+split just landed), and the Rust files need a from-scratch seam read
+this session did not get to.
 
-LARGE001 count: 52 (51 unwaived + 1 waived, after the ledger repair put
-gates back in a runnable state) -> 50 after both splits. Full repo-wide
-pytest --collect-only still succeeds (confirmed, no collection breakage
-from either split).
+Measured LARGE001 count after this session's one split: 47 unwaived + 1
+waived (48 total, down from 49 at session start) via `frob check --only
+archgate`, full output read (not piped).
 
-Files still on the T-1420 list (repo-wide LARGE001, unwaived), from
-largest: src/frob/vet/_capability.py (6044), src/frob/gates/__init__.py
-(6727 -- likely to shrink further as sibling extractions like today's
-land), src/frob/vet/_capability_registry.py's package (T-1420's own
-already-done split, not re-measured this session), src/frob/strata/
-_threat.py (2522), strata-core/src/parse/mod.rs (1744, Rust -- not
-attempted this session, no Rust split experience banked), src/frob/
-tickets/_models.py (1917), src/frob/tickets/_land.py (1845), src/frob/
-strata/_selfconform.py (1608), src/frob/tickets/_store.py (1552),
-src/frob/gates/_waive.py (1479 -- deceptively named same-sized-as-before
-since it wasn't the target this session), src/frob/gates/_docptr.py
-(1468), src/frob/tickets/_leases.py (1403), src/frob/strata/_elaborate.py
-(1403), src/frob/gates/_fix_engine.py (1401), src/frob/tickets/
-_evidence.py (1369), and the rest of the original 51-file list minus the
-two closed above. strata-core/src/lib.rs dropped off the list entirely
-between the ticket's original measurement and this session's first
-archgate run (852 lines waived carried over from before, not
-re-investigated -- may already have been split by a concurrent land;
-worth the coordinator re-checking rather than assuming this session
-touched it, since it did not).
-
-Nothing else in scope was touched. No ticket filed for the ledger repair
-(documentation/process finding, not a code defect with a scope glob).
+Nothing outside the ticket's declared scope was touched. No lease
+collisions hit. T-1420 itself stays open (not closed) -- 47 unwaived
+files remain repo-wide, most of them (Rust natives, strata/, gates/,
+tickets/_land.py, etc.) untouched by this session and needing their own
+seam reads before a future session force-splits them.
 
 ### Changed
 ```
- docs/guides/extending/capability-registry.md       |   66 +-
- docs/modules/gates.md                              |    2 +-
- docs/modules/vet.md                                |    8 +-
- docs/strata/host.md                                |    2 +-
- src/frob/gates/__init__.py                         |    3 +-
- src/frob/gates/_dead_symbols.py                    |  611 +---
- src/frob/gates/_sys.py                             |  295 +-
- src/frob/gates/_sys_selfaudit.py                   |  316 +++
- src/frob/gates/_waive.py                           |    2 +-
- src/frob/gates/_wire.py                            |  633 +++++
- src/frob/vet/_capability.py                        |   28 +-
- src/frob/vet/_capability_registry.py               | 2991 --------------------
- src/frob/vet/_capability_registry/__init__.py      |   80 +
- .../_capability_registry/_dangerous_ops_other.py   |  754 +++++
- .../_capability_registry/_dangerous_ops_python.py  |  726 +++++
- src/frob/vet/_capability_registry/_kinds.py        |  132 +
- src/frob/vet/_capability_registry/_matrix.py       |  751 +++++
- src/frob/vet/_capability_registry/_opaque.py       |  504 ++++
- src/frob/vet/_capability_registry/_schemas.py      |  133 +
- tests/test_capability_registry.py                  |   35 +-
- tests/test_gates.py                                |   61 +-
- tests/test_vet.py                                  |   62 +-
- tickets.md                                         |   80 +-
- 23 files changed, 4280 insertions(+), 3995 deletions(-)
+ src/frob/tickets/_new_renumber.py | 273 ++---------------------------------
+ src/frob/tickets/_renumber_v2.py  | 296 ++++++++++++++++++++++++++++++++++++++
+ src/frob/tickets/_store.py        |  18 +--
+ tests/test_tickets_collision.py   |  10 +-
+ tickets.md                        | 145 +++++++++++++++++++
+ 5 files changed, 466 insertions(+), 276 deletions(-)
 ```
 
 ### Evidence
@@ -5413,8 +5385,8 @@ Nothing else in scope was touched. No ticket filed for the ledger repair
 
 ### Captured claims
 - tests: 14 passed (from 14 evidence id(s))
-- gates: 1 error(s), 7650 warning(s), 694 waived
-- error-findings: PRE001@tickets/T-1420
+- gates: 8 error(s), 7405 warning(s), 730 waived
+- error-findings: AFFECT001@src/frob/tickets/_new_renumber.py, AFFECT001@src/frob/tickets/_renumber_v2.py, AFFECT001@src/frob/tickets/_store.py, F401@/home/logan/projects/frob/.claude/worktrees/t-1420/src/frob/tickets/_new_renumber.py:29, F401@/home/logan/projects/frob/.claude/worktrees/t-1420/src/frob/tickets/_new_renumber.py:35, F401@/home/logan/projects/frob/.claude/worktrees/t-1420/src/frob/tickets/_new_renumber.py:57, F401@/home/logan/projects/frob/.claude/worktrees/t-1420/src/frob/tickets/_new_renumber.py:58, INV006@src/frob/tickets/_renumber_v2.py
 
 <!-- ticket:T-1423 -->
 ```yaml
@@ -6073,6 +6045,7 @@ genuinely unresolved, not just unresolved-and-waived.
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 1 error(s), 563 warning(s), 694 waived
 - error-findings: SELFAUDIT001@design
+
 <!-- ticket:T-1434 -->
 ```yaml
 id: T-1434
@@ -8444,3 +8417,217 @@ threat: null
 component: null
 ```
 Wave5-O's classification (T-1400 Done report) isolated the app package's only real TEST005 gaps: telemetry.py (OSError-swallow, git-unavailable fallback, non-int SystemExit-code branches) and _daemon_proxy.py (~80 percent both narrow and wide: _probe_daemon, _classify_version_reply, _spawn_daemon, _shutdown_stale_daemon socket/subprocess error paths). Both need socket/subprocess seam mocking (T-1276's daemon-lease test precedent). Everything else sampled in app/strata was attribution artifact -- see T-1400/T-1415 Done reports for the tally.
+
+<!-- ticket:T-1458 -->
+```yaml
+id: T-1458
+title: 'arch: LARGE001 split of tickets _new_renumber v2 backend (T-1420 delivered
+  portion 4)'
+state: done
+kind: feature
+origin: agent
+created: '2026-08-02'
+priority: high
+parent: T-1420
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_new_renumber.py
+- src/frob/tickets/_renumber_v2.py
+- src/frob/tickets/_store.py
+- tests/test_tickets_collision.py
+evidence:
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_git_mv_renames_directory_and_rewrites_id_field
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_sibling_ticket_prose_citation_rewritten
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_locks_acquired_in_sorted_id_order_no_deadlock
+acceptance:
+- text: GIVEN the split WHEN frob check --only archgate --only drift runs THEN 0 errors
+    and _new_renumber.py is off the LARGE001 list
+  evidence:
+  - tests/test_tickets_collision.py::TestRenumberOneV2::test_git_mv_renames_directory_and_rewrites_id_field
+  - tests/test_tickets_collision.py::TestRenumberOneV2::test_sibling_ticket_prose_citation_rewritten
+  - tests/test_tickets_collision.py::TestRenumberOneV2::test_locks_acquired_in_sorted_id_order_no_deadlock
+threat: null
+component: null
+```
+Leaf carrier for T-1420's fourth delivered portion (T-1441/T-1442/T-1446 precedent). The comment-delimited v2-mode git-mv renumber backend moved verbatim from _new_renumber.py (989 to 730 lines) into new _renumber_v2.py (288 lines); renumber_one dispatches via a local import to avoid a circular import. Five frob:tests edges repointed in tests/test_tickets_collision.py and _store.py's DUP002 waiver prose renamed to the new path. DRIFT002 went 5 errors to 0 after the repoint; archgate/wire/dead_symbols/doclink/docanchor/fmt scoped checks 0 errors; LARGE001 48 to 47 unwaived. Also carries the vet _capability seam-analysis design draft (parent T-1420) filed this session.
+
+## Done report
+
+Leaf carrier for T-1420's fourth delivered portion. The v2-mode git-mv
+renumber backend (T-1255 family, already comment-delimited) moved
+verbatim from _new_renumber.py (989 -> 730 lines) to the new
+_renumber_v2.py (288 lines); renumber_one dispatches through a local
+import to avoid a circular import. Five frob:tests edges repointed in
+tests/test_tickets_collision.py and _store.py's DUP002 waiver prose
+updated to the new path -- DRIFT002 read 5 errors before the repoint,
+0 after, confirming the edges are live. Scoped archgate/wire/
+dead_symbols/doclink/docanchor/fmt checks all 0 errors; repo-wide
+LARGE001 48 -> 47 unwaived. The branch also carries the vet _capability
+seam-analysis design draft (parent T-1420) for the next dedicated
+session.
+
+### Changed
+```
+ src/frob/tickets/_new_renumber.py | 273 ++--------------------------
+ src/frob/tickets/_renumber_v2.py  | 296 +++++++++++++++++++++++++++++++
+ src/frob/tickets/_store.py        |  18 +-
+ tests/test_tickets_collision.py   |  10 +-
+ tickets.md                        | 364 +++++++++++++++++++++++++++-----------
+ 5 files changed, 578 insertions(+), 383 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_collision.py::TestRenumberOneV2::test_git_mv_renames_directory_and_rewrites_id_field` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestRenumberOneV2::test_sibling_ticket_prose_citation_rewritten` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestRenumberOneV2::test_locks_acquired_in_sorted_id_order_no_deadlock` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 8 error(s), 380 warning(s), 730 waived
+- error-findings: AFFECT001@src/frob/tickets/_new_renumber.py, AFFECT001@src/frob/tickets/_renumber_v2.py, AFFECT001@src/frob/tickets/_store.py, F401@/home/logan/projects/frob/.claude/worktrees/t-1420/src/frob/tickets/_new_renumber.py:29, F401@/home/logan/projects/frob/.claude/worktrees/t-1420/src/frob/tickets/_new_renumber.py:35, F401@/home/logan/projects/frob/.claude/worktrees/t-1420/src/frob/tickets/_new_renumber.py:57, F401@/home/logan/projects/frob/.claude/worktrees/t-1420/src/frob/tickets/_new_renumber.py:58, INV006@src/frob/tickets/_renumber_v2.py
+
+<!-- ticket:T-1459 -->
+```yaml
+id: T-1459
+title: vet _capability split design
+state: queued
+kind: feature
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: T-1420
+tier: ticket
+sprint: null
+scope:
+- src/frob/vet/_capability.py
+- tests/test_vet.py
+- tests/test_vet_capability.py
+threat: null
+component: null
+```
+T-1420 LARGE001 residue: src/frob/vet/_capability.py is 6070 lines (T-1074-
+flagged, largest unwaived LARGE001 file repo-wide). This ticket is the
+SPLIT DESIGN only -- do not implement blind; a follow-up ticket implements
+it once this design is reviewed.
+
+## Seam analysis (measured via `grep -n '^def \|^class ' src/frob/vet/_capability.py`)
+
+The module already reads as a scanner CORE plus a strict per-LANGUAGE
+alias/binding-resolution family repeated six times (Python, TypeScript,
+Rust, C, Kotlin) plus the tail-end fingerprint/opaque-indirection
+aggregation layer. Each per-language family is internally self-contained
+(its own scope-binding walk, alias table builder, resolved-candidate
+collector, `_<lang>_binding_capabilities`/`_<lang>_binding_operations`
+pair) and calls back into the scanner core only through a small, already-
+named set of shared helpers (`_needle_hits_outside_comments`,
+`_compiled_capability_patterns`, `ByteSpan` family, `_DangerousOperation`).
+This is the same shape the registry package split (T-1420, already landed
+this ticket's earlier portion: `src/frob/vet/_capability_registry/`) found
+in the sibling file -- same treatment applies here.
+
+Proposed module boundaries (verbatim moves, one seam per land, same
+discipline as every other T-1420 split):
+
+1. `src/frob/vet/_capability_core.py` (~180-820, ~640 lines): pattern
+   compilation (`_compile_patterns`, `_compiled_capability_patterns`),
+   comment/docstring/non-executable byte-span helpers (`_comment_byte_spans`
+   through `_non_executable_byte_spans`), the needle-matching primitives
+   (`_needle_to_ws_pattern` through `_needle_hits_as_bare_call`), and the
+   embedded-code-region family (`_looks_like_embedded_code` through
+   `_embedded_operations`). Every per-language module imports from here;
+   this module imports from no per-language module -- it is the shared
+   floor, so it must land FIRST if this is done incrementally.
+
+2. `src/frob/vet/_capability_python.py` (~820-1670, ~850 lines): the
+   `_py_*`/`_python_*`/`_resolve_py_*`/`_record_py_*`/`_bind_py_*` family
+   -- scope binding, alias table construction, resolved-candidate
+   collection, `_python_binding_capabilities`/`_python_binding_operations`.
+
+3. `src/frob/vet/_capability_typescript.py` (~1670-2745, ~1075 lines): the
+   `_ts_*`/`_collect_ts_*`/`_resolve_ts_*`/`_record_ts_*`/`_bind_ts_*`
+   family, same shape as Python's, plus TS-specific require/dynamic-import
+   handling (`_ts_require_call_module`, `_ts_dynamic_import_module`, the
+   `_ts_dynamic_import_then_*` chain) that has no Python analog.
+
+4. `src/frob/vet/_capability_rust.py` (~3282-4043, ~760 lines): the
+   `_rust_*` family -- `use`-declaration binding (`_bind_rust_use_as_clause`
+   through `_rust_use_table`), scope binding, alias tables,
+   `_rust_binding_capabilities`/`_rust_binding_operations`.
+
+5. `src/frob/vet/_capability_c.py` (~4043-4744, ~700 lines): the `_c_*`
+   family -- macro alias table, declaration/scope binding, alias tables
+   (including the array/structured-binding/default-param alias variants C
+   has that the other languages don't), `_c_binding_capabilities`/
+   `_c_binding_operations`/`_extra_c_binding_operations` (note:
+   `_c_binding_capabilities`/`_c_binding_operations`/
+   `_extra_c_binding_operations` currently sit textually AFTER the Kotlin
+   block at ~5208-5274, not adjacent to the rest of the `_c_*` family --
+   move them here too, verbatim, to keep the per-language module
+   cohesive rather than mirroring the current file's accidental ordering).
+
+6. `src/frob/vet/_capability_kotlin.py` (~4744-5274, ~530 lines): the
+   `_kt_*` family -- import table, callable-reference resolution, alias
+   table, `_kt_binding_capabilities`/`_kt_binding_operations`/
+   `_extra_kt_binding_operations`.
+
+7. `src/frob/vet/_capability.py` (remaining, ~5274-6070 minus the C tail
+   moved to (5), ~700 lines): stays the package's public entry surface --
+   `_operation_entry_matches`, `_resolved_candidates_for_language`,
+   `_binding_fingerprints`, the CVE-fingerprint scan family
+   (`_yaml_load_call_lacks_explicit_loader` through
+   `_scan_file_fingerprints`), `_decode_to_exec_signal`/
+   `_body_reaches_decode_and_exec`, the directory-level aggregation
+   (`_scan_directory_capabilities`/`_aggregate_capabilities`/
+   `_scan_directory_fingerprints`/`_aggregate_fingerprints`), self-path
+   exclusion (`is_self_pattern_path`/`_is_self_path`/`_is_test_path`), and
+   the public `scan_file_capabilities`/`language_for`/
+   `non_executable_line_numbers` entry points near the top of this range
+   (~2908-3184) -- these dispatch across every per-language module by
+   calling `_resolved_candidates_for_language`, so they belong with the
+   dispatcher, not with any one language.
+
+   Also stays here: the `_OpaqueFinding` class and the opaque-indirection
+   scan family (`_split_top_level_args` through `_needle_construct_findings`
+   and beyond, ~5771-6070) -- this is a DIFFERENT concern (structural
+   opaqueness of a needle's argument, not capability/operation binding)
+   that happens to live in the same file today; worth a SEPARATE follow-up
+   ticket to ask whether it should move to its own
+   `_capability_opaque.py` rather than folding it into step 7's dispatcher
+   module by default -- flagging here rather than deciding unilaterally in
+   this design ticket.
+
+## What the registry package split (already landed, T-1420) already absorbed
+
+`_capability_registry.py`'s own LARGE001 split (this ticket's earlier
+portion, see Done report) is the PRECEDENT this design follows: verbatim
+per-concern module extraction (`_dangerous_ops_python.py`,
+`_dangerous_ops_other.py`, `_matrix.py`, `_kinds.py`, `_schemas.py`,
+`_opaque.py`) under a package `__init__.py` that re-exports the public
+surface unchanged. `_capability.py`'s split should follow the SAME
+external-surface-unchanged discipline: `import frob.vet._capability` (or
+`from frob.vet._capability import scan_file_capabilities`, etc.) from any
+caller outside this module must keep working without a caller-side edit,
+whether the final shape is a flat sibling-file split (as sketched above)
+or a `_capability/` package mirroring the registry's own package shape --
+that packaging decision (flat siblings vs. a package directory) is left
+open for whoever implements this, not fixed by this design.
+
+## Why this session did not implement it
+
+Time/effort budget for this T-1420 session was allocated to closing out
+the smaller, unambiguous files on the ticket's scope list first (see the
+`_new_renumber.py`/`_renumber_v2.py` split landed this session). A ~6000
+line, 180-symbol, six-language file is not something to split blind in
+the time remaining -- this design ticket exists so the NEXT session (or
+this one, if time allows) can implement steps 1-6 as a clean sequence of
+one-seam-per-land commits without re-deriving the seam analysis from
+scratch.
+
+## Acceptance
+
+- [ ] Design reviewed (seam boundaries above judged unambiguous, or
+      revised) before any implementation ticket starts moving code.
+- [ ] Implementation, if undertaken, follows the verbatim-relocation +
+      frob:waive-carry + same-commit doc/test-edge-repoint discipline
+      every other T-1420 split in this ticket's history used.
