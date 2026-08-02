@@ -11824,6 +11824,12 @@ acceptance:
 - text: GIVEN a module recorded at zero hits in that run report WHEN the committed
     lock is read THEN it records zero for that module
   evidence: []
+- text: GIVEN frob ticket land has generated or modified frob-coverage.lock.json during
+    a land attempt WHEN the working tree is cleaned up THEN a freshly stamped lock
+    is never reverted to an older committed copy -- corroborated independently by
+    the T-1270 agent, which reported land leaving a stray lock diff in the root checkout
+    that it resolved with git checkout on that file
+  evidence: []
 threat: null
 component: null
 ```
@@ -11845,7 +11851,6 @@ WHY IT MATTERS. The lock is the persisted ratchet floor: it is what survives the
 This ticket is about DURABILITY, not the clamp. T-1401's carve-out is correct and should not be changed. The question is why a successful stamp's write is not what ends up committed.
 
 Acceptance should be checkable end to end: run a coverage stamp, then confirm the committed lock's source_sha matches that run and that a module measured at zero in the report reads zero in the lock.
-
 <!-- ticket:T-1420 -->
 ```yaml
 id: T-1420
