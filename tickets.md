@@ -12053,3 +12053,46 @@ WHAT TO BUILD. A supported way to amend acceptance, with the same discipline the
 Guard against the obvious abuse. Amending a criterion is a legitimate correction when the criterion was wrong; it is goalpost-moving when the criterion was right and the work fell short. The distinction cannot be fully automated, but the reason string makes it reviewable, and amendments should be surfaced -- in frob ticket show, and in the Done report -- rather than buried. Consider refusing an amendment on a ticket already in a terminal state.
 
 Then re-scope the ten burn-down tickets to triage-shaped acceptance, the shape already used on T-1400: every remaining finding is triaged as either a genuine gap closed with a behavioral test, or an artifact recorded with the covering test named. That is satisfiable, honest, and still forbids filler -- and it is what T-1418's classification is producing the input for.
+
+<!-- ticket:T-1423 -->
+```yaml
+id: T-1423
+title: frob check crashes with an unhandled database is locked under concurrent load
+state: queued
+kind: bug
+origin: human
+created: '2026-08-02'
+priority: critical
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/graph/cache.py
+- tests/test_graph_lock.py
+acceptance:
+- text: GIVEN the graph cache lock is held by another connection WHEN frob check runs
+    THEN it completes and reports rather than crashing with an unhandled exception
+  evidence: []
+- text: GIVEN a contended cache operation WHEN the lock cannot be acquired after retry
+    THEN the failure surfaces as a typani Result the caller handles, never as an escaping
+    exception
+  evidence: []
+threat: null
+component: null
+```
+frob check dies with an unhandled exception when the graph cache is contended:
+
+    ERROR: main: unhandled exception during dispatch: database is locked
+    frob: database is locked
+
+Measured on main 2026-08-02 with four agents running concurrently against the shared repo. The check had already produced its full warning output; it crashed at the end, so the entire run was lost and the exit code was a hard failure rather than a report.
+
+TWO DEFECTS, and they should be fixed together.
+
+1. It escapes as a raw exception. sqlite3.OperationalError "database is locked" is an expected, recoverable outcome of contending for a shared cache -- not a programmer bug. This repo's own convention is that a fallible operation a caller must handle returns a typani Result, and exceptions are reserved for unrecoverable programmer errors. A lock timeout is the former. Right now it reaches main's top-level handler and prints as an unhandled crash.
+
+2. It does not retry. T-1239 and T-1416 already established the pattern for this exact class in the same subsystem: a locked OperationalError means another process got there first, so poll and re-read rather than treating it as fatal. T-1239 applied that to schema application; T-1416 extended it to the meta.key IntegrityError. This is the third instance of the same family -- a lock encountered on a normal read/write path, outside schema application, with no retry at all. Fix it in the same shape, and check whether a single shared helper should own "retry a contended cache operation" for all three call sites rather than a third bespoke handler. This repo's no-duplication rule applies.
+
+WHY IT MATTERS BEYOND THE CRASH. The practical effect is that frob check is not safe to run while agents are working, which is precisely when a coordinator most wants to measure. Every gate reading taken during this session's concurrent dispatches was therefore suspect, and at least one pair of consecutive runs disagreed (5 errors then 0, with no intervening change) before this crash made the problem explicit. A measurement tool that is unreliable under the conditions it is used in is a hole in the "if frob passes, the code is good" guarantee -- you cannot trust a green you could not reproduce.
+
+ACCEPTANCE SHOULD BE BEHAVIOURAL, not just a caught exception: with a concurrently-held lock on the cache, frob check must complete and report, not crash. A test that holds the sqlite lock from another connection while a check runs is the honest reproduction.
