@@ -288,58 +288,17 @@ def _close_gate_claims_for_ticket(root: Path, ticket) -> bool | None:  # noqa: A
 
 
 # frob:ticket T-1387
-def _close_own_obligations_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
-    """T-1387 CLI wiring for T-1384's `own_obligations_clean` guard:
-    whether `ticket`'s OWN diff (every file `working_diff(root, "main")`
-    reports a hunk in) leaves outstanding (a) a new-symbol `frob:doc` edge
-    (COV001), (b) a testsuite strata declaration (SELFAUDIT001), or (c) an
-    unapplied REL001 version bump -- the T-1377/T-1379/T-1381 residue
-    class: closed clean, then surprised the very next unscoped `frob
-    check` with exactly this obligation, because nothing computed it at
-    close time.
-
-    REL001 reuses `_required_release_bump` (T-0338's existing read-only
-    bump computation, the SAME one `frob ticket land` applies) directly --
-    no duplicated version-diffing logic. COV001/SELFAUDIT001 have no
-    diff-scoped `--ticket` filter of their own (T-1351: `--ticket` only
-    scopes SCOPE/PREWORK/COV002/TODO001/FMT/AFFECT, every other gate
-    family's count is repo-wide) -- one `frob check --only gates` run
-    supplies the repo-wide `(rule, file)` identity set, filtered here to
-    files `ticket`'s own diff touched. This is a deliberate scoping
-    choice, not a full new-symbol-only diff parse: a touched file
-    carrying a PRE-EXISTING COV001/SELFAUDIT001 finding this ticket did
-    not itself introduce also counts against it -- stricter than "only
-    symbols this ticket newly added", never looser, since the remedy (add
-    the missing edge/declaration) is the same either way for a file the
-    ticket is already touching.
-
-    Returns `None` (skip) if `working_diff` itself is unavailable (not a
-    git checkout, no merge-base against `main`) or reports no touched
-    files at all -- "cannot verify" degrades to a no-op here rather than
-    fail-closed, matching `_close_mutation_evidence_for_ticket`'s posture
-    for the identical failure mode (additive to the pre-existing evidence
-    gates, not the sole gate). Returns `False` (fail-closed) if the `--only
-    gates` spawn itself is refused/unparsable, or if any of the three
-    obligations is outstanding."""
-    from frob.gitio import working_diff
-
-    diff = working_diff(root, "main")
-    if diff.is_err:
-        _log.warning(
-            "ticket close: %s working_diff unavailable (%s), skipping "
-            "T-1384 own-obligations check",
-            ticket.id,
-            diff.danger_err,
-        )
-        return None
-    touched = {h.file for h in diff.danger_ok.hunks}
-    if not touched:
-        return None
-
+def _own_obligations_rel_bump_dirty(root: Path, ticket) -> bool:  # noqa: ANN001
+    """The REL001 half of `_close_own_obligations_for_ticket` (ARCH001
+    split): `True` if a version bump is still outstanding against
+    `ticket`'s current public API, reusing `_required_release_bump`
+    (T-0338's existing read-only bump computation, the SAME one `frob
+    ticket land` applies) directly -- no duplicated version-diffing
+    logic. An unresolvable bump computation also counts as dirty
+    (fail-closed: "cannot verify" must never silently become "clean")."""
     from frob.app import ticket_runner as _ticket_runner
 
     rel_result = _ticket_runner._required_release_bump(root, ticket.id)
-    rel_dirty = False
     if rel_result.is_err:
         _log.warning(
             "ticket close: %s could not compute the REL001 bump (%s) -- "
@@ -347,14 +306,39 @@ def _close_own_obligations_for_ticket(root: Path, ticket) -> bool | None:  # noq
             ticket.id,
             rel_result.danger_err,
         )
-        rel_dirty = True
-    elif rel_result.danger_ok is not None:
+        return True
+    if rel_result.danger_ok is not None:
         _log.warning(
             "ticket close: %s REL001 version bump outstanding (needs %s)",
             ticket.id,
             rel_result.danger_ok,
         )
-        rel_dirty = True
+        return True
+    return False
+
+
+# frob:ticket T-1387
+def _own_obligations_diff_findings(
+    root: Path,
+    ticket,
+    touched: set[str],  # noqa: ANN001
+) -> list[str] | None:
+    """The COV001/SELFAUDIT001 half of `_close_own_obligations_for_ticket`
+    (ARCH001 split): the sorted `"<rule>:<file>"` list of live findings
+    under a file in `touched` -- `None` (fail-closed, distinct from an
+    empty list) if the `--only gates` spawn itself is refused or
+    unparsable, since COV001/SELFAUDIT001 have no diff-scoped `--ticket`
+    filter of their own (T-1351: `--ticket` only scopes SCOPE/PREWORK/
+    COV002/TODO001/FMT/AFFECT, every other gate family's count is
+    repo-wide) -- one `frob check --only gates` run supplies the
+    repo-wide `(rule, file)` identity set, filtered here to `touched`.
+    This is a deliberate scoping choice, not a full new-symbol-only diff
+    parse: a touched file carrying a PRE-EXISTING finding this ticket did
+    not itself introduce also counts against it -- stricter than "only
+    symbols this ticket newly added", never looser, since the remedy (add
+    the missing edge/declaration) is the same either way for a file the
+    ticket is already touching."""
+    from frob.app import ticket_runner as _ticket_runner
 
     spawned = _ticket_runner.guarded_subprocess_run(
         [
@@ -379,7 +363,7 @@ def _close_own_obligations_for_ticket(root: Path, ticket) -> bool | None:  # noq
             ticket.id,
             spawned.danger_err,
         )
-        return False
+        return None
     proc = spawned.danger_ok
     findings = _ticket_runner._parse_error_findings_from_stdout(
         ticket.id, proc.stdout, proc.returncode
@@ -391,12 +375,53 @@ def _close_own_obligations_for_ticket(root: Path, ticket) -> bool | None:  # noq
             "own-obligations, refusing to close on unverifiable evidence",
             ticket.id,
         )
-        return False
+        return None
 
     obligation_rules = {"COV001", "SELFAUDIT001"}
-    dirty = sorted(
+    return sorted(
         f"{r}:{f}" for r, f in findings if r in obligation_rules and f in touched
     )
+
+
+# frob:ticket T-1387
+def _close_own_obligations_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
+    """T-1387 CLI wiring for T-1384's `own_obligations_clean` guard:
+    whether `ticket`'s OWN diff (every file `working_diff(root, "main")`
+    reports a hunk in) leaves outstanding (a) a new-symbol `frob:doc` edge
+    (COV001), (b) a testsuite strata declaration (SELFAUDIT001), or (c) an
+    unapplied REL001 version bump (`_own_obligations_rel_bump_dirty`/
+    `_own_obligations_diff_findings`, split out for ARCH001) -- the
+    T-1377/T-1379/T-1381 residue class: closed clean, then surprised the
+    very next unscoped `frob check` with exactly this obligation, because
+    nothing computed it at close time.
+
+    Returns `None` (skip) if `working_diff` itself is unavailable (not a
+    git checkout, no merge-base against `main`) or reports no touched
+    files at all -- "cannot verify" degrades to a no-op here rather than
+    fail-closed, matching `_close_mutation_evidence_for_ticket`'s posture
+    for the identical failure mode (additive to the pre-existing evidence
+    gates, not the sole gate). Returns `False` (fail-closed) if the
+    `--only gates` spawn itself is refused/unparsable, or if any of the
+    three obligations is outstanding."""
+    from frob.gitio import working_diff
+
+    diff = working_diff(root, "main")
+    if diff.is_err:
+        _log.warning(
+            "ticket close: %s working_diff unavailable (%s), skipping "
+            "T-1384 own-obligations check",
+            ticket.id,
+            diff.danger_err,
+        )
+        return None
+    touched = {h.file for h in diff.danger_ok.hunks}
+    if not touched:
+        return None
+
+    rel_dirty = _own_obligations_rel_bump_dirty(root, ticket)
+    dirty = _own_obligations_diff_findings(root, ticket, touched)
+    if dirty is None:
+        return False
     if dirty:
         _log.warning(
             "ticket close: %s own-diff obligation(s) outstanding: %s",

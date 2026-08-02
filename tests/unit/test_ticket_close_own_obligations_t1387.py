@@ -21,12 +21,22 @@ from typing import Any
 import pytest
 from typani.result import Err, Ok, Result
 
+import frob.gitio as frob_gitio
 from frob.gitio import Diff, Hunk, ProcResult
 
 _DIRTY_COV_STDOUT = """frob check .  [FAIL]  1 errors  0 warnings
 
 ## Errors
   [gate:COV] src/frob/app/whatever.py:1  COV001  COV001: missing frob:doc edge
+
+## Tool summary
+  FAIL  gate-summary            1 errors, 0 warnings, 0 waived  [gates=1.00s]
+"""
+
+_DIRTY_SELFAUDIT_STDOUT = """frob check .  [FAIL]  1 errors  0 warnings
+
+## Errors
+  [gate:SELFAUDIT] src/frob/app/whatever.py:1  SELFAUDIT001  SELFAUDIT001: public test class not declared on testsuite
 
 ## Tool summary
   FAIL  gate-summary            1 errors, 0 warnings, 0 waived  [gates=1.00s]
@@ -97,7 +107,8 @@ class TestCloseOwnObligationsForTicket:
         from frob.tickets import Origin, Ticket, TicketKind, TicketState
 
         monkeypatch.setattr(
-            "frob.gitio.working_diff",
+            frob_gitio,
+            "working_diff",
             lambda root, base: Ok(Diff(base="abc123", hunks=())),
         )
 
@@ -126,7 +137,7 @@ class TestCloseOwnObligationsForTicket:
         from frob.tickets import Origin, Ticket, TicketKind, TicketState
 
         monkeypatch.setattr(
-            "frob.gitio.working_diff", lambda root, base: Err(GitError.NotARepo)
+            frob_gitio, "working_diff", lambda root, base: Err(GitError.NotARepo)
         )
         ticket = Ticket(
             id="T-0001",
@@ -148,7 +159,7 @@ class TestCloseOwnObligationsForTicket:
         from frob.tickets import Origin, Ticket, TicketKind, TicketState
 
         monkeypatch.setattr(
-            "frob.gitio.working_diff", lambda root, base: _diff_touching(_TOUCHED_FILE)
+            frob_gitio, "working_diff", lambda root, base: _diff_touching(_TOUCHED_FILE)
         )
         monkeypatch.setattr(
             ticket_runner, "_required_release_bump", lambda root, tid: Ok(None)
@@ -174,6 +185,43 @@ class TestCloseOwnObligationsForTicket:
         result = ticket_runner._close_own_obligations_for_ticket(tmp_path, ticket)
         assert result is False
 
+    def test_dirty_selfaudit001_under_touched_file_returns_false(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_close_own_obligations_t1387.py::TestCloseOwnObligationsForTicket.test_dirty_selfaudit001_under_touched_file_returns_false  # noqa: E501
+        from frob.app import ticket_runner
+        from frob.tickets import Origin, Ticket, TicketKind, TicketState
+
+        monkeypatch.setattr(
+            frob_gitio, "working_diff", lambda root, base: _diff_touching(_TOUCHED_FILE)
+        )
+        monkeypatch.setattr(
+            ticket_runner, "_required_release_bump", lambda root, tid: Ok(None)
+        )
+
+        def _fake(argv: list[str], **kwargs: Any) -> Result[ProcResult, Any]:
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv),
+                    returncode=1,
+                    stdout=_DIRTY_SELFAUDIT_STDOUT,
+                    stderr="",
+                )
+            )
+
+        monkeypatch.setattr(ticket_runner, "guarded_subprocess_run", _fake)
+        ticket = Ticket(
+            id="T-0001",
+            title="t",
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            created=date(2026, 1, 1),
+            state=TicketState.IN_PROGRESS,
+            evidence=("tests/test_x.py::test_x",),
+        )
+        result = ticket_runner._close_own_obligations_for_ticket(tmp_path, ticket)
+        assert result is False
+
     def test_rel001_bump_outstanding_returns_false(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -182,7 +230,7 @@ class TestCloseOwnObligationsForTicket:
         from frob.tickets import Origin, Ticket, TicketKind, TicketState
 
         monkeypatch.setattr(
-            "frob.gitio.working_diff", lambda root, base: _diff_touching(_TOUCHED_FILE)
+            frob_gitio, "working_diff", lambda root, base: _diff_touching(_TOUCHED_FILE)
         )
         monkeypatch.setattr(
             ticket_runner, "_required_release_bump", lambda root, tid: Ok("1.2.0")
@@ -216,7 +264,7 @@ class TestCloseOwnObligationsForTicket:
         from frob.tickets import Origin, Ticket, TicketKind, TicketState
 
         monkeypatch.setattr(
-            "frob.gitio.working_diff", lambda root, base: _diff_touching(_TOUCHED_FILE)
+            frob_gitio, "working_diff", lambda root, base: _diff_touching(_TOUCHED_FILE)
         )
         monkeypatch.setattr(
             ticket_runner, "_required_release_bump", lambda root, tid: Ok(None)
@@ -262,7 +310,7 @@ class TestCloseRefusesOwnObligationsEndToEnd:
         _write_closeable_ticket(tmp_path)
         _bypass_other_close_guards(monkeypatch, ticket_runner)
         monkeypatch.setattr(
-            "frob.gitio.working_diff", lambda root, base: _diff_touching(_TOUCHED_FILE)
+            frob_gitio, "working_diff", lambda root, base: _diff_touching(_TOUCHED_FILE)
         )
         monkeypatch.setattr(
             ticket_runner,
@@ -291,7 +339,7 @@ class TestCloseRefusesOwnObligationsEndToEnd:
         _write_closeable_ticket(tmp_path)
         _bypass_other_close_guards(monkeypatch, ticket_runner)
         monkeypatch.setattr(
-            "frob.gitio.working_diff", lambda root, base: _diff_touching(_TOUCHED_FILE)
+            frob_gitio, "working_diff", lambda root, base: _diff_touching(_TOUCHED_FILE)
         )
         monkeypatch.setattr(
             ticket_runner,
