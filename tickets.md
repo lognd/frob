@@ -8418,3 +8418,29 @@ threat: null
 component: null
 ```
 Every wave this drive landed left small unscoped residue on main that the coordinator hand-fixed between lands: waivers that did not travel with relocated prose (T-1442's INV006/PII012), format drift, stale registry denominators, SELFAUDIT interface attrs for store blocks. Each was invisible to the land's --ticket-scoped verification and only surfaced in the next full frob check. Feature: after the squash-apply commit, land runs a bounded unscoped delta check (errors only, vs the pre-land baseline it already captures) and either auto-fixes Tier-A residue in a follow-up commit or refuses with the exact finding list, so main's error floor cannot regress silently at land time. The claim-divergence machinery (T-0754) already computes most of this; the gap is that it compares scoped, not unscoped-delta.
+
+<!-- ticket:T-1457 -->
+```yaml
+id: T-1457
+title: 'app TEST005 genuine gaps: telemetry and _daemon_proxy socket/subprocess error
+  paths'
+state: queued
+kind: feature
+origin: agent
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/telemetry.py
+- src/frob/app/_daemon_proxy.py
+- tests/unit/**
+acceptance:
+- text: GIVEN the named error-path branches WHEN their tests run THEN each asserts
+    real behavior (fallback value, exit code, log line), never mere execution
+  evidence: []
+threat: null
+component: null
+```
+Wave5-O's classification (T-1400 Done report) isolated the app package's only real TEST005 gaps: telemetry.py (OSError-swallow, git-unavailable fallback, non-int SystemExit-code branches) and _daemon_proxy.py (~80 percent both narrow and wide: _probe_daemon, _classify_version_reply, _spawn_daemon, _shutdown_stale_daemon socket/subprocess error paths). Both need socket/subprocess seam mocking (T-1276's daemon-lease test precedent). Everything else sampled in app/strata was attribution artifact -- see T-1400/T-1415 Done reports for the tally.
