@@ -10759,7 +10759,7 @@ id: T-1403
 title: 'Investigate: T-1390 worktree changes landed on main under an unrelated commit
   message (c2fd45da)'
 state: in-progress
-kind: bug
+kind: docs
 origin: human
 created: '2026-08-01'
 priority: medium
@@ -10768,6 +10768,10 @@ tier: ticket
 sprint: null
 scope:
 - docs/guides/agent-playbook.md
+evidence:
+- cmd:bash -c "grep -q '^## 1b2' docs/guides/agent-playbook.md && grep -q 'T-1432'
+  docs/guides/agent-playbook.md && git show c2fd45da --stat | grep -q _land.py" exit=0
+  sha256=e3b0c44298fc
 threat: null
 component: null
 ```
