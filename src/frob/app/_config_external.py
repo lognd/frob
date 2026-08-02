@@ -122,6 +122,9 @@ def _build_external_config_kwargs(
         "ticket_sprint",
         "ticket_doable_sprint",
         "ticket_sprint_command",
+        # frob:ticket T-1422
+        "ticket_accept_amend_text",
+        "ticket_accept_amend_reason",
         "test_base",
         "test_fallback",
         "vet_hook",
@@ -184,6 +187,8 @@ def _build_external_config_kwargs(
         "ticket_scope_reason_file",
         # frob:ticket T-1029
         "ticket_accept_criterion_file",
+        # frob:ticket T-1422
+        "ticket_accept_amend_reason_file",
         "test_path",
         "vet_path",
         "vet_cve_mirror",
@@ -248,6 +253,12 @@ def _build_external_config_kwargs(
         # frob:ticket T-0628
         "graph_max_depth",
         "graph_max_nodes",
+        # frob:ticket T-1422
+        # Omitting these here is silent: argparse parses --amend/--remove,
+        # this loop drops them, and `frob ticket accept` then reports that
+        # it needs one of the very flags the user passed.
+        "ticket_accept_amend_index",
+        "ticket_accept_remove_index",
     ):
         val = getattr(args, int_field, None)
         if val is not None:
