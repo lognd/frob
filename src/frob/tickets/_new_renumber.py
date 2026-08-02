@@ -26,13 +26,11 @@ established, now just from a different caller module.
 from __future__ import annotations
 
 import re
-from contextlib import ExitStack
 from datetime import date
 from pathlib import Path
 
 from typani.result import Err, Ok, Result
 
-from frob.gitio import run_argv
 from frob.logging import get_logger
 from frob.tickets._archive import _load_merged
 from frob.tickets._leases import rename_lease
@@ -54,8 +52,6 @@ from frob.tickets._store import (
     ledger_path,
     load_all,
     load_archive,
-    ticket_lock,
-    tickets_dir,
     write_all,
     write_archive,
     write_ticket,

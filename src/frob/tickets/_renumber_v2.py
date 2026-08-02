@@ -8,6 +8,7 @@ verbatim with its T-1255 directives intact -- `renumber_one` in
 `_new_renumber.py` still dispatches to `renumber_one_v2` here for a v2-mode
 repo, imported back by name.)
 """
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 
