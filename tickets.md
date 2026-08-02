@@ -7555,6 +7555,7 @@ scope:
 - tests/unit/test_land_cross_ticket_leakage.py
 evidence:
 - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_declaring_broad_scope_but_untouched_does_not_block
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_refuses_when_sibling_ticket_still_open
 acceptance:
 - text: GIVEN a branch whose committed changeset touches a file that a sibling open
     ticket merely DECLARES in scope, but to which that sibling has contributed no
@@ -7564,7 +7565,8 @@ acceptance:
   - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_declaring_broad_scope_but_untouched_does_not_block
 - text: GIVEN a branch that genuinely carries a sibling open ticket's committed changes,
     WHEN the branch is landed, THEN CrossTicketLeakage still refuses the land
-  evidence: []
+  evidence:
+  - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_refuses_when_sibling_ticket_still_open
 threat: null
 component: null
 ```
