@@ -9326,8 +9326,14 @@ scope_changes:
   actor: logan
   at: '2026-08-01'
 acceptance:
-- text: GIVEN a comment using a FIELD_SIGNATURES word as ordinary prose with no correspondingly-named
-    identifier in scope WHEN the PII gate runs THEN PII012 does not fire
+- text: GIVEN a STANDALONE prose or rationale comment (not trailing a data-bearing
+    statement) using a FIELD_SIGNATURES word as ordinary English, with no reference
+    form and no correspondingly-named identifier in scope WHEN the PII gate runs THEN
+    PII012 does not fire. NOTE this criterion originally omitted the standalone
+    qualifier, which asked for a capability regression -- a trailing comment saying
+    "x = 1  # stores the user ssn" names no matching identifier either, and silencing
+    it would drop the poorly-named-variable case the rule exists for. Corrected before
+    any fix landed.
   evidence: []
 - text: GIVEN a comment naming a real in-scope identifier that holds person-related
     data WHEN the PII gate runs THEN PII012 still fires exactly as today, proven by
@@ -9335,6 +9341,18 @@ acceptance:
   evidence: []
 - text: GIVEN a hash character inside a string literal WHEN comments are extracted
     THEN it is not treated as starting a comment
+  evidence: []
+- text: GIVEN a trailing comment on a data-bearing statement (assignment, parameter,
+    annotated field) that names person-related data in prose, with no matching identifier
+    WHEN the PII gate runs THEN PII012 still fires -- this is the poorly-named-variable
+    case the rule exists for
+  evidence: []
+- text: GIVEN a standalone prose or rationale comment not attached to a data-bearing
+    statement, using a keyword as ordinary English WHEN the PII gate runs THEN PII012
+    does not fire
+  evidence: []
+- text: GIVEN a standalone comment in reference form (backticked or dotted) naming
+    a real in-scope symbol WHEN the PII gate runs THEN PII012 fires
   evidence: []
 threat: null
 component: null
