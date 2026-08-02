@@ -3347,7 +3347,7 @@ touched file.
 ```yaml
 id: T-1279
 title: 'TEST005 burn-down: src/frob/gates (179 findings, 12 at 0.0%)'
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -3458,7 +3458,6 @@ Gates: frob check --ticket T-1279 clean across all 39 gate families (run in thre
 - tests: 0 passed (from 0 evidence id(s))
 - gates: 0 error(s), 2784 warning(s), 698 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1281 -->
 ```yaml
 id: T-1281
