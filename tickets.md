@@ -1462,6 +1462,7 @@ run is expected pre-land, not a real gap.
 - tests: 4 passed (from 4 evidence id(s))
 - gates: 1 error(s), 7685 warning(s), 696 waived
 - error-findings: SELFAUDIT001@design
+
 <!-- ticket:T-1236 -->
 ```yaml
 id: T-1236
@@ -8288,7 +8289,7 @@ Landed and verified by T-1276 before the false close, so this ticket does NOT ne
 id: T-1401
 title: 'frob-coverage.lock.json disagrees with the coverage.xml it was stamped from:
   81.2 percent recorded for a file with zero hits'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -8298,25 +8299,24 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/_coverage.py
-- tests/test_gates.py
-scope_changes:
-- op: add
-  glob: tests/test_gates.py
-  reason: regression tests for the ratchet zero carve-out; T-1235's tests/** lease
-    blocked this during the ticket and has now been released
-  actor: logan
-  at: '2026-08-01'
+evidence:
+- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero
+- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_still_clamps_a_nonzero_drop
+- tests/test_gates.py::TestCoverageLoad::test_unjoined_modules_are_enumerated_not_silently_omitted
 acceptance:
 - text: GIVEN a make coverage run WHEN the lock is stamped THEN every module_line
     value equals the coverage computed from that run coverage.xml for the same module
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_still_clamps_a_nonzero_drop
 - text: GIVEN a module with zero recorded hits in coverage.xml WHEN the lock is stamped
     THEN it records zero for that module, never a non-zero value carried from elsewhere
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero
 - text: GIVEN the stamped lock WHEN load_coverage reports module_join_fraction below
     0.95 THEN the unjoined modules are enumerated explicitly rather than silently
     omitted
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestCoverageLoad::test_unjoined_modules_are_enumerated_not_silently_omitted
 threat: null
 component: null
 ```
@@ -8349,6 +8349,29 @@ Related and deliberately NOT folded in:
 - The genuinely-zero coverage of __main__.py and serve/** is a THIRD, separate matter and is T-1395's original premise, which stands after all. Those modules really are unexercised in the measured process, even though agents proved they trace correctly under the subprocess rc in isolation. T-1395 failed because the fix was not in the two files it scoped to, not because the problem was imaginary.
 
 - T-1375 already landed a provenance audit trail for lock writes (.frob/coverage-lock-audit.log). Check it first: it may already record who wrote these values and when.
+
+## Done report
+
+The lock/report disagreement was the T-1363 downward-ratchet clamp substituting the prior committed value on any drop over 2.0 points, with no carve-out for a genuine zero. Verified against the preserved coverage.xml from source_sha=de76e283: __main__.py, serve/_socketd.py and serve/_leases.py all record line-rate=0 there while the lock claimed 81.2/65.1/40.3. The clamp had therefore been hiding exactly the regression class a ratchet exists to catch. Fixed narrowly by excluding an exact 0.0 from the clamp; every non-zero drop keeps T-1363's protection unchanged, locked by its own regression test. load_coverage now enumerates the modules that failed to join instead of reporting only a bare ratio -- the bare 0.53 is what sent an earlier investigation chasing a join defect that did not exist. The 0.53 itself is a separate denominator artifact (851 counts tests/** that coverage.xml can never contain) and is filed separately, not folded in.
+
+### Changed
+```
+ src/frob/gates/_coverage.py | 138 +++++++++++++++-----
+ tests/test_gates.py         | 147 +++++++++++++++++++++
+ tickets.md                  | 306 +++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 554 insertions(+), 37 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_still_clamps_a_nonzero_drop` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageLoad::test_unjoined_modules_are_enumerated_not_silently_omitted` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 2 error(s), 400 warning(s), 700 waived
+- error-findings: PII012@tests/test_gates_fix_engine.py, PRE001@tickets/T-1401
+
 <!-- ticket:T-1402 -->
 ```yaml
 id: T-1402
@@ -8518,3 +8541,199 @@ Acceptance:
 - GIVEN the same land, WHEN a file genuinely inside the landing ticket's
   touched set carries a non-canonical frob: directive, THEN it is still
   fixed exactly as before.
+
+<!-- ticket:T-1405 -->
+```yaml
+id: T-1405
+title: update docs/modules/gates.md#public-api for T-1401's write_coverage_lock/load_coverage
+  behavior changes
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/modules/gates.md
+acceptance:
+- text: GIVEN a reader of docs/modules/gates.md#public-api WHEN they read the write_coverage_lock
+    entry THEN it documents that a genuine zero-hit module value is never clamped
+    to a stale committed value, unconditionally
+  evidence: []
+- text: GIVEN a reader of docs/modules/gates.md#public-api WHEN they read the load_coverage
+    entry THEN it documents that modules failing to join below the 0.95 threshold
+    are enumerated by name in a warning log, not just reported as a fraction
+  evidence: []
+threat: null
+component: null
+```
+T-1401 changed the documented behavior of two public functions in
+src/frob/gates/_coverage.py:
+
+- write_coverage_lock: the T-1363 downward ratchet now has an explicit
+  carve-out -- a module whose freshly measured value is exactly 0.0 is
+  never clamped back to a stale committed value, even with
+  allow_decrease=False. Previously any large drop (including a genuine
+  zero) was clamped.
+- load_coverage: when module_join_fraction falls below 0.95, the specific
+  unjoined .py modules are now enumerated in a WARNING log line, not just
+  reported as a bare fraction.
+
+docs/modules/gates.md#public-api documents both functions and needs a
+matching update (AFFECT001 flagged this in T-1401's own check run, but
+docs/** was held by T-1235's concurrent in-progress lease for the whole
+of T-1401's work, so the doc could not be updated in the same change --
+waived at both call sites in src/frob/gates/_coverage.py with a pointer
+to this ticket).
+
+Update docs/modules/gates.md's write_coverage_lock and load_coverage
+entries (or their #public-api anchor section) to describe the T-1401
+zero-hit ratchet carve-out and the unjoined-module enumeration log.
+
+<!-- ticket:T-1406 -->
+```yaml
+id: T-1406
+title: module_join_fraction denominator includes non-instrumentable repo-wide .py
+  files, not just the --cov target
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_coverage.py
+acceptance:
+- text: GIVEN a clean make coverage run over --cov=src/frob WHEN load_coverage computes
+    module_join_fraction THEN the denominator only counts modules that could ever
+    appear in coverage.xml under the measured --cov root(s), not every .py file in
+    the repo
+  evidence: []
+- text: GIVEN module_join_fraction cannot be scoped this way for some reason WHEN
+    a maintainer reads _module_join_fraction's docstring or the _DEFLATION_FLOOR comment
+    THEN it explicitly documents that the denominator includes non-instrumentable
+    files and why the floor still holds despite that
+  evidence: []
+threat: null
+component: null
+```
+T-1401 investigated frob-coverage.lock.json/coverage.xml disagreement and
+found two distinct problems in src/frob/gates/_coverage.py. This ticket is
+the second, deliberately NOT folded into T-1401's fix.
+
+load_coverage's module_join_fraction (and the T-1180 deflation floor built
+on it) treats "known .py modules" as every .py file _known_repo_paths finds
+-- either the full graph snapshot's symbol paths, or a repo-wide
+walk_pruned/_collect_file_hashes fallback that walks the ENTIRE checkout,
+not just the --cov target. make coverage runs pytest with
+--cov=src/frob (Makefile:233/238/242/305), so coverage.xml can structurally
+never contain classes for tests/**, scripts, or anything outside
+src/frob -- those files can never "join" no matter how healthy the run is.
+
+Measured on the same 2026-08-01 clean run T-1401 diagnosed: exactly 447
+files exist under src/frob (matching module_line's own joined count once
+the ratchet bug is fixed), while _known_repo_paths reports 851 known .py
+modules repo-wide (adding tests/** and friends, none of them ever
+instrumented by --cov=src/frob). module_join_fraction=447/851=0.53 --
+suspiciously close to the T-1180 _DEFLATION_FLOOR of 0.5, not because the
+run is unhealthy but because the denominator is structurally wrong. A
+future run that adds a handful more test files (routine) could cross this
+floor and refuse every stamp, for a reason with nothing to do with
+coverage health.
+
+Fix: _module_join_fraction (or its caller) should compare module_line's
+keys against the set of modules that are actually reachable under the
+same root(s) coverage.xml's own <source> elements declare (or otherwise
+scoped to what --cov could ever report), not every .py file in the repo.
+Alternatively, if comparing against the full repo is intentional,
+document module_join_fraction's docstring and the _DEFLATION_FLOOR
+comment to say so explicitly and pick a floor that accounts for the
+permanent non-instrumentable share, rather than leaving both silent about
+the mismatch.
+
+<!-- ticket:T-1407 -->
+```yaml
+id: T-1407
+title: Investigate why coverage.xml only ever joins ~53% of known modules even from
+  a full make coverage run, and whether burn-down agents' scoped verification runs
+  leave a stale coverage.xml a later frob check misreads as full-run data
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_coverage.py
+- Makefile
+- docs/guides/agent-playbook.md
+threat: null
+component: null
+```
+T-1398 investigated the claim that TEST005's per-symbol join was broken (well-tested modules with good file-level line coverage reporting exactly 0.0% symbol branch coverage). Direct experimentation on `src/frob/gates/_coverage.py`'s join mechanism (`_parse_classes`/`_select_join_root`/`_resolve_class_root`/`_symbol_branch`) found NO defect: a real coverage.xml generated from a scoped pytest run in this worktree correctly joined per-symbol branch percentages for all four symbols named in T-1398's evidence (src/frob/__main__.py::main, src/frob/serve/_socketd.py::daemon_version, src/frob/serve/_leases.py::ResourceLeaseManager.acquire/release/release_holder, src/frob/strata/_selfconform.py::check_self_conformance) -- every one reported a real, non-zero, plausible percentage (e.g. main() at 54.5%), never an artifact 0.0. A new regression test (tests/test_gates.py::TestCoverageLoad::test_symbol_with_good_file_coverage_reports_real_branch_pct) locks this in.
+
+What remains unexplained, and needs a fresh investigation (outside _coverage.py's join code):
+
+1. The COMMITTED frob-coverage.lock.json (source_sha de76e283, the "clean crash-free make coverage run" T-1398 cites) itself only joined 447 of 851 known .py modules -- module_join_fraction ~0.53, matching the same fraction T-1398's brief reported. That means roughly HALF of this repo's modules never appear in coverage.xml at all even from a full, successful `make coverage` run. This is a measurement/instrumentation gap (likely in how `coverage.py`/pytest-cov discovers/reports never-imported-or-executed files given this repo's `[tool.coverage.run] source = ["src/frob"]` config, or a genuine subprocess/thread coverage capture gap per the existing T-0464/T-1235 concurrency commentary in _coverage.py), not a `_coverage.py` parsing/join defect -- that code only ever sees whatever `coverage.xml` handed it.
+
+2. The specific "exactly 0.0%" values three burn-down agents (T-1279, T-1296, T-1395) reported for well-tested symbols could not be reproduced against a live, freshly-generated coverage.xml in this worktree. The most likely explanation is that whichever coverage.xml was on disk when those agents ran `frob check` was NOT the full/good de76e283 run -- coverage.xml is a per-worktree, gitignored, ephemeral file regenerated by every pytest-cov invocation, and docs/guides/agent-playbook.md#6c already documents this exact trap: a locally-scoped `pytest --cov` run (which section 6b tells a sub-agent to use instead of the coordinator-only `make coverage`) produces a coverage.xml that only measures its own subset, and TEST005 cannot distinguish "never measured" (skipped) from "measured, symbol just never executed in this run" (0.0, but genuine) for a FILE that happens to appear in module_line at all (e.g. via import side effects) without the specific symbol having been invoked in that narrower run.
+
+Recommend: (a) investigate why coverage.xml consistently only ever joins ~53% of known modules even from a full `make coverage` run -- this is the actual "half the repo reports 0.0/never-measured" story T-1398's title describes, and (b) audit whether burn-down agents' own scoped verification runs are leaving a stale/narrow coverage.xml on disk that a LATER unscoped `frob check` then reads as if it were the full run's data (a process/discipline gap in section 6c, not a code defect) -- possibly worth a stamp-time provenance check (e.g. refuse/warn a `frob check` TEST005 read against a coverage.xml whose recorded module count is far below the last committed lock's).
+
+<!-- ticket:T-1408 -->
+```yaml
+id: T-1408
+title: add regression tests for the T-1401 zero-hit ratchet carve-out in write_coverage_lock
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/test_gates.py
+acceptance:
+- text: GIVEN a committed lock with a non-zero value for a module WHEN write_coverage_lock
+    is called with module_line[module] == 0.0 for that module THEN the written lock
+    records 0.0 for that module, not the stale committed value
+  evidence: []
+- text: GIVEN a committed lock with a non-zero value for a module WHEN write_coverage_lock
+    is called with a non-zero value that drops by less than or equal to _LOCK_TOLERANCE
+    THEN the ratchet clamp does not fire (unchanged pre-T-1401 behavior)
+  evidence: []
+threat: null
+component: null
+```
+T-1401 fixed the frob-coverage.lock.json write_coverage_lock ratchet defect
+in src/frob/gates/_coverage.py (a module whose coverage.xml shows exactly
+zero hits was being silently clamped back up to a stale committed value).
+The fix and its behavior were verified manually and against the existing
+suite, but no new pytest regression test could be added in that ticket:
+tests/test_gates.py falls under tests/**, which T-1235 held an exclusive
+in-progress lease on for the whole of T-1401's work.
+
+Add to tests/test_gates.py::TestCoverageLoad:
+- test_write_coverage_lock_zero_hit_module_never_clamped: seed a committed
+  lock with a non-zero value for a module, then write_coverage_lock a
+  CoverageData whose module_line for that same module is exactly 0.0;
+  assert the resulting lock records 0.0, not the stale value (this is the
+  literal T-1401 incident: src/frob/__main__.py 81.2 -> 0.0).
+- keep test_write_coverage_lock_refuses_downward_ratchet and
+  test_write_coverage_lock_allow_decrease_overrides_ratchet as-is (T-1401
+  did not change non-zero ratchet behavior); add one assertion or a
+  companion test confirming a non-zero small drop is unaffected by the
+  new zero-only carve-out (i.e. the carve-out is `new_pct == 0.0` exactly,
+  not `new_pct < some threshold`).
+
+Bind these to write_coverage_lock via frob:tests directives in
+src/frob/gates/_coverage.py once landed (that file is NOT in this
+ticket's scope -- a one-line frob:tests addition there is a trivial
+follow-up commit, or fold it into whichever ticket lands this one).

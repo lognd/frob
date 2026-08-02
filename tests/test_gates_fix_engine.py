@@ -189,7 +189,9 @@ class TestSuppress001StringLiteralSafety:
     start` tokenizes the line rather than substring-searching it."""
 
     def test_hash_suppression_inside_string_literal_is_not_a_comment(self) -> None:
-        # frob:tests tests/test_gates_fix_engine.py::TestSuppress001StringLiteralSafety.test_hash_suppression_inside_string_literal_is_not_a_comment kind="unit"
+        # frob:tests \
+        # tests/test_gates_fix_engine.py::TestSuppress001StringLiteralSafety.test_hash_\
+        # suppression_inside_string_literal_is_not_a_comment kind="unit"
         # The marker is assembled rather than written literally. A bare
         # suppression token in source -- in a string, a comment, or a
         # directive line FMT001 happened to wrap mid-token -- trips ruff's

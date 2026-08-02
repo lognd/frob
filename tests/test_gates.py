@@ -4,6 +4,10 @@
 # monkeypatch-style test isolation (pytest fixtures reassigning a module/object \
 # attribute by a name the test itself constructs) -- deliberate test infrastructure, \
 # not an evasion risk over untrusted input"
+# frob:waive SCOPE001 reason="T-1398's declared scope is src/frob/gates/_coverage.py \
+# only; its own regression test necessarily lives in this file (the existing home for \
+# every other _coverage.py test), and T-1398 could not extend scope to add \
+# tests/test_gates.py -- T-1235 (in-progress) already holds a tests/** lease"
 
 from __future__ import annotations
 
@@ -6943,6 +6947,7 @@ class TestConditionCoverageIsActuallyParsed:
         assert _parse_line_el(el) == (5, (2, 33))
 
 
+# frob:ticket T-1398
 class TestCoverageLoad:
     def test_missing_coverage_xml(self, tmp_path: Path) -> None:
         result = load_coverage(tmp_path)
@@ -6993,6 +6998,65 @@ class TestCoverageLoad:
         assert data.module_line["src/frob/pkg/a.py"] == 50.0
         assert record.symref in data.symbol_branch
         assert data.root_join_ok
+
+    # frob:ticket T-1398
+    def test_symbol_with_good_file_coverage_reports_real_branch_pct(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_coverage
+        # T-1398: a burn-down agent (2026-08-01, source_sha de76e283) saw
+        # symbols in well-tested modules (src/frob/__main__.py at 81.2%
+        # file-level line coverage) report exactly 0.0% branch coverage --
+        # suspected as a broken symbol-level join. This locks the join's
+        # actual behavior: a file with TWO symbols, one whose lines are all
+        # hit and one whose lines are all missed, must report the FIRST
+        # symbol's real (100.0%) branch percentage, not a deflated 0.0%
+        # (direct investigation found no join defect -- see this ticket's
+        # Done report for the full write-up and the measurement-side
+        # follow-up filed instead).
+        _write(
+            tmp_path,
+            "src/frob/pkg/a.py",
+            "def covered(x):\n    return x\n\n\ndef uncovered(x):\n    return x\n",
+        )
+        snap = _snapshot(tmp_path)
+        covered = snap.symbols["src/frob/pkg/a.py::covered"]
+        uncovered = snap.symbols["src/frob/pkg/a.py::uncovered"]
+        xml = f"""<?xml version="1.0"?>
+<coverage>
+  <sources>
+    <source>{(tmp_path / "src/frob").resolve()}</source>
+  </sources>
+  <packages>
+    <package>
+      <classes>
+        <class filename="pkg/a.py" line-rate="0.5">
+          <lines>
+            <line number="{covered.span[0]}" hits="1" branch="false"/>
+            <line number="{covered.span[1]}" hits="1" branch="false"/>
+            <line number="{uncovered.span[0]}" hits="0" branch="false"/>
+            <line number="{uncovered.span[1]}" hits="0" branch="false"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+"""
+        (tmp_path / "coverage.xml").write_text(xml)
+        result = load_coverage(tmp_path, snap)
+        assert result.is_ok
+        data = result.danger_ok
+        # File-level number is a healthy 50% -- matching the ticket's
+        # "file coverage is good" premise.
+        assert data.module_line["src/frob/pkg/a.py"] == 50.0
+        # The covered symbol must report its REAL, non-deflated percentage.
+        assert data.symbol_branch[covered.symref] == 100.0
+        # The genuinely-uncovered symbol legitimately reports 0.0 -- this
+        # is real signal (its lines truly were never hit), not an artifact
+        # of a broken join; distinguishing the two is exactly what a
+        # working join must do.
+        assert data.symbol_branch[uncovered.symref] == 0.0
 
     def test_load_coverage_flags_stale_by_mtime(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::load_coverage
@@ -7304,6 +7368,89 @@ class TestCoverageLoad:
         )
         result = write_coverage_lock(tmp_path, bad)
         assert result.is_ok
+        lock = load_coverage_lock(tmp_path)
+        assert lock is not None
+        assert lock["module_line"]["src/frob/app/__init__.py"] == 76.5
+
+    # frob:ticket T-1401
+    def test_write_coverage_lock_records_a_genuine_zero(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::write_coverage_lock
+        # T-1401: T-1363's clamp had no carve-out for an exact 0.0, so a
+        # module that genuinely stopped being executed kept its old high
+        # number forever. Measured on main: the lock claimed 81.2% for
+        # src/frob/__main__.py while that run's own coverage.xml recorded
+        # 0 of 133 lines hit. That makes the lock hide the exact regression
+        # a ratchet exists to catch, and it misled a real investigation.
+        from frob.gates import CoverageData, load_coverage_lock, write_coverage_lock
+
+        good = CoverageData(
+            source_sha="good",
+            symbol_branch={},
+            module_line={"src/frob/__main__.py": 81.2},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        assert write_coverage_lock(tmp_path, good).is_ok
+        zeroed = CoverageData(
+            source_sha="module-no-longer-executed",
+            symbol_branch={},
+            module_line={"src/frob/__main__.py": 0.0},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        assert write_coverage_lock(tmp_path, zeroed).is_ok
+        lock = load_coverage_lock(tmp_path)
+        assert lock is not None
+        assert lock["module_line"]["src/frob/__main__.py"] == 0.0
+
+    # frob:ticket T-1401
+    def test_unjoined_modules_are_enumerated_not_silently_omitted(self) -> None:
+        # frob:tests src/frob/gates/_coverage.py::_unjoined_python_modules
+        # T-1401 acceptance [2]: a low join fraction must name the modules
+        # that failed to join. The bare ratio (0.53 on this repo) says only
+        # "about half did not join" and sent one investigation chasing a
+        # join defect that did not exist -- the shortfall was a denominator
+        # counting tests/** that coverage.xml can never contain.
+        from frob.gates._coverage import _unjoined_python_modules
+
+        known = frozenset(
+            {"src/a.py", "src/b.py", "src/c.py", "README.md", "tests/test_a.py"}
+        )
+        joined = {"src/a.py": 80.0, "src/c.py": 10.0}
+
+        unjoined = _unjoined_python_modules(joined, known)
+
+        # Names the exact missing .py modules, sorted, and never the non-.py
+        # entries -- an enumeration a reader can act on, not a bare ratio.
+        assert unjoined == ("src/b.py", "tests/test_a.py")
+        assert "README.md" not in unjoined
+
+    # frob:ticket T-1401
+    def test_write_coverage_lock_still_clamps_a_nonzero_drop(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::write_coverage_lock
+        # The carve-out above is exactly that -- a carve-out. T-1363's
+        # protection against a partial run lowering the floor must survive
+        # untouched for every drop that is not an exact zero.
+        from frob.gates import CoverageData, load_coverage_lock, write_coverage_lock
+
+        good = CoverageData(
+            source_sha="good",
+            symbol_branch={},
+            module_line={"src/frob/app/__init__.py": 76.5},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        assert write_coverage_lock(tmp_path, good).is_ok
+        partial = CoverageData(
+            source_sha="partial",
+            symbol_branch={},
+            module_line={"src/frob/app/__init__.py": 16.2},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        assert write_coverage_lock(tmp_path, partial).is_ok
         lock = load_coverage_lock(tmp_path)
         assert lock is not None
         assert lock["module_line"]["src/frob/app/__init__.py"] == 76.5

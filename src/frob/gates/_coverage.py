@@ -374,7 +374,33 @@ def _module_join_fraction(
     return len(module_line.keys() & known_python_paths) / len(known_python_paths)
 
 
+# T-1401: acceptance[2] -- a module that genuinely cannot be joined against
+# coverage.xml must surface as an explicit, enumerated diagnostic, never a
+# silent omission folded into a bare `module_join_fraction` float. A
+# percentage alone tells a reader THAT something is missing, not WHICH
+# modules -- exactly the gap that let a stale/carried-over lock value go
+# unnoticed until directly diffed against the raw xml (this ticket).
+_UNJOINED_LOG_THRESHOLD = 0.95
+
+
+def _unjoined_python_modules(
+    module_line: dict[str, float], known_paths: frozenset[str]
+) -> tuple[str, ...]:
+    """Known `.py` modules that do NOT appear in `module_line`, sorted.
+
+    The explicit complement `_module_join_fraction`'s bare ratio omits --
+    every module in this tuple failed to join against coverage.xml for
+    this run.
+    """
+    known_python_paths = frozenset(p for p in known_paths if p.endswith(".py"))
+    return tuple(sorted(known_python_paths - module_line.keys()))
+
+
 # frob:doc docs/modules/gates.md#public-api
+# frob:waive AFFECT001 reason="T-1401 added the unjoined-module enumeration log below \
+# the 0.95 join-fraction threshold; docs/modules/gates.md#public-api needs a matching \
+# update but docs/** was held by T-1235's concurrent in-progress lease for this \
+# ticket's whole duration -- tracked as T-1405, land the doc update there"
 def load_coverage(
     root: Path, snapshot: GraphSnapshot | None = None
 ) -> Result[CoverageData, CoverageError]:
@@ -402,6 +428,17 @@ def load_coverage(
         and xml_mtime < newest_source_mtime
     )
     join_fraction = _module_join_fraction(dict(module_line), known_paths)
+    if join_fraction < _UNJOINED_LOG_THRESHOLD:
+        unjoined = _unjoined_python_modules(dict(module_line), known_paths)
+        _log.warning(
+            "load_coverage: %s -> module_join_fraction=%.2f below %.2f -- "
+            "%d known .py module(s) did not join against coverage.xml: %s",
+            xml_path,
+            join_fraction,
+            _UNJOINED_LOG_THRESHOLD,
+            len(unjoined),
+            unjoined,
+        )
 
     _log.info(
         "load_coverage: %s -> %d module(s), %d symbol(s) mapped, join_ok=%s, "
@@ -635,17 +672,69 @@ def stamp_coverage(
 # (docs/audits/gates-accounting.md B5) -- a failed/partial `make coverage`
 # run rewrote these downward twice in one day (src/frob/app/__init__.py
 # 76.5% -> 16.2%), which would have permanently lowered the repo's quality
-# floor through a file nobody reviews had it been committed. Any single
-# module dropping by more than `_LOCK_TOLERANCE` points in one
-# `write_coverage_lock` call is refused (unless `allow_decrease=True`)
-# rather than silently accepted -- a real, deliberate re-baseline still
-# goes through via the explicit override, but an accidental one from a bad
-# measurement cannot. Reuses `_LOCK_TOLERANCE` (not a second constant) since
-# it is the same "float noise vs. real drift" threshold `coverage_lock_diff`
-# already applies when reading this same lock back.
+# floor through a file nobody reviews had it been committed. A module
+# dropping by more than `_LOCK_TOLERANCE` points in one `write_coverage_lock`
+# call is clamped to its prior committed value (unless `allow_decrease=True`)
+# rather than silently accepted -- a real, deliberate re-baseline still goes
+# through via the explicit override, but an accidental one from a bad
+# measurement cannot.
+#
+# T-1401: that clamp had no exception for a module whose real, freshly
+# measured coverage.xml value is EXACTLY ZERO -- and fired on one anyway
+# (src/frob/__main__.py: lock said 81.2%, coverage.xml recorded 0 of 133
+# lines hit) from a clean, crash-free, fully-completed `make coverage` run
+# (exit 0, no worker crash). A module coverage.xml genuinely recorded zero
+# hits for is never "a bad/partial measurement noise floor" -- it is the
+# most confident, unambiguous signal this module produces, and clamping it
+# back up to a stale number is exactly the silent-divergence failure mode
+# T-1363 itself was written to prevent, just aimed at the opposite case.
+# That divergence misled a later investigation (T-1398, dropped). This is
+# fixed narrowly: `new_pct == 0.0` is now excluded from the clamp
+# unconditionally, regardless of `allow_decrease`, so a real zero always
+# stamps as zero. Non-zero drops keep the pre-T-1401 clamp behavior
+# unchanged (see T-1401's Done report for why the clamp itself was not
+# removed more broadly: doing so would require updating this module's
+# existing T-1363 regression tests in the same change, and those live in
+# tests/test_gates.py, outside this ticket's touchable scope while T-1235
+# holds a concurrent lease on tests/** -- filed as a follow-up).
+
+
+def _apply_lock_ratchet(root: Path, rounded: dict[str, float]) -> None:
+    """Clamp `rounded` in place against the prior committed lock (T-1363/T-1401).
+
+    A module's new percentage is clamped back to the prior committed value
+    whenever it drops by more than `_LOCK_TOLERANCE` points -- UNLESS the new
+    value is exactly `0.0` (T-1401: a genuine zero-hit measurement is real
+    signal, never partial-run noise, and must never be silently overwritten).
+    Mutates `rounded` directly; logs a single loud warning naming how many
+    modules were clamped, never silent.
+    """
+    existing_lock = load_coverage_lock(root) or {}
+    existing_line: dict[str, float] = existing_lock.get("module_line", {})
+    clamped = 0
+    for module, existing_pct in existing_line.items():
+        new_pct = rounded.get(module)
+        if new_pct is None:
+            continue
+        if new_pct > 0.0 and existing_pct - new_pct > _LOCK_TOLERANCE:
+            rounded[module] = existing_pct
+            clamped += 1
+    if clamped:
+        _log.warning(
+            "write_coverage_lock: refused a downward ratchet on %d "
+            "module(s) (drop > %.1f points) -- kept the prior committed "
+            "floor for each; pass allow_decrease=True for a deliberate "
+            "re-baseline",
+            clamped,
+            _LOCK_TOLERANCE,
+        )
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:waive AFFECT001 reason="T-1401 added a zero-hit carve-out to the ratchet clamp \
+# below; docs/modules/gates.md#public-api needs a matching update but docs/** was held \
+# by T-1235's concurrent in-progress lease for this ticket's whole duration -- tracked \
+# as T-1405, land the doc update there"
 # frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refreshes_committed_lock  # noqa: E501
 # frob:tests tests/test_gates.py::TestCoverageLoad.test_write_coverage_lock_refuses_downward_ratchet  # noqa: E501
 # frob:tests tests/test_gates.py::TestCoverageLoad.test_write_coverage_lock_allow_decrease_overrides_ratchet  # noqa: E501
@@ -665,35 +754,22 @@ def write_coverage_lock(
     re-baseline -- never the default a `make coverage` run passes), a
     module already present in the committed lock can only ratchet UP: its
     new percentage is clamped to `max(existing, new)` whenever the drop
-    exceeds `_LOCK_RATCHET_TOLERANCE` points, so a single bad/partial
-    measurement cannot silently lower a committed quality floor. A module
-    with no prior lock entry is written as-is (nothing to ratchet against
-    yet).
+    exceeds `_LOCK_TOLERANCE` points, so a single bad/partial measurement
+    cannot silently lower a committed quality floor. A module with no prior
+    lock entry is written as-is (nothing to ratchet against yet).
+
+    T-1401: a module whose new value is EXACTLY zero is NEVER clamped, even
+    when `allow_decrease` is left `False` -- a real zero-hit measurement is
+    never "noise", and silently reporting a stale non-zero floor for a
+    module coverage.xml shows zero hits for is precisely the defect this
+    ticket found and fixed. See `_apply_lock_ratchet` for the clamp itself.
     """
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(GateError.WorktreeLeaseViolation)
     rounded = {k: round(v, 1) for k, v in sorted(data.module_line.items())}
     if not allow_decrease:
-        existing_lock = load_coverage_lock(root) or {}
-        existing_line: dict[str, float] = existing_lock.get("module_line", {})
-        clamped = 0
-        for module, existing_pct in existing_line.items():
-            new_pct = rounded.get(module)
-            if new_pct is None:
-                continue
-            if existing_pct - new_pct > _LOCK_TOLERANCE:
-                rounded[module] = existing_pct
-                clamped += 1
-        if clamped:
-            _log.warning(
-                "write_coverage_lock: refused a downward ratchet on %d "
-                "module(s) (drop > %.1f points) -- kept the prior committed "
-                "floor for each; pass allow_decrease=True for a deliberate "
-                "re-baseline",
-                clamped,
-                _LOCK_TOLERANCE,
-            )
+        _apply_lock_ratchet(root, rounded)
     lock = {
         "source_sha": data.source_sha,
         "module_line": rounded,
