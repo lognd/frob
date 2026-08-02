@@ -109,9 +109,8 @@ from frob.gates._fmt_directives import (
     format_paths,
 )
 from frob.gates._fuzz import fuzz_gate
-from frob.gates._gate_cache import evaluate_cacheable_gate
+from frob.gates._gate_cache import evaluate_cacheable_gate, model_side_channel_key
 from frob.gates._gate_cache import invalidate as invalidate_gate_cache
-from frob.gates._gate_cache import model_side_channel_key
 from frob.gates._inv import (  # noqa: F401 -- INV006_SRC_DIRS/INV006_SRC_SUFFIXES
     # re-exported as _fix_engine.py's direct `from frob.gates import ...` surface
     INV006_SRC_DIRS,
@@ -5602,6 +5601,59 @@ _CACHEABLE_GATES: frozenset[str] = frozenset(
 
 
 # frob:ticket T-1454
+def _cacheable_gate_factories(
+    st: _GateInputs, current_date: str
+) -> dict[
+    str, tuple[Callable[[GraphSnapshot], tuple[Violation, ...]], tuple[str, ...]]
+]:
+    """Per-`_CACHEABLE_GATES`-member table of `(call, extra_key)` factories,
+    extracted from `_cacheable_gate_call` (T-1454) to keep that function
+    under the ARCH001 line budget: one dict literal, built fresh per call
+    since each entry closes over `st`/`current_date`, rather than a chain
+    of `if name == ...: return ...` branches. Every entry's SIDE-INPUT key
+    discipline (T-1454's `model_side_channel_key` folding) is unchanged --
+    only the dispatch shape moved."""
+    from frob.policy import policy_gate
+
+    current_version = _current_version(st.repo_root) or "0.0.0"
+    return {
+        "drift": (
+            lambda snap: drift_gate(snap, st.lock),
+            (model_side_channel_key(st.lock),),
+        ),
+        "test": (
+            lambda snap: test_gate(
+                snap, st.systems, st.coverage, st.tests, st.test_policy
+            ),
+            (
+                model_side_channel_key(
+                    st.systems, st.coverage, st.tests, st.test_policy
+                ),
+            ),
+        ),
+        "policy": (
+            lambda snap: policy_gate(st.rules, snap, st.diff),
+            (model_side_channel_key(st.rules, st.diff),),
+        ),
+        "parse_failures": (lambda snap: parse_failure_gate(snap), ()),
+        "debt": (
+            lambda snap: debt_gate(
+                snap,
+                st.queue,
+                current_date=current_date,
+                current_version=current_version,
+            ),
+            (current_date, current_version, model_side_channel_key(st.queue)),
+        ),
+        "lang_conformance": (lambda _snap: lang_conformance_gate(), ()),
+        "affect_drift": (
+            lambda snap: affect_drift_gate(snap, st.diff),
+            (model_side_channel_key(st.diff),),
+        ),
+    }
+
+
+# frob:ticket T-1454
 def _cacheable_gate_call(
     name: str, st: _GateInputs
 ) -> tuple[Callable[[GraphSnapshot], tuple[Violation, ...]], tuple[str, ...]]:
@@ -5623,51 +5675,11 @@ def _cacheable_gate_call(
     result computed against the old side state. `parse_failures` and
     `lang_conformance` have no side input beyond the snapshot (and no
     snapshot at all, for `lang_conformance`) and correctly key on `()`."""
-    from frob.policy import policy_gate
-
     current_date = date.today().isoformat()
-    if name == "drift":
-        return (
-            lambda snap: drift_gate(snap, st.lock),
-            (model_side_channel_key(st.lock),),
-        )
-    if name == "test":
-        return (
-            lambda snap: test_gate(
-                snap, st.systems, st.coverage, st.tests, st.test_policy
-            ),
-            (
-                model_side_channel_key(
-                    st.systems, st.coverage, st.tests, st.test_policy
-                ),
-            ),
-        )
-    if name == "policy":
-        return (
-            lambda snap: policy_gate(st.rules, snap, st.diff),
-            (model_side_channel_key(st.rules, st.diff),),
-        )
-    if name == "parse_failures":
-        return (lambda snap: parse_failure_gate(snap), ())
-    if name == "debt":
-        current_version = _current_version(st.repo_root) or "0.0.0"
-        return (
-            lambda snap: debt_gate(
-                snap,
-                st.queue,
-                current_date=current_date,
-                current_version=current_version,
-            ),
-            (current_date, current_version, model_side_channel_key(st.queue)),
-        )
-    if name == "lang_conformance":
-        return (lambda _snap: lang_conformance_gate(), ())
-    if name == "affect_drift":
-        return (
-            lambda snap: affect_drift_gate(snap, st.diff),
-            (model_side_channel_key(st.diff),),
-        )
-    raise AssertionError(f"_cacheable_gate_call: {name!r} not in _CACHEABLE_GATES")
+    factories = _cacheable_gate_factories(st, current_date)
+    if name not in factories:
+        raise AssertionError(f"_cacheable_gate_call: {name!r} not in _CACHEABLE_GATES")
+    return factories[name]
 
 
 def _wrap_cacheable(
@@ -6620,7 +6632,12 @@ def _run_gates_bounded(
 
     thread_jobs, process_jobs, skipped = _build_jobs(selected, st, use_cache=use_cache)
     report = _assemble_gate_report(
-        cfg, st, thread_jobs, process_jobs, skipped, start_all,
+        cfg,
+        st,
+        thread_jobs,
+        process_jobs,
+        skipped,
+        start_all,
         max_process_workers=max_process_workers,
     )
     return Ok(report)

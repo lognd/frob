@@ -392,8 +392,8 @@ def _run_verify_pass(root: Path, cfg, warm_violations: tuple) -> dict:
     only ever executes inside the daemon process (called from
     `frob_check_delta`'s `verify=True` branch), so it gets the same
     `_DAEMON_GATE_MAX_WORKERS` pool cap."""
-    from frob.gates import violation_fingerprint
     from frob.gates import _run_gates_bounded as _run_gates
+    from frob.gates import violation_fingerprint
 
     _warm._invalidate(root)
     cold_result = _run_gates(cfg, max_process_workers=_DAEMON_GATE_MAX_WORKERS)

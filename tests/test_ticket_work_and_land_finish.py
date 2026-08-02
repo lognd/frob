@@ -9,6 +9,13 @@ worktree` commands, so the fixture reproduces the real shape rather than
 mocking it away.
 """
 
+# frob:waive OPAQUE001 reason="every setattr(...) here is pytest monkeypatch with a \
+# LITERAL dotted-path string target (e.g. \
+# frob.app.ticket_runner._land_cmd._unscoped_error_findings / \
+# _apply_root_tier_a_fixes), the standard test seam this suite already uses -- same \
+# disposition as tests/unit/test_ticket_close_bug002_t1438.py's file-level waiver; the \
+# mutated sites are restored by monkeypatch teardown and never escape the test process"
+
 from __future__ import annotations
 
 import subprocess
@@ -276,7 +283,9 @@ class TestPostLandUnscopedSweep:
             "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
             lambda root, ticket_id, **kw: baseline,
         )
-        ok = _post_land_unscoped_error_sweep(root, "T-0001", "T-0001", pre_sha, baseline)
+        ok = _post_land_unscoped_error_sweep(
+            root, "T-0001", "T-0001", pre_sha, baseline
+        )
         assert ok is True
         head = _run(["git", "rev-parse", "HEAD"], root).stdout.strip()
         assert head != pre_sha
@@ -308,7 +317,9 @@ class TestPostLandUnscopedSweep:
         monkeypatch.setattr(
             "frob.app.ticket_runner._land_cmd._apply_root_tier_a_fixes", fake_fix
         )
-        ok = _post_land_unscoped_error_sweep(root, "T-0001", "T-0001", pre_sha, baseline)
+        ok = _post_land_unscoped_error_sweep(
+            root, "T-0001", "T-0001", pre_sha, baseline
+        )
         assert ok is True
         log = _run(["git", "log", "--oneline", "-1"], root).stdout
         assert "post-land Tier-A cleanup" in log
@@ -332,7 +343,9 @@ class TestPostLandUnscopedSweep:
             "frob.app.ticket_runner._land_cmd._apply_root_tier_a_fixes",
             lambda root, ticket_id: 0,
         )
-        ok = _post_land_unscoped_error_sweep(root, "T-0001", "T-0001", pre_sha, baseline)
+        ok = _post_land_unscoped_error_sweep(
+            root, "T-0001", "T-0001", pre_sha, baseline
+        )
         assert ok is False
         head = _run(["git", "rev-parse", "HEAD"], root).stdout.strip()
         assert head == pre_sha
