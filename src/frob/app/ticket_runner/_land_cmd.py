@@ -81,26 +81,28 @@ def _absorb_pre_land_fixes(worktree: Path, ticket_id: str) -> None:
     own failure (a design root that does not resolve, an unloadable
     queue) is logged and skipped rather than refusing the land -- these
     are auto-fix conveniences, not a land precondition."""
-    from frob.gates._fix_engine import apply_tier_a_fixes
+    touched_paths = _land_touched_paths(worktree, ticket_id)
+    _fmt_pre_land_step(worktree, ticket_id, touched_paths)
+    _sync_interface_pre_land_step(worktree, ticket_id)
+    _tier_a_pre_land_step(worktree, ticket_id, touched_paths)
+
+
+# frob:ticket T-1404
+def _fmt_pre_land_step(
+    worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
+) -> None:
+    """The fmt half of `_absorb_pre_land_fixes`. T-1404: scoped to this
+    ticket's own touched-file set when it can be computed -- the pre-T-1404
+    whole-tree `format_paths(worktree, ...)` call rewrote ANY non-canonical
+    `frob:` directive anywhere in the tree, including files entirely
+    outside the landing ticket's own diff (the land-scope-discipline
+    collision T-1391 diagnosed but did not wire a fix for). Falls back to
+    the old whole-tree call when the touched set could not be computed
+    (`touched_paths is None`) -- degrading to the pre-T-1404 behaviour,
+    never silently skipping the fix outright."""
     from frob.gates._fmt_directives import format_paths, read_line_length
-    from frob.graph import build_graph
-    from frob.strata._sync_interface import (
-        apply_sync_interface,
-        sync_interface_report,
-    )
-    from frob.tickets import load_active
 
     limit = read_line_length(worktree)
-    # T-1404: scoped to this ticket's own touched-file set
-    # (`_land_touched_paths`) when it can be computed -- the pre-T-1404
-    # whole-tree `format_paths(worktree, ...)` call rewrote ANY non-
-    # canonical `frob:` directive anywhere in the tree, including files
-    # entirely outside the landing ticket's own diff (the land-scope-
-    # discipline collision T-1391 diagnosed but did not wire a fix for).
-    # Falls back to the old whole-tree call when the touched set cannot
-    # be computed (`_land_touched_paths` returned `None`) -- degrading to
-    # the pre-T-1404 behaviour, never silently skipping the fix outright.
-    touched_paths = _land_touched_paths(worktree, ticket_id)
     if touched_paths is None:
         fmt_report = format_paths(worktree, check_only=False, limit=limit)
         fmt_changed = len(fmt_report.changes)
@@ -119,6 +121,18 @@ def _absorb_pre_land_fixes(worktree: Path, ticket_id: str) -> None:
             fmt_changed,
         )
 
+
+# frob:ticket T-1175
+def _sync_interface_pre_land_step(worktree: Path, ticket_id: str) -> None:
+    """The sys sync-interface half of `_absorb_pre_land_fixes` -- writes
+    interface= drift fixes into `worktree`'s design root when one exists,
+    logging and skipping on any report failure (a land convenience, not a
+    precondition)."""
+    from frob.strata._sync_interface import (
+        apply_sync_interface,
+        sync_interface_report,
+    )
+
     if (worktree / "design").is_dir():
         sync_result = sync_interface_report(worktree, "design")
         if sync_result.is_err:
@@ -134,6 +148,19 @@ def _absorb_pre_land_fixes(worktree: Path, ticket_id: str) -> None:
                 ticket_id,
                 len(written),
             )
+
+
+# frob:ticket T-1323
+# frob:ticket T-1404
+def _tier_a_pre_land_step(
+    worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
+) -> None:
+    """The Tier-A deterministic auto-fix half of `_absorb_pre_land_fixes`,
+    logging and skipping when the graph or queue cannot load (a land
+    convenience, not a precondition)."""
+    from frob.gates._fix_engine import apply_tier_a_fixes
+    from frob.graph import build_graph
+    from frob.tickets import load_active
 
     snapshot_result = build_graph(worktree, worktree / ".frob" / "cache.db")
     queue_result = load_active(worktree)
