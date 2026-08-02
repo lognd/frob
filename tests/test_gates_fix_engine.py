@@ -188,13 +188,15 @@ class TestSuppress001StringLiteralSafety:
     literal must never be mistaken for a real comment -- `_find_comment_
     start` tokenizes the line rather than substring-searching it."""
 
-    def test_hash_noqa_inside_string_literal_is_not_a_comment(self) -> None:
-        # frob:tests \
-        # tests/test_gates_fix_engine.py::TestSuppress001StringLiteralSafety.test_hash_\
-        # noqa_inside_string_literal_is_not_a_comment kind="unit"
-        line = (
-            'x = "# noqa: E501 lives inside this string"  # type: ignore[name-defined]'
-        )
+    def test_hash_suppression_inside_string_literal_is_not_a_comment(self) -> None:
+        # frob:tests tests/test_gates_fix_engine.py::TestSuppress001StringLiteralSafety.test_hash_suppression_inside_string_literal_is_not_a_comment kind="unit"
+        # The marker is assembled rather than written literally. A bare
+        # suppression token in source -- in a string, a comment, or a
+        # directive line FMT001 happened to wrap mid-token -- trips ruff's
+        # own scanner, which then warns the directive is malformed. Building
+        # it keeps the runtime string byte-identical with nothing to misread.
+        marker = "# " + "noqa: E501"
+        line = f'x = "{marker} lives inside this string"  # type: ignore[name-defined]'
         code_part, comment_text, _newline = _split_suppression_line(line)
         assert code_part == 'x = "# noqa: E501 lives inside this string"'
         assert comment_text == "# type: ignore[name-defined]"
