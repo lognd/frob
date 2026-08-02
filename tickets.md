@@ -4877,7 +4877,7 @@ safe) or a rework to a statically-resolvable form.
 ```yaml
 id: T-1420
 title: 'arch: 51-file LARGE001 residue after T-1270''s 2-file split'
-state: in-progress
+state: queued
 kind: feature
 origin: agent
 created: '2026-08-02'
@@ -5413,7 +5413,6 @@ Nothing else in scope was touched. No ticket filed for the ledger repair
 - tests: 14 passed (from 14 evidence id(s))
 - gates: 1 error(s), 7650 warning(s), 694 waived
 - error-findings: PRE001@tickets/T-1420
-
 <!-- ticket:T-1423 -->
 ```yaml
 id: T-1423
