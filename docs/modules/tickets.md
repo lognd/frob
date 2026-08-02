@@ -1393,7 +1393,22 @@ def land(root: Path, ticket_id: str, worktree: Path, *,
          covers_scope: bool | None = None,
          bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]] | None = None,
          rebuild_natives: Callable[[Path], bool] | None = None,
-         sync_gate_rules: Callable[[Path, str], Result[tuple[str, ...] | None, LandError]] | None = None) -> Result[LandReport, LandError]
+         sync_gate_rules: Callable[[Path, str], Result[tuple[str, ...] | None, LandError]] | None = None,
+         check_gate_claims: Callable[[Ticket], bool | None] | None = None) -> Result[LandReport, LandError]
+    # T-1410: `check_gate_claims(ticket)`, when supplied, re-verifies every
+    # acceptance criterion shaped "0 <RULE> findings under <glob>"
+    # (frob.tickets._evidence._gate_claim_criteria) against the POST-MERGE
+    # worktree tree and refuses the land (ClaimDivergence, reused rather
+    # than adding a new LandError variant) when it returns False -- the
+    # T-1276 defect this closes: a criterion phrased this way used to be
+    # satisfiable by ANY bound evidence id, and T-1276 itself closed done
+    # and landed (LAND-PROOF verified) against 116 live TEST005 findings
+    # under its own criterion's glob, because nothing ever computed this.
+    # Defaults to `None` (skip) for the same cycle-avoidance reason as
+    # collected/passed/covers_scope; `frob ticket land` supplies it by
+    # default (`ticket_runner._land_gate_claims_fn`, which reuses
+    # `_close_gate_claims_for_ticket`'s exact computation against the
+    # worktree).
     # T-0398 D-05: `collected`/`passed`/`covers_scope`, when supplied by a
     # caller with a fresh test-collection/run/graph-binding oracle computed
     # against the POST-MERGE worktree tree, re-verify the ticket's evidence

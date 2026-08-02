@@ -170,6 +170,242 @@ def _close_mutation_evidence_for_ticket(root: Path, ticket) -> bool | None:  # n
     return not errors if violations else None
 
 
+# frob:ticket T-1410
+def _matching_gate_claim_files(
+    findings: frozenset[tuple[str, str]], rule: str, glob: str
+) -> list[str]:
+    """The sorted list of files in `findings` (a `(rule_id, file)` identity
+    set) that match `rule` and `fnmatch` against `glob` -- split out of
+    `_close_gate_claims_for_ticket`'s per-criterion loop (PERF004: a
+    `sorted()` call textually inside a `for` loop body) so the sort lives
+    in its own single-purpose function instead of inline in the loop."""
+    from fnmatch import fnmatch
+
+    return sorted(f for r, f in findings if r == rule and fnmatch(f, glob))
+
+
+# frob:ticket T-1410
+def _close_gate_claims_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
+    """T-1410 CLI wiring: whether every acceptance criterion on `ticket`
+    shaped as a package-wide gate-outcome claim ("0 <RULE> findings under
+    <glob>", `frob.tickets._evidence._gate_claim_criteria`) actually holds
+    against a live `frob check --only gates` run -- the T-1276 defect this
+    closes: T-1276's own criterion [0] read "0 TEST005 findings under
+    src/frob/app/**", was bound to unrelated passing evidence ids, and
+    closed done (LAND-PROOF verified) against 116 live TEST005 findings
+    under that exact glob, because nothing computed `gate_claims_verified`
+    -- the T-1399 guard clause existed but had no live caller.
+
+    Returns `None` (skip the check) when `ticket` carries no criterion in
+    this shape at all -- `_gate_claim_criteria` returning `()` means the
+    `gate_claims_verified` guard this feeds is a no-op regardless of what
+    is injected, so a ticket with only ordinary criteria is unaffected.
+
+    `frob check` has no CLI-level path-glob filter for gate violations (the
+    positional `path` argument scopes the ruff/ty/pytest tool stages, not
+    the `gates` stage's own violation set) -- so "scoped to the glob" here
+    means running ONLY the `gates` stage (not the full ruff/ty/pytest/gates
+    pipeline `_check_gate_findings_fn` runs for the Done-report recap) and
+    then filtering the returned `(rule, file)` finding-identity set by
+    `fnmatch` against the criterion's glob, once per criterion, rather than
+    narrowing what actually runs. Measured ~113s wall for a full `--only
+    gates` pass on this repo (docs comment on `frob.check._STAGE_GROUPS`) --
+    slow enough to be worth naming, not slow enough to skip; this spawn
+    carries its own 600s subprocess timeout (matching every other
+    `guarded_subprocess_run` call in this module), independent of any
+    foreground/session-level cap.
+
+    Returns `False` (fail-closed, blocking the close) if the spawn is
+    refused or its output is unparsable -- "cannot verify" must never
+    silently become "verified", the same posture `_covers_scope_for_
+    ticket`/`_reverify_evidence_for_close` already take for their own
+    unloadable/uncollectable failure modes."""
+    from frob.tickets._evidence import _criterion_gate_claim, _gate_claim_criteria
+
+    claims = _gate_claim_criteria(ticket)
+    if not claims:
+        return None
+
+    from frob.app import ticket_runner as _ticket_runner
+
+    spawned = _ticket_runner.guarded_subprocess_run(
+        [
+            _ticket_runner._python_for_tree(root),
+            "-m",
+            "frob",
+            "check",
+            "--only",
+            "gates",
+        ],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=600,
+        check=False,
+    )
+    if spawned.is_err:
+        _log.warning(
+            "ticket close: %s `frob check --only gates` refused to spawn "
+            "(%s) -- cannot verify T-1399 gate-claim criteria, refusing to "
+            "close on unverifiable evidence",
+            ticket.id,
+            spawned.danger_err,
+        )
+        return False
+    proc = spawned.danger_ok
+    findings = _ticket_runner._parse_error_findings_from_stdout(
+        ticket.id, proc.stdout, proc.returncode
+    )
+    if findings is None:
+        _log.warning(
+            "ticket close: %s `frob check --only gates` output had no "
+            "parsable gate-summary line -- cannot verify T-1399 gate-claim "
+            "criteria, refusing to close on unverifiable evidence",
+            ticket.id,
+        )
+        return False
+
+    all_clean = True
+    for c in claims:
+        parsed = _criterion_gate_claim(c.text)
+        if parsed is None:
+            continue
+        rule, glob = parsed
+        matches = _matching_gate_claim_files(findings, rule, glob)
+        if matches:
+            _log.warning(
+                "ticket close: %s criterion %r unmet -- %d live %s "
+                "finding(s) under %s: %s",
+                ticket.id,
+                c.text,
+                len(matches),
+                rule,
+                glob,
+                matches,
+            )
+            all_clean = False
+    return all_clean
+
+
+# frob:ticket T-1387
+def _close_own_obligations_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
+    """T-1387 CLI wiring for T-1384's `own_obligations_clean` guard:
+    whether `ticket`'s OWN diff (every file `working_diff(root, "main")`
+    reports a hunk in) leaves outstanding (a) a new-symbol `frob:doc` edge
+    (COV001), (b) a testsuite strata declaration (SELFAUDIT001), or (c) an
+    unapplied REL001 version bump -- the T-1377/T-1379/T-1381 residue
+    class: closed clean, then surprised the very next unscoped `frob
+    check` with exactly this obligation, because nothing computed it at
+    close time.
+
+    REL001 reuses `_required_release_bump` (T-0338's existing read-only
+    bump computation, the SAME one `frob ticket land` applies) directly --
+    no duplicated version-diffing logic. COV001/SELFAUDIT001 have no
+    diff-scoped `--ticket` filter of their own (T-1351: `--ticket` only
+    scopes SCOPE/PREWORK/COV002/TODO001/FMT/AFFECT, every other gate
+    family's count is repo-wide) -- one `frob check --only gates` run
+    supplies the repo-wide `(rule, file)` identity set, filtered here to
+    files `ticket`'s own diff touched. This is a deliberate scoping
+    choice, not a full new-symbol-only diff parse: a touched file
+    carrying a PRE-EXISTING COV001/SELFAUDIT001 finding this ticket did
+    not itself introduce also counts against it -- stricter than "only
+    symbols this ticket newly added", never looser, since the remedy (add
+    the missing edge/declaration) is the same either way for a file the
+    ticket is already touching.
+
+    Returns `None` (skip) if `working_diff` itself is unavailable (not a
+    git checkout, no merge-base against `main`) or reports no touched
+    files at all -- "cannot verify" degrades to a no-op here rather than
+    fail-closed, matching `_close_mutation_evidence_for_ticket`'s posture
+    for the identical failure mode (additive to the pre-existing evidence
+    gates, not the sole gate). Returns `False` (fail-closed) if the `--only
+    gates` spawn itself is refused/unparsable, or if any of the three
+    obligations is outstanding."""
+    from frob.gitio import working_diff
+
+    diff = working_diff(root, "main")
+    if diff.is_err:
+        _log.warning(
+            "ticket close: %s working_diff unavailable (%s), skipping "
+            "T-1384 own-obligations check",
+            ticket.id,
+            diff.danger_err,
+        )
+        return None
+    touched = {h.file for h in diff.danger_ok.hunks}
+    if not touched:
+        return None
+
+    from frob.app import ticket_runner as _ticket_runner
+
+    rel_result = _ticket_runner._required_release_bump(root, ticket.id)
+    rel_dirty = False
+    if rel_result.is_err:
+        _log.warning(
+            "ticket close: %s could not compute the REL001 bump (%s) -- "
+            "treating it as an outstanding own-obligation",
+            ticket.id,
+            rel_result.danger_err,
+        )
+        rel_dirty = True
+    elif rel_result.danger_ok is not None:
+        _log.warning(
+            "ticket close: %s REL001 version bump outstanding (needs %s)",
+            ticket.id,
+            rel_result.danger_ok,
+        )
+        rel_dirty = True
+
+    spawned = _ticket_runner.guarded_subprocess_run(
+        [
+            _ticket_runner._python_for_tree(root),
+            "-m",
+            "frob",
+            "check",
+            "--only",
+            "gates",
+        ],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=600,
+        check=False,
+    )
+    if spawned.is_err:
+        _log.warning(
+            "ticket close: %s `frob check --only gates` refused to spawn "
+            "(%s) -- cannot verify T-1384 own-obligations, refusing to "
+            "close on unverifiable evidence",
+            ticket.id,
+            spawned.danger_err,
+        )
+        return False
+    proc = spawned.danger_ok
+    findings = _ticket_runner._parse_error_findings_from_stdout(
+        ticket.id, proc.stdout, proc.returncode
+    )
+    if findings is None:
+        _log.warning(
+            "ticket close: %s `frob check --only gates` output had no "
+            "parsable gate-summary line -- cannot verify T-1384 "
+            "own-obligations, refusing to close on unverifiable evidence",
+            ticket.id,
+        )
+        return False
+
+    obligation_rules = {"COV001", "SELFAUDIT001"}
+    dirty = sorted(
+        f"{r}:{f}" for r, f in findings if r in obligation_rules and f in touched
+    )
+    if dirty:
+        _log.warning(
+            "ticket close: %s own-diff obligation(s) outstanding: %s",
+            ticket.id,
+            dirty,
+        )
+    return not (rel_dirty or dirty)
+
+
 # frob:ticket T-0417
 # frob:waive DUP001 reason="T-1089 split moved this function to a new file path with \
 # an unchanged body, which the diff-scoped DUP001 gate reads as newly-introduced code \
@@ -389,13 +625,14 @@ def _apply_close_time_evidence(root: Path, cfg: AppConfig) -> None:
 # frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade.test_false_mutation_evidence_with_skip_flag_is_downgraded_to_none  # noqa: E501
 # frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade.test_false_mutation_evidence_without_skip_flag_stays_false  # noqa: E501
 def _close_guards_for_ticket(root: Path, cfg: AppConfig, fresh_ticket) -> tuple:  # noqa: ANN001
-    """Compute the four independent close-time guard values `transition`
+    """Compute the six independent close-time guard values `transition`
     needs for `frob ticket close`'s strict default (T-0398 covers_scope,
     T-0571 config-gated review, T-0844 mutation evidence, T-0417 N-02
-    post-merge re-verify) -- each guard is its own existing helper; this
-    just threads `cfg.ticket_close_skip_mutation_evidence` through to
-    downgrade a `False` mutation-evidence verdict to `None` (skip) when
-    the escape hatch was passed."""
+    post-merge re-verify, T-1410 gate-claim verification, T-1387
+    own-obligations) -- each guard is its own existing helper; this just
+    threads `cfg.ticket_close_skip_mutation_evidence` through to downgrade
+    a `False` mutation-evidence verdict to `None` (skip) when the escape
+    hatch was passed."""
     from frob.app import ticket_runner as _ticket_runner
 
     covers_scope = _ticket_runner._covers_scope_for_ticket(root, fresh_ticket)
@@ -414,7 +651,24 @@ def _close_guards_for_ticket(root: Path, cfg: AppConfig, fresh_ticket) -> tuple:
     evidence_reverified = _ticket_runner._reverify_evidence_for_close(
         root, fresh_ticket
     )
-    return covers_scope, reviewed, mutation_evidence, evidence_reverified
+    from frob.app import ticket_runner as _ticket_runner
+
+    gate_claims_verified = _ticket_runner._close_gate_claims_for_ticket(
+        root, fresh_ticket
+    )
+    from frob.app import ticket_runner as _ticket_runner
+
+    own_obligations_clean = _ticket_runner._close_own_obligations_for_ticket(
+        root, fresh_ticket
+    )
+    return (
+        covers_scope,
+        reviewed,
+        mutation_evidence,
+        evidence_reverified,
+        gate_claims_verified,
+        own_obligations_clean,
+    )
 
 
 # frob:ticket T-0106
@@ -453,7 +707,16 @@ def _close(root: Path, cfg: AppConfig) -> None:
     ticket whose recorded evidence passed once but no longer passes
     against the CURRENT tree refuses to close -- the direct-close twin of
     `land`'s own post-merge re-verify (D-05), closing the TOCTOU gap where
-    `close` (unlike `land`) never re-ran anything."""
+    `close` (unlike `land`) never re-ran anything.
+
+    T-1410: `gate_claims_verified` is ALWAYS computed
+    (`_close_gate_claims_for_ticket`) and passed to `transition`, so a
+    ticket carrying an acceptance criterion shaped "0 <RULE> findings
+    under <glob>" refuses to close while a live `frob check --only gates`
+    run still reports findings for that rule under that glob -- the T-1276
+    defect (closed done, LAND-PROOF verified, against 116 live TEST005
+    findings under its own criterion's glob) is now refused at the real
+    close path, not just in the T-1399 guard's own unit tests."""
     from frob.tickets import TicketState, transition
 
     if cfg.ticket_id is None:
@@ -467,9 +730,14 @@ def _close(root: Path, cfg: AppConfig) -> None:
     # be computed against the ticket's CURRENT evidence, not the state
     # loaded before this call's own --evidence/--evidence-cmd applied.
     fresh_ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="close")
-    covers_scope, reviewed, mutation_evidence, evidence_reverified = (
-        _close_guards_for_ticket(root, cfg, fresh_ticket)
-    )
+    (
+        covers_scope,
+        reviewed,
+        mutation_evidence,
+        evidence_reverified,
+        gate_claims_verified,
+        own_obligations_clean,
+    ) = _close_guards_for_ticket(root, cfg, fresh_ticket)
 
     result = transition(
         root,
@@ -479,6 +747,8 @@ def _close(root: Path, cfg: AppConfig) -> None:
         reviewed=reviewed,
         mutation_evidence=mutation_evidence,
         evidence_reverified=evidence_reverified,
+        gate_claims_verified=gate_claims_verified,
+        own_obligations_clean=own_obligations_clean,
     )
     if result.is_err:
         _log.error(_close_failure_hint(cfg.ticket_id, ticket.state, result.danger_err))
@@ -517,10 +787,11 @@ def _reverify(root: Path, cfg: AppConfig) -> None:
     so a land had to proceed on trust in the ORIGINAL close-time recap
     alone, even though the ticket's evidence/scope may have changed since.
 
-    Re-runs the exact same four close-time guards `_close` computes
+    Re-runs the exact same five close-time guards `_close` computes
     (`_close_guards_for_ticket` -- D-02 covers_scope, T-0571 reviewed,
-    T-0844 mutation_evidence, T-0417 evidence_reverified, all shared, no
-    duplicated computation) and the exact same state-machine verification
+    T-0844 mutation_evidence, T-0417 evidence_reverified, T-1410
+    gate_claims_verified, all shared, no duplicated computation) and the
+    exact same state-machine verification
     `transition(..., TicketState.DONE, ...)` runs at close time
     (`frob.tickets.reverify_close_guard`, which wraps the SAME
     `_done_transition_guard` -- structural + T-0854 live-tracker-citation
@@ -567,9 +838,14 @@ def _reverify(root: Path, cfg: AppConfig) -> None:
     # evidence, not the state loaded before those flags applied (mirrors
     # `_close`'s own re-load-after-apply sequencing exactly).
     fresh_ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="reverify")
-    covers_scope, reviewed, mutation_evidence, evidence_reverified = (
-        _close_guards_for_ticket(root, cfg, fresh_ticket)
-    )
+    (
+        covers_scope,
+        reviewed,
+        mutation_evidence,
+        evidence_reverified,
+        gate_claims_verified,
+        own_obligations_clean,
+    ) = _close_guards_for_ticket(root, cfg, fresh_ticket)
 
     guard_result = reverify_close_guard(
         root,
@@ -578,6 +854,8 @@ def _reverify(root: Path, cfg: AppConfig) -> None:
         reviewed=reviewed,
         mutation_evidence=mutation_evidence,
         evidence_reverified=evidence_reverified,
+        gate_claims_verified=gate_claims_verified,
+        own_obligations_clean=own_obligations_clean,
     )
     if guard_result.is_err:
         _log.error(

@@ -356,6 +356,7 @@ def _reconcile_one_land_repair_marker(
 
 # frob:ticket T-0176
 # frob:ticket T-1355
+# frob:ticket T-1410
 # frob:doc docs/modules/tickets.md#frob-ticket-land
 # `dry_run` runs every check and every git mutation the real run would
 # (merge, splice, deletion-check) then unwinds it via
@@ -377,6 +378,7 @@ def land(
     | None = None,
     check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
     check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None = None,
+    check_gate_claims: Callable[[Ticket], bool | None] | None = None,
     skip_mutation_evidence: bool = False,
     allow_cross_ticket: bool = False,
 ) -> Result[LandReport, LandError]:
@@ -502,6 +504,23 @@ def land(
     against anything, and the test-count half is still checked
     independently whenever `passed` was supplied and ran successfully.
 
+    T-1410: `check_gate_claims(ticket)` (given the reloaded post-merge
+    ticket, same calling convention as `covers_scope`) lets a caller
+    re-verify every acceptance criterion shaped as a package-wide
+    gate-outcome claim ("0 <RULE> findings under <glob>",
+    `frob.tickets._evidence._gate_claim_criteria`) against the POST-MERGE
+    worktree tree, and refuses the land (`ClaimDivergence`, reused rather
+    than adding a new `LandError` variant -- both mean "a claimed
+    gate/test state does not hold post-merge") when it returns `False` --
+    the T-1276 defect this closes: T-1276's own criterion [0] read "0
+    TEST005 findings under src/frob/app/**", closed done and landed
+    (LAND-PROOF verified) against 116 live TEST005 findings under that
+    exact glob, because nothing ever computed this. `None` (default, skip)
+    matches every caller before T-1410 -- computing it needs
+    `frob.gates`/subprocess access `frob.tickets` deliberately does not
+    have (docs/rework.md cycle-avoidance); the `frob ticket land` CLI
+    supplies it by default (see `ticket_runner.py`'s `_land`).
+
     T-0577: the ENTIRE precheck-through-squash-commit body runs under
     `root`'s dedicated `_land_lock` (a cross-process `flock`, same
     primitive family as `frob.tickets._store.ledger_lock`'s T-0458
@@ -561,6 +580,7 @@ def land(
             sync_gate_rules=sync_gate_rules,
             check_gates=check_gates,
             check_gate_findings=check_gate_findings,
+            check_gate_claims=check_gate_claims,
             skip_mutation_evidence=skip_mutation_evidence,
             allow_cross_ticket=allow_cross_ticket,
         )
@@ -570,6 +590,7 @@ def land(
 # frob:ticket T-0601
 # frob:ticket T-0907
 # frob:ticket T-1355
+# frob:ticket T-1410
 def _land_locked(
     root: Path,
     ticket_id: str,
@@ -585,6 +606,7 @@ def _land_locked(
     | None = None,
     check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
     check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None = None,
+    check_gate_claims: Callable[[Ticket], bool | None] | None = None,
     skip_mutation_evidence: bool = False,
     allow_cross_ticket: bool = False,
 ) -> Result[LandReport, LandError]:
@@ -680,6 +702,39 @@ def _land_locked(
             if did_merge:
                 _abort_merge(worktree)
             return Err(claims_check.danger_err)
+
+        # T-1410: re-verify any "0 <RULE> findings under <glob>" acceptance
+        # criterion (`_gate_claim_criteria`) against the SAME post-merge
+        # tree the checks above just verified against -- same ordering
+        # rationale (before the dry-run early return). `check_gate_claims`
+        # is given the reloaded post-merge ticket, mirroring `covers_scope`
+        # 's own calling convention.
+        if check_gate_claims is not None:
+            from frob.tickets import _load_one
+
+            reloaded = _load_one(worktree, ticket_id)
+            if reloaded.is_err:
+                _log.error(
+                    "land: %s not found post-merge in %s -- cannot verify "
+                    "T-1399 gate-claim criteria",
+                    ticket_id,
+                    worktree,
+                )
+                if did_merge:
+                    _abort_merge(worktree)
+                return Err(LandError.NotFound)
+            if check_gate_claims(reloaded.danger_ok) is False:
+                _log.error(
+                    "land: %s carries an acceptance criterion asserting a "
+                    "package-wide gate outcome that the live post-merge "
+                    "tree does not establish -- refusing to land (T-1276 "
+                    "class defect, see WARNING lines above for which "
+                    "criterion/finding)",
+                    ticket_id,
+                )
+                if did_merge:
+                    _abort_merge(worktree)
+                return Err(LandError.ClaimDivergence)
 
         if dry_run_report is not None:
             return Ok(dry_run_report)

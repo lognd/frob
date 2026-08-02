@@ -74,6 +74,7 @@ node registry : foreign { clearance Public; }
 // spelling; config/log file writes) across every file `code` binds.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 // frob:ticket T-0956
+// frob:ticket T-1410
 // frob:waive AFFECT001 reason="T-1113: mechanical interface= attr population (measured public-surface metadata for the new mandatory SYS104 check), not a behavioral/architectural change -- the cited affects()-closure doc does not describe this node's public surface and has nothing to update here."
 node cli : trusted {
     clearance Internal;
@@ -272,8 +273,10 @@ node cli : trusted {
     attr interface=_check_gates_summary_fn;
     attr interface=_close;
     attr interface=_close_failure_hint;
+    attr interface=_close_gate_claims_for_ticket;
     attr interface=_close_guards_for_ticket;
     attr interface=_close_mutation_evidence_for_ticket;
+    attr interface=_close_own_obligations_for_ticket;
     attr interface=_collect_python_and_rust_ids;
     attr interface=_component;
     attr interface=_covers_review_for_ticket;
@@ -296,6 +299,7 @@ node cli : trusted {
     attr interface=_land_bump_version_fn;
     attr interface=_land_collected_fn;
     attr interface=_land_covers_scope_fn;
+    attr interface=_land_gate_claims_fn;
     attr interface=_land_passed_fn;
     attr interface=_land_rebuild_natives_fn;
     attr interface=_land_sync_gate_rules_fn;
@@ -2881,6 +2885,7 @@ cache graph_cache of graphlang {
 // frob:ticket T-1340
 // frob:ticket T-1363
 // frob:ticket T-1384
+// frob:ticket T-1410
 node testsuite : trusted {
     clearance Internal;
     code "tests/**";
@@ -3198,9 +3203,13 @@ node testsuite : trusted {
     attr interface=TestCloseFailureHintMutationEvidence;
     attr interface=TestCloseFromQueuedHint;
     attr interface=TestCloseGate;
+    attr interface=TestCloseGateClaimsForTicket;
     attr interface=TestCloseGuardsMutationEvidenceDowngrade;
     attr interface=TestCloseMutationEvidenceForTicket;
     attr interface=TestCloseOpenDescendantGuard;
+    attr interface=TestCloseOwnObligationsForTicket;
+    attr interface=TestCloseRefusesOwnObligationsEndToEnd;
+    attr interface=TestCloseRefusesT1276ShapeEndToEnd;
     attr interface=TestCloseSkipMutationEvidenceBypass;
     attr interface=TestCloseSkipMutationEvidenceCliWiring;
     attr interface=TestCloseStrictMode;

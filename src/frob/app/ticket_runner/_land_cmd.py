@@ -378,6 +378,28 @@ def _land_covers_scope_fn(worktree: Path):  # noqa: ANN201
     return fn
 
 
+# frob:ticket T-1410
+def _land_gate_claims_fn(worktree: Path):  # noqa: ANN201
+    """T-1410 CLI closure: `land()` calls this ONCE, POST-merge, with the
+    reloaded post-merge `Ticket` (mirroring `_land_covers_scope_fn`'s own
+    calling convention), and expects back whether every acceptance
+    criterion shaped as a package-wide gate-outcome claim ("0 <RULE>
+    findings under <glob>") holds against a live `frob check --only gates`
+    run in `worktree` -- reuses `_close_gate_claims_for_ticket`'s exact
+    computation (T-1410, `frob.app.ticket_runner._close_cmd`), just against
+    `worktree` instead of the direct-close path's `root`, so the two
+    callers (`frob ticket close`/`reverify` and `frob ticket land`) can
+    never drift into two independently hand-typed copies of the same
+    check."""
+
+    def fn(ticket):  # noqa: ANN001, ANN202
+        from frob.app import ticket_runner as _ticket_runner
+
+        return _ticket_runner._close_gate_claims_for_ticket(worktree, ticket)
+
+    return fn
+
+
 # frob:ticket T-0338
 def _land_bump_version_fn():  # noqa: ANN201
     """CLI closure: `land()` calls this AFTER the squash-apply is staged
@@ -690,7 +712,14 @@ def _land(root: Path, cfg: AppConfig) -> None:
     the post-merge tree before `frob ticket land` ever finalizes/closes/
     squash-applies it. The claim's test-count half reuses `passed` above
     -- no separate `run_tests` parameter at the land layer (review round 2
-    fix #3: derive from D-05's own real run instead of a duplicate one)."""
+    fix #3: derive from D-05's own real run instead of a duplicate one).
+
+    T-1410: `check_gate_claims` (`_land_gate_claims_fn`) is ALSO always
+    supplied here, so a ticket carrying a "0 <RULE> findings under <glob>"
+    acceptance criterion refuses to land while the post-merge tree still
+    reports live findings for that rule under that glob -- the T-1276
+    defect (closed done and landed against 116 live TEST005 findings under
+    its own criterion's glob) is now refused at the real land path."""
     from frob.tickets import land
 
     _require_land_args(cfg)
@@ -747,6 +776,7 @@ def _land(root: Path, cfg: AppConfig) -> None:
         check_gate_findings=_check_gate_findings_fn(
             worktree, cfg.ticket_id, spawn=_shared_spawn
         ),
+        check_gate_claims=_land_gate_claims_fn(worktree),
         skip_mutation_evidence=cfg.ticket_skip_mutation_evidence,
         allow_cross_ticket=cfg.ticket_allow_cross_ticket,
     )

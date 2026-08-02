@@ -163,9 +163,14 @@ class TestCloseGuardsMutationEvidenceDowngrade:
     def _guards(
         self, monkeypatch: pytest.MonkeyPatch, *, mutation_evidence, skip: bool
     ):  # noqa: ANN001, ANN202
-        """Run `_close_guards_for_ticket` with its three OTHER sub-guard
+        """Run `_close_guards_for_ticket` with its five OTHER sub-guard
         helpers stubbed to fixed, uninteresting values so only the
-        `mutation_evidence`/`skip` interaction under test varies."""
+        `mutation_evidence`/`skip` interaction under test varies. T-1410/
+        T-1387 each added one more independently-computed guard
+        (gate_claims_verified, own_obligations_clean) -- stubbed here to
+        `None` (skip) same as every other uninteresting guard, so this
+        test file's own fixed `object()` stand-in ticket never has to grow
+        real `.acceptance`/diff-shaped attributes just to satisfy them."""
         monkeypatch.setattr(
             ticket_runner, "_covers_scope_for_ticket", lambda root, t: None
         )
@@ -180,6 +185,12 @@ class TestCloseGuardsMutationEvidenceDowngrade:
         monkeypatch.setattr(
             ticket_runner, "_reverify_evidence_for_close", lambda root, t: None
         )
+        monkeypatch.setattr(
+            ticket_runner, "_close_gate_claims_for_ticket", lambda root, t: None
+        )
+        monkeypatch.setattr(
+            ticket_runner, "_close_own_obligations_for_ticket", lambda root, t: None
+        )
         cfg = AppConfig(ticket_close_skip_mutation_evidence=skip)
         return ticket_runner._close_guards_for_ticket(Path("."), cfg, object())
 
@@ -193,8 +204,8 @@ class TestCloseGuardsMutationEvidenceDowngrade:
         make the guard True here and wrongly downgrade to `None`) and
         boolop-And-swapped (`or` would make the guard True on the flag
         alone and also wrongly downgrade to `None`)."""
-        _covers_scope, _reviewed, mutation_evidence, _reverified = self._guards(
-            monkeypatch, mutation_evidence=True, skip=True
+        _covers_scope, _reviewed, mutation_evidence, _reverified, _claims, _own = (
+            self._guards(monkeypatch, mutation_evidence=True, skip=True)
         )
         assert mutation_evidence is True
 
@@ -205,8 +216,8 @@ class TestCloseGuardsMutationEvidenceDowngrade:
         real guard is True, so the escape hatch downgrades the
         confirmatory-only finding to `None` (skip) -- the normal-path pin
         the guard exists for."""
-        _covers_scope, _reviewed, mutation_evidence, _reverified = self._guards(
-            monkeypatch, mutation_evidence=False, skip=True
+        _covers_scope, _reviewed, mutation_evidence, _reverified, _claims, _own = (
+            self._guards(monkeypatch, mutation_evidence=False, skip=True)
         )
         assert mutation_evidence is None
 
@@ -218,7 +229,7 @@ class TestCloseGuardsMutationEvidenceDowngrade:
         stay `False` (the confirmatory-only refusal still fires
         upstream) -- confirms the flag half of the `and` is load-bearing
         too, not just the `is False` half."""
-        _covers_scope, _reviewed, mutation_evidence, _reverified = self._guards(
-            monkeypatch, mutation_evidence=False, skip=False
+        _covers_scope, _reviewed, mutation_evidence, _reverified, _claims, _own = (
+            self._guards(monkeypatch, mutation_evidence=False, skip=False)
         )
         assert mutation_evidence is False

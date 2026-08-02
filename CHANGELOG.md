@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.302.0] - unreleased
+
+- T-1410: Wire gate_claims_verified into close/land so the T-1399 guard actually fires
+
 ## [0.301.0] - unreleased
 
 - T-1399: Evidence binding does not verify the criterion: land closed T-1276 against 116 live TEST005 findings
