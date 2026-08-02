@@ -13843,3 +13843,68 @@ threat: null
 component: null
 ```
 Root cause of T-1403's c2fd45da incident: _add_and_commit_tickets_md runs 'git add tickets.md' then a bare 'git commit -m <message>', which commits the WHOLE index. Anything already staged in the checkout (e.g. by a conflicted stash pop, which auto-stages merged-clean files) rides along into the ledger commit under an unrelated message. Fix: pathspec-limit the commit ('git commit -m <msg> -- tickets.md', i.e. --only semantics) so the ledger commit can never contain anything but tickets.md, and add a regression test that stages a sentinel file, runs commit_ticket_ledger_change, and asserts the sentinel stays staged and out of the commit. Applies to every caller funneling through this helper (commit_start_transition, commit_ticket_ledger_change for new/drop/fail).
+
+<!-- ticket:T-1433 -->
+```yaml
+id: T-1433
+title: make coverage serial-rerun phase wedges forever on a dead-holder futex
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-02'
+priority: critical
+parent: null
+tier: ticket
+sprint: null
+scope:
+- Makefile
+- src/frob/testing/**
+acceptance:
+- text: GIVEN a make coverage invocation whose serial rerun phase stops making progress
+    WHEN the bounded deadline elapses THEN the run fails loudly with a diagnostic
+    instead of hanging indefinitely
+  evidence: []
+- text: GIVEN the futex-owner root cause is identified WHEN the fix lands THEN back-to-back
+    make coverage runs complete without a wedge
+  evidence: []
+threat: null
+component: null
+```
+Two independent full `make coverage` runs wedged identically in the serial
+rerun phase (the `-n 0 --cov-append --junitxml=.frob/last-coverage-rerun.xml`
+pytest that runs after the xdist phase, added by the T-1426 combine-drop fix):
+
+- Run 1 (2026-08-01 21:39): wedged for 12h52m with only 2m16s of CPU before
+  being killed.
+- Run 2 (2026-08-02 10:04): same phase, 0 CPU-seconds over a measured 20s
+  window after ~28 min elapsed (2m14s total CPU).
+
+Diagnostics captured on run 2's pytest (pid 563010) while wedged:
+- State S (sleeping), Threads: 1, wchan=futex_wait_queue -- a single-threaded
+  CPython blocked acquiring a lock/semaphore with NO child processes alive,
+  i.e. waiting on a synchronization primitive whose holder is gone.
+- fds 1/2/6/8 all pointed at deleted /tmp files.
+- A leaked multiprocessing forkserver from an earlier worktree test run
+  (t-1426 venv, alive 7h40m, spawned 02:51 from a pytest tmp path) was
+  present on the system during both wedges -- plausibly related to the
+  T-1378 forkserver-leak family, and possibly the dead lock-holder.
+- py-spy stack dump unavailable (no root; ptrace restricted).
+
+Suspects, in order:
+1. The xdist phase's gw0 worker CRASHED during run 2
+   (tests/system/test_frob_self_model.py::TestFrobSelfModel::
+   test_sys_gate_zero_violations, see .frob/last-coverage-run.log) -- a
+   crashed worker can leave a coverage/multiprocessing lock held; the
+   serial rerun then blocks on it forever.
+2. COVERAGE_PROCESS_START subprocess coverage (coverage-subprocess.rc)
+   installs locks shared across the make recipe's phases.
+3. The serve daemon / leaked forkserver holding a semaphore the rerun
+   inherits (T-1378's reap fix landed only for run_socket_daemon's own
+   shutdown path).
+
+Acceptance direction: the rerun phase must either complete or fail loudly
+under a bounded timeout (the make recipe should wrap the rerun in a
+deadline and kill-and-report instead of hanging forever), and the root
+cause futex owner must be identified and fixed. Reproduction: run
+make coverage twice back-to-back; observe the second (or even first)
+run's rerun-phase CPU flatline via ps -o cputimes.
