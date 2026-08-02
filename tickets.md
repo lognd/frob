@@ -4847,3 +4847,33 @@ whether the pool should be sized down, made lazy (spawned only on the
 first parallel-execution request, not eagerly), or shared/reused
 differently, and re-measure `frob check --only gates --delta --json`
 warm-daemon vs FROB_NO_DAEMON=1 to confirm parity or a real win.
+
+<!-- ticket:T-1437 -->
+```yaml
+id: T-1437
+title: ledger splice driver resurrects archived tickets, breaking every in-flight
+  worktree land after an archive
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-02'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land_merge.py
+- src/frob/tickets/_reporting.py
+acceptance:
+- text: GIVEN a worktree cut before an archive on main WHEN its ticket lands THEN
+    the splice drops main-archived blocks from the active ledger and the land completes
+    without DuplicateId
+  evidence: []
+- text: GIVEN a ledger with the same id in tickets.md and tickets-archive.md WHEN
+    frob ticket archive runs THEN it collapses the duplicate to the archive copy instead
+    of refusing
+  evidence: []
+threat: null
+component: null
+```
+Observed 2026-08-02: after frob ticket archive ran on main (61 tickets moved to tickets-archive.md), every worktree cut before the archive fails to land: the frob-ledger merge driver unions ticket ids across base/ours/theirs, so blocks archived on main but still active in the worktree ledger are resurrected into tickets.md, and the next ledger write fails with DuplicateId (present in both active and archive). frob ticket archive inside the worktree also refuses (id collision), leaving no CLI path to repair; the only recovery is the playbook 10b restore recipe (checkout main's ledger wholesale, re-apply every worktree delta by hand via start/evidence/done-report), which was needed for the w1b-daemon series and costs 15+ commands per worktree. Fix: make the splice archive-aware -- a ticket id present in tickets-archive.md on either side ranks above any active-side copy and must be dropped from the active ledger during the splice (state-rank already exists; add archived as the top rank). Also give frob ticket archive an idempotent mode that collapses an active/archive duplicate to the archive copy instead of refusing, as the recovery path.
