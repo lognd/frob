@@ -12918,3 +12918,61 @@ Two things remain, both outside T-1421's scope:
 Until this lands, BUG002 exists, is tested, and is documented, but does
 not gate a real ticket close/land -- exactly the "built but not reachable"
 gap docs/modules/gates.md's own T-0756 section warns about.
+
+<!-- ticket:T-1428 -->
+```yaml
+id: T-1428
+title: 'WIRE001: refuse a ticket that adds code nothing outside its own tests can
+  reach'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-02'
+priority: critical
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_dead_symbols.py
+- tests/test_gates.py
+- docs/modules/gates.md
+acceptance:
+- text: GIVEN a ticket diff adding a function, parameter, or registry entry that no
+    non-test code reaches WHEN the gate runs THEN it is refused, reconstructed as
+    a fixture from a real prior instance
+  evidence: []
+- text: GIVEN a properly wired change WHEN the gate runs THEN it is permitted, so
+    the rule is not simply refusing every addition
+  evidence: []
+- text: GIVEN a deliberate two-phase landing WHEN the addition names the follow-up
+    ticket expected to wire it THEN it is permitted and that obligation is recorded
+    rather than forgotten
+  evidence: []
+- text: GIVEN a new CLI flag whose dest never appears in AppConfig from_external copy
+    lists WHEN the gate runs THEN it is caught, since that wiring is a string in a
+    list and invisible to the call graph
+  evidence: []
+threat: null
+component: null
+```
+New code that nothing reaches is the single most repeated defect in this repo's recent history. Five clean instances landed in one session, every one of them disclosed honestly, every one with passing tests, and every one leaving the feature or guard completely inert on main.
+
+  T-1384  own_obligations_clean added to frob.tickets._evidence. Nothing computed it. Follow-up T-1387.
+  T-1399  gate_claims_verified added to the same module. Nothing computed it. Follow-up T-1410.
+  T-1391  only_paths added to FMT001's fix handler. Nothing passed it. Follow-up still open.
+  T-1421  bug_repro_violations, the BUG002 gate itself. No caller. Follow-up T-1427.
+  T-1422  CLI flags --amend/--remove parsed by argparse and silently dropped by AppConfig.from_external's hand-maintained field lists, so the command reported it needed the very flags just passed. Fixed in commit 8ff20668.
+
+Two more from the same session are adjacent rather than identical, and worth counting as the same family of "landed, looked done, did nothing": T-1239 fixed one exception class in the cache recovery path and left a neighbouring one still destroying shared caches (T-1416); T-1401 corrected the coverage ratchet clamp but its write does not survive to git (T-1419).
+
+WHY IT KEEPS HAPPENING, and why it is not a discipline problem. A ticket declares a scope. The new code and its call site almost always live in different modules -- a guard in frob.tickets, its computation in frob.app.ticket_runner; a gate in frob.gates, its registration in that package's __init__; a CLI flag in _cli_parsers, its field copy in app/config. Working strictly within a declared scope therefore produces an inert change BY DEFAULT, and the agent then correctly files a follow-up for the wiring. Every one of those agents did the right thing under the rules they were given. The rules make the trap.
+
+Nothing currently detects it. The unit tests pass because they exercise the new function directly. TEST016 passes because the diff IS mutation-detectable by its own evidence -- it cannot see an absent caller, since there is no mutant to survive. The gates are green, the ticket closes, the hazard is untouched. This is the same class as T-1399's finding one level up: acceptance verifies THE CHANGE, not THE EFFECT.
+
+WHAT TO BUILD. A rule -- WIRE001 or similar -- that fires when a ticket's own diff introduces a symbol, parameter, or registry entry that nothing outside the diff's own tests can reach. DEAD001 already does the neighbouring analysis for private symbols with no call-graph caller; this is the same question asked about newly-added code, including code that is public and therefore exempt from DEAD001 today.
+
+Cases it must catch, drawn from the five above: a new function with no non-test caller; a new keyword-only parameter that no call site passes; a new gate rule id absent from _KNOWN_GATE_RULES; a new CLI flag whose dest never appears in AppConfig.from_external's copy lists. That last one is worth special attention because it is invisible to the call graph entirely -- the wiring is a string in a list, not a call -- and it has now bitten twice (config.py's own comment already warns that fields get "silently dropped before AppConfig(**d)").
+
+Cases it must NOT catch, or it will be waived into uselessness: a genuine public API addition intended for downstream consumers; a parameter with a default that existing callers are meant to keep using; an interface implemented for a protocol that is dispatched dynamically. The escape hatch should require naming WHO is expected to call it and by when -- a frob:until-style binding to the follow-up ticket, so an intentional two-phase landing is recorded rather than forgotten. That converts today's honest-but-invisible disclosure into an enforced obligation.
+
+ACCEPTANCE MUST BE SELF-DEMONSTRATING. Reconstruct T-1384 or T-1421 as a fixture: a guard parameter added with no caller, unit-tested, passing every existing gate, must be REFUSED by this rule. And a properly wired change must be permitted. Without both directions this becomes another guard that ships inert -- which would be a genuinely absurd outcome for this particular ticket.
