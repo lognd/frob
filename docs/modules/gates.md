@@ -1991,6 +1991,16 @@ report for the real id). Cache HIT/MISS per gate logs at INFO
 (`frob.gates._gate_cache`'s own lines), visible under `frob check -v`,
 so a suspect cached result is diagnosable without a dedicated flag.
 
+**T-1436: a caller can cap the gate process pool.** `frob.gates.
+_run_gates_bounded(cfg, *, max_process_workers=None)` is `run_gates`
+with an explicit ceiling on the process-pool width, threaded through to
+`_open_process_pool`. Its one real consumer is the serve daemon
+(`frob.serve._tools`, `_DAEMON_GATE_MAX_WORKERS = 2` -- see
+docs/modules/serve.md#daemon-gate-runs-cap-their-process-pool-t-1436):
+a background daemon must not out-compete the foreground work it serves.
+`run_gates` itself is now a one-line uncapped wrapper; its public
+signature and behavior are unchanged.
+
 **What this does NOT yet cover.** `_CACHEABLE_GATES` only spans the
 thread-pool gates that read `st.snapshot` alone. The gates measured as the
 dominant CPU cost of a full `frob check` -- `sys`, `perf`, `arch`,

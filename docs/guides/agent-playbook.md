@@ -572,6 +572,12 @@ tickets; the helper handles it.
 Prefer `frob check --delta` against a stamped baseline over stash-isolation
 dances (stash changes, run check, unstash, diff).
 
+T-1346 turned the digest-keyed gate-result cache ON by default for every
+`frob check`. If a gate reading looks impossibly stale (e.g. a DRIFT001
+that survives the `frob ack` you just ran -- the gate-cache staleness bug filed from the T-1436 session),
+re-measure once with `FROB_NO_GATE_CACHE=1` before trusting or reporting
+it; a cached-vs-fresh disagreement is itself a finding worth a ticket.
+
 ```
 timeout 100 uv run frob check --stamp-baseline --only gates-native      # once, before starting work
 timeout 100 uv run frob check --stamp-baseline --only gates-security    # (chunked -- see section 3b)

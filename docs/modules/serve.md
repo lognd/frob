@@ -401,6 +401,21 @@ deterministic regardless of what spawned the children -- this
 deliberately reads only the stdlib's own process registry, with no
 dependency on `frob.serve._tools`'s own pool internals.
 
+### Daemon gate runs cap their process pool (T-1436)
+
+<!-- frob:describes src/frob/serve/_tools.py::_DAEMON_GATE_MAX_WORKERS -->
+
+T-1378's third measured defect: with a warm daemon up, a proxied
+`frob check --only gates --delta` ran SLOWER than `FROB_NO_DAEMON=1`
+because the daemon's gate process pool competed with the foreground
+check for the same cores (load average 5-8 on a 4-core WSL box).
+`frob_check_delta` and its `verify=True` cold cross-check now run gates
+through `frob.gates._run_gates_bounded` with
+`_DAEMON_GATE_MAX_WORKERS = 2`, leaving the remaining cores to whatever
+foreground work the daemon exists to serve. A direct `run_gates` call
+(the non-daemon path) is unchanged -- it still sizes its pool from the
+machine.
+
 ## FS-watch push invalidation (T-1094)
 
 <!-- frob:describes src/frob/serve/_watch.py::DEFAULT_WATCH_POLL_INTERVAL_S -->

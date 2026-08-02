@@ -6308,7 +6308,9 @@ def _stamp_worker_lock_keys_env() -> None:
 # frob:ticket T-0806
 # frob:ticket T-0947
 # frob:ticket T-0990
-def _open_process_pool(process_jobs: dict[str, _ProcessJob]) -> ProcessPoolExecutor:
+def _open_process_pool(
+    process_jobs: dict[str, _ProcessJob], *, max_workers: int | None = None
+) -> ProcessPoolExecutor:
     """Construct the `ProcessPoolExecutor` for `process_jobs` (which must be
     non-empty). Hoisted out of `_run_combined_jobs` (T-0767) so no single
     function constructs BOTH pools -- the T-0695 `pool-inside-pool`
@@ -6354,12 +6356,22 @@ def _open_process_pool(process_jobs: dict[str, _ProcessJob]) -> ProcessPoolExecu
     side of this marker. T-0990: the two env-marker stamps themselves now
     live in `_stamp_worker_stdout_log_level_env`/`_stamp_worker_lock_keys_env`
     (each a single, low-branch-count concern), called here before pool
-    construction exactly as the inline code used to run."""
+    construction exactly as the inline code used to run.
+
+    T-1436: `max_workers`, when given, caps the pool BELOW the normal
+    `min(len(process_jobs), cpu_count())` bound instead of replacing it --
+    a caller that already knows it is competing for CPU with something
+    else on the same box (the warm daemon's own `frob_check_delta`, see
+    `frob.serve._tools._DAEMON_GATE_MAX_WORKERS`) passes a smaller number
+    here to size its pool down; every other caller passes `None` (the
+    default) and gets the unchanged pre-T-1436 behavior."""
     _stamp_worker_stdout_log_level_env()
     _stamp_worker_lock_keys_env()
     # Bounded worker count (constraint 4): never more workers than
     # jobs, never more than the machine's CPU count.
     proc_workers = max(1, min(len(process_jobs), os.cpu_count() or 4))
+    if max_workers is not None:
+        proc_workers = max(1, min(proc_workers, max_workers))
     ctx = multiprocessing.get_context(_process_pool_start_method())
     if ctx.get_start_method() == "forkserver":
         ctx.set_forkserver_preload(list(_FORKSERVER_PRELOAD))
@@ -6394,6 +6406,8 @@ def _run_thread_jobs(
 def _run_combined_jobs(
     thread_jobs: dict[str, Callable[[], tuple[Violation, ...]]],
     process_jobs: dict[str, _ProcessJob],
+    *,
+    max_process_workers: int | None = None,
 ) -> tuple[list[Violation], dict[str, int], dict[str, float]]:
     """Run `thread_jobs` on a `ThreadPoolExecutor` and `process_jobs`
     (the CPU-bound giants, T-0415/docs/audits/perf.md H3) on a
@@ -6432,6 +6446,9 @@ def _run_combined_jobs(
     while preserving the T-0581 ordering exactly: create + submit the
     process pool first, then open the thread pool, then drain, then shut
     the process pool down. Do NOT inline either helper back here.
+
+    T-1436: `max_process_workers` passes straight through to
+    `_open_process_pool`'s own `max_workers` cap; see that docstring.
     """
     counts: dict[str, int] = {}
     timing: dict[str, float] = {}
@@ -6442,7 +6459,7 @@ def _run_combined_jobs(
     ppool: ProcessPoolExecutor | None = None
     process_futures: dict[str, Future[tuple[tuple[Violation, ...], float]]] = {}
     if process_jobs:
-        ppool = _open_process_pool(process_jobs)
+        ppool = _open_process_pool(process_jobs, max_workers=max_process_workers)
         process_futures = _submit_process_pool(ppool, process_jobs)
 
     try:
@@ -6506,7 +6523,27 @@ def _native_unavailable_report(root: Path) -> GateReport | None:
 def run_gates(
     cfg: GateConfig, *, use_cache: bool = False
 ) -> Result[GateReport, GateError]:
-    """Load everything once, then run the selected gates in parallel and merge.
+    """Public entry point: `_run_gates_bounded` with no process-pool-size
+    override (T-1436 -- kept as a thin, signature-stable wrapper so this
+    function's own `frob:doc` contract in `docs/modules/gates.md`/
+    `docs/modules/serve.md` needs no update just to add an internal-only
+    sizing knob a handful of callers use)."""
+    return _run_gates_bounded(cfg, use_cache=use_cache)
+
+
+def _run_gates_bounded(
+    cfg: GateConfig, *, use_cache: bool = False, max_process_workers: int | None = None
+) -> Result[GateReport, GateError]:
+    """Load everything once, then run the selected gates in parallel and
+    merge -- `run_gates`'s actual implementation, plus one T-1436 addition:
+    `max_process_workers`, private (no external caller contract), lets a
+    caller that already knows it is CPU-competing with something else on
+    the same box (currently only `frob.serve._tools.frob_check_delta`,
+    which always runs inside the warm daemon process) cap
+    `_open_process_pool`'s worker count below the normal `min(len(jobs),
+    cpu_count())` bound. Every existing `run_gates` call site is
+    unaffected -- this function's default (`None`) reproduces the exact
+    pre-T-1436 behavior.
 
     T-0602: `use_cache=True` opts into per-gate dependency-tracked partial
     re-evaluation (`_gate_cache.evaluate_cacheable_gate`) for the closed
@@ -6541,7 +6578,8 @@ def run_gates(
 
     thread_jobs, process_jobs, skipped = _build_jobs(selected, st, use_cache=use_cache)
     report = _assemble_gate_report(
-        cfg, st, thread_jobs, process_jobs, skipped, start_all
+        cfg, st, thread_jobs, process_jobs, skipped, start_all,
+        max_process_workers=max_process_workers,
     )
     return Ok(report)
 
@@ -6553,10 +6591,15 @@ def _assemble_gate_report(
     process_jobs: dict[str, _ProcessJob],
     skipped: list[str],
     start_all: float,
+    *,
+    max_process_workers: int | None = None,
 ) -> GateReport:
     """Run `thread_jobs`/`process_jobs` (T-0415), fold in the WAIVE001/
     WAIVE002/DSL001 self-checks, apply waivers and severity overrides, and
-    log the run's final tally."""
+    log the run's final tally.
+
+    T-1436: `max_process_workers` passes straight through to
+    `_run_combined_jobs`'s own `max_process_workers`."""
     all_violations: list[Violation] = [
         *_waive001_violations(st.snapshot),
         *_waive002_violations(st.snapshot, st.rule_ids),
@@ -6574,7 +6617,9 @@ def _assemble_gate_report(
         *waive007_gate(st.repo_root, st.snapshot, st.queue),
         *_dsl001_violations(st.snapshot),
     ]
-    job_violations, counts, timing = _run_combined_jobs(thread_jobs, process_jobs)
+    job_violations, counts, timing = _run_combined_jobs(
+        thread_jobs, process_jobs, max_process_workers=max_process_workers
+    )
     counts["waive"] = len(all_violations)
     all_violations.extend(job_violations)
     # T-0470: WAIVE003 needs the full assembled violation set (it re-runs

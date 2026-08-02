@@ -28,6 +28,19 @@ _log = get_logger(__name__)
 
 _CACHE_REL = Path(".frob") / "cache.db"
 
+#: T-1436: `frob_check_delta` only ever runs inside the warm daemon process
+#: (dispatched via `frob.serve._socketd`'s handler table / `frob.serve.
+#: _daemon`'s coverage-fresh hook -- never called from the CLI's own
+#: in-process `frob check`, which goes through `frob.check`/`run_gates`
+#: directly), so its `run_gates` call is ALWAYS competing with whatever
+#: else the daemon's host machine is doing, most commonly a foreground
+#: `frob check` the user is running at the same time. Capping the process
+#: pool at 2 workers here (rather than `run_gates`'s normal `min(len(jobs),
+#: cpu_count())`, which happily claims every core on a small box) trades
+#: a slower daemon-side gate pass for leaving headroom for the foreground
+#: command a human is actually waiting on.
+_DAEMON_GATE_MAX_WORKERS = 2
+
 
 # frob:doc docs/modules/serve.md#mcp-sdk
 class ServeError(ErrorSet):
@@ -373,11 +386,17 @@ def _run_verify_pass(root: Path, cfg, warm_violations: tuple) -> dict:
     `run_gates` fully cold, and report whether its violation set matches
     `warm_violations` fingerprint-for-fingerprint -- an obligation NOT
     re-evaluated between the two passes must not have had a changed input,
-    so a real mismatch means the warm path served a stale answer."""
-    from frob.gates import run_gates, violation_fingerprint
+    so a real mismatch means the warm path served a stale answer.
+
+    T-1436: like `frob_check_delta`'s own primary pass, this cold re-run
+    only ever executes inside the daemon process (called from
+    `frob_check_delta`'s `verify=True` branch), so it gets the same
+    `_DAEMON_GATE_MAX_WORKERS` pool cap."""
+    from frob.gates import violation_fingerprint
+    from frob.gates import _run_gates_bounded as _run_gates
 
     _warm._invalidate(root)
-    cold_result = run_gates(cfg)
+    cold_result = _run_gates(cfg, max_process_workers=_DAEMON_GATE_MAX_WORKERS)
     if cold_result.is_err:
         _log.error("serve: frob_check_delta: verify: %s", cold_result.danger_err)
         return {"verified": False, "verify_error": str(cold_result.danger_err.value)}
@@ -433,7 +452,8 @@ def frob_check_delta(
     any existing narrower caller of this RPC) -- `check_result` is new,
     additive structure, not a replacement."""
     from frob.check._python import _gates_success_result
-    from frob.gates import GateConfig, delta_violations, is_baseline_stale, run_gates
+    from frob.gates import GateConfig, delta_violations, is_baseline_stale
+    from frob.gates import _run_gates_bounded as _run_gates
     from frob.process.parsers.common import ToolResult
 
     state_result = _warm._warm_state(root)
@@ -450,7 +470,9 @@ def frob_check_delta(
     # own cold cross-check below deliberately does NOT pass `use_cache` (it
     # must stay a genuinely cold, cache-bypassing run to be the correctness
     # oracle it claims to be).
-    gate_result = run_gates(cfg, use_cache=True)
+    gate_result = _run_gates(
+        cfg, use_cache=True, max_process_workers=_DAEMON_GATE_MAX_WORKERS
+    )
     if gate_result.is_err:
         _log.error("serve: frob_check_delta: %s", gate_result.danger_err)
         return Err(ServeError.GateFailed)
