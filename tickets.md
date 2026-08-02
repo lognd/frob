@@ -4589,7 +4589,7 @@ T-1422's landed commit (frob ticket accept --amend/--remove) introduced src/frob
 ```yaml
 id: T-1430
 title: 'WIRE001: detect a new keyword-only parameter no call site passes'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-02'
