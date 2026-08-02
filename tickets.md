@@ -5144,7 +5144,7 @@ after) and is absent from the resulting commit's file list (git log -1
 ```yaml
 id: T-1433
 title: make coverage serial-rerun phase wedges forever on a dead-holder futex
-state: in-progress
+state: queued
 kind: bug
 origin: agent
 created: '2026-08-02'
@@ -5279,7 +5279,6 @@ genuinely unresolved, not just unresolved-and-waived.
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 1 error(s), 563 warning(s), 694 waived
 - error-findings: SELFAUDIT001@design
-
 <!-- ticket:T-1434 -->
 ```yaml
 id: T-1434
