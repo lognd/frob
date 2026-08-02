@@ -12002,3 +12002,54 @@ Not every bug ticket can satisfy this honestly, and the design must say what hap
 Reuse rather than rebuild. frob already has the machinery: T-0754's ClaimDivergence re-evaluates captured claims post-merge, T-1410 runs a gate and filters findings by glob, and the mutation-evidence path already checks out and perturbs code. This should compose with those, not duplicate them -- the repo's no-duplication rule applies with force here.
 
 WHAT SUCCESS LOOKS LIKE. Reconstruct any one of the five tickets above as a fixture: a ticket whose bound evidence passes at BOTH the parent and the fix commit must be refused. A ticket whose evidence fails at the parent and passes at the fix must be permitted. Both directions need a regression test, or this gate is exactly the kind of unverified guard it exists to prevent.
+
+<!-- ticket:T-1422 -->
+```yaml
+id: T-1422
+title: 'frob ticket accept can only append: add amend and remove for acceptance criteria,
+  with a recorded reason'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-02'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/ticket_runner/_metadata.py
+- src/frob/tickets/_models.py
+- tests/test_tickets_acceptance.py
+acceptance:
+- text: GIVEN a ticket with a mis-specified acceptance criterion WHEN it is amended
+    via the CLI with a reason THEN the new text replaces the old and the reason is
+    recorded in the ledger, the way scope changes already record theirs
+  evidence: []
+- text: GIVEN an amended criterion WHEN the ticket is shown or its Done report rendered
+    THEN the amendment and its reason are surfaced, never buried
+  evidence: []
+- text: GIVEN a ticket in a terminal state WHEN an amendment is attempted THEN it
+    is refused
+  evidence: []
+threat: null
+component: null
+```
+frob ticket accept can only APPEND acceptance criteria. There is no supported way to correct, replace, or remove one. That gap forces the two worst available workarounds, and both were exercised on 2026-08-01/02.
+
+WORKAROUND 1, hand-editing the ledger. Used twice. The second attempt embedded a space followed by a hash inside a plain YAML scalar, which starts a comment, truncating the mapping. tickets.md stopped parsing and frob reported "ticket queue failed to load: all gates were skipped. This is a hard failure" -- the ENTIRE gate layer down, not just the tickets gate. frob's own pre-commit hook had warned "the ledger should only be written via the frob ticket CLI" on three separate commits that day. The hook was right every time.
+
+WORKAROUND 2, filing a successor ticket. Used for T-1414, carrying T-1296's delivered strata work. This one is honest and is the right answer when the ORIGINAL goal genuinely remains open. But it is roughly fifteen minutes of ledger surgery per instance -- new ticket, scope, start, evidence rebind, done report, land -- and it leaves two ledger entries where the work was one.
+
+WHY IT MATTERS NOW, beyond convenience. A criterion can be WRONG in two distinct ways, and both occurred:
+
+  Mis-specified. T-1411's criterion [0] asked that a comment naming no in-scope identifier must not fire PII012. A trailing comment reading "stores the user ssn" names no matching identifier either, so satisfying the criterion as written would have SILENCED the poorly-named-variable case the rule exists for. An agent implemented it faithfully and produced a capability regression that passed review, because the criterion is what review checks against. Caught only because the agent surfaced two now-failing tests honestly instead of updating them.
+
+  Unsatisfiable by construction. Ten burn-down tickets assert "0 TEST005 findings under package X" across packages holding 100-400 findings. No single dispatch can satisfy that. Since T-1410 wired the gate-claim guard, frob correctly REFUSES to close them -- which is right, and which also means genuine completed work strands behind a criterion that was written as an aspiration rather than a deliverable.
+
+Neither is fixable today without one of the two workarounds above.
+
+WHAT TO BUILD. A supported way to amend acceptance, with the same discipline the rest of the ledger has. At minimum a verb to replace a criterion's text by index and a verb to remove one, both requiring a --reason recorded in the ledger exactly as frob ticket scope already records scope changes. The reason field is the point: an amended criterion must carry WHY it changed, so that weakening a criterion to force a close is visible in the record rather than silent.
+
+Guard against the obvious abuse. Amending a criterion is a legitimate correction when the criterion was wrong; it is goalpost-moving when the criterion was right and the work fell short. The distinction cannot be fully automated, but the reason string makes it reviewable, and amendments should be surfaced -- in frob ticket show, and in the Done report -- rather than buried. Consider refusing an amendment on a ticket already in a terminal state.
+
+Then re-scope the ten burn-down tickets to triage-shaped acceptance, the shape already used on T-1400: every remaining finding is triaged as either a genuine gap closed with a behavioral test, or an artifact recorded with the covering test named. That is satisfiable, honest, and still forbids filler -- and it is what T-1418's classification is producing the input for.
