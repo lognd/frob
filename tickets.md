@@ -8392,3 +8392,29 @@ invalidate recorded attachment bytes.
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 0 error(s), 1954 warning(s), 729 waived
 - error-findings: none (measured, zero errors)
+
+<!-- ticket:T-1456 -->
+```yaml
+id: T-1456
+title: land runs a post-land unscoped error sweep so relocation/waiver/format residue
+  never reaches main
+state: queued
+kind: feature
+origin: agent
+created: '2026-08-02'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land_finalize.py
+- src/frob/app/ticket_runner/_land_cmd.py
+acceptance:
+- text: GIVEN a land whose applied diff introduces an unscoped gate ERROR absent before
+    the land WHEN land finishes THEN it either auto-fixed the residue or refused with
+    the finding list, never left main's error floor regressed
+  evidence: []
+threat: null
+component: null
+```
+Every wave this drive landed left small unscoped residue on main that the coordinator hand-fixed between lands: waivers that did not travel with relocated prose (T-1442's INV006/PII012), format drift, stale registry denominators, SELFAUDIT interface attrs for store blocks. Each was invisible to the land's --ticket-scoped verification and only surfaced in the next full frob check. Feature: after the squash-apply commit, land runs a bounded unscoped delta check (errors only, vs the pre-land baseline it already captures) and either auto-fixes Tier-A residue in a follow-up commit or refuses with the exact finding list, so main's error floor cannot regress silently at land time. The claim-divergence machinery (T-0754) already computes most of this; the gap is that it compares scoped, not unscoped-delta.
