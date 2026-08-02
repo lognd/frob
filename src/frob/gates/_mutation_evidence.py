@@ -347,6 +347,7 @@ def _bug002_message(ticket_id: str, test_id: str, base_ref: str) -> str:
     )
 
 
+# frob:enforces CHK-GATE-BUG002
 # frob:doc \
 # docs/modules/gates.md#bug002-t-1421-a-bug-ticket-must-prove-the-defect-no-longer-repr\
 # oduces
