@@ -1120,7 +1120,6 @@ def _branch_changed_files(
     )
 
 
-# frob:ticket T-1355
 # frob:ticket T-1390
 def _ledger_ticket_at_merge_base(
     worktree: Path, base_ref: str, ticket_id: str
@@ -1154,6 +1153,62 @@ def _ledger_ticket_at_merge_base(
     return parsed.danger_ok.get(ticket_id)
 
 
+# frob:ticket T-1390
+def _leaked_hits_for_candidate(
+    worktree: Path,
+    landing_id: str,
+    other_id: str,
+    other: Ticket,
+    changed_paths: frozenset[str],
+    base_ref: str,
+) -> list[str] | None:
+    """The sorted hit-path list for ONE candidate sibling `other_id`, or
+    `None` if it is not actually leaked (T-1390: split out of `_find_
+    leaked_tickets` to keep that function's own per-candidate exemption
+    logic readable and under ARCH001's line threshold, zero behavior
+    change to any exemption's own semantics) -- exempts a sibling leased
+    to the SAME worktree as `landing_id` (T-1370), then requires BOTH a
+    declared-`scope` hit against `changed_paths` AND `other`'s own ledger
+    record to have actually changed since this branch forked from
+    `base_ref` (T-1390, via `_ledger_ticket_at_merge_base`) -- a scope hit
+    alone is never enough; see `_find_leaked_tickets`'s own docstring for
+    the false-positive class this second requirement closes."""
+    from frob.tickets._models import scope_matches
+    from frob.tickets._scope import _same_worktree_lease
+
+    if _same_worktree_lease(worktree, landing_id, other_id):
+        _log.info(
+            "land: %s cross-ticket leakage check exempting %s "
+            "(T-1370: both tickets are leased to the same worktree "
+            "-- one agent landing its own tickets back to back, not "
+            "a real cross-agent leak)",
+            landing_id,
+            other_id,
+        )
+        return None
+    hits = [
+        path
+        for path in changed_paths
+        if scope_matches(path, other.scope, kind=other.kind)
+    ]
+    if not hits:
+        return None
+    base_ticket = _ledger_ticket_at_merge_base(worktree, base_ref, other_id)
+    if base_ticket is not None and base_ticket == other:
+        _log.info(
+            "land: %s cross-ticket leakage check exempting %s (T-1390: "
+            "its ledger record is unchanged since this branch forked "
+            "from %s -- its declared scope matches %d changed path(s), "
+            "but it was never actually worked on this branch)",
+            landing_id,
+            other_id,
+            base_ref,
+            len(hits),
+        )
+        return None
+    return sorted(hits)
+
+
 # frob:ticket T-1355
 # frob:ticket T-1370
 # frob:ticket T-1390
@@ -1174,7 +1229,8 @@ def _find_leaked_tickets(
     terminal even if this worktree's pre-pull copy still shows it
     in-progress), whose declared `scope` matches at least one path in
     `changed_paths`, AND whose own ledger record has actually CHANGED on
-    this branch since it forked from `base_ref` (T-1390).
+    this branch since it forked from `base_ref` (T-1390, both checked by
+    `_leaked_hits_for_candidate`, one candidate at a time).
 
     T-1390: declared `scope` is an intention, not evidence that a sibling
     ticket's work is actually present on this branch -- measured across a
@@ -1182,8 +1238,7 @@ def _find_leaked_tickets(
     `tests/**`) matched almost every land's changed files even though
     they never contributed a single commit here, forcing
     `allow_cross_ticket=True` on every single land (the exact
-    reflex-override habit this guard exists to prevent -- see this
-    function's own module docstring for the T-1355 incident). The added
+    reflex-override habit this guard exists to prevent). The added
     signal: has `other`'s OWN ledger record actually moved since this
     branch forked (`_ledger_ticket_at_merge_base`)? A sibling ticket that
     genuinely got worked ON THIS BRANCH (the real T-1352/T-1276 shape --
@@ -1191,9 +1246,8 @@ def _find_leaked_tickets(
     CLI, all of which rewrite its ledger block) always leaves that trail;
     an unrelated ticket sitting open elsewhere, never touched here, does
     not -- its record at the fork point and its record now are byte-
-    identical. A ticket record identical since the fork is skipped
-    (logged at INFO, mirroring the T-1370 same-worktree exemption's own
-    style) even if its declared scope happens to match a changed path.
+    identical. A ticket record identical since the fork is skipped even
+    if its declared scope happens to match a changed path.
 
     T-1370: a sibling ticket LEASED TO THE SAME WORKTREE as `landing_id`
     (`_scope._same_worktree_lease`, the exact T-1356 precedent this
@@ -1203,8 +1257,7 @@ def _find_leaked_tickets(
     open siblings in the same worktree whose scopes overlap mutually
     deadlock: landing either one refuses because the other is still
     open, and there is no way to land either first."""
-    from frob.tickets._models import TicketState, scope_matches
-    from frob.tickets._scope import _same_worktree_lease
+    from frob.tickets._models import TicketState
 
     leaked: dict[str, list[str]] = {}
     for other_id, other in worktree_tickets.items():
@@ -1217,41 +1270,11 @@ def _find_leaked_tickets(
             continue
         if not other.scope:
             continue
-        if _same_worktree_lease(worktree, landing_id, other_id):
-            _log.info(
-                "land: %s cross-ticket leakage check exempting %s "
-                "(T-1370: both tickets are leased to the same worktree "
-                "-- one agent landing its own tickets back to back, not "
-                "a real cross-agent leak)",
-                landing_id,
-                other_id,
-            )
-            continue
-        hits = [
-            path
-            for path in changed_paths
-            if scope_matches(path, other.scope, kind=other.kind)
-        ]
-        if not hits:
-            continue
-        base_ticket = _ledger_ticket_at_merge_base(worktree, base_ref, other_id)
-        if base_ticket is not None and base_ticket == other:
-            _log.info(
-                "land: %s cross-ticket leakage check exempting %s (T-1390: "
-                "its ledger record is unchanged since this branch forked "
-                "from %s -- its declared scope matches %d changed path(s), "
-                "but it was never actually worked on this branch)",
-                landing_id,
-                other_id,
-                base_ref,
-                len(hits),
-            )
-            continue
-        # frob:waive PERF004 reason="sorts a DIFFERENT, per-ticket hits list each \
-        # iteration (for stable log/error ordering) -- there is nothing \
-        # loop-invariant to hoist, each ticket's hit set is independent and \
-        # typically single-digit length"
-        leaked[other_id] = sorted(hits)
+        hits = _leaked_hits_for_candidate(
+            worktree, landing_id, other_id, other, changed_paths, base_ref
+        )
+        if hits:
+            leaked[other_id] = hits
     return leaked
 
 
