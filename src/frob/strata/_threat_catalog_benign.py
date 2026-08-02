@@ -5,6 +5,7 @@ verbatim relocation -- WHY: pure data, no runtime check, previously
 sitting inside the same file as every catalog and all the checker logic
 that reads it). See docs/strata/threat.md#phasing and
 docs/guides/extending/benign-capabilities.md#benign-capabilities."""
+# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

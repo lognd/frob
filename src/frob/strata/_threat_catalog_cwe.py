@@ -5,6 +5,8 @@ from `_threat.py`, verbatim relocation -- WHY: pure catalog data, no
 runtime check, previously sitting inside the same file as the quality
 catalog and every checker function that reads them both). See
 docs/strata/threat.md#the-catalog-stdcwe for what these entries mean."""
+# frob:waive INV006 preset="split-carried-prose"
+# frob:waive PII012 reason="CWE catalog entry prose names credential/secret weakness categories (CWE-798 etc.); catalog DATA about vulnerability classes, not a PII-carrying surface"
 
 from __future__ import annotations
 
