@@ -46,7 +46,7 @@ from frob.strata._audit import (
     group_gaps_by_view,
 )
 from frob.strata._compliance import OutOfScopeRegulation
-from frob.strata._threat import _discharge_claim_id
+from frob.strata._threat_discharge import _discharge_claim_id
 
 
 def _write(root: Path, rel: str, source: str) -> None:

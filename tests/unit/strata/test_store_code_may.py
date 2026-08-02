@@ -64,7 +64,8 @@ class TestStoreMayFeedsThreat003:
     same way a node's would -- `_threat.py::check_discharge_completeness`
     reads `Node.may` generically, with no provenance distinction."""
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0166
     def test_store_with_exec_may_fires_undischarged_cwe_94(self):
         module = parse_module('module m\nstore db : trusted { may "exec"; }').danger_ok
@@ -78,7 +79,8 @@ class TestStoreMayFeedsThreat003:
         assert violations["CWE-94"].node == "db"
         assert violations["CWE-94"].rule == "THREAT003"
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0166
     def test_store_without_may_fires_no_obligation(self):
         model = KernelModel(nodes=(Node(id="db", trust="trusted"),))

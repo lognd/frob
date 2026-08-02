@@ -1,10 +1,10 @@
 # Benign capabilities
 
-<!-- frob:describes src/frob/strata/_threat.py::BenignCapability -->
+<!-- frob:describes src/frob/strata/_threat_models.py::BenignCapability -->
 
 ## What it is and where it lives
 
-`src/frob/strata/_threat.py`: `BenignCapability` (frozen, `kind` +
+`src/frob/strata/_threat_models.py`: `BenignCapability` (frozen, `kind` +
 `reason` + `caught_by` + an optional `family`, mandatory for repo-declared
 excuses -- T-0511) and `DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability,
 ...]`. Mirrors
@@ -38,7 +38,7 @@ themselves.
 ## Worked example diff
 
 ```python
-# src/frob/strata/_threat.py, in DEFAULT_BENIGN_CAPABILITIES:
+# src/frob/strata/_threat_catalog_benign.py, in DEFAULT_BENIGN_CAPABILITIES:
 BenignCapability(
     kind="ffi",
     reason=(
@@ -79,7 +79,7 @@ with a genuinely benign, non-tier-2 `may` kind (e.g. `html_render`/
 CATALOG`-only view) had no way to say so without either waiving THREAT002
 by name (naming a gap frob itself must patch, not a real repo-specific
 fact) or patching frob's own module. `load_repo_benign_capabilities`
-(`src/frob/strata/_threat.py`) closes that gap: it reads `frob.toml`'s
+(`src/frob/strata/_threat.py`, `load_repo_benign_capabilities`) closes that gap: it reads `frob.toml`'s
 `[[strata.benign_capabilities]]` array of tables -- the SAME array-of-
 tables shape `frob.policy`'s `[[policy.*]]` rules already use, chosen
 over inventing a new `.strata` surface construct (a `benign "kind" reason

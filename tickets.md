@@ -2451,6 +2451,7 @@ to force.
 
 ## Drop reason
 - 2026-08-02: superseded by its own delivered-portion split: T-1414 landed the 12 genuine-gap modules (done), and T-1415 carries the honest remainder as a queued ticket; keeping T-1296 in-progress alongside T-1415 double-counts the same work
+
 <!-- ticket:T-1305 -->
 ```yaml
 id: T-1305
@@ -5279,6 +5280,7 @@ genuinely unresolved, not just unresolved-and-waived.
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 1 error(s), 563 warning(s), 694 waived
 - error-findings: SELFAUDIT001@design
+
 <!-- ticket:T-1434 -->
 ```yaml
 id: T-1434
@@ -6145,3 +6147,243 @@ path are the delete half of a verbatim move.
 - tests: 8 passed (from 8 evidence id(s))
 - gates: 1 error(s), 1166 warning(s), 693 waived
 - error-findings: PRE001@tickets/T-1441
+
+<!-- ticket:T-1442 -->
+```yaml
+id: T-1442
+title: T-1420 delivered portion 2
+state: done
+kind: feature
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: T-1420
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/_threat.py
+- src/frob/strata/_threat_models.py
+- src/frob/strata/_threat_catalog_benign.py
+- src/frob/strata/_threat_catalog_cwe.py
+- src/frob/strata/_threat_catalog_quality.py
+- src/frob/strata/_threat_discharge.py
+- tests/unit/strata/test_threat.py
+- tests/unit/strata/test_litmus_cwe.py
+- tests/unit/strata/test_managed.py
+- tests/unit/strata/test_store_code_may.py
+- tests/unit/strata/test_sysdoc.py
+- tests/unit/strata/test_audit.py
+- tests/test_gates.py
+- docs/guides/extending/benign-capabilities.md
+- docs/guides/extending/threat-catalog.md
+scope_changes:
+- op: add
+  glob: tests/unit/strata/test_threat.py
+  reason: test/doc files whose frob:tests/frob:describes edges were repointed in the
+    same land
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/unit/strata/test_litmus_cwe.py
+  reason: test/doc files whose frob:tests/frob:describes edges were repointed in the
+    same land
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/unit/strata/test_managed.py
+  reason: test/doc files whose frob:tests/frob:describes edges were repointed in the
+    same land
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/unit/strata/test_store_code_may.py
+  reason: test/doc files whose frob:tests/frob:describes edges were repointed in the
+    same land
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/unit/strata/test_sysdoc.py
+  reason: test/doc files whose frob:tests/frob:describes edges were repointed in the
+    same land
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/unit/strata/test_audit.py
+  reason: test/doc files whose frob:tests/frob:describes edges were repointed in the
+    same land
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/test_gates.py
+  reason: test/doc files whose frob:tests/frob:describes edges were repointed in the
+    same land
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: docs/guides/extending/benign-capabilities.md
+  reason: test/doc files whose frob:tests/frob:describes edges were repointed in the
+    same land
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: docs/guides/extending/threat-catalog.md
+  reason: test/doc files whose frob:tests/frob:describes edges were repointed in the
+    same land
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/unit/strata/test_threat.py::TestDischargeCompleteness::test_fired_obligation_discharged_by_proved_claim
+- tests/unit/strata/test_threat.py::TestBenignCapability::test_empty_reason_is_rejected
+- tests/unit/strata/test_threat.py::TestCweTop25::test_cwe_94_reuses_the_exec_capability_join
+- tests/unit/strata/test_threat.py::TestQualityFamilies::test_quality_catalog_never_leaks_into_owasp_top_10_view
+- tests/unit/strata/test_litmus_cwe.py::TestFixtureCoverageIsExhaustive::test_every_catalog_entry_has_a_fixture_mapping
+- tests/unit/strata/test_managed.py::TestManagedDischargeFromParsedSurfaceSource::test_managed_node_with_same_shape_discharges
+- tests/unit/strata/test_store_code_may.py::TestStoreMayFeedsThreat003::test_store_with_exec_may_fires_undischarged_cwe_94
+- tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes
+threat: null
+component: null
+```
+Continuation of T-1420's LARGE001 burndown (parent ticket, precedent:
+T-1441 landed the first delivered portion). This portion splits
+src/frob/strata/_threat.py (2522 lines, the largest remaining Python
+file on T-1420's list after T-1441) into five modules along its own
+existing seams:
+
+- src/frob/strata/_threat_models.py: WeaknessEntry/OutOfScopeEntry/
+  BenignCapability/ThreatViolation/ThreatReport (the record shapes
+  everything else builds from)
+- src/frob/strata/_threat_catalog_benign.py: DEFAULT_BENIGN_CAPABILITIES
+- src/frob/strata/_threat_catalog_cwe.py: CWE_CATALOG/CWE_TOP_25_CATALOG/
+  VIEWS/CWE_TOP_25_VIEWS family
+- src/frob/strata/_threat_catalog_quality.py: QUALITY_CATALOG/
+  ALL_CATALOG/QUALITY_OUT_OF_SCOPE/QUALITY_VIEWS family
+- src/frob/strata/_threat_discharge.py: the THREAT003 mitigation-
+  chokepoint verification family (_mitigation_is_chokepoint and every
+  helper check_discharge_completeness needs) -- a single cohesive
+  concern per the module's own Phase C docstring
+
+All five new files land under 800 lines; _threat.py itself dropped from
+2522 to 757 lines. _threat.py re-exports every moved name so every
+existing `from frob.strata._threat import X` caller (production and
+test) keeps working unchanged; tests/production code that imported
+moved PRIVATE helpers directly are repointed to their new module.
+frob:tests directives and frob:describes doc anchors (docs/guides/
+extending/benign-capabilities.md, docs/guides/extending/threat-
+catalog.md) that named the old _threat.py location for moved symbols
+are repointed in the same change (DRIFT002 caught these before the fix,
+confirming the check exercises the edges).
+
+Verification (foreground, timeout-wrapped, per playbook section 3b):
+- pytest on every touched/covering test file: tests/unit/strata/
+  test_threat.py, test_litmus_cwe.py, test_managed.py,
+  test_store_code_may.py, test_sysdoc.py, test_audit.py, plus
+  tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes --
+  all green.
+- `frob check --only archgate --only wire --only dead_symbols --only
+  drift --only doclink --only fmt`: 0 errors (49 LARGE001 warnings, down
+  from 50 before this land; 1 pre-existing waiver unaffected). WIRE001
+  did NOT fire on any of the five relocated symbol groups -- T-1431's
+  relocation-awareness held.
+- ruff check / ruff format --check clean on every touched/new file.
+
+LARGE001 count: 50 -> 49. _threat.py itself (757 lines) drops off the
+list entirely (under the 800 threshold); no new file crosses it. Net:
+-1 file on T-1420's remaining list.
+
+## Done report
+
+Split src/frob/strata/_threat.py (2522 lines, largest remaining Python
+file on T-1420's LARGE001 list after T-1441) into five sibling modules
+along its own existing seams, verbatim relocation:
+
+- src/frob/strata/_threat_models.py (109 lines): WeaknessEntry/
+  OutOfScopeEntry/BenignCapability/ThreatViolation/ThreatReport
+- src/frob/strata/_threat_catalog_benign.py (274 lines):
+  DEFAULT_BENIGN_CAPABILITIES
+- src/frob/strata/_threat_catalog_cwe.py (478 lines): CWE_CATALOG/
+  CWE_TOP_25_CATALOG/CWE_TOP_25_OUT_OF_SCOPE/VIEWS/CWE_TOP_25_VIEWS
+- src/frob/strata/_threat_catalog_quality.py (290 lines): QUALITY_
+  CATALOG/ALL_CATALOG/QUALITY_OUT_OF_SCOPE/QUALITY_VIEWS
+- src/frob/strata/_threat_discharge.py (706 lines): the THREAT003
+  mitigation-chokepoint verification family
+  (_mitigation_is_chokepoint, check_discharge_completeness, and every
+  helper it needs) -- a single cohesive concern per the module's own
+  Phase C docstring
+
+_threat.py itself dropped to 757 lines (under the 800 threshold, so it
+drops off LARGE001's list entirely) and re-exports every moved
+public/lazily-imported name so every existing
+`from frob.strata._threat import X` caller (production and test) keeps
+working unchanged. Tests/production code importing moved PRIVATE
+helpers directly (_discharge_claim_id) are repointed to their new
+module in the same commit. frob:tests directives and frob:describes
+doc anchors (docs/guides/extending/benign-capabilities.md,
+docs/guides/extending/threat-catalog.md) naming the old _threat.py
+location for moved symbols are repointed in a follow-up commit --
+DRIFT002 caught every one of these before the fix, confirming the
+check actually exercises the edges.
+
+One authoring mistake caught and fixed before verification: an initial
+verbatim-relocation copy of the ThreatReport class dropped its
+model_config/violations field (a sed range cut two lines short),
+caught immediately by the covering pytest run failing with
+AttributeError before any commit -- fixed by completing the copy, no
+behavior change from the original.
+
+Verification (foreground, timeout-wrapped, playbook section 3b):
+- pytest on every touched/covering test file: tests/unit/strata/
+  test_threat.py (126 tests), test_litmus_cwe.py, test_managed.py,
+  test_store_code_may.py, test_sysdoc.py, test_audit.py, plus
+  tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes --
+  all green, all files still collect cleanly.
+- `frob check --only archgate --only wire --only dead_symbols --only
+  drift --only doclink --only fmt`: 0 errors both before and after the
+  doc/test-edge repoint commit (49 LARGE001 warnings after, down from
+  50 before this land; the 1 pre-existing waiver on
+  _land_git_ops.py is unaffected). WIRE001 did NOT fire on any of the
+  five relocated symbol groups -- T-1431's relocation-awareness held,
+  no regression.
+- ruff check / ruff format --check clean on every touched/new file.
+
+LARGE001 count: 50 -> 49 (one file, _threat.py, drops off the list; no
+new file crosses the threshold -- all five new modules land well under
+800 lines each).
+
+Nothing else in scope was touched. No new tickets filed (this portion
+completed cleanly within its own scope).
+
+### Changed
+```
+ docs/guides/extending/benign-capabilities.md |    8 +-
+ docs/guides/extending/threat-catalog.md      |    6 +-
+ src/frob/strata/_threat.py                   | 1813 +-------------------------
+ src/frob/strata/_threat_catalog_benign.py    |  274 ++++
+ src/frob/strata/_threat_catalog_cwe.py       |  478 +++++++
+ src/frob/strata/_threat_catalog_quality.py   |  290 ++++
+ src/frob/strata/_threat_discharge.py         |  706 ++++++++++
+ src/frob/strata/_threat_models.py            |  113 ++
+ tests/test_gates.py                          |    2 +-
+ tests/unit/strata/test_audit.py              |    2 +-
+ tests/unit/strata/test_litmus_cwe.py         |   32 +-
+ tests/unit/strata/test_managed.py            |    9 +-
+ tests/unit/strata/test_store_code_may.py     |    6 +-
+ tests/unit/strata/test_sysdoc.py             |    2 +-
+ tests/unit/strata/test_threat.py             |  155 ++-
+ tickets.md                                   |  151 ++-
+ 16 files changed, 2171 insertions(+), 1876 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_threat.py::TestDischargeCompleteness::test_fired_obligation_discharged_by_proved_claim` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_threat.py::TestBenignCapability::test_empty_reason_is_rejected` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_threat.py::TestCweTop25::test_cwe_94_reuses_the_exec_capability_join` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_threat.py::TestQualityFamilies::test_quality_catalog_never_leaks_into_owasp_top_10_view` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_litmus_cwe.py::TestFixtureCoverageIsExhaustive::test_every_catalog_entry_has_a_fixture_mapping` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_managed.py::TestManagedDischargeFromParsedSurfaceSource::test_managed_node_with_same_shape_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_store_code_may.py::TestStoreMayFeedsThreat003::test_store_with_exec_may_fires_undischarged_cwe_94` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 8 passed (from 8 evidence id(s))
+- gates: 9 error(s), 927 warning(s), 696 waived
+- error-findings: AFFECT001@src/frob/strata/_threat_catalog_cwe.py, AFFECT001@src/frob/strata/_threat_catalog_quality.py, AFFECT001@src/frob/strata/_threat_discharge.py, AFFECT001@src/frob/strata/_threat_models.py, DUP001@src/frob/strata/_threat_discharge.py, INV006@src/frob/strata/_threat_catalog_benign.py, INV006@src/frob/strata/_threat_catalog_cwe.py, INV006@src/frob/strata/_threat_catalog_quality.py, PII012@src/frob/strata/_threat_catalog_cwe.py

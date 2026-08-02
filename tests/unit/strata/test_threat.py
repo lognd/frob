@@ -43,9 +43,9 @@ from frob.strata._threat import (
     VIEWS,
     _caught_by_unresolved_tokens,
     _check_caught_by_integrity,
-    _discharge_claim_id,
     load_repo_benign_capabilities,
 )
+from frob.strata._threat_discharge import _discharge_claim_id
 
 
 def _write(root: Path, rel: str, source: str) -> None:
@@ -113,7 +113,7 @@ class TestCwe611Xxe:
     (docs/strata/threat.md#cve-fingerprints-code-level-pattern-catalog-
     t-0153)."""
 
-    # frob:tests src/frob/strata/_threat.py::CWE_CATALOG kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_CATALOG kind="unit"
     def test_cwe_611_entry_exists_in_the_catalog(self):
         entry = next((e for e in CWE_CATALOG if e.id == "CWE-611"), None)
         assert entry is not None
@@ -200,20 +200,20 @@ class TestQualityFamilies:
         assert violations[0].rule == "THREAT001"
         assert violations[0].cwe == "PERF-COMPRESS-001"
 
-    # frob:tests src/frob/strata/_threat.py::CWE_CATALOG kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_CATALOG kind="unit"
     def test_quality_catalog_never_leaks_into_owasp_top_10_view(self):
         quality_ids = {e.id for e in QUALITY_CATALOG}
         assert quality_ids.isdisjoint(VIEWS["owasp-top-10"])
         assert quality_ids.isdisjoint({e.id for e in CWE_CATALOG})
 
-    # frob:tests src/frob/strata/_threat.py::CWE_CATALOG kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_CATALOG kind="unit"
     def test_dynamic_orm_scope_reuses_the_sql_capability_join(self):
         entry = next(e for e in QUALITY_CATALOG if e.id == "CWE-639")
         cwe_89 = next(e for e in CWE_CATALOG if e.id == "CWE-89")
         assert entry.capability_kind == cwe_89.capability_kind == "sql"
         assert entry.mitigation != cwe_89.mitigation
 
-    # frob:tests src/frob/strata/_threat.py::QUALITY_CATALOG kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_quality.py::QUALITY_CATALOG kind="unit"
     def test_cwe_295_is_cataloged_with_no_capability_kind_or_view(self):
         # T-0188: TLS verify=False's WeaknessEntry -- honest views
         # placement means it belongs to neither owasp-top-10 nor
@@ -229,14 +229,14 @@ class TestQualityFamilies:
         assert entry.id not in CWE_TOP_25_VIEWS["cwe-top-25"]
         assert all(entry.id not in members for members in QUALITY_VIEWS.values())
 
-    # frob:tests src/frob/strata/_threat.py::CWE_CATALOG kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_CATALOG kind="unit"
     def test_no_kind_field_asserted_out_of_scope_entries_have_reasons(self):
         assert len(QUALITY_OUT_OF_SCOPE) == 5
         for entry in QUALITY_OUT_OF_SCOPE:
             assert entry.reason
 
     # frob:ticket T-0510
-    # frob:tests src/frob/strata/_threat.py::QUALITY_CATALOG kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_quality.py::QUALITY_CATALOG kind="unit"
     @pytest.mark.parametrize(
         "cwe_id",
         ["CWE-916", "CWE-1321", "CWE-1333", "CWE-601", "CWE-1336"],
@@ -285,7 +285,8 @@ class TestCweTop25:
     def test_cwe_top_25_view_has_25_members(self):
         assert len(CWE_TOP_25_VIEWS["cwe-top-25"]) == 25
 
-    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_OUT_OF_SCOPE \
+    # kind="unit"
     # frob:ticket T-0143
     def test_cwe_top_25_view_not_merged_into_default_views(self):
         # T-0143: kept separate so `_audit.py::DEFAULT_SECURITY_VIEWS`
@@ -294,7 +295,8 @@ class TestCweTop25:
         assert "cwe-top-25" not in VIEWS
         assert "cwe-top-25" in CWE_TOP_25_VIEWS
 
-    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_OUT_OF_SCOPE \
+    # kind="unit"
     # frob:ticket T-0143
     def test_missing_out_of_scope_entry_is_a_violation(self):
         thin = tuple(e for e in CWE_TOP_25_OUT_OF_SCOPE if e.id != "CWE-787")
@@ -310,13 +312,14 @@ class TestCweTop25:
         assert violations[0].rule == "THREAT001"
         assert violations[0].cwe == "CWE-787"
 
-    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_CATALOG kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_CATALOG kind="unit"
     # frob:ticket T-0143
     def test_cwe_top_25_catalog_never_leaks_into_owasp_top_10_view(self):
         top25_only_ids = {e.id for e in CWE_TOP_25_CATALOG}
         assert top25_only_ids.isdisjoint(VIEWS["owasp-top-10"])
 
-    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_OUT_OF_SCOPE \
+    # kind="unit"
     # frob:ticket T-0143
     # frob:ticket T-0345
     def test_out_of_scope_entries_have_specific_nonempty_reasons(self):
@@ -325,7 +328,7 @@ class TestCweTop25:
             assert entry.reason
             assert len(entry.reason) > 20  # a specific reason, not a stub
 
-    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_CATALOG kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_CATALOG kind="unit"
     # frob:ticket T-0143
     def test_cwe_94_reuses_the_exec_capability_join(self):
         entry = next(e for e in CWE_TOP_25_CATALOG if e.id == "CWE-94")
@@ -339,7 +342,8 @@ class TestCweTop25:
         assert entry.mitigation == "code_execution_sandboxing"
         assert entry.mitigation != cwe_78.mitigation
 
-    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_OUT_OF_SCOPE \
+    # kind="unit"
     # frob:ticket T-0143
     def test_memory_safety_entries_name_the_missing_kernel_concept(self):
         by_id = {e.id: e for e in CWE_TOP_25_OUT_OF_SCOPE}
@@ -351,7 +355,8 @@ class TestCweTop25:
             or "lifetime" in by_id["CWE-416"].reason
         )
 
-    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_OUT_OF_SCOPE \
+    # kind="unit"
     # frob:ticket T-0345
     def test_buffer_overflow_trio_name_the_same_missing_bounds_model(self):
         # T-0345: CWE-120/121/122 are 2025-list-new; each names the SAME
@@ -362,19 +367,22 @@ class TestCweTop25:
             assert "buffer" in by_id[cwe_id].reason
             assert len(by_id[cwe_id].reason) > 20
 
-    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_OUT_OF_SCOPE \
+    # kind="unit"
     # frob:ticket T-0345
     def test_cwe_284_discloses_generic_parent_of_862_863(self):
         entry = next(e for e in CWE_TOP_25_OUT_OF_SCOPE if e.id == "CWE-284")
         assert "CWE-862" in entry.reason or "CWE-863" in entry.reason
 
-    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_OUT_OF_SCOPE \
+    # kind="unit"
     # frob:ticket T-0345
     def test_cwe_770_names_the_missing_resource_budget_concept(self):
         entry = next(e for e in CWE_TOP_25_OUT_OF_SCOPE if e.id == "CWE-770")
         assert "resource" in entry.reason or "rate-limit" in entry.reason
 
-    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_OUT_OF_SCOPE \
+    # kind="unit"
     # frob:ticket T-0345
     def test_cwe_200_matches_the_weaknesses_registrys_own_disposition(self):
         # T-0345: 2025-list-new; docs/design/registry/weaknesses.yaml's
@@ -386,13 +394,14 @@ class TestCweTop25:
         assert "authz" in entry.reason or "authn" in entry.reason
         assert entry.id not in {e.id for e in CWE_TOP_25_CATALOG}
 
-    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_OUT_OF_SCOPE \
+    # kind="unit"
     # frob:ticket T-0143
     def test_cwe_77_discloses_duplicate_coverage_of_cwe_78(self):
         entry = next(e for e in CWE_TOP_25_OUT_OF_SCOPE if e.id == "CWE-77")
         assert "CWE-78" in entry.reason
 
-    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_CATALOG kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_CATALOG kind="unit"
     # frob:ticket T-0345
     def test_cwe_639_reuses_the_sql_capability_join(self):
         # T-0345: 2025-list-new; reuses QUALITY_CATALOG's existing CWE-639
@@ -403,7 +412,8 @@ class TestCweTop25:
         assert entry.capability_kind == quality_entry.capability_kind == "sql"
         assert entry.mitigation == "tenant_scoping"
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0143
     def test_cwe_94_fires_and_discharges_on_exec_capability(self):
         node = Node(id="Sandbox", trust="trusted", may=("exec",))
@@ -429,7 +439,8 @@ class TestCweTop25:
         assert "CWE-94" not in cwes
         assert "CWE-78" in cwes
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0143
     def test_cwe_94_fires_and_is_undischarged_with_no_claim(self):
         node = Node(id="Sandbox", trust="trusted", may=("exec",))
@@ -444,14 +455,16 @@ class TestCweTop25:
 
 
 class TestDischargeCompleteness:
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_no_capability_no_fired_obligation(self):
         model = KernelModel(nodes=(Node(id="Api", trust="trusted"),))
         result = check_discharge_completeness(model)
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_fired_obligation_with_no_claim_is_a_violation(self):
         model = KernelModel(
             nodes=(Node(id="Web", trust="trusted", may=("html_render",)),)
@@ -464,7 +477,8 @@ class TestDischargeCompleteness:
         assert violations[0].cwe == "CWE-79"
         assert violations[0].node == "Web"
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_fired_obligation_discharged_by_proved_claim(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
         claim_id = _discharge_claim_id("CWE-79", "Web")
@@ -482,7 +496,8 @@ class TestDischargeCompleteness:
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # invariant spec: [INV-029](invariants/INV-029.md)
     def test_discharge_claim_below_required_rung_is_a_violation(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
@@ -503,7 +518,8 @@ class TestDischargeCompleteness:
         assert len(violations) == 1
         assert "below catalog rung" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_assumed_claim_without_owner_or_review_is_a_violation(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
         claim_id = _discharge_claim_id("CWE-79", "Web")
@@ -524,7 +540,8 @@ class TestDischargeCompleteness:
         assert len(violations) == 1
         assert "no owner/review date" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_assumed_claim_with_owner_and_review_is_discharged(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
         claim_id = _discharge_claim_id("CWE-79", "Web")
@@ -545,7 +562,8 @@ class TestDischargeCompleteness:
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_multiple_capability_kinds_fire_multiple_obligations(self):
         node = Node(id="Web", trust="trusted", may=("html_render", "sql"))
         result = check_discharge_completeness(model=KernelModel(nodes=(node,)))
@@ -553,7 +571,8 @@ class TestDischargeCompleteness:
         cwes = {v.cwe for v in result.danger_ok}
         assert cwes == {"CWE-79", "CWE-89"}
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_discharge_claim_that_evaluates_refuted_is_a_violation(self):
         evil = Node(id="evil", trust="foreign")
         web = Node(id="Web", trust="trusted", may=("html_render",))
@@ -578,7 +597,8 @@ class TestDischargeCompleteness:
         assert violations[0].node == "Web"
         assert "REFUTED" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_kind_scoped_may_atom_still_fires(self):
         node = Node(id="Web", trust="trusted", may=("sql:orders_db",))
         result = check_discharge_completeness(model=KernelModel(nodes=(node,)))
@@ -593,7 +613,8 @@ class TestDischargeChokepointShape:
     claim), not merely exist at the right rung -- "declared somewhere" is no
     longer enough."""
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_reach_claim_does_not_discharge_as_a_chokepoint(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
         claim_id = _discharge_claim_id("CWE-79", "Web")
@@ -614,7 +635,8 @@ class TestDischargeChokepointShape:
         assert violations[0].rule == "THREAT003"
         assert "does not prove a mitigation chokepoint" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_noflow_claim_with_wrong_dst_does_not_discharge(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
         other = Node(id="Other", trust="trusted")
@@ -635,7 +657,8 @@ class TestDischargeChokepointShape:
         assert len(violations) == 1
         assert "does not prove a mitigation chokepoint" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0501
     def test_noflow_from_a_specific_foreign_trust_node_discharges(self):
         """`_discharges_as_chokepoint` accepts a `NoFlow` naming a
@@ -677,7 +700,8 @@ class TestDischargeChokepointShape:
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_noflow_from_a_non_foreign_node_does_not_discharge(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
         internal = Node(id="Internal", trust="trusted")
@@ -706,7 +730,8 @@ class TestMitigationKindChokepoint:
     required mitigation (`direction=ENDORSE`, `predicate ==
     WeaknessEntry.mitigation`), not merely any boundary of any kind."""
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_declassify_boundary_does_not_discharge(self):
         evil = Node(id="Evil", trust="foreign")
         web = Node(id="Web", trust="trusted", may=("html_render",))
@@ -739,7 +764,8 @@ class TestMitigationKindChokepoint:
         assert violations[0].rule == "THREAT003"
         assert "not of the required mitigation kind" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_endorse_boundary_with_wrong_predicate_does_not_discharge(self):
         evil = Node(id="Evil", trust="foreign")
         web = Node(id="Web", trust="trusted", may=("html_render",))
@@ -771,7 +797,8 @@ class TestMitigationKindChokepoint:
         assert len(violations) == 1
         assert "not of the required mitigation kind" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_endorse_boundary_with_matching_predicate_discharges(self):
         evil = Node(id="Evil", trust="foreign")
         web = Node(id="Web", trust="trusted", may=("html_render",))
@@ -802,7 +829,8 @@ class TestMitigationKindChokepoint:
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_endorse_boundary_with_no_evidence_ref_does_not_discharge_g1(self):
         """docs/audits/strata.md G1: before the fix, an `ENDORSE` boundary
         whose bare `predicate` string happened to equal the catalog's
@@ -843,7 +871,8 @@ class TestMitigationKindChokepoint:
         assert len(violations) == 1
         assert "not of the required mitigation kind" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_endorse_boundary_with_dangling_obligation_does_not_discharge_g1(self):
         """G1's other half: `obligations` naming a claim id that does NOT
         exist in the model must not be trusted either -- an evidence ref
@@ -879,7 +908,8 @@ class TestMitigationKindChokepoint:
         assert len(violations) == 1
         assert "not of the required mitigation kind" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_mixed_paths_matching_on_one_wrong_kind_on_other_does_not_discharge(self):
         # Two independent Evil->Web routes. The ORIGINAL (unrestricted)
         # NoFlow proves: both f1 and f2 carry SOME boundary, so
@@ -929,7 +959,8 @@ class TestMitigationKindChokepoint:
         assert len(violations) == 1
         assert "not of the required mitigation kind" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_assumed_claim_bypasses_the_mitigation_kind_check(self):
         # An assumed claim never reaches the closure at all
         # (`evaluate_claims` short-circuits it to ASSUMED), so there is no
@@ -1000,7 +1031,8 @@ class TestCodeBoundMitigationPredicate:
             ),
         )
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0595
     def test_no_observed_call_site_fails_closed_naming_the_boundary(
         self, tmp_path: Path
@@ -1028,7 +1060,8 @@ class TestCodeBoundMitigationPredicate:
         assert "b1" in violations[0].detail
         assert "no OBSERVED sanitizer" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0595
     def test_observed_call_site_discharges(self, tmp_path: Path):
         """The positive case: `output_encoding(...)` really is CALLED in
@@ -1045,7 +1078,8 @@ class TestCodeBoundMitigationPredicate:
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0595
     def test_call_site_via_attribute_access_also_discharges(self, tmp_path: Path):
         """A method/module-qualified call (`html.output_encoding(x)`) is
@@ -1063,7 +1097,8 @@ class TestCodeBoundMitigationPredicate:
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0595
     def test_call_site_in_a_different_nodes_code_does_not_count(self, tmp_path: Path):
         """`output_encoding` called only in a file owned by a DIFFERENT
@@ -1108,7 +1143,8 @@ class TestCodeBoundMitigationPredicate:
         assert len(violations) == 1
         assert "b1" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0595
     def test_absent_binding_keeps_the_old_weaker_half_behavior(self, tmp_path: Path):
         """Backward compatibility: a caller with no code tree at all
@@ -1139,7 +1175,8 @@ class TestFlowCompletenessGap:
     and a model with no flows/boundaries declared at all keep discharging
     exactly as before -- neither of those is the flagged gap."""
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0501
     def test_foreign_node_present_but_no_flow_to_sink_fails_closed(self):
         """Confirmed vacuous discharge BEFORE this ticket's fix: `Evil` is
@@ -1173,7 +1210,8 @@ class TestFlowCompletenessGap:
         assert "vacuously" in violations[0].detail
         assert "un-modeled" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0501
     def test_foreign_node_present_and_connected_elsewhere_still_fails_closed(self):
         """The foreign node need not be totally disconnected from the
@@ -1202,7 +1240,8 @@ class TestFlowCompletenessGap:
         assert "vacuously" in violations[0].detail
         assert "un-modeled" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0501
     def test_no_foreign_node_anywhere_still_discharges_by_absence(self):
         """Regression guard for T-0223: a model with ZERO `trust foreign`
@@ -1256,7 +1295,8 @@ class TestLibraryModeForeignlessDischarge:
     sink with no boundary -- no weakening for a model with a genuine
     injection path (library_exec_foreign_reaches_still_fires.strata)."""
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0223
     def test_foreign_less_library_model_discharges_cwe_78_by_absence(self):
         model = _load_litmus_model("library_exec_no_foreign_discharges.strata")
@@ -1264,7 +1304,8 @@ class TestLibraryModeForeignlessDischarge:
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0223
     def test_real_foreign_source_reaching_the_sink_still_fires(self):
         model = _load_litmus_model("library_exec_foreign_reaches_still_fires.strata")
@@ -1277,17 +1318,17 @@ class TestLibraryModeForeignlessDischarge:
 
 
 class TestBenignCapability:
-    # frob:tests src/frob/strata/_threat.py::BenignCapability kind="unit"
+    # frob:tests src/frob/strata/_threat_models.py::BenignCapability kind="unit"
     def test_empty_reason_is_rejected(self):
         with pytest.raises(ValidationError):
             BenignCapability(kind="metrics", reason="", caught_by="test fixture")
 
-    # frob:tests src/frob/strata/_threat.py::BenignCapability kind="unit"
+    # frob:tests src/frob/strata/_threat_models.py::BenignCapability kind="unit"
     def test_empty_caught_by_is_rejected(self):
         with pytest.raises(ValidationError):
             BenignCapability(kind="metrics", reason="no CWE weakness", caught_by="")
 
-    # frob:tests src/frob/strata/_threat.py::BenignCapability kind="unit"
+    # frob:tests src/frob/strata/_threat_models.py::BenignCapability kind="unit"
     def test_missing_caught_by_is_rejected(self):
         with pytest.raises(ValidationError):
             # intentionally omit required caught_by to verify runtime rejection
@@ -1660,7 +1701,8 @@ class TestEvalFiresCwe94:
         assert result.is_ok
         assert result.danger_ok == ()  # classified (CWE-94), not unclassified
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_eval_capability_fires_a_real_cwe94_obligation(self):
         """The obligation actually FIRES (THREAT003) with no discharge --
         this is the counterexample: an `eval`-declaring node with no
@@ -1673,7 +1715,8 @@ class TestEvalFiresCwe94:
         violations = result.danger_ok
         assert any(v.rule == "THREAT003" and v.cwe == "CWE-94" for v in violations)
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     def test_eval_capability_discharges_with_a_real_mitigation_claim(self):
         """Hardened case: the identical node, but with a proven `NoFlow`
         mitigation claim named `weakness:CWE-94:<node>` -- discharges

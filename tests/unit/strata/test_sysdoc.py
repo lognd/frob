@@ -20,7 +20,7 @@ from frob.strata import (
     merge_models,
     render_audit_matrix,
 )
-from frob.strata._threat import _discharge_claim_id
+from frob.strata._threat_discharge import _discharge_claim_id
 
 
 class TestMergeModels:

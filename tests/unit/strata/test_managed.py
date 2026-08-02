@@ -77,7 +77,8 @@ class TestManagedGrammar:
 class TestManagedDischargeFromParsedSurfaceSource:
     """T-0172: same shape, managed discharges / non-managed still fires."""
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0172
     def test_non_managed_node_with_mismatched_boundary_still_fires(self):
         from frob.strata._threat import check_discharge_completeness
@@ -92,7 +93,8 @@ class TestManagedDischargeFromParsedSurfaceSource:
             "not of the required mitigation kind" in violations[("CWE-89", "db")].detail
         )
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0172
     def test_managed_node_with_same_shape_discharges(self):
         from frob.strata._threat import check_discharge_completeness
@@ -102,7 +104,8 @@ class TestManagedDischargeFromParsedSurfaceSource:
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0172
     def test_managed_node_still_requires_a_discharging_claim(self):
         """Removing the claim from the managed fixture must still fire --

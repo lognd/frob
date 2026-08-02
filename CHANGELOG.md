@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.309.0] - unreleased
+
+- T-1442: T-1420 delivered portion 2
+
 ## [0.308.0] - unreleased
 
 - T-1441: arch: LARGE001 splits of gates _sys and _dead_symbols (T-1420 delivered portion 1)

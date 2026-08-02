@@ -2,11 +2,11 @@
 
 <a id="threat-catalog"></a>
 
-<!-- frob:describes src/frob/strata/_threat.py::WeaknessEntry -->
+<!-- frob:describes src/frob/strata/_threat_models.py::WeaknessEntry -->
 
 ## What / where
 
-`src/frob/strata/_threat.py` holds the `std.cwe` catalog: a conditional
+`src/frob/strata/_threat_catalog_cwe.py` holds the `std.cwe` catalog: a conditional
 obligation predicated on a capability being present in a strata model
 (docs/strata/threat.md#the-core-reframe). Two SEPARATE catalogs exist as
 distinct views, not one shared list:
@@ -59,7 +59,7 @@ registry, see [Benign capabilities](benign-capabilities.md)) and
 ## Worked example diff
 
 ```python
-# src/frob/strata/_threat.py, in CWE_CATALOG:
+# src/frob/strata/_threat_catalog_cwe.py, in CWE_CATALOG:
 WeaknessEntry(
     id="CWE-943",
     title="Improper Neutralization of Special Elements in Data Query Logic",

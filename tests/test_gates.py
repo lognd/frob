@@ -11607,7 +11607,7 @@ class TestSysGate:
         discharged produces no DOC003 violation."""
         import frob.strata as strata_mod
         from frob.strata import Claim, DesignIds, Node, NoFlow, Rung
-        from frob.strata._threat import _discharge_claim_id
+        from frob.strata._threat_discharge import _discharge_claim_id
 
         node = Node(id="Web", trust="trusted", may=("html_render",))
         claim_id = _discharge_claim_id("CWE-79", "Web")

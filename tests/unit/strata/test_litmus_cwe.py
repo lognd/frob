@@ -113,20 +113,20 @@ class TestFixtureCoverageIsExhaustive:
     or `CWE_TOP_25_CATALOG` with no entry here fails this test, never
     silently skips (T-0145 vacuous-pass doctrine)."""
 
-    # frob:tests src/frob/strata/_threat.py::CWE_CATALOG kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_CATALOG kind="unit"
     # frob:ticket T-0145
     def test_every_catalog_entry_has_a_fixture_mapping(self):
         catalog_ids = {e.id for e in _UNION_CATALOG}
         assert set(_FIRING_FIXTURES) == catalog_ids
 
-    # frob:tests src/frob/strata/_threat.py::CWE_CATALOG kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_CATALOG kind="unit"
     # frob:ticket T-0145
     def test_unfired_ids_are_exactly_the_capability_kind_none_entries(self):
         none_ids = {e.id for e in _UNION_CATALOG if e.capability_kind is None}
         assert none_ids == set(_UNFIRED_FIXTURES)
         assert none_ids == {cwe for cwe, v in _FIRING_FIXTURES.items() if v is None}
 
-    # frob:tests src/frob/strata/_threat.py::CWE_CATALOG kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_CATALOG kind="unit"
     # frob:ticket T-0145
     def test_every_firing_id_also_has_a_hardened_fixture(self):
         firing_ids = {cwe for cwe, v in _FIRING_FIXTURES.items() if v is not None}
@@ -153,14 +153,16 @@ class TestOutOfScopeExemptionMatchesCatalogExactly:
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_OUT_OF_SCOPE \
+    # kind="unit"
     # frob:ticket T-0145
     def test_out_of_scope_ids_are_disjoint_from_the_fixture_catalog(self):
         catalog_ids = {e.id for e in _UNION_CATALOG}
         out_of_scope_ids = {e.id for e in CWE_TOP_25_OUT_OF_SCOPE}
         assert catalog_ids.isdisjoint(out_of_scope_ids)
 
-    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_OUT_OF_SCOPE \
+    # kind="unit"
     # frob:ticket T-0145
     def test_out_of_scope_ids_cover_the_top_25_gap_exactly(self):
         # every cwe-top-25 view member is either in this suite's catalog
@@ -181,7 +183,8 @@ class TestFiringFromParsedSurfaceSource:
         "cwe_id",
         sorted(cwe for cwe, v in _FIRING_FIXTURES.items() if v is not None),
     )
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0145
     def test_fires_undischarged(self, cwe_id: str):
         fixture = _FIRING_FIXTURES[cwe_id]
@@ -202,7 +205,8 @@ class TestHardenedDischargesFromParsedSurfaceSource:
     hand-built `KernelModel`."""
 
     @pytest.mark.parametrize("cwe_id", sorted(_HARDENED_FIXTURES))
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0145
     def test_discharges_cleanly(self, cwe_id: str):
         filename, node_id = _HARDENED_FIXTURES[cwe_id]
@@ -221,7 +225,8 @@ class TestSharedExecCapabilityDischargesIndependently:
     independently of the other from ONE parsed fixture, not merely that
     the union of the two is empty."""
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0145
     def test_vuln_fixture_fires_both_independently(self):
         model = _load_model("cwe_exec_vuln.strata")
@@ -231,7 +236,8 @@ class TestSharedExecCapabilityDischargesIndependently:
         assert "CWE-78" in cwes
         assert "CWE-94" in cwes
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0145
     def test_hardened_fixture_discharges_both_independently(self):
         model = _load_model("cwe_exec_hardened.strata")
@@ -241,7 +247,8 @@ class TestSharedExecCapabilityDischargesIndependently:
         assert "CWE-78" not in cwes
         assert "CWE-94" not in cwes
 
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0145
     def test_discharging_only_one_leaves_the_other_undischarged(self):
         # A model that discharges CWE-78 alone must NOT accidentally
@@ -271,7 +278,8 @@ class TestCapabilityKindNoneEntriesNeverFireByDesign:
     scenario, rather than skipped."""
 
     @pytest.mark.parametrize("cwe_id", sorted(_UNFIRED_FIXTURES))
-    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
+    # kind="unit"
     # frob:ticket T-0145
     def test_never_fires_even_in_a_plausible_vulnerable_scenario(self, cwe_id: str):
         filename = _UNFIRED_FIXTURES[cwe_id]
@@ -281,7 +289,7 @@ class TestCapabilityKindNoneEntriesNeverFireByDesign:
         cwes = {v.cwe for v in result.danger_ok}
         assert cwe_id not in cwes
 
-    # frob:tests src/frob/strata/_threat.py::CWE_CATALOG kind="unit"
+    # frob:tests src/frob/strata/_threat_catalog_cwe.py::CWE_CATALOG kind="unit"
     # frob:ticket T-0145
     def test_capability_kind_is_none_for_all_three(self):
         by_id = {e.id: e for e in _UNION_CATALOG}
