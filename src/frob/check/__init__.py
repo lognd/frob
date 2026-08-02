@@ -426,8 +426,13 @@ def _python_tasks(
     base: str | None,
     skips: dict[str, bool],
     delta: bool = False,
+    no_cache: bool = False,
 ) -> list[Callable[[], ToolResult | list[ToolResult] | None]]:
-    """The enabled per-tool jobs for a Python check run."""
+    """The enabled per-tool jobs for a Python check run.
+
+    T-1346: `no_cache` reaches `_run_gates` unchanged -- see its own
+    docstring for the default-on gate-cache behavior this threads through.
+    """
 
     def wanted(name: str) -> bool:
         return only is None or name in only
@@ -450,7 +455,12 @@ def _python_tasks(
     if not skips["gates"] and wanted("gates"):
         tasks.append(
             lambda: _run_gates(
-                root, ticket=ticket, base=base, gates=gate_only, delta=delta
+                root,
+                ticket=ticket,
+                base=base,
+                gates=gate_only,
+                delta=delta,
+                no_cache=no_cache,
             )
         )
     return tasks
@@ -547,12 +557,18 @@ def run_check(
     ticket: str | None = None,
     base: str | None = None,
     delta: bool = False,
+    no_cache: bool = False,
 ) -> CheckResult:
     """Quality gate for Python projects: ruff, ty, cycle/dup/arch/bind, gates, etc.
 
     `delta=True` (T-0095) makes the gates stage report only violations new
     since `.frob/baseline` (see `frob.gates.stamp_baseline`/`delta_violations`) --
     an agent-facing signal-only mode; every other tool is unaffected.
+
+    `no_cache=True` (T-1346) forces the gates stage to recompute every gate
+    in full, bypassing T-0602's gate-result cache -- the default (`False`)
+    now serves cacheable gates from `.frob/gate-cache.db` when their inputs
+    are unchanged; see `_run_gates`'s docstring.
     """
     skips = _python_skip_flags(
         skip_ruff=skip_ruff,
@@ -572,6 +588,7 @@ def run_check(
         ticket=ticket,
         base=base,
         delta=delta,
+        no_cache=no_cache,
     )
 
 
@@ -584,6 +601,7 @@ def _run_check_with_skips(
     ticket: str | None,
     base: str | None,
     delta: bool,
+    no_cache: bool = False,
 ) -> CheckResult:
     """`run_check`'s task-selection and execution tail, once its many
     `skip_*` flags have been collapsed into `skips`."""
@@ -626,6 +644,7 @@ def _run_check_with_skips(
                 base=base,
                 skips=skips,
                 delta=delta,
+                no_cache=no_cache,
             )
             return CheckResult(path=str(root), results=_collect_results(tasks))
 
@@ -650,6 +669,7 @@ def run_check_cpp(
     ticket: str | None = None,
     base: str | None = None,
     delta: bool = False,
+    no_cache: bool = False,
 ) -> CheckResult:
     """Quality gate for CMake C/C++ projects.
 
@@ -693,6 +713,7 @@ def run_check_cpp(
             ticket=ticket,
             base=base,
             delta=delta,
+            no_cache=no_cache,
         )
         results.extend(_run_tasks_concurrently(post_build))
         return CheckResult(path=str(root), results=results)
@@ -710,6 +731,7 @@ def _cpp_post_build_tasks(
     ticket: str | None = None,
     base: str | None = None,
     delta: bool = False,
+    no_cache: bool = False,
 ) -> list[Callable[[], ToolResult | list[ToolResult] | None]]:
     """The enabled post-build job callables for a CMake C/C++ check run."""
     post_build: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
@@ -722,7 +744,9 @@ def _cpp_post_build_tasks(
         post_build.append(lambda: _run_ctest(bdir, valgrind=_valgrind))
     if not skip_gates:
         post_build.append(
-            lambda: _run_gates(root, ticket=ticket, base=base, delta=delta)
+            lambda: _run_gates(
+                root, ticket=ticket, base=base, delta=delta, no_cache=no_cache
+            )
         )
     return post_build
 
@@ -746,6 +770,7 @@ def run_check_rust(
     ticket: str | None = None,
     base: str | None = None,
     delta: bool = False,
+    no_cache: bool = False,
 ) -> CheckResult:
     """Quality gate for Rust/Cargo projects.
 
@@ -785,7 +810,9 @@ def run_check_rust(
             if r is not None:
                 results.append(r)
         if not skip_gates:
-            gate_result = _run_gates(root, ticket=ticket, base=base, delta=delta)
+            gate_result = _run_gates(
+                root, ticket=ticket, base=base, delta=delta, no_cache=no_cache
+            )
             if isinstance(gate_result, list):
                 results.extend(gate_result)
             else:
@@ -812,6 +839,7 @@ def run_check_ts(
     ticket: str | None = None,
     base: str | None = None,
     delta: bool = False,
+    no_cache: bool = False,
 ) -> CheckResult:
     """Quality gate for npm/TypeScript projects (tsc/eslint/prettier/vitest).
 
@@ -843,7 +871,9 @@ def run_check_ts(
             tasks.append(lambda: _run_vitest(root))
         if not skip_gates:
             tasks.append(
-                lambda: _run_gates(root, ticket=ticket, base=base, delta=delta)
+                lambda: _run_gates(
+                    root, ticket=ticket, base=base, delta=delta, no_cache=no_cache
+                )
             )
 
         results: list[ToolResult] = []

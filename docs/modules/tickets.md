@@ -2026,6 +2026,70 @@ Three gaps found in one real landing session, closed together:
   is offered anyway as an explicit, documented manual override, never set
   by `land` itself since it never needs it.
 
+## Merge queue (T-1345, first portion)
+
+<!-- frob:describes src/frob/tickets/_land_queue.py::QueueEntry -->
+<!-- frob:describes src/frob/tickets/_land_queue.py::QueueError -->
+<!-- frob:describes src/frob/tickets/_land_queue.py::enqueue -->
+<!-- frob:describes src/frob/tickets/_land_queue.py::drain_next -->
+<!-- frob:describes src/frob/tickets/_land_queue.py::queue_status -->
+
+`frob.tickets._land_queue` formalizes the coordinator-lands-serially
+discipline `docs/guides/agent-playbook.md` already documents as process
+into checkable tooling: `enqueue(root, ticket_id, worktree, branch)`
+appends a `queued` entry to `.frob/land-queue.json` and returns
+immediately (a caller never blocks waiting for `land()` to actually run);
+`drain_next(root, land_fn)` pops the oldest `queued` entry (FIFO) and runs
+it through a caller-supplied `land_fn` (normally a thin wrapper around
+`land()` itself), recording the outcome (`landed` + commit sha, or
+`failed` + the `LandError` value) back onto the entry rather than
+dropping it. `queue_status(root)` is a read-only snapshot of the full
+queue, any status, for a caller that wants to show state.
+
+This is a deliberately partial delivery of T-1345's full title ("agents
+enqueue verified branches, one drainer merges onto main"): the queue data
+structure plus `enqueue`/`drain_next` are real and tested
+(`tests/unit/test_land_queue.py`), but there is no `frob ticket land
+--queue` CLI flag and no drainer subcommand yet -- both need
+`src/frob/_cli_parsers/_ticket.py`/`src/frob/app/ticket_runner.py`,
+outside this ticket's declared scope (`src/frob/tickets/**`,
+`docs/modules/tickets.md`, `docs/guides/agent-playbook.md`). Filed as
+T-draft-2f611252 (renumbers at land -- see T-1345's Done report for the
+real id).
+
+**Policy decisions, recorded here per the ticket's own design questions:**
+
+- **Where the queue lives.** `.frob/land-queue.json`, guarded by a
+  dedicated `fcntl` flock (`.frob/land-queue.lock`) -- same posture as
+  `_land._land_lock`'s `.frob/land.lock`, a deliberately separate file so
+  the two concerns (serializing the actual git-heavy `land()` body vs.
+  serializing queue-file bookkeeping) never share a lock. A crashed
+  drainer leaves the file exactly as it was at its last successful write;
+  the next `drain_next` call simply resumes.
+- **A queued branch that no longer merges cleanly.** Rejected back to the
+  agent: `drain_next` marks the entry `failed` with the `LandError`
+  recorded and dequeues it (no longer a `drain_next` candidate), but never
+  removes it from the JSON history and never auto-rebases-and-retries.
+  Auto-retry risks landing a diff the agent never actually re-verified --
+  the same class of gap `docs/guides/agent-playbook.md` section 9's
+  deletion-filter rule exists to catch for a stale-base merge.
+- **Concurrency.** The queue-file lock is held only across the
+  pop-and-mark-landing step and the record-outcome step, NOT across the
+  `land_fn` call itself -- `land_fn`'s own `_land_lock` already serializes
+  the expensive part. Running exactly one drainer process per `root` is
+  an operational invariant this module documents but does not itself
+  enforce; a second concurrent drainer would be safe (the queue lock
+  prevents two drainers popping the same entry) but wasteful (both
+  contend on `_land_lock` for nothing).
+- **LAND-PROOF.** `drain_next` returns the updated `QueueEntry` (carrying
+  `commit_sha` on success), and `land_fn`'s own `Result[LandReport,
+  LandError]` is available to whatever wrapper the caller supplies -- a
+  future CLI drainer verb can print the same `LAND-PROOF:` line `frob
+  ticket land` already does today, from the `LandReport` its `land_fn`
+  closure captured. This module does not print anything itself (no CLI
+  surface in this scope), so the contract is preserved by construction:
+  nothing here bypasses or reimplements `land()`'s own reporting.
+
 ## Git merge driver
 
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_merge_driver -->

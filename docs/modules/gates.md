@@ -1962,12 +1962,9 @@ allowlist (`drift`, `test`, `policy`, `parse_failures`, `debt`,
 served from `.frob/gate-cache.db` instead of re-running it, whenever every
 file the gate is observed to have read still hashes the same, the tree's
 overall tracked-file membership is unchanged, and any non-file scalar
-input the gate also depends on is unchanged. `use_cache` defaults to
-`False` -- every pre-T-0602 `run_gates` call site (including a plain
-`frob check`) is unaffected; only `frob.serve._tools.frob_check_delta`
-opts in today. Full design, the membership-guard soundness argument, and
-the cold-diff oracle property test live in `frob.gates._gate_cache`'s
-module docstring and
+input the gate also depends on is unchanged. Full design, the
+membership-guard soundness argument, and the cold-diff oracle property
+test live in `frob.gates._gate_cache`'s module docstring and
 `docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602`.
 `deprecated` is deliberately NOT on this allowlist even though it looks
 snapshot-shaped: T-0639 (landed on `main` after T-0602 started) gave it a
@@ -1975,6 +1972,35 @@ snapshot-shaped: T-0639 (landed on `main` after T-0602 started) gave it a
 resolution, filesystem-dependent beyond what `TrackedSnapshot` observes --
 excluded per this section's own soundness rule the moment that landed,
 rather than cached unsoundly.
+
+**T-1346: `frob check` now actually uses this cache.** `run_gates`'s
+`use_cache` parameter existed from T-0602 but no `frob check` call site
+ever passed `use_cache=True` -- the whole mechanism sat built and unused
+except for `frob.serve._tools.frob_check_delta`. `frob.check._python.
+_run_gates` (every `run_check`/`run_check_cpp`/`run_check_rust`/
+`run_check_ts` call site funnels through it) now calls `run_gates(cfg,
+use_cache=_gate_cache_enabled(no_cache))`, ON by default, so a real
+`frob check` invocation with an unchanged file set serves the
+`_CACHEABLE_GATES` allowlist from cache instead of recomputing it. Set
+`FROB_NO_GATE_CACHE=1` (any non-empty value) to force a full recompute for
+one invocation -- a first-class `--no-cache` CLI flag needs
+`_cli_parsers/_check.py`/`app/config.py`/`app/check_runner.py`, which sit
+outside `src/frob/gates/**`/`src/frob/check/**` and were left as a
+follow-up (T-1445, renumbered at land -- see T-1346's Done
+report for the real id). Cache HIT/MISS per gate logs at INFO
+(`frob.gates._gate_cache`'s own lines), visible under `frob check -v`,
+so a suspect cached result is diagnosable without a dedicated flag.
+
+**What this does NOT yet cover.** `_CACHEABLE_GATES` only spans the
+thread-pool gates that read `st.snapshot` alone. The gates measured as the
+dominant CPU cost of a full `frob check` -- `sys`, `perf`, `arch`,
+`clones`/`dup`, `pii_structural`, `secrets`, `coverage`, `dead_symbols`,
+`deprecated`, `opaque` -- all run as `_ProcessJob`s that take `st.root`
+directly (an unbounded filesystem walk `TrackedSnapshot` cannot observe),
+so none of them are eligible for this cache as designed. Extending
+caching to that set is real, separate design work (a root-content-hash or
+similar invalidation key, not just a touched-file set) and is the natural
+next leverage point, tracked as a follow-up rather than attempted here.
 
 - `exclude_filtered_coverage` -- re-filters a `CoverageData` against
   `[graph] exclude` (T-0997); `stamp_coverage` calls it before writing

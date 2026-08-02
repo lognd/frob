@@ -560,6 +560,74 @@ class TestRunGatesDelta:
         assert any("stale" in d.message for d in all_diags)
 
 
+# frob:ticket T-1346
+class TestRunGatesCacheWiring:
+    """T-1346: `_run_gates` now defaults `run_gates`'s `use_cache` to True
+    (previously T-0602 built the cache but no `frob check` call site ever
+    opted in) and `no_cache=True`/`FROB_NO_GATE_CACHE` forces it back off."""
+
+    def test_gate_cache_enabled_default_true(self) -> None:
+        # frob:tests src/frob/check/_python.py::_gate_cache_enabled kind="unit"
+        from frob.check._python import _gate_cache_enabled
+
+        assert _gate_cache_enabled(False) is True
+
+    def test_gate_cache_enabled_false_when_no_cache_true(self) -> None:
+        # frob:tests src/frob/check/_python.py::_gate_cache_enabled kind="unit"
+        from frob.check._python import _gate_cache_enabled
+
+        assert _gate_cache_enabled(True) is False
+
+    def test_gate_cache_enabled_false_when_env_var_set(self, monkeypatch) -> None:
+        # frob:tests src/frob/check/_python.py::_gate_cache_enabled kind="unit"
+        from frob.check._python import _gate_cache_enabled
+
+        monkeypatch.setenv("FROB_NO_GATE_CACHE", "1")
+        assert _gate_cache_enabled(False) is False
+
+    def test_run_gates_passes_use_cache_true_by_default(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_gates kind="unit"
+        from frob.check._python import _run_gates
+
+        (tmp_path / "tickets.md").write_text("# Tickets\n")
+        seen: dict[str, object] = {}
+
+        def fake_run_gates(cfg, *, use_cache: bool = False):  # noqa: ANN001
+            seen["use_cache"] = use_cache
+            from typani import Ok
+
+            from frob.gates import GateReport, GateStats
+
+            return Ok(GateReport(violations=(), waived=(), stats=GateStats()))
+
+        monkeypatch.setattr("frob.gates.run_gates", fake_run_gates)
+        _run_gates(tmp_path)
+        assert seen["use_cache"] is True
+
+    def test_run_gates_no_cache_forces_use_cache_false(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_gates kind="unit"
+        from frob.check._python import _run_gates
+
+        (tmp_path / "tickets.md").write_text("# Tickets\n")
+        seen: dict[str, object] = {}
+
+        def fake_run_gates(cfg, *, use_cache: bool = False):  # noqa: ANN001
+            seen["use_cache"] = use_cache
+            from typani import Ok
+
+            from frob.gates import GateReport, GateStats
+
+            return Ok(GateReport(violations=(), waived=(), stats=GateStats()))
+
+        monkeypatch.setattr("frob.gates.run_gates", fake_run_gates)
+        _run_gates(tmp_path, no_cache=True)
+        assert seen["use_cache"] is False
+
+
 class TestSummarySeverityHonesty:
     """T-0228: a passing gate must never render its warn-class findings as a
     bare, alarming 'violation(s)' count -- every summary line splits into
@@ -589,7 +657,7 @@ class TestSummarySeverityHonesty:
         )
         monkeypatch.setattr(
             "frob.gates.run_gates",
-            lambda cfg: Ok(report),  # noqa: ARG005
+            lambda cfg, *, use_cache=False: Ok(report),  # noqa: ARG005
         )
         (tmp_path / "tickets.md").write_text("# Tickets\n")
         # T-0420: the overall totals now live on the trailing gate-summary
@@ -1317,6 +1385,7 @@ class TestDerivedStateLockWiring:
             ticket: str | None = None,
             base: str | None = None,
             delta: bool = False,
+            no_cache: bool = False,
         ) -> ToolResult:
             stage_states.append(spy.held)
             return ToolResult(
@@ -1361,6 +1430,7 @@ class TestDerivedStateLockWiring:
             ticket: str | None = None,
             base: str | None = None,
             delta: bool = False,
+            no_cache: bool = False,
         ) -> ToolResult:
             stage_states.append(spy.held)
             return ToolResult(

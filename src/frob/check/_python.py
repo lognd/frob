@@ -9,6 +9,7 @@ parallel.
 
 from __future__ import annotations
 
+import os
 import threading
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -613,9 +614,39 @@ def _error_count(violations) -> int:  # noqa: ANN001
     return sum(1 for v in violations if v.severity.value == "error")
 
 
+# frob:ticket T-1346
+#: `FROB_NO_GATE_CACHE=1` (any non-empty value) disables T-0602's gate
+#: cache for this invocation -- the escape hatch T-1346's acceptance
+#: criteria call for, expressed as an env var rather than a new argparse
+#: flag because `_cli_parsers/_check.py`/`app/config.py`/`app/check_runner.py`
+#: sit outside this ticket's declared scope (`src/frob/gates/**`,
+#: `src/frob/check/**`, `docs/modules/gates.md`); a first-class `--no-cache`
+#: CLI flag is filed as a follow-up (see docs/modules/gates.md).
+_NO_GATE_CACHE_ENV = "FROB_NO_GATE_CACHE"
+
+
+# frob:ticket T-1346
+# frob:tests tests/unit/test_check.py::TestRunGatesCacheWiring.test_gate_cache_enabled_default_true  # noqa: E501
+# frob:tests tests/unit/test_check.py::TestRunGatesCacheWiring.test_gate_cache_enabled_false_when_no_cache_true  # noqa: E501
+# frob:tests tests/unit/test_check.py::TestRunGatesCacheWiring.test_gate_cache_enabled_false_when_env_var_set  # noqa: E501
+def _gate_cache_enabled(no_cache: bool) -> bool:
+    """Whether this `_run_gates` call should opt into T-0602's gate-result
+    cache: `no_cache=True` (a caller's explicit request) or a non-empty
+    `FROB_NO_GATE_CACHE` env var both disable it; otherwise caching is ON
+    by default (T-1346 -- previously `run_gates`'s `use_cache=True` path
+    existed but no `frob check` call site ever passed it, so the cache
+    built in T-0602 never actually served a real invocation)."""
+    if no_cache:
+        return False
+    return not os.environ.get(_NO_GATE_CACHE_ENV)
+
+
 # frob:ticket T-0028
 # frob:ticket T-0102
 # frob:ticket T-0095
+# frob:ticket T-1346
+# frob:tests tests/unit/test_check.py::TestRunGatesCacheWiring.test_run_gates_passes_use_cache_true_by_default  # noqa: E501
+# frob:tests tests/unit/test_check.py::TestRunGatesCacheWiring.test_run_gates_no_cache_forces_use_cache_false  # noqa: E501
 def _run_gates(
     root: Path,
     *,
@@ -623,6 +654,7 @@ def _run_gates(
     base: str | None = None,
     gates: frozenset[str] = frozenset(),
     delta: bool = False,
+    no_cache: bool = False,
 ) -> ToolResult | list[ToolResult]:
     """Run frob.gates.run_gates as a check stage. Most load failures (git repo
     / tickets dir not guaranteed to exist for every `frob check` caller) are a
@@ -634,6 +666,17 @@ def _run_gates(
     to those absent from `.frob/baseline` before scoring/reporting -- the
     agent-facing signal-only mode; a missing or stale baseline degrades to
     the full (unfiltered) set with a WARN diagnostic, never a silent no-op.
+
+    T-1346: `run_gates` is now called with `use_cache=_gate_cache_enabled
+    (no_cache)` -- ON by default -- so the T-0602 dependency-tracked
+    partial-re-evaluation cache actually serves real `frob check` runs for
+    the closed `_CACHEABLE_GATES` allowlist (drift/test/policy/
+    parse_failures/debt/lang_conformance/affect_drift). `no_cache=True` (or
+    `FROB_NO_GATE_CACHE` set) forces a full recompute, matching every
+    pre-T-1346 call byte-for-byte. Cache HIT/MISS is logged per gate
+    (`frob.gates._gate_cache`'s own `_log.info` lines, visible under
+    `frob check -v`) so a suspect cached result is diagnosable without a
+    special flag.
 
     T-0603: `frob.check._derived_state_integrity_result` (called once,
     synchronously, before any check task is dispatched -- see
@@ -655,7 +698,7 @@ def _run_gates(
     from frob.gates import GateConfig, GateError, run_gates
 
     cfg = GateConfig(root=str(root), base=base or "main", ticket=ticket, gates=gates)
-    result = run_gates(cfg)
+    result = run_gates(cfg, use_cache=_gate_cache_enabled(no_cache))
     if result.is_err:
         return _gates_error_result(result.danger_err, GateError)
     return _gates_success_result(

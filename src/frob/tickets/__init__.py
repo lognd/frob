@@ -92,6 +92,13 @@ from frob.tickets._evidence import (
     transition,
 )
 from frob.tickets._land import land, splice_ledger
+from frob.tickets._land_queue import (
+    QueueEntry,
+    QueueError,
+    drain_next,
+    enqueue,
+    queue_status,
+)
 from frob.tickets._leases import (
     LeaseError,
     is_lease_ttl_expired,
@@ -552,6 +559,8 @@ __all__ = [
     "Origin",
     "PRIORITY_RANK",
     "Priority",
+    "QueueEntry",
+    "QueueError",
     "ReviewEntry",
     "ReviewVerdict",
     "ScopeChangeEntry",
@@ -582,7 +591,9 @@ __all__ = [
     "display_state",
     "doable",
     "doable_blocked",
+    "drain_next",
     "drop_ticket",
+    "enqueue",
     "has_approved_review_for_commit",
     "has_live_lease",
     "is_cmd_evidence",
@@ -596,6 +607,7 @@ __all__ = [
     "load_require_review_for_close",
     "mutate_labels",
     "mutate_scope",
+    "queue_status",
     "remove_acceptance",
     "set_component",
     "set_kind",

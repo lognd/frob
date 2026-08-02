@@ -3453,6 +3453,7 @@ node testsuite : trusted {
     attr interface=TestDraftFinalizeRewritesRegistryYamlRefs;
     attr interface=TestDraftIdFinalization;
     attr interface=TestDraftReferenceRewriteOnLand;
+    attr interface=TestDrainNext;
     attr interface=TestDrift;
     attr interface=TestDriftGate;
     attr interface=TestDriftLock;
@@ -3489,6 +3490,7 @@ node testsuite : trusted {
     attr interface=TestEndorsementChainValidation;
     attr interface=TestEnforceWorktreeLease;
     attr interface=TestEnforcesConformance;
+    attr interface=TestEnqueue;
     attr interface=TestEnsureDaemon;
     attr interface=TestEnsureDaemonLivenessBranches;
     attr interface=TestEnsureReleaseQuartetCoherent;
@@ -4107,6 +4109,7 @@ node testsuite : trusted {
     attr interface=TestQuery;
     attr interface=TestQueue;
     attr interface=TestQueueDesugar;
+    attr interface=TestQueueStatus;
     attr interface=TestQuietStdoutLogsReentrance;
     attr interface=TestR3CanonicalHash;
     attr interface=TestR3ElifDesugar;
@@ -4233,6 +4236,7 @@ node testsuite : trusted {
     attr interface=TestRunFallibilityChecks;
     attr interface=TestRunFuzz;
     attr interface=TestRunGates;
+    attr interface=TestRunGatesCacheWiring;
     attr interface=TestRunGatesDelta;
     attr interface=TestRunGatesQueueFailure;
     attr interface=TestRunGatesUseCache;
@@ -4381,6 +4385,7 @@ node testsuite : trusted {
     attr interface=TestStealOverride;
     attr interface=TestStoreCapacity;
     attr interface=TestStoreCodeMayGrammar;
+    attr interface=TestStoreCorrupt;
     attr interface=TestStoreDesugar;
     attr interface=TestStoreMayFeedsThreat003;
     attr interface=TestStoreMode;

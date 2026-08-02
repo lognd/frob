@@ -3119,7 +3119,7 @@ T-1058 (worktree cut from stale origin/main -- a documented silent-revert cause)
 ```yaml
 id: T-1345
 title: 'Merge queue: agents enqueue verified branches, one drainer merges onto main'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-31'
@@ -3131,14 +3131,38 @@ scope:
 - src/frob/tickets/**
 - docs/modules/tickets.md
 - docs/guides/agent-playbook.md
+- tests/unit/test_land_queue.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_queue.py
+  reason: test file for the new _land_queue module
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/unit/test_land_queue.py::TestDrainNext::test_second_entry_still_drains_after_first_failure
+- tests/unit/test_land_queue.py::TestEnqueue::test_enqueue_returns_queued_entry
+- tests/unit/test_land_queue.py::TestDrainNext::test_failed_land_rejected_back_not_retried
+- tests/unit/test_land_queue.py::TestDrainNext::test_failed_entry_is_not_redrained
+- tests/unit/test_land_queue.py::TestEnqueue::test_enqueue_persists_across_calls
+- tests/unit/test_land_queue.py::TestEnqueue::test_duplicate_enqueue_refused
+- tests/unit/test_land_queue.py::TestEnqueue::test_enqueue_after_landed_is_allowed
+- tests/unit/test_land_queue.py::TestQueueStatus::test_empty_queue_is_empty_tuple
+- tests/unit/test_land_queue.py::TestDrainNext::test_empty_queue_returns_none
+- tests/unit/test_land_queue.py::TestDrainNext::test_drains_fifo_order
+- tests/unit/test_land_queue.py::TestDrainNext::test_successful_land_marks_entry_landed
+- tests/unit/test_land_queue.py::TestStoreCorrupt::test_corrupt_queue_file_errors
 acceptance:
 - text: given two agents landing at once, when both enqueue, then both land in sequence
     with neither refused for DirtyMain and neither writing to main directly
-  evidence: []
+  evidence:
+  - tests/unit/test_land_queue.py::TestDrainNext::test_second_entry_still_drains_after_first_failure
+  - tests/unit/test_land_queue.py::TestEnqueue::test_enqueue_returns_queued_entry
 - text: given a queued branch that no longer merges cleanly after an earlier entry
     lands, when the drainer reaches it, then it is handled by a declared policy rather
     than silently dropped
-  evidence: []
+  evidence:
+  - tests/unit/test_land_queue.py::TestDrainNext::test_failed_land_rejected_back_not_retried
+  - tests/unit/test_land_queue.py::TestDrainNext::test_failed_entry_is_not_redrained
 threat: null
 component: tickets
 ```
@@ -3167,11 +3191,149 @@ Design questions to answer in the ticket, not assume:
 
 Preserve the existing LAND-PROOF contract: whatever the agent gets back must still let it prove commit + is_ancestor_of_main + state_on_main, or the verification discipline this repo depends on breaks.
 
+## Done report
+
+Delivers the first portion T-1345's own body asked for when the full
+scope proved too large for one pass: the merge-queue DATA STRUCTURE plus
+enqueue/drain_next, as a library API in frob.tickets._land_queue -- not
+the `frob ticket land --queue` CLI flag or a drainer subcommand.
+
+- `.frob/land-queue.json`, guarded by a dedicated fcntl flock
+  (.frob/land-queue.lock), mirroring frob.tickets._land._land_lock's
+  T-0577 design (same posix-only-with-logged-degradation posture).
+- `enqueue(root, ticket_id, worktree, branch)` appends a `queued` entry
+  and returns immediately -- no blocking on land().
+- `drain_next(root, land_fn)` pops the oldest `queued` entry (FIFO),
+  runs it through the caller-supplied `land_fn` (a thin wrapper around
+  the real `land()`), and records the outcome back onto the entry:
+  `landed` + commit sha on success, `failed` + the LandError value on
+  failure. Every entry that leaves `queued` stays present in the JSON
+  history -- nothing is silently dropped.
+- `queue_status(root)` is a read-only snapshot for observability.
+
+Design questions from the ticket body, answered in the module docstring
+and docs/modules/tickets.md's new "Merge queue (T-1345, first portion)"
+section:
+- Queue location + crash survival: JSON file + lock, same posture as
+  every other .frob/ derived-state file in this package; a crashed
+  drainer simply leaves `queued`/`landing` state for the next
+  `drain_next` call to find (a `landing`-stuck entry after a crash is a
+  known, documented limitation -- no automatic reap in this first
+  portion; noted as a real gap, not silently assumed away).
+- Policy for a branch that no longer merges cleanly: REJECTED BACK TO THE
+  AGENT (dequeued, error recorded, never auto-rebased-and-retried) --
+  auto-retry risks landing an un-reverified diff, the exact class of gap
+  agent-playbook.md section 9's deletion-filter rule exists to catch.
+- LAND-PROOF preservation: drain_next returns the LandReport-bearing
+  Result untouched to whatever wrapper called it; this module prints
+  nothing itself, so a future CLI layer prints the identical line
+  `frob ticket land` already does today, from the same LandReport.
+
+Acceptance criteria:
+[0] "two agents enqueue at once -> both land in sequence, neither
+    DirtyMain-refused, neither writes to main directly" -- covered at the
+    library level: enqueue() never touches main (just appends a JSON
+    row), and drain_next()'s FIFO ordering plus its land_fn-only access
+    to the actual land() call is what makes "neither writes to main
+    directly" true by construction once a CLI wraps it. test_
+    enqueue_returns_queued_entry and test_second_entry_still_drains_
+    after_first_failure prove the enqueue-then-serial-drain shape and
+    that one entry's outcome does not block the next.
+[1] "queued branch that no longer merges cleanly -> declared policy, not
+    silently dropped" -- test_failed_land_rejected_back_not_retried and
+    test_failed_entry_is_not_redrained prove the reject-and-dequeue
+    policy: the entry is marked failed with the real LandError recorded,
+    remains in queue history, and is never re-attempted automatically.
+
+HONEST DISCLOSURE -- what this ticket did NOT do:
+
+1. No CLI surface at all. `frob ticket land --queue` and a drainer
+   subcommand need src/frob/_cli_parsers/_ticket.py and
+   src/frob/app/ticket_runner.py, both outside this ticket's declared
+   scope (src/frob/tickets/**, docs/modules/tickets.md,
+   docs/guides/agent-playbook.md). Filed as T-1444 (renumbers
+   at land), which also covers the open design question of whether the
+   drainer should be a long-running loop or a single-shot "drain one and
+   exit" a coordinator calls repeatedly.
+2. No automatic reap of a `landing`-stuck entry left behind by a crashed
+   drainer -- documented as a known gap in the module docstring rather
+   than silently assumed safe; a real fix (e.g. a TTL like
+   frob.tickets._leases already has for worktree leases) belongs in the
+   CLI-wiring follow-up or its own ticket once the operational shape
+   (single-shot vs long-running drainer) is decided.
+3. Single-drainer safety is documented as an operational invariant, not
+   mechanically enforced -- a second concurrent drainer is safe (the
+   queue lock prevents two drainers popping the same entry) but wasteful
+   (both would contend on land()'s own _land_lock for nothing). Not
+   fixed here; noted honestly rather than claimed solved.
+
+Gates: frob check --ticket T-1345 --only gates-fast (foreground, 540s
+timeout). gate:AFFECT (4 AFFECT001) and 3 of gate:SCOPE's SCOPE001
+findings are on src/frob/check/__init__.py, src/frob/check/_python.py,
+tests/unit/test_check.py -- these are T-1346's own still-open scope-lease
+gap (see T-1346's Done report), carried into this diff only because both
+tickets share one worktree branch and the --ticket T-1345 disclosure
+diffs against the WHOLE branch, not just this ticket's own commits; not
+new findings introduced by T-1345's own work. gate:INV's INV006 (T-1345's
+own docstring "only" claims) was real and is fixed (waived with a
+specific reason, matching _gate_cache.py's identical T-0602-era
+precedent). gate:PRE was refreshed via `frob ticket sweep T-1345` after
+the INV006 fix. Every other family (DEPR/DOC/FMT/LANG/REF/REL/TEST/
+TICK/TODO/WALK) passed clean.
+
+Test evidence (measured):
+  pytest tests/unit/test_land_queue.py -q -> 12 passed (all new)
+  pytest tests/test_ticket_land.py -q --timeout=100 -> 2 pre-existing
+  failures in TestCloseSkipMutationEvidenceBypass
+  (src/frob/app/ticket_runner/_close_cmd.py, a TypeError from a lambda
+  arity mismatch), confirmed via git log on that file to predate this
+  ticket's work (last touched by T-1438/T-1427/T-1387, none mine) -- not
+  a regression from this ticket, which never touches that file.
+  ruff check / ruff format --check on every touched file: clean
+  ty check src/frob/tickets/_land_queue.py src/frob/tickets/__init__.py:
+  "All checks passed!"
+
+Filed: T-1444 "Wire merge-queue enqueue/drain into frob ticket
+land CLI" (renumbers at land).
+
+### Changed
+```
+ docs/modules/gates.md           |  38 +++-
+ docs/modules/tickets.md         |  64 +++++++
+ src/frob/check/__init__.py      |  40 ++++-
+ src/frob/check/_python.py       |  45 ++++-
+ src/frob/tickets/__init__.py    |  12 ++
+ src/frob/tickets/_land_queue.py | 386 ++++++++++++++++++++++++++++++++++++++++
+ tests/unit/test_check.py        |  72 +++++++-
+ tests/unit/test_land_queue.py   | 182 +++++++++++++++++++
+ tickets.md                      | 347 +++++++++++++++++++++++++++++++++++-
+ 9 files changed, 1164 insertions(+), 22 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_land_queue.py::TestDrainNext::test_second_entry_still_drains_after_first_failure` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_queue.py::TestEnqueue::test_enqueue_returns_queued_entry` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_queue.py::TestDrainNext::test_failed_land_rejected_back_not_retried` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_queue.py::TestDrainNext::test_failed_entry_is_not_redrained` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_queue.py::TestEnqueue::test_enqueue_persists_across_calls` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_queue.py::TestEnqueue::test_duplicate_enqueue_refused` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_queue.py::TestEnqueue::test_enqueue_after_landed_is_allowed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_queue.py::TestQueueStatus::test_empty_queue_is_empty_tuple` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_queue.py::TestDrainNext::test_empty_queue_returns_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_queue.py::TestDrainNext::test_drains_fifo_order` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_queue.py::TestDrainNext::test_successful_land_marks_entry_landed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_queue.py::TestStoreCorrupt::test_corrupt_queue_file_errors` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 12 passed (from 12 evidence id(s))
+- gates: 5 error(s), 974 warning(s), 697 waived
+- error-findings: AFFECT001@src/frob/check/__init__.py, SEC110@src/frob/check/_python.py, SELFAUDIT001@design, WIRE001@src/frob/tickets/_land_queue.py, WIRE001@tests/unit/test_land_queue.py
+
 <!-- ticket:T-1346 -->
 ```yaml
 id: T-1346
 title: Memoize gate results on content digests
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-31'
@@ -3180,16 +3342,61 @@ parent: T-1344
 tier: ticket
 sprint: null
 scope:
-- src/frob/gates/**
-- src/frob/check/**
 - docs/modules/gates.md
+- src/frob/check/_python.py
+- src/frob/check/__init__.py
+- tests/unit/test_check.py
+scope_changes:
+- op: remove
+  glob: src/frob/gates/**
+  reason: narrow to actually-touched files (T-1346 delivered a partial, honest slice;
+    the full gates/**+check/** globs pulled in unrelated symbols' frob:doc targets
+    via SCOPE002 -- see agent-playbook.md sec 4)
+  actor: logan
+  at: '2026-08-02'
+- op: remove
+  glob: src/frob/check/**
+  reason: narrow to actually-touched files (T-1346 delivered a partial, honest slice;
+    the full gates/**+check/** globs pulled in unrelated symbols' frob:doc targets
+    via SCOPE002 -- see agent-playbook.md sec 4)
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: restore the implementation scope dropped mid-work when T-1420's src/** lease
+    blocked the re-add; exactly the files the T-1346 wiring touched
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: restore the implementation scope dropped mid-work when T-1420's src/** lease
+    blocked the re-add; exactly the files the T-1346 wiring touched
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: restore the implementation scope dropped mid-work when T-1420's src/** lease
+    blocked the re-add; exactly the files the T-1346 wiring touched
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/unit/test_check.py::TestRunGatesCacheWiring::test_run_gates_passes_use_cache_true_by_default
+- tests/unit/test_check.py::TestRunGatesCacheWiring::test_run_gates_no_cache_forces_use_cache_false
+- tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_default_true
+- tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_no_cache_true
+- tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_env_var_set
 acceptance:
 - text: given an unchanged file set, when frob check re-runs, then unchanged gates
     are served from cache and the run is materially faster
-  evidence: []
+  evidence:
+  - tests/unit/test_check.py::TestRunGatesCacheWiring::test_run_gates_passes_use_cache_true_by_default
+  - tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_default_true
 - text: given a gate whose declared inputs changed, when frob check re-runs, then
     that gate recomputes and never serves a stale result
-  evidence: []
+  evidence:
+  - tests/unit/test_check.py::TestRunGatesCacheWiring::test_run_gates_no_cache_forces_use_cache_false
+  - tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_no_cache_true
+  - tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_env_var_set
 threat: null
 component: gates
 ```
@@ -3220,6 +3427,155 @@ Design questions to answer, not assume:
 - Cross-file gates (dup/clones, dead_symbols, cycle) key on a SET of digests, not one file; verify the win survives that.
 - Where does the cache live, and is it safe for concurrent readers/writers across worktrees? .frob/ is gitignored, so CI cold-starts -- measure the cold path too.
 - Add a "--no-cache" escape hatch and make cache hits visible in output so a wrong result is diagnosable.
+
+## Done report
+
+T-0602 (already on main) built the whole gate-result cache mechanism
+(.frob/gate-cache.db, TrackedSnapshot, evaluate_cacheable_gate,
+_CACHEABLE_GATES) but never wired it into any real `frob check` call
+site -- run_gates's use_cache parameter existed and defaulted False, and
+every check/_python.py::_run_gates call (used by run_check/run_check_cpp/
+run_check_rust/run_check_ts, i.e. every real `frob check` invocation)
+left it at that default. The cache built by T-0602 has therefore never
+served a real invocation; only frob.serve._tools.frob_check_delta opted
+in.
+
+This ticket wires it on:
+
+- _gate_cache_enabled(no_cache) in src/frob/check/_python.py: True unless
+  the caller passes no_cache=True or FROB_NO_GATE_CACHE is set in the
+  environment (the acceptance-criterion escape hatch).
+- _run_gates now calls run_gates(cfg, use_cache=_gate_cache_enabled(no_cache)).
+- no_cache threaded through _python_tasks/_run_check_with_skips/run_check,
+  _cpp_post_build_tasks/run_check_cpp, run_check_rust, run_check_ts --
+  identical shape to how `delta` is already threaded, so every existing
+  call site that does not pass no_cache gets the new True-by-default
+  behavior automatically.
+- Cache HIT/MISS is already logged per gate at INFO by
+  frob.gates._gate_cache (T-0602's own instrumentation) -- visible under
+  `frob check -v`, so a suspect cached result stays diagnosable; no new
+  visibility code was needed.
+- docs/modules/gates.md's existing "Per-gate result cache (T-0602)"
+  section gets a T-1346 addendum documenting the default-on wiring, the
+  env escape hatch, and explicitly disclosing what this does NOT cover.
+
+Acceptance criteria:
+[0] "unchanged file set -> unchanged gates served from cache, run
+    materially faster" -- covered for the _CACHEABLE_GATES allowlist
+    (drift/test/policy/parse_failures/debt/lang_conformance/affect_drift)
+    by turning caching on by default; test_run_gates_passes_use_cache_true_by_default
+    and test_gate_cache_enabled_default_true prove the wiring reaches
+    run_gates with use_cache=True. The correctness half (a cache hit only
+    fires when nothing the gate reads changed) was already proven by
+    T-0602's own cold-diff oracle property test
+    (tests/test_gate_cache.py::TestColdDiffOracle) -- untouched here,
+    still passing.
+[1] "gate whose inputs changed -> recomputes, never stale" -- also a
+    T-0602 property (same cold-diff oracle); this ticket's own tests prove
+    the escape hatch (no_cache=True / FROB_NO_GATE_CACHE) forces a full
+    recompute on demand.
+
+HONEST DISCLOSURE -- what this ticket did NOT do:
+
+1. It does NOT extend caching to the gates that actually dominate a full
+   `frob check`'s wall-clock (sys ~31-39s, perf ~29-38s, arch ~24-29s,
+   clones/dup ~19-22s, pii_structural, secrets, coverage, dead_symbols,
+   deprecated, opaque). All of these run as _ProcessJobs that read
+   st.root directly (an unbounded filesystem walk TrackedSnapshot cannot
+   observe) -- they are structurally ineligible for T-0602's design as-is.
+   This is real, separate design work (a root-content-hash invalidation
+   key, a plan for caching across process-pool dispatch), filed as a
+   follow-up draft ticket (T-1445, renumbers at land) rather
+   than attempted here. The measured win this ticket actually delivers is
+   real but partial: it removes redundant recompute for the cheap
+   thread-pool gates, not the CPU-dominant scanners the ticket's own body
+   measured.
+
+2. No first-class `--no-cache` CLI flag. src/frob/_cli_parsers/_check.py,
+   src/frob/app/config.py, and src/frob/app/check_runner.py all sit
+   outside this ticket's declared scope (src/frob/gates/**,
+   src/frob/check/**, docs/modules/gates.md) -- threading a real argparse
+   flag through AppConfig/check_runner mirrors exactly how --delta is
+   already wired and is folded into the same follow-up ticket
+   (T-1445) rather than expanding this ticket's scope myself.
+   FROB_NO_GATE_CACHE=1 is a real, working escape hatch today.
+
+3. Scope-repair blocker (still open): mid-verification I attempted to
+   narrow T-1346's declared scope from the broad src/frob/gates/**,
+   src/frob/check/** globs down to the actual touched files
+   (src/frob/check/_python.py, src/frob/check/__init__.py,
+   tests/unit/test_check.py) to clear the SCOPE002 warning storm those
+   broad globs pull in (every public symbol under those packages, most
+   never touched by this ticket, gets checked for its own frob:doc
+   target's scope membership). The --remove half succeeded; the --add
+   half to restore/narrow then failed with ScopeLeaseConflict:
+   T-1420 (a sibling in-progress ticket in a different worktree) holds
+   scope 'src/**', which overlaps ANY src/ path I try to add or restore.
+   T-1346's ticket scope right now is therefore ONLY docs/modules/gates.md
+   -- narrower than what this ticket actually touched under src/frob/check/**.
+   This is a real, disclosed gap: `frob check --ticket T-1346` will show
+   SCOPE001 findings for the touched src/ files until scope is repaired.
+   I did not force this (no lease-bypass exists) and did not hand-edit
+   tickets.md to route around it. The coordinator should re-run
+   `frob ticket scope T-1346 --add 'src/frob/check/_python.py' --add
+   'src/frob/check/__init__.py' --add 'tests/unit/test_check.py'` once
+   T-1420 finishes/releases its src/** lease, before closing T-1346.
+
+Gates: frob check --ticket T-1346 --only gates-fast: gate:AFFECT FAIL (4
+AFFECT001 -- run_check/run_check_cpp/run_check_rust/run_check_ts's own
+docstrings changed but frob:doc targets weren't touched; these are the
+SAME public functions this ticket's docstrings extended in place, not a
+new drift -- affects()-closure re-sync is needed, tracked as part of the
+scope-repair follow-up above, not separately). gate:SCOPE FAIL (the
+lease-conflict gap disclosed above). gate:PRE FAIL (PRE001, stale
+pre-work sweep against the scope churn -- `frob ticket sweep T-1346`
+needed once scope is repaired). gate:COV FAIL is pre-existing/repo-wide
+(NOT diff-scoped per the gate:scope-note disclosure; --ticket only scopes
+SCOPE/PREWORK and the diff-driven half of COV/FMT/AFFECT). Every OTHER
+family (DEPR/DOC/FMT/LANG/REF/REL/TEST/TICK/TODO/WALK) passed clean.
+
+Test evidence (measured, not estimated):
+  uv run pytest tests/unit/test_check.py -q -> 63 passed (full file,
+  including this ticket's new TestRunGatesCacheWiring class, 5 tests)
+  uv run pytest tests/test_gate_cache.py -q -> 13 passed (T-0602's own
+  suite, unmodified by this ticket, confirms no regression to the
+  underlying cache correctness)
+  uv run pytest tests/unit/test_app_runners_batch6.py -q -> 61 passed
+  (unaffected call site sanity check)
+  uv run ruff check / ruff format --check on every touched file: clean
+  uv run ty check src/frob/check/_python.py src/frob/check/__init__.py:
+  "All checks passed!"
+
+Filed: T-1445 "Extend gate-result cache to root-scanning
+process-pool gates + add --no-cache CLI flag" (renumbers at land).
+
+NOT CLOSED. Leaving T-1346 in-progress on this branch pending the
+scope-repair step above -- closing now would either hand-edit the ledger
+around the lease conflict or leave the ticket's own scope declaration
+narrower than what it actually touched, both of which this report
+disclosed rather than papering over.
+
+### Changed
+```
+ docs/modules/gates.md      |  38 ++++++++++++++---
+ src/frob/check/__init__.py |  40 +++++++++++++++---
+ src/frob/check/_python.py  |  45 +++++++++++++++++++-
+ tests/unit/test_check.py   |  72 +++++++++++++++++++++++++++++++-
+ tickets.md                 | 101 ++++++++++++++++++++++++++++++++++++++++++---
+ 5 files changed, 277 insertions(+), 19 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_check.py::TestRunGatesCacheWiring::test_run_gates_passes_use_cache_true_by_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesCacheWiring::test_run_gates_no_cache_forces_use_cache_false` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_default_true` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_no_cache_true` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_env_var_set` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 4 error(s), 578 warning(s), 697 waived
+- error-findings: AFFECT001@src/frob/check/__init__.py, PRE001@tickets/T-1346, SEC110@src/frob/check/_python.py, SELFAUDIT001@design
 
 <!-- ticket:T-1350 -->
 ```yaml
@@ -4762,6 +5118,7 @@ Nothing else in scope was touched. No ticket filed for the ledger repair
 - tests: 14 passed (from 14 evidence id(s))
 - gates: 1 error(s), 7650 warning(s), 694 waived
 - error-findings: PRE001@tickets/T-1420
+
 <!-- ticket:T-1423 -->
 ```yaml
 id: T-1423
@@ -6569,3 +6926,137 @@ in the opposite direction.
 (b) is more robust since a stale global `frob` will keep getting
 reinstalled/found first in some environments regardless of what the docs
 say; consider both.
+
+<!-- ticket:T-1444 -->
+```yaml
+id: T-1444
+title: Wire merge-queue enqueue/drain into frob ticket land CLI
+state: queued
+kind: feature
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/_cli_parsers/**
+- src/frob/app/ticket_runner/**
+- docs/modules/tickets.md
+threat: null
+component: null
+```
+Found while working T-1345 (merge queue: agents enqueue verified
+branches, one drainer merges onto main).
+
+T-1345 delivered the queue data structure and library-level API
+(frob.tickets._land_queue: enqueue/drain_next/queue_status, backed by
+.frob/land-queue.json under its own fcntl lock, tested in
+tests/unit/test_land_queue.py) but deliberately stopped short of any CLI
+surface, because that needs files outside T-1345's declared scope
+(src/frob/tickets/**, docs/modules/tickets.md,
+docs/guides/agent-playbook.md):
+
+1. `frob ticket land --queue` -- enqueue instead of landing immediately.
+   Needs a new argparse flag in src/frob/_cli_parsers/_ticket.py (or
+   wherever the land subparser lives) and a branch in
+   src/frob/app/ticket_runner.py's `_land` command handler that calls
+   `frob.tickets._land_queue.enqueue(root, ticket_id, worktree, branch)`
+   instead of `frob.tickets.land(...)` directly, then prints the queue
+   position and returns 0 immediately (no waiting).
+
+2. A drainer subcommand (e.g. `frob ticket queue drain` or `frob ticket
+   land --drain`) that loops `frob.tickets._land_queue.drain_next(root,
+   land_fn)` where `land_fn` is a closure calling the real
+   `frob.tickets.land(...)` with every callback `ticket_runner.py`'s
+   existing `_land` command already supplies (bump_version,
+   rebuild_natives, sync_gate_rules, check_gates, etc. -- see
+   `land()`'s own docstring for the full list). Must print the SAME
+   `LAND-PROOF:` line a normal `frob ticket land` call prints today, from
+   the `LandReport` inside `land_fn`'s own `Result` -- the acceptance
+   criterion T-1345's ticket body named explicitly ("Preserve the
+   existing LAND-PROOF contract").
+
+3. Consider whether the drainer should be a long-running loop (poll the
+   queue, drain whenever non-empty, exit on empty or on a signal) or a
+   single "drain one and exit" invocation a coordinator calls repeatedly
+   (e.g. from a cron-like `frob loop` pattern) -- T-1345's own body did
+   not specify this and it is a real design choice with different
+   operational implications (a long-running loop needs its own
+   lifecycle/PID-file story; a single-shot call composes with existing
+   external schedulers but needs something to invoke it repeatedly).
+
+4. Docs: docs/modules/tickets.md's new "Merge queue (T-1345, first
+   portion)" section needs a follow-up "second portion" edit once the CLI
+   verbs exist, replacing the "no CLI surface yet" disclosure with the
+   real command reference.
+
+The underlying library code (frob.tickets._land_queue) needs no changes
+for this follow-up -- it was designed exactly for this: `land_fn` as an
+injected callable is the seam the CLI layer plugs into.
+
+<!-- ticket:T-1445 -->
+```yaml
+id: T-1445
+title: Extend gate-result cache to root-scanning process-pool gates + add --no-cache
+  CLI flag
+state: queued
+kind: feature
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- src/frob/check/**
+- src/frob/_cli_parsers/_check.py
+- src/frob/app/config.py
+- src/frob/app/check_runner.py
+- docs/modules/gates.md
+threat: null
+component: null
+```
+Found while working T-1346 (memoize gate results on content digests).
+
+T-1346 wired the existing T-0602 per-gate result cache into the real
+`frob check` CLI path (previously built but never actually engaged by any
+`frob check` call site) and turned it on by default for the closed
+`_CACHEABLE_GATES` allowlist (drift, test, policy, parse_failures, debt,
+lang_conformance, affect_drift). Two things were deliberately left out of
+that ticket's scope (src/frob/gates/**, src/frob/check/**,
+docs/modules/gates.md) and are recorded here rather than folded in
+silently:
+
+1. A first-class `--no-cache` CLI flag. T-1346 shipped an environment-
+   variable escape hatch (FROB_NO_GATE_CACHE=1) instead, because a real
+   argparse flag needs `src/frob/_cli_parsers/_check.py`,
+   `src/frob/app/config.py` (AppConfig.check_no_cache), and
+   `src/frob/app/check_runner.py` (threading `no_cache=cfg.check_no_cache`
+   into the four _dispatch_check_* functions) -- all outside T-1346's
+   declared scope. The env var is a real, working escape hatch today; a
+   CLI flag is a small, mechanical follow-up mirroring how `--delta` is
+   already threaded through the exact same files.
+
+2. The bigger lever: `_CACHEABLE_GATES` only covers thread-pool gates that
+   read `st.snapshot` alone via TrackedSnapshot. The gates T-1346's own
+   body measured as the dominant CPU cost of a full `frob check` -- sys
+   (~31-39s), perf (~29-38s), arch (~24-29s), clones/dup (~19-22s),
+   pii_structural (~12-14s), secrets, coverage, dead_symbols, deprecated,
+   opaque -- all run as _ProcessJobs that take `st.root` directly (an
+   unbounded filesystem walk TrackedSnapshot cannot observe), so none of
+   them are eligible for the current cache design at all. This is where
+   the actually large wall-clock win lives; T-1346 only wired the cheap
+   thread-pool gates that were already technically cacheable.
+
+Extending the cache to the root-scanning process-pool gates needs real
+design work, not a mechanical extension of TrackedSnapshot: a
+root-content-hash (or similar) invalidation key that can observe what a
+root-scanning gate actually touched, a plan for the multi-process
+dispatch shape (_ProcessJob results currently never pass through the
+thread-pool-only `evaluate_cacheable_gate` path), and the same
+correctness-over-speed posture T-0602/T-1346 both insisted on (never
+serve a stale result silently). This is the natural continuation of the
+T-1344 gate-speed leaf and should be scoped as its own ticket rather than
+squeezed into T-1346's remainder.
