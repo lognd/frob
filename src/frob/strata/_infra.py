@@ -156,9 +156,7 @@ def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
             trust=decl.trust,
             clearance=decl.clearance,
             may=decl.may,
-            may_grants=tuple(
-                MayGrant(atom=g.atom, via=g.via) for g in decl.may_grants
-            ),
+            may_grants=tuple(MayGrant(atom=g.atom, via=g.via) for g in decl.may_grants),
             attrs=tuple(attrs_result.danger_ok),
             capacity=_store_capacity(decl),
             users=decl.users,
