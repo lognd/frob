@@ -8239,3 +8239,47 @@ Tune, do not remove: keep full strength on reports for tickets in the active win
 NOT IN SCOPE, recorded so nobody mistakes them for noise: TEST005's 1444, DOC006's 55, LARGE001's 52, EXHAUST002's 37 and COV007's 22 are real work. They stay. TICK009's 82 clear themselves as tickets close and scopes narrow.
 
 ACCEPTANCE NOTE for whoever implements: do not satisfy this by adding blanket waivers, lowering a threshold, or deleting a rule. The measure of success is that the findings which disappear are ones that were never actionable, and that a deliberately-introduced real violation of each tuned rule is still caught. Prove that with a regression test per rule.
+
+<!-- ticket:T-1403 -->
+```yaml
+id: T-1403
+title: 'Investigate: T-1390 worktree changes landed on main under an unrelated commit
+  message (c2fd45da)'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/guides/agent-playbook.md
+threat: null
+component: null
+```
+While landing T-1390, a `git stash pop` (accidentally run against agent-playbook.md
+section 1b's advice, while diagnosing an unrelated pre-existing test flake) popped
+a DIFFERENT worktree's stash entry ("On worktree-agent-aba2276bbee55aece: T-0190
+wip") onto this shared main checkout, producing a merge conflict in
+tests/test_secrets_gate.py and a staged tickets.md change. The conflicted pop was
+reverted cleanly with `git reset --merge HEAD` (the stash entry itself was never
+dropped, since a conflicted pop leaves it in the stash list -- confirmed with
+`git stash list` before and after).
+
+Separately (root cause not yet isolated), T-1390's own in-progress, pre-refactor
+_land.py/test changes ended up committed onto main under commit c2fd45da, whose
+message is "chore(tickets): file T-1402 gate-precision epic for the v1.0.0
+zero-warning bar" -- an unrelated ticket-filing commit that should only have
+touched tickets.md. The commit's actual diff (+96/-10 in src/frob/tickets/_land.py,
++34 in tests/unit/test_land_cross_ticket_leakage.py) is legitimate, reviewed T-1390
+work (the same code this ticket's own Done report cites), just mislabeled and
+landed a commit earlier/differently than intended. A follow-up commit
+(7a402998, "fix(tickets): split _find_leaked_tickets under ARCH001's line
+threshold") on top corrects the ARCH001 violation the premature commit still had.
+
+Filing this because: (1) main's commit history now has a misleading message next
+to real code, which could confuse `git blame`/bisect later, and (2) the underlying
+mechanism that let uncommitted worktree changes land under an unrelated commit
+message during a stash mishap is not understood and should be investigated before
+another agent hits it. No code was lost; both commits are on main and gates clean.
