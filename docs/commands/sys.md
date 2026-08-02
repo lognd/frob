@@ -324,6 +324,12 @@ frob sys sync-interface /path/to/repo
 Like `plan`/`doc`/`audit`, it takes a **repo root** (default `.`), not a
 design directory -- the command appends the configured design dir itself.
 
+Matches `store <id> { ... }` headers the same as `node <id> { ... }`
+headers (T-1425) -- a store is a node (docs/strata/surface.md#key-
+construct-semantics), and SYS104 already treats it as a first-class
+subject, so a design file with only `store` blocks and no bare `node`
+header is scanned and rewritten exactly like one with `node` blocks.
+
 Default mode (no `--check`) prints a per-file, per-node diff of every
 `interface=` addition/removal (`_print_sync_interface_diff`, INFO level,
 deterministic node/symbol order) and then writes the corrected text back

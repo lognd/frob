@@ -546,7 +546,12 @@ consistent with third-party/stdlib specifiers.
 SYS104 (`_selfconform.py`'s "Key construct semantics" above) went
 MANDATORY at T-1113: every node whose bound code has a non-empty real
 public surface is evaluated whether or not it has declared any
-`interface=` attr yet. (T-1111 touched `sync_interface_report`'s body
+`interface=` attr yet. This applies to `store` blocks too (a store is a
+node, docs above) -- `sync_interface_report`/`apply_sync_interface`
+match `store <id> { ... }` headers identically to `node <id> { ... }`
+headers (T-1425 fixed a gap where only `node` headers were matched, so a
+store's own `interface=` drift was silently invisible to both the report
+and the writer even though SYS104 itself already flagged it). (T-1111 touched `sync_interface_report`'s body
 only to add a `frob:waive WALK001` comment on its `design_root.rglob`
 call -- no behavior change; noted here to satisfy this section's
 affects()-closure obligation.) A mandatory check whose satisfying state

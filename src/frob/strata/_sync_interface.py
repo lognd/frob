@@ -80,11 +80,18 @@ from ._sysdoc import merge_models
 
 _log = get_logger(__name__)
 
-#: One node header line, e.g. `node cli : trusted {` -- captures the node id
-#: so a `.strata` file's raw text can be searched WITHOUT re-parsing (that
-#: would lose comments); the parser/elaborator is only used to compute the
-#: real/declared surface, never to regenerate this file's text.
-_NODE_HEADER_RE = re.compile(r"^(?P<indent>[ \t]*)node\s+(?P<id>\S+)\b[^{]*\{\s*$")
+#: One node OR store header line, e.g. `node cli : trusted {` or
+#: `store tickets_ledger : trusted {` -- captures the id so a `.strata`
+#: file's raw text can be searched WITHOUT re-parsing (that would lose
+#: comments); the parser/elaborator is only used to compute the
+#: real/declared surface, never to regenerate this file's text. `store`
+#: blocks are matched identically to `node` blocks (T-1425) because
+#: `_interface_conformance_violations`/`model.nodes` already treat them as
+#: first-class SYS104 subjects -- this module used to only match `node`,
+#: silently skipping every store's `interface=` drift.
+_NODE_HEADER_RE = re.compile(
+    r"^(?P<indent>[ \t]*)(?:node|store)\s+(?P<id>\S+)\b[^{]*\{\s*$"
+)
 
 #: One `attr interface=<symbol>;` line, in the exact form
 #: `_interface_conformance_violations`/existing `design/frob.strata` usage
@@ -296,7 +303,13 @@ def sync_interface_report(
     # change behavior"
     for path in sorted(design_root.rglob("*.strata")):
         text = path.read_text(encoding="utf-8")
-        if not _NODE_HEADER_RE.search(text) and "node " not in text:
+        # T-1425: this used to check `"node " not in text` only, silently
+        # skipping a store-only design file (no `node ` substring anywhere)
+        # before `_sync_one_file` ever ran -- `_NODE_HEADER_RE` itself uses
+        # `^`/`$` without MULTILINE, so `.search(text)` on the whole file
+        # only ever matches a header on the FIRST line, making this
+        # substring fallback the check that actually mattered in practice.
+        if "node " not in text and "store " not in text:
             continue
         result = _sync_one_file(text, binding, root)
         if result is None:

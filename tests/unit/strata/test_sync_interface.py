@@ -93,6 +93,45 @@ class TestSyncInterfaceReport:
         # Original file on disk is untouched (report never writes).
         assert design_path.read_text(encoding="utf-8") != new_text
 
+    def test_store_block_missing_interface_attr_is_written(self, tmp_path: Path):
+        """T-1425 regression: a `store <id> { ... }` block declaring its own
+        `interface=` attrs used to be silently skipped by both the report
+        and the writer (only `node` headers matched) even though
+        `_interface_conformance_violations` (SYS104) already treats stores
+        as first-class subjects via `model.nodes`. A store missing an
+        `interface=` attr must now be detected AND rewritten, exactly like
+        a node."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_store.py",
+            "def public_fn():\n    pass\n",
+        )
+        design_path = _write_design(
+            tmp_path,
+            "design",
+            "widget.strata",
+            "module widget\n"
+            "store widget_store : trusted {\n"
+            "    engine sqlite;\n"
+            '    code "src/frob/widget/**";\n'
+            "}\n",
+        )
+        result = sync_interface_report(tmp_path)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.has_drift
+        file_result = report.files[0]
+        assert file_result.changed
+        diffs = {d.node: d for d in file_result.diffs}
+        assert diffs["widget_store"].added == ("public_fn",)
+        assert diffs["widget_store"].removed == ()
+
+        new_text = file_result.new_text
+        assert "attr interface=public_fn;" in new_text
+
+        apply_sync_interface(tmp_path, report)
+        assert design_path.read_text(encoding="utf-8") == new_text
+
     def test_missing_interface_block_is_inserted_after_header(self, tmp_path: Path):
         """A node with a non-empty real surface but zero declared
         `interface=` attrs yet gets its block inserted right after the
