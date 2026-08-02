@@ -63,6 +63,7 @@ from frob.process._guard import guarded_subprocess_run
 from frob.tickets._live_tracker import live_tracker_citations
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
+    AcceptanceCriterion,
     Ticket,
     TicketError,
     TicketKind,
@@ -82,6 +83,57 @@ from frob.tickets._store import ledger_lock
 from frob.tickets._worktree_guard import enforce_worktree_lease
 
 _log = get_logger(__name__)
+
+
+# frob:ticket T-1399
+# The shape a package-wide gate-outcome acceptance criterion is written in
+# across this queue (T-1276's own criterion [0] is the exact incident):
+# "... 0 <RULE-ID> findings under <glob> ...". Matches a rule id (two or
+# more uppercase letters followed by two or more digits -- the same shape
+# `_new_gate_rule_acceptance`'s `_KNOWN_GATE_RULES` scan and every existing
+# gate id in this repo already uses, e.g. TEST005, COV001, DUP001) and a
+# path glob string immediately after "findings under". Deliberately a plain
+# text scan (mirrors `frob.tickets._live_tracker`'s "grep-shaped scan, not a
+# full parse" posture) -- precision over recall: a criterion phrased some
+# OTHER way that still asserts a package-wide gate outcome is a known,
+# disclosed gap (not silently assumed covered), not a false refusal risk,
+# since a non-match behaves exactly as before this ticket (T-1399's own
+# hard rule: a criterion naming no rule id and no glob must be unaffected).
+_GATE_CLAIM_RE = re.compile(
+    r"\b0\s+(?P<rule>[A-Z]{2,}[0-9]{2,})\s+findings\s+under\s+(?P<glob>\S+)"
+)
+
+
+# frob:ticket T-1399
+def _criterion_gate_claim(text: str) -> tuple[str, str] | None:
+    """`(rule_id, glob)` if `text` reads as a package-wide gate-outcome
+    claim ("0 <RULE-ID> findings under <glob>", `_GATE_CLAIM_RE`);
+    `None` otherwise -- the detection primitive `_gate_claim_criteria`
+    filters a ticket's acceptance list with, and the guard clause this
+    ticket (T-1399) closes keys off of. A trailing sentence-punctuation
+    character on the glob token (a criterion ending "...src/frob/app/**."
+    ) is stripped, since it is prose punctuation, not part of the glob."""
+    match = _GATE_CLAIM_RE.search(text)
+    if match is None:
+        return None
+    return match.group("rule"), match.group("glob").rstrip(".,;:")
+
+
+# frob:ticket T-1399
+def _gate_claim_criteria(ticket: Ticket) -> tuple[AcceptanceCriterion, ...]:
+    """Acceptance criteria on `ticket` that assert a package-wide gate
+    outcome (`_criterion_gate_claim` matches) -- the T-1399 fix: binding
+    ANY passing evidence id to a criterion shaped this way must not be
+    enough to satisfy it (the T-1276 incident: criterion [0] read "0
+    TEST005 findings under src/frob/app/**", bound to unrelated passing
+    node ids from a handful of runner tests, closed done against 116 live
+    findings under that exact glob). An empty return means `ticket` has no
+    criterion in this shape at all -- `_done_transition_gate_claim_guard`
+    is then a no-op regardless of what the caller injects, so a ticket
+    with only ordinary criteria behaves exactly as it did before T-1399."""
+    return tuple(
+        c for c in ticket.acceptance if _criterion_gate_claim(c.text) is not None
+    )
 
 
 def _has_done_report(body: str) -> bool:
@@ -114,6 +166,7 @@ def _transition_guard(
     mutation_evidence: bool | None = None,
     evidence_reverified: bool | None = None,
     own_obligations_clean: bool | None = None,
+    gate_claims_verified: bool | None = None,
 ) -> Result[None, TicketError]:
     """Enforce start-blocker and done-evidence preconditions for `to`."""
     if to == TicketState.IN_PROGRESS:
@@ -133,6 +186,7 @@ def _transition_guard(
             mutation_evidence=mutation_evidence,
             evidence_reverified=evidence_reverified,
             own_obligations_clean=own_obligations_clean,
+            gate_claims_verified=gate_claims_verified,
         )
     return Ok(None)
 
@@ -225,6 +279,47 @@ def _done_transition_structural_guard(
     return Ok(None)
 
 
+# frob:ticket T-1399
+def _done_transition_gate_claim_guard(
+    ticket: Ticket, *, gate_claims_verified: bool | None
+) -> Result[None, TicketError]:
+    """(T-1399, when the caller supplies `gate_claims_verified=False`)
+    `Err(GateClaimUnverified)` while `ticket` carries at least one
+    acceptance criterion shaped as a package-wide gate-outcome claim
+    (`_gate_claim_criteria`) -- the guard `own_obligations_clean` and every
+    other injected-boolean check in this module already establish the
+    idiom for: computing whether the named gate ACTUALLY reports zero
+    findings under the named glob needs a live `frob check`/`frob.gates`
+    run, a dependency `frob.tickets` deliberately stays free of (see
+    `_done_transition_guard`'s docstring) -- so the answer is injected by
+    the caller (`frob.app.ticket_runner`/`frob.tickets._land`), never
+    computed here.
+
+    `gate_claims_verified=None` (the default) skips this check entirely,
+    matching every caller before T-1399 -- a ticket with no gate-claim-
+    shaped criterion at all is also unaffected regardless of what a caller
+    injects, since `_gate_claim_criteria` returns `()` for it (T-1399's own
+    hard rule: an ordinary criterion naming no rule id and no glob behaves
+    exactly as it did before this guard existed). `gate_claims_verified=
+    True` means the caller already re-ran the named gate(s) against the
+    post-merge/current tree and confirmed every claim holds."""
+    if gate_claims_verified is False and _gate_claim_criteria(ticket):
+        claims = [
+            (c.text, _criterion_gate_claim(c.text))
+            for c in _gate_claim_criteria(ticket)
+        ]
+        _log.warning(
+            "tickets: %s cannot close, package-wide gate-outcome "
+            "criterion/criteria not established by the bound evidence: %s "
+            "-- run the named gate against the named glob and record its "
+            "result, then retry",
+            ticket.id,
+            claims,
+        )
+        return Err(TicketError.GateClaimUnverified)
+    return Ok(None)
+
+
 # frob:ticket T-1384
 def _done_transition_guard(
     root: Path,
@@ -236,6 +331,7 @@ def _done_transition_guard(
     mutation_evidence: bool | None = None,
     evidence_reverified: bool | None = None,
     own_obligations_clean: bool | None = None,
+    gate_claims_verified: bool | None = None,
 ) -> Result[None, TicketError]:
     """Enforce DONE-transition preconditions: evidence + substantive Done
     report present, no cmd: evidence on a kind that disallows it, (T-0715)
@@ -269,8 +365,18 @@ def _done_transition_guard(
     (T-1377/T-1379/T-1381 all closed clean and left exactly this residue
     for the very next unscoped `frob check` to surprise-discover).
 
+    (T-1399, when the caller supplies `gate_claims_verified=False`) that no
+    acceptance criterion asserting a package-wide gate outcome ("0 <RULE>
+    findings under <glob>", `_gate_claim_criteria`) is unestablished by the
+    ticket's bound evidence -- see `TicketError.GateClaimUnverified`'s
+    docstring for the incident this closes (T-1276: closed done, LAND-PROOF
+    verified, against 116 live TEST005 findings under the exact glob its
+    own criterion [0] named -- binding was positional, any passing node id
+    satisfied it, regardless of whether it established the claim).
+
     `covers_scope`/`reviewed`/`mutation_evidence`/`evidence_reverified`/
-    `own_obligations_clean` are injected, never computed here: answering
+    `own_obligations_clean`/`gate_claims_verified` are injected, never
+    computed here: answering
     "does an evidence id cover a touched/scope symbol" needs the obligation
     graph (`frob.graph`) and the `TESTS`-edge index `frob.testing`/
     `frob.gates` already build, answering "is there an approve review
@@ -284,13 +390,14 @@ def _done_transition_guard(
     dependencies (docs/rework.md cycle-avoidance -- `frob.gates`/
     `frob.app` are the layers allowed to join graph/runner + tickets).
     `None` (the default, matching every caller before D-02/T-0571/T-0844/
-    T-0417/T-1384) skips each check entirely, so existing callers/tests
-    are unaffected; a caller with the needed context (`frob.gates.
+    T-0417/T-1384/T-1399) skips each check entirely, so existing callers/
+    tests are unaffected; a caller with the needed context (`frob.gates.
     evidence_covers_scope`, `has_approved_review_for_commit`, `frob.gates.
     mutation_evidence_violations`, `frob.app.ticket_runner._reverify_
     evidence_for_close`, a `frob check --ticket`-scoped COV001/SELFAUDIT/
-    REL001 sweep over the ticket's own diff, or its own equivalent) opts
-    in by passing an explicit `True`/`False`.
+    REL001 sweep over the ticket's own diff, a fresh run of the named
+    gate against the named glob, or its own equivalent) opts in by passing
+    an explicit `True`/`False`.
     `live_tracker_citations`, by contrast, is a plain `git
     grep` under `root` (against `current_branch(root)` as the diff base,
     T-0854 rework's diff-aware exemption -- see the module docstring in
@@ -343,6 +450,11 @@ def _done_transition_guard(
             ticket.id,
         )
         return Err(TicketError.OwnObligationsUnclean)
+    gate_claim = _done_transition_gate_claim_guard(
+        ticket, gate_claims_verified=gate_claims_verified
+    )
+    if gate_claim.is_err:
+        return gate_claim
     return _done_transition_diff_derived_guard(root, ticket)
 
 
@@ -433,9 +545,14 @@ def _recover_missing_evidence_for_done(
 # frob:tests tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose.test_transition_rejects_when_own_obligations_clean_false  # noqa: E501
 # frob:tests tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose.test_transition_allows_when_own_obligations_clean_true  # noqa: E501
 # frob:tests tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose.test_transition_permissive_when_own_obligations_clean_none  # noqa: E501
+# frob:tests tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose.test_transition_rejects_t1276_shape_when_gate_claims_verified_false  # noqa: E501
+# frob:tests tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose.test_transition_allows_t1276_shape_when_gate_claims_verified_true  # noqa: E501
+# frob:tests tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose.test_transition_permissive_when_gate_claims_verified_none  # noqa: E501
+# frob:tests tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose.test_transition_unaffected_when_no_gate_claim_criterion_exists  # noqa: E501
 # frob:ticket T-0715
 # frob:ticket T-0417
 # frob:ticket T-1384
+# frob:ticket T-1399
 def transition(
     root: Path,
     ticket_id: str,
@@ -446,6 +563,7 @@ def transition(
     mutation_evidence: bool | None = None,
     evidence_reverified: bool | None = None,
     own_obligations_clean: bool | None = None,
+    gate_claims_verified: bool | None = None,
 ) -> Result[Ticket, TicketError]:
     """Enforce the state machine; `done` also requires evidence and a
     substantive Done report, (D-02) an evidence id covering a touched/
@@ -456,11 +574,15 @@ def transition(
     whenever the caller supplies `mutation_evidence=False`, (T-0417
     N-02) refuses when a fresh re-run of the ticket's recorded evidence
     against the CURRENT tree no longer passes, whenever the caller
-    supplies `evidence_reverified=False`, and (T-1384) refuses when the
+    supplies `evidence_reverified=False`, (T-1384) refuses when the
     ticket's own diff leaves a new-symbol doc/testsuite/REL001 obligation
     outstanding, whenever the caller supplies
-    `own_obligations_clean=False` (see `_done_transition_guard`'s
-    docstring for why these are injected rather than computed here)."""
+    `own_obligations_clean=False`, and (T-1399) refuses when an acceptance
+    criterion asserting a package-wide gate outcome ("0 <RULE> findings
+    under <glob>") is not established by the bound evidence, whenever the
+    caller supplies `gate_claims_verified=False` (see
+    `_done_transition_guard`'s docstring for why these are injected rather
+    than computed here)."""
     from frob.tickets import _TRANSITIONS, _load_ticket_and_queue, write_ticket
 
     leased = enforce_worktree_lease(root)
@@ -491,6 +613,7 @@ def transition(
         mutation_evidence=mutation_evidence,
         evidence_reverified=evidence_reverified,
         own_obligations_clean=own_obligations_clean,
+        gate_claims_verified=gate_claims_verified,
     )
     if guard.is_err:
         return Err(guard.danger_err)
@@ -515,6 +638,7 @@ def transition(
 # frob:tests \
 # tests/test_ticket_reverify.py::TestReverifyCloseGuard.test_refuses_non_done_ticket
 # frob:ticket T-1384
+# frob:ticket T-1399
 def reverify_close_guard(
     root: Path,
     ticket_id: str,
@@ -524,6 +648,7 @@ def reverify_close_guard(
     mutation_evidence: bool | None = None,
     evidence_reverified: bool | None = None,
     own_obligations_clean: bool | None = None,
+    gate_claims_verified: bool | None = None,
 ) -> Result[Ticket, TicketError]:
     """`frob ticket reverify`'s (T-1005) state-machine half: re-run the
     EXACT SAME `_done_transition_guard` check `transition(..., TicketState.
@@ -532,7 +657,8 @@ def reverify_close_guard(
     covers_scope, T-0572 acceptance binding), T-0571 reviewed (when
     injected), T-0844 mutation_evidence (when injected), T-0417
     evidence_reverified (when injected), T-1384 own_obligations_clean
-    (when injected), and the two ALWAYS-run diff-derived checks (T-0854
+    (when injected), T-1399 gate_claims_verified (when injected), and the
+    two ALWAYS-run diff-derived checks (T-0854
     live-tracker citation, T-0756 new-gate-rule acceptance) -- against a
     ticket that is ALREADY `done`, with NO write and NO state transition
     attempted either way. This closes churn item 6 (docs/audits/
@@ -548,7 +674,8 @@ def reverify_close_guard(
     `ticket.state is TicketState.DONE` -- reverify is specifically the
     post-close re-check, not a substitute for `close` on an in-progress
     ticket. `covers_scope`/`reviewed`/`mutation_evidence`/
-    `evidence_reverified`/`own_obligations_clean` are injected exactly
+    `evidence_reverified`/`own_obligations_clean`/`gate_claims_verified`
+    are injected exactly
     like `transition`'s own parameters of the same names (the caller,
     `frob.app.ticket_runner._reverify`, computes them via the identical
     `_close_guards_for_ticket` helper `_close` itself calls -- no
@@ -578,6 +705,7 @@ def reverify_close_guard(
         mutation_evidence=mutation_evidence,
         evidence_reverified=evidence_reverified,
         own_obligations_clean=own_obligations_clean,
+        gate_claims_verified=gate_claims_verified,
     )
     if guard.is_err:
         return Err(guard.danger_err)

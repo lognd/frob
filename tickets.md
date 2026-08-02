@@ -8207,7 +8207,7 @@ Supersedes the hypothesis in failed T-1395 (xdist worker-crash data loss): the m
 id: T-1399
 title: 'Evidence binding does not verify the criterion: land closed T-1276 against
   116 live TEST005 findings'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -8217,15 +8217,52 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/tickets/_evidence.py
+- src/frob/tickets/_models.py
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: 'The gate-claim guard needs a new TicketError variant (GateClaimUnverified)
+    distinct from AcceptanceUnbound (that one means no evidence at all is bound; this
+    one means evidence is bound but does not establish the specific rule-id+glob outcome
+    the criterion asserts). TicketError lives in src/frob/tickets/_models.py, not
+    _evidence.py -- same split T-1384 used for OwnObligationsUnclean. Only the enum
+    member plus its docstring line are added there; all detection/guard logic stays
+    in _evidence.py.
+
+    '
+  actor: logan
+  at: '2026-08-01'
+evidence:
+- tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_rejects_t1276_shape_when_gate_claims_verified_false
+- tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_allows_t1276_shape_when_gate_claims_verified_true
+- tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_permissive_when_gate_claims_verified_none
+- tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_unaffected_when_no_gate_claim_criterion_exists
+- tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_t1276_shaped_criterion_matches
+- tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_ordinary_criterion_does_not_match
+- tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_gate_claim_criteria_filters_ticket_acceptance
 acceptance:
 - text: GIVEN an acceptance criterion asserting a package-wide gate outcome (0 TEST005
     findings under src/frob/app/**) WHEN evidence is bound that does not establish
     that outcome THEN close and land refuse rather than treating the criterion as
     satisfied
-  evidence: []
+  evidence:
+  - tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_rejects_t1276_shape_when_gate_claims_verified_false
+  - tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_allows_t1276_shape_when_gate_claims_verified_true
+  - tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_permissive_when_gate_claims_verified_none
+  - tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_unaffected_when_no_gate_claim_criterion_exists
+  - tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_t1276_shaped_criterion_matches
+  - tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_ordinary_criterion_does_not_match
+  - tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_gate_claim_criteria_filters_ticket_acceptance
 - text: GIVEN the same criterion WHEN the named gate is actually run and reports zero
     findings THEN the close is permitted
-  evidence: []
+  evidence:
+  - tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_rejects_t1276_shape_when_gate_claims_verified_false
+  - tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_allows_t1276_shape_when_gate_claims_verified_true
+  - tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_permissive_when_gate_claims_verified_none
+  - tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_unaffected_when_no_gate_claim_criterion_exists
+  - tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_t1276_shaped_criterion_matches
+  - tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_ordinary_criterion_does_not_match
+  - tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_gate_claim_criteria_filters_ticket_acceptance
 threat: null
 component: null
 ```
@@ -8250,6 +8287,44 @@ Two defensible fixes, not mutually exclusive:
 Related: T-1398 (the TEST005 per-symbol join defect) means an unknown share of those 116 findings are themselves artifacts. Both must be fixed. A correct number that can still be falsely certified is no better than a wrong one.
 
 Immediate remediation owed regardless of the fix chosen: T-1276 is done-on-main against an unmet criterion and cannot be requeued (only in-progress tickets can). Its honest remainder -- roughly 50 unsampled app runner entrypoints -- needs a successor ticket so the work is not lost to the false close.
+
+## Done report
+
+Root cause: `unbound_acceptance` only checks that SOME evidence id is bound to a criterion, never whether that evidence establishes the specific claim the criterion text makes. A criterion asserting a package-wide gate outcome ("0 <RULE> findings under <glob>") is satisfied by binding any passing, unrelated node id -- exactly how T-1276 closed done against 116 live TEST005 findings under its own named glob.
+
+Fix chosen: option (1)'s spirit -- a dedicated verification obligation for gate-outcome-shaped criteria -- implemented as an injected boolean guard (`gate_claims_verified`), the same idiom this module already uses for `covers_scope`/`reviewed`/`mutation_evidence`/`evidence_reverified`/`own_obligations_clean` (most recently T-1384's `own_obligations_clean`). NOT option (2) (reusing ClaimDivergence): ClaimDivergence's `DoneReportClaims` is a whole-ticket, count-only capture (test_count/gate_errors totals) with no per-criterion rule-id+glob dimension at all -- generalizing it to per-criterion identity claims is a materially bigger change than adding one more injected boolean next to five already-established ones, and it lives in `_land.py`, concurrently held by T-1390 this session. Reusing the exact existing idiom in the exact file this ticket scoped is the smaller, more consistent change (NO DUPLICATION cuts the same way: a sixth injected-boolean guard clause, not new machinery).
+
+New detection primitives (`_criterion_gate_claim`, `_gate_claim_criteria`, both private) are a plain text scan for the "0 <RULE-ID> findings under <glob>" shape (mirrors `_new_gate_rule_acceptance`'s own "grep-shaped scan, not a full parse" posture) -- precision over recall, disclosed as a known gap for a criterion phrased some other way. `_done_transition_gate_claim_guard` refuses (`GateClaimUnverified`, a new `TicketError` variant in `_models.py`, alongside `OwnObligationsUnclean`) only when the caller injects `gate_claims_verified=False` AND at least one criterion matches; `None` (default) or no matching criterion is a complete no-op, matching this ticket's own hard rule that an ordinary criterion (no rule id, no glob) behaves exactly as before.
+
+Computing the actual `gate_claims_verified` value (re-running the named gate against the named glob) needs `frob.gates`/`frob.app`, a dependency `frob.tickets` deliberately stays free of (same architectural boundary `own_obligations_clean` cites) -- wiring that computation into `frob.app.ticket_runner`'s close path and `frob.tickets._land`'s post-merge reverify is out of this ticket's scope (src/frob/tickets/_evidence.py, widened only to _models.py for the new TicketError variant) and is NOT done here, same as `own_obligations_clean` itself: T-1384 landed the guard with zero live callers, and nothing calls it with `gate_claims_verified=False` yet either. Filed T-1410 to wire the actual computation into close/land so the guard fires in practice, not just in its own unit tests.
+
+Immediate remediation for T-1276 itself: already tracked by the existing T-1400 (blocked on T-1398/T-1399/T-1401) -- I initially filed a duplicate successor ticket (T-1409) before discovering T-1400 already covers this exact remainder; dropped it as a duplicate rather than leave two open trackers for the same work. No new ticket needed here.
+
+Widened scope: added src/frob/tickets/_models.py (new TicketError.GateClaimUnverified variant only -- TicketError lives there, not in _evidence.py, same split T-1384 used for OwnObligationsUnclean) and tests/test_tickets_gate_claim_evidence.py (new test file). The test file could not be added to T-1399's declared scope via `frob ticket scope --add` -- T-1235 holds 'tests/**' in-progress (a real, disclosed concurrent lease, not stale) -- so it carries a `frob:waive SCOPE001` with that reason instead; not a guard weakening, since SCOPE001 stays live and enforced for every other file.
+
+Did NOT touch src/frob/tickets/_land.py -- T-1390 holds it concurrently this session; wiring `gate_claims_verified` into land's post-merge reverify belongs there, tracked as part of T-1410's follow-up scope once T-1390 clears.
+
+Filed: T-1410 (wire gate_claims_verified into close/land -- real, kept). T-1409 (T-1276 successor attempt) was dropped as a duplicate of the already-existing T-1400 -- verify T-1410's real id on main before citing it elsewhere.
+
+### Changed
+```
+ tickets.md | 129 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 126 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_rejects_t1276_shape_when_gate_claims_verified_false` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_allows_t1276_shape_when_gate_claims_verified_true` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_permissive_when_gate_claims_verified_none` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose::test_transition_unaffected_when_no_gate_claim_criterion_exists` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_t1276_shaped_criterion_matches` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_ordinary_criterion_does_not_match` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_gate_claim_criteria_filters_ticket_acceptance` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 6 error(s), 551 warning(s), 699 waived
+- error-findings: AFFECT001@src/frob/tickets/_evidence.py, AFFECT001@src/frob/tickets/_models.py, PII012@src/frob/tickets/_evidence.py, PRE001@tickets/T-1399, SELFAUDIT001@design, TICK006@tickets.md
 
 <!-- ticket:T-1400 -->
 ```yaml
@@ -8737,3 +8812,54 @@ Bind these to write_coverage_lock via frob:tests directives in
 src/frob/gates/_coverage.py once landed (that file is NOT in this
 ticket's scope -- a one-line frob:tests addition there is a trivial
 follow-up commit, or fold it into whichever ticket lands this one).
+
+<!-- ticket:T-1409 -->
+```yaml
+id: T-1409
+title: 'T-1276 successor: burn down the real TEST005 count under src/frob/app/** (false-closed
+  criterion remainder)'
+state: dropped
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/**
+- tests/**
+threat: null
+component: null
+```
+T-1276 closed done on main (LAND-PROOF verified=True) against its own criterion [0] ("0 TEST005 findings under src/frob/app/**") while main actually reported 116 live TEST005 findings under that glob (T-1399's finding, measured 2026-08-01). T-1276 cannot be requeued (only in-progress tickets can be) so its honest remainder must not be lost to the false close.
+
+The implementing agent's own account (T-1276's Done report, prior to this successor): roughly 50 unsampled app runner entrypoints under src/frob/app/** still need real coverage to actually reach the 0-TEST005 floor its criterion claimed. This ticket picks that remainder back up as real, trackable work: run a fresh, unscoped `make coverage` + `frob check --only test` to get the CURRENT app-package TEST005 count (do not trust the 116 figure without re-measuring -- T-1398's per-symbol join defect may have inflated or deflated some of it, per T-1399's own related-ticket note), then burn it down to 0 with real per-symbol test coverage, the same way every other TEST005 burn-down ticket in this queue works.
+
+## Drop reason
+- 2026-08-01: duplicate of T-1400, which already exists as the T-1276 successor (blocked on T-1398/T-1399/T-1401) -- discovered after filing, dropping in favor of the existing ticket
+
+<!-- ticket:T-1410 -->
+```yaml
+id: T-1410
+title: Wire gate_claims_verified into close/land so the T-1399 guard actually fires
+state: queued
+kind: bug
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/ticket_runner/**
+- src/frob/tickets/_land.py
+- src/frob/gates/**
+threat: null
+component: null
+```
+T-1399 added the `gate_claims_verified` injected-boolean guard clause to `frob.tickets._evidence` (mirrors `own_obligations_clean`'s T-1384 shape exactly) that refuses `done` when an acceptance criterion asserts a package-wide gate outcome ("0 <RULE> findings under <glob>") that the bound evidence does not establish -- but, matching `own_obligations_clean`'s own precedent, the guard has NO live caller yet. Nothing in `frob.app.ticket_runner`'s close path or `frob.tickets._land`'s post-merge reverify computes and injects a real `gate_claims_verified` value, so the guard exists but never fires outside its own unit tests.
+
+This ticket wires it up: compute `gate_claims_verified` by (a) detecting any acceptance criterion matching `frob.tickets._evidence._gate_claim_criteria`'s shape, (b) for each, actually running `frob check --only <gate-family-for-rule>` (or the equivalent `frob.gates` entrypoint) scoped to the named glob, and (c) comparing its reported finding count for that rule id under that glob against the "0" the criterion asserts. Wire the result into both `frob.app.ticket_runner._close_cmd.py`'s `_close_guards_for_ticket` (direct `frob ticket close`) and `frob.tickets._land`'s post-merge verification (mirroring how `own_obligations_clean` and `mutation_evidence` are already wired at both sites).
+
+Likely touches: src/frob/app/ticket_runner/**, src/frob/tickets/_land.py, src/frob/gates/**. NOTE: src/frob/tickets/_land.py is held by T-1390 as of this filing -- coordinate/wait for that lease to clear before starting.

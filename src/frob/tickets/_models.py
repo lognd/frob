@@ -1631,6 +1631,21 @@ class TicketError(ErrorSet):
         "declaration, or REL001 bump outstanding; run `frob check --delta` "
         "(or the named gate) and resolve the finding(s) it names, then retry"
     )
+    # T-1399: a criterion asserting a package-wide gate outcome ("0 <RULE>
+    # findings under <glob>") is only satisfied by evidence that actually
+    # ESTABLISHES that outcome -- binding an unrelated passing node id makes
+    # `unbound_acceptance` formally satisfied while the underlying claim
+    # stays false (the T-1276 incident: closed done, LAND-PROOF verified,
+    # 116 live TEST005 findings under the exact glob the criterion named).
+    # Refuses (when the caller injects `gate_claims_verified=False`) while
+    # ANY of the ticket's acceptance criteria reads in this shape -- see
+    # `frob.tickets._evidence._gate_claim_criteria`/`_criterion_gate_claim`.
+    GateClaimUnverified = (
+        "an acceptance criterion asserts a package-wide gate outcome (0 "
+        "<RULE> findings under <glob>) that the bound evidence does not "
+        "establish; run the named gate against the named glob and record "
+        "its result, then retry"
+    )
 
 
 # frob:ticket T-0176

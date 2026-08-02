@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.301.0] - unreleased
+
+- T-1399: Evidence binding does not verify the criterion: land closed T-1276 against 116 live TEST005 findings
+
 ## [0.300.0] - unreleased
 
 - T-1391: FMT001's Tier-A fix pass rewrites the whole tree, colliding with land scope discipline

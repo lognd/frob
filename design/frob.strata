@@ -3275,6 +3275,7 @@ node testsuite : trusted {
     attr interface=TestCppSourceAccurateCollection;
     attr interface=TestCrashRetryIdempotencyJoin;
     attr interface=TestCrateBuildResultAndReport;
+    attr interface=TestCriterionGateClaimDetection;
     attr interface=TestCrlfPreservation;
     attr interface=TestCrossCorpusLinkageIntegrity;
     attr interface=TestCrossFamilyWaiverScoping;
@@ -4378,6 +4379,7 @@ node testsuite : trusted {
     attr interface=TestT0510Fingerprints;
     attr interface=TestT0844MutationEvidenceOnClose;
     attr interface=TestT1384OwnObligationsOnClose;
+    attr interface=TestT1399GateClaimOnClose;
     attr interface=TestTableTreeCountDeltas;
     attr interface=TestTaintFindings;
     attr interface=TestTaintGate;
