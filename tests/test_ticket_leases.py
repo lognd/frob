@@ -626,6 +626,59 @@ class TestCommitTicketLedgerChange:
         status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
         assert status.stdout.strip() != ""
 
+    # frob:ticket T-1432
+    def test_pre_staged_unrelated_file_never_rides_along_into_the_commit(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_pre_staged_unrelated_file_never_rides_along_into_the_commit  # noqa: E501
+        # T-1403's c2fd45da incident, reproduced directly: something else
+        # (a conflicted `git stash pop`, or any other reason) leaves an
+        # UNRELATED file already staged in the index before
+        # commit_ticket_ledger_change ever runs. The old bare `git commit
+        # -m message` commits the WHOLE index -- this sentinel file must
+        # never ride along into the ledger commit; it must stay staged,
+        # untouched, afterward.
+        from frob.tickets import transition
+        from frob.tickets._leases import commit_ticket_ledger_change
+
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+
+        sentinel = repo / "sentinel.py"
+        sentinel.write_text("# unrelated, pre-staged content\n")
+        _run(["git", "add", "sentinel.py"], repo)
+        # Precondition: the sentinel really is staged before the ledger
+        # commit runs.
+        pre_status = _run(["git", "status", "--porcelain"], repo)
+        assert "A  sentinel.py" in pre_status.stdout
+
+        result = commit_ticket_ledger_change(
+            repo, "T-0001", "chore(tickets): file T-0001"
+        )
+        assert result.is_ok
+
+        # tickets.md is now committed and clean...
+        ledger_status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert ledger_status.stdout.strip() == ""
+
+        # ...but the sentinel must STILL be staged, exactly as it was
+        # before -- never committed, never unstaged.
+        post_status = _run(["git", "status", "--porcelain"], repo)
+        assert "A  sentinel.py" in post_status.stdout, (
+            "the pre-staged sentinel was swept into the ledger commit "
+            "(or otherwise touched) instead of staying staged (T-1432 "
+            "regression)"
+        )
+
+        log = _run(["git", "log", "-1", "--name-only", "--pretty=%s"], repo)
+        lines = [line for line in log.stdout.splitlines() if line.strip()]
+        assert lines[0] == "chore(tickets): file T-0001"
+        committed_files = lines[1:]
+        assert "sentinel.py" not in committed_files, (
+            f"sentinel.py rode along into the ledger commit under an "
+            f"unrelated message -- committed files were: {committed_files}"
+        )
+        assert committed_files == ["tickets.md"]
+
 
 # frob:ticket T-1130
 class TestNewDropFailAutoCommit:

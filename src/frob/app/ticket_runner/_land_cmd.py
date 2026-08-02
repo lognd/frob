@@ -34,6 +34,71 @@ from ._verify import (
 _log = get_logger("frob.app.ticket_runner")
 
 
+# frob:ticket T-1437
+# frob:tests tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit.test_merge_driver_reads_archived_ids_from_merge_head_not_stale_disk  # noqa: E501
+# frob:tests tests/test_ticket_merge_driver.py::TestArchivedIdsForMergeDriver.test_not_mid_merge_falls_back_to_disk_based_archived_ids  # noqa: E501
+def _archived_ids_for_merge_driver(root: Path) -> frozenset[str]:
+    """T-1437 fix: `frob ticket merge-driver`'s archive-resurrection guard
+    used to call `frob.tickets._land_git_ops._archived_ids(root)`, a plain
+    disk read of `root`'s CURRENT `tickets-archive.md` -- but during a
+    LIVE git merge (this function's only real caller: git invokes the
+    merge driver as a subprocess mid-merge, one call per conflicting
+    path), git does not write any path's resolved merge content back to
+    the actual working-tree file until the entire merge machinery
+    finishes; it only ever hands a driver invocation three TEMP files
+    (`%O`/`%A`/`%B`) for the ONE path it is resolving. So a disk read of
+    `tickets-archive.md` from inside a `tickets.md` merge-driver
+    invocation always sees the PRE-merge archive, even if a sibling
+    invocation is concurrently resolving `tickets-archive.md` itself (both
+    paths are registered to `merge=frob-ledger` in `.gitattributes`) --
+    the exact T-1437 incident: `frob ticket archive` ran on `main` after a
+    worktree branched, and every subsequent `git merge main` inside that
+    worktree resurrected the just-archived id into `tickets.md`, because
+    `_archived_ids(root)` could not see main's new archive content yet.
+
+    This resolves archived ids from GIT OBJECTS instead of the working
+    tree: `HEAD` (`ours`) and `MERGE_HEAD` (`theirs`, the commit-ish git
+    sets for the in-progress merge this driver is running inside of) each
+    have a real, committed `tickets-archive.md` blob regardless of what
+    the working tree currently shows -- `git show <ref>:tickets-archive.md`
+    reads it directly from the object store, sidestepping the working-tree
+    staleness entirely. The union of ids parsed from BOTH refs is
+    returned, so a ticket archived on EITHER side is treated as archived.
+    Degrades to the old disk-based `_archived_ids(root)` (still correct
+    for `frob ticket land`'s own non-live-merge internal splice calls,
+    section 9 of this repo's `docs/guides/agent-playbook.md`) whenever
+    `MERGE_HEAD` cannot be resolved (not currently inside a git merge --
+    the ordinary case for every OTHER caller of this helper's underlying
+    machinery) or either ref's archive content fails to parse."""
+    from frob.tickets._land_git_ops import _archived_ids
+    from frob.tickets._land_git_ops import _read_text_at_ref as _show_at_ref
+    from frob.tickets._store import _parse_ledger
+
+    merge_head = run_argv(["git", "-C", str(root), "rev-parse", "MERGE_HEAD"])
+    if merge_head.is_err or merge_head.danger_ok.returncode != 0:
+        return _archived_ids(root)
+    theirs_ref = merge_head.danger_ok.stdout.strip()
+    if not theirs_ref:
+        return _archived_ids(root)
+
+    ours_text = _show_at_ref(root, "HEAD", "tickets-archive.md")
+    theirs_text = _show_at_ref(root, theirs_ref, "tickets-archive.md")
+
+    ids: set[str] = set()
+    for text in (ours_text, theirs_text):
+        if text is None:
+            continue
+        parsed = _parse_ledger(text)
+        if parsed.is_ok:
+            ids.update(parsed.danger_ok)
+    if not ids:
+        # Neither ref's archive parsed/existed -- degrade to the disk
+        # read rather than claim "nothing is archived" on a parse failure
+        # this helper cannot itself distinguish from "genuinely empty".
+        return _archived_ids(root)
+    return frozenset(ids)
+
+
 # frob:ticket T-1404
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_out_of_scope_file_with_noncanonical_directive_is_left_untouched  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_in_scope_file_with_noncanonical_directive_is_still_fixed  # noqa: E501
@@ -1009,9 +1074,17 @@ def _merge_driver(root: Path, cfg: AppConfig) -> None:
     `ours`/`theirs` fail to parse as a ticket ledger, in which case it
     exits 1 and leaves `ours` untouched -- git then reports the usual
     conflict for a human to resolve by hand, exactly as if no driver were
-    registered."""
+    registered.
+
+    T-1437: `archived_ids` is now resolved via `_archived_ids_for_merge_
+    driver` (git-object reads of `HEAD`/`MERGE_HEAD`'s own committed
+    `tickets-archive.md`), not a plain disk read of `root`'s current
+    working-tree copy -- see that helper's docstring for the staleness
+    defect this closes (a ticket archived on `main` after a worktree
+    branched used to get resurrected into `tickets.md` on the worktree's
+    next `git merge main`, because the disk read could never see the
+    new archive content mid-merge)."""
     from frob.tickets import splice_ledger
-    from frob.tickets._land_merge import _archived_ids
 
     _require_merge_driver_args(cfg)
     assert cfg.ticket_merge_ours is not None  # narrows for the type checker
@@ -1034,7 +1107,10 @@ def _merge_driver(root: Path, cfg: AppConfig) -> None:
         base_text = None
 
     spliced = splice_ledger(
-        ours_text, theirs_text, archived_ids=_archived_ids(root), base_text=base_text
+        ours_text,
+        theirs_text,
+        archived_ids=_archived_ids_for_merge_driver(root),
+        base_text=base_text,
     )
     if spliced.is_err:
         _log.error(

@@ -3072,6 +3072,7 @@ node testsuite : trusted {
     attr interface=TestArchiveResurrection;
     attr interface=TestArchiveSpliceDiscipline;
     attr interface=TestArchiveV2;
+    attr interface=TestArchivedIdsForMergeDriver;
     attr interface=TestAssumeReviewDates;
     attr interface=TestAssumes;
     attr interface=TestAssumptionLedger;
@@ -3235,6 +3236,7 @@ node testsuite : trusted {
     attr interface=TestCloseGate;
     attr interface=TestCloseGateClaimsForTicket;
     attr interface=TestCloseGuardsMutationEvidenceDowngrade;
+    attr interface=TestCloseMutationEvidenceBaseRef;
     attr interface=TestCloseMutationEvidenceForTicket;
     attr interface=TestCloseOpenDescendantGuard;
     attr interface=TestCloseOwnObligationsForTicket;

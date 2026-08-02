@@ -33,7 +33,7 @@ from frob.tickets import (
     new_ticket,
     transition,
 )
-from frob.tickets._store import atomic_write, ledger_path, write_ticket
+from frob.tickets._store import atomic_write, ledger_path, load_archive, write_ticket
 
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
@@ -58,6 +58,23 @@ def _spec(title: str) -> TicketSpec:
     return TicketSpec(title=title, kind=TicketKind.FEATURE, origin=Origin.AGENT)
 
 
+def _make_closeable(root: Path, ticket_id: str) -> None:
+    """Drive `ticket_id` to a state `transition(..., DONE)` will accept:
+    planned -> in-progress, evidence + Done report attached (T-1437,
+    mirroring `test_ticket_land.py`'s identical helper)."""
+    assert transition(root, ticket_id, TicketState.PLANNED).is_ok
+    assert transition(root, ticket_id, TicketState.IN_PROGRESS).is_ok
+    loaded = load_all(root)
+    ticket = loaded.danger_ok[ticket_id]
+    ticket = ticket.model_copy(
+        update={
+            "evidence": ("tests/test_x.py::test_ok",),
+            "body": ticket.body + "\n## Done report\n\nevidence attached\n",
+        }
+    )
+    assert write_ticket(root, ticket).is_ok
+
+
 def _cfg(base: Path, ours: Path, theirs: Path, *, path: Path) -> AppConfig:
     return AppConfig(
         ticket_merge_base=base,
@@ -65,6 +82,53 @@ def _cfg(base: Path, ours: Path, theirs: Path, *, path: Path) -> AppConfig:
         ticket_merge_theirs=theirs,
         ticket_path=path,
     )
+
+
+class TestArchivedIdsForMergeDriver:
+    """T-1437: `_archived_ids_for_merge_driver`'s own branch coverage,
+    isolated from the full `_merge_driver` end-to-end path -- both the
+    git-object resolution (covered by `TestMergeDriverViaRealGit`'s real
+    `MERGE_HEAD` test) and the disk-read fallback for when there is no
+    live merge in progress at all (this class)."""
+
+    def test_not_mid_merge_falls_back_to_disk_based_archived_ids(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_merge_driver.py::TestArchivedIdsForMergeDriver.test_not_mid_merge_falls_back_to_disk_based_archived_ids  # noqa: E501
+        # A real git repo with NO in-progress merge -- `git rev-parse
+        # MERGE_HEAD` must fail (nonzero exit), and the helper must fall
+        # back to the plain disk-based `_archived_ids(root)` rather than
+        # silently returning "nothing archived".
+        from frob.app.ticket_runner._land_cmd import _archived_ids_for_merge_driver
+
+        root = tmp_path / "root"
+        _git_init(root)
+        atomic_write(ledger_path(root), "# Tickets\n\n")
+        _commit_all(root, "init")
+
+        created = new_ticket(root, _spec("Will be archived"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(root, tid)
+        assert transition(root, tid, TicketState.DONE).is_ok
+        from frob.tickets import archive
+
+        archived = archive(root)
+        assert archived.is_ok and archived.danger_ok == 1
+
+        # No MERGE_HEAD exists at all right now -- confirm the precondition.
+        no_merge_head = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "MERGE_HEAD"],
+            capture_output=True,
+        )
+        assert no_merge_head.returncode != 0
+
+        result = _archived_ids_for_merge_driver(root)
+        assert tid in result, (
+            "the not-mid-merge fallback must still resolve the real, "
+            "disk-current archived id set via the plain _archived_ids(root) "
+            "read (T-1437 branch-coverage regression)"
+        )
 
 
 class TestMergeDriverHandler:
@@ -341,3 +405,122 @@ class TestMergeDriverViaRealGit:
         assert main_tid in merged.danger_ok
         assert merged.danger_ok[feature_tid].title == "Feature-branch ticket"
         assert merged.danger_ok[main_tid].title == "Main-branch ticket"
+
+    # frob:ticket T-1437
+    # frob:tests tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit.test_merge_driver_reads_archived_ids_from_merge_head_not_stale_disk  # noqa: E501
+    def test_merge_driver_reads_archived_ids_from_merge_head_not_stale_disk(
+        self, repo: Path
+    ) -> None:
+        """T-1437's own incident shape: a ticket done+archived on `main`
+        AFTER a feature branch already branched off (so the feature
+        branch's own on-disk `tickets-archive.md` has never seen the
+        archive at all -- a plain disk read from inside the feature
+        checkout would see it as NOT archived). `_merge_driver` must still
+        resolve it as archived by reading `MERGE_HEAD`'s real committed
+        content via git objects, not the stale disk copy.
+
+        Drives a REAL, in-progress git merge (`git merge --no-commit`,
+        driver NOT registered so git leaves an ordinary conflict rather
+        than auto-splicing) purely to get a genuine `MERGE_HEAD` ref set
+        on disk, then calls `_merge_driver` DIRECTLY, in-process (so this
+        test exercises the actual editable-install code under test, not
+        whatever `frob` a shelled-out `uv run` would resolve to from a
+        tmp-dir cwd with no pyproject.toml -- see `TestMergeDriverHandler`
+        for this repo's own precedent of calling `_merge_driver` directly
+        rather than through a spawned CLI)."""
+        created = new_ticket(repo, _spec("Will be archived on main"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "file the ticket that will later be archived")
+
+        _run(["git", "checkout", "-q", "-b", "feature"], repo)
+        # Feature does its own unrelated work -- nothing touching `tid` --
+        # so tickets.md genuinely diverges on both sides (a real 3-way
+        # merge is needed, not a fast-forward).
+        unrelated = new_ticket(repo, _spec("Unrelated feature work"))
+        assert unrelated.is_ok
+        unrelated_tid = unrelated.danger_ok.id
+        _commit_all(repo, "feature: unrelated work")
+
+        _run(["git", "checkout", "-q", "main"], repo)
+        _make_closeable(repo, tid)
+        assert transition(repo, tid, TicketState.DONE).is_ok
+        from frob.tickets import archive
+
+        archived_count = archive(repo)
+        assert archived_count.is_ok and archived_count.danger_ok == 1
+        _commit_all(repo, "main: close and archive the ticket")
+        main_tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        # Confirm the precondition: `tid` really is only on main's side at
+        # this point, feature's checkout has never seen it archived.
+        _run(["git", "checkout", "-q", "feature"], repo)
+        pre_merge_archive = load_archive(repo)
+        assert pre_merge_archive.is_ok
+        assert tid not in pre_merge_archive.danger_ok
+
+        # A plain `git merge --no-commit` that FORCES the registered
+        # driver off for this one invocation (`-c
+        # merge.frob-ledger.driver=false`, git's own documented way to
+        # make a path's custom merge driver always fail) genuinely
+        # conflicts on tickets.md and leaves MERGE_HEAD pointing at main's
+        # tip -- exactly what a live driver invocation would see mid-merge,
+        # without this test depending on the `repo` fixture's already-
+        # registered driver command (a shelled-out `uv run frob`, which
+        # resolves to whatever `frob` a tmp-dir cwd's `uv run` finds --
+        # not necessarily this worktree's own patched code under test).
+        merge = subprocess.run(
+            [
+                "git",
+                "-c",
+                "merge.frob-ledger.driver=false",
+                "merge",
+                "--no-commit",
+                "--no-ff",
+                "main",
+            ],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+        )
+        assert merge.returncode != 0, "expected a real conflict, not a clean merge"
+        merge_head = _run(["git", "rev-parse", "MERGE_HEAD"], repo).stdout.strip()
+        assert merge_head == main_tip
+
+        base_sha = _run(
+            ["git", "merge-base", "feature", "main"], repo
+        ).stdout.strip()
+        ours_text = _run(["git", "show", "feature:tickets.md"], repo).stdout
+        theirs_text = _run(["git", "show", f"{main_tip}:tickets.md"], repo).stdout
+        base_text = _run(["git", "show", f"{base_sha}:tickets.md"], repo).stdout
+
+        ours_path = repo / "ours.md"
+        theirs_path = repo / "theirs.md"
+        base_path = repo / "base.md"
+        ours_path.write_text(ours_text)
+        theirs_path.write_text(theirs_text)
+        base_path.write_text(base_text)
+
+        _merge_driver(
+            repo,
+            AppConfig(
+                ticket_merge_base=base_path,
+                ticket_merge_ours=ours_path,
+                ticket_merge_theirs=theirs_path,
+                ticket_path=repo,
+            ),
+        )
+
+        spliced_text = ours_path.read_text()
+        assert f"<!-- ticket:{tid} -->" not in spliced_text, (
+            f"{tid} was resurrected into the spliced tickets.md despite "
+            "being archived on main (T-1437 regression) -- "
+            "_archived_ids_for_merge_driver did not see MERGE_HEAD's "
+            "committed archive content"
+        )
+        assert f"<!-- ticket:{unrelated_tid} -->" in spliced_text
+
+        # Clean up the in-progress conflicted merge state this test set up
+        # purely to get a real MERGE_HEAD -- never leave it dangling for
+        # git's own working-tree assertions elsewhere in this test class.
+        subprocess.run(["git", "merge", "--abort"], cwd=str(repo), capture_output=True)

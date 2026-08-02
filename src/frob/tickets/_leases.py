@@ -725,20 +725,38 @@ def _without_agent_commit_guard() -> Iterator[None]:
 
 
 # frob:ticket T-1054
+# frob:ticket T-1432
+# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_pre_staged_unrelated_file_never_rides_along_into_the_commit  # noqa: E501
 def _add_and_commit_tickets_md(
     root: Path, ticket_id: str, message: str
 ) -> Result[None, LeaseError]:
-    """`git add tickets.md && git commit -m message` in `root` (T-1054,
-    generalized T-1130 to take an explicit `message` rather than always
-    hardcoding "start transition" -- `commit_start_transition` and
-    `commit_ticket_ledger_change` both funnel through this one add+commit
-    primitive with their own message text). `Err(CommitFailed)`, loudly
-    logged with the exact recovery command, if either step fails."""
+    """`git add tickets.md && git commit -m message -- tickets.md` in
+    `root` (T-1054, generalized T-1130 to take an explicit `message`
+    rather than always hardcoding "start transition" -- `commit_start_
+    transition` and `commit_ticket_ledger_change` both funnel through this
+    one add+commit primitive with their own message text). `Err(
+    CommitFailed)`, loudly logged with the exact recovery command, if
+    either step fails.
+
+    T-1432 fix: the commit step is now pathspec-limited (`git commit -m
+    message -- tickets.md`, git's documented `--only`-equivalent form for
+    a bare `-- <pathspec>` after the message) rather than a bare `git
+    commit -m message`, which commits the ENTIRE index regardless of what
+    was actually staged for THIS change. The T-1403 c2fd45da incident:
+    anything ALREADY staged in the checkout for an unrelated reason (a
+    conflicted `git stash pop` auto-stages every file that merged cleanly,
+    section 1b2 of `docs/guides/agent-playbook.md`) rode along into the
+    ledger commit under a `chore(tickets): ...` message that had nothing
+    to do with it, poisoning `git blame`/bisect archaeology for whatever
+    it swept in. Pathspec-limiting means this commit can now NEVER contain
+    anything but `tickets.md`'s own change -- any other staged content
+    stays staged, untouched, exactly as `git commit -- <pathspec>`'s own
+    documented contract guarantees."""
     added = gitio.run_argv(["git", "-C", str(root), "add", "tickets.md"])
     if added.is_ok and added.danger_ok.returncode == 0:
         with _without_agent_commit_guard():
             committed = gitio.run_argv(
-                ["git", "-C", str(root), "commit", "-m", message]
+                ["git", "-C", str(root), "commit", "-m", message, "--", "tickets.md"]
             )
     else:
         committed = added

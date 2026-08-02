@@ -136,9 +136,13 @@ def _covers_scope_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
 
 
 # frob:ticket T-0844
+# frob:ticket T-1438
 # frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_refuses_when_evidence_passes_at_parent  # noqa: E501
 # frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_succeeds_when_evidence_fails_at_parent  # noqa: E501
-def _close_mutation_evidence_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
+# frob:tests tests/unit/test_ticket_close_bug002_t1438.py::TestCloseMutationEvidenceBaseRef.test_uses_merge_base_not_own_branch_tip  # noqa: E501
+def _close_mutation_evidence_for_ticket(
+    root: Path, ticket, base_ref: str = "main"
+) -> bool | None:  # noqa: ANN001
     """T-0844: whether `ticket` carries an unwaived ERROR-severity TEST016
     confirmatory-only-evidence finding, mirroring `frob.tickets._land.
     _check_mutation_evidence`'s land-time computation
@@ -151,29 +155,42 @@ def _close_mutation_evidence_for_ticket(root: Path, ticket) -> bool | None:  # n
     treatment on the land path so a `bug`/`security` ticket cannot close
     directly any more than it can land without this check having run.
 
-    There is no separate worktree/base_ref split on the close path the way
-    `land` has (close runs against the CURRENT checkout, not a merge of a
-    worktree onto main) -- `root` doubles as both the tree scanned and the
-    diff base's own checkout, and `current_branch(root)` supplies the base
-    ref the diff is scoped against, same as `_land_precheck` does for
-    `land`. Returns `None` (skip the check) when the branch cannot be
-    resolved -- "cannot verify" must never silently become "verified", but
-    this check is additive to the pre-existing evidence gates (T-0755's own
+    T-1438 fix: the base ref this diffs/repros against is the git
+    merge-base of HEAD against `base_ref` (`ticket`'s real starting point,
+    default `"main"` -- pass `cfg.ticket_base_ref` from the caller), NOT
+    `current_branch(root)`. The old `current_branch(root)` call resolved to
+    the WORKTREE'S OWN branch in a dispatched agent's normal flow, which by
+    close time already carries the ticket's own fix commit at its tip --
+    `_bug_repro_outcome_at_ref`'s `git worktree add --detach <scratch>
+    <that-branch>` then checked out the FIX itself, not the pre-fix
+    parent, so the designated repro test trivially "passed at parent" for
+    EVERY bug-kind ticket closed this way and BUG002 refused every close
+    with a false `EvidenceConfirmatoryOnly` (forcing
+    `--skip-mutation-evidence` on every single bug-kind close). Resolving
+    the merge-base instead (mirroring `frob.gitio.working_diff`'s own
+    `_merge_base(root, base)` computation) names the commit the ticket's
+    work actually branched from, so a bug ticket's repro test is diffed/
+    replayed against its true pre-fix parent, not against its own tip.
+    Returns `None` (skip the check) when the merge-base cannot be resolved
+    -- "cannot verify" must never silently become "verified", but this
+    check is additive to the pre-existing evidence gates (T-0755's own
     posture), so it degrades to a no-op rather than fail-closed here."""
     from frob.gates import bug_repro_violations, mutation_evidence_violations
-    from frob.gitio import current_branch
+    from frob.gitio import _merge_base
 
-    branch = current_branch(root)
-    if branch.is_err:
+    resolved = _merge_base(root, base_ref)
+    if resolved.is_err:
         _log.warning(
-            "ticket close: %s could not resolve current branch, skipping "
-            "TEST016/BUG002 mutation-evidence checks",
+            "ticket close: %s could not resolve merge-base against %s, "
+            "skipping TEST016/BUG002 mutation-evidence checks",
             ticket.id,
+            base_ref,
         )
         return None
+    parent_ref = resolved.danger_ok
     violations = mutation_evidence_violations(
-        root, ticket, branch.danger_ok
-    ) + bug_repro_violations(root, ticket, branch.danger_ok)
+        root, ticket, parent_ref
+    ) + bug_repro_violations(root, ticket, parent_ref)
     for v in violations:
         _log.warning("ticket close: %s %s %s", ticket.id, v.rule, v.message)
     errors = [v for v in violations if v.severity == "error"]
@@ -677,7 +694,7 @@ def _close_guards_for_ticket(root: Path, cfg: AppConfig, fresh_ticket) -> tuple:
     from frob.app import ticket_runner as _ticket_runner
 
     mutation_evidence = _ticket_runner._close_mutation_evidence_for_ticket(
-        root, fresh_ticket
+        root, fresh_ticket, cfg.ticket_base_ref
     )
     if mutation_evidence is False and cfg.ticket_close_skip_mutation_evidence:
         mutation_evidence = None

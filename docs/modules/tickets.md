@@ -34,6 +34,19 @@ blocked_by/parent references and gate joins keep resolving correctly after
 a ticket is archived); `frob ticket list`/`doable` read the active file
 only (`load_active`), so the archive never bloats them.
 
+**T-1437: an id present in BOTH files is a self-healing collapse, not a
+refusal.** Before T-1437, `archive` hard-refused with `Err(DuplicateId)`
+the moment it found the SAME ticket id already in `tickets-archive.md`
+while also being moved out of the active ledger -- a shape that could
+arise from a stale ledger-driver splice (see the git-merge-driver
+paragraph below) with no CLI path to repair; the only recovery was the
+`docs/guides/agent-playbook.md` section 10b restore recipe. `archive` now
+collapses that id to the archive's EXISTING copy (never overwritten) and
+still drops it from the active ledger, returning the count of tickets
+genuinely newly archived (the collapsed duplicate does not count).
+`frob ticket archive` run again on a worktree that already has a stray
+active/archive duplicate is therefore the repair step, not a dead end.
+
 A dir-mode ticket file = YAML `---` frontmatter + body; a ledger section is
 the same fields in a ```yaml fence. Both pydantic-validated, both strict.
 
@@ -766,6 +779,20 @@ arbitrary caller-supplied commit message plus an explicit opt-out flag:
    logs the exact recovery command -- callers treat this as a hard
    `sys.exit(1)`, the same posture `commit_start_transition`'s callers
    already have.
+
+**T-1432: the commit itself is pathspec-limited (`git commit -m message --
+tickets.md`), never a bare `git commit -m message`.** A bare `git commit`
+commits the ENTIRE index, not just what this helper staged -- the T-1403
+c2fd45da incident: a conflicted `git stash pop` auto-stages every file
+that merged cleanly (`docs/guides/agent-playbook.md` section 1b2), and
+anything left staged that way rode along into the next `frob ticket
+new`/`start`/`drop`/`fail` ledger commit under an unrelated `chore(tickets):
+...` message, poisoning `git blame`/bisect archaeology for whatever it
+swept in. The pathspec limit (`-- tickets.md`, git's documented way to
+commit only a named path regardless of what else is staged) makes this
+structurally impossible now: the ledger commit can never contain anything
+but `tickets.md`, and anything else pre-staged stays staged, untouched,
+exactly as before this helper ran.
 
 Per-verb wiring (`frob.app.ticket_runner._new._new` / `_close_cmd._drop`
 / `_close_cmd._fail`):
@@ -1863,7 +1890,7 @@ tickets that never opt in" guard if it ran unconditionally there.
 close path: `frob.app.ticket_runner._close` computes the same
 `mutation_evidence_violations` check against the CURRENT checkout (there
 is no separate worktree/base_ref split on this path, so it runs against
-`root` with `current_branch(root)` as the diff base -- see
+`root` as both the tree scanned and the diff base's own checkout -- see
 `_close_mutation_evidence_for_ticket`) and passes the ERROR/no-ERROR
 verdict to `transition(..., mutation_evidence=...)`, which
 `_done_transition_guard` enforces the same way `_check_mutation_evidence`
@@ -1873,6 +1900,27 @@ close --skip-mutation-evidence` (AppConfig
 twin of land's escape hatch: the check still runs and logs its findings,
 it just cannot refuse the close. A security/bug-kind ticket can no longer
 dodge this obligation by closing directly instead of landing.
+
+**T-1438 fix: the diff/repro base is the merge-base with `main`, not
+`current_branch(root)`.** The base ref this check diffs/repros against
+used to be `current_branch(root)` -- in a dispatched worktree agent's
+normal flow that resolves to the WORKTREE'S OWN branch, which by close
+time already carries the ticket's own fix commit at its tip. BUG002's
+`_bug_repro_outcome_at_ref` then ran `git worktree add --detach <scratch>
+<that-branch>`, checking out the FIX itself rather than the pre-fix
+parent, so the designated repro test trivially "passed at parent" for
+every single bug-kind ticket closed this way -- forcing
+`--skip-mutation-evidence` on every bug-kind close, not just genuine false
+positives. `_close_mutation_evidence_for_ticket` now resolves
+`frob.gitio._merge_base(root, base_ref)` (`base_ref` defaults to `"main"`,
+threaded from `cfg.ticket_base_ref`) and diffs/repros against THAT commit
+instead -- the ticket's true starting point, mirroring the same
+merge-base computation `working_diff` already performs internally.
+`frob ticket land`'s own precheck (`_land_precheck` /
+`_resolve_main_branch_for_land`) does NOT share this defect: there,
+`root` is the actual main checkout being landed INTO (not the worktree
+being landed), so `current_branch(root)` correctly resolves to `main`
+itself, not to the ticket's own branch.
 
 ## Live-tracker citation preflight (T-0854)
 
@@ -2042,6 +2090,38 @@ a same-id divergence -- that case always resolves), the driver leaves
 human to resolve by hand, exactly as if no driver were registered. A
 merge driver can never turn a real parse failure into a silently-wrong
 splice.
+
+**T-1437: `archived_ids` is resolved from git objects, not the working
+tree.** `splice_ledger`'s `archived_ids` argument used to come from
+`_archived_ids(root)` -- a plain read of `root`'s CURRENT
+`tickets-archive.md` off disk. That is wrong specifically for THIS entry
+point: git invokes the merge driver as a subprocess mid-merge, one call
+per conflicting path, and does not write any path's resolved content back
+to the actual working-tree file until the ENTIRE merge finishes -- a
+disk read from inside a live driver invocation always sees the PRE-merge
+archive, even though `tickets-archive.md` is ALSO registered to
+`merge=frob-ledger` and may be concurrently resolving its own new
+content in a sibling invocation. The real incident: `frob ticket archive`
+ran on `main` after a worktree branched, and every subsequent `git merge
+main` inside that worktree resurrected the just-archived ticket into
+`tickets.md`, because the disk-based archived-ids read could never see
+main's new archive content in time.
+
+`_archived_ids_for_merge_driver` (`src/frob/app/ticket_runner/_land_cmd.py`)
+fixes this by reading `tickets-archive.md` from git OBJECTS instead:
+`git rev-parse MERGE_HEAD` names the commit git is merging in (set for the
+whole duration of an in-progress merge, real regardless of working-tree
+staleness), and `git show HEAD:tickets-archive.md` /
+`git show MERGE_HEAD:tickets-archive.md` read each side's actual committed
+archive content directly from the object store. The union of ids parsed
+from both is used, so a ticket archived on EITHER side is honored.
+Degrades to the old disk-based `_archived_ids(root)` whenever `MERGE_HEAD`
+cannot be resolved (not currently inside a git merge -- the ordinary case
+for `frob ticket land`'s own internal, non-live-merge splice calls, which
+were never affected by this defect in the first place: there `root` is
+the authoritative main checkout being read FROM, not the branch being
+merged, so its own disk state was never stale to begin with) or either
+ref's archive content fails to parse.
 
 ## Clipboard capture
 

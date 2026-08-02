@@ -5046,7 +5046,7 @@ surface, it does not add a new rule).
 ```yaml
 id: T-1432
 title: ledger auto-commit sweeps pre-staged index content into its commit
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-02'
@@ -5077,15 +5077,66 @@ scope_changes:
     and cover _leases.py symbols; the regression test may land in either
   actor: logan
   at: '2026-08-02'
+evidence:
+- tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_pre_staged_unrelated_file_never_rides_along_into_the_commit
 acceptance:
 - text: GIVEN a checkout with an unrelated file staged WHEN commit_ticket_ledger_change
     commits a dirty tickets.md THEN the resulting commit touches only tickets.md and
     the unrelated file remains staged
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_pre_staged_unrelated_file_never_rides_along_into_the_commit
 threat: null
 component: null
 ```
 Root cause of T-1403's c2fd45da incident: _add_and_commit_tickets_md runs 'git add tickets.md' then a bare 'git commit -m <message>', which commits the WHOLE index. Anything already staged in the checkout (e.g. by a conflicted stash pop, which auto-stages merged-clean files) rides along into the ledger commit under an unrelated message. Fix: pathspec-limit the commit ('git commit -m <msg> -- tickets.md', i.e. --only semantics) so the ledger commit can never contain anything but tickets.md, and add a regression test that stages a sentinel file, runs commit_ticket_ledger_change, and asserts the sentinel stays staged and out of the commit. Applies to every caller funneling through this helper (commit_start_transition, commit_ticket_ledger_change for new/drop/fail).
+
+## Done report
+
+_add_and_commit_tickets_md (src/frob/tickets/_leases.py) ran `git add
+tickets.md` followed by a bare `git commit -m message`, which commits the
+ENTIRE index, not just what this helper staged. The T-1403 c2fd45da
+incident: a conflicted git stash pop auto-stages every file that merged
+cleanly, and anything left staged that way rode along into the next
+ledger commit under an unrelated chore(tickets) message, poisoning git
+blame/bisect archaeology for whatever it swept in.
+
+Fix: pathspec-limit the commit (git commit -m message -- tickets.md,
+git's documented way to commit only a named path regardless of what else
+is staged) so the ledger commit can never contain anything but
+tickets.md. This is a one-line change to the single helper both
+commit_start_transition and commit_ticket_ledger_change funnel through
+(per the ticket's own note), so it covers every caller: frob ticket
+start/new/drop/fail.
+
+Added a regression test
+(test_pre_staged_unrelated_file_never_rides_along_into_the_commit) that
+stages a sentinel file, runs commit_ticket_ledger_change, and asserts the
+sentinel stays staged (git status shows "A  sentinel.py" both before and
+after) and is absent from the resulting commit's file list (git log -1
+--name-only shows only tickets.md).
+
+### Changed
+```
+ docs/modules/tickets.md                      |  82 ++++++++++-
+ src/frob/app/ticket_runner/_close_cmd.py     |  51 ++++---
+ src/frob/app/ticket_runner/_land_cmd.py      |  82 ++++++++++-
+ src/frob/tickets/_archive.py                 |  65 +++++++--
+ src/frob/tickets/_leases.py                  |  32 ++++-
+ tests/test_ticket_leases.py                  |  53 +++++++
+ tests/test_ticket_merge_driver.py            | 185 ++++++++++++++++++++++++-
+ tests/test_tickets.py                        |  44 ++++++
+ tests/unit/test_ticket_close_bug002_t1438.py | 140 +++++++++++++++++++
+ tickets.md                                   | 199 ++++++++++++++++++++++++++-
+ 10 files changed, 886 insertions(+), 47 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_pre_staged_unrelated_file_never_rides_along_into_the_commit` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 5 error(s), 380 warning(s), 693 waived
+- error-findings: DUP001@tests/test_ticket_merge_driver.py, OPAQUE001@tests/unit/test_ticket_close_bug002_t1438.py, PRE001@tickets/T-1432, SELFAUDIT001@design, WIRE001@tests/unit/test_ticket_close_bug002_t1438.py
 
 <!-- ticket:T-1433 -->
 ```yaml
@@ -5587,7 +5638,7 @@ warm-daemon vs FROB_NO_DAEMON=1 to confirm parity or a real win.
 id: T-1437
 title: ledger splice driver resurrects archived tickets, breaking every in-flight
   worktree land after an archive
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-02'
@@ -5598,26 +5649,149 @@ sprint: null
 scope:
 - src/frob/tickets/_land_merge.py
 - src/frob/tickets/_reporting.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/tickets/_archive.py
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: "Investigation (frob ticket start T-1437) shows the real defect and its\n\
+    repair both live outside the originally-declared scope\n(src/frob/tickets/_land_merge.py,\
+    \ src/frob/tickets/_reporting.py):\n\n- The actual git-merge-driver entry point\
+    \ (_merge_driver, whose\n  _archived_ids(root) disk read is the root cause --\
+    \ it reads the\n  live checkout's tickets-archive.md, which git has NOT yet written\
+    \ to\n  disk mid-merge, so it always sees the pre-merge/stale archive) lives in\n\
+    \  src/frob/app/ticket_runner/_land_cmd.py.\n- The archive-refuses-on-collision\
+    \ half (AC[1], frob ticket archive's\n  idempotent collapse) lives in src/frob/tickets/_archive.py\n\
+    \  (_write_archived_and_active).\n\nWidening scope to the files the fix and its\
+    \ tests actually touch.\n"
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/tickets/_archive.py
+  reason: "Investigation (frob ticket start T-1437) shows the real defect and its\n\
+    repair both live outside the originally-declared scope\n(src/frob/tickets/_land_merge.py,\
+    \ src/frob/tickets/_reporting.py):\n\n- The actual git-merge-driver entry point\
+    \ (_merge_driver, whose\n  _archived_ids(root) disk read is the root cause --\
+    \ it reads the\n  live checkout's tickets-archive.md, which git has NOT yet written\
+    \ to\n  disk mid-merge, so it always sees the pre-merge/stale archive) lives in\n\
+    \  src/frob/app/ticket_runner/_land_cmd.py.\n- The archive-refuses-on-collision\
+    \ half (AC[1], frob ticket archive's\n  idempotent collapse) lives in src/frob/tickets/_archive.py\n\
+    \  (_write_archived_and_active).\n\nWidening scope to the files the fix and its\
+    \ tests actually touch.\n"
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit::test_merge_driver_reads_archived_ids_from_merge_head_not_stale_disk
+- tests/test_tickets.py::TestArchive::test_id_present_in_both_active_and_archive_collapses_not_refuses
+- tests/test_ticket_merge_driver.py::TestArchivedIdsForMergeDriver::test_not_mid_merge_falls_back_to_disk_based_archived_ids
 acceptance:
 - text: GIVEN a worktree cut before an archive on main WHEN its ticket lands THEN
     the splice drops main-archived blocks from the active ledger and the land completes
     without DuplicateId
-  evidence: []
+  evidence:
+  - tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit::test_merge_driver_reads_archived_ids_from_merge_head_not_stale_disk
+  - tests/test_tickets.py::TestArchive::test_id_present_in_both_active_and_archive_collapses_not_refuses
 - text: GIVEN a ledger with the same id in tickets.md and tickets-archive.md WHEN
     frob ticket archive runs THEN it collapses the duplicate to the archive copy instead
     of refusing
-  evidence: []
+  evidence:
+  - tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit::test_merge_driver_reads_archived_ids_from_merge_head_not_stale_disk
+  - tests/test_tickets.py::TestArchive::test_id_present_in_both_active_and_archive_collapses_not_refuses
 threat: null
 component: null
 ```
 Observed 2026-08-02: after frob ticket archive ran on main (61 tickets moved to tickets-archive.md), every worktree cut before the archive fails to land: the frob-ledger merge driver unions ticket ids across base/ours/theirs, so blocks archived on main but still active in the worktree ledger are resurrected into tickets.md, and the next ledger write fails with DuplicateId (present in both active and archive). frob ticket archive inside the worktree also refuses (id collision), leaving no CLI path to repair; the only recovery is the playbook 10b restore recipe (checkout main's ledger wholesale, re-apply every worktree delta by hand via start/evidence/done-report), which was needed for the w1b-daemon series and costs 15+ commands per worktree. Fix: make the splice archive-aware -- a ticket id present in tickets-archive.md on either side ranks above any active-side copy and must be dropped from the active ledger during the splice (state-rank already exists; add archived as the top rank). Also give frob ticket archive an idempotent mode that collapses an active/archive duplicate to the archive copy instead of refusing, as the recovery path.
+
+## Done report
+
+Root cause (confirmed by direct reproduction, not just theory): git does
+not write any path's resolved merge content back to the actual
+working-tree file until the ENTIRE git-merge machinery finishes -- it
+only ever hands a merge-driver invocation three TEMP files (%O/%A/%B) for
+the ONE path it is resolving. So the old _archived_ids(root), a plain
+disk read of tickets-archive.md, always saw the PRE-merge archive from
+inside a live tickets.md merge-driver invocation, even though
+tickets-archive.md is ALSO registered to merge=frob-ledger and may be
+concurrently resolving its own new content. This reproduced exactly the
+observed incident: a ticket done+archived on main after a worktree
+branched got resurrected into tickets.md on the worktree's next real git
+merge main.
+
+Fix 1 (src/frob/app/ticket_runner/_land_cmd.py):
+_archived_ids_for_merge_driver resolves archived ids from git OBJECTS
+instead of the working tree -- git rev-parse MERGE_HEAD names the commit
+being merged in (real for the whole duration of an in-progress merge),
+and git show HEAD:tickets-archive.md / git show
+MERGE_HEAD:tickets-archive.md read each side's actual committed archive
+content directly from the object store, sidestepping working-tree
+staleness entirely. The union of ids from both refs is used. Degrades to
+the old disk-based _archived_ids(root) whenever MERGE_HEAD cannot be
+resolved (not currently inside a git merge) or either ref's content fails
+to parse. Verified frob ticket land's own internal splice call
+(_merge_main_into_worktree) does NOT share this defect: there root is the
+authoritative main checkout being read FROM (never the branch being
+merged), so its own disk state was never stale to begin with -- this
+already had test coverage
+(test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive).
+
+Fix 2 (src/frob/tickets/_archive.py, AC[1]): _write_archived_and_active
+no longer hard-refuses with Err(DuplicateId) when an id is present in
+BOTH the active ledger and the archive -- it collapses to the archive's
+existing copy (never overwritten) and still drops the id from the active
+ledger, returning the count of tickets genuinely newly archived. This is
+the CLI repair path the incident needed: before this, a worktree left
+with a stray active/archive duplicate (from a stale pre-fix merge, or any
+other cause) had to fall back to the playbook's manual section 10b
+restore recipe.
+
+Scope was widened via frob ticket scope --add (src/frob/app/
+ticket_runner/_land_cmd.py, src/frob/tickets/_archive.py) after
+investigation showed the real defect and its fix live outside the
+ticket's originally declared scope (_land_merge.py, _reporting.py) --
+splice_ledger itself (in _land_ledger_merge.py, re-exported via
+_land_merge.py) already correctly accepts an archived_ids parameter; the
+bug was entirely in WHAT was passed as archived_ids at the live-merge
+call site, and in archive()'s own refusal behavior.
+
+Both fixes reproduced against the real (not stale-globally-installed)
+worktree code: the merge-driver test drives _merge_driver directly
+in-process against a genuine MERGE_HEAD (a real git merge --no-commit
+left in a conflicted state via -c merge.frob-ledger.driver=false, since a
+shelled-out `uv run frob` from a tmp-dir cwd would resolve to some other
+installed frob, not this worktree's own patched code). I manually
+verified the merge-driver test fails without the fix (reverted
+archived_ids=_archived_ids_for_merge_driver(root) to archived_ids=frozenset()
+and re-ran -- the test correctly failed, then restored the real fix and
+re-ran green) before finalizing.
+
+### Changed
+```
+ docs/modules/tickets.md                      |  68 ++++++++++++-
+ src/frob/app/ticket_runner/_close_cmd.py     |  51 ++++++----
+ src/frob/app/ticket_runner/_land_cmd.py      |  81 +++++++++++++++-
+ src/frob/tickets/_archive.py                 |  65 ++++++++++---
+ tests/test_ticket_merge_driver.py            | 138 +++++++++++++++++++++++++-
+ tests/test_tickets.py                        |  44 +++++++++
+ tests/unit/test_ticket_close_bug002_t1438.py | 140 +++++++++++++++++++++++++++
+ tickets.md                                   | 108 ++++++++++++++++++++-
+ 8 files changed, 657 insertions(+), 38 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit::test_merge_driver_reads_archived_ids_from_merge_head_not_stale_disk` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestArchive::test_id_present_in_both_active_and_archive_collapses_not_refuses` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 5 error(s), 443 warning(s), 693 waived
+- error-findings: DUP001@tests/test_ticket_merge_driver.py, OPAQUE001@tests/unit/test_ticket_close_bug002_t1438.py, PRE001@tickets/T-1437, SELFAUDIT001@design, WIRE001@tests/unit/test_ticket_close_bug002_t1438.py
 
 <!-- ticket:T-1438 -->
 ```yaml
 id: T-1438
 title: BUG002 close check resolves parent ref to the worktree's own branch, not the
   ticket's real base
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-02'
@@ -5628,6 +5802,11 @@ sprint: null
 scope:
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/gates/_mutation_evidence.py
+evidence:
+- tests/unit/test_ticket_close_bug002_t1438.py::TestCloseMutationEvidenceBaseRef::test_uses_merge_base_not_own_branch_tip
+- tests/unit/test_ticket_close_bug002_t1438.py::TestCloseMutationEvidenceBaseRef::test_still_skips_when_merge_base_unresolvable
+- tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd::test_close_refuses_when_evidence_passes_at_parent
+- tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd::test_close_succeeds_when_evidence_fails_at_parent
 threat: null
 component: null
 ```
@@ -5663,6 +5842,63 @@ Fix direction: BUG002/close should resolve the ticket's actual base
 HEAD against it) rather than the worktree's own branch name, mirroring
 how `working_diff` already computes `_merge_base(root, base)` for the
 scope/wire gates.
+
+## Done report
+
+frob ticket close's BUG002/mutation-evidence check
+(_close_mutation_evidence_for_ticket) passed current_branch(root) as the
+diff/repro base ref. In a dispatched worktree agent's normal flow this
+resolves to the WORKTREE'S OWN branch, which by close time already
+carries the ticket's own fix commit at its tip -- _bug_repro_outcome_at_ref
+then checked out that branch's tip (the fix itself) instead of the
+pre-fix parent, so the designated repro test trivially "passed at parent"
+for every bug-kind ticket, forcing --skip-mutation-evidence on every
+single close.
+
+Fix: added a public frob.gitio.merge_base(root, base) wrapper (over the
+existing private _merge_base, the same computation working_diff already
+performs), and changed _close_mutation_evidence_for_ticket to accept a
+base_ref parameter (default "main", threaded from cfg.ticket_base_ref)
+and resolve the git merge-base of HEAD against it, passing that resolved
+commit -- not the branch name -- to mutation_evidence_violations and
+bug_repro_violations.
+
+Verified land's own precheck (_land_precheck / _resolve_main_branch_for_land)
+does NOT share this defect: there `root` is the actual main checkout being
+landed INTO (not the ticket's own branch), so current_branch(root)
+correctly resolves to main itself.
+
+Added a regression test (test_ticket_close_bug002_t1438.py) that builds a
+real git repo with a main branch and a feature branch carrying a second
+commit, then asserts the ref reaching mutation_evidence_violations/
+bug_repro_violations is main's tip (the merge-base), never the feature
+branch's own tip/name. Also covers the merge-base-unresolvable case
+(non-git tmp_path) still degrading to None (skip), not a false verdict.
+
+Docs updated in docs/modules/tickets.md (BUG002/close section) and
+docs/modules/testing.md (new merge_base public symbol).
+
+### Changed
+```
+ docs/modules/testing.md                      |  10 ++
+ docs/modules/tickets.md                      |  23 ++++-
+ src/frob/app/ticket_runner/_close_cmd.py     |  51 ++++++----
+ src/frob/gitio.py                            |  13 +++
+ tests/unit/test_ticket_close_bug002_t1438.py | 140 +++++++++++++++++++++++++++
+ tickets.md                                   |   8 +-
+ 6 files changed, 225 insertions(+), 20 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_close_bug002_t1438.py::TestCloseMutationEvidenceBaseRef::test_uses_merge_base_not_own_branch_tip` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_close_bug002_t1438.py::TestCloseMutationEvidenceBaseRef::test_still_skips_when_merge_base_unresolvable` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd::test_close_refuses_when_evidence_passes_at_parent` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd::test_close_succeeds_when_evidence_fails_at_parent` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 6 error(s), 392 warning(s), 693 waived
+- error-findings: COV001@src/frob/gitio.py, OPAQUE001@tests/unit/test_ticket_close_bug002_t1438.py, PRE001@tickets/T-1438, SELFAUDIT001@design, WIRE001@src/frob/gitio.py, WIRE001@tests/unit/test_ticket_close_bug002_t1438.py
 
 <!-- ticket:T-1439 -->
 ```yaml

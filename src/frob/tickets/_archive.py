@@ -102,7 +102,9 @@ def migrate(root: Path) -> Result[int, TicketError]:
 # frob:ticket T-0764
 # frob:ticket T-0843
 # frob:ticket T-0889
+# frob:ticket T-1437
 # frob:tests tests/test_tickets_ledger_concurrency.py::TestArchiveRaceWithConcurrentNew.test_concurrent_new_ticket_survives_a_racing_archive  # noqa: E501
+# frob:tests tests/test_tickets.py::TestArchive.test_id_present_in_both_active_and_archive_collapses_not_refuses  # noqa: E501
 # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_refuses_when_a_live_lease_exists  # noqa: E501
 # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_force_overrides_the_live_lease_refusal  # noqa: E501
 # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_ignores_a_stale_lease_from_a_removed_worktree  # noqa: E501
@@ -149,9 +151,14 @@ def archive(root: Path, *, force: bool = False) -> Result[int, TicketError]:
     tickets-archive.md, verbatim (same section format, still tracked and
     greppable); the active ledger keeps only open work. Idempotent -- a
     second call with nothing newly done/dropped moves nothing and returns
-    Ok(0). Returns the number of tickets moved. See the comment block
-    directly above this function for the full T-0633/T-0764/T-0843
-    locking and live-lease-refusal rationale.
+    Ok(0). An id already present in BOTH the active store and the archive
+    (T-1437's recovery path -- see `_write_archived_and_active`) is
+    collapsed to the archive's existing copy and dropped from the active
+    ledger, rather than refusing the whole call with `DuplicateId`.
+    Returns the number of tickets newly moved (the collapsed-duplicate
+    count is not included). See the comment block directly above this
+    function for the full T-0633/T-0764/T-0843 locking and
+    live-lease-refusal rationale.
 
     T-1256: a v2-mode repo (`_store_mode(root) == "v2"`) dispatches to
     `archive_v2` instead -- design section 4.3's plain `git mv
@@ -285,6 +292,8 @@ def archive_v2(root: Path, *, force: bool = False) -> Result[int, TicketError]:
 
 
 # frob:ticket T-0889
+# frob:ticket T-1437
+# frob:tests tests/test_tickets.py::TestArchive.test_id_present_in_both_active_and_archive_collapses_not_refuses  # noqa: E501
 def _write_archived_and_active(
     root: Path,
     active: dict[str, Ticket],
@@ -292,7 +301,27 @@ def _write_archived_and_active(
     active_digest: str | None,
 ) -> Result[int, TicketError]:
     """Merge `to_archive` into the archive file and drop it from the active
-    ledger, in that order; `Err(DuplicateId)` on an id already archived.
+    ledger, in that order.
+
+    T-1437: an id already present in the archive is no longer a hard
+    `Err(DuplicateId)` refusal -- it is dropped from `to_archive` (the
+    archive's own existing copy wins, unconditionally, never overwritten)
+    and still removed from the active ledger, so `archive` COLLAPSES the
+    duplicate instead of refusing outright. This is the recovery path the
+    T-1437 incident needed: a `git merge main`-triggered ledger-driver
+    resurrection (fixed at its own root cause by
+    `frob.app.ticket_runner._archived_ids_for_merge_driver`, T-1437) could
+    still leave a worktree's `tickets.md` carrying an id its own
+    `tickets-archive.md` ALSO carries (e.g. from a stale merge that ran
+    before this fix, or a hand-edited ledger) -- before this change,
+    `archive` on such a worktree refused outright with `DuplicateId` and
+    offered no CLI path to repair; a duplicate id is now a self-healing
+    no-op for that id (already archived, nothing further to do) rather
+    than a hard stop for the WHOLE `archive` call. Returns the count of
+    ids genuinely NEWLY archived (the overlap set does not count, since
+    nothing new was written for it) -- callers already treat `Ok(0)` as
+    "nothing to move" (see this function's own docstring precedent on
+    `archive`).
 
     `active_digest` (T-0889) is the `ledger_digest` snapshot `archive`'s
     caller took of the active ledger immediately before its `load_all` --
@@ -308,17 +337,31 @@ def _write_archived_and_active(
 
     overlap = set(to_archive) & set(archived)
     if overlap:
-        _log.error("tickets: archive id collision %s", overlap)
-        return Err(TicketError.DuplicateId)
+        _log.warning(
+            "tickets: archive collapsing %d id(s) already present in "
+            "tickets-archive.md -- archive copy wins, active copy dropped "
+            "(no re-archive): %s",
+            len(overlap),
+            sorted(overlap),
+        )
+    newly_archived = {
+        tid: t for tid, t in to_archive.items() if tid not in overlap
+    }
 
-    archive_write = write_archive(root, {**archived, **to_archive})
-    if archive_write.is_err:
-        return Err(archive_write.danger_err)
+    if newly_archived:
+        archive_write = write_archive(root, {**archived, **newly_archived})
+        if archive_write.is_err:
+            return Err(archive_write.danger_err)
 
     keep = {tid: t for tid, t in active.items() if tid not in to_archive}
     active_write = write_all(root, keep, expected_digest=active_digest)
     if active_write.is_err:
         return Err(active_write.danger_err)
 
-    _log.info("tickets: archived %d ticket(s)", len(to_archive))
-    return Ok(len(to_archive))
+    _log.info(
+        "tickets: archived %d ticket(s) (%d already-archived duplicate(s) "
+        "collapsed)",
+        len(newly_archived),
+        len(overlap),
+    )
+    return Ok(len(newly_archived))

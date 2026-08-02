@@ -1094,6 +1094,50 @@ class TestArchive:
         assert second.is_ok
         assert second.danger_ok == 0
 
+    # frob:ticket T-1437
+    def test_id_present_in_both_active_and_archive_collapses_not_refuses(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_archive.py::archive
+        # T-1437 recovery path: an id present in BOTH the active ledger
+        # AND tickets-archive.md (the DuplicateId shape a stale
+        # git-merge-driver splice used to be able to produce, T-1437's own
+        # root incident) must be a self-healing collapse to the archive's
+        # existing copy, not a hard refusal of the whole `archive` call.
+        from frob.tickets._store import load_archive, write_archive
+
+        _write(tmp_path, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
+        # Seed tickets-archive.md directly with the SAME id already
+        # archived, simulating the T-1437 incident's post-merge state
+        # (a leftover duplicate) without needing a real merge.
+        seeded = write_archive(
+            tmp_path, {"T-0001": _ticket(ticket_id="T-0001", state=TicketState.DONE)}
+        )
+        assert seeded.is_ok
+
+        result = archive(tmp_path)
+        assert result.is_ok, (
+            f"archive refused on a duplicate id instead of collapsing it "
+            f"(T-1437 regression): {result.err}"
+        )
+        assert result.danger_ok == 0, (
+            "the duplicate id is already archived -- nothing NEW was "
+            "archived, so the newly-archived count must be 0"
+        )
+
+        active = load_active(tmp_path).danger_ok
+        assert "T-0001" not in active.tickets, (
+            "the active-side duplicate must be dropped even though "
+            "nothing new was written to the archive"
+        )
+        archived = load_archive(tmp_path).danger_ok
+        assert "T-0001" in archived
+
+        # The overall queue must resolve cleanly afterward -- no
+        # DuplicateId left over for the very next load_queue to trip on.
+        merged = load_queue(tmp_path)
+        assert merged.is_ok
+
     def test_nothing_to_archive_is_zero(self, tmp_path: Path) -> None:
         _write(tmp_path, _ticket(ticket_id="T-0001", state=TicketState.QUEUED), "open")
         result = archive(tmp_path)
