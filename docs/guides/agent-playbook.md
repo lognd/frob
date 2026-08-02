@@ -191,6 +191,38 @@ FROB_AGENT=1` for a given worktree (T-0574) -- the same two vars section 1
 and section 3b's `--only` refusal both depend on, now derivable mechanically
 instead of hand-set per dispatch.
 
+## 1b2. A conflicted `stash pop` stages files, and ledger auto-commits sweep the whole index (T-1403)
+
+The second-order failure mode behind section 1b, root-caused from the
+c2fd45da incident: a conflicted `git stash pop` does not just conflict --
+it AUTO-STAGES every file that merged cleanly, leaving them sitting in the
+index of whichever checkout the pop ran in. `git reset --merge HEAD` backs
+out the conflicted files, but anything the pop staged cleanly can survive
+in the index unnoticed.
+
+The ledger auto-commit every `frob ticket new`/`start`/`drop`/`fail`
+performs (`_add_and_commit_tickets_md`) then runs `git add tickets.md`
+followed by a bare `git commit -m <message>` -- and a bare `git commit`
+commits the ENTIRE index, not just what was added for it. Result: the
+pre-staged leftovers land on main inside a `chore(tickets): file T-####`
+commit whose message has nothing to do with them. In the incident,
+T-1390's in-progress `_land.py` + test changes landed under c2fd45da
+("file T-1402 ..."), poisoning future `git blame`/bisect archaeology.
+
+Rules that follow:
+
+- After ANY stash mishap or merge back-out on a shared checkout, run
+  `git status` and confirm the index is EMPTY before running any frob
+  verb that auto-commits (`ticket new`/`start`/`drop`/`fail`, land).
+  `git restore --staged .` clears accidental staging without touching
+  the working tree.
+- Never keep unrelated changes staged-but-uncommitted on the shared main
+  checkout while ticket verbs run there. Staged state is invisible
+  crossfire for every auto-commit.
+- The mechanical fix (pathspec-limiting the ledger commit so it CANNOT
+  carry passengers) is T-1432; until it lands, the index-hygiene check
+  above is the only line of defense.
+
 ## 1c. NEVER edit `.git/info/exclude` (it is repo-global, not worktree-local)
 
 Same hazard class as section 1b's `git stash`, same root cause: `.git/
