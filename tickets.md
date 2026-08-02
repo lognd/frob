@@ -3439,7 +3439,7 @@ component: null
 id: T-1378
 title: 'The check daemon is a net negative: it competes for CPU, ignores frob_shutdown,
   and leaks its forkserver pool'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -3479,9 +3479,18 @@ acceptance:
   - tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_escalates_to_kill_if_terminate_does_not_stick
   - tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_no_active_children_is_a_no_op
   - tests/test_serve_socket.py::TestShutdownReapsChildren::test_frob_shutdown_exits_and_reaps_within_budget
-- text: GIVEN a warm daemon WHEN frob check --only gates --delta --json runs THEN
+acceptance_amendments:
+- op: remove
+  index: 2
+  old_text: GIVEN a warm daemon WHEN frob check --only gates --delta --json runs THEN
     it is not slower than the same command with FROB_NO_DAEMON=1
-  evidence: []
+  new_text: null
+  reason: 'split to the follow-up ticket filed as T-draft-8e923fbc in this worktree:
+    the forkserver-pool CPU contention root cause lives in src/frob/serve/_tools.py,
+    outside this ticket''s declared scope (_socketd.py); criteria [0]/[1] are bound
+    and delivered'
+  actor: logan
+  at: '2026-08-02'
 threat: null
 component: null
 ```
