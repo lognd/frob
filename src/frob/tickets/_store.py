@@ -1061,12 +1061,19 @@ def _read_index_cache(index_path: Path, paths: list[Path]) -> dict[str, Ticket] 
 
 
 # frob:ticket T-1257
+
+# frob:raises BaseException
 def _write_index_cache(
     index_path: Path, paths: list[Path], tickets: dict[str, Ticket]
 ) -> None:
     """Best-effort rebuild of the v2 index cache from a just-completed
-    fresh parse. Never raises: a failed write only costs the NEXT load's
-    speedup, never correctness (mirrors `_write_archive_cache`)."""
+    fresh parse. Never raises for an ordinary write failure -- OSError or
+    any other `Exception` only costs the NEXT load's speedup, never
+    correctness (mirrors `_write_archive_cache`). A `KeyboardInterrupt`/
+    `SystemExit` mid-write still propagates (the inner `except
+    BaseException: ... raise` is cleanup-then-reraise, never a discharge)
+    -- this cache write has no business intercepting a real interrupt/
+    exit, T-1371."""
     entries: dict[str, int] = {}
     for path in paths:
         try:
@@ -1094,6 +1101,16 @@ def _write_index_cache(
                 os.unlink(tmp_name)
             raise
     except OSError as exc:
+        _log.warning("tickets: failed to write v2 index cache, skipping (%s)", exc)
+    except Exception as exc:
+        # "Never raises" (this function's own docstring) -- the inner
+        # `except BaseException: ... raise` above is cleanup-then-
+        # reraise, not a discharge, so a non-`OSError` write surprise
+        # (e.g. `json.dump` choking on a genuinely unexpected payload
+        # shape) previously escaped past this function's own documented
+        # contract (EXHAUST002, T-1371). A bare `except:`/`BaseException`
+        # here would also swallow `KeyboardInterrupt`/`SystemExit`, which
+        # this best-effort CACHE write has no business intercepting.
         _log.warning("tickets: failed to write v2 index cache, skipping (%s)", exc)
 
 
@@ -1190,13 +1207,18 @@ def _read_archive_cache(
     return Ok(tickets)
 
 
+
+# frob:raises BaseException
 def _write_archive_cache(
     cache_path: Path, digest: str, tickets: dict[str, Ticket]
 ) -> None:
     """Best-effort write of the parsed archive to `cache_path`, keyed by
-    `digest`. Never raises: a failed cache write only costs the NEXT
-    load's speedup, not correctness, so it is logged and swallowed rather
-    than surfaced as a `load_archive` error."""
+    `digest`. Never raises for an ordinary write failure -- OSError or
+    any other `Exception` is logged and swallowed rather than surfaced as
+    a `load_archive` error. A `KeyboardInterrupt`/`SystemExit` mid-write
+    still propagates (the inner `except BaseException: ... raise` is
+    cleanup-then-reraise, never a discharge) -- this cache write has no
+    business intercepting a real interrupt/exit, T-1371."""
     payload = {
         "digest": digest,
         "tickets": {
@@ -1218,6 +1240,8 @@ def _write_archive_cache(
                 os.unlink(tmp_name)
             raise
     except OSError as exc:
+        _log.warning("tickets: failed to write archive cache, skipping (%s)", exc)
+    except Exception as exc:
         _log.warning("tickets: failed to write archive cache, skipping (%s)", exc)
 
 

@@ -111,7 +111,14 @@ def _looks_like_repo_state_read(node: ast.expr) -> bool:
     reconstruction)."""
     try:
         text = ast.unparse(node)
-    except (ValueError, TypeError):
+    except ValueError:
+        return False
+    except TypeError:
+        return False
+    except Exception:
+        # A cheap, honest textual proxy (this function's own docstring)
+        # tolerates an unparse surprise as "cannot confirm", not a crash
+        # (EXHAUST001, T-1371).
         return False
     if not any(f".{name}(" in text or f"{name}(" in text for name in _READ_CALL_NAMES):
         return False

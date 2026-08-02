@@ -151,13 +151,22 @@ def _is_already_cached(root: Path, name: str, cached_by: tuple[str, ...]) -> boo
             text = (root / rel).read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
-        lines = text.splitlines()
-        for i, line in enumerate(lines):
-            if def_pattern.match(line) is None:
-                continue
-            window = lines[max(0, i - _DECORATOR_LOOKBEHIND) : i]
-            if any(marker in wline for wline in window for marker in cached_by):
-                return True
+        try:
+            lines = text.splitlines()
+            for i, line in enumerate(lines):
+                if def_pattern.match(line) is None:
+                    continue
+                window = lines[max(0, i - _DECORATOR_LOOKBEHIND) : i]
+                if any(marker in wline for wline in window for marker in cached_by):
+                    return True
+        except (KeyError, IndexError, TypeError):
+            # A textual, conservative check (this function's own
+            # docstring) tolerates one surprising file's shape without
+            # aborting the whole scan over every OTHER tracked file
+            # (EXHAUST001/EXHAUST002, T-1371).
+            continue
+        except Exception:
+            continue
     return False
 
 

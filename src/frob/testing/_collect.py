@@ -275,6 +275,12 @@ def _missing_natives(natives: tuple[NativeSpec, ...]) -> tuple[NativeSpec, ...]:
             found = importlib.util.find_spec(spec.name)
         except (ImportError, ValueError):
             found = None
+        except Exception:
+            # A `find_spec` surprise is still "cannot resolve this native"
+            # (this function's own docstring), the same `None` outcome as
+            # the two named exceptions, not a crash of the whole missing-
+            # natives scan (EXHAUST001, T-1371).
+            found = None
         if found is None or not _compiled_artifacts(found):
             missing.append(spec)
     return tuple(missing)

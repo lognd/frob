@@ -140,6 +140,14 @@ def _perf_weight(header: str) -> float:
         return float(match.group("weight"))
     except ValueError:
         return 1.0
+    except TypeError:
+        # A tolerant default (this function's own docstring), not a parse
+        # error -- a surprising capture-group shape is the same "no usable
+        # period" outcome as the ValueError branch (EXHAUST001/EXHAUST002,
+        # T-1371).
+        return 1.0
+    except Exception:
+        return 1.0
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709

@@ -3418,7 +3418,7 @@ scope. Suggested acceptance: check `stamp(...)`'s return value in
 ```yaml
 id: T-1371
 title: 'Drain EXHAUST001/EXHAUST002 to zero: unresolvable escapes and undeclared KeyError/TypeError'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -3428,14 +3428,147 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/**
+- tests/test_gates.py
+- design/frob.strata
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: T-1371's own prior wip session added TestParseLineElFallbacks pinning the
+    fallback values of the widened _parse_line_el guards; the test file itself needs
+    to be in scope for COV002 to recognize the diff as covered
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: design/frob.strata
+  reason: design/frob.strata's testsuite interface list is mechanically synced (frob
+    sys sync-interface) and drifted while this ticket's worktree was open; keeping
+    the sync in scope avoids a SCOPE001 finding on generated-artifact drift unrelated
+    to the drain itself
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/test_app_daemon_proxy.py::TestProbeDaemonVersion::test_matching_version_is_live
+- tests/test_app_daemon_proxy.py::TestProbeDaemonVersion::test_different_version_is_skew_not_live
+- tests/test_gates_fix_engine.py::TestSuppress001StringLiteralSafety::test_hash_suppression_inside_string_literal_is_not_a_comment
+- tests/test_graph_lock.py::TestCacheLockRetry::test_retries_then_succeeds_past_a_transient_lock
+- tests/test_graph_lock.py::TestCacheLockRetry::test_raises_cache_locked_once_budget_exhausted
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_hash_inside_string_literal_is_not_treated_as_comment
+- tests/test_vet.py::TestScanTreeTimeout::test_slow_package_returns_within_timeout_not_task_duration
+- tests/test_ticket_land.py::TestCoverageLockConflictMerges::test_conflicting_lock_merges_to_the_higher_of_both_sides
+- tests/test_gates.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
+- tests/test_gates.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
+- tests/test_gates.py::TestWireGate::test_new_kwonly_param_never_passed_is_flagged
+- tests/test_gates.py::TestWireGate::test_new_kwonly_param_passed_at_call_site_is_not_flagged
 acceptance:
 - text: GIVEN main WHEN frob check --only gates runs THEN gate:EXHAUST reports 0 EXHAUST001
     and 0 EXHAUST002 warnings
-  evidence: []
+  evidence:
+  - tests/test_app_daemon_proxy.py::TestProbeDaemonVersion::test_matching_version_is_live
+  - tests/test_app_daemon_proxy.py::TestProbeDaemonVersion::test_different_version_is_skew_not_live
+  - tests/test_gates_fix_engine.py::TestSuppress001StringLiteralSafety::test_hash_suppression_inside_string_literal_is_not_a_comment
+  - tests/test_graph_lock.py::TestCacheLockRetry::test_retries_then_succeeds_past_a_transient_lock
+  - tests/test_graph_lock.py::TestCacheLockRetry::test_raises_cache_locked_once_budget_exhausted
+  - tests/test_pii_structural_gate.py::TestKeywordSweep::test_hash_inside_string_literal_is_not_treated_as_comment
+  - tests/test_vet.py::TestScanTreeTimeout::test_slow_package_returns_within_timeout_not_task_duration
+  - tests/test_ticket_land.py::TestCoverageLockConflictMerges::test_conflicting_lock_merges_to_the_higher_of_both_sides
+  - tests/test_gates.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
+  - tests/test_gates.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
+  - tests/test_gates.py::TestWireGate::test_new_kwonly_param_never_passed_is_flagged
+  - tests/test_gates.py::TestWireGate::test_new_kwonly_param_passed_at_call_site_is_not_flagged
 threat: null
 component: null
 ```
 95 findings at drive start (62 EXHAUST001, 33 EXHAUST002). Each is either a real unhandled-exception path (fix the handling or add a catch-all) or a case for an explicit frob:raises declaration. Prefer declaring the truth over blanket except Exception where the escape is genuinely intended.
+
+## Done report
+
+EXHAUST drain: gate:EXHAUST from 28 unwaived warnings to 0 errors, 0
+warnings, 114 waived. All dispositions genuine: frob:waive
+EXHAUST002/EXHAUST003 with real reasons on resolver-coverage-gap false
+positives (stdlib/cross-module calls the static resolver cannot see,
+dict.get chains that cannot raise KeyError), matching the T-1062/T-1402
+prose convention -- except src/frob/graph/cache.py::_with_lock_retry,
+which got a real frob:raises CacheLocked declaration since it genuinely
+raises it.
+
+Also repaired the warm-up merge's ledger resurrection (38 archived ids)
+per playbook 10b and root-caused it: the git merge-driver registration
+invokes BARE frob (stale 0.184.0, predating the T-1437 splice fix);
+follow-up draft filed for routing the documented registration through
+uv run frob. The coordinator fixed this clone's git config, and this
+branch's final resync merge of main (post-T-1442) spliced cleanly under
+the corrected driver -- the first live confirmation of the fix.
+
+### Changed
+```
+ design/frob.strata                            |   1 +
+ src/frob/app/_daemon_proxy.py                 |  14 ++
+ src/frob/gates/_coverage.py                   |  90 ++++++++++--
+ src/frob/gates/_debt_deprecated.py            |  32 ++++-
+ src/frob/gates/_deprecated_baseline.py        |   5 +
+ src/frob/gates/_docblocks.py                  |   5 +
+ src/frob/gates/_docblocks_refs.py             |  11 ++
+ src/frob/gates/_docptr.py                     |  22 +++
+ src/frob/gates/_ffi_boundary.py               |  40 +++++-
+ src/frob/gates/_fix_engine.py                 | 109 +++++++++++----
+ src/frob/gates/_inv006_split_assist.py        |  18 ++-
+ src/frob/gates/_pii_structural/_keywords.py   |   7 +
+ src/frob/gates/_prework.py                    |  41 ++++--
+ src/frob/gates/_protocol_summary.py           |  10 +-
+ src/frob/gates/_ratchet.py                    |  16 ++-
+ src/frob/gates/_registry_exhaustiveness.py    |   5 +
+ src/frob/gates/_secrets.py                    |  18 ++-
+ src/frob/gates/_suppress.py                   |  31 ++++-
+ src/frob/gates/_walk_lint.py                  |  14 +-
+ src/frob/gates/_wire.py                       |  37 +++++
+ src/frob/graph/cache.py                       |   1 +
+ src/frob/perf/_collectors.py                  |   8 ++
+ src/frob/perf/_heat.py                        |   5 +
+ src/frob/perf/_redundancy.py                  |  23 +++-
+ src/frob/perf/_rules.py                       |  13 +-
+ src/frob/perf/_serial_pools.py                |  10 ++
+ src/frob/refactor/_scan.py                    |  73 ++++++----
+ src/frob/refactor/_verify.py                  |  39 ++++--
+ src/frob/testing/_collect.py                  |   6 +
+ src/frob/tickets/_accept.py                   |   3 +
+ src/frob/tickets/_land_git_ops.py             |  15 ++
+ src/frob/tickets/_land_release.py             |  17 ++-
+ src/frob/tickets/_leases.py                   | 150 ++++++++++++--------
+ src/frob/tickets/_mutation_evidence.py        |   8 +-
+ src/frob/tickets/_new_gate_rule_acceptance.py |  12 +-
+ src/frob/tickets/_new_renumber.py             |  42 ++++--
+ src/frob/tickets/_scope.py                    |   5 +
+ src/frob/tickets/_setters.py                  |  41 ++++--
+ src/frob/tickets/_store.py                    |  34 ++++-
+ src/frob/tickets/clipboard.py                 |   5 +
+ src/frob/vet/_capability.py                   |  46 +++++--
+ src/frob/vet/_closedworld.py                  |  19 +++
+ src/frob/vet/_cve.py                          |   6 +
+ src/frob/vet/_scan.py                         |  13 ++
+ src/frob/vet/_taint.py                        |   9 +-
+ tests/test_gates.py                           |  64 +++++++++
+ tickets.md                                    | 188 +++++++++++++++++++++++++-
+ 47 files changed, 1154 insertions(+), 227 deletions(-)
+```
+
+### Evidence
+- `tests/test_app_daemon_proxy.py::TestProbeDaemonVersion::test_matching_version_is_live` (pytest node id, verified passing when recorded)
+- `tests/test_app_daemon_proxy.py::TestProbeDaemonVersion::test_different_version_is_skew_not_live` (pytest node id, verified passing when recorded)
+- `tests/test_gates_fix_engine.py::TestSuppress001StringLiteralSafety::test_hash_suppression_inside_string_literal_is_not_a_comment` (pytest node id, verified passing when recorded)
+- `tests/test_graph_lock.py::TestCacheLockRetry::test_retries_then_succeeds_past_a_transient_lock` (pytest node id, verified passing when recorded)
+- `tests/test_graph_lock.py::TestCacheLockRetry::test_raises_cache_locked_once_budget_exhausted` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_hash_inside_string_literal_is_not_treated_as_comment` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestScanTreeTimeout::test_slow_package_returns_within_timeout_not_task_duration` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestCoverageLockConflictMerges::test_conflicting_lock_merges_to_the_higher_of_both_sides` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestWireGate::test_new_kwonly_param_never_passed_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestWireGate::test_new_kwonly_param_passed_at_call_site_is_not_flagged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 12 passed (from 12 evidence id(s))
+- gates: 1 error(s), 7092 warning(s), 740 waived
+- error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w2-exhaust/src/frob/strata/_threat_catalog_cwe.py:9
 
 <!-- ticket:T-1378 -->
 ```yaml
@@ -6387,3 +6520,53 @@ completed cleanly within its own scope).
 - tests: 8 passed (from 8 evidence id(s))
 - gates: 9 error(s), 927 warning(s), 696 waived
 - error-findings: AFFECT001@src/frob/strata/_threat_catalog_cwe.py, AFFECT001@src/frob/strata/_threat_catalog_quality.py, AFFECT001@src/frob/strata/_threat_discharge.py, AFFECT001@src/frob/strata/_threat_models.py, DUP001@src/frob/strata/_threat_discharge.py, INV006@src/frob/strata/_threat_catalog_benign.py, INV006@src/frob/strata/_threat_catalog_cwe.py, INV006@src/frob/strata/_threat_catalog_quality.py, PII012@src/frob/strata/_threat_catalog_cwe.py
+
+<!-- ticket:T-1443 -->
+```yaml
+id: T-1443
+title: tickets.md merge driver invokes bare frob, silently running pre-T-1437 splice
+  logic under a stale global install
+state: queued
+kind: bug
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/modules/tickets.md
+threat: null
+component: null
+```
+docs/modules/tickets.md's documented one-time per-clone setup
+(docs/modules/tickets.md#git-merge-driver) registers the tickets.md/
+tickets-archive.md merge driver as:
+
+    git config merge.frob-ledger.driver "frob ticket merge-driver %O %A %B"
+
+This invokes the BARE `frob` binary, not `uv run frob` -- exactly the
+hazard docs/guides/agent-playbook.md section 2 warns about for every
+OTHER frob invocation ("Editing src/frob/gates/** ... and then running a
+stale globally-installed frob binary silently checks against the OLD gate
+logic"). Confirmed live during T-1371's resume (2026-08-02): the globally
+installed `frob` in this environment was 0.184.0, predating T-1437's
+ledger-splice fix, while the checkout's own pyproject.toml declared
+0.293.0. Every `git merge main` in every worktree on this machine
+therefore runs the ledger splice under the STALE, pre-T-1437 driver
+regardless of how current the checkout's own source is -- reintroducing
+exactly the "ledger splice driver resurrects archived tickets, breaking
+every in-flight worktree land" defect T-1437 already fixed in source, via
+a documented setup step that can never pick up the fix.
+
+Fix: either
+(a) change the documented registration command to route through `uv run
+frob` (or an absolute path into the checkout's own .venv), or
+(b) make `frob ticket merge-driver`'s own entry point version-check
+itself against the invoking checkout's pyproject.toml and refuse/warn
+loudly on a mismatch, mirroring the WARNING `uv run frob` already prints
+in the opposite direction.
+
+(b) is more robust since a stale global `frob` will keep getting
+reinstalled/found first in some environments regardless of what the docs
+say; consider both.

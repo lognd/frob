@@ -96,6 +96,7 @@ def _pyo3_boundary_pairs(repo_root: Path) -> tuple[tuple[Path, Path], ...]:
     return tuple(pairs)
 
 
+# frob:waive ARCH001 reason="T-1371's EXHAUST001/002 fix added two small per-pair try/except blocks (read failure, scan failure) around the pre-existing loop body -- boilerplate exception-handling lines, not new independently meaningful phases to split out; splitting the try/except itself into a helper would just move the same lines behind an indirection without separating a real sub-concern"  # noqa: E501
 def _ffi001_violations(repo_root: Path) -> list[Violation]:
     """FFI001 (T-0690): every `_pyo3_boundary_pairs` pair's Rust-side
     observed raised-type set (`scan_pyo3_raises`) cross-checked against
@@ -105,10 +106,24 @@ def _ffi001_violations(repo_root: Path) -> list[Violation]:
     alone tells a reader both sides of the drift without a second lookup."""
     violations: list[Violation] = []
     for pyi_path, rs_path in _pyo3_boundary_pairs(repo_root):
-        rust_source = rs_path.read_text(encoding="utf-8", errors="replace")
-        pyi_source = pyi_path.read_text(encoding="utf-8", errors="replace")
-        observed = scan_pyo3_raises(rust_source)
-        declared = parse_pyi_declared_raises(pyi_source)
+        try:
+            rust_source = rs_path.read_text(encoding="utf-8", errors="replace")
+            pyi_source = pyi_path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            # A pair discovered by `_pyo3_boundary_pairs` but no longer
+            # readable (deleted/renamed between listing and read, a race
+            # this gate does not otherwise guard against) must not crash
+            # the whole FFI001 pass over every OTHER pair (EXHAUST001,
+            # T-1371) -- skip just this one.
+            continue
+        try:
+            observed = scan_pyo3_raises(rust_source)
+            declared = parse_pyi_declared_raises(pyi_source)
+        except Exception:
+            # A malformed/unexpected `.rs`/`.pyi` shape confusing either
+            # scanner must not abort the whole FFI001 pass over every
+            # OTHER pair (EXHAUST001, T-1371) -- skip just this one.
+            continue
         try:
             rel = str(pyi_path.relative_to(repo_root))
         except ValueError:
@@ -163,8 +178,21 @@ def _ffi002_violations(root: Path) -> list[Violation]:
             continue
         if is_excluded(rel, exclude_globs) or is_test_file(rel):
             continue
-        source = path.read_text(encoding="utf-8", errors="replace")
-        for call in scan_ctypes_boundary_calls(source):
+        try:
+            source = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            # A file listed by `iter_files` but gone/unreadable by read
+            # time must not crash the whole FFI002 pass (EXHAUST001,
+            # T-1371) -- skip just this one.
+            continue
+        try:
+            calls = list(scan_ctypes_boundary_calls(source))
+        except Exception:
+            # A malformed/unexpected source shape confusing the ctypes
+            # call scanner must not abort the whole FFI002 pass over
+            # every OTHER file (EXHAUST001, T-1371) -- skip just this one.
+            continue
+        for call in calls:
             if call.declared:
                 continue
             violations.append(

@@ -603,6 +603,11 @@ def _read_md(root: Path, rel_path: str) -> str | None:
         return (root / rel_path).read_text(encoding="utf-8", errors="replace")
     except OSError:
         return None
+    except Exception:
+        # This function's own contract is "never a crash" (EXHAUST001,
+        # T-1371) -- a genuinely unresolvable read failure is just another
+        # unreadable-file case.
+        return None
 
 
 # ---------------------------------------------------------------------------

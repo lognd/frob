@@ -168,6 +168,7 @@ class CacheLocked(sqlite3.OperationalError):
 # frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_retries_then_succeeds_past_a_transient_lock  # noqa: E501
 # frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_non_locked_operational_error_is_not_retried  # noqa: E501
 # frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_store_file_data_retries_past_a_held_exclusive_lock  # noqa: E501
+# frob:raises CacheLocked
 def _with_lock_retry(op, *, what: str):  # noqa: ANN001, ANN202
     """Run `op()`, retrying while sqlite reports the db as locked, up to
     `_LOCK_TOTAL_TIMEOUT_SECONDS`; raises `CacheLocked` once the budget is

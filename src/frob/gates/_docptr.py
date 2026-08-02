@@ -418,6 +418,12 @@ def _file_and_anchor_violations(
                 anchor_cache[resolved] = _heading_slugs(root / resolved)
             except OSError:
                 anchor_cache[resolved] = None
+            except Exception:
+                # A resolved-but-unreadable/malformed tracked doc must not
+                # abort the whole doc-pointer scan for every OTHER token in
+                # this doc (EXHAUST001/EXHAUST002, T-1371) -- same "cannot
+                # confirm the anchor, skip" posture as the OSError branch.
+                anchor_cache[resolved] = None
         slugs = anchor_cache[resolved]
         if slugs is not None and anchor_part not in slugs:
             violations.append(
@@ -607,6 +613,11 @@ def _load_frob_toml(root: Path) -> dict | None:
             return tomllib.load(handle)
     except (OSError, tomllib.TOMLDecodeError):
         return None
+    except Exception:
+        # Fail-open (this function's own docstring) over a genuinely
+        # unresolvable manifest-load surprise too, not just the two named
+        # cases (EXHAUST001, T-1371).
+        return None
 
 
 def _load_toml_manifests(root: Path) -> list[dict]:
@@ -630,6 +641,10 @@ def _load_toml_manifests(root: Path) -> list[dict]:
                 manifests.append(tomllib.load(handle))
         except (OSError, tomllib.TOMLDecodeError):
             pass
+        except Exception:
+            # Fail-open per-manifest (this function's own docstring),
+            # same posture as `_load_frob_toml` (EXHAUST001, T-1371).
+            pass
     spawned = run_argv(("git", "-C", str(root), "ls-files", "*Cargo.toml"))
     cargo_paths = (
         spawned.danger_ok.stdout.splitlines()
@@ -641,6 +656,8 @@ def _load_toml_manifests(root: Path) -> list[dict]:
             with (root / rel).open("rb") as handle:
                 manifests.append(tomllib.load(handle))
         except (OSError, tomllib.TOMLDecodeError):
+            continue
+        except Exception:
             continue
     return manifests
 
@@ -1004,6 +1021,11 @@ def _rust_item_defined_in_file(root: Path, file_path: str, name: str) -> bool:
     try:
         text = (root / file_path).read_text(encoding="utf-8", errors="replace")
     except OSError:
+        return False
+    except Exception:
+        # Same fail-closed-to-"not found" posture as the OSError branch --
+        # a doc pointer citing an unreadable file is not evidence of a
+        # crash-worthy bug (EXHAUST001, T-1371).
         return False
     return pattern.search(text) is not None
 

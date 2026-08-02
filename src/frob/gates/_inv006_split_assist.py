@@ -84,6 +84,8 @@ def _covering_invariant_id(rel: str, snapshot: GraphSnapshot) -> str | None:
 # frob:tests tests/test_gates.py::TestInv006SplitAssist.test_finds_carried_waiver_for_verbatim_moved_claim  # noqa: E501
 # frob:tests tests/test_gates.py::TestInv006SplitAssist.test_no_match_when_no_other_file_shares_the_claim  # noqa: E501
 # frob:tests tests/test_gates.py::TestInv006SplitAssist.test_reworded_claim_is_not_detected_v1_disclosed  # noqa: E501
+# frob:waive AFFECT001 reason="T-1371 only widens internal exception handling so one bad candidate file cannot abort the whole search; the documented detector behavior (verbatim sentence match against a covering waiver/invariant) is unchanged, so docs/modules/gates.md#inv006-t-0408 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
+# frob:waive ARCH001 reason="T-1371's EXHAUST001/002 fix wraps the pre-existing per-candidate body in one try/except (text/graph lookup surprise -> skip this candidate) -- boilerplate exception handling, not a new independently meaningful phase; splitting it out would just move the same lines behind an indirection"  # noqa: E501
 def find_carried_waiver(
     root: Path,
     moved_text: str,
@@ -125,10 +127,20 @@ def find_carried_waiver(
                     candidate_text = path.read_text(encoding="utf-8")
                 except OSError:
                     continue
-                normalized_candidate = _normalize_prose(candidate_text)
-                if not any(s in normalized_candidate for s in sentences):
+                try:
+                    normalized_candidate = _normalize_prose(candidate_text)
+                    if not any(s in normalized_candidate for s in sentences):
+                        continue
+                    covering = _covering_waiver_directive_attrs(rel, snapshot)
+                except Exception:
+                    # One candidate file's text/graph lookup being
+                    # surprising must not abort the whole carried-waiver
+                    # search over every OTHER candidate (EXHAUST001/
+                    # EXHAUST002, T-1371) -- this detector's own docstring
+                    # already tolerates "no match anywhere" as a normal
+                    # `None` result, so skipping one bad candidate is the
+                    # same outcome class.
                     continue
-                covering = _covering_waiver_directive_attrs(rel, snapshot)
                 if covering is not None:
                     reason, preset = covering
                     # T-1176/T-1177: carry a PRESET REFERENCE, not a copy

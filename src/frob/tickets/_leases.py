@@ -228,6 +228,7 @@ class _LeaseRecord(BaseModel):
 # frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_age_seconds_computes_elapsed_time kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_age_seconds_none_for_unparseable_timestamp kind="unit"  # noqa: E501
 # frob:ticket T-0601
+# frob:waive AFFECT001 reason="T-1371 only widens the already-documented 'defensive, a lease file is peer-writable' None-on-failure contract to cover any unresolvable timestamp, not just ValueError -- no observable behavior change, so docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def lease_age_seconds(
     record: _LeaseRecord, *, now: datetime | None = None
 ) -> float | None:
@@ -240,6 +241,11 @@ def lease_age_seconds(
     try:
         recorded = datetime.fromisoformat(record.recorded_at)
     except ValueError:
+        return None
+    except Exception:
+        # "Defensive -- a lease file is peer-writable" (this function's
+        # own docstring) covers any genuinely unresolvable timestamp
+        # surprise too, not just `ValueError` (EXHAUST001, T-1371).
         return None
     if recorded.tzinfo is None:
         recorded = recorded.replace(tzinfo=UTC)
@@ -344,11 +350,20 @@ def _probe_worktree_liveness(worktree: str) -> str:
         pass
     except OSError:
         return "ambiguous"
+    except Exception:
+        # This function's own contract is "the safe, conservative
+        # fallback that a caller must treat as cannot confirm either
+        # way" for ANY other stat surprise (docstring) -- a non-OSError
+        # surprise is the same "do not risk a destructive unlink" outcome
+        # (EXHAUST001, T-1371).
+        return "ambiguous"
     else:
         return "present"
     try:
         os.stat(path.parent)
     except OSError:
+        return "ambiguous"
+    except Exception:
         return "ambiguous"
     return "confirmed_absent"
 
@@ -603,6 +618,7 @@ def _load_stale_worktree_warn_commits(root: Path) -> int:
 # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_silent_when_within_threshold kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_silent_on_non_git_root kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_respects_configured_threshold kind="unit"  # noqa: E501
+# frob:waive AFFECT001 reason="T-1371 only widens the already-documented 'best-effort and non-fatal' silent-no-op contract to cover any git-result-shape surprise, not just the .is_err-checked cases -- no observable behavior change, so docs/modules/tickets.md#stale-worktree-cut-warning-t-1059 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def warn_if_worktree_stale(
     root: Path, ticket_id: str, *, main_ref: str = "main"
 ) -> None:
@@ -620,40 +636,50 @@ def warn_if_worktree_stale(
     `main_ref`, unparsable count) degrades to a silent no-op, matching this
     module's other optional-signal helpers (`_tickets_md_dirty`) -- this is a
     detector, not a gate, and must never block `start` itself."""
-    threshold = _load_stale_worktree_warn_commits(root)
-    merge_base_result = gitio.run_argv(
-        ["git", "-C", str(root), "merge-base", "HEAD", main_ref]
-    )
-    if merge_base_result.is_err or merge_base_result.danger_ok.returncode != 0:
-        return
-    merge_base = merge_base_result.danger_ok.stdout.strip()
-    if not merge_base:
-        return
-    count_result = gitio.run_argv(
-        ["git", "-C", str(root), "rev-list", "--count", f"{merge_base}..{main_ref}"]
-    )
-    if count_result.is_err or count_result.danger_ok.returncode != 0:
-        return
     try:
-        behind = int(count_result.danger_ok.stdout.strip())
-    except ValueError:
+        threshold = _load_stale_worktree_warn_commits(root)
+        merge_base_result = gitio.run_argv(
+            ["git", "-C", str(root), "merge-base", "HEAD", main_ref]
+        )
+        if merge_base_result.is_err or merge_base_result.danger_ok.returncode != 0:
+            return
+        merge_base = merge_base_result.danger_ok.stdout.strip()
+        if not merge_base:
+            return
+        count_result = gitio.run_argv(
+            ["git", "-C", str(root), "rev-list", "--count", f"{merge_base}..{main_ref}"]
+        )
+        if count_result.is_err or count_result.danger_ok.returncode != 0:
+            return
+        try:
+            behind = int(count_result.danger_ok.stdout.strip())
+        except ValueError:
+            return
+        if behind < threshold:
+            return
+        _log.warning(
+            "ticket start: %s worktree is %d commit(s) behind %s's tip "
+            "(merge-base %s) -- this repo has repeatedly been bitten by "
+            "worktrees cut from a stale base (T-1030); run `git merge %s` "
+            "and re-verify `git log --oneline -1` shows (or descends from) "
+            "%s's tip before continuing "
+            "(docs/guides/agent-playbook.md#1-worktree-warm-up)",
+            ticket_id,
+            behind,
+            main_ref,
+            merge_base[:8],
+            main_ref,
+            main_ref,
+        )
+    except (KeyError, TypeError):
+        # "Best-effort and non-fatal: any git failure ... degrades to a
+        # silent no-op" (this function's own docstring) -- a surprising
+        # subprocess-result shape is the same outcome class as the
+        # `.is_err`-checked failures above, not a crash of `ticket start`
+        # itself (EXHAUST001/EXHAUST002, T-1371).
         return
-    if behind < threshold:
+    except Exception:
         return
-    _log.warning(
-        "ticket start: %s worktree is %d commit(s) behind %s's tip "
-        "(merge-base %s) -- this repo has repeatedly been bitten by "
-        "worktrees cut from a stale base (T-1030); run `git merge %s` "
-        "and re-verify `git log --oneline -1` shows (or descends from) "
-        "%s's tip before continuing "
-        "(docs/guides/agent-playbook.md#1-worktree-warm-up)",
-        ticket_id,
-        behind,
-        main_ref,
-        merge_base[:8],
-        main_ref,
-        main_ref,
-    )
 
 
 # frob:ticket T-1054
@@ -1213,6 +1239,13 @@ def _worktree_head_age_seconds(
         committed = int(spawned.danger_ok.stdout.strip())
     except ValueError:
         return None
+    except TypeError:
+        # "`None` if unresolvable" (this function's own docstring) covers
+        # a surprising subprocess-result shape too, not just `ValueError`
+        # (EXHAUST001/EXHAUST002, T-1371).
+        return None
+    except Exception:
+        return None
     current = now if now is not None else datetime.now(UTC)
     return current.timestamp() - committed
 
@@ -1296,30 +1329,39 @@ def _sweep_verdict_for_worktree(
     if clean is not True:
         return _WorktreeVerdict(path=str(candidate), verdict="kept:dirty")
 
-    live_lease: _LeaseRecord | None = None
-    for record in leases:
-        try:
-            record_path = Path(record.worktree).resolve()
-        except OSError:
-            continue
-        if record_path != candidate:
-            continue
-        if not is_lease_ttl_expired(record, now=now):
-            live_lease = record
-            break
-    if live_lease is not None:
-        age = lease_age_seconds(live_lease, now=now)
-        age_str = f"{int(age)}s" if age is not None else "unknown-age"
-        return _WorktreeVerdict(
-            path=str(candidate),
-            verdict="kept:lease",
-            detail=f"{live_lease.ticket_id} {age_str}",
-        )
+    try:
+        live_lease: _LeaseRecord | None = None
+        for record in leases:
+            try:
+                record_path = Path(record.worktree).resolve()
+            except OSError:
+                continue
+            if record_path != candidate:
+                continue
+            if not is_lease_ttl_expired(record, now=now):
+                live_lease = record
+                break
+        if live_lease is not None:
+            age = lease_age_seconds(live_lease, now=now)
+            age_str = f"{int(age)}s" if age is not None else "unknown-age"
+            return _WorktreeVerdict(
+                path=str(candidate),
+                verdict="kept:lease",
+                detail=f"{live_lease.ticket_id} {age_str}",
+            )
 
-    if min_age_hours is not None:
-        head_age = _worktree_head_age_seconds(candidate, now=now)
-        if head_age is None or head_age < min_age_hours * 3600:
-            return _WorktreeVerdict(path=str(candidate), verdict="kept:age")
+        if min_age_hours is not None:
+            head_age = _worktree_head_age_seconds(candidate, now=now)
+            if head_age is None or head_age < min_age_hours * 3600:
+                return _WorktreeVerdict(path=str(candidate), verdict="kept:age")
+    except (TypeError, ValueError):
+        # This is a removal-safety verdict: any surprise while judging
+        # lease/age must fail CLOSED to "do not remove", the same
+        # posture `sweep_worktrees`'s own docstring already documents
+        # for the dirty/lease/age gates (EXHAUST001/EXHAUST002, T-1371).
+        return _WorktreeVerdict(path=str(candidate), verdict="kept:age")
+    except Exception:
+        return _WorktreeVerdict(path=str(candidate), verdict="kept:age")
 
     if dry_run:
         return _WorktreeVerdict(

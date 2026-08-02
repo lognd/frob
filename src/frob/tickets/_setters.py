@@ -292,22 +292,33 @@ def _mine_done_transitions(
             state = _ticket_state_in_blob(blob, ticket_id)
             if state is None:
                 continue
-            if state == TicketState.DONE.value and state != prev_state[ticket_id]:
-                try:
-                    committed_at = datetime.fromisoformat(iso)
-                except ValueError:
-                    prev_state[ticket_id] = state
-                    continue
-                transitions.append(
-                    SprintTransition(
-                        ticket_id=ticket_id,
-                        sha=sha,
-                        committed_at=committed_at,
-                        from_state=prev_state[ticket_id],
-                        to_state=state,
+            try:
+                if state == TicketState.DONE.value and state != prev_state[ticket_id]:
+                    try:
+                        committed_at = datetime.fromisoformat(iso)
+                    except ValueError:
+                        prev_state[ticket_id] = state
+                        continue
+                    transitions.append(
+                        SprintTransition(
+                            ticket_id=ticket_id,
+                            sha=sha,
+                            committed_at=committed_at,
+                            from_state=prev_state[ticket_id],
+                            to_state=state,
+                        )
                     )
-                )
-            prev_state[ticket_id] = state
+                prev_state[ticket_id] = state
+            except KeyError:
+                # `prev_state` is seeded from the exact same `ticket_ids`
+                # this loop iterates (`dict.fromkeys` above), so this
+                # should be unreachable in practice -- but a history-
+                # mining pass over untrusted git blob content must not
+                # crash on a surprise, only mis-derive one ticket's own
+                # transition list (EXHAUST002, T-1371).
+                continue
+            except Exception:
+                continue
     return tuple(transitions)
 
 

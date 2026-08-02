@@ -139,6 +139,11 @@ def probe_daemon(
 # connect that must precede it would add indirection without separating a real \
 # sub-concern, and the classification half is already extracted into \
 # _classify_version_reply"
+# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to socket.socket's own \
+# connect/settimeout/sendall/recv calls, stdlib socket calls the resolver cannot \
+# statically bound past the broad except (TimeoutError, OSError) wrapping the whole \
+# with-block; every locally documented raise path (ConnectionRefusedError, \
+# FileNotFoundError, TimeoutError, OSError) is caught explicitly"
 def _ask_version_over_socket(path: Path, timeout_s: float) -> bytes | DaemonLiveness:
     """One bounded `frob_version` round trip: the raw reply bytes, or the
     `DaemonLiveness` that the transport failure itself already proves."""
@@ -168,6 +173,15 @@ def _ask_version_over_socket(path: Path, timeout_s: float) -> bytes | DaemonLive
 
 
 # frob:ticket T-1380
+# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to \
+# bytes.split/bytes.decode and dict.get chained twice, plain str/bytes/dict operations \
+# the resolver cannot statically bound; the one real raise path (json.loads on \
+# malformed input) is caught below"
+# frob:waive EXHAUST002 reason="T-1371: same resolver artifact as EXHAUST003 above -- \
+# the chained payload.get(...).get(...) is defensive against a non-dict 'result' \
+# value, which raises AttributeError (already caught), not KeyError; dict.get never \
+# raises KeyError by construction, so this is a false positive from the gate's \
+# syntactic scan"
 def _classify_version_reply(buf: bytes) -> tuple[DaemonLiveness, str | None]:
     """A well-formed reply -> `Live` or `VersionSkew`; anything unreadable
     -> `Wedged`, the conservative answer."""

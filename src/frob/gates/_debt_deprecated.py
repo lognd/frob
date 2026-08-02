@@ -554,16 +554,34 @@ def _build_deprecated_ref_index(root: Path) -> _DeprecatedRefIndex:
                 src_lines = path.read_bytes().decode(errors="replace").splitlines()
             except OSError:
                 src_lines = []
-            for name, line in ids_result.danger_ok:
-                ctx = src_lines[line - 1] if 0 < line <= len(src_lines) else ""
-                index.identifier_hits.setdefault(name, []).append((rel, line, ctx))
+            try:
+                for name, line in ids_result.danger_ok:
+                    ctx = src_lines[line - 1] if 0 < line <= len(src_lines) else ""
+                    index.identifier_hits.setdefault(name, []).append((rel, line, ctx))
+            except Exception:
+                # A single file's identifier/line data being surprising
+                # (out-of-range span, unexpected shape) must not abort the
+                # whole-tree index build for every OTHER file (EXHAUST001/
+                # EXHAUST002, T-1371) -- same "one bad input, keep going"
+                # posture this loop already has for `_collect_source_files`
+                # and `parse_file` failures via `.is_ok` checks.
+                _log.debug(
+                    "_build_deprecated_ref_index: skipping %s (bad identifiers)", rel
+                )
 
         parsed_result = parse_file(path)
         if parsed_result.is_ok:
-            for sym in _definition_symbols(parsed_result.danger_ok.symbols):
-                _, _, name = sym.qualname.rpartition(".")
-                index.definition_sites.setdefault(name, set()).add((rel, sym.span[0]))
-                index.first_definition_file.setdefault(name, rel)
+            try:
+                for sym in _definition_symbols(parsed_result.danger_ok.symbols):
+                    _, _, name = sym.qualname.rpartition(".")
+                    index.definition_sites.setdefault(name, set()).add(
+                        (rel, sym.span[0])
+                    )
+                    index.first_definition_file.setdefault(name, rel)
+            except Exception:
+                _log.debug(
+                    "_build_deprecated_ref_index: skipping %s (bad symbols)", rel
+                )
     return index
 
 

@@ -465,6 +465,12 @@ def _module_reexports(root: Path, file_path: str, name: str) -> bool:
         text = (root / file_path).read_text(encoding="utf-8", errors="replace")
     except OSError:
         return False
+    except Exception:
+        # Conservative-in-the-false-positive-direction by design (this
+        # function's own docstring) -- an unresolvable read is just another
+        # "can't confirm a re-export" case, not a crash (EXHAUST001,
+        # T-1371).
+        return False
     blob = "\n".join(
         [
             *_ALL_BLOCK_RE.findall(text),
@@ -575,6 +581,11 @@ def _rust_item_defined(root: Path, files: tuple[str, ...], name: str) -> bool:
         try:
             text = (root / rel).read_text(encoding="utf-8", errors="replace")
         except OSError:
+            continue
+        except Exception:
+            # A conservative existence check (this function's own docstring)
+            # tolerates one unreadable candidate file without aborting the
+            # whole scan (EXHAUST001, T-1371).
             continue
         if pattern.search(text):
             return True

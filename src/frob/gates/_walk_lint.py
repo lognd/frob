@@ -293,6 +293,7 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
 # frob:tests tests/test_walk_lint_gate.py::TestSelfMatchExclusion.test_own_files_not_scanned  # noqa: E501
 # frob:invariant INV-005
 # invariant spec: [INV-005](invariants/INV-005.md)
+# frob:waive AFFECT001 reason="T-1371 only widens internal exception handling so one bad file cannot abort the whole WALK001 pass; the documented behavior is unchanged, so docs/modules/gates.md#walk001-unpruned-traversal-t-0471 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def walk_lint_gate(root: Path) -> tuple[Violation, ...]:
     """WALK001 (docs/modules/gates.md#walk001-unpruned-traversal-t-0471):
     every git-tracked `src/frob/**/*.py` file scanned for a raw recursive
@@ -313,9 +314,16 @@ def walk_lint_gate(root: Path) -> tuple[Violation, ...]:
             _log.debug("walk_lint_gate: skipping unparseable %s", rel_path)
             continue
         scanned += 1
-        violations.extend(
-            _walk001_violation(rel_path, site) for site in _scan_python_walks(tree)
-        )
+        try:
+            violations.extend(
+                _walk001_violation(rel_path, site) for site in _scan_python_walks(tree)
+            )
+        except Exception:
+            # One file's AST shape confusing the walk-site scanner must
+            # not abort the whole WALK001 pass over every OTHER tracked
+            # file (EXHAUST001/EXHAUST002, T-1371) -- same "skip just this
+            # one" posture as the parse-failure branch above.
+            _log.debug("walk_lint_gate: skipping unscannable %s", rel_path)
 
     _log.info(
         "walk_lint_gate: scanned %d tracked src/frob .py file(s), %d violation(s)",

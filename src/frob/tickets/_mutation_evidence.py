@@ -134,9 +134,15 @@ def _matches_base_ref_tip(root: Path, file: str, base_ref: str) -> bool:
         return False
     try:
         current = target.read_bytes()
+        return current == spawned.danger_ok.stdout.encode()
     except OSError:
         return False
-    return current == spawned.danger_ok.stdout.encode()
+    except Exception:
+        # "Best-effort: any git failure ... returns False" (this
+        # function's own docstring) covers a genuinely unresolvable
+        # comparison surprise too, not just `OSError` (EXHAUST001,
+        # T-1371).
+        return False
 
 
 # frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_filters_to_scope_and_python  # noqa: E501

@@ -985,4 +985,9 @@ def _is_relative(path: Path, root: Path) -> bool:
         path.relative_to(root)
     except ValueError:
         return False
+    except Exception:
+        # Cosmetic-only (this function's own docstring): a genuinely
+        # unresolvable comparison just means "cannot confirm, treat as not
+        # relative", not a crash (EXHAUST001, T-1371).
+        return False
     return True

@@ -63,6 +63,11 @@ def _current_actor() -> str:
         return getpass.getuser()
     except OSError:
         return "unknown"
+    except Exception:
+        # "never raises" (this function's own docstring) covers any
+        # platform/sandbox surprise, not just `OSError` (EXHAUST001,
+        # T-1371).
+        return "unknown"
 
 
 # frob:ticket T-0455

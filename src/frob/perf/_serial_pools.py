@@ -116,6 +116,7 @@ class SerialExecutor:
 
 # frob:doc docs/modules/perf.md#pool-dispatched-work-attribution-t-0948
 # frob:tests tests/unit/perf/test_serial_pools.py::TestInstallSerialPools.test_with_serial_pools_worker_is_majority_attributed  # noqa: E501
+# frob:waive AFFECT001 reason="T-1371 only widens the already-documented 'safe to call even if frob.gates fails to import' contract to cover any import-time surprise, not just ImportError -- no observable behavior change, so docs/modules/perf.md#pool-dispatched-work-attribution-t-0948 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def install_serial_pools() -> None:
     """Replace `ThreadPoolExecutor`/`ProcessPoolExecutor` with
     `SerialExecutor` everywhere frob's gate dispatch looks them up --
@@ -136,6 +137,15 @@ def install_serial_pools() -> None:
         _log.warning(
             "install_serial_pools: frob.gates import failed, only the "
             "concurrent.futures-level patch is active"
+        )
+        return
+    except Exception:
+        # "Safe to call even if frob.gates fails to import" (this
+        # function's own docstring) covers any import-time surprise, not
+        # just `ImportError` (EXHAUST001, T-1371).
+        _log.warning(
+            "install_serial_pools: frob.gates import raised unexpectedly, "
+            "only the concurrent.futures-level patch is active"
         )
         return
     _frob_gates.ThreadPoolExecutor = SerialExecutor  # type: ignore[attr-defined]  # ty: ignore[invalid-assignment]  # noqa: E501

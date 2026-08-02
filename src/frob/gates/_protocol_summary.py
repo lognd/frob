@@ -893,7 +893,15 @@ def _discharge(root: Path, symref: str, resource: str) -> Violation | None:
         source = (root / path).read_text(encoding="utf-8")
     except OSError:
         return None
-    result = _language_discharge(path, source, resource)
+    try:
+        result = _language_discharge(path, source, resource)
+    except Exception:
+        # Best-effort, textual (this function's own docstring) -- a
+        # surprising discharge-predicate lookup means "no discharge
+        # applies", the exact same `None` this function already returns
+        # for the OSError branch, not a crash of the whole PROTO002 pass
+        # (EXHAUST001/EXHAUST002, T-1371).
+        return None
     if not result.discharged:
         return None
     return Violation(

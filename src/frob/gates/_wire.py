@@ -94,6 +94,13 @@ def _hunks_by_file(diff: Diff) -> dict[str, list[tuple[int, int]]]:
     return by_file
 
 
+# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to \
+# Path.read_text/str.splitlines and dict.setdefault, plain pathlib/str/dict operations \
+# the resolver cannot statically bound; the one real raise path (a deleted/unreadable \
+# file) is caught below"
+# frob:waive EXHAUST002 reason="T-1371: same resolver artifact as EXHAUST003 above -- \
+# every dict access below is dict.setdefault (never raises KeyError by construction), \
+# not a bare subscript; a false positive from the gate's syntactic scan"
 def _added_lines(
     root: Path, hunks_by_file: dict[str, list[tuple[int, int]]]
 ) -> dict[str, list[tuple[int, str]]]:
@@ -143,6 +150,14 @@ def _new_callable_records(
     return found
 
 
+# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to re.compile/ \
+# Path.read_text/str.splitlines, stdlib/pathlib calls the resolver cannot statically \
+# bound; a malformed short-name cannot reach re.compile since it is always \
+# re.escape()'d first, and file-read failure is caught below"
+# frob:waive EXHAUST002 reason="T-1371: same resolver artifact as EXHAUST003 above -- \
+# snapshot.file_hashes iteration and enumerate(lines, 1) are plain iteration, not \
+# dict/list subscripting that can raise KeyError; a false positive from the gate's \
+# syntactic scan"
 def _is_reached_outside_diff_tests(
     root: Path, snapshot: GraphSnapshot, record, def_lines: frozenset[int]
 ) -> bool:
@@ -340,6 +355,10 @@ def _wire001_rule_id_violations(
     return violations
 
 
+# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to \
+# Path.read_text/re.search/dict.items iteration, plain pathlib/re/dict operations the \
+# resolver cannot statically bound; the one real raise path (config_external.py \
+# missing/unreadable) is caught above"
 def _wire001_cli_dest_violations(
     root: Path, added_lines: dict[str, list[tuple[int, str]]]
 ) -> list[Violation]:
@@ -424,6 +443,9 @@ def _touched_callable_records(
     return found
 
 
+# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to ast.walk/ \
+# ast.FunctionDef attribute access, stdlib ast calls the resolver cannot statically \
+# bound; the one real raise path (ast.parse on malformed source) is caught below"
 def _kwonly_param_names(source: str, short_name: str) -> frozenset[str] | None:
     """Keyword-only parameter names of the first `def`/`async def` named
     `short_name` in `source`, via the stdlib `ast` module (simpler and
@@ -462,6 +484,13 @@ def _keyword_arg_pattern(name: str) -> re.Pattern[str]:
     return cached
 
 
+# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to _keyword_arg_pattern \
+# (a module-local cached-regex helper the resolver cannot see through) and \
+# Path.read_text/str.splitlines; the one real raise path (a deleted/ unreadable file) \
+# is caught below"
+# frob:waive EXHAUST002 reason="T-1371: same resolver artifact as EXHAUST003 above -- \
+# _keyword_arg_pattern's own dict.get lookup on the module-level cache is never a bare \
+# subscript; no KeyError-raising call is reachable from this function's own source"
 def _keyword_passed_outside_def(
     root: Path, snapshot: GraphSnapshot, record, def_lines: frozenset[int], name: str
 ) -> bool:
@@ -489,6 +518,14 @@ def _keyword_passed_outside_def(
     return False
 
 
+# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to \
+# _touched_callable_records/_kwonly_param_names/_keyword_passed_outside_def, \
+# module-local helpers the resolver cannot see through, and run_argv, a cross-module \
+# Result-returning wrapper it likewise cannot see through; the one real raise path \
+# (Path.read_text on a deleted/unreadable file) is caught above"
+# frob:waive EXHAUST002 reason="T-1371: same resolver artifact as EXHAUST003 above -- \
+# every operation below is a frozenset/set difference or plain iteration, not a bare \
+# subscript that can raise KeyError; a false positive from the gate's syntactic scan"
 def _wire001_new_kwonly_param_violations(
     root: Path,
     diff: Diff,

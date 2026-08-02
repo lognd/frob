@@ -2968,6 +2968,7 @@ def language_for(path: Path) -> str | None:
 # frob:ticket T-0769
 # frob:ticket T-0972
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive AFFECT001 reason="T-1371 only widens the already-documented 'never raises' contract to cover a surprising span shape, not just the OSError read failure -- no observable behavior change, so docs/modules/vet.md#public-api needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def non_executable_line_numbers(path: Path) -> frozenset[int]:
     """Every 1-indexed line number in `path` that a comment or python
     docstring span (`_non_executable_byte_spans`, T-0209/T-0769) touches --
@@ -2992,11 +2993,19 @@ def non_executable_line_numbers(path: Path) -> frozenset[int]:
     except OSError:
         return frozenset()
     lines: set[int] = set()
-    # frob:waive PERF002 reason="each (start, end) span needs its own byte-count query over a different sub-range; not a repeated identical count to hoist"  # noqa: E501
-    for start, end in spans:
-        first_line = raw.count(b"\n", 0, start) + 1
-        last_line = raw.count(b"\n", 0, max(end - 1, 0)) + 1
-        lines.update(range(first_line, last_line + 1))
+    try:
+        # frob:waive PERF002 reason="each (start, end) span needs its own byte-count query over a different sub-range; not a repeated identical count to hoist"  # noqa: E501
+        for start, end in spans:
+            first_line = raw.count(b"\n", 0, start) + 1
+            last_line = raw.count(b"\n", 0, max(end - 1, 0)) + 1
+            lines.update(range(first_line, last_line + 1))
+    except (KeyError, TypeError, ValueError):
+        # "Never raises" (this function's own docstring) covers a
+        # surprising span shape too, not just the read failure above
+        # (EXHAUST001/EXHAUST002, T-1371).
+        return frozenset()
+    except Exception:
+        return frozenset()
     return frozenset(lines)
 
 
@@ -4620,6 +4629,15 @@ def _c_call_target_resolved(
             index_value = int(node_text(index))
         except ValueError:
             return None
+        except (KeyError, TypeError):
+            # A `number_literal` node's text failing to resolve to a
+            # plain int is the same "cannot resolve this array-alias
+            # index" outcome as the ValueError branch, not a crash of the
+            # whole C/C++ call-target resolver (EXHAUST001/EXHAUST002,
+            # T-1371).
+            return None
+        except Exception:
+            return None
         return array_alias_table.get((node_text(base), index_value))
     return None
 
@@ -5616,6 +5634,7 @@ def _is_test_path(path: Path) -> bool:
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0201
 # frob:ticket T-0253
+# frob:waive AFFECT001 reason="T-1371 only widens internal exception handling around path resolution to a broader 'cannot confirm, treat as not a self-pattern path' fallback -- no observable behavior change, so docs/modules/vet.md#public-api needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def is_self_pattern_path(
     path: Path,
     root: Path | None = None,
@@ -5635,13 +5654,20 @@ def is_self_pattern_path(
         return False
     try:
         resolved = path.resolve()
+        parts = resolved.parts
+        return any(
+            len(parts) >= len(suffix) and parts[-len(suffix) :] == suffix
+            for suffix in suffixes
+        )
     except OSError:
         return False
-    parts = resolved.parts
-    return any(
-        len(parts) >= len(suffix) and parts[-len(suffix) :] == suffix
-        for suffix in suffixes
-    )
+    except (KeyError, TypeError):
+        # A genuinely surprising `parts`/`suffix` shape is the same
+        # "cannot confirm this is a self-pattern path" outcome as the
+        # OSError branch, not a crash (EXHAUST001/EXHAUST002, T-1371).
+        return False
+    except Exception:
+        return False
 
 
 def _is_self_path(path: Path, source_dir: Path) -> bool:

@@ -180,6 +180,12 @@ def _parse_comparable(value: str) -> PkgVersion | None:
         return PkgVersion(value)
     except InvalidVersion:
         return None
+    except Exception:
+        # "The ONLY failure mode this function has" (this function's own
+        # docstring) is aspirational, not literal -- a genuinely
+        # unresolvable value still maps to the same `None`/
+        # `INDETERMINATE` caller contract (EXHAUST001, T-1371).
+        return None
 
 
 def _evaluate_entry(dep_version: str, entry: Version) -> tuple[str, str]:

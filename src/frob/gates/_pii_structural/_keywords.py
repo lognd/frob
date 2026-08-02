@@ -417,6 +417,13 @@ _FROB_DIRECTIVE_RE = re.compile(r"^\s*frob:")
 
 
 # frob:ticket T-1411
+# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to \
+# tokenize.generate_tokens/io.StringIO, stdlib calls the resolver cannot statically \
+# bound past the except (TokenError, IndentationError, SyntaxError) below; every \
+# documented raise path tokenize.generate_tokens can produce is already caught"
+# frob:waive EXHAUST002 reason="T-1371: same resolver artifact as EXHAUST003 above -- \
+# tokenize's internal dict-keyed dispatch is conservatively assumed to leak KeyError; \
+# no KeyError-raising call is reachable from this function's own source"
 def _extract_comments(text: str) -> list[tuple[int, str, bool]]:
     """Every `#`-comment's `(lineno, comment_text_after_hash, is_trailing)`
     in `text`. LEVEL 1 of T-1411's structural fix: uses the stdlib

@@ -146,6 +146,11 @@ def _write_ratchet_lock(root: Path, lock: RatchetLock) -> Result[None, RatchetEr
         )
     except OSError:
         return Err(RatchetError.WriteFailed)
+    except Exception:
+        # This function's own contract is a `Result` -- a genuinely
+        # unresolvable write-time surprise belongs in `RatchetError.
+        # WriteFailed`, not an escaping exception (EXHAUST001, T-1371).
+        return Err(RatchetError.WriteFailed)
     return Ok(None)
 
 
@@ -236,6 +241,7 @@ def resolve_ratchet_severity(rule_id: str, finding_key: str, lock: RatchetLock) 
 # frob:ticket T-0569
 # frob:doc docs/modules/gates.md#ratchet-pools-t-0569
 # frob:tests tests/test_gates_ratchet.py::TestRatchetEnabledRules.test_reads_configured_rules  # noqa: E501
+# frob:waive AFFECT001 reason="T-1371 only widens internal exception handling; the documented missing-is-default behavior is unchanged, so docs/modules/gates.md#ratchet-pools-t-0569 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def ratchet_enabled_rules(root: Path) -> frozenset[str]:
     """The rule ids opted into ratcheting via `[gates.ratchet] rules =
     [...]` in `root/frob.toml` (T-0569) -- empty (no rule ratcheted) if
@@ -248,7 +254,13 @@ def ratchet_enabled_rules(root: Path) -> frozenset[str]:
     try:
         with toml_path.open("rb") as fh:
             data = tomllib.load(fh)
+        rules = data.get("gates", {}).get("ratchet", {}).get("rules", [])
+        return frozenset(str(r) for r in rules)
     except (OSError, tomllib.TOMLDecodeError):
         return frozenset()
-    rules = data.get("gates", {}).get("ratchet", {}).get("rules", [])
-    return frozenset(str(r) for r in rules)
+    except Exception:
+        # Missing-is-default (this function's own docstring) over a
+        # genuinely malformed `[gates.ratchet]` shape too (a non-dict
+        # `gates`/`ratchet` table, a non-list `rules`), not just the two
+        # named load failures (EXHAUST001, T-1371).
+        return frozenset()

@@ -105,9 +105,16 @@ def _is_scan_path_pruned(
         return False
     try:
         rel = scan_path.relative_to(root).as_posix()
+        return is_excluded(rel, exclude_globs) or is_excluded(f"{rel}/.", exclude_globs)
     except ValueError:
         return False
-    return is_excluded(rel, exclude_globs) or is_excluded(f"{rel}/.", exclude_globs)
+    except Exception:
+        # A poorly-scoped ticket glob is exactly what this function exists
+        # to defend against (its own docstring) -- a genuinely unresolvable
+        # path/exclude-glob surprise falls back to "not pruned", the same
+        # side this function's other early-return branches already choose
+        # on ambiguity (EXHAUST001, T-1371).
+        return False
 
 
 # frob:ticket T-0240
@@ -156,18 +163,28 @@ def _xref_hit_for_scope_pattern(
         )
         return None
     symbol = None
-    if snapshot is not None:
-        try:
-            scan_path_rel = scan_path.relative_to(root).as_posix()
-        except ValueError:
-            scan_path_rel = "."
-        symbol = _real_symbol_for_scope_pattern(
-            f"{scan_path_rel}/**" if scan_path_rel != "." else "**", snapshot
-        )
-    if symbol is None:
+    try:
+        if snapshot is not None:
+            try:
+                scan_path_rel = scan_path.relative_to(root).as_posix()
+            except ValueError:
+                scan_path_rel = "."
+            symbol = _real_symbol_for_scope_pattern(
+                f"{scan_path_rel}/**" if scan_path_rel != "." else "**", snapshot
+            )
+        if symbol is None:
+            return None
+        xref_result = xref(symbol, scan_path)
+        return xref_result.danger_ok.symbol if xref_result.is_ok else None
+    except (KeyError, TypeError):
+        # This function's own contract already returns `None` for "resolves
+        # to no real symbol"/"the bounded xref call finds nothing"
+        # (docstring) -- a surprising graph/xref shape is the same outcome
+        # class, not a crash of the whole sweep (EXHAUST001/EXHAUST002,
+        # T-1371).
         return None
-    xref_result = xref(symbol, scan_path)
-    return xref_result.danger_ok.symbol if xref_result.is_ok else None
+    except Exception:
+        return None
 
 
 # frob:ticket T-0976

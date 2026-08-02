@@ -50,6 +50,9 @@ _log = get_logger("frob.tickets")
 _TERMINAL_STATES = frozenset({TicketState.DONE, TicketState.DROPPED})
 
 
+# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to getpass.getuser, a \
+# stdlib call the resolver cannot statically bound; the one documented raise path \
+# (OSError) is caught below"
 def _current_actor() -> str:
     """Best-effort identity for an `acceptance_amendments` audit entry's
     `actor` field (T-1422) -- the OS login name, or `"unknown"` if the

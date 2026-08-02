@@ -93,6 +93,11 @@ def _decode_file_count(ref: str) -> tuple[str, int]:
         return file, int(count_s)
     except ValueError:
         return ref, 1
+    except Exception:
+        # A hand-written/legacy baseline entry can put anything after the
+        # separator (EXHAUST001/EXHAUST002, T-1371) -- this function's own
+        # contract is "tolerate a bad suffix as count=1", never a crash.
+        return ref, 1
 
 
 # frob:ticket T-1052

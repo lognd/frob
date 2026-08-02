@@ -69,14 +69,35 @@ _LOCK_AUDIT_REL = Path(".frob") / "coverage-lock-audit.log"
 
 
 def _parse_line_el(line_el: ET.Element) -> tuple[int, tuple[int, int]] | None:
-    """One Cobertura `<line>` -> `(number, (hits, branch_pct))`, or None if junk."""
+    """One Cobertura `<line>` -> `(number, (hits, branch_pct))`, or None if junk.
+
+    Deliberately best-effort over the WHOLE element, not just the two
+    `int()` calls: a malformed/attacker-crafted `coverage.xml` can put
+    non-string attribute values or unexpected shapes past `.get()`, and
+    this parser's own contract ("or None if junk") means any such
+    surprise is junk too, not a crash (EXHAUST001/EXHAUST002, T-1371).
+    Stacked single-type `except` clauses, not one `except (A, B):` tuple --
+    `frob.arch._python._py_except_exception_type`'s own docstring discloses
+    that a tuple catch is normalized down to only its FIRST member for the
+    may-raise resolver, so a tuple here would silently under-report what
+    this function actually guards against.
+    """
     try:
         number = int(line_el.get("number", "0"))
         hits = int(line_el.get("hits", "0"))
+        is_branch = line_el.get("branch") == "true"
+        cond_cov = line_el.get("condition-coverage", "")
     except ValueError:
         return None
-    is_branch = line_el.get("branch") == "true"
-    cond_cov = line_el.get("condition-coverage", "")
+    except TypeError:
+        return None
+    except KeyError:
+        return None
+    except Exception:
+        # Genuinely unresolvable failure mode of `.get()`/`int()` on a
+        # crafted-or-corrupt `<line>` element -- this parser's own contract
+        # is "junk -> None", never a crash (EXHAUST001, T-1371).
+        return None
     branch_pct = 100 if hits > 0 else 0
     if is_branch and cond_cov:
         try:
@@ -88,7 +109,14 @@ def _parse_line_el(line_el: ET.Element) -> tuple[int, tuple[int, int]] | None:
             # line to hit/not-hit -- measured on this repo, the parser
             # emitted only 0 and 100 while 1324 lines were genuinely partial.
             branch_pct = int(cond_cov.split("%")[0].strip())
-        except (ValueError, IndexError):
+        # frob:ticket T-1371
+        # T-1371 names every escape this int()/split() can raise rather
+        # than leaning on a bare handler (EXHAUST001); T-1376 owns the
+        # expression itself, so the widened guard sits on the CORRECTED
+        # parse, never on the old split("(") form it replaced.
+        except (ValueError, IndexError, TypeError, KeyError):
+            branch_pct = 100 if hits > 0 else 0
+        except Exception:
             branch_pct = 100 if hits > 0 else 0
     return number, (hits, branch_pct)
 
@@ -139,6 +167,14 @@ def _repo_relative_root(source: str, repo_root: Path) -> str | None:
         try:
             rel = source_path.relative_to(repo_root.resolve())
         except ValueError:
+            return None
+        except OSError:
+            # `.resolve()` can fail on a genuinely broken cwd/permission
+            # (EXHAUST001, T-1371) -- an unresolvable root is exactly the
+            # "drop it, don't guess" case this function already documents
+            # for the ValueError branch.
+            return None
+        except Exception:
             return None
         return rel.as_posix()
     return Path(source).as_posix().removeprefix("./")
@@ -290,6 +326,16 @@ def _build_class_maps(
                 module_line[filename] = float(line_rate) * 100.0
             except ValueError:
                 pass
+            except TypeError:
+                pass
+            except KeyError:
+                pass
+            except Exception:
+                # A malformed `line-rate` attribute (wrong type/shape) is
+                # just another junk value to skip, not a crash (EXHAUST001/
+                # EXHAUST002, T-1371) -- matches this function's own
+                # fallback-to-`winning_root` posture for other junk input.
+                pass
         hits_by_class_line[filename] = _parse_class_lines(class_el)
     return module_line, hits_by_class_line
 
@@ -349,6 +395,13 @@ def _newest_source_mtime(root: Path, snapshot: GraphSnapshot | None) -> float | 
         try:
             mtime = (root / path).stat().st_mtime
         except OSError:
+            continue
+        except ValueError:
+            # `root / path` can reject a malformed graph-recorded path
+            # (embedded NUL, etc.) on some platforms (EXHAUST001, T-1371) --
+            # same "cannot judge this one, skip it" posture as OSError.
+            continue
+        except Exception:
             continue
         if newest is None or mtime > newest:
             newest = mtime
@@ -454,7 +507,10 @@ def _unjoined_python_modules(
 # frob:waive AFFECT001 reason="T-1401 added the unjoined-module enumeration log below \
 # the 0.95 join-fraction threshold; docs/modules/gates.md#public-api needs a matching \
 # update but docs/** was held by T-1235's concurrent in-progress lease for this \
-# ticket's whole duration -- tracked as T-1405, land the doc update there"
+# ticket's whole duration -- tracked as T-1405, land the doc update there. T-1371 also \
+# widened this function's own internal exception handling to fulfill its existing \
+# Result-returning contract more completely; that part changes no documented public \
+# behavior on its own."
 def load_coverage(
     root: Path, snapshot: GraphSnapshot | None = None
 ) -> Result[CoverageData, CoverageError]:
@@ -466,10 +522,26 @@ def load_coverage(
     source_sha, tree = loaded.danger_ok
 
     known_paths = _known_repo_paths(root, snapshot)
-    module_line, hits_by_class_line, join_ok, tried_roots = _parse_classes(
-        tree.getroot(), root, known_paths
-    )
-    symbol_branch = _symbol_branch(snapshot, hits_by_class_line)
+    try:
+        module_line, hits_by_class_line, join_ok, tried_roots = _parse_classes(
+            tree.getroot(), root, known_paths
+        )
+        symbol_branch = _symbol_branch(snapshot, hits_by_class_line)
+    except Exception as exc:
+        # A structurally surprising (but well-formed-XML) coverage.xml --
+        # unexpected attribute shapes deep in `_parse_classes`/
+        # `_symbol_branch` -- is a malformed report, not an unrecoverable
+        # programmer bug; this function's own contract is a `Result`, so
+        # that surprise belongs in `CoverageError.Malformed`, not an
+        # escaping exception (EXHAUST001/EXHAUST002, T-1371). A single
+        # `except Exception:` (this repo's own may-raise resolver's only
+        # recognized catch-all shape, `frob.arch._mayraise._CATCH_ALL_TYPES`)
+        # both discharges the unresolvable-call case and covers every named
+        # leaked type, so no separate per-type clause is needed here.
+        _log.error(
+            "load_coverage: %s malformed while mapping classes: %s", xml_path, exc
+        )
+        return Err(CoverageError.Malformed)
 
     try:
         xml_mtime = xml_path.stat().st_mtime

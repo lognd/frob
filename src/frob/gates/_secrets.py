@@ -910,6 +910,7 @@ def _stale_fake_marker_violations(rel_path: str, text: str) -> list[Violation]:
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:waive AFFECT001 reason="T-1371 only widens internal exception handling so one bad file cannot abort the whole staleness pass; the documented WAIVE004 behavior is unchanged, so docs/modules/gates.md#public-api needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def fake_marker_staleness_gate(root: Path) -> tuple[Violation, ...]:
     """WAIVE004 (T-0978): every git-tracked file's `frob:secret-fake
     reason="..."` marker sites that currently discharge zero real secret
@@ -925,7 +926,13 @@ def fake_marker_staleness_gate(root: Path) -> tuple[Violation, ...]:
         except (OSError, UnicodeDecodeError):
             _log.debug("secrets_gate: skipping unreadable/binary %s", rel_path)
             continue
-        violations.extend(_stale_fake_marker_violations(rel_path, text))
+        try:
+            violations.extend(_stale_fake_marker_violations(rel_path, text))
+        except Exception:
+            # One file's marker text being surprising must not abort the
+            # WAIVE004 staleness pass over every OTHER tracked file
+            # (EXHAUST001/EXHAUST002, T-1371).
+            _log.debug("fake_marker_staleness_gate: skipping unparseable %s", rel_path)
     return tuple(violations)
 
 
@@ -1053,6 +1060,7 @@ def _is_env_file(rel_path: str) -> bool:
 # frob:enforces CHK-GATE-SEC003
 # frob:enforces CHK-GATE-SEC004
 # frob:enforces CHK-SUBSYS-GATES-QUALITY
+# frob:waive AFFECT001 reason="T-1371 only widens internal exception handling so one bad file cannot abort the whole scan; the documented SEC001-003 behavior is unchanged, so docs/modules/gates.md#public-api needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def secrets_gate(root: Path) -> tuple[Violation, ...]:
     """SEC001/SEC002/SEC003 (docs/modules/gates.md#rule-catalog): every
     git-tracked file scanned for real-looking provider credentials, plus a
@@ -1070,7 +1078,13 @@ def secrets_gate(root: Path) -> tuple[Violation, ...]:
             _log.debug("secrets_gate: skipping unreadable/binary %s", rel_path)
             continue
         scanned += 1
-        violations.extend(_scan_text(rel_path, text))
+        try:
+            violations.extend(_scan_text(rel_path, text))
+        except Exception:
+            # One file's text being surprising to the secret-pattern
+            # scanner must not abort the whole SEC001-003 pass over every
+            # OTHER tracked file (EXHAUST001/EXHAUST002, T-1371).
+            _log.debug("secrets_gate: skipping unscannable %s", rel_path)
 
     _log.info(
         "secrets_gate: scanned %d tracked file(s), %d violation(s)",

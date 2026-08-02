@@ -139,6 +139,19 @@ def _scan_capabilities_best_effort(
             source_dir,
         )
         return frozenset()
+    except Exception:
+        # "Best-effort like every other closed-world lookup here, never
+        # crash the whole accounting pass" (this function's own
+        # docstring) covers any other scan surprise too, not just
+        # `RecursionError` (EXHAUST001, T-1371).
+        _log.warning(
+            "vet: closed-world: capability scan of %s (%s) failed "
+            "unexpectedly; treating as empty capabilities rather than "
+            "crashing",
+            import_name,
+            source_dir,
+        )
+        return frozenset()
 
 
 def _best_effort_version(import_name: str) -> str:
@@ -148,6 +161,12 @@ def _best_effort_version(import_name: str) -> str:
     try:
         return _installed_version(import_name)
     except PackageNotFoundError:
+        return "unknown"
+    except Exception:
+        # "Never raises -- this is best-effort metadata for a cache key"
+        # (this function's own docstring) covers any other metadata-
+        # lookup surprise too, not just `PackageNotFoundError`
+        # (EXHAUST001, T-1371).
         return "unknown"
 
 

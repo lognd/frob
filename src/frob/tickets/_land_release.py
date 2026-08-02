@@ -116,6 +116,11 @@ def _read_root_manifest_version(root: Path, pre_land_tip: str) -> str | None:
         data = json.loads(shown.danger_ok.stdout)
     except ValueError:
         return None
+    except Exception:
+        # "All treated as 'nothing to compare', never raised" (this
+        # function's own docstring) covers a genuinely unresolvable JSON
+        # decode surprise too, not just `ValueError` (EXHAUST001, T-1371).
+        return None
     version = data.get("version") if isinstance(data, dict) else None
     return version if isinstance(version, str) else None
 
@@ -220,7 +225,17 @@ def _read_working_manifest_version(root: Path) -> str | None:
         return None
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+    except OSError:
+        return None
+    except json.JSONDecodeError:
+        return None
+    except ValueError:
+        return None
+    except Exception:
+        # "`None` if the manifest is missing, unparsable, or has no
+        # string `version` field" (this function's own docstring) covers
+        # any read/decode surprise, not just the two named cases
+        # (EXHAUST001/EXHAUST002, T-1371).
         return None
     version = data.get("version") if isinstance(data, dict) else None
     return version if isinstance(version, str) else None

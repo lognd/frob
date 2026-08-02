@@ -137,7 +137,17 @@ def _locate_known_rules_in_tree(root: Path) -> tuple[Path, frozenset[str]] | Non
             text = candidate.read_text(encoding="utf-8")
         except OSError:
             continue
-        rules = _extract_known_rules(text)
+        try:
+            rules = _extract_known_rules(text)
+        except (KeyError, TypeError):
+            # A "cannot resolve" outcome (this function's own docstring)
+            # from one candidate's surprising text shape must not abort
+            # the whole scan over every OTHER candidate (EXHAUST001/
+            # EXHAUST002, T-1371) -- treat it the same as "no match in
+            # this file".
+            continue
+        except Exception:
+            continue
         if rules is not None:
             matches.append((candidate, rules))
     if len(matches) != 1:

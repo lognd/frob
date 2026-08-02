@@ -51,6 +51,11 @@ def _is_wsl() -> bool:
         text = Path("/proc/version").read_text(encoding="utf-8", errors="replace")
     except OSError:
         return False
+    except Exception:
+        # A platform probe with no docstring contract to violate -- a
+        # genuinely unresolvable read is just another "not WSL, or
+        # cannot tell" case, not a crash (EXHAUST001, T-1371).
+        return False
     return "microsoft" in text.lower()
 
 

@@ -248,6 +248,8 @@ def _handle_import(
 
 # frob:doc docs/commands/refactor.md#scan_references
 # frob:tests tests/test_refactor.py::TestScanReferences.test_finds_from_import_call_site
+# frob:waive AFFECT001 reason="T-1371 only widens internal exception handling so one bad file cannot abort the whole scan (a surprise becomes a disclosed 'unresolved' entry, matching this function's own never-silently-drops-it contract); no observable public-API change, so docs/commands/refactor.md needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
+# frob:waive ARCH001 reason="T-1371's EXHAUST001/002 fix wraps the pre-existing per-file loop body in one try/except (AST-shape surprise -> disclosed unresolved entry, not an abort) -- boilerplate exception handling, not a new independently meaningful phase; splitting it out would just move the same lines behind an indirection"  # noqa: E501
 def scan_references(
     repo_root: Path,
     resolved: ResolvedSymbol,
@@ -277,37 +279,48 @@ def scan_references(
         except (OSError, SyntaxError):
             continue
 
-        bound_names = _existing_bound_names(tree)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.ImportFrom) and node.module == old_ref.module:
-                if _shares_line_with_sibling_statement(tree, node):
-                    # A whole-span rewrite here (`_import_op`) would
-                    # silently delete a semicolon-joined sibling
-                    # statement on the same physical line -- refuse the
-                    # mechanical rewrite and disclose instead of
-                    # clobbering unrelated code.
-                    unresolved.append(
-                        f"{file_path}:{node.lineno}: `from {old_ref.module} "
-                        "import ...` shares its physical line with another "
-                        "statement (semicolon-joined) -- not rewritten "
-                        "mechanically, would delete the sibling statement"
+        try:
+            bound_names = _existing_bound_names(tree)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ImportFrom) and node.module == old_ref.module:
+                    if _shares_line_with_sibling_statement(tree, node):
+                        # A whole-span rewrite here (`_import_op`) would
+                        # silently delete a semicolon-joined sibling
+                        # statement on the same physical line -- refuse the
+                        # mechanical rewrite and disclose instead of
+                        # clobbering unrelated code.
+                        unresolved.append(
+                            f"{file_path}:{node.lineno}: `from {old_ref.module} "
+                            "import ...` shares its physical line with another "
+                            "statement (semicolon-joined) -- not rewritten "
+                            "mechanically, would delete the sibling statement"
+                        )
+                        continue
+                    new_ops, new_aliases = _handle_from_import(
+                        file_path,
+                        source,
+                        tree,
+                        node,
+                        old_ref,
+                        destination,
+                        dest_leaf,
+                        bound_names,
+                        alias_conflict,
                     )
-                    continue
-                new_ops, new_aliases = _handle_from_import(
-                    file_path,
-                    source,
-                    tree,
-                    node,
-                    old_ref,
-                    destination,
-                    dest_leaf,
-                    bound_names,
-                    alias_conflict,
-                )
-                ops.extend(new_ops)
-                aliases.extend(new_aliases)
-            elif isinstance(node, ast.Import):
-                unresolved.extend(_handle_import(file_path, tree, node, old_ref))
+                    ops.extend(new_ops)
+                    aliases.extend(new_aliases)
+                elif isinstance(node, ast.Import):
+                    unresolved.extend(_handle_import(file_path, tree, node, old_ref))
+        except (KeyError, TypeError, ValueError) as exc:
+            # This scan's own contract is a disclosed `unresolved` list,
+            # never a crash for a single unusual file (this function's own
+            # docstring: "never silently drops it") -- a surprising AST
+            # shape in one file becomes a disclosed unresolved entry
+            # instead of aborting the whole repo scan (EXHAUST001/
+            # EXHAUST002, T-1371).
+            unresolved.append(f"{file_path}: scan failed unexpectedly ({exc})")
+        except Exception as exc:
+            unresolved.append(f"{file_path}: scan failed unexpectedly ({exc})")
     return ops, aliases, unresolved
 
 

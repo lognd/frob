@@ -47,6 +47,11 @@ def _relativize(root: Path, raw_file: str) -> str | None:
         rel = resolved.relative_to(resolved_root)
     except (OSError, ValueError):
         return None
+    except Exception:
+        # Best-effort (this function's own docstring) over a genuinely
+        # unresolvable path surprise too, not just the two named cases
+        # (EXHAUST001, T-1371).
+        return None
     return PurePosixPath(rel).as_posix()
 
 

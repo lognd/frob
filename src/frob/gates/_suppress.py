@@ -173,6 +173,12 @@ def _relativize(file: str | None, root: Path) -> str | None:
         return path.resolve().relative_to(root.resolve()).as_posix()
     except ValueError:
         return None
+    except Exception:
+        # `.resolve()` can fail on a genuinely broken cwd/permission
+        # (EXHAUST001, T-1371) -- an unresolvable root is exactly the
+        # "cannot site this diagnostic" case this function already
+        # documents for the ValueError branch.
+        return None
 
 
 def _ty_diagnostics(root: Path) -> list[tuple[str, int, str]]:
@@ -238,15 +244,30 @@ def _mypy_diagnostics(root: Path) -> list[tuple[str, int, str]]:
         )
     except FileNotFoundError:
         return []
+    except Exception:
+        # "An unavailable/disabled mypy yields an empty list rather than
+        # raising" (this function's own docstring) covers any invocation
+        # surprise, not just `FileNotFoundError` (EXHAUST001, T-1371).
+        return []
     if run_result.is_err:
         return []
     proc = run_result.danger_ok
     out: list[tuple[str, int, str]] = []
-    for file, line, code in _parse_mypy(proc.stdout):
-        rel = _relativize(file, root)
-        if rel is None:
-            continue
-        out.append((rel, line, code))
+    try:
+        for file, line, code in _parse_mypy(proc.stdout):
+            rel = _relativize(file, root)
+            if rel is None:
+                continue
+            out.append((rel, line, code))
+    except TypeError:
+        # A surprising mypy output shape (this oracle invocation's own
+        # docstring already treats "unavailable" as an empty list, not a
+        # raise) is the same "cannot use this oracle run" outcome, not a
+        # crash of the whole suppress001 comparison (EXHAUST001/EXHAUST002,
+        # T-1371).
+        return []
+    except ValueError:
+        return []
     return out
 
 

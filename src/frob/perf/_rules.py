@@ -97,8 +97,17 @@ def _source_lines(path: str, span: tuple[int, int]) -> tuple[str, ...]:
         text = Path(path).read_text(encoding="utf-8", errors="replace")
     except OSError:
         return ()
-    start, end = span
-    return tuple(text.splitlines())[start - 1 : end]
+    try:
+        start, end = span
+        return tuple(text.splitlines())[start - 1 : end]
+    except (KeyError, TypeError, ValueError):
+        # `()` is this function's own documented fallback for "cannot
+        # produce these lines" -- a surprising `span` shape is the same
+        # outcome class as the OSError branch, not a crash (EXHAUST001/
+        # EXHAUST002, T-1371).
+        return ()
+    except Exception:
+        return ()
 
 
 # frob:ticket T-0230

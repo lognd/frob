@@ -103,7 +103,19 @@ def _next_ticket_id(existing: dict[str, Ticket]) -> str:
     for tid in existing:
         try:
             max_num = max(max_num, int(tid.split("-", 1)[1]))
-        except (IndexError, ValueError):
+        except IndexError:
+            continue
+        except ValueError:
+            continue
+        except KeyError:
+            continue
+        except TypeError:
+            continue
+        except Exception:
+            # A malformed/unexpected ticket id shape must not abort the
+            # whole id-space scan over every OTHER ticket (EXHAUST001/
+            # EXHAUST002, T-1371) -- same "skip it" posture as the two
+            # named branches above.
             continue
     return f"T-{max_num + 1:04d}"
 
@@ -428,12 +440,19 @@ def _scan_code_references(
             continue
         if old_id not in text:
             continue
-        directive_text, directive_hits = _rewrite_directive_references(
-            text, old_id, new_id
-        )
-        rewritten, registry_hits = _rewrite_registry_references(
-            directive_text, old_id, new_id
-        )
+        try:
+            directive_text, directive_hits = _rewrite_directive_references(
+                text, old_id, new_id
+            )
+            rewritten, registry_hits = _rewrite_registry_references(
+                directive_text, old_id, new_id
+            )
+        except Exception:
+            # One file's directive/registry text confusing the rewrite
+            # helpers must not abort the whole renumber scan over every
+            # OTHER tracked file (EXHAUST001/EXHAUST002, T-1371) -- skip
+            # just this one, same as the read-failure branch above.
+            continue
         hits = directive_hits + registry_hits
         if hits:
             changed[path] = (rewritten, hits)
@@ -657,7 +676,14 @@ def _scan_v2_reference_files(
             continue
         if old_id not in text:
             continue
-        rewritten, hits = _rewrite_body_prose_references(text, id_mapping)
+        try:
+            rewritten, hits = _rewrite_body_prose_references(text, id_mapping)
+        except Exception:
+            # One file's prose confusing the rewrite core must not abort
+            # the whole v2-reference scan over every OTHER file
+            # (EXHAUST001/EXHAUST002, T-1371) -- skip just this one, same
+            # as the read-failure branch above.
+            continue
         if hits:
             changed[path] = (rewritten, hits)
     return changed

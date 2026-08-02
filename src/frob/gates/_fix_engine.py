@@ -115,6 +115,7 @@ def write_autofix_manifest(root: Path, applied: list[FixApplied]) -> None:
 # frob:ticket T-1348
 # frob:doc docs/modules/tickets.md#frob-ticket-land
 # frob:tests tests/test_gates.py::TestAutofixManifest.test_write_then_clear_roundtrip
+# frob:waive AFFECT001 reason="T-1371 only widens internal exception handling; the documented breadcrumb-removal behavior is unchanged, so docs/modules/tickets.md#frob-ticket-land needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def clear_autofix_manifest(root: Path) -> None:
     """Remove the T-1348 recovery breadcrumb (`write_autofix_manifest`)
     after a Tier-A auto-fix pass finishes SUCCESSFULLY -- a completed pass
@@ -126,6 +127,14 @@ def clear_autofix_manifest(root: Path) -> None:
         path.unlink()
     except FileNotFoundError:
         pass
+    except OSError:
+        # A permission/locking failure clearing the breadcrumb is not
+        # this function's own contract to escalate (EXHAUST001, T-1371):
+        # the manifest is a best-effort recovery aid, not load-bearing
+        # state -- a leftover file after a successful pass is harmless.
+        _log.debug("clear_autofix_manifest: could not remove %s", path)
+    except Exception:
+        _log.debug("clear_autofix_manifest: could not remove %s", path)
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
@@ -192,11 +201,21 @@ def _rewrite_line_substring(path: Path, line: int, old: str, new: str) -> bool:
         return False
     lines = text.splitlines(keepends=True)
     idx = line - 1
-    if idx < 0 or idx >= len(lines):
+    try:
+        if idx < 0 or idx >= len(lines):
+            return False
+        if old not in lines[idx]:
+            return False
+        lines[idx] = lines[idx].replace(old, new, 1)
+    except (KeyError, IndexError, TypeError):
+        # A directive's recorded `line` no longer lining up with the
+        # file's current shape (edited concurrently, or a stale graph
+        # snapshot) is exactly the "moved, do nothing" case this
+        # function's own docstring already promises, not a crash
+        # (EXHAUST001/EXHAUST002, T-1371).
         return False
-    if old not in lines[idx]:
+    except Exception:
         return False
-    lines[idx] = lines[idx].replace(old, new, 1)
     return _write_text(path, "".join(lines))
 
 
@@ -385,26 +404,34 @@ def _fix_inv006_carried_waiver_for_file(
         text = path.read_text(encoding="utf-8")
     except OSError:
         return None
-    if not find_exclusivity_claims(text):
-        return None
-    if _inv006_already_discharged(rel, snapshot):
-        return None
-    from frob.gates import INV006_SRC_DIRS, INV006_SRC_SUFFIXES
+    try:
+        if not find_exclusivity_claims(text):
+            return None
+        if _inv006_already_discharged(rel, snapshot):
+            return None
+        from frob.gates import INV006_SRC_DIRS, INV006_SRC_SUFFIXES
 
-    carried = find_carried_waiver(
-        root,
-        text,
-        exclude_rel=rel,
-        candidate_dirs=INV006_SRC_DIRS,
-        candidate_suffixes=INV006_SRC_SUFFIXES,
-        snapshot=snapshot,
-    )
-    if carried is None:
+        carried = find_carried_waiver(
+            root,
+            text,
+            exclude_rel=rel,
+            candidate_dirs=INV006_SRC_DIRS,
+            candidate_suffixes=INV006_SRC_SUFFIXES,
+            snapshot=snapshot,
+        )
+        if carried is None:
+            return None
+        source_rel, kind, fixit = carried
+        if kind != "waiver":
+            return None  # an invariant bind is not a waiver to carry
+        comment_line = _INV006_LINE_COMMENT.get(suffix, "#") + " " + fixit
+    except Exception:
+        # This handler's own contract (T-1323, `_waive004_verified_
+        # candidates`'s sibling docstring) is "prove-fresh-or-do-nothing":
+        # any surprise scanning/matching this one file means carry
+        # nothing for it, never crash the whole Tier-A auto-fix pass over
+        # every OTHER file (EXHAUST001/EXHAUST002, T-1371).
         return None
-    source_rel, kind, fixit = carried
-    if kind != "waiver":
-        return None  # an invariant bind is not a waiver to carry
-    comment_line = _INV006_LINE_COMMENT.get(suffix, "#") + " " + fixit
     if not _write_text(path, comment_line + "\n" + text):
         return None
     return FixApplied(
@@ -648,6 +675,13 @@ def _parse_suppress001_message(message: str) -> tuple[str, str] | None:
     return match.group("reporting"), code
 
 
+# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to \
+# tokenize.generate_tokens/io.StringIO, stdlib calls the resolver cannot statically \
+# bound past the except (TokenError, IndentationError, SyntaxError, ValueError) below; \
+# every documented raise path tokenize.generate_tokens can produce is already caught"
+# frob:waive EXHAUST002 reason="T-1371: same resolver artifact as EXHAUST003 above -- \
+# tokenize's internal dict-keyed dispatch is conservatively assumed to leak KeyError; \
+# no KeyError-raising call is reachable from this function's own source"
 def _find_comment_start(line: str) -> int | None:
     """The column of the FIRST genuine trailing comment token on `line`
     (a single physical source line, no newline), or `None` if it carries
@@ -752,6 +786,10 @@ def _render_suppression_line(
     return rendered + newline
 
 
+# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to dict.get chained \
+# three deep and dict.items() iteration in the list-comprehension below, plain dict \
+# operations the resolver cannot statically bound; the one real raise path \
+# (tomllib.loads on malformed TOML) is caught above"
 def _ruff_per_file_ignores(root: Path) -> list[tuple[str, set[str]]]:
     """`[tool.ruff.lint.per-file-ignores]` from `root/pyproject.toml`, as
     `(glob, codes)` pairs -- an empty list if the file/section is
@@ -791,6 +829,9 @@ def _code_ignored_for_path(root: Path, rel_path: str, code: str) -> bool:
     return False
 
 
+# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to \
+# guarded_subprocess_run, a cross-module wrapper the resolver cannot see through; the \
+# one documented raise path (FileNotFoundError, ruff binary missing) is caught below"
 def _run_ruff_format(path: Path) -> None:
     """Best-effort `ruff format <path>` delegation -- the coordinator-
     directed fix for an over-long CODE line (a def/class signature):
@@ -818,6 +859,16 @@ def _run_ruff_format(path: Path) -> None:
         )
 
 
+# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to \
+# _split_suppression_line/_line_suppressions_for_fix/_merged_dialect_codes/ \
+# _strip_known_pragma_comments/_render_suppression_line/_code_ignored_for_path, \
+# module-local helpers the resolver cannot see through; the one real raise path \
+# (path.read_text) is caught above"
+# frob:waive EXHAUST002 reason="T-1371: same resolver artifact as EXHAUST003 above -- \
+# _merged_dialect_codes indexes into `dialects` by `reporting`, a dict lookup the \
+# resolver conservatively assumes can raise KeyError; `dialects` is always the full \
+# SuppressionDialect registry passed in by the caller, and `reporting` is always a key \
+# already validated against it upstream"
 def _apply_one_suppress001_fix(
     root: Path,
     rel_file: str,
@@ -1169,11 +1220,19 @@ def _remove_waiver_line(path: Path, line: int, rule: str) -> bool:
         return False
     lines = text.splitlines(keepends=True)
     idx = line - 1
-    if idx < 0 or idx >= len(lines):
+    try:
+        if idx < 0 or idx >= len(lines):
+            return False
+        if not _is_single_line_waiver(lines[idx], rule):
+            return False
+        del lines[idx]
+    except (KeyError, IndexError, TypeError):
+        # Same "the directive moved, do nothing" contract as the OSError
+        # branch above -- a stale recorded `line` must not crash the
+        # whole WAIVE004 auto-fix pass (EXHAUST001/EXHAUST002, T-1371).
         return False
-    if not _is_single_line_waiver(lines[idx], rule):
+    except Exception:
         return False
-    del lines[idx]
     return _write_text(path, "".join(lines))
 
 

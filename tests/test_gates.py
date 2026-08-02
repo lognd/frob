@@ -7316,6 +7316,70 @@ class TestTestGate:
 # frob:ticket T-0545
 # frob:ticket T-1180
 # frob:ticket T-1363
+# frob:ticket T-1371
+class TestParseLineElFallbacks:
+    """T-1371 widened `_parse_line_el`'s guards; these pin the fallback
+    VALUES those guards compute, not merely that they do not crash. A
+    guard that returns the wrong branch percentage is as broken as one
+    that raises."""
+
+    @staticmethod
+    def _el(**attrs: str):
+        import xml.etree.ElementTree as ET
+
+        return ET.Element("line", attrs)
+
+    # frob:tests src/frob/gates/_coverage.py::_parse_line_el kind="unit"
+    def test_malformed_condition_coverage_with_hits_falls_back_to_full(self):
+        """An unparseable `condition-coverage` on a HIT branch line must
+        fall back to 100, not 0 -- the line demonstrably executed."""
+        from frob.gates._coverage import _parse_line_el
+
+        el = self._el(
+            number="7",
+            hits="3",
+            branch="true",
+            condition="x",
+            **{"condition-coverage": "not-a-percentage"},
+        )
+        assert _parse_line_el(el) == (7, (3, 100))
+
+    # frob:tests src/frob/gates/_coverage.py::_parse_line_el kind="unit"
+    def test_malformed_condition_coverage_without_hits_falls_back_to_zero(self):
+        """The same fallback on an UNHIT line must be 0, not 100 --
+        otherwise a corrupt report silently reads as fully covered."""
+        from frob.gates._coverage import _parse_line_el
+
+        el = self._el(
+            number="7",
+            hits="0",
+            branch="true",
+            **{"condition-coverage": "not-a-percentage"},
+        )
+        assert _parse_line_el(el) == (7, (0, 0))
+
+    # frob:tests src/frob/gates/_coverage.py::_parse_line_el kind="unit"
+    def test_non_branch_line_uses_hits_only(self):
+        """`branch` anything other than the literal "true" means the line
+        is not a branch, so `condition-coverage` must be ignored."""
+        from frob.gates._coverage import _parse_line_el
+
+        el = self._el(
+            number="4",
+            hits="2",
+            branch="false",
+            **{"condition-coverage": "50% (1/2)"},
+        )
+        assert _parse_line_el(el) == (4, (2, 100))
+
+    # frob:tests src/frob/gates/_coverage.py::_parse_line_el kind="unit"
+    def test_non_integer_hits_is_none_not_a_crash(self):
+        """The documented "junk -> None, never a crash" contract."""
+        from frob.gates._coverage import _parse_line_el
+
+        assert _parse_line_el(self._el(number="1", hits="lots")) is None
+
+
 # frob:ticket T-1376
 class TestConditionCoverageIsActuallyParsed:
     """T-1376: `branch_pct` must come from the REAL percentage, not
