@@ -1263,7 +1263,19 @@ def _tests_target_shape_violations(snapshot: GraphSnapshot) -> list[Violation]:
 # verbatim-copy contract exists to prevent. T-1015 measured this
 # as the single largest DOC006 cluster (154 of 349 findings post-matcher-
 # fix, ~44%) before adding this exclusion.
-_ARCHIVAL_LEDGER_FILES = frozenset({"tickets-archive.md"})
+#
+# `CHANGELOG.md` (T-1412) is the same class and is excluded for the same
+# reason. `frob ticket land` appends an entry at land time describing what
+# that change did, naming the symbols and paths as they were THEN, and the
+# file is land-owned and append-only thereafter (T-0731's guard refuses a
+# hand-edit outright -- which is how this surfaced: a DOC006 on a symbol
+# that never existed top-level had no in-worktree path to zero at all,
+# because the only honest fix would have been editing an immutable record
+# a pre-commit hook correctly refuses to let anyone touch). Checking
+# release-note prose written in 2026-06 against the tree as it stands
+# today is not this gate's motivating case, and the only way to satisfy
+# it would be to falsify history.
+_ARCHIVAL_LEDGER_FILES = frozenset({"tickets-archive.md", "CHANGELOG.md"})
 
 
 def _tracked_all_files(root: Path) -> frozenset[str]:

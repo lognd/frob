@@ -602,6 +602,50 @@ class TestDoc006BareIdentifierNarrowing:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/strata/spec.md")
 
+    def test_changelog_is_an_archival_record_not_checked(self, tmp_path: Path) -> None:
+        """T-1412: `CHANGELOG.md` is append-only and land-owned -- `frob
+        ticket land` writes each entry describing the tree as it was THEN,
+        and T-0731's pre-commit guard refuses a hand-edit outright. A
+        DOC006 there therefore has no honest path to zero: the only fix
+        would be falsifying an immutable record. Same class, and same
+        rationale, as `tickets-archive.md`."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(tmp_path, "docs/guide.md", "# Anchor\n\nSee `real_thing`.\n")
+        _write(
+            tmp_path,
+            "CHANGELOG.md",
+            "# Changelog\n\n- renamed `src/pkg/mod.py::long_gone_symbol`\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "CHANGELOG.md")
+
+    def test_live_doc_still_flagged_after_changelog_exclusion(
+        self, tmp_path: Path
+    ) -> None:
+        """The exclusion above narrows AIM, never capability: a stale
+        pointer in a LIVE doc -- one anybody can still edit honestly --
+        must still be caught exactly as before."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "# Anchor\n\nSee `src/pkg/mod.py::long_gone_symbol`.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert _by_rule(violations, "docs/guide.md")
+
     def test_cross_file_real_symbol_passes(self, tmp_path: Path) -> None:
         """A single-anchor doc mentioning a symbol defined in ANOTHER file
         (not its own anchor file) is a real cross-file reference, not
