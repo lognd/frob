@@ -8560,7 +8560,7 @@ invalidate recorded attachment bytes.
 id: T-1456
 title: land runs a post-land unscoped error sweep so relocation/waiver/format residue
   never reaches main
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-08-02'
