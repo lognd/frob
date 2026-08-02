@@ -358,8 +358,9 @@ def _is_reached_outside_diff_tests(
             lines = (root / path).read_text(encoding="utf-8").splitlines()
         except (OSError, UnicodeDecodeError):
             continue
+        own_def_lines = def_lines if path == record.id.path else frozenset()
         for lineno, text in enumerate(lines, 1):
-            if path == record.id.path and lineno in def_lines:
+            if lineno in own_def_lines:
                 continue
             if def_pattern.match(text):
                 continue
