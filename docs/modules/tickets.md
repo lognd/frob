@@ -100,7 +100,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/_doable.py::doable -->
 <!-- frob:describes src/frob/tickets/_evidence.py::transition -->
 <!-- frob:describes src/frob/tickets/_reporting.py::record_failure -->
-<!-- frob:describes src/frob/tickets/_reporting.py::attach -->
+<!-- frob:describes src/frob/tickets/_reporting_attachments.py::attach -->
 <!-- frob:describes src/frob/tickets/_evidence.py::add_evidence -->
 <!-- frob:describes src/frob/tickets/_evidence.py::run_cmd_evidence -->
 <!-- frob:describes src/frob/tickets/_evidence.py::reverify_cmd_evidence -->

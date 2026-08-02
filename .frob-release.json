@@ -1812,7 +1812,6 @@
     "src/frob/tickets/_provisional.py::on_default_branch": "c2b5008828542ab1d72ff75028b2454039bc72ce6efc4b895276c7b7c40f3dc0",
     "src/frob/tickets/_reconcile.py::ReconcileReport": "6fcf1082746b1f61aaafacf99f15a9fbd20c963a30da6fdaea42e00fe8eacb0f",
     "src/frob/tickets/_reconcile.py::reconcile": "58835d71ad4e6042338e50dd303c4f966ed5023eaab07bd4c0831773d5073f2f",
-    "src/frob/tickets/_reporting.py::attach": "5df30457c0549f6170224e79cdb437421a48d725f985f150f2bbd2e073947b2c",
     "src/frob/tickets/_reporting.py::brief_ticket": "56fe4788cff649f6af1962cc379f1103f50003a1454b5aaee63299e87e1c9e52",
     "src/frob/tickets/_reporting.py::compose_done_report": "d464b803df4208fc92ba2353874ea6a5cc05cb312c3fb60f274cfae0d3fd2e51",
     "src/frob/tickets/_reporting.py::drop_ticket": "24f39c4e6fe2d59a9debea717775383b9f635e0847e2b6e25d6f1ba124963276",
@@ -1821,6 +1820,7 @@
     "src/frob/tickets/_reporting.py::record_failure": "ed4f7d8066c114b4aa0f7868f15d069ad386184f6c3d8289481e8c65ffef8dd8",
     "src/frob/tickets/_reporting.py::record_review": "57c6f4c0fd34fae360a6049dd736c3958d01cfef3388657fc5eb0cc5edbf62f7",
     "src/frob/tickets/_reporting.py::set_done_report": "e986c914e7ed5d017e1d766983f12cc042544a6b90712b6e34d93ce1a13cd086",
+    "src/frob/tickets/_reporting_attachments.py::attach": "5df30457c0549f6170224e79cdb437421a48d725f985f150f2bbd2e073947b2c",
     "src/frob/tickets/_scope.py::mutate_scope": "c0261fba55cf8031a29d4bb5f8cfa53f5ccb6fe930d15251ef57076e949926d5",
     "src/frob/tickets/_setters.py::set_component": "6ed99d19391bf26ac9ae25792a213e1079a841623ed2fb2deac73bff44690a40",
     "src/frob/tickets/_setters.py::set_kind": "8a4080d822675b2aba306037e1a3af1d01669fe4772c4ecb0077d7427781ebd0",
@@ -1953,5 +1953,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.310.0"
+  "version": "0.311.0"
 }

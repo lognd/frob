@@ -920,7 +920,7 @@ class TestIterRawLedgerFrontmatter:
 
 class TestAttach:
     def test_file_source_copies_and_records_sha256(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_reporting.py::attach
+        # frob:tests src/frob/tickets/_reporting_attachments.py::attach
         _write(tmp_path, _ticket())
         src = tmp_path / "mockup.png"
         data = b"fake-png-bytes"

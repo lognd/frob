@@ -4877,7 +4877,7 @@ safe) or a rework to a statically-resolvable form.
 ```yaml
 id: T-1420
 title: 'arch: 51-file LARGE001 residue after T-1270''s 2-file split'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-08-02'
@@ -4886,17 +4886,312 @@ parent: null
 tier: ticket
 sprint: null
 scope:
-- src/**
-- frob-core/src/lib.rs
 - strata-core/src/lib.rs
 - strata-core/src/parse/mod.rs
-- src/frob/vet/_capability_registry.py
+- src/frob/tickets/_models.py
+- src/frob/tickets/_store.py
+- src/frob/tickets/_new_renumber.py
+- src/frob/tickets/_reporting.py
+- src/frob/tickets/_reporting_attachments.py
+- src/frob/vet/_capability.py
+- src/frob/vet/_scan.py
+- src/frob/vet/_scan_violations.py
+- strata-core/src/parse/**
+- tests/**
+- docs/**
 scope_changes:
 - op: add
   glob: src/frob/vet/_capability_registry.py
   reason: the file this split deletes; land's UnownedDeletions check does not treat
     the src/** glob as covering it, and the ledger splice dropped this entry when
     main was merged forward
+  actor: logan
+  at: '2026-08-02'
+- op: remove
+  glob: src/**
+  reason: 'T-1420 was scoped to src/** repo-wide, which held a blocking lease over
+
+    the whole tree and stalled other tickets'' scope operations this session
+
+    (per coordinator brief). Only 8 unwaived LARGE001 findings remain as of
+
+    this measurement (archgate re-run): tickets/_models.py, tickets/_store.py,
+
+    tickets/_new_renumber.py, tickets/_reporting.py, vet/_capability.py,
+
+    vet/_scan.py, strata-core/src/lib.rs, strata-core/src/parse/mod.rs.
+
+    Narrowing scope to exactly those files plus their test/doc counterparts
+
+    so this ticket no longer holds a tree-wide lease.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: 'T-1420 was scoped to src/** repo-wide, which held a blocking lease over
+
+    the whole tree and stalled other tickets'' scope operations this session
+
+    (per coordinator brief). Only 8 unwaived LARGE001 findings remain as of
+
+    this measurement (archgate re-run): tickets/_models.py, tickets/_store.py,
+
+    tickets/_new_renumber.py, tickets/_reporting.py, vet/_capability.py,
+
+    vet/_scan.py, strata-core/src/lib.rs, strata-core/src/parse/mod.rs.
+
+    Narrowing scope to exactly those files plus their test/doc counterparts
+
+    so this ticket no longer holds a tree-wide lease.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/tickets/_store.py
+  reason: 'T-1420 was scoped to src/** repo-wide, which held a blocking lease over
+
+    the whole tree and stalled other tickets'' scope operations this session
+
+    (per coordinator brief). Only 8 unwaived LARGE001 findings remain as of
+
+    this measurement (archgate re-run): tickets/_models.py, tickets/_store.py,
+
+    tickets/_new_renumber.py, tickets/_reporting.py, vet/_capability.py,
+
+    vet/_scan.py, strata-core/src/lib.rs, strata-core/src/parse/mod.rs.
+
+    Narrowing scope to exactly those files plus their test/doc counterparts
+
+    so this ticket no longer holds a tree-wide lease.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/tickets/_new_renumber.py
+  reason: 'T-1420 was scoped to src/** repo-wide, which held a blocking lease over
+
+    the whole tree and stalled other tickets'' scope operations this session
+
+    (per coordinator brief). Only 8 unwaived LARGE001 findings remain as of
+
+    this measurement (archgate re-run): tickets/_models.py, tickets/_store.py,
+
+    tickets/_new_renumber.py, tickets/_reporting.py, vet/_capability.py,
+
+    vet/_scan.py, strata-core/src/lib.rs, strata-core/src/parse/mod.rs.
+
+    Narrowing scope to exactly those files plus their test/doc counterparts
+
+    so this ticket no longer holds a tree-wide lease.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/tickets/_reporting.py
+  reason: 'T-1420 was scoped to src/** repo-wide, which held a blocking lease over
+
+    the whole tree and stalled other tickets'' scope operations this session
+
+    (per coordinator brief). Only 8 unwaived LARGE001 findings remain as of
+
+    this measurement (archgate re-run): tickets/_models.py, tickets/_store.py,
+
+    tickets/_new_renumber.py, tickets/_reporting.py, vet/_capability.py,
+
+    vet/_scan.py, strata-core/src/lib.rs, strata-core/src/parse/mod.rs.
+
+    Narrowing scope to exactly those files plus their test/doc counterparts
+
+    so this ticket no longer holds a tree-wide lease.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/tickets/_reporting_attachments.py
+  reason: 'T-1420 was scoped to src/** repo-wide, which held a blocking lease over
+
+    the whole tree and stalled other tickets'' scope operations this session
+
+    (per coordinator brief). Only 8 unwaived LARGE001 findings remain as of
+
+    this measurement (archgate re-run): tickets/_models.py, tickets/_store.py,
+
+    tickets/_new_renumber.py, tickets/_reporting.py, vet/_capability.py,
+
+    vet/_scan.py, strata-core/src/lib.rs, strata-core/src/parse/mod.rs.
+
+    Narrowing scope to exactly those files plus their test/doc counterparts
+
+    so this ticket no longer holds a tree-wide lease.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/vet/_capability.py
+  reason: 'T-1420 was scoped to src/** repo-wide, which held a blocking lease over
+
+    the whole tree and stalled other tickets'' scope operations this session
+
+    (per coordinator brief). Only 8 unwaived LARGE001 findings remain as of
+
+    this measurement (archgate re-run): tickets/_models.py, tickets/_store.py,
+
+    tickets/_new_renumber.py, tickets/_reporting.py, vet/_capability.py,
+
+    vet/_scan.py, strata-core/src/lib.rs, strata-core/src/parse/mod.rs.
+
+    Narrowing scope to exactly those files plus their test/doc counterparts
+
+    so this ticket no longer holds a tree-wide lease.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/vet/_scan.py
+  reason: 'T-1420 was scoped to src/** repo-wide, which held a blocking lease over
+
+    the whole tree and stalled other tickets'' scope operations this session
+
+    (per coordinator brief). Only 8 unwaived LARGE001 findings remain as of
+
+    this measurement (archgate re-run): tickets/_models.py, tickets/_store.py,
+
+    tickets/_new_renumber.py, tickets/_reporting.py, vet/_capability.py,
+
+    vet/_scan.py, strata-core/src/lib.rs, strata-core/src/parse/mod.rs.
+
+    Narrowing scope to exactly those files plus their test/doc counterparts
+
+    so this ticket no longer holds a tree-wide lease.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/vet/_scan_violations.py
+  reason: 'T-1420 was scoped to src/** repo-wide, which held a blocking lease over
+
+    the whole tree and stalled other tickets'' scope operations this session
+
+    (per coordinator brief). Only 8 unwaived LARGE001 findings remain as of
+
+    this measurement (archgate re-run): tickets/_models.py, tickets/_store.py,
+
+    tickets/_new_renumber.py, tickets/_reporting.py, vet/_capability.py,
+
+    vet/_scan.py, strata-core/src/lib.rs, strata-core/src/parse/mod.rs.
+
+    Narrowing scope to exactly those files plus their test/doc counterparts
+
+    so this ticket no longer holds a tree-wide lease.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: strata-core/src/lib.rs
+  reason: 'T-1420 was scoped to src/** repo-wide, which held a blocking lease over
+
+    the whole tree and stalled other tickets'' scope operations this session
+
+    (per coordinator brief). Only 8 unwaived LARGE001 findings remain as of
+
+    this measurement (archgate re-run): tickets/_models.py, tickets/_store.py,
+
+    tickets/_new_renumber.py, tickets/_reporting.py, vet/_capability.py,
+
+    vet/_scan.py, strata-core/src/lib.rs, strata-core/src/parse/mod.rs.
+
+    Narrowing scope to exactly those files plus their test/doc counterparts
+
+    so this ticket no longer holds a tree-wide lease.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: strata-core/src/parse/**
+  reason: 'T-1420 was scoped to src/** repo-wide, which held a blocking lease over
+
+    the whole tree and stalled other tickets'' scope operations this session
+
+    (per coordinator brief). Only 8 unwaived LARGE001 findings remain as of
+
+    this measurement (archgate re-run): tickets/_models.py, tickets/_store.py,
+
+    tickets/_new_renumber.py, tickets/_reporting.py, vet/_capability.py,
+
+    vet/_scan.py, strata-core/src/lib.rs, strata-core/src/parse/mod.rs.
+
+    Narrowing scope to exactly those files plus their test/doc counterparts
+
+    so this ticket no longer holds a tree-wide lease.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/**
+  reason: 'T-1420 was scoped to src/** repo-wide, which held a blocking lease over
+
+    the whole tree and stalled other tickets'' scope operations this session
+
+    (per coordinator brief). Only 8 unwaived LARGE001 findings remain as of
+
+    this measurement (archgate re-run): tickets/_models.py, tickets/_store.py,
+
+    tickets/_new_renumber.py, tickets/_reporting.py, vet/_capability.py,
+
+    vet/_scan.py, strata-core/src/lib.rs, strata-core/src/parse/mod.rs.
+
+    Narrowing scope to exactly those files plus their test/doc counterparts
+
+    so this ticket no longer holds a tree-wide lease.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: docs/**
+  reason: 'T-1420 was scoped to src/** repo-wide, which held a blocking lease over
+
+    the whole tree and stalled other tickets'' scope operations this session
+
+    (per coordinator brief). Only 8 unwaived LARGE001 findings remain as of
+
+    this measurement (archgate re-run): tickets/_models.py, tickets/_store.py,
+
+    tickets/_new_renumber.py, tickets/_reporting.py, vet/_capability.py,
+
+    vet/_scan.py, strata-core/src/lib.rs, strata-core/src/parse/mod.rs.
+
+    Narrowing scope to exactly those files plus their test/doc counterparts
+
+    so this ticket no longer holds a tree-wide lease.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: remove
+  glob: frob-core/src/lib.rs
+  reason: neither file appears in the current unwaived LARGE001 finding set; drop
+    from scope to keep the lease minimal (re-applying the same narrowing lost by the
+    tickets.md main-restore step)
+  actor: logan
+  at: '2026-08-02'
+- op: remove
+  glob: src/frob/vet/_capability_registry.py
+  reason: neither file appears in the current unwaived LARGE001 finding set; drop
+    from scope to keep the lease minimal (re-applying the same narrowing lost by the
+    tickets.md main-restore step)
   actor: logan
   at: '2026-08-02'
 evidence:
@@ -7060,3 +7355,233 @@ correctness-over-speed posture T-0602/T-1346 both insisted on (never
 serve a stale result silently). This is the natural continuation of the
 T-1344 gate-speed leaf and should be scoped as its own ticket rather than
 squeezed into T-1346's remainder.
+
+<!-- ticket:T-1446 -->
+```yaml
+id: T-1446
+title: T-1420 delivered portion 3
+state: done
+kind: feature
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: T-1420
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_reporting.py
+- src/frob/tickets/_reporting_attachments.py
+- src/frob/vet/_scan.py
+- src/frob/vet/_scan_violations.py
+- docs/modules/tickets.md
+- tests/test_tickets.py
+evidence:
+- tests/test_tickets.py::TestAttach::test_file_source_copies_and_records_sha256
+- tests/test_tickets.py::TestAttach::test_index_increments
+- tests/test_tickets.py::TestAttach::test_large_file_logs_warning
+- tests/test_tickets.py::TestAttach::test_unknown_ticket_not_found
+- tests/test_vet.py::TestQuarantine::test_fresh_package_blocked
+- tests/test_vet.py::TestQuarantine::test_old_package_ok
+- tests/test_vet.py::TestQuarantine::test_network_failure_degrades_to_unverified
+- tests/test_vet.py::TestQuarantine::test_typosquat_name_blocked_before_any_registry_lookup
+- tests/test_vet.py::TestAllowConfig::test_vet_section_present
+threat: null
+component: null
+```
+T-1420 delivered portion 3 of the LARGE001 residue burndown (WAVE4-L, this
+worktree). Continues from portions 1/2 (T-1441/T-1442) with two more
+verbatim-relocation splits:
+
+1. src/frob/tickets/_reporting.py (845 -> 754 lines): the attach()/
+   attachment-write quartet (attach, _attachment_bytes,
+   _next_attachment_path, _record_attachment) moved verbatim to a new
+   src/frob/tickets/_reporting_attachments.py -- the one filesystem-I/O
+   concern in the former module, distinct from the done-report/review/drop
+   prose-mutation family that stays behind. Re-exported from _reporting.py
+   for existing callers. Repointed the frob:describes doc edge
+   (docs/modules/tickets.md) and the frob:tests directive
+   (tests/test_tickets.py) that named the old location.
+
+2. src/frob/vet/_scan.py (915 -> 765 lines): the per-rule Violation
+   constructor family (_vet001/002/003/004/006/011_violation,
+   _quarantine_violation, _lockfile_name) moved verbatim to a new
+   src/frob/vet/_scan_violations.py -- pure "decide and format one
+   Violation" leaves with no I/O, distinct from _scan.py's own
+   orchestration (locate source, run the scan, thread results through the
+   parallel/sequential dependency loop). Re-exported for existing callers.
+   No cross-file frob:tests/frob:describes directives named the old
+   symbol locations (grepped clean before and after).
+
+Waiver carries: grepped both source files for `frob:waive` BEFORE moving
+anything, per the T-1420 brief's portion-2 lesson (INV006/PII012 carries
+missed there). Neither _reporting.py's attachment quartet nor _scan.py's
+violation-constructor block carried a directly-attached frob:waive of
+their own (the file-level waivers in both source files stayed with the
+functions that motivated them, none of which moved). Split #2 did surface
+one PRE-EXISTING, previously-unwaived INV006 finding on _scan.py itself
+(two 'only' hits in unrelated design prose -- a waiver-reason string and a
+log message -- both present on main before this ticket touched the file);
+disposed with a new frob:waive INV006 in _scan.py rather than left for the
+next agent to rediscover, since it is inside this ticket's own declared
+scope.
+
+Neither split touches src/frob/tickets/_models.py, _store.py,
+_new_renumber.py, src/frob/vet/_capability.py, or the two strata-core Rust
+files still on T-1420's list -- those remain for a future portion. Scope
+was narrowed from src/** to the exact remaining LARGE001 target list (plus
+tests/**, docs/**) before starting, and re-narrowed after the tickets.md
+main-restore step reverted it (section 10b's known first-ticket-per-
+worktree edge case).
+
+frob check --only archgate --only wire --only dead_symbols --only drift
+--only doclink --only invariant --only pii_structural --only fmt --ticket
+T-1420 is clean (0 errors) after both splits; LARGE001 warning count
+dropped from 49 (session start baseline) to 47.
+
+## Done report
+
+Split two of the eight remaining unwaived LARGE001 files at session start
+(measured via `frob check --only archgate`, not the ticket's stale 51-file
+prose): src/frob/tickets/_reporting.py (845 -> 754 lines) and
+src/frob/vet/_scan.py (915 -> 765 lines). Both splits are verbatim
+relocations of a cohesive function family into a new sibling module,
+re-exported from the original for existing callers (no caller-visible
+behavior change).
+
+_reporting.py: the attach()/_attachment_bytes/_next_attachment_path/
+_record_attachment quartet moved to _reporting_attachments.py (its own
+filesystem-I/O boundary). Repointed docs/modules/tickets.md's
+frob:describes edge and tests/test_tickets.py's frob:tests directive to
+the new file.
+
+_scan.py: the seven per-rule Violation-constructor functions
+(_vet001/002/003/004/006/011_violation, _quarantine_violation) plus their
+shared _lockfile_name helper moved to _scan_violations.py. No cross-file
+frob:tests/frob:describes directives named the old locations (grepped
+clean). Also carries a new frob:waive INV006 on _scan.py for two
+pre-existing 'only' design-prose hits (a waiver-reason string, a log
+message) that were never anchored on main either -- unrelated to the
+split itself, surfaced only because gate:invariant was run scoped to this
+ticket for the first time.
+
+Both source files were grepped for `frob:waive` before moving anything
+(the portion-2 lesson in the T-1420 brief); no waiver directly attached to
+either moved function family in either file.
+
+Verified: ruff format/check clean on all 4 touched+created files; pytest
+on tests/test_tickets.py -k Attach and tests/test_vet.py (full file, 244
+tests) all green; frob check --only archgate --only wire --only
+dead_symbols --only drift --only doclink --only invariant --only
+pii_structural --only fmt --ticket T-1420 is 0 errors after both splits.
+LARGE001 warning count dropped from 49 findings (measured pre-work-sweep
+archgate baseline this session) to 47.
+
+Not done this portion: src/frob/tickets/_models.py, _store.py,
+_new_renumber.py, src/frob/vet/_capability.py (6070 lines, T-1074-flagged
+-- needs a dedicated follow-up decision before splitting, not a plain
+verbatim relocation), and the two strata-core Rust files
+(strata-core/src/lib.rs 869, strata-core/src/parse/mod.rs 1744) remain on
+T-1420's list for a future portion.
+
+### Changed
+```
+ docs/modules/tickets.md                    |   2 +-
+ src/frob/tickets/_reporting.py             | 127 ++------
+ src/frob/tickets/_reporting_attachments.py | 140 +++++++++
+ src/frob/vet/_scan.py                      | 215 +++-----------
+ src/frob/vet/_scan_violations.py           | 201 +++++++++++++
+ tests/test_tickets.py                      |   2 +-
+ tickets.md                                 | 461 ++++++++++++++++++++++++++++-
+ 7 files changed, 852 insertions(+), 296 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets.py::TestAttach::test_file_source_copies_and_records_sha256` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestAttach::test_index_increments` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestAttach::test_large_file_logs_warning` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestAttach::test_unknown_ticket_not_found` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestQuarantine::test_fresh_package_blocked` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestQuarantine::test_old_package_ok` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestQuarantine::test_network_failure_degrades_to_unverified` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestQuarantine::test_typosquat_name_blocked_before_any_registry_lookup` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestAllowConfig::test_vet_section_present` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 9 passed (from 9 evidence id(s))
+- gates: 0 error(s), 569 warning(s), 729 waived
+- error-findings: none (measured, zero errors)
+
+<!-- ticket:T-1447 -->
+```yaml
+id: T-1447
+title: T-1420 delivered portion 3
+state: dropped
+kind: feature
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_reporting.py
+- src/frob/tickets/_reporting_attachments.py
+- src/frob/vet/_scan.py
+- src/frob/vet/_scan_violations.py
+- docs/modules/tickets.md
+- tests/test_tickets.py
+threat: null
+component: null
+```
+T-1420 delivered portion 3 of the LARGE001 residue burndown (WAVE4-L, this
+worktree). Continues from portions 1/2 (T-1441/T-1442) with two more
+verbatim-relocation splits:
+
+1. src/frob/tickets/_reporting.py (845 -> 754 lines): the attach()/
+   attachment-write quartet (attach, _attachment_bytes,
+   _next_attachment_path, _record_attachment) moved verbatim to a new
+   src/frob/tickets/_reporting_attachments.py -- the one filesystem-I/O
+   concern in the former module, distinct from the done-report/review/drop
+   prose-mutation family that stays behind. Re-exported from _reporting.py
+   for existing callers. Repointed the frob:describes doc edge
+   (docs/modules/tickets.md) and the frob:tests directive
+   (tests/test_tickets.py) that named the old location.
+
+2. src/frob/vet/_scan.py (915 -> 765 lines): the per-rule Violation
+   constructor family (_vet001/002/003/004/006/011_violation,
+   _quarantine_violation, _lockfile_name) moved verbatim to a new
+   src/frob/vet/_scan_violations.py -- pure "decide and format one
+   Violation" leaves with no I/O, distinct from _scan.py's own
+   orchestration (locate source, run the scan, thread results through the
+   parallel/sequential dependency loop). Re-exported for existing callers.
+   No cross-file frob:tests/frob:describes directives named the old
+   symbol locations (grepped clean before and after).
+
+Waiver carries: grepped both source files for `frob:waive` BEFORE moving
+anything, per the T-1420 brief's portion-2 lesson (INV006/PII012 carries
+missed there). Neither _reporting.py's attachment quartet nor _scan.py's
+violation-constructor block carried a directly-attached frob:waive of
+their own (the file-level waivers in both source files stayed with the
+functions that motivated them, none of which moved). Split #2 did surface
+one PRE-EXISTING, previously-unwaived INV006 finding on _scan.py itself
+(two 'only' hits in unrelated design prose -- a waiver-reason string and a
+log message -- both present on main before this ticket touched the file);
+disposed with a new frob:waive INV006 in _scan.py rather than left for the
+next agent to rediscover, since it is inside this ticket's own declared
+scope.
+
+Neither split touches src/frob/tickets/_models.py, _store.py,
+_new_renumber.py, src/frob/vet/_capability.py, or the two strata-core Rust
+files still on T-1420's list -- those remain for a future portion. Scope
+was narrowed from src/** to the exact remaining LARGE001 target list (plus
+tests/**, docs/**) before starting, and re-narrowed after the tickets.md
+main-restore step reverted it (section 10b's known first-ticket-per-
+worktree edge case).
+
+frob check --only archgate --only wire --only dead_symbols --only drift
+--only doclink --only invariant --only pii_structural --only fmt --ticket
+T-1420 is clean (0 errors) after both splits; LARGE001 warning count
+dropped from 49 (session start baseline) to 47.
+
+## Drop reason
+- 2026-08-02: refiling with --parent T-1420
