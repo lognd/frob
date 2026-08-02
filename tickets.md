@@ -11187,7 +11187,7 @@ this investigation ticket implements directly.
 ```yaml
 id: T-1408
 title: add regression tests for the T-1401 zero-hit ratchet carve-out in write_coverage_lock
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
