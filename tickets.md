@@ -2218,7 +2218,7 @@ machinery or file a removal ticket instead of writing a fake test for it
 ```yaml
 id: T-1296
 title: 'TEST005 burn-down: src/frob/strata (196 findings, 1 at 0.0%)'
-state: in-progress
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -2449,6 +2449,8 @@ to force.
 - gates: 0 error(s), 1966 warning(s), 699 waived
 - error-findings: none (measured, zero errors)
 
+## Drop reason
+- 2026-08-02: superseded by its own delivered-portion split: T-1414 landed the 12 genuine-gap modules (done), and T-1415 carries the honest remainder as a queued ticket; keeping T-1296 in-progress alongside T-1415 double-counts the same work
 <!-- ticket:T-1305 -->
 ```yaml
 id: T-1305
