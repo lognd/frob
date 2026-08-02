@@ -8298,6 +8298,14 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/_coverage.py
+- tests/test_gates.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: regression tests for the ratchet zero carve-out; T-1235's tests/** lease
+    blocked this during the ticket and has now been released
+  actor: logan
+  at: '2026-08-01'
 acceptance:
 - text: GIVEN a make coverage run WHEN the lock is stamped THEN every module_line
     value equals the coverage computed from that run coverage.xml for the same module
@@ -8341,7 +8349,6 @@ Related and deliberately NOT folded in:
 - The genuinely-zero coverage of __main__.py and serve/** is a THIRD, separate matter and is T-1395's original premise, which stands after all. Those modules really are unexercised in the measured process, even though agents proved they trace correctly under the subprocess rc in isolation. T-1395 failed because the fix was not in the two files it scoped to, not because the problem was imaginary.
 
 - T-1375 already landed a provenance audit trail for lock writes (.frob/coverage-lock-audit.log). Check it first: it may already record who wrote these values and when.
-
 <!-- ticket:T-1402 -->
 ```yaml
 id: T-1402
