@@ -10758,7 +10758,7 @@ Every one of these deletions is a direct, mechanical consequence of splitting th
 id: T-1403
 title: 'Investigate: T-1390 worktree changes landed on main under an unrelated commit
   message (c2fd45da)'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-01'
