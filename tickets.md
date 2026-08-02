@@ -7542,7 +7542,7 @@ this investigation ticket's close.
 id: T-1390
 title: CrossTicketLeakage compares declared scope, not actual sibling changes -- every
   land needs --allow-cross-ticket
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
