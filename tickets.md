@@ -9330,10 +9330,10 @@ acceptance:
     statement) using a FIELD_SIGNATURES word as ordinary English, with no reference
     form and no correspondingly-named identifier in scope WHEN the PII gate runs THEN
     PII012 does not fire. NOTE this criterion originally omitted the standalone
-    qualifier, which asked for a capability regression -- a trailing comment saying
-    "x = 1  # stores the user ssn" names no matching identifier either, and silencing
-    it would drop the poorly-named-variable case the rule exists for. Corrected before
-    any fix landed.
+    qualifier, which asked for a capability regression -- a trailing comment on an
+    assignment whose prose says it stores an ssn names no matching identifier either,
+    and silencing it would drop the poorly-named-variable case the rule exists for.
+    Corrected before any fix landed.
   evidence: []
 - text: GIVEN a comment naming a real in-scope identifier that holds person-related
     data WHEN the PII gate runs THEN PII012 still fires exactly as today, proven by
