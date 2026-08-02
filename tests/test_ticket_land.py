@@ -15,6 +15,7 @@ point of `land` is real merge/conflict/deletion behavior.
 
 from __future__ import annotations
 
+import json
 import multiprocessing
 import os
 import re
@@ -2292,6 +2293,76 @@ class TestOutOfScopeConflictAutoResolved:
         assert result.is_ok, result.err
         # Main's side of the out-of-scope conflict won.
         assert (repo / "src" / "feature.py").read_text() == "# main-side edit\n"
+        assert (repo / "src" / "other.py").read_text() == "worktree change\n"
+
+
+# frob:ticket T-1434
+class TestCoverageLockConflictMerges:
+    """T-1434: `frob-coverage.lock.json` is a coverage-ratchet artifact,
+    not an ordinary source file -- a genuine conflict on it (both the
+    worktree and main independently stamped coverage since diverging)
+    must never blindly discard one side's freshly measured data. Confirms
+    the root cause (T-1270's "reverted to an older committed value"
+    incident) and its fix: the out-of-scope conflict auto-resolver now
+    keeps the elementwise MAX of both sides' `module_line` percentages
+    instead of picking one side wholesale."""
+
+    # frob:tests tests/test_ticket_land.py::TestCoverageLockConflictMerges.test_conflicting_lock_merges_to_the_higher_of_both_sides  # noqa: E501
+    def test_conflicting_lock_merges_to_the_higher_of_both_sides(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land_git_ops.py::_merge_coverage_lock_conflict
+        wt = repo.parent / "wt-covlock"
+        base_lock = {
+            "source_sha": "base",
+            "module_line": {"src/a.py": 50.0, "src/b.py": 50.0},
+        }
+        (repo / "frob-coverage.lock.json").write_text(
+            json.dumps(base_lock, indent=2, sort_keys=True) + "\n"
+        )
+        _commit_all(repo, "seed base frob-coverage.lock.json")
+        _run(["git", "worktree", "add", "-b", "feature-covlock", str(wt)], repo)
+
+        # Worktree ticket is scoped ONLY to src/other.py -- it never
+        # legitimately touches frob-coverage.lock.json, but a local
+        # `--stamp-coverage` run (e.g. while investigating a fix) leaves
+        # it dirty anyway, with a REAL, freshly measured, higher number
+        # for src/a.py that main's own stamp does not have yet.
+        (wt / "src" / "other.py").write_text("worktree change\n")
+        wt_lock = {
+            "source_sha": "worktree-fresh",
+            "module_line": {"src/a.py": 95.0, "src/b.py": 50.0},
+        }
+        (wt / "frob-coverage.lock.json").write_text(
+            json.dumps(wt_lock, indent=2, sort_keys=True) + "\n"
+        )
+        created = new_ticket(
+            wt, _spec("Coverage lock conflict", scope=("src/other.py",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        _commit_all(wt, "worktree edits other.py and stamps coverage locally")
+
+        # Main independently stamps coverage too, with a higher number
+        # for src/b.py the worktree's own stamp does not have.
+        main_lock = {
+            "source_sha": "main-fresh",
+            "module_line": {"src/a.py": 50.0, "src/b.py": 90.0},
+        }
+        (repo / "frob-coverage.lock.json").write_text(
+            json.dumps(main_lock, indent=2, sort_keys=True) + "\n"
+        )
+        _commit_all(repo, "main stamps coverage independently")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+
+        merged = json.loads((repo / "frob-coverage.lock.json").read_text())
+        # Neither side's freshly measured number was silently discarded --
+        # the higher of the two survives for every module.
+        assert merged["module_line"]["src/a.py"] == 95.0
+        assert merged["module_line"]["src/b.py"] == 90.0
         assert (repo / "src" / "other.py").read_text() == "worktree change\n"
 
 

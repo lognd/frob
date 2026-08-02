@@ -636,9 +636,59 @@ _DEFLATION_FLOOR = 0.5
 # still stamps, still refreshes the lock from whatever joined).
 _DEFLATION_MIN_KNOWN_MODULES = 20
 
+# frob:ticket T-1435
+# T-1435 (T-1407 finding 2): a burn-down agent's own scoped `pytest --cov`
+# run (section 6b of docs/guides/agent-playbook.md -- the sanctioned
+# workaround for "don't run `make coverage` as a sub-agent") leaves a
+# narrow coverage.xml on disk that measures only a handful of touched
+# modules. `_DEFLATION_FLOOR` alone does not catch this: a locally-scoped
+# run can join 100% of the FEW modules it measured (module_join_fraction
+# reads clean) while still covering only a sliver of what the last full
+# `make coverage` run covered -- the floor above compares a run against
+# itself, never against history. This ratio instead compares the CURRENT
+# run's joined module count against the last COMMITTED
+# `frob-coverage.lock.json`'s module count: a full run replacing a full
+# run keeps this ratio near 1.0; a scoped run masquerading as a full one
+# collapses it. `0.5` mirrors `_DEFLATION_FLOOR`'s own threshold choice
+# (one floor value repo-wide, not two independently-tuned numbers to keep
+# in sync) -- deliberately conservative, since incremental `make
+# coverage-fast` runs (T-0484) can legitimately measure a proper subset in
+# between full runs and must not trip this on every ordinary use.
+_PROVENANCE_MIN_MODULE_RATIO = 0.5
 
+
+# frob:ticket T-1435
+def _provenance_drop(root: Path, current_module_count: int) -> tuple[int, float] | None:
+    """`(committed_count, ratio)` if the current coverage.xml's joined
+    module count looks like a locally-scoped run being misread as a full
+    one (T-1435), else `None`.
+
+    Reads the last COMMITTED `frob-coverage.lock.json` (never the current,
+    possibly-scoped run's own numbers) as the historical baseline. Returns
+    `None` (nothing to flag) whenever there is no committed lock yet, the
+    lock predates enough known modules to mean anything
+    (`_DEFLATION_MIN_KNOWN_MODULES`, the same sample-size floor
+    `_filtered_coverage_or_deflated` already applies), or the ratio is at
+    or above `_PROVENANCE_MIN_MODULE_RATIO`.
+    """
+    lock = load_coverage_lock(root)
+    if not lock:
+        return None
+    committed_line = lock.get("module_line") or {}
+    committed_count = len(committed_line)
+    if committed_count < _DEFLATION_MIN_KNOWN_MODULES:
+        return None
+    ratio = current_module_count / committed_count
+    if ratio >= _PROVENANCE_MIN_MODULE_RATIO:
+        return None
+    return (committed_count, ratio)
+
+
+# frob:ticket T-1435
 # frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refuses_below_deflation_floor  # noqa: E501
 # frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_deflation_floor_skipped_below_min_known_modules  # noqa: E501
+# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refuses_locally_scoped_run_via_provenance_drop  # noqa: E501
+# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_provenance_check_skipped_without_committed_lock  # noqa: E501
 def _filtered_coverage_or_deflated(
     root: Path, snapshot: GraphSnapshot
 ) -> Result[CoverageData | None, GateError]:
@@ -673,6 +723,32 @@ def _filtered_coverage_or_deflated(
     # path (e.g. `src/frob/scaffold/data/**`'s .j2 templates,
     # 22 of them observed) as drift no re-stamp can ever clear.
     filtered = exclude_filtered_coverage(loaded.danger_ok, snapshot)
+    # T-1435: checked BEFORE the sample-size skip below -- this check has
+    # its own independent gate (the committed lock's own module count,
+    # `_DEFLATION_MIN_KNOWN_MODULES`-checked inside `_provenance_drop`
+    # itself), not the CURRENT tree's known-module count. A locally-scoped
+    # run's tree can legitimately look tiny (few known modules -> the
+    # sample-size skip below would fire) while the committed lock it is
+    # about to silently narrow was built from a real, large, full run --
+    # exactly the shape this check exists to catch, so it must not be
+    # skipped just because today's checkout looks small.
+    drop = _provenance_drop(root, len(filtered.module_line))
+    if drop is not None:
+        committed_count, ratio = drop
+        _log.error(
+            "stamp_coverage: refusing to stamp -- coverage.xml joins only "
+            "%d module(s), %.0f%% of the %d module(s) the last committed "
+            "%s recorded (floor %.0f%%); this looks like a locally-scoped "
+            "coverage.xml (e.g. a burn-down agent's own `pytest --cov` "
+            "run, docs/guides/agent-playbook.md section 6b) being read as "
+            "if it were a full run's data -- re-run: make coverage",
+            len(filtered.module_line),
+            ratio * 100,
+            committed_count,
+            _LOCK_REL,
+            _PROVENANCE_MIN_MODULE_RATIO * 100,
+        )
+        return Err(GateError.CoverageDeflated)
     known_python_modules = sum(
         1 for p in _known_repo_paths(root, snapshot) if p.endswith(".py")
     )

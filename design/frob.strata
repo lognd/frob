@@ -3306,8 +3306,10 @@ node testsuite : trusted {
     attr interface=TestCov002ScopeCoverage;
     attr interface=TestCov002StrataModuleCoverage;
     attr interface=TestCov003CmdEvidence;
+    attr interface=TestCoverageFastUsesAbsoluteSubprocessRc;
     attr interface=TestCoverageGate;
     attr interface=TestCoverageLoad;
+    attr interface=TestCoverageLockConflictMerges;
     attr interface=TestCoverageTargetFlakeTolerance;
     attr interface=TestCoverageTargetNativesGuard;
     attr interface=TestCoverageTotality;
@@ -4293,6 +4295,7 @@ node testsuite : trusted {
     attr interface=TestSelfMatchExclusion;
     attr interface=TestSelfReferentialTestsDirectiveScopeAgreement;
     attr interface=TestSerialExecutor;
+    attr interface=TestSerialRerunHasABoundedDeadline;
     attr interface=TestSerializeAndParse;
     attr interface=TestServeGetattr;
     attr interface=TestServeRunner;

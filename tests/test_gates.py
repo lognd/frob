@@ -7381,6 +7381,7 @@ class TestConditionCoverageIsActuallyParsed:
 
 
 # frob:ticket T-1398
+# frob:ticket T-1435
 class TestCoverageLoad:
     def test_missing_coverage_xml(self, tmp_path: Path) -> None:
         result = load_coverage(tmp_path)
@@ -8127,6 +8128,95 @@ class TestCoverageLoad:
         result = stamp_coverage(tmp_path, snap)
         assert result.is_ok
         assert (tmp_path / ".frob" / "coverage-stamp").exists()
+
+    # frob:ticket T-1435
+    def test_stamp_coverage_refuses_locally_scoped_run_via_provenance_drop(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::stamp_coverage
+        # T-1435 (T-1407 finding 2): a locally-scoped `pytest --cov` run
+        # (docs/guides/agent-playbook.md section 6b's sanctioned
+        # workaround) can join 100% of the FEW modules it measured -- the
+        # pre-existing `_DEFLATION_FLOOR` check alone reads this as clean,
+        # because it only ever compares a run against ITSELF (its own
+        # module_join_fraction). This fixture's snapshot only knows about
+        # 2 modules (a small, ticket-scoped checkout), and coverage.xml
+        # joins both of them fully -- but the last COMMITTED
+        # frob-coverage.lock.json recorded 24 modules from a real full
+        # run. The provenance check must catch that drop even though the
+        # deflation floor alone would not.
+        _write(tmp_path, "src/frob/pkg/m0.py", "def helper(x):\n    return x\n")
+        _write(tmp_path, "src/frob/pkg/m1.py", "def helper(x):\n    return x\n")
+        (tmp_path / "frob-coverage.lock.json").write_text(
+            json.dumps(
+                {
+                    "source_sha": "priorsha",
+                    "module_line": {
+                        f"src/frob/pkg/m{i}.py": 90.0 for i in range(24)
+                    },
+                }
+            )
+        )
+        xml = """<?xml version="1.0"?>
+<coverage>
+  <packages>
+    <package>
+      <classes>
+        <class filename="src/frob/pkg/m0.py" line-rate="0.9">
+          <lines><line number="2" hits="1" branch="false"/></lines>
+        </class>
+        <class filename="src/frob/pkg/m1.py" line-rate="0.9">
+          <lines><line number="2" hits="1" branch="false"/></lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+"""
+        (tmp_path / "coverage.xml").write_text(xml)
+        snap = _snapshot(tmp_path)
+        result = stamp_coverage(tmp_path, snap)
+        assert result.is_err
+        assert result.danger_err == GateError.CoverageDeflated
+        # The committed lock must NOT be overwritten by the scoped run's
+        # tiny module set -- T-1363's ratchet exists precisely so a
+        # partial measurement cannot silently narrow committed history,
+        # and this refusal must stop before write_coverage_lock is ever
+        # reached at all.
+        lock_text = (tmp_path / "frob-coverage.lock.json").read_text()
+        assert json.loads(lock_text)["source_sha"] == "priorsha"
+        assert len(json.loads(lock_text)["module_line"]) == 24
+
+    # frob:ticket T-1435
+    def test_stamp_coverage_provenance_check_skipped_without_committed_lock(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::stamp_coverage
+        # T-1435: with no `frob-coverage.lock.json` on disk yet (a fresh
+        # checkout, or the very first `make coverage` a repo ever runs),
+        # there is no history to compare against -- the provenance check
+        # must not fire, and stamping must succeed exactly as it did
+        # before this ticket.
+        _write(tmp_path, "src/frob/pkg/m0.py", "def helper(x):\n    return x\n")
+        xml = """<?xml version="1.0"?>
+<coverage>
+  <packages>
+    <package>
+      <classes>
+        <class filename="src/frob/pkg/m0.py" line-rate="0.9">
+          <lines><line number="2" hits="1" branch="false"/></lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+"""
+        (tmp_path / "coverage.xml").write_text(xml)
+        assert not (tmp_path / "frob-coverage.lock.json").exists()
+        snap = _snapshot(tmp_path)
+        result = stamp_coverage(tmp_path, snap)
+        assert result.is_ok
+        assert (tmp_path / "frob-coverage.lock.json").exists()
 
     # frob:ticket T-0997
     def test_stamp_coverage_lock_excludes_graph_excluded_modules(

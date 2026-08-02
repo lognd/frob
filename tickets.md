@@ -3930,7 +3930,7 @@ writing a test for it).
 id: T-1397
 title: 'coverage-fast Makefile target points COVERAGE_PROCESS_START at pyproject.toml
   (relative source/data_file), same Loss-A shape T-1235 fixed for coverage:'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -3940,6 +3940,29 @@ tier: ticket
 sprint: null
 scope:
 - Makefile
+- tests/unit/test_makefile_coverage.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_makefile_coverage.py
+  reason: 'The Makefile fix needs a regression test locking the recipe text and
+
+    proving coverage-fast no longer points COVERAGE_PROCESS_START at
+
+    pyproject.toml directly. tests/unit/test_makefile_coverage.py is the
+
+    existing home for every other Makefile coverage-recipe regression test
+
+    (parses the same _MAKEFILE text) -- a new test file would duplicate its
+
+    fixtures.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_never_points_at_pyproject_toml
+- tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
+- tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_rc_file_target_is_shared_not_duplicated
 threat: null
 component: null
 ```
@@ -3970,6 +3993,73 @@ Fix: generate the same kind of absolute-path subprocess rc `coverage:`
 already does (or reuse `.frob/coverage-subprocess.rc` if `coverage:` has
 already run once) instead of pointing COVERAGE_PROCESS_START at
 pyproject.toml directly.
+
+## Done report
+
+Confirmed the reported defect by reading the live Makefile: coverage-fast's
+incremental (xargs) branch pointed COVERAGE_PROCESS_START directly at
+pyproject.toml (relative source/data_file), the same Loss-A shape T-1235
+fixed for coverage: by generating a dedicated .frob/coverage-subprocess.rc
+with absolute paths.
+
+Fix: factored .frob/coverage-subprocess.rc generation into its own plain
+Make file target (content is deterministic -- only $(CURDIR)-dependent,
+constant for the checkout's lifetime -- so a file target that only
+regenerates once, rather than a recipe re-run on every invocation, is
+correct and also directly implements the ticket's own suggested fix
+wording: "reuse .frob/coverage-subprocess.rc if coverage: has already run
+once"). coverage: still unconditionally rm's and regenerates it at the top
+of every real run (rm -f .coverage .coverage.* .frob/coverage-subprocess.rc)
+to preserve its existing always-fresh behavior; coverage-fast now depends
+on the same file target and points COVERAGE_PROCESS_START at it instead of
+pyproject.toml, so a coverage-fast-only run (no prior coverage: run) still
+generates the correct absolute-path rc rather than needing one to already
+exist.
+
+Verified: make .frob/coverage-subprocess.rc run directly produces the
+expected absolute-path rc content (manually inspected: source and
+data_file both resolve to this checkout's absolute path). make -n coverage
+and make -n coverage-fast dry-run cleanly with correctly expanded
+COVERAGE_PROCESS_START values, no shell-quoting/expansion regressions.
+
+Three new regression tests in tests/unit/test_makefile_coverage.py
+(TestCoverageFastUsesAbsoluteSubprocessRc) lock: (1) the literal
+pyproject.toml Loss-A shape can never reappear, (2) coverage-fast's own
+recipe text depends on and uses the shared rc, (3) the rc-generating printf
+block exists in exactly one place (not duplicated across the two targets).
+Full tests/unit/test_makefile_coverage.py suite (22 tests) passes:
+`uv run pytest tests/unit/test_makefile_coverage.py -p no:cacheprovider -q`
+-> all green.
+
+Not independently reproduced end-to-end via a live pytest-cov subprocess
+run against the OLD (buggy) rc path, matching the ticket's own disclosed
+verification method (read the Makefile directly, confirmed by dry-run
+expansion) -- a live subprocess-coverage-loss reproduction would need a
+real make coverage run first (coordinator-only step per playbook 6b) to
+get past coverage-fast's cold-.coverage fallback branch.
+
+### Changed
+```
+ Makefile                             |  58 ++++++-
+ docs/guides/agent-playbook.md        |  55 ++++++
+ src/frob/gates/_coverage.py          |  76 +++++++++
+ src/frob/tickets/_land_git_ops.py    | 112 ++++++++++++
+ tests/test_gates.py                  |  90 ++++++++++
+ tests/test_ticket_land.py            |  71 ++++++++
+ tests/unit/test_makefile_coverage.py | 105 ++++++++++++
+ tickets.md                           | 322 ++++++++++++++++++++++++++++++++++-
+ 8 files changed, 876 insertions(+), 13 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_never_points_at_pyproject_toml` (pytest node id, verified passing when recorded)
+- `tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc` (pytest node id, verified passing when recorded)
+- `tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_rc_file_target_is_shared_not_duplicated` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 3 error(s), 349 warning(s), 694 waived
+- error-findings: ARCH001@src/frob/tickets/_land_git_ops.py, PRE001@tickets/T-1397, SELFAUDIT001@design
 
 <!-- ticket:T-1400 -->
 ```yaml
@@ -5001,7 +5091,7 @@ Root cause of T-1403's c2fd45da incident: _add_and_commit_tickets_md runs 'git a
 ```yaml
 id: T-1433
 title: make coverage serial-rerun phase wedges forever on a dead-holder futex
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-02'
@@ -5012,11 +5102,36 @@ sprint: null
 scope:
 - Makefile
 - src/frob/testing/**
+- tests/unit/test_makefile_coverage.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_makefile_coverage.py
+  reason: 'The Makefile-side bounded-deadline fix needs a regression test locking
+    the
+
+    recipe text and proving the timeout wrapping mechanism actually bounds a
+
+    wedged child. tests/unit/test_makefile_coverage.py is the existing home
+
+    for every other Makefile coverage-recipe regression test (parses the same
+
+    _MAKEFILE text via the same _recipe_tail()-style helpers) -- a new test
+
+    file would duplicate its fixtures.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_both_serial_reruns_are_wrapped_in_a_bounded_timeout
+- tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_timeout_wrapping_kills_a_wedged_child_instead_of_hanging
 acceptance:
 - text: GIVEN a make coverage invocation whose serial rerun phase stops making progress
     WHEN the bounded deadline elapses THEN the run fails loudly with a diagnostic
     instead of hanging indefinitely
-  evidence: []
+  evidence:
+  - tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_both_serial_reruns_are_wrapped_in_a_bounded_timeout
+  - tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_timeout_wrapping_kills_a_wedged_child_instead_of_hanging
 - text: GIVEN the futex-owner root cause is identified WHEN the fix lands THEN back-to-back
     make coverage runs complete without a wedge
   evidence: []
@@ -5062,12 +5177,62 @@ cause futex owner must be identified and fixed. Reproduction: run
 make coverage twice back-to-back; observe the second (or even first)
 run's rerun-phase CPU flatline via ps -o cputimes.
 
+## Done report
+
+Implemented acceptance[0]: both `-n 0` serial rerun invocations in the
+`coverage:` Makefile recipe are now wrapped in `timeout -k 30
+$(COVERAGE_RERUN_DEADLINE)` (default 1800s, overridable via `make coverage
+COVERAGE_RERUN_DEADLINE=<seconds>`). A rerun that wedges now exits 124
+(coreutils timeout's deadline-exceeded signal) within the bounded window
+instead of hanging indefinitely, and the recipe emits a loud, specific
+ERROR line naming T-1433 and the deadline used. This is proven, not just
+asserted: a live regression test applies the exact same `timeout -k 30
+<deadline> env ...` shape to a child that blocks forever and confirms it
+exits 124 inside a small bounded wall-clock window.
+
+Acceptance[1] (root-cause the futex owner) is NOT resolved and I am
+disclosing that honestly rather than let silence imply it was. Per this
+dispatch's own constraint (playbook 6b/3c), I could not run a full `make
+coverage` or reproduce the wedge myself -- doing so is a coordinator-only
+step, not a sub-agent one, and no timeout-bounded scoped command can
+reproduce a multi-hour hang. I read the three ranked suspects in the
+ticket body (crashed xdist worker leaving a coverage/multiprocessing lock
+held; COVERAGE_PROCESS_START subprocess coverage locks; a leaked
+forkserver/semaphore) and could not distinguish between them without a
+live reproduction, which is out of my sanctioned budget. The bounded
+deadline (acceptance[0]) means the NEXT wedge, whichever suspect it
+turns out to be, will surface as a loud, immediate failure with the exact
+COVERAGE_RERUN_DEADLINE value in the log instead of a silent multi-hour
+hang -- which gives the coordinator (who CAN run make coverage and wait on
+it) a much cheaper reproduction loop to root-cause the actual holder from,
+next time it fires.
+
+I am leaving T-1433 open rather than closing it, since acceptance[1] is
+genuinely unresolved, not just unresolved-and-waived.
+
+### Changed
+```
+ Makefile                             | 31 +++++++++++++++++--
+ tests/unit/test_makefile_coverage.py | 55 ++++++++++++++++++++++++++++++++++
+ tickets.md                           | 58 ++++++++++++++++++++++++++++++++----
+ 3 files changed, 137 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_both_serial_reruns_are_wrapped_in_a_bounded_timeout` (pytest node id, verified passing when recorded)
+- `tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_timeout_wrapping_kills_a_wedged_child_instead_of_hanging` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 1 error(s), 563 warning(s), 694 waived
+- error-findings: SELFAUDIT001@design
+
 <!-- ticket:T-1434 -->
 ```yaml
 id: T-1434
 title: Confirm whether frob ticket land or its worktree-merge flow ever reverts a
   freshly stamped frob-coverage.lock.json
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-02'
@@ -5078,6 +5243,65 @@ sprint: null
 scope:
 - src/frob/tickets/_land.py
 - docs/guides/agent-playbook.md
+- src/frob/tickets/_land_git_ops.py
+- tests/test_ticket_land.py
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: 'Investigation confirmed the root cause lives in
+
+    src/frob/tickets/_land_git_ops.py''s `_auto_resolve_out_of_scope_conflicts`
+
+    (the out-of-scope merge-conflict auto-resolver), not in _land.py itself --
+
+    _land.py only calls it. Fixing the confirmed defect (a genuine merge
+
+    conflict on frob-coverage.lock.json is resolved by blindly keeping one
+
+    side, discarding the other''s freshly stamped data with no freshness/
+
+    ratchet comparison) requires touching the function that actually performs
+
+    the resolution. Adding this file to scope; a regression test for the fix
+
+    belongs in tests/test_ticket_land.py, the existing home for every other
+
+    land-merge-conflict test (TestOutOfScopeConflictAutoResolved and
+
+    siblings), so that file is added too.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'Investigation confirmed the root cause lives in
+
+    src/frob/tickets/_land_git_ops.py''s `_auto_resolve_out_of_scope_conflicts`
+
+    (the out-of-scope merge-conflict auto-resolver), not in _land.py itself --
+
+    _land.py only calls it. Fixing the confirmed defect (a genuine merge
+
+    conflict on frob-coverage.lock.json is resolved by blindly keeping one
+
+    side, discarding the other''s freshly stamped data with no freshness/
+
+    ratchet comparison) requires touching the function that actually performs
+
+    the resolution. Adding this file to scope; a regression test for the fix
+
+    belongs in tests/test_ticket_land.py, the existing home for every other
+
+    land-merge-conflict test (TestOutOfScopeConflictAutoResolved and
+
+    siblings), so that file is added too.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/test_ticket_land.py::TestCoverageLockConflictMerges::test_conflicting_lock_merges_to_the_higher_of_both_sides
 threat: null
 component: null
 ```
@@ -5106,12 +5330,79 @@ workflow habit (running `git checkout -- frob-coverage.lock.json` by hand,
 per docs/guides/agent-playbook.md's land-owned-files guidance) that needs a
 playbook correction instead of a code fix.
 
+## Done report
+
+Confirmed: yes, frob ticket land's worktree-merge flow could silently
+discard a freshly stamped frob-coverage.lock.json. Root cause located in
+src/frob/tickets/_land_git_ops.py's _auto_resolve_out_of_scope_conflicts:
+frob-coverage.lock.json is essentially never inside a landing ticket's own
+declared scope (it is a shared, cross-cutting artifact, not owned by any
+one ticket), so any GENUINE merge conflict on it (both the worktree and
+main independently ran --stamp-coverage since diverging) fell into the
+same code path as an ordinary out-of-scope conflict: keep one side
+(git checkout --theirs, main's side) unconditionally, with no freshness
+or ratchet comparison. That matches the "reverted to an older committed
+value" shape both T-1270 and T-1419 independently observed -- confirmed,
+not refuted.
+
+Fix: src/frob/tickets/_land_git_ops.py::_merge_coverage_lock_conflict, a
+narrow, file-specific resolver invoked before the general blind-checkout
+loop in _auto_resolve_out_of_scope_conflicts. It reads both conflicting
+sides via `git show :2:<path>` / `:3:<path>`, parses them as the lock's
+{"source_sha", "module_line"} shape, and keeps the ELEMENTWISE MAX of
+both sides' module_line percentages for every module present on either
+side -- the same "never silently lower a committed floor" principle
+_apply_lock_ratchet (T-1363) already applies to a single side's own
+write, extended across a two-sided merge. Falls back to the pre-existing
+blind-checkout behavior only if either side fails to parse (never worse
+than before this ticket, only better when it succeeds).
+
+Verified with a new reproduction test
+(tests/test_ticket_land.py::TestCoverageLockConflictMerges::
+test_conflicting_lock_merges_to_the_higher_of_both_sides): seeds a base
+lock, has the worktree stamp a higher number for one module and main
+independently stamp a higher number for a DIFFERENT module, lands, and
+confirms BOTH sides' higher numbers survive in the merged result rather
+than either being silently discarded. The full existing
+tests/test_ticket_land.py suite (203 tests) still passes with this
+change, including TestOutOfScopeConflictAutoResolved (the ordinary
+out-of-scope conflict behavior for files other than the coverage lock is
+completely unchanged).
+
+Not a workflow-only finding: this is a genuine code defect with a code
+fix, not purely an agent-habit issue needing only a playbook correction
+-- though docs/guides/agent-playbook.md (already in scope) is updated
+too (new section 6f) so an agent who still sees a stray
+frob-coverage.lock.json diff at land time knows land now merges it
+correctly and does not need T-1270's `git checkout` workaround anymore.
+
+### Changed
+```
+ Makefile                             |  31 ++++-
+ docs/guides/agent-playbook.md        |  55 +++++++++
+ src/frob/gates/_coverage.py          |  76 ++++++++++++
+ src/frob/tickets/_land_git_ops.py    | 112 +++++++++++++++++
+ tests/test_gates.py                  |  90 ++++++++++++++
+ tests/test_ticket_land.py            |  71 +++++++++++
+ tests/unit/test_makefile_coverage.py |  55 +++++++++
+ tickets.md                           | 231 ++++++++++++++++++++++++++++++++++-
+ 8 files changed, 714 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestCoverageLockConflictMerges::test_conflicting_lock_merges_to_the_higher_of_both_sides` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 3 error(s), 515 warning(s), 694 waived
+- error-findings: ARCH001@src/frob/tickets/_land_git_ops.py, PRE001@tickets/T-1434, SELFAUDIT001@design
+
 <!-- ticket:T-1435 -->
 ```yaml
 id: T-1435
 title: Add a stamp-time provenance check for a locally-scoped coverage.xml misread
   as a full run (T-1407 finding 2)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-02'
@@ -5122,6 +5413,34 @@ sprint: null
 scope:
 - src/frob/gates/_coverage.py
 - docs/guides/agent-playbook.md
+- tests/test_gates.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: 'The stamp-time provenance check this ticket implements needs regression
+
+    tests to satisfy the evidence/test-coverage discipline (section 5/6 of
+
+    docs/guides/agent-playbook.md): a new refusal path in
+
+    src/frob/gates/_coverage.py with no test exercising it is unverified
+
+    behavior, not done work. tests/test_gates.py is the existing home for
+
+    every other _coverage.py regression test (TestCoverageLoad class) --
+
+    adding a parallel test file would duplicate its fixtures/helpers. Adding
+
+    this single file to scope keeps the new tests colocated with the tests
+
+    they extend.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refuses_locally_scoped_run_via_provenance_drop
+- tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_provenance_check_skipped_without_committed_lock
 threat: null
 component: null
 ```
@@ -5160,6 +5479,68 @@ This must build on T-1406 (module_join_fraction has to mean something
 trustworthy first) and should re-verify T-1406's fix has actually landed
 and been observed against a real make coverage run before calibrating any
 threshold, per this ticket's own investigation discipline.
+
+## Done report
+
+Implemented the stamp-time provenance check T-1407 finding 2 called for.
+`_provenance_drop` (src/frob/gates/_coverage.py) compares the CURRENT
+run's joined module count against the last COMMITTED
+frob-coverage.lock.json's own module count -- independent of
+`_DEFLATION_FLOOR`'s own self-comparison, which a locally-scoped run
+passes trivially (it can join 100% of the few modules it measured).
+Wired into `_filtered_coverage_or_deflated` (stamp_coverage's pre-stamp
+check) BEFORE the existing sample-size skip, since this check has its
+own independent floor (the committed lock's own module count) and must
+not be skipped just because today's checkout/known-module count looks
+small.
+
+Verified via two new regression tests in tests/test_gates.py's existing
+TestCoverageLoad class:
+- test_stamp_coverage_refuses_locally_scoped_run_via_provenance_drop:
+  ground-truth proof the new check fires where the OLD deflation floor
+  alone would not (2-module scoped run, 100% joined, against a 24-module
+  committed lock) and that the committed lock is left untouched by the
+  refusal.
+- test_stamp_coverage_provenance_check_skipped_without_committed_lock:
+  no committed lock yet -> stamping proceeds exactly as before this
+  ticket.
+
+Full tests/test_gates.py suite (31 TestCoverageLoad tests, 217 total in
+the file) still passes: `uv run pytest tests/test_gates.py -p
+no:cacheprovider -q` -> all green, no regressions.
+
+docs/guides/agent-playbook.md section 6e updated in the same change to
+record that T-1435 closed the gap it had flagged as still-open.
+
+Cut/disclosed: this fixes the STAMP-TIME (`--stamp-coverage`) read path
+only, per the ticket's own scope (src/frob/gates/_coverage.py). It does
+not change `frob check`'s other, unscoped TEST005 reads elsewhere in
+frob.gates (out of this ticket's scope) -- an agent following playbook
+section 6b's sanctioned workaround still must not treat a scoped
+`pytest --cov` run's coverage.xml as full-run evidence for anything
+beyond its own touched set (section 6c already covers this; T-1435 adds
+a second, independent line of defense specifically at the point a
+scoped run's data gets promoted into the committed lock).
+
+### Changed
+```
+ Makefile                             |  31 +++++++++-
+ docs/guides/agent-playbook.md        |  18 ++++++
+ src/frob/gates/_coverage.py          |  76 ++++++++++++++++++++++++
+ tests/test_gates.py                  |  90 +++++++++++++++++++++++++++++
+ tests/unit/test_makefile_coverage.py |  55 ++++++++++++++++++
+ tickets.md                           | 109 +++++++++++++++++++++++++++++++++--
+ 6 files changed, 373 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refuses_locally_scoped_run_via_provenance_drop` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_provenance_check_skipped_without_committed_lock` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 2 error(s), 874 warning(s), 693 waived
+- error-findings: PRE001@tickets/T-1435, SELFAUDIT001@design
 
 <!-- ticket:T-1436 -->
 ```yaml

@@ -645,3 +645,108 @@ class TestCombineAppendPreservesBaseData:
             text=True,
         )
         assert "100%" in post_combine.stdout, post_combine.stdout + post_combine.stderr
+
+
+# frob:ticket T-1433
+class TestSerialRerunHasABoundedDeadline:
+    """T-1433: two independent `make coverage` runs wedged forever in the
+    serial (`-n 0`) rerun phase on a dead-holder futex -- a single-
+    threaded pytest process, no children, blocked in `futex_wait_queue`
+    with zero CPU seconds consumed. `addopts`' `--timeout=120` is a
+    PER-TEST watchdog (pytest-timeout) that cannot catch a hang between
+    tests or in teardown/lock machinery, exactly where this wedge sat.
+    These tests lock the Makefile's own recipe text so both `-n 0` rerun
+    invocations stay wrapped in a bounded `timeout`, and prove the wrapping
+    mechanism itself actually bounds a wedged child rather than just
+    looking like it does."""
+
+    # frob:ticket T-1433
+    # frob:tests \
+    # tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline.test_bot\
+    # h_serial_reruns_are_wrapped_in_a_bounded_timeout
+    def test_both_serial_reruns_are_wrapped_in_a_bounded_timeout(self):
+        """Both the node-down-recovery and the failure-recovery `-n 0`
+        reruns must be wrapped in a coreutils `timeout` invocation, and
+        `COVERAGE_RERUN_DEADLINE` must be a real Makefile variable with a
+        default -- a regression here silently reintroduces the T-1433
+        indefinite-hang mechanism with no other visible symptom until the
+        next multi-hour wedge."""
+        assert "COVERAGE_RERUN_DEADLINE ?= " in _MAKEFILE, _MAKEFILE
+        rerun_lines = [
+            line
+            for line in _MAKEFILE.splitlines()
+            if "-n 0" in line and "pytest" in line
+        ]
+        assert len(rerun_lines) == 2, rerun_lines
+        for line in rerun_lines:
+            assert "timeout -k 30 $(COVERAGE_RERUN_DEADLINE)" in line, line
+
+    # frob:ticket T-1433
+    # frob:tests \
+    # tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline.test_tim\
+    # eout_wrapping_kills_a_wedged_child_instead_of_hanging
+    def test_timeout_wrapping_kills_a_wedged_child_instead_of_hanging(self):
+        """Ground-truth reproduction of the FIX (not the bug): the exact
+        `timeout -k 30 <deadline> env ...` shape used in the recipe,
+        applied to a child that blocks forever (simulating the observed
+        dead-holder futex_wait), exits 124 (coreutils `timeout`'s signal
+        for "deadline exceeded") within a small bounded wall-clock window
+        instead of hanging -- proving the wrapper is load-bearing, not
+        decorative Makefile text."""
+        result = subprocess.run(
+            ["timeout", "-k", "1", "2", "python3", "-c", "import time; time.sleep(60)"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        assert result.returncode == 124, (result.returncode, result.stdout, result.stderr)
+
+
+# frob:ticket T-1397
+class TestCoverageFastUsesAbsoluteSubprocessRc:
+    """T-1397: `coverage-fast`'s incremental branch used to point
+    `COVERAGE_PROCESS_START` directly at `pyproject.toml` -- relative
+    `source`/`data_file` (`[tool.coverage.run]` has no absolute paths of
+    its own), the same Loss-A shape T-1235 fixed for `coverage:` by
+    generating a dedicated rc with absolute paths. Any subprocess spawned
+    during a `coverage-fast` run with a different cwd than `$(CURDIR)`
+    risked silently losing/stranding its coverage data. `coverage-fast`
+    now depends on the SAME `.frob/coverage-subprocess.rc` file target
+    `coverage:` uses, instead of a second, divergent path."""
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc.test_coverage_fast_never_points_at_pyproject_toml  # noqa: E501
+    def test_coverage_fast_never_points_at_pyproject_toml(self) -> None:
+        """The literal Loss-A shape this ticket exists to prevent must
+        never reappear in the live Makefile text."""
+        assert "COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml" not in _MAKEFILE, (
+            _MAKEFILE
+        )
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc.test_coverage_fast_uses_the_shared_absolute_rc  # noqa: E501
+    def test_coverage_fast_uses_the_shared_absolute_rc(self) -> None:
+        """`coverage-fast`'s incremental (xargs) branch must point
+        `COVERAGE_PROCESS_START` at the same absolute-path rc `coverage:`
+        depends on, and must depend on that file target (so a
+        `coverage-fast`-only run, with no prior `coverage:` run, still
+        generates it rather than failing to find it)."""
+        match = re.search(
+            r"^coverage-fast: \$\(STAMP\)\n(?:\t.*\n)*",
+            _MAKEFILE,
+            re.MULTILINE,
+        )
+        assert match is not None, "coverage-fast: recipe not found in Makefile"
+        recipe = match.group(0)
+        assert "$(MAKE) .frob/coverage-subprocess.rc" in recipe, recipe
+        assert (
+            "COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc"
+            in recipe
+        ), recipe
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc.test_rc_file_target_is_shared_not_duplicated  # noqa: E501
+    def test_rc_file_target_is_shared_not_duplicated(self) -> None:
+        """Only ONE place in the Makefile generates
+        `.frob/coverage-subprocess.rc` -- `coverage:` and `coverage-fast:`
+        both depend on the same file target rather than each embedding
+        their own copy of the `printf` block (a second copy is exactly
+        how the two recipes drifted apart in the first place)."""
+        assert _MAKEFILE.count("> .frob/coverage-subprocess.rc") == 1, _MAKEFILE

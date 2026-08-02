@@ -749,6 +749,61 @@ time. A follow-up ticket (filed by T-1407) tracks adding a stamp-time
 provenance check for that specific gap; this section exists so nobody
 re-derives the denominator explanation from scratch first.
 
+**T-1435 closed that gap.** `stamp_coverage` (`src/frob/gates/_coverage.py`)
+now compares the CURRENT run's joined module count against the last
+COMMITTED `frob-coverage.lock.json`'s own module count (`_provenance_drop`),
+independent of `_DEFLATION_FLOOR`'s own self-comparison -- a locally-scoped
+run can join 100% of the few modules it measured (the deflation floor alone
+reads that as clean) while still covering a fraction of what the committed
+lock recorded; a drop below `_PROVENANCE_MIN_MODULE_RATIO` (0.5, deliberately
+the same threshold as `_DEFLATION_FLOOR` rather than a second number to keep
+in sync) now refuses the stamp outright instead of silently narrowing
+committed history. Skipped entirely when there is no committed lock yet (a
+fresh checkout) or the committed lock itself predates
+`_DEFLATION_MIN_KNOWN_MODULES` known modules (sample-size noise, same floor
+the deflation check already applies). This is a read-time defense at
+`--stamp-coverage`, not a fix to `frob check`'s other, unscoped TEST005
+reads -- an agent following section 6b's sanctioned workaround still should
+not treat a scoped `pytest --cov` run's `coverage.xml` as full-run evidence
+for anything beyond its own touched set (section 6c).
+
+## 6f. `frob ticket land` COULD silently discard a freshly stamped
+## `frob-coverage.lock.json` -- confirmed and fixed (T-1434)
+
+T-1419/T-1270 both independently observed `frob-coverage.lock.json`
+reverting to an older committed value some time after a genuine, correct
+stamp -- T-1270's agent found a stray lock diff at land time and resolved
+it by hand with `git checkout`, without knowing why it was there. T-1434
+investigated and confirmed a real, reachable defect (now fixed): the file
+is essentially never inside a landing ticket's own `scope`, so whenever it
+GENUINELY conflicts during `frob ticket land`'s worktree-merge (both the
+worktree and main independently stamped coverage since diverging --
+possible even though only a coordinator should run `make coverage`,
+because a worktree can also pick up a stray local stamp from directly
+running `frob check --stamp-coverage` while investigating something),
+`_auto_resolve_out_of_scope_conflicts` in
+`src/frob/tickets/_land_git_ops.py` used to resolve it the same way it
+resolves any other out-of-scope conflict: blindly keep one side (`git
+checkout --theirs`, i.e. main's side) and discard the other's data
+entirely, with no freshness or ratchet comparison at all. For an ordinary
+source file that is correct (main is authoritative for something the
+ticket never touched); for this specific file it silently threw away real,
+freshly measured coverage numbers -- exactly the "reverted to an older
+committed value" shape both prior investigations saw.
+
+Fixed narrowly, scoped to this one file: `_merge_coverage_lock_conflict`
+resolves a `frob-coverage.lock.json` conflict by taking the ELEMENTWISE
+MAX of both sides' `module_line` percentages (the same "never silently
+lower a committed floor" principle `_apply_lock_ratchet`/T-1363 already
+applies to a single side's own write, extended across a two-sided merge)
+instead of picking one side wholesale. Falls back to the pre-T-1434 blind
+-checkout behavior only if either side fails to parse as the expected
+shape -- never worse than before, only better when it succeeds. This is a
+merge-time fix, not a workflow correction: an agent hitting a stray
+`frob-coverage.lock.json` diff at land time no longer needs the
+`git checkout` workaround T-1270's agent improvised -- land itself now
+merges it correctly.
+
 ## 7. Waive discipline
 
 `frob:waive RULE-ID reason="..."` suppresses one specific violation and

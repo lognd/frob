@@ -35,6 +35,7 @@ here.
 from __future__ import annotations
 
 import fnmatch
+import json
 import os
 import re
 from collections.abc import Iterator, Sequence
@@ -246,6 +247,99 @@ def _restore_lock_version_only_drift(root: Path) -> bool:
         return False
     restored = run_argv(["git", "-C", str(root), "checkout", "--", "uv.lock"])
     return restored.is_ok and restored.danger_ok.returncode == 0
+
+
+# T-1434: the literal path `frob.gates._coverage._LOCK_REL` names -- NOT
+# imported from there. `frob.gates` already imports FROM `frob.tickets`
+# (e.g. `frob.gates._coverage.enforce_worktree_lease`,
+# `frob.gates._todo_fmt.TicketQueue`), so importing `frob.gates._coverage`
+# from this module would be circular; a plain string literal is the
+# cheapest way to name the one path this module needs to special-case
+# without inventing a shared constants module for a single filename.
+_COVERAGE_LOCK_PATH = "frob-coverage.lock.json"
+
+
+# frob:ticket T-1434
+# frob:tests tests/test_ticket_land.py::TestCoverageLockConflictMerges.test_conflicting_lock_merges_to_the_higher_of_both_sides  # noqa: E501
+def _merge_coverage_lock_conflict(cwd: Path, path: str) -> bool:
+    """Resolve a genuine merge conflict on `frob-coverage.lock.json` by
+    taking the ELEMENTWISE MAX of both sides' `module_line` percentages,
+    rather than blindly keeping one side (T-1434).
+
+    T-1434 confirmed a real defect: `_auto_resolve_out_of_scope_conflicts`
+    resolves any out-of-scope conflicted path by unconditionally keeping
+    one side (`git checkout --<keep>`) -- correct for an ordinary source
+    file (main's side is definitionally authoritative for something the
+    landing ticket never touched), but wrong for this file specifically.
+    `frob-coverage.lock.json` is a committed coverage-ratchet artifact
+    (`write_coverage_lock`/`_apply_lock_ratchet` in
+    `frob.gates._coverage`, T-1363): a conflict here means BOTH sides ran
+    their own `--stamp-coverage` since diverging, and blindly keeping one
+    side silently discards the other's real, freshly measured numbers --
+    exactly the "a freshly stamped lock reverted to an older committed
+    value" shape T-1270's agent observed. This is the same "never
+    silently lower a committed floor" principle `_apply_lock_ratchet`
+    already applies to a single side's own write, extended across a
+    two-sided merge: for every module present on either side, keep
+    whichever side's percentage is HIGHER (a module only on one side
+    keeps that side's value unchanged). `source_sha` is taken from
+    whichever side has the larger `module_line` (a rough proxy for "more
+    complete run"; a real re-stamp is expected to correct it at the next
+    `--stamp-coverage` regardless).
+
+    Returns `True` (and stages the merged file) only when BOTH sides
+    parse as the expected `{"source_sha": ..., "module_line": {...}}`
+    shape; returns `False` (leave conflicted, exactly as before T-1434)
+    for anything else -- a malformed side, a missing stage, or a git
+    failure -- so this never guesses on data it cannot make sense of.
+    """
+    ours = run_argv(["git", "-C", str(cwd), "show", f":2:{path}"])
+    theirs = run_argv(["git", "-C", str(cwd), "show", f":3:{path}"])
+    if ours.is_err or ours.danger_ok.returncode != 0:
+        return False
+    if theirs.is_err or theirs.danger_ok.returncode != 0:
+        return False
+    try:
+        ours_doc = json.loads(ours.danger_ok.stdout)
+        theirs_doc = json.loads(theirs.danger_ok.stdout)
+    except ValueError:
+        return False
+    ours_lines = ours_doc.get("module_line")
+    theirs_lines = theirs_doc.get("module_line")
+    if not isinstance(ours_lines, dict) or not isinstance(theirs_lines, dict):
+        return False
+    merged_lines: dict[str, float] = dict(ours_lines)
+    for module, theirs_pct in theirs_lines.items():
+        ours_pct = merged_lines.get(module)
+        if ours_pct is None or theirs_pct > ours_pct:
+            merged_lines[module] = theirs_pct
+    source_sha = (
+        ours_doc.get("source_sha")
+        if len(ours_lines) >= len(theirs_lines)
+        else theirs_doc.get("source_sha")
+    )
+    merged_doc = {
+        "source_sha": source_sha,
+        "module_line": dict(sorted(merged_lines.items())),
+    }
+    full_path = cwd / path
+    try:
+        full_path.write_text(
+            json.dumps(merged_doc, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+    except OSError:
+        return False
+    add = run_argv(["git", "-C", str(cwd), "add", "--", path])
+    if add.is_err or add.danger_ok.returncode != 0:
+        return False
+    _log.info(
+        "land: merged conflicting %s -- kept the higher of both sides' "
+        "module_line percentages for every module (T-1434), never "
+        "blindly discarding one side's freshly stamped data",
+        path,
+    )
+    return True
 
 
 def _conflicted_files(root: Path) -> set[str]:
@@ -610,6 +704,24 @@ def _auto_resolve_out_of_scope_conflicts(
         return Ok(frozenset())
     still_conflicted = {f for f in conflicted if scope_matches(f, ticket.scope)}
     for path in sorted(conflicted - still_conflicted):
+        # T-1434: frob-coverage.lock.json is a coverage-ratchet artifact,
+        # not an ordinary source file -- blindly keeping one side of a
+        # real conflict here silently discards the other side's freshly
+        # stamped data (confirmed root cause of the "reverted to an
+        # older committed value" incident T-1270's agent observed). Try
+        # the elementwise-max merge FIRST; only fall through to the
+        # ordinary blind-checkout behavior if that merge itself declines
+        # (a malformed side, a git failure) -- never worse than before
+        # T-1434, only better when it succeeds.
+        if path == _COVERAGE_LOCK_PATH and _merge_coverage_lock_conflict(cwd, path):
+            _log.info(
+                "land: %s auto-resolved out-of-scope conflict in %s via "
+                "the T-1434 coverage-lock merge (not in scope %s)",
+                ticket.id,
+                path,
+                list(ticket.scope),
+            )
+            continue
         resolved = _checkout_and_stage(cwd, keep, path)
         if resolved.is_err:
             _log.warning(

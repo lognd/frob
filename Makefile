@@ -228,11 +228,42 @@ playbook:
 # reduces how often either rerun path is needed at all, by making the
 # initial parallel run's OWN OOM-driven crashes less likely in the first
 # place.
+# T-1433: the serial (`-n 0`) rerun phases above wedge on a dead-holder
+# futex -- observed twice, one run hanging 12h52m before manual kill, with
+# the pytest process single-threaded, no children, blocked in
+# futex_wait_queue, and zero CPU seconds consumed over a 20s window. Root
+# cause is still unconfirmed (leading suspects: a crashed xdist worker from
+# the PARALLEL phase leaving a coverage/multiprocessing lock held that the
+# serial rerun then blocks on forever; COVERAGE_PROCESS_START's subprocess
+# coverage locks; or a leaked forkserver/semaphore from an earlier run --
+# see tickets.md T-1433). `addopts`' `--timeout=120` (pyproject.toml) is a
+# PER-TEST watchdog scoped to the test call itself -- it cannot catch a
+# hang between tests, in fixture teardown, or in coverage's own save/lock
+# machinery, which is exactly where this wedge was observed sitting.
+# COVERAGE_RERUN_DEADLINE wraps each `-n 0` rerun in a coreutils `timeout`
+# so a wedge fails loudly (nonzero exit, clear diagnostic) inside a bounded
+# wall-clock budget instead of hanging indefinitely: `-k 30` sends SIGTERM
+# first and escalates to SIGKILL after a 30s grace period for anything that
+# ignores it (matches the "single-threaded, no children, blocked past a
+# clean shutdown" shape observed both times). Override with
+# `make coverage COVERAGE_RERUN_DEADLINE=<seconds>` for a slower machine or
+# a deliberately larger serial suite.
+COVERAGE_RERUN_DEADLINE ?= 1800
 COVERAGE_WORKERS ?= 4
-coverage: $(STAMP)
-	rm -f .coverage .coverage.*
-	$(MAKE) core
-	uv run frob doctor
+
+# T-1235/T-1397: the ONE place that generates COVERAGE_PROCESS_START's rc
+# file, with ABSOLUTE `source`/`data_file` paths -- both `coverage:` and
+# `coverage-fast:` depend on this file target instead of each pointing
+# COVERAGE_PROCESS_START somewhere different. Deterministic content (only
+# $(CURDIR), constant for the life of this checkout), so a plain file
+# target -- not a `.PHONY` recipe re-run every time -- is correct: once
+# generated it never needs regenerating, and `coverage-fast` (T-1397) now
+# reuses exactly the same rc `coverage:` already produced instead of
+# pointing COVERAGE_PROCESS_START at pyproject.toml directly (relative
+# `source`/`data_file`, the same Loss-A shape T-1235 fixed for `coverage:`
+# itself -- any subprocess spawned with a different cwd than $(CURDIR)
+# risks silently losing/stranding its coverage data).
+.frob/coverage-subprocess.rc:
 	mkdir -p .frob
 	printf '%s\n' \
 		'[run]' \
@@ -249,17 +280,29 @@ coverage: $(STAMP)
 		'    src/frob' \
 		'    */src/frob' \
 		> .frob/coverage-subprocess.rc
+
+coverage: $(STAMP)
+	rm -f .coverage .coverage.* .frob/coverage-subprocess.rc
+	$(MAKE) core
+	uv run frob doctor
+	$(MAKE) .frob/coverage-subprocess.rc
 	COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-report= -q -n $(COVERAGE_WORKERS) --junitxml=.frob/last-coverage-run.xml > .frob/last-coverage-run.log 2>&1; \
 	status=$$?; \
 	cat .frob/last-coverage-run.log; \
 	if grep -q "node down" .frob/last-coverage-run.log; then \
 		echo "coverage: WARNING: an xdist worker crashed mid-run (node down) -- that worker's coverage data for EVERY test it executed, not only the ones reported failed, is silently gone (a crash bypasses coverage's own SIGTERM-triggered save); re-running the FULL suite serially (not just --last-failed) to recover complete data rather than accept a deflated stamp"; \
-		COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --timeout-method=signal --junitxml=.frob/last-coverage-rerun.xml; \
+		timeout -k 30 $(COVERAGE_RERUN_DEADLINE) env COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --timeout-method=signal --junitxml=.frob/last-coverage-rerun.xml; \
 		status=$$?; \
+		if [ $$status -eq 124 ]; then \
+			echo "coverage: ERROR: serial rerun (node-down recovery) exceeded its COVERAGE_RERUN_DEADLINE=$(COVERAGE_RERUN_DEADLINE)s bound (T-1433) -- killed, not left to hang; this is a wedge, not a slow pass, re-run with a raised deadline only if you have positively ruled out a stuck lock"; \
+		fi; \
 	elif [ $$status -ne 0 ]; then \
 		echo "coverage: parallel run had failures -- rerunning failed tests once, serially, without coverage-halting"; \
-		COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --timeout-method=signal --last-failed --junitxml=.frob/last-coverage-rerun.xml; \
+		timeout -k 30 $(COVERAGE_RERUN_DEADLINE) env COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --timeout-method=signal --last-failed --junitxml=.frob/last-coverage-rerun.xml; \
 		status=$$?; \
+		if [ $$status -eq 124 ]; then \
+			echo "coverage: ERROR: serial rerun (failure recovery) exceeded its COVERAGE_RERUN_DEADLINE=$(COVERAGE_RERUN_DEADLINE)s bound (T-1433) -- killed, not left to hang; this is a wedge, not a slow pass, re-run with a raised deadline only if you have positively ruled out a stuck lock"; \
+		fi; \
 	fi; \
 	uv run coverage combine --append; \
 	uv run coverage xml -i -o .frob/coverage.partial.xml; \
@@ -317,11 +360,12 @@ coverage-fast: $(STAMP)
 		$(MAKE) coverage; \
 	else \
 		$(MAKE) core && uv run frob doctor || exit 1; \
+		$(MAKE) .frob/coverage-subprocess.rc; \
 		targets="$$(uv run python -c "from pathlib import Path; from frob.graph import build_graph, load_graph; from frob.testing import python_coverage_targets; root = Path('.'); cache = root / '.frob' / 'cache.db'; loaded = load_graph(cache); snap = (loaded if loaded.is_ok else build_graph(root, cache)).danger_ok; print('\n'.join(t for t in python_coverage_targets(root, snap, '$(BASE)') if t != '*'))" 2>/dev/null)"; \
 		if [ -z "$$targets" ]; then \
 			echo "coverage-fast: touched set selects no python target against $(BASE) -- nothing incremental to run"; \
 		else \
-			echo "$$targets" | COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml xargs uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q; \
+			echo "$$targets" | COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc xargs uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q; \
 		fi; \
 		uv run coverage combine --append; \
 		uv run coverage xml -i; \
