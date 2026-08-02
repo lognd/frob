@@ -635,6 +635,7 @@ class LangError(ErrorSet):
 class GraphError(ErrorSet):
     CacheCorrupt    = "Cache file unreadable; delete .frob/cache.db to rebuild"
     CacheStale      = "Cache does not match working tree; run build_graph"
+    CacheLocked     = "Cache lock held by another process; retry the command"
     UnknownSymbol   = "Symbol reference does not resolve"
     AmbiguousSymbol = "Reference matches more than one symbol"
 # plus LangError via composition: BuildError = GraphError | LangError
@@ -690,6 +691,26 @@ def load_file_data(conn: sqlite3.Connection, file_path: str) -> tuple[...]
 def load_all(conn: sqlite3.Connection, *, stats=None) -> GraphSnapshot
     # Reassembles the full GraphSnapshot from every row currently in the db.
 ```
+
+### Lock contention (T-1423)
+
+Concurrent `frob` processes sharing the same `.frob/cache.db` can hit
+`sqlite3.OperationalError("database is locked")` on any write (or, more
+rarely, a read racing a schema rebuild). `connect`'s connect-time wait and
+its schema-application retry (T-0029/T-1239/T-1416) already covered two of
+the three places this can happen; `store_file_data`, `set_root`,
+`touch_file_stat`, and `connect_readonly` are the third -- an ordinary
+read/write path outside schema application. All four now retry through a
+contended lock via the shared `_with_lock_retry` helper (same
+poll/backoff shape and `_LOCK_TOTAL_TIMEOUT_SECONDS` budget as the
+schema-application retry) instead of letting the raw exception escape.
+
+If the budget is exhausted, `cache.CacheLocked` (a narrow
+`sqlite3.OperationalError` subclass) is raised instead of the bare sqlite
+exception, so a caller can catch exactly this recoverable-contention case.
+`build_graph` and `load_graph` do so and report `Err(GraphError.CacheLocked)`
+-- a `frob check` run under heavy contention now completes and reports,
+rather than crashing with an unhandled exception.
 
 ### Mount-filesystem performance (T-0245)
 

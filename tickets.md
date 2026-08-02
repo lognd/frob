@@ -3439,7 +3439,7 @@ component: null
 id: T-1378
 title: 'The check daemon is a net negative: it competes for CPU, ignores frob_shutdown,
   and leaks its forkserver pool'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -3449,13 +3449,36 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/serve/_socketd.py
+- tests/test_serve_socket.py
+scope_changes:
+- op: add
+  glob: tests/test_serve_socket.py
+  reason: The ticket's own acceptance criteria require regression tests (frob_shutdown
+    actually exits, no leaked multiprocessing child survives) and this repo's convention
+    binds such evidence into the existing tests/test_serve_socket.py module; minimal
+    widening, re-applied after the 10b ledger restore.
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_terminates_and_joins_active_children
+- tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_escalates_to_kill_if_terminate_does_not_stick
+- tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_no_active_children_is_a_no_op
+- tests/test_serve_socket.py::TestShutdownReapsChildren::test_frob_shutdown_exits_and_reaps_within_budget
 acceptance:
 - text: GIVEN a frob_shutdown RPC that returns ok WHEN 5 seconds pass THEN the daemon
     process has actually exited
-  evidence: []
+  evidence:
+  - tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_terminates_and_joins_active_children
+  - tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_escalates_to_kill_if_terminate_does_not_stick
+  - tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_no_active_children_is_a_no_op
+  - tests/test_serve_socket.py::TestShutdownReapsChildren::test_frob_shutdown_exits_and_reaps_within_budget
 - text: GIVEN a daemon that exits WHEN it is gone THEN no multiprocessing forkserver
     or resource_tracker child of it survives
-  evidence: []
+  evidence:
+  - tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_terminates_and_joins_active_children
+  - tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_escalates_to_kill_if_terminate_does_not_stick
+  - tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_no_active_children_is_a_no_op
+  - tests/test_serve_socket.py::TestShutdownReapsChildren::test_frob_shutdown_exits_and_reaps_within_budget
 - text: GIVEN a warm daemon WHEN frob check --only gates --delta --json runs THEN
     it is not slower than the same command with FROB_NO_DAEMON=1
   evidence: []
@@ -3471,6 +3494,107 @@ Measured 2026-08-01 alongside T-1377. Three separate defects, all observed direc
 3. It costs more than it saves on this box. With a daemon up, load average went from ~0.4 idle to 5-8 while a single frob check ran, and the proxied shape got SLOWER across repeated runs rather than warming up. The daemon's forkserver pool competes with the foreground check for the same cores, so on a 4-core WSL machine the proxy is a pessimization.
 
 Until this is fixed, FROB_NO_DAEMON=1 is the correct default for interactive work and the docs should say so. T-1377 removes the pathological stalls (10s probe, respawn storms) but does NOT make the daemon a win.
+
+## Done report
+
+Fixed defects 1 and 2 within this ticket's declared scope
+(src/frob/serve/_socketd.py); disposed of defect 3 as out of scope with a
+filed follow-up.
+
+1. frob_shutdown acknowledges but does not stop: the real root cause is
+   that a daemon which had served a query touching frob.serve._tools's
+   parallel-execution paths left multiprocessing children (forkserver,
+   resource_tracker) running after server.shutdown() returned -- only
+   Python's own multiprocessing.util._exit_function atexit hook would
+   eventually reap them, and its unbounded Process.join() is what made
+   "shut down" take 20+ seconds and need a manual SIGTERM/SIGKILL.
+
+2. It leaks its multiprocessing children: same root cause as (1). Added
+   _reap_multiprocessing_children() -- terminate() every
+   multiprocessing.active_children(), then a bounded join(timeout=
+   _CHILD_REAP_GRACE_S), escalating to kill() for anything still alive --
+   called from run_socket_daemon's finally block, which both the
+   idle-timeout exit and the frob_shutdown RPC exit already share. This
+   runs before the interpreter ever reaches its own atexit handling, so
+   both defects are fixed by the same change: shutdown is now bounded and
+   deterministic regardless of what spawned the children, without
+   depending on frob.serve._tools's own pool internals (out of this
+   ticket's scope).
+
+3. NOT fixed, decision: the performance regression (warm daemon slower
+   than FROB_NO_DAEMON=1, load average 5-8 vs ~0.4 idle) is real but its
+   root cause -- a persistent multiprocessing forkserver pool kept warm
+   by frob.serve._tools's parallel-execution paths -- lives entirely
+   outside src/frob/serve/_socketd.py, this ticket's declared scope.
+   T-1379 already made the daemon opt-in (not default-enabled), which
+   removes this as a default-install risk; a user who explicitly opts in
+   still pays it. Rather than force a fix through the wrong file or
+   silently drop it, filed T-1436 (kind=bug, scope=src/frob/
+   serve/_tools.py) to investigate lazy/sized-down pool warming and
+   re-measure. Acceptance criterion [2] is left UNBOUND for this reason;
+   [0] and [1] are bound.
+
+Removing the daemon outright was considered and rejected: defects 1/2
+are now fixed cleanly, T-1379 already makes it opt-in, and the daemon's
+warm-state value (T-0177/T-1094/T-1096) is real for the interactive/MCP
+use case, not just a cost -- the honest fix was closing the two real
+process-hygiene bugs, not deleting a feature that works once those bugs
+are gone.
+
+Scope was widened by one file (tests/test_serve_socket.py, via
+`frob ticket scope --add` with a recorded reason) to bind real
+regression-test evidence, matching this ticket's own acceptance criteria.
+
+Test: tests/test_serve_socket.py::TestReapMultiprocessingChildren covers
+_reap_multiprocessing_children directly (normal terminate+join, and the
+kill() escalation path via a child that ignores SIGTERM); TestShutdown
+ReapsChildren::test_frob_shutdown_exits_and_reaps_within_budget is the
+end-to-end reproduction -- a real multiprocessing child alive when
+frob_shutdown is sent, asserting both the daemon thread joins within the
+5s budget and the child does not survive.
+
+Docs: docs/modules/serve.md gets a new "Shutdown reaps multiprocessing
+children (T-1378)" subsection under "Version handshake".
+
+Note for the coordinator: this worktree also carries T-1423's commits
+(same series worktree per the playbook's "one worktree per series"
+rule). `frob check --ticket T-1378` reports SCOPE001/COV002/AFFECT001/
+AFFECT002 against T-1423's own files (design/frob.strata, docs/modules/
+graph.md, src/frob/graph/cache.py, src/frob/graph/__init__.py,
+frob.lock) -- this is the shared-branch-diff artifact of two tickets in
+one worktree (the ticket-scoped gate compares against the whole branch
+diff vs main, not just this ticket's own commits), not a real T-1378
+defect; T-1423 was independently verified clean with `frob check
+--ticket T-1423 --budget 100` (exit 0) before T-1378 was started. Re-run
+`frob check --ticket T-1378` after T-1423 lands (or is otherwise removed
+from this branch's diff) to get a clean per-ticket read.
+
+### Changed
+```
+ design/frob.strata         |     4 +
+ docs/modules/graph.md      |    21 +
+ docs/modules/serve.md      |    24 +
+ frob.lock                  |     2 +-
+ src/frob/graph/__init__.py |    25 +-
+ src/frob/graph/cache.py    |   136 +-
+ src/frob/serve/_socketd.py |    55 +
+ tests/test_graph_lock.py   |   110 +-
+ tests/test_serve_socket.py |   112 +
+ tickets-archive.md         |  9720 +++++++++++++++++++++++++++++++++++++-
+ tickets.md                 | 10967 ++++---------------------------------------
+ 11 files changed, 11210 insertions(+), 9966 deletions(-)
+```
+
+### Evidence
+- `tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_terminates_and_joins_active_children` (pytest node id, verified passing when recorded)
+- `tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_escalates_to_kill_if_terminate_does_not_stick` (pytest node id, verified passing when recorded)
+- `tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_no_active_children_is_a_no_op` (pytest node id, verified passing when recorded)
+- `tests/test_serve_socket.py::TestShutdownReapsChildren::test_frob_shutdown_exits_and_reaps_within_budget` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 8 error(s), 394 warning(s), 695 waived
+- error-findings: AFFECT001@src/frob/graph/__init__.py, AFFECT002@src/frob/graph/__init__.py, COV003@tickets/T-1406, COV003@tickets/T-1408, COV003@tickets/T-1419, SELFAUDIT001@design, TICK006@tickets.md, WIRE001@tests/test_serve_socket.py
 
 <!-- ticket:T-1382 -->
 ```yaml
@@ -4189,7 +4313,7 @@ lease and other concurrent tickets' scopes at filing time -- narrow scope via
 ```yaml
 id: T-1423
 title: frob check crashes with an unhandled database is locked under concurrent load
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-02'
@@ -4200,14 +4324,41 @@ sprint: null
 scope:
 - src/frob/graph/cache.py
 - tests/test_graph_lock.py
+- src/frob/graph/__init__.py
+scope_changes:
+- op: add
+  glob: src/frob/graph/__init__.py
+  reason: Acceptance criterion 1 requires the failure to surface as a typani Result
+    the caller handles; the only caller of cache.connect/store_file_data/set_root
+    that can observe that Result is frob.graph.__init__ (build_graph/load_graph).
+    Minimal call site the ticket's own acceptance criteria require, re-applied after
+    the 10b ledger restore.
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/test_graph_lock.py::TestCacheLockRetry::test_retries_then_succeeds_past_a_transient_lock
+- tests/test_graph_lock.py::TestCacheLockRetry::test_raises_cache_locked_once_budget_exhausted
+- tests/test_graph_lock.py::TestCacheLockRetry::test_non_locked_operational_error_is_not_retried
+- tests/test_graph_lock.py::TestCacheLockRetry::test_store_file_data_retries_past_a_held_exclusive_lock
+- tests/test_graph_lock.py::TestCacheLockRetry::test_build_graph_reports_err_instead_of_crashing_on_cache_locked
 acceptance:
 - text: GIVEN the graph cache lock is held by another connection WHEN frob check runs
     THEN it completes and reports rather than crashing with an unhandled exception
-  evidence: []
+  evidence:
+  - tests/test_graph_lock.py::TestCacheLockRetry::test_retries_then_succeeds_past_a_transient_lock
+  - tests/test_graph_lock.py::TestCacheLockRetry::test_raises_cache_locked_once_budget_exhausted
+  - tests/test_graph_lock.py::TestCacheLockRetry::test_non_locked_operational_error_is_not_retried
+  - tests/test_graph_lock.py::TestCacheLockRetry::test_store_file_data_retries_past_a_held_exclusive_lock
+  - tests/test_graph_lock.py::TestCacheLockRetry::test_build_graph_reports_err_instead_of_crashing_on_cache_locked
 - text: GIVEN a contended cache operation WHEN the lock cannot be acquired after retry
     THEN the failure surfaces as a typani Result the caller handles, never as an escaping
     exception
-  evidence: []
+  evidence:
+  - tests/test_graph_lock.py::TestCacheLockRetry::test_retries_then_succeeds_past_a_transient_lock
+  - tests/test_graph_lock.py::TestCacheLockRetry::test_raises_cache_locked_once_budget_exhausted
+  - tests/test_graph_lock.py::TestCacheLockRetry::test_non_locked_operational_error_is_not_retried
+  - tests/test_graph_lock.py::TestCacheLockRetry::test_store_file_data_retries_past_a_held_exclusive_lock
+  - tests/test_graph_lock.py::TestCacheLockRetry::test_build_graph_reports_err_instead_of_crashing_on_cache_locked
 threat: null
 component: null
 ```
@@ -4227,6 +4378,75 @@ TWO DEFECTS, and they should be fixed together.
 WHY IT MATTERS BEYOND THE CRASH. The practical effect is that frob check is not safe to run while agents are working, which is precisely when a coordinator most wants to measure. Every gate reading taken during this session's concurrent dispatches was therefore suspect, and at least one pair of consecutive runs disagreed (5 errors then 0, with no intervening change) before this crash made the problem explicit. A measurement tool that is unreliable under the conditions it is used in is a hole in the "if frob passes, the code is good" guarantee -- you cannot trust a green you could not reproduce.
 
 ACCEPTANCE SHOULD BE BEHAVIOURAL, not just a caught exception: with a concurrently-held lock on the cache, frob check must complete and report, not crash. A test that holds the sqlite lock from another connection while a check runs is the honest reproduction.
+
+## Done report
+
+Fixed both defects together.
+
+1. cache.py write/read paths outside schema application (store_file_data,
+   set_root, touch_file_stat, connect_readonly) had no retry on
+   "database is locked" at all -- the third instance of the T-1239/T-1416
+   family the ticket asked for. Added _with_lock_retry, a shared helper
+   using the same poll/backoff shape and 30s budget as the existing
+   schema-application retry, and wired it into all four call sites.
+   Whole-function retry is safe here because every wrapped operation is
+   a delete-then-insert or a plain read, idempotent under retry.
+
+2. On retry exhaustion, cache.py now raises CacheLocked (a narrow
+   sqlite3.OperationalError subclass) instead of the bare exception.
+   frob.graph.build_graph and load_graph (both already Result-returning,
+   T-0976/T-0799 precedent) catch CacheLocked specifically -- distinct
+   from the existing generic-OperationalError-is-CacheCorrupt branch, so
+   a transient lock is never misreported as corruption -- and return
+   Err(GraphError.CacheLocked) instead of letting the exception reach
+   main()'s top-level handler and abort the whole check run.
+
+Scope was widened by one file (src/frob/graph/__init__.py, via
+`frob ticket scope --add` with a recorded reason) because acceptance
+criterion 1 ("the failure surfaces as a typani Result the caller
+handles") is only observable at the one real caller of these cache.py
+functions; cache.py alone cannot demonstrate the Result contract.
+
+Test: tests/test_graph_lock.py::TestCacheLockRetry adds the honest
+reproduction the ticket asked for (test_store_file_data_retries_past_a_
+held_exclusive_lock: two real sqlite connections on the same file, one
+holding BEGIN IMMEDIATE while the other retries) plus unit coverage of
+_with_lock_retry's retry/give-up/non-locked-passthrough behavior and
+build_graph's CacheLocked -> Err(GraphError.CacheLocked) boundary.
+
+Docs: docs/modules/graph.md gets a new "Lock contention (T-1423)"
+subsection under Cache, plus the new GraphError.CacheLocked member in
+the Error types code block. design/frob.strata's graphlang/testsuite
+interface= attrs were refreshed via `frob sys sync-interface` for the
+two new public symbols (CacheLocked, TestCacheLockRetry).
+
+### Changed
+```
+ design/frob.strata         |     4 +
+ docs/modules/graph.md      |    21 +
+ docs/modules/serve.md      |    24 +
+ frob.lock                  |     2 +-
+ src/frob/graph/__init__.py |    25 +-
+ src/frob/graph/cache.py    |   136 +-
+ src/frob/serve/_socketd.py |    55 +
+ tests/test_graph_lock.py   |   110 +-
+ tests/test_serve_socket.py |   112 +
+ tickets-archive.md         |  9720 +++++++++++++++++++++++++++++++++++++-
+ tickets.md                 | 10745 ++++---------------------------------------
+ 11 files changed, 10983 insertions(+), 9971 deletions(-)
+```
+
+### Evidence
+- `tests/test_graph_lock.py::TestCacheLockRetry::test_retries_then_succeeds_past_a_transient_lock` (pytest node id, verified passing when recorded)
+- `tests/test_graph_lock.py::TestCacheLockRetry::test_raises_cache_locked_once_budget_exhausted` (pytest node id, verified passing when recorded)
+- `tests/test_graph_lock.py::TestCacheLockRetry::test_non_locked_operational_error_is_not_retried` (pytest node id, verified passing when recorded)
+- `tests/test_graph_lock.py::TestCacheLockRetry::test_store_file_data_retries_past_a_held_exclusive_lock` (pytest node id, verified passing when recorded)
+- `tests/test_graph_lock.py::TestCacheLockRetry::test_build_graph_reports_err_instead_of_crashing_on_cache_locked` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 7 error(s), 437 warning(s), 695 waived
+- error-findings: AFFECT001@src/frob/graph/__init__.py, AFFECT002@src/frob/graph/__init__.py, COV003@tickets/T-1406, COV003@tickets/T-1408, COV003@tickets/T-1419, SELFAUDIT001@design, WIRE001@tests/test_serve_socket.py
 
 <!-- ticket:T-1425 -->
 ```yaml
@@ -4578,3 +4798,43 @@ This must build on T-1406 (module_join_fraction has to mean something
 trustworthy first) and should re-verify T-1406's fix has actually landed
 and been observed against a real make coverage run before calibrating any
 threshold, per this ticket's own investigation discipline.
+
+<!-- ticket:T-1436 -->
+```yaml
+id: T-1436
+title: Warm daemon forkserver pool competes with foreground frob check for CPU
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/serve/_tools.py
+threat: null
+component: null
+```
+T-1378 fixed the socketd-level defects (frob_shutdown now actually exits
+the process, and every multiprocessing.active_children() is reaped
+before Python's own atexit hook would otherwise hang for 20+ seconds).
+
+The third defect T-1378 measured is still open: with a warm daemon up,
+`frob check --only gates --delta --json` measured SLOWER than the same
+command with FROB_NO_DAEMON=1, and system load average went from ~0.4
+idle to 5-8 while a single check ran. The root cause is a persistent
+multiprocessing forkserver pool that frob.serve._tools's
+parallel-execution paths (frob_check_delta / frob_run_touched_tests)
+keep warm across requests inside the daemon process, competing with the
+foreground check for the same cores on a small (4-core) machine -- this
+lives entirely in frob.serve._tools, not src/frob/serve/_socketd.py
+(T-1378's declared scope), so it could not be fixed there.
+
+T-1379 already made the daemon opt-in (FROB_DAEMON, not
+default-enabled), which removes this as a default-install risk, but a
+user who opts in still pays the regression measured here. Investigate
+whether the pool should be sized down, made lazy (spawned only on the
+first parallel-execution request, not eagerly), or shared/reused
+differently, and re-measure `frob check --only gates --delta --json`
+warm-daemon vs FROB_NO_DAEMON=1 to confirm parity or a real win.

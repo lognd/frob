@@ -101,6 +101,7 @@ class GraphError(ErrorSet):
 
     CacheCorrupt = "Cache file unreadable; delete .frob/cache.db to rebuild"
     CacheStale = "Cache does not match working tree; run build_graph"
+    CacheLocked = "Cache lock held by another process; retry the command"
     UnknownSymbol = "Symbol reference does not resolve"
     AmbiguousSymbol = "Reference matches more than one symbol"
 
@@ -518,11 +519,20 @@ def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
     process already holds the lock in another thread (e.g. nested inside
     `frob check`'s SHARED hold) -- see that function's docstring for the
     full reentrancy contract and its accepted soundness trade-off.
+
+    T-1423: `_cache.CacheLocked` (raised once `_cache._with_lock_retry`'s
+    own retry budget is exhausted under sustained contention) is caught
+    here and reported as `Err(GraphError.CacheLocked)`, never an unhandled
+    exception reaching `main()`'s top-level handler.
     """
     root = root.resolve()
     _log.info("build_graph: root=%s cache=%s", root, cache)
     with derived_state_write_lock(root):
-        conn = _cache.connect(cache)
+        try:
+            conn = _cache.connect(cache)
+        except _cache.CacheLocked as exc:
+            _log.error("build_graph: cache lock never released: %s", exc)
+            return Err(GraphError.CacheLocked)
         try:
             exclude_globs = _load_exclude_globs(root)
             source_files, doc_files = _walk_repo_files(root, exclude_globs)
@@ -540,6 +550,9 @@ def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
                 conn, root, parsed_count, cache_hits, parse_failures
             )
             return Ok(snapshot)
+        except _cache.CacheLocked as exc:
+            _log.error("build_graph: cache lock never released: %s", exc)
+            return Err(GraphError.CacheLocked)
         finally:
             conn.close()
 
@@ -688,6 +701,11 @@ def load_graph(cache: Path) -> Result[GraphSnapshot, GraphError]:
         return Err(GraphError.CacheCorrupt)
     try:
         conn = _cache.connect_readonly(cache)
+    except _cache.CacheLocked as exc:
+        # T-1423: contended, not corrupt -- do not conflate the two, or a
+        # transient lock triggers a needless cache rebuild downstream.
+        _log.error("load_graph: cache lock never released at %s: %s", cache, exc)
+        return Err(GraphError.CacheLocked)
     except Exception as exc:  # sqlite3.DatabaseError and friends
         _log.error("load_graph: cache unreadable at %s: %s", cache, exc)
         return Err(GraphError.CacheCorrupt)
@@ -725,6 +743,11 @@ def _load_graph_from_connection(conn, cache: Path) -> Result[GraphSnapshot, Grap
             _log.warning("load_graph: %s added since cache built", added_path)
             return Err(GraphError.CacheStale)
         snapshot = _cache.load_all(conn)
+    except _cache.CacheLocked as exc:
+        # T-1423: contended, not corrupt -- distinct from the OperationalError
+        # branch below, which is genuine schema drift.
+        _log.error("load_graph: cache lock never released at %s: %s", cache, exc)
+        return Err(GraphError.CacheLocked)
     except sqlite3.OperationalError as exc:
         # T-0799: schema drift (missing table/column from a pre-migration
         # cache.db) surfaces here as a query-time OperationalError, not at

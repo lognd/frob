@@ -7,9 +7,13 @@
 
 from __future__ import annotations
 
+import sqlite3
+import threading
+import time
 from pathlib import Path
 
-from frob.graph import build_graph
+from frob.graph import GraphError, build_graph
+from frob.graph import cache as graph_cache
 from frob.graph.lock import LockError, acknowledge, drift, load_lock, write_lock
 
 
@@ -290,3 +294,107 @@ class TestLoadLock:
         result = load_lock(path)
         assert result.is_err
         assert result.danger_err == LockError.Malformed
+
+
+# frob:ticket T-1423
+class TestCacheLockRetry:
+    """`_with_lock_retry` (T-1423) must retry a contended cache write/read
+    instead of letting `sqlite3.OperationalError("database is locked")`
+    escape, and must convert an exhausted retry budget into `CacheLocked`
+    rather than the bare sqlite exception."""
+
+    # frob:tests src/frob/graph/cache.py::_with_lock_retry
+    def test_retries_then_succeeds_past_a_transient_lock(
+        self, monkeypatch
+    ) -> None:
+        calls = {"n": 0}
+
+        def _flaky() -> str:
+            calls["n"] += 1
+            if calls["n"] < 3:
+                raise sqlite3.OperationalError("database is locked")
+            return "ok"
+
+        monkeypatch.setattr(graph_cache, "_LOCK_POLL_SECONDS", 0.01)
+        result = graph_cache._with_lock_retry(_flaky, what="test-op")
+        assert result == "ok"
+        assert calls["n"] == 3
+
+    # frob:tests src/frob/graph/cache.py::_with_lock_retry
+    def test_raises_cache_locked_once_budget_exhausted(self, monkeypatch) -> None:
+        def _always_locked() -> None:
+            raise sqlite3.OperationalError("database is locked")
+
+        monkeypatch.setattr(graph_cache, "_LOCK_POLL_SECONDS", 0.01)
+        monkeypatch.setattr(graph_cache, "_LOCK_TOTAL_TIMEOUT_SECONDS", 0.03)
+        try:
+            graph_cache._with_lock_retry(_always_locked, what="test-op")
+        except graph_cache.CacheLocked:
+            pass
+        else:
+            raise AssertionError("expected CacheLocked to be raised")
+
+    # frob:tests src/frob/graph/cache.py::_with_lock_retry
+    def test_non_locked_operational_error_is_not_retried(self) -> None:
+        def _other_error() -> None:
+            raise sqlite3.OperationalError("disk I/O error")
+
+        try:
+            graph_cache._with_lock_retry(_other_error, what="test-op")
+        except sqlite3.OperationalError as exc:
+            assert not isinstance(exc, graph_cache.CacheLocked)
+        else:
+            raise AssertionError("expected the original OperationalError to propagate")
+
+    # frob:tests src/frob/graph/cache.py::store_file_data
+    def test_store_file_data_retries_past_a_held_exclusive_lock(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """Two real sqlite connections on the same file, one holding an
+        exclusive write lock while the other retries -- the honest
+        reproduction the ticket asks for, not just a monkeypatched op."""
+        cache = tmp_path / "cache.db"
+        conn = graph_cache.connect(cache)
+        blocker = sqlite3.connect(str(cache), timeout=0.1, check_same_thread=False)
+        blocker.execute("BEGIN IMMEDIATE")
+        blocker.execute("INSERT INTO meta (key, value) VALUES ('x', '1')")
+
+        monkeypatch.setattr(graph_cache, "_LOCK_POLL_SECONDS", 0.05)
+        monkeypatch.setattr(graph_cache, "_LOCK_TOTAL_TIMEOUT_SECONDS", 2.0)
+
+        def _release_after_delay() -> None:
+            time.sleep(0.2)
+            blocker.commit()
+            blocker.close()
+
+        releaser = threading.Thread(target=_release_after_delay)
+        releaser.start()
+        try:
+            graph_cache.store_file_data(
+                conn,
+                file_path="a.py",
+                content_hash="deadbeef",
+                symbols=(),
+                edges=(),
+                malformed=(),
+            )
+            conn.commit()
+        finally:
+            releaser.join()
+            conn.close()
+
+    # frob:tests src/frob/graph/build_graph
+    def test_build_graph_reports_err_instead_of_crashing_on_cache_locked(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        root = tmp_path / "repo"
+        root.mkdir()
+        cache = tmp_path / "cache.db"
+
+        def _always_locked(path):  # noqa: ANN001, ARG001
+            raise graph_cache.CacheLocked("database is locked")
+
+        monkeypatch.setattr(graph_cache, "connect", _always_locked)
+        result = build_graph(root, cache)
+        assert result.is_err
+        assert result.danger_err == GraphError.CacheLocked

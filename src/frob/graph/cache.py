@@ -151,6 +151,69 @@ _LOCK_POLL_SECONDS = 2.0
 _LOCK_TOTAL_TIMEOUT_SECONDS = 30.0
 
 
+# frob:ticket T-1423
+# frob:doc docs/modules/graph.md#lock-contention-t-1423
+# frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_raises_cache_locked_once_budget_exhausted  # noqa: E501
+# frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_build_graph_reports_err_instead_of_crashing_on_cache_locked  # noqa: E501
+class CacheLocked(sqlite3.OperationalError):
+    """A cache operation could not acquire the sqlite lock within the retry
+    budget (T-1423). Distinct from a bare `sqlite3.OperationalError` so a
+    caller (`frob.graph.build_graph`/`load_graph`) can catch exactly this
+    recoverable-contention case and turn it into a typani `Result` instead
+    of letting it escape as an unhandled exception -- never raised for a
+    non-lock `DatabaseError`, which still propagates unchanged."""
+
+
+# frob:ticket T-1423
+# frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_retries_then_succeeds_past_a_transient_lock  # noqa: E501
+# frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_non_locked_operational_error_is_not_retried  # noqa: E501
+# frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_store_file_data_retries_past_a_held_exclusive_lock  # noqa: E501
+def _with_lock_retry(op, *, what: str):  # noqa: ANN001, ANN202
+    """Run `op()`, retrying while sqlite reports the db as locked, up to
+    `_LOCK_TOTAL_TIMEOUT_SECONDS`; raises `CacheLocked` once the budget is
+    exhausted instead of letting the raw `sqlite3.OperationalError` escape.
+
+    T-1239 and T-1416 already retry a locked/racing `OperationalError`
+    during schema application (`_apply_schema_with_recovery`); this is the
+    same retry shape generalized to every OTHER cache read/write path
+    (`store_file_data`, `set_root`, `touch_file_stat`, `connect_readonly`)
+    so a lock encountered outside schema application is retried too,
+    instead of crashing `frob check` outright (T-1423). `op` must be safe
+    to call more than once -- every current use is a delete-then-insert
+    (or a read), both idempotent under retry.
+    """
+    deadline = time.monotonic() + _LOCK_TOTAL_TIMEOUT_SECONDS
+    warned = False
+    while True:
+        try:
+            return op()
+        except sqlite3.OperationalError as exc:
+            if "locked" not in str(exc).lower():
+                raise
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                _log.error(
+                    "cache: %s still locked after %.0fs, giving up",
+                    what,
+                    _LOCK_TOTAL_TIMEOUT_SECONDS,
+                )
+                raise CacheLocked(str(exc)) from exc
+            if not warned:
+                _log.warning(
+                    "cache: %s locked, retrying (up to %.0fs remaining)",
+                    what,
+                    remaining,
+                )
+                warned = True
+            else:
+                _log.debug(
+                    "cache: %s still locked, retrying (%.0fs remaining)",
+                    what,
+                    remaining,
+                )
+            time.sleep(_LOCK_POLL_SECONDS)
+
+
 def _open(path: Path) -> sqlite3.Connection:
     """A cache connection with a busy timeout so concurrent builds wait
     rather than raising `disk I/O error` (T-0029: two agents building the
@@ -452,18 +515,30 @@ def connect_readonly(path: Path) -> sqlite3.Connection:
     must check existence first (`load_graph` already does).
     """
     uri = f"file:{path}?mode=ro"
-    conn = sqlite3.connect(uri, uri=True, timeout=30.0)
+    conn = _with_lock_retry(
+        lambda: sqlite3.connect(uri, uri=True, timeout=30.0),
+        what=f"connect_readonly({path})",
+    )
     conn.execute("PRAGMA query_only = ON")
     return conn
 
 
 # frob:doc docs/modules/graph.md#cache
+# frob:ticket T-1423
 def set_root(conn: sqlite3.Connection, root: str) -> None:
-    """Record the snapshot's repo root (used by `load_graph`)."""
-    conn.execute(
-        "INSERT INTO meta (key, value) VALUES ('root', ?) "
-        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-        (root,),
+    """Record the snapshot's repo root (used by `load_graph`).
+
+    Retries through a contended lock (T-1423, `_with_lock_retry`) rather
+    than raising a bare `sqlite3.OperationalError`; the upsert is
+    idempotent under retry.
+    """
+    _with_lock_retry(
+        lambda: conn.execute(
+            "INSERT INTO meta (key, value) VALUES ('root', ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (root,),
+        ),
+        what="set_root",
     )
 
 
@@ -507,6 +582,7 @@ def get_file_meta(
 
 
 # frob:ticket T-0245
+# frob:ticket T-1423
 # frob:doc docs/modules/graph.md#cache
 def touch_file_stat(
     conn: sqlite3.Connection, file_path: str, *, mtime_ns: int, size: int
@@ -515,11 +591,16 @@ def touch_file_stat(
 
     Used when a file's mtime moved (e.g. a re-checkout or `touch`) but its
     content hash did not: cheaper than a full `store_file_data` re-insert of
-    symbols/edges/malformed, which are already correct (T-0245).
+    symbols/edges/malformed, which are already correct (T-0245). Retries
+    through a contended lock (T-1423, `_with_lock_retry`) instead of
+    raising; the update is idempotent under retry.
     """
-    conn.execute(
-        "UPDATE files SET mtime_ns = ?, size = ? WHERE path = ?",
-        (mtime_ns, size, file_path),
+    _with_lock_retry(
+        lambda: conn.execute(
+            "UPDATE files SET mtime_ns = ?, size = ? WHERE path = ?",
+            (mtime_ns, size, file_path),
+        ),
+        what=f"touch_file_stat({file_path})",
     )
 
 
@@ -581,6 +662,7 @@ def _store_malformed(
 
 
 # frob:doc docs/modules/graph.md#cache
+# frob:ticket T-1423
 def store_file_data(
     conn: sqlite3.Connection,
     *,
@@ -600,18 +682,29 @@ def store_file_data(
     `mtime_ns`/`size` (T-0245) are the stat pair a later build can trust
     instead of re-reading the file's bytes; default to 0 for callers (tests,
     mainly) that only care about content-hash behavior.
+
+    Retries through a contended lock (T-1423, `_with_lock_retry`) instead
+    of raising a bare `sqlite3.OperationalError`: the whole delete-then-
+    insert body is idempotent under retry (a partial attempt just gets
+    redone identically), so retrying the entire function on a mid-write
+    lock is safe.
     """
-    conn.execute(
-        "INSERT INTO files (path, content_hash, mtime_ns, size) VALUES (?, ?, ?, ?) "
-        "ON CONFLICT(path) DO UPDATE SET "
-        "content_hash = excluded.content_hash, "
-        "mtime_ns = excluded.mtime_ns, "
-        "size = excluded.size",
-        (file_path, content_hash, mtime_ns, size),
-    )
-    _store_symbols(conn, file_path, symbols)
-    _store_edges(conn, file_path, edges)
-    _store_malformed(conn, file_path, malformed)
+
+    def _op() -> None:
+        conn.execute(
+            "INSERT INTO files (path, content_hash, mtime_ns, size) "
+            "VALUES (?, ?, ?, ?) "
+            "ON CONFLICT(path) DO UPDATE SET "
+            "content_hash = excluded.content_hash, "
+            "mtime_ns = excluded.mtime_ns, "
+            "size = excluded.size",
+            (file_path, content_hash, mtime_ns, size),
+        )
+        _store_symbols(conn, file_path, symbols)
+        _store_edges(conn, file_path, edges)
+        _store_malformed(conn, file_path, malformed)
+
+    _with_lock_retry(_op, what=f"store_file_data({file_path})")
 
 
 def _row_to_symbol(row: tuple) -> SymbolRecord:
@@ -691,6 +784,7 @@ def load_all(
 
 
 __all__ = [
+    "CacheLocked",
     "connect",
     "get_file_meta",
     "get_root",

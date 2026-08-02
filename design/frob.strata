@@ -477,6 +477,7 @@ node graphlang : trusted {
     attr interface=BuildStats;
     attr interface=ByteRange;
     attr interface=COMMENT_TYPES;
+    attr interface=CacheLocked;
     attr interface=CallGraph;
     attr interface=CtypesBoundaryCall;
     attr interface=DATA_CLUMP_MIN_GROUP_SIZE;
@@ -3125,6 +3126,7 @@ node testsuite : trusted {
     attr interface=TestBuildServer;
     attr interface=TestCCppNamespace;
     attr interface=TestCacheDesugar;
+    attr interface=TestCacheLockRetry;
     attr interface=TestCacheModule;
     attr interface=TestCallGraph;
     attr interface=TestCallGraphBounds;
@@ -4118,6 +4120,7 @@ node testsuite : trusted {
     attr interface=TestRealGateGreen;
     attr interface=TestRealGitCommonDirPairRegisters;
     attr interface=TestRealLedgerIntegrity;
+    attr interface=TestReapMultiprocessingChildren;
     attr interface=TestRebuildNatives;
     attr interface=TestReconcileOrphanWorktree;
     attr interface=TestReconcileOrphanedLandIntent;
@@ -4308,6 +4311,7 @@ node testsuite : trusted {
     attr interface=TestSharedStateRaceHazards;
     attr interface=TestSharedStoreWrite;
     attr interface=TestShowBlocked;
+    attr interface=TestShutdownReapsChildren;
     attr interface=TestSiblingDoneReportPreserved;
     attr interface=TestSigkillMidStaging;
     attr interface=TestSingleFileLedger;

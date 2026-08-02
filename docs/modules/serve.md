@@ -377,6 +377,30 @@ could go stale relative to whichever process actually happens to be
 running the daemon. See "CLI daemon proxy (T-1093)" below, "Version-skew
 self-heal", for the client side of this handshake.
 
+### Shutdown reaps multiprocessing children (T-1378)
+
+<!-- frob:describes src/frob/serve/_socketd.py::_reap_multiprocessing_children -->
+
+Before T-1378, `frob_shutdown` acknowledged and stopped `serve_forever()`
+but left any `multiprocessing.active_children()` this process had
+accumulated (a forkserver, its resource_tracker, or a query-spawned
+worker from `frob.serve._tools`'s parallel-execution paths) running --
+only Python's own `multiprocessing.util._exit_function` atexit hook
+would eventually reap them, and its unbounded `Process.join()` is exactly
+what made a "shut down" daemon take 20+ seconds to actually disappear and
+sometimes need a manual `SIGTERM`/`SIGKILL`.
+
+`run_socket_daemon`'s shutdown path now calls `_reap_multiprocessing_
+children()` itself, right after `server.serve_forever()` returns (both
+the idle-timeout exit and the `frob_shutdown` RPC exit go through this
+same `finally` block): `terminate()` every active child, then a bounded
+`join(timeout=_CHILD_REAP_GRACE_S)`, escalating to `kill()` for anything
+still alive after the grace period. This runs before the process ever
+reaches Python's own atexit handling, so shutdown is bounded and
+deterministic regardless of what spawned the children -- this
+deliberately reads only the stdlib's own process registry, with no
+dependency on `frob.serve._tools`'s own pool internals.
+
 ## FS-watch push invalidation (T-1094)
 
 <!-- frob:describes src/frob/serve/_watch.py::DEFAULT_WATCH_POLL_INTERVAL_S -->

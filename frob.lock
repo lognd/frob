@@ -246,7 +246,7 @@
       "ref": "src/frob/graph/__init__.py::edges_to"
     },
     {
-      "digest": "1c1d978a724be157556bce3d2db34e82d109ae5e1d6423d9f98871a5d9cb9e8c",
+      "digest": "b193af3c01a25f8c8b39736b223113b6b0eea25fb0d9eeb3313dfdc8bf9166cd",
       "facet": "body",
       "ref": "src/frob/graph/__init__.py::load_graph"
     },

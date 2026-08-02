@@ -52,6 +52,7 @@ from __future__ import annotations
 import errno
 import fcntl
 import json
+import multiprocessing
 import os
 import queue
 import socket
@@ -82,6 +83,14 @@ _IDLE_POLL_INTERVAL_S = 5.0
 
 _LOCK_REL = Path(".frob") / "daemon.lock"
 _SOCKET_REL = Path(".frob") / "daemon.sock"
+
+# frob:ticket T-1378
+# How long to wait for a lingering multiprocessing child (forkserver,
+# resource_tracker, or a query-spawned worker) to exit gracefully after
+# `terminate()` before escalating to `kill()` -- short and bounded so
+# reaping never becomes the thing that stalls shutdown past the 5s
+# acceptance window.
+_CHILD_REAP_GRACE_S = 1.0
 
 
 # frob:doc docs/modules/serve.md#version-handshake-t-1105
@@ -557,6 +566,46 @@ def _remove_stale_socket(sock_path: Path) -> None:
         pass
 
 
+# frob:ticket T-1378
+# frob:tests tests/test_serve_socket.py::TestReapMultiprocessingChildren.test_terminates_and_joins_active_children  # noqa: E501
+# frob:tests tests/test_serve_socket.py::TestReapMultiprocessingChildren.test_escalates_to_kill_if_terminate_does_not_stick  # noqa: E501
+def _reap_multiprocessing_children() -> None:
+    """Terminate (then, if needed, kill) every `multiprocessing.active_
+    children()` process still tracked by this interpreter (T-1378).
+
+    Observed defect: a daemon that had served a query touching
+    `frob.serve._tools`'s parallel-execution paths (forkserver pool,
+    resource_tracker) left those children running after `frob_shutdown`
+    reported success -- they were only ever reaped by Python's own
+    `multiprocessing.util._exit_function` atexit hook, whose unbounded
+    `Process.join()` is exactly what made real shutdown take 20+ seconds
+    and need a manual `SIGTERM`/`SIGKILL`. Reaping explicitly and
+    BOUNDED here, before that atexit hook ever runs, makes both the
+    "actually gone" and "no leaked child" acceptance criteria hold
+    regardless of what spawned the children -- this deliberately does not
+    import or depend on `frob.serve._tools`'s own pool machinery, only the
+    stdlib's own process registry.
+    """
+    children = multiprocessing.active_children()
+    if not children:
+        return
+    _log.warning(
+        "serve: socketd: reaping %d lingering multiprocessing child(ren): %s",
+        len(children),
+        [c.pid for c in children],
+    )
+    for child in children:
+        child.terminate()
+    for child in children:
+        child.join(timeout=_CHILD_REAP_GRACE_S)
+        if child.is_alive():
+            _log.warning(
+                "serve: socketd: child pid=%s survived terminate(), killing", child.pid
+            )
+            child.kill()
+            child.join(timeout=_CHILD_REAP_GRACE_S)
+
+
 def _idle_monitor(
     server: _DaemonServer, idle_timeout_s: float, stop: threading.Event
 ) -> None:
@@ -654,6 +703,12 @@ def run_socket_daemon(cfg: SocketDaemonConfig) -> Result[None, DaemonError]:
         server.server_close()
         _remove_stale_socket(sock_path)
         _release_singleton_lock(lock_handle)
+        # T-1378: reap before releasing control back to the caller -- a
+        # daemon that served a query spawning multiprocessing workers must
+        # not leave them for the interpreter's own atexit hook to find,
+        # which is what made shutdown take 20+ seconds and need a manual
+        # SIGKILL.
+        _reap_multiprocessing_children()
         _log.info("serve: socketd: shut down cleanly at %s", sock_path)
     return Ok(None)
 
