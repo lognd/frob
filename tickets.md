@@ -12018,6 +12018,14 @@ scope:
 - frob-core/src/lib.rs
 - strata-core/src/lib.rs
 - strata-core/src/parse/mod.rs
+- src/frob/vet/_capability_registry.py
+scope_changes:
+- op: add
+  glob: src/frob/vet/_capability_registry.py
+  reason: the file deleted by this split; land's UnownedDeletions check did not treat
+    the existing src/** scope glob as covering it, so naming the exact path
+  actor: logan
+  at: '2026-08-02'
 threat: null
 component: null
 ```
@@ -12090,7 +12098,6 @@ raise the threshold and do not waive merely for size.
 Note: src/frob/tickets/ and src/frob/app/ticket_runner/ overlap T-1296's strata TEST005
 lease and other concurrent tickets' scopes at filing time -- narrow scope via
 `frob ticket scope` before starting, per playbook section 4/lease-collision guidance.
-
 <!-- ticket:T-1421 -->
 ```yaml
 id: T-1421
