@@ -8917,3 +8917,39 @@ CAPABILITY MUST NOT SHRINK. Do not delete keywords, do not drop the comment scan
 Precedent already in this file: _scan_comment_keywords deliberately skips "# frob:..." directive comments (_FROB_DIRECTIVE_RE, T-0539). So context-sensitive exclusion is an accepted shape here; this ticket generalises it from one hardcoded prefix to actual structure.
 
 Related: _PII012_REVIEWED_NON_PII (T-0540) is a manually-maintained (file, word) allowlist -- a symptom of the same defect. Every entry in it is a case where a human confirmed the word was prose, not a name. If Level 2 lands, most of that table should become unnecessary; check whether it can shrink, and report how much of it survives.
+
+<!-- ticket:T-1412 -->
+```yaml
+id: T-1412
+title: Drain residual DOC006 findings to zero (post T-1372, 6 remaining)
+state: queued
+kind: docs
+origin: human
+created: '2026-08-01'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- CHANGELOG.md
+- tickets.md
+acceptance:
+- text: frob check --only docanchor --only doclink --only docblocks reports 0 unwaived
+    DOC006 findings in CHANGELOG.md and tickets.md
+  evidence: []
+threat: null
+component: null
+```
+A prior drive (T-1372) drained DOC006 from roughly 55 findings to 6 remaining
+unwaived findings on main. This ticket finishes draining that residue to
+zero: classify each of the 6 as a genuine stale reference (fix it), an
+intentionally illustrative/future-facing example (waive with a reason
+naming why it cannot resolve), or a pointer inside an append-only
+historical record such as CHANGELOG.md (waive with a reason naming its
+historical-record status, never rewrite the record).
+
+Scope is narrow: only the prose lines in CHANGELOG.md and tickets.md that
+currently trip DOC006, verified via
+"frob check --only docanchor --only doclink --only docblocks". Does not
+touch src/frob/gates/** or src/frob/tickets/_evidence.py, both held by
+other in-flight tickets.
