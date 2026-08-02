@@ -8166,3 +8166,71 @@ Related and deliberately NOT folded in:
 - The genuinely-zero coverage of __main__.py and serve/** is a THIRD, separate matter and is T-1395's original premise, which stands after all. Those modules really are unexercised in the measured process, even though agents proved they trace correctly under the subprocess rc in isolation. T-1395 failed because the fix was not in the two files it scoped to, not because the problem was imaginary.
 
 - T-1375 already landed a provenance audit trail for lock writes (.frob/coverage-lock-audit.log). Check it first: it may already record who wrote these values and when.
+
+<!-- ticket:T-1402 -->
+```yaml
+id: T-1402
+title: 'Gate precision for v1.0.0: EXHAUST001 and TICK011 fire where no honest fix
+  exists'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-01'
+priority: high
+parent: null
+tier: epic
+sprint: null
+scope:
+- src/frob/gates/_exhaustive_handling.py
+- src/frob/gates/_tickets.py
+acceptance:
+- text: GIVEN an EXHAUST001 finding whose only escape is an unresolvable (Unknown)
+    callee WHEN the gate runs THEN it does not demand a catch-all handler under EXHAUST001,
+    and any resolution-coverage concern is reported as its own distinct signal
+  evidence: []
+- text: GIVEN a genuinely unhandled resolvable exception escape WHEN the gate runs
+    THEN EXHAUST001 still fires exactly as today, proven by a regression test
+  evidence: []
+- text: GIVEN a Done report for a ticket outside the active window WHEN the tickets
+    gate runs THEN TICK011 does not fire on it by default
+  evidence: []
+- text: GIVEN a Done report written now that discloses a cut with no ticket cited
+    WHEN the tickets gate runs THEN TICK011 still fires exactly as today, proven by
+    a regression test
+  evidence: []
+threat: null
+component: null
+```
+Release bar for v1.0.0 is zero errors and zero warnings. A warning count in the thousands means either we were lazy or frob is too noisy. This ticket covers the second cause ONLY, and it is explicitly NOT a licence to delete capability. Every check exists for a reason. The north star stands: if frob passes, the code is good. A rule that is switched off cannot make that guarantee. The goal is to make each rule a precise strike -- fire on the thing it was built to catch, and stay silent otherwise -- so that a zero is honest rather than bought.
+
+Measured on main 2026-08-01 (unwaived counts, from an unscoped frob check):
+
+    TEST005    1444      real work, accuracy pending T-1401
+    TICK009      82      self-clearing as tickets close/narrow
+    EXHAUST001   69      AIM PROBLEM -- see below
+    DOC006       55      real work
+    LARGE001     52      real refactors
+    TICK011      50      AIM PROBLEM -- see below
+    EXHAUST002   37      real work
+    COV007       22      real (2 already fixed by dropping needless anchors)
+    WALK001/DEAD001/REF002  4/1/1
+
+TARGET 1 -- EXHAUST001, 69 findings, 69 of them (100 percent) citing "(Unknown)".
+
+Every single unwaived EXHAUST001 says an "unresolvable call/raise (Unknown) still escapes" and asks for a catch-all handler. Not one names a concrete exception type that genuinely escapes. So the rule is not reporting "you failed to handle a real error path"; it is reporting "frob's own call-graph could not resolve this callee", and then asking the developer to paper over frob's resolution limit with a broad except.
+
+That is the wrong instrument twice over. It converts a tool limitation into developer work, and the work it asks for -- a catch-all -- makes the code WORSE, since a bare handler hides the very error classes EXHAUST exists to surface. It actively pushes against the north star.
+
+Tune, do not remove: EXHAUST001 should fire when a resolvable call or raise genuinely escapes an incomplete handler set. Where the callee is unresolvable, that is a distinct condition and deserves a distinct, quieter signal (its own rule id, or a diagnostic about resolution coverage) rather than being folded into "you have an unhandled escape". Improving resolution -- native call-graph work, typeshed/stdlib awareness -- converts these into either silence or a real finding. Both outcomes are honest; today's is not.
+
+TARGET 2 -- TICK011, 50 findings, all against historical Done reports in the ledger.
+
+TICK011 flags a Done report that discloses cut/deferred work without citing a follow-up ticket. That check is genuinely valuable AT THE MOMENT A REPORT IS WRITTEN -- it is how disclosed cuts avoid being silently dropped, and it should keep firing there.
+
+But it currently re-scans the entire historical ledger forever, so it fires on reports written long ago, for work whose context is gone: 14 of the 50 cite tickets below T-0500. Retroactively filing follow-ups for years-old cut work is not warranted, and cannot be done honestly -- nobody can now reconstruct what T-0078's "scope cut" referred to. These 50 can never be legitimately driven to zero by doing the work; they can only be waived en masse, which is exactly the dishonest zero we are trying to avoid.
+
+Tune, do not remove: keep full strength on reports for tickets in the active window (or on any report written from now on), and treat the historical tail as closed -- archived, or gated behind an explicit opt-in flag for anyone auditing history deliberately. The capability survives intact for every case where it can still change an outcome.
+
+NOT IN SCOPE, recorded so nobody mistakes them for noise: TEST005's 1444, DOC006's 55, LARGE001's 52, EXHAUST002's 37 and COV007's 22 are real work. They stay. TICK009's 82 clear themselves as tickets close and scopes narrow.
+
+ACCEPTANCE NOTE for whoever implements: do not satisfy this by adding blanket waivers, lowering a threshold, or deleting a rule. The measure of success is that the findings which disappear are ones that were never actionable, and that a deliberately-introduced real violation of each tuned rule is still caught. Prove that with a regression test per rule.
