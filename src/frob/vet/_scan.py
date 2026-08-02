@@ -649,6 +649,7 @@ def _open_single_worker_pool() -> ThreadPoolExecutor:
 # longer blocking the rest of the run. This is the same disclosed
 # trade-off as `_scan_dependencies`' docstring, made concrete here.
 
+
 # frob:waive EXHAUST001 reason="fut.result()'s only special-cased outcome is \
 # FutureTimeoutError (this function's own docstring: 'rather than raising or silently \
 # dropping the package') -- any OTHER exception is _process_dependency's own genuine \

@@ -953,6 +953,9 @@ node gates : trusted {
 node checker : trusted {
     clearance Internal;
     code "src/frob/check/**";
+    // T-1346: _python.py's FROB_NO_GATE_CACHE feature-flag read (the gate
+    // result cache escape hatch) -- a boolean opt-out, no secret carried.
+    may "env.read";
     may "exec";
     may "fs.write";
     may "fs.read";
@@ -2654,6 +2657,8 @@ store tickets_ledger : trusted {
     attr interface=Origin;
     attr interface=PRIORITY_RANK;
     attr interface=Priority;
+    attr interface=QueueEntry;
+    attr interface=QueueError;
     attr interface=ReconcileReport;
     attr interface=RenumberReport;
     attr interface=ReviewEntry;
@@ -2693,8 +2698,10 @@ store tickets_ledger : trusted {
     attr interface=display_state;
     attr interface=doable;
     attr interface=doable_blocked;
+    attr interface=drain_next;
     attr interface=drop_ticket;
     attr interface=enforce_worktree_lease;
+    attr interface=enqueue;
     attr interface=epic_rollup;
     attr interface=fcntl;
     attr interface=finalize_draft;
@@ -2731,6 +2738,7 @@ store tickets_ledger : trusted {
     attr interface=new_ticket;
     attr interface=on_default_branch;
     attr interface=parse_claims_from_done_report;
+    attr interface=queue_status;
     attr interface=read_all_leases;
     attr interface=reconcile;
     attr interface=record_failure;

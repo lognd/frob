@@ -638,6 +638,7 @@ def _gate_cache_enabled(no_cache: bool) -> bool:
     built in T-0602 never actually served a real invocation)."""
     if no_cache:
         return False
+    # frob:waive SEC110 reason="FROB_NO_GATE_CACHE feature-flag read (T-1346's cache escape hatch); a boolean opt-out, carries no secret"  # noqa: E501
     return not os.environ.get(_NO_GATE_CACHE_ENV)
 
 

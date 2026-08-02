@@ -1062,6 +1062,7 @@ def _read_index_cache(index_path: Path, paths: list[Path]) -> dict[str, Ticket] 
 
 # frob:ticket T-1257
 
+
 # frob:raises BaseException
 def _write_index_cache(
     index_path: Path, paths: list[Path], tickets: dict[str, Ticket]
@@ -1205,7 +1206,6 @@ def _read_archive_cache(
         return None
     _log.debug("tickets: archive cache hit (digest %s)", digest)
     return Ok(tickets)
-
 
 
 # frob:raises BaseException
