@@ -13748,3 +13748,28 @@ THE FIX. Compare against the SYMBOL's prior existence, not the FILE's. A symbol 
 Two sub-cases worth handling deliberately rather than by accident: a symbol that is relocated AND changed in the same diff (still relocated -- the reachability question is unchanged unless the change is what removed its caller), and a symbol relocated into a file that also introduces genuinely new symbols (the new ones stay in scope).
 
 NOT IN SCOPE, and worth stating so it is not lost: the two findings above ARE real, pre-existing, test-only production symbols. Making WIRE001 relocation-aware does not make them reachable. They are a legitimate DEAD-family question about test-only helpers living in production modules, and if that is worth acting on it deserves its own ticket rather than being smuggled in here.
+
+<!-- ticket:T-1432 -->
+```yaml
+id: T-1432
+title: ledger auto-commit sweeps pre-staged index content into its commit
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-02'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_leases.py
+- tests/test_tickets_leases.py
+acceptance:
+- text: GIVEN a checkout with an unrelated file staged WHEN commit_ticket_ledger_change
+    commits a dirty tickets.md THEN the resulting commit touches only tickets.md and
+    the unrelated file remains staged
+  evidence: []
+threat: null
+component: null
+```
+Root cause of T-1403's c2fd45da incident: _add_and_commit_tickets_md runs 'git add tickets.md' then a bare 'git commit -m <message>', which commits the WHOLE index. Anything already staged in the checkout (e.g. by a conflicted stash pop, which auto-stages merged-clean files) rides along into the ledger commit under an unrelated message. Fix: pathspec-limit the commit ('git commit -m <msg> -- tickets.md', i.e. --only semantics) so the ledger commit can never contain anything but tickets.md, and add a regression test that stages a sentinel file, runs commit_ticket_ledger_change, and asserts the sentinel stays staged and out of the commit. Applies to every caller funneling through this helper (commit_start_transition, commit_ticket_ledger_change for new/drop/fail).
