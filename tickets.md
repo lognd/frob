@@ -7553,12 +7553,15 @@ sprint: null
 scope:
 - src/frob/tickets/_land.py
 - tests/unit/test_land_cross_ticket_leakage.py
+evidence:
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_declaring_broad_scope_but_untouched_does_not_block
 acceptance:
 - text: GIVEN a branch whose committed changeset touches a file that a sibling open
     ticket merely DECLARES in scope, but to which that sibling has contributed no
     actual change on this branch, WHEN the branch is landed, THEN the land is permitted
     without --allow-cross-ticket
-  evidence: []
+  evidence:
+  - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_declaring_broad_scope_but_untouched_does_not_block
 - text: GIVEN a branch that genuinely carries a sibling open ticket's committed changes,
     WHEN the branch is landed, THEN CrossTicketLeakage still refuses the land
   evidence: []
