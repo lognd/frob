@@ -715,6 +715,40 @@ Rule: when a coverage claim matters, read `coverage.xml` -- the primary
 artifact -- and say which artifact you read. A derived record is never
 evidence for a defect in the thing it was derived from.
 
+## 6e. The "~53% of known modules join" mystery was a denominator bug, not a
+## measurement gap (T-1406/T-1407)
+
+A recurring, alarming-sounding number showed up across several
+investigations: even a full, healthy `make coverage` run's committed
+`frob-coverage.lock.json` only ever joined roughly half of this repo's known
+`.py` modules (measured: 447 of 851, `module_join_fraction` ~0.53) -- right
+next to `_DEFLATION_FLOOR` (0.5), which made it look like real coverage data
+was silently going missing on every single run.
+
+T-1407 investigated and T-1406 found and fixed the actual cause: `module_
+join_fraction`'s denominator (`_known_repo_paths`) counted every `.py` file
+in the WHOLE repo -- `tests/**`, scripts, everything -- even though `make
+coverage` runs `pytest --cov=src/frob`, which can structurally never report
+coverage for anything outside that root. 447 real `src/frob` modules divided
+by 851 repo-wide modules is not a measurement gap; it is arithmetic against
+the wrong denominator. `_scope_known_paths_to_coverage_roots` now scopes the
+denominator to whatever root(s) `coverage.xml`'s own `<sources>` block
+declares before dividing, so a healthy run's `module_join_fraction` reads
+close to 1.0, not ~0.53, going forward. `_known_repo_paths` itself stays
+unscoped for its OTHER caller (`_parse_classes`'s root-join disambiguation,
+which genuinely needs the full repo-wide set) -- only the join-fraction
+denominator narrowed.
+
+This does NOT explain (and T-1406 does not fix) a DIFFERENT, still-open
+risk T-1407 also flagged: a burn-down agent's own scoped `pytest --cov` run
+(section 6b's sanctioned workaround for "don't run `make coverage` as a
+sub-agent") leaves a narrow `coverage.xml` on disk that a LATER, unscoped
+`frob check` can silently misread as if it were a full run's data -- there
+is currently no mechanism that tells these two situations apart at read
+time. A follow-up ticket (filed by T-1407) tracks adding a stamp-time
+provenance check for that specific gap; this section exists so nobody
+re-derives the denominator explanation from scratch first.
+
 ## 7. Waive discipline
 
 `frob:waive RULE-ID reason="..."` suppresses one specific violation and

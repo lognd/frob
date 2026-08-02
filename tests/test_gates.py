@@ -7369,6 +7369,51 @@ class TestCoverageLoad:
         assert result.is_ok
         assert result.danger_ok.module_join_fraction == 1.0
 
+    # frob:ticket T-1406
+    def test_module_join_fraction_excludes_files_outside_declared_cov_root(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_coverage
+        # frob:tests src/frob/gates/_coverage.py::_scope_known_paths_to_coverage_roots
+        # T-1406: a real `make coverage` run's <sources> declares only
+        # `src/frob` (the `--cov=` target), so a file OUTSIDE that root
+        # (e.g. `tests/**`) can structurally never appear in coverage.xml
+        # no matter how healthy the run is. Before this ticket,
+        # module_join_fraction's denominator counted that file anyway,
+        # deflating a perfectly healthy run's fraction toward
+        # _DEFLATION_FLOOR for reasons unrelated to run health.
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(tmp_path, "tests/test_a.py", "def test_helper():\n    pass\n")
+        snap = _snapshot(tmp_path)
+        xml = (
+            '<?xml version="1.0"?><coverage><sources>'
+            f"<source>{(tmp_path / 'src/frob').resolve()}</source>"
+            "</sources><packages><package><classes>"
+            '<class filename="pkg/a.py" line-rate="1.0">'
+            '<lines><line number="1" hits="1" branch="false"/></lines>'
+            "</class></classes></package></packages></coverage>"
+        )
+        (tmp_path / "coverage.xml").write_text(xml)
+        result = load_coverage(tmp_path, snap)
+        assert result.is_ok
+        # tests/test_a.py is a known .py module but outside the declared
+        # src/frob cov root -- it must not count against the fraction.
+        assert result.danger_ok.module_join_fraction == 1.0
+
+    # frob:ticket T-1406
+    def test_scope_known_paths_no_declared_roots_falls_back_unchanged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::_scope_known_paths_to_coverage_roots
+        # T-1406: with no <sources> block to scope against (or every entry
+        # unresolvable against this checkout), the old repo-wide denominator
+        # is the only one available -- known_paths must pass through
+        # unchanged rather than collapsing to nothing.
+        from frob.gates._coverage import _scope_known_paths_to_coverage_roots
+
+        known = frozenset({"src/frob/pkg/a.py", "tests/test_a.py"})
+        assert _scope_known_paths_to_coverage_roots(known, ()) == known
+
     def test_joins_via_repo_relative_source(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::load_coverage
         # A non-frob layout: package lives at the repo root, no `src/`
@@ -7684,6 +7729,38 @@ class TestCoverageLoad:
         lock = load_coverage_lock(tmp_path)
         assert lock is not None
         assert lock["module_line"]["src/frob/app/__init__.py"] == 76.5
+
+    # frob:ticket T-1408
+    def test_write_coverage_lock_small_drop_within_tolerance_not_clamped(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::write_coverage_lock
+        # T-1408: T-1401's genuine-zero carve-out (test above) is `new_pct
+        # == 0.0` exactly, never a threshold -- confirm the PRE-existing
+        # `_LOCK_TOLERANCE` (2.0 points) behavior is unchanged for a small,
+        # non-zero drop: a drop within tolerance writes through as-is
+        # (never clamped), same as before T-1401 touched this function.
+        from frob.gates import CoverageData, load_coverage_lock, write_coverage_lock
+
+        good = CoverageData(
+            source_sha="good",
+            symbol_branch={},
+            module_line={"src/frob/app/__init__.py": 76.5},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        assert write_coverage_lock(tmp_path, good).is_ok
+        small_drop = CoverageData(
+            source_sha="small-drop-within-tolerance",
+            symbol_branch={},
+            module_line={"src/frob/app/__init__.py": 75.0},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        assert write_coverage_lock(tmp_path, small_drop).is_ok
+        lock = load_coverage_lock(tmp_path)
+        assert lock is not None
+        assert lock["module_line"]["src/frob/app/__init__.py"] == 75.0
 
     # frob:ticket T-1363
     def test_write_coverage_lock_allow_decrease_overrides_ratchet(

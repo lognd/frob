@@ -513,9 +513,13 @@ def _deploy_conformance_tool_result(violations) -> ToolResult:  # noqa: ANN001
 
 
 # frob:ticket T-0586
+# frob:ticket T-1419
 # frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_coverage_mode_passes_loaded_snapshot kind="unit"  # noqa: E501
 # frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_coverage_mode_calls_stamp_and_returns kind="unit"  # noqa: E501
 # frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_coverage_failure_exits_1 kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_coverage_lock_source_sha_mismatch_exits_1 kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_coverage_lock_source_sha_match_succeeds kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_coverage_no_snapshot_skips_durability_check kind="unit"  # noqa: E501
 def _run_stamp_coverage(root: Path) -> None:
     """`frob check --stamp-coverage`: record coverage.xml as the current stamp,
     and refresh the committed `frob-coverage.lock.json` summary.
@@ -529,6 +533,22 @@ def _run_stamp_coverage(root: Path) -> None:
     (still stamps, just without the lock refresh) rather than failing the
     whole command -- the lock refresh is a bonus this call provides, not a
     hard requirement of stamping.
+
+    T-1419: a real incident found the committed `frob-coverage.lock.json`
+    still asserting a stale `source_sha`/percentage for a module coverage.xml
+    measured at genuine zero, even though `stamp_coverage` had logged a
+    successful write for the run in question -- the CALL reported success,
+    but the on-disk committed lock never durably reflected it. `stamp_
+    coverage` writes `.frob/coverage-stamp` and `frob-coverage.lock.json`
+    from the SAME `coverage.xml` source sha in one call, so immediately
+    after a call that attempted a lock refresh (`snapshot` was available),
+    this re-reads both artifacts back from disk and refuses loudly (exit 1)
+    if their `source_sha` values disagree -- that disagreement is exactly
+    the observable symptom of a write that reported success but did not
+    durably persist, whether the cause is a silent write no-op or some
+    other process's write racing/overwriting this one. No snapshot means no
+    lock refresh was ever attempted (the pre-existing, intentional T-0586
+    skip), so there is nothing to durability-check in that case.
     """
     from frob.gates import stamp_coverage
     from frob.graph import build_graph, load_graph
@@ -555,6 +575,40 @@ def _run_stamp_coverage(root: Path) -> None:
         _log.error("stamp-coverage failed: %s", result.danger_err)
         sys.exit(1)
     _log.info("coverage stamp written")
+
+    if snapshot is not None and not _lock_matches_stamp(root):
+        _log.error(
+            "stamp-coverage: %s reports a different source_sha than the "
+            "coverage stamp that was just written -- the lock refresh did "
+            "not durably persist this run's data (T-1419); re-run `frob "
+            "check --stamp-coverage`, and if this repeats, something "
+            "outside this call is overwriting frob-coverage.lock.json "
+            "after the write",
+            root / "frob-coverage.lock.json",
+        )
+        sys.exit(1)
+
+
+# frob:ticket T-1419
+def _lock_matches_stamp(root: Path) -> bool:
+    """True when the committed `frob-coverage.lock.json` just written by
+    `stamp_coverage` carries the SAME `source_sha` as `.frob/coverage-stamp`
+    from that same call (T-1419).
+
+    Both artifacts are written from one `coverage.xml` inside a single
+    `stamp_coverage` invocation, so under a durable write they can never
+    disagree -- a mismatch here is the read-after-write proof that the
+    lock's on-disk content is not what this run just produced, regardless
+    of whether the write silently no-opped or something else clobbered it
+    afterward. Missing/unreadable data on either side reads as `False`
+    (cannot confirm durability, so do not claim it)."""
+    from frob.gates import load_coverage_lock, load_stamp
+
+    lock = load_coverage_lock(root)
+    stamp = load_stamp(root)
+    if lock is None or stamp is None:
+        return False
+    return lock.get("source_sha") == stamp.get("source_sha")
 
 
 # frob:ticket T-0563

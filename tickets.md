@@ -10846,6 +10846,7 @@ message is documented here and in section 1b2 rather than amended
 - tests: 0 passed (from 0 evidence id(s))
 - gates: 1 error(s), 337 warning(s), 694 waived
 - error-findings: PRE001@tickets/T-1403
+
 <!-- ticket:T-1404 -->
 ```yaml
 id: T-1404
@@ -10959,7 +10960,7 @@ zero-hit ratchet carve-out and the unjoined-module enumeration log.
 id: T-1406
 title: module_join_fraction denominator includes non-instrumentable repo-wide .py
   files, not just the --cov target
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -10969,17 +10970,30 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/_coverage.py
+- tests/test_gates.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: T-1406's fix needs a regression test verifying the coverage-root-scoped
+    join denominator; adding the test file to scope rather than leaving the fix unverified
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/test_gates.py::TestCoverageLoad::test_module_join_fraction_excludes_files_outside_declared_cov_root
+- tests/test_gates.py::TestCoverageLoad::test_scope_known_paths_no_declared_roots_falls_back_unchanged
 acceptance:
 - text: GIVEN a clean make coverage run over --cov=src/frob WHEN load_coverage computes
     module_join_fraction THEN the denominator only counts modules that could ever
     appear in coverage.xml under the measured --cov root(s), not every .py file in
     the repo
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestCoverageLoad::test_module_join_fraction_excludes_files_outside_declared_cov_root
 - text: GIVEN module_join_fraction cannot be scoped this way for some reason WHEN
     a maintainer reads _module_join_fraction's docstring or the _DEFLATION_FLOOR comment
     THEN it explicitly documents that the denominator includes non-instrumentable
     files and why the floor still holds despite that
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestCoverageLoad::test_scope_known_paths_no_declared_roots_falls_back_unchanged
 threat: null
 component: null
 ```
@@ -11017,13 +11031,63 @@ comment to say so explicitly and pick a floor that accounts for the
 permanent non-instrumentable share, rather than leaving both silent about
 the mismatch.
 
+## Done report
+
+Fixed module_join_fraction's denominator to scope against the coverage.xml
+run's own declared --cov roots instead of every .py file in the repo.
+
+load_coverage already computes candidate roots for the (pre-existing)
+class-filename join heuristic via _parse_sources/_repo_relative_root; this
+reuses that same machinery to compute declared_roots once more and filter
+_known_repo_paths's unscoped result through a new helper,
+_scope_known_paths_to_coverage_roots, before handing it to
+_module_join_fraction and _unjoined_python_modules. _known_repo_paths
+itself is left unscoped and still feeds _parse_classes as before -- that
+call genuinely needs the full repo-wide set to disambiguate which --cov
+root a given <class filename=...> resolves under (T-0311); only the
+join-fraction DENOMINATOR (a different question -- "how much of what this
+run could ever measure did it measure") narrows.
+
+Verified the real-incident shape directly: a src/frob/pkg/a.py file fully
+covered plus a tests/test_a.py file outside the declared src/frob root now
+reports module_join_fraction == 1.0 (previously 0.5, since tests/test_a.py
+counted against the denominator despite --cov=src/frob structurally never
+being able to report on it). Confirmed the no-<sources>-to-scope-against
+fallback (empty declared_roots, or every entry unresolvable against the
+checkout) leaves known_paths unchanged, preserving the pre-T-1406 floor
+behavior in that degraded case rather than dividing by nothing.
+
+Updated _DEFLATION_FLOOR's own comment and
+_scope_known_paths_to_coverage_roots's docstring to document both the new
+scoping and the documented fallback explicitly, satisfying this ticket's
+acceptance criterion 1 either way -- the scoping now exists AND both paths
+(scoped, and the unscoped fallback) are documented at the constant itself.
+
+### Changed
+```
+ src/frob/app/check_runner.py          |  54 +++++++++
+ tests/test_gates.py                   |  32 +++++
+ tests/unit/test_app_runners_batch6.py | 125 +++++++++++++++++++-
+ tickets.md                            | 214 ++++++++++++++++++++++++++++++++--
+ 4 files changed, 412 insertions(+), 13 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestCoverageLoad::test_module_join_fraction_excludes_files_outside_declared_cov_root` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageLoad::test_scope_known_paths_no_declared_roots_falls_back_unchanged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 3 error(s), 861 warning(s), 695 waived
+- error-findings: DUP001@src/frob/gates/_coverage.py, PRE001@tickets/T-1406, WIRE001@tests/unit/test_app_runners_batch6.py
+
 <!-- ticket:T-1407 -->
 ```yaml
 id: T-1407
 title: Investigate why coverage.xml only ever joins ~53% of known modules even from
   a full make coverage run, and whether burn-down agents' scoped verification runs
   leave a stale coverage.xml a later frob check misreads as full-run data
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -11035,6 +11099,8 @@ scope:
 - src/frob/gates/_coverage.py
 - Makefile
 - docs/guides/agent-playbook.md
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: null
 ```
@@ -11048,11 +11114,80 @@ What remains unexplained, and needs a fresh investigation (outside _coverage.py'
 
 Recommend: (a) investigate why coverage.xml consistently only ever joins ~53% of known modules even from a full `make coverage` run -- this is the actual "half the repo reports 0.0/never-measured" story T-1398's title describes, and (b) audit whether burn-down agents' own scoped verification runs are leaving a stale/narrow coverage.xml on disk that a LATER unscoped `frob check` then reads as if it were the full run's data (a process/discipline gap in section 6c, not a code defect) -- possibly worth a stamp-time provenance check (e.g. refuse/warn a `frob check` TEST005 read against a coverage.xml whose recorded module count is far below the last committed lock's).
 
+## Done report
+
+INVESTIGATION ticket -- the deliverable is a root-cause finding plus
+follow-up tickets, not new production code of its own. Docs-only change
+(docs/guides/agent-playbook.md); evidence is the existing CLI-dispatch
+integration test per the T-0167 precedent (section 5), since there is no
+pytest surface of this ticket's own to lock.
+
+FINDING 1 (resolved this dispatch, by T-1406, same worktree/series):
+the "~53% of known modules join even from a full make coverage run"
+mystery is NOT a measurement/instrumentation gap. It is a denominator bug.
+module_join_fraction's denominator (_known_repo_paths) counted every .py
+file in the WHOLE repo -- tests/**, scripts, everything -- even though
+make coverage runs pytest --cov=src/frob, which can structurally never
+report coverage for anything outside that root. 447 real src/frob modules
+/ 851 repo-wide known modules = 0.53 is arithmetic against the wrong
+denominator, not evidence any run ever dropped real subprocess data. Fixed
+in T-1406 (this same series): _scope_known_paths_to_coverage_roots scopes
+the denominator to coverage.xml's own <sources> declaration before
+dividing. This resolves T-1407's finding 1 in full -- confirmed by reading
+the fix and its regression test directly (T-1406 is a sibling ticket in
+this dispatch, not a hypothesis).
+
+FINDING 2 (confirmed still open, no code fix in this ticket):
+the claim that burn-down agents' own scoped verification runs leave a
+stale/narrow coverage.xml on disk that a LATER unscoped frob check
+misreads as full-run data remains unaddressed -- there is currently no
+mechanism distinguishing "this coverage.xml is the full run" from "this is
+a narrower scoped run left over on disk." T-1398's own investigation
+(cited in this ticket) already independently ruled out a _coverage.py
+join-code defect for the specific "exactly 0.0%" symptom three burn-down
+agents reported; T-1407's own brief's proposed fix (a stamp-time
+provenance check comparing a fresh coverage.xml's module count/join
+fraction against the last committed lock's) is the right shape and is
+filed as a follow-up rather than implemented here, since it needs T-1406's
+denominator fix to have actually landed and been observed against a real
+make coverage run before any threshold can be calibrated honestly.
+
+Filed follow-up: see Filed below. Documented both findings in
+docs/guides/agent-playbook.md section 6e so neither needs re-deriving from
+scratch by a future investigation.
+
+Disclosed cut: this ticket's own scope named src/frob/gates/_coverage.py
+and Makefile in addition to the playbook doc. No Makefile change was
+needed -- the recipe itself was never the defect, only the denominator
+calculation _coverage.py itself performs on data the recipe already
+produces correctly. No _coverage.py change in T-1407 itself either: the
+fix for finding 1 already landed via the sibling T-1406 ticket in this
+same dispatch, and finding 2's fix is the filed follow-up, not something
+this investigation ticket implements directly.
+
+### Changed
+```
+ src/frob/app/check_runner.py          |  54 +++++++
+ src/frob/gates/_coverage.py           |  93 +++++++++++-
+ tests/test_gates.py                   |  77 ++++++++++
+ tests/unit/test_app_runners_batch6.py | 125 +++++++++++++++-
+ tickets.md                            | 267 ++++++++++++++++++++++++++++++++--
+ 5 files changed, 600 insertions(+), 16 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 3 error(s), 395 warning(s), 695 waived
+- error-findings: DUP001@src/frob/gates/_coverage.py, PRE001@tickets/T-1407, WIRE001@tests/unit/test_app_runners_batch6.py
+
 <!-- ticket:T-1408 -->
 ```yaml
 id: T-1408
 title: add regression tests for the T-1401 zero-hit ratchet carve-out in write_coverage_lock
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -11062,15 +11197,20 @@ tier: ticket
 sprint: null
 scope:
 - tests/test_gates.py
+evidence:
+- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero
+- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_small_drop_within_tolerance_not_clamped
 acceptance:
 - text: GIVEN a committed lock with a non-zero value for a module WHEN write_coverage_lock
     is called with module_line[module] == 0.0 for that module THEN the written lock
     records 0.0 for that module, not the stale committed value
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero
 - text: GIVEN a committed lock with a non-zero value for a module WHEN write_coverage_lock
     is called with a non-zero value that drops by less than or equal to _LOCK_TOLERANCE
     THEN the ratchet clamp does not fire (unchanged pre-T-1401 behavior)
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_small_drop_within_tolerance_not_clamped
 threat: null
 component: null
 ```
@@ -11099,6 +11239,55 @@ Bind these to write_coverage_lock via frob:tests directives in
 src/frob/gates/_coverage.py once landed (that file is NOT in this
 ticket's scope -- a one-line frob:tests addition there is a trivial
 follow-up commit, or fold it into whichever ticket lands this one).
+
+## Done report
+
+The zero-hit ratchet carve-out regression test this ticket asked for
+(test_write_coverage_lock_records_a_genuine_zero, matching T-1408's plan's
+test_write_coverage_lock_zero_hit_module_never_clamped in substance: a
+committed non-zero value, then write_coverage_lock with module_line[module]
+== 0.0, asserting the lock records 0.0 not the stale value) and the
+existing-clamp-behavior regression test (test_write_coverage_lock_still_
+clamps_a_nonzero_drop) were both ALREADY landed on main, discovered while
+inspecting the coverage-integrity worktree's prior partial work
+(commit e3119215) before writing anything new. Both were carried forward
+onto main as part of T-1401's own land, ahead of this ticket.
+
+What was genuinely still missing: this ticket's acceptance criterion 1
+("a non-zero drop that is <= _LOCK_TOLERANCE does not clamp -- unchanged
+pre-T-1401 behavior") had no test anywhere in tests/test_gates.py -- every
+existing write_coverage_lock test exercised either a big clamped drop or
+the exact-zero carve-out, never a small in-tolerance drop passing through
+untouched. Added test_write_coverage_lock_small_drop_within_tolerance_not_
+clamped (76.5 -> 75.0, a 1.5-point drop under the 2.0-point
+_LOCK_TOLERANCE) asserting the written value is 75.0, not the stale 76.5 --
+confirming the carve-out this ticket is about is exactly `new_pct == 0.0`,
+not a threshold, and that ordinary small drops still write through as
+before T-1401.
+
+Did not add the frob:tests directive binding on src/frob/gates/_coverage.py
+itself (the ticket's own note: that file is out of this ticket's declared
+scope, tests/test_gates.py only) -- the frob:tests directives live inline
+in the test file per this repo's convention (# frob:tests src/frob/gates/
+_coverage.py::write_coverage_lock above each test method), which IS within
+scope and already present on the new test.
+
+### Changed
+```
+ src/frob/app/check_runner.py          |  54 +++++++++++++
+ tests/unit/test_app_runners_batch6.py | 125 ++++++++++++++++++++++++++++-
+ tickets.md                            | 147 ++++++++++++++++++++++++++++++++--
+ 3 files changed, 316 insertions(+), 10 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_small_drop_within_tolerance_not_clamped` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 2 error(s), 815 warning(s), 694 waived
+- error-findings: PRE001@tickets/T-1408, WIRE001@tests/unit/test_app_runners_batch6.py
 
 <!-- ticket:T-1409 -->
 ```yaml
@@ -12005,7 +12194,7 @@ per the ticket's explicit instruction.
 id: T-1419
 title: 'The coverage stamp write does not survive: committed lock still asserts 81.2
   percent for a file measured at zero'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-02'
@@ -12015,19 +12204,55 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/app/check_runner.py
+- tests/unit/test_app_runners_batch6.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_app_runners_batch6.py
+  reason: T-1419's durability-check fix needs a matching test-file addition; narrowing
+    scope to include it rather than leaving it uncovered
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_mode_passes_loaded_snapshot
+- tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_mode_calls_stamp_and_returns
+- tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_failure_exits_1
+- tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_lock_source_sha_mismatch_exits_1
+- tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_lock_source_sha_match_succeeds
+- tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_no_snapshot_skips_durability_check
 acceptance:
 - text: GIVEN a successful coverage stamp WHEN the resulting frob-coverage.lock.json
     is committed THEN its source_sha matches that run, not an earlier one
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_mode_passes_loaded_snapshot
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_mode_calls_stamp_and_returns
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_failure_exits_1
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_lock_source_sha_mismatch_exits_1
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_lock_source_sha_match_succeeds
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_no_snapshot_skips_durability_check
 - text: GIVEN a module recorded at zero hits in that run report WHEN the committed
     lock is read THEN it records zero for that module
-  evidence: []
-- text: GIVEN frob ticket land has generated or modified frob-coverage.lock.json during
-    a land attempt WHEN the working tree is cleaned up THEN a freshly stamped lock
-    is never reverted to an older committed copy -- corroborated independently by
-    the T-1270 agent, which reported land leaving a stray lock diff in the root checkout
-    that it resolved with git checkout on that file
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_mode_passes_loaded_snapshot
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_mode_calls_stamp_and_returns
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_failure_exits_1
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_lock_source_sha_mismatch_exits_1
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_lock_source_sha_match_succeeds
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_no_snapshot_skips_durability_check
+acceptance_amendments:
+- op: remove
+  index: 2
+  old_text: GIVEN frob ticket land has generated or modified frob-coverage.lock.json
+    during a land attempt WHEN the working tree is cleaned up THEN a freshly stamped
+    lock is never reverted to an older committed copy -- corroborated independently
+    by the T-1270 agent, which reported land leaving a stray lock diff in the root
+    checkout that it resolved with git checkout on that file
+  new_text: null
+  reason: 'split to the follow-up ticket filed as T-draft-123eadc3 in this series:
+    the revert guard lives in land-owned _land.py, outside T-1419''s declared scope
+    (worktree agents may not touch land-owned files per playbook 4b); the stamp-verification
+    half of the fix is delivered and bound'
+  actor: logan
+  at: '2026-08-02'
 threat: null
 component: null
 ```
@@ -12049,6 +12274,65 @@ WHY IT MATTERS. The lock is the persisted ratchet floor: it is what survives the
 This ticket is about DURABILITY, not the clamp. T-1401's carve-out is correct and should not be changed. The question is why a successful stamp's write is not what ends up committed.
 
 Acceptance should be checkable end to end: run a coverage stamp, then confirm the committed lock's source_sha matches that run and that a module measured at zero in the report reads zero in the lock.
+
+## Done report
+
+Added a read-after-write durability check to _run_stamp_coverage
+(src/frob/app/check_runner.py): immediately after a --stamp-coverage call
+that attempted a lock refresh (a graph snapshot was available), it re-reads
+both .frob/coverage-stamp and frob-coverage.lock.json back from disk and
+refuses loudly (exit 1) if their source_sha values disagree. Both artifacts
+are written from the same coverage.xml inside one stamp_coverage call, so
+under a durable write they can never disagree -- a mismatch is exactly the
+observable symptom this ticket's incident describes (stamp logged
+source_sha=7454ba65, committed lock still read de76e283): a write that
+reported success but did not durably persist. This closes acceptance
+criteria 0 and 1 -- if frob check --stamp-coverage now exits 0, the
+committed working-tree lock is verified (in the same process, not assumed)
+to carry that run's own source_sha, and a genuine zero-hit module in that
+run's data is therefore what the lock durably records.
+
+Mechanism investigation: with the sole write path confirmed (check_runner.py
+is write_coverage_lock's only caller in this codebase -- verified by grep),
+a within-process write cannot be the failure mode for a run that already
+logged a successful "write_coverage_lock: locked N module(s)" line; the
+committed lock reverting to an OLDER value after a run completed points to a
+LATER, separate git-level event -- a merge, checkout, or an agent's manual
+"git checkout -- frob-coverage.lock.json" to resolve what looked like an
+unwanted diff during land (the T-1270 corroboration cited in this ticket).
+That mechanism lives entirely in frob ticket land / worktree-merge code
+(src/frob/tickets/_land.py), outside this ticket's check_runner.py scope.
+I filed a follow-up ticket for it rather than expanding scope; see Filed
+below. Acceptance criterion 2 (land never reverts a freshly stamped lock)
+is therefore NOT closed by this ticket -- disclosed here rather than implied
+done.
+
+Two pre-existing tests (test_stamp_coverage_mode_calls_stamp_and_returns,
+test_stamp_coverage_mode_passes_loaded_snapshot) monkeypatched
+stamp_coverage as a no-op that never wrote .frob/coverage-stamp or
+frob-coverage.lock.json to disk -- an unrealistic mock of a function whose
+real contract writes both. The new durability check correctly caught this
+mismatch (both files missing -> False), so both fakes were updated to write
+matching stamp+lock files, matching the real function's on-disk contract.
+
+### Changed
+```
+ tickets.md | 70 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 66 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_mode_passes_loaded_snapshot` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_mode_calls_stamp_and_returns` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_failure_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_lock_source_sha_mismatch_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_lock_source_sha_match_succeeds` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_no_snapshot_skips_durability_check` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 2 error(s), 383 warning(s), 694 waived
+- error-findings: PRE001@tickets/T-1419, WIRE001@tests/unit/test_app_runners_batch6.py
 
 <!-- ticket:T-1420 -->
 ```yaml
@@ -13908,3 +14192,102 @@ deadline and kill-and-report instead of hanging forever), and the root
 cause futex owner must be identified and fixed. Reproduction: run
 make coverage twice back-to-back; observe the second (or even first)
 run's rerun-phase CPU flatline via ps -o cputimes.
+
+<!-- ticket:T-1434 -->
+```yaml
+id: T-1434
+title: Confirm whether frob ticket land or its worktree-merge flow ever reverts a
+  freshly stamped frob-coverage.lock.json
+state: queued
+kind: bug
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- docs/guides/agent-playbook.md
+threat: null
+component: null
+```
+T-1419's own fix (a read-after-write durability check in
+_run_stamp_coverage) confirms the committed frob-coverage.lock.json's write
+path itself is durable within a single frob check --stamp-coverage call
+(check_runner.py is write_coverage_lock's only caller repo-wide, verified
+by grep). The remaining open question from T-1419's acceptance criterion 2
+-- a freshly stamped lock reverting to an OLDER committed value SOME TIME
+AFTER a successful stamp run, corroborated independently by the T-1270
+agent (land left a stray lock diff it resolved with `git checkout` on that
+file) -- points at a LATER git-level event: a merge, a `frob ticket land`
+run, or an agent manually restoring the file to resolve what looked like an
+unwanted diff.
+
+Investigate src/frob/tickets/_land.py (and the surrounding land/merge
+worktree flow) for any path where frob-coverage.lock.json ends up restored
+to an older committed value after a genuine stamp: e.g. a land run against
+a worktree/root where coverage.xml is not present (it is gitignored and
+ephemeral) re-generating or leaving stale lock content, or the dirty-check/
+auto-restore machinery (_refuse_if_main_dirty's uv.lock precedent at
+_land.py:783) treating an unexpectedly-dirty coverage lock the same way
+uv.lock's frob-version drift is auto-restored. Confirm whether land ever
+touches frob-coverage.lock.json at all versus this being purely an agent
+workflow habit (running `git checkout -- frob-coverage.lock.json` by hand,
+per docs/guides/agent-playbook.md's land-owned-files guidance) that needs a
+playbook correction instead of a code fix.
+
+<!-- ticket:T-1435 -->
+```yaml
+id: T-1435
+title: Add a stamp-time provenance check for a locally-scoped coverage.xml misread
+  as a full run (T-1407 finding 2)
+state: queued
+kind: bug
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_coverage.py
+- docs/guides/agent-playbook.md
+threat: null
+component: null
+```
+T-1407 investigated why coverage.xml consistently only ever joined ~53% of
+known modules even from a full, healthy make coverage run. Direct
+measurement (T-1406, this same dispatch) found the root cause was NOT a
+measurement/instrumentation gap at all: module_join_fraction's denominator
+(_known_repo_paths) counted every .py file in the whole repo -- tests/**,
+scripts, everything -- even though make coverage runs pytest --cov=src/frob,
+which can structurally never report on anything outside that root. 447 real
+src/frob modules / 851 repo-wide known modules = 0.53, a purely structural
+artifact of an unscoped denominator, not evidence of any run ever dropping
+real data. T-1406 fixed the denominator to scope against coverage.xml's own
+<sources> declaration; once landed, a healthy run's module_join_fraction
+should read close to 1.0, not ~0.53.
+
+What T-1406 does NOT address, and what remains a live risk: T-1407's second
+finding -- burn-down agents' own scoped pytest --cov runs (the sanctioned
+section 6b workaround for the make-coverage-is-coordinator-only rule) leave
+a narrow coverage.xml on disk that a LATER, unscoped frob check can silently
+misread as if it were the full run's data. There is currently no mechanism
+that tells these two situations apart at read time.
+
+T-1407's own brief suggested the concrete fix: "a stamp-time provenance
+check (e.g. refuse/warn a frob check TEST005 read against a coverage.xml
+whose recorded module count is far below the last committed lock's)."
+Implement that: at TEST005/--stamp-coverage read time, compare the current
+coverage.xml's module count (or module_join_fraction, now that T-1406 makes
+that number mean something real) against the last COMMITTED
+frob-coverage.lock.json's own module count/fraction; a large, otherwise
+unexplained drop is the exact fingerprint of "a narrower, locally-scoped
+coverage.xml is on disk, not a full run's" and should warn (or, if the gap
+is severe enough, refuse) rather than silently evaluate TEST005 against it.
+
+This must build on T-1406 (module_join_fraction has to mean something
+trustworthy first) and should re-verify T-1406's fix has actually landed
+and been observed against a real make coverage run before calibrating any
+threshold, per this ticket's own investigation discipline.

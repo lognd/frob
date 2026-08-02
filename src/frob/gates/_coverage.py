@@ -356,6 +356,7 @@ def _newest_source_mtime(root: Path, snapshot: GraphSnapshot | None) -> float | 
 
 
 # frob:ticket T-0464
+# frob:ticket T-1406
 def _module_join_fraction(
     module_line: dict[str, float], known_paths: frozenset[str]
 ) -> float:
@@ -367,11 +368,67 @@ def _module_join_fraction(
     joined) -- this is the deflation fingerprint that `root_join_ok` alone
     misses. `1.0` (nothing to flag) when there are no known `.py` modules
     to compare against.
+
+    T-1406: `known_paths` is expected to already be scoped to whatever
+    root(s) coverage.xml's own `--cov=` target could ever report on
+    (`_scope_known_paths_to_coverage_roots`, applied by `load_coverage`
+    before calling this) -- this function itself does no scoping of its
+    own, it just divides. Passing an unscoped, repo-wide `known_paths`
+    (every `tests/**`/script `.py` file included, none of them ever
+    instrumentable under a `--cov=src/frob` run) structurally deflates
+    this fraction for reasons that have nothing to do with the run's
+    actual health; that was T-1406's own finding (measured: 447/851=0.53,
+    suspiciously close to `_DEFLATION_FLOOR` for a healthy run).
     """
     known_python_paths = frozenset(p for p in known_paths if p.endswith(".py"))
     if not known_python_paths:
         return 1.0
     return len(module_line.keys() & known_python_paths) / len(known_python_paths)
+
+
+# frob:ticket T-1406
+def _scope_known_paths_to_coverage_roots(
+    known_paths: frozenset[str], declared_roots: tuple[str, ...]
+) -> frozenset[str]:
+    """`known_paths` filtered down to whatever `declared_roots` coverage.xml's
+    own `<sources><source>` elements name (repo-relative, via
+    `_repo_relative_root`) -- the set of paths a `--cov=<root>` run could
+    EVER report on, structurally (T-1406).
+
+    `_known_repo_paths` returns every `.py` (or graph-known) module in the
+    repo, unconditionally -- `tests/**`, scripts, everything -- because it
+    also serves the coverage-ROOT-JOIN heuristic (`_select_join_root`),
+    which genuinely needs the full set to disambiguate which `--cov` root a
+    given `<class filename=...>` resolves under. `module_join_fraction`'s
+    DENOMINATOR has a narrower, different job: "how much of what this run
+    COULD have measured did it actually measure" -- a module `--cov` could
+    never touch in the first place is not something the run "dropped," and
+    counting it against the run structurally deflates the fraction no
+    matter how healthy the run is (T-1406's own measurement: `make coverage`
+    runs `pytest --cov=src/frob`, so `tests/**` can never join, yet the
+    unscoped denominator counted it anyway -- 447/851=0.53, next door to
+    `_DEFLATION_FLOOR`, for a run with nothing wrong).
+
+    `declared_roots` empty (no `<sources>` block, or every entry unresolvable
+    against this checkout -- `_repo_relative_root` returning `None` for all
+    of them) returns `known_paths` UNCHANGED: with no root information to
+    scope against, the old repo-wide behavior is the only one available,
+    and the `_DEFLATION_FLOOR` comparison degrades to that meaning again
+    rather than dividing by an empty set.
+    """
+    if not declared_roots:
+        return known_paths
+    normalized_roots = tuple(r for r in declared_roots if r)
+    if not normalized_roots:
+        return known_paths
+    return frozenset(
+        p
+        for p in known_paths
+        if any(
+            p == r or p.startswith(f"{r}/") or r == ""
+            for r in normalized_roots
+        )
+    )
 
 
 # T-1401: acceptance[2] -- a module that genuinely cannot be joined against
@@ -427,9 +484,26 @@ def load_coverage(
         and newest_source_mtime is not None
         and xml_mtime < newest_source_mtime
     )
-    join_fraction = _module_join_fraction(dict(module_line), known_paths)
+    # T-1406: scope the join-fraction denominator to whatever root(s)
+    # coverage.xml's own <sources> declares -- NOT `known_paths` unscoped,
+    # which counts every .py file in the repo (tests/**, scripts) even
+    # though a --cov=<root> run can structurally never report on anything
+    # outside that root. `_parse_classes` above still gets the UNSCOPED
+    # `known_paths` (it needs the full set for root-join disambiguation);
+    # only the deflation-floor denominator narrows.
+    declared_roots = tuple(
+        rel
+        for rel in (
+            _repo_relative_root(src, root) for src in _parse_sources(tree.getroot())
+        )
+        if rel is not None
+    )
+    scoped_known_paths = _scope_known_paths_to_coverage_roots(
+        known_paths, declared_roots
+    )
+    join_fraction = _module_join_fraction(dict(module_line), scoped_known_paths)
     if join_fraction < _UNJOINED_LOG_THRESHOLD:
-        unjoined = _unjoined_python_modules(dict(module_line), known_paths)
+        unjoined = _unjoined_python_modules(dict(module_line), scoped_known_paths)
         _log.warning(
             "load_coverage: %s -> module_join_fraction=%.2f below %.2f -- "
             "%d known .py module(s) did not join against coverage.xml: %s",
@@ -532,6 +606,21 @@ def exclude_filtered_coverage(
 # it. Same threshold as TEST011 by design (one floor, not two to keep in
 # sync); duplicated as a constant here (not imported from `frob.gates`,
 # which imports FROM this module) rather than risk a circular import.
+#
+# T-1406: the fraction this floor compares against is scoped to whatever
+# root(s) coverage.xml's own <sources> block declares
+# (`_scope_known_paths_to_coverage_roots`, applied in `load_coverage`
+# before `module_join_fraction` is computed) -- NOT every `.py` file in
+# the repo. Before T-1406, a healthy `--cov=src/frob` run's own denominator
+# included `tests/**` and every other non-instrumentable path, permanently
+# deflating the fraction toward this floor for reasons unrelated to run
+# health (measured: 447/851=0.53, immediately above 0.5, purely from
+# counting files `--cov` could never report on). When `<sources>` is
+# missing or none of its entries resolve against this checkout, scoping
+# falls back to the old repo-wide denominator (documented in
+# `_scope_known_paths_to_coverage_roots`'s own docstring) -- this floor
+# still holds in that degraded case, just against the wider, noisier
+# fraction it always compared against pre-T-1406.
 _DEFLATION_FLOOR = 0.5
 
 # T-1180: a real, tiny repo (or the many test fixtures that build a

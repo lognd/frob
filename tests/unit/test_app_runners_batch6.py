@@ -507,6 +507,25 @@ def _make_check_result(errors: int = 0, warnings: int = 0) -> CheckResult:
     )
 
 
+# frob:ticket T-1419
+def _write_matching_stamp_and_lock(root: Path, source_sha: str) -> None:
+    """Write `.frob/coverage-stamp` and `frob-coverage.lock.json` under
+    `root` with the same `source_sha` (T-1419) -- the durable-write shape a
+    real `stamp_coverage` call produces, used by fake `stamp_coverage`
+    stand-ins in this test module so `_lock_matches_stamp`'s post-write
+    check does not spuriously fail against an otherwise-unrelated mock."""
+    import json
+
+    frob_dir = root / ".frob"
+    frob_dir.mkdir(parents=True, exist_ok=True)
+    (frob_dir / "coverage-stamp").write_text(
+        json.dumps({"source_sha": source_sha, "file_hashes": {}})
+    )
+    (root / "frob-coverage.lock.json").write_text(
+        json.dumps({"source_sha": source_sha, "module_line": {}})
+    )
+
+
 # frob:ticket T-0563
 # frob:ticket T-0627
 class TestCheckRunner:
@@ -519,14 +538,17 @@ class TestCheckRunner:
         assert exc.value.code == 1
         assert "path does not exist" in caplog.text
 
+    # frob:ticket T-1419
     def test_stamp_coverage_mode_calls_stamp_and_returns(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
         import frob.gates as gates_mod
 
-        monkeypatch.setattr(
-            gates_mod, "stamp_coverage", lambda root, snapshot=None: Ok(None)
-        )
+        def _fake_stamp_coverage(root, snapshot=None):
+            _write_matching_stamp_and_lock(root, "sha-a")
+            return Ok(None)
+
+        monkeypatch.setattr(gates_mod, "stamp_coverage", _fake_stamp_coverage)
         cfg = AppConfig(check_path=tmp_path, check_stamp_coverage=True)
         with caplog.at_level("INFO"):
             check_run(cfg)
@@ -548,6 +570,7 @@ class TestCheckRunner:
             check_run(cfg)
         assert exc.value.code == 1
 
+    # frob:ticket T-1419
     def test_stamp_coverage_mode_passes_loaded_snapshot(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -566,6 +589,7 @@ class TestCheckRunner:
         def _fake_stamp_coverage(root, snapshot=None):
             received["root"] = root
             received["snapshot"] = snapshot
+            _write_matching_stamp_and_lock(root, "sha-b")
             return Ok(None)
 
         monkeypatch.setattr(gates_mod, "stamp_coverage", _fake_stamp_coverage)
@@ -573,6 +597,101 @@ class TestCheckRunner:
         cfg = AppConfig(check_path=tmp_path, check_stamp_coverage=True)
         check_run(cfg)
         assert received["snapshot"] is sentinel_snapshot
+
+    # frob:ticket T-1419
+    def test_stamp_coverage_lock_source_sha_mismatch_exits_1(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """T-1419: `stamp_coverage` reports success but leaves the committed
+        `frob-coverage.lock.json` with a DIFFERENT `source_sha` than the
+        stamp it just wrote in the same call (the exact real-incident shape
+        -- a write that reports success but does not durably persist).
+        `_run_stamp_coverage`'s read-after-write check must refuse loudly
+        rather than let this pass as a clean stamp."""
+        import frob.gates as gates_mod
+        import frob.graph as graph_mod
+
+        def _fake_load_graph(cache):
+            return Ok(object())
+
+        def _fake_stamp_coverage(root, snapshot=None):
+            # Stamp reflects the fresh run, but the lock is left holding an
+            # older, different source_sha -- simulating a write that did
+            # not durably persist.
+            _write_matching_stamp_and_lock(root, "fresh-sha")
+            (root / "frob-coverage.lock.json").write_text(
+                '{"source_sha": "stale-sha", "module_line": {}}'
+            )
+            return Ok(None)
+
+        monkeypatch.setattr(gates_mod, "stamp_coverage", _fake_stamp_coverage)
+        monkeypatch.setattr(graph_mod, "load_graph", _fake_load_graph)
+        cfg = AppConfig(check_path=tmp_path, check_stamp_coverage=True)
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            check_run(cfg)
+        assert exc.value.code == 1
+        assert "did not durably persist" in caplog.text
+
+    # frob:ticket T-1419
+    def test_stamp_coverage_lock_source_sha_match_succeeds(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """T-1419: when the committed lock's `source_sha` DOES match the
+        stamp just written, the durability check passes silently and
+        `--stamp-coverage` reports its normal success."""
+        import frob.gates as gates_mod
+        import frob.graph as graph_mod
+
+        def _fake_load_graph(cache):
+            return Ok(object())
+
+        def _fake_stamp_coverage(root, snapshot=None):
+            _write_matching_stamp_and_lock(root, "matching-sha")
+            return Ok(None)
+
+        monkeypatch.setattr(gates_mod, "stamp_coverage", _fake_stamp_coverage)
+        monkeypatch.setattr(graph_mod, "load_graph", _fake_load_graph)
+        cfg = AppConfig(check_path=tmp_path, check_stamp_coverage=True)
+        with caplog.at_level("INFO"):
+            check_run(cfg)
+        assert "coverage stamp written" in caplog.text
+        assert "did not durably persist" not in caplog.text
+
+    # frob:ticket T-1419
+    def test_stamp_coverage_no_snapshot_skips_durability_check(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """T-1419: when the graph snapshot is unavailable (the pre-existing
+        T-0586 skip -- no lock refresh was ever attempted), the durability
+        check must not fire even though no lock file exists on disk at
+        all -- there was nothing to durability-check."""
+        import frob.gates as gates_mod
+        import frob.graph as graph_mod
+        from frob.gates import GateError
+
+        def _fake_load_graph(cache):
+            return Err(GateError.QueueUnavailable)
+
+        def _fake_build_graph(root, cache):
+            return Err(GateError.QueueUnavailable)
+
+        def _fake_stamp_coverage(root, snapshot=None):
+            assert snapshot is None
+            frob_dir = root / ".frob"
+            frob_dir.mkdir(parents=True, exist_ok=True)
+            (frob_dir / "coverage-stamp").write_text(
+                '{"source_sha": "stamp-only-sha", "file_hashes": {}}'
+            )
+            return Ok(None)
+
+        monkeypatch.setattr(gates_mod, "stamp_coverage", _fake_stamp_coverage)
+        monkeypatch.setattr(graph_mod, "load_graph", _fake_load_graph)
+        monkeypatch.setattr(graph_mod, "build_graph", _fake_build_graph)
+        cfg = AppConfig(check_path=tmp_path, check_stamp_coverage=True)
+        with caplog.at_level("INFO"):
+            check_run(cfg)
+        assert "coverage stamp written" in caplog.text
+        assert not (tmp_path / "frob-coverage.lock.json").exists()
 
     def test_stamp_baseline_mode_calls_stamp_and_returns(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
