@@ -5163,3 +5163,36 @@ threat: null
 component: null
 ```
 T-0771's env read/write split deliberately left 3 registry entries tagged capability_kind=env that are process-lifecycle/signal operations, not environment-variable access (its own Done report calls this a pre-existing kind-naming mismatch and promised a follow-up that was never filed -- this is it). Consequence, first hit 2026-08-02: may-env declarations now explode to env.read/env.write (WIRED_MODE_FAMILIES), so NO declaration can ever discharge a bare env observation; the first test that called signal.signal (tests/test_serve_socket.py, T-1378's kill-escalation child) turned SELFAUDIT001 SYS100 red on node testsuite with no honest declaration available, and a design waive clause is the only escape. Fix: move signal.signal (and the sys.exit/os._exit entries if they emit) to an accurate kind -- install-hook fits a process-wide signal handler's semantics, or introduce a process-control kind if not -- update matrix excuses and the TestExtendedKindsDriftLock disjointness lock, drop bare env from _EXTENDED_KINDS once no entry emits it, and remove the testsuite waive clause this incident added.
+
+<!-- ticket:T-1440 -->
+```yaml
+id: T-1440
+title: 'strata: scoped may clauses -- a capability grant must name its surface, not
+  bless the whole node'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-02'
+priority: high
+parent: null
+tier: story
+sprint: null
+scope:
+- src/frob/strata/**
+- strata-core/src/parse/**
+- design/frob.strata
+- docs/strata/**
+acceptance:
+- text: GIVEN a node with may X via glob WHEN a file outside the glob observes X THEN
+    SYS100 fires for that file even though the node declares X
+  evidence: []
+- text: GIVEN a node with may X via glob WHEN only files inside the glob observe X
+    THEN the audit is green
+  evidence: []
+- text: GIVEN a via-less may on a node binding more files than the threshold WHEN
+    frob sys audit runs THEN an advisory finding names the unscoped grant
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-08-02: the current may clause grants a capability to a node's ENTIRE code glob, which reproduces the anti-pattern strata exists to kill -- everything inside a broad node (testsuite: code tests/**) can do everything the node may. A grant should be forced down to a few controllable surfaces. Design sketch: (1) grammar -- may KIND [via GLOB[, GLOB...]] where via names sub-globs of the node's own code binding; a via-less may keeps meaning whole-node for migration. (2) SYS100 join becomes per-file: an observation in file F is discharged only by a may whose via matches F (or a via-less may); an observation outside every via surface stays red even though the node nominally holds the capability. (3) SYS101 staleness likewise judged per via surface, so a dead grant on one file is flagged even while another file legitimately uses the same kind. (4) a new advisory rule fires on via-less may clauses on nodes whose code glob binds more than a threshold file count, driving the codebase toward full scoping without a flag-day; [strata] config gets require_may_scope to escalate it to error for repos ready to commit. (5) argument-level scoping (may env.read of FROB_*) is a natural follow-up once via lands; note it in docs but do not build it in this ticket. Migration for this repo: split testsuite/broad nodes' grants down to the actual observing files using the existing scanner's per-file observation data, which already knows exactly which file observes which kind.
