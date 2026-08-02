@@ -5133,3 +5133,33 @@ Fix direction: BUG002/close should resolve the ticket's actual base
 HEAD against it) rather than the worktree's own branch name, mirroring
 how `working_diff` already computes `_merge_base(root, base)` for the
 scope/wire gates.
+
+<!-- ticket:T-1439 -->
+```yaml
+id: T-1439
+title: Reclassify process-control registry entries (signal.signal, sys.exit/os._exit)
+  out of capability kind env
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/vet/_capability_registry.py
+- src/frob/strata/_selfconform.py
+- tests/test_capability_registry.py
+acceptance:
+- text: GIVEN a file calling signal.signal WHEN the capability scanner runs THEN the
+    observation is a declarable kind, not bare env
+  evidence: []
+- text: GIVEN the registry no longer emits bare env WHEN the drift-lock tests run
+    THEN _EXTENDED_KINDS no longer contains env and the testsuite waive clause is
+    removed
+  evidence: []
+threat: null
+component: null
+```
+T-0771's env read/write split deliberately left 3 registry entries tagged capability_kind=env that are process-lifecycle/signal operations, not environment-variable access (its own Done report calls this a pre-existing kind-naming mismatch and promised a follow-up that was never filed -- this is it). Consequence, first hit 2026-08-02: may-env declarations now explode to env.read/env.write (WIRED_MODE_FAMILIES), so NO declaration can ever discharge a bare env observation; the first test that called signal.signal (tests/test_serve_socket.py, T-1378's kill-escalation child) turned SELFAUDIT001 SYS100 red on node testsuite with no honest declaration available, and a design waive clause is the only escape. Fix: move signal.signal (and the sys.exit/os._exit entries if they emit) to an accurate kind -- install-hook fits a process-wide signal handler's semantics, or introduce a process-control kind if not -- update matrix excuses and the TestExtendedKindsDriftLock disjointness lock, drop bare env from _EXTENDED_KINDS once no entry emits it, and remove the testsuite waive clause this incident added.
