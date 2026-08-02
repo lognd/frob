@@ -8338,7 +8338,7 @@ unresolved drift finding.
 ```yaml
 id: T-1455
 title: COV004 attachment check shipped as an unconditional-fire stub
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-02'
