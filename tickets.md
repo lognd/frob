@@ -4008,7 +4008,7 @@ Landed and verified by T-1276 before the false close, so this ticket does NOT ne
 ```yaml
 id: T-1404
 title: Wire frob ticket land's pre-fix pass to FMT001's new only_paths land-scoping
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
