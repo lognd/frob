@@ -12096,3 +12096,57 @@ TWO DEFECTS, and they should be fixed together.
 WHY IT MATTERS BEYOND THE CRASH. The practical effect is that frob check is not safe to run while agents are working, which is precisely when a coordinator most wants to measure. Every gate reading taken during this session's concurrent dispatches was therefore suspect, and at least one pair of consecutive runs disagreed (5 errors then 0, with no intervening change) before this crash made the problem explicit. A measurement tool that is unreliable under the conditions it is used in is a hole in the "if frob passes, the code is good" guarantee -- you cannot trust a green you could not reproduce.
 
 ACCEPTANCE SHOULD BE BEHAVIOURAL, not just a caught exception: with a concurrently-held lock on the cache, frob check must complete and report, not crash. A test that holds the sqlite lock from another connection while a check runs is the honest reproduction.
+
+<!-- ticket:T-1424 -->
+```yaml
+id: T-1424
+title: 'T-1270 file splits left 24 errors on main: stale doc edges, orphaned invariant
+  waivers, and a relocated 392-line function'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-02'
+priority: critical
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/guides/**
+- src/frob/app/_config_external.py
+- src/frob/_cli_parsers/_ticket/**
+- invariants/**
+acceptance:
+- text: GIVEN main after T-1270 WHEN an UNSCOPED frob check runs THEN it reports zero
+    errors
+  evidence: []
+- text: GIVEN _build_external_config_kwargs WHEN the arch gate runs THEN it is under
+    the 60-line threshold by genuine decomposition, not a waiver
+  evidence: []
+- text: GIVEN each re-acked doc edge WHEN reviewed THEN the doc still accurately describes
+    the symbol it points at, confirmed per edge rather than blanket-acked
+  evidence: []
+threat: null
+component: null
+```
+T-1270's file splits (commit 1dc8ce86) landed 24 errors onto main. The splits themselves are good work with real seams and should NOT be reverted; this ticket cleans up the residue they left outside their own scope.
+
+MEASURED on main 2026-08-02, unscoped frob check:
+
+  18 x DRIFT002 -- doc describes-edges and test edges pointing at code that moved. Six still name src/frob/_cli_parsers/_ticket.py, which no longer exists (it became a package). Twelve name src/frob/app/config.py and src/frob/app/_config_meta.py, whose digests changed when from_external and the repo-metadata helpers were extracted. docs/guides/agentic-workflow.md carries several of them.
+  5 x INV006 -- each of the five new src/frob/_cli_parsers/_ticket/ modules now makes an exclusivity or normative claim. The original _ticket.py carried a single file-level waiver for that claim; splitting the file split the claim across five files and left the waiver behind on none of them.
+  1 x INV005 -- INV-049's evidence never reaches its frob:invariant anchor.
+  1 x ARCH001 -- _build_external_config_kwargs in the new src/frob/app/_config_external.py has 392 lines against a 60-line threshold. This is the 380-line argparse field-copy loop extracted verbatim from config.py. The extraction moved a LARGE001 violation and created an ARCH001 one; the function itself was never broken up.
+
+WHY IT GOT THROUGH, worth recording because it will recur. The implementing agent drove frob check --ticket T-1270 to zero errors and reported it honestly. That is a TICKET-SCOPED zero. Every one of these 24 findings lives outside the ticket's declared scope -- in docs/, in tests/, or in files the split created -- so the scoped run could not see them. This is exactly the hazard playbook section 6c documents, and the scope-note it prints was not enough to catch it. Coordinators must re-measure UNSCOPED after landing a refactor that moves symbols between files; a scoped zero is not a repo zero.
+
+THE WORK.
+
+For DRIFT002: repoint each stale edge at the symbol's new home, then re-ack the ones whose target is unchanged but whose digest moved (frob ack is the designed remedy for a re-verified reference). Do not blanket-ack -- read each edge and confirm the doc still describes what it points at. An ack on a doc that is now wrong is worse than the drift finding.
+
+For INV006: carry the original file-level waiver onto whichever of the five modules genuinely makes the claim, with its reason intact. If a module does not actually make an exclusivity claim, it needs no waiver -- check rather than copying all five.
+
+For ARCH001: split _build_external_config_kwargs properly. A 392-line argparse field-copy loop is mechanical and should decompose cleanly by field group. Do not waive it -- the whole point of T-1270 was reducing genuine size, and accepting a 392-line function would make the parent ticket a wash.
+
+For INV005: bind evidence that reaches INV-049's anchor, or explain why it cannot.
+
+Verify UNSCOPED before reporting: an unscoped frob check must be back to zero errors. A --ticket-scoped zero is not acceptable evidence for this ticket specifically, given that a scoped zero is what let the regression land.
