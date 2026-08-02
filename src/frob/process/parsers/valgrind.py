@@ -102,9 +102,11 @@ def _parse_text(text: str, exit_code: int) -> ToolResult:
 
 
 # frob:ticket T-0045
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to ET.Element.findtext/ \
-# findall (stdlib ElementTree calls the resolver cannot bound) and Diagnostic \
-# construction (a pydantic model); the one real raise path (int(ln)) is caught above"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to ET.Element.findtext/ findall \
+# (stdlib ElementTree calls the resolver cannot bound) and Diagnostic construction (a \
+# pydantic model); the one real raise path (int(ln)) is caught above"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _xml_error_diagnostic(error: ET.Element) -> Diagnostic:
     """A Diagnostic for one valgrind XML `<error>` element."""
@@ -128,8 +130,10 @@ def _xml_error_diagnostic(error: ET.Element) -> Diagnostic:
     )
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _xml_error_diagnostic \
-# (an ElementTree walk the resolver cannot see through) and summarize_severity, a \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to _xml_error_diagnostic (an \
+# ElementTree walk the resolver cannot see through) and summarize_severity, a \
 # cross-module pure aggregation call; the one real raise path (ET.fromstring) is \
 # caught below"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above -- \

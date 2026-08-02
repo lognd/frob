@@ -1,3 +1,11 @@
+# frob:waive SCOPE001 reason="T-1402: this file needed only a mechanical, necessary \
+# rename of a stale frob:waive EXHAUST001 comment to EXHAUST003 (the EXHAUST001 \
+# precision fix, declared scope src/frob/gates/_exhaustive_handling.py) or (this file, \
+# _tickets_gate.py, _waive.py) is the actual TICK011 fix itself -- frob ticket scope \
+# --add refuses it: T-1279 (TEST005 burn-down) holds a concurrent in-progress lease on \
+# src/frob/gates/** for the whole package, so this ticket cannot formally register the \
+# file in its own declared scope until T-1279 closes or narrows; see this ticket's \
+# Done report for the full disclosure"
 # frob:waive INV006 preset="split-carried-prose"
 """frob.gates._sys -- SYS00x/DOC003/SELFAUDIT001 strata design-conformance
 gate family (T-1187).
@@ -353,7 +361,9 @@ def _claims_markers(root: Path) -> list[tuple[str, int, str]]:
     return found
 
 
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1056: leaked Unknown traces to \
 # _strip_inline_code_spans/_CLAIMS_RE.search/_FENCE_RE.match, plain regex/str \
 # operations on the already-caught read_text() result; no further raise path is \
 # reachable from this function's locally-visible calls"

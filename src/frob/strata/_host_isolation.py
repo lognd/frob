@@ -529,9 +529,11 @@ def _mode_digits(mode: str) -> str | None:
     return None
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _mode_digits, a \
-# module-local str-normalizing helper the resolver cannot see through; the one real \
-# raise path (int() on a malformed digit) is caught below"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to _mode_digits, a module-local \
+# str-normalizing helper the resolver cannot see through; the one real raise path \
+# (int() on a malformed digit) is caught below"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _mode_owner_writable(mode: str) -> bool:
     """Whether the OWNER permission digit of a POSIX octal `mode` string
@@ -547,9 +549,11 @@ def _mode_owner_writable(mode: str) -> bool:
     return bool(owner_digit & 0o2)
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to str.strip/len, plain \
-# str methods the resolver cannot statically bound; the one real raise path (int() on \
-# a malformed digit) is caught below"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to str.strip/len, plain str \
+# methods the resolver cannot statically bound; the one real raise path (int() on a \
+# malformed digit) is caught below"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _mode_has_setuid(mode: str) -> bool:
     """Whether a 4-digit POSIX octal `mode` string's special-bits digit

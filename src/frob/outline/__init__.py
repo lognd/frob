@@ -170,8 +170,10 @@ def _parse_for_outline(
 
 
 # frob:doc docs/commands/outline.md#public-api
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _parse_for_outline's \
-# own call graph (parse_file/extract_imports, cross-module Result-returning calls) and \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to _parse_for_outline's own call \
+# graph (parse_file/extract_imports, cross-module Result-returning calls) and \
 # _outline_symbols, a pure structural walk of already-parsed data; every \
 # locally-visible fallible step is Result-checked or caught"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
@@ -290,7 +292,9 @@ def _return_annotation(tail: tuple[str, ...]) -> str:
     return " -> " + "".join(_spaced(ret_tokens))
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _find_matching_close_ \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to _find_matching_close_ \
 # paren/_spaced/_return_annotation, plain tuple/str token-walk helpers the resolver \
 # cannot see through; the one real raise path (tuple.index) is caught below"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"

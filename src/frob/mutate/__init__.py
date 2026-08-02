@@ -260,10 +260,12 @@ def _in_any_range(lineno: int, line_ranges: tuple[tuple[int, int], ...]) -> bool
     return any(start <= lineno <= end for start, end in line_ranges)
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _Mutator.visit (a \
-# custom ast.NodeVisitor subclass whose per-node-type visit_* methods the resolver \
-# cannot enumerate) and ast.unparse/ast.fix_missing_locations, stdlib ast calls over \
-# an already-caught ast.parse tree; no further raise path is reachable from this \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to _Mutator.visit (a custom \
+# ast.NodeVisitor subclass whose per-node-type visit_* methods the resolver cannot \
+# enumerate) and ast.unparse/ast.fix_missing_locations, stdlib ast calls over an \
+# already-caught ast.parse tree; no further raise path is reachable from this \
 # function's own locally-visible calls"
 def _mutation_at(
     source: str, i: int, file: str
@@ -289,7 +291,9 @@ def _mutation_at(
 
 
 # frob:doc docs/modules/mutate.md#public-api
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _count_mutations/ \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to _count_mutations/ \
 # _mutation_point_linenos (custom ast.NodeVisitor walks the resolver cannot enumerate) \
 # and _mutation_at's own already-Result-wrapped call below; the one real raise path \
 # (ast.parse) is caught above"
@@ -445,10 +449,12 @@ def _restore_any_stale_journals(root: Path) -> None:
 
 
 # frob:ticket T-0976
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to generate_mutants's \
-# own internal call graph (ast NodeVisitor walks the resolver cannot enumerate), \
-# already wrapped as a typani Result and checked via .is_err below; the only \
-# locally-visible fallible step (bytes.decode) is caught above"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to generate_mutants's own internal \
+# call graph (ast NodeVisitor walks the resolver cannot enumerate), already wrapped as \
+# a typani Result and checked via .is_err below; the only locally-visible fallible \
+# step (bytes.decode) is caught above"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _prepare_mutants(
     original_bytes: bytes,
@@ -473,10 +479,11 @@ def _prepare_mutants(
     return Ok(mutants)
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to \
-# guarded_subprocess_run, a cross-module Result-returning wrapper the resolver cannot \
-# see through; every one of its documented raise paths is caught in this function's \
-# per-mutation try block below"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to guarded_subprocess_run, a \
+# cross-module Result-returning wrapper the resolver cannot see through; every one of \
+# its documented raise paths is caught in this function's per-mutation try block below"
 def _run_mutants(
     target: Path,
     mutants: tuple[_Mutation, ...],

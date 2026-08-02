@@ -105,9 +105,11 @@ class StaleNative:
     reason: str = "mtime"
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to walk_pruned, a \
-# cross-module generator the resolver cannot see through; the one real raise path \
-# (path.stat()) is caught below"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to walk_pruned, a cross-module \
+# generator the resolver cannot see through; the one real raise path (path.stat()) is \
+# caught below"
 def _newest_mtime(directory: Path) -> float | None:
     """Latest mtime among every regular file under `directory` (pruning
     `frob.excludes.BUILTIN_SKIP_DIRS` via `walk_pruned`), or `None` if
@@ -163,8 +165,10 @@ def _source_dir_for(root: Path, spec: NativeSpec) -> str | None:
     return None
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to walk_pruned, a \
-# cross-module generator the resolver cannot see through; the one real raise path \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to walk_pruned, a cross-module \
+# generator the resolver cannot see through; the one real raise path \
 # (path.read_bytes()) is caught below"
 def _source_content_digest(directory: Path) -> str:
     """T-0513: an order-stable sha256 over every non-pruned file's

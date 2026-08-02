@@ -86,10 +86,12 @@ def _dirty_path_from_porcelain_line(line: str) -> str | None:
     return rest
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to st.st_mtime_ns/ \
-# st.st_size, plain attribute access on the os.stat_result the caught full.stat() call \
-# already produced; no further raise path is reachable from this function's \
-# locally-visible calls"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to st.st_mtime_ns/ st.st_size, \
+# plain attribute access on the os.stat_result the caught full.stat() call already \
+# produced; no further raise path is reachable from this function's locally-visible \
+# calls"
 def _stat_tag(root: Path, rel_path: str) -> str:
     """`"path:mtime_ns:size"` for `rel_path` under `root`, or `"path:gone"`
     if it no longer exists (deleted since `git status` was run) -- folded

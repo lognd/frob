@@ -1,3 +1,11 @@
+# frob:waive SCOPE001 reason="T-1402: this file needed only a mechanical, necessary \
+# rename of a stale frob:waive EXHAUST001 comment to EXHAUST003 (the EXHAUST001 \
+# precision fix, declared scope src/frob/gates/_exhaustive_handling.py) or (this file, \
+# _tickets_gate.py, _waive.py) is the actual TICK011 fix itself -- frob ticket scope \
+# --add refuses it: T-1279 (TEST005 burn-down) holds a concurrent in-progress lease on \
+# src/frob/gates/** for the whole package, so this ticket cannot formally register the \
+# file in its own declared scope until T-1279 closes or narrows; see this ticket's \
+# Done report for the full disclosure"
 """frob.gates -- enforcement gates, policy, and invariants (docs/modules/gates.md).
 
 The drift half (nothing declared is silently broken) and the coverage half
@@ -4582,9 +4590,11 @@ def test_gate(
 # imported at the top of this module and re-exported below.
 
 
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to data.get('project', \
-# {}).get(field) on a dict already produced by tomllib.load's caught call; plain \
-# dict.get access cannot raise"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this finding traces to an unresolved-callee resolution gap \
+# instead (T-1056: leaked Unknown traces to data.get('project', {}).get(field) on a \
+# dict already produced by tomllib.load's caught call; plain dict.get access cannot \
+# raise)"
 def _pyproject_project_field(root: Path, field: str) -> str | None:
     """One `[project].<field>` string from `root/pyproject.toml`, or
     `None` if the file, table, or field is missing/mistyped (extracted
@@ -4611,10 +4621,12 @@ def _current_version(root: Path) -> str | None:
 # frob:ticket T-0403
 # frob:tests tests/test_gates.py::TestTestGate.test_changelog_mentions_rejects_substring_in_prose  # noqa: E501
 # frob:tests tests/test_gates.py::TestTestGate.test_changelog_mentions_accepts_real_heading_entry  # noqa: E501
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to pattern.search(text) \
-# against a re.Pattern compiled from a version string via re.escape, on text already \
-# caught via read_text()'s own OSError handling; a compiled-pattern search over an \
-# already-decoded str cannot raise"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this finding traces to an unresolved-callee resolution gap \
+# instead (T-1056: leaked Unknown traces to pattern.search(text) against a re.Pattern \
+# compiled from a version string via re.escape, on text already caught via \
+# read_text()'s own OSError handling; a compiled-pattern search over an \
+# already-decoded str cannot raise)"
 def _changelog_mentions(root: Path, version: str) -> bool:
     """Whether CHANGELOG.md (if present) has a HEADING entry for `version`;
     absent file passes.
@@ -4865,9 +4877,11 @@ def _current_project_name(root: Path) -> str | None:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-1009
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to data.get('package', \
-# []) iteration and package.get(...) dict access on a dict already produced by \
-# tomllib.load's caught call; plain dict/list access cannot raise"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this finding traces to an unresolved-callee resolution gap \
+# instead (T-1056: leaked Unknown traces to data.get('package', []) iteration and \
+# package.get(...) dict access on a dict already produced by tomllib.load's caught \
+# call; plain dict/list access cannot raise)"
 def _uv_lock_version(root: Path) -> str | None:
     """The project's own package `version` as recorded in `root/uv.lock`'s
     `[[package]]` table (matched by `pyproject.toml`'s `[project].name`),

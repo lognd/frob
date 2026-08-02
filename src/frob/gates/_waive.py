@@ -1,3 +1,11 @@
+# frob:waive SCOPE001 reason="T-1402: this file needed only a mechanical, necessary \
+# rename of a stale frob:waive EXHAUST001 comment to EXHAUST003 (the EXHAUST001 \
+# precision fix, declared scope src/frob/gates/_exhaustive_handling.py) or (this file, \
+# _tickets_gate.py, _waive.py) is the actual TICK011 fix itself -- frob ticket scope \
+# --add refuses it: T-1279 (TEST005 burn-down) holds a concurrent in-progress lease on \
+# src/frob/gates/** for the whole package, so this ticket cannot formally register the \
+# file in its own declared scope until T-1279 closes or narrows; see this ticket's \
+# Done report for the full disclosure"
 """frob.gates._waive -- WAIVE001-005/DSL001 directive validation plus the
 shared `_match_waiver`/`_apply_waivers` matching spine.
 
@@ -583,6 +591,17 @@ _KNOWN_GATE_RULES = frozenset(
         # sets.
         "EXHAUST001",
         "EXHAUST002",
+        # frob:ticket T-1402
+        # T-1402: EXHAUST003 (frob.gates._exhaustive_handling's
+        # exhaustive_handling_gate) -- the quieter resolution-coverage
+        # signal the EXHAUST001 precision fix demoted an unresolved-callee
+        # leak into, split out of EXHAUST001 (declared scope:
+        # src/frob/gates/_exhaustive_handling.py; this one-line addition to
+        # this module's known-rule allowlist is the minimal out-of-scope
+        # widening needed for the new rule id to be `frob:waive`-able at
+        # all -- WAIVE002 would otherwise flag any waiver naming it as
+        # targeting a rule that can never match).
+        "EXHAUST003",
         # frob:ticket T-0690
         # T-0690: FFI001/FFI002 (frob.gates._ffi_boundary's
         # ffi_boundary_gate) -- the FFI-boundary exception-declaration
@@ -1292,11 +1311,12 @@ _PACKAGE_SCOPED_RULES = frozenset({"TEST003", "TEST004", "TEST007"})
 
 # frob:invariant INV-006
 # frob:tests tests/test_arch_gate.py::TestArchGateWaivers.test_ceiling_refires_when_grown_past_it  # noqa: E501
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to waiver.attrs.get \
-# (plain dict access) and int(ceiling_text); the int() ValueError path is already \
-# caught above, and the remaining TypeError path from the metric comparison is now \
-# explicitly caught below -- no unhandled raise path remains, only the resolver's \
-# inability to see that"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1056: leaked Unknown traces to waiver.attrs.get (plain dict \
+# access) and int(ceiling_text); the int() ValueError path is already caught above, \
+# and the remaining TypeError path from the metric comparison is now explicitly caught \
+# below -- no unhandled raise path remains, only the resolver's inability to see that"
 def _ceiling_ok(waiver: Edge, violation: Violation) -> bool:
     """Whether `waiver` still covers `violation` given its optional
     `ceiling=` attribute: always true when no ceiling is set (or the

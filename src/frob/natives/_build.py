@@ -184,9 +184,11 @@ def _resolve_buildable_crate(root: Path, spec) -> Path | None:  # noqa: ANN001
 # transition) -- the same cohesive shape T-0977 already waived for this module's \
 # sibling wrappers (_cargo_env, _run_ctest_list) and frob.exec's _run_npx. Splitting \
 # the log/branch pairs further would add indirection, not cohesion."
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to \
-# guarded_subprocess_run itself, a cross-module Result-returning wrapper the resolver \
-# cannot see through; its one documented raise path (missing uvx/cargo) is caught below"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to guarded_subprocess_run itself, \
+# a cross-module Result-returning wrapper the resolver cannot see through; its one \
+# documented raise path (missing uvx/cargo) is caught below"
 # frob:waive EXHAUST002 reason="T-1062: same guarded_subprocess_run resolver artifact \
 # as EXHAUST001 above"
 def _build_one_crate(

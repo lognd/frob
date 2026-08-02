@@ -305,7 +305,9 @@ def _mutation_for_command(tokens: list[str]) -> set[MutationTarget]:
 # resolved 'eval' verb (index 0); a script line has finitely many tokens, so nesting \
 # 'eval eval ...' bottoms out" measure="len(tokens) at each recursive hop, strictly \
 # decreasing"
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _split_commands/ \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to _split_commands/ \
 # _resolve_command (reached via _mutation_for_command), plain list/str-token walks the \
 # resolver cannot see through; the one real raise path (_tokenize_line) is caught below"
 # frob:waive EXHAUST002 reason="T-1062: the resolver flags _LAST_POSITIONAL_KIND[base] \
@@ -364,7 +366,9 @@ def _mutation_for_base(base: str, args: list[str]) -> set[MutationTarget]:
 
 
 # frob:doc docs/strata/host.md#deploy002deploy003-conformance
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _split_commands/ \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to _split_commands/ \
 # _resolve_command (reached via _mutation_for_command), plain list/str-token walks the \
 # resolver cannot see through; the one real raise path (_tokenize_line) is caught below"
 # frob:waive EXHAUST002 reason="T-1062: same _LAST_POSITIONAL_KIND[base] resolver \

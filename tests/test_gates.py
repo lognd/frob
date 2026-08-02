@@ -12091,9 +12091,13 @@ class TestTick006PhantomFiling:
 
 # frob:ticket T-1129
 class TestTick011DisclosedCutWithoutTicket:
-    """TICK011 (T-1129): a Done report's prose disclosing deferred/cut
-    work with no ticket id cited nearby and no explicit no-ticket-needed
-    reason -- the T-1085/T-0321/T-1140/T-1150 incident class."""
+    """TICK011 (T-1129, active-window-narrowed T-1402): a Done report's
+    prose disclosing deferred/cut work with no ticket id cited nearby and
+    no explicit no-ticket-needed reason -- the T-1085/T-0321/T-1140/
+    T-1150 incident class. Full strength inside `_TICK011_ACTIVE_WINDOW`
+    of the ledger's current highest ticket id; silent by default outside
+    it (a historical report nobody can honestly reconstruct context for),
+    unless `FROB_TICK011_INCLUDE_HISTORY` is set."""
 
     def _queue(self, *tickets: Ticket) -> TicketQueue:
         """A `TicketQueue` of `tickets`, keyed by id."""
@@ -12217,6 +12221,88 @@ class TestTick011DisclosedCutWithoutTicket:
         )
         violations = tickets_gate(tmp_path, self._queue(ticket))
         assert not any(v.rule == "TICK011" for v in violations)
+
+    # frob:tests \
+    # tests/test_gates.py::TestTick011DisclosedCutWithoutTicket.test_historical_ticket_\
+    # outside_active_window_is_silent_by_default
+    def test_historical_ticket_outside_active_window_is_silent_by_default(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1402: an old ticket's Done report (numerically far below the
+        ledger's current highest id) discloses the exact same uncited
+        follow-up shape `test_disclosed_follow_up_with_no_citation_fires`
+        proves still fires INSIDE the window -- but here the ledger also
+        has a much later ticket, pushing the old one outside
+        `_TICK011_ACTIVE_WINDOW`, so it must NOT fire by default. This is
+        the precision fix: 50 pre-fix findings were all exactly this
+        shape (14 below T-0500), unfixable without reconstructing
+        long-gone context."""
+        old = _ticket(
+            ticket_id="T-0001",
+            body=(
+                "## Done report\n\n"
+                "`check_runner.py`'s two `ToolResult`-builder groups were "
+                "NOT touched -- deliberately left for a follow-up pass "
+                "rather than expanding this ticket's scope further.\n"
+            ),
+        )
+        recent = _ticket(ticket_id="T-1400", body="## Description\nx\n")
+        violations = tickets_gate(tmp_path, self._queue(old, recent))
+        assert not any(v.rule == "TICK011" for v in violations)
+
+    # frob:tests \
+    # tests/test_gates.py::TestTick011DisclosedCutWithoutTicket.test_recent_ticket_outs\
+    # ide_old_window_still_fires_exactly_as_today
+    def test_recent_ticket_outside_old_window_still_fires_exactly_as_today(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1402 regression: a Done report written NOW (a high ticket
+        number, inside the active window even with a much-later sibling
+        ticket also on the ledger) with the exact T-1085 uncited-
+        disclosure shape must still fire EXHAUST-style -- er, TICK011 --
+        exactly as before this ticket's narrowing. This is the case the
+        narrowing must NOT silence."""
+        recent = _ticket(
+            ticket_id="T-1400",
+            body=(
+                "## Done report\n\n"
+                "`check_runner.py`'s two `ToolResult`-builder groups were "
+                "NOT touched -- deliberately left for a follow-up pass "
+                "rather than expanding this ticket's scope further.\n"
+            ),
+        )
+        newer = _ticket(ticket_id="T-1401", body="## Description\nx\n")
+        violations = tickets_gate(tmp_path, self._queue(recent, newer))
+        tick011 = [v for v in violations if v.rule == "TICK011"]
+        assert len(tick011) == 1
+        assert "T-1400" in tick011[0].message
+
+    # frob:tests \
+    # tests/test_gates.py::TestTick011DisclosedCutWithoutTicket.test_include_history_en\
+    # v_opt_in_restores_the_historical_finding
+    def test_include_history_env_opt_in_restores_the_historical_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-1402: the explicit opt-in escape hatch
+        (`FROB_TICK011_INCLUDE_HISTORY`) restores the historical finding
+        `test_historical_ticket_outside_active_window_is_silent_by_default`
+        proves is silent by default -- the capability is not deleted, only
+        gated behind a deliberate choice."""
+        monkeypatch.setenv("FROB_TICK011_INCLUDE_HISTORY", "1")
+        old = _ticket(
+            ticket_id="T-0001",
+            body=(
+                "## Done report\n\n"
+                "`check_runner.py`'s two `ToolResult`-builder groups were "
+                "NOT touched -- deliberately left for a follow-up pass "
+                "rather than expanding this ticket's scope further.\n"
+            ),
+        )
+        recent = _ticket(ticket_id="T-1400", body="## Description\nx\n")
+        violations = tickets_gate(tmp_path, self._queue(old, recent))
+        tick011 = [v for v in violations if v.rule == "TICK011"]
+        assert len(tick011) == 1
+        assert "T-0001" in tick011[0].message
 
 
 # frob:ticket T-0820
@@ -13032,12 +13118,17 @@ class TestComplianceGate:
 
 # frob:ticket T-0688
 class TestExhaustiveHandlingGate:
-    """T-0688: frob.gates._exhaustive_handling.exhaustive_handling_gate --
-    EXHAUST001/EXHAUST002 over frob.arch._mayraise.compute_may_raise's
-    per-function may-raise sets. A function is a "boundary" only once it
-    has at least one except clause of its own; a boundary that leaks
-    Unknown with no catch-all fires EXHAUST001, a boundary that leaks a
-    named type not declared via `# frob:raises <Type>` fires EXHAUST002."""
+    """T-0688 (EXHAUST001/EXHAUST002), narrowed T-1402 (EXHAUST003):
+    frob.gates._exhaustive_handling.exhaustive_handling_gate over
+    frob.arch._mayraise.compute_may_raise's per-function may-raise sets. A
+    function is a "boundary" only once it has at least one except clause
+    of its own. A boundary that leaks Unknown with no catch-all fires
+    EXHAUST001 ONLY when the Unknown traces to the function's own
+    ambiguous bare re-raise (a real in-source construct); when it traces
+    only to an unresolved callee (a call-graph resolution gap, not a
+    confirmed unhandled error) it fires the quieter EXHAUST003 instead. A
+    boundary that leaks a named type not declared via `# frob:raises
+    <Type>` fires EXHAUST002."""
 
     # frob:tests \
     # tests/test_gates.py::TestExhaustiveHandlingGate.test_partial_catch_of_named_type_\
@@ -13071,9 +13162,17 @@ class TestExhaustiveHandlingGate:
     # tests/test_gates.py::TestExhaustiveHandlingGate.test_unknown_without_catch_all_fi\
     # res_exhaust001
     def test_unknown_without_catch_all_fires_exhaust001(self, tmp_path: Path) -> None:
-        """`boundary` calls an unresolvable function (contributes Unknown)
-        and only catches ValueError -- no catch-all discharges Unknown, so
-        EXHAUST001 fires."""
+        """T-0688 original name kept in place (T-0685/T-0688's own Done-
+        report evidence cites this exact node id) -- T-1402 UPDATES what it
+        asserts, in place, rather than orphaning that historical evidence:
+        `boundary` calls an unresolvable function (contributes Unknown) and
+        only catches ValueError -- this is now a call-graph resolution gap,
+        not a confirmed unhandled error path, so as of T-1402 it fires the
+        quieter EXHAUST003 and NOT EXHAUST001 (the precision fix this
+        ticket makes: 69/69 pre-fix EXHAUST001 findings in this repo's own
+        source were exactly this shape). See
+        `test_unresolvable_callee_fires_exhaust003_not_exhaust001` below for
+        the same assertion under a name that describes current behavior."""
         from frob.gates._exhaustive_handling import exhaustive_handling_gate
 
         _write(
@@ -13088,9 +13187,72 @@ class TestExhaustiveHandlingGate:
             ),
         )
         violations = exhaustive_handling_gate(tmp_path)
+        assert not _by_rule(violations, "EXHAUST001")
+        found = _by_rule(violations, "EXHAUST003")
+        assert found
+        assert any(v.symref == "mod.py::boundary" for v in found)
+
+    # frob:tests \
+    # tests/test_gates.py::TestExhaustiveHandlingGate.test_unresolvable_callee_fires_ex\
+    # haust003_not_exhaust001
+    def test_unresolvable_callee_fires_exhaust003_not_exhaust001(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1402's own name for the same assertion
+        `test_unknown_without_catch_all_fires_exhaust001` above now makes
+        (kept a second, descriptively-named copy alongside the
+        historically-evidenced original rather than only renaming it, so
+        this ticket's own `frob:tests` directive names something that
+        describes current behavior)."""
+        from frob.gates._exhaustive_handling import exhaustive_handling_gate
+
+        _write(
+            tmp_path,
+            "mod.py",
+            (
+                "def boundary():\n"
+                "    try:\n"
+                "        some_unresolved_call()\n"
+                "    except ValueError:\n"
+                "        pass\n"
+            ),
+        )
+        violations = exhaustive_handling_gate(tmp_path)
+        assert not _by_rule(violations, "EXHAUST001")
+        found = _by_rule(violations, "EXHAUST003")
+        assert found
+        assert any(v.symref == "mod.py::boundary" for v in found)
+
+    # frob:tests \
+    # tests/test_gates.py::TestExhaustiveHandlingGate.test_ambiguous_bare_reraise_still\
+    # _fires_exhaust001
+    def test_ambiguous_bare_reraise_still_fires_exhaust001(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1402 regression: `boundary`'s own bare `raise` (re-raise, no
+        preceding catch at all -- a real, in-source construct, not an
+        unresolved callee) still fires EXHAUST001 exactly as before the
+        precision fix -- this is the case the narrowing must NOT silence."""
+        from frob.gates._exhaustive_handling import exhaustive_handling_gate
+
+        _write(
+            tmp_path,
+            "mod.py",
+            (
+                "def boundary(flag):\n"
+                "    if flag:\n"
+                "        raise\n"
+                "    try:\n"
+                "        pass\n"
+                "    except ValueError:\n"
+                "        pass\n"
+            ),
+        )
+        violations = exhaustive_handling_gate(tmp_path)
         found = _by_rule(violations, "EXHAUST001")
         assert found
         assert any(v.symref == "mod.py::boundary" for v in found)
+        assert not _by_rule(violations, "EXHAUST003")
 
     # frob:tests \
     # tests/test_gates.py::TestExhaustiveHandlingGate.test_catch_all_of_unknown_does_no\

@@ -98,9 +98,11 @@ def _annotated_types_for_target(
     return _annotated_param_types(sig, hints)
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to str.endswith on \
-# path_str, a plain string already produced by the caught str.split call; no further \
-# raise path is reachable from this function's locally-visible calls"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to str.endswith on path_str, a \
+# plain string already produced by the caught str.split call; no further raise path is \
+# reachable from this function's locally-visible calls"
 def _parse_python_ref(ref: str) -> tuple[str, str] | None:
     """Split `ref` into `(path_str, qualname)`, or `None` if malformed or
     not a Python target."""

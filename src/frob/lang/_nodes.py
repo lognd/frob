@@ -47,9 +47,11 @@ def node_text(node: Node | None) -> str:
 
 
 # frob:doc docs/modules/graph.md#public-api
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to str.replace/Path. \
-# as_posix, plain str/pathlib calls the resolver cannot statically bound; every real \
-# raise path (path existence/resolve checks) is caught in each language branch"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to str.replace/Path. as_posix, \
+# plain str/pathlib calls the resolver cannot statically bound; every real raise path \
+# (path existence/resolve checks) is caught in each language branch"
 # frob:waive AFFECT001 reason="T-1062: EXHAUST001 hardening -- widened OSError \
 # handling around Path.exists()/Path.resolve() in both language branches; the \
 # documented 'None when unresolvable' return contract and behavior are unchanged, \

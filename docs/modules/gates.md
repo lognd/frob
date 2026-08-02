@@ -1263,7 +1263,7 @@ removed.
 temporary over-broad scope or a lease cleanup already in flight can be
 dispositioned with a reasoned `frob:waive TICK009|TICK010 reason="..."`.
 
-### TICK011 (T-1129)
+### TICK011 (T-1129, active-window-narrowed T-1402)
 
 <!-- frob:describes src/frob/gates/_tickets_gate.py::_tick011_disclosed_cuts_without_ticket -->
 
@@ -1315,6 +1315,23 @@ ledger: 0 findings (the T-1111 false positives above were the only hits
 before the technical-token exclusion; the real T-1085/T-0321-class
 incidents this rule targets had already been hand-filed by the
 coordinator by the time this rule landed).
+
+**Active window (T-1402).** A later, unscoped measurement (2026-08-01)
+found 50 unwaived TICK011 findings, every one against a HISTORICAL Done
+report -- 14 of them citing tickets below T-0500 -- for scope cuts nobody
+can now reconstruct enough context to honestly follow up on. Those 50
+could only ever be driven to zero by waiving them en masse, exactly the
+dishonest zero this repo's own north star (release drive T-1402: "if
+frob passes, the code is good") rejects. TICK011 stays at FULL STRENGTH
+-- unchanged from every paragraph above -- for any Done report whose
+owning ticket is inside `_TICK011_ACTIVE_WINDOW` (the `_TICK011_
+ACTIVE_WINDOW` ids below the ledger's own current highest real `T-####`
+id, self-adjusting rather than a fixed historical date/id line); a report
+outside that window is skipped by default, not deleted as a capability --
+set `FROB_TICK011_INCLUDE_HISTORY` (any non-empty value) to scan the full
+ledger anyway for a deliberate history audit. This is a narrowing of
+AIM, not of coverage: any report written from now on is always inside
+the window the moment it lands.
 
 ### COMPLIANCE005 (T-0788)
 
@@ -1492,16 +1509,34 @@ remainder after that function's own catches are subtracted (see that
 resolver's own docstring), so any non-empty leaked set on a boundary is,
 by construction, an incompletely-handled one:
 
-- **EXHAUST001** -- `UNKNOWN` (an unresolvable call/raise, per the
-  resolver's fail-closed doctrine) is in the leaked set and none of the
-  boundary's own catches is broad enough to plausibly discharge it (a bare
-  `except:` or `except Exception:`). Per the parent ticket's own
-  acceptance: `Unknown` in the guarded set forces a catch-all or fixing
-  the unresolvable call; a narrow `except ValueError:` never counts.
+- **EXHAUST001** (narrowed T-1402) -- `UNKNOWN` is in the leaked set,
+  none of the boundary's own catches is broad enough to plausibly
+  discharge it (a bare `except:` or `except Exception:`), AND the
+  `UNKNOWN` traces to the function's OWN ambiguous bare re-raise (a bare
+  `raise` whose nearest preceding catch is itself absent or a bare
+  `except:`, mirroring `_mayraise._resolve_direct_raises`'s own-raise
+  classification) -- a real, visible-in-source construct, not a
+  call-graph resolution limit. A narrow `except ValueError:` never
+  discharges it.
+- **EXHAUST003** (T-1402) -- the same undischarged `UNKNOWN` leak, but
+  traced ONLY to an unresolved callee (this function's own, or one it
+  calls transitively) rather than an own ambiguous re-raise: a
+  call-graph resolution-coverage gap, not a confirmed unhandled error
+  path. Reported as a distinct, quieter signal instead of demanding a
+  catch-all -- a 2026-08-01 measurement (T-1402) found 69/69 unwaived
+  EXHAUST001 findings in this repo's own source were exactly this shape
+  (100% citing "(Unknown)", 0% naming a concrete escaping type), which
+  converted a tool resolution limit into developer work and encouraged a
+  bare `except Exception:` that would have hidden the real error classes
+  this gate exists to surface. Narrow it with a `# frob:callee-raises
+  <Type>` declaration on the call, or improve resolution (native
+  call-graph/typeshed awareness) -- both make the finding disappear
+  honestly, unlike a blanket catch-all.
 - **EXHAUST002** -- a named, non-`UNKNOWN` type is in the leaked set with
   no matching `# frob:raises <ExceptionType>` directive (below) declaring
   it as intentional propagation. The violation message names exactly the
-  missing type(s).
+  missing type(s). Unaffected by the T-1402 narrowing above -- EXHAUST002
+  already only ever fires with a concrete type named.
 
 Both rules ship at WARN severity as of this landing (T-0688) -- a first
 real run against this repo's own source surfaced 176 pre-existing

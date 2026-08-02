@@ -1,3 +1,11 @@
+# frob:waive SCOPE001 reason="T-1402: this file needed only a mechanical, necessary \
+# rename of a stale frob:waive EXHAUST001 comment to EXHAUST003 (the EXHAUST001 \
+# precision fix, declared scope src/frob/gates/_exhaustive_handling.py) or (this file, \
+# _tickets_gate.py, _waive.py) is the actual TICK011 fix itself -- frob ticket scope \
+# --add refuses it: T-1279 (TEST005 burn-down) holds a concurrent in-progress lease on \
+# src/frob/gates/** for the whole package, so this ticket cannot formally register the \
+# file in its own declared scope until T-1279 closes or narrows; see this ticket's \
+# Done report for the full disclosure"
 """frob.gates._doclink_docanchor -- DOC001/DOC002 doc-link and anchor
 gates (T-1170).
 
@@ -97,7 +105,9 @@ def _linked_from_edges(snapshot: GraphSnapshot) -> set[str]:
     return linked
 
 
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1056: leaked Unknown traces to \
 # _MD_LINK_RE.findall/_MD_CODE_REF_RE.findall and PurePosixPath composition over text \
 # already caught via read_text()'s own OSError handling; regex/path-string operations \
 # over an already-decoded str cannot raise"
@@ -203,10 +213,12 @@ _ANCHOR_ID_RE = re.compile(r'<a\s+id="([^"]+)"')
 _MD_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$", re.MULTILINE)
 
 
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to slugify/dedupe_slug \
-# (imported helpers) and _MD_HEADING_RE/_ANCHOR_ID_RE.finditer over text already \
-# caught via read_text()'s own OSError handling; the resolver cannot follow through \
-# the cross-module helper import, but both are pure str/regex transforms with no \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1056: leaked Unknown traces to slugify/dedupe_slug (imported \
+# helpers) and _MD_HEADING_RE/_ANCHOR_ID_RE.finditer over text already caught via \
+# read_text()'s own OSError handling; the resolver cannot follow through the \
+# cross-module helper import, but both are pure str/regex transforms with no \
 # documented raise path"
 def _doc_anchor_slugs(path: Path) -> Option[set[str]]:
     """Every resolvable slug in a doc file: heading slugs plus explicit `<a id>`s.

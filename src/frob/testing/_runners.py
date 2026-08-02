@@ -302,8 +302,10 @@ def _route_items(
     return Ok({i: tuple(v) for i, v in buckets.items()})
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to run_argv, a \
-# cross-module Result-returning wrapper the resolver cannot see through, and \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to run_argv, a cross-module \
+# Result-returning wrapper the resolver cannot see through, and \
 # spawned.danger_ok.stdout attribute access on its own return type; every locally \
 # fallible parse step below is caught"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"

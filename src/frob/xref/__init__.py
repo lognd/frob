@@ -101,10 +101,12 @@ _ALL_EXTS = supported_extensions() | _SOURCE_EXTS
 
 
 # frob:doc docs/commands/xref.md#public-api
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _search_parsed/ \
-# _search_text (module-local tree-sitter/text-scan helpers the resolver cannot see \
-# through) and XrefResult construction (a pydantic model); every locally-visible \
-# fallible step (relative_to, file read) is caught above"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to _search_parsed/ _search_text \
+# (module-local tree-sitter/text-scan helpers the resolver cannot see through) and \
+# XrefResult construction (a pydantic model); every locally-visible fallible step \
+# (relative_to, file read) is caught above"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 # frob:waive AFFECT001 reason="T-1062: EXHAUST001 hardening -- added an explicit \
 # except OSError around a text-search file read that previously could crash; the \
@@ -167,9 +169,11 @@ def _collect_source_files(root: Path, lang: str | None) -> list[Path]:
     return results
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to str.startswith/Path. \
-# parts, plain str/pathlib calls the resolver cannot statically bound; the one real \
-# raise path (relative_to outside root) is caught below"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to str.startswith/Path. parts, \
+# plain str/pathlib calls the resolver cannot statically bound; the one real raise \
+# path (relative_to outside root) is caught below"
 def _is_hidden(path: Path, root: Path) -> bool:
     """Whether any path component is dot-prefixed or `__pycache__`.
 

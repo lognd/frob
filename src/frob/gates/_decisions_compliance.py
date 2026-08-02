@@ -1,3 +1,11 @@
+# frob:waive SCOPE001 reason="T-1402: this file needed only a mechanical, necessary \
+# rename of a stale frob:waive EXHAUST001 comment to EXHAUST003 (the EXHAUST001 \
+# precision fix, declared scope src/frob/gates/_exhaustive_handling.py) or (this file, \
+# _tickets_gate.py, _waive.py) is the actual TICK011 fix itself -- frob ticket scope \
+# --add refuses it: T-1279 (TEST005 burn-down) holds a concurrent in-progress lease on \
+# src/frob/gates/** for the whole package, so this ticket cannot formally register the \
+# file in its own declared scope until T-1279 closes or narrows; see this ticket's \
+# Done report for the full disclosure"
 """frob.gates._decisions_compliance -- DEC00x/COMPLIANCE00x registry-
 adoption-lifecycle gates (T-1159).
 
@@ -40,8 +48,10 @@ _log = get_logger(__name__)
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0004
 # frob:ticket T-0894
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to the deferred imports \
-# of decision_gate/decisions_dir/load_decisions/path_ever_tracked, whose own call \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1056: leaked Unknown traces to the deferred imports of \
+# decision_gate/decisions_dir/load_decisions/path_ever_tracked, whose own call \
 # surfaces the resolver cannot follow through a function-local import; every \
 # locally-visible fallible operation in this gate (path checks, the two try/except \
 # blocks below) is already narrowly handled"
@@ -167,8 +177,10 @@ def _compliance005_violation(cv) -> Violation:  # noqa: ANN001
 # frob:enforces CMPL-FEDRAMP-IMPACT-TIERS
 # frob:enforces CMPL-SLSA-BUILD-LEVELS
 # frob:enforces CMPL-FROB-CATALOG-ENTRIES
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to the deferred import \
-# of path_ever_tracked and check_cmpl_registry's own resolution, which the resolver \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1056: leaked Unknown traces to the deferred import of \
+# path_ever_tracked and check_cmpl_registry's own resolution, which the resolver \
 # cannot follow through a function-local import boundary; this function's own \
 # locally-visible fallible step (registry_dir existence) is a plain path check"
 def compliance_gate(

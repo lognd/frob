@@ -146,7 +146,9 @@ class _EventBus:
 # TimeoutError/OSError distinction into a separate function would not shrink real \
 # complexity, only relocate it behind an extra call boundary this function's one \
 # caller would immediately re-inline"
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to socket.socket's own \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to socket.socket's own \
 # connect/makefile/write/readline calls and json.dumps, stdlib socket/json calls the \
 # resolver cannot fully bound past the broad except OSError below"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above -- \

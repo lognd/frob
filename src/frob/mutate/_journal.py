@@ -210,8 +210,10 @@ def _target_display(root: Path, target: Path) -> str:
         return str(target)
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to os.kill itself; every \
-# exception os.kill can raise is an OSError subclass, and ProcessLookupError/ \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to os.kill itself; every exception \
+# os.kill can raise is an OSError subclass, and ProcessLookupError/ \
 # PermissionError/OSError together already cover the full hierarchy"
 def _pid_alive(pid: int) -> bool:
     """Whether `pid` names a currently-running process, via a signal-0

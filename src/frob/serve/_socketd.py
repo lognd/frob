@@ -477,10 +477,11 @@ class _RequestHandler(socketserver.StreamRequestHandler):
         released = self.server.lease_manager.release(resource, self._lease_holder_id)
         return {"id": request.id, "result": {"released": released}}
 
-    # frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to \
-    # self._write_line's own json.dumps call, a stdlib call the resolver cannot \
-    # statically bound as raise-free; the two documented raise paths (OSError, \
-    # ValueError) are caught below"
+    # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+    # ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee \
+    # instead (the demoted case). T-1062: leaked Unknown traces to self._write_line's \
+    # own json.dumps call, a stdlib call the resolver cannot statically bound as \
+    # raise-free; the two documented raise paths (OSError, ValueError) are caught below"
     def _pump_events(self, q: queue.Queue[dict[str, Any] | None]) -> None:
         """Event-pump thread body: block on `q.get()` and write each frame
         out to this connection until a `None` sentinel (unsubscribed) or a
@@ -538,9 +539,11 @@ class _DaemonServer(socketserver.ThreadingUnixStreamServer):
         super().__init__(str(sock_path), _RequestHandler, bind_and_activate=True)
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to the _log.info call's \
-# own %-formatting, a stdlib logging call the resolver cannot statically bound; the \
-# one real raise path (Path.unlink) is caught below"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to the _log.info call's own \
+# %-formatting, a stdlib logging call the resolver cannot statically bound; the one \
+# real raise path (Path.unlink) is caught below"
 def _remove_stale_socket(sock_path: Path) -> None:
     """Unlink a leftover socket file at `sock_path` if one exists -- safe
     to do unconditionally here because the caller only reaches this after

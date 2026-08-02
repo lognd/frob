@@ -192,10 +192,12 @@ def _smt_bind_params(
 # frob:waive COV007 reason="docs/modules/dup.md's Rung R7 section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to the optional \
-# z3-solver dependency's own call surface (_smt_parse_pair/_smt_solve, both taking the \
-# deferred `z3` module the resolver cannot follow) and snapshot.symbols.get, a dict \
-# method already None-checked; every locally-visible fallible step is Result-checked"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to the optional z3-solver \
+# dependency's own call surface (_smt_parse_pair/_smt_solve, both taking the deferred \
+# `z3` module the resolver cannot follow) and snapshot.symbols.get, a dict method \
+# already None-checked; every locally-visible fallible step is Result-checked"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
 def _probe_smt_equivalence(
     a: str, b: str, snapshot: GraphSnapshot

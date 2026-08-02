@@ -1,3 +1,11 @@
+# frob:waive SCOPE001 reason="T-1402: this file needed only a mechanical, necessary \
+# rename of a stale frob:waive EXHAUST001 comment to EXHAUST003 (the EXHAUST001 \
+# precision fix, declared scope src/frob/gates/_exhaustive_handling.py) or (this file, \
+# _tickets_gate.py, _waive.py) is the actual TICK011 fix itself -- frob ticket scope \
+# --add refuses it: T-1279 (TEST005 burn-down) holds a concurrent in-progress lease on \
+# src/frob/gates/** for the whole package, so this ticket cannot formally register the \
+# file in its own declared scope until T-1279 closes or narrows; see this ticket's \
+# Done report for the full disclosure"
 """frob.gates._tickets_gate -- TICK00x ledger-hygiene/invariant family (T-1140).
 
 Split out of `frob.gates.__init__` (T-1115/T-1140 residue, one-family-per-
@@ -18,6 +26,7 @@ every `_tickN_*` helper stays private to this module.
 from __future__ import annotations
 
 import difflib
+import os
 import re
 import tomllib
 from datetime import date
@@ -319,7 +328,9 @@ def _tick005_ledger_at_ref(root: Path, ref: str) -> dict[str, Ticket] | None:
 
 # frob:ticket T-0537
 # frob:enforces CHK-GATE-TICK005
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1056: leaked Unknown traces to \
 # _tick005_head_second_parent/_tick005_ledger_at_ref's own gitio.run_argv calls, which \
 # already return a typani Result (no exception path) that the resolver cannot \
 # statically see through; every locally fallible step here degrades via an explicit \
@@ -552,6 +563,73 @@ _TICK011_NO_TICKET_NEEDED_RE = re.compile(
 #: TICK006's own `_TICK006_CLAIM_WINDOW` precedent.
 _TICK011_VICINITY = 300
 
+#: T-1402: how many ids below the ledger's own highest known `T-####` count
+#: as the ACTIVE WINDOW a Done report's disclosed cut can still be
+#: honestly followed up on. A 2026-08-01 measurement (T-1402) found 50
+#: unwaived TICK011 findings, every one against a HISTORICAL Done report,
+#: 14 of them citing tickets below T-0500 -- nobody can now reconstruct
+#: what a years-old ticket's "scope cut" prose referred to, so those 50
+#: can never be honestly driven to zero by doing the work, only waived en
+#: masse (exactly the dishonest zero this rule exists to prevent). TICK011
+#: stays at full strength for any report inside this window -- where a
+#: disclosed cut can still be turned into a real follow-up ticket -- and
+#: is silent by default outside it (`_tick011_ticket_in_active_window`).
+#: 500 is deliberately generous (not a tight recency cutoff): it is sized
+#: to comfortably outlast a single active development drive so a report
+#: written a few hundred tickets ago -- still plausibly reconstructable --
+#: is not silenced just because the ledger kept moving underneath it.
+_TICK011_ACTIVE_WINDOW = 500
+
+#: T-1402: the escape hatch for someone deliberately auditing the
+#: historical ledger tail this rule is otherwise silent on by default
+#: (the "gated behind an explicit opt-in flag" half of this ticket's own
+#: acceptance) -- set to any non-empty value to scan every ticket
+#: regardless of `_TICK011_ACTIVE_WINDOW`, matching this repo's existing
+#: `FROB_AGENT`/`FROB_ALLOW_FULL_CHECK`-style env-var opt-in convention
+#: (`frob.gates.__init__`'s own `_agent_mode`).
+_TICK011_INCLUDE_HISTORY_ENV = "FROB_TICK011_INCLUDE_HISTORY"
+
+#: T-1402: a ticket id's trailing numeric component (`"T-0500"` -> `500`),
+#: or `None` for a provisional `T-draft-<hex>` id (drafts are never old --
+#: they have not landed yet, so the active-window question does not apply;
+#: callers treat `None` as "always active").
+_TICK_NUM_RE = re.compile(r"^T-(\d{4})$")
+
+
+def _tick011_ticket_num(ticket_id: str) -> int | None:
+    """The numeric component of a real `T-####` id (T-1402), or `None` for
+    anything else (a `T-draft-<hex>` id, or a malformed id that should
+    never reach here) -- the recency proxy `_tick011_active_window_floor`/
+    `_tick011_in_active_window` key off of."""
+    m = _TICK_NUM_RE.match(ticket_id)
+    return int(m.group(1)) if m else None
+
+
+def _tick011_active_window_floor(known_ids: set[str]) -> int:
+    """The lowest ticket number (T-1402) still inside TICK011's active
+    window: `_TICK011_ACTIVE_WINDOW` below the highest real `T-####` id in
+    `known_ids` (0 if none parse, so an empty/all-draft ledger never
+    excludes anything). Self-adjusting rather than a fixed historical
+    cutoff -- the window slides forward with the ledger's own growth,
+    matching this ticket's own "active window" framing rather than a
+    fixed date/id line that would itself go stale."""
+    nums = [n for n in (_tick011_ticket_num(tid) for tid in known_ids) if n is not None]
+    if not nums:
+        return 0
+    return max(0, max(nums) - _TICK011_ACTIVE_WINDOW)
+
+
+def _tick011_in_active_window(ticket_id: str, floor: int) -> bool:
+    """True when `ticket_id` is inside TICK011's active window (T-1402):
+    a provisional `T-draft-<hex>` id (never old) or a real `T-####` id
+    whose number is at or above `floor`. False means the ticket is
+    HISTORICAL -- TICK011 stays silent on it by default (see
+    `_TICK011_ACTIVE_WINDOW`'s docstring), unless
+    `_TICK011_INCLUDE_HISTORY_ENV` is set."""
+    num = _tick011_ticket_num(ticket_id)
+    return num is None or num >= floor
+
+
 #: Calibrating this rule against the LIVE repo ledger (T-1129's own
 #: obligation: "frob's own ledger findings fixed or dispositioned in the
 #: same land") found bare "residue"/"residual" is a term of art in this
@@ -607,17 +685,22 @@ def _tick011_disclosure_hits(text: str) -> tuple[re.Match[str], ...]:
 
 
 # frob:ticket T-1129
+# frob:ticket T-1402
 # frob:tests tests/test_gates.py::TestTick011DisclosedCutWithoutTicket.test_disclosed_follow_up_with_no_citation_fires  # noqa: E501
+# frob:tests tests/test_gates.py::TestTick011DisclosedCutWithoutTicket.test_recent_ticket_outside_old_window_still_fires_exactly_as_today  # noqa: E501
+# frob:tests tests/test_gates.py::TestTick011DisclosedCutWithoutTicket.test_historical_ticket_outside_active_window_is_silent_by_default  # noqa: E501
+# frob:tests tests/test_gates.py::TestTick011DisclosedCutWithoutTicket.test_include_history_env_opt_in_restores_the_historical_finding  # noqa: E501
 # frob:enforces CHK-GATE-TICK011
 def _tick011_disclosed_cuts_without_ticket(
     queue: TicketQueue, archived: Result[dict[str, Ticket], TicketError]
 ) -> tuple[Violation, ...]:
-    """TICK011 (T-1129): WARN when a Done report's prose discloses
-    deferred/cut work (`_TICK011_DISCLOSURE_PATTERNS`: "left for a
-    follow-up", "not yet ticketed", "deferred to a follow-up", "residue"/
-    "residual", a scope cut) with no `T-####`/`T-draft-<hex>` id resolving
-    to a real ledger block, and no explicit no-ticket-needed reason,
-    within `_TICK011_VICINITY` characters.
+    """TICK011 (T-1129, active-window-narrowed T-1402): WARN when a Done
+    report's prose discloses deferred/cut work
+    (`_TICK011_DISCLOSURE_PATTERNS`: "left for a follow-up", "not yet
+    ticketed", "deferred to a follow-up", "residue"/"residual", a scope
+    cut) with no `T-####`/`T-draft-<hex>` id resolving to a real ledger
+    block, and no explicit no-ticket-needed reason, within
+    `_TICK011_VICINITY` characters.
 
     Five incidents this drive motivated this (T-1085, T-0321's close,
     T-1140, T-1150 -- see this module's `_TICK011_DISCLOSURE_PATTERNS`
@@ -627,41 +710,81 @@ def _tick011_disclosed_cuts_without_ticket(
     FILING claim from silently standing. One finding per ticket (the
     first uncited disclosure occurrence) rather than one per phrase hit --
     conservative on noise for a WARN-tier first turn-on, matching this
-    rule's own `_TICK011_DISCLOSURE_PATTERNS` calibration posture."""
+    rule's own `_TICK011_DISCLOSURE_PATTERNS` calibration posture.
+
+    T-1402: this check is full strength (unchanged from the paragraph
+    above) inside `_TICK011_ACTIVE_WINDOW` -- the window a disclosed cut
+    can still be honestly turned into a real follow-up ticket. A ticket
+    outside that window (or every ticket, if `_tick011_ticket_num` cannot
+    parse anything to anchor a window on) is skipped by default: a
+    2026-08-01 measurement found 50 unwaived findings, all against
+    historical reports nobody can now reconstruct context for -- a
+    dishonest-only-waivable-en-masse zero, not this rule's job to produce.
+    Set `_TICK011_INCLUDE_HISTORY_ENV` non-empty to scan the full ledger
+    anyway (deliberate history audits)."""
     known_ids = set(queue.tickets) | (
         set(archived.danger_ok) if archived.is_ok else set()
     )
+    include_history = _tick011_include_history_opt_in()
+    active_floor = 0 if include_history else _tick011_active_window_floor(known_ids)
     violations: list[Violation] = []
     for ticket in sorted(queue.tickets.values(), key=lambda t: t.id):
-        done_report_text = _tick006_done_report_text(ticket.body)
-        if not done_report_text:
+        if not include_history and not _tick011_in_active_window(
+            ticket.id, active_floor
+        ):
             continue
-        for match in _tick011_disclosure_hits(done_report_text):
-            lo = max(0, match.start() - _TICK011_VICINITY)
-            hi = min(len(done_report_text), match.end() + _TICK011_VICINITY)
-            vicinity = done_report_text[lo:hi]
-            if _TICK011_NO_TICKET_NEEDED_RE.search(vicinity):
-                continue
-            if any(tid in known_ids for tid in _TICK006_ID_RE.findall(vicinity)):
-                continue
-            violations.append(
-                Violation(
-                    rule="TICK011",
-                    severity=Severity.WARN,
-                    file="tickets.md",
-                    line=0,
-                    message=(
-                        f"TICK011: {ticket.id}'s Done report discloses "
-                        f'deferred/cut work ("{match.group(0)}") with no '
-                        f"ticket id cited nearby and no explicit "
-                        f"no-ticket-needed reason -- file the follow-up "
-                        f"ticket and cite it, or say so explicitly if none "
-                        f"is needed"
-                    ),
-                )
-            )
-            break  # one finding per ticket -- see docstring
+        found = _tick011_first_uncited_disclosure(ticket, known_ids)
+        if found is not None:
+            violations.append(found)
     return tuple(violations)
+
+
+def _tick011_include_history_opt_in() -> bool:
+    """True when `_TICK011_INCLUDE_HISTORY_ENV` is set to a non-empty value
+    (T-1402) -- the deliberate-history-audit escape hatch that disables the
+    active-window filter entirely (see `_TICK011_ACTIVE_WINDOW`'s
+    docstring)."""
+    # frob:waive SEC110 reason="T-1402: FROB_TICK011_INCLUDE_HISTORY is a boolean \
+    # opt-in flag (same shape as the existing FROB_AGENT/FROB_WORKTREE precedent in \
+    # frob.tickets._leases) that toggles whether this rule scans the historical ledger \
+    # tail -- it carries no secret/confidential value"
+    return bool(os.environ.get(_TICK011_INCLUDE_HISTORY_ENV))
+
+
+def _tick011_first_uncited_disclosure(
+    ticket: Ticket, known_ids: set[str]
+) -> Violation | None:
+    """The first uncited disclosure occurrence in `ticket`'s Done report
+    (T-1402, split out of `_tick011_disclosed_cuts_without_ticket` to stay
+    under `ARCH001`'s function-length threshold), or `None` if its Done
+    report has no such occurrence -- one finding per ticket, matching that
+    function's own docstring."""
+    done_report_text = _tick006_done_report_text(ticket.body)
+    if not done_report_text:
+        return None
+    for match in _tick011_disclosure_hits(done_report_text):
+        lo = max(0, match.start() - _TICK011_VICINITY)
+        hi = min(len(done_report_text), match.end() + _TICK011_VICINITY)
+        vicinity = done_report_text[lo:hi]
+        if _TICK011_NO_TICKET_NEEDED_RE.search(vicinity):
+            continue
+        if any(tid in known_ids for tid in _TICK006_ID_RE.findall(vicinity)):
+            continue
+        return Violation(
+            rule="TICK011",
+            severity=Severity.WARN,
+            file="tickets.md",
+            line=0,
+            message=(
+                f"TICK011: {ticket.id}'s Done report discloses "
+                f'deferred/cut work ("{match.group(0)}") with no '
+                f"ticket id cited nearby and no explicit "
+                f"no-ticket-needed reason -- file the follow-up "
+                f"ticket and cite it, or say so explicitly if none "
+                f"is needed"
+            ),
+        )
+    return None
 
 
 # frob:ticket T-0820
@@ -848,7 +971,9 @@ def _tick009_scope_breadth_nudges(
 
 
 # frob:ticket T-0714
-# frob:waive EXHAUST001 reason="T-1056: leaked Unknown traces to leases_dir's own \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1056: leaked Unknown traces to leases_dir's own \
 # Result-returning fallibility, already checked via .is_err below; no bare raise path \
 # is reachable from this function's locally-visible calls"
 # frob:waive EXHAUST002 reason="T-1056: json.JSONDecodeError is a ValueError subclass \

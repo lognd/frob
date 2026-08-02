@@ -22,16 +22,35 @@ check_errors_as_values` for the sibling advisory that instead looks at
 public raisers with unhandling callers, a different question over the
 same computed sets.
 
-EXHAUST001 (Unknown leaks past a boundary with no catch-all): `UNKNOWN` in
-the leaked set means some raise/callee this resolver could not statically
-identify escapes a function that otherwise tries to handle its own
-errors, and none of its own catches is broad enough (bare `except:` or
-`except Exception:`) to plausibly cover it -- per the parent ticket's own
-acceptance, `Unknown` in the guarded set forces a catch-all or fixing the
-unresolvable call; silent non-exhaustiveness is not allowed to pass
-quietly. A `# frob:raises <Type>` declared-propagation directive (below)
-never discharges `UNKNOWN` -- it names a KNOWN type, and `UNKNOWN` is
-definitionally not one; only a real catch-all does.
+EXHAUST001 (Unknown leaks past a boundary with no catch-all, T-1402
+narrowed): a 2026-08-01 measurement (T-1402) found every single unwaived
+EXHAUST001 finding in this repo's own source (69/69) traced to an
+UNRESOLVABLE CALLEE -- a call this resolver's same-module lookup could
+not match, not a real in-source exception construct. That is a report
+about `_mayraise`'s own call-graph resolution coverage, not about a
+genuinely unhandled error path, and asking a developer to paper over it
+with a catch-all makes the boundary WORSE (a bare handler now also
+swallows the real error classes this gate exists to surface). EXHAUST001
+is narrowed to fire ONLY when the leaked `UNKNOWN` can be attributed to
+the function's OWN `raise` statement -- a bare re-raise
+(`NormalizedRaise.exception_type is None`) whose nearest preceding catch
+is itself absent or a bare `except:` (`_own_unknown_direct_raise`,
+mirroring `_mayraise._resolve_direct_raises`'s own-raise classification
+narrowly, not its call-resolution half) -- a real, visible-in-source
+construct whose exact escaping type is inherently ambiguous by
+construction, never a tool resolution limit. None of its own catches
+being broad enough (bare `except:` or `except Exception:`) to plausibly
+cover it still gates the finding; a `# frob:raises <Type>` declared-
+propagation directive (below) never discharges `UNKNOWN` -- it names a
+KNOWN type, and `UNKNOWN` is definitionally not one; only a real
+catch-all does.
+
+EXHAUST003 (T-1402) is the quieter, DISTINCT signal for the demoted
+case: a leaked `UNKNOWN` whose own function contributes no ambiguous bare
+re-raise of its own (so the leak traces to an unresolved callee -- this
+function's own, or one it calls transitively) is reported here instead,
+naming the resolution gap plainly rather than asking for a catch-all. See
+that rule's own docstring on `_function_violations` below.
 
 EXHAUST002 (a named, non-`UNKNOWN` type leaks past a boundary): every
 leaked type other than `UNKNOWN` is checked against this function's own
@@ -47,11 +66,11 @@ named type with no matching directive is EXHAUST002, naming exactly the
 missing type(s) (the parent ticket's own acceptance: "the missing
 exception types are named").
 
-Both rules attach `symref` (the leaking function's `path::qualname`) so
-`frob:waive EXHAUST001 reason="..."` / `frob:waive EXHAUST002
-reason="..."` bind precisely to that one function, same waiver-precision
-convention `frob.gates._models.Violation.symref`'s own docstring
-describes for every other symbol-scoped rule.
+All three rules attach `symref` (the leaking function's `path::qualname`)
+so a reasoned `frob:waive` naming EXHAUST001, EXHAUST002, or EXHAUST003
+directly binds precisely to that one function, same waiver-precision
+convention `frob.gates._models.Violation.symref`'s own docstring describes
+for every other symbol-scoped rule.
 
 SEVERITY (first-turn-on debt, T-0688): both rules ship at `Severity.WARN`,
 not `ERROR`, at this ticket's landing -- a first real run of this gate
@@ -86,7 +105,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from frob.arch._mayraise import UNKNOWN, compute_may_raise
-from frob.arch._normalized import NormalizedFunction, NormalizedModule
+from frob.arch._normalized import NormalizedCatch, NormalizedFunction, NormalizedModule
 from frob.excludes import is_excluded, is_test_file, iter_files, load_exclude_globs
 from frob.gates._models import Severity, Violation
 from frob.lang import raw_tree
@@ -171,6 +190,43 @@ def _has_catch_all(func: NormalizedFunction) -> bool:
     return any(c.exception_type in _CATCH_ALL_TYPES for c in func.catches)
 
 
+def _nearest_preceding_catch(
+    func: NormalizedFunction, line: int
+) -> NormalizedCatch | None:
+    """The `catch` in `func` with the greatest `line` at or before `line`
+    (T-1402) -- a narrow local duplicate of `frob.arch._mayraise.
+    _nearest_preceding_catch` (that resolver's private helper is out of
+    this ticket's declared-scope carve-out; see this module's docstring
+    for why duplicating this one small helper, not importing a private
+    name across modules, is the intended shape here, matching this
+    module's existing `_qualname` precedent)."""
+    candidates = [c for c in func.catches if c.line <= line]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda c: c.line)
+
+
+def _own_unknown_direct_raise(func: NormalizedFunction) -> bool:
+    """True when at least one of `func`'s OWN `raise` statements resolves
+    to `UNKNOWN` via `_mayraise`'s own bare-reraise rule (T-1402): a bare
+    `raise` (`exception_type is None`) whose nearest preceding catch is
+    itself absent or a bare `except:` (`exception_type is None`) --
+    mirrors `_mayraise._resolve_direct_raises`'s own-raise classification
+    narrowly (not its call/callee-resolution half). This is the ONLY
+    condition EXHAUST001 now fires on for a leaked `UNKNOWN`: a real,
+    visible-in-source construct whose escaping type is inherently
+    ambiguous by construction, distinct from a leaked `UNKNOWN` whose only
+    source is an unresolved callee (this gate's EXHAUST003, T-1402's
+    precision fix -- see this module's docstring)."""
+    for r in func.raises:
+        if r.exception_type is not None:
+            continue
+        catch = _nearest_preceding_catch(func, r.line)
+        if catch is None or catch.exception_type is None:
+            return True
+    return False
+
+
 def _function_violations(
     module: NormalizedModule,
     func: NormalizedFunction,
@@ -189,21 +245,43 @@ def _function_violations(
         return violations
 
     if UNKNOWN in leaked and not _has_catch_all(func):
-        violations.append(
-            Violation(
-                rule="EXHAUST001",
-                severity=Severity.WARN,
-                file=module.path,
-                line=func.line,
-                message=(
-                    f"EXHAUST001: `{qualname}` handles some exceptions but an "
-                    "unresolvable call/raise (Unknown) still escapes -- add a "
-                    "catch-all (`except Exception:`) or fix the unresolvable "
-                    "call"
-                ),
-                symref=qualname,
+        if _own_unknown_direct_raise(func):
+            violations.append(
+                Violation(
+                    rule="EXHAUST001",
+                    severity=Severity.WARN,
+                    file=module.path,
+                    line=func.line,
+                    message=(
+                        f"EXHAUST001: `{qualname}` handles some exceptions but "
+                        "a bare `raise` re-raises an exception whose type "
+                        "cannot be determined (no preceding catch, or the "
+                        "nearest preceding catch is itself a bare `except:`) "
+                        "-- add a catch-all (`except Exception:`) or catch "
+                        "the specific type being re-raised"
+                    ),
+                    symref=qualname,
+                )
             )
-        )
+        else:
+            violations.append(
+                Violation(
+                    rule="EXHAUST003",
+                    severity=Severity.WARN,
+                    file=module.path,
+                    line=func.line,
+                    message=(
+                        f"EXHAUST003: `{qualname}` handles some exceptions but "
+                        "this gate's call-graph resolver could not statically "
+                        "identify a callee that may escape -- this is a "
+                        "resolution-coverage gap, not a confirmed unhandled "
+                        "error; narrow it with a `# frob:callee-raises "
+                        "<Type>` declaration on the call, or improve "
+                        "resolution, rather than adding a blind catch-all"
+                    ),
+                    symref=qualname,
+                )
+            )
 
     declared = _declared_propagations(source_lines, func)
     named_leak = {t for t in leaked if t != UNKNOWN} - declared
@@ -229,21 +307,27 @@ def _function_violations(
 
 # frob:doc docs/modules/gates.md#exhaust001exhaust002-t-0688
 # frob:ticket T-0688
+# frob:ticket T-1402
 # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_partial_catch_of_named_type_fires_exhaust002  # noqa: E501
-# frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_unknown_without_catch_all_fires_exhaust001  # noqa: E501
+# frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_unresolvable_callee_fires_exhaust003_not_exhaust001  # noqa: E501
+# frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_ambiguous_bare_reraise_still_fires_exhaust001  # noqa: E501
 # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_catch_all_of_unknown_does_not_fire_exhaust001  # noqa: E501
 # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_declared_frob_raises_directive_discharges_exhaust002  # noqa: E501
 # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_function_with_no_catches_is_not_a_boundary  # noqa: E501
 # frob:enforces CHK-GATE-EXHAUST001
 # frob:enforces CHK-GATE-EXHAUST002
+# frob:enforces CHK-GATE-EXHAUST003
 def exhaustive_handling_gate(root: Path) -> tuple[Violation, ...]:
-    """EXHAUST001/EXHAUST002 (T-0688) over every python file under `root`:
-    a function/method that has attempted exception handling (at least one
-    `catches` entry) but still leaks an exception past it, per
-    `frob.arch._mayraise.compute_may_raise`, fails with the missing type(s)
-    named (`_function_violations`). Non-python files, files with no
-    tree-sitter grammar, and test files are silently skipped -- see this
-    module's docstring for the disclosed scope."""
+    """EXHAUST001/EXHAUST002/EXHAUST003 (T-0688, narrowed T-1402) over
+    every python file under `root`: a function/method that has attempted
+    exception handling (at least one `catches` entry) but still leaks an
+    exception past it, per `frob.arch._mayraise.compute_may_raise`, fails
+    with the missing type(s) named (`_function_violations`) -- a leaked
+    `UNKNOWN` fires EXHAUST001 only when it traces to the function's own
+    ambiguous bare re-raise, EXHAUST003 otherwise (an unresolved-callee
+    resolution gap). Non-python files, files with no tree-sitter grammar,
+    and test files are silently skipped -- see this module's docstring for
+    the disclosed scope."""
     from frob.arch._python import PythonAdapter
 
     exclude_globs = load_exclude_globs(root)

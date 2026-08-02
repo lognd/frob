@@ -388,7 +388,9 @@ def _merge_base(root: Path, base: str) -> Result[str, GitError]:
 _HUNK_HEADER_PREFIX = "@@ "
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to str.startswith/ \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to str.startswith/ \
 # str.strip/dict.setdefault, plain str/dict methods the resolver cannot statically \
 # bound; the one real raise path (the hunk-header token parse) is caught below"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"

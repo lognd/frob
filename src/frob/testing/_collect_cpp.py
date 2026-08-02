@@ -114,7 +114,9 @@ def _find_ctest_dirs(root: Path) -> list[Path]:
     return sorted(build_dirs)
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to _INCLUDE_RE.findall/ \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to _INCLUDE_RE.findall/ \
 # _ADD_TEST_RE.findall, compiled-regex scans over already-caught read_text() output; \
 # regex operations over an already-decoded str cannot raise"
 def _parse_ctest_command_map(build_dir: Path) -> dict[str, str]:

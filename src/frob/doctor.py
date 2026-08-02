@@ -327,7 +327,9 @@ class VenvShimDrift(BaseModel):
 # frob:tests tests/system/test_cli_doctor.py::TestDoctorVenvShims.test_flags_shebang_outside_venv  # noqa: E501
 # frob:tests tests/system/test_cli_doctor.py::TestDoctorVenvShims.test_clean_shebang_reports_nothing  # noqa: E501
 # frob:tests tests/system/test_cli_doctor.py::TestDoctorVenvShims.test_no_venv_directory_reports_nothing  # noqa: E501
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to Path.iterdir/ \
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to Path.iterdir/ \
 # Path.resolve/bytes.decode, stdlib pathlib/bytes calls the resolver cannot statically \
 # bound; every locally-visible fallible step (the two entry-level OSError sites, the \
 # shebang-dir resolve) is already caught above"

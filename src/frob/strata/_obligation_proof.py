@@ -66,9 +66,11 @@ def node_has_bound_code(node_id: str, owner_by_node: dict[str, list[str]]) -> bo
 # frob:doc docs/strata/reliability.md#shared-proof-against-code-plumbing-t-0641
 # frob:ticket T-0641
 # frob:tests tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken.test_matches_a_real_token  # noqa: E501
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to pattern.search(text), \
-# a compiled-regex search over an already-decoded str produced by the caught \
-# read_text() call; a compiled pattern search cannot raise"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to pattern.search(text), a \
+# compiled-regex search over an already-decoded str produced by the caught read_text() \
+# call; a compiled pattern search cannot raise"
 def files_evidence_token(
     paths: list[str], root: Path, pattern: re.Pattern[str]
 ) -> bool:

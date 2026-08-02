@@ -51,9 +51,11 @@ _GROWTH_PREFIX = "growth="
 _GROWTH_HORIZON_MONTHS = 24
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to node.attrs/node.id \
-# attribute access on an untyped `node` param (no static type to bound); the one real \
-# raise path (float() on a malformed skew value) is caught below"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to node.attrs/node.id attribute \
+# access on an untyped `node` param (no static type to bound); the one real raise path \
+# (float() on a malformed skew value) is caught below"
 # frob:waive EXHAUST002 reason="T-1062: same untyped-attribute-access resolver \
 # artifact as EXHAUST001 above"
 def _node_skew(node) -> float | None:
@@ -86,9 +88,11 @@ def _zipf_hottest_share(alpha: float, shards: int) -> float:
     return weights[0] / sum(weights)
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to flow.attrs attribute \
-# access on an untyped `flow` param (no static type to bound); the one real raise path \
-# (float() on a malformed growth value) is caught below"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to flow.attrs attribute access on \
+# an untyped `flow` param (no static type to bound); the one real raise path (float() \
+# on a malformed growth value) is caught below"
 # frob:waive EXHAUST002 reason="T-1062: same untyped-attribute-access resolver \
 # artifact as EXHAUST001 above"
 def _flow_growth(flow) -> float | None:
@@ -612,9 +616,11 @@ def _eval_bound_latency_or_size(
     return Ok(_proved(claim, f"declared {body.metric.value} within limit"))
 
 
-# frob:waive EXHAUST001 reason="T-1062: leaked Unknown traces to ClaimResult \
-# construction (a pydantic model, whose validation call the resolver cannot bound); \
-# the one real raise path (date.fromisoformat) is caught above"
+# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
+# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
+# (the demoted case). T-1062: leaked Unknown traces to ClaimResult construction (a \
+# pydantic model, whose validation call the resolver cannot bound); the one real raise \
+# path (date.fromisoformat) is caught above"
 def _eval_assumed(claim: Claim, today: _dt.date) -> ClaimResult:
     """Assumes never prove anything; they are ledgered, owned, and expiring."""
     detail = f"assumed by {claim.owner or 'unowned'}"
