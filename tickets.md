@@ -5782,7 +5782,7 @@ re-ran green) before finalizing.
 - `tests/test_tickets.py::TestArchive::test_id_present_in_both_active_and_archive_collapses_not_refuses` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 2 passed (from 2 evidence id(s))
+- tests: 3 passed (from 3 evidence id(s))
 - gates: 5 error(s), 443 warning(s), 693 waived
 - error-findings: DUP001@tests/test_ticket_merge_driver.py, OPAQUE001@tests/unit/test_ticket_close_bug002_t1438.py, PRE001@tickets/T-1437, SELFAUDIT001@design, WIRE001@tests/unit/test_ticket_close_bug002_t1438.py
 
