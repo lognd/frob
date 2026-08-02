@@ -37,7 +37,8 @@ immediately.
 | obfuscation | decode-then-eval chains, high-entropy string blobs, minified-source-in-sdist mismatch |
 | embedded_code | large HTML/JS-shaped STRING LITERAL inside another language's source (T-0244: python's own grammar hides an embedded dashboard's markup/script from every needle table above) -- size + HTML/JS-signal heuristic over python `string` tree-sitter nodes; ALWAYS emitted for a region found (fail-closed), plus any typescript-needle hits over the region's own text |
 
-`CAPABILITY_KINDS` (`src/frob/vet/_capability_registry.py`) has grown
+`CAPABILITY_KINDS` (`src/frob/vet/_capability_registry/_kinds.py`, part of
+the `_capability_registry` package since T-1420) has grown
 beyond this table's 11 rows to ~24 entries: precise connect-vs-listen and
 read-vs-write variants of `net`/`env` (`net-connect`/`net-listen`/
 `net.connect`/`net.listen`, `env-read`/`env-write`/`env.read`/
@@ -634,7 +635,7 @@ Honest scope cuts (T-0180, not silently claimed done):
 T-0158 addendum 2's priority survey list of python/npm/cargo third-party
 libraries, surveyed against each library's REAL API surface (not guessed)
 and dispositioned as either new `DangerousOperation` entries in
-`src/frob/vet/_capability_registry.py::DANGEROUS_OPERATIONS`, or an
+`src/frob/vet/_capability_registry/_matrix.py::DANGEROUS_OPERATIONS`, or an
 explicit pure-library verdict with no dangerous surface. Every
 ticket-listed library appears exactly once below, so none is silently
 dropped.
@@ -1122,7 +1123,8 @@ What landed on top of the lockfile-conformance MVP:
   directly in `_capability.py` rather than compiled from
   `_capability_registry.DANGEROUS_OPERATIONS`: T-0170's declared scope
   covers `_capability.py`/tests/this doc only, not
-  `src/frob/vet/_capability_registry.py`, so `kotlin` could not be added
+  `src/frob/vet/_capability_registry/` (a single file until T-1420 split it
+  into a package), so `kotlin` could not be added
   to the registry's `LANGUAGES` tuple or given a formal `MatrixExcuse` for
   its unpatterned cells (eval, fs/fs-write/fs-read, ffi, install-hook,
   html_render, sql, fetch_url, deserialize) in the same change, and

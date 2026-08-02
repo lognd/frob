@@ -1833,7 +1833,7 @@ Tier-A deterministic auto-fix handlers (T-1138)" below.
 ## WIRE001/WIRE002 (T-1428)
 
 <a id="wire001-wire002-t-1428"></a>
-<!-- frob:describes src/frob/gates/_dead_symbols.py::wire_gate -->
+<!-- frob:describes src/frob/gates/_wire.py::wire_gate -->
 
 Five real instances in one session landed, passed every gate, closed
 honestly, and did nothing: `own_obligations_clean` (T-1384),

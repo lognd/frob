@@ -35,7 +35,7 @@ from frob.vet._capability_registry import (
 
 
 class TestMatrixExhaustiveness:
-    # frob:tests src/frob/vet/_capability_registry.py::_unexcused_empty_cells \
+    # frob:tests src/frob/vet/_capability_registry/_matrix.py::_unexcused_empty_cells \
     # kind="unit"
     def test_no_unexcused_empty_cells(self) -> None:
         """T-0158's core exhaustiveness claim: every (kind, language) cell is
@@ -43,7 +43,8 @@ class TestMatrixExhaustiveness:
         here -- the blanket C/C++ exemption is retired."""
         assert _unexcused_empty_cells() == ()
 
-    # frob:tests src/frob/vet/_capability_registry.py::capability_matrix kind="unit"
+    # frob:tests src/frob/vet/_capability_registry/_matrix.py::capability_matrix \
+    # kind="unit"
     def test_matrix_covers_every_kind_and_language(self) -> None:
         cells = capability_matrix()
         assert len(cells) == len(CAPABILITY_KINDS) * len(LANGUAGES)
@@ -52,7 +53,8 @@ class TestMatrixExhaustiveness:
             for language in LANGUAGES:
                 assert (kind, language) in seen
 
-    # frob:tests src/frob/vet/_capability_registry.py::DANGEROUS_OPERATIONS kind="unit"
+    # frob:tests src/frob/vet/_capability_registry/_matrix.py::DANGEROUS_OPERATIONS \
+    # kind="unit"
     def test_every_operation_kind_and_language_registered(self) -> None:
         """Every `_DangerousOperation` names a registered kind/language --
         the T-0158 drift-lock: the registry cannot silently grow a kind or
@@ -61,14 +63,16 @@ class TestMatrixExhaustiveness:
             assert entry.capability_kind in CAPABILITY_KINDS
             assert entry.language in LANGUAGES
 
-    # frob:tests src/frob/vet/_capability_registry.py::CAPABILITY_MATRIX_EXCUSES \
+    # frob:tests \
+    # src/frob/vet/_capability_registry/_matrix.py::CAPABILITY_MATRIX_EXCUSES \
     # kind="unit"
     def test_every_excuse_kind_and_language_registered(self) -> None:
         for excuse in CAPABILITY_MATRIX_EXCUSES:
             assert excuse.capability_kind in CAPABILITY_KINDS
             assert excuse.language in LANGUAGES
 
-    # frob:tests src/frob/vet/_capability_registry.py::capability_matrix kind="unit"
+    # frob:tests src/frob/vet/_capability_registry/_matrix.py::capability_matrix \
+    # kind="unit"
     def test_no_cell_is_both_patterned_and_excused(self) -> None:
         """An excused cell exists BECAUSE it has no pattern -- a cell that
         is both patterned and carries a stale excuse entry is a drift bug
@@ -78,19 +82,19 @@ class TestMatrixExhaustiveness:
 
 
 class TestValidateRegistryKinds:
-    # frob:tests src/frob/vet/_capability_registry.py::_validate_registry_kinds \
-    # kind="unit"
+    # frob:tests \
+    # src/frob/vet/_capability_registry/_matrix.py::_validate_registry_kinds kind="unit"
     def test_known_kinds_pass(self) -> None:
         assert _validate_registry_kinds(frozenset({"exec", "eval"})) == ()
 
-    # frob:tests src/frob/vet/_capability_registry.py::_validate_registry_kinds \
-    # kind="unit"
+    # frob:tests \
+    # src/frob/vet/_capability_registry/_matrix.py::_validate_registry_kinds kind="unit"
     def test_unknown_kind_reported(self) -> None:
         offenders = _validate_registry_kinds(frozenset({"exec", "bogus-kind"}))
         assert offenders == ("bogus-kind",)
 
-    # frob:tests src/frob/vet/_capability_registry.py::_validate_registry_kinds \
-    # kind="unit"
+    # frob:tests \
+    # src/frob/vet/_capability_registry/_matrix.py::_validate_registry_kinds kind="unit"
     def test_every_threat_catalog_kind_is_registered(self) -> None:
         """Cross-check (T-0158 deliverable 4): every `capability_kind`
         `CWE_CATALOG`/`CWE_TOP_25_CATALOG`/`DEFAULT_BENIGN_CAPABILITIES`
@@ -297,7 +301,8 @@ class TestNoSilentNeedleRegression:
     Catches the next silent detection drop as a test failure, not a
     reviewer catch."""
 
-    # frob:tests src/frob/vet/_capability_registry.py::DANGEROUS_OPERATIONS kind="unit"
+    # frob:tests src/frob/vet/_capability_registry/_matrix.py::DANGEROUS_OPERATIONS \
+    # kind="unit"
     def test_every_pre_registry_needle_still_fires_somewhere(self) -> None:
         from frob.vet._capability import _PATTERNS
 
@@ -323,7 +328,8 @@ class TestNoSilentNeedleRegression:
             f"replacement and no _RECLASSIFIED_NEEDLES entry: {missing}"
         )
 
-    # frob:tests src/frob/vet/_capability_registry.py::DANGEROUS_OPERATIONS kind="unit"
+    # frob:tests src/frob/vet/_capability_registry/_matrix.py::DANGEROUS_OPERATIONS \
+    # kind="unit"
     def test_every_reclassified_needle_actually_still_fires_under_its_new_kind(
         self,
     ) -> None:
@@ -356,7 +362,8 @@ class TestNoSilentNeedleRegression:
                 f"absent from the compiled table entirely"
             )
 
-    # frob:tests src/frob/vet/_capability_registry.py::DANGEROUS_OPERATIONS kind="unit"
+    # frob:tests src/frob/vet/_capability_registry/_matrix.py::DANGEROUS_OPERATIONS \
+    # kind="unit"
     def test_popen_bare_call_still_flags_exec(self, tmp_path: Path) -> None:
         """The specific reviewer-caught regression: `from subprocess import
         Popen; Popen(cmd)` with no `subprocess.` prefix at the call site

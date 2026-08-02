@@ -793,7 +793,7 @@ channel. T-1061 closes it on both fronts:
   same as `_print_contention_report`); a SYS205 finding makes the whole
   audit exit nonzero, same as any other family.
 - **`frob check`'s SELFAUDIT001 gate**
-  (`src/frob/gates/_sys.py::_selfaudit_violations`) now folds SYS205
+  (`src/frob/gates/_sys_selfaudit.py::_selfaudit_violations`) now folds SYS205
   findings into the SAME wrapped `Violation` stream SYS100-103/SYS2xx/
   REL2xx already use -- suppressible the ordinary GATES-layer way too
   (`frob:waive SELFAUDIT001:<node> reason="..."`), same as any other

@@ -2448,10 +2448,10 @@ class TestWireGate:
     def test_new_public_function_with_no_caller_is_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
         # Reconstructs T-1421's shape: a new guard function, unit-tested
         # directly, wired into nothing outside its own test.
-        from frob.gates._dead_symbols import wire_gate
+        from frob.gates._wire import wire_gate
 
         _write(
             tmp_path,
@@ -2480,8 +2480,8 @@ class TestWireGate:
     def test_new_function_called_from_non_test_code_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
-        from frob.gates._dead_symbols import wire_gate
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        from frob.gates._wire import wire_gate
 
         _write(
             tmp_path,
@@ -2511,13 +2511,13 @@ class TestWireGate:
     def test_relocated_symbol_via_file_split_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
         # T-1431: a LARGE001 file split moves a symbol verbatim into a new
         # file. The diff-scoped hunk proxy sees it as "new" in the new
         # file, but it existed (same body, same name, called only from its
         # own test) at the merge-base under the OLD path -- WIRE001 must
         # not fire.
-        from frob.gates._dead_symbols import wire_gate
+        from frob.gates._wire import wire_gate
 
         _git_init(tmp_path)
         _write(
@@ -2567,12 +2567,12 @@ class TestWireGate:
     def test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
         # T-1431 acceptance [1]: relocation-awareness must not blanket-
         # exempt a whole new file -- a symbol with no prior existence
         # anywhere at the merge-base still fires, even sitting right next
         # to a relocated one in the same new file.
-        from frob.gates._dead_symbols import wire_gate
+        from frob.gates._wire import wire_gate
 
         _git_init(tmp_path)
         _write(
@@ -2617,11 +2617,11 @@ class TestWireGate:
 
     # frob:ticket T-1430
     def test_new_kwonly_param_never_passed_is_flagged(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
         # T-1430 case 4: an EXISTING function (already has a non-test
         # caller, so case 1 never fires) grows a new keyword-only
         # parameter that no call site anywhere passes.
-        from frob.gates._dead_symbols import wire_gate
+        from frob.gates._wire import wire_gate
 
         _git_init(tmp_path)
         _write(
@@ -2664,8 +2664,8 @@ class TestWireGate:
     def test_new_kwonly_param_passed_at_call_site_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
-        from frob.gates._dead_symbols import wire_gate
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        from frob.gates._wire import wire_gate
 
         _git_init(tmp_path)
         _write(
@@ -2714,10 +2714,10 @@ class TestWireGate:
     def test_new_rule_id_missing_from_known_gate_rules_is_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
         # Reconstructs T-1421's BUG002 shape: a gate emits a rule id string
         # that was never registered in _KNOWN_GATE_RULES.
-        from frob.gates._dead_symbols import wire_gate
+        from frob.gates._wire import wire_gate
 
         _write(
             tmp_path,
@@ -2735,8 +2735,8 @@ class TestWireGate:
     def test_new_rule_id_present_in_known_gate_rules_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
-        from frob.gates._dead_symbols import wire_gate
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        from frob.gates._wire import wire_gate
 
         _write(
             tmp_path,
@@ -2756,10 +2756,10 @@ class TestWireGate:
     def test_new_cli_dest_missing_from_config_external_is_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
         # Reconstructs T-1422's shape: argparse parses a flag whose dest
         # never made it into _config_external.py's copy lists.
-        from frob.gates._dead_symbols import wire_gate
+        from frob.gates._wire import wire_gate
 
         _write(
             tmp_path,
@@ -2782,8 +2782,8 @@ class TestWireGate:
     def test_new_cli_dest_present_in_config_external_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
-        from frob.gates._dead_symbols import wire_gate
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        from frob.gates._wire import wire_gate
 
         _write(
             tmp_path,
@@ -2809,8 +2809,8 @@ class TestWireGate:
 
     # frob:ticket T-1428
     def test_wire002_fires_when_follow_up_ticket_missing(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
-        from frob.gates._dead_symbols import wire_gate
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        from frob.gates._wire import wire_gate
 
         _write(
             tmp_path,
@@ -2832,8 +2832,8 @@ class TestWireGate:
     def test_wire002_fires_when_follow_up_ticket_is_closed(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
-        from frob.gates._dead_symbols import wire_gate
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        from frob.gates._wire import wire_gate
 
         _write(
             tmp_path,
@@ -2852,8 +2852,8 @@ class TestWireGate:
 
     # frob:ticket T-1428
     def test_wire002_clean_when_follow_up_ticket_is_open(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_dead_symbols.py::wire_gate kind="unit"
-        from frob.gates._dead_symbols import wire_gate
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        from frob.gates._wire import wire_gate
 
         _write(
             tmp_path,
@@ -11820,7 +11820,8 @@ class TestSelfAuditGate:
         assert matches[0].severity == Severity.ERROR
         assert "widget" in matches[0].message
 
-    # frob:tests src/frob/gates/_sys.py::_compliance_selfaudit_violations kind="unit"
+    # frob:tests src/frob/gates/_sys_selfaudit.py::_compliance_selfaudit_violations \
+    # kind="unit"
     def test_selfaudit001_folds_compliance_violation(self, tmp_path: Path) -> None:
         """T-1314: GIVEN a design model with a Pii-clearance node carrying
         `exposure:public-web` and no `privacy-policy` attr (PRIVACY-NOTICE,
@@ -11850,7 +11851,8 @@ class TestSelfAuditGate:
         assert len(matches) >= 1
         assert matches[0].severity == Severity.WARN
 
-    # frob:tests src/frob/gates/_sys.py::_compliance_selfaudit_violations kind="unit"
+    # frob:tests src/frob/gates/_sys_selfaudit.py::_compliance_selfaudit_violations \
+    # kind="unit"
     def test_selfaudit001_compliance_clean_model_no_violations(
         self, tmp_path: Path
     ) -> None:
@@ -11868,7 +11870,8 @@ class TestSelfAuditGate:
         violations = _compliance_selfaudit_violations(tmp_path, design_ids, "design")
         assert _by_rule(violations, "SELFAUDIT001") == []
 
-    # frob:tests src/frob/gates/_sys.py::_compliance_selfaudit_violations kind="unit"
+    # frob:tests src/frob/gates/_sys_selfaudit.py::_compliance_selfaudit_violations \
+    # kind="unit"
     def test_selfaudit001_compliance_suppressed_on_design_load_error(
         self, tmp_path: Path
     ) -> None:

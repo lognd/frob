@@ -71,7 +71,7 @@ from frob.gates._coverage import (
     exclude_filtered_coverage as _coverage_exclude_filtered_coverage,
 )
 from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
-from frob.gates._dead_symbols import dead_symbol_gate, wire_gate
+from frob.gates._dead_symbols import dead_symbol_gate
 from frob.gates._debt_deprecated import (
     _release_expired_deprecated_violations,
     _release_open_debt_violations,
@@ -206,6 +206,7 @@ from frob.gates._waive_comments import (
 )
 from frob.gates._waive_lease import active_ticket, ticket_lease_pin
 from frob.gates._walk_lint import walk_lint_gate
+from frob.gates._wire import wire_gate
 from frob.gates.decisions import DecisionError
 from frob.gates.invariants import Invariant, InvariantError, load_invariants
 from frob.gitio import Diff, Hunk, run_argv, working_diff

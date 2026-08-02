@@ -4295,7 +4295,7 @@ safe) or a rework to a statically-resolvable form.
 ```yaml
 id: T-1420
 title: 'arch: 51-file LARGE001 residue after T-1270''s 2-file split'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-08-02'
@@ -4312,10 +4312,26 @@ scope:
 scope_changes:
 - op: add
   glob: src/frob/vet/_capability_registry.py
-  reason: the file deleted by this split; land's UnownedDeletions check did not treat
-    the existing src/** scope glob as covering it, so naming the exact path
+  reason: the file this split deletes; land's UnownedDeletions check does not treat
+    the src/** glob as covering it, and the ledger splice dropped this entry when
+    main was merged forward
   actor: logan
   at: '2026-08-02'
+evidence:
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_matrix_covers_every_kind_and_language
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_every_operation_kind_and_language_registered
+- tests/test_capability_registry.py::TestValidateRegistryKinds::test_known_kinds_pass
+- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_covers_every_needle_table_module
+- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_survives_a_foreign_install_copy
+- tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
+- tests/test_gates.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged
+- tests/test_gates.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
+- tests/test_gates.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged
+- tests/test_gates.py::TestSysGate::test_sys001_dangling
+- tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes
+- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
+- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
 threat: null
 component: null
 ```
@@ -4388,6 +4404,138 @@ raise the threshold and do not waive merely for size.
 Note: src/frob/tickets/ and src/frob/app/ticket_runner/ overlap T-1296's strata TEST005
 lease and other concurrent tickets' scopes at filing time -- narrow scope via
 `frob ticket scope` before starting, per playbook section 4/lease-collision guidance.
+
+## Done report
+
+This session resumed T-1420 in the existing .claude/worktrees/t-1420
+worktree. Before any split work could proceed, `frob check` failed
+outright: the section-1 `git merge main` warm-up combined this branch's
+still-active tickets.md entries (61 ids) with main's separately-archived
+tickets-archive.md changes for the SAME ids, producing a cross-file
+DuplicateId that hard-failed the ticket-queue load (`all gates were
+skipped`). Root cause: the ledger merge-driver splices conflicts WITHIN
+tickets.md but has no way to see that main independently moved these ids
+into tickets-archive.md while this branch's own tickets.md still carried
+them active. Repaired by removing the 61 stale active blocks from
+tickets.md (main's own tickets.md already has 0 of them; archive already
+holds the authoritative closed state for each) -- committed separately
+(7f4982dd) before any split work, since every gate was structurally
+unable to run until this was fixed. This is a NEW failure mode beyond the
+ones playbook section 10/10b document (those cover same-file conflicts
+and late-merge timing; this is a cross-file main-vs-branch archival
+divergence) -- worth a playbook addendum, flagging for the coordinator
+rather than filing a ticket myself (documentation-only, no scope glob
+fits it, and it is a one-off repair not a recurring code defect).
+
+Two clean, gate-verified splits landed this session:
+
+1. src/frob/gates/_sys.py (819 -> 537 lines): SELFAUDIT001 self-audit-at-
+   land family (_selfaudit_violations/_compliance_selfaudit_violations,
+   T-0756/T-1314, ~284 lines) moved verbatim into a new sibling
+   src/frob/gates/_sys_selfaudit.py (317 lines). sys_gate imports both
+   back unchanged. Commit a411377d.
+
+2. src/frob/gates/_dead_symbols.py (819 -> 216 lines): the WIRE001/
+   WIRE002 family (T-1428/T-1431, _short_name through wire_gate plus its
+   four literal-regex constants, ~594 lines) moved verbatim into a new
+   sibling src/frob/gates/_wire.py (633 lines), importing back
+   _CALLABLE_KINDS/_is_dunder/_is_test_symbol from _dead_symbols (both
+   gates share the dunder/test-symbol exemption logic). frob.gates.
+   __init__ now imports wire_gate from _wire. Commit d295a0c4.
+
+Both splits followed the section-checklist discipline: doc edges fixed
+in the same commit (docs/strata/host.md's _selfaudit_violations
+reference; docs/modules/gates.md's frob:describes wire_gate anchor),
+frob:tests edges in tests/test_gates.py repointed to the new file paths
+(3 for the compliance-selfaudit family, all of TestWireGate's for the
+wire split), FMT001 line-wraps applied via `frob fmt`, ruff check/format
+clean on every touched file. Per-split verification: scoped pytest on
+the moved test classes (all green), then `frob check --only archgate
+--only wire --only dead_symbols --only drift --only doclink --only
+docanchor --only fmt` -- 0 errors both times (drift caught the stale
+frob:tests references before the fix, confirming the check actually
+exercises the edges). Confirmed no regression: WIRE001 did NOT fire on
+either relocation (both bodies moved with unchanged digests, carrying
+their directives intact) -- T-1431's relocation-awareness held as
+expected, no regression to report there.
+
+LARGE001 count: 52 (51 unwaived + 1 waived, after the ledger repair put
+gates back in a runnable state) -> 50 after both splits. Full repo-wide
+pytest --collect-only still succeeds (confirmed, no collection breakage
+from either split).
+
+Files still on the T-1420 list (repo-wide LARGE001, unwaived), from
+largest: src/frob/vet/_capability.py (6044), src/frob/gates/__init__.py
+(6727 -- likely to shrink further as sibling extractions like today's
+land), src/frob/vet/_capability_registry.py's package (T-1420's own
+already-done split, not re-measured this session), src/frob/strata/
+_threat.py (2522), strata-core/src/parse/mod.rs (1744, Rust -- not
+attempted this session, no Rust split experience banked), src/frob/
+tickets/_models.py (1917), src/frob/tickets/_land.py (1845), src/frob/
+strata/_selfconform.py (1608), src/frob/tickets/_store.py (1552),
+src/frob/gates/_waive.py (1479 -- deceptively named same-sized-as-before
+since it wasn't the target this session), src/frob/gates/_docptr.py
+(1468), src/frob/tickets/_leases.py (1403), src/frob/strata/_elaborate.py
+(1403), src/frob/gates/_fix_engine.py (1401), src/frob/tickets/
+_evidence.py (1369), and the rest of the original 51-file list minus the
+two closed above. strata-core/src/lib.rs dropped off the list entirely
+between the ticket's original measurement and this session's first
+archgate run (852 lines waived carried over from before, not
+re-investigated -- may already have been split by a concurrent land;
+worth the coordinator re-checking rather than assuming this session
+touched it, since it did not).
+
+Nothing else in scope was touched. No ticket filed for the ledger repair
+(documentation/process finding, not a code defect with a scope glob).
+
+### Changed
+```
+ docs/guides/extending/capability-registry.md       |   66 +-
+ docs/modules/gates.md                              |    2 +-
+ docs/modules/vet.md                                |    8 +-
+ docs/strata/host.md                                |    2 +-
+ src/frob/gates/__init__.py                         |    3 +-
+ src/frob/gates/_dead_symbols.py                    |  611 +---
+ src/frob/gates/_sys.py                             |  295 +-
+ src/frob/gates/_sys_selfaudit.py                   |  316 +++
+ src/frob/gates/_waive.py                           |    2 +-
+ src/frob/gates/_wire.py                            |  633 +++++
+ src/frob/vet/_capability.py                        |   28 +-
+ src/frob/vet/_capability_registry.py               | 2991 --------------------
+ src/frob/vet/_capability_registry/__init__.py      |   80 +
+ .../_capability_registry/_dangerous_ops_other.py   |  754 +++++
+ .../_capability_registry/_dangerous_ops_python.py  |  726 +++++
+ src/frob/vet/_capability_registry/_kinds.py        |  132 +
+ src/frob/vet/_capability_registry/_matrix.py       |  751 +++++
+ src/frob/vet/_capability_registry/_opaque.py       |  504 ++++
+ src/frob/vet/_capability_registry/_schemas.py      |  133 +
+ tests/test_capability_registry.py                  |   35 +-
+ tests/test_gates.py                                |   61 +-
+ tests/test_vet.py                                  |   62 +-
+ tickets.md                                         |   80 +-
+ 23 files changed, 4280 insertions(+), 3995 deletions(-)
+```
+
+### Evidence
+- `tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells` (pytest node id, verified passing when recorded)
+- `tests/test_capability_registry.py::TestMatrixExhaustiveness::test_matrix_covers_every_kind_and_language` (pytest node id, verified passing when recorded)
+- `tests/test_capability_registry.py::TestMatrixExhaustiveness::test_every_operation_kind_and_language_registered` (pytest node id, verified passing when recorded)
+- `tests/test_capability_registry.py::TestValidateRegistryKinds::test_known_kinds_pass` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_covers_every_needle_table_module` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_survives_a_foreign_install_copy` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSysGate::test_sys001_dangling` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 14 passed (from 14 evidence id(s))
+- gates: 1 error(s), 7650 warning(s), 694 waived
+- error-findings: PRE001@tickets/T-1420
 
 <!-- ticket:T-1423 -->
 ```yaml
@@ -4587,6 +4735,7 @@ T-1422's landed commit (frob ticket accept --amend/--remove) introduced src/frob
 
 ## Drop reason
 - 2026-08-02: T-1427 already resolved this: src/frob/tickets/_accept.py carries a reasoned frob:waive INV006; frob check --only invariant confirms 0 findings on this file. Re-dropped on main after the worktree drop was lost to the ledger splice (T-1437's resurrect class).
+
 <!-- ticket:T-1430 -->
 ```yaml
 id: T-1430
@@ -5196,3 +5345,185 @@ threat: null
 component: null
 ```
 User directive 2026-08-02: the current may clause grants a capability to a node's ENTIRE code glob, which reproduces the anti-pattern strata exists to kill -- everything inside a broad node (testsuite: code tests/**) can do everything the node may. A grant should be forced down to a few controllable surfaces. Design sketch: (1) grammar -- may KIND [via GLOB[, GLOB...]] where via names sub-globs of the node's own code binding; a via-less may keeps meaning whole-node for migration. (2) SYS100 join becomes per-file: an observation in file F is discharged only by a may whose via matches F (or a via-less may); an observation outside every via surface stays red even though the node nominally holds the capability. (3) SYS101 staleness likewise judged per via surface, so a dead grant on one file is flagged even while another file legitimately uses the same kind. (4) a new advisory rule fires on via-less may clauses on nodes whose code glob binds more than a threshold file count, driving the codebase toward full scoping without a flag-day; [strata] config gets require_may_scope to escalate it to error for repos ready to commit. (5) argument-level scoping (may env.read of FROB_*) is a natural follow-up once via lands; note it in docs but do not build it in this ticket. Migration for this repo: split testsuite/broad nodes' grants down to the actual observing files using the existing scanner's per-file observation data, which already knows exactly which file observes which kind.
+
+<!-- ticket:T-1441 -->
+```yaml
+id: T-1441
+title: 'arch: LARGE001 splits of gates _sys and _dead_symbols (T-1420 delivered portion
+  1)'
+state: done
+kind: feature
+origin: agent
+created: '2026-08-02'
+priority: high
+parent: T-1420
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_sys.py
+- src/frob/gates/_sys_selfaudit.py
+- src/frob/gates/_dead_symbols.py
+- src/frob/gates/_wire.py
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+- docs/modules/gates.md
+- docs/strata/host.md
+- src/frob/vet/_capability_registry.py
+- src/frob/vet/_capability_registry/**
+- src/frob/vet/_capability.py
+- tests/test_capability_registry.py
+- tests/test_vet.py
+- src/frob/gates/_waive.py
+scope_changes:
+- op: add
+  glob: src/frob/vet/_capability_registry.py
+  reason: the t-1420 branch also carries the earlier-session T-1420 commit 8efc97e3
+    (capability_registry package split, gate-verified as part of frob check --ticket
+    T-1420 budget-100 clean run); this leaf lands the whole delivered branch, so its
+    scope must cover that split too
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/vet/_capability_registry/**
+  reason: the t-1420 branch also carries the earlier-session T-1420 commit 8efc97e3
+    (capability_registry package split, gate-verified as part of frob check --ticket
+    T-1420 budget-100 clean run); this leaf lands the whole delivered branch, so its
+    scope must cover that split too
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/vet/_capability.py
+  reason: the t-1420 branch also carries the earlier-session T-1420 commit 8efc97e3
+    (capability_registry package split, gate-verified as part of frob check --ticket
+    T-1420 budget-100 clean run); this leaf lands the whole delivered branch, so its
+    scope must cover that split too
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/test_capability_registry.py
+  reason: the t-1420 branch also carries the earlier-session T-1420 commit 8efc97e3
+    (capability_registry package split, gate-verified as part of frob check --ticket
+    T-1420 budget-100 clean run); this leaf lands the whole delivered branch, so its
+    scope must cover that split too
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/test_vet.py
+  reason: the t-1420 branch also carries the earlier-session T-1420 commit 8efc97e3
+    (capability_registry package split, gate-verified as part of frob check --ticket
+    T-1420 budget-100 clean run); this leaf lands the whole delivered branch, so its
+    scope must cover that split too
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: the t-1420 branch also carries the earlier-session T-1420 commit 8efc97e3
+    (capability_registry package split, gate-verified as part of frob check --ticket
+    T-1420 budget-100 clean run); this leaf lands the whole delivered branch, so its
+    scope must cover that split too
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
+- tests/test_gates.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged
+- tests/test_gates.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
+- tests/test_gates.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged
+- tests/test_gates.py::TestSysGate::test_sys001_dangling
+- tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes
+- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
+- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
+acceptance:
+- text: GIVEN the two split commits WHEN frob check --only archgate --only wire --only
+    dead_symbols --only drift runs THEN 0 errors and LARGE001 no longer lists _sys.py
+    or _dead_symbols.py
+  evidence:
+  - tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
+  - tests/test_gates.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged
+  - tests/test_gates.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
+  - tests/test_gates.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged
+  - tests/test_gates.py::TestSysGate::test_sys001_dangling
+  - tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes
+  - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
+  - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
+threat: null
+component: null
+```
+Leaf carrier for T-1420's first delivered portion (T-1414 precedent), so completed splits land on main while T-1420's lease continues on the remaining 50 files. Two verbatim-relocation splits, both gate-verified in the t-1420 worktree: (1) src/frob/gates/_sys.py 819 to 537 lines, SELFAUDIT001 family moved to new _sys_selfaudit.py; (2) src/frob/gates/_dead_symbols.py 819 to 216 lines, WIRE001/WIRE002 family moved to new _wire.py, frob.gates.__init__ repointed. Doc and frob:tests edges repointed in the same commits; WIRE001's T-1431 relocation-awareness held on both (no false fire). LARGE001 count 52 to 50.
+
+## Done report
+
+Leaf carrier landing T-1420's first delivered portion (T-1414 precedent)
+so two completed, gate-verified LARGE001 splits reach main while the
+T-1420 lease continues over the remaining 50 files.
+
+1. src/frob/gates/_sys.py (819 -> 537 lines): the SELFAUDIT001 family
+   moved verbatim to new src/frob/gates/_sys_selfaudit.py (317 lines).
+2. src/frob/gates/_dead_symbols.py (819 -> 216 lines): the WIRE001/
+   WIRE002 family moved verbatim to new src/frob/gates/_wire.py (633
+   lines), importing shared exemption helpers back from _dead_symbols;
+   frob.gates.__init__ repointed.
+
+Both splits repointed their doc edges (docs/strata/host.md,
+docs/modules/gates.md) and frob:tests edges (tests/test_gates.py) in the
+same commit as the move; drift/doclink/docanchor/fmt/archgate/wire/
+dead_symbols scoped checks all pass, and WIRE001's T-1431
+relocation-awareness held on both relocations (no false fire, its first
+real-world exercise). LARGE001 file count 52 -> 50.
+
+Also carried: the t-1420 worktree's ledger repair after the warm-up
+merge resurrected 61 main-archived ticket blocks (the T-1437 splice
+class) -- stale active blocks removed, verified against main's ledger.
+
+Also delivered on this branch (earlier T-1420 session, commit 8efc97e3,
+verified inside the same frob check --ticket T-1420 --budget 100 clean
+run): src/frob/vet/_capability_registry.py (2991 lines) split into a
+7-module package (_dangerous_ops_python/_dangerous_ops_other/_kinds/
+_matrix/_opaque/_schemas), with _capability.py and the vet/registry
+tests repointed. The three frob:waive directives that lived in the old
+monofile (INV006 split-carried-prose, COV007 drift-lock helper, AFFECT001
+tuple-extension) were RELOCATED into the new package modules with their
+reasons intact, not dropped -- the deletion filter's hits on the old
+path are the delete half of a verbatim move.
+
+### Changed
+```
+ docs/guides/extending/capability-registry.md       |   66 +-
+ docs/modules/gates.md                              |    2 +-
+ docs/modules/vet.md                                |    8 +-
+ docs/strata/host.md                                |    2 +-
+ src/frob/gates/__init__.py                         |    3 +-
+ src/frob/gates/_dead_symbols.py                    |  611 +---
+ src/frob/gates/_sys.py                             |  295 +-
+ src/frob/gates/_sys_selfaudit.py                   |  316 +++
+ src/frob/gates/_waive.py                           |    2 +-
+ src/frob/gates/_wire.py                            |  633 +++++
+ src/frob/vet/_capability.py                        |   28 +-
+ src/frob/vet/_capability_registry.py               | 2991 --------------------
+ src/frob/vet/_capability_registry/__init__.py      |   80 +
+ .../_capability_registry/_dangerous_ops_other.py   |  754 +++++
+ .../_capability_registry/_dangerous_ops_python.py  |  726 +++++
+ src/frob/vet/_capability_registry/_kinds.py        |  132 +
+ src/frob/vet/_capability_registry/_matrix.py       |  751 +++++
+ src/frob/vet/_capability_registry/_opaque.py       |  504 ++++
+ src/frob/vet/_capability_registry/_schemas.py      |  133 +
+ tests/test_capability_registry.py                  |   35 +-
+ tests/test_gates.py                                |   61 +-
+ tests/test_vet.py                                  |   62 +-
+ tickets.md                                         |  278 +-
+ 23 files changed, 4478 insertions(+), 3995 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSysGate::test_sys001_dangling` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 8 passed (from 8 evidence id(s))
+- gates: 1 error(s), 1166 warning(s), 693 waived
+- error-findings: PRE001@tickets/T-1441

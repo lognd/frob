@@ -4065,22 +4065,19 @@ class TestFingerprintScan:
         # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
         import re
 
-        from frob.vet._capability import (
-            _FINGERPRINT_CATALOG_PATH,
-            _REGISTRY_PATH,
-            _SELF_PATH,
-            is_self_pattern_path,
-        )
+        from frob.vet._capability import is_self_pattern_path
 
         repo_root = Path(__file__).resolve().parents[1]
         src_root = repo_root / "src" / "frob"
         needle_table_marker = re.compile(r"needles\s*=\s*\(|needles\s*:\s*tuple\[")
         offenders: list[Path] = []
+        matched: list[Path] = []
         for path in src_root.rglob("*.py"):
             text = path.read_text(encoding="utf-8", errors="replace")
-            if needle_table_marker.search(text) and not is_self_pattern_path(
-                path, repo_root
-            ):
+            if not needle_table_marker.search(text):
+                continue
+            matched.append(path)
+            if not is_self_pattern_path(path, repo_root):
                 offenders.append(path)
 
         assert offenders == [], (
@@ -4088,19 +4085,19 @@ class TestFingerprintScan:
             f"is_self_pattern_path: {offenders} -- widen the exclusion set "
             f"in frob.vet._capability"
         )
-        # sanity: the exclusion set is exactly the three known catalog/
-        # scanner modules, not accidentally empty (which would make the
-        # `offenders == []` assertion above vacuously true).
-        assert {_SELF_PATH, _REGISTRY_PATH, _FINGERPRINT_CATALOG_PATH} == {
-            p.resolve()
-            for p in (
-                Path(__file__).resolve().parents[1] / "src/frob/vet/_capability.py",
-                Path(__file__).resolve().parents[1]
-                / "src/frob/vet/_capability_registry.py",
-                Path(__file__).resolve().parents[1]
-                / "src/frob/strata/_cve_fingerprint.py",
-            )
-        }
+        # sanity: the marker itself actually matched something -- not
+        # accidentally empty (which would make the `offenders == []`
+        # assertion above vacuously true). T-1420 split
+        # `_capability_registry.py` into a package, so this no longer
+        # names a fixed count/set of files (that would re-hardcode the
+        # exact thing this drift-lock exists to keep loose) -- it only
+        # confirms every catalog/scanner module `_capability.py`,
+        # `_cve_fingerprint.py`, and the `_capability_registry/` package's
+        # table submodules are still present and still matched.
+        assert len(matched) >= 3, matched
+        assert repo_root / "src/frob/vet/_capability.py" in matched
+        assert repo_root / "src/frob/strata/_cve_fingerprint.py" in matched
+        assert any(p.parent.name == "_capability_registry" for p in matched), matched
 
     def test_self_pattern_exclusion_survives_a_foreign_install_copy(
         self, tmp_path: Path
@@ -4131,7 +4128,16 @@ class TestFingerprintScan:
         foreign_frob_src = fake_repo / "src" / "frob"
 
         foreign_capability = foreign_frob_src / "vet" / "_capability.py"
-        foreign_registry = foreign_frob_src / "vet" / "_capability_registry.py"
+        # T-1420: _capability_registry.py split into a package -- use one
+        # representative table submodule (suffix matching is per-file, not
+        # per-directory, so any one of the package's listed suffixes proves
+        # the same thing the old single-file path used to).
+        foreign_registry = (
+            foreign_frob_src
+            / "vet"
+            / "_capability_registry"
+            / "_dangerous_ops_python.py"
+        )
         foreign_fingerprint = foreign_frob_src / "strata" / "_cve_fingerprint.py"
         # the discriminator checks the exact scan root passed in (no
         # ancestor search, see `_make_fake_frob_repo_root`'s docstring), so
@@ -6057,7 +6063,7 @@ class TestOpaqueIndirectionGate:
         # the best-effort callgraph only sees name( call tokens, not indexed-constant \
         # attribute mutation; same disposition as the evasion-taxonomy meta-test \
         # COV006 waivers"
-        # frob:tests src/frob/vet/_capability_registry.py::_OpaqueStructuralConstruct kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_registry/_schemas.py::_OpaqueStructuralConstruct kind="unit"  # noqa: E501
         # T-1051: `_OpaqueStructuralConstruct.model_config = ConfigDict(
         # frozen=True)` (same immutability posture as `_OpaqueConstruct`
         # above it) must actually reject a post-construction mutation --
@@ -6331,7 +6337,7 @@ class TestOpaqueIndirectionGate:
     def test_rust_extern_ffi_symbol_excused_source_invisible(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_registry.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_registry/_opaque.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
         # taxonomy "`extern` block FFI symbol binding resolved by the
         # dynamic linker" row. Same source-invisible shape as the C
         # weak-symbol row `OPAQUE_SOURCE_INVISIBLE` already excuses (T-0665)
@@ -6387,7 +6393,7 @@ class TestOpaqueIndirectionGate:
     def test_rust_proc_macro_synthesized_call_excused_source_invisible(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_registry.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_registry/_opaque.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
         # taxonomy "procedural / derive macros synthesizing a call from
         # external input" row -- mirrors the `macro_rules!` resolver gap
         # `test_macro_rules_expansion_emitting_fixed_call_not_detected`
@@ -6496,7 +6502,7 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "Function constructor" for f in findings)
 
     def test_c_weak_symbol_override_excused_source_invisible(self) -> None:
-        # frob:tests src/frob/vet/_capability_registry.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_registry/_opaque.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
         # taxonomy "weak-symbol override resolved by the linker/loader" row
         # (C). Unlike the other C runtime rows, this one is DELIBERATELY
         # not a fixture-with-a-finding: the T-0665 sign-off excuses it via
@@ -6512,7 +6518,7 @@ class TestOpaqueIndirectionGate:
         assert "weak-symbol" in c_cpp_excuses[0].reason
 
     def test_rust_runtime_vtable_patch_excused_source_invisible(self) -> None:
-        # frob:tests src/frob/vet/_capability_registry.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_registry/_opaque.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
         # Rust's own `OPAQUE_SOURCE_INVISIBLE` entries: a runtime vtable
         # patch (unsafe raw-pointer rewrite of a trait object's vtable
         # slot), plus, as of T-1047, a dedicated `extern` FFI symbol

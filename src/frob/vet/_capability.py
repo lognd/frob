@@ -2774,7 +2774,16 @@ def _ts_binding_operations(
 # table, so scanning either against itself trivially "observes" every
 # capability regardless of what the code actually does).
 _SELF_PATH = Path(__file__).resolve()
-_REGISTRY_PATH = (Path(__file__).parent / "_capability_registry.py").resolve()
+# T-1420: `_capability_registry.py` split into a package -- no single file
+# is "the registry" any more, so `_REGISTRY_PATH` names the package's
+# `__init__.py` as the closest equivalent identity anchor. The operative
+# exclusion mechanism is `_SELF_PATTERN_SUFFIXES` (updated above for the
+# split), not this variable -- neither it nor `_SELF_PATH` is read anywhere
+# outside this comment block; both are kept as documented identity anchors
+# only, per the T-0253 note below.
+_REGISTRY_PATH = (
+    Path(__file__).parent / "_capability_registry" / "__init__.py"
+).resolve()
 # T-0153: `frob.strata._cve_fingerprint` stores every `CveFingerprint.needles`
 # entry as a literal string too -- same self-match class as `_REGISTRY_PATH`
 # above, so its own file is excluded from directory aggregation on the same
@@ -2829,7 +2838,22 @@ _FINGERPRINT_CATALOG_PATH = (
 # frob:ticket T-0910
 _SELF_PATTERN_SUFFIXES: tuple[tuple[str, ...], ...] = (
     ("frob", "vet", "_capability.py"),
-    ("frob", "vet", "_capability_registry.py"),
+    # T-1420: `_capability_registry.py` split into a package -- every
+    # submodule that itself carries a `needles=(...)` literal table OR a
+    # `needles: tuple[str, ...]` catalog-entry FIELD declaration (the two
+    # T-0201 drift-lock shapes -- `_schemas.py`'s `_DangerousOperation`
+    # class declares the field even though the actual literal data lives in
+    # the two `_dangerous_ops_*.py` tables) needs its own suffix entry here
+    # (the exclusion was previously keyed on the single monolithic file; a
+    # package has no single file to key on). `__init__.py`/`_kinds.py`
+    # carry neither shape (pure re-exports and the plain vocabulary tuple)
+    # and are deliberately NOT listed -- scanning them finds nothing to
+    # exclude.
+    ("frob", "vet", "_capability_registry", "_schemas.py"),
+    ("frob", "vet", "_capability_registry", "_dangerous_ops_python.py"),
+    ("frob", "vet", "_capability_registry", "_dangerous_ops_other.py"),
+    ("frob", "vet", "_capability_registry", "_matrix.py"),
+    ("frob", "vet", "_capability_registry", "_opaque.py"),
     ("frob", "strata", "_cve_fingerprint.py"),
     # T-0729: `frob.arch._srp`'s ARCH103 mixed-concern check stores its
     # I/O-classifier signals (`_IO_MODULE_PREFIXES`: `socket.`,

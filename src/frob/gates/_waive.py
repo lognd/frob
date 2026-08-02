@@ -528,7 +528,7 @@ _KNOWN_GATE_RULES = frozenset(
         # T-1428: a ticket's own diff adds a symbol, gate-rule-id literal,
         # or CLI flag `dest` that nothing outside the diff's own tests can
         # reach -- the repeat-offender "landed, passed every gate, did
-        # nothing" defect (`frob.gates._dead_symbols.wire_gate`).
+        # nothing" defect (`frob.gates._wire.wire_gate`).
         "WIRE001",
         # T-1428: a `frob:waive WIRE001` present but its `follow_up=`
         # attribute is missing or does not name a real, still-open ticket
