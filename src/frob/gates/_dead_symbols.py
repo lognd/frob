@@ -374,56 +374,75 @@ def _is_reached_outside_diff_tests(
     return False
 
 
+def _base_name_match_paths(root: Path, base: str, short: str) -> frozenset[str]:
+    """Paths at revision `base` whose text defines a `def`/`class` named
+    `short`, via one `git grep -l` (cheap, no parse) -- empty on grep
+    failure or no match (rc=1 is git grep's "no match", not an error)."""
+    pattern = rf"^[[:space:]]*(async[[:space:]]+def|def|class)[[:space:]]+{short}\b"
+    grep = run_argv(
+        ("git", "-C", str(root), "grep", "-lE", pattern, base, "--", "*.py")
+    )
+    if grep.is_err or grep.danger_ok.returncode not in (0, 1):
+        return frozenset()
+    paths: set[str] = set()
+    for line in grep.danger_ok.stdout.splitlines():
+        # git grep -l on a revision spec prints "<rev>:<path>".
+        _, _, path = line.partition(":")
+        if path:
+            paths.add(path)
+    return frozenset(paths)
+
+
+def _parsed_scratch_symbols(text: str, suffix: str) -> tuple:
+    """Symbols of `text` parsed through a scratch temp file (since
+    `frob.lang.parse_file` only reads a real `Path`) -- empty on parse
+    failure (the caller treats that as "no match", never an exemption)."""
+    with tempfile.NamedTemporaryFile(
+        suffix=suffix, mode="w", encoding="utf-8", delete=False
+    ) as handle:
+        handle.write(text)
+        tmp_path = Path(handle.name)
+    try:
+        parsed = parse_file(tmp_path)
+    finally:
+        tmp_path.unlink(missing_ok=True)
+    return () if parsed.is_err else tuple(parsed.danger_ok.symbols)
+
+
+def _base_blob_symbol_digests(
+    root: Path, base: str, path: str, short: str
+) -> tuple[str, ...]:
+    """Body (or, body-less, signature) digests of every symbol named
+    `short` in blob `base:path` -- one `git show` read fed through
+    `_parsed_scratch_symbols`. Empty on any show/parse failure."""
+    show = run_argv(("git", "-C", str(root), "show", f"{base}:{path}"))
+    if show.is_err or show.danger_ok.returncode != 0:
+        return ()
+    suffix = Path(path).suffix or ".py"
+    return tuple(
+        digests.body or digests.sig
+        for symbol in _parsed_scratch_symbols(show.danger_ok.stdout, suffix)
+        if _short_name(symbol.qualname) == short
+        for digests in (compute_digests(symbol),)
+    )
+
+
 def _merge_base_body_match(
     root: Path, base: str, short: str, target_digest: str
 ) -> bool:
     """True if a `def`/`class` named `short` existed ANYWHERE in the tree at
     `base` (the diff's merge-base sha) whose body (or, for a body-less
     symbol, signature) digest equals `target_digest` -- the T-1431
-    relocation check. A `git grep` at the base revision finds candidate
-    `path:line` hits by name (cheap, no parse needed for the common "no
-    prior symbol by this name at all" case); only a name-match candidate
-    pays for a `git show` blob read plus a real `frob.lang.parse_file`
-    extraction to compare digests. Digest equality, not just a name match,
-    is required -- two unrelated symbols can share a short name."""
-    pattern = rf"^[[:space:]]*(async[[:space:]]+def|def|class)[[:space:]]+{short}\b"
-    grep = run_argv(
-        ("git", "-C", str(root), "grep", "-lE", pattern, base, "--", "*.py")
+    relocation check. `_base_name_match_paths` finds candidate paths by
+    name (cheap, no parse needed for the common "no prior symbol by this
+    name at all" case); only a name-match candidate pays for
+    `_base_blob_symbol_digests`'s blob read + parse. Digest equality, not
+    just a name match, is required -- two unrelated symbols can share a
+    short name."""
+    return any(
+        target_digest in _base_blob_symbol_digests(root, base, path, short)
+        for path in _base_name_match_paths(root, base, short)
     )
-    if grep.is_err or grep.danger_ok.returncode not in (0, 1):
-        # rc=1 means "no match" for git grep -- not an error, just empty.
-        return False
-    paths: set[str] = set()
-    for line in grep.danger_ok.stdout.splitlines():
-        if ":" not in line:
-            continue
-        # git grep -l on a revision spec prints "<rev>:<path>".
-        _, _, path = line.partition(":")
-        if path:
-            paths.add(path)
-    for path in paths:
-        show = run_argv(("git", "-C", str(root), "show", f"{base}:{path}"))
-        if show.is_err or show.danger_ok.returncode != 0:
-            continue
-        with tempfile.NamedTemporaryFile(
-            suffix=Path(path).suffix or ".py", mode="w", encoding="utf-8", delete=False
-        ) as handle:
-            handle.write(show.danger_ok.stdout)
-            tmp_path = Path(handle.name)
-        try:
-            parsed = parse_file(tmp_path)
-        finally:
-            tmp_path.unlink(missing_ok=True)
-        if parsed.is_err:
-            continue
-        for symbol in parsed.danger_ok.symbols:
-            if _short_name(symbol.qualname) != short:
-                continue
-            digests = compute_digests(symbol)
-            candidate = digests.body or digests.sig
-            if candidate == target_digest:
-                return True
-    return False
 
 
 def _wire001_unwired_symbol_violations(
@@ -690,7 +709,7 @@ def _wire001_new_kwonly_param_violations(
         base_kwonly = _kwonly_param_names(show.danger_ok.stdout, short)
         if base_kwonly is None:
             continue
-        new_names = sorted(current_kwonly - base_kwonly)
+        new_names = current_kwonly - base_kwonly
         if not new_names:
             continue
         def_lines = frozenset(range(record.span[0], record.span[1] + 1))
@@ -713,6 +732,10 @@ def _wire001_new_kwonly_param_violations(
                     ),
                 )
             )
+    # One deterministic sort AFTER the loop (PERF004: never sort per
+    # iteration) -- set iteration order above is arbitrary, output must
+    # not be.
+    violations.sort(key=lambda v: (v.file, v.line, v.message))
     return violations
 
 
