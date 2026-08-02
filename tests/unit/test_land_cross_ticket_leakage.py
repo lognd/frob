@@ -238,4 +238,38 @@ class TestCrossTicketLeakage:
         result = land(repo, landing_id, wt, dry_run=False)
 
         assert result.is_ok, result.err
+
+    def test_sibling_declaring_broad_scope_but_untouched_does_not_block(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"  # noqa: E501
+        # T-1390: the measured false-positive class -- an UNRELATED open
+        # ticket (never leased to this worktree, never worked on this
+        # branch) merely DECLARES a broad scope ("src/**") that happens to
+        # cover a file this branch legitimately changes. Its own ledger
+        # record never moves on this branch, so it must not block the
+        # land even though its declared scope matches.
+        broad = new_ticket(repo, _spec("Broad-scope backlog item", scope=("src/**",)))
+        assert broad.is_ok
+        broad_id = broad.danger_ok.id
+        assert transition(repo, broad_id, TicketState.PLANNED).is_ok
+        assert transition(repo, broad_id, TicketState.IN_PROGRESS).is_ok
+        _commit_all(repo, f"seed {broad_id}: broad-scope backlog item, in-progress")
+
+        # The worktree forks AFTER broad_id already exists on main, so its
+        # ledger record is identical at the fork point and now -- nothing
+        # in this branch ever touches broad_id.
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "solo-broad", str(wt)], repo)
+        created = new_ticket(wt, _spec("Independent fix", scope=("src/fix.py",)))
+        assert created.is_ok
+        landing_id = created.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "fix.py").write_text("# independent fix, unrelated to broad_id\n")
+        _commit_all(wt, f"{landing_id}: independent fix")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_ok, result.err
+        assert (repo / "src" / "fix.py").exists()
         assert (repo / "src" / "fix.py").exists()

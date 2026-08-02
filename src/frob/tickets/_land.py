@@ -1121,13 +1121,49 @@ def _branch_changed_files(
 
 
 # frob:ticket T-1355
+# frob:ticket T-1390
+def _ledger_ticket_at_merge_base(
+    worktree: Path, base_ref: str, ticket_id: str
+) -> Ticket | None:
+    """`ticket_id`'s ticket record as it existed in `worktree`'s ledger at
+    the point `worktree`'s branch actually DIVERGED from `base_ref` (T-1390)
+    -- `git merge-base base_ref HEAD`, not `base_ref` itself, so a
+    worktree that has since `git merge`d `base_ref` back in (agent-
+    playbook.md section 1b's sanctioned mid-ticket sync) is compared
+    against the true fork point, not whatever `base_ref` has advanced to
+    since. Returns `None` when the ref/ledger is unreadable or the id did
+    not exist there yet (a ticket created fresh on this branch has no
+    prior record to compare against, so any scope-matching hit against it
+    is real work done here, never a false positive) -- the caller treats
+    `None` the same as "changed" (fail toward still flagging a candidate
+    leak, never toward silently clearing one)."""
+    from frob.tickets._store import _parse_ledger
+
+    merge_base = run_argv(["git", "-C", str(worktree), "merge-base", base_ref, "HEAD"])
+    if merge_base.is_err or merge_base.danger_ok.returncode != 0:
+        return None
+    sha = merge_base.danger_ok.stdout.strip()
+    if not sha:
+        return None
+    shown = run_argv(["git", "-C", str(worktree), "show", f"{sha}:tickets.md"])
+    if shown.is_err or shown.danger_ok.returncode != 0:
+        return None
+    parsed = _parse_ledger(shown.danger_ok.stdout)
+    if parsed.is_err:
+        return None
+    return parsed.danger_ok.get(ticket_id)
+
+
+# frob:ticket T-1355
 # frob:ticket T-1370
+# frob:ticket T-1390
 def _find_leaked_tickets(
     worktree: Path,
     landing_id: str,
     worktree_tickets: dict[str, Ticket],
     root_tickets: dict[str, Ticket],
     changed_paths: frozenset[str],
+    base_ref: str,
 ) -> dict[str, list[str]]:
     """The `{other_ticket_id: [leaked_path, ...]}` map `_check_cross_
     ticket_leakage` refuses on (T-1355: split out to keep the parent under
@@ -1136,8 +1172,28 @@ def _find_leaked_tickets(
     root already knows the id, is the AUTHORITATIVE state -- a ticket
     landed done through its own separate `frob ticket land` call is
     terminal even if this worktree's pre-pull copy still shows it
-    in-progress) and whose declared `scope` matches at least one path in
-    `changed_paths`.
+    in-progress), whose declared `scope` matches at least one path in
+    `changed_paths`, AND whose own ledger record has actually CHANGED on
+    this branch since it forked from `base_ref` (T-1390).
+
+    T-1390: declared `scope` is an intention, not evidence that a sibling
+    ticket's work is actually present on this branch -- measured across a
+    real session, siblings that merely declare a broad scope (`src/**`,
+    `tests/**`) matched almost every land's changed files even though
+    they never contributed a single commit here, forcing
+    `allow_cross_ticket=True` on every single land (the exact
+    reflex-override habit this guard exists to prevent -- see this
+    function's own module docstring for the T-1355 incident). The added
+    signal: has `other`'s OWN ledger record actually moved since this
+    branch forked (`_ledger_ticket_at_merge_base`)? A sibling ticket that
+    genuinely got worked ON THIS BRANCH (the real T-1352/T-1276 shape --
+    started, evidence recorded, Done report written, all via the ticket
+    CLI, all of which rewrite its ledger block) always leaves that trail;
+    an unrelated ticket sitting open elsewhere, never touched here, does
+    not -- its record at the fork point and its record now are byte-
+    identical. A ticket record identical since the fork is skipped
+    (logged at INFO, mirroring the T-1370 same-worktree exemption's own
+    style) even if its declared scope happens to match a changed path.
 
     T-1370: a sibling ticket LEASED TO THE SAME WORKTREE as `landing_id`
     (`_scope._same_worktree_lease`, the exact T-1356 precedent this
@@ -1176,12 +1232,26 @@ def _find_leaked_tickets(
             for path in changed_paths
             if scope_matches(path, other.scope, kind=other.kind)
         ]
-        if hits:
-            # frob:waive PERF004 reason="sorts a DIFFERENT, per-ticket hits list each \
-            # iteration (for stable log/error ordering) -- there is nothing \
-            # loop-invariant to hoist, each ticket's hit set is independent and \
-            # typically single-digit length"
-            leaked[other_id] = sorted(hits)
+        if not hits:
+            continue
+        base_ticket = _ledger_ticket_at_merge_base(worktree, base_ref, other_id)
+        if base_ticket is not None and base_ticket == other:
+            _log.info(
+                "land: %s cross-ticket leakage check exempting %s (T-1390: "
+                "its ledger record is unchanged since this branch forked "
+                "from %s -- its declared scope matches %d changed path(s), "
+                "but it was never actually worked on this branch)",
+                landing_id,
+                other_id,
+                base_ref,
+                len(hits),
+            )
+            continue
+        # frob:waive PERF004 reason="sorts a DIFFERENT, per-ticket hits list each \
+        # iteration (for stable log/error ordering) -- there is nothing \
+        # loop-invariant to hoist, each ticket's hit set is independent and \
+        # typically single-digit length"
+        leaked[other_id] = sorted(hits)
     return leaked
 
 
@@ -1214,7 +1284,13 @@ def _check_cross_ticket_leakage(
     use, so this can never drift from what "covered by that ticket's
     scope" means anywhere else in the codebase. A ticket with no declared
     `scope` at all matches nothing (an empty scope is never treated as
-    "matches everything").
+    "matches everything"). A scope-match ALONE is not enough to flag a
+    ticket (T-1390): `_find_leaked_tickets` also requires the sibling's
+    own ledger record to have actually changed on this branch since it
+    forked from `base_ref` -- a declared scope is an intention, not
+    evidence that the sibling's work is present here; only a ticket that
+    was genuinely started/worked (its ledger block moved) on this exact
+    branch counts as leaked.
 
     `allow_cross_ticket=True` is the escape hatch (T-1355, mirroring
     `skip_mutation_evidence`'s pattern) for a genuinely intentional
@@ -1247,7 +1323,7 @@ def _check_cross_ticket_leakage(
     if worktree_tickets is None:
         return Ok(None)
     leaked = _find_leaked_tickets(
-        worktree, ticket.id, worktree_tickets, root_tickets, relevant
+        worktree, ticket.id, worktree_tickets, root_tickets, relevant, base_ref
     )
     if not leaked:
         return Ok(None)
