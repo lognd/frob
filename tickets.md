@@ -8351,10 +8351,13 @@ scope:
 - src/frob/strata/_effects.py
 - tests/test_gates.py
 - .gitattributes
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov004_matching_sha_is_clean
 acceptance:
 - text: GIVEN an attachment whose file exists with a byte-exact sha256 WHEN the COV
     gate runs THEN COV004 does not fire
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestCoverageGate::test_cov004_matching_sha_is_clean
 - text: GIVEN a missing or content-drifted attachment WHEN the COV gate runs THEN
     COV004 fires
   evidence: []
