@@ -39,7 +39,7 @@ def _recipe_tail() -> str:
     rather than a hand-copied reimplementation that could drift from it.
     """
     match = re.search(
-        r"^\tuv run coverage combine; \\\n(?:\t.*\\\n)*\texit \$\$stamp_status$",
+        r"^\tuv run coverage combine --append; \\\n(?:\t.*\\\n)*\texit \$\$stamp_status$",
         _MAKEFILE,
         re.MULTILINE,
     )
@@ -458,3 +458,190 @@ class TestSubprocessRcIsAbsoluteAndConcurrencyAware:
         run_cfg = data["tool"]["coverage"]["run"]
         assert run_cfg["concurrency"] == ["multiprocessing", "thread"], run_cfg
         assert run_cfg["sigterm"] is True, run_cfg
+
+
+class TestCombineAppendPreservesBaseData:
+    """T-1426: `coverage combine` (no `--append`) silently ERASES whatever
+    real data is already in the base `.coverage` file the first time
+    `CoverageData.update()` touches it in that process
+    (`CoverageData._start_using`: `if not self._have_used: self.erase()`,
+    only skipped when `--append` triggers `self.coverage.load()` first --
+    coverage/cmdline.py's `combine` action). The `coverage:` recipe's base
+    `.coverage` file already holds real data by the time it reaches
+    `combine` (pytest-cov's own xdist `DistMaster.finish()` combines every
+    worker's data into it in-process before pytest exits) -- so calling
+    `combine` without `--append` discarded that entire in-process run,
+    keeping only whatever separate satellite (subprocess-traced) data
+    files happened to be lying around. This directly reproduces both the
+    Makefile recipe's real invocation shape and the T-1418 finding it
+    explains, using the `coverage` CLI itself (no pytest/xdist involved),
+    and locks the Makefile's own recipe text so `--append` cannot silently
+    regress back out."""
+
+    # frob:tests \
+    # tests/unit/test_makefile_coverage.py::TestCombineAppendPreservesBaseData.test_mak\
+    # efile_recipe_uses_append
+    def test_makefile_recipe_uses_append(self):
+        """The live `coverage:` recipe text must call `coverage combine
+        --append`, never bare `coverage combine` -- a regression here
+        silently reintroduces the T-1426 data-loss mechanism with no
+        other visible symptom until TEST005 numbers go inexplicably
+        deflated again."""
+        assert "uv run coverage combine --append" in _MAKEFILE, _MAKEFILE
+        assert "uv run coverage combine;" not in _MAKEFILE, _MAKEFILE
+        assert "uv run coverage combine 2>/dev/null" not in _MAKEFILE, _MAKEFILE
+
+    # frob:tests \
+    # tests/unit/test_makefile_coverage.py::TestCombineAppendPreservesBaseData.test_com\
+    # bine_without_append_erases_base_data
+    def test_combine_without_append_erases_base_data(self, tmp_path):
+        """Ground-truth reproduction of the bug: a base data file with
+        real coverage of a canary module, PLUS a separate satellite
+        parallel-mode data file, combined WITHOUT `--append` -- the
+        canary's real, pre-existing coverage must NOT survive (this pins
+        the exact defective behavior `--append` exists to route around;
+        if this ever starts passing, coverage.py's own `combine` semantics
+        changed and the Makefile fix may no longer be load-bearing)."""
+        canary = tmp_path / "canary.py"
+        canary.write_text("def f():\n    return 1\n", encoding="utf-8")
+        env = _coverage_clean_env()
+
+        # Base run: real, non-trivial coverage of the canary lands in the
+        # plain `.coverage` file -- this stands in for pytest-cov's own
+        # in-process xdist combine, already done by the time the Makefile
+        # reaches its own `coverage combine` step.
+        subprocess.run(
+            ["coverage", "run", "--branch", str(canary.name)],
+            cwd=tmp_path,
+            env={**env, "PYTHONPATH": str(tmp_path)},
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        driver = tmp_path / "drive.py"
+        driver.write_text("import canary\nassert canary.f() == 1\n", encoding="utf-8")
+        subprocess.run(
+            ["coverage", "run", "--branch", str(driver.name)],
+            cwd=tmp_path,
+            env={**env, "PYTHONPATH": str(tmp_path)},
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        pre_combine = subprocess.run(
+            ["coverage", "report", str(canary.name)],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        assert "100%" in pre_combine.stdout, pre_combine.stdout + pre_combine.stderr
+
+        # A separate, genuinely-parallel satellite data file (mimics a
+        # COVERAGE_PROCESS_START subprocess trace) that touches an
+        # unrelated file only -- the recipe's real satellite files are
+        # exactly this shape.
+        other = tmp_path / "other.py"
+        other.write_text("def g():\n    return 2\n", encoding="utf-8")
+        subprocess.run(
+            [
+                "coverage",
+                "run",
+                "--branch",
+                "--parallel-mode",
+                str(other.name),
+            ],
+            cwd=tmp_path,
+            env={**env, "PYTHONPATH": str(tmp_path)},
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        # WITHOUT --append: the base file's real canary data is erased.
+        subprocess.run(
+            ["coverage", "combine"],
+            cwd=tmp_path,
+            env=env,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        post_combine = subprocess.run(
+            ["coverage", "report", str(canary.name)],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        assert "0%" in post_combine.stdout, (
+            "expected the known combine-without-append erasure -- if this "
+            "assertion now fails, coverage.py's own semantics changed and "
+            f"the Makefile's --append fix should be re-verified: {post_combine.stdout}"
+        )
+
+    # frob:tests \
+    # tests/unit/test_makefile_coverage.py::TestCombineAppendPreservesBaseData.test_com\
+    # bine_with_append_preserves_base_data
+    def test_combine_with_append_preserves_base_data(self, tmp_path):
+        """Same setup as the erasure repro above, but with `--append` (the
+        Makefile's actual, fixed invocation) -- the canary's real,
+        pre-existing coverage MUST survive the combine."""
+        canary = tmp_path / "canary.py"
+        canary.write_text("def f():\n    return 1\n", encoding="utf-8")
+        env = _coverage_clean_env()
+
+        subprocess.run(
+            ["coverage", "run", "--branch", str(canary.name)],
+            cwd=tmp_path,
+            env={**env, "PYTHONPATH": str(tmp_path)},
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        driver = tmp_path / "drive.py"
+        driver.write_text("import canary\nassert canary.f() == 1\n", encoding="utf-8")
+        subprocess.run(
+            ["coverage", "run", "--branch", str(driver.name)],
+            cwd=tmp_path,
+            env={**env, "PYTHONPATH": str(tmp_path)},
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        other = tmp_path / "other.py"
+        other.write_text("def g():\n    return 2\n", encoding="utf-8")
+        subprocess.run(
+            [
+                "coverage",
+                "run",
+                "--branch",
+                "--parallel-mode",
+                str(other.name),
+            ],
+            cwd=tmp_path,
+            env={**env, "PYTHONPATH": str(tmp_path)},
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        # WITH --append (the Makefile's fixed shape): the base file's
+        # real canary data survives.
+        subprocess.run(
+            ["coverage", "combine", "--append"],
+            cwd=tmp_path,
+            env=env,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        post_combine = subprocess.run(
+            ["coverage", "report", str(canary.name)],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        assert "100%" in post_combine.stdout, post_combine.stdout + post_combine.stderr

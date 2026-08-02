@@ -67,6 +67,25 @@ playbook:
 # makes `combine` fail with "Can't combine branch coverage data with
 # statement data". Fixture repos instead gitignore the stray `.coverage.*`
 # locally, the same way they gitignore `.frob/`.
+# T-1426: `coverage combine` MUST be called with `--append`, always. The
+# recipe's base `.coverage` file already holds real, correctly-merged data
+# by the time this recipe reaches `combine` (pytest-cov's own xdist
+# DistMaster.finish() combines every worker's data into it in-process,
+# before pytest even exits). Root cause, confirmed by direct instrumentation
+# of coverage.py 7.14.1: `coverage`'s CLI `combine` action only calls
+# `self.coverage.load()` first when `--append` is passed
+# (coverage/cmdline.py); without it, the FIRST write inside
+# `CoverageData.update()` (invoked once per satellite file it unions in)
+# calls `CoverageData._start_using()`, which unconditionally `erase()`s the
+# base data file the very first time it is touched in that process
+# (`if not self._have_used: self.erase()`) -- silently discarding
+# everything pytest-cov already combined, before the satellite files are
+# even unioned back in. Live-reproduced: src/frob/__main__.py measured at
+# 136 real covered lines in `.coverage` pre-combine, 0 post-`combine`
+# (no `--append`), 136 again post-`combine --append`. This is why T-1353's
+# own regression test (`TestCombineRecoversDisjointSessions`) never caught
+# it: that test exercises `coverage run --append` (a different code path)
+# and never calls the `combine` CLI action at all.
 #
 # T-0538: `$(STAMP)`'s `uv sync` (re-run whenever pyproject.toml is newer
 # than the stamp) silently REMOVES the editable `strata_core`/`frob_core`
@@ -242,7 +261,7 @@ coverage: $(STAMP)
 		COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --timeout-method=signal --last-failed --junitxml=.frob/last-coverage-rerun.xml; \
 		status=$$?; \
 	fi; \
-	uv run coverage combine; \
+	uv run coverage combine --append; \
 	uv run coverage xml -i -o .frob/coverage.partial.xml; \
 	if [ $$status -ne 0 ]; then \
 		echo "coverage: ERROR: pytest run failed (exit $$status) -- leaving coverage.xml, .frob/coverage-stamp, and frob-coverage.lock.json untouched (T-1363: a failed/partial run must never overwrite good data); the failed run's own data was written to .frob/coverage.partial.xml for inspection only, never promoted"; \
@@ -304,7 +323,7 @@ coverage-fast: $(STAMP)
 		else \
 			echo "$$targets" | COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml xargs uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q; \
 		fi; \
-		uv run coverage combine --append 2>/dev/null || uv run coverage combine; \
+		uv run coverage combine --append; \
 		uv run coverage xml -i; \
 		uv run frob check --stamp-coverage; \
 	fi

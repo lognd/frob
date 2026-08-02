@@ -3256,6 +3256,7 @@ node testsuite : trusted {
     attr interface=TestCollectTsTests;
     attr interface=TestColor;
     attr interface=TestColorizedLevelFormatter;
+    attr interface=TestCombineAppendPreservesBaseData;
     attr interface=TestCombineRecoversDisjointSessions;
     attr interface=TestCommitStartTransition;
     attr interface=TestCommitTicketLedgerChange;
