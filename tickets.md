@@ -5960,7 +5960,7 @@ scratch.
 id: T-1463
 title: frob ticket land now exceeds the 540s foreground budget; sweep and checks need
   memoized reuse
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-02'
@@ -6074,7 +6074,7 @@ ticket-scoped diff against main. Will resolve once those land.
 (no evidence recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
+- tests: 4 passed (from 4 evidence id(s))
 - gates: 0 error(s), 273 warning(s), 743 waived
 - error-findings: none (measured, zero errors)
 
