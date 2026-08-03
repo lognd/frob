@@ -6667,3 +6667,26 @@ threat: null
 component: null
 ```
 T-1205 acceptance[1]'s second half (the first half -- TEST005 stale-and-disclosed marking -- landed in T-1205's own session). TEST011 currently WARNs on stale_by_mtime/deflated join fraction; this ticket makes staleness a genuine blocking contract (ERROR-severity, or a dedicated new rule) once the disclosure half has had time to be adopted without breaking every existing checkout at once. Needs its own investigation into rollout sequencing (a same-session flip to ERROR would gate the whole repo on every slightly-stale coverage.xml, which is common in normal dev flow) -- do not just flip severity without that review.
+
+<!-- ticket:T-draft-01ab413f -->
+```yaml
+id: T-draft-01ab413f
+title: Per-file content-hash keyed incremental coverage caching (T-1205 acceptance[2])
+state: queued
+kind: feature
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/testing/**
+- src/frob/gates/_coverage.py
+- tests/test_coverage.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1205 acceptance[2]: an unchanged file's coverage must never be recomputed -- keyed by content hash, full-suite runs reserved for cold start or an explicit --full. This is the incremental-caching engine underlying T-1205's whole 'coverage as managed derived state' vision; needs its own design pass (what the per-file cache format is, how it merges with a full coverage.xml, how staleness is detected per-file vs. the whole-tree stale_by_mtime signal T-1205's sibling ticket -- TEST011 escalation -- already uses) before implementation. Filed as a focused slice of T-1205, which is too large for one session.
