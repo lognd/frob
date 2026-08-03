@@ -60,6 +60,21 @@ class TestTick009ScopeBreadthNudges:
         ]
         assert not violations
 
+    # frob:ticket T-1484
+    def test_scope_breadth_ack_exempts_ticket(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges.test_scope_breadth_ack_exempts_ticket  # noqa: E501
+        ticket = _ticket("T-1105", ("src/frob/**",), TicketState.QUEUED)
+        acked = ticket.model_copy(
+            update={
+                "scope_breadth_ack": True,
+                "scope_breadth_ack_reason": "epic umbrella, broad by design",
+            }
+        )
+        violations = [
+            v for v in tickets_gate(tmp_path, _queue(acked)) if v.rule == "TICK009"
+        ]
+        assert not violations
+
 
 class TestTick010StaleLeaseReport:
     def _write_lease(self, root: Path, ticket_id: str, worktree: str) -> Path:

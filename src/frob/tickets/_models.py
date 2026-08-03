@@ -1295,6 +1295,25 @@ class Ticket(BaseModel):
     # creation or via `frob ticket sprint assign`.
     sprint: str | None = None
     scope: tuple[str, ...] = ()
+    # frob:ticket T-1484
+    # honest acknowledged-broad escape hatch for TICK009 (WAVE14-B): when
+    # True, `_tick009_scope_breadth_nudges` skips this ticket entirely,
+    # regardless of `tier` -- an epic/umbrella ticket's scope is
+    # DELIBERATELY broad (it tracks a whole campaign, not one file list),
+    # and TICK009 previously had no waive channel at all (`frob:waive`
+    # only suppresses one violation LINE, and TICK009 is not in
+    # `_UNWAIVABLE_RULES` but still fired a fresh nudge every ledger-wide
+    # scan since the acknowledgement had nowhere to persist). Set via
+    # `frob ticket scope-ack <id> --reason TEXT`, never by hand-editing
+    # the ledger -- `scope_breadth_ack_reason` records WHY, so an
+    # acknowledgement is never silent the way a missing waiver reason
+    # would be.
+    scope_breadth_ack: bool = False
+    # frob:ticket T-1484
+    # required human-readable justification for `scope_breadth_ack=True`;
+    # `None` when `scope_breadth_ack` is False. Set together by
+    # `set_scope_breadth_ack`, never independently.
+    scope_breadth_ack_reason: str | None = None
     # frob:ticket T-0455
     # append-only audit trail of every `frob ticket scope --add/--remove`
     # mutation this ticket's `scope` has gone through (never edited, only
@@ -1538,6 +1557,8 @@ class TicketError(ErrorSet):
     # T-0455: `frob ticket scope --add/--remove` failure modes
     ScopeChangeEmpty = "scope change requires at least one --add or --remove glob"
     ScopeChangeReasonMissing = "scope change requires a non-empty --reason"
+    # frob:ticket T-1484
+    ScopeBreadthAckReasonMissing = "scope-ack requires a non-empty --reason"
     ScopeLeaseConflict = (
         "requested --add glob overlaps a path leased by another in-progress ticket"
     )

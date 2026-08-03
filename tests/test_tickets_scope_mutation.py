@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from frob.app.config import AppConfig
-from frob.app.ticket_runner import _scope
+from frob.app.ticket_runner import _scope, _scope_ack
 from frob.tickets import (
     Origin,
     ScopeChangeOp,
@@ -21,6 +21,7 @@ from frob.tickets import (
     load_queue,
     mutate_scope,
     new_ticket,
+    set_scope_breadth_ack,
     transition,
 )
 from frob.tickets._models import TicketSpec, _glob_is_subset
@@ -403,4 +404,64 @@ class TestScopeCli:
         )
         with pytest.raises(SystemExit) as exc_info:
             _scope(tmp_path, cfg)
+        assert exc_info.value.code == 1
+
+
+# frob:ticket T-1484
+class TestSetScopeBreadthAck:
+    """WAVE14-B's honest TICK009 acknowledged-broad channel:
+    `frob.tickets.set_scope_breadth_ack` (library) and `frob ticket
+    scope-ack` (CLI)."""
+
+    def test_ack_sets_both_fields(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_sets_bo\
+        # th_fields
+        ticket = _make_ticket(tmp_path, scope=("src/frob/**",))
+        result = set_scope_breadth_ack(
+            tmp_path, ticket.id, "epic umbrella, broad by design"
+        )
+        assert result.is_ok, result
+        updated = result.danger_ok
+        assert updated.scope_breadth_ack is True
+        assert updated.scope_breadth_ack_reason == "epic umbrella, broad by design"
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets[ticket.id].scope_breadth_ack is True
+
+    def test_ack_requires_non_blank_reason(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_require\
+        # s_non_blank_reason
+        ticket = _make_ticket(tmp_path, scope=("src/frob/**",))
+        result = set_scope_breadth_ack(tmp_path, ticket.id, "   ")
+        assert result.is_err
+        assert result.danger_err is TicketError.ScopeBreadthAckReasonMissing
+
+    def test_cli_scope_ack_sets_flag(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_cli_scope_a\
+        # ck_sets_flag
+        ticket = _make_ticket(tmp_path, scope=("src/frob/**",))
+        cfg = AppConfig(
+            ticket_command="scope-ack",
+            ticket_id=ticket.id,
+            ticket_path=tmp_path,
+            ticket_scope_reason="epic umbrella, broad by design",
+        )
+        _scope_ack(tmp_path, cfg)
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets[ticket.id].scope_breadth_ack is True
+
+    def test_cli_scope_ack_requires_reason(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_cli_scope_a\
+        # ck_requires_reason
+        ticket = _make_ticket(tmp_path, scope=("src/frob/**",))
+        cfg = AppConfig(
+            ticket_command="scope-ack",
+            ticket_id=ticket.id,
+            ticket_path=tmp_path,
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _scope_ack(tmp_path, cfg)
         assert exc_info.value.code == 1

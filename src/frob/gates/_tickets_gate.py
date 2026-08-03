@@ -957,6 +957,13 @@ def _tick009_scope_breadth_nudges(
             TicketState.PLANNED,
         ):
             continue
+        # frob:ticket T-1484
+        # WAVE14-B: an acknowledged-broad ticket (`frob ticket scope-ack`)
+        # is exempt entirely -- TICK009 previously had no waive channel at
+        # all for a genuinely broad epic/umbrella scope, so every ledger
+        # scan re-nudged the same already-decided tickets forever.
+        if t.scope_breadth_ack:
+            continue
         for warning in large_glob_warnings(t, root, breadth=breadth):
             violations.append(
                 Violation(

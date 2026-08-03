@@ -1,6 +1,6 @@
-"""frob.app.ticket_runner._mutate -- the `scope`/`priority`/`kind`/
-`component`/`label`/`accept`/`board`/`epic`/`tier`/`sprint`/`brief`/`flow`
-mutation command family.
+"""frob.app.ticket_runner._mutate -- the `scope`/`scope-ack`/`priority`/
+`kind`/`component`/`label`/`accept`/`board`/`epic`/`tier`/`sprint`/`brief`/
+`flow` mutation command family.
 
 Extracted from `frob.app.ticket_runner` (T-1089, T-0395 tier-2 split
 residue). Re-exported from `frob.app.ticket_runner`'s package `__init__`
@@ -97,6 +97,37 @@ def _scope(root: Path, cfg: AppConfig) -> None:
     # frob:ticket T-0998
     for warning in _scope_closure_warnings(root, ticket.scope):
         _log.warning("ticket scope %s: scope closure: %s", ticket.id, warning)
+
+
+# frob:ticket T-1484
+# frob:tests tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_sets_both_fields  # noqa: E501
+def _scope_ack(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket scope-ack <id> (--reason TEXT | --reason-file PATH)`:
+    the honest TICK009 acknowledged-broad channel (WAVE14-B) -- forwards to
+    `frob.tickets.set_scope_breadth_ack`, reusing `_resolve_scope_reason`'s
+    `--reason`/`--reason-file` resolution (same mutual-exclusivity/required
+    -ness rules `scope` already enforces, T-0737)."""
+    from frob.tickets import set_scope_breadth_ack
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket scope-ack requires <id>")
+        sys.exit(1)
+
+    reason = _resolve_scope_reason(cfg)
+    if not reason:
+        _log.error("frob ticket scope-ack requires --reason TEXT or --reason-file PATH")
+        sys.exit(1)
+
+    result = set_scope_breadth_ack(root, cfg.ticket_id, reason)
+    if result.is_err:
+        _log.error("scope-ack failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info(
+        "%s: scope_breadth_ack now True (TICK009 exempt) -- %s",
+        cfg.ticket_id,
+        ticket.scope_breadth_ack_reason,
+    )
 
 
 # frob:ticket T-0411

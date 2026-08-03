@@ -63,6 +63,39 @@ def _add_ticket_scope_parser(ticket_sub):
     return ticket_scope_p
 
 
+# frob:ticket T-1484
+def _add_ticket_scope_ack_parser(ticket_sub):
+    """Register `frob ticket scope-ack <id> (--reason TEXT | --reason-file
+    PATH)` -- WAVE14-B's honest acknowledged-broad channel for TICK009: a
+    genuinely-broad epic/umbrella ticket's scope stays broad by DESIGN, so
+    this records that decision (`scope_breadth_ack`/`scope_breadth_ack_
+    reason`) instead of `_add_ticket_scope_parser`'s narrow-it-down
+    protocol, which is the wrong tool for a ticket that is broad on
+    purpose. Same `--reason`/`--reason-file` mutual-exclusion shape as
+    `scope` (T-0737)."""
+    ticket_scope_ack_p = ticket_sub.add_parser(
+        "scope-ack",
+        help="acknowledge a genuinely-broad scope is intentional (WAVE14-B) "
+        "-- exempts this ticket from TICK009's scope-breadth nudge",
+    )
+    ticket_scope_ack_p.add_argument("ticket_id", metavar="id")
+    ticket_scope_ack_p.add_argument(
+        "--reason",
+        dest="ticket_scope_reason",
+        metavar="TEXT",
+        help="why this ticket's broad scope is intentional; required unless "
+        "--reason-file is given",
+    )
+    ticket_scope_ack_p.add_argument(
+        "--reason-file",
+        dest="ticket_scope_reason_file",
+        metavar="PATH",
+        help="read the ack reason verbatim from PATH instead of the shell "
+        "(T-0737); mutually exclusive with --reason",
+    )
+    return ticket_scope_ack_p
+
+
 # frob:ticket T-0411
 def _add_ticket_priority_parser(ticket_sub):
     """Register `frob ticket priority <id> <level>` -- reprioritize an

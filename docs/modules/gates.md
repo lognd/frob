@@ -1346,9 +1346,26 @@ run after it would find the very files it should be reporting already
 removed.
 
 **Where they run.** Both are `tickets_gate` checks (`frob check`'s
-`tickets` stage), waivable (not in `_UNWAIVABLE_RULES`) -- a genuinely
-temporary over-broad scope or a lease cleanup already in flight can be
-dispositioned with a reasoned `frob:waive TICK009|TICK010 reason="..."`.
+`tickets` stage), waivable in principle (not in `_UNWAIVABLE_RULES`) -- but
+TICK009's own violations are anchored at `tickets.md:0` (they describe a
+whole ticket's declared scope, not one source line), so there is no
+concrete line to attach an inline `frob:waive TICK009 reason="..."`
+comment to in practice -- a TICK010 lease-cleanup finding, by contrast,
+still names a real `.git/frob-leases/*.json` path a waiver comment could
+target if one were ever added there.
+
+**Acknowledged-broad exemption (WAVE14-B, T-1484).** A
+genuinely-broad epic/umbrella ticket (its scope legitimately spans a whole
+campaign, not one file list) previously had no honest way to silence
+TICK009 -- it re-fired the same nudge on every ledger-wide `frob check`
+forever. `frob ticket scope-ack <id> (--reason TEXT | --reason-file PATH)`
+sets `Ticket.scope_breadth_ack=True` (with the mandatory justification
+recorded in `scope_breadth_ack_reason`), and `_tick009_scope_breadth_nudges`
+skips any ticket carrying that flag entirely, independent of `tier`. This
+is the same "acknowledge the specific case, with a reason, once" shape
+`frob:waive` gives every other gate -- just implemented as a ledger field
+instead of a source-line comment, since TICK009's finding has no source
+line to anchor to.
 
 ### TICK011 (T-1129, active-window-narrowed T-1402)
 

@@ -136,6 +136,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::_doable_sort_key -->
 <!-- frob:describes src/frob/tickets/_setters.py::set_component -->
 <!-- frob:describes src/frob/tickets/_setters.py::set_tier -->
+<!-- frob:describes src/frob/tickets/_setters.py::set_scope_breadth_ack -->
 <!-- frob:describes src/frob/tickets/_reporting.py::mutate_labels -->
 <!-- frob:describes src/frob/tickets/__init__.py::board_view -->
 <!-- frob:describes src/frob/tickets/__init__.py::epic_rollup -->

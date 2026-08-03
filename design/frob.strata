@@ -257,6 +257,7 @@ node cli : trusted {
     attr interface=_add_ticket_renumber_parser;
     attr interface=_add_ticket_reverify_parser;
     attr interface=_add_ticket_review_parser;
+    attr interface=_add_ticket_scope_ack_parser;
     attr interface=_add_ticket_scope_parser;
     attr interface=_add_ticket_sprint_parser;
     attr interface=_add_ticket_tier_parser;
@@ -349,6 +350,7 @@ node cli : trusted {
     attr interface=_run_sweep;
     attr interface=_run_tests_count_fn;
     attr interface=_scope;
+    attr interface=_scope_ack;
     attr interface=_scope_closure_warnings;
     attr interface=_shared_check_spawn_fn;
     attr interface=_show;
@@ -2642,6 +2644,8 @@ store tickets_ledger : trusted {
     // shell=True evidence-command spawn, `clipboard.py`'s subprocess.run
     // calls) were wired through the guard by T-0803/T-0805, so the
     // declared flag below is a true statement of switchable capability.
+    attr interface=AcceptanceAmendmentEntry;
+    attr interface=AcceptanceAmendmentOp;
     attr interface=AcceptanceCriterion;
     attr interface=AttachError;
     attr interface=Attachment;
@@ -2688,16 +2692,28 @@ store tickets_ledger : trusted {
     attr interface=Stride;
     attr interface=Ticket;
     attr interface=TicketError;
+    attr interface=TicketFlowReport;
+    attr interface=TicketFlowRow;
     attr interface=TicketKind;
     attr interface=TicketQueue;
     attr interface=TicketSpec;
     attr interface=TicketState;
     attr interface=TicketTier;
+    attr interface=_archived_ids;
+    attr interface=_commit_message;
+    attr interface=_deletion_owned;
+    attr interface=_validate_acceptance_bound;
+    attr interface=_validate_closeable;
+    attr interface=_validate_evidence_kind_consistency;
+    attr interface=add_acceptance;
     attr interface=add_cmd_evidence;
     attr interface=add_evidence;
     attr interface=agent_env_exports;
+    attr interface=allocator_lock;
+    attr interface=amend_acceptance;
     attr interface=archive;
     attr interface=archive_path;
+    attr interface=archive_v2;
     attr interface=atomic_write;
     attr interface=attach;
     attr interface=attachments_dir;
@@ -2708,6 +2724,7 @@ store tickets_ledger : trusted {
     attr interface=clipboard_has_image;
     attr interface=clipboard_image;
     attr interface=commit_start_transition;
+    attr interface=commit_ticket_ledger_change;
     attr interface=compose_brief;
     attr interface=compose_done_report;
     attr interface=compute_changed_lines;
@@ -2723,12 +2740,15 @@ store tickets_ledger : trusted {
     attr interface=fcntl;
     attr interface=finalize_draft;
     attr interface=finalize_draft_for_land;
+    attr interface=git_mv_dir;
     attr interface=has_approved_review_for_commit;
     attr interface=has_live_lease;
     attr interface=has_substantive_done_report;
     attr interface=is_cmd_evidence;
     attr interface=is_draft_id;
     attr interface=is_lease_ttl_expired;
+    attr interface=is_valid_ticket_ref;
+    attr interface=iter_raw_ledger_frontmatter;
     attr interface=land;
     attr interface=large_glob_warnings;
     attr interface=lease_age_seconds;
@@ -2757,18 +2777,21 @@ store tickets_ledger : trusted {
     attr interface=parse_claims_from_done_report;
     attr interface=queue_status;
     attr interface=read_all_leases;
+    attr interface=read_done_report;
     attr interface=reconcile;
     attr interface=record_failure;
     attr interface=record_lease;
     attr interface=record_review;
     attr interface=recover_done_report_why;
     attr interface=release_lease;
+    attr interface=remove_acceptance;
     attr interface=rename_lease;
     attr interface=render_changed_block;
     attr interface=render_claims_block;
     attr interface=render_evidence_block;
     attr interface=renumber;
     attr interface=renumber_one;
+    attr interface=renumber_one_v2;
     attr interface=replace_done_report_section;
     attr interface=replay_evidence_from_done_report;
     attr interface=resolve_lease;
@@ -2783,6 +2806,7 @@ store tickets_ledger : trusted {
     attr interface=set_done_report;
     attr interface=set_kind;
     attr interface=set_priority;
+    attr interface=set_scope_breadth_ack;
     attr interface=set_sprint;
     attr interface=set_tier;
     attr interface=slugify;
@@ -2790,53 +2814,24 @@ store tickets_ledger : trusted {
     attr interface=sprint_velocity;
     attr interface=sprint_view;
     attr interface=sweep_worktrees;
+    attr interface=ticket_flow;
+    attr interface=ticket_lock;
     attr interface=tickets_dir;
     attr interface=transition;
     attr interface=unbound_acceptance;
     attr interface=undispatched_stale;
+    attr interface=v2_archive_dir;
+    attr interface=v2_attachments_dir;
+    attr interface=v2_done_report_path;
+    attr interface=v2_state_transitions;
+    attr interface=v2_ticket_dir;
+    attr interface=v2_ticket_path;
     attr interface=validate_evidence;
     attr interface=warn_if_worktree_stale;
     attr interface=write_all;
     attr interface=write_archive;
-    attr interface=write_ticket;
-    attr interface=add_acceptance;
-    attr interface=TicketFlowReport;
-    attr interface=TicketFlowRow;
-    attr interface=ticket_flow;
-    attr interface=is_valid_ticket_ref;
-    attr interface=iter_raw_ledger_frontmatter;
-    attr interface=commit_ticket_ledger_change;
-    attr interface=allocator_lock;
-    attr interface=ticket_lock;
-    attr interface=read_done_report;
-    attr interface=v2_attachments_dir;
-    attr interface=v2_done_report_path;
-    attr interface=v2_ticket_dir;
-    attr interface=v2_ticket_path;
     attr interface=write_done_report;
-    // T-1329: SYS104 drift from the ledger-v2 chain (T-1254..T-1258) and
-    // the T-1251 seam split's re-export surface, caught by the T-1320
-    // coverage run's selfconform failures.
-    attr interface=_archived_ids;
-    attr interface=_commit_message;
-    attr interface=_deletion_owned;
-    attr interface=_validate_acceptance_bound;
-    attr interface=_validate_closeable;
-    attr interface=_validate_evidence_kind_consistency;
-    attr interface=archive_v2;
-    attr interface=git_mv_dir;
-    attr interface=renumber_one_v2;
-    attr interface=v2_archive_dir;
-    attr interface=v2_state_transitions;
-    // T-1422: acceptance-amendment verbs (frob ticket accept --amend/
-    // --remove) -- `frob sys sync-interface` only auto-rewrites `node`
-    // interface= blocks (its `_NODE_HEADER_RE` matcher), not `store`
-    // blocks like this one, so these four are hand-added to match what
-    // it WOULD write; T-1425 files the store-support gap (renumbers at land).
-    attr interface=AcceptanceAmendmentEntry;
-    attr interface=AcceptanceAmendmentOp;
-    attr interface=amend_acceptance;
-    attr interface=remove_acceptance;
+    attr interface=write_ticket;
 }
 
 // T-0956: names the SAME single-writer arbiter the five SYS203/
@@ -4352,6 +4347,7 @@ node testsuite : trusted {
     attr interface=TestSetKind;
     attr interface=TestSetManifestVersion;
     attr interface=TestSetPriority;
+    attr interface=TestSetScopeBreadthAck;
     attr interface=TestSetTier;
     attr interface=TestSeverityAndDegrade;
     attr interface=TestSeverityOverrides;

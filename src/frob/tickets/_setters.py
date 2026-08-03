@@ -138,6 +138,46 @@ def set_tier(
     return _set_ticket_field(root, ticket_id, "tier", tier, log_value=tier.value)
 
 
+# frob:ticket T-1484
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_sets_both_fields  # noqa: E501
+def set_scope_breadth_ack(
+    root: Path, ticket_id: str, reason: str
+) -> Result[Ticket, TicketError]:
+    """`frob ticket scope-ack <id> --reason TEXT`: acknowledge a
+    genuinely-broad scope (WAVE14-B) -- sets `scope_breadth_ack=True` and
+    records `reason` in `scope_breadth_ack_reason` in one ledger-locked
+    write, the honest TICK009 waive channel that did not exist before this.
+    A blank/whitespace-only `reason` is rejected (`Err`) the same way
+    `WAIVE001` rejects a reasonless `frob:waive` -- an acknowledgement with
+    no stated justification is indistinguishable from ignoring the nudge."""
+    if not reason.strip():
+        return Err(TicketError.ScopeBreadthAckReasonMissing)
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    from frob.tickets import _load_ticket_and_queue
+
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        updated = ticket.model_copy(
+            update={
+                "scope_breadth_ack": True,
+                "scope_breadth_ack_reason": reason,
+            }
+        )
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s scope_breadth_ack set to True (reason=%s)", ticket_id, reason
+    )
+    return Ok(updated)
+
+
 # frob:ticket T-0715
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_tiers.py::TestSprintAssign.test_updates_sprint_field
