@@ -6017,6 +6017,9 @@ attachments:
 - path: attachments/T-1433/02-untitled.txt
   caption: ''
   sha256: df012c46187fdaed7c338acb221b46b17f32b4af14565adcb614bb9ef35ec4bf
+- path: attachments/T-1433/03-untitled.txt
+  caption: ''
+  sha256: 2362014fea45df8922f609423897dbbd336625832f279b7df64d4af6a3f254d7
 acceptance:
 - text: GIVEN a make coverage invocation whose serial rerun phase stops making progress
     WHEN the bounded deadline elapses THEN the run fails loudly with a diagnostic
@@ -6118,7 +6121,6 @@ genuinely unresolved, not just unresolved-and-waived.
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 1 error(s), 563 warning(s), 694 waived
 - error-findings: SELFAUDIT001@design
-
 <!-- ticket:T-1434 -->
 ```yaml
 id: T-1434

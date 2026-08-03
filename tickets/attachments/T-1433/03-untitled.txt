@@ -1,0 +1,49 @@
+=== Sun Aug  2 17:20:40 EDT 2026 live wedge capture ===
+total 0
+drwxrwxrwt  2 root root   40 Aug  2 16:52 .
+drwxr-xr-x 16 root root 4080 Jul 31 11:26 ..
+--- pid 2128669 threads=5
+l-wx------ 1 logan logan 64 Aug  2 16:41 1 -> /home/logan/projects/frob/.frob/last-coverage-run.log
+l-wx------ 1 logan logan 64 Aug  2 16:41 2 -> /home/logan/projects/frob/.frob/last-coverage-run.log
+l-wx------ 1 logan logan 64 Aug  2 16:41 5 -> /home/logan/projects/frob/.frob/last-coverage-run.log
+l-wx------ 1 logan logan 64 Aug  2 16:41 7 -> /home/logan/projects/frob/.frob/last-coverage-run.log
+l-wx------ 1 logan logan 64 Aug  2 16:41 9 -> /home/logan/projects/frob/.frob/last-coverage-run.log
+State:	S (sleeping)
+Threads:	5
+--- pid 2128699 threads=2
+l-wx------ 1 logan logan 64 Aug  2 16:22 11 -> /home/logan/projects/frob/.frob/last-coverage-run.log
+lrwx------ 1 logan logan 64 Aug  2 16:22 13 -> /home/logan/projects/frob/tests/fixtures/dup_rungs/.frob/dup.db
+lrwx------ 1 logan logan 64 Aug  2 16:22 14 -> /home/logan/projects/frob/tests/fixtures/dup_region/.frob/dup.db
+lrwx------ 1 logan logan 64 Aug  2 16:41 15 -> /home/logan/projects/frob/tests/fixtures/dup_smart/.frob/dup.db
+lrwx------ 1 logan logan 64 Aug  2 16:22 16 -> /home/logan/projects/frob/tests/fixtures/dup_inline/.frob/dup.db
+State:	S (sleeping)
+Threads:	2
+--- pid 2128706 threads=2
+l-wx------ 1 logan logan 64 Aug  2 16:22 11 -> /home/logan/projects/frob/.frob/last-coverage-run.log
+lrwx------ 1 logan logan 64 Aug  2 16:22 12 -> /tmp/pytest-of-logan/pytest-2081/popen-gw3/test_dup_code_fingerprint_chan0/.frob/dup.db
+l-wx------ 1 logan logan 64 Aug  2 16:22 2 -> /home/logan/projects/frob/.frob/last-coverage-run.log
+l-wx------ 1 logan logan 64 Aug  2 16:22 9 -> /home/logan/projects/frob/.frob/last-coverage-run.log
+State:	S (sleeping)
+Threads:	2
+--- pid 2143538 threads=2
+l-wx------ 1 logan logan 64 Aug  2 16:25 11 -> /home/logan/projects/frob/.frob/last-coverage-run.log
+lrwx------ 1 logan logan 64 Aug  2 16:25 17 -> /tmp/pytest-of-logan/pytest-2081/popen-gw4/test_empty_store_is_empty_list0/.frob/hotgraph_sketches.db
+l-wx------ 1 logan logan 64 Aug  2 16:25 2 -> /home/logan/projects/frob/.frob/last-coverage-run.log
+l-wx------ 1 logan logan 64 Aug  2 16:25 9 -> /home/logan/projects/frob/.frob/last-coverage-run.log
+State:	S (sleeping)
+Threads:	2
+--- pid 2155713 threads=2
+l-wx------ 1 logan logan 64 Aug  2 16:29 11 -> /home/logan/projects/frob/.frob/last-coverage-run.log
+l-wx------ 1 logan logan 64 Aug  2 16:29 2 -> /home/logan/projects/frob/.frob/last-coverage-run.log
+l-wx------ 1 logan logan 64 Aug  2 16:29 9 -> /home/logan/projects/frob/.frob/last-coverage-run.log
+State:	S (sleeping)
+Threads:	2
+
+=== Third reproduction, 2026-08-02 ~20:10 ===
+Identical signature at 99% of the xdist phase: 2 workers zombie
+(Z, unreaped), master + 4 survivor workers all futex_wait, zero CPU
+over 25s probes. dmesg unavailable for OOM confirmation;
+/proc/pressure/memory shows large historical stall totals
+(some=3949s full=2925s cumulative) but idle at capture. Three of three
+full-suite runs today wedged this way; the xdist phase is NOT covered
+by the Makefile serial-rerun timeout.
