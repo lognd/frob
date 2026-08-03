@@ -439,12 +439,24 @@ for the full mechanics (dangling-backslash and CRLF handling included).
 | `frob:release <resource>` | enclosing function releases that resource (T-0809) |
 | `frob:escapes <resource>` | enclosing function transfers an unreleased resource out to its caller (T-0809) |
 | `frob:enumerates <doc-anchor>` | enclosing collection-literal symbol is member-list-verified at that doc anchor (T-1227) |
+| `frob:until <T-####>` | enclosing (code-side) or nearest-heading (markdown-side) span's negative-existence claim is bound to that ticket (T-1229) |
 
 `frob:enumerates <symref> members="a,b,c"` (T-1227) is the markdown-side
 counterpart: same HTML-comment anchor shape as `frob:describes`, but the
 mandatory `members=` attribute carries the doc author's claimed member
 list, AST-diffed against the collection literal's real members every
 check run (DOCENUM001, docs/modules/gates.md#docenum001-t-1227).
+
+`<!-- frob:until T-#### -->` (T-1229) is the markdown-side form of
+`frob:until`: an HTML comment binding the doc section under the nearest
+heading to the ticket that will build the not-yet-built thing the section
+describes. `markdown_anchors` also heuristically detects negative-
+existence prose itself (the "X is missing today" phrasings
+`_NEGEXIST_PHRASE_RE` matches: "does not [yet] exist", "not-yet built/
+implemented/wired/supported/available/shipped/landed") in the same pass
+and emits a `CLAIMS_ABSENCE` edge sharing the section's anchor --
+NEGEXIST001 (docs/modules/gates.md#negexist001-gate-t-1229) flags a claim
+with no `frob:until` at all, or one whose bound ticket(s) already closed.
 
 Markdown side (doc anchors), in HTML comments; applies from the comment to
 the next heading of equal or higher level:
@@ -512,12 +524,13 @@ All pydantic `BaseModel`, `frozen=True`.
   digests, and source span.
 - `SymbolRecord.symref` -- the canonical `path::qualname` string key a
   record is stored under in `GraphSnapshot.symbols`.
-<!-- frob:enumerates src/frob/graph/_models.py::EdgeKind members="DOC,USES_CONTRACT,INVARIANT,TICKET,TODO,WAIVE,DEBT,DESCRIBES,TESTS,DECISION,CHANNEL,BOUNDARY,SECRET,ENFORCES,DEPRECATED,PROTOCOL,TRANSITION,REQUIRES,ACQUIRE,RELEASE,ESCAPES,ENUMERATES" -->
+<!-- frob:enumerates src/frob/graph/_models.py::EdgeKind members="DOC,USES_CONTRACT,INVARIANT,TICKET,TODO,WAIVE,DEBT,DESCRIBES,TESTS,DECISION,CHANNEL,BOUNDARY,SECRET,ENFORCES,DEPRECATED,PROTOCOL,TRANSITION,REQUIRES,ACQUIRE,RELEASE,ESCAPES,ENUMERATES,UNTIL,CLAIMS_ABSENCE" -->
 - `EdgeKind` -- the closed set of typed relationships a `frob:` directive
-  or doc anchor can declare (22 members: doc, uses-contract, invariant,
+  or doc anchor can declare (24 members: doc, uses-contract, invariant,
   ticket, todo, waive, debt, describes, tests, decision, channel,
   boundary, secret, enforces, deprecated, protocol, transition, requires,
-  acquire, release, escapes, enumerates -- T-1227).
+  acquire, release, escapes, enumerates, until, claims-absence -- T-1227,
+  until/claims-absence T-1229).
 - `Edge` -- one directive/anchor's declared obligation between a src
   symbol/doc anchor and an opaque target.
 - `MalformedDirective` -- a `frob:` comment line that failed to parse,

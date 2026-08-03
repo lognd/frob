@@ -66,6 +66,13 @@ _VERB_TABLE: dict[str, EdgeKind] = {
     # `members=` attribute; this code-side edge only records discoverable
     # traceability from the symbol back to the doc that enumerates it.
     "enumerates": EdgeKind.ENUMERATES,
+    # T-1229: `frob:until T-####` -- markdown-side directive, matched by
+    # `_UNTIL_RE`/`markdown_anchors` below like `describes`/`enumerates`;
+    # this table entry exists only so a code-side `frob:until T-####`
+    # comment (bare target, no required attrs, same shape as `frob:ticket`)
+    # is also accepted -- e.g. directly above the still-missing symbol a
+    # doc's absence claim is about, not just in markdown prose.
+    "until": EdgeKind.UNTIL,
 }
 
 _LINE_RE = re.compile(r"^frob:(?P<verb>\S+)(?:\s+(?P<rest>.*))?$")
@@ -151,6 +158,27 @@ _DESCRIBES_RE = re.compile(
 _ENUMERATES_RE = re.compile(
     r'<!--\s*frob:enumerates\s+(?P<symref>\S+)\s+members="(?P<members>[^"]*)"\s*-->'
 )
+# T-1229: `frob:until T-####`'s markdown-side form -- mirrors
+# `_DESCRIBES_RE`'s bare-target shape exactly (no attrs, just a ticket id),
+# binding the doc section it appears under to the ticket that will build
+# the not-yet-built thing the section describes.
+_UNTIL_RE = re.compile(r"<!--\s*frob:until\s+(?P<ticket>T-\d+)\s*-->")
+# T-1229: negative-existence prose heuristic (gate-gap class 3,
+# docs/audits/docs-staleness-2026-07-29.md) -- "X does not exist yet",
+# "not yet built/implemented/wired/supported/available/shipped/landed".
+# Deliberately narrow (a handful of fixed phrasings) rather than a broad
+# NLP heuristic: a false negative here just means a claim goes unflagged
+# (same posture as every other best-effort doc-drift heuristic in this
+# module), but a false positive would make NEGEXIST001 noisy enough to be
+# ignored, which is worse than under-detecting.
+_NEGEXIST_PHRASE_RE = re.compile(
+    r"\b(?:does not|doesn't|do not|don't)\s+(?:yet\s+)?exist\b"
+    r"|\bnot\s+yet\s+(?:built|implemented|wired(?:\s+up)?|supported|available"
+    r"|shipped|landed)\b"
+    r"|\b(?:not\s+(?:built|implemented|wired(?:\s+up)?|supported|available"
+    r"|shipped|landed)\s+yet)\b",
+    re.IGNORECASE,
+)
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 # T-0212: GitHub strips everything except word chars (unicode-aware, so
 # accented letters survive but emoji do not), hyphens, and spaces -- it
@@ -182,6 +210,11 @@ def dedupe_slug(slug: str, seen: dict[str, int]) -> str:
 
 
 # frob:doc docs/modules/graph.md#comment-dsl
+# frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_until_directive_emits_until_edge  # noqa: E501
+# frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_negative_existence_phrase_emits_claims_absence_edge  # noqa: E501
+# frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_not_yet_wired_phrase_is_also_detected  # noqa: E501
+# frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_directive_comment_line_itself_never_matches_the_heuristic  # noqa: E501
+# frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_plain_prose_with_no_matching_phrase_emits_nothing  # noqa: E501
 def markdown_anchors(doc_path: str, text: str) -> tuple[Edge, ...]:
     """Extract `<!-- frob:describes ... -->` and `<!-- frob:enumerates ... -->`
     anchors bound to the nearest heading (T-1227 adds the latter)."""
@@ -217,7 +250,40 @@ def markdown_anchors(doc_path: str, text: str) -> tuple[Edge, ...]:
                     attrs={"members": enumerates.group("members")},
                 )
             )
-    _log.debug("%s: %d describes/enumerates anchor(s)", doc_path, len(edges))
+            continue
+        until = _UNTIL_RE.search(line)
+        if until is not None:
+            edges.append(
+                Edge(
+                    src=f"{doc_path}#{slug}",
+                    kind=EdgeKind.UNTIL,
+                    target=until.group("ticket"),
+                    origin=f"{doc_path}:{lineno}",
+                )
+            )
+            continue
+        # T-1229: a directive comment line (`<!-- frob:... -->`) is never
+        # itself prose worth heuristic-scanning for a negative-existence
+        # claim -- skip it so e.g. this very module's own docstring/
+        # comment text describing the `_UNTIL_RE`/`_NEGEXIST_PHRASE_RE`
+        # heuristic never self-matches.
+        if "<!--" in line and "-->" in line:
+            continue
+        negexist = _NEGEXIST_PHRASE_RE.search(line)
+        if negexist is not None:
+            edges.append(
+                Edge(
+                    src=f"{doc_path}#{slug}",
+                    kind=EdgeKind.CLAIMS_ABSENCE,
+                    target=negexist.group(0),
+                    origin=f"{doc_path}:{lineno}",
+                )
+            )
+    _log.debug(
+        "%s: %d describes/enumerates/until/claims-absence anchor(s)",
+        doc_path,
+        len(edges),
+    )
     return tuple(edges)
 
 

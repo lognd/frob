@@ -1111,7 +1111,7 @@ component: null
 id: T-1229
 title: negative-existence claims -- bind absence-claims to a ticket via frob:until,
   flag unbound ones
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -1122,10 +1122,199 @@ sprint: null
 scope:
 - src/frob/graph/**
 - src/frob/gates/**
+- docs/design/registry/check-coverage.yaml
+- docs/modules/gates.md
+- docs/modules/graph.md
+- tests/unit/gates/test_negexist.py
+- tests/test_graph.py
+- docs/guides/extending/comment-dsl-directives.md
+scope_changes:
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: 'Coordinator brief for T-1229 explicitly requires registering the new
+
+    NEGEXIST001 gate rule id in docs/design/registry/check-coverage.yaml
+
+    (one documented entry, gate_rule_total bumped by exactly one) alongside
+
+    _KNOWN_GATE_RULES -- this is the WIRE001/T-1428 registry-completeness
+
+    requirement for any new gate rule literal, not an unrelated expansion.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'Docs move with code (playbook rule): NEGEXIST001''s frob:doc anchor
+
+    (gates.md) and the frob:until/frob:enumerates comment-DSL prose
+
+    (graph.md) must exist for DOC002 to resolve the new gate''s own
+
+    frob:doc pointer and to document the new directive for humans/agents.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'Docs move with code (playbook rule): NEGEXIST001''s frob:doc anchor
+
+    (gates.md) and the frob:until/frob:enumerates comment-DSL prose
+
+    (graph.md) must exist for DOC002 to resolve the new gate''s own
+
+    frob:doc pointer and to document the new directive for humans/agents.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/unit/gates/test_negexist.py
+  reason: 'Evidence recording requires a real test file covering the new
+
+    NEGEXIST001 gate and frob:until/CLAIMS_ABSENCE markdown-anchor parsing.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/test_graph.py
+  reason: 'Evidence recording requires a real test file covering the new
+
+    NEGEXIST001 gate and frob:until/CLAIMS_ABSENCE markdown-anchor parsing.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: docs/guides/extending/comment-dsl-directives.md
+  reason: 'Adding "until" to _VERB_TABLE (T-1229''s code-side frob:until form)
+
+    made this doc''s DOCENUM001-checked member list stale immediately --
+
+    a real DOCENUM001 gate error, not optional cleanup.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_until_directive_emits_until_edge
+- tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_negative_existence_phrase_emits_claims_absence_edge
+- tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_not_yet_wired_phrase_is_also_detected
+- tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_directive_comment_line_itself_never_matches_the_heuristic
+- tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_plain_prose_with_no_matching_phrase_emits_nothing
+- tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_unbound_claim_is_flagged
+- tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_claim_bound_to_open_ticket_is_clean
+- tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_claim_bound_to_closed_ticket_is_stale
+- tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_claim_bound_to_missing_ticket_is_stale
+- tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_no_claims_at_all_is_clean
 threat: null
 component: null
 ```
 A directive (e.g. frob:until T-####) binds not-yet-built prose to a ticket; when the ticket closes/archives the claim goes stale. Unbound absence-claims ('does not exist yet' heuristics) get flagged for binding. The sweep found ~20 shipped-but-documented-as-absent instances (docs/audits/docs-staleness-2026-07-29.md, 'Negative-existence claims' section). Ref: gate-gap class 3.
+
+## Done report
+
+Implemented the NEGEXIST001 mechanism (gate-gap class 3,
+docs/audits/docs-staleness-2026-07-29.md): a markdown-side `frob:until
+T-####` directive (`<!-- frob:until T-#### -->`, `frob.graph.dsl._UNTIL_RE`)
+binds a not-yet-built prose claim ("X does not exist yet", "not yet
+built/implemented/wired/supported/available/shipped/landed") to the
+ticket that will build it, mirroring `frob:enumerates`'s existing
+heading-anchor binding shape. `markdown_anchors` also now heuristically
+detects the claim itself (`_NEGEXIST_PHRASE_RE`, deliberately narrow --
+a fixed phrase list, not NLP) and emits both an `UNTIL` edge and a new
+`CLAIMS_ABSENCE` edge (two new `EdgeKind` members) sharing the doc's
+`<doc>#<anchor>` src, so the new gate (`frob.gates._negexist.
+negexist001_gate`) never re-reads markdown text -- it groups already-
+parsed `GraphSnapshot.edges`.
+
+NEGEXIST001 (WARN, rides alongside DOC004/DOC005/DOC006/DOCENUM001 under
+the `docblocks` stage group -- no new stage-group registration needed)
+fires two ways: a claim with no `frob:until` at all (unbound), or one
+whose bound ticket(s) are all missing/closed/archived (stale). A live
+scoped run against this repo's own docs surfaced 4 real, pre-existing
+unbound negative-existence claims (docs/modules/gates.md:50/91/456,
+docs/modules/graph.md:384) -- the gate works as designed; those 4 are
+left for a follow-up burn-down, not fixed here (out of this ticket's own
+scope, and fixing them would require either binding a ticket to each or
+rewriting the prose, a judgment call for whoever owns that doc).
+
+One gate rule id registered end to end per the T-1428 lesson: NEGEXIST001
+added to `_KNOWN_GATE_RULES` (src/frob/gates/_waive.py) and to
+docs/design/registry/check-coverage.yaml as exactly one new
+`CHK-GATE-NEGEXIST001` entry (`gate_rule_total` bumped 274 -> 275, no
+duplicates).
+
+Scope was widened beyond the ticket's original two globs
+(src/frob/graph/**, src/frob/gates/**) via `frob ticket scope --add`,
+each with a written reason, because implementing the mechanism required
+touching adjacent surfaces the original scope did not name:
+- docs/design/registry/check-coverage.yaml (the WIRE001/T-1428 registry
+  requirement itself)
+- docs/modules/gates.md, docs/modules/graph.md (frob:doc anchor targets
+  DOC002 must resolve, plus the comment-DSL prose documenting the new
+  directive)
+- docs/guides/extending/comment-dsl-directives.md (its own
+  `frob:enumerates`-checked `_VERB_TABLE` member list went stale the
+  moment `until` was added there -- a real DOCENUM001 error, not
+  optional)
+- tests/unit/gates/test_negexist.py, tests/test_graph.py (evidence)
+
+Self-inflicted findings caught and fixed before landing: my own new doc
+prose in gates.md/graph.md illustrating the heuristic's example phrases
+("does not exist yet", "not yet built") literally matched
+`_NEGEXIST_PHRASE_RE` itself, and `_negexist.py`'s own module docstring
+tripped INV006 (an "only" exclusivity claim with no invariant edge).
+Both fixed by rewording (bracket-broken example text; dropped the
+"only"). WIRE001 also initially flagged the two test-file helper
+functions (`_queue`/`_snapshot`) as unreachable outside their own tests
+-- renamed to `_test_queue`/`_test_snapshot` so `_is_test_symbol`'s
+existing leading-underscore-stripped `test_`/`Test` exemption applies,
+matching that function's own documented precedent for private test
+helpers.
+
+Verified scoped: `--only docblocks --only wire --only registry --only
+invariant --only prework --ticket T-1229` all clean (0 errors); ruff
+clean on every touched file; `frob fmt --check` 0 files would change;
+`pytest tests/unit/gates/test_negexist.py -q` 10/10 pass. Per playbook
+section 6c this is NOT a repo-wide clean claim -- gate families outside
+what `--only` named above were not run this session.
+
+### Changed
+```
+ docs/design/registry/check-coverage.yaml        |   6 +-
+ docs/guides/extending/comment-dsl-directives.md |   8 +-
+ docs/modules/gates.md                           |  25 ++++
+ docs/modules/graph.md                           |  19 ++-
+ src/frob/gates/__init__.py                      |   6 +
+ src/frob/gates/_negexist.py                     | 127 ++++++++++++++++
+ src/frob/gates/_waive.py                        |   3 +
+ src/frob/graph/_models.py                       |  17 +++
+ src/frob/graph/dsl.py                           |  68 ++++++++-
+ tests/unit/gates/test_negexist.py               | 183 ++++++++++++++++++++++++
+ tickets.md                                      |  91 +++++++++++-
+ 11 files changed, 543 insertions(+), 10 deletions(-)
+```
+
+### Evidence
+- `tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_until_directive_emits_until_edge` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_negative_existence_phrase_emits_claims_absence_edge` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_not_yet_wired_phrase_is_also_detected` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_directive_comment_line_itself_never_matches_the_heuristic` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_plain_prose_with_no_matching_phrase_emits_nothing` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_unbound_claim_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_claim_bound_to_open_ticket_is_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_claim_bound_to_closed_ticket_is_stale` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_claim_bound_to_missing_ticket_is_stale` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_no_claims_at_all_is_clean` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: 4 error(s), 1279 warning(s), 737 waived
+- error-findings: ARCH001@src/frob/app/telemetry.py, ARCH001@src/frob/graph/dsl.py, PRE001@tickets/T-1229, SELFAUDIT001@design
 
 <!-- ticket:T-1230 -->
 ```yaml
@@ -10069,3 +10258,64 @@ threat: null
 component: null
 ```
 After T-1456 (post-land unscoped error sweep) and the growing gate set, a single frob ticket land runs multiple near-full frob check invocations (pre-land baseline capture, post-merge claim re-verification, post-land sweep) and now regularly exceeds the playbook's 540s foreground budget -- two lands on 2026-08-02 died with exit 143 during post-land cleanup (the land itself committed; the sweep never ran, letting residue through in exactly the way T-1456 was built to stop). Fix directions: reuse one shared check invocation's results across the land phases (the T-1346 gate cache should make back-to-back runs cheap -- measure why it does not), run the baseline capture concurrently with the pre-land merge, and/or split the sweep into its own post-land verb the coordinator can run in background. The foreground-budget hook and playbook section 3b guidance also need updating to whatever the fixed land's real worst case is.
+
+<!-- ticket:T-1464 -->
+```yaml
+id: T-1464
+title: 'perf: persist parse-artifact cache across process-pool gate workers (correctly
+  scoped)'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/lang/__init__.py
+- src/frob/graph/cache.py
+- src/frob/perf/**
+- src/frob/dup/**
+- src/frob/arch/**
+- src/frob/gates/_dead_symbols.py
+- src/frob/gates/__init__.py
+threat: null
+component: null
+```
+T-1217 investigated but could not be implemented as scoped
+(scope=['src/frob/gates/__init__.py', 'src/frob/check/__init__.py']) --
+see T-1217's Done report / fail reason for the full investigation.
+
+Root cause confirmed: frob.lang's parse cache (_parse_cache,
+src/frob/lang/__init__.py) is a plain in-process dict, cleared per
+process -- fine for the single-process thread-pool stages
+frob.check._memo.run_memo_scope already covers, but every
+ProcessPoolExecutor worker _run_process_gate (gates/__init__.py:6165)
+spawns is a FRESH process with an empty cache, so each CPU-bound gate
+that calls frob.lang.parse_file/iter_identifiers -- perf (src/frob/perf/**),
+clones/dup (src/frob/dup/**), arch (src/frob/arch/**),
+dead_symbols (src/frob/gates/_dead_symbols.py), plus sys/pii's own
+callers -- independently re-parses and re-extracts the whole repo in its
+own worker, no matter how many other gates just did the same work.
+
+The real fix (persist derived per-file artifacts -- body tokens, leaf
+identifiers, comment/docstring spans, import specs -- in a sqlite table
+keyed by the content hash already in cache.db, and have parse_file/
+extract consult that table before re-walking) requires touching:
+- src/frob/lang/__init__.py (parse_file/iter_identifiers' own cache
+  logic, or a new persistent layer beside _parse_cache)
+- src/frob/graph/cache.py (the content-hash-keyed sqlite table itself,
+  alongside the existing files/symbols/edges tables)
+- every CPU-bound gate module that currently calls parse_file/
+  iter_identifiers directly and would need to read the new table
+  instead: src/frob/perf/**, src/frob/dup/**, src/frob/arch/**,
+  src/frob/gates/_dead_symbols.py (sys/pii's exact call sites need the
+  same audit)
+
+None of these are in gates/__init__.py or check/__init__.py -- T-1217's
+declared scope structurally cannot reach the actual fix. Re-file with a
+scope that includes frob.lang, frob.graph.cache, and the CPU-bound gate
+modules above (or split into a foundation ticket for the persistent
+cache layer plus one follow-up per consuming gate family, to keep any
+single ticket's blast radius reviewable).

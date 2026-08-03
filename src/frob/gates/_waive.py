@@ -496,6 +496,9 @@ _KNOWN_GATE_RULES = frozenset(
         # T-1227: `frob:enumerates` doc-claimed member-list AST-diff, ack-
         # immune (frob.gates._docenum).
         "DOCENUM001",
+        # T-1229: `frob:until T-####`-bound negative-existence claim --
+        # unbound, or bound to a closed/archived ticket (frob.gates._negexist).
+        "NEGEXIST001",
         # T-0471: unpruned filesystem traversal (frob.gates._walk_lint).
         "WALK001",
         # T-0465: .git/info/exclude entry shadowing tracked source

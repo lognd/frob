@@ -158,6 +158,23 @@ class EdgeKind(StrEnum):
     # independent of ack state (content-verified, ack-immune, unlike
     # DRIFT001's digest-based staleness check).
     ENUMERATES = "enumerates"
+    # T-1229: `frob:until T-####` -- markdown-side directive
+    # (`markdown_anchors`, mirroring DESCRIBES/ENUMERATES' anchor-binding
+    # shape) that binds a not-yet-built prose claim to the ticket that will
+    # build it: `target` is the ticket id, `src` is `<doc>#<anchor>`. The
+    # NEGEXIST001 gate (`frob.gates._negexist`) treats the claim as stale
+    # once that ticket closes/archives (the prose should have been updated
+    # when the ticket shipped) and flags a negative-existence claim in the
+    # same anchor section with no `frob:until` at all as unbound.
+    UNTIL = "until"
+    # T-1229: a heuristically-detected "does not exist yet"/"not yet
+    # built"/... prose claim (`_NEGEXIST_PHRASE_RE`), emitted alongside
+    # UNTIL from the same `markdown_anchors` pass so both flow into
+    # `GraphSnapshot.edges` uniformly -- `target` is the matched phrase
+    # snippet (diagnostic only, never machine-compared), `src` is
+    # `<doc>#<anchor>`. NEGEXIST001 groups these by anchor against any
+    # sibling UNTIL edge to decide bound vs. unbound.
+    CLAIMS_ABSENCE = "claims-absence"
 
 
 # frob:doc docs/modules/graph.md#data-models

@@ -898,6 +898,7 @@ node gates : trusted {
     attr interface=marker_for;
     attr interface=model_side_channel_key;
     attr interface=mutation_evidence_violations;
+    attr interface=negexist001_gate;
     attr interface=opaque_gate;
     attr interface=parse_failure_gate;
     attr interface=path_ever_tracked;
@@ -3873,6 +3874,7 @@ node testsuite : trusted {
     attr interface=TestMapGolden;
     attr interface=TestMapRunner;
     attr interface=TestMarkdownAnchors;
+    attr interface=TestMarkdownAnchorsUntilAndClaimsAbsence;
     attr interface=TestMarkdownWaive;
     attr interface=TestMarkerFor;
     attr interface=TestMatrixClaimsFire;
@@ -3949,6 +3951,7 @@ node testsuite : trusted {
     attr interface=TestNativeTestCollectors;
     attr interface=TestNativesRunner;
     attr interface=TestNegativeFixtures;
+    attr interface=TestNegexist001Gate;
     attr interface=TestNestedLoopFaninAdvisories;
     attr interface=TestNetEnabled;
     attr interface=TestNewAcceptanceFile;

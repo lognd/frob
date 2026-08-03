@@ -611,6 +611,7 @@
     "src/frob/gates/_models.py::WaiverRef": "e87075968df880378a7f2d77ad82d2e88738ead66ad613ca784e3d9b799e4f8d",
     "src/frob/gates/_mutation_evidence.py::bug_repro_violations": "c4df7e5033b7e9ee011046f50340867a3c94a7e534618bb9edec5975bedc983b",
     "src/frob/gates/_mutation_evidence.py::mutation_evidence_violations": "c0d2e1ffbc9cf06685fed64352ec95a2903d4725c8145739ab15042d5e1955e2",
+    "src/frob/gates/_negexist.py::negexist001_gate": "e5fca5d1ff53b17d7217460549968977722e149e6806d839bea9f363f7459d8f",
     "src/frob/gates/_opaque.py::opaque_gate": "0eb55c661ccdef04c21ab211bd9581f3f8c1fddd62e86d13639afe915825fc84",
     "src/frob/gates/_parse_failures.py::local_parse001_violation": "7aeb62643cbf5a1d1a8c781b2cc4bc3293bfa9ddb6aa5c243ac073770917b7be",
     "src/frob/gates/_parse_failures.py::parse_failure_gate": "cc39260a1ddc8374324edbba4fd8974d4a2ac3b6a7902860ef3c18b71f9850be",
@@ -1963,5 +1964,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.315.0"
+  "version": "0.316.0"
 }

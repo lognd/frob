@@ -144,6 +144,7 @@ from frob.gates._mutation_evidence import (
     bug_repro_violations,
     mutation_evidence_violations,
 )
+from frob.gates._negexist import negexist001_gate
 from frob.gates._opaque import opaque_gate
 from frob.gates._parse_failures import parse_failure_gate
 from frob.gates._pii_structural import pii_structural_gate
@@ -5804,11 +5805,16 @@ def _build_thread_jobs(
         # alongside DOC004/DOC005/DOC006 under the same "docblocks" gate
         # name -- same repo-wide doc-drift concern, no new stage-group
         # registration needed (DOC006's own precedent).
+        # T-1229: NEGEXIST001 (frob:until-bound negative-existence claims)
+        # rides alongside DOC004/DOC005/DOC006/DOCENUM001 under the same
+        # "docblocks" gate name -- same repo-wide doc-drift concern, no
+        # new stage-group registration needed (DOCENUM001's own precedent).
         "docblocks": lambda: (
             *doc004_gate(st.repo_root, st.snapshot),
             *doc005_gate(st.repo_root),
             *doc006_gate(st.repo_root, st.snapshot),
             *docenum001_gate(st.repo_root, st.snapshot),
+            *negexist001_gate(st.snapshot, st.queue),
         ),
         "fuzz": lambda: fuzz_gate(st.root, st.snapshot),
         # T-1340: SUPPRESS001, evidence-driven suppression-dialect

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.316.0] - unreleased
+
+- T-1229: negative-existence claims -- bind absence-claims to a ticket via frob:until, flag unbound ones
+
 ## [0.315.0] - unreleased
 
 - T-1360: Footgun detection: warn when a command failed or under-reported in a way that looks like success

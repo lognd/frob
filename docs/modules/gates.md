@@ -1574,6 +1574,31 @@ Every DOCENUM001 finding is `frob:waive DOCENUM001 reason="..."`-able via
 the normal source-level waiver path (the markdown anchor's own `origin`
 line carries the edge, same as every other doc-facing gate).
 
+## NEGEXIST001 (T-1229)
+
+<a id="negexist001-gate-t-1229"></a>
+<!-- frob:describes src/frob/gates/_negexist.py::negexist001_gate -->
+
+`frob:until T-####` (`frob.graph.dsl`, markdown-side directive inside an
+HTML comment: `<!-- frob:until T-#### -->`, `frob.graph.dsl._UNTIL_RE`,
+docs/modules/graph.md#comment-dsl) binds a negative-existence prose claim
+(the "X is missing today" phrasings `_NEGEXIST_PHRASE_RE` matches: "does
+not [yet] exist", "not-yet built/implemented/wired/supported/available/
+shipped/landed") to the ticket that will build the missing thing.
+`markdown_anchors` also heuristically detects the claim itself
+(`frob.graph.dsl._NEGEXIST_PHRASE_RE`) and emits both as edges sharing the
+doc's `<doc>#<anchor>` src.
+
+NEGEXIST001 (gate name `negexist001`, rides alongside DOC004/DOC005/
+DOC006/DOCENUM001 under the `docblocks` stage group) fires WARN in two
+cases: an anchor section carries a negative-existence claim with no
+`frob:until` at all (unbound -- nothing will ever catch it once the thing
+ships), or its bound ticket(s) are all missing/closed/archived (stale --
+the claim should have been revisited when the ticket shipped). A claim
+heuristic match is best-effort, matching only a fixed phrase list -- a
+false negative here just means an unrelated claim goes unflagged, never a
+false failure.
+
 ## EXHAUST001 EXHAUST002 (T-0688)
 
 <a id="exhaust001exhaust002-t-0688"></a>
