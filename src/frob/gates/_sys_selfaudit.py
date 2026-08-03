@@ -30,17 +30,38 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
+# frob:ticket T-1451
+def _selfaudit_severity(sub_rule: str, root: Path) -> Severity:
+    """`Severity.ERROR` for every SELFAUDIT001 sub-rule EXCEPT SYS107
+    (T-1451's via-less-may-on-a-large-node advisory), which defaults to
+    `Severity.WARN` and is escalated to ERROR only when `[strata]
+    require_may_scope` is set in `root/frob.toml`
+    (`frob.strata._scope_config.load_strata_scope_config`) -- an opt-in
+    for a repo whose owner is ready to make the advisory a hard
+    requirement. Every other sub-rule (SYS100-106/SYS2xx/REL2xx) keeps
+    SELFAUDIT001's original unconditional-ERROR posture, unchanged."""
+    if sub_rule != "SYS107":
+        return Severity.ERROR
+    from frob.strata import load_strata_scope_config
+
+    config = load_strata_scope_config(root)
+    return Severity.ERROR if config.require_may_scope else Severity.WARN
+
+
 # frob:ticket T-0756
 # frob:enforces CHK-GATE-SELFAUDIT001
 def _selfaudit_violation(
-    sub_rule: str, node: str, detail: str, design_dir: str
+    sub_rule: str, node: str, detail: str, design_dir: str, root: Path
 ) -> Violation:
-    """Build one SELFAUDIT001 finding wrapping a single SYS100-102/SYS2xx/
+    """Build one SELFAUDIT001 finding wrapping a single SYS100-107/SYS2xx/
     REL2xx underlying finding -- split out of `_selfaudit_violations`
-    purely to keep its loop bodies short."""
+    purely to keep its loop bodies short. T-1451: severity is no longer a
+    flat constant -- `_selfaudit_severity` special-cases SYS107 to WARN
+    (escalatable via `[strata] require_may_scope`), every other sub-rule
+    stays ERROR exactly as before."""
     return Violation(
         rule="SELFAUDIT001",
-        severity=Severity.ERROR,
+        severity=_selfaudit_severity(sub_rule, root),
         file=design_dir,
         line=1,
         message=(f"SELFAUDIT001: self-audit family {sub_rule} node={node}: {detail}"),
@@ -128,7 +149,7 @@ def _selfaudit_violations(
         )
     else:
         violations.extend(
-            _selfaudit_violation(v.rule, v.node, v.detail, design_dir)
+            _selfaudit_violation(v.rule, v.node, v.detail, design_dir, root)
             for v in selfconform.danger_ok.violations
         )
 
@@ -149,7 +170,7 @@ def _selfaudit_violations(
         model, store_ids=design_ids.store_ids, module=resource_module
     )
     violations.extend(
-        _selfaudit_violation(v.rule, v.node, v.detail, design_dir)
+        _selfaudit_violation(v.rule, v.node, v.detail, design_dir, root)
         for v in contention.violations
     )
 
@@ -165,7 +186,7 @@ def _selfaudit_violations(
             model, resource_module, binding.danger_ok, root
         )
         violations.extend(
-            _selfaudit_violation(v.rule, v.node, v.detail, design_dir)
+            _selfaudit_violation(v.rule, v.node, v.detail, design_dir, root)
             for v in mode_conformance.violations
         )
 
@@ -178,7 +199,7 @@ def _selfaudit_violations(
         )
     else:
         violations.extend(
-            _selfaudit_violation(v.rule, v.node, v.detail, design_dir)
+            _selfaudit_violation(v.rule, v.node, v.detail, design_dir, root)
             for v in timeouts.danger_ok.violations
         )
 
@@ -191,7 +212,7 @@ def _selfaudit_violations(
         )
     else:
         violations.extend(
-            _selfaudit_violation(v.rule, v.node, v.detail, design_dir)
+            _selfaudit_violation(v.rule, v.node, v.detail, design_dir, root)
             for v in health.danger_ok.violations
         )
 

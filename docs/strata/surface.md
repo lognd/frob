@@ -181,25 +181,30 @@ per-file SYS100 join (`_effects.py::check_capability_conformance`) reads
 (`MayGrant`, `_models.py`) the same direct-mapping convention `may`
 itself uses.
 
-**Not yet built (deliberately deferred, T-1440's own scope cut):**
-per-`via`-surface SYS101 staleness (a grant scoped to file A that only
-file B ever exercised should read as stale on A specifically, not
-merely "this kind is used somewhere on the node"); an advisory finding
-for a via-less `may` on a node whose `code` glob binds more than a
-threshold file count, escalatable to a hard error via a
-`[strata] require_may_scope` config knob; and argument-level scoping
-(e.g. `may "env.read" of "FROB_*"`, narrowing WHICH env vars/paths/hosts
-a grant covers, not just which files) as a natural follow-up once `via`
-itself has real usage to learn from. Each is its own follow-up ticket
-(T-1440's children) rather than bundled into the grammar/join landing --
-see `tickets.md` for their ids.
+**Delivered by T-1440's children:** per-`via`-surface SYS101 staleness
+(T-1450) -- a grant scoped to file A that only file B ever exercised now
+reads as stale on A specifically, judged per `MayGrant` rather than per
+flat kind (`_selfconform.py::_stale_design_violations_for_node`); and
+SYS107 (T-1451), an advisory finding for a via-less `may` on a node
+whose `code` glob binds more than `_LARGE_NODE_FILE_THRESHOLD` (20)
+files, WARN by default and escalatable to ERROR via a `[strata]
+require_may_scope` config knob (`_scope_config.py::StrataScopeConfig`,
+wired into SELFAUDIT001's per-sub-rule severity in
+`frob.gates._sys_selfaudit._selfaudit_severity`).
 
-**Migration note:** this repo's own `design/frob.strata` is deliberately
-NOT migrated to `via` by T-1440 itself -- every existing grant stays
-via-less (whole-node) so the repo stays green throughout; narrowing the
-real grants down to their actual observing files is its own follow-up
-ticket, using the mutation-audit scanner's existing per-file observation
-data (`_mutation_audit.py`) to find the real surface per kind.
+**Still not yet built (deliberately deferred, T-1440's own scope cut):**
+argument-level scoping (e.g. `may "env.read" of "FROB_*"`, narrowing
+WHICH env vars/paths/hosts a grant covers, not just which files) as a
+natural follow-up once `via` itself has real usage to learn from --
+its own follow-up ticket (T-1440's child) rather than bundled into the
+grammar/join landing; see `tickets.md` for its id.
+
+**Migration note:** this repo's own `design/frob.strata` was deliberately
+NOT migrated to `via` by T-1440 itself -- every existing grant stayed
+via-less (whole-node) so the repo stayed green throughout; narrowing the
+real grants down to their actual observing files is T-1453 (using the
+mutation-audit scanner's existing per-file observation data,
+`_mutation_audit.py`, to find the real surface per kind).
 
 **`errors_total`/`panics_contained_by`/`observe`/`on deploy` on `store`
 (T-0247):** the identical T-0070/T-0136 clauses `node` has, now also

@@ -806,6 +806,9 @@ _KNOWN_GATE_RULES = frozenset(
         "SYS104",
         "SYS105",
         "SYS106",
+        # T-1451: SYS107 via-less-may-on-a-large-node advisory
+        # (src/frob/strata/_selfconform.py).
+        "SYS107",
         "SYS200",
         "SYS201",
         "SYS202",

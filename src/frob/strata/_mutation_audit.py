@@ -74,10 +74,11 @@ from ._export import _SECCOMP_KIND_MAP, node_allowed_syscalls
 from ._models import KernelModel, Node
 from ._selfconform import (
     _EXTENDED_KINDS,
+    _aggregate_raw_kinds_by_node,
     _all_kinds_view,
     _bind_conformance_inputs,
     _extended_kinds_view,
-    _observed_raw_kinds_by_node,
+    _observed_raw_kinds_by_file,
     _stale_design_violations,
 )
 from ._sysdoc import merge_models
@@ -367,14 +368,24 @@ def _load_mutation_audit_baseline(
     bound = _bind_conformance_inputs(model, root)
     if bound.is_err:
         return Err(bound.danger_err)
-    raw_by_node = _observed_raw_kinds_by_node(bound.danger_ok, root)
+    binding = bound.danger_ok
+    raw_by_file = _observed_raw_kinds_by_file(binding, root)
+    raw_by_node = _aggregate_raw_kinds_by_node(binding, raw_by_file)
     all_kinds_view = _all_kinds_view(raw_by_node)
     extended_view = _extended_kinds_view(raw_by_node)
     # SYS101 (stale design) has exactly one producer, `_stale_design_
     # violations` -- `_extended_kind_violations` is a SYS100 producer
     # (module docstring's core/extended split) and contributes nothing to
-    # the SYS101 baseline count.
-    baseline_count = len(_stale_design_violations(model, root, all_kinds_view))
+    # the SYS101 baseline count. T-1450: SYS101 now judges staleness per
+    # may-via surface, so its baseline needs the FILE-level normalized
+    # view (`_all_kinds_view` over `raw_by_file`, not `raw_by_node`) plus
+    # `binding` itself to resolve each node's owned-file set for the
+    # per-`via` narrowing -- `all_kinds_view`/`extended_view` above stay
+    # node-level for the mutation-audit's OTHER (SYS100-side) callers,
+    # unaffected by this ticket.
+    baseline_count = len(
+        _stale_design_violations(model, root, binding, _all_kinds_view(raw_by_file))
+    )
     return Ok((model, all_kinds_view, extended_view, baseline_count))
 
 

@@ -381,9 +381,11 @@ body, per that gate's own docstring.
 
 Deferred out of this ticket's scope (see T-0809's Done report): the
 T-0686 may-raise engine this substrate is meant to eventually share with
-(may-raise does not exist yet to consume it) -- the T-0745 DESIGN
+(may-raise has no implementation to consume it) -- the T-0745 DESIGN
 CONSTRAINT ("one engine, whichever builds first hosts it") could not be
 coordinated on this pass either, unchanged from T-0745's own disclosure.
+No open ticket currently tracks building the may-raise engine -- this is
+a disclosed scope cut, not active work.
 
 T-0972: `affects`'s own `sorted(_dependents_of(snapshot, node))` BFS-walk
 call picked up a reasoned `frob:waive PERF004` (the dependents set

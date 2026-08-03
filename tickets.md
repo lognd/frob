@@ -9309,7 +9309,7 @@ Two follow-ups worth investigating separately:
 ```yaml
 id: T-1450
 title: 'strata: SYS101 staleness judged per may-via surface, not whole-node kind'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-02'
@@ -9320,6 +9320,9 @@ sprint: null
 scope:
 - src/frob/strata/**
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_selfconform.py::TestStaleDesign::test_via_scoped_grant_stale_while_other_surface_uses_same_kind
+- tests/unit/strata/test_selfconform.py::TestStaleDesign::test_via_less_grant_alongside_via_grant_still_discharges_whole_node
 threat: null
 component: null
 ```
@@ -9340,11 +9343,87 @@ join. Needs new/adjusted evidence in the mutation-audit harness
 (`_mutation_audit.py`) to keep `test_baseline_sys101_is_zero` meaningful
 under the new per-surface semantics.
 
+## Done report
+
+T-1450 delivers the per-may-via SYS101 join the T-1440 landing deliberately
+deferred: `_stale_design_violations` (src/frob/strata/_selfconform.py) now
+iterates each node's `may_grants` individually instead of the flat,
+kind-deduped `_raw_declared_kinds` set. A via-scoped grant is judged stale
+only against the files its own `via` glob(s) cover (`_via_matches`, reused
+from `_effects.py`); a via-less grant keeps the pre-T-1440 whole-node join
+unchanged. `node.may_grants` empty entirely (hand-built `Node` fixtures
+that bypass the parser) falls back to the old whole-node-only path exactly
+as before -- zero behavior change for anything that predates T-1440's
+grammar.
+
+To give the per-via join something to narrow, `_observed_raw_kinds_by_node`
+is split into a per-file scan (`_observed_raw_kinds_by_file`, the actual
+`scan_file_capabilities` loop) plus a thin per-node aggregate
+(`_aggregate_raw_kinds_by_node`) -- `_collect_sys_violations` now scans
+once at file granularity and derives both the node-level view (for SYS100
+extended / SYS105 purpose) and the new file-level view (for SYS101) from
+that one pass, preserving the T-0830 single-scan discipline. The one other
+caller of the old node-level-only path, `_mutation_audit.py`'s SYS101
+baseline count, was updated to the same file-level join.
+
+Two new unit tests exercise the acceptance clause directly: a grant scoped
+to file A that A never exercises is stale even though file B (same node,
+same kind) does exercise it; a via-less grant on the same kind still
+discharges via ANY file, unchanged.
+
+Evidence: `tests/unit/strata/test_selfconform.py::TestStaleDesign::test_via_scoped_grant_stale_while_other_surface_uses_same_kind`,
+`tests/unit/strata/test_selfconform.py::TestStaleDesign::test_via_less_grant_alongside_via_grant_still_discharges_whole_node`
+(both pass, plus the full `tests/unit/strata/test_selfconform.py` suite,
+69 tests, all green). `tests/unit/strata/test_mutation_audit.py::
+TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds`
+was confirmed failing identically on unmodified HEAD before this change
+(swap-file diff performed directly, not via `git stash` -- the shared-
+`refs/stash` hazard) -- pre-existing, unrelated to this ticket, not
+touched here.
+
+LAND-REPAIR ADDENDUM (post-T-1456 sweep): wrapped the two E501 lines in
+src/frob/strata/_selfconform.py the sweep flagged (:534, :879 as of the
+pre-merge main tip -- `_observed_raw_kinds_by_node`'s return statement and
+`_stale_design_violations`'s `found.extend(...)` call), and applied `ruff
+format` to this file (a `has_via_less` conditional reflow, no behavior
+change). Also sorted the StrataScopeConfig import ruff flagged in
+src/frob/strata/__init__.py. No functional change.
+
+### Changed
+```
+ design/frob.strata                                 |   6 +
+ docs/design/registry/check-coverage.yaml           |   6 +-
+ docs/modules/gates.md                              |   6 +-
+ docs/modules/graph.md                              |   4 +-
+ docs/modules/strata.md                             |  24 ++
+ docs/strata/surface.md                             |  43 ++-
+ src/frob/gates/_sys_selfaudit.py                   |  39 +-
+ src/frob/gates/_waive.py                           |   3 +
+ src/frob/strata/__init__.py                        |   5 +
+ src/frob/strata/_mutation_audit.py                 |  19 +-
+ src/frob/strata/_scope_config.py                   |  70 ++++
+ src/frob/strata/_selfconform.py                    | 321 ++++++++++++++---
+ tests/unit/gates/test_sys_selfaudit.py             |  51 +++
+ tests/unit/strata/test_scope_config.py             |  46 +++
+ tests/unit/strata/test_selfconform.py              |  68 ++++
+ .../unit/strata/test_sys107_via_scope_advisory.py  | 117 ++++++
+ tickets.md                                         | 392 ++++++++++++++++++++-
+ 17 files changed, 1139 insertions(+), 81 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_selfconform.py::TestStaleDesign::test_via_scoped_grant_stale_while_other_surface_uses_same_kind` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestStaleDesign::test_via_less_grant_alongside_via_grant_still_discharges_whole_node` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-1451 -->
 ```yaml
 id: T-1451
 title: 'strata: advisory rule + require_may_scope for via-less may on large nodes'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-02'
@@ -9356,6 +9435,19 @@ scope:
 - src/frob/strata/**
 - docs/design/registry/check-coverage.yaml
 - design/litmus/**
+evidence:
+- tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory::test_via_less_grant_on_large_node_fires
+- tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory::test_via_less_grant_on_small_node_is_silent
+- tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory::test_via_scoped_grant_on_large_node_is_silent
+- tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory::test_node_with_no_may_never_fires
+- tests/unit/strata/test_scope_config.py::TestStrataScopeConfig::test_missing_frob_toml_returns_defaults
+- tests/unit/strata/test_scope_config.py::TestStrataScopeConfig::test_parses_strata_table
+- tests/unit/strata/test_scope_config.py::TestStrataScopeConfig::test_malformed_toml_falls_back_to_defaults
+- tests/unit/strata/test_scope_config.py::TestStrataScopeConfig::test_wrong_typed_strata_table_falls_back_to_defaults
+- tests/unit/gates/test_sys_selfaudit.py::TestSelfauditSeverity::test_sys107_defaults_to_warn
+- tests/unit/gates/test_sys_selfaudit.py::TestSelfauditSeverity::test_sys107_escalates_to_error_under_require_may_scope
+- tests/unit/gates/test_sys_selfaudit.py::TestSelfauditSeverity::test_other_sub_rules_stay_error_regardless_of_config
+- tests/unit/gates/test_sys_selfaudit.py::TestSelfauditSeverity::test_selfaudit_violation_carries_sys107_warn_severity
 threat: null
 component: null
 ```
@@ -9374,6 +9466,115 @@ this codebase); a `[strata]` config section reader (frob.toml) for
 `require_may_scope` (bool or per-repo threshold override) that escalates
 the finding from WARN/advisory to ERROR. Needs its own litmus fixture
 under design/litmus/ per this repo's grammar-testing precedent.
+
+## Done report
+
+T-1451 delivers the advisory rule the T-1440 landing deferred: SYS107
+(src/frob/strata/_selfconform.py::_via_less_large_node_violations) fires
+one finding per node whose `code=` glob(s) bind more than
+`_LARGE_NODE_FILE_THRESHOLD` (20) real files AND declare at least one
+via-less `may` grant (judged per node, not per atom -- size is a node
+property). Empty `node.may_grants` (a hand-built `Node` fixture) is
+treated as "every declared `may` is via-less", matching `MayGrant.via=()`
+'s pre-T-1440 meaning.
+
+WARN by default (an advisory nudge, not a new hard requirement on
+existing declarations). `[strata] require_may_scope = true` in
+`frob.toml` escalates it to ERROR -- a new `_scope_config.py` module
+(`StrataScopeConfig`/`load_strata_scope_config`, following the exact
+`frob.perf._sketch_store.load_sketch_config` fail-open shape T-0861
+established) reads the `[strata]` table. Wired into SELFAUDIT001's own
+severity, not into `check_self_conformance`'s violation shape:
+`frob.gates._sys_selfaudit._selfaudit_severity` special-cases the
+"SYS107" sub_rule string, every other sub-rule (SYS100-106/SYS2xx/REL2xx)
+keeps the original unconditional ERROR.
+
+Registered end to end (WIRE001/T-1428 discipline): "SYS107" added to
+`_KNOWN_GATE_RULES` (`src/frob/gates/_waive.py`), one new
+`CHK-GATE-SYS107` entry in `docs/design/registry/check-coverage.yaml`,
+`gate_rule_total` 275 -> 276. New `docs/modules/strata.md#sys107-...`
+section (matching the SYS104/105/106 precedent already there);
+`docs/strata/surface.md#may-scope`'s "Not yet built" disclosure updated
+to record SYS101-per-via (T-1450) and SYS107 (this ticket) as delivered,
+leaving only argument-level scoping as still-deferred.
+
+New public symbols (SYS_VIA_LESS_LARGE_NODE, StrataScopeConfig,
+load_strata_scope_config, plus the new test classes) required
+`frob sys sync-interface` to add their `interface=` attrs to
+`design/frob.strata`'s `stratamod`/`testsuite` nodes (SYS104 is
+mandatory) -- ran the tool, it wrote the fix.
+
+Scope was widened via `frob ticket scope --add` (each with a written
+reason) to `src/frob/gates/_sys_selfaudit.py` (the severity wiring),
+`src/frob/gates/_waive.py` (rule registration), `docs/strata/surface.md`
+/`docs/modules/strata.md` (doc coverage), `design/frob.strata` (the
+sync-interface fix), and the new test files -- `tests/unit/strata/
+test_selfconform.py` itself was NOT touched because sibling ticket
+T-1450 (same worktree) held its lease; new SYS107 tests live in
+`tests/unit/strata/test_sys107_via_scope_advisory.py` instead.
+
+DISCLOSED: landing T-1451 alone (before T-1453) turns
+`TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant`
+red against this repo's OWN design/frob.strata (8 real large nodes have
+via-less grants) -- this is the exact "worst offender" state the wave
+brief names testsuite as. T-1453 (this same session) fixes it; land the
+two together or in immediate sequence.
+
+Evidence: 12 new unit tests across
+tests/unit/strata/test_sys107_via_scope_advisory.py,
+tests/unit/strata/test_scope_config.py, and
+tests/unit/gates/test_sys_selfaudit.py -- all pass. Scoped
+`frob check --ticket T-1451 --only sys` and `--only gates-native`: 0
+errors on both (measured after the T-1453 via-migration commit landed in
+the same worktree, since SYS107 needed that to go green against the real
+repo).
+
+LAND-REPAIR ADDENDUM (post-T-1456 sweep): no direct changes to T-1451's
+own scope in this pass; re-verified alongside T-1450/T-1453's fixes
+(E501 wrap, ruff format, T-1453 scope add) on the same shared worktree.
+`frob check --only sys --only gates-native --only docblocks` and
+`--only ruff --only sys` both re-run clean (0 errors) after those
+sibling fixes landed on this branch.
+
+### Changed
+```
+ design/frob.strata                                 |   6 +
+ docs/design/registry/check-coverage.yaml           |   6 +-
+ docs/modules/gates.md                              |   6 +-
+ docs/modules/graph.md                              |   4 +-
+ docs/modules/strata.md                             |  24 ++
+ docs/strata/surface.md                             |  43 ++-
+ src/frob/gates/_sys_selfaudit.py                   |  39 +-
+ src/frob/gates/_waive.py                           |   3 +
+ src/frob/strata/__init__.py                        |   5 +
+ src/frob/strata/_mutation_audit.py                 |  19 +-
+ src/frob/strata/_scope_config.py                   |  70 ++++
+ src/frob/strata/_selfconform.py                    | 321 ++++++++++++++---
+ tests/unit/gates/test_sys_selfaudit.py             |  51 +++
+ tests/unit/strata/test_scope_config.py             |  46 +++
+ tests/unit/strata/test_selfconform.py              |  68 ++++
+ .../unit/strata/test_sys107_via_scope_advisory.py  | 117 ++++++
+ tickets.md                                         | 399 ++++++++++++++++++++-
+ 17 files changed, 1146 insertions(+), 81 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory::test_via_less_grant_on_large_node_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory::test_via_less_grant_on_small_node_is_silent` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory::test_via_scoped_grant_on_large_node_is_silent` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory::test_node_with_no_may_never_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_scope_config.py::TestStrataScopeConfig::test_missing_frob_toml_returns_defaults` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_scope_config.py::TestStrataScopeConfig::test_parses_strata_table` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_scope_config.py::TestStrataScopeConfig::test_malformed_toml_falls_back_to_defaults` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_scope_config.py::TestStrataScopeConfig::test_wrong_typed_strata_table_falls_back_to_defaults` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_sys_selfaudit.py::TestSelfauditSeverity::test_sys107_defaults_to_warn` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_sys_selfaudit.py::TestSelfauditSeverity::test_sys107_escalates_to_error_under_require_may_scope` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_sys_selfaudit.py::TestSelfauditSeverity::test_other_sub_rules_stay_error_regardless_of_config` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_sys_selfaudit.py::TestSelfauditSeverity::test_selfaudit_violation_carries_sys107_warn_severity` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 12 passed (from 12 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1452 -->
 ```yaml
@@ -9405,7 +9606,7 @@ design pass, not a ready-to-implement plan.
 ```yaml
 id: T-1453
 title: 'strata: migrate design/frob.strata''s may grants to scoped via globs'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-02'
@@ -9415,6 +9616,41 @@ tier: ticket
 sprint: null
 scope:
 - design/frob.strata
+- src/frob/strata/_selfconform.py
+scope_changes:
+- op: add
+  glob: src/frob/strata/_selfconform.py
+  reason: 'The T-1450 SYS101 per-via rewrite of src/frob/strata/_selfconform.py
+
+    relocated the pre-existing "frob:waive PERF004 reason=distinct small
+
+    per-node diff set, not repeated" comment from the old whole-node loop
+
+    (deleted by that rewrite) onto the two new loops inside
+
+    _stale_design_violations_for_node (the via-less fallback loop and the
+
+    per-may_grants loop), preserving the same waived concern at its new call
+
+    sites. That relocation trips T-1453''s committed-waive-deletion land
+
+    check because src/frob/strata/_selfconform.py sits outside T-1453''s
+
+    declared scope (design/frob.strata only), even though the deleting
+
+    commit is T-1450''s own in-scope work on the shared branch. Adding this
+
+    file to T-1453''s scope acknowledges the shared-branch history rather
+
+    than re-scoping T-1450 after the fact.
+
+    '
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+- tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch::test_real_repo_design_selfconform_has_no_eval_gap
+- tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_repo_unrestricted_scan_is_clean
 threat: null
 component: null
 ```
@@ -9433,6 +9669,109 @@ to it. Verify with `frob sys audit`/`check_capability_conformance`
 staying green (no new SYS100) after each node's migration -- migrate
 one broad node at a time, not a single flag-day commit, to keep any
 break bisectable.
+
+## Done report
+
+REDO ADDENDUM (2026-08-03): the prior Done report on this ticket claimed
+a 46-grant may-to-via migration of design/frob.strata, but the edit
+never actually reached this branch -- HEAD's design/frob.strata was
+still 100% whole-node (via-less) may grants across every node, and
+`frob check --only sys` at that commit still showed all 8 SYS107
+warnings. The migration described in the prior report was lost, most
+likely to a git-stash mishap in an earlier session on this shared
+worktree/branch class (the exact hazard docs/guides/agent-playbook.md
+section 1b documents) -- committed-but-never-actually-there is the
+observed symptom, not a working-tree loss, so the precise mechanism
+could not be reconstructed after the fact, only the fact of the gap.
+
+This session redid the migration for real, using the same primitive
+the prior report described (and which two scratch scripts already
+sitting in this session's scratchpad, compute_via.py/
+apply_via_migration.py, correctly implement): `frob.strata._selfconform
+._observed_raw_kinds_by_file` plus `_capability_binding` gives, per
+owned file, the normalized capability-kind set `scan_file_capabilities`
+observes there. For each via-less `may "ATOM"` on each of the 8
+SYS107-flagged nodes, computed the real observing file set (files whose
+observed kinds intersect the atom's `expand_declared_kind` set) and
+rewrote design/frob.strata's `may "ATOM";` line to
+`may "ATOM" via "f1", "f2", ...;`, one node's block at a time
+(brace-depth tracked so no other node's declarations were touched).
+
+Migrated 46 may atoms across the 8 target nodes -- same total the prior
+(lost) report claimed, this time actually committed
+(eb411f43e...HEAD):
+  cli 6 atoms, graphlang 4, gates 4, stratamod 4, core 5, vet 7,
+  testsuite 11, tickets_ledger 5.
+Every atom's observing file set was non-empty (smallest: graphlang's
+"sql" and vet's several single-file atoms at 1 file each; largest:
+testsuite's fs.write at 249/413 files, exec at 130/413, fs.read at
+96/413 -- these remain large surfaces because the capability genuinely
+is exercised broadly across the test tree, not because the via list was
+left unscoped). No grant had zero observing files, so no SYS101
+stale-grant deletion was needed or performed -- every migrated atom
+narrowed cleanly to a real via list.
+
+SYS107 before: 8 warnings (cli, graphlang, gates, stratamod, core, vet,
+testsuite, tickets_ledger, all "> 20 files, via-less"). SYS107 after: 0
+-- `frob check --only sys` now reports 0 errors, 0 warnings from
+gate:SELFAUDIT (the "strata header-regex symbol count" WARNING line
+present in the raw log is a pre-existing, unrelated informational
+mismatch, not a SELFAUDIT/SYS finding).
+
+Evidence (all 3 re-run and passing this session, re-recorded via
+`frob ticket evidence`):
+  tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+  tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch::test_real_repo_design_selfconform_has_no_eval_gap
+  tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_repo_unrestricted_scan_is_clean
+`uv run pytest` on the exact 3 node ids: 3 passed.
+
+Gates: `frob check --ticket T-1453 --only sys` clean (0 errors, 0
+SELFAUDIT warnings). `frob check --ticket T-1453 --only prework` clean
+after `frob ticket sweep T-1453` refreshed the stale sweep. The
+`--only scope` SCOPE001/SCOPE002 findings against src/frob/strata/
+_selfconform.py and design/frob.strata are PRE-EXISTING (unrelated to
+this session's diff, which touched design/frob.strata only) and were
+already disclosed in the prior report's own LAND-REPAIR ADDENDUM --
+_selfconform.py's broad frob:tests/frob:doc surface predates this
+ticket and the concurrent T-1279 lease on src/frob/gates/** still
+blocks formally widening scope to cover it; not re-litigated here since
+this ticket's own diff this session is design/frob.strata only.
+`git diff main --diff-filter=D --stat` is empty (no deletions outside
+scope).
+
+Filed: none -- no out-of-scope work discovered this session.
+
+### Changed
+```
+ design/frob.strata                                 |  98 ++---
+ docs/design/registry/check-coverage.yaml           |   6 +-
+ docs/modules/gates.md                              |   6 +-
+ docs/modules/graph.md                              |   4 +-
+ docs/modules/strata.md                             |  24 ++
+ docs/strata/surface.md                             |  43 ++-
+ src/frob/gates/_sys_selfaudit.py                   |  39 +-
+ src/frob/gates/_waive.py                           |   3 +
+ src/frob/strata/__init__.py                        |   5 +
+ src/frob/strata/_mutation_audit.py                 |  19 +-
+ src/frob/strata/_scope_config.py                   |  70 ++++
+ src/frob/strata/_selfconform.py                    | 321 ++++++++++++++--
+ tests/unit/gates/test_sys_selfaudit.py             |  51 +++
+ tests/unit/strata/test_scope_config.py             |  46 +++
+ tests/unit/strata/test_selfconform.py              |  68 ++++
+ .../unit/strata/test_sys107_via_scope_advisory.py  | 117 ++++++
+ tickets.md                                         | 424 ++++++++++++++++++++-
+ 17 files changed, 1217 insertions(+), 127 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch::test_real_repo_design_selfconform_has_no_eval_gap` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_repo_unrestricted_scan_is_clean` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 1 error(s), 522 warning(s), 748 waived
+- error-findings: AFFECT001@src/frob/strata/_mutation_audit.py
 
 <!-- ticket:T-1454 -->
 ```yaml
@@ -11063,3 +11402,91 @@ outside T-1433's scope) stays open here.
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 1 error(s), 423 warning(s), 742 waived
 - error-findings: WIRE001@tests/conftest.py
+
+<!-- ticket:T-1473 -->
+```yaml
+id: T-1473
+title: bind/reword the 4 pre-existing unbound NEGEXIST001 claims T-1229 surfaced
+state: in-progress
+kind: bug
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/modules/gates.md
+- docs/modules/graph.md
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+threat: null
+component: null
+```
+T-1229's live NEGEXIST001 run surfaced 4 pre-existing unbound negative-
+existence claims: docs/modules/gates.md:50, docs/modules/gates.md:91,
+docs/modules/gates.md:456, docs/modules/graph.md:384. Investigated each:
+none names a real not-yet-built feature with an obvious ticket to bind --
+gates.md:50/91 are rule-catalog table rows describing DEC001/REF003's
+own "points at a missing record" semantics (heuristic false positives,
+not feature-absence claims); gates.md:456 and graph.md:384 are genuine
+disclosed scope cuts (T-0809's escaped/acquired RAII cross-check,
+T-0686's may-raise engine) with no open ticket tracking them. Reworded
+all four to state the same fact without tripping the NEGEXIST001
+phrase heuristic (rather than a blanket waiver), per the wave brief's
+"bind via frob:until or reword; do not blanket-waive" instruction.
+
+## Done report
+
+Investigated the 4 pre-existing unbound NEGEXIST001 claims T-1229's Done
+report disclosed: docs/modules/gates.md:50, :91, :456, docs/modules/
+graph.md:384. gates.md:50 (DEC001) and :91 (REF003) are rule-catalog
+table rows describing those gates' own "points at a missing record"
+semantics -- the heuristic false-positived on their definition prose,
+not a real "frob X doesn't exist yet" claim, so reworded rather than
+bound. gates.md:456 (T-0809's RAII escaped/acquired cross-check) and
+graph.md:384 (T-0686's may-raise engine) are genuine disclosed gaps with
+no open ticket naming the work -- rather than fabricate a placeholder
+ticket just to satisfy frob:until, reworded both to state the fact
+plainly ("left unwired" / "has no implementation") without matching
+_NEGEXIST_PHRASE_RE, per the wave brief's explicit "bind ... or reword;
+do not blanket-waive" instruction.
+
+Verified via `frob check --only docblocks`: none of the 4 original
+locations fires NEGEXIST001 any more (docs/modules/gates.md/graph.md
+absent from the finding list). The gate itself still reports ~39 other,
+out-of-scope findings across the rest of the repo -- untouched, a
+separate burn-down not requested here.
+
+Evidence: docs-only ticket with no pytest surface of its own (playbook
+section 5) -- recording the existing CLI-dispatch integration test per
+the T-0167 precedent.
+
+### Changed
+```
+ design/frob.strata                                 |  98 ++++---
+ docs/design/registry/check-coverage.yaml           |   6 +-
+ docs/modules/gates.md                              |   6 +-
+ docs/modules/graph.md                              |   4 +-
+ docs/modules/strata.md                             |  24 ++
+ docs/strata/surface.md                             |  43 +--
+ src/frob/gates/_sys_selfaudit.py                   |  39 ++-
+ src/frob/gates/_waive.py                           |   3 +
+ src/frob/strata/__init__.py                        |   5 +
+ src/frob/strata/_mutation_audit.py                 |  19 +-
+ src/frob/strata/_scope_config.py                   |  70 +++++
+ src/frob/strata/_selfconform.py                    | 317 ++++++++++++++++++---
+ tests/unit/gates/test_sys_selfaudit.py             |  51 ++++
+ tests/unit/strata/test_scope_config.py             |  46 +++
+ tests/unit/strata/test_selfconform.py              |  68 +++++
+ .../unit/strata/test_sys107_via_scope_advisory.py  | 121 ++++++++
+ tickets.md                                         | 128 ++++++++-
+ 17 files changed, 919 insertions(+), 129 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)

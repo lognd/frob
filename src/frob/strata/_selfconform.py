@@ -138,6 +138,22 @@ direction (starting at a bound node and following its real import
 edges), so a file some future exclude-glob or walk boundary hides from
 SYS103's own walk but that a bound node still imports at runtime is
 still caught. Cycle-safe (visited-set BFS over resolved import targets).
+
+SYS107 (T-1451) via-less-may-on-a-large-node advisory -- a node whose
+`code=` glob(s) bind more than `_LARGE_NODE_FILE_THRESHOLD` real files but
+declares at least one `may` atom with NO `via` (a T-1440 whole-node
+grant) is an advisory (WARN by default) finding: the bigger a node's
+bound surface, the less a whole-node grant actually tells a reviewer
+about which files really need the capability, and the more valuable
+narrowing it to `via` globs would be. Deliberately WARN, not ERROR, by
+default (an advisory nudge toward scoping, not a new hard requirement on
+every pre-existing declaration) -- `[strata] require_may_scope` in
+`frob.toml` (`_scope_config.py`) escalates it to ERROR for a repo whose
+owner is ready to commit. GAP STATEMENT: nothing else in this module (or
+`_effects.py`) evaluates a node's OWN size against its grants' `via`
+coverage -- SYS100/SYS101 both join declared-vs-observed per file or per
+node, never asking whether a via-less grant's blast radius is large
+enough to be worth narrowing at all.
 """
 
 from __future__ import annotations
@@ -172,10 +188,12 @@ from ._effects import (
     _KIND_MAP,
     _declared_kinds,
     _may_kind,
+    _via_matches,
     check_capability_conformance,
 )
 from ._errors import StrataError
 from ._models import KernelModel
+from ._scope_config import load_strata_scope_config
 from ._waive import (
     CONFORMANCE_WAIVER_EXPIRED_RULE,
     STALE_WAIVER_RULE,
@@ -224,10 +242,27 @@ SYS_PURPOSE_CONTRACT = "SYS105"
 #: a bound node's own files, with an observed capability (module
 #: docstring's SYS106 section).
 SYS_BINDING_TOTALITY = "SYS106"
+# frob:doc docs/strata/surface.md#may-scope
+#: `frob sys audit` rule id for SYS107 (T-1451) via-less-may-on-a-large-
+#: node advisory: a node bound to more than `_LARGE_NODE_FILE_THRESHOLD`
+#: real files declaring at least one via-less `may` grant (module
+#: docstring's SYS107 section). WARN by default; escalated to ERROR by
+#: `[strata] require_may_scope` (`_scope_config.py`).
+SYS_VIA_LESS_LARGE_NODE = "SYS107"
 
 #: `src/` subtree self-conformance actually scans -- our own package root
 #: (module docstring: `design/frob.strata` models exactly this one tree).
 _PACKAGE_ROOT = "src/frob"
+
+# frob:doc docs/strata/surface.md#may-scope
+#: SYS107's default "large node" file-count threshold (T-1451) --
+#: deliberately a round, generous number (LARGE001's own file-SIZE
+#: threshold precedent, `frob.arch._check_large_file`, is the closest
+#: existing analog in this repo for "a size past which a flat/unscoped
+#: declaration stops being informative") rather than a data-derived one;
+#: `[strata] require_may_scope_threshold` in `frob.toml` overrides it per
+#: repo (`_scope_config.py::StrataScopeConfig`).
+_LARGE_NODE_FILE_THRESHOLD = 20
 
 #: The vet capability kinds THREAT004's `_effects.py::_KIND_MAP` has no
 #: tier-2 analog for (module docstring's SYS100 gap statement) -- the ONLY
@@ -434,6 +469,50 @@ def _match_capability_owner(
     return Ok(next(iter(matched)) if matched else FOREIGN)
 
 
+def _observed_raw_kinds_by_file(
+    binding: CodeBinding, root: Path
+) -> dict[str, frozenset[str]]:
+    """Every owned file (`rel` path) -> the RAW `scan_file_capabilities`
+    output for that ONE file (no `_EXTENDED_KINDS` filter, no `_KIND_MAP`
+    normalization) -- the SINGLE per-file scan pass every other observed-
+    kinds view in this module (per-node aggregate via
+    `_observed_raw_kinds_by_node`, and T-1450's per-via `_stale_design_
+    violations` join) derives from, so `scan_file_capabilities` still
+    only ever runs once per owned file (H5/T-0830's single-scan property,
+    now anchored at file granularity instead of node granularity so a
+    per-`via`-surface join has something to narrow). `binding` here is
+    ALWAYS the T-0169 `_capability_binding` superset, never the raw
+    `.py`-only `bind_code` output -- see that function's docstring. Skips
+    `is_self_pattern_path` files (T-0201): a pattern-catalog data file's
+    needle literals are not code exercising the capability, the same
+    self-match class `frob.vet._capability`'s own aggregation excludes."""
+    per_file: dict[str, frozenset[str]] = {}
+    for rel in _sorted_owned_files(binding):
+        path = root / rel
+        if is_self_pattern_path(path, root):
+            continue
+        found = scan_file_capabilities(path)
+        if found:
+            per_file[rel] = frozenset(found)
+    return per_file
+
+
+def _aggregate_raw_kinds_by_node(
+    binding: CodeBinding, raw_by_file: dict[str, frozenset[str]]
+) -> dict[str, frozenset[str]]:
+    """Every node id -> the union of an already-scanned `raw_by_file`
+    map's values across that node's owned files -- the per-node
+    aggregation step split out of `_observed_raw_kinds_by_node` (T-1450)
+    so a caller that also needs the per-file map (the per-via SYS101 join)
+    can compute the file-level scan once and derive both views from it,
+    instead of `_observed_raw_kinds_by_node` re-scanning independently."""
+    per_node: dict[str, set[str]] = {}
+    for rel, kinds in raw_by_file.items():
+        owner = binding.owner[rel]
+        per_node.setdefault(owner, set()).update(kinds)
+    return {node_id: frozenset(kinds) for node_id, kinds in per_node.items()}
+
+
 def _observed_raw_kinds_by_node(
     binding: CodeBinding, root: Path
 ) -> dict[str, frozenset[str]]:
@@ -447,20 +526,14 @@ def _observed_raw_kinds_by_node(
     per-file resolution work `scan_file_capabilities` does). `binding`
     here is ALWAYS the T-0169 `_capability_binding` superset, never the
     raw `.py`-only `bind_code` output -- see that function's docstring.
-    Skips `is_self_pattern_path` files (T-0201): a pattern-catalog data
-    file's needle literals are not code exercising the capability, the
-    same self-match class `frob.vet._capability`'s own aggregation
-    excludes."""
-    per_node: dict[str, set[str]] = {}
-    for rel in _sorted_owned_files(binding):
-        path = root / rel
-        if is_self_pattern_path(path, root):
-            continue
-        owner = binding.owner[rel]
-        found = scan_file_capabilities(path)
-        if found:
-            per_node.setdefault(owner, set()).update(found)
-    return {node_id: frozenset(kinds) for node_id, kinds in per_node.items()}
+    T-1450: now a thin wrapper over `_observed_raw_kinds_by_file` +
+    `_aggregate_raw_kinds_by_node` for standalone callers -- the hot path
+    (`_collect_sys_violations`) calls the file-level scan directly and
+    aggregates itself so it can also hand the per-file map to the SYS101
+    per-via join, without a second scan."""
+    return _aggregate_raw_kinds_by_node(
+        binding, _observed_raw_kinds_by_file(binding, root)
+    )
 
 
 def _extended_kinds_view(
@@ -666,10 +739,112 @@ def _raw_declared_kinds(node) -> frozenset[str]:  # noqa: ANN001
     return frozenset(_may_kind(atom) for atom in node.may)
 
 
+def _node_owned_files(binding: CodeBinding, node_id: str) -> list[str]:
+    """Every owned file (`rel` path) `binding` binds to `node_id` -- T-1450's
+    per-grant SYS101 join narrows this by a grant's own `via` globs, so it
+    needs the node's owned-file set directly rather than the already-
+    aggregated per-node kind union `observed_by_node` used to hand it."""
+    return sorted(rel for rel, owner in binding.owner.items() if owner == node_id)
+
+
+def _observed_kinds_for_files(
+    files: list[str], all_kinds_by_file: dict[str, frozenset[str]]
+) -> frozenset[str]:
+    """The union of `all_kinds_by_file`'s (already `_KIND_MAP`-normalized,
+    T-1450) values across `files` -- shared by a via-less grant's whole-
+    node join and a `via`-scoped grant's narrowed join, the only
+    difference between the two being which file list is passed in."""
+    observed: set[str] = set()
+    for rel in files:
+        observed |= all_kinds_by_file.get(rel, frozenset())
+    return frozenset(observed)
+
+
+def _stale_grant_violation(
+    node_id: str, raw_kind: str, via: tuple[str, ...]
+) -> SelfConformViolation:
+    """Build one SYS101 finding for a declared-but-unobserved atom, split
+    out of `_stale_design_violations_for_node` (T-1450) purely to keep its
+    loop body short. `via`, when present, is folded into `detail` so the
+    finding names the specific surface that failed to discharge it -- not
+    just the node, which per-via staleness (unlike the old whole-node
+    join) can no longer imply on its own."""
+    _log.warning(
+        "selfconform: SYS101 %s declared but never observed on %s%s",
+        raw_kind,
+        node_id,
+        f" via {list(via)}" if via else "",
+    )
+    detail = f"capability {raw_kind!r} declared but never observed"
+    if via:
+        detail += f" via {', '.join(via)}"
+    return SelfConformViolation(
+        rule=SYS_STALE_DESIGN,
+        node=node_id,
+        detail=detail,
+        capability=raw_kind,
+    )
+
+
+def _stale_design_violations_for_node(
+    node,  # noqa: ANN001
+    binding: CodeBinding,
+    all_kinds_by_file: dict[str, frozenset[str]],
+) -> list[SelfConformViolation]:
+    """One node's SYS101 findings (T-1450): iterates `node.may_grants`
+    (populated for every parsed `may` clause, with or without `via` --
+    `strata-core/src/parse/grammar_node.rs`) rather than the flat, kind-
+    deduped `_raw_declared_kinds(node)` set the old whole-node join used,
+    so a `via`-scoped grant is judged only against the files its own glob
+    covers while a via-less grant on the SAME kind keeps the old whole-
+    node join -- the exact "a dead grant on one file is flagged even
+    while another file legitimately uses the same kind" acceptance clause
+    this ticket exists for. `node.may_grants` empty entirely (a `Node`
+    built directly, bypassing the parser -- most unit-test fixtures) falls
+    back to the pre-T-1450 whole-node-only join over
+    `_raw_declared_kinds`, an exact behavior-preserving path (mirrors
+    `_effects.py::_declared_kinds_for_file`'s own legacy fallback)."""
+    owned_files = _node_owned_files(binding, node.id)
+    whole_node_observed = _observed_kinds_for_files(owned_files, all_kinds_by_file)
+    found: list[SelfConformViolation] = []
+    if not node.may_grants:
+        # frob:waive PERF004 reason="distinct small per-node diff set, not repeated"
+        for raw_kind in sorted(_raw_declared_kinds(node)):
+            canonical = canonical_declared_kind(raw_kind)
+            expanded = expand_declared_kind(canonical)
+            if expanded & whole_node_observed:
+                continue
+            found.append(_stale_grant_violation(node.id, raw_kind, ()))
+        return found
+    seen: set[tuple[str, tuple[str, ...]]] = set()
+    # frob:waive PERF004 reason="distinct small per-node grant list, not repeated"
+    for grant in node.may_grants:
+        raw_kind = _may_kind(grant.atom)
+        key = (raw_kind, grant.via)
+        if key in seen:
+            continue  # duplicate (kind, via) grant -- already judged
+        seen.add(key)
+        if grant.via:
+            matched_files = [rel for rel in owned_files if _via_matches(rel, grant.via)]
+            observed = _observed_kinds_for_files(matched_files, all_kinds_by_file)
+        else:
+            observed = whole_node_observed
+        canonical = canonical_declared_kind(raw_kind)
+        expanded = expand_declared_kind(canonical)
+        if expanded & observed:
+            continue
+        found.append(_stale_grant_violation(node.id, raw_kind, grant.via))
+    return found
+
+
 # frob:invariant INV-026
 # frob:tests tests/unit/strata/test_selfconform.py::TestStaleDesign.test_stale_design_skips_node_fully_within_graph_exclude  # noqa: E501
+# frob:tests tests/unit/strata/test_selfconform.py::TestStaleDesign.test_via_scoped_grant_stale_while_other_surface_uses_same_kind  # noqa: E501
 def _stale_design_violations(
-    model: KernelModel, root: Path, observed_by_node: dict[str, frozenset[str]]
+    model: KernelModel,
+    root: Path,
+    binding: CodeBinding,
+    all_kinds_by_file: dict[str, frozenset[str]],
 ) -> list[SelfConformViolation]:
     """SYS101 over every kind (net/fs/exec included) -- new code, since no
     shipped join checks this direction (module docstring's SYS101 gap
@@ -686,35 +861,26 @@ def _stale_design_violations(
     coarse `may "fs"` declaration keeps discharging on EITHER mode being
     observed (mandate point 2/old `_alias_legacy_fs_observations`
     backward-compat behavior, now a natural consequence of this generic
-    per-atom join rather than fs-specific code). T-0830: `observed_by_node`
-    is precomputed by the caller (an `_all_kinds_view` derivation) instead
-    of this function scanning the owned-file set itself -- see
-    `_extended_kind_violations`'s docstring for why."""
+    per-atom join rather than fs-specific code).
+
+    T-1450: judged PER MAY-VIA SURFACE, not per whole-node kind -- delegated
+    to `_stale_design_violations_for_node` per node (see its docstring for
+    the per-grant join and the legacy whole-node fallback). `binding` is
+    the T-0169 capability-binding superset (needed to resolve each node's
+    owned-file set for the per-`via` narrowing); `all_kinds_by_file` is
+    precomputed by the caller (an `_all_kinds_view` derivation over
+    `_observed_raw_kinds_by_file`, T-0830's single-scan discipline
+    extended to file granularity) instead of this function scanning the
+    owned-file set itself -- see `_extended_kind_violations`'s docstring
+    for why."""
     skip_nodes = _fully_excluded_node_ids(model, root)
     found: list[SelfConformViolation] = []
     for node in model.nodes:
         if node.id in skip_nodes:
             continue
-        observed = observed_by_node.get(node.id, frozenset())
-        # frob:waive PERF004 reason="distinct small per-node diff set, not repeated"
-        for raw_kind in sorted(_raw_declared_kinds(node)):
-            canonical = canonical_declared_kind(raw_kind)
-            expanded = expand_declared_kind(canonical)
-            if expanded & observed:
-                continue
-            _log.warning(
-                "selfconform: SYS101 %s declared but never observed on %s",
-                raw_kind,
-                node.id,
-            )
-            found.append(
-                SelfConformViolation(
-                    rule=SYS_STALE_DESIGN,
-                    node=node.id,
-                    detail=f"capability {raw_kind!r} declared but never observed",
-                    capability=raw_kind,
-                )
-            )
+        found.extend(
+            _stale_design_violations_for_node(node, binding, all_kinds_by_file)
+        )
     return found
 
 
@@ -1127,6 +1293,71 @@ def _binding_totality_violations(
     return found
 
 
+# frob:doc docs/strata/surface.md#may-scope
+# frob:ticket T-1451
+def _node_real_code_file_count(binding: CodeBinding, node_id: str) -> int:
+    """The number of real (owned, non-`FOREIGN`) files `binding` binds to
+    `node_id` -- SYS107's own "how large is this node's blast radius"
+    measure, split out purely so `_via_less_large_node_violations`'s loop
+    body stays short. Reuses `binding.owner` directly (already computed by
+    the caller's `_capability_binding` pass) rather than re-walking
+    `node.attrs`'s `code=` globs -- an owned-file count, not a glob count,
+    is what actually determines how much a whole-node grant covers."""
+    return sum(1 for owner in binding.owner.values() if owner == node_id)
+
+
+# frob:doc docs/strata/surface.md#may-scope
+# frob:ticket T-1451
+# frob:tests tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory.test_via_less_grant_on_large_node_fires  # noqa: E501
+# frob:tests tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory.test_via_less_grant_on_small_node_is_silent  # noqa: E501
+# frob:tests tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory.test_via_scoped_grant_on_large_node_is_silent  # noqa: E501
+def _via_less_large_node_violations(
+    model: KernelModel, binding: CodeBinding, threshold: int
+) -> list[SelfConformViolation]:
+    """SYS107 (T-1451, module docstring's SYS107 section): a node bound to
+    more than `threshold` real files that declares at least one via-less
+    `may` grant is an advisory finding. Judged per NODE, not per grant (one
+    finding per offending node, not one per via-less atom) -- the point is
+    "this node is big enough that its whole-node grants are worth
+    narrowing", a property of the node's size, not of any one atom.
+    `node.may_grants` empty entirely (a `Node` built directly, bypassing
+    the parser) is treated as "every declared `may` is via-less" (the
+    pre-T-1440 meaning `MayGrant.via=()` formalizes), so this still fires
+    correctly for a hand-built `Node` fixture with a flat `may` tuple and
+    no `may_grants` at all."""
+    found: list[SelfConformViolation] = []
+    for node in model.nodes:
+        if not node.may:
+            continue
+        file_count = _node_real_code_file_count(binding, node.id)
+        if file_count <= threshold:
+            continue
+        has_via_less = not node.may_grants or any(
+            not grant.via for grant in node.may_grants
+        )
+        if not has_via_less:
+            continue
+        _log.warning(
+            "selfconform: SYS107 via-less may grant on large node %s (%d files > "
+            "threshold %d)",
+            node.id,
+            file_count,
+            threshold,
+        )
+        found.append(
+            SelfConformViolation(
+                rule=SYS_VIA_LESS_LARGE_NODE,
+                node=node.id,
+                detail=(
+                    f"node {node.id!r} binds {file_count} file(s) (> {threshold}) "
+                    "and declares at least one via-less may grant -- consider "
+                    "narrowing it with via"
+                ),
+            )
+        )
+    return found
+
+
 def _top_level_dirs(root: Path) -> list[str]:
     """Every immediate, non-skipped subdirectory name of `root / _PACKAGE_ROOT`
     (module docstring's SYS102 unit of "unmodeled code"), in sorted order.
@@ -1496,7 +1727,8 @@ def _collect_sys_violations(
     `_all_kinds_view`) are derived from it before being handed to the two
     violation functions."""
     core_violations = _core_undeclared_violations(model, capability_binding, root)
-    raw_by_node = _observed_raw_kinds_by_node(capability_binding, root)
+    raw_by_file = _observed_raw_kinds_by_file(capability_binding, root)
+    raw_by_node = _aggregate_raw_kinds_by_node(capability_binding, raw_by_file)
     extended_violations = _extended_kind_violations(
         model, _extended_kinds_view(raw_by_node)
     )
@@ -1505,7 +1737,9 @@ def _collect_sys_violations(
         _dedupe_sys100_extended_against_core(core_violations, extended_violations)
     )
     violations.extend(
-        _stale_design_violations(model, root, _all_kinds_view(raw_by_node))
+        _stale_design_violations(
+            model, root, capability_binding, _all_kinds_view(raw_by_file)
+        )
     )
     violations.extend(_unmodeled_violations(root, capability_binding))
     violations.extend(_coverage_totality_violations(capability_binding, root))
@@ -1514,6 +1748,11 @@ def _collect_sys_violations(
     )
     violations.extend(_purpose_contract_violations(model, _all_kinds_view(raw_by_node)))
     violations.extend(_binding_totality_violations(model, capability_binding, root))
+    scope_config = load_strata_scope_config(root)
+    threshold = scope_config.require_may_scope_threshold or _LARGE_NODE_FILE_THRESHOLD
+    violations.extend(
+        _via_less_large_node_violations(model, capability_binding, threshold)
+    )
     return violations
 
 

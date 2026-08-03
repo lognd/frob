@@ -404,6 +404,7 @@ from frob.strata._scenarios import (
     build_compromised_user_scenario,
     evaluate_scenarios,
 )
+from frob.strata._scope_config import StrataScopeConfig, load_strata_scope_config
 from frob.strata._secrets import (
     SECRET_LABEL,
     SecretExpansion,
@@ -418,6 +419,7 @@ from frob.strata._selfconform import (
     SYS_STALE_DESIGN,
     SYS_UNDECLARED_INTERFACE,
     SYS_UNMODELED_CODE,
+    SYS_VIA_LESS_LARGE_NODE,
     SelfConformReport,
     SelfConformViolation,
     check_self_conformance,
@@ -566,7 +568,10 @@ __all__ = [
     "SYS_STALE_DESIGN",
     "SYS_UNDECLARED_INTERFACE",
     "SYS_UNMODELED_CODE",
+    "SYS_VIA_LESS_LARGE_NODE",
     "SYS_UNARBITRATED_MODE_CONFLICT",
+    "StrataScopeConfig",
+    "load_strata_scope_config",
     "LABELS",
     "REGULATION_VIEWS",
     "SECRET_LABEL",

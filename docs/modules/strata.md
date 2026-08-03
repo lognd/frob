@@ -212,6 +212,30 @@ test_repo_unrestricted_scan_is_clean`) already proves zero FOREIGN-and-
 capable files exist anywhere in the repo (prefix bypassed), SYS106's
 reachable subset of that same empty set is necessarily also empty.
 
+<a id="sys107-via-less-large-node-advisory-t-1451"></a>
+## SYS107 via-less-may-on-a-large-node advisory (T-1451)
+
+A node bound to more than `_LARGE_NODE_FILE_THRESHOLD` (20,
+`_selfconform.py`) real files that declares at least one via-less `may`
+grant (docs/strata/surface.md#may-scope) is an advisory SYS107 finding:
+the larger a node's bound surface, the less informative a whole-node
+grant is, and the more valuable narrowing it with `via` would be. Judged
+per NODE (one finding per offending node, not per atom) -- size is a
+property of the node, not of any one grant.
+
+Deliberately WARN by default, not ERROR: this is a nudge toward scoping
+existing, otherwise-valid declarations, not a new hard requirement
+imposed on a repo that has not opted in. `[strata] require_may_scope =
+true` in `frob.toml` (`_scope_config.py::load_strata_scope_config`)
+escalates it to ERROR -- wired into SELFAUDIT001's per-sub-rule severity
+map (`frob.gates._sys_selfaudit._selfaudit_severity`) rather than into
+`check_self_conformance`'s own `SelfConformViolation` shape, since
+severity is a SELFAUDIT001-gate-pipeline concern, not a self-conformance
+data-model concern -- `frob sys audit`'s own CLI report still lists a
+SYS107 finding exactly like any other, undifferentiated by the config
+(severity only affects whether `frob check`/`frob ticket land` treats it
+as a hard failure).
+
 <a id="bounded-escape-hatches-t-0671"></a>
 ## Bounded escape hatches for conformance obligations (T-0671)
 

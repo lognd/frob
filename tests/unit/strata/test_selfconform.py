@@ -23,6 +23,7 @@ from frob.strata import (
     SYS_UNDECLARED_INTERFACE,
     SYS_UNMODELED_CODE,
     KernelModel,
+    MayGrant,
     Node,
     Waiver,
     check_self_conformance,
@@ -519,6 +520,73 @@ class TestStaleDesign:
         assert result.is_ok
         hit = [v for v in result.danger_ok.violations if v.rule == SYS_STALE_DESIGN]
         assert any(v.node == "widget" and "net" in v.detail for v in hit)
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # invariant spec: [INV-026](invariants/INV-026.md)
+    def test_via_scoped_grant_stale_while_other_surface_uses_same_kind(
+        self, tmp_path: Path
+    ):
+        """T-1450: SYS101 must judge staleness PER may-via SURFACE, not per
+        whole-node kind -- a grant scoped to `_net_a.py` that is never
+        exercised there is stale even though `_net_b.py` (a different file
+        on the same node) legitimately uses the same `net` kind, because
+        that observation cannot discharge a grant whose `via` never covers
+        it."""
+        _write(tmp_path, "src/frob/widget/_net_a.py", "x = 1\n")
+        _write(
+            tmp_path,
+            "src/frob/widget/_net_b.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may=("net", "net"),
+                    may_grants=(
+                        MayGrant(atom="net", via=("src/frob/widget/_net_a.py",)),
+                        MayGrant(atom="net", via=("src/frob/widget/_net_b.py",)),
+                    ),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hit = [v for v in result.danger_ok.violations if v.rule == SYS_STALE_DESIGN]
+        assert any(
+            v.node == "widget" and "net" in v.detail and "_net_a.py" in v.detail
+            for v in hit
+        )
+        assert not any("_net_b.py" in v.detail for v in hit)
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_via_less_grant_alongside_via_grant_still_discharges_whole_node(
+        self, tmp_path: Path
+    ):
+        """A via-LESS grant on the same node/kind keeps the pre-T-1450
+        whole-node join -- it discharges on ANY file's observation,
+        exactly like a legacy node with no `may_grants` at all."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_net_b.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may=("net",),
+                    may_grants=(MayGrant(atom="net", via=()),),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(v.rule == SYS_STALE_DESIGN for v in result.danger_ok.violations)
 
 
 class TestUnmodeledCode:
