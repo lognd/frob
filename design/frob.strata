@@ -2160,6 +2160,7 @@ node mutate : trusted {
 // capability boundary.
 // frob:doc docs/commands/refactor.md#public-api
 // frob:ticket T-1329
+// frob:ticket T-1267
 node refactor : trusted {
     attr interface=AliasRecord;
     attr interface=RefactorError;
@@ -2174,12 +2175,22 @@ node refactor : trusted {
     attr interface=apply_plan;
     attr interface=build_move_ops;
     attr interface=build_plan;
+    attr interface=carry_lock_acks;
+    attr interface=extend_span_for_attached_directives;
     attr interface=find_python_files;
     attr interface=module_to_path;
+    attr interface=resolve_rename_dest_collision;
     attr interface=resolve_symbol;
     attr interface=run_refactor;
     attr interface=run_refactor_command;
+    attr interface=scan_directive_carriers;
+    attr interface=scan_doc_anchor_carriers;
+    attr interface=scan_docs_prose_mentions;
+    attr interface=scan_evidence_citations;
+    attr interface=scan_pii_allowlist_carrier;
+    attr interface=scan_python_prose_mentions;
     attr interface=scan_references;
+    attr interface=scan_registry_citations;
     attr interface=verify_check_delta;
     attr interface=verify_import_resolution;
     attr interface=verify_pytest_collect;
@@ -2921,6 +2932,7 @@ cache graph_cache of graphlang {
 // frob:ticket T-1384
 // frob:ticket T-1410
 // frob:ticket T-1433
+// frob:ticket T-1267
 node testsuite : trusted {
     clearance Internal;
     code "tests/**";
@@ -3059,6 +3071,7 @@ node testsuite : trusted {
     attr interface=TestAgentRunnerEnv;
     attr interface=TestAggregateDemand;
     attr interface=TestAlarms;
+    attr interface=TestAliasPolicy;
     attr interface=TestAll;
     attr interface=TestAllocatorLock;
     attr interface=TestAllowConfig;
@@ -3430,6 +3443,7 @@ node testsuite : trusted {
     attr interface=TestDifferentialParity;
     attr interface=TestDigest;
     attr interface=TestDigests;
+    attr interface=TestDirectiveCarrier;
     attr interface=TestDischargeChokepointShape;
     attr interface=TestDischargeCompleteness;
     attr interface=TestDispatch;
@@ -4129,6 +4143,7 @@ node testsuite : trusted {
     attr interface=TestProjectLangConformanceGate;
     attr interface=TestProofs;
     attr interface=TestPropagatedDemand;
+    attr interface=TestProseCarrier;
     attr interface=TestProseOnlyRetrofitIntegrity;
     attr interface=TestProtocolDeclarations;
     attr interface=TestProtocolLanguageExcuseDischarge;
@@ -4234,6 +4249,7 @@ node testsuite : trusted {
     attr interface=TestRepoDirtyKey;
     attr interface=TestRepoRoot;
     attr interface=TestRepoWideIdempotenceT0985;
+    attr interface=TestRepointer;
     attr interface=TestReservedMarkerVerbs;
     attr interface=TestReservedTestDomainEmails;
     attr interface=TestResolve;
