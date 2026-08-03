@@ -6690,3 +6690,28 @@ threat: null
 component: null
 ```
 T-1205 acceptance[2]: an unchanged file's coverage must never be recomputed -- keyed by content hash, full-suite runs reserved for cold start or an explicit --full. This is the incremental-caching engine underlying T-1205's whole 'coverage as managed derived state' vision; needs its own design pass (what the per-file cache format is, how it merges with a full coverage.xml, how staleness is detected per-file vs. the whole-tree stale_by_mtime signal T-1205's sibling ticket -- TEST011 escalation -- already uses) before implementation. Filed as a focused slice of T-1205, which is too large for one session.
+
+<!-- ticket:T-draft-321a1b94 -->
+```yaml
+id: T-draft-321a1b94
+title: frob-native coverage command replacing Makefile orchestration, cross-platform
+  (T-1205 acceptance[0]/[3]/[4])
+state: queued
+kind: feature
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/testing/**
+- src/frob/check/__init__.py
+- Makefile
+- docs/modules/gates.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1205 acceptance[0], [3], [4]: a frob-native command (frob coverage / frob test --coverage) performs subprocess-rc generation, pytest invocation, combine, xml, and stamp in Python with no Makefile/shell dependency, runs automatically (touched-set only) whenever a gated command's freshness contract says stale, and merges into the persisted coverage store -- no manual make coverage step in any documented workflow. This is the largest remaining piece of T-1205's vision (a real cross-platform orchestration engine) and depends on the incremental per-file caching design (this ticket's sibling, T-draft-01ab413f) existing first. Filed as a focused slice of T-1205, which is too large for one session -- do this after the caching-format ticket, not in parallel with it.
