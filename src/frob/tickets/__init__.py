@@ -91,7 +91,7 @@ from frob.tickets._evidence import (
     run_cmd_evidence,
     transition,
 )
-from frob.tickets._land import land, splice_ledger
+from frob.tickets._land import land, land_plan, splice_ledger
 from frob.tickets._land_queue import (
     QueueEntry,
     QueueError,
@@ -122,6 +122,7 @@ from frob.tickets._models import (
     EpicRollup,
     FailureEntry,
     LandError,
+    LandPlanReport,
     LandReport,
     Origin,
     Priority,
@@ -165,6 +166,7 @@ from frob.tickets._reconcile import ReconcileReport, reconcile
 from frob.tickets._reporting import (
     AttachError,
     attach,
+    brief_cluster,
     brief_ticket,
     compose_done_report,
     drop_ticket,
@@ -556,6 +558,7 @@ __all__ = [
     "EpicRollup",
     "FailureEntry",
     "LandError",
+    "LandPlanReport",
     "LandReport",
     "Origin",
     "PRIORITY_RANK",
@@ -600,6 +603,7 @@ __all__ = [
     "is_cmd_evidence",
     "is_valid_ticket_ref",
     "land",
+    "land_plan",
     "large_glob_warnings",
     "leased_by",
     "ledger_lock",
@@ -621,6 +625,7 @@ __all__ = [
     "ticket_flow",
     "Stride",
     "board_view",
+    "brief_cluster",
     "brief_ticket",
     "epic_rollup",
     "finalize_draft",

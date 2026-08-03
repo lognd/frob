@@ -7,6 +7,8 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from frob.tickets import (
     Origin,
     Ticket,
@@ -20,6 +22,7 @@ from frob.tickets import (
     scope_breadth_context,
 )
 from frob.tickets._models import _globs_intersect, scope_overlap, scope_overlap_globs
+from frob.tickets._store import _serialize_ticket
 
 
 def _ticket(
@@ -437,3 +440,180 @@ class TestBreadthPerf:
         result = _repo_files_git(tmp_path)
         assert not spawned
         assert result is None
+
+
+# frob:ticket T-1243
+# frob:waive WIRE001 reason="test-only fixture helper used by \
+# TestClusterScopeConflict's own three test methods below, in this same file -- a test \
+# fixture calling itself is not the class of orphaned-production-code WIRE001 exists \
+# to catch" follow_up="T-1487"
+def _write_ticket_file(root: Path, ticket: Ticket, slug: str) -> None:
+    """Write `ticket` into `root/tickets/<id>-<slug>.md` (T-1243) -- the
+    on-disk fixture `_refuse_on_cluster_scope_conflict` needs, since it
+    reads through `frob.tickets.load_queue` rather than an in-memory
+    `TicketQueue` the way this file's other tests build one."""
+    tickets_dir = root / "tickets"
+    tickets_dir.mkdir(parents=True, exist_ok=True)
+    (tickets_dir / f"{ticket.id}-{slug}.md").write_text(
+        _serialize_ticket(ticket), encoding="utf-8"
+    )
+
+
+# frob:ticket T-1243
+class TestClusterScopeConflict:
+    # frob:ticket T-1243
+    def test_refuses_when_union_scope_collides_with_a_foreign_lease(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_lease.py::TestClusterScopeConflict.test_refuses_when_union_scope_collides_with_a_foreign_lease  # noqa: E501
+        import pytest
+
+        from frob.app.ticket_runner._lifecycle import (
+            _refuse_on_cluster_scope_conflict,
+        )
+
+        _write_ticket_file(
+            tmp_path,
+            _ticket(ticket_id="T-0050", state=TicketState.IN_PROGRESS, scope=("a.py",)),
+            "foreign",
+        )
+        member = _ticket(ticket_id="T-0002", scope=("a.py", "b.py"))
+        with pytest.raises(SystemExit) as exc_info:
+            _refuse_on_cluster_scope_conflict(tmp_path, "T-0001", (member,))
+        assert exc_info.value.code == 1
+
+    # frob:ticket T-1243
+    def test_no_conflict_returns_quietly(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_lease.py::TestClusterScopeConflict.test_no_conflict_returns_quietly  # noqa: E501
+        from frob.app.ticket_runner._lifecycle import (
+            _refuse_on_cluster_scope_conflict,
+        )
+
+        _write_ticket_file(
+            tmp_path,
+            _ticket(ticket_id="T-0050", state=TicketState.IN_PROGRESS, scope=("c.py",)),
+            "foreign",
+        )
+        member = _ticket(ticket_id="T-0002", scope=("a.py", "b.py"))
+        _refuse_on_cluster_scope_conflict(tmp_path, "T-0001", (member,))
+
+    # frob:ticket T-1243
+    def test_a_conflict_with_its_own_member_is_never_a_conflict(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_lease.py::TestClusterScopeConflict.test_a_conflict_with_its_own_member_is_never_a_conflict  # noqa: E501
+        from frob.app.ticket_runner._lifecycle import (
+            _refuse_on_cluster_scope_conflict,
+        )
+
+        member = _ticket(
+            ticket_id="T-0002", state=TicketState.IN_PROGRESS, scope=("a.py",)
+        )
+        _write_ticket_file(tmp_path, member, "member")
+        _refuse_on_cluster_scope_conflict(tmp_path, "T-0001", (member,))
+
+
+# frob:ticket T-1243
+# frob:waive DUP001 reason="the run/git-init/commit-all trio is an established \
+# real-git fixture idiom this test module family already repeats byte-identically \
+# (tests/test_ticket_work_and_land_finish.py, tests/test_ticket_land.py, \
+# tests/test_tickets_collision.py, tests/test_ticket_leases.py, \
+# tests/test_ticket_merge_driver.py, tests/test_ticket_reconcile.py) -- extracting a \
+# shared conftest helper is a real, independent cleanup outside T-1243's own scope"
+class TestWorkCluster:
+    # frob:ticket T-1243
+    @staticmethod
+    def _run(argv: list, cwd: Path) -> None:
+        import subprocess
+
+        subprocess.run(argv, cwd=str(cwd), check=True, capture_output=True, text=True)
+
+    # frob:ticket T-1243
+    def _git_init(self, root: Path) -> None:
+        root.mkdir(parents=True, exist_ok=True)
+        self._run(["git", "init", "-q", "-b", "main"], root)
+        self._run(["git", "config", "user.email", "test@example.com"], root)
+        self._run(["git", "config", "user.name", "Test"], root)
+
+    # frob:ticket T-1243
+    # frob:tests tests/test_tickets_lease.py::TestWorkCluster.test_leases_every_dispatchable_member_into_one_worktree  # noqa: E501
+    def test_leases_every_dispatchable_member_into_one_worktree(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # This test spawns its OWN real git repos/worktree under tmp_path,
+        # simulating an end-user CLI invocation, not the dispatching
+        # agent's own leased worktree -- strip the calling shell's
+        # FROB_WORKTREE/FROB_AGENT (T-0880's same rationale for
+        # tests/system/**'s run() helper) so a dispatched agent running
+        # this file directly, with its own lease vars set per playbook
+        # section 1, cannot spuriously trip the worktree-lease guard
+        # against these tmp_path repos.
+        monkeypatch.delenv("FROB_WORKTREE", raising=False)
+        monkeypatch.delenv("FROB_AGENT", raising=False)
+
+        from frob.app.config import AppConfig
+        from frob.app.ticket_runner._lifecycle import _work
+        from frob.tickets import TicketState, load_all
+        from frob.tickets._models import Origin, TicketKind, TicketSpec, TicketTier
+        from frob.tickets._new_renumber import new_ticket
+        from frob.tickets._store import atomic_write, ledger_path
+
+        main_repo = tmp_path / "main"
+        self._git_init(main_repo)
+        atomic_write(ledger_path(main_repo), "# Tickets\n\n")
+        self._run(["git", "add", "-A"], main_repo)
+        self._run(["git", "commit", "-q", "-m", "init"], main_repo)
+
+        epic = new_ticket(
+            main_repo,
+            TicketSpec(
+                title="epic",
+                kind=TicketKind.FEATURE,
+                origin=Origin.AGENT,
+                tier=TicketTier.EPIC,
+            ),
+        ).danger_ok
+        first = new_ticket(
+            main_repo,
+            TicketSpec(
+                title="first",
+                kind=TicketKind.FEATURE,
+                origin=Origin.AGENT,
+                parent=epic.id,
+                scope=("a.py",),
+            ),
+        ).danger_ok
+        second = new_ticket(
+            main_repo,
+            TicketSpec(
+                title="second",
+                kind=TicketKind.FEATURE,
+                origin=Origin.AGENT,
+                parent=epic.id,
+                scope=("b.py",),
+                blocked_by=(first.id,),
+            ),
+        ).danger_ok
+        self._run(["git", "add", "-A"], main_repo)
+        self._run(["git", "commit", "-q", "-m", "file cluster tickets"], main_repo)
+
+        worktree = tmp_path / "cluster-worktree"
+        cfg = AppConfig(
+            ticket_command="work",
+            ticket_cluster=epic.id,
+            ticket_worktree=worktree,
+            ticket_foreground=True,
+            ticket_path=main_repo,
+        )
+        _work(main_repo, cfg)
+
+        assert (worktree / ".git").exists()
+        loaded = load_all(worktree).danger_ok
+        # T-0002 (no blockers) starts immediately in this one pass; T-0003
+        # (blocked_by T-0002) cannot legally start until T-0002 actually
+        # CLOSES -- the state machine's own open-blocker guard refuses an
+        # IN_PROGRESS blocker just as much as a QUEUED one -- so it is
+        # never even auto-planned, deferred for an ordinary
+        # `frob ticket start` later.
+        assert loaded[first.id].state is TicketState.IN_PROGRESS
+        assert loaded[second.id].state is TicketState.QUEUED

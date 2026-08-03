@@ -364,6 +364,178 @@ def _build_natives_for_work(worktree: Path, ticket_id: str) -> None:
         sys.exit(1)
 
 
+# frob:ticket T-1243
+def _default_cluster_worktree(root: Path, cluster_id: str) -> Path:
+    """The default `.claude/worktrees/<slug>` path `frob ticket work
+    --cluster` creates/reuses when `--worktree` is not given (T-1243) --
+    same naming convention as `_default_work_worktree`, just keyed off the
+    cluster (epic/story) id instead of a single ticket id."""
+    return root / ".claude" / "worktrees" / cluster_id.lower()
+
+
+# frob:ticket T-1243
+def _refuse_on_cluster_scope_conflict(
+    root: Path, cluster_id: str, members: tuple
+) -> None:
+    """`sys.exit(1)` naming the conflicting ticket/glob if the union scope of
+    `members` (T-1243) overlaps an ALREADY in-progress ticket's active
+    lease that is not itself one of `members` (a sibling cluster, or a
+    lone-ticket mission, already holding overlapping files) -- preserves
+    the disjoint-scope dispatch guarantee `frob.tickets.leased_by` already
+    gives single-ticket `start`/`doable` at the cluster level too. A clean
+    return means the whole union scope is free to lease."""
+    from frob.tickets import load_queue
+    from frob.tickets._brief import cluster_union_scope
+    from frob.tickets._doable import _all_leases
+    from frob.tickets._models import scope_overlap_globs
+
+    member_ids = {t.id for t in members}
+    union_scope = cluster_union_scope(members)
+    if not union_scope:
+        return
+
+    queue_result = load_queue(root)
+    if queue_result.is_err:
+        return
+    queue = queue_result.danger_ok
+    for holder_id, holder_scope in _all_leases(queue, root):
+        if holder_id in member_ids:
+            continue
+        collision = scope_overlap_globs(union_scope, holder_scope)
+        if collision is not None:
+            _log.error(
+                "ticket work --cluster %s failed: union scope %r collides "
+                "with %s's active lease on %r -- resolve the overlap "
+                "before dispatching this cluster",
+                cluster_id,
+                collision[0],
+                holder_id,
+                collision[1],
+            )
+            sys.exit(1)
+
+
+# frob:ticket T-1243
+def _start_cluster_members(
+    worktree: Path, cluster_id: str, members: tuple, cfg: AppConfig
+) -> tuple[str, ...]:
+    """Start every `members` ticket that has no OPEN blocker right now
+    (T-1243), in `cluster_descendants`' dependency order, against
+    `worktree` -- reusing `_start` per member rather than a second state-
+    machine path. A member still blocked by an earlier member of this same
+    cluster is left alone and its id returned in the deferred tuple (see
+    `_work_cluster`'s docstring for why becoming in-progress cannot
+    resolve a sibling's own open blocker within this same pass). Reloads
+    the queue fresh before each member since the PRECEDING member's own
+    start just committed a ledger change."""
+    from frob.tickets import load_queue
+    from frob.tickets._doable import _open_blockers
+
+    deferred: list[str] = []
+    for member in members:
+        queue_now = load_queue(worktree)
+        if queue_now.is_err:
+            _log.error("ticket work --cluster failed: %s", queue_now.danger_err)
+            sys.exit(1)
+        open_blockers = _open_blockers(queue_now.danger_ok, member)
+        if open_blockers:
+            deferred.append(member.id)
+            _log.info(
+                "ticket work --cluster %s: %s deferred -- still blocked by "
+                "%s (start it with `frob ticket start %s` in this same "
+                "worktree once that closes)",
+                cluster_id,
+                member.id,
+                list(open_blockers),
+                member.id,
+            )
+            continue
+        member_cfg = cfg.model_copy(update={"ticket_id": member.id})
+        _start(worktree, member_cfg)
+    return tuple(deferred)
+
+
+# frob:ticket T-1243
+def _work_cluster(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket work --cluster <epic-or-story-id> [--worktree PATH]`
+    (T-1243): the cluster form of `_work` -- create/reuse ONE worktree,
+    merge `main` for freshness, and build natives ONCE for the whole
+    mission (instead of once per ticket), then lease every currently-
+    dispatchable descendant of the cluster into it via the union of their
+    declared scopes (`frob.tickets._brief.cluster_union_scope`),
+    dependency-ordered (`frob.tickets._brief.cluster_descendants`).
+    Refuses loudly, before creating/touching anything, if the union scope
+    collides with an already-leased ticket outside this cluster
+    (`_refuse_on_cluster_scope_conflict`) -- the T-1243 acceptance
+    criterion that a second cluster with an overlapping union scope fails
+    loud rather than silently double-leasing files. Each member whose
+    blockers are ALREADY resolved (no open `blocked_by`, including a
+    sibling cluster member the dependency-ordering already sequenced
+    first) transitions to in-progress immediately, exactly the way
+    `_start` already does (auto-plan a queued ticket, background pre-work
+    sweep); a member still blocked by an EARLIER member of this same
+    cluster cannot legally start in the same pass -- the ticket state
+    machine's own transition guard refuses an open blocker, and becoming
+    IN_PROGRESS is not the same as the blocker CLOSING -- so it is left
+    queued/planned and reported as deferred, startable with an ordinary
+    `frob ticket start <id>` in this SAME already-leased worktree the
+    moment its blocker actually closes. Each started member's own lease
+    releases individually, exactly like any ordinary single-ticket lease;
+    this adds no new release mechanism, only a shared worktree/warmup."""
+    from frob.tickets import _load_one, load_queue
+    from frob.tickets._brief import cluster_descendants
+
+    cluster_id = cfg.ticket_cluster
+    assert cluster_id is not None  # caller-checked
+
+    loaded = _load_one(root, cluster_id)
+    if loaded.is_err:
+        _log.error("ticket work --cluster failed: %s", loaded.danger_err)
+        sys.exit(1)
+
+    queue_result = load_queue(root)
+    if queue_result.is_err:
+        _log.error("ticket work --cluster failed: %s", queue_result.danger_err)
+        sys.exit(1)
+    members = cluster_descendants(queue_result.danger_ok, cluster_id)
+    if not members:
+        _log.error(
+            "ticket work --cluster %s failed: no dispatchable descendant "
+            "leaf tickets found (all done/dropped, or all blocked by "
+            "something outside the cluster)",
+            cluster_id,
+        )
+        sys.exit(1)
+
+    _refuse_on_cluster_scope_conflict(root, cluster_id, members)
+
+    worktree = (
+        cfg.ticket_worktree or _default_cluster_worktree(root, cluster_id)
+    ).resolve()
+    _worktree_add_or_reuse(root, worktree, cluster_id)
+    _ensure_worktree_fresh(worktree, cluster_id)
+    _build_natives_for_work(worktree, cluster_id)
+
+    _log.info(
+        "ticket work --cluster %s: worktree ready at %s -- starting %d "
+        "member ticket(s): %s",
+        cluster_id,
+        worktree,
+        len(members),
+        [t.id for t in members],
+    )
+    deferred = _start_cluster_members(worktree, cluster_id, members, cfg)
+    if deferred:
+        _log.info(
+            "ticket work --cluster %s: %d member(s) started now, %d "
+            "deferred pending an intra-cluster blocker: %s",
+            cluster_id,
+            len(members) - len(deferred),
+            len(deferred),
+            list(deferred),
+        )
+
+
 # frob:ticket T-1175
 def _work(root: Path, cfg: AppConfig) -> None:
     """`frob ticket work <id> [--worktree PATH]` (T-1175): the one-verb
@@ -377,9 +549,17 @@ def _work(root: Path, cfg: AppConfig) -> None:
     worktree; `--foreground`/`--steal` pass through to `_start` unchanged.
     Every step here is a REUSE of existing machinery (worktree add/merge
     via plain git, `build_natives`, `_start`) -- no new subsystem, per the
-    T-1175 user directive this ticket implements verbatim."""
+    T-1175 user directive this ticket implements verbatim.
+
+    `--cluster <epic-or-story-id>` (T-1243) dispatches to `_work_cluster`
+    instead: the same worktree-warmup/natives-build steps run ONCE for the
+    whole cluster rather than once per ticket."""
+    if cfg.ticket_cluster is not None:
+        _work_cluster(root, cfg)
+        return
+
     if cfg.ticket_id is None:
-        _log.error("frob ticket work requires <id>")
+        _log.error("frob ticket work requires <id> or --cluster <epic-or-story-id>")
         sys.exit(1)
 
     worktree = (

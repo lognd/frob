@@ -192,6 +192,32 @@ def brief_ticket(root: Path, ticket_id: str) -> Result[str, TicketError]:
     return Ok(compose_brief(root, ticket, holders, concurrent))
 
 
+# frob:ticket T-1243
+# frob:doc docs/modules/tickets.md#frob-ticket-brief---cluster-t-1243
+# frob:tests tests/test_tickets_brief.py::TestClusterBrief.test_composes_one_briefing_for_the_whole_cluster  # noqa: E501
+def brief_cluster(root: Path, cluster_id: str) -> Result[str, TicketError]:
+    """`frob ticket brief --cluster <id>` (T-1243): compose one briefing
+    (`frob.tickets._brief.compose_cluster_brief`) covering every currently-
+    dispatchable descendant of the epic/story `cluster_id`, dependency-
+    ordered (`frob.tickets._brief.cluster_descendants`) -- the playbook's
+    hard-rule sections read ONCE for the whole mission instead of once per
+    ticket. `Err(NotFound)` if `cluster_id` does not resolve."""
+    from frob.tickets import _load_one, load_queue
+    from frob.tickets._brief import cluster_descendants, compose_cluster_brief
+
+    loaded = _load_one(root, cluster_id)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    cluster = loaded.danger_ok
+
+    queue_result = load_queue(root)
+    if queue_result.is_err:
+        return Err(queue_result.danger_err)
+    members = cluster_descendants(queue_result.danger_ok, cluster_id)
+
+    return Ok(compose_cluster_brief(root, cluster, members))
+
+
 _LEADING_DONE_REPORT_HEADING_RE = re.compile(
     r"\A(?:[ \t]*\n)*[ \t]*#{1,6}[ \t]+done report[ \t]*\n?", re.IGNORECASE
 )

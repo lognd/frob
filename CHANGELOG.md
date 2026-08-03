@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.321.0] - unreleased
+
+- T-1269: ticket land --plan: atomic design-phase land with automatic draft finalization
+
 ## [0.320.0] - unreleased
 
 - T-1267: refactor: prose/doc-anchor carrier (docstring, docs/**, anchor-slug rewrite)

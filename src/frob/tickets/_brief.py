@@ -20,7 +20,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
-from frob.tickets._models import Ticket
+from frob.tickets._models import Ticket, TicketQueue, TicketState, TicketTier
 
 # frob:ticket T-0568
 _PLAYBOOK_REL = Path("docs/guides/agent-playbook.md")
@@ -320,6 +320,211 @@ def compose_brief(
     lines.append("## Gate baseline")
     lines.append(_gate_baseline_summary(root))
     lines.append("")
+
+    lines.append(_rel_land_rules(root))
+
+    return "\n".join(lines) + "\n"
+
+
+# frob:ticket T-1243
+def _cluster_open_blockers(queue: TicketQueue, t: Ticket) -> tuple[str, ...]:
+    """`t`'s blockers not yet DONE/DROPPED (T-1243) -- the same open-
+    blocker rule `frob.tickets._doable._open_blockers` applies, duplicated
+    here (rather than imported) only because `_doable.py` late-imports
+    `_open_blockers` from this package's `__init__` at call time, and this
+    module is loaded BEFORE `__init__` finishes assembling it (the same
+    load-order constraint several other split-module helpers already work
+    around by late-importing instead; this one instead just keeps its own
+    tiny copy, since the rule itself is one line of real logic)."""
+    return tuple(
+        blocker_id
+        for blocker_id in t.blocked_by
+        if queue.tickets.get(blocker_id) is None
+        or queue.tickets[blocker_id].state not in (TicketState.DONE, TicketState.DROPPED)
+    )
+
+
+# frob:ticket T-1243
+def _topo_order_cluster(
+    dispatchable: list[Ticket],
+) -> tuple[Ticket, ...]:
+    """Kahn's-algorithm topological order over `dispatchable`'s INTERNAL
+    (intra-cluster) `blocked_by` edges (T-1243), ties broken by the same
+    priority/age order `doable` uses (`_doable_sort_key`) -- a heap keyed
+    by that same tuple instead of re-`sorted()`ing the whole frontier list
+    per emitted ticket (PERF004: the naive re-sort-every-iteration shape
+    this replaces). Any leftover (a `blocked_by` CYCLE among cluster
+    members -- should never happen in a well-formed ledger, but never
+    silently drop work) is appended, priority/age ordered, after every
+    resolvable ticket."""
+    import heapq
+
+    from frob.tickets import _doable_sort_key
+
+    by_id = {t.id: t for t in dispatchable}
+    remaining_blockers: dict[str, set[str]] = {
+        t.id: {b for b in _cluster_open_blockers_of(t, by_id)} for t in dispatchable
+    }
+    heap: list[tuple] = [
+        (_doable_sort_key(t), t.id)
+        for t in dispatchable
+        if not remaining_blockers[t.id]
+    ]
+    heapq.heapify(heap)
+
+    ordered: list[Ticket] = []
+    placed: set[str] = set()
+    while heap:
+        _key, ticket_id = heapq.heappop(heap)
+        ticket = by_id[ticket_id]
+        ordered.append(ticket)
+        placed.add(ticket_id)
+        for tid, blockers in remaining_blockers.items():
+            if tid in placed or ticket_id not in blockers:
+                continue
+            blockers.discard(ticket_id)
+            if not blockers:
+                heapq.heappush(heap, (_doable_sort_key(by_id[tid]), tid))
+
+    leftover = sorted(
+        (t for t in dispatchable if t.id not in placed), key=_doable_sort_key
+    )
+    ordered.extend(leftover)
+    return tuple(ordered)
+
+
+# frob:ticket T-1243
+def _cluster_open_blockers_of(t: Ticket, by_id: dict) -> tuple[str, ...]:
+    """The subset of `t.blocked_by` that names another cluster MEMBER
+    (`by_id`, T-1243) -- an EXTERNAL blocker is not this function's
+    concern (`cluster_descendants` already filtered those out before
+    calling `_topo_order_cluster`); this only isolates the intra-cluster
+    edges the topological sort itself needs to sequence."""
+    return tuple(b for b in t.blocked_by if b in by_id)
+
+
+# frob:ticket T-1243
+# frob:doc docs/modules/tickets.md#frob-ticket-brief---cluster-t-1243
+# frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_dependency_order_respects_intra_cluster_blocked_by  # noqa: E501
+# frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_excludes_leaf_blocked_from_outside_the_cluster  # noqa: E501
+# frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_unknown_cluster_returns_empty  # noqa: E501
+def cluster_descendants(
+    queue: TicketQueue, cluster_id: str
+) -> tuple[Ticket, ...]:
+    """Dependency-ordered, currently-dispatchable LEAF descendants of the
+    epic/story `cluster_id` (T-1243): every `TicketTier.TICKET` descendant
+    (`epic_rollup`'s parent-chain walk, any depth) still in {queued,
+    planned} whose open blockers (if any) are ALL other members of this
+    same cluster -- a leaf blocked by something OUTSIDE the cluster is not
+    yet dispatchable as part of this mission and is excluded, matching
+    `frob.tickets._doable._doable_candidates`'s own no-open-external-
+    blocker rule. Ordered by `_topo_order_cluster`'s Kahn's-algorithm walk
+    over the INTERNAL (intra-cluster) `blocked_by` edges, so a dependent
+    ticket never precedes the dependency it needs. Returns an empty tuple
+    if `cluster_id` does not resolve or has no dispatchable leaf
+    descendants yet."""
+    from frob.tickets import epic_rollup
+
+    rollup = epic_rollup(queue, cluster_id)
+    if rollup.is_err:
+        return ()
+    descendant_ids = {t.id for t in rollup.danger_ok.descendants}
+    leaves = [
+        t
+        for t in rollup.danger_ok.descendants
+        if t.tier is TicketTier.TICKET
+        and t.state in (TicketState.QUEUED, TicketState.PLANNED)
+    ]
+    dispatchable = [
+        t
+        for t in leaves
+        if all(b in descendant_ids for b in _cluster_open_blockers(queue, t))
+    ]
+    return _topo_order_cluster(dispatchable)
+
+
+# frob:ticket T-1243
+# frob:doc docs/modules/tickets.md#frob-ticket-brief---cluster-t-1243
+# frob:tests tests/test_tickets_brief.py::TestClusterUnionScope.test_deduplicates_and_preserves_first_seen_order  # noqa: E501
+def cluster_union_scope(members: tuple[Ticket, ...]) -> tuple[str, ...]:
+    """The deduplicated, order-preserving union of every member ticket's
+    declared `scope` globs (T-1243) -- the single lease a `frob ticket work
+    --cluster` mission acquires across every ticket it leases into one
+    worktree."""
+    seen: list[str] = []
+    seen_set: set[str] = set()
+    for t in members:
+        for glob in t.scope:
+            if glob not in seen_set:
+                seen_set.add(glob)
+                seen.append(glob)
+    return tuple(seen)
+
+
+# frob:ticket T-1243
+# frob:doc docs/modules/tickets.md#frob-ticket-brief---cluster-t-1243
+# frob:tests tests/test_tickets_brief.py::TestClusterBrief.test_composes_one_briefing_for_the_whole_cluster  # noqa: E501
+def compose_cluster_brief(
+    root: Path,
+    cluster: Ticket,
+    members: tuple[Ticket, ...],
+) -> str:
+    """Render the T-1243 cluster mission briefing for `cluster` (an epic or
+    story): the playbook hard-rule sections and REL/land rules ONCE (not
+    once per member, the whole point of a cluster brief over N separate
+    `compose_brief` calls), the union scope lease (`cluster_union_scope`)
+    the mission acquires, then each `members` ticket's own body+acceptance+
+    scope in `cluster_descendants`' dependency order, plus an explicit land-
+    cadence reminder: ONE `frob ticket land` per member ticket as it closes,
+    never one mega-land for the whole cluster."""
+    lines: list[str] = [
+        f"# Cluster mission briefing: {cluster.id} -- {cluster.title}",
+        "",
+        f"Kind: {cluster.kind.value}  Tier: {cluster.tier.value}",
+        f"{len(members)} dispatchable member ticket(s), dependency-ordered below.",
+        "",
+    ]
+
+    lines.append("## Union scope lease")
+    union_scope = cluster_union_scope(members)
+    if union_scope:
+        lines.extend(f"- {glob}" for glob in union_scope)
+    else:
+        lines.append("(no scope declared across any member)")
+    lines.append("")
+
+    lines.extend(_playbook_hard_rules_section(root))
+
+    lines.append("## Land cadence")
+    lines.append(
+        "Land ONE ticket at a time, in the order below, as each closes -- "
+        "never one mega-land for the whole cluster. The union scope lease "
+        "above is held by this single worktree for the whole mission; each "
+        "member's own scope releases individually the moment that ticket "
+        "closes, exactly like an ordinary single-ticket lease."
+    )
+    lines.append("")
+
+    for i, ticket in enumerate(members, start=1):
+        lines.append(f"## Member {i}/{len(members)}: {ticket.id} -- {ticket.title}")
+        lines.append(f"Kind: {ticket.kind.value}  Priority: {ticket.priority.value}")
+        lines.append("")
+        lines.append(ticket.body.strip() or "(no body)")
+        lines.append("")
+        if ticket.acceptance:
+            lines.append("### Acceptance")
+            for idx, item in enumerate(ticket.acceptance):
+                status = (
+                    f"bound({list(item.evidence)})" if item.evidence else "UNBOUND"
+                )
+                lines.append(f"- [{idx}] {status}: {item.text}")
+            lines.append("")
+        lines.append("### Scope")
+        if ticket.scope:
+            lines.extend(f"- {glob}" for glob in ticket.scope)
+        else:
+            lines.append("(no scope declared)")
+        lines.append("")
 
     lines.append(_rel_land_rules(root))
 

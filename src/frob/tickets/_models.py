@@ -1786,6 +1786,12 @@ class LandError(ErrorSet):
         "(not done/dropped) on main -- landing would silently carry a "
         "sibling ticket's work onto main ahead of its own close"
     )
+    # frob:ticket T-1269
+    PlanTickGateDirty = (
+        "frob ticket land --plan's post-merge TICK gate re-check reported "
+        "a non-clean result -- the merge and any draft finalization were "
+        "fully unwound"
+    )
 
 
 # frob:ticket T-0176
@@ -1820,6 +1826,22 @@ class LandReport(BaseModel):
     # changeset touched a native-extension source tree (frob-core/
     # strata-core).
     natives_rebuilt: bool = False
+
+
+# frob:ticket T-1269
+# frob:doc docs/modules/tickets.md#frob-ticket-land---plan-t-1269
+class LandPlanReport(BaseModel):
+    """Outcome of one `land_plan()` call (`frob ticket land --plan`): a
+    design-phase worktree (docs + ledger changes, no closeable worked
+    ticket) merged onto `root` and every incoming draft id it carried
+    finalized to a real `T-####` id, all in one atomic commit."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    dry_run: bool
+    merge_commit: str | None = None
+    finalized: tuple[tuple[str, str], ...] = ()
+    commit_sha: str | None = None
 
 
 # frob:ticket T-0454

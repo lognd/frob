@@ -2684,6 +2684,7 @@ store tickets_ledger : trusted {
     attr interface=LEASE_TTL_SECONDS;
     attr interface=LEDGER_PATH;
     attr interface=LandError;
+    attr interface=LandPlanReport;
     attr interface=LandReport;
     attr interface=LeaseError;
     attr interface=MutationEvidenceError;
@@ -2732,13 +2733,17 @@ store tickets_ledger : trusted {
     attr interface=attachments_dir;
     attr interface=base_ref_resolvable;
     attr interface=board_view;
+    attr interface=brief_cluster;
     attr interface=brief_ticket;
     attr interface=check_ticket_mutation_evidence;
+    attr interface=cluster_descendants;
+    attr interface=cluster_union_scope;
     attr interface=clipboard_has_image;
     attr interface=clipboard_image;
     attr interface=commit_start_transition;
     attr interface=commit_ticket_ledger_change;
     attr interface=compose_brief;
+    attr interface=compose_cluster_brief;
     attr interface=compose_done_report;
     attr interface=compute_changed_lines;
     attr interface=dispatch_stale_hours;
@@ -2763,6 +2768,7 @@ store tickets_ledger : trusted {
     attr interface=is_valid_ticket_ref;
     attr interface=iter_raw_ledger_frontmatter;
     attr interface=land;
+    attr interface=land_plan;
     attr interface=large_glob_warnings;
     attr interface=lease_age_seconds;
     attr interface=leased_by;
@@ -3272,6 +3278,10 @@ node testsuite : trusted {
     attr interface=TestCliSysExport;
     attr interface=TestClientVersion;
     attr interface=TestClipboardAttachOnNew;
+    attr interface=TestClusterBrief;
+    attr interface=TestClusterDescendants;
+    attr interface=TestClusterScopeConflict;
+    attr interface=TestClusterUnionScope;
     attr interface=TestCloseEvidenceDoneReportRequeueAutoCommit;
     attr interface=TestCloseFailAfterMerge;
     attr interface=TestCloseFailureHintMutationEvidence;
@@ -3814,6 +3824,7 @@ node testsuite : trusted {
     attr interface=TestLandIntent;
     attr interface=TestLandInternalEnvThroughHook;
     attr interface=TestLandNotFound;
+    attr interface=TestLandPlan;
     attr interface=TestLandProofAndFinish;
     attr interface=TestLandPushCliWiring;
     attr interface=TestLandRebuildNativesFn;
@@ -4716,6 +4727,7 @@ node testsuite : trusted {
     attr interface=TestWireGate;
     attr interface=TestWlHash;
     attr interface=TestWork;
+    attr interface=TestWorkCluster;
     attr interface=TestWorkingDiff;
     attr interface=TestWorktree;
     attr interface=TestWorktreeGuardWiredIntoMutations;
