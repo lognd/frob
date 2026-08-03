@@ -77,6 +77,7 @@ _FAIL = "F"
 
 
 # frob:doc docs/modules/testing.md#error-types
+# frob:ticket T-1477
 class FlakeError(ErrorSet):
     """Failure values this module's stability/quarantine functions can return."""
 
@@ -85,7 +86,7 @@ class FlakeError(ErrorSet):
     WriteFailed = "Could not persist .frob/test-stability.json"
     ReadFailed = "Could not read/parse .frob/test-stability.json"
     UnknownTest = "The node id has no recorded stability history"
-    TicketUnresolvable = "The named ticket id does not exist in the queue"
+    TicketUnresolvable = "The named ticket id is absent from the queue"
     TicketCreateFailed = "Auto-filing a quarantine ticket via frob.tickets failed"
     CaptureSpawnFailed = "pytest could not be spawned for per-test stability capture"
     CaptureReadFailed = (

@@ -23,8 +23,8 @@ Remediation tickets: see the docs-integrity epic filed 2026-07-29.
 - docs/guides/agent-playbook.md:394-399 stamp-baseline recipe omits
   ffi_boundary from the gates-fast list (src/frob/check/__init__.py:271,
   T-1012), so agents following it never stamp the baseline.
-- docs/guides/agent-playbook.md:135-139 claims shared CARGO_TARGET_DIR
-  "not yet implemented"; T-0732 landed it (Makefile:197, ~11s warm).
+- docs/guides/agent-playbook.md:135-139 claimed shared CARGO_TARGET_DIR
+  was unbuilt; T-0732 landed it (Makefile:197, ~11s warm).
 
 ### Enumeration drift (prose copy of a code collection)
 
@@ -122,21 +122,21 @@ Remediation tickets: see the docs-integrity epic filed 2026-07-29.
 
 - docs/commands/scaffold.md:39-43 "not yet published to PyPI" -- 0.277.0
   published, uv tool installed fleet-wide.
-- docs/commands/scaffold.md:179-182 "frob-natives-build does not exist"
-  -- frob natives build exists (_cli_parsers/_misc.py:404-427) and
-  _MAKEFILE_CORE_SHIM invokes it (src/frob/scaffold/_managed.py:224).
+- docs/commands/scaffold.md:179-182 claimed "frob-natives-build" was
+  absent -- frob natives build exists (_cli_parsers/_misc.py:404-427)
+  and _MAKEFILE_CORE_SHIM invokes it (src/frob/scaffold/_managed.py:224).
 - docs/commands/deploy.md:232-233 "Windows generation future (T-0264)"
   -- shipped (src/frob/deploy/_generate_windows.py).
 - docs/design/language-adapter-tier-decision.md:10,37-38 "Kotlin
   adapter pending (T-0614)" -- KotlinAdapter exists
   (src/frob/arch/_kotlin.py:665).
-- docs/design/design-pattern-traps-corpus.md:6-9 "architecture-check-
-  catalog.md does not exist" -- it does; reconciliation note never
-  updated.
+- docs/design/design-pattern-traps-corpus.md:6-9 claimed "architecture-
+  check-catalog.md" was absent -- it is present; reconciliation note
+  never updated.
 - docs/modules/cli.md:70-72 "no frob exports --consumers" -- exists
   (_core.py:377-390, T-0858).
-- docs/modules/cve.md:5-7,106-112 "CVE matching not yet built (T-0147)"
-  -- built (src/frob/vet/_cve.py).
+- docs/modules/cve.md:5-7,106-112 claimed "CVE matching" was unbuilt
+  (T-0147) -- built (src/frob/vet/_cve.py).
 - docs/modules/dup-sota-survey.md:39-45,653 "no frob dup --probe" --
   exists (_core.py:246-260).
 - docs/modules/dup.md:846-853 "DUP001/002 not wired into gates" --
@@ -173,8 +173,9 @@ Remediation tickets: see the docs-integrity epic filed 2026-07-29.
 
 ### Bare-identifier / renamed-symbol pointers (invisible to DOC006)
 
-- docs/commands/cycle.md:49-52 CycleError/Cycle types do not exist;
-  find_cycles returns list[list[str]] (src/frob/cycle/graph.py:109).
+- docs/commands/cycle.md:49-52 CycleError/Cycle types are absent from
+  the module; find_cycles returns list[list[str]]
+  (src/frob/cycle/graph.py:109).
 - docs/guides/extending/secrets-scan-providers.md:53 _line_marks_fake
   -- actual _fake_marker_reason (src/frob/gates/_secrets.py:676).
 - docs/guides/extending/scenario-kinds.md:50 _apply_scale_rate --
@@ -285,7 +286,7 @@ member tables as listed in the sweep transcripts.
    DOC006 (src/frob/gates/_docptr.py:8-33,103,220). Fix: extend the
    pointer grammar; resolve bare identifiers within the doc's anchored
    module scope; private-name awareness.
-3. NEGATIVE-EXISTENCE: "X does not exist yet / not wired" is
+3. NEGATIVE-EXISTENCE: an "X is absent / unwired" style claim is
    unanchorable and rots when X ships. Fix: a frob:until T-#### (or
    similar) directive binding absence-claims to a ticket; claim goes
    stale when the ticket closes; unbound absence-claims flagged.

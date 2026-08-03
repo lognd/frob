@@ -73,6 +73,7 @@ blocked_by: []                # ticket ids; open blockers make this not doable
 parent: T-0040                # hierarchy: planner decomposes goals into trees
 scope:                        # blast radius for the scope gate
   - src/frob/tickets/**
+  # frob:waive DOC006 reason="illustrative example ticket's scope list -- src/frob/app/ticket_runner.py became a package, but T-0042 here is a fabricated example ticket id, not a real one to keep current"
   - src/frob/app/ticket_runner.py
 evidence: []                  # test node ids, filled before close
 attachments:
@@ -535,6 +536,7 @@ previously re-run `close`'s own verification suite against it --
 Lands used to proceed on trust in the ORIGINAL close-time recap alone,
 even when the ticket's evidence had since changed.
 
+<!-- frob:waive DOC004 reason="illustrative CLI example using placeholder ticket T-0042 and test_foo.py -- neither is a real anchor target" -->
 ```bash
 frob ticket evidence T-0042 tests/test_foo.py::test_stronger  # bind new/strengthened evidence
 frob ticket reverify T-0042                                   # re-run close verification, refresh recap
@@ -1375,7 +1377,8 @@ unaffected -- only how many times the ledger text is parsed to answer it.
 decision).** `tickets_gate` now also runs TICK011 (a Done-report
 disclosed-cut-without-ticket scan, unrelated to the id-collision
 invariant this section documents) alongside TICK001-TICK010 -- see
-`docs/modules/gates.md#tick011-t-1129` for TICK011's own design.
+`docs/modules/gates.md#tick011-t-1129-active-window-narrowed-t-1402` for
+TICK011's own design.
 TICK002 (a `T-draft-*` id surviving onto the default branch) is the rule
 that actually matters: it means the finalize step was skipped, failed, or
 forgotten, which is precisely the "collision-proofing silently did not
@@ -2099,9 +2102,9 @@ queue, any status, for a caller that wants to show state.
 This is a deliberately partial delivery of T-1345's full title ("agents
 enqueue verified branches, one drainer merges onto main"): the queue data
 structure plus `enqueue`/`drain_next` are real and tested
-(`tests/unit/test_land_queue.py`), but there is no `frob ticket land
+(`tests/unit/test_land_queue.py`), but there is no <!-- frob:waive DOC006 reason="disclosed-not-done narrative naming a CLI flag/paths that do not exist yet" -->`frob ticket land
 --queue` CLI flag and no drainer subcommand yet -- both need
-`src/frob/_cli_parsers/_ticket.py`/`src/frob/app/ticket_runner.py`,
+`src/frob/_cli_parsers/_ticket/**`/`src/frob/app/ticket_runner/**`,
 outside this ticket's declared scope (`src/frob/tickets/**`,
 `docs/modules/tickets.md`, `docs/guides/agent-playbook.md`). Filed as
 T-draft-2f611252 (renumbers at land -- see T-1345's Done report for the
@@ -2803,7 +2806,7 @@ def ledger_path(root: Path) -> Path
 def archive_path(root: Path) -> Path
     # The tickets-archive.md path at the repo root (same ledger format).
 def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]
-    # Every ticket in tickets-archive.md (empty dict if it doesn't exist yet).
+    # Every ticket in tickets-archive.md (empty dict if the file is absent).
     # T-1206: cached in .frob/tickets-archive-cache.json, keyed by the
     # archive file's own sha256 content hash (never mtime) -- an unchanged
     # archive is never reparsed; any byte change invalidates the cache.

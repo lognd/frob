@@ -267,8 +267,9 @@ each URL is the canonical home, but this session did not re-fetch them):
 misattributed to fill a table cell; every "not yet in repo" row is stated
 as a gap rather than backfilled with an invented `WeaknessEntry`. The
 `docs/design/capability-evasion-taxonomy.md` file this task asked to
-reconcile against does not exist in this worktree -- reported as absent,
-not silently skipped nor fabricated.
+reconcile against was absent from this worktree at the time this
+document was written (it now exists) -- reported as absent then, not
+silently skipped nor fabricated.
 
 ---
 

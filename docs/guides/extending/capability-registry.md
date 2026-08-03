@@ -35,7 +35,7 @@ which submodule actually defines it. Core symbols, and their current home:
   from needing ANY dangerous-operation pattern (the "pure side" of the
   same curation).
 
-`src/frob/vet/_capability.py::_compile_patterns` builds the scanner's
+`src/frob/vet/_capability_core.py::_compile_patterns` builds the scanner's
 `_PATTERNS` table FROM `DANGEROUS_OPERATIONS` at import time -- adding an
 operation to the registry is picked up by the scanner automatically, no
 separate pattern-table edit required.

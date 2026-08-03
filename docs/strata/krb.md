@@ -262,7 +262,7 @@ management, KRB001/KRB003's escalation-via-delegation class), CWE-284
 (improper access control, KRB004's cross-realm class), and CWE-522
 (insufficiently protected credentials, KRB002's roastable-SPN class) to a
 SEPARATE `krb-movement-baseline` view (`KRB_MOVEMENT_VIEWS`) -- never
-appended to `_threat.py::CWE_CATALOG`/`VIEWS`, the same separate-view
+appended to `_threat_catalog_cwe.py::CWE_CATALOG`/`VIEWS`, the same separate-view
 precedent `COMPROMISED_OWNER_CATALOG` set for HOST001/HOST002.
 
 ### Compromised-krb-principal scenario

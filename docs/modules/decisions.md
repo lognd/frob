@@ -74,7 +74,7 @@ Runs inside `frob check` (and `frob check --only decisions`) whenever a
 | Rule | Fails when |
 |---|---|
 | DEC000 | a decision record is malformed (hard-fail, like the ticket queue) |
-| DEC001 | a `frob:decision AD-###` edge points at a record that does not exist |
+| DEC001 | a `frob:decision AD-###` edge points at a record that is missing |
 | DEC002 | an `accepted` decision has no `frob:decision` anchor in code |
 | DEC003 | `decisions/` was committed on this branch's history and has since been deleted (T-0894, unwaivable) |
 

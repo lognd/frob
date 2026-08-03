@@ -259,7 +259,7 @@ all -- no HTTP/CLI/RPC boundary is modeled, because the "caller" is
 whoever imports the library, not a node this model has any business
 naming. Filed from a real sibling-repo pilot (P1 gap 8, feldspar): the
 obligation fired, the obvious discharge shapes (an `assume`, a boundary)
-felt like lying about a mitigation that does not exist, and `frob sys plan
+felt like lying about a mitigation that is absent, and `frob sys plan
 --apply` kept minting tickets that looked permanently unclosable.
 
 **The obligation IS honestly dischargeable, by the EXISTING chokepoint
@@ -523,7 +523,7 @@ alongside self-conformance/PII/compliance in one audit report.
 conservative `rate 1 req/s` (LINT001 discharged). `checker`/`core`/
 `stratamod`/`vet` each hold a risky (`exec`/`net`) capability with
 **no real kill switch in the codebase today** -- rather than fabricate a
-`flag=<id>` attr that names a mechanism that does not exist, each of these
+`flag=<id>` attr that names a mechanism that is absent, each of these
 four nodes now declares a `waive "LINT004" reason "..." ticket "T-0200";`
 clause (T-0174, `docs/strata/waive.md`): `frob sys audit` prints these as
 WAIVED with the reason rather than either a fabricated pass or permanent

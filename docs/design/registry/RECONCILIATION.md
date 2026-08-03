@@ -172,8 +172,8 @@ stated `TOTAL_LEAF_CONTROLS_ENUMERATED: 599` is a SUM of these counts,
 not a set of 599 individually addressable ids. `secrets-pii-corpus.md` is
 the same shape (`secrets.provider_token_formats: total 30` is one line).
 **This registry cannot manufacture 599 (compliance) + 56 (secrets) + 44
-(pii) = 699 leaf-level canonical ids that do not exist in either source
-doc** without inventing content neither doc actually enumerated
+(pii) = 699 leaf-level canonical ids absent from either source doc**
+without inventing content neither doc actually enumerated
 row-by-row -- reported as a structural gap in the SOURCE corpus, not
 silently patched over. `compliance.yaml`, `secrets.yaml`, `pii.yaml` are
 built at the doc's own actual granularity (27 + 3 + 7 = 37 entries) and

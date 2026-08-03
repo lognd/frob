@@ -130,8 +130,8 @@ Every entry is a YAML mapping with (at minimum):
    granular, not leaf-item granular (e.g. "GDPR-ARTICLES: 99" is one
    registry entry, not 99). The source docs themselves do not assign
    individual ids to each GDPR article / ASVS requirement / CIS
-   safeguard, so this registry cannot manufacture ids that do not exist
-   in the source without inventing content -- flagged, not silently
+   safeguard, so this registry cannot manufacture ids absent from the
+   source without inventing content -- flagged, not silently
    upgraded.
 2. `evasion.yaml` ids (`EVA-<LANG>-<S|R><NN>`) were MINTED by this
    registry pass, not carried from the source doc, because

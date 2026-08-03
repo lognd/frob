@@ -75,9 +75,9 @@ first-class treatment, not parity:
   `--sync-advisories`) require explicit confirmation in [vet.allow].
 - **Non-registry sources (VET-JS004)**: git/http/file dependencies in
   the manifest are declarable-only, never silent.
-- **Not yet built**: dependency-confusion detection (a `VET-JS002`-style
+- **Unbuilt today**: dependency-confusion detection (a `VET-JS002`-style
   check against `[vet].internal_scopes`) is disclosed future work, not
-  shipped -- `[vet].internal_scopes` does not exist as a config key today.
+  shipped -- `[vet].internal_scopes` is not a config key today.
 
 ## Python, Rust, C/C++: same care, ecosystem-shaped
 
@@ -280,7 +280,7 @@ linkage) after the normal package table, or a `cve_matches` array folded
 into the `--json` payload alongside the existing `VetReport` fields.
 Matches are reporting-only in this slice -- no new gate rule feeds them
 into `frob check`'s enforce/exit-code path yet (a `VET012`-shaped gate
-rule is a natural follow-up, not yet built).
+rule is a natural, still-unbuilt follow-up).
 
 ## Mechanics
 
@@ -350,7 +350,7 @@ rule is a natural follow-up, not yet built).
   `render_containment_report` produces the text form, LIVE-then-
   UNVERIFIED-then-CONTAINED-then-UNMODELED ordered so a data-source
   outage is never scrolled past as if it were a routine no-coverage
-  result; wiring a <!-- frob:waive DOC006 reason="proposal syntax for a flag that does not exist yet, the same sentence discloses it as a follow-up" -->`frob vet --containment` CLI flag through `app/
+  result; wiring a <!-- frob:waive DOC006 reason="proposal syntax for a flag not yet added, the same sentence discloses it as a follow-up" -->`frob vet --containment` CLI flag through `app/
   vet_runner.py`/`__main__.py` is a follow-up (out of T-0110's declared
   scope, which is `src/frob/vet/**` only).
 
@@ -621,7 +621,7 @@ Honest scope cuts (T-0180, not silently claimed done):
   transitive import of its own is invisible to this pass -- a real gap,
   not a claimed-closed one.
 - **`RecursionError` degrades to empty capabilities, not a crash.**
-  `_capability.py::_comment_byte_spans`'s recursive tree-sitter walk hits
+  `_capability_core.py::_comment_byte_spans`'s recursive tree-sitter walk hits
   Python's recursion limit on some real, deeply-nested third-party source
   files (observed live against `pydantic`'s installed dependency tree in
   this repo's own `.venv`); `_closedworld.py::_scan_capabilities_best_effort`

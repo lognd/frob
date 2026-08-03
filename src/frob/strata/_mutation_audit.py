@@ -354,10 +354,6 @@ def _audit_one_atom(
     )
 
 
-# frob:doc docs/strata/selfconform.md#the-three-rules
-# frob:tests \
-# tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo.test_every_may\
-# _is_load_bearing
 def _load_mutation_audit_baseline(
     root: Path,
 ) -> Result[
@@ -398,6 +394,7 @@ def _load_mutation_audit_baseline(
 
 
 # frob:doc docs/strata/selfconform.md#may-mutation-audit-t-1203
+# frob:doc docs/strata/selfconform.md#the-three-rules
 # frob:tests tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo.test_every_may_is_load_bearing kind="unit"  # noqa: E501
 def run_may_mutation_audit(root: Path) -> Result[MutationAuditReport, StrataError]:
     """The T-1203 mutation-audit entry point: load every `.strata` model

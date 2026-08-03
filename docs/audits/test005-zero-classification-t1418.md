@@ -4,7 +4,8 @@ Classifies all 306 symbol-level TEST005 findings that reported EXACTLY
 0.0% branch coverage in the 2026-08-02 `make coverage` run
 (source_sha=7454ba65, exit 0, 860 files stamped, doctor healthy, no worker
 crashes) -- the input measurement T-1418's brief cites. Read
-`docs/guides/agent-playbook.md#6d` before touching this class of claim
+`docs/guides/agent-playbook.md#6d-test005-reads-coveragexml-and-make-coverage-deletes-it`
+before touching this class of claim
 again; that section documents the exact `coverage.xml` recovery recipe
 used here.
 

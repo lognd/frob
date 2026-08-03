@@ -124,10 +124,10 @@ Failure modes are typed, never a bare exception:
 
 | `FleetError` | Meaning |
 |---|---|
-| `ManifestNotFound` | the manifest file does not exist |
+| `ManifestNotFound` | the manifest file is missing |
 | `ManifestMalformed` | the manifest failed to parse as `[[repo]]` TOML |
 | `RepoNotFound` | no manifest entry with that name |
-| `RepoPathMissing` | the manifest entry's path does not exist on disk |
+| `RepoPathMissing` | the manifest entry's path is missing on disk |
 | `RouteFailed` | the target has no ticket ledger at all (neither `tickets.md` nor a legacy `tickets/` dir -- not a frob-enabled repo), or the underlying `frob.tickets.new_ticket` call failed (a locked/malformed target ledger, an unleased worktree, ...) |
 
 `route_ticket` checks for an existing ledger (`tickets.md` or a legacy

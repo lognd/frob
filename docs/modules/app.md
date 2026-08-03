@@ -329,7 +329,7 @@ checked on its own merits rather than extracted uniformly:
   worth a cross-module import, T-0084). The group's other 4 members
   (`_read_ledger_text_or_empty`/`_read_archive_text_or_empty` in
   `src/frob/tickets/_land.py`, `_read_text_or_empty` x2 in
-  `src/frob/vet/_ecosystem.py`/`_supplychain.py`) do not exist in
+  `src/frob/vet/_ecosystem.py`/`_supplychain.py`) are absent from
   `deploy_runner.py` at all -- a coincidental cross-subsystem signature
   collision, not a `deploy_runner.py` duplicate.
 

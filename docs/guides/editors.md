@@ -28,7 +28,7 @@ punctuation.
 
 It does **not** give you code completion, go-to-definition, hover
 diagnostics, or refactoring. Those require a real Language Server Protocol
-integration, which does not exist for strata yet. If `.strata` files start
+integration, which strata has no plan to build. If `.strata` files start
 carrying enough weight to justify that investment, it is a new, separate
 piece of tooling -- not an extension of this grammar.
 

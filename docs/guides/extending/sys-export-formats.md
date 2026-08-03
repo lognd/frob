@@ -74,7 +74,7 @@ _EXPORT_FORMATS = ("k8s", "seccomp", "iam", "terraform-sg")
 
 - Adding the render function but forgetting `_EXPORT_FORMATS` -- the CLI
   rejects the format with a usage error that names only the OLD list, so
-  the new format silently does not exist from a user's perspective even
+  the new format silently reads as absent from a user's perspective even
   though the code compiles and any direct unit test calling
   `export_terraform_sg` directly still passes.
 - Giving an export function I/O side effects (writing a file, hitting a

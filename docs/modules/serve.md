@@ -668,6 +668,8 @@ affects` (`frob_affects`), `frob stats` (`frob_stats`), and `frob test`'s
 touched-set path (`frob_run_touched_tests`) (see "Proxied commands"
 below); every other query-shaped subcommand this ticket's epic (T-0321)
 names is a disclosed residual, not yet wired -- see "Scope cut" below.
+<!-- frob:until T-1479 -->
+
 
 ### Decision tree
 

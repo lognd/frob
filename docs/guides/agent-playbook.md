@@ -170,7 +170,7 @@ reference-transaction` hook (`frob.scaffold._managed`'s stash-guard block)
 that refuses any `git stash` while `git worktree list` shows more than one
 worktree for the clone, with `fatal: ref updates aborted by hook` and a
 pointer back to this section. This required actually checking git's hook
-surface rather than assuming one exists: a `pre-stash` hook does not exist
+surface rather than assuming one exists: a `pre-stash` hook is absent
 natively, and neither of the two obvious substitutes actually intercepts
 `git stash` -- an `alias.stash` override is silently ignored by git (aliases
 cannot shadow a built-in subcommand name, verified empirically) and the

@@ -423,7 +423,7 @@ so explicitly under "frob.vet mapping."
   autonomous agents installing their own generated output with no human
   in the loop.
 - **Detection signature:** a package name newly appearing in a manifest
-  that does not exist in the registry's historical index as of a given
+  that is absent from the registry's historical index as of a given
   date, later registered by a low-reputation/new publisher shortly after
   becoming a commonly-hallucinated name (requires-external-data: registry
   existence + timing correlation with LLM hallucination corpora).

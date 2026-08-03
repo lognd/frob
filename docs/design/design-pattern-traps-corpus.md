@@ -931,9 +931,10 @@ single citable origin found; flagged, not dressed up.
 ## Reconciliation with the existing repo catalog
 
 `docs/design/architecture-check-catalog.md` and
-`docs/design/structural-linter-adversarial-hardening.md` **do not exist in
-this worktree** (confirmed via filesystem search before writing this
-document), so there is no existing prose to directly diff against. The
+`docs/design/structural-linter-adversarial-hardening.md` **were absent
+from this worktree at the time this document was written** (confirmed
+via filesystem search before writing this document; both now exist), so
+there was no existing prose to directly diff against at that time. The
 reconciliation below is against the T-0330/T-0332 ticket bodies in
 `tickets.md`, which are the closest in-repo statement of the planned arch
 checks and recommender:

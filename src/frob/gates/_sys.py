@@ -496,6 +496,7 @@ def _doc003(root: Path, design_ids) -> list[Violation]:  # noqa: ANN001
 # `frob check` on every repo, only degrade (T-0134) on repos that actually
 # opted into `design/`.
 # invariant spec: [INV-041](invariants/INV-041.md)
+# frob:doc docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756
 def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """SYS001 (dangling directive), SYS002 (unbound boundary/secret), SYS003
     (undeclared cross-component import, tier-2 conformance), SYS004 (a

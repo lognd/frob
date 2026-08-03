@@ -132,7 +132,8 @@ changing the exit code):
 (The ticket's fourth named rule, filtered-verification-before-`land`, is
 deliberately NOT duplicated here -- `frob check`'s own `gate:scope-note`
 line, T-1351, already covers "what a `--only`/`--ticket` run suppressed";
-see `docs/guides/agent-playbook.md#6c` for that mechanism.)
+see `docs/guides/agent-playbook.md#6c-a---only--ticket-scoped-0-findings-is-not-a-package-clean-claim-t-1351`
+for that mechanism.)
 
 Tips are individually suppressible (`FROB_SUPPRESS_TIPS=FAST_EXIT1,...`,
 comma-separated rule ids) or disabled entirely

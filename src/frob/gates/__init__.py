@@ -3124,6 +3124,7 @@ def _scope_exempt_file(
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:doc docs/modules/gates.md#scope002-t-0998
 # frob:ticket T-0906
 # frob:tests tests/test_gates.py::TestScopePrework.test_scope001_fires_when_no_scope_declared  # noqa: E501
 # frob:tests tests/test_gates.py::TestScopePrework.test_scope001_empty_scope_ledger_still_implicitly_in_scope  # noqa: E501
@@ -3180,7 +3181,6 @@ def _scope002_violation(message: str) -> Violation:
     )
 
 
-# frob:doc docs/modules/gates.md#scope002-t-0998
 # frob:ticket T-0998
 # frob:tests tests/test_gates.py::TestScope002ClosureGate.test_warns_on_unscoped_doc_target  # noqa: E501
 # frob:tests tests/test_gates.py::TestScope002ClosureGate.test_warns_on_unscoped_private_helper  # noqa: E501
@@ -4706,7 +4706,6 @@ def _rel001_version(manifest, snapshot, current_version):  # noqa: ANN001
     return bump, []
 
 
-# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0731
 # frob:tests tests/test_gates.py::TestDebtGate.test_release_gate_bump_suppressed_under_frob_agent  # noqa: E501
 # frob:tests tests/test_gates.py::TestDebtGate.test_release_gate_bump_fires_without_frob_agent  # noqa: E501
@@ -4727,7 +4726,6 @@ def _rel001_bump_suppressed_under_agent() -> bool:
     return bool(os.environ.get("FROB_AGENT"))
 
 
-# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0807
 # frob:tests tests/test_gates.py::TestDebtGate.test_rel001_linked_worktree_detected  # noqa: E501
 def _rel001_is_linked_worktree(root: Path) -> bool:
@@ -4759,7 +4757,6 @@ def _rel001_is_linked_worktree(root: Path) -> bool:
     return git_dir != common_dir
 
 
-# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0807
 # frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease  # noqa: E501
 # frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_linked_worktree_no_ticket  # noqa: E501
@@ -4887,7 +4884,6 @@ def release_gate(
     return tuple(violations)
 
 
-# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-1009
 def _current_project_name(root: Path) -> str | None:
     """The project name from `pyproject.toml`'s `[project].name`, or
@@ -4896,7 +4892,6 @@ def _current_project_name(root: Path) -> str | None:
     return _pyproject_project_field(root, "name")
 
 
-# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-1009
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
 # ambiguous bare re-raise; this finding traces to an unresolved-callee resolution gap \
@@ -4926,7 +4921,6 @@ def _uv_lock_version(root: Path) -> str | None:
     return None
 
 
-# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-1009
 # frob:invariant INV-044
 # invariant spec: [INV-044](invariants/INV-044.md)
@@ -4967,7 +4961,6 @@ def _rel002_coherence_violations(root: Path, manifest) -> list[Violation]:  # no
     ]
 
 
-# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0807
 # frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_linked_worktree_no_ticket  # noqa: E501
 # frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease  # noqa: E501
@@ -6536,7 +6529,6 @@ def _run_combined_jobs(
 
 
 # frob:ticket T-1148
-# frob:doc docs/modules/gates.md#native001-t-1148
 # frob:tests tests/test_gates.py::TestNativeAvailabilityGate.test_unimportable_native_short_circuits_run_gates_with_one_finding  # noqa: E501
 def _native_unavailable_report(root: Path) -> GateReport | None:
     """T-1148: ONE `NATIVE001` `GateReport` naming every declared native
@@ -6577,6 +6569,7 @@ def _native_unavailable_report(root: Path) -> GateReport | None:
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:doc docs/modules/gates.md#native001-t-1148
 # frob:doc docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602  # noqa: E501
 # frob:ticket T-0021
 # frob:ticket T-0602

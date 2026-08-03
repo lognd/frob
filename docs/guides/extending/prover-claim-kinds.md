@@ -68,8 +68,8 @@ a subsection.
   Python code (e.g. an auto-instantiated obligation), never authored
   directly. This is sometimes intentional (auto-instantiated-only claims)
   but must be a deliberate choice, not an oversight.
-- Evaluating a claim kind against a `FactBase` query that does not exist
-  yet and hand-rolling ad hoc graph traversal inside `_claims.py` instead
+- Evaluating a claim kind against a `FactBase` query that is missing
+  and hand-rolling ad hoc graph traversal inside `_claims.py` instead
   of adding the query to `_facts.py::FactBase` -- this duplicates traversal
   logic that belongs in one place (the "closure is complete over the
   model" contract every other claim kind relies on).

@@ -64,7 +64,7 @@ positive and negative case.
 - **Expecting a data-table recipe.** This is the sharpest template
   deviation among frob's registries -- most guides in this series say
   "append an entry"; LINT genuinely requires new code. Do not go looking
-  for a `LINT_RULES` tuple that does not exist.
+  for a `LINT_RULES` tuple; no such tuple is part of this registry's shape.
 - **Assuming LINT002 and LINT005 are redundant.** The module comment
   explicitly documents that a model can fail LINT002 (caching-covered
   node with a bad cache policy) and PASS LINT005 (jurisdiction-agnostic

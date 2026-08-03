@@ -69,7 +69,6 @@ def _selfaudit_violation(
     )
 
 
-# frob:doc docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756
 # frob:waive AFFECT001 reason="T-1146 threads the SAME resource_module this function \
 # already built for check_mode_conformance into check_resource_contention's module= \
 # too (moved a few lines earlier, no new fact for \
@@ -243,7 +242,6 @@ def _compliance_selfaudit_violation(view: str, cv, design_dir: str) -> Violation
     )
 
 
-# frob:doc docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756
 # frob:ticket T-1314
 # frob:invariant INV-041
 # frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_folds_compliance_violation  # noqa: E501

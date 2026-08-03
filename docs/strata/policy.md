@@ -53,10 +53,13 @@ moment it is declared.
 Under refinement, policies are DESIGNED to inherit downward monotonically
 -- a child should only be able to strengthen an inherited policy, never
 weaken it (a weakening would be a refinement error). This monotonicity
-check is not implemented yet: `compile_policies`/`_resolve_scope` resolve
-scope membership but there is no refinement-diff pass that compares a
-child's policy set against its parent's and flags a weakening, so this
-paragraph currently states design intent, not an enforced guarantee.
+check has no enforcing code today: `compile_policies`/`_resolve_scope`
+resolve scope membership but there is no refinement-diff pass that
+compares a child's policy set against its parent's and flags a
+weakening, so this paragraph currently states design intent, not an
+enforced guarantee.
+<!-- frob:until T-1482 -->
+
 <!-- frob:waive INV003 reason="the refinement-monotonicity rule described here has no enforcing code yet (compile_policies resolves scope membership only, no parent/child refinement-diff pass exists) -- see the paragraph above; tracked as design debt, not silently claimed as proven" -->
 <!-- frob:waive INV004 reason="same gap as the INV003 waiver: refinement monotonicity is stated design intent with no discharging check yet" -->
 

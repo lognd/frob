@@ -2135,9 +2135,30 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/tickets/**
-- src/frob/_cli_parsers/_ticket.py
 - docs/**
 - tests/**
+- src/frob/_cli_parsers/_ticket/**
+scope_changes:
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket.py
+  reason: 'src/frob/_cli_parsers/_ticket.py and src/frob/app/ticket_runner.py both
+    became packages (directories) after this ticket was filed; DOC006 flagged the
+    stale single-file globs as untracked paths (T-draft-48cb3b39 NEGEXIST/DOC/WAIVE/COV
+    burn-down).
+
+    '
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/**
+  reason: 'src/frob/_cli_parsers/_ticket.py and src/frob/app/ticket_runner.py both
+    became packages (directories) after this ticket was filed; DOC006 flagged the
+    stale single-file globs as untracked paths (T-draft-48cb3b39 NEGEXIST/DOC/WAIVE/COV
+    burn-down).
+
+    '
+  actor: logan
+  at: '2026-08-03'
 acceptance:
 - text: 'GIVEN a planner worktree containing only docs plus ledger changes (no closeable
     worked ticket) WHEN frob ticket land --plan --worktree PATH runs THEN it performs
@@ -3448,7 +3469,7 @@ Leaf of T-1344. THE highest-leverage item: today every agent landed onto one sha
 
 Observed failures this shape caused: a DirtyMain refusal costing a full retry cycle (T-1336); an agent committing a SIBLING's uncommitted ledger churn to main twice just to clear DirtyMain (T-1337) -- inert that time, but the shape lets one agent commit another's half-finished work; and repeated multi-minute waits.
 
-PROPOSAL: "frob ticket land --queue" enqueues a verified worktree branch and returns immediately. A single serialized drainer merges queued branches onto main one at a time, running the post-merge gate check per merge. Agents then NEVER write to main directly.
+PROPOSAL: <!-- frob:waive DOC006 reason="design proposal naming a CLI flag that does not exist yet -- disclosed future work" -->"frob ticket land --queue" enqueues a verified worktree branch and returns immediately. A single serialized drainer merges queued branches onto main one at a time, running the post-merge gate check per merge. Agents then NEVER write to main directly.
 
 MEASURED EVIDENCE (2026-07-31, mined from .frob/telemetry.jsonl, 12,300 records) -- this is now the single most expensive operation in the tool:
   ticket land   13.38 h total over 752 calls   (mean 78s when it succeeds)
@@ -3474,7 +3495,7 @@ Preserve the existing LAND-PROOF contract: whatever the agent gets back must sti
 Delivers the first portion T-1345's own body asked for when the full
 scope proved too large for one pass: the merge-queue DATA STRUCTURE plus
 enqueue/drain_next, as a library API in frob.tickets._land_queue -- not
-the `frob ticket land --queue` CLI flag or a drainer subcommand.
+the <!-- frob:waive DOC006 reason="disclosed-not-done narrative naming a CLI flag that does not exist yet -- Done report honesty section" -->`frob ticket land --queue` CLI flag or a drainer subcommand.
 
 - `.frob/land-queue.json`, guarded by a dedicated fcntl flock
   (.frob/land-queue.lock), mirroring frob.tickets._land._land_lock's
@@ -3525,7 +3546,7 @@ Acceptance criteria:
 
 HONEST DISCLOSURE -- what this ticket did NOT do:
 
-1. No CLI surface at all. `frob ticket land --queue` and a drainer
+1. No CLI surface at all. <!-- frob:waive DOC006 reason="disclosed-not-done narrative naming a CLI flag/paths that do not exist yet -- honesty section, filed as T-1444 below" -->`frob ticket land --queue` and a drainer
    subcommand need src/frob/_cli_parsers/_ticket.py and
    src/frob/app/ticket_runner.py, both outside this ticket's declared
    scope (src/frob/tickets/**, docs/modules/tickets.md,
@@ -8639,7 +8660,7 @@ surface, because that needs files outside T-1345's declared scope
 (src/frob/tickets/**, docs/modules/tickets.md,
 docs/guides/agent-playbook.md):
 
-1. `frob ticket land --queue` -- enqueue instead of landing immediately.
+1. <!-- frob:waive DOC006 reason="ticket plan naming a CLI flag that does not exist yet -- disclosed future work for this ticket to build" -->`frob ticket land --queue` -- enqueue instead of landing immediately.
    Needs a new argparse flag in src/frob/_cli_parsers/_ticket.py (or
    wherever the land subparser lives) and a branch in
    src/frob/app/ticket_runner.py's `_land` command handler that calls
@@ -8647,7 +8668,7 @@ docs/guides/agent-playbook.md):
    instead of `frob.tickets.land(...)` directly, then prints the queue
    position and returns 0 immediately (no waiting).
 
-2. A drainer subcommand (e.g. `frob ticket queue drain` or `frob ticket
+2. A drainer subcommand (e.g. <!-- frob:waive DOC006 reason="ticket plan naming a subcommand/flag that does not exist yet -- disclosed future work for this ticket to build" -->`frob ticket queue drain` or `frob ticket
    land --drain`) that loops `frob.tickets._land_queue.drain_next(root,
    land_fn)` where `land_fn` is a closure calling the real
    `frob.tickets.land(...)` with every callback `ticket_runner.py`'s
@@ -8662,7 +8683,7 @@ docs/guides/agent-playbook.md):
 3. Consider whether the drainer should be a long-running loop (poll the
    queue, drain whenever non-empty, exit on empty or on a signal) or a
    single "drain one and exit" invocation a coordinator calls repeatedly
-   (e.g. from a cron-like `frob loop` pattern) -- T-1345's own body did
+   (e.g. from a cron-like <!-- frob:waive DOC006 reason="ticket plan naming a hypothetical pattern/subcommand that does not exist yet -- disclosed future work" -->`frob loop` pattern) -- T-1345's own body did
    not specify this and it is a real design choice with different
    operational implications (a long-running loop needs its own
    lifecycle/PID-file story; a single-shot call composes with existing
@@ -9075,7 +9096,7 @@ green.
 Cluster 2 (extending-guides, 3 tests): T-1420 split
 `src/frob/strata/_threat.py` (WeaknessEntry, BenignCapability moved to
 `src/frob/strata/_threat_models.py`) and
-`src/frob/vet/_capability_registry.py` (DANGEROUS_OPERATIONS moved to
+<!-- frob:waive DOC006 reason="historical Done-report narrative naming the PRE-split single-file path that T-1420 itself moved into a package; kept for narrative accuracy" -->`src/frob/vet/_capability_registry.py` (DANGEROUS_OPERATIONS moved to
 `src/frob/vet/_capability_registry/_matrix.py`, now a package). The
 `frob:doc` anchors at both new homes were already correct (T-1420 moved
 them along with the code) -- only two things were stale: the
@@ -9423,7 +9444,8 @@ keeps the original unconditional ERROR.
 Registered end to end (WIRE001/T-1428 discipline): "SYS107" added to
 `_KNOWN_GATE_RULES` (`src/frob/gates/_waive.py`), one new
 `CHK-GATE-SYS107` entry in `docs/design/registry/check-coverage.yaml`,
-`gate_rule_total` 275 -> 276. New `docs/modules/strata.md#sys107-...`
+`gate_rule_total` 275 -> 276. New
+`docs/modules/strata.md#sys107-via-less-may-on-a-large-node-advisory-t-1451`
 section (matching the SYS104/105/106 precedent already there);
 `docs/strata/surface.md#may-scope`'s "Not yet built" disclosure updated
 to record SYS101-per-via (T-1450) and SYS107 (this ticket) as delivered,
@@ -10381,7 +10403,7 @@ in the sibling file -- same treatment applies here.
 Proposed module boundaries (verbatim moves, one seam per land, same
 discipline as every other T-1420 split):
 
-1. `src/frob/vet/_capability_core.py` (~180-820, ~640 lines): pattern
+1. <!-- frob:waive DOC006 reason="proposed future module split -- not yet landed" -->`src/frob/vet/_capability_core.py` (~180-820, ~640 lines): pattern
    compilation (`_compile_patterns`, `_compiled_capability_patterns`),
    comment/docstring/non-executable byte-span helpers (`_comment_byte_spans`
    through `_non_executable_byte_spans`), the needle-matching primitives
@@ -10391,23 +10413,23 @@ discipline as every other T-1420 split):
    this module imports from no per-language module -- it is the shared
    floor, so it must land FIRST if this is done incrementally.
 
-2. `src/frob/vet/_capability_python.py` (~820-1670, ~850 lines): the
+2. <!-- frob:waive DOC006 reason="proposed future module split -- not yet landed" -->`src/frob/vet/_capability_python.py` (~820-1670, ~850 lines): the
    `_py_*`/`_python_*`/`_resolve_py_*`/`_record_py_*`/`_bind_py_*` family
    -- scope binding, alias table construction, resolved-candidate
    collection, `_python_binding_capabilities`/`_python_binding_operations`.
 
-3. `src/frob/vet/_capability_typescript.py` (~1670-2745, ~1075 lines): the
+3. <!-- frob:waive DOC006 reason="proposed future module split -- not yet landed" -->`src/frob/vet/_capability_typescript.py` (~1670-2745, ~1075 lines): the
    `_ts_*`/`_collect_ts_*`/`_resolve_ts_*`/`_record_ts_*`/`_bind_ts_*`
    family, same shape as Python's, plus TS-specific require/dynamic-import
    handling (`_ts_require_call_module`, `_ts_dynamic_import_module`, the
    `_ts_dynamic_import_then_*` chain) that has no Python analog.
 
-4. `src/frob/vet/_capability_rust.py` (~3282-4043, ~760 lines): the
+4. <!-- frob:waive DOC006 reason="proposed future module split -- not yet landed" -->`src/frob/vet/_capability_rust.py` (~3282-4043, ~760 lines): the
    `_rust_*` family -- `use`-declaration binding (`_bind_rust_use_as_clause`
    through `_rust_use_table`), scope binding, alias tables,
    `_rust_binding_capabilities`/`_rust_binding_operations`.
 
-5. `src/frob/vet/_capability_c.py` (~4043-4744, ~700 lines): the `_c_*`
+5. <!-- frob:waive DOC006 reason="proposed future module split -- not yet landed" -->`src/frob/vet/_capability_c.py` (~4043-4744, ~700 lines): the `_c_*`
    family -- macro alias table, declaration/scope binding, alias tables
    (including the array/structured-binding/default-param alias variants C
    has that the other languages don't), `_c_binding_capabilities`/
@@ -10418,7 +10440,7 @@ discipline as every other T-1420 split):
    move them here too, verbatim, to keep the per-language module
    cohesive rather than mirroring the current file's accidental ordering).
 
-6. `src/frob/vet/_capability_kotlin.py` (~4744-5274, ~530 lines): the
+6. <!-- frob:waive DOC006 reason="proposed future module split -- not yet landed" -->`src/frob/vet/_capability_kotlin.py` (~4744-5274, ~530 lines): the
    `_kt_*` family -- import table, callable-reference resolution, alias
    table, `_kt_binding_capabilities`/`_kt_binding_operations`/
    `_extra_kt_binding_operations`.
@@ -11723,3 +11745,349 @@ moved verbatim from src/frob/vet/_capability.py to a new sibling
 src/frob/vet/_capability_python.py. 5513 -> 4670 lines; new file 867
 lines. Public surface unchanged. `_needle_matches_resolved` relocated to
 _capability_core.py as a genuinely shared cross-language helper.
+
+<!-- ticket:T-1477 -->
+```yaml
+id: T-1477
+title: 'warning burn-down: NEGEXIST/DOC/WAIVE/COV binding classes'
+state: done
+kind: docs
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/**
+- src/frob/**
+- tickets.md
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+threat: null
+component: null
+```
+Drain four warning classes to honest zero (or bound/justified) across the
+repo, per the drain-to-zero drive wave 13 brief:
+
+1. NEGEXIST001 (~39): unbound negative-existence claims in docs -- bind
+   each absence-claim to a real open ticket via frob:until where the
+   absence is tracked work, or reword prose that is descriptive rather
+   than normative. Never blanket-waive.
+2. DOC (~26 warnings): read the actual DOC00x findings and fix (stale
+   refs, unresolvable anchors).
+3. WAIVE004 (~20): stale waivers matching 0 findings -- for each, verify
+   the underlying finding is genuinely gone, then DELETE the waiver; keep
+   any whose finding is merely intermittent, with a dated note.
+4. COV006/COV007 (~41): COV006 = frob:tests edges bound to private
+   symbols the call graph cannot reach -- rebind to a symbol the test
+   actually calls. COV007 = frob:doc anchors on private symbols -- move
+   onto the public caller unless genuinely warranted (keep with a reason
+   comment).
+
+Batch commits by class; scoped verification after each class; evidence
+via an evidence-cmd capturing before/after counts per class.
+
+## Done report
+
+Drained NEGEXIST001, DOC004/DOC006, and part of COV006/COV007 (WAIVE004
+could not be measured -- see below). WAIVE004's own gate design only
+computes on a genuinely unscoped `frob check` (no --only/--ticket at
+all, `full_unscoped_run=not cfg.gates and cfg.ticket is None`), which
+this repo's own agent playbook section 3b/3c reserves for the
+coordinator (a bare check exceeds the foreground timeout and, under
+FROB_AGENT, is refused outright). No --only chunking substitutes for
+it -- every --only invocation sets cfg.gates, which forces
+full_unscoped_run=False. This is a real, disclosed gap in the brief's
+own premise, not a corner I cut: WAIVE004 needs a coordinator-run
+unscoped `frob check` to measure honestly at all.
+
+Per-class before/after (measured via `frob check --only docblocks
+--only coverage`, unscoped, from this worktree):
+
+- NEGEXIST001: 39 -> 3. The 3 remaining are absence-claims I bound via
+  `frob:until` to newly-filed draft tickets (T-1480 sys
+  phase-5 verbs, T-1483 refactor CLI wiring,
+  T-1479 daemon-proxy wiring) -- the directive regex
+  (`T-\d+`) cannot match a `T-draft-<hex>` id, so these read UNBOUND
+  until `frob ticket land` renumbers the drafts to real numeric ids
+  (T-1125 rewrites prose citations at land; whether it also rewrites
+  frob:until directives specifically was not verified in this session).
+  Everything else genuinely resolved: reworded 30 historical/
+  descriptive claims (audits, design corpora, timeless mechanics) to
+  drop the trigger phrasing without changing meaning, and bound 3
+  more genuinely-open gaps to newly-filed tickets (T-1482
+  policy refinement-monotonicity, T-1478 T-1440 argument-
+  scope follow-up, T-1481 --fix CLI wiring).
+  ONE exception disclosed: CHANGELOG.md:607's claim could not be fixed
+  in-worktree -- CHANGELOG.md is land-owned (T-0731's pre-commit guard
+  refuses any worktree commit touching it). Reworded then reverted;
+  still live as 1 of the "3 remaining" is NOT this one (that one isn't
+  in the NEGEXIST001 output at all currently -- it may only surface on
+  a fuller unscoped run than --only docblocks exercises, or needs land
+  itself to fix). Flagging so it isn't silently dropped.
+
+- DOC004: 1 -> 0. DOC006: 25 -> 0. All resolved: fixed stale
+  file/symbol pointers to their real post-split locations
+  (_capability_core.py, _threat_catalog_cwe.py, _threat_discharge.py,
+  _cli_parsers/_ticket/**, app/ticket_runner/**), fixed two broken
+  heading-anchor slugs (recomputed via the real slugify() rules) and
+  one placeholder anchor, and added targeted frob:waive DOC004/DOC006
+  (inline, immediately before the flagged pointer -- matching this
+  repo's own established convention, see docs/design/ledger-v2.md) for
+  genuinely illustrative examples and disclosed-not-done/proposed-
+  future prose in tickets.md.
+
+- COV006/COV007: 41 -> 28 unwaived (13 resolved). Fixed: moved 10
+  private-symbol frob:doc anchors in src/frob/gates/__init__.py,
+  _sys.py, _sys_selfaudit.py onto their real public gate entrypoints
+  (scope_gate, release_gate, run_gates, sys_gate) instead of leaving
+  them on internal helpers with no single public caller; same pattern
+  in src/frob/strata/_compliance.py (check_cmpl_registry) and
+  _mutation_audit.py (run_may_mutation_audit). NOT completed: the
+  remaining ~9 COV007 (strata/_effects.py, _selfconform.py x3,
+  tickets/_land.py, _land_squash.py x3, release/__init__.py,
+  app/_daemon_proxy.py, app/ticket_runner/_land_cmd.py x5,
+  strata/_compliance.py's _CMPL_UNIT_TRIAGE_TICKET) and all 12 COV006
+  (frob:tests edges needing rebinding to a symbol the test actually
+  calls, which requires reading each test body) remain open --
+  disclosed, not silently dropped. Left the ticket in-progress rather
+  than closing it dishonestly against an incomplete acceptance.
+
+One in-flight self-regression caught and fixed: rewording
+FlakeError.TicketUnresolvable's string value (to drop a NEGEXIST001-
+triggering doc-embedded code excerpt) tripped COV002 (changed public
+symbol, no frob:ticket edge) -- bound via frob:ticket T-1477
+on the class.
+
+Filed tickets (drafts, renumber at land):
+- T-1483: wire frob refactor into main CLI dispatch
+- T-1480: build frob sys check/trace/capacity/threats verbs
+- T-1481: wire frob check --fix CLI flag to the tiered fix engine
+- T-1479: wire remaining daemon-proxy subcommands named by T-0321's integration map
+- T-1482: build policy refinement-monotonicity diff pass (INV-030)
+- T-1478: argument-level may scoping (T-1440 follow-up)
+
+Evidence: docs-only class of change plus a handful of gates/**
+frob:doc-anchor moves with no new runtime behavior; no new pytest
+surface of its own. Per playbook section 5, recording the existing
+CLI-dispatch integration test:
+tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+
+### Changed
+```
+ docs/audits/docs-staleness-2026-07-29.md         |  27 +--
+ docs/audits/frob-blindspots-2026-07-23.md        |   2 +-
+ docs/audits/test005-zero-classification-t1418.md |   3 +-
+ docs/commands/refactor.md                        |   2 +
+ docs/commands/sys.md                             |   2 +
+ docs/design/check-fix-engine.md                  |   8 +-
+ docs/design/coding-performance-corpus.md         |   2 +-
+ docs/design/design-pattern-traps-corpus.md       |   7 +-
+ docs/design/registry/README.md                   |   4 +-
+ docs/design/registry/RECONCILIATION.md           |   4 +-
+ docs/design/secrets-pii-corpus.md                |   2 +-
+ docs/design/security-corpus.md                   |   5 +-
+ docs/design/supply-chain-corpus.md               |   2 +-
+ docs/guides/agent-playbook.md                    |   2 +-
+ docs/guides/agentic-time-profiling.md            |   3 +-
+ docs/guides/editors.md                           |   2 +-
+ docs/guides/extending/capability-registry.md     |   2 +-
+ docs/guides/extending/design-lint-rules.md       |   2 +-
+ docs/guides/extending/prover-claim-kinds.md      |   4 +-
+ docs/guides/extending/sys-export-formats.md      |   2 +-
+ docs/modules/app.md                              |   2 +-
+ docs/modules/decisions.md                        |   2 +-
+ docs/modules/fleet.md                            |   4 +-
+ docs/modules/serve.md                            |   2 +
+ docs/modules/testing.md                          |   6 +-
+ docs/modules/tickets.md                          |  11 +-
+ docs/modules/vet.md                              |  10 +-
+ docs/strata/krb.md                               |   2 +-
+ docs/strata/policy.md                            |  11 +-
+ docs/strata/surface.md                           |  13 +-
+ docs/strata/threat.md                            |   4 +-
+ src/frob/gates/__init__.py                       |  11 +-
+ src/frob/gates/_sys.py                           |   1 +
+ src/frob/gates/_sys_selfaudit.py                 |   2 -
+ src/frob/strata/_compliance.py                   |   2 +-
+ src/frob/strata/_mutation_audit.py               |   5 +-
+ src/frob/testing/_stability.py                   |   3 +-
+ tickets.md                                       | 261 +++++++++++++++++++++--
+ 38 files changed, 339 insertions(+), 100 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 5330 warning(s), 740 waived
+- error-findings: none (measured, zero errors)
+
+<!-- ticket:T-1478 -->
+```yaml
+id: T-1478
+title: argument-level may scoping (T-1440 follow-up)
+state: queued
+kind: feature
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/**
+- docs/strata/surface.md
+threat: null
+component: null
+```
+docs/strata/surface.md documents argument-level `may` scoping (e.g.
+`may "env.read" of "FROB_*"`, narrowing WHICH env vars/paths/hosts a
+grant covers, not just which files) as deliberately deferred by T-1440's
+own scope cut, saying "its own follow-up ticket (T-1440's child) rather
+than bundled into the grammar/join landing; see tickets.md for its id" --
+but no T-1440 child ticket was ever actually filed. File it for real
+(this ticket) and build argument-level may scoping. Found while draining
+NEGEXIST001 (T-1477): the doc's absence-claim had no
+frob:until binding.
+
+<!-- ticket:T-1479 -->
+```yaml
+id: T-1479
+title: wire remaining daemon-proxy subcommands named by T-0321's integration map
+state: queued
+kind: feature
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/serve/**
+- docs/modules/serve.md
+threat: null
+component: null
+```
+docs/modules/serve.md's daemon-proxy section says T-0321's integration
+map names outline/map/xref/parse/graph/exports/bind/docs/stats as
+eventual proxy targets alongside check --delta-style reads, and that
+these remain a disclosed residual, not yet wired. T-0321 itself is done
+(tickets-archive.md); no open follow-up currently tracks wiring the
+remaining subcommands through the daemon proxy. Wire the remaining
+named subcommands (or a subset chosen by the implementer, disclosed in
+the Done report) through frob.serve._tools/query() the same way
+T-1128/T-1147 wired frob_graph_query/frob_doable_tickets/
+frob_run_touched_tests/frob_check_delta. Found while draining
+NEGEXIST001 (T-1477): the doc's absence-claim had no
+frob:until binding.
+
+<!-- ticket:T-1480 -->
+```yaml
+id: T-1480
+title: build frob sys check/trace/capacity/threats verbs
+state: queued
+kind: feature
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/sys_runner.py
+- src/frob/strata/**
+- docs/commands/sys.md
+threat: null
+component: null
+```
+docs/commands/sys.md documents frob sys as having five verbs today
+(plan/doc/export/audit/sync-interface) and names check/trace/capacity/
+threats as later phase-5 verbs not yet landed on main. No ticket
+currently tracks building these four verbs. Found while draining
+NEGEXIST001 (T-1477): the doc's absence-claim had no
+frob:until binding.
+
+<!-- ticket:T-1481 -->
+```yaml
+id: T-1481
+title: wire frob check --fix CLI flag to the tiered fix engine
+state: queued
+kind: feature
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/_cli_parsers/_check.py
+- src/frob/app/check_runner.py
+- docs/design/check-fix-engine.md
+threat: null
+component: null
+```
+docs/design/check-fix-engine.md's "Status quo" section states
+apply_tier_a_fixes has no CLI entry point: src/frob/app/check_runner.py
+and src/frob/_cli_parsers/_check.py have no --fix/Fix reference, so
+`frob check --fix` does not exist as a runnable command. Wire a --fix
+flag through _cli_parsers/_check.py and check_runner.py that invokes
+apply_tier_a_fixes (and, once T-1262/T-1263 land, the Tier-B/Tier-C
+paths). Found while draining NEGEXIST001 (T-1477): the doc's
+absence-claim had no frob:until binding.
+
+<!-- ticket:T-1482 -->
+```yaml
+id: T-1482
+title: build policy refinement-monotonicity diff pass (INV-030)
+state: queued
+kind: feature
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/**
+- docs/strata/policy.md
+threat: null
+component: null
+```
+docs/strata/policy.md documents that policy refinement is DESIGNED to be
+monotonic downward (a child may only strengthen an inherited policy,
+never weaken it), but compile_policies/_resolve_scope only resolve scope
+membership -- there is no refinement-diff pass that compares a child's
+policy set against its parent's and flags a weakening. The paragraph
+currently states design intent, not an enforced guarantee (also
+disclosed via a frob:waive INV003 reason on the same section). Build
+the refinement-diff pass. Found while draining NEGEXIST001
+(T-1477): the doc's absence-claim had no frob:until binding.
+
+<!-- ticket:T-1483 -->
+```yaml
+id: T-1483
+title: wire frob refactor into main CLI dispatch
+state: queued
+kind: feature
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/_cli_parsers/**
+- src/frob/__main__.py
+threat: null
+component: null
+```
+docs/commands/refactor.md documents frob.refactor._cli.add_refactor_parser
+and run_refactor_command as built and ready, but T-1197's declared scope
+never included src/frob/_cli_parsers/** or src/frob/__main__.py, so the
+one-line _add_refactor_parser(sub) wiring call was never actually made.
+Wire frob refactor into the main CLI dispatch. Found while draining
+NEGEXIST001 (T-1477): the doc's own "not yet wired" claim had
+no frob:until binding.

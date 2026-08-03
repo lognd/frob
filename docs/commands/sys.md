@@ -8,6 +8,8 @@ checking counterpart to `doc`), and `sync-interface` (T-1150, mechanical
 `interface=` attr upkeep). `check`/`trace`/`capacity`/`threats` are
 later phase-5 tickets not yet landed on `main` -- when they land, this
 doc and `src/frob/app/sys_runner.py` extend rather than get replaced.
+<!-- frob:until T-1480 -->
+
 
 ## Quickstart (T-0167)
 

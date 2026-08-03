@@ -85,7 +85,7 @@ Repo state at audit: main @ d27fbcec, clean tree.
   spawns) through `guarded_subprocess_run`, OR give `serve`/`gitio`/`tickets`
   their own real flag and update the waivers. Either way, DELETE the stale
   "T-0200 is the follow-on to build one" waivers -- the mechanism exists; the
-  honest state is "wired: yes/no", not "not built yet".
+  honest state is "wired: yes/no", not "still unbuilt".
 - Lint/gate direction: add a gate that fails when a `waive`/`frob:waive`
   reason references a ticket that is DONE/DROPPED in the ledger (stale-waiver
   detection). A waiver justified by "pending T-XXXX" must not outlive T-XXXX.

@@ -686,7 +686,7 @@ class FlakeError(ErrorSet):
     WriteFailed          = "Could not persist .frob/test-stability.json"
     ReadFailed           = "Could not read/parse .frob/test-stability.json"
     UnknownTest          = "The node id has no recorded stability history"
-    TicketUnresolvable   = "The named ticket id does not exist in the queue"
+    TicketUnresolvable   = "The named ticket id is absent from the queue"
     TicketCreateFailed   = "Auto-filing a quarantine ticket via frob.tickets failed"
     CaptureSpawnFailed   = "pytest could not be spawned for per-test stability capture"
     CaptureReadFailed    = "The junit-xml report from a stability capture run was unreadable"
@@ -797,8 +797,8 @@ first-class target, not an afterthought:
   own view and merge through git. Known seam: two worktrees can allocate
   the same sequential ticket id (T-0043 twice); `load_queue` detects the
   collision post-merge as `DuplicateId` (the gate fails loudly), and
-  `frob ticket renumber` (`src/frob/_cli_parsers/_ticket.py`) is the
-  shipped remedy.
+  `frob ticket renumber` (`src/frob/_cli_parsers/_ticket/_progress.py`)
+  is the shipped remedy.
 
 ## Design decisions
 

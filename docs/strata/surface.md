@@ -90,7 +90,7 @@ convention `errors_total`/`abstract` already use (`_code_binding.py::
 is_managed` reads it back). Semantically: `check_import_conformance`
 (`_code_binding.py`) skips a managed node's owned files the same way it
 skips `FOREIGN` files -- "no tier-2 conformance" -- and a fired THREAT003
-weakness obligation on a managed node (`_threat.py::_check_one_discharge`)
+weakness obligation on a managed node (`_threat_discharge.py::_check_one_discharge`)
 still needs a discharging claim proving a chokepoint shape and clearing the
 catalog rung, but is exempt from the boundary-KIND (`_mitigation_is_
 chokepoint`) proof a code-modeled node needs, the SAME exemption an
@@ -140,7 +140,7 @@ established), and `may` capability atoms land directly on the elaborated
 generically off any elaborated `Node` with no store/node distinction, so
 a store with `code`/`may` participates in tier-2 import conformance
 (`_code_binding.py::check_import_conformance`) and auto-instantiates
-THREAT003 weakness obligations (`_threat.py::check_discharge_completeness`)
+THREAT003 weakness obligations (`_threat_discharge.py::check_discharge_completeness`)
 exactly the way a code-modeled node's would -- no new join, no new
 exemption.
 
@@ -192,12 +192,13 @@ require_may_scope` config knob (`_scope_config.py::StrataScopeConfig`,
 wired into SELFAUDIT001's per-sub-rule severity in
 `frob.gates._sys_selfaudit._selfaudit_severity`).
 
-**Still not yet built (deliberately deferred, T-1440's own scope cut):**
+**Still unbuilt (deliberately deferred, T-1440's own scope cut):**
 argument-level scoping (e.g. `may "env.read" of "FROB_*"`, narrowing
 WHICH env vars/paths/hosts a grant covers, not just which files) as a
 natural follow-up once `via` itself has real usage to learn from --
 its own follow-up ticket (T-1440's child) rather than bundled into the
-grammar/join landing; see `tickets.md` for its id.
+grammar/join landing.
+<!-- frob:until T-1478 -->
 
 **Migration note:** this repo's own `design/frob.strata` was deliberately
 NOT migrated to `via` by T-1440 itself -- every existing grant stayed
@@ -887,7 +888,7 @@ truth) has *any* inbound flow at std.trust elaboration time and the cache
 declares no `invalidate_on`, elaboration fails
 `StrataError.MissingInvalidation`. Each `invalidate_on F` must name a
 flow that both exists and writes to Y (`dst == Y`); either failure is
-`UnknownReference` (F doesn't exist) or `MissingInvalidation` (F exists
+`UnknownReference` (F is absent) or `MissingInvalidation` (F exists
 but doesn't write to Y).
 
 ### The immutable-TTL pairing
@@ -920,7 +921,7 @@ is the only channel, preserving law 1.
 
 A `sticky` balancer routing to a downstream node carrying `state=none` is
 a structural contradiction (sticky routing exists to pin a client to
-state that, by declaration, does not exist). `elaborate_infra` reports
+state that, by declaration, is absent). `elaborate_infra` reports
 this as a non-fatal string in `InfraExpansion.diagnostics`;
 `_elaborate.py::elaborate` logs each at WARNING. This diagnostic is not a
 `KernelModel` field (kernel types may not grow a vocabulary-specific

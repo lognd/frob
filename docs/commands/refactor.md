@@ -6,6 +6,8 @@ atomically if it cannot complete. Design: `docs/design/refactor-verb.md`
 (T-1135). This page documents the engine T-1197 built; the CLI verb
 itself is not yet wired into `frob`'s main dispatch (see "CLI wiring
 status" below).
+<!-- frob:until T-1483 -->
+
 
 ## Usage (once wired)
 
