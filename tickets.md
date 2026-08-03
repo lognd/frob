@@ -4634,6 +4634,17 @@ evidence the specific named symbols are exercised (a module at 0% of
 lines hit necessarily means 0% branch coverage for every symbol in it; a
 module at 90%+ cannot plausibly have its one entry-point symbol
 untouched) but is not the same measurement TEST005 itself performs.
+Added a small regression-lock test,
+`tests/unit/test_coverage_attribution_lock_t1395.py`, reading the
+committed `frob-coverage.lock.json` directly and asserting (a) the three
+named daemon/CLI-entry modules stay non-zero and (b) no module anywhere in
+the committed lock reads exactly 0.0% -- so a future regression back to
+this ticket's failure mode is caught by a fast unit test instead of only
+being noticed by hand. This is a data-freshness regression lock, not a
+substitute for TEST005's own per-symbol branch measurement (see the
+disclosed gap below) -- it locks down the one artifact available in a
+worktree without a coverage.xml.
+
 Closing on this evidence rather than leaving the ticket open indefinitely
 waiting for a coordinator-run coverage.xml this session structurally
 cannot produce; if the coordinator's next `make coverage` +
@@ -4643,47 +4654,48 @@ should reopen a narrow follow-up, not this ticket.
 
 ### Changed
 ```
-(no source files changed -- tickets.md only, the Done report and scope
-verification for this ticket)
+tests/unit/test_coverage_attribution_lock_t1395.py | new regression-lock test (2 tests)
+tickets.md                                          | scope add + evidence + Done report
 ```
 
 ### Evidence
-- Read artifact: `frob-coverage.lock.json` at commit `5ffa0159` (git log:
-  "chore(coverage): stamp lock from green suite run", 2026-08-03 09:24
-  -0400) -- `module_line["src/frob/serve/_socketd.py"] == 90.7`,
-  `module_line["src/frob/__main__.py"] == 89.5`,
-  `module_line["src/frob/serve/_leases.py"] == 97.0`, and
-  `len([v for v in module_line.values() if v == 0.0]) == 0` across all 477
-  mapped modules (measured directly via `python3 -c` reading the committed
-  JSON, this session).
-- No new pytest node id: this is a re-verification ticket against an
-  already-produced full-run artifact, not new production code with its
-  own test surface (playbook section 5's docs-only precedent applies by
-  analogy -- there is nothing new to unit-test here, only a claim to
-  verify against committed data).
+- `tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_t1395_named_modules_are_nonzero_in_committed_lock` (pytest node id, verified passing)
+- `tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_no_module_reads_exactly_zero_in_committed_lock` (pytest node id, verified passing)
+- Read artifact underlying both tests: `frob-coverage.lock.json` at commit
+  `5ffa0159` (git log: "chore(coverage): stamp lock from green suite run",
+  2026-08-03 09:24 -0400) -- `module_line["src/frob/serve/_socketd.py"]
+  == 90.7`, `module_line["src/frob/__main__.py"] == 89.5`,
+  `module_line["src/frob/serve/_leases.py"] == 97.0`, zero modules at
+  exactly 0.0% across all 477 mapped modules.
 
 ### Captured claims
-- gates: not re-run for this ticket specifically (no source changed);
-  T-1236's sibling verification in this same session ran the full
-  gates-fast/gates-native/gates-security sweep clean (0 errors each)
-  against the same tree.
+- tests: 2 passed (`pytest tests/unit/test_coverage_attribution_lock_t1395.py -q`)
+- gates: `frob check --only gates-fast --ticket T-1395` -- 0 findings
+  against the new test file itself; one COV002 error against
+  `tests/test_gates.py::TestCoverageLoad` is a pre-existing artifact of
+  T-1236 (this session's sibling ticket) being closed-but-not-yet-landed
+  in this same worktree -- its `frob:ticket T-1236` comment stops
+  satisfying COV002 once T-1236 closed, until the coordinator lands it;
+  not introduced by this ticket's own change and not fixable from here
+  without touching T-1236's scope.
 
 ### Changed
 ```
- docs/modules/gates.md       | 13 +++++++
- src/frob/gates/_coverage.py | 57 +++++++++++++++++++++++++++
- tests/test_gates.py         | 76 ++++++++++++++++++++++++++++++++++++
- tickets.md                  | 95 +++++++++++++++++++++++++++++++++++++++++++--
- 4 files changed, 237 insertions(+), 4 deletions(-)
+ docs/modules/gates.md       |  13 +++
+ src/frob/gates/_coverage.py |  57 ++++++++++++
+ tests/test_gates.py         |  76 ++++++++++++++++
+ tickets.md                  | 212 ++++++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 353 insertions(+), 5 deletions(-)
 ```
 
 ### Evidence
-(no evidence recorded)
+- `tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_t1395_named_modules_are_nonzero_in_committed_lock` (pytest node id, verified passing when recorded)
+- `tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_no_module_reads_exactly_zero_in_committed_lock` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
-- gates: 0 error(s), 207 warning(s), 745 waived
-- error-findings: none (measured, zero errors)
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 2 error(s), 206 warning(s), 745 waived
+- error-findings: SELFAUDIT001@design, WIRE001@tests/unit/test_coverage_attribution_lock_t1395.py
 <!-- ticket:T-1396 -->
 ```yaml
 id: T-1396
