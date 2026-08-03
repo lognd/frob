@@ -6884,6 +6884,7 @@ scope_changes:
 evidence:
 - tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_both_serial_reruns_are_wrapped_in_a_bounded_timeout
 - tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_timeout_wrapping_kills_a_wedged_child_instead_of_hanging
+- tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group
 attachments:
 - path: attachments/T-1433/01-untitled.txt
   caption: ''
@@ -6903,7 +6904,8 @@ acceptance:
   - tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_timeout_wrapping_kills_a_wedged_child_instead_of_hanging
 - text: GIVEN the futex-owner root cause is identified WHEN the fix lands THEN back-to-back
     make coverage runs complete without a wedge
-  evidence: []
+  evidence:
+  - tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group
 threat: null
 component: null
 ```
