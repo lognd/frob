@@ -105,7 +105,15 @@ DETECTABLE_KINDS: frozenset[str] = frozenset(_KIND_MAP.values()) | _EXTENDED_KIN
 #: `client_storage`, none of which has a real OS-syscall analog) has NO
 #: second-detector coverage yet -- `run_may_mutation_audit` reports its
 #: deletions as `SecondDetectorGap` rather than silently counting SYS100
-#: alone as "double detected".
+#: alone as "double detected". T-1454 (env-mode-explosion/T-1453 via
+#: migration fallout): `env.read` joins this disclosed-gap list too --
+#: unlike `fs.read`/`fs.write` (real `open`/`read` syscalls, T-1203's
+#: rationale for adding those two to `_SECCOMP_KIND_MAP`), reading an
+#: environment variable has no distinct OS syscall of its own (it is a
+#: libc lookup over the process's already-mapped environment block), so
+#: there is no seccomp-profile fact to vary when an `env.read` atom is
+#: deleted -- a real gap, not a spurious one, and NOT fabricated into
+#: `_SECCOMP_KIND_MAP` just to make this set look complete.
 EXPORT_DETECTABLE_KINDS: frozenset[str] = frozenset(_SECCOMP_KIND_MAP)
 
 #: A DETECTABLE substitution target for every declared kind: picked so it

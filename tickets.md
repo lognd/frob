@@ -7154,6 +7154,7 @@ attempt to raise the width back to 4.
 - tests: 3 passed (from 3 evidence id(s))
 - gates: 0 error(s), 2134 warning(s), 740 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1434 -->
 ```yaml
 id: T-1434
@@ -11420,6 +11421,7 @@ the T-0167 precedent.
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-1474 -->
 ```yaml
 id: T-1474
@@ -11546,3 +11548,111 @@ fixed by this change; no distinct defect found in any of them.
 - tests: 5 passed (from 5 evidence id(s))
 - gates: 1 error(s), 316 warning(s), 741 waived
 - error-findings: SELFAUDIT001@design
+
+<!-- ticket:T-1475 -->
+```yaml
+id: T-1475
+title: 'main suite: last 2 failures blocking green'
+state: done
+kind: bug
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/design/registry/check-coverage.yaml
+- src/frob/gates/**
+- tests/test_registry_exhaustiveness.py
+- tests/unit/strata/test_mutation_audit.py
+- src/frob/strata/**
+evidence:
+- tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+threat: null
+component: null
+```
+Two failures block a green main suite run:
+
+1. tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
+   REG008 findings on docs/design/registry/check-coverage.yaml. Recent lands
+   added CHK-GATE-NEGEXIST001/CHK-GATE-SYS107 entries that presumably lack
+   whatever REG008 demands. Fix by satisfying REG008 honestly for the new
+   entries, matching sibling entries' compliance.
+
+2. tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+   Pre-existing failure: the mutation-audit second detector's
+   disclosed-gaps set drifted, an extra 'env.read' gap appeared
+   (downstream of the 2026-08-02 env-mode-explosion and T-1453 via
+   migration). Determine whether env.read is a genuine new app-level gap
+   the detector cannot see (update disclosed-gaps allowlist with honest
+   reason) or a spurious drift (fix the detector/join instead).
+
+## Done report
+
+Changed:
+src/frob/strata/_selfconform.py (frob:enforces CHK-GATE-SYS107 edge added)
+src/frob/strata/_mutation_audit.py (EXPORT_DETECTABLE_KINDS docstring updated)
+tests/unit/strata/test_mutation_audit.py (disclosed-gaps set + docstring updated)
+
+Root cause 1 (REG008 on check-coverage.yaml): CHK-GATE-SYS107's registry
+entry is dispositioned handled_by:SYS107, but SYS107 (a SELFAUDIT001
+sub-rule, T-1451) only had the family-level `frob:enforces
+CHK-GATE-SELFAUDIT001` edge in src/frob/gates/_sys_selfaudit.py -- no
+sub-rule-specific edge, unlike sibling SYS104/105/106 which each got
+their own explicit `frob:enforces CHK-GATE-SYS10x` edge in
+_selfconform.py when their registry entries were added (T-1113
+precedent). Added the matching `frob:enforces CHK-GATE-SYS107` edge
+next to CHK-GATE-SYS106 in _selfconform.py's SYS10x edge block.
+
+Root cause 2 (mutation-audit disclosed-gaps drift): the env-mode-
+explosion (T-1453's via migration) promoted the `checker` node's
+`may "env.read"` atom (design/frob.strata, T-1346's FROB_NO_GATE_CACHE
+gate-cache escape hatch) to its precise tier-2 spelling. Confirmed via
+direct inspection that this is a genuine, disclosed gap and not spurious
+drift: unlike `fs.read`/`fs.write` (real `open`/`read` syscalls,
+T-1203's rationale for adding those two to `_SECCOMP_KIND_MAP`), reading
+an environment variable has no distinct OS syscall of its own (a libc
+lookup over the process's already-mapped environment block) -- there is
+no seccomp-profile fact for the second detector to vary on when an
+`env.read` atom is deleted. Added `env.read` to the test's disclosed set
+and updated `EXPORT_DETECTABLE_KINDS`'s docstring in _mutation_audit.py
+to name it alongside the other disclosed app-level kinds.
+
+Evidence:
+tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
+tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+
+Verification: both tests pass standalone, together, and as full-file runs
+(tests/test_registry_exhaustiveness.py: 42 passed; tests/unit/strata/
+test_mutation_audit.py: 6 passed). `uv run frob check --only registry
+--only sys` is clean: 0 errors, 0 waived, 1 pre-existing unrelated
+warning (SYS100 extended env observed but undeclared on testsuite).
+
+Filed: none -- both root causes were fully addressed in scope, no
+follow-up needed.
+
+Gates: uv run frob check --only registry --only sys clean (0 errors);
+PRE001/TICK006 seen on a later full `frob check --ticket` run are stale-
+sweep/scratchpad-collision artifacts unrelated to this ticket's own
+changes (see final report to coordinator) -- re-ran pre-work sweep to
+clear PRE001.
+
+### Changed
+```
+ src/frob/strata/_mutation_audit.py       |  10 +-
+ src/frob/strata/_selfconform.py          |   4 +
+ tests/unit/strata/test_mutation_audit.py |  14 ++-
+ tickets.md                               | 165 +++++++++++++++++++++++++++++++
+ 4 files changed, 191 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 1 error(s), 3002 warning(s), 740 waived
+- error-findings: TICK006@tickets.md

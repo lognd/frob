@@ -1534,6 +1534,10 @@ def _unmodeled_violations(
 # frob:enforces CHK-GATE-SYS104
 # frob:enforces CHK-GATE-SYS105
 # frob:enforces CHK-GATE-SYS106
+# T-1451: CHK-GATE-SYS107 registry entry added alongside the via-less-
+# may-on-a-large-node advisory (_via_less_large_node_violations below),
+# mirroring the CHK-GATE-SYS104/105/106 precedent above.
+# frob:enforces CHK-GATE-SYS107
 # frob:enforces CHK-SUBSYS-STRATA
 # T-0672: SLH-SYS-EVA-* edges bind this function directly to the
 # structural-linter-adversarial-hardening.md denominator rows T-0668/

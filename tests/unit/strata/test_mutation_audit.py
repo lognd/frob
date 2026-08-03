@@ -65,7 +65,18 @@ class TestMayMutationAuditRealRepo:
         """The seccomp/export detector (module docstring) has real
         syscall coverage for `exec`/`net`/`fs.read`/`fs.write` only -- every
         OTHER declared kind is a disclosed `second_detector_gap`, not a
-        silently-passing false claim of double detection."""
+        silently-passing false claim of double detection.
+
+        T-1454: `env.read` joins the disclosed set alongside bare `env`.
+        The env-mode-explosion (T-1453's via migration) promoted `checker`
+        node's `may "env.read"` atom (design/frob.strata, T-1346's
+        FROB_NO_GATE_CACHE escape-hatch read) to the precise tier-2
+        spelling `_may_kind` returns -- but unlike `fs.read`/`fs.write`
+        (real `open`/`read` syscalls), reading an environment variable has
+        no OS syscall of its own (a libc lookup over the process's
+        already-mapped environment block), so `_SECCOMP_KIND_MAP`
+        correctly has no entry for it (`_export.py`'s own docstring). This
+        is a genuine, disclosed second-detector gap, not spurious drift."""
         repo_root = Path(__file__).resolve().parents[3]
         result = run_may_mutation_audit(repo_root)
         assert result.is_ok
@@ -73,6 +84,7 @@ class TestMayMutationAuditRealRepo:
         assert gap_kinds == {
             "eval",
             "env",
+            "env.read",
             "deserialize",
             "fetch_url",
             "ffi",
