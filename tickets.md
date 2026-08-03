@@ -4519,7 +4519,7 @@ Found while working T-1392 (frob check --ticket T-1392 unscoped repo-wide gate:C
 id: T-1395
 title: 'Coverage attribution still misses daemon and CLI-entry processes: serve/ and
   __main__.py remain 0.0%'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
