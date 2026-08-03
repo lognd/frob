@@ -608,3 +608,18 @@ def _operation_entry_matches(
     if entry.language == "python" and entry.function_or_pattern.startswith("compile("):
         return _has_bare_compile_call(raw, comment_spans)
     return False
+
+
+def _needle_matches_resolved(needle: str, resolved: str) -> bool:
+    """True if `needle` (a registry needle string, e.g. `"subprocess."`,
+    `"os.system("`, or a bare `"Popen("`) occurs in the RESOLVED dotted
+    target `resolved` (e.g. `"subprocess.run"`), checking both the bare
+    resolved string and a synthesized call form (`resolved + "("`) so a
+    needle written with a trailing call-paren (`"os.system("`) still
+    matches a resolved identity that has none of its own (T-0328: this is
+    the resolved-identity sibling of the raw-text `_needle_hits_outside_
+    comments` substring check above). Shared across every per-language
+    binding family (python/typescript/rust/c/kotlin), not python-specific
+    despite the T-0328 origin -- lives in the core module so no per-
+    language module depends on another."""
+    return needle in resolved or needle in f"{resolved}("
