@@ -257,6 +257,49 @@ def test_timed_call_records_nonzero_exit_on_plain_exception(tmp_path: Path):
     assert raised
     record = json.loads((tmp_path / TELEMETRY_REL).read_text(encoding="utf-8").strip())
     assert record["exit"] == 1
+
+
+def test_timed_call_does_not_leak_gitio_logs_onto_stdout(tmp_path: Path, capsys):
+    # frob:tests src/frob/app/telemetry.py::timed_call
+    # T-1360 regression: `_finish_timed_call`'s footgun-detection path used
+    # to call `tree_hash(root)` (which spawns `git` via `frob.gitio`,
+    # logging at DEBUG) OUTSIDE `quiet_stdout_logs()` -- only the LATER
+    # `tree_hash` call inside `record_cli_event` was quieted. That left
+    # gitio's spawn log free to print on stdout, appended after whatever
+    # `fn()` itself already wrote there, corrupting any `--json` command's
+    # stdout for a caller doing `json.loads(stdout)`. Use a real (tiny)
+    # git repo so `tree_hash`'s git spawn genuinely happens and would
+    # genuinely log if unquieted.
+    import subprocess
+
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.email=t@example.com",
+            "-c",
+            "user.name=t",
+            "commit",
+            "--allow-empty",
+            "-q",
+            "-m",
+            "x",
+        ],
+        cwd=tmp_path,
+        check=True,
+    )
+
+    def _print_json():
+        print('{"ok": true}')
+        return 0
+
+    timed_call(tmp_path, subcommand="check", args_head="check --json", fn=_print_json)
+    captured = capsys.readouterr()
+    assert captured.out.strip() == '{"ok": true}'
+    assert "gitio" not in captured.out
+
+
 # --- footgun detection (T-1360) ---------------------------------------
 
 

@@ -225,17 +225,30 @@ def _finish_timed_call(
     recording -- reading `detect_footguns` after `record_cli_event` would
     let this very invocation match as its own "prior" record. Tips never
     change control flow; a detector failure is swallowed, matching
-    `append_event`'s own best-effort discipline."""
+    `append_event`'s own best-effort discipline.
+
+    T-1360 regression fix: the `tree_hash(root)` computed here for
+    `detect_footguns` spawns `git` via `frob.gitio.run_argv`, exactly like
+    the one inside `record_cli_event` -- but this call site was not wrapped
+    in `quiet_stdout_logs()`, so gitio's INFO-level spawn log leaked onto
+    stdout ahead of `record_cli_event`'s own quieting, corrupting any
+    `--json` command's stdout payload. `quiet_stdout_logs()` is reentrant
+    and thread-safe (T-0125), so wrapping it here too is safe even though
+    `record_cli_event` wraps its own inner call again."""
+    from frob.logging.quiet import quiet_stdout_logs
+
     tips: list[Tip] = []
     if not tips_disabled():
         try:
+            with quiet_stdout_logs():
+                tree_hash_value = tree_hash(root)
             tips = detect_footguns(
                 root,
                 subcommand=subcommand,
                 args_head=redact_command(args_head),
                 duration_ms=duration_ms,
                 exit_code=exit_code,
-                tree_hash_value=tree_hash(root),
+                tree_hash_value=tree_hash_value,
             )
         except Exception as exc:  # pragma: no cover - defensive, best-effort
             _log.debug("telemetry: footgun detection failed (ignored): %s", exc)

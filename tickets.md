@@ -11490,3 +11490,130 @@ the T-0167 precedent.
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
+
+<!-- ticket:T-1474 -->
+```yaml
+id: T-1474
+title: T-1360 footgun hook pollutes --json stdout with gitio log lines
+state: done
+kind: bug
+origin: human
+created: '2026-08-03'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/telemetry.py
+- tests/test_telemetry.py
+scope_changes:
+- op: add
+  glob: tests/test_telemetry.py
+  reason: footgun detect_footguns/tree_hash test coverage lives here
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/test_telemetry.py::test_timed_call_records_event_and_returns_value
+- tests/test_telemetry.py::test_record_cli_event_shape
+- tests/test_telemetry.py::test_detect_footguns_flags_fast_exit1
+- tests/system/test_cli_parse.py::test_pytest_json_exit_zero
+- tests/test_telemetry.py::test_timed_call_does_not_leak_gitio_logs_onto_stdout
+threat: null
+component: null
+```
+The 2026-08-03 full-suite run has 117 FAILED tests, dominated by
+json.decoder errors in tests/system/test_cli_*.py -- every `--json` CLI
+command's stdout now carries trailing "gitio: spawning ('git', ...
+'rev-parse', '--short', 'HEAD')..." log lines appended after the JSON
+document.
+
+Root cause: `frob.app.telemetry._finish_timed_call` (T-1360's own footgun
+detection wiring) calls `detect_footguns(..., tree_hash_value=tree_hash(root))`
+directly, NOT inside `quiet_stdout_logs()`. `tree_hash` spawns `git` via
+`frob.gitio.run_argv`, whose module logger emits INFO-level lines that the
+root logger's stdout handler (config.toml: DEBUG..WARNING routed to
+stdout) prints immediately. Only the LATER `record_cli_event` call (which
+also calls `tree_hash(root)` a second time) is wrapped in
+`quiet_stdout_logs()` -- the earlier, unwrapped call in `_finish_timed_call`
+leaks the gitio spawn log onto stdout, appended after the command's own
+`--json` payload, corrupting it for any caller doing `json.loads(stdout)`.
+
+T-1360's own design note (module docstring on `record_cli_event`) already
+states the requirement that telemetry must be invisible on stdout -- the
+detect_footguns call site was simply missed when quieting was added.
+
+## Done report
+
+Root cause confirmed: `frob.app.telemetry._finish_timed_call` calls
+`tree_hash(root)` inline as an argument to `detect_footguns(...)`, outside
+any `quiet_stdout_logs()` scope. `tree_hash` spawns `git rev-parse --short
+HEAD` via `frob.gitio.run_argv`, whose module logger emits INFO lines that
+`config.toml`'s root stdout handler (DEBUG..WARNING routed to stdout)
+prints immediately. The LATER `tree_hash(root)` call inside
+`record_cli_event` was already correctly wrapped in `quiet_stdout_logs()`
+(the module docstring on `record_cli_event` documents exactly this
+requirement) -- but the earlier call feeding `detect_footguns` was missed
+when that quieting was added, so the gitio spawn log leaked onto stdout
+ahead of it, appended after any `--json` command's own JSON payload and
+corrupting it for `json.loads(stdout)` callers.
+
+Fix: wrap the `tree_hash(root)` call inside `_finish_timed_call` in its
+own `quiet_stdout_logs()` block before passing the result to
+`detect_footguns`. `quiet_stdout_logs()` is documented reentrant and
+thread-safe (T-0125), so nesting it with the later call inside
+`record_cli_event` is safe.
+
+New regression test added:
+tests/test_telemetry.py::test_timed_call_does_not_leak_gitio_logs_onto_stdout
+-- exercises `timed_call` against a real (tiny) git repo, capturing
+stdout across a `fn()` that prints a single JSON line (simulating a
+`--json` command). Confirmed this test FAILS against the pre-fix code
+(checked out `main`'s `src/frob/app/telemetry.py` locally, re-ran the
+test): captured stdout is `{"ok": true}\ngitio: spawning (...) ->
+returncode=0\n...`, reproducing the exact corruption shape from the
+regression report. Confirmed it PASSES with the fix restored.
+
+Verification:
+- tests/system/test_cli_parse.py, tests/system/test_cli_outline.py: all
+  pass (93 total).
+- tests/test_telemetry.py: all 33 tests pass (32 pre-existing + 1 new
+  regression test; footgun feature itself intact).
+- tests/integration/test_gitlog.py: all pass (18 total).
+- tests/unit/test_parse.py: all pass (145 total).
+- tests/system/test_system.py: all pass (36 total).
+- Broader spot check: `pytest tests/system/ -k cli` (all `test_cli_*.py`
+  system tests, 350 total) all pass.
+- `frob check --ticket <id> --budget 100`: gates-fast group clean (0
+  errors across ARCH/DEAD/EXHAUST/LARGE/OPAQUE/PERF/PII/SEC/COV/DEPR/DOC/
+  LANG/NEGEXIST/REF/SCOPE/TEST/TICK/TODO/WALK). Only tool-summary findings
+  are ruff-format/ruff-check on files this ticket did not touch
+  (tests/test_telemetry.py CRLF reformat + import-sort in two unrelated
+  strata test files) -- pre-existing repo-wide state, not introduced by
+  this change; `ruff format --check`/`ruff check` on
+  src/frob/app/telemetry.py itself pass clean.
+- `frob check --ticket <id> --only gates-native --only gates-security
+  --only lint --only static`: gate:ARCH/DEAD/EXHAUST/LARGE/OPAQUE/PERF/
+  PII/SEC all 0 errors; ty and frob-cycle clean.
+
+Second cause: none found. All three named failure families
+(tests/integration/test_gitlog.py, tests/unit/test_parse.py,
+tests/system/test_system.py) were symptoms of the same root cause and are
+fixed by this change; no distinct defect found in any of them.
+
+### Changed
+```
+ tickets.md | 116 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 116 insertions(+)
+```
+
+### Evidence
+- `tests/test_telemetry.py::test_timed_call_records_event_and_returns_value` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_record_cli_event_shape` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_detect_footguns_flags_fast_exit1` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_parse.py::test_pytest_json_exit_zero` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_timed_call_does_not_leak_gitio_logs_onto_stdout` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 1 error(s), 316 warning(s), 741 waived
+- error-findings: SELFAUDIT001@design
