@@ -957,7 +957,7 @@ Timing/findings proof (script run in the worktree, see also natural
 id: T-1212
 title: 'perf: dup_spawn _entry_occurrences re-scans occurrences per (def, entry) pair
   -- index once per file'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -1038,7 +1038,7 @@ Timing proof (script in the worktree):
 (no evidence recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
+- tests: 2 passed (from 2 evidence id(s))
 - gates: 2 error(s), 162 warning(s), 745 waived
 - error-findings: ARCH001@src/frob/perf/_dup_spawn.py, WIRE001@src/frob/vet/_capability_core.py
 
