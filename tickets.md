@@ -9606,7 +9606,7 @@ design pass, not a ready-to-implement plan.
 ```yaml
 id: T-1453
 title: 'strata: migrate design/frob.strata''s may grants to scoped via globs'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-02'
