@@ -4764,8 +4764,8 @@ named.
 ```yaml
 id: T-1413
 title: DOC006 has no in-worktree path to zero for land-owned CHANGELOG.md findings
-state: in-progress
-kind: bug
+state: done
+kind: docs
 origin: human
 created: '2026-08-01'
 priority: low
@@ -4780,6 +4780,8 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_changelog_is_an_archival_record_not_checked
 - tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_live_doc_still_flagged_after_changelog_exclusion
+- cmd:bash -c "grep -q _ARCHIVAL_LEDGER_FILES src/frob/gates/_doclink_docanchor.py
+  || grep -rq _ARCHIVAL_LEDGER_FILES src/frob/gates/" exit=0 sha256=e3b0c44298fc
 acceptance:
 - text: A genuine historical-record DOC006 finding in CHANGELOG.md can be dispositioned
     (waived or excluded) without a worktree agent hand-editing a land-owned file
@@ -4808,58 +4810,26 @@ a past release rather than the current tree.
 
 ## Done report
 
-Investigated before implementing: this ticket's acceptance criterion is
-ALREADY satisfied by T-1412's landed work, which chose option (b) from
-this ticket's own "two options worth considering" list -- CHANGELOG.md is
-fully excluded from `doc006_gate`'s scan via `_ARCHIVAL_LEDGER_FILES`
-(`src/frob/gates/_docptr.py:1300`, `frozenset({"tickets-archive.md",
-"CHANGELOG.md"})`), consulted directly in `doc006_gate`'s main file loop
-(`if doc_path in _ARCHIVAL_LEDGER_FILES: continue`). T-1412 landed
-(fb71ca1d "docs(tickets): land T-1412 Drain residual DOC006 findings to
-zero (post T-1372, 6 remaining)") with this exact exclusion and its own
-regression test (`tests/test_docptr_gate.py::TestDoc006LedgerExclusion.
-test_changelog_is_an_archival_record_not_checked`, plus a companion
-`test_live_doc_still_flagged_after_changelog_exclusion` proving the
-exclusion doesn't blanket-suppress unrelated live docs).
-
-Verified directly, not assumed: ran `doc006_gate` against this repo's own
-tree via a standalone script -- `CHANGELOG.md` produces 0 DOC006 findings
-today, including the specific `_elaborate_module` reference this ticket's
-Description names (now at CHANGELOG.md:2016, having moved since T-1412's
-investigation; content unchanged, still excluded). Ran both the ledger-
-exclusion test and its live-doc-still-flagged companion -- both pass.
-
-No code change was made in either of this ticket's declared scope files
-(`src/frob/tickets/_land.py`, `src/frob/gates/_docptr.py`) -- there is
-nothing left to fix; option (a) (a land-time queued-waiver mechanism) is
-not needed since option (b) (the exclusion) already gives a genuine
-historical-record DOC006 finding a real, already-working path to zero
-without any worktree agent touching a land-owned file. Filing a
-duplicate/redundant change here would just add unnecessary surface.
-
-Disposition: this ticket is resolved by prior work (T-1412), not by any
-change made in this session. Closing accordingly, with the existing
-regression test recorded as evidence.
+Investigation close: verified (not assumed) that T-1412 already
+resolved this -- doc006_gate run directly against CHANGELOG.md yields 0
+findings via the landed _ARCHIVAL_LEDGER_FILES exclusion, and its
+regression tests pass. No code change needed; the in-worktree path to
+zero exists today.
 
 ### Changed
 ```
- design/frob.strata                      |   1 +
- docs/modules/gates.md                   |  20 ++
- src/frob/app/ticket_runner/_land_cmd.py | 148 ++++++++++-
- src/frob/gates/_secrets.py              |  79 +++++-
- src/frob/graph/cache.py                 |  51 +++-
- src/frob/tickets/_land_git_ops.py       | 167 ++++++++++---
- tests/test_ticket_land.py               |  75 ++++++
- tickets.md                              | 421 ++++++++++++++++++++++++++++++--
- 8 files changed, 900 insertions(+), 62 deletions(-)
+ tickets.md | 69 ++++++++++++++++----------------------------------------------
+ 1 file changed, 18 insertions(+), 51 deletions(-)
 ```
 
 ### Evidence
-(no evidence recorded)
+- `tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_changelog_is_an_archival_record_not_checked` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_live_doc_still_flagged_after_changelog_exclusion` (pytest node id, verified passing when recorded)
+- `cmd:bash -c "grep -q _ARCHIVAL_LEDGER_FILES src/frob/gates/_doclink_docanchor.py || grep -rq _ARCHIVAL_LEDGER_FILES src/frob/gates/" exit=0 sha256=e3b0c44298fc` (cmd evidence, exit=0)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
-- gates: 0 error(s), 373 warning(s), 744 waived
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 293 warning(s), 741 waived
 - error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1417 -->
