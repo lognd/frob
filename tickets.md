@@ -6317,7 +6317,7 @@ left as its own follow-up if wanted.
 (no evidence recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
+- tests: 1 passed (from 1 evidence id(s))
 - gates: 4 error(s), 350 warning(s), 745 waived
 - error-findings: AFFECT001@src/frob/logging/handler.py, E501@/home/logan/projects/frob/.claude/worktrees/w21d-drafts/src/frob/logging/handler.py:38, E501@/home/logan/projects/frob/.claude/worktrees/w21d-drafts/src/frob/logging/handler.py:57, PRE001@tickets/T-1443
 
