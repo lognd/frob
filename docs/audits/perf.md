@@ -1,5 +1,7 @@
 # frob check / daemon PERFORMANCE + CACHING audit
 
+Status: 2026-07-27
+
 MEASURE-FIRST. All numbers below are measured on this checkout
 (`/home/logan/projects/frob`, ext4 `/dev/sdd` -- **NOT** `/mnt/c`; see Note 1),
 via `uv run` (0.9.x source tree), not the stale 0.9.0 wheel.

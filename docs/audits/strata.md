@@ -1,5 +1,7 @@
 # strata audit -- "if a proof/gate passes, the property actually holds"
 
+Status: 2026-07-27
+
 Scope read in full: `_facts.py`, `_claims.py`, `_selfconform.py`, `_threat.py`
 (1607 lines), `_audit.py`, `_deploy.py`, `_native_staleness.py`; plus targeted
 greps across `_code_binding.py`, `_effects.py`, `_host.py`, `_models.py`.

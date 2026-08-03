@@ -277,6 +277,12 @@ _KNOWN_GATE_RULES = frozenset(
         "DOC001",
         "DOC002",
         "DOC003",
+        # T-1231: an obligated doc's own inline link target/#fragment doesn't resolve.
+        "DOC008",
+        # T-1232: an audit doc under docs/audits/*.md has no dated status header.
+        "DOC009",
+        # T-1230: a `make <target>` prose citation isn't a real Makefile recipe.
+        "DOC010",
         "DUP001",
         "DUP002",
         "DUP003",

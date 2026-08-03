@@ -1,5 +1,7 @@
 # frob self-blindspot audit -- structural inefficiency + security
 
+Status: 2026-08-03
+
 Scope: frob auditing itself for defects its own gates bless. Calibration class:
 the T-0773 rev-parse loop-invariant-spawn incident, the T-0769 prose-as-capability
 miscount, and the T-0761 land false-green. Each finding names the nearest gate and

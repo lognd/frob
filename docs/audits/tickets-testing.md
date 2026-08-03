@@ -1,5 +1,7 @@
 # Audit: accounting & test-selection layer (frob.tickets + frob.testing)
 
+Status: SUPERSEDED (see docs/audits/tickets-testing-round2.md)
+
 > **Status: SUPERSEDED.** This audit describes pre-T-0398 behavior.
 > `docs/audits/tickets-testing-round2.md` re-audited the same layer AFTER
 > the T-0398 evidence-integrity fix landed and is the current reference;

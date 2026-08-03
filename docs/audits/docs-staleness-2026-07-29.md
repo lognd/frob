@@ -1,5 +1,7 @@
 # Docs staleness audit -- 2026-07-29
 
+Status: 2026-08-03
+
 Point-in-time audit snapshot. Denominator: 121 docs (docs/** plus
 README.md, CLAUDE.md, FROBLEMS.md, CHANGELOG.md), all 121 claim-verified
 by a four-pass exhaustive sweep. Baseline: the doc-family gates

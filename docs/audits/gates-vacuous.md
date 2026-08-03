@@ -1,5 +1,7 @@
 # Gate-by-gate vacuous-satisfaction sweep + lang parser trust-boundary pass
 
+Status: 2026-07-23
+
 Scope: T-0786, the two surfaces the 2026-07-23 blindspot audit
 (`docs/audits/frob-blindspots-2026-07-23.md`) explicitly named as skipped --
 (a) a full vacuous-satisfaction sweep of `gates/__init__.py` and the

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.319.0] - unreleased
+
+- T-1231: doclink basename+fragment validation -- resolve relative link targets and #fragment anchors
+
 ## [0.318.0] - unreleased
 
 - T-1484: WAVE14-B: drain TICK warning class (scope-breadth ack mechanism + TICK004/TICK003 cleanup)

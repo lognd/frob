@@ -280,6 +280,8 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             "policy",
             "doclink",
             "docanchor",
+            "docstatus",
+            "docmake",
             "fuzz",
             "release",
             "decisions",

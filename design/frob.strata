@@ -845,6 +845,8 @@ node gates : trusted {
     attr interface=docanchor_gate;
     attr interface=docenum001_gate;
     attr interface=doclink_gate;
+    attr interface=docmake_gate;
+    attr interface=docstatus_gate;
     attr interface=drift_gate;
     attr interface=dup_gate;
     attr interface=evaluate_cacheable_gate;
@@ -3459,7 +3461,9 @@ node testsuite : trusted {
     attr interface=TestDocanchorGate;
     attr interface=TestDocenum001Gate;
     attr interface=TestDoclinkGate;
+    attr interface=TestDocmakeGate;
     attr interface=TestDocsRunner;
+    attr interface=TestDocstatusGate;
     attr interface=TestDocstringProseNotObservedLineLevel;
     attr interface=TestDocstringProseNotObservedSetLevel;
     attr interface=TestDoctorCli;

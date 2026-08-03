@@ -1,5 +1,7 @@
 # vet subsystem audit -- false-negative / evasion hunt
 
+Status: 2026-07-27
+
 North-star under test: "if `frob vet` approves, the dependency+code is actually
 safe." Verdict up front: **that claim is false in many concrete ways.** The
 approval gate (`scan_tree`) is a union of cheap lexical file-shape checks with

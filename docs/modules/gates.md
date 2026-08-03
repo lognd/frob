@@ -58,6 +58,9 @@ declaration).
 | TEST007 | test | a cross-package `frob:uses-contract` dependency has no pairwise integration test covering that boundary (opt-in via `[testing].pair_integration`) |
 | DOC001 | doclink | a doc file matching `[gates.docs] include` globs (default `docs/**/*.md` -- new files auto-obligated) has no frob:describes anchor, no frob:doc edge into it, and is unreachable via markdown links from the roots (docs/index.md, README.md) |
 | DOC002 | docanchor | a `frob:doc <file>#<slug>` edge whose target doesn't resolve: missing `#anchor`, missing file, or `<slug>` matches neither a heading slug (`frob.graph.dsl.slugify`) nor an explicit `<a id="...">` in `<file>` |
+| DOC008 | doclink | (T-1231) an obligated doc's own inline markdown link `[text](target#frag)` doesn't resolve: relative `target` isn't a real file, or `#frag` matches neither a heading slug nor an explicit `<a id="...">` in the target |
+| DOC009 | docstatus | (T-1232) a `docs/audits/*.md` file has no dated `Status: YYYY-MM-DD` (or `Status: SUPERSEDED (see <path>)`) header in its first 15 lines, or a superseded-by target doesn't resolve |
+| DOC010 | docmake | (T-1230) a `` `make <target>` `` prose citation in an obligated doc isn't a real Makefile recipe |
 | POL* | policy | user-defined rules from `frob.toml` (see below) |
 | DUP001/DUP002 | clones | the diff introduces a clone of an existing symbol (opt-in, `[dup].enforce`) |
 | DUP003 | clones | (T-0399) `[dup].enforce=true` but frob-core is not installed/built -- clone detection was requested but is unavailable; fails CLOSED (ERROR) instead of silently skipping |

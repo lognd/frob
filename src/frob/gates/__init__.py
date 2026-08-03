@@ -89,6 +89,8 @@ from frob.gates._doclink_docanchor import (
     _docanchor_check_edge,
     docanchor_gate,
     doclink_gate,
+    docmake_gate,
+    docstatus_gate,
 )
 from frob.gates._docptr import doc006_gate
 from frob.gates._dup import dup_gate
@@ -5100,6 +5102,8 @@ _ALL_GATES = frozenset(
         "policy",
         "doclink",
         "docanchor",
+        "docstatus",
+        "docmake",
         "perf",
         "fuzz",
         "release",
@@ -5487,6 +5491,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "policy",
     "doclink",
     "docanchor",
+    "docstatus",
+    "docmake",
     "perf",
     "fuzz",
     "release",
@@ -5783,6 +5789,13 @@ def _build_thread_jobs(
         # (possibly scoped) st.root, so `frob check <subdir>` reports the
         # same DOC002 result as the unscoped run.
         "docanchor": lambda: docanchor_gate(st.repo_root, st.snapshot),
+        # T-1232: docs/audits/*.md status headers, repo_root-scoped like
+        # docanchor above (a scoped `frob check <subdir>` must still see
+        # the whole docs/audits/ tree).
+        "docstatus": lambda: docstatus_gate(st.repo_root),
+        # T-1230: Makefile target citations, repo_root-scoped like
+        # docstatus/docanchor above.
+        "docmake": lambda: docmake_gate(st.repo_root, st.snapshot),
         # T-0436: fenced-code-block doc-drift heuristic, repo_root-scoped for
         # the same reason docanchor/refs are -- doc paths are repo-relative
         # text either way, and `git ls-files *.md` must see the whole repo.
@@ -6794,6 +6807,8 @@ __all__ = [
     "deprecated_current_references",
     "doclink_gate",
     "docanchor_gate",
+    "docstatus_gate",
+    "docmake_gate",
     "dup_gate",
     "list_debt",
     "list_deprecated",

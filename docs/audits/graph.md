@@ -1,5 +1,7 @@
 # Audit: `src/frob/graph/**` -- the obligation-graph foundation
 
+Status: 2026-07-27
+
 North-star under test: *"if `frob check` passes, the code is actually good."*
 This audit hunts every way that is FALSE inside the graph layer (the substrate
 every gate trusts). Verified with source reads of the whole package plus

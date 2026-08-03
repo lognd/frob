@@ -1,5 +1,7 @@
 # Audit round 2: accounting & test-selection layer (post T-0398)
 
+Status: 2026-07-28
+
 Re-audit AFTER the T-0398 evidence-integrity fix landed (commits 26eadf9,
 476bc4c, 2d4ceb3, plus CLI wiring). Scope: `src/frob/tickets/**`,
 `src/frob/testing/**`, evidence/close/land enforcement in

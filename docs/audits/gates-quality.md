@@ -1,5 +1,7 @@
 # Audit: quality/security detector gates
 
+Status: 2026-07-28
+
 North-star under test: **"if `frob check` passes (exit 0), the code is actually good."**
 Verdict up front: **badly false** for the entire quality surface. The dup, perf, PII,
 structural-secrets, and architecture detectors are individually reasonable pieces of
