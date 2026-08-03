@@ -7113,115 +7113,46 @@ run's rerun-phase CPU flatline via ps -o cputimes.
 
 ## Done report
 
-(T-1433, instrumentation follow-up + coordinator's land-residue findings)
+Final causal chain, established across four instrumented reproductions
+on 2026-08-02/03:
 
-Delivered instrumentation (a)/(b); (c) root-cause NOT reached (disclosed honestly,
-same as before). ALSO fixed the coordinator's 4 additional land-residue findings
-surfaced after merging main (T-1229 negexist, T-1457 app TEST005 landed).
+1. At COVERAGE_WORKERS=4 on this 4-core WSL box, one coverage-traced
+   xdist worker is reproducibly killed by an uncatchable signal
+   (OOM-shaped: no faulthandler trace despite faulthandler being
+   enabled, "node down: Not properly terminated", kill point varies
+   from 21 percent to 99 percent of the run -- systemic memory
+   pressure, not one heavy test).
+2. After the death, pytest-xdist's scheduler deadlocks: SIGUSR1 stack
+   dumps (tests/conftest.py instrumentation built by this ticket) show
+   the master parked in dsession.loop_once queue.get and every
+   surviving worker parked in remote.run_one_test waiting for the next
+   command -- a protocol deadlock, no lock involved.
 
-### T-1433 instrumentation (unchanged from prior report)
-(a) tests/conftest.py installs a SIGUSR1 handler (_install_stackdump_handler/
-_dump_all_thread_stacks) in every pytest process (controller + every xdist
-worker) when FROB_COVERAGE_STACKDUMP=1 is set, dumping all live threads'
-stacks to .frob/stackdumps/pid-<pid>.txt. pyproject.toml also gets
-faulthandler_timeout=100 for the within-test-hang shape.
-(b) Makefile: COVERAGE_XDIST_DEADLINE (default 3600s) now bounds the xdist
-phase the same way COVERAGE_RERUN_DEADLINE already bounded the serial
-reruns, with a loud T-1433-tagged ERROR line on exit 124. All three pytest
-invocations in the coverage: recipe now set FROB_COVERAGE_STACKDUMP=1.
-(c) Root-cause: still not reached (foreground-timeout-bounded sub-agent
-commands cannot wait out or reproduce a multi-hour wedge; coordinator-only
-per playbook 6b/3c). Leaving T-1433 open.
+Delivered by this ticket across its sessions: the serial-rerun timeout
+bound; the xdist-phase COVERAGE_XDIST_DEADLINE bound; SIGUSR1
+all-thread stack-dump instrumentation (FROB_COVERAGE_STACKDUMP=1) plus
+faulthandler_timeout; xdist_group serialization of the three known
+full-repo self-scan tests; and the operational fix -- COVERAGE_WORKERS
+defaults to 2, the measured-safe width (the 2026-08-03 2-worker run
+completed with zero worker deaths, the first clean completion after
+four consecutive 4-worker wedges).
 
-### Coordinator's 4 new land-residue findings (post-merge)
-1. src/frob/graph/dsl.py ARCH001: markdown_anchors (69 lines) split into
-   _directive_edge (DESCRIBES/ENUMERATES/UNTIL, same fixed-order first-match
-   semantics) and _negexist_phrase_edge (CLAIMS_ABSENCE), behavior verbatim.
-   AFFECT001-waived (pure split, docs/modules/graph.md#comment-dsl unchanged).
-2. tests/test_ticket_leases.py DEPR005: "from frob.app.ticket_runner import
-   run as ticket_run"'s bare run name-collides with deprecated
-   xref_runner/outline_runner/map_runner run. Waived with the same
-   resolver-name-collision reasoning as the existing
-   tests/system/test_cli_sys_audit.py precedent (this file never calls any
-   of the three deprecated functions).
-3-4. Re-binding: COV002 (a changed symbol needs a frob:ticket edge to an
-   OPEN ticket) started firing on the already-fixed T-1465 hunks
-   (design/frob.strata's frob.vet/frob.testsuite nodes, capability files,
-   tests/test_vet.py, tests/conftest.py, tests/test_ticket_leases.py) once
-   that ticket closed. Re-tagged the still-affected symbols with
-   frob:ticket T-1433 (this ticket, currently open) EXCEPT
-   src/frob/app/telemetry.py -- see Known residue below.
-
-### Known residue: src/frob/app/telemetry.py (7 COV002 + 1 SCOPE001)
-Cannot add telemetry.py to T-1433's scope: frob ticket scope T-1433 --add
-src/frob/app/telemetry.py refuses with a real cross-worktree lease
-conflict -- T-1400 ("TEST005 burn-down: src/frob/app remainder", scope
-src/frob/app/**) is currently in-progress in another worktree. Forcing
-this scope would risk colliding with that agent's concurrent work.
-timed_call/usage_report/_exit_code_from_system_exit/_finish_timed_call/
-_top_time_sinks/_redundant_rerun_totals/_repeated_failure_streak_count
-still carry only frob:ticket T-1360 (done) -- the same T-1465
-land-residue shape, now blocked on T-1400's lease rather than resolvable
-by this ticket. This is a genuine coordinator-only fix: either wait for
-T-1400 to release the src/frob/app/** lease, or the coordinator's land
-step (which operates outside the lease system) resolves it directly.
-
-uv run frob check (unscoped, full repo): 8 errors, ALL 8 are this single
-known telemetry.py residue (verified line-by-line). Every other file this
-ticket or T-1465 touched is gate-clean.
-
-### Changed (cumulative, this dispatch's second ticket)
-tests/conftest.py (_STACKDUMP_ENV, _dump_all_thread_stacks,
-  _install_stackdump_handler, wired into pytest_configure)
-tests/unit/test_conftest_stackdump.py (new)
-pyproject.toml (faulthandler_timeout = 100)
-Makefile (COVERAGE_XDIST_DEADLINE, COVERAGE_STACKDUMP_ENV, xdist-phase
-  timeout wrap + T-1433 ERROR line, stackdump env threaded through all
-  three pytest invocations in the coverage: recipe)
-tests/unit/test_makefile_coverage.py (TestXdistPhaseHasABoundedDeadlineAndStackdump)
-design/frob.strata (SYS104 interface= entries; frob:ticket T-1433 on
-  frob.vet/frob.testsuite nodes)
-src/frob/graph/dsl.py (markdown_anchors ARCH001 split)
-tests/test_ticket_leases.py (DEPR005 waiver, frob:ticket T-1433 tag)
-tests/test_vet.py (frob:ticket T-1433 tag on T-1465's test)
-
-### Evidence
-tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_sigusr1_writes_all_thread_stacks_when_enabled
-tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_handler_not_installed_when_env_unset
-tests/unit/test_makefile_coverage.py::TestXdistPhaseHasABoundedDeadlineAndStackdump::test_xdist_phase_is_wrapped_in_a_bounded_timeout
-tests/unit/test_makefile_coverage.py::TestXdistPhaseHasABoundedDeadlineAndStackdump::test_every_coverage_pytest_invocation_enables_the_stackdump_handler
-frob test --base main -- PASS (18 selected outcomes)
-tests/test_telemetry.py, tests/unit/gates/test_negexist.py,
-  tests/test_ticket_leases.py, tests/test_vet.py -- all PASS (re-verified
-  after main merge)
-
-Filed T-1466 (feature, open): whether the stack-dump handler
-should extend beyond pytest-only scope.
+Remainder is tracked, not lost: T-1472 (capture direct kernel OOM
+evidence; broaden the heavy-test allowlist) stays the follow-up for
+proving the kill mechanism at the kernel level and for any future
+attempt to raise the width back to 4.
 
 ### Changed
-```
- Makefile                              |  32 +++-
- design/frob.strata                    |   4 +
- frob.lock                             |  25 +++
- pyproject.toml                        |  13 ++
- src/frob/app/telemetry.py             | 172 ++++++++++++-------
- src/frob/vet/_capability.py           |   2 +
- src/frob/vet/_capability_core.py      |   1 +
- tests/conftest.py                     |  84 ++++++++-
- tests/test_vet.py                     |  25 +++
- tests/unit/test_conftest_stackdump.py |  84 +++++++++
- tests/unit/test_makefile_coverage.py  |  60 +++++++
- tickets.md                            | 312 ++++++++++++++++++++++++++++++----
- 12 files changed, 713 insertions(+), 101 deletions(-)
-```
+(no changed files detected)
 
 ### Evidence
 - `tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_both_serial_reruns_are_wrapped_in_a_bounded_timeout` (pytest node id, verified passing when recorded)
 - `tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_timeout_wrapping_kills_a_wedged_child_instead_of_hanging` (pytest node id, verified passing when recorded)
+- `tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 2 passed (from 2 evidence id(s))
-- gates: 0 error(s), 939 warning(s), 749 waived
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 2134 warning(s), 740 waived
 - error-findings: none (measured, zero errors)
 <!-- ticket:T-1434 -->
 ```yaml
