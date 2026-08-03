@@ -564,6 +564,7 @@ class AppConfig(BaseModel):
 
     # doctor
     doctor_json: bool = False
+    doctor_usage: bool = False  # frob:ticket T-1360
 
     # clean (T-0457: tiered, artifact-only workspace cleanup)
     clean_path: Path | None = None

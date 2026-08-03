@@ -177,7 +177,10 @@ node cli : trusted {
     attr interface=STATE_STYLE;
     attr interface=SpawnRecorder;
     attr interface=Subcommand;
+    attr interface=SubcommandTimeSink;
     attr interface=TELEMETRY_REL;
+    attr interface=Tip;
+    attr interface=UsageReport;
     attr interface=VenvShimDrift;
     attr interface=_accept;
     attr interface=_active_large_glob_warnings;
@@ -373,6 +376,7 @@ node cli : trusted {
     attr interface=cycle_runner_run;
     attr interface=debt_runner_run;
     attr interface=deploy_runner_run;
+    attr interface=detect_footguns;
     attr interface=docs_runner_run;
     attr interface=doctor_runner_run;
     attr interface=dup_runner_run;
@@ -409,6 +413,7 @@ node cli : trusted {
     attr interface=registry_runner_run;
     attr interface=release_daemon_lease;
     attr interface=release_runner_run;
+    attr interface=render_tips;
     attr interface=repo_root;
     attr interface=reset_common_dir_cache;
     attr interface=run;
@@ -433,8 +438,10 @@ node cli : trusted {
     attr interface=test_runner_run;
     attr interface=ticket_runner_run;
     attr interface=timed_call;
+    attr interface=tips_disabled;
     attr interface=tree_hash;
     attr interface=try_daemon_lease;
+    attr interface=usage_report;
     attr interface=verify_derived_state;
     attr interface=vet_runner_run;
     attr interface=walk_pruned;
@@ -4817,6 +4824,12 @@ node testsuite : trusted {
     attr interface=test_demand_matches_sum_oracle;
     attr interface=test_depth_1_limits_to_root_files;
     attr interface=test_depth_1_shows_root_files;
+    attr interface=test_detect_footguns_does_not_flag_fast_exit1_on_success;
+    attr interface=test_detect_footguns_flags_fast_exit1;
+    attr interface=test_detect_footguns_flags_redundant_rerun;
+    attr interface=test_detect_footguns_flags_repeated_failure_streak;
+    attr interface=test_detect_footguns_respects_suppress_env;
+    attr interface=test_detect_footguns_returns_empty_when_tips_disabled;
     attr interface=test_different_args_are_distinct_cache_entries;
     attr interface=test_docs_index_links_the_guide;
     attr interface=test_docs_module_integration;
@@ -5204,6 +5217,9 @@ node testsuite : trusted {
     attr interface=test_render_project_propagates_resolve_failure;
     attr interface=test_render_project_unknown_type_is_err;
     attr interface=test_render_project_writes_expected_files;
+    attr interface=test_render_tips_empty_list_is_empty_string;
+    attr interface=test_render_tips_human_readable_names_the_rule;
+    attr interface=test_render_tips_json_is_parseable;
     attr interface=test_repo_excludes_litmus_strata_from_obligation_surface;
     attr interface=test_report_and_apply_are_the_tier_a_ready_entry_points;
     attr interface=test_required_version_and_satisfies;
@@ -5371,6 +5387,10 @@ node testsuite : trusted {
     attr interface=test_unsupported_language;
     attr interface=test_upload_commits_uv_lock_with_pyproject;
     attr interface=test_upload_relocks_after_version_bump;
+    attr interface=test_usage_report_aggregates_time_and_failures;
+    attr interface=test_usage_report_counts_fast_exit1;
+    attr interface=test_usage_report_counts_redundant_reruns;
+    attr interface=test_usage_report_empty_corpus_is_all_zero;
     attr interface=test_vet_print_table_force_color_has_ansi_same_content;
     attr interface=test_vet_print_table_plain_has_no_ansi;
     attr interface=test_walk_pruned_does_not_descend_venv_or_git;

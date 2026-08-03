@@ -25,6 +25,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, TypeVar
 
+from pydantic import BaseModel
+
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -198,6 +200,7 @@ def record_ticket_event(
     append_event(root, record)
 
 
+# frob:ticket T-1360
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
 # frob:raises Exception
 def timed_call(
@@ -206,7 +209,14 @@ def timed_call(
     """Run `fn()`, recording a `record_cli_event` regardless of outcome
     (including a `SystemExit`, which argparse-style CLI handlers raise for
     non-zero exits) -- the caller's exception/SystemExit still propagates
-    unchanged after the event is written."""
+    unchanged after the event is written.
+
+    T-1360: also runs footgun detection AFTER recording and prints any tips
+    to stderr (`_log.warning`, never stdout -- a `--json` command's own
+    stdout must stay parseable) before the exception/SystemExit continues
+    propagating. Tips never change control flow or the return value; a
+    detector failure of its own is swallowed, matching `append_event`'s
+    own best-effort discipline."""
     start = time.monotonic()
     exit_code = 0
     try:
@@ -227,6 +237,22 @@ def timed_call(
         raise
     finally:
         duration_ms = (time.monotonic() - start) * 1000.0
+        # T-1360: detect BEFORE appending this run's own record -- otherwise
+        # `detect_footguns` would read this very invocation back out of the
+        # stream as its own "prior" match and every run would flag itself.
+        tips: list[Tip] = []
+        if not tips_disabled():
+            try:
+                tips = detect_footguns(
+                    root,
+                    subcommand=subcommand,
+                    args_head=redact_command(args_head),
+                    duration_ms=duration_ms,
+                    exit_code=exit_code,
+                    tree_hash_value=tree_hash(root),
+                )
+            except Exception as exc:  # pragma: no cover - defensive, best-effort
+                _log.debug("telemetry: footgun detection failed (ignored): %s", exc)
         record_cli_event(
             root,
             subcommand=subcommand,
@@ -234,17 +260,437 @@ def timed_call(
             duration_ms=duration_ms,
             exit_code=exit_code,
         )
+        # T-1360 delivery requirement: tips must be machine-readable when the
+        # invocation itself asked for `--json` -- an agent parsing stdout as
+        # JSON cannot also parse a human-styled line appended after it, and
+        # a per-subcommand flag name (`doctor_json`, `stats_json`, ...) is
+        # not available generically at this call site, so the raw args head
+        # is checked directly.
+        as_json = "--json" in args_head.split()
+        rendered = render_tips(tips, as_json=as_json)
+        if rendered:
+            _log.warning(rendered)
+
+
+# frob:ticket T-1360
+_NO_FOOTGUN_TIPS_ENV = "FROB_NO_FOOTGUN_TIPS"
+"""Opt-out env var for footgun tips specifically -- distinct from
+`FROB_NO_TELEMETRY`, which also stops recording. A caller may want the
+corpus recorded but not the post-command nag."""
+
+# frob:ticket T-1360
+_SUPPRESS_TIPS_ENV = "FROB_SUPPRESS_TIPS"
+"""Comma-separated rule ids (e.g. `FAST_EXIT1,REDUNDANT_RERUN`) individually
+suppressed -- a tip that nags gets ignored, which is worse than no tip
+(T-1360's own delivery requirement)."""
+
+# frob:ticket T-1360
+_FAST_EXIT_MS = 2000.0
+"""Duration threshold under which a nonzero exit is flagged as `FAST_EXIT1`
+-- short enough that the command plausibly failed before doing real work,
+per T-1360's corpus mining (756 such runs)."""
+
+# frob:ticket T-1360
+_REDUNDANT_LOOKBACK = 200
+"""How many trailing telemetry records `detect_footguns` scans for a prior
+identical (subcommand, args_head, tree_hash) or repeated-failure match --
+bounded so detection stays O(1)-ish relative to a large corpus rather than
+re-reading the whole file every invocation."""
+
+# frob:ticket T-1360
+_REPEATED_FAILURE_STREAK = 3
+"""Consecutive identical failing invocations (same subcommand + args_head,
+each nonzero exit, no successful run of the same command in between)
+required before `REPEATED_FAILURE` fires -- one or two retries is normal
+iteration, three in a row with no change is stuck."""
+
+
+# frob:ticket T-1360
+# frob:doc docs/guides/agentic-time-profiling.md#public-api
+class Tip(BaseModel):
+    """One footgun-detector finding (T-1360): a command that completed but
+    looked like a different result than what actually happened (silently
+    redundant, silently erroring fast, silently under-verified, silently
+    stuck). Printed AFTER the command it concerns, never blocking it;
+    `--json`-serializable so an agent -- the primary consumer per the
+    ticket -- can parse and self-correct rather than relying on a
+    human-styled hint."""
+
+    model_config = {}
+
+    rule_id: str
+    message: str
+    suggested_command: str | None = None
+
+
+# frob:ticket T-1360
+def _suppressed_rule_ids() -> frozenset[str]:
+    """Rule ids named in `FROB_SUPPRESS_TIPS` (comma-separated), normalized
+    to upper case -- an empty/unset env yields an empty set, suppressing
+    nothing."""
+    raw = os.environ.get(_SUPPRESS_TIPS_ENV, "")
+    return frozenset(part.strip().upper() for part in raw.split(",") if part.strip())
+
+
+# frob:ticket T-1360
+# frob:doc docs/guides/agentic-time-profiling.md#public-api
+def tips_disabled() -> bool:
+    """True when tips are opted out entirely via `FROB_NO_FOOTGUN_TIPS`
+    (any non-empty, non-`0`/`false` value) or telemetry itself is disabled
+    (`is_disabled()`) -- no corpus, no detection."""
+    if is_disabled():
+        return True
+    value = os.environ.get(
+        _NO_FOOTGUN_TIPS_ENV, ""
+    )  # frob:waive SEC110 reason="opt-out flag, not a secret"
+    return value.strip().lower() not in ("", "0", "false")
+
+
+# frob:ticket T-1360
+def _read_recent_cli_events(root: Path, limit: int) -> list[dict[str, Any]]:
+    """Up to `limit` most recent `kind=\"cli\"` records from `root`'s
+    telemetry stream, oldest first. Missing/unreadable file yields an empty
+    list -- detection is best-effort, same as recording itself."""
+    path = _telemetry_path(root)
+    if not path.is_file():
+        return []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        _log.debug("telemetry: read failed (ignored): %s", exc)
+        return []
+    events: list[dict[str, Any]] = []
+    for line in lines[-limit * 4 :]:  # cli + ticket records interleaved; overscan
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(record, dict) and record.get("kind") == "cli":
+            events.append(record)
+    return events[-limit:]
+
+
+# frob:ticket T-1360
+def _tip_redundant_rerun(
+    history: list[dict[str, Any]],
+    *,
+    subcommand: str,
+    args_head: str,
+    tree_hash_value: str,
+) -> Tip | None:
+    """`REDUNDANT_RERUN`: an EARLIER `history` record shares this run's
+    `(subcommand, args_head, tree_hash)` exactly -- the tree has not
+    changed since, so this run's result could not have differed."""
+    for prior in reversed(history):
+        if (
+            prior.get("subcommand") == subcommand
+            and prior.get("args_head") == args_head
+            and prior.get("tree_hash") == tree_hash_value
+        ):
+            return Tip(
+                rule_id="REDUNDANT_RERUN",
+                message=(
+                    f"you ran 'frob {args_head}' at this exact "
+                    f"tree state (tree_hash={tree_hash_value}) before, at "
+                    f"{prior.get('iso_ts', 'an earlier time')}; nothing has "
+                    "changed since -- this run could not have produced a "
+                    "different result."
+                ),
+                suggested_command=None,
+            )
+    return None
+
+
+# frob:ticket T-1360
+def _tip_fast_exit1(
+    *, args_head: str, duration_ms: float, exit_code: int
+) -> Tip | None:
+    """`FAST_EXIT1`: this run itself exited nonzero in under `_FAST_EXIT_MS`
+    -- the trap T-1360's own coordinator incident hit (a 0.77s error read
+    as a 180x speedup)."""
+    if exit_code == 0 or duration_ms >= _FAST_EXIT_MS:
+        return None
+    return Tip(
+        rule_id="FAST_EXIT1",
+        message=(
+            f"'frob {args_head}' exited with an ERROR "
+            f"(exit={exit_code}) in {duration_ms:.0f}ms; it did NOT do the "
+            "work you may think it did -- a fast failure is not a fast "
+            "success."
+        ),
+        suggested_command=None,
+    )
+
+
+# frob:ticket T-1360
+def _tip_repeated_failure(
+    history: list[dict[str, Any]],
+    *,
+    subcommand: str,
+    args_head: str,
+    exit_code: int,
+) -> Tip | None:
+    """`REPEATED_FAILURE`: this run is the Nth (>= `_REPEATED_FAILURE_STREAK`)
+    consecutive failure of the identical `(subcommand, args_head)` in
+    `history` with no intervening success -- stuck, not progressing."""
+    if exit_code == 0:
+        return None
+    streak = 1
+    for prior in reversed(history):
+        if prior.get("subcommand") != subcommand or prior.get("args_head") != args_head:
+            continue
+        if prior.get("exit") == 0:
+            break
+        streak += 1
+        if streak >= _REPEATED_FAILURE_STREAK:
+            break
+    if streak < _REPEATED_FAILURE_STREAK:
+        return None
+    return Tip(
+        rule_id="REPEATED_FAILURE",
+        message=(
+            f"'frob {args_head}' has now failed "
+            f"{streak} times in a row with no successful run in "
+            "between -- this looks stuck, not progressing; "
+            "re-running the identical command is unlikely to help."
+        ),
+        suggested_command=None,
+    )
+
+
+# frob:ticket T-1360
+# frob:doc docs/guides/agentic-time-profiling.md#public-api
+def detect_footguns(
+    root: Path,
+    *,
+    subcommand: str,
+    args_head: str,
+    duration_ms: float,
+    exit_code: int,
+    tree_hash_value: str,
+) -> list[Tip]:
+    """Footgun tips for the CLI invocation just completed (T-1360),
+    evaluated against the trailing telemetry corpus. Three of the ticket's
+    named rules are implemented here, one per `_tip_*` helper (the fourth,
+    coverage-number misuse, ties to T-1335 and is out of this ticket's
+    scope per its own Description): `REDUNDANT_RERUN`, `FAST_EXIT1`,
+    `REPEATED_FAILURE` -- see each helper's own docstring.
+
+    Suppressed rule ids (`FROB_SUPPRESS_TIPS`) are filtered out before
+    returning. Returns `[]` when tips are disabled (`tips_disabled()`) --
+    callers should check that first to skip the read entirely, but this
+    function re-derives nothing unsafe if called anyway."""
+    if tips_disabled():
+        return []
+    suppressed = _suppressed_rule_ids()
+    history = _read_recent_cli_events(root, _REDUNDANT_LOOKBACK)
+
+    candidates = (
+        _tip_redundant_rerun(
+            history,
+            subcommand=subcommand,
+            args_head=args_head,
+            tree_hash_value=tree_hash_value,
+        ),
+        _tip_fast_exit1(
+            args_head=args_head, duration_ms=duration_ms, exit_code=exit_code
+        ),
+        _tip_repeated_failure(
+            history, subcommand=subcommand, args_head=args_head, exit_code=exit_code
+        ),
+    )
+    return [
+        tip for tip in candidates if tip is not None and tip.rule_id not in suppressed
+    ]
+
+
+# frob:ticket T-1360
+# frob:doc docs/guides/agentic-time-profiling.md#public-api
+def render_tips(tips: list[Tip], *, as_json: bool) -> str:
+    """`tips` formatted for post-command display: one `model_dump_json`
+    array when `as_json` (the machine-readable form T-1360 requires so an
+    agent can self-correct), else one human-readable `[RULE_ID] message`
+    line per tip. Returns `\"\"` for an empty list either way -- callers
+    should skip printing entirely rather than print an empty JSON array,
+    to avoid corrupting a `--json` command's own stdout (same discipline
+    as `record_cli_event`'s `quiet_stdout_logs` requirement)."""
+    if not tips:
+        return ""
+    if as_json:
+        return json.dumps([t.model_dump() for t in tips])
+    return "\n".join(f"[{t.rule_id}] {t.message}" for t in tips)
+
+
+# frob:ticket T-1360
+# frob:doc docs/guides/agentic-time-profiling.md#public-api
+class SubcommandTimeSink(BaseModel):
+    """One subcommand's aggregate cost across the whole corpus (T-1360's
+    `frob doctor usage` deliverable) -- ranked by `total_duration_ms`
+    descending in `UsageReport.top_time_sinks`."""
+
+    model_config = {}
+
+    subcommand: str
+    calls: int
+    total_duration_ms: float
+    failures: int
+
+
+# frob:ticket T-1360
+# frob:doc docs/guides/agentic-time-profiling.md#public-api
+class UsageReport(BaseModel):
+    """`frob doctor usage`'s report (T-1360's fourth delivery requirement):
+    top time sinks and footgun totals mined from the local telemetry
+    corpus -- the same numbers T-1360's own Description mined by hand
+    (2.55h wasted on redundant re-runs, 756 fast-exit-1 runs, 11% overall
+    failure rate) are now a command, not an ad-hoc script."""
+
+    model_config = {}
+
+    total_calls: int
+    total_duration_ms: float
+    failures: int
+    failure_rate: float
+    top_time_sinks: list[SubcommandTimeSink]
+    redundant_rerun_count: int
+    redundant_rerun_wasted_ms: float
+    fast_exit1_count: int
+    repeated_failure_streaks: int
+
+
+# frob:ticket T-1360
+def _all_cli_events(root: Path) -> list[dict[str, Any]]:
+    """Every `kind=\"cli\"` record in `root`'s telemetry stream, oldest
+    first -- `usage_report`'s corpus-wide scan needs the whole history, not
+    `_read_recent_cli_events`'s bounded lookback window."""
+    path = _telemetry_path(root)
+    if not path.is_file():
+        return []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        _log.debug("telemetry: read failed (ignored): %s", exc)
+        return []
+    events: list[dict[str, Any]] = []
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(record, dict) and record.get("kind") == "cli":
+            events.append(record)
+    return events
+
+
+# frob:ticket T-1360
+# frob:doc docs/guides/agentic-time-profiling.md#public-api
+def usage_report(root: Path, *, top_n: int = 10) -> UsageReport:
+    """Aggregate `root`'s whole telemetry corpus into a `UsageReport`
+    (T-1360): per-subcommand time sinks, provably-redundant re-run cost
+    (identical `(subcommand, args_head, tree_hash)` seen twice), fast-exit
+    failures, and stuck-repeat streaks. Read-only, corpus-wide, and cheap
+    relative to the run it summarizes -- a single linear pass over the
+    file. Empty/missing corpus yields an all-zero report, never an error."""
+    events = _all_cli_events(root)
+    total_calls = len(events)
+    total_duration_ms = sum(float(e.get("duration_ms", 0.0)) for e in events)
+    failures = sum(1 for e in events if e.get("exit") != 0)
+    failure_rate = (failures / total_calls) if total_calls else 0.0
+
+    by_subcommand: dict[str, list[float | int]] = {}
+    for e in events:
+        sub = str(e.get("subcommand", ""))
+        bucket = by_subcommand.setdefault(sub, [0, 0.0, 0])
+        bucket[0] = int(bucket[0]) + 1
+        bucket[1] = float(bucket[1]) + float(e.get("duration_ms", 0.0))
+        if e.get("exit") != 0:
+            bucket[2] = int(bucket[2]) + 1
+    top_time_sinks = sorted(
+        (
+            SubcommandTimeSink(
+                subcommand=sub,
+                calls=int(calls),
+                total_duration_ms=float(dur),
+                failures=int(fails),
+            )
+            for sub, (calls, dur, fails) in by_subcommand.items()
+        ),
+        key=lambda s: s.total_duration_ms,
+        reverse=True,
+    )[:top_n]
+
+    seen: dict[tuple[str, str, str], bool] = {}
+    redundant_count = 0
+    redundant_wasted_ms = 0.0
+    for e in events:
+        key = (
+            str(e.get("subcommand", "")),
+            str(e.get("args_head", "")),
+            str(e.get("tree_hash", "")),
+        )
+        if key in seen:
+            redundant_count += 1
+            redundant_wasted_ms += float(e.get("duration_ms", 0.0))
+        else:
+            seen[key] = True
+
+    fast_exit1_count = sum(
+        1
+        for e in events
+        if e.get("exit") != 0 and float(e.get("duration_ms", 0.0)) < _FAST_EXIT_MS
+    )
+
+    streak_key: tuple[str, str] | None = None
+    streak_len = 0
+    repeated_failure_streaks = 0
+    for e in events:
+        key2 = (str(e.get("subcommand", "")), str(e.get("args_head", "")))
+        if e.get("exit") != 0 and key2 == streak_key:
+            streak_len += 1
+            if streak_len == _REPEATED_FAILURE_STREAK:
+                repeated_failure_streaks += 1
+        elif e.get("exit") != 0:
+            streak_key = key2
+            streak_len = 1
+        else:
+            streak_key = None
+            streak_len = 0
+
+    return UsageReport(
+        total_calls=total_calls,
+        total_duration_ms=total_duration_ms,
+        failures=failures,
+        failure_rate=failure_rate,
+        top_time_sinks=top_time_sinks,
+        redundant_rerun_count=redundant_count,
+        redundant_rerun_wasted_ms=redundant_wasted_ms,
+        fast_exit1_count=fast_exit1_count,
+        repeated_failure_streaks=repeated_failure_streaks,
+    )
 
 
 __all__ = [
     "TELEMETRY_REL",
+    "SubcommandTimeSink",
+    "Tip",
+    "UsageReport",
     "append_event",
+    "detect_footguns",
     "estimate_tokens",
     "is_disabled",
     "iso_now",
     "record_cli_event",
     "record_ticket_event",
     "redact_command",
+    "render_tips",
     "timed_call",
+    "tips_disabled",
     "tree_hash",
+    "usage_report",
 ]

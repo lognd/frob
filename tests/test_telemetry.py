@@ -9,13 +9,17 @@ from pathlib import Path
 from frob.app.telemetry import (
     TELEMETRY_REL,
     append_event,
+    detect_footguns,
     estimate_tokens,
     is_disabled,
     iso_now,
     record_cli_event,
     record_ticket_event,
     redact_command,
+    render_tips,
     timed_call,
+    tips_disabled,
+    usage_report,
 )
 
 
@@ -151,3 +155,189 @@ def test_timed_call_maps_non_int_system_exit_code_to_one(tmp_path: Path):
         pass
     record = json.loads((tmp_path / TELEMETRY_REL).read_text(encoding="utf-8").strip())
     assert record["exit"] == 1
+
+
+# --- footgun detection (T-1360) ---------------------------------------
+
+
+def test_detect_footguns_flags_redundant_rerun(tmp_path: Path):
+    # frob:tests src/frob/app/telemetry.py::detect_footguns
+    record_cli_event(
+        tmp_path, subcommand="check", args_head="check", duration_ms=500, exit_code=0
+    )
+    tips = detect_footguns(
+        tmp_path,
+        subcommand="check",
+        args_head="check",
+        duration_ms=500,
+        exit_code=0,
+        tree_hash_value="unknown",
+    )
+    assert [t.rule_id for t in tips] == ["REDUNDANT_RERUN"]
+    assert "before" in tips[0].message
+
+
+def test_detect_footguns_flags_fast_exit1(tmp_path: Path):
+    # frob:tests src/frob/app/telemetry.py::detect_footguns
+    tips = detect_footguns(
+        tmp_path,
+        subcommand="check",
+        args_head="check --ticket T-1",
+        duration_ms=250,
+        exit_code=1,
+        tree_hash_value="unknown",
+    )
+    assert "FAST_EXIT1" in [t.rule_id for t in tips]
+
+
+def test_detect_footguns_does_not_flag_fast_exit1_on_success(tmp_path: Path):
+    # frob:tests src/frob/app/telemetry.py::detect_footguns
+    tips = detect_footguns(
+        tmp_path,
+        subcommand="check",
+        args_head="check",
+        duration_ms=250,
+        exit_code=0,
+        tree_hash_value="unknown",
+    )
+    assert tips == []
+
+
+def test_detect_footguns_flags_repeated_failure_streak(tmp_path: Path):
+    # frob:tests src/frob/app/telemetry.py::detect_footguns
+    for _ in range(2):
+        record_cli_event(
+            tmp_path,
+            subcommand="ticket",
+            args_head="land T-1",
+            duration_ms=5000,
+            exit_code=1,
+        )
+    tips = detect_footguns(
+        tmp_path,
+        subcommand="ticket",
+        args_head="land T-1",
+        duration_ms=5000,
+        exit_code=1,
+        tree_hash_value="unknown",
+    )
+    assert "REPEATED_FAILURE" in [t.rule_id for t in tips]
+
+
+def test_detect_footguns_respects_suppress_env(tmp_path: Path, monkeypatch):
+    # frob:tests src/frob/app/telemetry.py::detect_footguns
+    monkeypatch.setenv("FROB_SUPPRESS_TIPS", "FAST_EXIT1")
+    tips = detect_footguns(
+        tmp_path,
+        subcommand="check",
+        args_head="check",
+        duration_ms=100,
+        exit_code=1,
+        tree_hash_value="unknown",
+    )
+    assert tips == []
+
+
+def test_detect_footguns_returns_empty_when_tips_disabled(tmp_path: Path, monkeypatch):
+    # frob:tests src/frob/app/telemetry.py::detect_footguns
+    # frob:tests src/frob/app/telemetry.py::tips_disabled
+    monkeypatch.setenv("FROB_NO_FOOTGUN_TIPS", "1")
+    assert tips_disabled()
+    tips = detect_footguns(
+        tmp_path,
+        subcommand="check",
+        args_head="check",
+        duration_ms=100,
+        exit_code=1,
+        tree_hash_value="unknown",
+    )
+    assert tips == []
+
+
+def test_render_tips_json_is_parseable(tmp_path: Path):
+    # frob:tests src/frob/app/telemetry.py::render_tips
+    tips = detect_footguns(
+        tmp_path,
+        subcommand="check",
+        args_head="check",
+        duration_ms=100,
+        exit_code=1,
+        tree_hash_value="unknown",
+    )
+    rendered = render_tips(tips, as_json=True)
+    parsed = json.loads(rendered)
+    assert parsed[0]["rule_id"] == "FAST_EXIT1"
+
+
+def test_render_tips_empty_list_is_empty_string():
+    # frob:tests src/frob/app/telemetry.py::render_tips
+    assert render_tips([], as_json=True) == ""
+    assert render_tips([], as_json=False) == ""
+
+
+def test_render_tips_human_readable_names_the_rule():
+    # frob:tests src/frob/app/telemetry.py::render_tips
+    from frob.app.telemetry import Tip
+
+    rendered = render_tips([Tip(rule_id="FAST_EXIT1", message="boom")], as_json=False)
+    assert rendered == "[FAST_EXIT1] boom"
+
+
+# --- usage_report / doctor --usage (T-1360) ----------------------------
+
+
+def test_usage_report_empty_corpus_is_all_zero(tmp_path: Path):
+    # frob:tests src/frob/app/telemetry.py::usage_report
+    report = usage_report(tmp_path)
+    assert report.total_calls == 0
+    assert report.total_duration_ms == 0.0
+    assert report.failure_rate == 0.0
+    assert report.top_time_sinks == []
+
+
+def test_usage_report_aggregates_time_and_failures(tmp_path: Path):
+    # frob:tests src/frob/app/telemetry.py::usage_report
+    record_cli_event(
+        tmp_path, subcommand="check", args_head="check", duration_ms=1000, exit_code=0
+    )
+    record_cli_event(
+        tmp_path, subcommand="check", args_head="check", duration_ms=500, exit_code=1
+    )
+    record_cli_event(
+        tmp_path,
+        subcommand="ticket",
+        args_head="land T-1",
+        duration_ms=2000,
+        exit_code=0,
+    )
+    report = usage_report(tmp_path)
+    assert report.total_calls == 3
+    assert report.total_duration_ms == 3500.0
+    assert report.failures == 1
+    assert report.failure_rate == 1 / 3
+    assert report.top_time_sinks[0].subcommand == "ticket"
+    assert report.top_time_sinks[0].total_duration_ms == 2000.0
+
+
+def test_usage_report_counts_redundant_reruns(tmp_path: Path):
+    # frob:tests src/frob/app/telemetry.py::usage_report
+    for _ in range(3):
+        record_cli_event(
+            tmp_path,
+            subcommand="check",
+            args_head="check --ticket T-1",
+            duration_ms=1000,
+            exit_code=0,
+        )
+    report = usage_report(tmp_path)
+    assert report.redundant_rerun_count == 2
+    assert report.redundant_rerun_wasted_ms == 2000.0
+
+
+def test_usage_report_counts_fast_exit1(tmp_path: Path):
+    # frob:tests src/frob/app/telemetry.py::usage_report
+    record_cli_event(
+        tmp_path, subcommand="check", args_head="check", duration_ms=100, exit_code=1
+    )
+    report = usage_report(tmp_path)
+    assert report.fast_exit1_count == 1

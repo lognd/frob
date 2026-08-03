@@ -33,7 +33,14 @@ _log = get_logger(__name__)
 def run(cfg: AppConfig) -> None:
     """Render the `frob doctor` native-extension diagnosis; exits 1 when any
     extension is missing so `frob doctor` is scriptable as a preflight
-    check, not just a human-readable report."""
+    check, not just a human-readable report. `--usage` (T-1360) instead
+    renders the local telemetry corpus's top time sinks and footgun
+    totals -- a separate, non-exiting report, mutually exclusive with the
+    native-extension check in practice (usage is checked first)."""
+    if cfg.doctor_usage:
+        _run_usage(cfg)
+        return
+
     from frob.doctor import run_diagnosis
 
     if cfg.doctor_json:
@@ -75,3 +82,49 @@ def run(cfg: AppConfig) -> None:
 
     if not report.healthy:
         sys.exit(1)
+
+
+# frob:ticket T-1360
+# frob:tests tests/test_telemetry.py::test_usage_report_empty_corpus_is_all_zero
+def _run_usage(cfg: AppConfig) -> None:
+    """Render `frob doctor --usage` (T-1360): top time sinks and footgun
+    totals mined from `.frob/telemetry.jsonl`. Never exits nonzero -- this
+    is a report, not a health check."""
+    from pathlib import Path
+
+    from frob.app.telemetry import usage_report
+
+    root = Path(".").resolve()
+    with quiet_stdout_logs():
+        report = usage_report(root)
+
+    if cfg.doctor_json:
+        _log.info(report.model_dump_json(indent=2))
+        return
+
+    r = Renderer.for_stream(
+        sys.stdout, color_flag=cfg.color, no_color_flag=cfg.no_color
+    )
+    r.write.heading("frob doctor --usage")
+    r.blank()
+    r.write.kv("total calls", str(report.total_calls))
+    r.write.kv("total duration", f"{report.total_duration_ms / 1000.0:.1f}s")
+    r.write.kv(
+        "failure rate",
+        f"{report.failure_rate * 100:.1f}% ({report.failures}/{report.total_calls})",
+    )
+    r.write.kv("redundant re-runs", str(report.redundant_rerun_count))
+    r.write.kv(
+        "redundant re-run cost",
+        f"{report.redundant_rerun_wasted_ms / 1000.0:.1f}s",
+    )
+    r.write.kv("fast exit-1 runs", str(report.fast_exit1_count))
+    r.write.kv("stuck-repeat streaks", str(report.repeated_failure_streaks))
+    r.blank()
+    r.write.heading("top time sinks")
+    for sink in report.top_time_sinks:
+        r.write.kv(
+            f"  frob {sink.subcommand}",
+            f"{sink.total_duration_ms / 1000.0:.1f}s over {sink.calls} call(s), "
+            f"{sink.failures} failure(s)",
+        )

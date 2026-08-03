@@ -112,6 +112,43 @@ ground-truth block against this page's per-call estimates for the same
 dispatch is what surfaces the discrepancy between the two (T-0178
 addendum, part c) -- report both numbers, not just one.
 
+## Footgun detection (T-1360)
+
+Three separate incidents in one drive session (T-1293, T-1337, and a
+coordinator's own 180x-speedup misread) shared the same shape: a command
+completed and LOOKED like success -- or like a legitimate result -- while
+actually failing or under-reporting. `timed_call` now runs a detection
+pass over the trailing telemetry corpus after every invocation and prints
+any findings AFTER the command (`_log.warning`, never blocking, never
+changing the exit code):
+
+- `REDUNDANT_RERUN`: this exact `(subcommand, args_head, tree_hash)` ran
+  before at the current tree state -- nothing could have changed.
+- `FAST_EXIT1`: this run exited nonzero in under 2 seconds -- the trap
+  the coordinator hit reading a fast failure as a fast success.
+- `REPEATED_FAILURE`: the identical command has now failed 3+ times in a
+  row with no successful run in between -- stuck, not progressing.
+
+(The ticket's fourth named rule, filtered-verification-before-`land`, is
+deliberately NOT duplicated here -- `frob check`'s own `gate:scope-note`
+line, T-1351, already covers "what a `--only`/`--ticket` run suppressed";
+see `docs/guides/agent-playbook.md#6c` for that mechanism.)
+
+Tips are individually suppressible (`FROB_SUPPRESS_TIPS=FAST_EXIT1,...`,
+comma-separated rule ids) or disabled entirely
+(`FROB_NO_FOOTGUN_TIPS=1`) without also disabling recording -- a tip that
+nags gets ignored, which is worse than no tip. When the triggering
+invocation itself passed `--json`, tips render as a JSON array on the same
+channel instead of a human-readable line, so an agent parsing stdout can
+also parse the tip and self-correct (`render_tips`, `Tip.model_dump`).
+
+`frob doctor --usage` (`--json` supported) reports the same rules
+aggregated over the WHOLE local corpus: total calls/duration, failure
+rate, top time sinks by subcommand, redundant-rerun count and wasted
+wall-clock, fast-exit-1 count, and stuck-repeat streak count
+(`usage_report`) -- the "where does the time go" question this ticket's
+own corpus mining answered by hand, now a command.
+
 ## Public API
 
 <!-- frob:describes src/frob/app/telemetry.py::TELEMETRY_REL -->
@@ -125,6 +162,13 @@ addendum, part c) -- report both numbers, not just one.
 <!-- frob:describes src/frob/app/telemetry.py::record_cli_event -->
 <!-- frob:describes src/frob/app/telemetry.py::record_ticket_event -->
 <!-- frob:describes src/frob/app/telemetry.py::timed_call -->
+<!-- frob:describes src/frob/app/telemetry.py::Tip -->
+<!-- frob:describes src/frob/app/telemetry.py::tips_disabled -->
+<!-- frob:describes src/frob/app/telemetry.py::detect_footguns -->
+<!-- frob:describes src/frob/app/telemetry.py::render_tips -->
+<!-- frob:describes src/frob/app/telemetry.py::SubcommandTimeSink -->
+<!-- frob:describes src/frob/app/telemetry.py::UsageReport -->
+<!-- frob:describes src/frob/app/telemetry.py::usage_report -->
 
 ```python
 TELEMETRY_REL: Path                # ".frob/telemetry.jsonl", relative to a repo root
@@ -137,4 +181,11 @@ def estimate_tokens(text) -> int
 def record_cli_event(root, *, subcommand, args_head, duration_ms, exit_code) -> None
 def record_ticket_event(root, *, ticket_id, event, extra=None) -> None
 def timed_call(root, *, subcommand, args_head, fn) -> T
+class Tip(BaseModel): rule_id, message, suggested_command
+def tips_disabled() -> bool
+def detect_footguns(root, *, subcommand, args_head, duration_ms, exit_code, tree_hash_value) -> list[Tip]
+def render_tips(tips, *, as_json) -> str
+class SubcommandTimeSink(BaseModel): subcommand, calls, total_duration_ms, failures
+class UsageReport(BaseModel): total_calls, total_duration_ms, failures, failure_rate, top_time_sinks, redundant_rerun_count, redundant_rerun_wasted_ms, fast_exit1_count, repeated_failure_streaks
+def usage_report(root, *, top_n=10) -> UsageReport
 ```

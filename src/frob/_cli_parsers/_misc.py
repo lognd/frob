@@ -341,6 +341,13 @@ def _add_doctor_parser(sub) -> None:
         help="verify native extensions (frob_core, strata_core) are installed",
     )
     doctor_p.add_argument("--json", dest="doctor_json", action="store_true")
+    # frob:ticket T-1360
+    doctor_p.add_argument(
+        "--usage",
+        dest="doctor_usage",
+        action="store_true",
+        help="report top time sinks and footguns from the local telemetry corpus",
+    )
 
 
 # frob:ticket T-0457

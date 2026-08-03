@@ -153,17 +153,24 @@
     "src/frob/app/serve_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/stats_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/sys_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
+    "src/frob/app/telemetry.py::SubcommandTimeSink": "099d1b8e087533e14d1d47400fa8ff761a67418bf67baedf25a430c2b027fea4",
     "src/frob/app/telemetry.py::T": "2b415e305d0d8f7446395542a91c55ae592ab9d0cdde6f37f3c940a6d55b02c4",
     "src/frob/app/telemetry.py::TELEMETRY_REL": "69585fea98b2f90f7815658ac06790488e39e006efd7510a6db439eebdbbd7f2",
+    "src/frob/app/telemetry.py::Tip": "7e50dcbadea18f803b547d4bc08e28d838711079b7b74aa5e62ee2fcc12fb19b",
+    "src/frob/app/telemetry.py::UsageReport": "f7f90df0ea247c6f692a9f6b49a3f955502b1180327bd061f6bef0499e0ee523",
     "src/frob/app/telemetry.py::append_event": "20ce1460c7282c1da96edd13153ed80e2132b6e6fa2ec69f27d59598293c7c29",
+    "src/frob/app/telemetry.py::detect_footguns": "f7d66daa9c91382377ac72f55f9398abbd5fbb59c013a3207c50252e6f8186b4",
     "src/frob/app/telemetry.py::estimate_tokens": "eaa671777fdb23fe2cd17ef2216260c18fb485edcac71a664132cb7ed4c2280c",
     "src/frob/app/telemetry.py::is_disabled": "9d06c96b5b7a899865e0fe4e0afbd7690395c92761c2b6e003fd67edc9bd35da",
     "src/frob/app/telemetry.py::iso_now": "36ed4ad41a0e13d0e609d1fc28960c1b304d7b6f554d5b894778665029aa544e",
     "src/frob/app/telemetry.py::record_cli_event": "fba2698030baa5fa00c209e9098658e81f8466e88679257c3496c2c9621a832e",
     "src/frob/app/telemetry.py::record_ticket_event": "8c3efcb380dc4c40e02f7151478a4912871a04ef76cd6b11d48d95ad31750b69",
     "src/frob/app/telemetry.py::redact_command": "2d942d728c5cbf3e91275771ff12c3941553dd2423c811247433c6e1f4797a14",
+    "src/frob/app/telemetry.py::render_tips": "a00835f93a0f3ce0bfb91edeacc48fe2e81c1beaaf67d0763a24a8ae670fd66f",
     "src/frob/app/telemetry.py::timed_call": "f97f99a388f2e87da31714f3d6379fb3d008516582a6a449838786de8443aa3d",
+    "src/frob/app/telemetry.py::tips_disabled": "ef81b6e0b04de2c4912c3b6b3e07eab6dceadca08969ac78fac1c06565d5c369",
     "src/frob/app/telemetry.py::tree_hash": "3159b478fcf403f744bd83292b5d2507533c3efb66b4c94de610234f936b2b4b",
+    "src/frob/app/telemetry.py::usage_report": "feddd2674eac3495c45aefd9525e8875be254ac4e52b710b4e505b57214186f0",
     "src/frob/app/ticket_runner/__init__.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/vet_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/worktree_runner.py::run": "92572764844d8b13ffb2ffb62e56a895e0d81ecd853be11fada4aa366856323b",
@@ -1956,5 +1963,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.314.0"
+  "version": "0.315.0"
 }

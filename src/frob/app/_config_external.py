@@ -304,6 +304,7 @@ _BOOL_FLAGS = (
     "vet_json",
     "stats_json",
     "doctor_json",
+    "doctor_usage",  # frob:ticket T-1360
     "mutate_json",
     "perf_tests",
     "perf_json",

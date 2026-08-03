@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.315.0] - unreleased
+
+- T-1360: Footgun detection: warn when a command failed or under-reported in a way that looks like success
+
 ## [0.314.0] - unreleased
 
 - T-1454: T-1346 gate cache serves stale DRIFT001 result across a frob ack boundary
