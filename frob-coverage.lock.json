@@ -25,7 +25,7 @@
     "src/frob/app/app.py": 94.1,
     "src/frob/app/arch_runner.py": 100.0,
     "src/frob/app/bind_runner.py": 100.0,
-    "src/frob/app/check_runner.py": 93.4,
+    "src/frob/app/check_runner.py": 93.6,
     "src/frob/app/clean_runner.py": 74.5,
     "src/frob/app/config.py": 100.0,
     "src/frob/app/cycle_runner.py": 87.5,
@@ -96,10 +96,10 @@
     "src/frob/arch/_typedesign.py": 93.3,
     "src/frob/arch/_typescript.py": 94.5,
     "src/frob/bind/__init__.py": 100.0,
-    "src/frob/check/__init__.py": 85.8,
+    "src/frob/check/__init__.py": 87.3,
     "src/frob/check/_memo.py": 98.4,
     "src/frob/check/_native.py": 22.7,
-    "src/frob/check/_python.py": 65.0,
+    "src/frob/check/_python.py": 75.5,
     "src/frob/check/_ts.py": 53.5,
     "src/frob/clean/__init__.py": 100.0,
     "src/frob/clean/_core.py": 81.8,
@@ -442,9 +442,10 @@
     "src/frob/vet/__init__.py": 100.0,
     "src/frob/vet/_allow.py": 87.5,
     "src/frob/vet/_cache.py": 82.7,
-    "src/frob/vet/_capability.py": 91.0,
+    "src/frob/vet/_capability.py": 90.2,
     "src/frob/vet/_capability_core.py": 97.3,
     "src/frob/vet/_capability_modes.py": 98.1,
+    "src/frob/vet/_capability_python.py": 95.6,
     "src/frob/vet/_capability_registry/__init__.py": 100.0,
     "src/frob/vet/_capability_registry/_dangerous_ops_other.py": 100.0,
     "src/frob/vet/_capability_registry/_dangerous_ops_python.py": 100.0,
@@ -477,5 +478,5 @@
     "src/frob/vet/_typosquat.py": 94.4,
     "src/frob/xref/__init__.py": 94.4
   },
-  "source_sha": "3a82d59545f4b4f956567fd8dfa2f4dc8091873fa9dcc9d7a9e1f97537faa038"
+  "source_sha": "14e246e2fdc478bebaf662e58968d3c56f5852e3cfed71990770da88c162ecdc"
 }
