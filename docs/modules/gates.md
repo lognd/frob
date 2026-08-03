@@ -2103,6 +2103,19 @@ next leverage point, tracked as a follow-up rather than attempted here.
   _coverage`) -- promoting that WARN-advisory heuristic into a hard
   pre-stamp gate, since a run that silently dropped subprocess coverage
   used to stamp clean and only get flagged after the fact.
+- `stamp_coverage`'s T-1236 canary-module guard -- `module_join_fraction`
+  alone cannot catch every deflation shape: a module that never got
+  traced still JOINS against `coverage.xml`, just at 0% line-rate, so the
+  aggregate ratio can sit near 1.0 even while a whole class of process
+  (subprocess, daemon, CLI-entry) went unmeasured. `_canary_deflation`
+  (`frob.gates._coverage`) checks a small named list of modules known to
+  be exercised by every healthy full run (`_CANARY_MODULES`, currently
+  `src/frob/__main__.py` -- invoked by every system test) and refuses the
+  stamp (`Err(GateError.CoverageDeflated)`) if any present canary reads
+  exactly 0.0%, independent of what the join fraction reports. Skipped
+  when a canary is simply absent from a run's `module_line` (a tiny
+  fixture snapshot that never declared it) -- only a present-but-zero
+  reading trips it.
 - `write_coverage_lock`'s T-1363 downward-ratchet guard -- unless called
   with `allow_decrease=True`, a module already present in the committed
   `frob-coverage.lock.json` can only move up: a drop of more than

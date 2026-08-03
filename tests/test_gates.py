@@ -8310,6 +8310,82 @@ class TestCoverageLoad:
         assert result.is_ok
         assert (tmp_path / "frob-coverage.lock.json").exists()
 
+    # frob:ticket T-1236
+    def test_stamp_coverage_refuses_zero_canary_module(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::stamp_coverage
+        # T-0969/T-1180 found that `module_join_fraction` alone reads
+        # clean on a run that silently dropped subprocess/CLI-entry
+        # coverage: a module that never got traced still JOINS against
+        # coverage.xml, just at 0% -- so the aggregate ratio can sit near
+        # 1.0 even though a whole class of process went unmeasured. Every
+        # module here (including the canary, src/frob/__main__.py) joins,
+        # so the plain deflation floor alone would pass this fixture; only
+        # the canary check (T-1236) catches it.
+        for i in range(23):
+            _write(tmp_path, f"src/frob/pkg/m{i}.py", "def helper(x):\n    return x\n")
+        _write(tmp_path, "src/frob/__main__.py", "def main():\n    pass\n")
+        classes = "\n".join(
+            f'<class filename="src/frob/pkg/m{i}.py" line-rate="0.9">'
+            '<lines><line number="2" hits="1" branch="false"/></lines></class>'
+            for i in range(23)
+        )
+        xml = f"""<?xml version="1.0"?>
+<coverage>
+  <packages>
+    <package>
+      <classes>
+        {classes}
+        <class filename="src/frob/__main__.py" line-rate="0.0">
+          <lines><line number="2" hits="0" branch="false"/></lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+"""
+        (tmp_path / "coverage.xml").write_text(xml)
+        snap = _snapshot(tmp_path)
+        result = stamp_coverage(tmp_path, snap)
+        assert result.is_err
+        assert result.danger_err == GateError.CoverageDeflated
+        assert not (tmp_path / ".frob" / "coverage-stamp").exists()
+        assert not (tmp_path / "frob-coverage.lock.json").exists()
+
+    # frob:ticket T-1236
+    def test_stamp_coverage_canary_check_skipped_when_module_unknown(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::stamp_coverage
+        # A fixture/tiny-repo snapshot that never declares
+        # src/frob/__main__.py at all must not be flagged by the canary
+        # check -- it has nothing to say about a module that is not part
+        # of this run's known set. Sample-size (_DEFLATION_MIN_KNOWN_
+        # MODULES) is the gate that governs tiny repos in general; the
+        # canary check only fires when the named module IS present and
+        # reads exactly 0.0%.
+        for i in range(24):
+            _write(tmp_path, f"src/frob/pkg/m{i}.py", "def helper(x):\n    return x\n")
+        classes = "\n".join(
+            f'<class filename="src/frob/pkg/m{i}.py" line-rate="0.9">'
+            '<lines><line number="2" hits="1" branch="false"/></lines></class>'
+            for i in range(24)
+        )
+        xml = f"""<?xml version="1.0"?>
+<coverage>
+  <packages>
+    <package>
+      <classes>
+        {classes}
+      </classes>
+    </package>
+  </packages>
+</coverage>
+"""
+        (tmp_path / "coverage.xml").write_text(xml)
+        snap = _snapshot(tmp_path)
+        result = stamp_coverage(tmp_path, snap)
+        assert result.is_ok
+
     # frob:ticket T-0997
     def test_stamp_coverage_lock_excludes_graph_excluded_modules(
         self, tmp_path: Path
