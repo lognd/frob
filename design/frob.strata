@@ -3092,6 +3092,7 @@ node testsuite : trusted {
     attr interface=TestArchiveSpliceDiscipline;
     attr interface=TestArchiveV2;
     attr interface=TestArchivedIdsForMergeDriver;
+    attr interface=TestAskVersionOverSocket;
     attr interface=TestAssumeReviewDates;
     attr interface=TestAssumes;
     attr interface=TestAssumptionLedger;
@@ -3238,15 +3239,18 @@ node testsuite : trusted {
     attr interface=TestClaimEvaluationSanity;
     attr interface=TestClaimsMalformedAttrs;
     attr interface=TestClassificationCsv;
+    attr interface=TestClassifyVersionReply;
     attr interface=TestCleanRunnerRun;
     attr interface=TestCleanupObligationGate;
     attr interface=TestClearIntent;
+    attr interface=TestClearOrphanedSocket;
     attr interface=TestClearRatchetEntry;
     attr interface=TestCli;
     attr interface=TestCliCommandTableGenerator;
     attr interface=TestCliEvidenceEnforcementEndToEnd;
     attr interface=TestCliStartRecordsGateCompatibleDigest;
     attr interface=TestCliSysExport;
+    attr interface=TestClientVersion;
     attr interface=TestClipboardAttachOnNew;
     attr interface=TestCloseEvidenceDoneReportRequeueAutoCommit;
     attr interface=TestCloseFailAfterMerge;
@@ -4187,6 +4191,7 @@ node testsuite : trusted {
     attr interface=TestRelativize;
     attr interface=TestReleaseBump;
     attr interface=TestReleaseBumpQuartetAtomicity;
+    attr interface=TestReleaseDaemonLease;
     attr interface=TestReleaseGateCoherence;
     attr interface=TestReleaseRunner;
     attr interface=TestReleaseSyncRunner;
@@ -4350,6 +4355,7 @@ node testsuite : trusted {
     attr interface=TestSharedStoreWrite;
     attr interface=TestShowBlocked;
     attr interface=TestShutdownReapsChildren;
+    attr interface=TestShutdownStaleDaemon;
     attr interface=TestSiblingDoneReportPreserved;
     attr interface=TestSideChannelKey;
     attr interface=TestSigkillMidStaging;
@@ -4365,6 +4371,7 @@ node testsuite : trusted {
     attr interface=TestSorted;
     attr interface=TestSourceLocation;
     attr interface=TestSpawnBackgroundSweep;
+    attr interface=TestSpawnDaemon;
     attr interface=TestSpawnRecorder;
     attr interface=TestSplatArgumentDegradesToUnknown;
     attr interface=TestSpliceLedger;
@@ -4542,6 +4549,7 @@ node testsuite : trusted {
     attr interface=TestTransitionRefusesOnUnacceptedNewGateRule;
     attr interface=TestTreeDigest;
     attr interface=TestTrustChainReachability;
+    attr interface=TestTryDaemonLeaseErrorPaths;
     attr interface=TestTscUnavailable;
     attr interface=TestTubeGoldens;
     attr interface=TestTwoCheckoutConcurrentFilingIncident;
@@ -4714,6 +4722,7 @@ node testsuite : trusted {
     attr interface=test_all_registered_types_render_without_error;
     attr interface=test_analyze_project_second_call_is_memo_hit;
     attr interface=test_append_event_respects_no_telemetry_env;
+    attr interface=test_append_event_swallows_oserror_and_logs;
     attr interface=test_append_event_writes_one_json_line;
     attr interface=test_arch_clean_dir_no_warnings;
     attr interface=test_arch_detects_deep_nesting;
@@ -5203,6 +5212,7 @@ node testsuite : trusted {
     attr interface=test_reclaimed_bytes_sums_matched_entries;
     attr interface=test_record_cli_event_shape;
     attr interface=test_record_journal_progress_tracks_last_written_content;
+    attr interface=test_record_ticket_event_merges_extra_fields;
     attr interface=test_record_ticket_event_shape;
     attr interface=test_recycled_pid_with_mismatched_starttime_is_treated_stale;
     attr interface=test_redact_command_hides_recognizable_secret;
@@ -5358,11 +5368,15 @@ node testsuite : trusted {
     attr interface=test_timed_call_maps_bare_system_exit_to_zero;
     attr interface=test_timed_call_maps_non_int_system_exit_code_to_one;
     attr interface=test_timed_call_records_event_and_returns_value;
+    attr interface=test_timed_call_records_nonzero_exit_on_plain_exception;
     attr interface=test_timed_call_records_nonzero_exit_on_system_exit;
     attr interface=test_tmlanguage_is_valid_json;
     attr interface=test_tool_tokens_sums_output_tokens_per_tool;
     attr interface=test_top_time_sinks_orders_descending;
     attr interface=test_tree_edit_similarity_identical_sequences_is_one;
+    attr interface=test_tree_hash_returns_stripped_stdout_on_success;
+    attr interface=test_tree_hash_returns_unknown_on_nonzero_returncode;
+    attr interface=test_tree_hash_returns_unknown_when_git_spawn_errors;
     attr interface=test_tree_sitter_extensions_excludes_strata;
     attr interface=test_two_independent_cycles;
     attr interface=test_txt_extension_exits_nonzero;

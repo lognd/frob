@@ -108,6 +108,9 @@ class DaemonLiveness(ErrorSet):
 # frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon.test_missing_socket_is_nosocket  # noqa: E501
 # frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon.test_dead_socket_file_is_orphaned  # noqa: E501
 # frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon.test_silent_listener_is_wedged  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket.test_connect_timeout_is_wedged  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket.test_connect_oserror_is_wedged  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket.test_hangup_before_newline_is_wedged  # noqa: E501
 def probe_daemon(
     root: Path, *, timeout_s: float = _PROBE_TIMEOUT_S
 ) -> tuple[DaemonLiveness, str | None]:
@@ -182,6 +185,10 @@ def _ask_version_over_socket(path: Path, timeout_s: float) -> bytes | DaemonLive
 # value, which raises AttributeError (already caught), not KeyError; dict.get never \
 # raises KeyError by construction, so this is a false positive from the gate's \
 # syntactic scan"
+# frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_malformed_json_is_wedged  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_non_dict_result_is_wedged  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_non_str_version_is_wedged  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_bad_utf8_is_wedged  # noqa: E501
 def _classify_version_reply(buf: bytes) -> tuple[DaemonLiveness, str | None]:
     """A well-formed reply -> `Live` or `VersionSkew`; anything unreadable
     -> `Wedged`, the conservative answer."""
@@ -199,6 +206,7 @@ def _classify_version_reply(buf: bytes) -> tuple[DaemonLiveness, str | None]:
 
 # frob:ticket T-1377
 # frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon.test_orphaned_socket_is_unlinked  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClearOrphanedSocket.test_unlink_oserror_is_swallowed  # noqa: E501
 def _clear_orphaned_socket(root: Path) -> None:
     """Unlink a socket file nothing is listening on, so the next probe is a
     clean `NoSocket` rather than another refused connect."""
@@ -221,6 +229,7 @@ class ProxyReason(ErrorSet):
     RemoteError = "the daemon returned a JSON-RPC error for this query"
 
 
+# frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClientVersion.test_unexpected_exception_falls_back_to_unknown  # noqa: E501
 def _client_version() -> str:
     """This process's installed `frob` version, or 'unknown' from a raw
     source checkout with no registered distribution -- mirrors
@@ -238,6 +247,7 @@ def _client_version() -> str:
         return "unknown"
 
 
+# frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestSpawnDaemon.test_popen_oserror_is_swallowed  # noqa: E501
 def _spawn_daemon(root: Path) -> None:
     """Best-effort, fire-and-forget spawn of the T-1092 socket daemon
     (`frob.serve.run_socket_daemon`) as a detached subprocess of the
@@ -270,6 +280,8 @@ def _spawn_daemon(root: Path) -> None:
     )
 
 
+# frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestShutdownStaleDaemon.test_rpc_failure_is_logged_and_returns  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestShutdownStaleDaemon.test_successful_shutdown_waits_for_lock_release  # noqa: E501
 def _shutdown_stale_daemon(root: Path) -> None:
     """Ask the daemon already running for `root` to stop gracefully via the
     `frob_shutdown` RPC (T-1105) and wait (briefly, bounded by
@@ -470,6 +482,8 @@ class _LeaseConnection:
 # frob:tests tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_round_trip_acquire_call_release_close kind="unit"  # noqa: E501
 # frob:tests tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_disabled_env_bypasses_lease kind="unit"  # noqa: E501
 # frob:tests tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_no_daemon_falls_back_unreachable kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths.test_call_oserror_closes_connection_and_returns_unreachable  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths.test_remote_error_response_closes_connection  # noqa: E501
 def try_daemon_lease(
     root: Path,
     resource: str,
@@ -527,6 +541,7 @@ def try_daemon_lease(
 # frob:doc docs/modules/testing.md#t-1126-daemon-owned-coverage-lease-frob_lease_acquirefrob_lease_release  # noqa: E501
 # frob:tests tests/test_coverage_wait_shared.py::TestWorktreeLock.test_uses_daemon_lease_when_daemon_up kind="unit"  # noqa: E501
 # frob:tests tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_round_trip_acquire_call_release_close kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestReleaseDaemonLease.test_call_oserror_is_swallowed_and_connection_still_closed  # noqa: E501
 def release_daemon_lease(conn: _LeaseConnection, resource: str) -> None:
     """Explicitly free `resource` on `conn` (best-effort: a failure here
     is harmless -- `conn.close()`, always called right after by the

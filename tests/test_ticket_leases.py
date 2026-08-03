@@ -24,8 +24,10 @@ import os
 import subprocess
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
+from typani import Ok
 
 from frob.app.config import AppConfig
 from frob.app.ticket_runner import run as ticket_run
@@ -470,6 +472,78 @@ class TestWorktreeSweepCli:
         out = capsys.readouterr().out
         assert "removed" in out
         assert "swept 1 worktree(s)" in out
+
+    def test_sweep_cli_exits_1_on_sweep_error(
+        self, sweep_repo: Path, capsys
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestWorktreeSweepCli.test_sweep_cli_exits_1_on_sweep_error  # noqa: E501
+        # T-1400: `_run_sweep`'s `result.is_err` branch (worktree_runner.py
+        # 69-70) -- `sweep_worktrees` failing (not a repo) must exit 1 with
+        # a logged error, not raise or print verdict lines.
+        from typani import Err
+
+        from frob.app.worktree_runner import run as worktree_run
+        from frob.tickets._leases import _WorktreeSweepError
+
+        with patch(
+            "frob.app.worktree_runner.sweep_worktrees",
+            return_value=Err(_WorktreeSweepError.NotARepo),
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                worktree_run(["sweep", str(sweep_repo)])
+        assert exc_info.value.code == 1
+        out = capsys.readouterr().out
+        assert out == ""
+
+    def test_sweep_cli_prints_kept_lease_and_detail_verdicts(
+        self, sweep_repo: Path, capsys
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestWorktreeSweepCli.test_sweep_cli_prints_kept_lease_and_detail_verdicts  # noqa: E501
+        # T-1400: `_run_sweep`'s per-verdict rendering branches
+        # (worktree_runner.py 77, 81) -- the dedicated "kept:lease"
+        # formatting and the generic `elif verdict.detail:` formatting,
+        # distinct from the bare-verdict `else` line already covered by
+        # test_sweep_cli_prints_verdicts_and_summary.
+        from frob.app.worktree_runner import run as worktree_run
+        from frob.tickets._leases import _WorktreeVerdict
+
+        fake_verdicts = [
+            _WorktreeVerdict(
+                path=str(sweep_repo / "wt-leased"),
+                verdict="kept:lease",
+                detail="T-0001",
+            ),
+            _WorktreeVerdict(
+                path=str(sweep_repo / "wt-dirty"),
+                verdict="kept:dirty",
+                detail="uncommitted changes",
+            ),
+        ]
+        with patch(
+            "frob.app.worktree_runner.sweep_worktrees",
+            return_value=Ok(fake_verdicts),
+        ):
+            worktree_run(["sweep", str(sweep_repo), "--dry-run"])
+        out = capsys.readouterr().out
+        assert "kept:lease(T-0001)" in out
+        assert "kept:dirty(uncommitted changes)" in out
+        assert "swept 2 worktree(s)" in out
+
+    def test_sweep_cli_unrecognized_subcommand_falls_through_to_usage_error(
+        self, capsys
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestWorktreeSweepCli.test_sweep_cli_unrecognized_subcommand_falls_through_to_usage_error  # noqa: E501
+        # T-1400: `run()`'s fallthrough (worktree_runner.py 104-105) --
+        # no subcommand at all (argparse's `worktree_command` stays
+        # `None`) prints help to stderr and exits 1, instead of silently
+        # doing nothing.
+        from frob.app.worktree_runner import run as worktree_run
+
+        with pytest.raises(SystemExit) as exc_info:
+            worktree_run([])
+        assert exc_info.value.code == 1
+        err = capsys.readouterr().err
+        assert "usage" in err.lower()
 
 
 # frob:ticket T-1054

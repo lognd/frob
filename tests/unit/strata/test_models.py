@@ -73,6 +73,29 @@ class TestQuantity:
         assert result.is_err
         assert result.danger_err is StrataError.UnitMismatch
 
+    # frob:tests src/frob/strata/_models.py::Quantity.base_value kind="unit"
+    def test_base_value_unknown_unit_is_an_error(self):
+        bad = Quantity(value=1, unit="furlong")
+        result = bad.base_value()
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownUnit
+
+    # frob:tests src/frob/strata/_models.py::Quantity.leq kind="unit"
+    def test_leq_propagates_unknown_unit_error_from_self(self):
+        bad = Quantity(value=1, unit="furlong")
+        ok = Quantity(value=1, unit="s")
+        result = bad.leq(ok)
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownUnit
+
+    # frob:tests src/frob/strata/_models.py::Quantity.leq kind="unit"
+    def test_leq_propagates_unknown_unit_error_from_other(self):
+        ok = Quantity(value=1, unit="s")
+        bad = Quantity(value=1, unit="furlong")
+        result = ok.leq(bad)
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownUnit
+
 
 class TestCapacity:
     # frob:tests src/frob/strata/_models.py::Capacity.singleton kind="unit"

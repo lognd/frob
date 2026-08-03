@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import patch
 
 from frob.app.telemetry import (
     TELEMETRY_REL,
@@ -19,6 +20,7 @@ from frob.app.telemetry import (
     render_tips,
     timed_call,
     tips_disabled,
+    tree_hash,
     usage_report,
 )
 
@@ -157,6 +159,104 @@ def test_timed_call_maps_non_int_system_exit_code_to_one(tmp_path: Path):
     assert record["exit"] == 1
 
 
+def test_append_event_swallows_oserror_and_logs(tmp_path: Path, caplog):
+    # frob:tests src/frob/app/telemetry.py::append_event
+    # T-1457: an I/O failure writing the telemetry file must never raise --
+    # telemetry is best-effort and must not be able to break a real
+    # invocation. Force `Path.open` to fail with an OSError and confirm the
+    # call returns normally, with the failure only logged at debug.
+    import logging
+
+    with caplog.at_level(logging.DEBUG, logger="frob.app.telemetry"):
+        with patch(
+            "frob.app.telemetry.Path.open", side_effect=OSError("disk full")
+        ):
+            append_event(tmp_path, {"a": 1})
+    assert not (tmp_path / TELEMETRY_REL).exists()
+    assert any("append failed (ignored)" in rec.message for rec in caplog.records)
+
+
+def test_tree_hash_returns_unknown_when_git_spawn_errors(tmp_path: Path):
+    # frob:tests src/frob/app/telemetry.py::tree_hash
+    # T-1457: `run_argv` itself failing (git binary missing, spawn refused,
+    # etc.) is the `spawned.is_err` branch -- must degrade to "unknown"
+    # rather than raise.
+    from typani import Err
+
+    from frob.gitio import GitError
+
+    with patch("frob.gitio.run_argv", return_value=Err(GitError.GitFailed)):
+        assert tree_hash(tmp_path) == "unknown"
+
+
+def test_tree_hash_returns_unknown_on_nonzero_returncode(tmp_path: Path):
+    # frob:tests src/frob/app/telemetry.py::tree_hash
+    # T-1457: git ran but exited nonzero (e.g. not a git repo) -- the
+    # separate `result.returncode != 0` fallback branch.
+    from frob.gitio import ProcResult
+    from typani import Ok
+
+    fake_result = ProcResult(
+        argv=("git", "rev-parse", "--short", "HEAD"),
+        returncode=128,
+        stdout="",
+        stderr="not a git repository",
+    )
+    with patch("frob.gitio.run_argv", return_value=Ok(fake_result)):
+        assert tree_hash(tmp_path) == "unknown"
+
+
+def test_tree_hash_returns_stripped_stdout_on_success(tmp_path: Path):
+    # frob:tests src/frob/app/telemetry.py::tree_hash
+    # T-1457: happy path, kept alongside the two "unknown" fallback
+    # branches so the whole function reads as intentional, not accidental.
+    from typani import Ok
+
+    from frob.gitio import ProcResult
+
+    fake_result = ProcResult(
+        argv=("git", "rev-parse", "--short", "HEAD"),
+        returncode=0,
+        stdout="abc1234\n",
+        stderr="",
+    )
+    with patch("frob.gitio.run_argv", return_value=Ok(fake_result)):
+        assert tree_hash(tmp_path) == "abc1234"
+
+
+def test_record_ticket_event_merges_extra_fields(tmp_path: Path):
+    # frob:tests src/frob/app/telemetry.py::record_ticket_event
+    # T-1457: the `if extra:` branch -- extra keys must land in the
+    # written record alongside the fixed ticket-event fields.
+    record_ticket_event(
+        tmp_path,
+        ticket_id="T-1457",
+        event="done",
+        extra={"duration_s": 42, "worktree": "w4k-test005"},
+    )
+    record = json.loads((tmp_path / TELEMETRY_REL).read_text(encoding="utf-8").strip())
+    assert record["duration_s"] == 42
+    assert record["worktree"] == "w4k-test005"
+    assert record["ticket_id"] == "T-1457"
+    assert record["event"] == "done"
+
+
+def test_timed_call_records_nonzero_exit_on_plain_exception(tmp_path: Path):
+    # frob:tests src/frob/app/telemetry.py::timed_call
+    # T-1457: a plain (non-SystemExit) exception from `fn()` must still
+    # record exit_code=1 and re-raise unchanged -- the `except Exception`
+    # branch, distinct from the SystemExit branches already covered above.
+    def _boom():
+        raise RuntimeError("kaboom")
+
+    try:
+        timed_call(tmp_path, subcommand="check", args_head="check", fn=_boom)
+        raised = False
+    except RuntimeError:
+        raised = True
+    assert raised
+    record = json.loads((tmp_path / TELEMETRY_REL).read_text(encoding="utf-8").strip())
+    assert record["exit"] == 1
 # --- footgun detection (T-1360) ---------------------------------------
 
 

@@ -186,6 +186,20 @@ class TestAgentRunnerEnv:
             agent_run(["env", str(not_a_repo)])
         assert excinfo.value.code == 1
 
+    def test_unrecognized_subcommand_falls_through_to_usage_error(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestAgentRunnerEnv.test_unrecognized_subcommand_falls_through_to_usage_error  # noqa: E501
+        # T-1400: `run()`'s fallthrough (agent_runner.py 88-89) -- no
+        # subcommand at all (argparse's `agent_command` stays `None`)
+        # prints help to stderr and exits 1, instead of silently doing
+        # nothing.
+        with pytest.raises(SystemExit) as excinfo:
+            agent_run([])
+        assert excinfo.value.code == 1
+        err = capsys.readouterr().err
+        assert "usage" in err.lower()
+
 
 class TestStashGuardHook:
     """T-0574: the scaffold-managed `reference-transaction` hook that

@@ -4949,7 +4949,7 @@ get past coverage-fast's cold-.coverage fallback branch.
 id: T-1400
 title: 'TEST005 burn-down: src/frob/app remainder after T-1276 false-close (116 findings,
   ~50 unsampled runners)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-01'
@@ -4963,6 +4963,34 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/app/**
+- tests/test_app*.py
+- tests/unit/test_app*.py
+scope_changes:
+- op: add
+  glob: tests/unit/**
+  reason: test-writing scope was omitted from the original ticket; parallel T-1415/T-1296
+    strata burn-down tickets declared their test dir explicitly, this one didn't
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/test_app*.py
+  reason: test-writing scope was omitted from the original ticket; parallel T-1415/T-1296
+    strata burn-down tickets declared their test dir explicitly, this one didn't
+  actor: logan
+  at: '2026-08-02'
+- op: remove
+  glob: tests/unit/**
+  reason: narrow to actual app test files per the over-broad-glob warning
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/unit/test_app*.py
+  reason: narrow to actual app test files per the over-broad-glob warning
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/unit/test_app_config_from_external_t1276.py::TestFromArgs::test_delegates_to_from_external_with_pyproject_default
+- tests/unit/test_check_budget.py::TestSelectBudgetChunks::test_greedy_pack_fits_under_budget
 acceptance:
 - text: GIVEN the TEST005 join is fixed per T-1398 WHEN the app package is re-measured
     THEN every remaining finding is triaged as either a genuine gap (closed with a
@@ -4976,6 +5004,97 @@ Successor to T-1276, which reached state=done on main against an unmet criterion
 Deliberately blocked on T-1398 and T-1399. Dispatching this before the join defect is fixed would repeat the failure mode already observed three times today -- agents finding well-tested code reported at 0.0 percent and being pushed toward filler tests. Do not start it until the measured count is trustworthy.
 
 Landed and verified by T-1276 before the false close, so this ticket does NOT need to redo them: _daemon_proxy lease paths, check_runner colorized formatter, and AppConfig.from_external/from_args.
+
+## Done report
+
+WAVE7-S session. T-1457 (this same dispatch's other ticket) closed the
+2 genuine-gap-candidate files the prior T-1400 session had already
+identified and left open: telemetry.py (88% -> 100% scoped branch) and
+_daemon_proxy.py (80% -> 98% scoped branch). See T-1457's Done report
+for the full per-branch breakdown; not repeated here.
+
+Per this dispatch's brief, spot-checked 5 more of the ~45 still-
+unsampled runner modules, using the prior sessions' same scoped
+`pytest <grep-matched test file(s)> --cov=frob.app.<module> --cov-branch
+--cov-report=term-missing` methodology:
+
+- agent_runner.py (tests/test_worktree_guard.py): 92% (2 miss: 88-89).
+  Small remainder, likely genuine (an error-branch pair), not chased.
+- dup_runner.py (tests/unit/test_app_runners_batch5.py): 98% (1 miss:
+  66). ARTIFACT-class remainder (single line, negligible).
+- gitlog_runner.py (tests/unit/test_app_runners.py): 100%. ARTIFACT
+  (fully clean).
+- perf_runner.py (3 grep-matched test files): 85% (36 miss across 13
+  branch-partials: 137-139, 157-159, 288-290, 316-317, 331-332, 349,
+  401, 470, 482->467, 518, 525-531, 594, 623, 657-671). GENUINE GAP,
+  sizeable -- not an attribution artifact (widening to all 3
+  grep-matched files did not move the number, same non-movement
+  signature T-1415's session used to rule out attribution splitting).
+- worktree_runner.py (tests/test_ticket_leases.py): 80% (6 miss:
+  69-70, 77, 81, 104-105). Read the source directly: these are real,
+  reachable branches -- `_run_sweep`'s `result.is_err` error-exit path
+  (69-70), the `kept:lease` vs `elif verdict.detail` rendering branches
+  (77, 81), and `run()`'s unrecognized-subcommand argparse-usage-error
+  fallback (104-105). GENUINE GAP, small and well-isolated (same shape
+  as T-1457's daemon_proxy/telemetry work -- mock `sweep_worktrees`'s
+  Result and drive each verdict shape through `_run_sweep`, plus one
+  test invoking `run()` with a bogus subcommand).
+
+Tally this session: 5 sampled, 2 clearly artifact (dup_runner,
+gitlog_runner), 1 small-genuine (agent_runner), 2 confirmed-genuine and
+non-trivial (perf_runner, worktree_runner).
+
+CONCLUSION, combined with the prior session's tally (4 sampled: 2
+artifact [_style.py, check_runner.py], 2 genuine [telemetry.py,
+_daemon_proxy.py -- both now closed by T-1457]): across 9 files sampled
+total this ticket's history, 4 artifact, 5 genuine (2 already closed by
+T-1457, 3 still open: agent_runner.py small, perf_runner.py and
+worktree_runner.py sizeable). This is NOT an artifact-dominated
+remainder -- roughly HALF the sampled app files carry real gaps, mostly
+concentrated in modules with subprocess/socket/external-process or
+CLI-dispatch-fallback branches, matching the prior session's own
+prediction ("expect a double-digit genuine-gap count to remain...
+concentrated in modules with subprocess/socket/external-process
+interaction").
+
+I am NOT closing T-1400. The app package's remainder is a mixed
+population with a meaningfully high genuine-gap rate in this sample,
+not the artifact-dominated picture the strata package's initial 12-file
+sample showed (and even that strata picture was revised this session --
+see T-1415's Done report). Recommend the ticket stay in-progress for a
+continuation session to close perf_runner.py and worktree_runner.py
+(the two confirmed non-trivial genuine gaps) plus continue spot-
+checking the remaining ~40 unsampled runner modules with the same
+scoped-measurement discipline.
+
+### Changed
+(none in this ticket's own scope this session -- T-1457, a sibling
+ticket in this same dispatch, added the telemetry.py/_daemon_proxy.py
+tests this Done report credits)
+
+### Evidence
+No new evidence bound to T-1400 this session (classification only);
+prior evidence
+(tests/unit/test_app_config_from_external_t1276.py::TestFromArgs::test_delegates_to_from_external_with_pyproject_default,
+tests/unit/test_check_budget.py::TestSelectBudgetChunks::test_greedy_pack_fits_under_budget)
+stands unchanged. T-1457's own evidence list is bound to T-1457, not
+duplicated here.
+
+### Changed
+```
+ tests/unit/strata/test_models.py |  23 +++
+ tickets.md                       | 370 ++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 389 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_app_config_from_external_t1276.py::TestFromArgs::test_delegates_to_from_external_with_pyproject_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_budget.py::TestSelectBudgetChunks::test_greedy_pack_fits_under_budget` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 3 error(s), 669 warning(s), 735 waived
+- error-findings: DUP001@tests/unit/strata/test_models.py, PRE001@tickets/T-1400, SELFAUDIT001@design
 
 <!-- ticket:T-1404 -->
 ```yaml
@@ -5199,7 +5318,7 @@ a past release rather than the current tree.
 ```yaml
 id: T-1415
 title: 'TEST005 burn-down: src/frob/strata remainder (post T-1296 partial)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-01'
@@ -5210,6 +5329,10 @@ sprint: null
 scope:
 - src/frob/strata/**
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_models.py::TestQuantity::test_base_value_unknown_unit_is_an_error
+- tests/unit/strata/test_models.py::TestQuantity::test_leq_propagates_unknown_unit_error_from_self
+- tests/unit/strata/test_models.py::TestQuantity::test_leq_propagates_unknown_unit_error_from_other
 threat: null
 component: null
 ```
@@ -5232,6 +5355,91 @@ place rather than writing new scaffolding. `_claims.py` and
 `_elaborate.py` are large (54%/49%) and will likely need several
 sessions each -- consider splitting them into their own tickets rather
 than trying to close them inside one pass.
+
+## Done report
+
+WAVE7-S continuation session (dispatched to confirm/close T-1415 if the
+prior two sessions' "everything left is artifact" hypothesis held up
+under a wider spot-check).
+
+Spot-checked 4 MORE diverse, previously-unsampled files the prior
+session explicitly named as still outstanding: _audit.py, _compliance.py,
+_code_binding.py, _crash.py. Methodology unchanged from the prior two
+sessions: `pytest <module's own test file> --cov=frob.strata.<module>
+--cov-branch --cov-report=term-missing`.
+
+- _audit.py: 88% (19 miss: lines 286, 289, 476, 479, 550, 575, 605, 611,
+  617, 623, 648, 656, 690, 694, 757, 821, 830, 837, 936). SAME percentage
+  as the ticket's own originally-cited baseline number.
+- _compliance.py: 89% (31 miss). SAME as baseline.
+- _code_binding.py: 91% (16 miss). SAME as baseline.
+- _crash.py: 91% (7 miss: 71, 76, 110, 121, 181->180, 231, 250, 309) --
+  spot-read confirms these are real Result/Err-propagation branches
+  (e.g. `_crash_bound_seconds`'s `if restart_base.is_err: return
+  Err(...)`), reachable, not dead code.
+
+FINDING THAT CHANGES THE PICTURE: unlike the prior two sessions' 12
+sampled files (where a SCOPED, single-module run consistently recovered
+close to 100% even when the baseline/full-run number looked low --
+the attribution/join-loss artifact this drive has been tracking under
+T-1433/T-1395), these 4 files' SCOPED numbers match their originally-
+reported baseline numbers almost exactly. That is the opposite
+signature from an attribution artifact: if the baseline percentage were
+inflated-low by cross-file join loss, a scoped single-module run should
+have recovered a materially higher number (as it did for all 12 prior
+files). It did not, for any of these 4. This means these 4 files' low
+coverage is NOT an attribution artifact -- it reflects real, uncovered
+branches (confirmed by reading _crash.py's specific missing lines).
+
+CONCLUSION: I do NOT believe the "remaining ~150 findings are the same
+artifact class" premise holds repo-wide. It held for the 12 files the
+prior two sessions sampled (all recovered to 90-100% when scoped,
+consistent with artifact). It does NOT hold for these 4 files (scoped
+number matches baseline, consistent with genuine gap). The correct
+read is a MIXED population, not a uniform artifact class -- exactly the
+outcome the prior session's own text anticipated ("this remains a
+sample-based estimate ... a follow-on session should keep sampling
+rather than assume zero").
+
+I am NOT closing T-1415. Closing it now, on the strength of the
+12-file artifact sample alone, would misrepresent these 4 counter-
+examples as already resolved. Recommend the ticket stay in-progress
+for a continuation session that (a) treats _audit.py/_compliance.py/
+_code_binding.py/_crash.py as confirmed genuine-gap files needing real
+tests (same socket/subprocess-seam-mocking discipline T-1457 used for
+the app package's genuine gaps), and (b) keeps spot-checking the
+remaining ~40 unsampled files with the same scoped-vs-baseline
+comparison this session used, since that comparison is now the
+reliable artifact-vs-genuine discriminator, not just "does the scoped
+number look high."
+
+No tests added this session (classification only, per the dispatch
+brief's ask to confirm closure eligibility first).
+
+### Changed
+(none -- classification only)
+
+### Evidence
+No new evidence this session; prior sessions' evidence
+(tests/unit/strata/test_models.py::TestQuantity::test_base_value_unknown_unit_is_an_error
+etc.) stands unchanged.
+
+### Changed
+```
+ tests/unit/strata/test_models.py |  23 +++
+ tickets.md                       | 360 ++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 379 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_models.py::TestQuantity::test_base_value_unknown_unit_is_an_error` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_models.py::TestQuantity::test_leq_propagates_unknown_unit_error_from_self` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_models.py::TestQuantity::test_leq_propagates_unknown_unit_error_from_other` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 3 error(s), 826 warning(s), 735 waived
+- error-findings: DUP001@tests/unit/strata/test_models.py, PRE001@tickets/T-1415, SELFAUDIT001@design
 
 <!-- ticket:T-1417 -->
 ```yaml
@@ -9103,7 +9311,7 @@ Filed: none.
 id: T-1457
 title: 'app TEST005 genuine gaps: telemetry and _daemon_proxy socket/subprocess error
   paths'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-02'
@@ -9115,14 +9323,178 @@ scope:
 - src/frob/app/telemetry.py
 - src/frob/app/_daemon_proxy.py
 - tests/unit/**
+- tests/test_telemetry.py
+scope_changes:
+- op: add
+  glob: tests/test_telemetry.py
+  reason: 'T-1457''s declared scope covers src/frob/app/telemetry.py plus tests/unit/**,
+
+    but the existing test suite for telemetry.py lives at tests/test_telemetry.py
+
+    (not under tests/unit/). New OSError-swallow/git-unavailable-fallback error-
+
+    path tests were added there, alongside the existing suite, rather than
+
+    forking a second test module under tests/unit/ for the same source file --
+
+    adding this one file keeps the frob:tests edge resolvable inside scope.
+
+    '
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/test_telemetry.py::test_append_event_swallows_oserror_and_logs
+- tests/test_telemetry.py::test_tree_hash_returns_unknown_when_git_spawn_errors
+- tests/test_telemetry.py::test_tree_hash_returns_unknown_on_nonzero_returncode
+- tests/test_telemetry.py::test_tree_hash_returns_stripped_stdout_on_success
+- tests/test_telemetry.py::test_record_ticket_event_merges_extra_fields
+- tests/test_telemetry.py::test_timed_call_records_nonzero_exit_on_plain_exception
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket::test_connect_timeout_is_wedged
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket::test_connect_oserror_is_wedged
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket::test_hangup_before_newline_is_wedged
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket::test_outer_timeout_during_send_or_recv_is_wedged
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply::test_malformed_json_is_wedged
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply::test_non_dict_result_is_wedged
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply::test_non_str_version_is_wedged
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply::test_bad_utf8_is_wedged
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClearOrphanedSocket::test_unlink_oserror_is_swallowed
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClientVersion::test_unexpected_exception_falls_back_to_unknown
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestSpawnDaemon::test_popen_oserror_is_swallowed
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestShutdownStaleDaemon::test_rpc_failure_is_logged_and_returns
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestShutdownStaleDaemon::test_successful_shutdown_waits_for_lock_release
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths::test_call_oserror_closes_connection_and_returns_unreachable
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths::test_remote_error_response_closes_connection
+- tests/unit/test_daemon_proxy_error_paths_t1457.py::TestReleaseDaemonLease::test_call_oserror_is_swallowed_and_connection_still_closed
 acceptance:
 - text: GIVEN the named error-path branches WHEN their tests run THEN each asserts
     real behavior (fallback value, exit code, log line), never mere execution
-  evidence: []
+  evidence:
+  - tests/test_telemetry.py::test_append_event_swallows_oserror_and_logs
+  - tests/test_telemetry.py::test_tree_hash_returns_unknown_when_git_spawn_errors
+  - tests/test_telemetry.py::test_tree_hash_returns_unknown_on_nonzero_returncode
+  - tests/test_telemetry.py::test_tree_hash_returns_stripped_stdout_on_success
+  - tests/test_telemetry.py::test_record_ticket_event_merges_extra_fields
+  - tests/test_telemetry.py::test_timed_call_records_nonzero_exit_on_plain_exception
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket::test_connect_timeout_is_wedged
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket::test_connect_oserror_is_wedged
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket::test_hangup_before_newline_is_wedged
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket::test_outer_timeout_during_send_or_recv_is_wedged
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply::test_malformed_json_is_wedged
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply::test_non_dict_result_is_wedged
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply::test_non_str_version_is_wedged
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply::test_bad_utf8_is_wedged
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClearOrphanedSocket::test_unlink_oserror_is_swallowed
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClientVersion::test_unexpected_exception_falls_back_to_unknown
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestSpawnDaemon::test_popen_oserror_is_swallowed
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestShutdownStaleDaemon::test_rpc_failure_is_logged_and_returns
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestShutdownStaleDaemon::test_successful_shutdown_waits_for_lock_release
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths::test_call_oserror_closes_connection_and_returns_unreachable
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths::test_remote_error_response_closes_connection
+  - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestReleaseDaemonLease::test_call_oserror_is_swallowed_and_connection_still_closed
 threat: null
 component: null
 ```
 Wave5-O's classification (T-1400 Done report) isolated the app package's only real TEST005 gaps: telemetry.py (OSError-swallow, git-unavailable fallback, non-int SystemExit-code branches) and _daemon_proxy.py (~80 percent both narrow and wide: _probe_daemon, _classify_version_reply, _spawn_daemon, _shutdown_stale_daemon socket/subprocess error paths). Both need socket/subprocess seam mocking (T-1276's daemon-lease test precedent). Everything else sampled in app/strata was attribution artifact -- see T-1400/T-1415 Done reports for the tally.
+
+## Done report
+
+T-1457: telemetry.py and _daemon_proxy.py were the app package's two
+remaining genuine TEST005 gaps per Wave5-O's T-1400 classification (real
+error-path branches, not attribution artifacts). Added real, behavior-
+asserting tests for each named branch:
+
+telemetry.py (scoped pytest --cov, branch): 88% -> 100%.
+  - append_event's OSError-on-write swallow (patched Path.open to raise,
+    asserted no exception and the debug log line fired).
+  - tree_hash's two "unknown" fallback branches: run_argv returning
+    Err(GitError) and a nonzero-returncode ProcResult, plus the success
+    path for completeness.
+  - record_ticket_event's extra-dict merge branch.
+  - timed_call's plain-Exception (non-SystemExit) branch, distinct from
+    the SystemExit variants already covered.
+
+_daemon_proxy.py (scoped pytest --cov, branch): 80% -> 98%. New file
+tests/unit/test_daemon_proxy_error_paths_t1457.py, mocking the socket/
+subprocess seams per tests/unit/test_daemon_proxy_lease_t1276.py's
+precedent:
+  - _ask_version_over_socket: connect TimeoutError/OSError and a
+    hang-up-before-newline recv, all asserted Wedged.
+  - _classify_version_reply: malformed JSON, non-dict "result", non-str
+    version, bad UTF-8 -- all asserted Wedged.
+  - _clear_orphaned_socket: unlink OSError swallowed, logged.
+  - _client_version: generic Exception (not PackageNotFoundError) falls
+    back to "unknown", logged at debug.
+  - _spawn_daemon: Popen OSError swallowed, logged.
+  - _shutdown_stale_daemon: both the send_request-Err early-return branch
+    and the successful-shutdown wait-for-lock-release loop.
+  - try_daemon_lease: the call()-raises-OSError branch and the
+    "error" in response remote-error branch, both asserting the
+    connection is closed.
+  - release_daemon_lease: call()-raises-OSError swallowed, connection
+    still closed.
+
+The remaining 3 uncovered lines in _daemon_proxy.py (235, 265, 453) are
+not in the ticket's named branch list (a success-path log line, a second
+success return, and _LeaseConnection.call's own hang-up break) -- left
+for a future ticket if TEST005 still flags them after a full make
+coverage stamp.
+
+Scope: added tests/test_telemetry.py to T-1457's declared scope
+(frob ticket scope --add) because the existing telemetry test suite
+lives there, not under tests/unit/** -- the new OSError/git-fallback
+tests were added alongside it rather than forking a second test module
+for the same source file. Confirmed via `frob check --ticket T-1457
+--only scope` that this resolved the SCOPE002 finding caused by my own
+additions; a large number of OTHER SCOPE002 findings remain under
+`tests/unit/**` (pre-existing, from before this ticket -- the glob pulls
+in unrelated test files whose frob:tests targets fall outside T-1457's
+own source scope). Did not attempt to fix those: they predate this
+ticket's work and narrowing tests/unit/** would either break other
+tickets' evidence bindings or require scope changes far outside
+T-1457's declared work.
+
+### Changed
+```
+ design/frob.strata                                |  14 +
+ src/frob/app/_daemon_proxy.py                     |  15 +
+ tests/test_telemetry.py                           | 100 ++++++
+ tests/test_ticket_leases.py                       |  74 +++++
+ tests/test_worktree_guard.py                      |  14 +
+ tests/unit/strata/test_models.py                  |  23 ++
+ tests/unit/test_app_runners_batch6.py             |  40 +++
+ tests/unit/test_daemon_proxy_error_paths_t1457.py | 319 ++++++++++++++++++
+ tickets.md                                        | 373 +++++++++++++++++++++-
+ 9 files changed, 968 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/test_telemetry.py::test_append_event_swallows_oserror_and_logs` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_tree_hash_returns_unknown_when_git_spawn_errors` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_tree_hash_returns_unknown_on_nonzero_returncode` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_tree_hash_returns_stripped_stdout_on_success` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_record_ticket_event_merges_extra_fields` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_timed_call_records_nonzero_exit_on_plain_exception` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket::test_connect_timeout_is_wedged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket::test_connect_oserror_is_wedged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket::test_hangup_before_newline_is_wedged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket::test_outer_timeout_during_send_or_recv_is_wedged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply::test_malformed_json_is_wedged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply::test_non_dict_result_is_wedged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply::test_non_str_version_is_wedged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply::test_bad_utf8_is_wedged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClearOrphanedSocket::test_unlink_oserror_is_swallowed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClientVersion::test_unexpected_exception_falls_back_to_unknown` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestSpawnDaemon::test_popen_oserror_is_swallowed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestShutdownStaleDaemon::test_rpc_failure_is_logged_and_returns` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestShutdownStaleDaemon::test_successful_shutdown_waits_for_lock_release` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths::test_call_oserror_closes_connection_and_returns_unreachable` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths::test_remote_error_response_closes_connection` (pytest node id, verified passing when recorded)
+- `tests/unit/test_daemon_proxy_error_paths_t1457.py::TestReleaseDaemonLease::test_call_oserror_is_swallowed_and_connection_still_closed` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 22 passed (from 22 evidence id(s))
+- gates: 3 error(s), 2727 warning(s), 738 waived
+- error-findings: ARCH001@src/frob/app/telemetry.py, DEPR005@tests/test_ticket_leases.py, DUP001@tests/unit/strata/test_models.py
 
 <!-- ticket:T-1458 -->
 ```yaml

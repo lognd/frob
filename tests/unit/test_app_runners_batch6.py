@@ -371,6 +371,46 @@ class TestPerfRunner:
             perf_run(cfg)
         assert exc.value.code == 3
 
+    def test_collect_file_read_oserror_exits_1(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # T-1400: `_read_perf_file_text`'s `except OSError` branch
+        # (perf_runner.py 288-290) -- an unreadable `--file` (permission
+        # denied, disappeared mid-read, etc.) must log and exit 1, not
+        # raise.
+        from unittest.mock import patch
+
+        profile = tmp_path / "profile.txt"
+        profile.write_text("not-real-profile-data\n")
+        cfg = AppConfig(perf_command="collect", perf_path=tmp_path, perf_file=profile)
+        with (
+            caplog.at_level("ERROR"),
+            patch(
+                "pathlib.Path.read_text",
+                side_effect=OSError("permission denied"),
+            ),
+            pytest.raises(SystemExit) as exc,
+        ):
+            perf_run(cfg)
+        assert exc.value.code == 1
+        assert "could not read" in caplog.text
+
+    def test_collect_parse_failure_exits_1(self, tmp_path: Path, caplog) -> None:
+        # T-1400: `_parse_perf_text_or_exit`'s `result.is_err` branch
+        # (perf_runner.py 316-317) -- a `--file` that reads fine but does
+        # not parse as the resolved collector format must log and exit 1.
+        profile = tmp_path / "profile.json"
+        profile.write_text("not valid json at all {{{\n")
+        cfg = AppConfig(
+            perf_command="collect",
+            perf_path=tmp_path,
+            perf_file=profile,
+            perf_format="pyspy-raw",
+        )
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            perf_run(cfg)
+        assert exc.value.code == 1
+
     def test_profile_command_error_exits_1(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
