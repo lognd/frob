@@ -17,6 +17,8 @@ from frob.tickets import (
     TicketError,
     TicketKind,
     TicketState,
+    TicketTier,
+    brief_cluster,
     brief_ticket,
 )
 from frob.tickets._brief import (
@@ -26,6 +28,8 @@ from frob.tickets._brief import (
     _infer_verify_commands,
     _load_playbook_sections,
     _parse_playbook_sections,
+    cluster_descendants,
+    cluster_union_scope,
 )
 from frob.tickets._store import _serialize_ticket
 
@@ -56,16 +60,21 @@ def _ticket(
     acceptance: tuple[str, ...] = (),
     state: TicketState = TicketState.QUEUED,
     body: str = "## Description\nsomething\n",
+    tier: TicketTier = TicketTier.TICKET,
+    parent: str | None = None,
+    blocked_by: tuple[str, ...] = (),
+    title: str = "Sample ticket",
 ) -> Ticket:
     return Ticket(
         id=ticket_id,
-        title="Sample ticket",
+        title=title,
         state=state,
         kind=TicketKind.FEATURE,
         origin=Origin.HUMAN,
         created=date(2026, 1, 1),
-        blocked_by=(),
-        parent=None,
+        blocked_by=blocked_by,
+        parent=parent,
+        tier=tier,
         scope=scope,
         evidence=(),
         attachments=(),
@@ -273,3 +282,124 @@ class TestBriefCli:
         with pytest.raises(SystemExit) as exc_info:
             _brief(tmp_path, cfg)
         assert exc_info.value.code == 1
+
+
+# frob:ticket T-1243
+class TestClusterDescendants:
+    # frob:ticket T-1243
+    def test_dependency_order_respects_intra_cluster_blocked_by(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_dependency_order_respects_intra_cluster_blocked_by  # noqa: E501
+        from frob.tickets import load_queue
+
+        _write(tmp_path, _ticket(ticket_id="T-0001", tier=TicketTier.EPIC), "epic")
+        _write(
+            tmp_path,
+            _ticket(ticket_id="T-0002", parent="T-0001", blocked_by=("T-0003",)),
+            "second",
+        )
+        _write(
+            tmp_path,
+            _ticket(ticket_id="T-0003", parent="T-0001"),
+            "first",
+        )
+        queue = load_queue(tmp_path).danger_ok
+        members = cluster_descendants(queue, "T-0001")
+        assert [t.id for t in members] == ["T-0003", "T-0002"]
+
+    # frob:ticket T-1243
+    def test_excludes_leaf_blocked_from_outside_the_cluster(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_excludes_leaf_blocked_from_outside_the_cluster  # noqa: E501
+        from frob.tickets import load_queue
+
+        _write(tmp_path, _ticket(ticket_id="T-0001", tier=TicketTier.EPIC), "epic")
+        _write(
+            tmp_path,
+            _ticket(ticket_id="T-0002", parent="T-0001", blocked_by=("T-0099",)),
+            "blocked",
+        )
+        queue = load_queue(tmp_path).danger_ok
+        members = cluster_descendants(queue, "T-0001")
+        assert members == ()
+
+    # frob:ticket T-1243
+    def test_unknown_cluster_returns_empty(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_unknown_cluster_returns_empty  # noqa: E501
+        from frob.tickets import load_queue
+
+        (tmp_path / "tickets").mkdir()
+        queue = load_queue(tmp_path).danger_ok
+        assert cluster_descendants(queue, "T-9999") == ()
+
+
+# frob:ticket T-1243
+class TestClusterUnionScope:
+    # frob:ticket T-1243
+    def test_deduplicates_and_preserves_first_seen_order(self) -> None:
+        # frob:tests tests/test_tickets_brief.py::TestClusterUnionScope.test_deduplicates_and_preserves_first_seen_order  # noqa: E501
+        members = (
+            _ticket(ticket_id="T-0002", scope=("a.py", "b.py")),
+            _ticket(ticket_id="T-0003", scope=("b.py", "c.py")),
+        )
+        assert cluster_union_scope(members) == ("a.py", "b.py", "c.py")
+
+
+# frob:ticket T-1243
+class TestClusterBrief:
+    # frob:ticket T-1243
+    def test_composes_one_briefing_for_the_whole_cluster(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_brief.py::TestClusterBrief.test_composes_one_briefing_for_the_whole_cluster  # noqa: E501
+        _write(
+            tmp_path,
+            _ticket(ticket_id="T-0001", tier=TicketTier.EPIC, title="An epic"),
+            "epic",
+        )
+        _write(
+            tmp_path,
+            _ticket(
+                ticket_id="T-0002",
+                parent="T-0001",
+                scope=("src/a.py",),
+                acceptance=("first thing",),
+                body="## Description\ndo the first thing\n",
+                blocked_by=("T-0003",),
+            ),
+            "second",
+        )
+        _write(
+            tmp_path,
+            _ticket(
+                ticket_id="T-0003",
+                parent="T-0001",
+                scope=("src/b.py",),
+                acceptance=("second thing",),
+                body="## Description\ndo the second thing\n",
+            ),
+            "first",
+        )
+        result = brief_cluster(tmp_path, "T-0001")
+        assert result.is_ok, result.err
+        text = result.danger_ok
+        assert "Cluster mission briefing: T-0001" in text
+        assert "Union scope lease" in text
+        assert "src/a.py" in text
+        assert "src/b.py" in text
+        assert "do the first thing" in text
+        assert "do the second thing" in text
+        assert "Land cadence" in text
+        assert "one mega-land" in text
+        # T-0003 has no unresolved intra-cluster blocker -- it must be
+        # briefed BEFORE its dependent T-0002.
+        assert text.index("Member 1/2: T-0003") < text.index("Member 2/2: T-0002")
+
+    # frob:ticket T-1243
+    def test_unknown_cluster_not_found(self, tmp_path: Path) -> None:
+        (tmp_path / "tickets").mkdir()
+        result = brief_cluster(tmp_path, "T-9999")
+        assert result.is_err
+        assert result.danger_err is TicketError.NotFound

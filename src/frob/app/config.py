@@ -450,7 +450,17 @@ class AppConfig(BaseModel):
     # (proof line: commit is-ancestor-of-main + ticket state on main),
     # remove --worktree.
     ticket_land_finish: bool = False
+    # frob:ticket T-1269
+    # `frob ticket land --plan --worktree PATH`: land a design-phase
+    # worktree (docs + ledger changes, no closeable worked ticket)
+    # atomically instead of a single ticket's own squash-land.
+    ticket_land_plan: bool = False
     ticket_worktree: Path | None = None
+    # frob:ticket T-1243
+    # `frob ticket brief --cluster <id>` / `frob ticket work --cluster <id>`
+    # -- the epic/story id whose dispatchable descendants are briefed/
+    # leased as one mission instead of a single ticket id.
+    ticket_cluster: str | None = None
     # frob:ticket T-0474
     # `frob ticket start <id> --foreground` -- run the pre-work sweep
     # synchronously (the pre-T-0474 default) instead of backgrounding it.

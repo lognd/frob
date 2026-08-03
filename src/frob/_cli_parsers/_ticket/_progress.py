@@ -62,7 +62,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         "merge main for freshness, build natives, then start (replaces "
         "playbook section 0 steps 1-2 plus start)",
     )
-    ticket_work_p.add_argument("ticket_id", metavar="id")
+    ticket_work_p.add_argument("ticket_id", metavar="id", nargs="?", default=None)
     ticket_work_p.add_argument(
         "--worktree",
         dest="ticket_worktree",
@@ -70,6 +70,18 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         default=None,
         help="worktree path to create/reuse (default: "
         ".claude/worktrees/<id-lowercased>)",
+    )
+    # frob:ticket T-1243
+    ticket_work_p.add_argument(
+        "--cluster",
+        dest="ticket_cluster",
+        metavar="EPIC-OR-STORY-ID",
+        default=None,
+        help="lease every dispatchable descendant of this epic/story into "
+        "ONE worktree instead of the single-ticket id positional (T-1243): "
+        "worktree warmup/natives-build pays once for the whole mission, "
+        "and every member ticket transitions to in-progress against a "
+        "union scope lease, released ticket-by-ticket as each closes",
     )
     ticket_work_p.add_argument(
         "--foreground",
@@ -176,13 +188,27 @@ def _add_ticket_land_parser(ticket_sub):
         help="one-command landing: merge-check-splice-close-commit "
         "a ticket's worktree onto this checkout",
     )
-    ticket_land_p.add_argument("ticket_id", metavar="id")
+    ticket_land_p.add_argument("ticket_id", metavar="id", nargs="?", default=None)
     ticket_land_p.add_argument(
         "--worktree",
         dest="ticket_worktree",
         metavar="PATH",
         required=True,
         help="path to the worktree checked out to the ticket's branch",
+    )
+    # frob:ticket T-1269
+    ticket_land_p.add_argument(
+        "--plan",
+        dest="ticket_land_plan",
+        action="store_true",
+        help=(
+            "T-1269: land a DESIGN-PHASE worktree (docs + ledger changes, "
+            "no closeable worked ticket) instead of a single ticket's own "
+            "squash-land -- merges --worktree's branch onto this checkout, "
+            "finalizes EVERY incoming draft id in one atomic pass, "
+            "verifies the TICK gate, and commits; any failure fully "
+            "unwinds. No <id> positional needed with --plan."
+        ),
     )
     ticket_land_p.add_argument(
         "--dry-run",

@@ -1189,6 +1189,67 @@ delegates to `frob.tickets._brief.compose_brief`, which assembles:
 `Err(NotFound)` if `ticket_id` does not resolve, same as every other
 single-ticket command.
 
+## Frob ticket brief --cluster (T-1243)
+
+A coordinator dispatching an epic/story's leaf tickets one at a time pays
+worktree creation, a playbook read, and a `frob natives build` PER TICKET,
+even though every ticket in the series lands into the same worktree in
+practice (the "serial-cluster dispatch" coordinator convention). `frob
+ticket brief --cluster <epic-or-story-id>` and `frob ticket work --cluster
+<epic-or-story-id>` make that convention a first-class verb pair instead
+of a hand-assembled dispatch prompt.
+
+`frob.tickets.brief_cluster(root, cluster_id) -> Result[str, TicketError]`
+delegates to `frob.tickets._brief.compose_cluster_brief`, which composes
+ONE briefing covering `frob.tickets._brief.cluster_descendants`' result:
+every `TicketTier.TICKET` descendant of `cluster_id` (via `epic_rollup`'s
+parent-chain walk, any depth) that is still {queued, planned} and whose
+open blockers, if any, are all other members of the same cluster --
+sequenced by a topological sort over those intra-cluster `blocked_by`
+edges (ties broken by the same priority/age order `doable` uses), never
+listing a dependent ticket ahead of the dependency it needs. Unlike
+`compose_brief`, the playbook hard-rule sections and the REL/land rules
+render ONCE for the whole mission; the union scope
+(`frob.tickets._brief.cluster_union_scope`, a deduplicated, order-
+preserving union of every member's declared scope) is the single lease
+the mission acquires; each member ticket's own body, acceptance, and scope
+render in its own numbered "Member i/N" section; and an explicit "Land
+cadence" section reminds the agent to land ONE ticket at a time, in
+sequence, as each closes -- never one mega-land for the whole cluster.
+
+`frob ticket work --cluster <epic-or-story-id> [--worktree PATH]`
+(`frob.app.ticket_runner._lifecycle._work_cluster`) is the leasing half:
+create/reuse ONE worktree (default `.claude/worktrees/<cluster-id-
+lowercased>`, same convention as single-ticket `work`), merge `main` for
+freshness, and build natives -- each exactly ONCE for the whole cluster --
+then walk `cluster_descendants`' dependency order, starting each member
+whose blockers are ALREADY resolved (reusing the existing single-ticket
+`_start` transition -- auto-plan a queued ticket, background pre-work
+sweep -- rather than inventing a second state-machine path). A member
+still blocked by an EARLIER member of the SAME cluster cannot legally
+start in this same pass: the ticket state machine's own transition guard
+refuses an open `blocked_by` entry, and becoming IN_PROGRESS is not the
+same as that blocker CLOSING. Such a member is left queued/planned and
+reported as deferred -- startable with an ordinary `frob ticket start
+<id>` in this SAME already-leased worktree the moment its blocker
+actually closes, no new worktree/warmup needed. Before creating or
+touching anything, `_refuse_on_cluster_scope_conflict` computes the union
+scope and refuses loudly (naming the colliding ticket id and glob) if it
+overlaps an ALREADY in-progress ticket's active lease that is not itself
+a member of this cluster -- the same disjoint-scope dispatch guarantee
+`frob.tickets.leased_by` already gives a single-ticket `start`/`doable`,
+extended to the union-scope case so two clusters can never silently
+double-lease the same files. Each started member's own lease still
+releases individually, exactly like an ordinary single-ticket lease, the
+moment that ticket closes -- a cluster mission shares only the worktree
+and the one-time warmup cost, not a single combined lease that only
+releases when every member is done.
+
+`Err(NotFound)` if `cluster_id` does not resolve; an empty result (no
+dispatchable member found -- every descendant is already done/dropped, or
+every remaining one is blocked by something outside the cluster) is a
+loud CLI refusal, not a silent no-op briefing/lease.
+
 ## State machine
 
 ```
@@ -1813,6 +1874,56 @@ UNIONED with the losing side's (deduplicated, winner's own ids first),
 never dropped -- previously an evidence-count tiebreak picked ONE side's
 evidence set wholesale, silently discarding the other side's ids when two
 worktrees closed the same ticket with disjoint evidence.
+
+## Frob ticket land --plan (T-1269)
+
+<!-- frob:describes src/frob/tickets/_land.py::land_plan -->
+
+`frob ticket land <id>` requires a closeable WORKED ticket (evidence +
+Done report, `_validate_closeable`) -- a design-phase worktree that only
+carries docs plus ledger changes (a planning pass that filed several draft
+tickets but closed none of them) has no such ticket to land under. Before
+T-1269, landing one of these required manual coordinator surgery: a
+guarded plain `git merge` (`FROB_LAND_INTERNAL=1`) plus a hand-assigned
+`frob ticket renumber <draft> <next-id>` call PER incoming draft --
+observed costing 15 hand-assigned renumbers across 4 batches landing four
+planner worktrees in one drive.
+
+`frob ticket land --plan --worktree PATH [--dry-run]`
+(`frob.tickets.land_plan`) does the whole chain atomically instead:
+
+1. Refuse if `root`/`--worktree` are the same path, or `root` has any
+   uncommitted change (the same two `land()` preflight checks, reused
+   verbatim).
+2. Merge `--worktree`'s branch onto `root`'s current branch (`git merge
+   --no-ff` -- never a squash; there is no single worked ticket to squash
+   under, unlike `land`'s own per-ticket path). Any `tickets.md` conflict
+   splices via the registered git merge driver
+   (`docs/modules/tickets.md#git-merge-driver`) the same way an ordinary
+   `git merge`/`pull` already would -- `land_plan` performs no ledger
+   surgery of its own. A real conflict `git merge --abort`s (nothing was
+   committed yet) and refuses with `LandError.MergeConflict`.
+3. Finalize EVERY draft id (`is_draft_id`) now present in `root`'s merged
+   ledger to the next free real id, one `finalize_draft` call each
+   (T-0162's existing allocator-locked next-id computation -- never a
+   hand-assigned id), then commit the rewrite in one
+   `chore(tickets): land --plan finalize ...` commit.
+4. Optionally re-check the TICK gate via an injected `check_ticks()`
+   callable (`frob ticket land --plan`'s CLI supplies `frob check --only
+   tickets`, cycle-avoidance-consistent with `land`'s own `check_gates`/
+   `covers_scope`/etc. -- `frob.tickets` cannot import `frob.gates`
+   directly, docs/rework.md) -- a non-clean result refuses with
+   `LandError.PlanTickGateDirty`.
+
+On ANY failure after the merge (step 3's finalize, or step 4's TICK
+re-check), `root` is `git reset --hard`ed back to its pre-merge tip -- no
+half-merged ledger, no partially-renumbered draft survives. `dry_run=True`
+runs the merge and finalize exactly as a real call would, then always
+`git reset --hard`s back regardless of outcome, returning the
+`LandPlanReport` of what WOULD have happened. The whole chain runs under
+`root`'s `_land_lock` (T-0577, the same cross-process lock `land()` uses),
+so a concurrent `land()`/`land_plan()` call against the SAME `root` blocks
+at the lock acquire instead of racing this one.
 
 ## Mutation-evidence obligation (TEST016, T-0755)
 

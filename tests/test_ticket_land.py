@@ -7238,3 +7238,153 @@ class TestLandSquashHelpersMutationCoverage:
         monkeypatch.setattr(_land_squash_mod, "run_argv", _fake_run_argv)
         sha_str, files = _land_squash_mod._land_commit_details(tmp_path)
         assert sha_str is None
+
+
+# frob:ticket T-1269
+# frob:waive WIRE001 reason="test-only fixture helper used by TestLandPlan's own five \
+# test methods below, in this same file -- a test fixture calling itself is not the \
+# class of orphaned-production-code WIRE001 exists to catch" follow_up="T-1488"
+def _make_design_worktree(
+    main_repo: Path, tmp_path: Path, *, branch: str = "design"
+) -> Path:
+    """A worktree branched off `main_repo` carrying only docs/ledger
+    changes and a fresh draft ticket -- the T-1269 "design-phase, no
+    closeable worked ticket" shape `land_plan` targets. Real `git
+    worktree add`, matching this file's own established fixture idiom."""
+    worktree = tmp_path / "design-wt"
+    _run(["git", "worktree", "add", str(worktree), "-b", branch, "main"], main_repo)
+    return worktree
+
+
+# frob:ticket T-1269
+class TestLandPlan:
+    """T-1269: `frob ticket land --plan` -- atomic design-phase land with
+    automatic draft finalization. Real git subprocesses/worktrees,
+    matching this whole file's established style."""
+
+    # frob:ticket T-1269
+    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_merges_and_finalizes_every_draft_atomically  # noqa: E501
+    def test_merges_and_finalizes_every_draft_atomically(
+        self, repo: Path, tmp_path: Path
+    ) -> None:
+        from frob.tickets._land import land_plan
+
+        worktree = _make_design_worktree(repo, tmp_path)
+        (worktree / "docs").mkdir()
+        (worktree / "docs" / "new.md").write_text("# New doc\n")
+        draft = new_ticket(
+            worktree,
+            _spec("A design-phase draft ticket"),
+        ).danger_ok
+        assert draft.id.startswith("T-draft-")
+        _commit_all(worktree, "docs: add new.md + file draft")
+
+        result = land_plan(repo, worktree)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+        assert not report.dry_run
+        assert report.merge_commit is not None
+        assert report.commit_sha is not None
+        assert len(report.finalized) == 1
+        old_id, new_id = report.finalized[0]
+        assert old_id == draft.id
+        assert new_id.startswith("T-") and not new_id.startswith("T-draft-")
+
+        # The finalized id (never the draft id) is what actually landed.
+        loaded = load_all(repo).danger_ok
+        assert new_id in loaded
+        assert draft.id not in loaded
+        assert (repo / "docs" / "new.md").exists()
+        # Landing left root clean -- no half-merged state, no stray lock.
+        assert _status_ignoring_frob(repo) == ""
+
+    # frob:ticket T-1269
+    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_dry_run_unwinds_the_merge  # noqa: E501
+    def test_dry_run_unwinds_the_merge(self, repo: Path, tmp_path: Path) -> None:
+        from frob.tickets._land import land_plan
+
+        worktree = _make_design_worktree(repo, tmp_path)
+        (worktree / "docs").mkdir()
+        (worktree / "docs" / "new.md").write_text("# New doc\n")
+        _commit_all(worktree, "docs: add new.md")
+
+        pre_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        result = land_plan(repo, worktree, dry_run=True)
+        assert result.is_ok, result.err
+        assert result.danger_ok.dry_run
+        # root is back at its pre-merge tip -- nothing landed for real.
+        post_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert post_sha == pre_sha
+        assert not (repo / "docs" / "new.md").exists()
+
+    # frob:ticket T-1269
+    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_merge_conflict_aborts_and_refuses  # noqa: E501
+    def test_merge_conflict_aborts_and_refuses(
+        self, repo: Path, tmp_path: Path
+    ) -> None:
+        from frob.tickets._land import land_plan
+
+        worktree = _make_design_worktree(repo, tmp_path)
+        (worktree / "src" / "feature.py").write_text("# worktree edit\n")
+        _commit_all(worktree, "conflicting edit")
+
+        # A genuine, real textual conflict on the SAME line in root.
+        (repo / "src" / "feature.py").write_text("# root edit\n")
+        _commit_all(repo, "root edit")
+
+        pre_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        result = land_plan(repo, worktree)
+        assert result.is_err
+        assert result.danger_err is LandError.MergeConflict
+        # The conflicted merge was aborted -- root is clean and unmoved.
+        assert _status_ignoring_frob(repo) == ""
+        post_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert post_sha == pre_sha
+
+    # frob:ticket T-1269
+    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_tick_gate_dirty_unwinds_everything  # noqa: E501
+    def test_tick_gate_dirty_unwinds_everything(
+        self, repo: Path, tmp_path: Path
+    ) -> None:
+        from frob.tickets._land import land_plan
+
+        worktree = _make_design_worktree(repo, tmp_path)
+        (worktree / "docs").mkdir()
+        (worktree / "docs" / "new.md").write_text("# New doc\n")
+        draft = new_ticket(worktree, _spec("Another draft")).danger_ok
+        _commit_all(worktree, "docs: add new.md + file draft")
+
+        pre_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        result = land_plan(repo, worktree, check_ticks=lambda: False)
+        assert result.is_err
+        assert result.danger_err is LandError.PlanTickGateDirty
+        # Fully unwound: root back at its pre-merge tip, draft never
+        # finalized anywhere, no half-landed doc file.
+        post_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert post_sha == pre_sha
+        assert not (repo / "docs" / "new.md").exists()
+        assert draft.id not in load_all(repo).danger_ok
+
+    # frob:ticket T-1269
+    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_cli_dispatches_to_land_plan_and_reports  # noqa: E501
+    def test_cli_dispatches_to_land_plan_and_reports(
+        self, repo: Path, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        from frob.app.config import AppConfig
+        from frob.app.ticket_runner._land_cmd import _land
+
+        worktree = _make_design_worktree(repo, tmp_path)
+        (worktree / "docs").mkdir()
+        (worktree / "docs" / "new.md").write_text("# New doc\n")
+        _commit_all(worktree, "docs: add new.md")
+
+        cfg = AppConfig(
+            ticket_command="land",
+            ticket_land_plan=True,
+            ticket_worktree=worktree,
+            ticket_path=repo,
+        )
+        with caplog.at_level("INFO"):
+            _land(repo, cfg)
+        assert any("landed onto" in rec.message for rec in caplog.records)
+        assert (repo / "docs" / "new.md").exists()
