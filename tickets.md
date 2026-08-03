@@ -1094,13 +1094,13 @@ reference.
   flow (any source edit after a coverage run makes it stale by
   definition) -- this needs its own rollout-sequencing review, not a
   same-session severity flip. Filed as a follow-up (draft id
-  `T-draft-adacc08c`, scope `src/frob/gates/__init__.py`,
+  `T-1489`, scope `src/frob/gates/__init__.py`,
   `tests/test_gates.py`, `docs/modules/gates.md`).
 - Acceptance[2] (per-file content-hash keyed incremental caching, so an
   unchanged file's coverage is never recomputed) is a real design problem
   on its own (cache format, per-file staleness vs. whole-tree
   `stale_by_mtime`, merge semantics with a full `coverage.xml`) -- filed
-  as its own ticket (draft id `T-draft-01ab413f`, scope
+  as its own ticket (draft id `T-1487`, scope
   `src/frob/testing/**`, `src/frob/gates/_coverage.py`,
   `tests/test_coverage.py`).
 - Acceptance[0], [3], [4] (the frob-native `frob coverage`/`frob test
@@ -1108,7 +1108,7 @@ reference.
   cross-platform, wired to run automatically inside any gated command
   that needs fresh data) is the largest remaining piece and structurally
   depends on the caching-format ticket above existing first -- filed as
-  its own ticket (draft id `T-draft-321a1b94`, explicitly sequenced
+  its own ticket (draft id `T-1488`, explicitly sequenced
   AFTER the caching ticket, scope `src/frob/testing/**`,
   `src/frob/check/__init__.py`, `Makefile`, `docs/modules/gates.md`).
 
@@ -1138,9 +1138,9 @@ tickets.md                   | scope add, evidence, 3 new follow-up drafts, this
   and T-1293's own incident warn against.
 
 ### Filed
-- `T-draft-adacc08c` -- TEST011 blocking-escalation follow-up
-- `T-draft-01ab413f` -- per-file content-hash incremental caching design+impl
-- `T-draft-321a1b94` -- frob-native coverage command (depends on the above)
+- `T-1489` -- TEST011 blocking-escalation follow-up
+- `T-1487` -- per-file content-hash incremental caching design+impl
+- `T-1488` -- frob-native coverage command (depends on the above)
 
 ### Captured claims
 - tests: 4 passed (this session's new tests); full
@@ -7506,9 +7506,9 @@ land:
 
 Ref: gate-gap class 6 in docs/audits/docs-staleness-2026-07-29.md.
 
-<!-- ticket:T-draft-01ab413f -->
+<!-- ticket:T-1487 -->
 ```yaml
-id: T-draft-01ab413f
+id: T-1487
 title: Per-file content-hash keyed incremental coverage caching (T-1205 acceptance[2])
 state: queued
 kind: feature
@@ -7529,9 +7529,9 @@ component: null
 ```
 T-1205 acceptance[2]: an unchanged file's coverage must never be recomputed -- keyed by content hash, full-suite runs reserved for cold start or an explicit --full. This is the incremental-caching engine underlying T-1205's whole 'coverage as managed derived state' vision; needs its own design pass (what the per-file cache format is, how it merges with a full coverage.xml, how staleness is detected per-file vs. the whole-tree stale_by_mtime signal T-1205's sibling ticket -- TEST011 escalation -- already uses) before implementation. Filed as a focused slice of T-1205, which is too large for one session.
 
-<!-- ticket:T-draft-321a1b94 -->
+<!-- ticket:T-1488 -->
 ```yaml
-id: T-draft-321a1b94
+id: T-1488
 title: frob-native coverage command replacing Makefile orchestration, cross-platform
   (T-1205 acceptance[0]/[3]/[4])
 state: queued
@@ -7552,11 +7552,11 @@ scope_breadth_ack_reason: null
 threat: null
 component: null
 ```
-T-1205 acceptance[0], [3], [4]: a frob-native command (frob coverage / frob test --coverage) performs subprocess-rc generation, pytest invocation, combine, xml, and stamp in Python with no Makefile/shell dependency, runs automatically (touched-set only) whenever a gated command's freshness contract says stale, and merges into the persisted coverage store -- no manual make coverage step in any documented workflow. This is the largest remaining piece of T-1205's vision (a real cross-platform orchestration engine) and depends on the incremental per-file caching design (this ticket's sibling, T-draft-01ab413f) existing first. Filed as a focused slice of T-1205, which is too large for one session -- do this after the caching-format ticket, not in parallel with it.
+T-1205 acceptance[0], [3], [4]: a frob-native command (frob coverage / frob test --coverage) performs subprocess-rc generation, pytest invocation, combine, xml, and stamp in Python with no Makefile/shell dependency, runs automatically (touched-set only) whenever a gated command's freshness contract says stale, and merges into the persisted coverage store -- no manual make coverage step in any documented workflow. This is the largest remaining piece of T-1205's vision (a real cross-platform orchestration engine) and depends on the incremental per-file caching design (this ticket's sibling, T-1487) existing first. Filed as a focused slice of T-1205, which is too large for one session -- do this after the caching-format ticket, not in parallel with it.
 
-<!-- ticket:T-draft-adacc08c -->
+<!-- ticket:T-1489 -->
 ```yaml
-id: T-draft-adacc08c
+id: T-1489
 title: TEST011 escalates from advisory WARN to a blocking freshness contract for stale
   coverage
 state: queued
