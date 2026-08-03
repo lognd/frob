@@ -744,11 +744,12 @@ class TestCapabilityScan:
 
     def test_capability_module_self_scan_documented_false_positive(self) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
-        # T-0151: `_capability.py` stores every needle as literal string data,
-        # so scanning IT directly (not via directory aggregation) still shows
-        # the accepted false-positive class documented in the module
-        # docstring and docs/modules/vet.md -- this locks that decision so a
-        # future "fix" doesn't silently change the behavior either way.
+        # T-0151: the capability scanner's own source stores every needle as
+        # literal string data, so scanning IT directly (not via directory
+        # aggregation) still shows the accepted false-positive class
+        # documented in the module docstring and docs/modules/vet.md -- this
+        # locks that decision so a future "fix" doesn't silently change the
+        # behavior either way.
         #
         # T-0769: the ORIGINAL "cmdclass"/"install-hook" instance of this
         # class no longer applies -- "cmdclass" only ever appeared inside
@@ -764,6 +765,12 @@ class TestCapabilityScan:
         # statement, not prose) still makes this module observe "eval" on
         # itself, exactly the self-match class the module docstring
         # documents.
+        #
+        # T-1420 (portion 5): `_has_bare_compile_call` (and the rest of the
+        # scanner-core primitives) moved to `_capability_core.py` in the
+        # LARGE001 split -- the self-match now shows up scanning THAT file,
+        # not the (now much smaller) `_capability.py` dispatcher, which no
+        # longer carries this literal at all.
         from frob.vet._capability import scan_file_capabilities
 
         own_path = (
@@ -771,7 +778,7 @@ class TestCapabilityScan:
             / "src"
             / "frob"
             / "vet"
-            / "_capability.py"
+            / "_capability_core.py"
         )
         capabilities = scan_file_capabilities(own_path)
         assert "eval" in capabilities  # b"compile(" appears as real code data

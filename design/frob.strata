@@ -2467,6 +2467,7 @@ node vet : trusted {
     may "install-hook";
     may "net";
     attr flag=frob_vet_net_kill_switch;
+    attr interface=ByteSpan;
     attr interface=CAPABILITY_KINDS;
     attr interface=CAPABILITY_MATRIX_EXCUSES;
     attr interface=CAPABILITY_MODES;
