@@ -97,6 +97,7 @@ silent omission.
 # frob:ticket T-0157
 from __future__ import annotations
 
+import bisect
 import math
 import re
 from collections import Counter
@@ -576,6 +577,72 @@ CRITICAL_PROVIDERS = frozenset(p.provider for p in _PATTERNS if p.label == "crit
 #: corresponding test fixture (T-0157's drift-lock requirement).
 ALL_PROVIDERS: frozenset[str] = frozenset(p.provider for p in _PATTERNS)
 
+# T-1211 (perf report candidate #6): find which line indices in a file's
+# text could possibly contain a hit (`_candidate_line_indices`) with 33
+# whole-FILE `finditer` calls (one per `_PATTERNS` entry) instead of 33
+# compiled patterns x `finditer` per PHYSICAL LINE (544k lines measured x 33
+# patterns = ~18M `finditer` calls, ~94% of the gate's wall time -- the cost
+# is Python-level per-call/regex-engine-setup overhead multiplied 544k-fold,
+# not the character-scanning itself).
+#
+# A single COMBINED alternation regex (`(?P<p0>...)|(?P<p1>...)|...`) was
+# tried first and measured SLOWER end-to-end (~19s vs. ~4.4s baseline on this
+# repo's own tree) -- confirmed empirically, not assumed. Python's `re`
+# engine has no shared-prefix/Aho-Corasick optimization across alternation
+# branches; a single compiled pattern's literal-prefix fast path (the actual
+# source of `finditer`'s per-pattern speed) is defeated the moment 33
+# unrelated literal prefixes are OR'd into one pattern, so scanning the whole
+# file with one combined regex tries all 33 branches at every character
+# position instead of skipping ahead via one literal's own prefix scan.
+# Keeping `_PATTERNS` as 33 SEPARATE compiled regexes, each run once over the
+# whole file text (33 calls total, not 33 x line-count), preserves each
+# pattern's own prefix optimization while still cutting `finditer` call
+# count by ~5 orders of magnitude versus the per-line loop.
+#
+# None of `_PATTERNS` uses MULTILINE/DOTALL, and every char class that could
+# otherwise cross a line (`.`, `\s`) is either bounded by `.`'s default
+# no-newline-match semantics or is a NEGATED class excluding `\s` (hence
+# `\n`) -- so a match's span can never straddle two physical lines, and
+# mapping a match start offset to its containing line via `_line_offsets`/
+# `bisect` is exact, not an approximation. The actual per-line claim/
+# precedence/fake-marker logic is UNCHANGED and still runs, verbatim, via
+# `_scan_line` -- only for the (rare) candidate lines this pre-pass
+# identifies, never for a line with zero possible hits. This keeps findings
+# byte-identical to the pre-T-1211 per-line-per-pattern loop while skipping
+# the ~94% of lines that can never produce a violation.
+
+
+# frob:ticket T-1211
+def _line_offsets(text: str) -> list[int]:
+    """Cumulative character offset (0-based) of the START of each physical
+    line in `text`, `splitlines(keepends=True)`-derived so it agrees exactly
+    with `text.splitlines()`'s own line boundaries (T-1211)."""
+    offsets = [0]
+    for line in text.splitlines(keepends=True):
+        offsets.append(offsets[-1] + len(line))
+    return offsets
+
+
+# frob:ticket T-1211
+def _candidate_line_indices(text: str) -> list[int]:
+    """0-based indices, ascending, of every physical line in `text` that at
+    least one `_PATTERNS` entry matches (T-1211) -- the set of lines worth
+    handing to `_scan_line`'s real per-pattern logic. A line absent from this
+    list is provably a zero-hit line under every pattern in `_PATTERNS`, so
+    skipping it changes nothing about the findings, only how much per-line
+    work runs to reach them. Runs each of the 33 `_PATTERNS` regexes ONCE
+    over the whole file text (33 `finditer` calls total) rather than once per
+    physical line -- see the module-level comment above this function for
+    why a single combined-alternation regex was tried and measured slower."""
+    if not text:
+        return []
+    offsets = _line_offsets(text)
+    indices: set[int] = set()
+    for pattern in _PATTERNS:
+        for match in pattern.regex.finditer(text):
+            indices.add(bisect.bisect_right(offsets, match.start()) - 1)
+    return sorted(indices)
+
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:waive COV007 reason="docs/modules/gates.md's Public API section individually \
@@ -1009,12 +1076,20 @@ def _secret_violation(
     )
 
 
+# frob:ticket T-1211
 def _scan_text(rel_path: str, text: str) -> list[Violation]:
     """SEC001/SEC004 violations for every real-looking token found in `text`
-    (SEC004: T-0968, a `frob:secret-fake` marker missing `reason="..."`)."""
+    (SEC004: T-0968, a `frob:secret-fake` marker missing `reason="..."`).
+
+    T-1211: only lines `_candidate_line_indices` flags as possibly matching
+    `_PATTERNS` (via one combined-alternation pass over the whole file text)
+    are handed to `_scan_line`'s real per-pattern/fake-marker logic -- a line
+    with zero possible hits is skipped entirely rather than re-scanned by all
+    33 patterns individually. Findings are unchanged; see `_COMBINED_PATTERN`
+    for why this cannot silently drop or reorder a real hit."""
     lines = text.splitlines()
     violations: list[Violation] = list(_bare_fake_marker_violations(rel_path, text))
-    for index in range(len(lines)):
+    for index in _candidate_line_indices(text):
         for pattern, token in _scan_line(lines, index):
             violations.append(_secret_violation(pattern, token, rel_path, index))
     return violations

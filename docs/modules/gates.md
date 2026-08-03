@@ -2086,6 +2086,15 @@ next leverage point, tracked as a follow-up rather than attempted here.
   `frob-coverage.lock.json` so the committed lock and the TEST012 gate's
   live comparison agree about what counts as a module (e.g. scaffold
   `.j2` templates), instead of the lock permanently drifting.
+- `load_coverage`'s T-1401 unjoined-module enumeration -- whenever
+  `module_join_fraction` falls below `_UNJOINED_LOG_THRESHOLD` (0.95),
+  the specific known `.py` modules that did NOT join against
+  `coverage.xml` (`_unjoined_python_modules`) are enumerated BY NAME in a
+  single `load_coverage: ... module_join_fraction=... below ... known .py
+  module(s) did not join ...` WARNING log line, not just reported as a
+  bare fraction -- a percentage alone tells a reader THAT something is
+  missing, not WHICH modules, which let a stale/carried-over lock value
+  go unnoticed until directly diffed against the raw xml.
 - `stamp_coverage`'s T-1180 deflation floor -- when called with a
   `snapshot`, refuses to write `.frob/coverage-stamp`/`frob-coverage.
   lock.json` at all (`Err(GateError.CoverageDeflated)`) whenever the
@@ -2105,6 +2114,17 @@ next leverage point, tracked as a follow-up rather than attempted here.
   nobody reviews had it been committed. `stamp_coverage` always calls this
   with the default (`allow_decrease=False`); a deliberate re-baseline
   needs the explicit override, never a bare `make coverage` run.
+- `write_coverage_lock`'s T-1401 zero-hit ratchet carve-out -- the T-1363
+  clamp above has one unconditional exception: a module whose freshly
+  measured value is EXACTLY `0.0` is never clamped back to a stale
+  committed value, even with `allow_decrease=False`. A real incident
+  (`src/frob/__main__.py`: lock said 81.2%, `coverage.xml` recorded 0 of
+  133 lines hit from a clean, crash-free `make coverage` run) showed a
+  genuine zero is the most confident, unambiguous signal this module
+  produces -- clamping it back up to a stale number is exactly the
+  silent-divergence failure mode T-1363 itself exists to prevent, just
+  aimed at the opposite case. Non-zero drops still clamp exactly as
+  before; only an exact zero is exempt.
 - `write_coverage_lock`'s T-1375 durable attribution trail -- a real
   incident found `frob-coverage.lock.json` modified with no matching
   `write_coverage_lock: locked N module(s)` line in either of two

@@ -754,24 +754,57 @@ def load_file_data(
 
 
 # frob:doc docs/modules/graph.md#cache
+# frob:ticket T-1214
+# frob:waive AFFECT001 reason="T-1214 only batches load_all's internal query \
+# shape (3 whole-table SELECTs instead of 3-per-file); its documented contract \
+# in docs/modules/graph.md#cache -- reassembles the full GraphSnapshot from \
+# every row currently in the db -- is unchanged, so the doc anchor needs no \
+# prose update. Touching docs/modules/graph.md itself would pull the whole \
+# graph module's scope-closure obligations into this ticket's narrow scope, \
+# which is out of proportion to a query-shape-only perf change."  # noqa: E501
 def load_all(
     conn: sqlite3.Connection, *, stats: BuildStats | None = None
 ) -> GraphSnapshot:
-    """Reassemble the full `GraphSnapshot` from every row currently in the db."""
+    """Reassemble the full `GraphSnapshot` from every row currently in the db.
+
+    T-1214: does 3 whole-table `SELECT`s total (symbols, edges, malformed),
+    each ordered by `path`, instead of `load_file_data`'s 3-queries-PER-FILE
+    shape (5595 `execute` calls for ~1865 files, measured pre-fix) --
+    `attrs == '{}'` (the common no-attrs case) also skips `json.loads`
+    entirely rather than parsing an empty object every time. `load_file_data`
+    itself is unchanged and still used by the incremental single-file cache-
+    hit path (`frob.graph.__init__`); this rewrite only touches the
+    whole-snapshot path, which never needs a per-file round trip."""
     root = get_root(conn) or ""
     file_hashes = {
         path: content_hash
         for path, content_hash in conn.execute("SELECT path, content_hash FROM files")
     }
     symbols: dict[str, SymbolRecord] = {}
-    edges: list[Edge] = []
-    malformed: list[MalformedDirective] = []
-    for path in file_hashes:
-        recs, e, m = load_file_data(conn, path)
-        for rec in recs:
-            symbols[rec.symref] = rec
-        edges.extend(e)
-        malformed.extend(m)
+    for row in conn.execute(
+        "SELECT symref, path, qualname, kind, public, span_start, span_end, "
+        "digest_sig, digest_body, digest_doc FROM symbols ORDER BY path"
+    ):
+        rec = _row_to_symbol(row)
+        symbols[rec.symref] = rec
+    edges: list[Edge] = [
+        Edge(
+            src=src,
+            kind=EdgeKind(kind),
+            target=target,
+            origin=origin,
+            attrs={} if attrs == "{}" else json.loads(attrs),
+        )
+        for src, kind, target, origin, attrs in conn.execute(
+            "SELECT src, kind, target, origin, attrs FROM edges ORDER BY file"
+        )
+    ]
+    malformed: list[MalformedDirective] = [
+        MalformedDirective(file=file_path, line=line, reason=reason)
+        for file_path, line, reason in conn.execute(
+            "SELECT file, line, reason FROM malformed ORDER BY file"
+        )
+    ]
     return GraphSnapshot(
         root=root,
         symbols=symbols,

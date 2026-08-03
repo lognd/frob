@@ -871,43 +871,150 @@ def _waive_deletions_in_diff(
     wholly deleted) file never shows up in a `--diff-filter=D --name-only`
     listing, only inside the hunk body.
 
-    SCOPED OUT (T-1326 reviewer-flagged MINOR at T-1323's own approval,
-    left unclosed here deliberately): `_LAND_WAIVE_LINE_RE` only matches a
-    SINGLE physical `# frob:waive ...`/`// frob:waive ...` line, mirroring
-    `frob.gates._fix_engine`'s own `_WAIVE_SINGLE_LINE_RE` scope exactly
-    (see that module for the authoritative waiver-comment grammar). A
-    multi-line/continuation waiver -- one whose `reason="..."` text wraps
-    onto a following physical line via a trailing backslash or a block
-    comment -- is invisible to this scan on EITHER side (uncommitted or
-    committed): only the FIRST physical line matches `_LAND_WAIVE_LINE_RE`
-    at all, so a deletion that removes just a continuation line (leaving
-    the `frob:waive RULE` line itself intact) is not detected as a waiver
-    deletion by this function, on top of and separate from `_deletion_
-    owned`'s down-stream scope-ownership question. Closing this requires
-    teaching the scan the SAME multi-line grammar `_fix_engine` parses
-    (a real continuation-aware state machine, not a regex tweak) -- out of
-    this ticket's scope (`_land.py`/`_land_merge.py`/`tests/
-    test_ticket_land.py` only); tracked as a follow-up rather than
-    silently left unnoted."""
+    T-1468 fix: a `frob:waive` comment may wrap its `reason="..."` text
+    across several physical lines via a trailing-backslash continuation
+    (this repo's own directive convention); `frob fmt`'s line-length
+    absorption can RE-WRAP such a comment (change how many physical lines
+    it spans, without changing its actual content) as an ordinary side
+    effect of a completely unrelated ticket's land. A naive line-based diff
+    read sees the old wrap's physical lines as deleted and the new wrap's
+    as added -- indistinguishable, at the single-line level, from someone
+    actually removing the waiver. `_fold_waive_blocks` reassembles each
+    side's physical lines into logical `(rule, normalized_text)` blocks
+    (joining continuations, stripping comment leaders/backslashes,
+    collapsing whitespace) PER HUNK, and a deleted block is only reported
+    as a real deletion if no added block in the SAME hunk normalizes to
+    the identical text -- a pure re-wrap normalizes identically on both
+    sides and is silently not flagged, while a genuine content change (or
+    an outright removal, where no equivalent added block exists at all)
+    still is."""
     diff = run_argv(
         ["git", "-C", str(worktree), "diff", *diff_args, "--no-color", "-U0"]
     )
     if diff.is_err or diff.danger_ok.returncode not in (0, 1):
         return Err(LandError.GitFailed)
+    return Ok(tuple(_scan_diff_for_waive_deletions(diff.danger_ok.stdout)))
+
+
+# frob:ticket T-1468
+def _scan_diff_for_waive_deletions(stdout: str) -> list[tuple[str, str]]:
+    """The real per-hunk scan `_waive_deletions_in_diff` delegates to
+    (T-1468): walks `stdout` (a `git diff --no-color -U0` invocation)
+    file-header and hunk-header boundaries, buffering each hunk's raw
+    `-`/`+` physical lines and flushing them through `_real_waive_
+    deletions` at every boundary -- split out from the caller purely to
+    keep that function's own body short; behavior is identical to having
+    this loop inline."""
     deletions: list[tuple[str, str]] = []
     current_file: str | None = None
-    for line in diff.danger_ok.stdout.splitlines():
-        if line.startswith("--- a/"):
-            current_file = line.removeprefix("--- a/")
-        elif line.startswith("--- /dev/null"):
-            current_file = None
-        elif line.startswith("-") and not line.startswith("---"):
-            if current_file is None:
-                continue
-            match = _LAND_WAIVE_LINE_RE.match(line[1:])
-            if match is not None:
-                deletions.append((current_file, match.group(2)))
-    return Ok(tuple(deletions))
+    minus_lines: list[str] = []
+    plus_lines: list[str] = []
+
+    for line in stdout.splitlines():
+        if line.startswith("--- a/") or line.startswith("--- /dev/null"):
+            deletions.extend(
+                _real_waive_deletions(current_file, minus_lines, plus_lines)
+            )
+            minus_lines, plus_lines = [], []
+            current_file = (
+                None if line == "--- /dev/null" else line.removeprefix("--- a/")
+            )
+        elif line.startswith("@@"):
+            deletions.extend(
+                _real_waive_deletions(current_file, minus_lines, plus_lines)
+            )
+            minus_lines, plus_lines = [], []
+        elif line.startswith("-") and not line.startswith("---") and current_file:
+            minus_lines.append(line[1:])
+        elif line.startswith("+") and not line.startswith("+++") and current_file:
+            plus_lines.append(line[1:])
+    deletions.extend(_real_waive_deletions(current_file, minus_lines, plus_lines))
+    return deletions
+
+
+# frob:ticket T-1468
+def _real_waive_deletions(
+    current_file: str | None, minus_lines: Sequence[str], plus_lines: Sequence[str]
+) -> list[tuple[str, str]]:
+    """One hunk's genuine `(file, rule)` waive deletions (T-1468): folds
+    both sides into logical blocks (`_fold_waive_blocks`) and reports a
+    deleted block only when no added block in the same hunk normalizes to
+    the identical text -- see `_waive_deletions_in_diff`'s docstring for
+    why a pure re-wrap must not count as a deletion. Returns `[]` when
+    there is no current file (outside any tracked hunk) or nothing was
+    deleted in this hunk."""
+    if current_file is None or not minus_lines:
+        return []
+    added_normalized = {text for _rule, text in _fold_waive_blocks(plus_lines)}
+    return [
+        (current_file, rule)
+        for rule, text in _fold_waive_blocks(minus_lines)
+        if text not in added_normalized
+    ]
+
+
+# frob:ticket T-1468
+def _fold_waive_blocks(lines: Sequence[str]) -> list[tuple[str, str]]:
+    """`(rule, normalized_text)` for every `frob:waive` comment block found
+    in `lines` (T-1468, one diff hunk's raw physical lines on one side): a
+    block starts at a line matching `_LAND_WAIVE_LINE_RE` and continues
+    consuming subsequent lines while the PREVIOUS line (right-stripped)
+    ends in a trailing backslash continuation -- this repo's own single-
+    `\\`-per-physical-line convention for wrapping a long `reason="..."`.
+    A line that itself starts a fresh `frob:waive` block ends any
+    in-progress one even if the prior line ended in a backslash (a real
+    directive is never itself continuation prose). Returns one entry per
+    block found, in file order."""
+    blocks: list[tuple[str, str]] = []
+    current_rule: str | None = None
+    current_fragments: list[str] = []
+    continuing = False
+
+    def _flush() -> None:
+        if current_rule is not None:
+            blocks.append((current_rule, _normalize_waive_fragments(current_fragments)))
+
+    for raw in lines:
+        match = _LAND_WAIVE_LINE_RE.match(raw)
+        if match is not None:
+            _flush()
+            current_rule = match.group(2)
+            current_fragments = [raw]
+            continuing = raw.rstrip().endswith("\\")
+            continue
+        if continuing and current_rule is not None:
+            current_fragments.append(raw)
+            continuing = raw.rstrip().endswith("\\")
+            continue
+        _flush()
+        current_rule = None
+        current_fragments = []
+        continuing = False
+    _flush()
+    return blocks
+
+
+# frob:ticket T-1468
+_WAIVE_COMMENT_LEADER_RE = re.compile(r"^\s*(#|//)\s*")
+
+
+def _normalize_waive_fragments(fragments: Sequence[str]) -> str:
+    """Canonical, wrap-insensitive text for a `frob:waive` comment block
+    (T-1468): strips each physical line's comment leader (`#`/`//`) and any
+    trailing backslash continuation marker, joins the remaining fragments
+    with a single space, and collapses internal whitespace runs to one
+    space each -- so two comments carrying byte-identical waiver content
+    but wrapped across a different number of physical lines (a `frob fmt`
+    re-wrap of an over-long line, say) normalize to the exact same string."""
+    parts: list[str] = []
+    for frag in fragments:
+        text = _WAIVE_COMMENT_LEADER_RE.sub("", frag.strip())
+        text = text.rstrip()
+        if text.endswith("\\"):
+            text = text[:-1].rstrip()
+        parts.append(text)
+    normalized = " ".join(part for part in parts if part)
+    return re.sub(r"\s+", " ", normalized).strip()
 
 
 def _uncommitted_waive_deletions(

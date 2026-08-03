@@ -1435,6 +1435,81 @@ class TestUncommittedWaiveDeletionRefusal:
         assert result.danger_err == LandError.OutOfScopeWaiveDeletion
 
 
+# frob:ticket T-1468
+class TestWaiveRewrapNotDeletion:
+    """T-1468: a `frob fmt` re-wrap of a multi-line `frob:waive` comment's
+    `reason="..."` continuation (changing how many physical lines it spans
+    without changing its actual content) must NOT trip the T-1323/T-1326
+    out-of-scope waive-deletion refusal -- only a genuine content removal
+    should."""
+
+    # frob:ticket T-1468
+    def test_rewrap_only_diff_is_not_flagged_as_a_deletion(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land_git_ops.py::_uncommitted_waive_deletions kind="unit"  # noqa: E501
+        (repo / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="some very long reason that used to fit on \\\n'
+            '# two lines like this"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add other.py with a wrapped PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-waive-rewrap", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Unrelated ticket", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        # Re-wrap the SAME reason text across three physical lines instead
+        # of two -- a `frob fmt` line-length absorption, not a content
+        # change. Out of this ticket's scope, uncommitted (the exact T-1323
+        # laundering shape), but it must not refuse: the normalized content
+        # is byte-identical to what it replaces.
+        (wt / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="some very long reason that used \\\n'
+            "# to fit \\\n"
+            '# on two lines like this"\n'
+            "def g():\n    pass\n"
+        )
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_ok, result.err
+
+    # frob:ticket T-1468
+    def test_rewrap_that_also_changes_content_still_refuses(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land_git_ops.py::_uncommitted_waive_deletions kind="unit"  # noqa: E501
+        (repo / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="some very long reason that used to fit on \\\n'
+            '# two lines like this"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add other.py with a wrapped PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-waive-rewrap-changed", str(wt)],
+            repo,
+        )
+
+        created = new_ticket(wt, _spec("Unrelated ticket", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        # Re-wrapped AND the reason text itself genuinely changed -- this
+        # must still refuse, since the normalized content differs.
+        (wt / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="a completely different reason \\\n'
+            '# spanning two lines now"\n'
+            "def g():\n    pass\n"
+        )
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_err
+        assert result.danger_err == LandError.OutOfScopeWaiveDeletion
+
+
 class TestCommittedWaiveDeletionRefusal:
     """T-1326: extends the T-1323 guard from the worktree's UNCOMMITTED
     state to its COMMITTED branch history (`merge-base..HEAD`) -- the

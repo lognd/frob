@@ -456,6 +456,14 @@ def _sweep_revert_land(
 
 # frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1456
+# frob:ticket T-1463
+# frob:waive AFFECT001 reason="T-1463 only skips a guaranteed-redundant second scan \
+# when Tier-A applied 0 fixes (root's tree is provably unchanged since fresh was \
+# captured); the documented step 4/5 contract in docs/modules/tickets.md's Post-land \
+# unscoped error sweep section is unchanged -- same inputs, same outputs, fewer \
+# duplicate frob check spawns. Out of this ticket's declared scope (src/frob/app/ \
+# ticket_runner/_land_cmd.py, src/frob/tickets/_land_finalize.py) to also touch \
+# docs/modules/tickets.md here."  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_absent_before_land_refuses_and_reverts  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_fixed_by_tier_a_lands_with_a_followup_commit  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_no_new_error_is_a_silent_no_op  # noqa: E501
@@ -487,7 +495,16 @@ def _post_land_unscoped_error_sweep(
     an unmeasurable fresh scan is treated as "skip the sweep, do not
     refuse a land over a comparison neither side could actually make" --
     same unmeasured-is-not-zero posture `_check_gates_summary_fn`/
-    `_check_gate_findings_fn` already use."""
+    `_check_gate_findings_fn` already use.
+
+    T-1463: when the Tier-A auto-fix retry applies 0 fixes, `root`'s tree
+    is provably unchanged since `fresh` was captured a few lines above --
+    a second full unscoped scan can only reproduce the identical result,
+    so it is skipped and `fresh` is reused directly as `reverify` instead
+    of paying for a guaranteed-redundant budget-bounded `frob check`
+    spawn (this was, along with the pre-land baseline capture now running
+    concurrently with `land()` in `_land`, one of the two near-full check
+    invocations pushing a land past the playbook's foreground budget)."""
     if baseline_findings is None:
         _log.warning(
             "ticket land: %s post-land unscoped sweep skipped -- pre-land "
@@ -515,9 +532,19 @@ def _post_land_unscoped_error_sweep(
         )
         return True
 
-    _sweep_apply_tier_a_and_commit(root, ticket_id, final_id, new_findings)
+    fixed_count = _sweep_apply_tier_a_and_commit(
+        root, ticket_id, final_id, new_findings
+    )
 
-    reverify = _unscoped_error_findings(root, ticket_id)
+    # T-1463: Tier-A applying 0 fixes means `root`'s tree is UNCHANGED since
+    # `fresh` was captured above -- a second full unscoped scan can only
+    # reproduce the exact same result, so skip it and reuse `fresh`
+    # directly instead of paying for a guaranteed-redundant budget-bounded
+    # `frob check` spawn.
+    if fixed_count == 0:
+        reverify: frozenset[tuple[str, str]] | None = fresh
+    else:
+        reverify = _unscoped_error_findings(root, ticket_id)
     still_new = (reverify - baseline_findings) if reverify is not None else new_findings
     if not still_new:
         _log.info(
@@ -1122,6 +1149,54 @@ def _warn_land_override_flags(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1456
+# frob:ticket T-1463
+def _spawn_baseline_snapshot_worktree(root: Path, sha: str) -> Path | None:
+    """T-1463: create a detached, throwaway `git worktree` checkout of
+    `root` at `sha` so the pre-land baseline scan (`_unscoped_error_
+    findings`) can run against an IMMUTABLE snapshot instead of `root`'s
+    live working tree. This is what makes running the baseline scan
+    CONCURRENTLY with `land()`'s own merge into `root` safe: without a
+    snapshot, a background scan reading `root` directly would race
+    `land()`'s merge writing to those same files mid-scan, producing a
+    baseline that is neither the true pre-land state nor the post-merge
+    one. Returns `None` (never raises) on any git failure -- the caller
+    falls back to the pre-T-1463 sequential, direct-on-`root` scan, same
+    as if this function did not exist."""
+    import tempfile
+
+    tmp_dir = Path(tempfile.mkdtemp(prefix="frob-land-baseline-"))
+    added = run_argv(
+        ["git", "-C", str(root), "worktree", "add", "--detach", str(tmp_dir), sha]
+    )
+    if added.is_err or added.danger_ok.returncode != 0:
+        _log.warning(
+            "ticket land: baseline snapshot worktree creation failed at %s -- "
+            "baseline capture will run sequentially against root instead",
+            sha,
+        )
+        return None
+    return tmp_dir
+
+
+# frob:ticket T-1463
+def _remove_baseline_snapshot_worktree(root: Path, tmp_dir: Path) -> None:
+    """Best-effort cleanup of `_spawn_baseline_snapshot_worktree`'s temp
+    checkout (T-1463): logged, never raised, on failure -- a leaked
+    worktree registration is a cheap, later-swept nuisance (`frob worktree
+    sweep`, playbook section 12b), not a land-blocking error."""
+    removed = run_argv(
+        ["git", "-C", str(root), "worktree", "remove", "--force", str(tmp_dir)]
+    )
+    if removed.is_err or removed.danger_ok.returncode != 0:
+        _log.warning(
+            "ticket land: failed to remove baseline snapshot worktree %s -- "
+            "run `frob worktree sweep` later to clean it up",
+            tmp_dir,
+        )
+
+
+# frob:ticket T-1456
+# frob:ticket T-1463
 def _capture_pre_land_baseline(
     root: Path, cfg: AppConfig
 ) -> tuple[str | None, frozenset[tuple[str, str]] | None]:
@@ -1130,7 +1205,18 @@ def _capture_pre_land_baseline(
     identity set -- the exact pair `_post_land_unscoped_error_sweep`
     compares a post-land scan against. Skipped outright (returns
     `(None, None)`) for a `--dry-run`, since nothing will actually land on
-    `root` to compare a post-land state against."""
+    `root` to compare a post-land state against.
+
+    T-1463: scans a detached snapshot worktree at the captured HEAD sha
+    (`_spawn_baseline_snapshot_worktree`) instead of `root` directly, when
+    that snapshot can be created -- this is what lets `_land` run this
+    whole function in a background thread WHILE `land()`'s own merge
+    proceeds on `root`, instead of paying for the two sequentially (this
+    scan's ~budget-bounded wall time was previously pure dead time added
+    on top of `land()`'s own worktree-scoped checks, and was the single
+    biggest reason a land could exceed the playbook's foreground budget).
+    Falls back to scanning `root` directly (the pre-T-1463 behavior) if
+    the snapshot worktree cannot be created for any reason."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
     if cfg.ticket_dry_run:
         return None, None
@@ -1138,7 +1224,17 @@ def _capture_pre_land_baseline(
     rev = run_argv(["git", "-C", str(root), "rev-parse", "HEAD"])
     if rev.is_ok and rev.danger_ok.returncode == 0:
         pre_land_sha = rev.danger_ok.stdout.strip()
-    pre_land_findings = _unscoped_error_findings(root, cfg.ticket_id)
+    if pre_land_sha is None:
+        pre_land_findings = _unscoped_error_findings(root, cfg.ticket_id)
+        return pre_land_sha, pre_land_findings
+    snapshot = _spawn_baseline_snapshot_worktree(root, pre_land_sha)
+    if snapshot is None:
+        pre_land_findings = _unscoped_error_findings(root, cfg.ticket_id)
+        return pre_land_sha, pre_land_findings
+    try:
+        pre_land_findings = _unscoped_error_findings(snapshot, cfg.ticket_id)
+    finally:
+        _remove_baseline_snapshot_worktree(root, snapshot)
     return pre_land_sha, pre_land_findings
 
 
@@ -1174,6 +1270,13 @@ def _run_post_land_sweep_or_exit(
         sys.exit(1)
 
 
+# frob:ticket T-1463
+# frob:waive ARCH103 reason="T-0977 precedent: this IS the `frob ticket land` CLI \
+# orchestration entrypoint -- resolve root, run the pre-land fix absorption, kick off \
+# the T-1463 background baseline scan, invoke land(), join the baseline thread, run \
+# the post-land sweep, report, push, finish. Each step is already its own extracted \
+# helper/closure; the sequencing and exit-code decisions themselves ARE this \
+# function's one job, not a separate concern to split out further"  # noqa: E501
 def _land(root: Path, cfg: AppConfig) -> None:
     """`frob ticket land <id> --worktree <path> [--dry-run]`: run the whole
     merge-check-splice-close-commit chain via `frob.tickets.land`, reporting
@@ -1206,7 +1309,20 @@ def _land(root: Path, cfg: AppConfig) -> None:
     acceptance criterion refuses to land while the post-merge tree still
     reports live findings for that rule under that glob -- the T-1276
     defect (closed done and landed against 116 live TEST005 findings under
-    its own criterion's glob) is now refused at the real land path."""
+    its own criterion's glob) is now refused at the real land path.
+
+    T-1463: the pre-land baseline capture (`_capture_pre_land_baseline`) is
+    started in a background thread BEFORE `land()` is called, and joined
+    only once its result is actually needed (`_run_post_land_sweep_or_exit`,
+    after `land()` returns) -- it scans an isolated snapshot worktree, not
+    `root` itself (see `_capture_pre_land_baseline`'s docstring), so it is
+    safe to run while `land()` merges into `root` at the same time. This
+    overlaps the baseline scan's own budget-bounded wall time with
+    whatever `land()` spends on its own worktree-scoped checks instead of
+    paying for both sequentially, which was the single largest reason a
+    land exceeded the playbook's foreground budget."""
+    import threading
+
     from frob.tickets import land
 
     _require_land_args(cfg)
@@ -1224,7 +1340,17 @@ def _land(root: Path, cfg: AppConfig) -> None:
     root = _resolve_land_root(root, worktree, cfg.ticket_id)
 
     _warn_land_override_flags(cfg)
-    pre_land_sha, pre_land_findings = _capture_pre_land_baseline(root, cfg)
+
+    # T-1463: run concurrently with land()'s own merge/checks below -- see
+    # this function's docstring and _capture_pre_land_baseline's for why
+    # this is safe (snapshot-isolated, not a read of root's live tree).
+    _baseline_holder: list[tuple[str | None, frozenset[tuple[str, str]] | None]] = []
+    _baseline_thread = threading.Thread(
+        target=lambda: _baseline_holder.append(_capture_pre_land_baseline(root, cfg)),
+        name=f"frob-land-baseline-{cfg.ticket_id}",
+        daemon=True,
+    )
+    _baseline_thread.start()
 
     # T-0919: one shared spawn feeds BOTH check_gates/check_gate_findings
     # below instead of each running its own full `frob check --ticket`.
@@ -1255,6 +1381,14 @@ def _land(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
 
     report = result.danger_ok
+
+    # T-1463: join only now -- the background baseline scan has had this
+    # whole land() call's wall time to finish concurrently; a slow scan
+    # just blocks here a little longer, it never blocked land() itself.
+    _baseline_thread.join()
+    pre_land_sha, pre_land_findings = (
+        _baseline_holder[0] if _baseline_holder else (None, None)
+    )
 
     _run_post_land_sweep_or_exit(root, cfg, report, pre_land_sha, pre_land_findings)
 
