@@ -6899,7 +6899,7 @@ by that later ticket.
 (no evidence recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
+- tests: 1 passed (from 1 evidence id(s))
 - gates: 3 error(s), 145 warning(s), 745 waived
 - error-findings: AFFECT001@src/frob/logging/handler.py, E501@/home/logan/projects/frob/.claude/worktrees/w21d-drafts/src/frob/logging/handler.py:38, E501@/home/logan/projects/frob/.claude/worktrees/w21d-drafts/src/frob/logging/handler.py:57
 
