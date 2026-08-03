@@ -10722,3 +10722,29 @@ main has 4 live errors post T-1360/T-1462 land: (a) src/frob/vet/_capability_cor
 
 ## Drop reason
 - 2026-08-02: duplicate draft, superseded by T-1465 with fuller scope
+
+<!-- ticket:T-1468 -->
+```yaml
+id: T-1468
+title: land deletion filter reads fmt rewraps of frob:waive comments as deletions
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land_git_ops.py
+acceptance:
+- text: GIVEN a diff that only re-flows a frob:waive comment's line wrapping WHEN
+    the land deletion filter runs THEN it is not treated as a deletion
+  evidence: []
+- text: GIVEN a diff that genuinely deletes a frob:waive directive WHEN the filter
+    runs THEN it still refuses as today
+  evidence: []
+threat: null
+component: null
+```
+Observed on the T-1465 land: the pre-land fmt absorb rewrapped two multi-line frob:waive WIRE001 comments in tests/conftest.py to fit the line-length limit; the deletion filter saw the minus-lines of the rewrap diff as waiver deletions and refused the land (OutOfScopeWaiveDeletion) even though the waiver text, rule, reason, and follow_up were byte-equivalent after re-flowing. The Done-report prose disclosure did not satisfy the check; only adding every touched file to the landing ticket's scope did. Fix: the filter should normalize waive directives (join continuation lines, collapse whitespace) on both diff sides and treat an identical-normalized-content rewrap as no deletion. Regression test: a diff that only re-wraps a waive comment passes the filter; a diff that actually removes one still refuses.
