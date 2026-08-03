@@ -801,6 +801,11 @@ scope_changes:
     coverage lives
   actor: logan
   at: '2026-08-03'
+evidence:
+- tests/test_gates.py::TestTestGate::test_test005_symbol_finding_discloses_stale_coverage
+- tests/test_gates.py::TestTestGate::test_test005_symbol_finding_no_disclosure_when_fresh
+- tests/test_gates.py::TestTestGate::test_test005_module_finding_discloses_stale_coverage
+- tests/test_gates.py::TestTestGate::test_test005_system_finding_discloses_stale_coverage
 acceptance:
 - text: GIVEN a tracked source change WHEN frob check runs THEN coverage data for
     affected symbols is refreshed automatically via the touched-set test machinery
