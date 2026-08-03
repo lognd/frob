@@ -249,7 +249,10 @@ playbook:
 # `make coverage COVERAGE_RERUN_DEADLINE=<seconds>` for a slower machine or
 # a deliberately larger serial suite.
 COVERAGE_RERUN_DEADLINE ?= 1800
-COVERAGE_WORKERS ?= 4
+# T-1433: 4 workers reproducibly lost one to an uncatchable kill (OOM-shaped)
+# and wedged the xdist scheduler; the 2026-08-03 2-worker run completed with
+# zero deaths. 2 is the measured-safe default on this 4-core WSL box.
+COVERAGE_WORKERS ?= 2
 # T-1433: the xdist (parallel) phase used to have NO bound at all -- only
 # the `-n 0` serial rerun above got one. Both incidents' own reproduction
 # ("run make coverage twice back-to-back") never actually pinned down
