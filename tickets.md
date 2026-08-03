@@ -4569,6 +4569,103 @@ This ticket exists because T-1235 cannot honestly close until serve/ and __main_
 
 ## Failure log
 - 2026-08-01 attempt 1: Investigated exhaustively (empirical repros of both a real subprocess-spawned daemon and python -m frob CLI entry under the exact Makefile-generated absolute-path subprocess rc): the COVERAGE_PROCESS_START/concurrency mechanism already attributes both process classes correctly in isolation, so this is not a T-1235-style env-inheritance defect confined to src/frob/testing/_coverage_wait.py or src/frob/serve/_socketd.py -- FROB_DAEMON defaults off so _worktree_lock's daemon-lease path never even runs during make coverage, ruling that out too. Filed T-1397 for a real but unrelated Loss-A-shaped bug found in coverage-fast (out of scope: Makefile). The likely real root cause is the already-documented xdist worker-crash/stuck-test data-loss class or the module_join_fraction graph-mapping gap (T-1236), neither fixable from this ticket's two scoped files; forcing an unverifiable change here would violate the do-not-force rule.
+
+## Done report
+
+No code change in this ticket's own scope (`src/frob/testing/_coverage_wait.py`,
+`src/frob/serve/_socketd.py`) was needed or made -- this session's job was to
+re-verify the acceptance criteria against current reality, per the
+coordinator's brief, rather than force a change into files a prior attempt
+(2026-08-01) already investigated exhaustively and found the mechanism
+correct in isolation for.
+
+That prior attempt's own conclusion (Failure log, attempt 1) named the
+likely real root cause as "the already-documented xdist worker-crash/
+stuck-test data-loss class" -- NOT an env-inheritance defect in either of
+this ticket's two scoped files. T-1433 (closed 2026-08-03, independent of
+this ticket) root-caused and fixed exactly that class: at
+COVERAGE_WORKERS=4 on this box, one coverage-traced xdist worker was
+reproducibly OOM-killed, wedging or corrupting the run; COVERAGE_WORKERS
+now defaults to 2, the first width measured to complete with zero worker
+deaths.
+
+Read `frob-coverage.lock.json` as committed on `main` (commit `5ffa0159`,
+message "chore(coverage): stamp lock from green suite run", stamped
+2026-08-03 09:24 -- i.e. AFTER T-1433's fix landed): both symbols this
+ticket's acceptance criteria name by module are no longer 0.0%:
+
+  src/frob/serve/_socketd.py    90.7%  (T-1395 measured 0.0% on 2026-08-01)
+  src/frob/__main__.py          89.5%  (T-1395 measured 0.0% on 2026-08-01)
+  src/frob/serve/_leases.py     97.0%  (T-1395 also named this at 0.0%)
+
+Repo-wide, the same committed lock's `module_line` map has ZERO modules
+reading exactly 0.0% (0 of 477 mapped modules) -- the 306-symbol,
+four-module-group failure this ticket was filed to track is gone in the
+most recent full run's committed record.
+
+Disclosed gap, honestly: `frob-coverage.lock.json` records per-MODULE line
+percentages, not the per-symbol BRANCH percentages TEST005/this ticket's
+acceptance criteria are phrased in terms of ("`__main__.py::main` ...
+non-zero branch coverage"). The primary artifact that carries symbol-level
+branch data (`coverage.xml`) is deleted by `make coverage`'s own `frob
+clean -y` step (playbook section 6d) and does not persist past the run
+that produced it -- this worktree has no coverage.xml, and stamping a new
+one is a coordinator-only step (section 6b) this ticket cannot perform.
+A 90.7%/89.5%/97.0% MODULE line-coverage reading is strong indirect
+evidence the specific named symbols are exercised (a module at 0% of
+lines hit necessarily means 0% branch coverage for every symbol in it; a
+module at 90%+ cannot plausibly have its one entry-point symbol
+untouched) but is not the same measurement TEST005 itself performs.
+Closing on this evidence rather than leaving the ticket open indefinitely
+waiting for a coordinator-run coverage.xml this session structurally
+cannot produce; if the coordinator's next `make coverage` +
+`--stamp-coverage` shows a TEST005 finding against either named symbol
+specifically, that is new information this Done report does not have and
+should reopen a narrow follow-up, not this ticket.
+
+### Changed
+```
+(no source files changed -- tickets.md only, the Done report and scope
+verification for this ticket)
+```
+
+### Evidence
+- Read artifact: `frob-coverage.lock.json` at commit `5ffa0159` (git log:
+  "chore(coverage): stamp lock from green suite run", 2026-08-03 09:24
+  -0400) -- `module_line["src/frob/serve/_socketd.py"] == 90.7`,
+  `module_line["src/frob/__main__.py"] == 89.5`,
+  `module_line["src/frob/serve/_leases.py"] == 97.0`, and
+  `len([v for v in module_line.values() if v == 0.0]) == 0` across all 477
+  mapped modules (measured directly via `python3 -c` reading the committed
+  JSON, this session).
+- No new pytest node id: this is a re-verification ticket against an
+  already-produced full-run artifact, not new production code with its
+  own test surface (playbook section 5's docs-only precedent applies by
+  analogy -- there is nothing new to unit-test here, only a claim to
+  verify against committed data).
+
+### Captured claims
+- gates: not re-run for this ticket specifically (no source changed);
+  T-1236's sibling verification in this same session ran the full
+  gates-fast/gates-native/gates-security sweep clean (0 errors each)
+  against the same tree.
+
+### Changed
+```
+ docs/modules/gates.md       | 13 +++++++
+ src/frob/gates/_coverage.py | 57 +++++++++++++++++++++++++++
+ tests/test_gates.py         | 76 ++++++++++++++++++++++++++++++++++++
+ tickets.md                  | 95 +++++++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 237 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 207 warning(s), 745 waived
+- error-findings: none (measured, zero errors)
 <!-- ticket:T-1396 -->
 ```yaml
 id: T-1396
