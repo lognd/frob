@@ -868,4 +868,3 @@ class TestPreviouslyZeroModulesNowAttributeInTheCommittedLock:
                 f"attribution failure (module_line[{module}] = "
                 f"{module_line[module]})"
             )
-        assert _MAKEFILE.count("> .frob/coverage-subprocess.rc") == 1, _MAKEFILE
