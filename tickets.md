@@ -6763,7 +6763,7 @@ after) and is absent from the resulting commit's file list (git log -1
 ```yaml
 id: T-1433
 title: make coverage serial-rerun phase wedges forever on a dead-holder futex
-state: in-progress
+state: queued
 kind: bug
 origin: agent
 created: '2026-08-02'
@@ -7058,7 +7058,6 @@ should extend beyond pytest-only scope.
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 0 error(s), 939 warning(s), 749 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1434 -->
 ```yaml
 id: T-1434
