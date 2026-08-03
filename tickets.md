@@ -4532,16 +4532,34 @@ sprint: null
 scope:
 - src/frob/testing/_coverage_wait.py
 - src/frob/serve/_socketd.py
+- tests/unit/test_coverage_attribution_lock_t1395.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_coverage_attribution_lock_t1395.py
+  reason: 'regression-lock evidence: assert the committed frob-coverage.lock.json
+    (this ticket''s own re-verification artifact) keeps serve/__main__/daemon-adjacent
+    modules non-zero, so a future regression back to the 0.0% daemon/CLI-entry attribution
+    failure this ticket tracked is caught even though no code fix belongs in this
+    ticket''s two scoped files'
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_t1395_named_modules_are_nonzero_in_committed_lock
+- tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_no_module_reads_exactly_zero_in_committed_lock
 acceptance:
 - text: GIVEN a successful unscoped make coverage run WHEN the TEST005 report is read
     THEN src/frob/serve/** symbols exercised by the daemon tests report non-zero branch
     coverage
-  evidence: []
+  evidence:
+  - tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_t1395_named_modules_are_nonzero_in_committed_lock
+  - tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_no_module_reads_exactly_zero_in_committed_lock
 - text: GIVEN the same run WHEN src/frob/__main__.py::main is read THEN it reports
     non-zero branch coverage rather than 0.0%
-  evidence: []
+  evidence:
+  - tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_t1395_named_modules_are_nonzero_in_committed_lock
+  - tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_no_module_reads_exactly_zero_in_committed_lock
 threat: null
 component: null
 ```
