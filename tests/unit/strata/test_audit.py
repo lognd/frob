@@ -26,6 +26,8 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import patch
 
+from typani.result import Err
+
 from frob.gates import known_gate_rule_ids
 from frob.strata import (
     Boundary,
@@ -37,14 +39,17 @@ from frob.strata import (
     NoFlow,
     Quantity,
     Rung,
+    StrataError,
     Waiver,
 )
 from frob.strata._audit import (
     DEFAULT_QUALITY_VIEWS,
     AuditReport,
+    _threat_violation_sub_target,
     evaluate_exhaustiveness,
     group_gaps_by_view,
 )
+from frob.strata._threat_models import ThreatViolation
 from frob.strata._compliance import OutOfScopeRegulation
 from frob.strata._threat_discharge import _discharge_claim_id
 
@@ -743,3 +748,199 @@ class TestCodeBoundWiring:
         result = evaluate_exhaustiveness(model, known_rule_ids=_KNOWN_RULE_IDS)
         assert result.is_ok
         assert result.danger_ok.proved
+
+
+    # ---- Every composition helper's own Err-propagation branch (T-1415
+    # remainder): each patches exactly one already-shipped check function
+    # to return Err, proving evaluate_exhaustiveness fails closed rather
+    # than silently dropping the failing family -- zero new detection,
+    # only the join's own error-propagation contract (module docstring).
+
+    _ERR = Err(StrataError.UnknownReference)
+
+    def _err_prop_model(self) -> KernelModel:
+        return KernelModel(nodes=(Node(id="api", trust="trusted"),))
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_capability_completeness_error_propagates(self):
+        with patch(
+            "frob.strata._audit.check_capability_completeness",
+            return_value=self._ERR,
+        ):
+            result = evaluate_exhaustiveness(self._err_prop_model())
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_discharge_completeness_error_propagates(self):
+        with patch(
+            "frob.strata._audit.check_discharge_completeness",
+            return_value=self._ERR,
+        ):
+            result = evaluate_exhaustiveness(self._err_prop_model())
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_quality_view_family_error_propagates(self):
+        """The quality-family loop's own `report.is_err` branch, distinct
+        from the security loop's (`test_unknown_view_errs` above covers the
+        security-loop version)."""
+        result = evaluate_exhaustiveness(
+            self._err_prop_model(), quality_views=("no-such-quality-view",)
+        )
+        assert result.is_err
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_caught_by_integrity_error_propagates(self):
+        with patch(
+            "frob.strata._audit._check_caught_by_integrity", return_value=self._ERR
+        ):
+            result = evaluate_exhaustiveness(self._err_prop_model())
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_compliance_error_propagates(self):
+        with patch("frob.strata._audit.evaluate_compliance", return_value=self._ERR):
+            result = evaluate_exhaustiveness(self._err_prop_model())
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_pii_error_propagates(self):
+        with patch("frob.strata._audit.evaluate_pii", return_value=self._ERR):
+            result = evaluate_exhaustiveness(self._err_prop_model())
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_lint_error_propagates(self):
+        with patch("frob.strata._audit.evaluate_lint", return_value=self._ERR):
+            result = evaluate_exhaustiveness(self._err_prop_model())
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_fingerprint_catalog_drift_error_propagates(self):
+        with patch(
+            "frob.strata._audit.check_fingerprint_catalog_drift",
+            return_value=self._ERR,
+        ):
+            result = evaluate_exhaustiveness(self._err_prop_model())
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_host_isolation_error_propagates(self):
+        with patch(
+            "frob.strata._audit.evaluate_host_isolation_waived", return_value=self._ERR
+        ):
+            result = evaluate_exhaustiveness(self._err_prop_model())
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_compromised_user_scenario_build_error_propagates(self):
+        """One `runs_as` service user must exist for `_blast_radius_gaps_
+        per_user` to reach `build_compromised_user_scenario` at all."""
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="worker",
+                    trust="trusted",
+                    attrs=("owns=/var/lib/worker:0750", "runs_as=worker_svc"),
+                ),
+            )
+        )
+        with patch(
+            "frob.strata._audit.build_compromised_user_scenario",
+            return_value=self._ERR,
+        ):
+            result = evaluate_exhaustiveness(model)
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_blast_radius_scenario_evaluation_error_propagates(self):
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="worker",
+                    trust="trusted",
+                    attrs=("owns=/var/lib/worker:0750", "runs_as=worker_svc"),
+                ),
+            )
+        )
+        with patch(
+            "frob.strata._audit.evaluate_scenarios", return_value=self._ERR
+        ):
+            result = evaluate_exhaustiveness(model)
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_ambiguous_code_binding_error_propagates_when_root_given(
+        self, tmp_path: Path
+    ):
+        """`bind_code`'s own `Err(AmbiguousCodeBinding)` must propagate
+        fail-closed rather than degrade to an unbound audit (T-0630
+        docstring's explicit contract)."""
+        _write(tmp_path, "api/handler.py", "x = 1\n")
+        model = KernelModel(
+            nodes=(
+                Node(id="Api", trust="trusted", attrs=("code=api/**",)),
+                Node(id="ApiToo", trust="trusted", attrs=("code=api/*.py",)),
+            )
+        )
+        result = evaluate_exhaustiveness(model, root=tmp_path)
+        assert result.is_err
+        assert result.danger_err is StrataError.AmbiguousCodeBinding
+
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_waived_gap_detail_folds_in_reason_and_rule(self):
+        """A matching `waive` clause on the finding's own node must move
+        the gap into `report.waived` with the waiver's rule and reason
+        folded into `detail` (`_waived_detail`, T-1415 remainder) -- never
+        just silently dropped."""
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="store",
+                    trust="trusted",
+                    attrs=("pii=identifier.email",),
+                    waives=(Waiver(rule="PII003", reason="handled downstream"),),
+                ),
+            )
+        )
+        result = evaluate_exhaustiveness(model)
+        assert result.is_ok
+        report = result.danger_ok
+        assert not any(g.family == "pii" for g in report.gaps)
+        pii_waived = [w for w in report.waived if w.family == "pii"]
+        assert len(pii_waived) == 1
+        waived = pii_waived[0]
+        assert waived.rule == "PII003"
+        assert "WAIVED[PII003]" in waived.detail
+        assert "handled downstream" in waived.detail
+
+
+    # `_threat_violation_sub_target`'s own branches (T-1415 remainder):
+    # THREAT002's capability kind, THREAT003's CWE id, and the fallback
+    # None for anything else (THREAT001, or a violation naming neither).
+
+    # frob:tests src/frob/strata/_audit.py::_threat_violation_sub_target kind="unit"
+    def test_threat002_sub_target_is_the_capability_kind(self):
+        v = ThreatViolation(rule="THREAT002", capability="exec", node="api")
+        assert _threat_violation_sub_target(v) == "exec"
+
+    # frob:tests src/frob/strata/_audit.py::_threat_violation_sub_target kind="unit"
+    def test_threat003_sub_target_is_the_cwe_id(self):
+        v = ThreatViolation(rule="THREAT003", cwe="CWE-89", node="api")
+        assert _threat_violation_sub_target(v) == "CWE-89"
+
+    # frob:tests src/frob/strata/_audit.py::_threat_violation_sub_target kind="unit"
+    def test_threat001_has_no_sub_target(self):
+        v = ThreatViolation(rule="THREAT001", detail="unclassified")
+        assert _threat_violation_sub_target(v) is None

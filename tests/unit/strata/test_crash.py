@@ -101,6 +101,63 @@ class TestNoHangCheck:
         result = evaluate_crash_contracts(model)
         assert result.is_ok
 
+    # frob:tests src/frob/strata/_crash.py::evaluate_crash_contracts kind="unit"
+    def test_restart_with_unknown_unit_fails_closed(self):
+        """`_crash_bound_seconds`'s own restart-unit Err branch (T-1415
+        remainder), propagated through `_validate_no_hang_flow`."""
+        model = KernelModel(
+            nodes=(
+                _node("caller"),
+                _node(
+                    "worker",
+                    crash=CrashContract(restart=Quantity(value=30, unit="bogus")),
+                ),
+            ),
+            flows=(_flow("f1", "caller", "worker", timeout=_seconds(40)),),
+        )
+        result = evaluate_crash_contracts(model)
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownUnit
+
+    # frob:tests src/frob/strata/_crash.py::evaluate_crash_contracts kind="unit"
+    def test_retry_with_unknown_unit_fails_closed(self):
+        """`_crash_bound_seconds`'s own retry-unit Err branch (T-1415
+        remainder)."""
+        model = KernelModel(
+            nodes=(
+                _node("caller"),
+                _node(
+                    "worker",
+                    crash=CrashContract(
+                        restart=_seconds(30), retry=Quantity(value=5, unit="bogus")
+                    ),
+                ),
+            ),
+            flows=(_flow("f1", "caller", "worker", timeout=_seconds(40)),),
+        )
+        result = evaluate_crash_contracts(model)
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownUnit
+
+    # frob:tests src/frob/strata/_crash.py::evaluate_crash_contracts kind="unit"
+    def test_flow_timeout_with_unknown_unit_fails_closed(self):
+        """`_validate_no_hang_flow`'s own timeout-unit Err branch (T-1415
+        remainder)."""
+        model = KernelModel(
+            nodes=(
+                _node("caller"),
+                _node("worker", crash=CrashContract(restart=_seconds(30))),
+            ),
+            flows=(
+                _flow(
+                    "f1", "caller", "worker", timeout=Quantity(value=40, unit="bogus")
+                ),
+            ),
+        )
+        result = evaluate_crash_contracts(model)
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownUnit
+
 
 class TestRecoverySourceValidation:
     def test_unknown_recovers_from_target_fails_closed(self):
@@ -132,6 +189,30 @@ class TestRecoverySourceValidation:
         )
         result = evaluate_crash_contracts(model)
         assert result.is_ok
+
+    # frob:tests src/frob/strata/_crash.py::evaluate_crash_contracts kind="unit"
+    def test_build_facts_error_propagates_from_crash_diagnostics(self):
+        """A negative flow quantity fails `build_facts` closed inside
+        `_crash_diagnostics`, after the recovery-source and no-hang checks
+        already passed (T-1415 remainder)."""
+        model = KernelModel(
+            nodes=(
+                _node("caller"),
+                _node("worker", crash=CrashContract(restart=_seconds(30))),
+            ),
+            flows=(
+                _flow(
+                    "f1",
+                    "caller",
+                    "worker",
+                    timeout=_seconds(40),
+                    rate=Quantity(value=-1, unit="req/s"),
+                ),
+            ),
+        )
+        result = evaluate_crash_contracts(model)
+        assert result.is_err
+        assert result.danger_err is StrataError.NegativeQuantity
 
 
 class TestCrashRetryIdempotencyJoin:
@@ -177,6 +258,34 @@ class TestCrashRetryIdempotencyJoin:
                 _node("worker", crash=CrashContract(restart=_seconds(30))),
             ),
             flows=(_flow("f1", "caller", "worker", timeout=_seconds(30)),),
+        )
+        result = evaluate_crash_contracts(model)
+        assert result.is_ok
+        assert result.danger_ok.diagnostics == ()
+
+    # frob:tests src/frob/strata/_crash.py::evaluate_crash_contracts kind="unit"
+    def test_flow_already_at_least_once_is_left_untouched_not_double_marked(self):
+        """Covers the `_join_retry_idempotency` loop's not-taken branch: a
+        flow already carrying the at-least-once attr must not be
+        re-appended a second time (T-1415 remainder)."""
+        model = KernelModel(
+            nodes=(
+                _node("caller"),
+                _node(
+                    "worker",
+                    attrs=("idempotent",),
+                    crash=CrashContract(restart=_seconds(30), retry=_seconds(10)),
+                ),
+            ),
+            flows=(
+                _flow(
+                    "f1",
+                    "caller",
+                    "worker",
+                    timeout=_seconds(40),
+                    attrs=("delivery=at_least_once",),
+                ),
+            ),
         )
         result = evaluate_crash_contracts(model)
         assert result.is_ok
@@ -251,3 +360,31 @@ class TestAutoGeneratedCrashScenario:
         # worker (and its flows) are removed under its own crash scenario, so
         # audit_src can no longer reach sink through it.
         assert scenario.results[0].verdict is Verdict.REFUTED
+
+    # frob:tests src/frob/strata/_crash.py::evaluate_crash_contracts kind="unit"
+    def test_scenario_evaluation_error_propagates(self):
+        """A claim that targets the crashed node itself cannot resolve once
+        the auto-generated scenario removes that node -- `evaluate_scenarios`
+        errors and `evaluate_crash_contracts` propagates it closed, covering
+        both `_crash_scenario_results` and `_evaluate_crashable_contracts`'s
+        own Err branches (T-1415 remainder)."""
+        model = KernelModel(
+            nodes=(
+                _node("caller"),
+                _node("worker", crash=CrashContract(restart=_seconds(30))),
+            ),
+            flows=(_flow("f1", "caller", "worker", timeout=_seconds(30)),),
+            claims=(
+                Claim(
+                    id="worker_capacity",
+                    body=BoundClaim(
+                        metric=Metric.RATE,
+                        target="worker",
+                        limit=Quantity(value=100, unit="req/s"),
+                    ),
+                ),
+            ),
+        )
+        result = evaluate_crash_contracts(model)
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference

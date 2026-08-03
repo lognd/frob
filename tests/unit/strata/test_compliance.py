@@ -6,6 +6,9 @@ T-0109/T-0116).
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import patch
+
+from typani.result import Err
 
 from frob.registry import RegistryEntry, parse_disposition
 from frob.strata import (
@@ -19,15 +22,20 @@ from frob.strata import (
     OutOfScopeRegulation,
     PrivacyPolicy,
     Quantity,
+    StrataError,
 )
 from frob.strata._compliance import (
     _CMPL_UNIT_TRIAGE_TICKET,
     CMPL_REGISTRY_UNIT_IDS,
     COMPLIANCE_CATALOG,
     REGULATION_VIEWS,
+    _check_baa,
     _check_cmpl_registry_unit_backing,
     _check_cmpl_registry_unit_dispositions,
+    _check_coppa,
     _check_regulation_caught_by_integrity,
+    _claim_override,
+    _retention_limit,
     check_cmpl_registry,
     check_privacy_policy,
     check_regulation_catalog_completeness,
@@ -216,6 +224,70 @@ class TestCoppa:
             v.rule == "COMPLIANCE002" and "owner" in v.detail for v in result.danger_ok
         )
 
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_asserted_non_assumed_claim_does_not_override(self):
+        """A real (non-`assumed`) `Claim` matching the auto-instantiated
+        claim id must NOT bypass the structural check (T-1415 remainder):
+        only an explicit `assume` clause counts as an override."""
+        model = _coppa_model(gated=False)
+        model = model.model_copy(
+            update={
+                "claims": (
+                    Claim(
+                        id="compliance:COPPA:collect",
+                        body=NoFlow(src="Child", dst="Store"),
+                        assumed=False,
+                    ),
+                )
+            }
+        )
+        overridden, malformed = _claim_override(model, "compliance:COPPA:collect")
+        assert overridden is False
+        assert malformed is None
+        # end-to-end: the obligation is still refuted, unaffected by the
+        # non-overriding claim.
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert any(v.regulation == "COPPA" for v in result.danger_ok)
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_non_pii_child_flow_is_silent(self):
+        """The `_pii_or_above` False branch: a `subject:child`-tagged flow
+        whose label sits below Pii never fires COPPA (T-1415 remainder)."""
+        principal = Node(id="Child", trust="foreign")
+        store = Node(id="Store", trust="trusted")
+        flow = Flow(
+            id="collect",
+            src="Child",
+            dst="Store",
+            label="Public",
+            attrs=("subject:child",),
+        )
+        model = KernelModel(nodes=(principal, store), flows=(flow,))
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert not any(v.regulation == "COPPA" for v in result.danger_ok)
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_flow_dst_not_a_declared_node_is_silently_out_of_reach(self):
+        """A collection flow whose `dst` names no node in the model cannot
+        be joined against a store -- COPPA's own per-flow check must not
+        crash or misfire, just skip it (T-1415 remainder). Exercised
+        directly against `_check_coppa` since a fully invalid `dst` also
+        trips `build_facts`'s own `UnknownReference` fail-closed check one
+        step earlier in `check_regulation_discharge`'s real pipeline
+        (`_check_retention` runs first)."""
+        principal = Node(id="Child", trust="foreign")
+        flow = Flow(
+            id="collect",
+            src="Child",
+            dst="Ghost",
+            label="Pii",
+            attrs=("subject:child",),
+        )
+        model = KernelModel(nodes=(principal,), flows=(flow,))
+        assert _check_coppa(model) == ()
+
 
 def _erasure_model(*, has_revocation: bool) -> KernelModel:
     store = Node(
@@ -250,6 +322,49 @@ class TestGdprErasure:
     # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
     def test_revocation_edge_discharges_erasure(self):
         model = _erasure_model(has_revocation=True)
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert not any(v.regulation == "GDPR-ERASURE" for v in result.danger_ok)
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_malformed_override_is_a_violation(self):
+        model = _erasure_model(has_revocation=False)
+        model = model.model_copy(
+            update={
+                "claims": (
+                    Claim(
+                        id="compliance:GDPR-ERASURE:EuStore",
+                        body=NoFlow(src="Api", dst="EuStore"),
+                        assumed=True,
+                    ),
+                )
+            }
+        )
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert any(
+            v.regulation == ""
+            and v.rule == "COMPLIANCE002"
+            and "owner" in v.detail
+            for v in result.danger_ok
+        )
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_owner_and_review_override_clears_erasure(self):
+        model = _erasure_model(has_revocation=False)
+        model = model.model_copy(
+            update={
+                "claims": (
+                    Claim(
+                        id="compliance:GDPR-ERASURE:EuStore",
+                        body=NoFlow(src="Api", dst="EuStore"),
+                        assumed=True,
+                        owner="legal@example.com",
+                        review="2027-01-01",
+                    ),
+                )
+            }
+        )
         result = check_regulation_discharge(model)
         assert result.is_ok
         assert not any(v.regulation == "GDPR-ERASURE" for v in result.danger_ok)
@@ -298,6 +413,128 @@ class TestGdprRetention:
         assert result.is_ok
         assert not any(v.regulation == "GDPR-RETENTION" for v in result.danger_ok)
 
+    def _store_and_flow(self, *, retention_attr: str) -> KernelModel:
+        store = Node(
+            id="EuStore",
+            trust="trusted",
+            clearance="Pii",
+            attrs=("jurisdiction:eu-resident", retention_attr),
+        )
+        api = Node(id="Api", trust="trusted")
+        flow = Flow(
+            id="collect",
+            src="Api",
+            dst="EuStore",
+            label="Pii",
+            age=Quantity(value=1, unit="d"),
+        )
+        return KernelModel(nodes=(api, store), flows=(flow,))
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_non_time_retention_unit_is_a_violation(self):
+        """A `retention=` bound declared in a non-time dimension (e.g. mass)
+        cannot be compared against worst-case age -- refuted directly,
+        never silently treated as passing (T-1415 remainder)."""
+        model = self._store_and_flow(retention_attr="retention=5kg")
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        violations = [v for v in result.danger_ok if v.regulation == "GDPR-RETENTION"]
+        assert len(violations) == 1
+        assert "not a time unit" in violations[0].detail
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_malformed_override_is_a_violation(self):
+        model = self._store_and_flow(retention_attr="retention=1d")
+        model = model.model_copy(
+            update={
+                "claims": (
+                    Claim(
+                        id="compliance:GDPR-RETENTION:EuStore",
+                        body=NoFlow(src="Api", dst="EuStore"),
+                        assumed=True,
+                    ),
+                )
+            }
+        )
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert any(
+            v.regulation == "" and "owner" in v.detail for v in result.danger_ok
+        )
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_owner_and_review_override_clears_retention(self):
+        model = self._store_and_flow(retention_attr="retention=1d")
+        model = model.model_copy(
+            update={
+                "claims": (
+                    Claim(
+                        id="compliance:GDPR-RETENTION:EuStore",
+                        body=NoFlow(src="Api", dst="EuStore"),
+                        assumed=True,
+                        owner="legal@example.com",
+                        review="2027-01-01",
+                    ),
+                )
+            }
+        )
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert not any(v.regulation == "GDPR-RETENTION" for v in result.danger_ok)
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_non_pii_clearance_store_is_silent(self):
+        """The `_pii_or_above` False branch: a `jurisdiction:eu-resident`
+        node whose clearance sits below Pii never fires GDPR-RETENTION
+        (T-1415 remainder)."""
+        store = Node(
+            id="EuStore",
+            trust="trusted",
+            clearance="Public",
+            attrs=("jurisdiction:eu-resident", "retention=1d"),
+        )
+        api = Node(id="Api", trust="trusted")
+        flow = Flow(id="collect", src="Api", dst="EuStore", label="Public")
+        model = KernelModel(nodes=(api, store), flows=(flow,))
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert not any(v.regulation == "GDPR-RETENTION" for v in result.danger_ok)
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_negative_flow_quantity_fails_the_whole_discharge_check_closed(self):
+        """`_check_retention`'s own `build_facts` Err propagates through
+        `check_regulation_discharge` (T-1415 remainder), same negative-
+        quantity structural failure `_facts.py::_validate_nonnegative_
+        quantities` fails closed on elsewhere."""
+        store = Node(
+            id="EuStore",
+            trust="trusted",
+            clearance="Pii",
+            attrs=("jurisdiction:eu-resident", "retention=90d"),
+        )
+        api = Node(id="Api", trust="trusted")
+        flow = Flow(
+            id="collect",
+            src="Api",
+            dst="EuStore",
+            label="Pii",
+            rate=Quantity(value=-1, unit="req/s"),
+        )
+        model = KernelModel(nodes=(api, store), flows=(flow,))
+        result = check_regulation_discharge(model)
+        assert result.is_err
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_malformed_retention_attr_returns_none(self):
+        """A `retention=` attr with no parseable numeric prefix logs and
+        returns None (T-1415 remainder) -- covered directly since the
+        malformed shape never survives to a real Quantity fixture."""
+        assert _retention_limit(("retention=notanumber",)) is None
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_no_retention_attr_returns_none(self):
+        assert _retention_limit(("jurisdiction:eu-resident",)) is None
+
 
 class TestGdprLawfulBasis:
     # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
@@ -336,6 +573,72 @@ class TestGdprLawfulBasis:
         assert result.is_ok
         assert not any(v.regulation == "GDPR-BASIS" for v in result.danger_ok)
 
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_non_pii_flow_is_silent(self):
+        store = Node(
+            id="EuStore", trust="trusted", attrs=("jurisdiction:eu-resident",)
+        )
+        api = Node(id="Api", trust="trusted")
+        flow = Flow(id="collect", src="Api", dst="EuStore", label="Public")
+        model = KernelModel(nodes=(api, store), flows=(flow,))
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert not any(v.regulation == "GDPR-BASIS" for v in result.danger_ok)
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_malformed_override_is_a_violation(self):
+        store = Node(
+            id="EuStore",
+            trust="trusted",
+            clearance="Pii",
+            attrs=("jurisdiction:eu-resident",),
+        )
+        api = Node(id="Api", trust="trusted")
+        flow = Flow(id="collect", src="Api", dst="EuStore", label="Pii")
+        model = KernelModel(
+            nodes=(api, store),
+            flows=(flow,),
+            claims=(
+                Claim(
+                    id="compliance:GDPR-BASIS:collect",
+                    body=NoFlow(src="Api", dst="EuStore"),
+                    assumed=True,
+                ),
+            ),
+        )
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert any(
+            v.regulation == "" and "owner" in v.detail for v in result.danger_ok
+        )
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_owner_and_review_override_clears_basis(self):
+        store = Node(
+            id="EuStore",
+            trust="trusted",
+            clearance="Pii",
+            attrs=("jurisdiction:eu-resident",),
+        )
+        api = Node(id="Api", trust="trusted")
+        flow = Flow(id="collect", src="Api", dst="EuStore", label="Pii")
+        model = KernelModel(
+            nodes=(api, store),
+            flows=(flow,),
+            claims=(
+                Claim(
+                    id="compliance:GDPR-BASIS:collect",
+                    body=NoFlow(src="Api", dst="EuStore"),
+                    assumed=True,
+                    owner="legal@example.com",
+                    review="2027-01-01",
+                ),
+            ),
+        )
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert not any(v.regulation == "GDPR-BASIS" for v in result.danger_ok)
+
 
 class TestHipaaBaa:
     # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
@@ -358,6 +661,66 @@ class TestHipaaBaa:
             id="share", src="Api", dst="Vendor", label="Pii", attrs=("subject:health",)
         )
         model = KernelModel(nodes=(api, vendor), flows=(flow,))
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert not any(v.regulation == "HIPAA-BAA" for v in result.danger_ok)
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_dst_not_a_declared_node_is_silently_out_of_reach(self):
+        """Exercised directly against `_check_baa`, for the same reason
+        `TestCoppa`'s equivalent test is: `build_facts` would error first
+        through the real `check_regulation_discharge` pipeline."""
+        api = Node(id="Api", trust="trusted")
+        flow = Flow(
+            id="share", src="Api", dst="Ghost", label="Pii", attrs=("subject:health",)
+        )
+        model = KernelModel(nodes=(api,), flows=(flow,))
+        assert _check_baa(model) == ()
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_malformed_override_is_a_violation(self):
+        api = Node(id="Api", trust="trusted")
+        vendor = Node(id="Vendor", trust="authenticated")
+        flow = Flow(
+            id="share", src="Api", dst="Vendor", label="Pii", attrs=("subject:health",)
+        )
+        model = KernelModel(
+            nodes=(api, vendor),
+            flows=(flow,),
+            claims=(
+                Claim(
+                    id="compliance:HIPAA-BAA:share",
+                    body=NoFlow(src="Api", dst="Vendor"),
+                    assumed=True,
+                ),
+            ),
+        )
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert any(
+            v.regulation == "" and "owner" in v.detail for v in result.danger_ok
+        )
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_owner_and_review_override_clears_baa(self):
+        api = Node(id="Api", trust="trusted")
+        vendor = Node(id="Vendor", trust="authenticated")
+        flow = Flow(
+            id="share", src="Api", dst="Vendor", label="Pii", attrs=("subject:health",)
+        )
+        model = KernelModel(
+            nodes=(api, vendor),
+            flows=(flow,),
+            claims=(
+                Claim(
+                    id="compliance:HIPAA-BAA:share",
+                    body=NoFlow(src="Api", dst="Vendor"),
+                    assumed=True,
+                    owner="legal@example.com",
+                    review="2027-01-01",
+                ),
+            ),
+        )
         result = check_regulation_discharge(model)
         assert result.is_ok
         assert not any(v.regulation == "HIPAA-BAA" for v in result.danger_ok)
@@ -388,6 +751,66 @@ class TestMinimization:
             Flow(id="read", src="Store", dst="Reader", label="Pii"),
         )
         model = KernelModel(nodes=(api, store, reader), flows=flows)
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert not any(v.regulation == "MINIMIZATION" for v in result.danger_ok)
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_non_pii_field_flow_is_silent(self):
+        api = Node(id="Api", trust="trusted")
+        store = Node(id="Store", trust="trusted")
+        flow = Flow(
+            id="collect", src="Api", dst="Store", label="Public", attrs=("field:ssn",)
+        )
+        model = KernelModel(nodes=(api, store), flows=(flow,))
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert not any(v.regulation == "MINIMIZATION" for v in result.danger_ok)
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_malformed_override_is_a_violation(self):
+        api = Node(id="Api", trust="trusted")
+        store = Node(id="Store", trust="trusted", clearance="Pii")
+        flow = Flow(
+            id="collect", src="Api", dst="Store", label="Pii", attrs=("field:ssn",)
+        )
+        model = KernelModel(
+            nodes=(api, store),
+            flows=(flow,),
+            claims=(
+                Claim(
+                    id="compliance:MINIMIZATION:collect",
+                    body=NoFlow(src="Api", dst="Store"),
+                    assumed=True,
+                ),
+            ),
+        )
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert any(
+            v.regulation == "" and "owner" in v.detail for v in result.danger_ok
+        )
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_owner_and_review_override_clears_minimization(self):
+        api = Node(id="Api", trust="trusted")
+        store = Node(id="Store", trust="trusted", clearance="Pii")
+        flow = Flow(
+            id="collect", src="Api", dst="Store", label="Pii", attrs=("field:ssn",)
+        )
+        model = KernelModel(
+            nodes=(api, store),
+            flows=(flow,),
+            claims=(
+                Claim(
+                    id="compliance:MINIMIZATION:collect",
+                    body=NoFlow(src="Api", dst="Store"),
+                    assumed=True,
+                    owner="legal@example.com",
+                    review="2027-01-01",
+                ),
+            ),
+        )
         result = check_regulation_discharge(model)
         assert result.is_ok
         assert not any(v.regulation == "MINIMIZATION" for v in result.danger_ok)
@@ -438,6 +861,50 @@ class TestPrivacyNotice:
         assert result.is_ok
         assert not any(v.regulation == "PRIVACY-NOTICE" for v in result.danger_ok)
 
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_malformed_override_is_a_violation(self):
+        store = Node(
+            id="Store", trust="trusted", clearance="Pii", attrs=("exposure:public-web",)
+        )
+        model = KernelModel(
+            nodes=(store,),
+            flows=(),
+            claims=(
+                Claim(
+                    id="compliance:PRIVACY-NOTICE:Store",
+                    body=NoFlow(src="Store", dst="Store"),
+                    assumed=True,
+                ),
+            ),
+        )
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert any(
+            v.regulation == "" and "owner" in v.detail for v in result.danger_ok
+        )
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
+    def test_owner_and_review_override_clears_privacy_notice(self):
+        store = Node(
+            id="Store", trust="trusted", clearance="Pii", attrs=("exposure:public-web",)
+        )
+        model = KernelModel(
+            nodes=(store,),
+            flows=(),
+            claims=(
+                Claim(
+                    id="compliance:PRIVACY-NOTICE:Store",
+                    body=NoFlow(src="Store", dst="Store"),
+                    assumed=True,
+                    owner="legal@example.com",
+                    review="2027-01-01",
+                ),
+            ),
+        )
+        result = check_regulation_discharge(model)
+        assert result.is_ok
+        assert not any(v.regulation == "PRIVACY-NOTICE" for v in result.danger_ok)
+
 
 class TestPrivacyPolicy:
     # frob:tests src/frob/strata/_compliance.py::check_privacy_policy kind="unit"
@@ -465,6 +932,26 @@ class TestPrivacyPolicy:
         policy = PrivacyPolicy(id="v1", collected_fields=frozenset({"email"}))
         violations = check_privacy_policy(model, policy)
         assert violations == ()
+
+    # frob:tests src/frob/strata/_compliance.py::check_privacy_policy kind="unit"
+    def test_non_pii_flow_is_never_checked(self):
+        api = Node(id="Api", trust="trusted")
+        store = Node(id="Store", trust="trusted")
+        flow = Flow(
+            id="collect", src="Api", dst="Store", label="Public", attrs=("field:ssn",)
+        )
+        model = KernelModel(nodes=(api, store), flows=(flow,))
+        policy = PrivacyPolicy(id="v1", collected_fields=frozenset())
+        assert check_privacy_policy(model, policy) == ()
+
+    # frob:tests src/frob/strata/_compliance.py::check_privacy_policy kind="unit"
+    def test_flow_with_no_field_attr_is_never_checked(self):
+        api = Node(id="Api", trust="trusted")
+        store = Node(id="Store", trust="trusted", clearance="Pii")
+        flow = Flow(id="collect", src="Api", dst="Store", label="Pii")
+        model = KernelModel(nodes=(api, store), flows=(flow,))
+        policy = PrivacyPolicy(id="v1", collected_fields=frozenset())
+        assert check_privacy_policy(model, policy) == ()
 
 
 class TestRegulationCaughtByIntegrity:
@@ -659,6 +1146,40 @@ class TestEvaluateCompliance:
         assert result.is_ok
         rules = {v.rule for v in result.danger_ok.violations}
         assert "COMPLIANCE004" not in rules
+
+    # frob:tests src/frob/strata/_compliance.py::evaluate_compliance kind="unit"
+    def test_discharge_error_propagates(self):
+        """`check_regulation_discharge`'s own Err (via `_check_retention`'s
+        `build_facts` failure) must propagate through `evaluate_compliance`,
+        not just through `check_regulation_discharge` directly (T-1415
+        remainder)."""
+        store = Node(
+            id="EuStore",
+            trust="trusted",
+            clearance="Pii",
+            attrs=("jurisdiction:eu-resident", "retention=90d"),
+        )
+        api = Node(id="Api", trust="trusted")
+        flow = Flow(
+            id="collect",
+            src="Api",
+            dst="EuStore",
+            label="Pii",
+            rate=Quantity(value=-1, unit="req/s"),
+        )
+        model = KernelModel(nodes=(api, store), flows=(flow,))
+        result = evaluate_compliance(model, "all-regulations")
+        assert result.is_err
+
+    # frob:tests src/frob/strata/_compliance.py::evaluate_compliance kind="unit"
+    def test_caught_by_integrity_error_propagates(self):
+        model = KernelModel(nodes=(Node(id="api", trust="trusted"),))
+        with patch(
+            "frob.strata._compliance._check_regulation_caught_by_integrity",
+            return_value=Err(StrataError.UnknownReference),
+        ):
+            result = evaluate_compliance(model, "all-regulations")
+        assert result.is_err
 
 
 class TestCmplRegistry:

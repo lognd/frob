@@ -225,3 +225,46 @@ class TestRatchetFindingRendering:
         match = re.search(r"regressed (\d+)%", out)
         assert match is not None, out
         assert int(match.group(1)) > 500, out
+
+
+class TestCollectAndHotTopTruncation:
+    """`--top N` truncation branches (T-1400 remainder): `_collect_body`'s
+    own `cfg.perf_top is not None` slice and `_hot_json_payload`'s `top is
+    not None` slice, each only taken when `--top` is actually passed."""
+
+    def test_collect_top_truncates_decile_rows(self, tmp_path: Path, capsys) -> None:
+        workload, line = _write_workload(tmp_path)
+        profile = tmp_path / "p.script"
+        profile.write_text(_perf_script([(1.0, f"{workload}:{line}")]))
+
+        cfg = AppConfig(
+            perf_command="collect",
+            perf_path=tmp_path,
+            perf_file=profile,
+            perf_top=0,
+            perf_json=True,
+        )
+        perf_run(cfg)
+        out = capsys.readouterr().out
+        payload = json.loads(out)
+        # perf_top=0 slices every row away -- proves the slice actually
+        # ran (an untaken branch would return every language-decile row).
+        assert payload["rows"] == []
+
+    def test_hot_top_truncates_json_rows(self, tmp_path: Path, capsys) -> None:
+        workload, line = _write_workload(tmp_path)
+        profile = tmp_path / "p.script"
+        profile.write_text(_perf_script([(1.0, f"{workload}:{line}")]))
+
+        perf_run(
+            AppConfig(perf_command="collect", perf_path=tmp_path, perf_file=profile)
+        )
+        capsys.readouterr()
+
+        perf_run(
+            AppConfig(
+                perf_command="hot", perf_path=tmp_path, perf_top=0, perf_json=True
+            )
+        )
+        out = capsys.readouterr().out
+        assert json.loads(out) == []
