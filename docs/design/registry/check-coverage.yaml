@@ -19,7 +19,7 @@
 #     fabricated ticket). As work closes a concern down to a real gate
 #     rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 276
+gate_rule_total: 279
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     name: "COV001 is a live, enforced gate rule"
@@ -933,6 +933,18 @@ gate_rule_entries:
   - id: "CHK-GATE-DOC007"
     name: "DOC007 is a live, enforced gate rule"
     disposition: "handled_by:DOC007"
+    cross_refs: []
+  - id: "CHK-GATE-DOC008"
+    name: "DOC008 is a live, enforced gate rule (T-1231: an obligated doc's own inline markdown link target or #fragment does not resolve)"
+    disposition: "handled_by:DOC008"
+    cross_refs: []
+  - id: "CHK-GATE-DOC009"
+    name: "DOC009 is a live, enforced gate rule (T-1232: a docs/audits/*.md file has no dated status/superseded-by header)"
+    disposition: "handled_by:DOC009"
+    cross_refs: []
+  - id: "CHK-GATE-DOC010"
+    name: "DOC010 is a live, enforced gate rule (T-1230: a `make <target>` prose citation is not a real Makefile recipe)"
+    disposition: "handled_by:DOC010"
     cross_refs: []
   - id: "CHK-GATE-REG012"
     name: "REG012 is a live, enforced gate rule"
