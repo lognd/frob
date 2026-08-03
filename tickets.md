@@ -1074,7 +1074,7 @@ Derived-state auto-refresh sweep 2026-07-29 (user directive: nothing frob-manage
 id: T-1214
 title: 'perf: graph/cache load_file_data issues 3 sqlite queries per file -- batch
   whole-table SELECTs'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -1171,7 +1171,7 @@ T-1211 lands.
 (no evidence recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
+- tests: 3 passed (from 3 evidence id(s))
 - gates: 0 error(s), 266 warning(s), 741 waived
 - error-findings: none (measured, zero errors)
 
