@@ -9,6 +9,7 @@ from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
 
 from ._declared_surface import _EMPTY_DECLARED_SURFACE, _DeclaredSurface
+from ._node_index import _build_node_index, _NodeIndex
 from ._python_fields import _literal_str
 
 _log = get_logger(__name__)
@@ -118,20 +119,31 @@ def _sec110_violation(rel_path: str, lineno: int, site: str) -> Violation:
     )
 
 
+# frob:waive AFFECT001 reason="T-1209 adds an optional internal _index perf kwarg \
+# (defaults to computing the same walk it always did); the documented SEC110 \
+# behavior/output is unchanged (verified byte-identical before/after against this \
+# repo's own tree), so docs/modules/gates.md#public-api needs no update"
 def _scan_python_env_access(
     tree: ast.Module,
     rel_path: str,
     declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+    *,
+    _index: _NodeIndex | None = None,
 ) -> tuple[Violation, ...]:
     """SEC110 over every `os.environ[...]`/`os.environ.get(...)`/
     `os.getenv(...)` call/subscript site in `tree` (module docstring:
     family 3, env/secret sources), joined against `declared`'s
     Secret-clearance code binding (T-0351) -- a file already code-bound to
-    a declared std.secrets node is discharged, not merely waivable."""
+    a declared std.secrets node is discharged, not merely waivable.
+    `_index` (T-1209 perf): see `_scan_python_fields`'s docstring --
+    `index._ordered(index.subscripts, index.calls)` recovers the same
+    `Subscript`/`Call` document-order interleaving the original single
+    `ast.walk` loop produced, so finding order is unchanged."""
     if declared._has_secret(rel_path):
         return ()
+    index = _index if _index is not None else _build_node_index(tree)
     violations: list[Violation] = []
-    for node in ast.walk(tree):
+    for node in index._ordered(index.subscripts, index.calls):
         if isinstance(node, ast.Subscript) and _is_environ_subscript(node):
             var_name = _literal_str(_subscript_key(node))
             if var_name is not None and _is_allowlisted_env_var(var_name):

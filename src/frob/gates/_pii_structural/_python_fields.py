@@ -12,6 +12,7 @@ from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
 
 from ._declared_surface import _EMPTY_DECLARED_SURFACE, _DeclaredSurface
+from ._node_index import _build_node_index, _NodeIndex
 from ._signatures import _field_name_hit, _field_type_hit
 
 _log = get_logger(__name__)
@@ -119,17 +120,29 @@ def _scan_class_fields(
 
 
 # frob:tests tests/test_pii_structural_gate.py::TestFieldNames.test_password_field_fires
+# frob:waive AFFECT001 reason="T-1209 adds an optional internal _index perf kwarg \
+# (defaults to computing the same walk it always did); the documented PII010 \
+# behavior/output is unchanged (verified byte-identical before/after against this \
+# repo's own tree), so docs/modules/gates.md#public-api needs no update"
 def _scan_python_fields(
     tree: ast.Module,
     rel_path: str,
     declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+    *,
+    _index: _NodeIndex | None = None,
 ) -> tuple[Violation, ...]:
     """PII010 over every data-structure `ClassDef` in `tree` (module
     docstring: pydantic/dataclass/TypedDict/attrs field names+types),
-    joined against `declared`'s std.pii carries tags (T-0351)."""
+    joined against `declared`'s std.pii carries tags (T-0351). `_index`
+    (T-1209 perf): an already-built `_NodeIndex` for `tree`, so a caller
+    scanning one file with multiple sub-scans builds the walk once and
+    passes it to each -- computed locally via `_build_node_index` when
+    omitted (e.g. a direct unit-test call), so every caller's behavior is
+    unchanged either way."""
+    index = _index if _index is not None else _build_node_index(tree)
     violations: list[Violation] = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ClassDef) and _is_data_structure(node):
+    for node in index.class_defs:
+        if _is_data_structure(node):
             violations.extend(_scan_class_fields(node, rel_path, declared))
     return tuple(violations)
 
@@ -174,17 +187,20 @@ def _column_call_string_name(node: ast.Call) -> str | None:
 
 
 def _scan_orm_columns(
-    tree: ast.Module,
+    index: _NodeIndex,
     rel_path: str,
     declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
 ) -> list[Violation]:
     """PII010 over `name = Column(...)` declarative-model assignments and
     `Column("name", ...)` alembic-style positional column declarations
     (T-0348 family 2), matched against `FIELD_SIGNATURES` the same way a
-    dataclass/pydantic field name is; joined against `declared` (T-0351)."""
+    dataclass/pydantic field name is; joined against `declared` (T-0351).
+    Reads `index.calls`/`index.assigns` (T-1209 perf) instead of re-walking
+    -- two separate passes, same as the original two separate `ast.walk`
+    loops, so relative finding order is unchanged."""
     violations: list[Violation] = []
-    for node in ast.walk(tree):
-        if not (isinstance(node, ast.Call) and _is_column_call(node)):
+    for node in index.calls:
+        if not _is_column_call(node):
             continue
         string_name = _column_call_string_name(node)
         if string_name is not None:
@@ -193,9 +209,7 @@ def _scan_orm_columns(
                 violations.append(
                     _pii010_violation(rel_path, node.lineno, string_name, sig)
                 )
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Assign):
-            continue
+    for node in index.assigns:
         if not (isinstance(node.value, ast.Call) and _is_column_call(node.value)):
             continue
         for target in node.targets:
@@ -271,18 +285,26 @@ def _ddl_column_names(sql: str) -> list[str]:
 
 
 def _scan_ddl_strings(
-    tree: ast.Module,
+    index: _NodeIndex,
     rel_path: str,
     declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
 ) -> list[Violation]:
     """PII010 over `CREATE TABLE` column names embedded in string-literal
     constants anywhere in `tree` (T-0348 family 2: raw-SQL migrations),
-    joined against `declared` (T-0351)."""
+    joined against `declared` (T-0351). Reads `index.str_constants` (T-1209
+    perf) instead of re-walking."""
     violations: list[Violation] = []
-    for node in ast.walk(tree):
-        if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+    for node in index.str_constants:
+        value = node.value
+        if not isinstance(value, str):
+            # Unreachable at runtime -- `_NodeIndex.str_constants` always
+            # buckets `Constant` nodes whose `.value` is already `str`
+            # (`_build_node_index`'s own filter). Re-checked here purely to
+            # re-narrow `node.value`'s static type for the checker, the
+            # same narrowing an inline `ast.walk` + `isinstance` loop used
+            # to give it for free.
             continue
-        for column_name in _ddl_column_names(node.value):
+        for column_name in _ddl_column_names(value):
             sig = _field_name_hit(column_name)
             if sig is not None and not declared._has_pii(rel_path, sig.category):
                 violations.append(
@@ -296,12 +318,16 @@ def _scan_python_ddl(
     tree: ast.Module,
     rel_path: str,
     declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+    *,
+    _index: _NodeIndex | None = None,
 ) -> tuple[Violation, ...]:
     """PII010 over sqlalchemy ORM `Column(...)` declarations and raw-SQL
     `CREATE TABLE` string literals (T-0348 family 2: DB/DDL schema
-    scanning, deferred from T-0207)."""
-    violations = _scan_orm_columns(tree, rel_path, declared)
-    violations.extend(_scan_ddl_strings(tree, rel_path, declared))
+    scanning, deferred from T-0207). `_index` (T-1209 perf): see
+    `_scan_python_fields`'s docstring -- computed locally when omitted."""
+    index = _index if _index is not None else _build_node_index(tree)
+    violations = _scan_orm_columns(index, rel_path, declared)
+    violations.extend(_scan_ddl_strings(index, rel_path, declared))
     return tuple(violations)
 
 

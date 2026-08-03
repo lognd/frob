@@ -111,6 +111,7 @@ from ._declared_surface import _DeclaredSurface, _load_declared_surface
 from ._emails import _is_email_shaped, _scan_python_email_values
 from ._env_access import _scan_python_env_access
 from ._keywords import _scan_python_keyword_sweep
+from ._node_index import _build_node_index
 from ._python_fields import (
     _is_data_structure,
     _scan_python_ddl,
@@ -145,7 +146,11 @@ def _scan_one_python_file(
     run every `_scan_python_*` sub-scan, or -- an unparseable file not
     covered by `[graph].exclude` (T-0897) -- return a single PARSE001
     finding instead. `None` (not an empty list) signals "excluded, do not
-    count as scanned", distinct from "scanned, zero findings"."""
+    count as scanned", distinct from "scanned, zero findings".
+
+    T-1209 perf: builds one `_NodeIndex` (`_build_node_index`, a single
+    `ast.walk(tree)` pass) here and passes it to every sub-scan via its
+    `_index` kwarg, instead of each sub-scan running its own `ast.walk`."""
     try:
         text = (root / rel_path).read_text(encoding="utf-8", errors="strict")
         tree = ast.parse(text, filename=rel_path)
@@ -163,12 +168,13 @@ def _scan_one_python_file(
             )
             return None
         return [_parse001_violation(rel_path, str(exc))]
+    index = _build_node_index(tree)
     violations: list[Violation] = []
-    violations.extend(_scan_python_fields(tree, rel_path, declared))
-    violations.extend(_scan_python_env_access(tree, rel_path, declared))
-    violations.extend(_scan_python_ddl(tree, rel_path, declared))
-    violations.extend(_scan_python_email_values(tree, rel_path, text))
-    violations.extend(_scan_python_keyword_sweep(tree, rel_path, text))
+    violations.extend(_scan_python_fields(tree, rel_path, declared, _index=index))
+    violations.extend(_scan_python_env_access(tree, rel_path, declared, _index=index))
+    violations.extend(_scan_python_ddl(tree, rel_path, declared, _index=index))
+    violations.extend(_scan_python_email_values(tree, rel_path, text, _index=index))
+    violations.extend(_scan_python_keyword_sweep(tree, rel_path, text, _index=index))
     return violations
 
 

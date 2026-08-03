@@ -17,6 +17,8 @@ from email.utils import parseaddr
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
 
+from ._node_index import _build_node_index, _NodeIndex
+
 _log = get_logger(__name__)
 
 # RFC 2606 reserves `example.com`/`example.net`/`example.org` (plus the
@@ -137,21 +139,27 @@ def _pii011_violation(rel_path: str, lineno: int, value: str) -> Violation:
 
 # frob:tests tests/test_pii_structural_gate.py::TestEmailShapeValues.test_email_literal_fires  # noqa: E501
 def _scan_python_email_values(
-    tree: ast.Module, rel_path: str, text: str
+    tree: ast.Module, rel_path: str, text: str, *, _index: _NodeIndex | None = None
 ) -> tuple[Violation, ...]:
     """PII011 over every email-shaped string-literal `ast.Constant` in
     `tree` (T-0349 family 4), skipping any literal marked fake via
-    `_EMAIL_FAKE_MARKER` on its own line or the line directly above."""
+    `_EMAIL_FAKE_MARKER` on its own line or the line directly above.
+    `_index` (T-1209 perf): see `_scan_python_fields`'s docstring --
+    computed locally when omitted."""
+    index = _index if _index is not None else _build_node_index(tree)
     lines = text.splitlines()
     violations: list[Violation] = []
-    for node in ast.walk(tree):
-        if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+    for node in index.str_constants:
+        value = node.value
+        if not isinstance(value, str):
+            # Unreachable at runtime -- see `_scan_ddl_strings`'s identical
+            # guard (`_python_fields.py`) for why this re-check exists.
             continue
-        if not _is_email_shaped(node.value):
+        if not _is_email_shaped(value):
             continue
-        if _is_reserved_test_domain_email(node.value):
+        if _is_reserved_test_domain_email(value):
             continue
         if _line_marks_fake_email(lines, node.lineno):
             continue
-        violations.append(_pii011_violation(rel_path, node.lineno, node.value))
+        violations.append(_pii011_violation(rel_path, node.lineno, value))
     return tuple(violations)

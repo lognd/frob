@@ -24,6 +24,7 @@ import tokenize
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
 
+from ._node_index import _build_node_index, _NodeIndex
 from ._python_fields import _is_data_structure_field_target
 from ._signatures import _camel_to_snake, _field_name_hit, _FieldSignature
 
@@ -366,7 +367,7 @@ def _is_pii012_reviewed_non_pii(rel_path: str, token: str) -> bool:
     return (rel_path, token) in _PII012_REVIEWED_NON_PII
 
 
-def _scan_identifier_keywords(tree: ast.Module, rel_path: str) -> list[Violation]:
+def _scan_identifier_keywords(index: _NodeIndex, rel_path: str) -> list[Violation]:
     """PII012 over every plain identifier (variable/parameter/function
     name) matching a `FIELD_SIGNATURES` name-kind keyword, EXCLUDING sites
     `_scan_python_fields` (PII010) already reports on -- T-0350 family 5:
@@ -374,15 +375,18 @@ def _scan_identifier_keywords(tree: ast.Module, rel_path: str) -> list[Violation
     population PII010's data-structure-field scan deliberately excludes
     (a bare local variable, function parameter, or plain-class attribute
     named `password` is not itself a declared data-structure field) --
-    and EXCLUDING `_PII012_REVIEWED_NON_PII` sites (T-0540)."""
+    and EXCLUDING `_PII012_REVIEWED_NON_PII` sites (T-0540). Reads `index`'s
+    buckets (T-1209 perf) instead of re-walking; `index._ordered(index.args,
+    index.function_defs, index.names)` recovers the original single-walk
+    interleaving of those three types so finding order is unchanged."""
     already_covered: set[int] = {
         node.lineno
-        for node in ast.walk(tree)
-        if isinstance(node, ast.AnnAssign) and _is_data_structure_field_target(node)
+        for node in index.ann_assigns
+        if _is_data_structure_field_target(node)
     }
     seen: set[tuple[int, str]] = set()
     violations: list[Violation] = []
-    for node in ast.walk(tree):
+    for node in index._ordered(index.args, index.function_defs, index.names):
         name: str | None = None
         lineno = 0
         if isinstance(node, ast.arg):
@@ -463,7 +467,7 @@ def _extract_comments(text: str) -> list[tuple[int, str, bool]]:
 
 
 # frob:ticket T-1411
-def _in_scope_identifier_tokens(tree: ast.Module) -> frozenset[str]:
+def _in_scope_identifier_tokens(index: _NodeIndex) -> frozenset[str]:
     """Every lowercase, camelCase/underscore-split token appearing in any
     real identifier bound or referenced in this file's AST (function/class
     names, parameters, assignment targets, attribute accesses, import
@@ -473,9 +477,18 @@ def _in_scope_identifier_tokens(tree: ast.Module) -> frozenset[str]:
     identifier in this file plausibly named by it) cannot trigger PII012
     on vocabulary alone. Uses the same `_camel_to_snake` normalization
     `_field_name_hit` applies to identifiers, so `apiKey`/`api_key` add the
-    same `{"api", "key"}` tokens either way."""
+    same `{"api", "key"}` tokens either way. Reads `index`'s buckets
+    (T-1209 perf) instead of re-walking -- this builds an unordered `set`,
+    so no cross-bucket document-order recovery is needed here."""
     tokens: set[str] = set()
-    for node in ast.walk(tree):
+    for node in (
+        *index.names,
+        *index.args,
+        *index.function_defs,
+        *index.class_defs,
+        *index.attributes,
+        *index.aliases,
+    ):
         name: str | None = None
         if isinstance(node, ast.Name):
             name = node.id
@@ -510,7 +523,7 @@ def _is_comment_reference_form(comment: str, start: int, end: int) -> bool:
 
 
 def _scan_comment_keywords(
-    tree: ast.Module, text: str, rel_path: str
+    index: _NodeIndex, text: str, rel_path: str
 ) -> list[Violation]:
     """PII012 over every `#`-comment's word tokens matching a
     `FIELD_SIGNATURES` name-kind keyword (T-0350 family 5), EXCLUDING
@@ -536,7 +549,7 @@ def _scan_comment_keywords(
     secret_still_fires`) still fire unchanged; a standalone rationale
     comment using the same vocabulary as ordinary prose, with no
     referenced identifier, does not."""
-    in_scope_tokens = _in_scope_identifier_tokens(tree)
+    in_scope_tokens = _in_scope_identifier_tokens(index)
     violations: list[Violation] = []
     seen: set[tuple[int, str]] = set()
     for lineno, comment, is_trailing in _extract_comments(text):
@@ -566,11 +579,13 @@ def _scan_comment_keywords(
 
 # frob:tests tests/test_pii_structural_gate.py::TestKeywordSweep.test_identifier_keyword_fires_at_suggestion_severity  # noqa: E501
 def _scan_python_keyword_sweep(
-    tree: ast.Module, rel_path: str, text: str
+    tree: ast.Module, rel_path: str, text: str, *, _index: _NodeIndex | None = None
 ) -> tuple[Violation, ...]:
     """PII012 (T-0350 family 5): identifier and comment keyword hits at
     suggestion severity, reusing `FIELD_SIGNATURES` -- no hard fail on a
-    bare name/comment word alone."""
-    violations = _scan_identifier_keywords(tree, rel_path)
-    violations.extend(_scan_comment_keywords(tree, text, rel_path))
+    bare name/comment word alone. `_index` (T-1209 perf): see
+    `_scan_python_fields`'s docstring -- computed locally when omitted."""
+    index = _index if _index is not None else _build_node_index(tree)
+    violations = _scan_identifier_keywords(index, rel_path)
+    violations.extend(_scan_comment_keywords(index, text, rel_path))
     return tuple(violations)
