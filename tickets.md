@@ -724,6 +724,8 @@ scope:
 - src/frob/check/__init__.py
 - docs/modules/gates.md
 - tests/test_coverage.py
+- src/frob/gates/__init__.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -781,6 +783,22 @@ scope_changes:
   reason: 'WAVE14-B (T-draft-57d64be9) TICK009 narrowing pass: replaced chronic-broad/over-threshold
     globs with the specific modules/docs/tests this ticket''s own plan names; expand
     with ''frob ticket scope --add'' as real work reveals more files.'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: TEST005's violation-emitting helpers (_test005_symbols/_modules/_systems)
+    live in src/frob/gates/__init__.py, not _coverage.py -- acceptance[1]'s stale-and-disclosed
+    marking must be added there; tests/test_gates.py is where TEST005's existing test
+    coverage lives
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: tests/test_gates.py
+  reason: TEST005's violation-emitting helpers (_test005_symbols/_modules/_systems)
+    live in src/frob/gates/__init__.py, not _coverage.py -- acceptance[1]'s stale-and-disclosed
+    marking must be added there; tests/test_gates.py is where TEST005's existing test
+    coverage lives
   actor: logan
   at: '2026-08-03'
 acceptance:
@@ -6625,3 +6643,27 @@ across a real corpus, not a quick fold-in inside a multi-ticket sweep.
 Scope for the follow-up: src/frob/arch/_python.py (nesting/cyclomatic/
 events fold), src/frob/arch/_concurrency_model.py (_walk_all), src/frob/
 arch/_patterns.py (_find_if_statements).
+
+<!-- ticket:T-draft-adacc08c -->
+```yaml
+id: T-draft-adacc08c
+title: TEST011 escalates from advisory WARN to a blocking freshness contract for stale
+  coverage
+state: queued
+kind: feature
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+- docs/modules/gates.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1205 acceptance[1]'s second half (the first half -- TEST005 stale-and-disclosed marking -- landed in T-1205's own session). TEST011 currently WARNs on stale_by_mtime/deflated join fraction; this ticket makes staleness a genuine blocking contract (ERROR-severity, or a dedicated new rule) once the disclosure half has had time to be adopted without breaking every existing checkout at once. Needs its own investigation into rollout sequencing (a same-session flip to ERROR would gate the whole repo on every slightly-stale coverage.xml, which is common in normal dev flow) -- do not just flip severity without that review.
