@@ -1899,7 +1899,7 @@ run is expected pre-land, not a real gap.
 ```yaml
 id: T-1236
 title: 'coverage deflation guard: canary modules, not just join fraction'
-state: in-progress
+state: done
 kind: security
 origin: agent
 created: '2026-07-29'
