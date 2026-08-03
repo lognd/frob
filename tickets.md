@@ -1899,7 +1899,7 @@ run is expected pre-land, not a real gap.
 ```yaml
 id: T-1236
 title: 'coverage deflation guard: canary modules, not just join fraction'
-state: queued
+state: in-progress
 kind: security
 origin: agent
 created: '2026-07-29'
@@ -1966,7 +1966,6 @@ threat: null
 component: null
 ```
 T-1180's deflation floor stamped three deflated runs clean because source= makes every unexecuted file appear at 0% so the join fraction stays high. Structural blind spot found by the T-0969 diagnosis 2026-07-29.
-
 <!-- ticket:T-1238 -->
 ```yaml
 id: T-1238
