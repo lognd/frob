@@ -23,8 +23,7 @@ _CONFTEST_PATH = Path(__file__).resolve().parent.parent / "conftest.py"
 # frob:waive WIRE001 reason="a private test-fixture helper used only by \
 # TestStackdumpHandler's own methods below, in this same file -- there is no \
 # production caller to wire it to by design, it exists solely to load \
-# tests/conftest.py as a standalone module for direct unit testing" \
-# follow_up="T-1466"
+# tests/conftest.py as a standalone module for direct unit testing" follow_up="T-1466"
 def _load_conftest():
     """Import `tests/conftest.py` as a standalone module (not via pytest's
     own plugin machinery, which already has it loaded once as a fixture
@@ -83,3 +82,43 @@ class TestStackdumpHandler:
             assert signal.getsignal(signal.SIGUSR1) is previous
         finally:
             signal.signal(signal.SIGUSR1, previous)
+
+
+class TestSelfScanHeavyGrouping:
+    """T-1433: `pytest_collection_modifyitems`'s full-repo self-scan
+    xdist-group forcing -- the mitigation for the root-caused "node down:
+    Not properly terminated" worker deaths (kernel OOM-kill, no
+    faulthandler fault trace captured, matching an uncatchable SIGKILL)."""
+
+    # frob:tests tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_self_scan_heavy_tests_share_one_xdist_group  # noqa: E501
+    def test_self_scan_heavy_tests_share_one_xdist_group(self) -> None:
+        """A collected item whose name matches one of the known full-repo
+        self-scan tests gets the SAME `xdist_group` marker as the others --
+        the exact grouping that makes `--dist=loadgroup` schedule them
+        onto one worker sequentially instead of several workers at once."""
+        module = _load_conftest()
+
+        class _FakeItem:
+            def __init__(self, name: str) -> None:
+                self.name = name
+                self.own_markers: list = []
+
+            def add_marker(self, marker) -> None:  # noqa: ANN001
+                self.own_markers.append(marker)
+
+        items = [
+            _FakeItem("test_sys_gate_zero_violations"),
+            _FakeItem("test_repo_design_and_declarations_are_self_conformant"),
+            _FakeItem("test_repo_unrestricted_scan_is_clean"),
+            _FakeItem("test_something_unrelated"),
+        ]
+        module.pytest_collection_modifyitems(config=None, items=items)
+
+        group_names = set()
+        for item in items[:3]:
+            assert len(item.own_markers) == 1, item.name
+            marker = item.own_markers[0]
+            assert marker.name == "xdist_group"
+            group_names.add(marker.kwargs["name"])
+        assert group_names == {"frob_self_scan_heavy"}
+        assert items[3].own_markers == []

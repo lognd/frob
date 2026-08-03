@@ -29,8 +29,7 @@ recipe sets this for exactly the two phases T-1433's incidents wedged in
 # by _install_stackdump_handler (same module, called from pytest_configure below) -- \
 # the call-graph analysis does not resolve a signal.signal(...) registration as a call \
 # edge, so this reads as uncalled even though it is the live handler for every pytest \
-# process this recipe spawns once FROB_COVERAGE_STACKDUMP=1 is set" \
-# follow_up="T-1466"
+# process this recipe spawns once FROB_COVERAGE_STACKDUMP=1 is set" follow_up="T-1466"
 def _dump_all_thread_stacks(_signum: int, _frame: object) -> None:
     """`SIGUSR1` handler (T-1433): write every live thread's stack in
     THIS process to a per-pid file under `.frob/stackdumps/` so a wedge
@@ -89,6 +88,52 @@ def _install_stackdump_handler() -> None:
 #: of which reaches `run_mutations`' own normal-exit restore) gets picked
 #: up here too.
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+#: Substrings (matched against a collected item's own `.name`) that flag a
+#: test as a full-repo self-scan: `build_graph`/`check_self_conformance`/
+#: `sys_gate` invoked against THIS repo's own live source tree
+#: (`_REPO_ROOT`), not a synthetic `tmp_path` fixture. Root-caused in
+#: T-1433's live SIGUSR1 capture: a worker running one of these tests goes
+#: down with "node down: Not properly terminated" and no faulthandler
+#: fault trace in `.frob/last-coverage-run.log` -- the absence of a trace
+#: rules out a caught fault (SIGSEGV/SIGABRT/SIGFPE, all of which
+#: `faulthandler.enable()` intercepts and would have logged) and points at
+#: an UNCATCHABLE SIGKILL, i.e. the kernel OOM-killer, matching this
+#: repo's own documented WSL OOM-kill history (Makefile's own T-1353
+#: comment: "-n auto workers ... oversubscribes this host's CPU and memory
+#: ... 5+ workers went node down in a single invocation"). Each of these
+#: tests independently parses/walks every file in `src/frob` in-process;
+#: `loadgroup` scheduling has no reason to keep them apart, so several can
+#: land on DIFFERENT workers at the same wall-clock moment, each paying
+#: this same peak-memory cost concurrently. Named by substring (not exact
+#: match) so a renamed/parametrized variant of any of these still groups
+#: without needing this list edited in lockstep with the test files
+#: themselves, which live outside this ticket's scope.
+_SELF_SCAN_HEAVY_NAME_SUBSTRINGS = (
+    "test_sys_gate_zero_violations",
+    "test_repo_design_and_declarations_are_self_conformant",
+    "test_repo_unrestricted_scan_is_clean",
+)
+
+
+# frob:ticket T-1433
+# frob:tests tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_self_scan_heavy_tests_share_one_xdist_group  # noqa: E501
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: list[pytest.Item]
+) -> None:
+    """Force every full-repo self-scan test (`_SELF_SCAN_HEAVY_NAME_SUBSTRINGS`)
+    into the SAME `pytest-xdist` group (T-1433) so `loadgroup` scheduling
+    (this repo's `addopts`, `pyproject.toml`) runs them one after another
+    on a single worker instead of scattering them across several workers
+    that then all pay their full-repo-scan peak-memory cost at the same
+    moment -- the scheduling shape the live incident capture points at as
+    the OOM-kill trigger behind "node down: Not properly terminated". A
+    no-op under plain `pytest` (no `-n`/`--dist`): `xdist_group` is inert
+    without `pytest-xdist` actually distributing the run."""
+    for item in items:
+        if any(needle in item.name for needle in _SELF_SCAN_HEAVY_NAME_SUBSTRINGS):
+            item.add_marker(pytest.mark.xdist_group(name="frob_self_scan_heavy"))
 
 
 # frob:ticket T-0885

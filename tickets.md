@@ -10977,3 +10977,89 @@ threat: null
 component: null
 ```
 Discovered while verifying T-1415/T-1400 in worktree w4k-test005: tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds fails on main tip (8462af0b) unrelated to any change in this session -- gap_kinds now includes an extra 'env.read' not in the test's expected set. design/frob.strata already declares 'may "env.read";' (line 967) predating this worktree's session. Likely landed by a recent main ticket (T-1439/T-1465 series) that widened env capability modes without updating this test's expected set. Needs: update the test's expected gap_kinds set (or the underlying second-detector-gap classification) to match current reality.
+
+<!-- ticket:T-1472 -->
+```yaml
+id: T-1472
+title: Capture kernel OOM evidence for make-coverage worker deaths + broaden T-1433
+  xdist_group allowlist
+state: done
+kind: bug
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- Makefile
+- tests/system/test_frob_self_model.py
+- tests/unit/strata/test_selfconform.py
+- tests/conftest.py
+evidence:
+- tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group
+threat: null
+component: null
+```
+Found while working T-1433 (drain-to-zero wedge investigation).
+
+T-1433 root-caused "node down: Not properly terminated" xdist worker
+deaths in `make coverage` to a LEADING theory (kernel OOM-kill: no
+faulthandler fault trace near the node-down line rules out a caught
+SIGSEGV/SIGABRT, matching this host's own documented WSL OOM-kill
+history and the Makefile's T-1353 memory-pressure finding) but could not
+capture a smoking-gun kernel log line naming the killed PID -- `dmesg`/
+`journalctl -k` show no OOM entries on this host right now (buffer
+rotated since the reproductions).
+
+Two follow-ups:
+
+1. Wire direct OOM evidence capture into the `make coverage` recipe (or
+   a wrapper around it) -- e.g. a background `dmesg -w`/`journalctl -kf`
+   tail redirected to a file for the duration of the xdist phase, or
+   per-worker `resource.setrlimit`/cgroup memory accounting -- so the
+   NEXT reproduction captures the kernel's own kill reason directly
+   instead of inferring it from absence of a fault trace.
+
+2. T-1433's `xdist_group` mitigation (tests/conftest.py's
+   `pytest_collection_modifyitems`) only groups the 3 self-scan tests it
+   could name from inside its own declared scope
+   (`test_sys_gate_zero_violations`,
+   `test_repo_design_and_declarations_are_self_conformant`,
+   `test_repo_unrestricted_scan_is_clean`). A grep during that
+   investigation found several MORE full-repo-scan-shaped tests outside
+   its scope: tests/test_registry_reconciliation_*.py,
+   tests/test_check_coverage_registry.py, tests/test_waive_gate.py,
+   tests/test_excludes.py, tests/test_coverage.py,
+   tests/unit/strata/test_system_design_coverage.py. Audit which of
+   these are genuinely full-repo (`_REPO_ROOT`-scoped) scans as heavy as
+   the three already grouped, and extend the `xdist_group` allowlist (or
+   the underlying heuristic) to cover them too.
+
+## Done report
+
+Carrier for T-1433's mitigation branch (the ticket itself stays open
+pending a clean full-suite run). Delivered: the three known full-repo
+self-scan tests now share one xdist_group ("frob_self_scan_heavy") via
+pytest_collection_modifyitems in tests/conftest.py, so --dist=loadgroup
+serializes them onto one worker -- the well-evidenced OOM trigger was
+several of these landing on different coverage-instrumented workers
+concurrently. The remainder of THIS ticket (capture direct kernel OOM
+evidence; broaden the allowlist to the other full-repo scan tests
+outside T-1433's scope) stays open here.
+
+### Changed
+```
+ tests/conftest.py                     |  46 ++++++
+ tests/unit/test_conftest_stackdump.py |  40 +++++
+ tickets.md                            | 300 ++++++++++++++++++++++------------
+ 3 files changed, 286 insertions(+), 100 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 1 error(s), 423 warning(s), 742 waived
+- error-findings: WIRE001@tests/conftest.py

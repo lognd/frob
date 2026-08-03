@@ -4335,6 +4335,7 @@ node testsuite : trusted {
     attr interface=TestSelfAuditGate;
     attr interface=TestSelfMatchExclusion;
     attr interface=TestSelfReferentialTestsDirectiveScopeAgreement;
+    attr interface=TestSelfScanHeavyGrouping;
     attr interface=TestSerialExecutor;
     attr interface=TestSerialRerunHasABoundedDeadline;
     attr interface=TestSerializeAndParse;
@@ -4713,6 +4714,7 @@ node testsuite : trusted {
     attr interface=py_file;
     attr interface=py_sample;
     attr interface=py_src;
+    attr interface=pytest_collection_modifyitems;
     attr interface=pytest_configure;
     attr interface=pytestmark;
     attr interface=repo;
