@@ -1911,6 +1911,7 @@ scope:
 - src/frob/gates/_coverage.py
 - tests/test_coverage.py
 - docs/modules/gates.md
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -1956,12 +1957,24 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+- op: add
+  glob: tests/test_gates.py
+  reason: the deflation-guard tests this ticket adds belong beside the existing TestCoverageLoad
+    class in tests/test_gates.py, matching every prior deflation-floor precedent (T-1180/T-1363/T-1435);
+    tests/test_coverage.py is an unrelated file (T-0484 touched-set helper tests)
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refuses_zero_canary_module
+- tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_canary_check_skipped_when_module_unknown
 acceptance:
 - text: 'GIVEN a coverage run that lost subprocess or pool-worker data THEN the stamp
     is refused: guard checks fraction-of-known-modules-with-nonzero-coverage and named
     canaries (src/frob/__main__.py nonzero while system tests exist), not only module_join_fraction
     which reads ~1.0 under source=-inflated zeros'
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refuses_zero_canary_module
+  - tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_canary_check_skipped_when_module_unknown
 threat: null
 component: null
 ```
