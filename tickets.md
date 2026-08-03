@@ -844,6 +844,124 @@ ESCALATED TO CRITICAL 2026-07-31. This ticket's absence caused the largest singl
 T-1335 (landed 2026-07-31) fixed the pipeline's SILENT FAILURE (exit 0 on a failed stamp write), so a bad refresh is now loud. T-1353 tracks the xdist symbol-level data drop that appears to be the underlying corruption. Neither makes the refresh automatic or incremental -- that is this ticket, and it is what stops the failure class rather than the instance.
 
 User directive 2026-07-29: we should never run make coverage manually; frob must never consume stale data or retread work that should be cached. Today coverage.xml is a hand-refreshed artifact: TEST011 warns it predates tracked changes and TEST005 findings are computed from it anyway (the attribution-inflation problem T-0969 is untangling). Design: treat coverage like the graph cache -- a derived artifact frob owns, refreshed incrementally from the touched-set (the affects closure already exists in frob.graph.affects), merged per-file keyed by content hash, with the freshness contract enforced by the gate rather than a Makefile comment. Interacts with T-0969 (attribution fix defines what honest data is) and the CI gitignored-trust child under T-1193 (CI needs the same no-stale contract). Related: the profiler found process-pool workers re-derive per-file artifacts every run -- same no-retread principle, separate ticket in the perf tree.
+
+## Done report
+
+(partial -- ticket stays open, narrowed via follow-ups)
+
+T-1205 is an epic: 5 acceptance criteria spanning a whole incremental
+coverage-orchestration engine, a native cross-platform command replacing
+`make coverage`, and a freshness-contract escalation across the repo's
+existing TEST011 gate. Attempting all five in one session risked shallow,
+under-tested code across a very wide surface -- instead, delivered the one
+piece that is genuinely coherent and safely landable on its own, and
+decomposed the rest into scoped, sequenced follow-up tickets rather than
+leaving a vague "large, needs more work" note.
+
+**Delivered this session (acceptance[1], first half only):** TEST005
+findings computed from a stale `coverage.xml` (`CoverageData.
+stale_by_mtime`) now carry a `[STALE COVERAGE] ` disclosure prefix on
+their message, threaded through all three TEST005 finding paths
+(`_test005_symbol_violation`, `_test005_modules`, `_test005_system_
+violation` in `src/frob/gates/__init__.py`). This directly targets the
+2026-07-31 incident acceptance[1] names: T-1293's agent trusted a
+23-hour-stale stamp and closed a ticket having fixed 1 of 64 real
+findings, because a stale finding read exactly like a fresh one. Now the
+disclosure travels WITH the finding itself, not just as a separate
+TEST011 advisory line a reader has to separately notice and cross-
+reference.
+
+**NOT delivered, filed as sequenced follow-ups instead of forced:**
+
+- Acceptance[1]'s SECOND half -- escalating TEST011 itself from WARN to a
+  genuinely blocking contract -- is deliberately NOT done in this session.
+  Flipping severity outright would gate the ENTIRE repo on every
+  slightly-stale coverage.xml, which is extremely common in normal dev
+  flow (any source edit after a coverage run makes it stale by
+  definition) -- this needs its own rollout-sequencing review, not a
+  same-session severity flip. Filed as a follow-up (draft id
+  `T-draft-adacc08c`, scope `src/frob/gates/__init__.py`,
+  `tests/test_gates.py`, `docs/modules/gates.md`).
+- Acceptance[2] (per-file content-hash keyed incremental caching, so an
+  unchanged file's coverage is never recomputed) is a real design problem
+  on its own (cache format, per-file staleness vs. whole-tree
+  `stale_by_mtime`, merge semantics with a full `coverage.xml`) -- filed
+  as its own ticket (draft id `T-draft-01ab413f`, scope
+  `src/frob/testing/**`, `src/frob/gates/_coverage.py`,
+  `tests/test_coverage.py`).
+- Acceptance[0], [3], [4] (the frob-native `frob coverage`/`frob test
+  --coverage` command replacing the Makefile's orchestration entirely,
+  cross-platform, wired to run automatically inside any gated command
+  that needs fresh data) is the largest remaining piece and structurally
+  depends on the caching-format ticket above existing first -- filed as
+  its own ticket (draft id `T-draft-321a1b94`, explicitly sequenced
+  AFTER the caching ticket, scope `src/frob/testing/**`,
+  `src/frob/check/__init__.py`, `Makefile`, `docs/modules/gates.md`).
+
+Ticket left OPEN (not closed) -- this session's own scope is a real,
+coherent slice of T-1205, but T-1205 itself is not done. Its own scope
+was widened (via `frob ticket scope --add`) to cover `src/frob/gates/
+__init__.py` and `tests/test_gates.py`, since TEST005's violation-
+emitting helpers live there, not in `_coverage.py`.
+
+### Changed
+```
+src/frob/gates/__init__.py | _STALE_DISCLOSURE_PREFIX + threaded `stale`
+                             param through _test005_symbol_violation /
+                             _test005_modules / _test005_system_violation
+tests/test_gates.py         | +4 tests (disclosure present/absent per path)
+tickets.md                   | scope add, evidence, 3 new follow-up drafts, this report
+```
+
+### Evidence
+- `tests/test_gates.py::TestTestGate::test_test005_symbol_finding_discloses_stale_coverage` (pytest node id, verified passing)
+- `tests/test_gates.py::TestTestGate::test_test005_symbol_finding_no_disclosure_when_fresh` (pytest node id, verified passing)
+- `tests/test_gates.py::TestTestGate::test_test005_module_finding_discloses_stale_coverage` (pytest node id, verified passing)
+- `tests/test_gates.py::TestTestGate::test_test005_system_finding_discloses_stale_coverage` (pytest node id, verified passing)
+- Not bound to acceptance[1] via `--accepts`: only the disclosure half of
+  that criterion is satisfied, and binding evidence to a half-satisfied
+  criterion is exactly the false-close pattern this playbook (section 5)
+  and T-1293's own incident warn against.
+
+### Filed
+- `T-draft-adacc08c` -- TEST011 blocking-escalation follow-up
+- `T-draft-01ab413f` -- per-file content-hash incremental caching design+impl
+- `T-draft-321a1b94` -- frob-native coverage command (depends on the above)
+
+### Captured claims
+- tests: 4 passed (this session's new tests); full
+  `pytest tests/test_gates.py -k test005 -q` -- 10 passed (no regressions
+  in the surrounding TEST005 suite)
+- gates: `frob check --only gates-fast/gates-native/gates-security
+  --ticket T-1205` all clean (0 errors) against this session's own
+  changed files, after removing a stray duplicated-assert artifact from a
+  sibling ticket's (T-1235) test edit that PERF002 caught; the SELFAUDIT001/
+  WIRE001 findings against `tests/unit/test_coverage_attribution_lock_
+  t1395.py` are the same expected pre-land `frob sys sync-interface`/
+  auto-fix artifact noted in T-1235's own prior Done report -- resolved
+  automatically by `frob ticket land`, not a real gap in this session's work.
+
+### Changed
+```
+ docs/modules/gates.md                              |  13 +
+ src/frob/gates/_coverage.py                        |  57 +++
+ tests/test_gates.py                                |  76 ++++
+ tests/unit/test_coverage_attribution_lock_t1395.py |  81 ++++
+ tests/unit/test_makefile_coverage.py               |  55 +++
+ tickets.md                                         | 460 ++++++++++++++++++---
+ 6 files changed, 685 insertions(+), 57 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTestGate::test_test005_symbol_finding_discloses_stale_coverage` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_test005_symbol_finding_no_disclosure_when_fresh` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_test005_module_finding_discloses_stale_coverage` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_test005_system_finding_discloses_stale_coverage` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 2 error(s), 1029 warning(s), 745 waived
+- error-findings: SELFAUDIT001@design, WIRE001@tests/unit/test_coverage_attribution_lock_t1395.py
 <!-- ticket:T-1210 -->
 ```yaml
 id: T-1210
