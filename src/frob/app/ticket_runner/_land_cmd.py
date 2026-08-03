@@ -278,7 +278,11 @@ def _tier_a_pre_land_step(
 
 
 # frob:ticket T-1456
-_POST_LAND_SWEEP_BUDGET_S = 90
+# frob:ticket T-1463
+# 90s was far under a real unscoped check (~3.5 min on this repo); every
+# land's sweep spawn then died on TimeoutExpired, which also ESCAPED as an
+# unhandled crash instead of the documented None/skip path (fixed below).
+_POST_LAND_SWEEP_BUDGET_S = 300
 
 
 # frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
@@ -299,16 +303,31 @@ def _unscoped_error_findings(
     treats that as "skip the sweep, do not compare a real set against a
     guess," matching every other T-0846/T-0850 unmeasured-is-not-zero
     convention in this module."""
+    import subprocess
+
     from frob.app import ticket_runner as _ticket_runner
 
-    guarded = _ticket_runner.guarded_subprocess_run(
-        [_python_for_tree(root), "-m", "frob", "check", "--budget", str(budget)],
-        cwd=root,
-        capture_output=True,
-        text=True,
-        timeout=budget + 30,
-        check=False,
-    )
+    try:
+        guarded = _ticket_runner.guarded_subprocess_run(
+            [_python_for_tree(root), "-m", "frob", "check", "--budget", str(budget)],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=budget + 60,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        # T-1463: the docstring's "None means unmeasurable (... timeout ...)"
+        # contract was never actually implemented -- TimeoutExpired escaped
+        # to main()'s top-level handler and crashed the whole land.
+        _log.warning(
+            "ticket land: %s unscoped post-land sweep timed out after %ds -- "
+            "skipping the sweep (unmeasured, not zero); run `frob check` by "
+            "hand to verify main's error floor",
+            ticket_id,
+            budget + 60,
+        )
+        return None
     if guarded.is_err:
         _log.warning(
             "ticket land: %s unscoped post-land sweep spawn refused (%s)",
