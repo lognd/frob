@@ -1,5 +1,7 @@
 # Gates accounting audit -- "if frob check passes, the code is actually good"
 
+Status: 2026-07-20
+
 Scope: `src/frob/gates/__init__.py` (4056 lines) plus `_coverage.py`, `_baseline.py`,
 `_filehash.py`, `decisions.py`, `invariants` region, and the drift facet machinery in
 `src/frob/graph/lock.py` / `digest.py` / `dsl.py` that the DRIFT gates depend on.

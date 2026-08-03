@@ -1,5 +1,7 @@
 # Full-repo capability audit (2026-07-20)
 
+Status: 2026-08-02
+
 Seven read-only `auditor` passes over the whole codebase, one per cohesive
 subsystem, under a single North-Star: **if `frob check` / a ticket-close / a
 strata proof passes, the thing it claims must actually hold.** The mandate was

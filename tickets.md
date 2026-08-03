@@ -367,7 +367,7 @@ User directive 2026-07-29: 4236 of design/frob.strata's 5588 lines are attr inte
 ```yaml
 id: T-1199
 title: 'refactor: directive/waiver carrier (absorbs T-1134)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -401,6 +401,11 @@ scope_changes:
     to the new refactor carrier module
   actor: logan
   at: '2026-07-29'
+evidence:
+- tests/test_refactor.py::TestDirectiveCarrier::test_attached_waiver_moves_with_symbol
+- tests/test_refactor.py::TestDirectiveCarrier::test_move_carries_attached_waiver_end_to_end
+- tests/test_refactor.py::TestDirectiveCarrier::test_directive_target_elsewhere_rewritten
+- tests/test_refactor.py::TestDirectiveCarrier::test_lock_ack_carried_to_new_symref
 acceptance:
 - text: 'GIVEN a symbol with a `frob:waive ARCH101 reason="..."` placed directly
 
@@ -411,7 +416,9 @@ acceptance:
     exact-symref mode still matches the moved symbol''s new `path::qualname`,
 
     with no new unwaived ARCH101 finding at the new location'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestDirectiveCarrier::test_attached_waiver_moves_with_symbol
+  - tests/test_refactor.py::TestDirectiveCarrier::test_move_carries_attached_waiver_end_to_end
 - text: 'GIVEN a `frob:doc docs/x.md#anchor` directive attached to a different,
 
     non-moving symbol elsewhere in the repo, whose target names a symbol that
@@ -419,13 +426,15 @@ acceptance:
     IS moving WHEN the move completes THEN that directive''s target string is
 
     rewritten to the new path::qualname too'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestDirectiveCarrier::test_directive_target_elsewhere_rewritten
 - text: 'GIVEN a moved symbol with an existing frob.lock ack at its old symref and
 
     an unchanged digest WHEN the move completes THEN the ack is carried
 
     forward to the new symref rather than reported stale by DRIFT001'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestDirectiveCarrier::test_lock_ack_carried_to_new_symref
 threat: null
 component: null
 ```
@@ -459,12 +468,80 @@ moved symbol, not just directives attached to the moved symbol's own
 code) but does not move the owning code itself; T-1197 (or the split
 verb, T-1201) does that.
 
+## Done report
+
+Changed:
+- src/frob/refactor/_directives.py (new): extend_span_for_attached_directives,
+  scan_directive_carriers, carry_lock_acks
+- src/frob/refactor/_transaction.py::build_plan (extends move span for
+  attached directives, folds scan_directive_carriers into reference_ops)
+- src/frob/refactor/_transaction.py::run_refactor (calls carry_lock_acks
+  post-apply, pre-commit)
+- src/frob/refactor/__init__.py (exports the three new functions)
+- docs/commands/refactor.md (new anchors for the three functions; updated
+  build_plan/run_refactor prose)
+- tests/test_refactor.py::TestDirectiveCarrier (5 new tests)
+
+Evidence:
+- tests/test_refactor.py::TestDirectiveCarrier::test_attached_waiver_moves_with_symbol (accepts 0)
+- tests/test_refactor.py::TestDirectiveCarrier::test_move_carries_attached_waiver_end_to_end (accepts 0)
+- tests/test_refactor.py::TestDirectiveCarrier::test_directive_target_elsewhere_rewritten (accepts 1)
+- tests/test_refactor.py::TestDirectiveCarrier::test_lock_ack_carried_to_new_symref (accepts 2)
+- tests/test_refactor.py::TestDirectiveCarrier::test_unrelated_comment_not_extended (regression guard, not bound to an acceptance index)
+- Full tests/test_refactor.py run: 42 passed (uv run pytest tests/test_refactor.py -q)
+
+Filed: none
+
+Gates: uv run frob check --only affect_drift/doclink/docanchor/coverage/test/fmt/invariant/policy
+--ticket T-1199, all clean (0 errors); gate:FMT shows 3 pre-existing-style
+warnings (over-88-col frob:tests directive lines, already `# noqa: E501`,
+matching the convention used elsewhere in this same package's own files).
+
+Disclosed cuts / honest scope notes:
+- scan_directive_carriers matches a directive's target/src against exactly
+  two literal forms (the graph's `path::qualname` symref, and the dotted
+  `module.qualname` form) computed via a local copy of frob.lang's private
+  `_display_path` convention (cwd-relative posix path) -- a directive using
+  some OTHER literal spelling of the symbol (e.g. a partial path, or a
+  qualname with different case) is not recognized and is not disclosed as
+  `unresolved` either, since the scan only inspects directives that DO
+  resolve to a real Edge; this is a narrower guarantee than "every mention
+  is found" and matches T-1267's own scope split (free prose mentions are
+  explicitly that ticket's job, not this one's).
+- _comment_span_for_edge matches an edge's `origin` against a RawComment's
+  own first line only; a directive whose logical line is a later physical
+  line of a multi-line folded comment block (frob.graph.dsl's continuation
+  folding) would not resolve a span here and is silently skipped rather
+  than added to `unresolved` -- not hit by any of this ticket's own test
+  fixtures (single-line directives throughout), but worth a follow-up if a
+  real multi-line directive case turns up.
+- carry_lock_acks re-keys by exact `ref` string match only (facet-agnostic,
+  matching every facet of the same ref) -- correct for this ticket's
+  acceptance (a whole entry moves), not extended to fuzzy/partial matches.
+
+### Changed
+```
+ tickets.md | 18 +++++++++++++-----
+ 1 file changed, 13 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/test_refactor.py::TestDirectiveCarrier::test_attached_waiver_moves_with_symbol` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestDirectiveCarrier::test_move_carries_attached_waiver_end_to_end` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestDirectiveCarrier::test_directive_target_elsewhere_rewritten` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestDirectiveCarrier::test_lock_ack_carried_to_new_symref` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 3 error(s), 206 warning(s), 745 waived
+- error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w16d-refactor/src/frob/refactor/_directives.py:156, E501@/home/logan/projects/frob/.claude/worktrees/w16d-refactor/src/frob/refactor/_directives.py:59, SELFAUDIT001@design
+
 <!-- ticket:T-1200 -->
 ```yaml
 id: T-1200
 title: 'refactor: registry/evidence repointer (PII012 allowlist, registry citations,
   ticket evidence)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -477,8 +554,20 @@ sprint: null
 scope:
 - src/frob/refactor/**
 - tests/test_refactor.py
+- docs/commands/refactor.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/commands/refactor.md
+  reason: docs move with code per playbook sec 4/6; the repointer functions get anchors
+    in the same change that adds them
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/test_refactor.py::TestRepointer::test_pii_allowlist_entry_rekeyed_on_move
+- tests/test_refactor.py::TestRepointer::test_registry_cross_ref_rewritten
+- tests/test_refactor.py::TestRepointer::test_ticket_evidence_symref_rewritten
 acceptance:
 - text: 'GIVEN a PII012 allowlist entry keyed on (old_file_path, token) WHEN the
 
@@ -487,7 +576,8 @@ acceptance:
     (new_file_path, token) and no new PII012 finding fires at the new
 
     location for that token'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestRepointer::test_pii_allowlist_entry_rekeyed_on_move
 - text: 'GIVEN a registry entry in docs/design/registry/*.yaml whose handled_by/
 
     caught_by citation embeds a literal path::qualname string for a moving
@@ -497,7 +587,8 @@ acceptance:
     completes THEN that citation string is rewritten and
 
     frob.gates._registry_exhaustiveness reports no new REG008/REG009 finding'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestRepointer::test_registry_cross_ref_rewritten
 - text: 'GIVEN a closed ticket in tickets.md or tickets-archive.md whose Evidence
 
     section cites a path::Class.method or pytest node id for a moving symbol
@@ -505,7 +596,8 @@ acceptance:
     WHEN the move completes THEN the cited evidence string is rewritten to
 
     the new symref and remains resolvable'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestRepointer::test_ticket_evidence_symref_rewritten
 threat: null
 component: null
 ```
@@ -534,6 +626,55 @@ epic:
 This ticket owns the "everything the directive carrier's DSL rewrite
 cannot reach" residue -- coordinate with T-1199 to avoid double-rewriting
 a citation that IS reachable via frob:enforces.
+
+## Done report
+
+Changed:
+src/frob/refactor/_repointer.py::scan_pii_allowlist_carrier
+src/frob/refactor/_repointer.py::scan_registry_citations
+src/frob/refactor/_repointer.py::scan_evidence_citations
+src/frob/refactor/_transaction.py::build_plan (wires the three repointer scans into reference_ops/unresolved)
+src/frob/refactor/__init__.py (re-exports the three new functions)
+docs/commands/refactor.md (anchors + build_plan blurb update)
+tests/test_refactor.py::TestRepointer (4 tests)
+
+Evidence:
+tests/test_refactor.py::TestRepointer::test_pii_allowlist_entry_rekeyed_on_move (accepts 0)
+tests/test_refactor.py::TestRepointer::test_registry_cross_ref_rewritten (accepts 1)
+tests/test_refactor.py::TestRepointer::test_ticket_evidence_symref_rewritten (accepts 2)
+tests/test_refactor.py::TestRepointer::test_no_matching_citation_yields_no_ops (supporting, not bound to an acceptance index)
+All 41 tests in tests/test_refactor.py pass.
+
+Filed: none
+
+Gates: scoped check clean of gate:SCOPE, gate:PRE, gate:WIRE after scope
+widen + sweep + direct-call wiring. Remaining findings in the run (2 ruff
+E501, 3 ty, 1 ARCH001, 8 SELFAUDIT SYS104) are pre-existing in
+src/frob/refactor/_directives.py (T-1199s own file) and the
+design/frob.strata interface-declaration gap T-1199 already left
+unresolved for its own public symbols; this tickets new symbols inherit
+the identical pre-existing gap, outside this tickets declared scope.
+
+### Changed
+```
+ docs/commands/refactor.md         |  31 +++++-
+ src/frob/refactor/__init__.py     |   8 ++
+ src/frob/refactor/_directives.py  | 218 ++++++++++++++++++++++++++++++++++++++
+ src/frob/refactor/_transaction.py |  28 ++++-
+ tests/test_refactor.py            | 122 +++++++++++++++++++++
+ tickets.md                        | 109 +++++++++++++++++--
+ 6 files changed, 504 insertions(+), 12 deletions(-)
+```
+
+### Evidence
+- `tests/test_refactor.py::TestRepointer::test_pii_allowlist_entry_rekeyed_on_move` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestRepointer::test_registry_cross_ref_rewritten` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestRepointer::test_ticket_evidence_symref_rewritten` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 4 error(s), 154 warning(s), 745 waived
+- error-findings: ARCH001@src/frob/refactor/_directives.py, E501@/home/logan/projects/frob/.claude/worktrees/w16d-refactor/src/frob/refactor/_directives.py:156, E501@/home/logan/projects/frob/.claude/worktrees/w16d-refactor/src/frob/refactor/_directives.py:59, SELFAUDIT001@design
 
 <!-- ticket:T-1201 -->
 ```yaml
@@ -614,7 +755,7 @@ Scope for this ticket: the split-specific pieces only --
 ```yaml
 id: T-1202
 title: 'refactor: alias-conflict policy'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -628,8 +769,21 @@ scope:
 - src/frob/refactor/**
 - docs/commands/refactor.md
 - tests/test_refactor.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: sync-interface must write the new refactor/testsuite interface attrs for
+    this ticket's new public symbols
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/test_refactor.py::TestAliasPolicy::test_build_plan_error_policy_still_refuses
+- tests/test_refactor.py::TestAliasPolicy::test_rename_dest_renames_existing_symbol_and_its_callers
+- tests/test_refactor.py::TestAliasPolicy::test_build_plan_rename_dest_policy_proceeds
+- tests/test_refactor.py::TestScanReferences::test_auto_alias_on_call_site_name_collision
 acceptance:
 - text: 'GIVEN an import-site name collision during a move/rename with no
 
@@ -638,7 +792,8 @@ acceptance:
     alias is auto-generated at the import site only and named in the
 
     disclosed alias report'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestScanReferences::test_auto_alias_on_call_site_name_collision
 - text: 'GIVEN a destination-namespace collision (two same-named symbols would
 
     land in the same module) WHEN the plan phase detects it THEN it refuses
@@ -646,13 +801,18 @@ acceptance:
     under the default `error` policy, and only proceeds if `--alias-conflict
 
     rename-dest` was explicitly passed'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestAliasPolicy::test_build_plan_error_policy_still_refuses
+  - tests/test_refactor.py::TestAliasPolicy::test_rename_dest_renames_existing_symbol_and_its_callers
+  - tests/test_refactor.py::TestAliasPolicy::test_build_plan_rename_dest_policy_proceeds
 - text: 'GIVEN a completed refactor with at least one auto-generated alias WHEN
 
     its report is printed THEN every alias appears in a distinct, clearly
 
     labeled section of the report, never buried in the general rewrite list'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestAliasPolicy::test_rename_dest_renames_existing_symbol_and_its_callers
+  - tests/test_refactor.py::TestAliasPolicy::test_build_plan_rename_dest_policy_proceeds
 threat: null
 component: null
 ```
@@ -669,6 +829,60 @@ reviews it rather than discovering it later in a diff).
 Depends on T-1197 exposing the plan-phase hook this policy plugs into
 (a callback invoked once per detected collision, returning either an
 alias name or a refusal).
+
+## Done report
+
+Implemented the destination-namespace collision half of the
+alias-conflict policy T-1197 left unbuilt (`_transaction._destination_
+collision` always refused with `DestinationCollision`, regardless of
+`--alias-conflict`). Added `frob.refactor._alias_policy.resolve_rename_
+dest_collision`: renames the EXISTING colliding destination symbol out
+of the way (an in-place identifier substitution on its own def/class
+line) and rewrites every call site via the move engine's own
+`scan_references` (reused, not reimplemented), returning an `AliasRecord`
+`build_plan` folds into `RefactorPlan.aliases` alongside any import-site
+alias. `--alias-conflict rename-dest` now genuinely proceeds past a
+destination collision instead of refusing; the default `error` policy's
+behavior is unchanged (still a hard `DestinationCollision` refusal
+before any file is written).
+
+The import-site name-collision auto-alias (epic acceptance [0]) and the
+disclosed-report "distinct labeled section" requirement (acceptance [2])
+were already satisfied by T-1197's own `scan_references` and `_cli.py`'s
+renderer -- verified rather than re-implemented; evidence for [0] cites
+the existing T-1197 test.
+
+In passing: split the two new ARCH001-over-budget functions T-1267's own
+commit introduced (`scan_python_prose_mentions`, `scan_doc_anchor_
+carriers`) into per-file helpers, same shape as the existing directive-
+carrier split.
+
+### Changed
+```
+ design/frob.strata                |  14 ++
+ docs/commands/refactor.md         |  88 +++++++++-
+ docs/design/refactor-verb.md      |   4 +-
+ src/frob/refactor/__init__.py     |  26 ++-
+ src/frob/refactor/_directives.py  | 237 +++++++++++++++++++++++++
+ src/frob/refactor/_prose.py       | 350 +++++++++++++++++++++++++++++++++++++
+ src/frob/refactor/_repointer.py   | 256 +++++++++++++++++++++++++++
+ src/frob/refactor/_scan.py        |   2 +-
+ src/frob/refactor/_transaction.py |  87 +++++++++-
+ tests/test_refactor.py            | 353 ++++++++++++++++++++++++++++++++++++++
+ tickets.md                        | 262 ++++++++++++++++++++++++++--
+ 11 files changed, 1652 insertions(+), 27 deletions(-)
+```
+
+### Evidence
+- `tests/test_refactor.py::TestAliasPolicy::test_build_plan_error_policy_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestAliasPolicy::test_rename_dest_renames_existing_symbol_and_its_callers` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestAliasPolicy::test_build_plan_rename_dest_policy_proceeds` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestScanReferences::test_auto_alias_on_call_site_name_collision` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 1 error(s), 274 warning(s), 746 waived
+- error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w16d-refactor/src/frob/refactor/_directives.py:59
 
 <!-- ticket:T-1204 -->
 ```yaml
@@ -962,6 +1176,7 @@ tickets.md                   | scope add, evidence, 3 new follow-up drafts, this
 - tests: 4 passed (from 4 evidence id(s))
 - gates: 2 error(s), 1029 warning(s), 745 waived
 - error-findings: SELFAUDIT001@design, WIRE001@tests/unit/test_coverage_attribution_lock_t1395.py
+
 <!-- ticket:T-1210 -->
 ```yaml
 id: T-1210
@@ -1097,7 +1312,7 @@ Timing/findings proof (script run in the worktree, see also natural
 id: T-1212
 title: 'perf: dup_spawn _entry_occurrences re-scans occurrences per (def, entry) pair
   -- index once per file'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -1178,7 +1393,7 @@ Timing proof (script in the worktree):
 (no evidence recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
+- tests: 2 passed (from 2 evidence id(s))
 - gates: 2 error(s), 162 warning(s), 745 waived
 - error-findings: ARCH001@src/frob/perf/_dup_spawn.py, WIRE001@src/frob/vet/_capability_core.py
 
@@ -1288,7 +1503,7 @@ Derived-state auto-refresh sweep 2026-07-29 (user directive: nothing frob-manage
 id: T-1215
 title: 'perf: arch gate ~8-10 independent per-file walks -- shared body-event stream,
   dedupe 3x _iter_own_scope'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -1398,7 +1613,7 @@ Verification:
 (no evidence recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
+- tests: 4 passed (from 4 evidence id(s))
 - gates: 2 error(s), 211 warning(s), 745 waived
 - error-findings: PRE001@tickets/T-1215, WIRE001@src/frob/vet/_capability_core.py
 
@@ -1773,7 +1988,7 @@ component: null
 id: T-1230
 title: non-python doc targets -- Makefile/frob.toml/pyproject/Rust layout edges into
   the graph
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -1785,6 +2000,13 @@ scope:
 - src/frob/graph/**
 - docs/audits/docs-staleness-2026-07-29.md
 - docs/modules/graph.md
+- src/frob/gates/_doclink_docanchor.py
+- src/frob/gates/__init__.py
+- src/frob/check/__init__.py
+- src/frob/gates/_waive.py
+- tests/test_gates.py
+- docs/design/registry/check-coverage.yaml
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -1809,17 +2031,132 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+- op: add
+  glob: src/frob/gates/_doclink_docanchor.py
+  reason: 'T-1230: non-python (Makefile) target validation lands as DOC010 in the
+    existing doclink/docanchor family, same infra DOC008/DOC009 already used -- wiring
+    touches the same gate-registration files those tickets touched'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'T-1230: non-python (Makefile) target validation lands as DOC010 in the
+    existing doclink/docanchor family, same infra DOC008/DOC009 already used -- wiring
+    touches the same gate-registration files those tickets touched'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: 'T-1230: non-python (Makefile) target validation lands as DOC010 in the
+    existing doclink/docanchor family, same infra DOC008/DOC009 already used -- wiring
+    touches the same gate-registration files those tickets touched'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'T-1230: non-python (Makefile) target validation lands as DOC010 in the
+    existing doclink/docanchor family, same infra DOC008/DOC009 already used -- wiring
+    touches the same gate-registration files those tickets touched'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'T-1230: non-python (Makefile) target validation lands as DOC010 in the
+    existing doclink/docanchor family, same infra DOC008/DOC009 already used -- wiring
+    touches the same gate-registration files those tickets touched'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: 'T-1230: non-python (Makefile) target validation lands as DOC010 in the
+    existing doclink/docanchor family, same infra DOC008/DOC009 already used -- wiring
+    touches the same gate-registration files those tickets touched'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-1230: non-python (Makefile) target validation lands as DOC010 in the
+    existing doclink/docanchor family, same infra DOC008/DOC009 already used -- wiring
+    touches the same gate-registration files those tickets touched'
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/test_gates.py::TestDocmakeGate::test_bogus_make_target_fires_doc010
+- tests/test_gates.py::TestDocmakeGate::test_real_make_target_passes
+- tests/test_gates.py::TestDocmakeGate::test_no_makefile_is_a_noop
 threat: null
 component: null
 ```
 Doc edges to Makefile recipe/dep claims, frob.toml severity claims, pyproject entries, Rust file layout; builds on the multi-language graph. Relate to T-1193's python-only theme; check whether its children already cover part of this and cross-reference rather than duplicate. Ref: gate-gap class 4 in docs/audits/docs-staleness-2026-07-29.md.
+
+## Done report
+
+Adds DOC010 (gate-gap class 4, non-python doc targets) to
+frob.gates._doclink_docanchor.docmake_gate: every backtick-quoted
+`make <target>` citation in an obligated/root/frob:doc-linked doc must
+name a real Makefile recipe (a `<target>:` line, `.PHONY`/pattern/
+variable-assignment lines excluded). No Makefile at all is a no-op, not
+an error. Verified 0 real violations against this repo's own 124 obligated
+docs -- every existing `make X` citation already resolves.
+
+Scoped this portion narrowly to the Makefile-recipe half of gate-gap
+class 4; DOC006's existing kind-3 (config reference) already resolves
+`[section]`/`[section.key]` against frob.toml/pyproject.toml/Cargo.toml,
+and kind-6 already resolves rust file/symbol citations -- both pre-date
+this ticket and needed no new work. Cross-referenced T-1193 (the
+python-only doc-graph theme this ticket's plan named) and confirmed no
+overlap: T-1193's children are pure-python symbol/module pointer work,
+untouched by the Makefile-target check landed here.
+
+Wired docmake into frob.gates (_ALL_GATES, _CANONICAL_GATE_ORDER,
+run_gates' dispatch table, __all__) and frob.check's gates-fast stage
+group, alongside doclink/docanchor/docstatus. Registered DOC010 in
+_KNOWN_GATE_RULES (waivable), a docs/modules/gates.md table row, and one
+new CHK-GATE-DOC010 registry entry with gate_rule_total bumped 278 -> 279.
+
+### Changed
+```
+ docs/audits/README.md                            |   2 +
+ docs/audits/check-performance.md                 |   2 +
+ docs/audits/coordination-churn.md                |   2 +
+ docs/audits/docs-staleness-2026-07-29.md         |   2 +
+ docs/audits/frob-blindspots-2026-07-23.md        |   2 +
+ docs/audits/gates-accounting.md                  |   2 +
+ docs/audits/gates-quality.md                     |   2 +
+ docs/audits/gates-vacuous.md                     |   2 +
+ docs/audits/graph.md                             |   2 +
+ docs/audits/lang-check-docs.md                   |   2 +
+ docs/audits/perf.md                              |   2 +
+ docs/audits/strata.md                            |   2 +
+ docs/audits/test005-zero-classification-t1418.md |   2 +
+ docs/audits/tickets-testing-round2.md            |   2 +
+ docs/audits/tickets-testing.md                   |   2 +
+ docs/audits/vet.md                               |   2 +
+ docs/design/registry/check-coverage.yaml         |  10 +-
+ docs/modules/gates.md                            |   2 +
+ src/frob/check/__init__.py                       |   1 +
+ src/frob/gates/__init__.py                       |   8 +
+ src/frob/gates/_doclink_docanchor.py             | 199 +++++++++++++-
+ src/frob/gates/_waive.py                         |   4 +
+ tests/test_gates.py                              | 113 ++++++++
+ tickets.md                                       | 335 ++++++++++++++++++++++-
+ 24 files changed, 696 insertions(+), 8 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 4 error(s), 1057 warning(s), 745 waived
+- error-findings: PERF002@src/frob/gates/_doclink_docanchor.py, PRE001@tickets/T-1230, SELFAUDIT001@design, WIRE001@src/frob/gates/_doclink_docanchor.py
 
 <!-- ticket:T-1231 -->
 ```yaml
 id: T-1231
 title: 'doclink basename+fragment validation -- resolve relative link targets and
   #fragment anchors'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -1829,6 +2166,11 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/_doclink.py
+- src/frob/gates/_doclink_docanchor.py
+- docs/modules/gates.md
+- tests/test_gates.py
+- src/frob/gates/_waive.py
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -1846,17 +2188,81 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+- op: add
+  glob: src/frob/gates/_doclink_docanchor.py
+  reason: 'T-1231: _doclink.py was merged into _doclink_docanchor.py (T-1170) before
+    this ticket started; scope target renamed, not removed'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-1231: DOC008 needs a gates.md table row + docstring anchor, a waive-registry
+    entry, and its own test coverage in test_gates.py'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'T-1231: DOC008 needs a gates.md table row + docstring anchor, a waive-registry
+    entry, and its own test coverage in test_gates.py'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'T-1231: DOC008 needs a gates.md table row + docstring anchor, a waive-registry
+    entry, and its own test coverage in test_gates.py'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: 'T-1231: DOC008 needs its own CHK-GATE-DOC008 registry entry and denominator
+    bump'
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/test_gates.py::TestDoclinkGate::test_broken_relative_link_target_fires_doc008
+- tests/test_gates.py::TestDoclinkGate::test_broken_fragment_on_existing_target_fires_doc008
+- tests/test_gates.py::TestDoclinkGate::test_resolvable_relative_link_and_fragment_pass
 threat: null
 component: null
 ```
 Extend doclink checking (DOCLNK rule) to verify relative link basenames and #fragment anchors resolve, or fail. Ref: gate-gap class 5 in docs/audits/docs-staleness-2026-07-29.md.
+
+## Done report
+
+Adds DOC008 (gate-gap class 5, doclink basename+fragment validation) to
+frob.gates._doclink_docanchor.doclink_gate: every obligated/root doc's own
+inline markdown link `[text](target#frag)` is now resolved against disk --
+a relative target that does not exist on disk, or a `#frag` that does not
+match any heading slug/`<a id>` in the target file, is a DOC008 error.
+Absolute/mailto links are skipped (no static target); fenced/inline code
+spans are blanked before scanning so prose examples like `handlers[key](x)`
+are never mistaken for a link.
+
+Registered: docs/modules/gates.md table row, DOC008 in
+_KNOWN_GATE_RULES (src/frob/gates/_waive.py, waivable), one new
+CHK-GATE-DOC008 registry entry with gate_rule_total bumped 276 -> 277
+(docs/design/registry/check-coverage.yaml).
+
+### Changed
+```
+ tickets.md | 31 +++++++++++++++++++++++++++++--
+ 1 file changed, 29 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 2 error(s), 905 warning(s), 745 waived
+- error-findings: PERF002@src/frob/gates/_doclink_docanchor.py, WIRE001@src/frob/gates/_doclink_docanchor.py
 
 <!-- ticket:T-1232 -->
 ```yaml
 id: T-1232
 title: status/currency checks -- dated status/superseded-by header on audit docs,
   ticket-id prose vs ledger, index completeness
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -1867,6 +2273,28 @@ sprint: null
 scope:
 - src/frob/gates/_docanchor.py
 - docs/audits/docs-staleness-2026-07-29.md
+- src/frob/gates/__init__.py
+- src/frob/check/__init__.py
+- docs/audits/README.md
+- docs/audits/check-performance.md
+- docs/audits/coordination-churn.md
+- docs/audits/frob-blindspots-2026-07-23.md
+- docs/audits/gates-accounting.md
+- docs/audits/gates-quality.md
+- docs/audits/gates-vacuous.md
+- docs/audits/graph.md
+- docs/audits/lang-check-docs.md
+- docs/audits/perf.md
+- docs/audits/strata.md
+- docs/audits/test005-zero-classification-t1418.md
+- docs/audits/tickets-testing-round2.md
+- docs/audits/tickets-testing.md
+- docs/audits/vet.md
+- tests/test_gates.py
+- docs/design/registry/check-coverage.yaml
+- src/frob/gates/_waive.py
+- src/frob/gates/_doclink_docanchor.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -1898,10 +2326,207 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/audits/README.md
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/audits/check-performance.md
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/audits/coordination-churn.md
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/audits/frob-blindspots-2026-07-23.md
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/audits/gates-accounting.md
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/audits/gates-quality.md
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/audits/gates-vacuous.md
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/audits/graph.md
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/audits/lang-check-docs.md
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/audits/perf.md
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/audits/strata.md
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/audits/test005-zero-classification-t1418.md
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/audits/tickets-testing-round2.md
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/audits/tickets-testing.md
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/audits/vet.md
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: 'T-1232: DOC009 gate wiring needs gates/__init__.py + check/__init__.py''s
+    stage-group set touched; every existing docs/audits/*.md needs the new status
+    header this ticket''s gate now requires'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'T-1232: DOC009 must be registered in _KNOWN_GATE_RULES for waive-validation'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: src/frob/gates/_doclink_docanchor.py
+  reason: 'T-1232: docstatus_gate (DOC009) lives here alongside doclink_gate/docanchor_gate'
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-1232: DOC009 needs a gates.md table row'
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/test_gates.py::TestDocstatusGate::test_missing_status_header_fires_doc009
+- tests/test_gates.py::TestDocstatusGate::test_dated_status_header_passes
+- tests/test_gates.py::TestDocstatusGate::test_superseded_header_with_missing_target_fires_doc009
+- tests/test_gates.py::TestDocstatusGate::test_superseded_header_with_real_target_passes
 threat: null
 component: null
 ```
 Require a dated status/superseded-by header on docs/audits/* (gate-checkable); check ticket-id prose against ledger state (open/closed/renumbered); check index completeness vs the docs tree. Ref: gate-gap class 6 in docs/audits/docs-staleness-2026-07-29.md.
+
+## Done report
+
+Adds DOC009 (gate-gap class 6, status/currency) to
+frob.gates._doclink_docanchor.docstatus_gate: every docs/audits/*.md file
+must carry a dated `Status: YYYY-MM-DD` header, or a `Status: SUPERSEDED
+(see <path>)` header whose target actually resolves, within its first 15
+lines. Missing header or a dangling superseded-by target is a DOC009
+error. Retrofitted a status header onto all 16 pre-existing docs/audits/
+files (dated from each file's last commit date via `git log`; the one
+already-superseded doc, tickets-testing.md, got the SUPERSEDED form
+pointing at tickets-testing-round2.md, matching its existing prose).
+
+Wired docstatus into frob.gates (_ALL_GATES, _CANONICAL_GATE_ORDER,
+run_gates' dispatch table, __all__) and frob.check's gates-fast stage
+group, alongside doclink/docanchor. Registered DOC009 in
+_KNOWN_GATE_RULES (waivable), a docs/modules/gates.md table row, and one
+new CHK-GATE-DOC009 registry entry with gate_rule_total bumped 277 -> 278.
+
+Left for follow-up (out of this portion, per the ticket's other two named
+checks): ticket-id prose vs ledger state, and docs-tree index
+completeness -- both need a real cross-reference against tickets.md/the
+docs tree walk, a separate, larger mechanism than the header check this
+lands. Filed T-1486 for those two (renumbers to a real T-#### at land),
+rather than force them into this land.
+
+### Changed
+```
+ docs/design/registry/check-coverage.yaml |   6 +-
+ docs/modules/gates.md                    |   1 +
+ src/frob/gates/_doclink_docanchor.py     | 125 +++++++++++++-
+ src/frob/gates/_waive.py                 |   2 +
+ tests/test_gates.py                      |  57 +++++++
+ tickets.md                               | 285 ++++++++++++++++++++++++++++++-
+ 6 files changed, 469 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 4 error(s), 823 warning(s), 745 waived
+- error-findings: PERF002@src/frob/gates/_doclink_docanchor.py, PRE001@tickets/T-1232, SELFAUDIT001@design, WIRE001@src/frob/gates/_doclink_docanchor.py
 
 <!-- ticket:T-1235 -->
 ```yaml
@@ -2073,6 +2698,7 @@ tickets.md                            | evidence + Done report
 - tests: 5 passed (from 5 evidence id(s))
 - gates: 4 error(s), 144 warning(s), 745 waived
 - error-findings: PERF002@tests/unit/test_makefile_coverage.py, PRE001@tickets/T-1235, SELFAUDIT001@design, WIRE001@tests/unit/test_coverage_attribution_lock_t1395.py
+
 <!-- ticket:T-1236 -->
 ```yaml
 id: T-1236
@@ -2233,6 +2859,7 @@ tickets.md                  | T-1236 scope add + evidence + Done report
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 0 error(s), 889 warning(s), 745 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1238 -->
 ```yaml
 id: T-1238
@@ -2734,7 +3361,7 @@ function's shape, do not invent a second YAML-mutation pattern).
 ```yaml
 id: T-1267
 title: 'refactor: prose/doc-anchor carrier (docstring, docs/**, anchor-slug rewrite)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -2749,6 +3376,7 @@ scope:
 - tests/test_refactor.py
 - docs/design/refactor-verb.md
 - docs/commands/refactor.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -2776,13 +3404,28 @@ scope_changes:
     set, discovered dynamically, not a static scope glob
   actor: logan
   at: '2026-07-29'
+- op: add
+  glob: design/frob.strata
+  reason: sync-interface must write the new refactor/testsuite interface attrs for
+    this ticket's new public symbols
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/test_refactor.py::TestProseCarrier::test_docstring_mention_elsewhere_rewritten
+- tests/test_refactor.py::TestProseCarrier::test_directive_line_skipped_by_prose_scan
+- tests/test_refactor.py::TestProseCarrier::test_docs_prose_and_code_block_rewritten
+- tests/test_refactor.py::TestProseCarrier::test_heading_and_anchor_rewritten_together
+- tests/test_refactor.py::TestProseCarrier::test_unrelated_heading_not_touched
+- tests/test_refactor.py::TestProseCarrier::test_unreadable_doc_file_disclosed_in_unresolved
 acceptance:
 - text: 'GIVEN a docstring or comment in a file unrelated to a moved symbol''s own
 
     code, naming that symbol''s old dotted path in prose WHEN the move
 
     completes THEN that mention is rewritten to the new dotted path'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestProseCarrier::test_docstring_mention_elsewhere_rewritten
+  - tests/test_refactor.py::TestProseCarrier::test_directive_line_skipped_by_prose_scan
 - text: 'GIVEN docs/** prose (a sentence naming the old module) or an embedded
 
     fenced code block citing the old import path WHEN the move completes
@@ -2790,7 +3433,8 @@ acceptance:
     THEN both are rewritten to the new path, and `frob.gates._doclink_docanchor`
 
     reports no new DOC001/DOC002 finding caused by the move'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestProseCarrier::test_docs_prose_and_code_block_rewritten
 - text: 'GIVEN a doc heading whose slug embeds the moved symbol or module name
 
     WHEN the move completes THEN the heading text and its anchor slug are
@@ -2798,7 +3442,9 @@ acceptance:
     rewritten together, and every existing `frob:doc`/markdown
 
     `frob:describes` reference to that anchor still resolves'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestProseCarrier::test_heading_and_anchor_rewritten_together
+  - tests/test_refactor.py::TestProseCarrier::test_unrelated_heading_not_touched
 - text: 'GIVEN a prose mention the tool cannot safely rewrite (ambiguous natural-
 
     language use, a name that collides with a common English word, or a
@@ -2808,7 +3454,8 @@ acceptance:
     THEN it is listed explicitly in the disclosed report as "not rewritten --
 
     review by hand", never silently skipped and never guessed at'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestProseCarrier::test_unreadable_doc_file_disclosed_in_unresolved
 threat: null
 component: null
 ```
@@ -2842,6 +3489,55 @@ silently skipped and never silently rewritten on a guess.
 This ticket owns ONLY the free-text prose/doc-anchor rows; it does not
 touch `frob:*` DSL directive targets (T-1199's scope) or the Python
 import/call-site rewrite (T-1197's scope).
+
+## Done report
+
+Implemented the three free-text carriers `_directives.py`/`_repointer.py` do
+not reach: `scan_python_prose_mentions` (docstring/comment prose anywhere
+in the repo naming the moving symbol's old dotted path or symref, skipping
+`frob:*` directive-owning spans to avoid a double rewrite with T-1199's
+carrier), `scan_docs_prose_mentions` (docs/** prose sentences and fenced
+code blocks citing the old import path), and `scan_doc_anchor_carriers`
+(a doc heading embedding the moved symbol/module name gets its text and
+`frob.graph.dsl.slugify` anchor slug rewritten together, then every
+`frob:doc`/markdown reference to the old anchor repointed). All three are
+word-boundary matched (no partial-word false positive inside an unrelated
+longer name) and wired into `build_plan` via a new `_prose_carrier_ops`
+helper alongside the T-1199/T-1200 carriers already there. An unreadable
+file is disclosed in `unresolved` as "review by hand", never silently
+skipped (epic acceptance [3]).
+
+In passing (per dispatch note): fixed the 8 SELFAUDIT SYS104 gaps T-1199
+left (6 refactor symbols + 2 testsuite classes) via `frob sys
+sync-interface` (now covers node attr blocks), and split the 73-line
+`scan_directive_carriers` (ARCH001) into a thin repo-wide loop plus a new
+private `_scan_file_for_directive_carriers` per-file helper.
+
+### Changed
+```
+ design/frob.strata                |   8 ++
+ docs/commands/refactor.md         |  57 ++++++++-
+ src/frob/refactor/__init__.py     |  16 +++
+ src/frob/refactor/_directives.py  | 237 +++++++++++++++++++++++++++++++++++
+ src/frob/refactor/_repointer.py   | 256 ++++++++++++++++++++++++++++++++++++++
+ src/frob/refactor/_transaction.py |  51 +++++++-
+ tests/test_refactor.py            | 211 +++++++++++++++++++++++++++++++
+ tickets.md                        | 187 +++++++++++++++++++++++++---
+ 8 files changed, 1006 insertions(+), 17 deletions(-)
+```
+
+### Evidence
+- `tests/test_refactor.py::TestProseCarrier::test_docstring_mention_elsewhere_rewritten` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestProseCarrier::test_directive_line_skipped_by_prose_scan` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestProseCarrier::test_docs_prose_and_code_block_rewritten` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestProseCarrier::test_heading_and_anchor_rewritten_together` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestProseCarrier::test_unrelated_heading_not_touched` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestProseCarrier::test_unreadable_doc_file_disclosed_in_unresolved` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 1 error(s), 269 warning(s), 746 waived
+- error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w16d-refactor/src/frob/refactor/_directives.py:59
 
 <!-- ticket:T-1269 -->
 ```yaml
@@ -4874,6 +5570,7 @@ tickets.md                                          | scope add + evidence + Don
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 2 error(s), 206 warning(s), 745 waived
 - error-findings: SELFAUDIT001@design, WIRE001@tests/unit/test_coverage_attribution_lock_t1395.py
+
 <!-- ticket:T-1396 -->
 ```yaml
 id: T-1396
@@ -6767,29 +7464,47 @@ Scope for the follow-up: src/frob/arch/_python.py (nesting/cyclomatic/
 events fold), src/frob/arch/_concurrency_model.py (_walk_all), src/frob/
 arch/_patterns.py (_find_if_statements).
 
-<!-- ticket:T-draft-adacc08c -->
+<!-- ticket:T-1486 -->
 ```yaml
-id: T-draft-adacc08c
-title: TEST011 escalates from advisory WARN to a blocking freshness contract for stale
-  coverage
+id: T-1486
+title: 'docstatus follow-up: ticket-id prose vs ledger + docs index completeness'
 state: queued
 kind: feature
 origin: human
 created: '2026-08-03'
 priority: medium
-parent: null
+parent: T-1226
 tier: ticket
 sprint: null
 scope:
-- src/frob/gates/__init__.py
-- tests/test_gates.py
-- docs/modules/gates.md
+- src/frob/gates/_doclink_docanchor.py
+- docs/design/registry/check-coverage.yaml
+- docs/audits/docs-staleness-2026-07-29.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 threat: null
 component: null
 ```
-T-1205 acceptance[1]'s second half (the first half -- TEST005 stale-and-disclosed marking -- landed in T-1205's own session). TEST011 currently WARNs on stale_by_mtime/deflated join fraction; this ticket makes staleness a genuine blocking contract (ERROR-severity, or a dedicated new rule) once the disclosure half has had time to be adopted without breaking every existing checkout at once. Needs its own investigation into rollout sequencing (a same-session flip to ERROR would gate the whole repo on every slightly-stale coverage.xml, which is common in normal dev flow) -- do not just flip severity without that review.
+T-1232 landed DOC009 (dated status/superseded-by header on docs/audits/*.md,
+gate-gap class 6's first sub-item). Its other two named checks are still
+open, deliberately left as a follow-up rather than forced into that
+land:
+
+1. Ticket-id prose vs ledger: a T-#### mention in doc prose should be
+   checked against tickets.md/tickets-archive.md -- flag a mention of an id
+   that does not exist at all, or (harder) one whose state contradicts the
+   prose (e.g. "tracked under T-0397" when T-0397 is closed/renumbered).
+   Needs a real ledger read from a gate (frob.tickets._store or similar),
+   not just a doc-tree scan.
+2. Index completeness: docs/index.md's own link inventory should be
+   checked against the full docs/** tree walk (a doc file that exists but
+   is not named anywhere in the index is exactly DOC001's orphan case in
+   spirit, but from the index's own completeness angle rather than the
+   file's reachability angle -- worth checking whether this is fully
+   subsumed by DOC001 or is a genuinely distinct gap before building a
+   new rule).
+
+Ref: gate-gap class 6 in docs/audits/docs-staleness-2026-07-29.md.
 
 <!-- ticket:T-draft-01ab413f -->
 ```yaml
@@ -6838,3 +7553,27 @@ threat: null
 component: null
 ```
 T-1205 acceptance[0], [3], [4]: a frob-native command (frob coverage / frob test --coverage) performs subprocess-rc generation, pytest invocation, combine, xml, and stamp in Python with no Makefile/shell dependency, runs automatically (touched-set only) whenever a gated command's freshness contract says stale, and merges into the persisted coverage store -- no manual make coverage step in any documented workflow. This is the largest remaining piece of T-1205's vision (a real cross-platform orchestration engine) and depends on the incremental per-file caching design (this ticket's sibling, T-draft-01ab413f) existing first. Filed as a focused slice of T-1205, which is too large for one session -- do this after the caching-format ticket, not in parallel with it.
+
+<!-- ticket:T-draft-adacc08c -->
+```yaml
+id: T-draft-adacc08c
+title: TEST011 escalates from advisory WARN to a blocking freshness contract for stale
+  coverage
+state: queued
+kind: feature
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+- docs/modules/gates.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1205 acceptance[1]'s second half (the first half -- TEST005 stale-and-disclosed marking -- landed in T-1205's own session). TEST011 currently WARNs on stale_by_mtime/deflated join fraction; this ticket makes staleness a genuine blocking contract (ERROR-severity, or a dedicated new rule) once the disclosure half has had time to be adopted without breaking every existing checkout at once. Needs its own investigation into rollout sequencing (a same-session flip to ERROR would gate the whole repo on every slightly-stale coverage.xml, which is common in normal dev flow) -- do not just flip severity without that review.

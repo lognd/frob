@@ -1,5 +1,7 @@
 # Coordination churn self-audit (2026-07-26/27 zero-drive)
 
+Status: 2026-07-27
+
 Coordinator-authored retrospective over ~160 ticket closures landed in
 one continuous drive. Every item below recurred enough times to be a
 design defect in the workflow, not operator error. Source: the drive's

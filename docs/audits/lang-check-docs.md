@@ -1,5 +1,7 @@
 # Audit: lang / check / doc-machinery / CLI orchestration
 
+Status: 2026-07-27
+
 North-star tested: "if `frob check` passes, the code is actually good AND the docs actually match."
 Verdict up front: **FALSE in several structural ways.** The doc/coverage/drift guarantee is
 Python-only, the strongest doc gate (COV001) is a non-blocking WARN, a parse/IO failure erases a

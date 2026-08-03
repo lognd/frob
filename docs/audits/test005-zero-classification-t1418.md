@@ -1,5 +1,7 @@
 # TEST005 zero-percent classification (T-1418)
 
+Status: 2026-08-03
+
 Classifies all 306 symbol-level TEST005 findings that reported EXACTLY
 0.0% branch coverage in the 2026-08-02 `make coverage` run
 (source_sha=7454ba65, exit 0, 860 files stamped, doctor healthy, no worker

@@ -12,9 +12,19 @@ from frob.refactor import (
     SymbolRef,
     apply_plan,
     build_plan,
+    carry_lock_acks,
+    extend_span_for_attached_directives,
+    resolve_rename_dest_collision,
     resolve_symbol,
     run_refactor,
+    scan_directive_carriers,
+    scan_doc_anchor_carriers,
+    scan_docs_prose_mentions,
+    scan_evidence_citations,
+    scan_pii_allowlist_carrier,
+    scan_python_prose_mentions,
     scan_references,
+    scan_registry_citations,
 )
 from frob.refactor._resolve import module_to_path
 
@@ -804,3 +814,423 @@ class TestCli:
         finally:
             os.chdir(cwd)
         assert code == 1
+
+
+class TestDirectiveCarrier:
+    """T-1199: `frob:*` directives and `frob.lock` acks move/repoint with
+    a moved symbol."""
+
+    def test_attached_waiver_moves_with_symbol(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestDirectiveCarrier.test_attached_waiver_moves_with_\
+        # symbol
+        source = "# frob:waive ARCH101 reason=\"test\"\ndef greet():\n    return 'hi'\n"
+        lines = source.splitlines()
+        # `greet`'s own def line is line 2 (1-indexed); the waiver directly
+        # above it should extend the move span back to line 1.
+        assert extend_span_for_attached_directives(lines, 2) == 1
+
+    def test_unrelated_comment_not_extended(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestDirectiveCarrier.test_unrelated_comment_not_exten\
+        # ded
+        source = "# just a regular comment\ndef greet():\n    return 'hi'\n"
+        lines = source.splitlines()
+        assert extend_span_for_attached_directives(lines, 2) == 2
+
+    def test_directive_target_elsewhere_rewritten(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestDirectiveCarrier.test_directive_target_elsewhere_\
+        # rewritten
+        import os
+
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        old_symref = "src/pkg/mod.py::greet"
+        _write(
+            root,
+            "src/pkg/other.py",
+            f"def use():\n    pass\n\n\n# frob:tests {old_symref}\ndef test_use():\n"
+            "    use()\n",
+        )
+        cwd = os.getcwd()
+        os.chdir(root)
+        try:
+            resolved = resolve_symbol(
+                root, SymbolRef(module="pkg.mod", qualname="greet")
+            ).danger_ok
+            destination = SymbolRef(module="pkg.mod", qualname="hello")
+            ops, unresolved = scan_directive_carriers(root, resolved, destination)
+        finally:
+            os.chdir(cwd)
+        assert unresolved == []
+        assert len(ops) == 1
+        assert "src/pkg/mod.py::hello" in ops[0].new_text
+        assert old_symref not in ops[0].new_text
+
+    def test_lock_ack_carried_to_new_symref(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestDirectiveCarrier.test_lock_ack_carried_to_new_sym\
+        # ref
+        import json
+        import os
+
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        old_symref = "src/pkg/mod.py::greet"
+        lock_doc = {
+            "version": 1,
+            "entries": [{"ref": old_symref, "facet": "sig", "digest": "abc123"}],
+        }
+        _write(root, "frob.lock", json.dumps(lock_doc))
+        cwd = os.getcwd()
+        os.chdir(root)
+        try:
+            resolved = resolve_symbol(
+                root, SymbolRef(module="pkg.mod", qualname="greet")
+            ).danger_ok
+            destination = SymbolRef(module="pkg.mod", qualname="hello")
+            carried = carry_lock_acks(root, resolved, destination)
+        finally:
+            os.chdir(cwd)
+        assert carried == 1
+        new_lock = json.loads((root / "frob.lock").read_text(encoding="utf-8"))
+        refs = [e["ref"] for e in new_lock["entries"]]
+        assert "src/pkg/mod.py::hello" in refs
+        assert old_symref not in refs
+
+    def test_move_carries_attached_waiver_end_to_end(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestDirectiveCarrier.test_move_carries_attached_waive\
+        # r_end_to_end
+        import os
+
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "# frob:waive ARCH101 reason=\"test\"\ndef greet():\n    return 'hi'\n",
+        )
+        _commit_all(root, "initial")
+        cwd = os.getcwd()
+        os.chdir(root)
+        try:
+            plan = build_plan(
+                root,
+                RefactorKind.MOVE,
+                SymbolRef(module="pkg.mod", qualname="greet"),
+                SymbolRef(module="pkg.new", qualname="greet"),
+            ).danger_ok
+        finally:
+            os.chdir(cwd)
+        result = apply_plan(root, plan)
+        assert result.is_ok
+        new_text = (root / "src/pkg/new.py").read_text(encoding="utf-8")
+        assert "frob:waive ARCH101" in new_text
+        old_text = (root / "src/pkg/mod.py").read_text(encoding="utf-8")
+        assert "frob:waive ARCH101" not in old_text
+
+
+class TestRepointer:
+    """T-1200: the three non-DSL reference kinds the directive carrier
+    cannot reach -- PII012 allowlist, registry citations, ticket evidence."""
+
+    def test_pii_allowlist_entry_rekeyed_on_move(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestRepointer.test_pii_allowlist_entry_rekeyed_on_move
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        _write(
+            root,
+            "src/frob/gates/_pii_structural/_keywords.py",
+            "_TABLE = frozenset(\n"
+            "    {\n"
+            '        ("src/pkg/mod.py", "greet"),\n'
+            "    }\n"
+            ")\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        destination = SymbolRef(module="pkg.new", qualname="greet")
+        ops, unresolved = scan_pii_allowlist_carrier(root, resolved, destination)
+        assert unresolved == []
+        assert len(ops) == 1
+        assert '("src/pkg/new.py", "greet")' in ops[0].new_text
+        assert "src/pkg/mod.py" not in ops[0].new_text
+
+    def test_registry_cross_ref_rewritten(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestRepointer.test_registry_cross_ref_rewritten
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        old_symref = "src/pkg/mod.py::greet"
+        _write(
+            root,
+            "docs/design/registry/foo.yaml",
+            f'    cross_refs: ["{old_symref}"]\n',
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        destination = SymbolRef(module="pkg.new", qualname="greet")
+        ops, unresolved = scan_registry_citations(root, resolved, destination)
+        assert unresolved == []
+        assert len(ops) == 1
+        assert "src/pkg/new.py::greet" in ops[0].new_text
+        assert old_symref not in ops[0].new_text
+
+    def test_ticket_evidence_symref_rewritten(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestRepointer.test_ticket_evidence_symref_rewritten
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        old_symref = "src/pkg/mod.py::greet"
+        _write(root, "tickets.md", f"Evidence: {old_symref} passes.\n")
+        _write(root, "tickets-archive.md", f"Evidence: {old_symref} passes.\n")
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        destination = SymbolRef(module="pkg.new", qualname="greet")
+        ops, unresolved = scan_evidence_citations(root, resolved, destination)
+        assert unresolved == []
+        assert len(ops) == 2
+        touched = {op.file_path for op in ops}
+        assert str(root / "tickets.md") in touched
+        assert str(root / "tickets-archive.md") in touched
+        for op in ops:
+            assert "src/pkg/new.py::greet" in op.new_text
+            assert old_symref not in op.new_text
+
+    def test_no_matching_citation_yields_no_ops(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestRepointer.test_no_matching_citation_yields_no_ops
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        destination = SymbolRef(module="pkg.new", qualname="greet")
+        ops, unresolved = scan_registry_citations(root, resolved, destination)
+        assert ops == []
+        assert unresolved == []
+        ops, unresolved = scan_evidence_citations(root, resolved, destination)
+        assert ops == []
+        assert unresolved == []
+
+
+class TestProseCarrier:
+    """T-1267: docstring/comment prose, docs/** prose, and doc heading/
+    anchor slug carriers -- the free-text reference kinds no structured
+    (`frob:*` DSL, registry yaml, ticket evidence) carrier reaches."""
+
+    def test_docstring_mention_elsewhere_rewritten(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestProseCarrier.test_docstring_mention_elsewhere_rew\
+        # ritten
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        _write(
+            root,
+            "src/pkg/other.py",
+            "def use():\n"
+            '    """See `pkg.mod.greet` for the shared greeting logic."""\n'
+            "    pass\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        destination = SymbolRef(module="pkg.mod", qualname="hello")
+        ops, unresolved = scan_python_prose_mentions(root, resolved, destination)
+        assert unresolved == []
+        assert len(ops) == 1
+        assert "pkg.mod.hello" in ops[0].new_text
+        assert "pkg.mod.greet" not in ops[0].new_text
+
+    def test_directive_line_skipped_by_prose_scan(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestProseCarrier.test_directive_line_skipped_by_prose\
+        # _scan
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        old_symref = "src/pkg/mod.py::greet"
+        _write(
+            root,
+            "src/pkg/other.py",
+            f"def use():\n    pass\n\n\n# frob:tests {old_symref}\ndef test_use():\n"
+            "    use()\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        destination = SymbolRef(module="pkg.mod", qualname="hello")
+        ops, unresolved = scan_python_prose_mentions(root, resolved, destination)
+        # Owned by scan_directive_carriers instead -- the prose scan must
+        # not double-rewrite the same directive comment.
+        assert ops == []
+        assert unresolved == []
+
+    def test_docs_prose_and_code_block_rewritten(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestProseCarrier.test_docs_prose_and_code_block_rewri\
+        # tten
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        _write(
+            root,
+            "docs/guide.md",
+            "Call `pkg.mod.greet` to say hello.\n\n"
+            "```python\nfrom pkg.mod import greet\n```\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        destination = SymbolRef(module="pkg.mod", qualname="hello")
+        ops, unresolved = scan_docs_prose_mentions(root, resolved, destination)
+        assert unresolved == []
+        assert len(ops) == 1
+        assert "pkg.mod.hello" in ops[0].new_text
+        assert "pkg.mod.greet" not in ops[0].new_text
+
+    def test_heading_and_anchor_rewritten_together(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestProseCarrier.test_heading_and_anchor_rewritten_to\
+        # gether
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        _write(root, "docs/guide.md", "# greet\n\nSome text.\n")
+        _write(
+            root,
+            "src/pkg/other.py",
+            "# frob:doc docs/guide.md#greet\ndef use():\n    pass\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        destination = SymbolRef(module="pkg.mod", qualname="hello")
+        ops, unresolved = scan_doc_anchor_carriers(root, resolved, destination)
+        assert unresolved == []
+        heading_ops = [op for op in ops if str(root / "docs/guide.md") == op.file_path]
+        assert any("# hello" in op.new_text for op in heading_ops)
+        anchor_ops = [op for op in ops if str(root / "src/pkg/other.py") == op.file_path]
+        assert any("docs/guide.md#hello" in op.new_text for op in anchor_ops)
+
+    def test_unrelated_heading_not_touched(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestProseCarrier.test_unrelated_heading_not_touched
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        _write(root, "docs/guide.md", "# unrelated topic\n\nSome text.\n")
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        destination = SymbolRef(module="pkg.mod", qualname="hello")
+        ops, unresolved = scan_doc_anchor_carriers(root, resolved, destination)
+        assert ops == []
+        assert unresolved == []
+
+    def test_unreadable_doc_file_disclosed_in_unresolved(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestProseCarrier.test_unreadable_doc_file_disclosed_i\
+        # n_unresolved
+        import os
+        import stat
+
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        bad_doc = _write(root, "docs/guide.md", "Call `pkg.mod.greet` please.\n")
+        bad_doc.chmod(0)
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        destination = SymbolRef(module="pkg.mod", qualname="hello")
+        try:
+            ops, unresolved = scan_docs_prose_mentions(root, resolved, destination)
+        finally:
+            bad_doc.chmod(stat.S_IRUSR | stat.S_IWUSR)
+        if os.name == "nt" or os.geteuid() == 0:
+            # chmod(0) does not deny a root/administrator reader -- the
+            # unresolved-disclosure path is unreachable in that
+            # environment, not a test failure.
+            return
+        assert ops == []
+        assert len(unresolved) == 1
+        assert "review by hand" in unresolved[0]
+
+
+class TestAliasPolicy:
+    """T-1202: the alias-conflict policy layer for a DESTINATION-namespace
+    collision (two symbols landing with the same name in the same
+    module) -- distinct from the import-site name collision `scan_
+    references` already resolves on its own."""
+
+    def test_rename_dest_renames_existing_symbol_and_its_callers(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestAliasPolicy.test_rename_dest_renames_existing_sym\
+        # bol_and_its_callers
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def hello():\n    return 'yo'\n",
+        )
+        _write(
+            root,
+            "src/pkg/caller.py",
+            "from pkg.mod import hello\n\ndef use():\n    return hello()\n",
+        )
+        existing = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="hello")
+        ).danger_ok
+        own_op, caller_ops, alias = resolve_rename_dest_collision(
+            root, existing, "hello"
+        )
+        assert "def hello_existing" in own_op.new_text
+        assert alias.original_name == "hello"
+        assert alias.alias_name == "hello_existing"
+        assert len(caller_ops) == 2
+        assert all("hello_existing" in op.new_text for op in caller_ops)
+
+    def test_build_plan_error_policy_still_refuses(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestAliasPolicy.test_build_plan_error_policy_still_re\
+        # fuses
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def greet():\n    return 'hi'\n\n\ndef hello():\n    return 'yo'\n",
+        )
+        result = build_plan(
+            root,
+            RefactorKind.RENAME,
+            SymbolRef(module="pkg.mod", qualname="greet"),
+            SymbolRef(module="pkg.mod", qualname="hello"),
+            alias_conflict="error",
+        )
+        assert result.is_err
+        assert result.danger_err == RefactorError.DestinationCollision
+
+    def test_build_plan_rename_dest_policy_proceeds(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestAliasPolicy.test_build_plan_rename_dest_policy_pr\
+        # oceeds
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def greet():\n    return 'hi'\n\n\ndef hello():\n    return 'yo'\n",
+        )
+        result = build_plan(
+            root,
+            RefactorKind.RENAME,
+            SymbolRef(module="pkg.mod", qualname="greet"),
+            SymbolRef(module="pkg.mod", qualname="hello"),
+            alias_conflict="rename-dest",
+        )
+        assert result.is_ok
+        plan = result.danger_ok
+        assert len(plan.aliases) == 1
+        assert plan.aliases[0].original_name == "hello"
+        assert plan.aliases[0].alias_name == "hello_existing"
+        assert any("def hello_existing" in op.new_text for op in plan.reference_ops)

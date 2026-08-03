@@ -202,7 +202,7 @@ the registry/evidence repointer child (T-1200) owns the registry-YAML
 and ticket-ledger rows; the reference-rewrite engine child (T-1197) owns
 the Python import/call-site row and is the shared substrate (parse +
 plan + apply + verify machinery) the others are built on top of, not
-parallel to; the prose/doc-anchor carrier child (T-1203) owns every row
+parallel to; the prose/doc-anchor carrier child (T-1267) owns every row
 in the "Prose-rewrite scope" section below -- free text is NOT a DSL
 target and is NOT covered by T-1199.
 
@@ -210,7 +210,7 @@ target and is NOT covered by T-1199.
 
 Distinct from the frob-owned DSL rewrite above -- this is free text that
 happens to NAME a moved symbol. Owned in full by the prose/doc-anchor
-carrier child (T-1203), not by the directive carrier (T-1199), which
+carrier child (T-1267), not by the directive carrier (T-1199), which
 only rewrites structured `frob:*` DSL directive targets:
 
 - Docstrings and comments naming the dotted path, anywhere in the repo

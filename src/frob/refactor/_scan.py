@@ -4,7 +4,7 @@ moving symbol, repo-wide, before any file write
 imports/call sites" row).
 
 This is the one reference-kind row T-1197 owns directly; the sibling
-DSL/registry/prose carriers (T-1199/T-1200/T-1203) extend the same
+DSL/registry/prose carriers (T-1199/T-1200/T-1267) extend the same
 `RefactorPlan.reference_ops`/`aliases` shape with their own scan passes
 rather than reimplementing this walk (docs/design/refactor-verb.md's
 "Children filed" section).

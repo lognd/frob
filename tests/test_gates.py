@@ -9101,6 +9101,166 @@ class TestDoclinkGate:
         assert "docs/index.md" not in message or "create it" in message
         assert "no configured docs root exists" in message or "create it" in message
 
+    def test_broken_relative_link_target_fires_doc008(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::doclink_gate kind="unit"
+        # T-1231: an inline markdown link to a file that does not exist.
+        from frob.gates import doclink_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "index.md").write_text(
+            "# Docs\n\n[broken](missing.md)\n", encoding="utf-8"
+        )
+
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        violations = doclink_gate(root, snap)
+        assert set(_rules(violations)) == {"DOC008"}
+        assert any("missing.md" in v.message for v in violations)
+
+    def test_broken_fragment_on_existing_target_fires_doc008(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::doclink_gate kind="unit"
+        # T-1231: the target file exists but the #fragment does not resolve.
+        from frob.gates import doclink_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "index.md").write_text(
+            "# Docs\n\n[bad anchor](target.md#nope)\n", encoding="utf-8"
+        )
+        (root / "docs" / "target.md").write_text(
+            "# Target\n\n## Real Heading\n", encoding="utf-8"
+        )
+
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        violations = doclink_gate(root, snap)
+        assert set(_rules(violations)) == {"DOC008"}
+        assert any("nope" in v.message for v in violations)
+
+    def test_resolvable_relative_link_and_fragment_pass(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::doclink_gate kind="unit"
+        from frob.gates import doclink_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "index.md").write_text(
+            "# Docs\n\n[good](target.md#real-heading)\n"
+            "[abs](https://example.com/x.md#nope)\n",
+            encoding="utf-8",
+        )
+        (root / "docs" / "target.md").write_text(
+            "# Target\n\n## Real Heading\n", encoding="utf-8"
+        )
+
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        violations = doclink_gate(root, snap)
+        assert set(_rules(violations)) == set()
+
+
+class TestDocstatusGate:
+    def test_missing_status_header_fires_doc009(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docstatus_gate kind="unit"
+        from frob.gates import docstatus_gate
+
+        root = tmp_path / "repo"
+        (root / "docs" / "audits").mkdir(parents=True)
+        (root / "docs" / "audits" / "no_header.md").write_text(
+            "# An Audit\n\nSome prose with no status header at all.\n",
+            encoding="utf-8",
+        )
+        violations = docstatus_gate(root)
+        assert set(_rules(violations)) == {"DOC009"}
+        assert any("no_header.md" in v.file for v in violations)
+
+    def test_dated_status_header_passes(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docstatus_gate kind="unit"
+        from frob.gates import docstatus_gate
+
+        root = tmp_path / "repo"
+        (root / "docs" / "audits").mkdir(parents=True)
+        (root / "docs" / "audits" / "dated.md").write_text(
+            "# An Audit\n\nStatus: 2026-08-01\n\nSome prose.\n", encoding="utf-8"
+        )
+        assert docstatus_gate(root) == ()
+
+    def test_superseded_header_with_missing_target_fires_doc009(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docstatus_gate kind="unit"
+        from frob.gates import docstatus_gate
+
+        root = tmp_path / "repo"
+        (root / "docs" / "audits").mkdir(parents=True)
+        (root / "docs" / "audits" / "stale.md").write_text(
+            "# An Audit\n\nStatus: SUPERSEDED (see docs/audits/missing.md)\n",
+            encoding="utf-8",
+        )
+        violations = docstatus_gate(root)
+        assert set(_rules(violations)) == {"DOC009"}
+        assert any("missing.md" in v.message for v in violations)
+
+    def test_superseded_header_with_real_target_passes(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docstatus_gate kind="unit"
+        from frob.gates import docstatus_gate
+
+        root = tmp_path / "repo"
+        (root / "docs" / "audits").mkdir(parents=True)
+        (root / "docs" / "audits" / "stale.md").write_text(
+            "# An Audit\n\nStatus: SUPERSEDED (see docs/audits/current.md)\n",
+            encoding="utf-8",
+        )
+        (root / "docs" / "audits" / "current.md").write_text(
+            "# Current\n\nStatus: 2026-08-01\n", encoding="utf-8"
+        )
+        assert docstatus_gate(root) == ()
+
+
+class TestDocmakeGate:
+    def test_bogus_make_target_fires_doc010(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docmake_gate kind="unit"
+        from frob.gates import docmake_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "Makefile").write_text("build:\n\techo hi\n", encoding="utf-8")
+        (root / "docs" / "index.md").write_text(
+            "# Docs\n\nRun `make nonexistent-target` first.\n", encoding="utf-8"
+        )
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        violations = docmake_gate(root, snap)
+        assert set(_rules(violations)) == {"DOC010"}
+        assert any("nonexistent-target" in v.message for v in violations)
+
+    def test_real_make_target_passes(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docmake_gate kind="unit"
+        from frob.gates import docmake_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "Makefile").write_text(
+            "build:\n\techo hi\ninstall-tool:\n\techo installing\n", encoding="utf-8"
+        )
+        (root / "docs" / "index.md").write_text(
+            "# Docs\n\nRun `make install-tool` first.\n", encoding="utf-8"
+        )
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        assert docmake_gate(root, snap) == ()
+
+    def test_no_makefile_is_a_noop(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docmake_gate kind="unit"
+        from frob.gates import docmake_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "index.md").write_text(
+            "# Docs\n\nRun `make anything` first.\n", encoding="utf-8"
+        )
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        assert docmake_gate(root, snap) == ()
+
 
 class TestDocanchorGate:
     def _snap(self, root: Path):

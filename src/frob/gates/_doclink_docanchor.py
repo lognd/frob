@@ -61,6 +61,30 @@ _MD_LINK_RE = re.compile(r"\]\(([^)#\s]+)")
 # written terminal-first, where an index names files in code spans rather
 # than markdown links -- an index entry is a link either way.
 _MD_CODE_REF_RE = re.compile(r"`([^`\s]+\.md)`")
+# DOC008 (T-1231): unlike _MD_LINK_RE above (fragment stripped -- reachability
+# crawling only cares about the file), this keeps the `#fragment` half so the
+# resolver below can validate it against the target file's own anchors.
+_MD_LINK_TARGET_RE = re.compile(r"\]\(([^)\s]+)\)")
+_URL_SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*://|^mailto:")
+# DOC008 must not treat prose code spans as markdown links: `handlers[key](x)`
+# (an array-subscript-then-call example) matches `\]\(...\)` lexically but is
+# never a real link. Blank out fenced blocks and inline `code` spans first
+# (preserving newlines, so line numbers stay correct) before scanning.
+_FENCED_CODE_RE = re.compile(r"```.*?```", re.DOTALL)
+_INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
+
+
+def _blank_non_newlines(match: re.Match[str]) -> str:
+    """Replace `match` with spaces, keeping any embedded newlines intact."""
+    return "".join(c if c == "\n" else " " for c in match.group(0))
+
+
+def _strip_code_spans(text: str) -> str:
+    """Blank out fenced code blocks and inline `code` spans so DOC008's link
+    scan never mistakes prose code (e.g. `handlers[key](x)`) for a real
+    markdown link -- newline count (and therefore line numbers) is preserved."""
+    text = _FENCED_CODE_RE.sub(_blank_non_newlines, text)
+    return _INLINE_CODE_RE.sub(_blank_non_newlines, text)
 
 
 def _doclink_config(root: Path) -> tuple[list[str], list[str], list[str]]:
@@ -188,9 +212,16 @@ def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     orphans = sorted(obligated - linked - set(roots))
 
     link_hint = _doclink_root_hint(root, roots)
-    violations = tuple(_doc001_orphan(orphan, link_hint) for orphan in orphans)
-    _log.info("doclink: %d obligated, %d orphaned", len(obligated), len(violations))
-    return violations
+    violations = [_doc001_orphan(orphan, link_hint) for orphan in orphans]
+    broken = _doc008_broken_links(root, obligated | set(roots))
+    violations.extend(broken)
+    _log.info(
+        "doclink: %d obligated, %d orphaned, %d broken link(s)",
+        len(obligated),
+        len(orphans),
+        len(broken),
+    )
+    return tuple(violations)
 
 
 # frob:enforces CHK-GATE-DOC001
@@ -207,6 +238,95 @@ def _doc001_orphan(orphan: str, link_hint: str) -> Violation:
             f"{link_hint}"
         ),
     )
+
+
+# frob:enforces CHK-GATE-DOC008
+def _doc008_violation(doc_rel: str, line: int, message: str) -> Violation:
+    """Build one DOC008 error `Violation` (T-1231: a doc's own inline link
+    target, or its `#fragment`, does not resolve)."""
+    return Violation(
+        rule="DOC008",
+        severity=Severity.ERROR,
+        file=doc_rel,
+        line=line,
+        message=message,
+    )
+
+
+def _doc008_scan_doc(
+    root: Path,
+    doc_rel: str,
+    slug_cache: dict[str, Option[set[str]]],
+) -> list[Violation]:
+    """T-1231 (gate-gap class 5): validate every relative markdown link and
+    `#fragment` inside `doc_rel` against what actually exists on disk --
+    doclink's reachability crawl above only cares whether a link exists at
+    all, never whether it resolves. Absolute URLs/mailto links are out of
+    scope (no static resolution target); a link's own `#fragment` is
+    resolved the same way DOC002 resolves a `frob:doc` edge's anchor
+    (heading slug or explicit `<a id>`)."""
+    doc_path = root / doc_rel
+    try:
+        text = doc_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    scan_text = _strip_code_spans(text)
+    base = PurePosixPath(doc_rel).parent
+    violations: list[Violation] = []
+    line_of = _line_index(text)
+    for match in _MD_LINK_TARGET_RE.finditer(scan_text):
+        target = match.group(1)
+        if _URL_SCHEME_RE.match(target):
+            continue
+        line = line_of(match.start())
+        path_part, _, frag = target.partition("#")
+        if path_part:
+            resolved = str(PurePosixPath(*(base / path_part).parts)).replace("../", "")
+            target_path = root / resolved
+            if not target_path.exists():
+                violations.append(
+                    _doc008_violation(
+                        doc_rel,
+                        line,
+                        f"DOC008: link target {target!r} does not resolve "
+                        f"(no file at {resolved!r})",
+                    )
+                )
+                continue
+            if not frag or target_path.suffix != ".md":
+                continue
+            if resolved not in slug_cache:
+                slug_cache[resolved] = _doc_anchor_slugs(target_path)
+            slugs = slug_cache[resolved].or_else(lambda: Some(set())).danger_some
+        else:
+            # Same-file anchor (`[text](#slug)`): resolve against this doc.
+            if not frag:
+                continue
+            if doc_rel not in slug_cache:
+                slug_cache[doc_rel] = _doc_anchor_slugs(doc_path)
+            slugs = slug_cache[doc_rel].or_else(lambda: Some(set())).danger_some
+            resolved = doc_rel
+        if frag not in slugs:
+            violations.append(
+                _doc008_violation(
+                    doc_rel,
+                    line,
+                    _anchor_mismatch_message(target, resolved, frag, slugs),
+                )
+            )
+    return violations
+
+
+def _doc008_broken_links(root: Path, docs: set[str]) -> tuple[Violation, ...]:
+    """DOC008: every obligated/root doc's own inline link targets and
+    `#fragment`s must resolve. Runs after DOC001's reachability crawl so a
+    genuinely-broken link is flagged whether or not the doc it lives in is
+    itself reachable."""
+    slug_cache: dict[str, Option[set[str]]] = {}
+    violations: list[Violation] = []
+    for doc_rel in sorted(docs):
+        violations.extend(_doc008_scan_doc(root, doc_rel, slug_cache))
+    return tuple(violations)
 
 
 _ANCHOR_ID_RE = re.compile(r'<a\s+id="([^"]+)"')
@@ -337,6 +457,181 @@ def _docanchor_check_edge(
     return None
 
 
+# T-1232 (gate-gap class 6): a dated `Status: YYYY-MM-DD` (or
+# `Status: SUPERSEDED (see <path>)`) header, checked within the first
+# `_STATUS_HEADER_SCAN_LINES` lines of every docs/audits/*.md file -- audit
+# docs describe a point-in-time snapshot and rot silently with no currency
+# marker at all (docs/audits/docs-staleness-2026-07-29.md's own STATUS/
+# CURRENCY gate-gap class).
+_STATUS_HEADER_RE = re.compile(
+    r"^[>\s]*\**Status:\**\s*"
+    r"(?:(?P<date>\d{4}-\d{2}-\d{2})|SUPERSEDED\s*\(see\s+(?P<path>[^)]+)\))"
+)
+_STATUS_HEADER_SCAN_LINES = 15
+
+
+def _audit_docs(root: Path) -> set[str]:
+    """The docs/audits/*.md files obligated to carry a DOC009 status header."""
+    return {p.relative_to(root).as_posix() for p in root.glob("docs/audits/*.md")}
+
+
+# frob:enforces CHK-GATE-DOC009
+def _doc009_violation(doc_rel: str, message: str) -> Violation:
+    """Build one DOC009 error `Violation` -- a missing or unresolvable
+    status/superseded-by header on an audit doc."""
+    return Violation(
+        rule="DOC009", severity=Severity.ERROR, file=doc_rel, line=0, message=message
+    )
+
+
+def _doc009_check_doc(root: Path, doc_rel: str) -> Violation | None:
+    """The DOC009 `Violation` for `doc_rel`, or None when a dated status
+    header (or a superseded-by header whose target resolves) is found
+    within its first `_STATUS_HEADER_SCAN_LINES` lines."""
+    try:
+        text = (root / doc_rel).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    for line in text.splitlines()[:_STATUS_HEADER_SCAN_LINES]:
+        match = _STATUS_HEADER_RE.match(line.strip())
+        if match is None:
+            continue
+        path = match.group("path")
+        if path is not None and not (root / path).exists():
+            return _doc009_violation(
+                doc_rel,
+                f"DOC009: {doc_rel} superseded-by target {path!r} does not "
+                f"resolve to a real file",
+            )
+        return None
+    return _doc009_violation(
+        doc_rel,
+        f"DOC009: {doc_rel} is missing a dated status header in its first "
+        f"{_STATUS_HEADER_SCAN_LINES} lines -- add 'Status: YYYY-MM-DD' or "
+        f"'Status: SUPERSEDED (see <path>)'",
+    )
+
+
+# frob:doc docs/modules/gates.md#public-api
+def docstatus_gate(root: Path) -> tuple[Violation, ...]:
+    """DOC009: every `docs/audits/*.md` file needs a dated status (or
+    superseded-by) header -- an audit is a point-in-time snapshot, and
+    unlike code it carries no digest/hash the drift gate can compare
+    against, so a currency claim has to be explicit and checkable."""
+    root = Path(root)
+    docs = _audit_docs(root)
+    violations = tuple(
+        v
+        for doc_rel in sorted(docs)
+        for v in (_doc009_check_doc(root, doc_rel),)
+        if v is not None
+    )
+    _log.info("docstatus: %d audit doc(s), %d violation(s)", len(docs), len(violations))
+    return violations
+
+
+# T-1230 (gate-gap class 4, non-python doc targets): a `` `make <target>` ``
+# citation in prose is invisible to every python-shaped pointer check
+# (DOC006's kind 3 already resolves `[section]`/`[section.key]` against
+# frob.toml/pyproject.toml/Cargo.toml -- this closes the sibling gap for
+# Makefile recipe names specifically, the one non-python target class the
+# docs-staleness sweep found rotting with no gate at all).
+_MAKE_TARGET_CITATION_RE = re.compile(r"`make ([A-Za-z][\w.-]*)`")
+_MAKEFILE_TARGET_RE = re.compile(r"^([A-Za-z][\w.-]*)\s*:(?!=)")
+
+
+def _makefile_targets(root: Path) -> set[str]:
+    """Every recipe name declared in `root`'s Makefile (`target:` lines,
+    `.PHONY`/pattern/variable-assignment lines excluded)."""
+    makefile = root / "Makefile"
+    try:
+        text = makefile.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return set()
+    targets: set[str] = set()
+    for line in text.splitlines():
+        if line.startswith(("\t", "#", ".")):
+            continue
+        match = _MAKEFILE_TARGET_RE.match(line)
+        if match:
+            targets.add(match.group(1))
+    return targets
+
+
+# frob:enforces CHK-GATE-DOC010
+def _line_index(text: str):
+    """Sorted newline offsets for O(log n) offset->line lookups (PERF002:
+    never text.count per match in a loop)."""
+    import bisect as _bisect
+
+    offsets = [i for i, ch in enumerate(text) if ch == "\n"]
+
+    def line_of(offset: int) -> int:
+        return _bisect.bisect_right(offsets, offset - 1) + 1
+
+    return line_of
+
+
+def _doc010_violation(doc_rel: str, line: int, target: str) -> Violation:
+    """Build one DOC010 error `Violation` -- a cited `make <target>` recipe
+    that does not exist in the repo's Makefile."""
+    return Violation(
+        rule="DOC010",
+        severity=Severity.ERROR,
+        file=doc_rel,
+        line=line,
+        message=(
+            f"DOC010: `make {target}` is not a real Makefile target "
+            f"(no `{target}:` recipe)"
+        ),
+    )
+
+
+def _doc010_scan_doc(
+    root: Path, doc_rel: str, make_targets: set[str]
+) -> list[Violation]:
+    """DOC010 violations for every `` `make <target>` `` citation in
+    `doc_rel` whose target does not resolve against `make_targets`."""
+    try:
+        text = (root / doc_rel).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    violations: list[Violation] = []
+    line_of = _line_index(text)
+    for match in _MAKE_TARGET_CITATION_RE.finditer(text):
+        target = match.group(1)
+        if target in make_targets:
+            continue
+        line = line_of(match.start())
+        violations.append(_doc010_violation(doc_rel, line, target))
+    return violations
+
+
+# frob:doc docs/modules/gates.md#public-api
+def docmake_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """DOC010: every `` `make <target>` `` citation in an obligated doc must
+    name a real Makefile recipe -- the Makefile has no graph node of its
+    own, so a renamed/removed target's doc citation was invisible to every
+    other doc gate (gate-gap class 4)."""
+    root = Path(root)
+    if not (root / "Makefile").exists():
+        return ()
+    make_targets = _makefile_targets(root)
+    include, exclude, roots = _doclink_config(root)
+    docs = (
+        _obligated_docs(root, include, exclude)
+        | set(roots)
+        | _linked_from_edges(snapshot)
+    )
+    violations = tuple(
+        v
+        for doc_rel in sorted(docs)
+        for v in _doc010_scan_doc(root, doc_rel, make_targets)
+    )
+    _log.info("docmake: %d doc(s) scanned, %d violation(s)", len(docs), len(violations))
+    return violations
+
+
 __all__ = [
     # frob:ticket T-1170
     # `_doclink_config`/`_obligated_docs`/`_docanchor_check_edge`/
@@ -356,4 +651,6 @@ __all__ = [
     "_docanchor_check_edge",
     "docanchor_gate",
     "doclink_gate",
+    "docstatus_gate",
+    "docmake_gate",
 ]

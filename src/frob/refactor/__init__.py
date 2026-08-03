@@ -5,7 +5,7 @@ substrate).
 Owns the resolve/plan/apply/verify transaction pipeline and the Python
 import/call-site reference kind. The directive/waiver carrier (T-1199),
 registry/evidence repointer (T-1200), and prose/doc-anchor carrier
-(T-1203) extend `RefactorPlan.reference_ops` with their own scan passes
+(T-1267) extend `RefactorPlan.reference_ops` with their own scan passes
 against the same `build_plan`/`apply_plan`/`run_refactor` machinery -- they
 do not reimplement transaction mechanics (docs/design/refactor-verb.md's
 "Children filed" section).
@@ -19,7 +19,13 @@ pydantic models describing every intermediate shape.
 
 from __future__ import annotations
 
+from frob.refactor._alias_policy import resolve_rename_dest_collision
 from frob.refactor._apply import apply_plan
+from frob.refactor._directives import (
+    carry_lock_acks,
+    extend_span_for_attached_directives,
+    scan_directive_carriers,
+)
 from frob.refactor._models import (
     AliasRecord,
     RefactorError,
@@ -30,6 +36,16 @@ from frob.refactor._models import (
     RewriteOp,
     SymbolRef,
     VerifyOutcome,
+)
+from frob.refactor._prose import (
+    scan_doc_anchor_carriers,
+    scan_docs_prose_mentions,
+    scan_python_prose_mentions,
+)
+from frob.refactor._repointer import (
+    scan_evidence_citations,
+    scan_pii_allowlist_carrier,
+    scan_registry_citations,
 )
 from frob.refactor._resolve import module_to_path, resolve_symbol
 from frob.refactor._scan import find_python_files, scan_references
@@ -52,11 +68,21 @@ __all__ = [
     "VerifyOutcome",
     "apply_plan",
     "build_plan",
+    "carry_lock_acks",
+    "extend_span_for_attached_directives",
     "find_python_files",
     "module_to_path",
+    "resolve_rename_dest_collision",
     "resolve_symbol",
     "run_refactor",
+    "scan_directive_carriers",
+    "scan_doc_anchor_carriers",
+    "scan_docs_prose_mentions",
+    "scan_evidence_citations",
+    "scan_pii_allowlist_carrier",
+    "scan_python_prose_mentions",
     "scan_references",
+    "scan_registry_citations",
     "verify_check_delta",
     "verify_import_resolution",
     "verify_pytest_collect",
