@@ -6926,7 +6926,7 @@ after) and is absent from the resulting commit's file list (git log -1
 ```yaml
 id: T-1433
 title: make coverage serial-rerun phase wedges forever on a dead-holder futex
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-02'
