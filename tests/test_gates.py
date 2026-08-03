@@ -7018,6 +7018,120 @@ class TestTestGate:
         )
         assert any(v.rule == "TEST005" and "sys" in v.file for v in violations)
 
+    # frob:ticket T-1205
+    def test_test005_symbol_finding_discloses_stale_coverage(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1205 acceptance[1]: a TEST005 finding computed from a stale
+        coverage.xml (`stale_by_mtime=True`) must carry the
+        `[STALE COVERAGE]` disclosure prefix, not read as an unqualified
+        current fact (the T-1293 incident this ticket exists to prevent:
+        an agent trusted a 23-hour-stale stamp and closed a ticket having
+        fixed 1 of 64 real findings)."""
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/frob/pkg/a.py::helper"]
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={record.symref: 40.0},
+            module_line={},
+            stale_by_mtime=True,
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(
+            snap, (), Some(coverage), tests, TestPolicy(unit_branch_cov=90)
+        )
+        v = next(
+            v for v in violations if v.rule == "TEST005" and v.symref == record.symref
+        )
+        assert v.message.startswith("[STALE COVERAGE] TEST005:")
+
+    # frob:ticket T-1205
+    def test_test005_symbol_finding_no_disclosure_when_fresh(
+        self, tmp_path: Path
+    ) -> None:
+        """Counterpart: a fresh (non-stale) TEST005 finding must NOT carry
+        the disclosure prefix -- the marker is conditional, not universal."""
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/frob/pkg/a.py::helper"]
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={record.symref: 40.0},
+            module_line={},
+            stale_by_mtime=False,
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(
+            snap, (), Some(coverage), tests, TestPolicy(unit_branch_cov=90)
+        )
+        v = next(
+            v for v in violations if v.rule == "TEST005" and v.symref == record.symref
+        )
+        assert not v.message.startswith("[STALE COVERAGE]")
+        assert v.message.startswith("TEST005:")
+
+    # frob:ticket T-1205
+    def test_test005_module_finding_discloses_stale_coverage(
+        self, tmp_path: Path
+    ) -> None:
+        """Same T-1205 disclosure, for the per-module TEST005 finding path."""
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        snap = _snapshot(tmp_path)
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 10.0},
+            stale_by_mtime=True,
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(
+            snap, (), Some(coverage), tests, TestPolicy(module_line_cov=85)
+        )
+        v = next(
+            v
+            for v in violations
+            if v.rule == "TEST005" and v.file == "src/frob/pkg/a.py"
+        )
+        assert v.message.startswith("[STALE COVERAGE] TEST005:")
+
+    # frob:ticket T-1205
+    def test_test005_system_finding_discloses_stale_coverage(
+        self, tmp_path: Path
+    ) -> None:
+        """Same T-1205 disclosure, for the per-system TEST005 finding path."""
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        snap = _snapshot(tmp_path)
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 10.0},
+            stale_by_mtime=True,
+        )
+        system = SystemSpec(
+            id="sys", entrypoint="x", min_e2e=0, paths=("src/frob/pkg/*",)
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(
+            snap, (system,), Some(coverage), tests, TestPolicy(system_line_cov=80)
+        )
+        v = next(v for v in violations if v.rule == "TEST005" and "sys" in v.file)
+        assert v.message.startswith("[STALE COVERAGE] TEST005:")
+
     def test_test008_fires_on_unjoined_root(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::_test008_unjoined_root
         from typani.option import Some
