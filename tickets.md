@@ -10747,3 +10747,28 @@ threat: null
 component: null
 ```
 Observed on the T-1465 land: the pre-land fmt absorb rewrapped two multi-line frob:waive WIRE001 comments in tests/conftest.py to fit the line-length limit; the deletion filter saw the minus-lines of the rewrap diff as waiver deletions and refused the land (OutOfScopeWaiveDeletion) even though the waiver text, rule, reason, and follow_up were byte-equivalent after re-flowing. The Done-report prose disclosure did not satisfy the check; only adding every touched file to the landing ticket's scope did. Fix: the filter should normalize waive directives (join continuation lines, collapse whitespace) on both diff sides and treat an identical-normalized-content rewrap as no deletion. Regression test: a diff that only re-wraps a waive comment passes the filter; a diff that actually removes one still refuses.
+
+<!-- ticket:T-1469 -->
+```yaml
+id: T-1469
+title: make coverage doctor precondition dies on stale leases a finished agent left;
+  auto-reconcile instead
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- Makefile
+- src/frob/app/doctor_runner.py
+acceptance:
+- text: GIVEN a stale in-progress hold with no live lease WHEN make coverage runs
+    THEN the hold is auto-requeued with a logged line and the suite proceeds
+  evidence: []
+threat: null
+component: null
+```
+Third occurrence 2026-08-02: an agent session ends leaving an in-progress hold with no live lease; the next make coverage aborts at its frob doctor precondition (exit 1, before pytest ever runs) and the whole suite run is lost -- twice this cost a full run slot, and the footgun FAST_EXIT1 detector now flags it but cannot fix it. Stale leases are mechanically healable (frob ticket reconcile --apply does exactly this). Fix: either the coverage recipe runs reconcile --apply before doctor, or doctor gains --heal-stale-leases (auto-requeue with a logged line) for exactly this class while still failing hard on the non-healable conditions (missing natives, corrupt derived state).
