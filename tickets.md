@@ -1148,7 +1148,7 @@ Derived-state auto-refresh sweep 2026-07-29 (user directive: nothing frob-manage
 id: T-1215
 title: 'perf: arch gate ~8-10 independent per-file walks -- shared body-event stream,
   dedupe 3x _iter_own_scope'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -1258,7 +1258,7 @@ Verification:
 (no evidence recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
+- tests: 4 passed (from 4 evidence id(s))
 - gates: 2 error(s), 211 warning(s), 745 waived
 - error-findings: PRE001@tickets/T-1215, WIRE001@src/frob/vet/_capability_core.py
 
