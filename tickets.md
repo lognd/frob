@@ -1767,7 +1767,7 @@ Require a dated status/superseded-by header on docs/audits/* (gate-checkable); c
 ```yaml
 id: T-1235
 title: 'coverage attribution fix: subprocess rc + multiprocessing concurrency'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-29'
