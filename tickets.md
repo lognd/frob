@@ -755,7 +755,7 @@ Scope for this ticket: the split-specific pieces only --
 ```yaml
 id: T-1202
 title: 'refactor: alias-conflict policy'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
