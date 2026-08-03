@@ -6182,7 +6182,7 @@ T-1433's SIGUSR1 stack-dump handler (tests/conftest.py::_install_stackdump_handl
 ```yaml
 id: T-1468
 title: land deletion filter reads fmt rewraps of frob:waive comments as deletions
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-02'
@@ -6316,7 +6316,7 @@ to main. Will resolve once those land.
 (no evidence recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
+- tests: 4 passed (from 4 evidence id(s))
 - gates: 0 error(s), 549 warning(s), 744 waived
 - error-findings: none (measured, zero errors)
 
