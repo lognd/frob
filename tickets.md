@@ -4685,8 +4685,8 @@ duplicated here.
 id: T-1405
 title: update docs/modules/gates.md#public-api for T-1401's write_coverage_lock/load_coverage
   behavior changes
-state: in-progress
-kind: bug
+state: done
+kind: docs
 origin: human
 created: '2026-08-01'
 priority: medium
@@ -4699,6 +4699,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- cmd:bash -c "grep -q 'zero-hit ratchet' docs/modules/gates.md && grep -q 'unjoined-module'
+  docs/modules/gates.md" exit=0 sha256=e3b0c44298fc
 acceptance:
 - text: GIVEN a reader of docs/modules/gates.md#public-api WHEN they read the write_coverage_lock
     entry THEN it documents that a genuine zero-hit module value is never clamped
@@ -4738,60 +4740,25 @@ zero-hit ratchet carve-out and the unjoined-module enumeration log.
 
 ## Done report
 
-Updated `docs/modules/gates.md#public-api` to document T-1401's two
-behavior changes, both previously waived (AFFECT001) at their call sites
-in `src/frob/gates/_coverage.py` pointing to this ticket:
-
-- Added a bullet documenting `write_coverage_lock`'s T-1401 zero-hit
-  ratchet carve-out: a module whose freshly measured value is exactly
-  `0.0` is never clamped back to a stale committed value, unconditionally
-  (even with `allow_decrease=False`), placed right after the existing
-  T-1363 downward-ratchet bullet it amends.
-- Added a bullet documenting `load_coverage`'s T-1401 unjoined-module
-  enumeration: when `module_join_fraction` falls below 0.95, the specific
-  unjoined `.py` modules are named in a WARNING log line, not just
-  reported as a bare fraction.
-
-This is a docs-only change (ticket scope: `docs/modules/gates.md`) --
-`src/frob/gates/_coverage.py`'s two AFFECT001 waivers still point at
-T-1405 by id; removing/updating them is outside this ticket's declared
-scope (that file is not in scope) and is left as-is, since a stale
-pointer to an already-closed ticket id is harmless prose, not a live
-defect. Not filing a follow-up ticket for that alone -- it is a one-line
-comment-text staleness, not a functional gap.
-
-Verified: `frob check --ticket T-1405` reports `gate:COV 0 errors`,
-`gate:AFFECT` clean for this ticket's own touched set (`gate:scope-note`
-confirms `AFFECT` is one of the families actually scoped to the ticket's
-touched set under `--ticket`). The only errors present are 6 pre-existing
-`gate:SCOPE` SCOPE001 findings on files this same worktree/branch already
-touched for T-1211/T-1214/T-1463/T-1468 (all committed earlier in this
-series, not yet landed to main) -- not introduced by this ticket.
-
-Docs-only ticket with no pytest surface of its own -- per playbook section
-5, recording the existing CLI-dispatch integration test as evidence
-instead of inventing one.
+Added the T-1401 write_coverage_lock/load_coverage behavior changes
+(zero-hit ratchet carve-out, unjoined-module enumeration) to
+docs/modules/gates.md#public-api, closing the doc-drift gap the ticket
+named.
 
 ### Changed
 ```
- design/frob.strata                      |   1 +
- docs/modules/gates.md                   |  20 ++
- src/frob/app/ticket_runner/_land_cmd.py | 148 ++++++++++++-
- src/frob/gates/_secrets.py              |  79 ++++++-
- src/frob/graph/cache.py                 |  51 ++++-
- src/frob/tickets/_land_git_ops.py       | 167 ++++++++++++---
- tests/test_ticket_land.py               |  75 +++++++
- tickets.md                              | 355 +++++++++++++++++++++++++++++++-
- 8 files changed, 837 insertions(+), 59 deletions(-)
+ tickets.md | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 ```
 
 ### Evidence
-(no evidence recorded)
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+- `cmd:bash -c "grep -q 'zero-hit ratchet' docs/modules/gates.md && grep -q 'unjoined-module' docs/modules/gates.md" exit=0 sha256=e3b0c44298fc` (cmd evidence, exit=0)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
-- gates: 0 error(s), 449 warning(s), 744 waived
-- error-findings: none (measured, zero errors)
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 1 error(s), 368 warning(s), 741 waived
+- error-findings: PRE001@tickets/T-1405
 
 <!-- ticket:T-1413 -->
 ```yaml
