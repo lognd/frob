@@ -3339,6 +3339,7 @@ node testsuite : trusted {
     attr interface=TestCov002ScopeCoverage;
     attr interface=TestCov002StrataModuleCoverage;
     attr interface=TestCov003CmdEvidence;
+    attr interface=TestCoverageAttributionLockStaysNonZero;
     attr interface=TestCoverageFastUsesAbsoluteSubprocessRc;
     attr interface=TestCoverageGate;
     attr interface=TestCoverageLoad;
@@ -4106,6 +4107,7 @@ node testsuite : trusted {
     attr interface=TestPostLandUnscopedSweep;
     attr interface=TestPredicates;
     attr interface=TestPrefilterPreservesRecall;
+    attr interface=TestPreviouslyZeroModulesNowAttributeInTheCommittedLock;
     attr interface=TestPreworkSweepBounds;
     attr interface=TestPreworkSweepRefresh;
     attr interface=TestPrimitiveObsession;
