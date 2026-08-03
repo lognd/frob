@@ -6904,3 +6904,31 @@ class TestSupplyChainOpaqueBinaryArtifact:
 
         (tmp_path / "readme.txt").write_text("hello\n")
         assert _opaque_binary_artifact_violations(tmp_path) == []
+
+
+# frob:ticket T-1433
+class TestOperationEntryMatchesFallthrough:
+    """T-1465: `_operation_entry_matches` must return `False`
+    (not implicitly `None`, ty's invalid-return-type finding) for an
+    entry with no `needles` whose `function_or_pattern` is not a
+    Python bare-`compile(` special case -- the fallthrough branch."""
+
+    # frob:ticket T-1433
+    def test_no_needles_and_not_bare_compile_returns_false(self) -> None:
+        # frob:tests src/frob/vet/_capability_core.py::_operation_entry_matches \
+        # kind="unit"
+        from frob.vet._capability_core import _operation_entry_matches
+        from frob.vet._capability_registry._schemas import _DangerousOperation
+
+        entry = _DangerousOperation(
+            language="python",
+            library="os",
+            function_or_pattern="os.system(",
+            capability_kind="exec",
+            rationale="test fixture",
+            safer_alternative="subprocess.run",
+            severity="high",
+            needles=(),
+        )
+        result = _operation_entry_matches(entry, b"nothing relevant here", ())
+        assert result is False

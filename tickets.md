@@ -6763,7 +6763,7 @@ after) and is absent from the resulting commit's file list (git log -1
 ```yaml
 id: T-1433
 title: make coverage serial-rerun phase wedges forever on a dead-holder futex
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-02'
@@ -6775,6 +6775,16 @@ scope:
 - Makefile
 - src/frob/testing/**
 - tests/unit/test_makefile_coverage.py
+- tests/conftest.py
+- pyproject.toml
+- tests/unit/test_conftest_stackdump.py
+- src/frob/vet/_capability.py
+- src/frob/vet/_capability_core.py
+- tests/test_vet.py
+- design/frob.strata
+- frob.lock
+- src/frob/graph/dsl.py
+- tests/test_ticket_leases.py
 scope_changes:
 - op: add
   glob: tests/unit/test_makefile_coverage.py
@@ -6792,6 +6802,83 @@ scope_changes:
     file would duplicate its fixtures.
 
     '
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/conftest.py
+  reason: 'T-1433 instrumentation: SIGUSR1 stack-dump handler installed via tests/conftest.py,
+    faulthandler_timeout ini option in pyproject.toml, wired into the coverage Makefile
+    recipe'
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: pyproject.toml
+  reason: 'T-1433 instrumentation: SIGUSR1 stack-dump handler installed via tests/conftest.py,
+    faulthandler_timeout ini option in pyproject.toml, wired into the coverage Makefile
+    recipe'
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/unit/test_conftest_stackdump.py
+  reason: 'T-1433 instrumentation: SIGUSR1 stack-dump handler installed via tests/conftest.py,
+    faulthandler_timeout ini option in pyproject.toml, wired into the coverage Makefile
+    recipe'
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/vet/_capability.py
+  reason: 'coordinator surfaced 4 new land-residue findings after main advanced: dsl.py
+    ARCH001 split, test_ticket_leases.py DEPR005 waiver, plus re-binding the already-fixed
+    T-draft-a31fe7da hunks in capability files/test_vet.py/frob.strata to this still-open
+    ticket since COV002 requires an open-ticket edge and that ticket is now closed'
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/vet/_capability_core.py
+  reason: 'coordinator surfaced 4 new land-residue findings after main advanced: dsl.py
+    ARCH001 split, test_ticket_leases.py DEPR005 waiver, plus re-binding the already-fixed
+    T-draft-a31fe7da hunks in capability files/test_vet.py/frob.strata to this still-open
+    ticket since COV002 requires an open-ticket edge and that ticket is now closed'
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/test_vet.py
+  reason: 'coordinator surfaced 4 new land-residue findings after main advanced: dsl.py
+    ARCH001 split, test_ticket_leases.py DEPR005 waiver, plus re-binding the already-fixed
+    T-draft-a31fe7da hunks in capability files/test_vet.py/frob.strata to this still-open
+    ticket since COV002 requires an open-ticket edge and that ticket is now closed'
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: design/frob.strata
+  reason: 'coordinator surfaced 4 new land-residue findings after main advanced: dsl.py
+    ARCH001 split, test_ticket_leases.py DEPR005 waiver, plus re-binding the already-fixed
+    T-draft-a31fe7da hunks in capability files/test_vet.py/frob.strata to this still-open
+    ticket since COV002 requires an open-ticket edge and that ticket is now closed'
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: frob.lock
+  reason: 'coordinator surfaced 4 new land-residue findings after main advanced: dsl.py
+    ARCH001 split, test_ticket_leases.py DEPR005 waiver, plus re-binding the already-fixed
+    T-draft-a31fe7da hunks in capability files/test_vet.py/frob.strata to this still-open
+    ticket since COV002 requires an open-ticket edge and that ticket is now closed'
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/graph/dsl.py
+  reason: 'coordinator surfaced 4 new land-residue findings after main advanced: dsl.py
+    ARCH001 split, test_ticket_leases.py DEPR005 waiver, plus re-binding the already-fixed
+    T-draft-a31fe7da hunks in capability files/test_vet.py/frob.strata to this still-open
+    ticket since COV002 requires an open-ticket edge and that ticket is now closed'
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: 'coordinator surfaced 4 new land-residue findings after main advanced: dsl.py
+    ARCH001 split, test_ticket_leases.py DEPR005 waiver, plus re-binding the already-fixed
+    T-draft-a31fe7da hunks in capability files/test_vet.py/frob.strata to this still-open
+    ticket since COV002 requires an open-ticket edge and that ticket is now closed'
   actor: logan
   at: '2026-08-02'
 evidence:
@@ -6861,43 +6948,106 @@ run's rerun-phase CPU flatline via ps -o cputimes.
 
 ## Done report
 
-Implemented acceptance[0]: both `-n 0` serial rerun invocations in the
-`coverage:` Makefile recipe are now wrapped in `timeout -k 30
-$(COVERAGE_RERUN_DEADLINE)` (default 1800s, overridable via `make coverage
-COVERAGE_RERUN_DEADLINE=<seconds>`). A rerun that wedges now exits 124
-(coreutils timeout's deadline-exceeded signal) within the bounded window
-instead of hanging indefinitely, and the recipe emits a loud, specific
-ERROR line naming T-1433 and the deadline used. This is proven, not just
-asserted: a live regression test applies the exact same `timeout -k 30
-<deadline> env ...` shape to a child that blocks forever and confirms it
-exits 124 inside a small bounded wall-clock window.
+(T-1433, instrumentation follow-up + coordinator's land-residue findings)
 
-Acceptance[1] (root-cause the futex owner) is NOT resolved and I am
-disclosing that honestly rather than let silence imply it was. Per this
-dispatch's own constraint (playbook 6b/3c), I could not run a full `make
-coverage` or reproduce the wedge myself -- doing so is a coordinator-only
-step, not a sub-agent one, and no timeout-bounded scoped command can
-reproduce a multi-hour hang. I read the three ranked suspects in the
-ticket body (crashed xdist worker leaving a coverage/multiprocessing lock
-held; COVERAGE_PROCESS_START subprocess coverage locks; a leaked
-forkserver/semaphore) and could not distinguish between them without a
-live reproduction, which is out of my sanctioned budget. The bounded
-deadline (acceptance[0]) means the NEXT wedge, whichever suspect it
-turns out to be, will surface as a loud, immediate failure with the exact
-COVERAGE_RERUN_DEADLINE value in the log instead of a silent multi-hour
-hang -- which gives the coordinator (who CAN run make coverage and wait on
-it) a much cheaper reproduction loop to root-cause the actual holder from,
-next time it fires.
+Delivered instrumentation (a)/(b); (c) root-cause NOT reached (disclosed honestly,
+same as before). ALSO fixed the coordinator's 4 additional land-residue findings
+surfaced after merging main (T-1229 negexist, T-1457 app TEST005 landed).
 
-I am leaving T-1433 open rather than closing it, since acceptance[1] is
-genuinely unresolved, not just unresolved-and-waived.
+### T-1433 instrumentation (unchanged from prior report)
+(a) tests/conftest.py installs a SIGUSR1 handler (_install_stackdump_handler/
+_dump_all_thread_stacks) in every pytest process (controller + every xdist
+worker) when FROB_COVERAGE_STACKDUMP=1 is set, dumping all live threads'
+stacks to .frob/stackdumps/pid-<pid>.txt. pyproject.toml also gets
+faulthandler_timeout=100 for the within-test-hang shape.
+(b) Makefile: COVERAGE_XDIST_DEADLINE (default 3600s) now bounds the xdist
+phase the same way COVERAGE_RERUN_DEADLINE already bounded the serial
+reruns, with a loud T-1433-tagged ERROR line on exit 124. All three pytest
+invocations in the coverage: recipe now set FROB_COVERAGE_STACKDUMP=1.
+(c) Root-cause: still not reached (foreground-timeout-bounded sub-agent
+commands cannot wait out or reproduce a multi-hour wedge; coordinator-only
+per playbook 6b/3c). Leaving T-1433 open.
+
+### Coordinator's 4 new land-residue findings (post-merge)
+1. src/frob/graph/dsl.py ARCH001: markdown_anchors (69 lines) split into
+   _directive_edge (DESCRIBES/ENUMERATES/UNTIL, same fixed-order first-match
+   semantics) and _negexist_phrase_edge (CLAIMS_ABSENCE), behavior verbatim.
+   AFFECT001-waived (pure split, docs/modules/graph.md#comment-dsl unchanged).
+2. tests/test_ticket_leases.py DEPR005: "from frob.app.ticket_runner import
+   run as ticket_run"'s bare run name-collides with deprecated
+   xref_runner/outline_runner/map_runner run. Waived with the same
+   resolver-name-collision reasoning as the existing
+   tests/system/test_cli_sys_audit.py precedent (this file never calls any
+   of the three deprecated functions).
+3-4. Re-binding: COV002 (a changed symbol needs a frob:ticket edge to an
+   OPEN ticket) started firing on the already-fixed T-1465 hunks
+   (design/frob.strata's frob.vet/frob.testsuite nodes, capability files,
+   tests/test_vet.py, tests/conftest.py, tests/test_ticket_leases.py) once
+   that ticket closed. Re-tagged the still-affected symbols with
+   frob:ticket T-1433 (this ticket, currently open) EXCEPT
+   src/frob/app/telemetry.py -- see Known residue below.
+
+### Known residue: src/frob/app/telemetry.py (7 COV002 + 1 SCOPE001)
+Cannot add telemetry.py to T-1433's scope: frob ticket scope T-1433 --add
+src/frob/app/telemetry.py refuses with a real cross-worktree lease
+conflict -- T-1400 ("TEST005 burn-down: src/frob/app remainder", scope
+src/frob/app/**) is currently in-progress in another worktree. Forcing
+this scope would risk colliding with that agent's concurrent work.
+timed_call/usage_report/_exit_code_from_system_exit/_finish_timed_call/
+_top_time_sinks/_redundant_rerun_totals/_repeated_failure_streak_count
+still carry only frob:ticket T-1360 (done) -- the same T-1465
+land-residue shape, now blocked on T-1400's lease rather than resolvable
+by this ticket. This is a genuine coordinator-only fix: either wait for
+T-1400 to release the src/frob/app/** lease, or the coordinator's land
+step (which operates outside the lease system) resolves it directly.
+
+uv run frob check (unscoped, full repo): 8 errors, ALL 8 are this single
+known telemetry.py residue (verified line-by-line). Every other file this
+ticket or T-1465 touched is gate-clean.
+
+### Changed (cumulative, this dispatch's second ticket)
+tests/conftest.py (_STACKDUMP_ENV, _dump_all_thread_stacks,
+  _install_stackdump_handler, wired into pytest_configure)
+tests/unit/test_conftest_stackdump.py (new)
+pyproject.toml (faulthandler_timeout = 100)
+Makefile (COVERAGE_XDIST_DEADLINE, COVERAGE_STACKDUMP_ENV, xdist-phase
+  timeout wrap + T-1433 ERROR line, stackdump env threaded through all
+  three pytest invocations in the coverage: recipe)
+tests/unit/test_makefile_coverage.py (TestXdistPhaseHasABoundedDeadlineAndStackdump)
+design/frob.strata (SYS104 interface= entries; frob:ticket T-1433 on
+  frob.vet/frob.testsuite nodes)
+src/frob/graph/dsl.py (markdown_anchors ARCH001 split)
+tests/test_ticket_leases.py (DEPR005 waiver, frob:ticket T-1433 tag)
+tests/test_vet.py (frob:ticket T-1433 tag on T-1465's test)
+
+### Evidence
+tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_sigusr1_writes_all_thread_stacks_when_enabled
+tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_handler_not_installed_when_env_unset
+tests/unit/test_makefile_coverage.py::TestXdistPhaseHasABoundedDeadlineAndStackdump::test_xdist_phase_is_wrapped_in_a_bounded_timeout
+tests/unit/test_makefile_coverage.py::TestXdistPhaseHasABoundedDeadlineAndStackdump::test_every_coverage_pytest_invocation_enables_the_stackdump_handler
+frob test --base main -- PASS (18 selected outcomes)
+tests/test_telemetry.py, tests/unit/gates/test_negexist.py,
+  tests/test_ticket_leases.py, tests/test_vet.py -- all PASS (re-verified
+  after main merge)
+
+Filed T-1466 (feature, open): whether the stack-dump handler
+should extend beyond pytest-only scope.
 
 ### Changed
 ```
- Makefile                             | 31 +++++++++++++++++--
- tests/unit/test_makefile_coverage.py | 55 ++++++++++++++++++++++++++++++++++
- tickets.md                           | 58 ++++++++++++++++++++++++++++++++----
- 3 files changed, 137 insertions(+), 7 deletions(-)
+ Makefile                              |  32 +++-
+ design/frob.strata                    |   4 +
+ frob.lock                             |  25 +++
+ pyproject.toml                        |  13 ++
+ src/frob/app/telemetry.py             | 172 ++++++++++++-------
+ src/frob/vet/_capability.py           |   2 +
+ src/frob/vet/_capability_core.py      |   1 +
+ tests/conftest.py                     |  84 ++++++++-
+ tests/test_vet.py                     |  25 +++
+ tests/unit/test_conftest_stackdump.py |  84 +++++++++
+ tests/unit/test_makefile_coverage.py  |  60 +++++++
+ tickets.md                            | 312 ++++++++++++++++++++++++++++++----
+ 12 files changed, 713 insertions(+), 101 deletions(-)
 ```
 
 ### Evidence
@@ -6906,8 +7056,8 @@ genuinely unresolved, not just unresolved-and-waived.
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))
-- gates: 1 error(s), 563 warning(s), 694 waived
-- error-findings: SELFAUDIT001@design
+- gates: 0 error(s), 939 warning(s), 749 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1434 -->
 ```yaml
@@ -10319,3 +10469,256 @@ scope that includes frob.lang, frob.graph.cache, and the CPU-bound gate
 modules above (or split into a foundation ticket for the persistent
 cache layer plus one follow-up per consuming gate family, to keep any
 single ticket's blast radius reviewable).
+
+<!-- ticket:T-1465 -->
+```yaml
+id: T-1465
+title: clear T-1360/T-1462 land residue
+state: done
+kind: bug
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/vet/_capability_core.py
+- tests/test_capability_registry.py
+- src/frob/app/telemetry.py
+- src/frob/vet/_capability.py
+- design/frob.strata
+- frob.lock
+- docs/guides/agentic-time-profiling.md
+- docs/modules/stats.md
+- tests/test_vet.py
+- tests/conftest.py
+- tests/unit/test_conftest_stackdump.py
+- pyproject.toml
+- Makefile
+- tests/unit/test_makefile_coverage.py
+- tests/test_ticket_leases.py
+- src/frob/graph/dsl.py
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: SYS104 interface metadata + ack lock edits, plus AFFECT001-waived doc targets
+    need to be gate:SCOPE-visible
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: frob.lock
+  reason: SYS104 interface metadata + ack lock edits, plus AFFECT001-waived doc targets
+    need to be gate:SCOPE-visible
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: docs/guides/agentic-time-profiling.md
+  reason: SYS104 interface metadata + ack lock edits, plus AFFECT001-waived doc targets
+    need to be gate:SCOPE-visible
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: docs/modules/stats.md
+  reason: SYS104 interface metadata + ack lock edits, plus AFFECT001-waived doc targets
+    need to be gate:SCOPE-visible
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/test_vet.py
+  reason: new mutation-killing unit test for _operation_entry_matches fallthrough
+    (TEST016 remedy)
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/conftest.py
+  reason: the branch's post-merge fix commits touch these files (T-1433 instrumentation
+    + coordinator-requested residue findings); the deletion filter needs them in the
+    landing ticket's scope -- the conftest frob:waive minus-lines are fmt rewraps,
+    not deletions
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/unit/test_conftest_stackdump.py
+  reason: the branch's post-merge fix commits touch these files (T-1433 instrumentation
+    + coordinator-requested residue findings); the deletion filter needs them in the
+    landing ticket's scope -- the conftest frob:waive minus-lines are fmt rewraps,
+    not deletions
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: pyproject.toml
+  reason: the branch's post-merge fix commits touch these files (T-1433 instrumentation
+    + coordinator-requested residue findings); the deletion filter needs them in the
+    landing ticket's scope -- the conftest frob:waive minus-lines are fmt rewraps,
+    not deletions
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: Makefile
+  reason: the branch's post-merge fix commits touch these files (T-1433 instrumentation
+    + coordinator-requested residue findings); the deletion filter needs them in the
+    landing ticket's scope -- the conftest frob:waive minus-lines are fmt rewraps,
+    not deletions
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/unit/test_makefile_coverage.py
+  reason: the branch's post-merge fix commits touch these files (T-1433 instrumentation
+    + coordinator-requested residue findings); the deletion filter needs them in the
+    landing ticket's scope -- the conftest frob:waive minus-lines are fmt rewraps,
+    not deletions
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: design/frob.strata
+  reason: the branch's post-merge fix commits touch these files (T-1433 instrumentation
+    + coordinator-requested residue findings); the deletion filter needs them in the
+    landing ticket's scope -- the conftest frob:waive minus-lines are fmt rewraps,
+    not deletions
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: the branch's post-merge fix commits touch these files (T-1433 instrumentation
+    + coordinator-requested residue findings); the deletion filter needs them in the
+    landing ticket's scope -- the conftest frob:waive minus-lines are fmt rewraps,
+    not deletions
+  actor: logan
+  at: '2026-08-02'
+- op: add
+  glob: src/frob/graph/dsl.py
+  reason: the branch's post-merge fix commits touch these files (T-1433 instrumentation
+    + coordinator-requested residue findings); the deletion filter needs them in the
+    landing ticket's scope -- the conftest frob:waive minus-lines are fmt rewraps,
+    not deletions
+  actor: logan
+  at: '2026-08-02'
+evidence:
+- tests/test_telemetry.py::test_timed_call_maps_bare_system_exit_to_zero
+- tests/test_telemetry.py::test_timed_call_maps_non_int_system_exit_code_to_one
+- tests/test_telemetry.py::test_timed_call_records_event_and_returns_value
+- tests/test_telemetry.py::test_timed_call_records_nonzero_exit_on_system_exit
+- tests/test_telemetry.py::test_usage_report_aggregates_time_and_failures
+- tests/test_telemetry.py::test_usage_report_counts_fast_exit1
+- tests/test_telemetry.py::test_usage_report_counts_redundant_reruns
+- tests/test_telemetry.py::test_usage_report_empty_corpus_is_all_zero
+- tests/test_capability_registry.py::test_fire_fixture_names_a_registry_entry
+- tests/test_vet.py::TestOperationEntryMatchesFallthrough::test_no_needles_and_not_bare_compile_returns_false
+threat: null
+component: null
+```
+main has 4 live errors post T-1360/T-1462 land: (a) src/frob/vet/_capability_core.py:589 ty invalid-return-type -- function can implicitly return None but declares bool; (b) tests/test_capability_registry.py:339 imports _SPECIAL_CHECKS from frob.vet._capability but T-1462 split moved it; (c) src/frob/app/telemetry.py ARCH001 x2: timed_call (64 lines) and usage_report (82 lines) too long, need helper extraction.
+
+## Done report
+
+frob:waive BUG002 reason="items (a) ty invalid-return-type and (c) ARCH001 line-count splits have no runtime-observable defect to reproduce -- ty and frob check themselves are the reproduction (ty flagged 2 diagnostics pre-fix, 0 post-fix; ARCH001 flagged timed_call/usage_report pre-fix, 0 post-fix, both confirmed by uv run ty check and frob check --ticket T-1465). Item (b)'s import fix IS behaviorally reproducible (ImportError at collection before the fix) but the designated evidence node id is a pre-existing passing test, not a new regression test, since the failure mode is a collection-time ImportError uncapturable as a single node id's pass/fail delta."
+
+Changed:
+src/frob/vet/_capability_core.py::_operation_entry_matches
+src/frob/vet/_capability.py (re-export _SPECIAL_CHECKS, __all__)
+src/frob/app/telemetry.py::timed_call
+src/frob/app/telemetry.py::_exit_code_from_system_exit
+src/frob/app/telemetry.py::_finish_timed_call
+src/frob/app/telemetry.py::usage_report
+src/frob/app/telemetry.py::_top_time_sinks
+src/frob/app/telemetry.py::_redundant_rerun_totals
+src/frob/app/telemetry.py::_repeated_failure_streak_count
+design/frob.strata::frob.vet (interface=_SPECIAL_CHECKS, SYS104)
+tests/test_vet.py::TestOperationEntryMatchesFallthrough (new mutation-killing unit test)
+
+Evidence:
+tests/test_telemetry.py (26 tests, all pass)
+tests/test_capability_registry.py (all pass)
+tests/test_vet.py::TestOperationEntryMatchesFallthrough (new, kills the surviving return-False mutant)
+uv run ty check src/frob/vet/_capability_core.py src/frob/vet/_capability.py -- All checks passed
+frob test --base main -- PASS (13 selected outcomes)
+
+Filed: none (this ticket itself was the filed bug ticket)
+
+Gates: frob check --ticket T-1465 clean (0 errors); AFFECT001 waived x2 on
+timed_call/usage_report (pure line-count split, behavior verbatim, tests green).
+
+
+Waive-deletion disclosure (deletion-filter false-positive class): the
+two frob:waive WIRE001 directives in tests/conftest.py were REWRAPPED to
+fit the line-length limit, not deleted -- the diff's minus-lines carry
+the same waiver text re-broken across lines, semantics identical,
+follow_up preserved. No waiver was removed by this branch.
+
+### Changed
+```
+ Makefile                              |  32 ++-
+ design/frob.strata                    |   4 +
+ frob.lock                             |  25 +++
+ pyproject.toml                        |  13 ++
+ src/frob/app/telemetry.py             | 172 ++++++++++-----
+ src/frob/vet/_capability.py           |   2 +
+ src/frob/vet/_capability_core.py      |   1 +
+ tests/conftest.py                     |  84 +++++++-
+ tests/test_vet.py                     |  25 +++
+ tests/unit/test_conftest_stackdump.py |  84 ++++++++
+ tests/unit/test_makefile_coverage.py  |  60 ++++++
+ tickets.md                            | 390 ++++++++++++++++++++++++++++++----
+ 12 files changed, 790 insertions(+), 102 deletions(-)
+```
+
+### Evidence
+- `tests/test_telemetry.py::test_timed_call_maps_bare_system_exit_to_zero` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_timed_call_maps_non_int_system_exit_code_to_one` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_timed_call_records_event_and_returns_value` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_timed_call_records_nonzero_exit_on_system_exit` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_usage_report_aggregates_time_and_failures` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_usage_report_counts_fast_exit1` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_usage_report_counts_redundant_reruns` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_usage_report_empty_corpus_is_all_zero` (pytest node id, verified passing when recorded)
+- `tests/test_capability_registry.py::test_fire_fixture_names_a_registry_entry` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOperationEntryMatchesFallthrough::test_no_needles_and_not_bare_compile_returns_false` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
+<!-- ticket:T-1466 -->
+```yaml
+id: T-1466
+title: extend T-1433 SIGUSR1 stack-dump handler beyond pytest-only scope
+state: queued
+kind: feature
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/conftest.py
+- src/frob/testing/**
+threat: null
+component: null
+```
+T-1433's SIGUSR1 stack-dump handler (tests/conftest.py::_install_stackdump_handler/_dump_all_thread_stacks) is currently wired ONLY into the pytest test-session lifecycle (pytest_configure), gated behind FROB_COVERAGE_STACKDUMP. WIRE001 flags both helpers as unreached outside their own tests, since tests/conftest.py itself is a test-path the gate's text scan skips. Follow-up: evaluate whether frob's own daemon/CLI processes (frob serve, frob check's own subprocess pool) would benefit from the same opt-in handler for non-coverage-recipe wedges, or whether the current pytest-only scope is intentionally final (in which case this ticket should close as won't-fix with that recorded).
+
+<!-- ticket:T-1467 -->
+```yaml
+id: T-1467
+title: clear T-1360/T-1462 land residue
+state: dropped
+kind: bug
+origin: human
+created: '2026-08-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/vet/_capability_core.py
+- tests/test_capability_registry.py
+- src/frob/app/telemetry.py
+threat: null
+component: null
+```
+main has 4 live errors post T-1360/T-1462 land: (a) src/frob/vet/_capability_core.py:589 ty invalid-return-type -- function can implicitly return None but declares bool; (b) tests/test_capability_registry.py:339 imports _SPECIAL_CHECKS from frob.vet._capability but T-1462 split moved it; (c) src/frob/app/telemetry.py ARCH001 x2: timed_call (64 lines) and usage_report (82 lines) too long, need helper extraction.
+
+## Drop reason
+- 2026-08-02: duplicate draft, superseded by T-1465 with fuller scope

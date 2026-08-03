@@ -584,6 +584,7 @@ def _matched_capabilities(
 
 
 # frob:ticket T-0882
+# frob:ticket T-1433
 def _operation_entry_matches(
     entry: _DangerousOperation, raw: bytes, comment_spans: tuple[ByteSpan, ...]
 ) -> bool:
@@ -606,3 +607,4 @@ def _operation_entry_matches(
         )
     if entry.language == "python" and entry.function_or_pattern.startswith("compile("):
         return _has_bare_compile_call(raw, comment_spans)
+    return False

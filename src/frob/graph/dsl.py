@@ -209,12 +209,78 @@ def dedupe_slug(slug: str, seen: dict[str, int]) -> str:
     return slug if count == 0 else f"{slug}-{count}"
 
 
+def _negexist_phrase_edge(
+    line: str, doc_path: str, slug: str, lineno: int
+) -> Edge | None:
+    """T-1229: `CLAIMS_ABSENCE` edge for a negative-existence-claim phrase
+    (`_NEGEXIST_PHRASE_RE`) found in `line`, or `None` -- split out of
+    `markdown_anchors`'s main loop (ARCH001) since this is the one match
+    kind with its own pre-check (a directive comment line is never itself
+    prose worth heuristic-scanning, so e.g. this very module's own
+    docstring/comment text describing the heuristic never self-matches)."""
+    if "<!--" in line and "-->" in line:
+        return None
+    negexist = _NEGEXIST_PHRASE_RE.search(line)
+    if negexist is None:
+        return None
+    return Edge(
+        src=f"{doc_path}#{slug}",
+        kind=EdgeKind.CLAIMS_ABSENCE,
+        target=negexist.group(0),
+        origin=f"{doc_path}:{lineno}",
+    )
+
+
+def _directive_edge(line: str, doc_path: str, slug: str, lineno: int) -> Edge | None:
+    """One `DESCRIBES`/`ENUMERATES`/`UNTIL` edge for `line`, or `None` --
+    split out of `markdown_anchors`'s main loop (ARCH001): these three
+    directive-comment forms are mutually exclusive per line and checked
+    in this fixed order, matching the original inline loop's semantics
+    exactly (first match wins, `markdown_anchors` still short-circuits on
+    a non-`None` result before falling through to the negexist-phrase
+    check)."""
+    describes = _DESCRIBES_RE.search(line)
+    if describes is not None:
+        facet = describes.group("facet") or "sig"
+        return Edge(
+            src=f"{doc_path}#{slug}",
+            kind=EdgeKind.DESCRIBES,
+            target=describes.group("symref"),
+            origin=doc_path,
+            attrs={"facet": facet},
+        )
+    enumerates = _ENUMERATES_RE.search(line)
+    if enumerates is not None:
+        return Edge(
+            src=f"{doc_path}#{slug}",
+            kind=EdgeKind.ENUMERATES,
+            target=enumerates.group("symref"),
+            origin=f"{doc_path}:{lineno}",
+            attrs={"members": enumerates.group("members")},
+        )
+    until = _UNTIL_RE.search(line)
+    if until is not None:
+        return Edge(
+            src=f"{doc_path}#{slug}",
+            kind=EdgeKind.UNTIL,
+            target=until.group("ticket"),
+            origin=f"{doc_path}:{lineno}",
+        )
+    return None
+
+
 # frob:doc docs/modules/graph.md#comment-dsl
 # frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_until_directive_emits_until_edge  # noqa: E501
 # frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_negative_existence_phrase_emits_claims_absence_edge  # noqa: E501
 # frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_not_yet_wired_phrase_is_also_detected  # noqa: E501
 # frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_directive_comment_line_itself_never_matches_the_heuristic  # noqa: E501
 # frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_plain_prose_with_no_matching_phrase_emits_nothing  # noqa: E501
+# frob:ticket T-1433
+# frob:waive AFFECT001 reason="pure ARCH001 line-count split (extracted \
+# _directive_edge/_negexist_phrase_edge helpers, preserving match order and behavior \
+# verbatim -- tests/unit/gates/test_negexist.py's tests stay green); the documented \
+# comment-DSL contract in docs/modules/graph.md#comment-dsl is unchanged, so it needs \
+# no update"
 def markdown_anchors(doc_path: str, text: str) -> tuple[Edge, ...]:
     """Extract `<!-- frob:describes ... -->` and `<!-- frob:enumerates ... -->`
     anchors bound to the nearest heading (T-1227 adds the latter)."""
@@ -226,59 +292,13 @@ def markdown_anchors(doc_path: str, text: str) -> tuple[Edge, ...]:
         if heading is not None:
             slug = dedupe_slug(slugify(heading.group(2)), seen)
             continue
-        describes = _DESCRIBES_RE.search(line)
-        if describes is not None:
-            facet = describes.group("facet") or "sig"
-            edges.append(
-                Edge(
-                    src=f"{doc_path}#{slug}",
-                    kind=EdgeKind.DESCRIBES,
-                    target=describes.group("symref"),
-                    origin=doc_path,
-                    attrs={"facet": facet},
-                )
-            )
+        directive_edge = _directive_edge(line, doc_path, slug, lineno)
+        if directive_edge is not None:
+            edges.append(directive_edge)
             continue
-        enumerates = _ENUMERATES_RE.search(line)
-        if enumerates is not None:
-            edges.append(
-                Edge(
-                    src=f"{doc_path}#{slug}",
-                    kind=EdgeKind.ENUMERATES,
-                    target=enumerates.group("symref"),
-                    origin=f"{doc_path}:{lineno}",
-                    attrs={"members": enumerates.group("members")},
-                )
-            )
-            continue
-        until = _UNTIL_RE.search(line)
-        if until is not None:
-            edges.append(
-                Edge(
-                    src=f"{doc_path}#{slug}",
-                    kind=EdgeKind.UNTIL,
-                    target=until.group("ticket"),
-                    origin=f"{doc_path}:{lineno}",
-                )
-            )
-            continue
-        # T-1229: a directive comment line (`<!-- frob:... -->`) is never
-        # itself prose worth heuristic-scanning for a negative-existence
-        # claim -- skip it so e.g. this very module's own docstring/
-        # comment text describing the `_UNTIL_RE`/`_NEGEXIST_PHRASE_RE`
-        # heuristic never self-matches.
-        if "<!--" in line and "-->" in line:
-            continue
-        negexist = _NEGEXIST_PHRASE_RE.search(line)
-        if negexist is not None:
-            edges.append(
-                Edge(
-                    src=f"{doc_path}#{slug}",
-                    kind=EdgeKind.CLAIMS_ABSENCE,
-                    target=negexist.group(0),
-                    origin=f"{doc_path}:{lineno}",
-                )
-            )
+        negexist_edge = _negexist_phrase_edge(line, doc_path, slug, lineno)
+        if negexist_edge is not None:
+            edges.append(negexist_edge)
     _log.debug(
         "%s: %d describes/enumerates/until/claims-absence anchor(s)",
         doc_path,

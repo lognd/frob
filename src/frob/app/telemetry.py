@@ -200,9 +200,73 @@ def record_ticket_event(
     append_event(root, record)
 
 
+def _exit_code_from_system_exit(exc: SystemExit) -> int:
+    """Map a caught `SystemExit` to a telemetry exit code: `sys.exit()`/
+    `sys.exit(None)` is conventionally SUCCESS (0); an int code is used
+    as-is; anything else (e.g. a message string) is treated as non-zero,
+    matching Python's own `SystemExit` convention."""
+    if exc.code is None:
+        return 0
+    if isinstance(exc.code, int):
+        return exc.code
+    return 1
+
+
+def _finish_timed_call(
+    root: Path,
+    *,
+    subcommand: str,
+    args_head: str,
+    duration_ms: float,
+    exit_code: int,
+) -> None:
+    """`timed_call`'s `finally`-block work: record the CLI event, then run
+    footgun detection and print any tips (T-1360). Detection runs BEFORE
+    recording -- reading `detect_footguns` after `record_cli_event` would
+    let this very invocation match as its own "prior" record. Tips never
+    change control flow; a detector failure is swallowed, matching
+    `append_event`'s own best-effort discipline."""
+    tips: list[Tip] = []
+    if not tips_disabled():
+        try:
+            tips = detect_footguns(
+                root,
+                subcommand=subcommand,
+                args_head=redact_command(args_head),
+                duration_ms=duration_ms,
+                exit_code=exit_code,
+                tree_hash_value=tree_hash(root),
+            )
+        except Exception as exc:  # pragma: no cover - defensive, best-effort
+            _log.debug("telemetry: footgun detection failed (ignored): %s", exc)
+    record_cli_event(
+        root,
+        subcommand=subcommand,
+        args_head=args_head,
+        duration_ms=duration_ms,
+        exit_code=exit_code,
+    )
+    # T-1360 delivery requirement: tips must be machine-readable when the
+    # invocation itself asked for `--json` -- an agent parsing stdout as
+    # JSON cannot also parse a human-styled line appended after it, and
+    # a per-subcommand flag name (`doctor_json`, `stats_json`, ...) is
+    # not available generically at this call site, so the raw args head
+    # is checked directly.
+    as_json = "--json" in args_head.split()
+    rendered = render_tips(tips, as_json=as_json)
+    if rendered:
+        _log.warning(rendered)
+
+
 # frob:ticket T-1360
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
 # frob:raises Exception
+# frob:waive AFFECT001 reason="T-1465 is a pure ARCH001 line-count \
+# split (extracted _exit_code_from_system_exit/_finish_timed_call helpers, \
+# preserving behavior verbatim, 26 tests in tests/test_telemetry.py still \
+# green); the documented public contract is unchanged, so \
+# docs/guides/agentic-time-profiling.md#public-api and docs/modules/stats.md \
+# need no update"  # noqa: E501
 def timed_call(
     root: Path, *, subcommand: str, args_head: str, fn: Callable[[], T]
 ) -> T:
@@ -222,54 +286,20 @@ def timed_call(
     try:
         return fn()
     except SystemExit as exc:
-        # `sys.exit()`/`sys.exit(None)` is conventionally SUCCESS (exit 0);
-        # an int code is used as-is; anything else (e.g. a message string)
-        # is a non-zero exit per Python's own SystemExit convention.
-        if exc.code is None:
-            exit_code = 0
-        elif isinstance(exc.code, int):
-            exit_code = exc.code
-        else:
-            exit_code = 1
+        exit_code = _exit_code_from_system_exit(exc)
         raise
     except Exception:
         exit_code = 1
         raise
     finally:
         duration_ms = (time.monotonic() - start) * 1000.0
-        # T-1360: detect BEFORE appending this run's own record -- otherwise
-        # `detect_footguns` would read this very invocation back out of the
-        # stream as its own "prior" match and every run would flag itself.
-        tips: list[Tip] = []
-        if not tips_disabled():
-            try:
-                tips = detect_footguns(
-                    root,
-                    subcommand=subcommand,
-                    args_head=redact_command(args_head),
-                    duration_ms=duration_ms,
-                    exit_code=exit_code,
-                    tree_hash_value=tree_hash(root),
-                )
-            except Exception as exc:  # pragma: no cover - defensive, best-effort
-                _log.debug("telemetry: footgun detection failed (ignored): %s", exc)
-        record_cli_event(
+        _finish_timed_call(
             root,
             subcommand=subcommand,
             args_head=args_head,
             duration_ms=duration_ms,
             exit_code=exit_code,
         )
-        # T-1360 delivery requirement: tips must be machine-readable when the
-        # invocation itself asked for `--json` -- an agent parsing stdout as
-        # JSON cannot also parse a human-styled line appended after it, and
-        # a per-subcommand flag name (`doctor_json`, `stats_json`, ...) is
-        # not available generically at this call site, so the raw args head
-        # is checked directly.
-        as_json = "--json" in args_head.split()
-        rendered = render_tips(tips, as_json=as_json)
-        if rendered:
-            _log.warning(rendered)
 
 
 # frob:ticket T-1360
@@ -588,21 +618,12 @@ def _all_cli_events(root: Path) -> list[dict[str, Any]]:
     return events
 
 
-# frob:ticket T-1360
-# frob:doc docs/guides/agentic-time-profiling.md#public-api
-def usage_report(root: Path, *, top_n: int = 10) -> UsageReport:
-    """Aggregate `root`'s whole telemetry corpus into a `UsageReport`
-    (T-1360): per-subcommand time sinks, provably-redundant re-run cost
-    (identical `(subcommand, args_head, tree_hash)` seen twice), fast-exit
-    failures, and stuck-repeat streaks. Read-only, corpus-wide, and cheap
-    relative to the run it summarizes -- a single linear pass over the
-    file. Empty/missing corpus yields an all-zero report, never an error."""
-    events = _all_cli_events(root)
-    total_calls = len(events)
-    total_duration_ms = sum(float(e.get("duration_ms", 0.0)) for e in events)
-    failures = sum(1 for e in events if e.get("exit") != 0)
-    failure_rate = (failures / total_calls) if total_calls else 0.0
-
+def _top_time_sinks(
+    events: list[dict[str, Any]], *, top_n: int
+) -> list[SubcommandTimeSink]:
+    """Per-subcommand call count/total duration/failure count from `events`,
+    the `top_n` costliest by total duration, descending -- `usage_report`'s
+    time-sink ranking."""
     by_subcommand: dict[str, list[float | int]] = {}
     for e in events:
         sub = str(e.get("subcommand", ""))
@@ -611,7 +632,7 @@ def usage_report(root: Path, *, top_n: int = 10) -> UsageReport:
         bucket[1] = float(bucket[1]) + float(e.get("duration_ms", 0.0))
         if e.get("exit") != 0:
             bucket[2] = int(bucket[2]) + 1
-    top_time_sinks = sorted(
+    return sorted(
         (
             SubcommandTimeSink(
                 subcommand=sub,
@@ -625,6 +646,11 @@ def usage_report(root: Path, *, top_n: int = 10) -> UsageReport:
         reverse=True,
     )[:top_n]
 
+
+def _redundant_rerun_totals(events: list[dict[str, Any]]) -> tuple[int, float]:
+    """(count, wasted_ms) for `events` whose `(subcommand, args_head,
+    tree_hash)` repeats an EARLIER event exactly -- each repeat after the
+    first is provably redundant (the tree had not changed)."""
     seen: dict[tuple[str, str, str], bool] = {}
     redundant_count = 0
     redundant_wasted_ms = 0.0
@@ -639,13 +665,13 @@ def usage_report(root: Path, *, top_n: int = 10) -> UsageReport:
             redundant_wasted_ms += float(e.get("duration_ms", 0.0))
         else:
             seen[key] = True
+    return redundant_count, redundant_wasted_ms
 
-    fast_exit1_count = sum(
-        1
-        for e in events
-        if e.get("exit") != 0 and float(e.get("duration_ms", 0.0)) < _FAST_EXIT_MS
-    )
 
+def _repeated_failure_streak_count(events: list[dict[str, Any]]) -> int:
+    """How many times a run of `_REPEATED_FAILURE_STREAK`-or-more
+    consecutive identical `(subcommand, args_head)` failures occurs across
+    `events`, with no intervening success resetting the streak."""
     streak_key: tuple[str, str] | None = None
     streak_len = 0
     repeated_failure_streaks = 0
@@ -661,6 +687,38 @@ def usage_report(root: Path, *, top_n: int = 10) -> UsageReport:
         else:
             streak_key = None
             streak_len = 0
+    return repeated_failure_streaks
+
+
+# frob:ticket T-1360
+# frob:doc docs/guides/agentic-time-profiling.md#public-api
+# frob:waive AFFECT001 reason="T-1465 is a pure ARCH001 line-count \
+# split (extracted _top_time_sinks/_redundant_rerun_totals/ \
+# _repeated_failure_streak_count helpers, preserving behavior verbatim, 26 \
+# tests in tests/test_telemetry.py still green); the documented public \
+# contract is unchanged, so docs/guides/agentic-time-profiling.md#public-api \
+# needs no update"  # noqa: E501
+def usage_report(root: Path, *, top_n: int = 10) -> UsageReport:
+    """Aggregate `root`'s whole telemetry corpus into a `UsageReport`
+    (T-1360): per-subcommand time sinks, provably-redundant re-run cost
+    (identical `(subcommand, args_head, tree_hash)` seen twice), fast-exit
+    failures, and stuck-repeat streaks. Read-only, corpus-wide, and cheap
+    relative to the run it summarizes -- a single linear pass over the
+    file. Empty/missing corpus yields an all-zero report, never an error."""
+    events = _all_cli_events(root)
+    total_calls = len(events)
+    total_duration_ms = sum(float(e.get("duration_ms", 0.0)) for e in events)
+    failures = sum(1 for e in events if e.get("exit") != 0)
+    failure_rate = (failures / total_calls) if total_calls else 0.0
+
+    top_time_sinks = _top_time_sinks(events, top_n=top_n)
+    redundant_count, redundant_wasted_ms = _redundant_rerun_totals(events)
+    fast_exit1_count = sum(
+        1
+        for e in events
+        if e.get("exit") != 0 and float(e.get("duration_ms", 0.0)) < _FAST_EXIT_MS
+    )
+    repeated_failure_streaks = _repeated_failure_streak_count(events)
 
     return UsageReport(
         total_calls=total_calls,

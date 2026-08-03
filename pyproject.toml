@@ -137,6 +137,19 @@ testpaths = ["tests"]
 # docs/guides/testing.md#per-test-timeout-ci-hardening for the list;
 # T-draft-1770ceef tracks adding those overrides (out of this ticket's
 # docs/guides+config-only scope).
+# T-1433: pytest's BUILTIN faulthandler plugin dumps every thread's stack
+# to stderr for any single test that runs past faulthandler_timeout
+# seconds, BEFORE --timeout-method=thread above kills it at 120s -- a
+# within-test hang now self-diagnoses (which function, which lock) instead
+# of surfacing only as a bare kill with no traceback. Deliberately shorter
+# than the 120s kill deadline so the dump has time to land first. This
+# complements (does not replace) T-1433's SIGUSR1 handler in
+# tests/conftest.py, which targets the OTHER wedge shape T-1433's two
+# incidents actually hit -- a hang BETWEEN tests / in
+# session-teardown/coverage-save machinery, outside any single test's
+# --timeout watch window, where only an external signal reaches the
+# stuck process.
+faulthandler_timeout = 100
 addopts = "-q -n auto --dist=loadgroup --timeout=120 --timeout-method=thread"
 pythonpath = ["."]
 markers = [

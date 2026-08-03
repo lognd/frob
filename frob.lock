@@ -1,6 +1,31 @@
 {
   "entries": [
     {
+      "digest": "8fbee6718ef9bc758edf072acd16ca686515454c4236bda210ffb6fc9314a49a",
+      "facet": "sig",
+      "ref": "design/frob.strata::frob.vet"
+    },
+    {
+      "digest": "d8a3c5c4826e6a25c933a99e591e993f4baec194ced85dd46bf1fbb14bf070af",
+      "facet": "body",
+      "ref": "src/frob/app/telemetry.py::timed_call"
+    },
+    {
+      "digest": "f97f99a388f2e87da31714f3d6379fb3d008516582a6a449838786de8443aa3d",
+      "facet": "sig",
+      "ref": "src/frob/app/telemetry.py::timed_call"
+    },
+    {
+      "digest": "6f286dc10e2fc8f96cc6cd36455aec62f240f37f4d88b69659e60ed4fd50ba9b",
+      "facet": "body",
+      "ref": "src/frob/app/telemetry.py::usage_report"
+    },
+    {
+      "digest": "feddd2674eac3495c45aefd9525e8875be254ac4e52b710b4e505b57214186f0",
+      "facet": "sig",
+      "ref": "src/frob/app/telemetry.py::usage_report"
+    },
+    {
       "digest": "aa9b26c1c76d9b2ca95b0357908f32434c59d71b07f26412c39b08511c58af04",
       "facet": "body",
       "ref": "src/frob/arch/_mayraise.py::compute_may_raise"

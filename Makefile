@@ -250,6 +250,21 @@ playbook:
 # a deliberately larger serial suite.
 COVERAGE_RERUN_DEADLINE ?= 1800
 COVERAGE_WORKERS ?= 4
+# T-1433: the xdist (parallel) phase used to have NO bound at all -- only
+# the `-n 0` serial rerun above got one. Both incidents' own reproduction
+# ("run make coverage twice back-to-back") never actually pinned down
+# WHICH phase the dead-holder futex sat in, so leaving the xdist phase
+# unbounded left half the recipe still able to hang indefinitely. A large
+# default (1h) reflects this phase's own baseline cost (the full parallel
+# suite, not a small rerun) -- override with
+# `make coverage COVERAGE_XDIST_DEADLINE=<seconds>`.
+COVERAGE_XDIST_DEADLINE ?= 3600
+# T-1433: gates tests/conftest.py's SIGUSR1 stack-dump handler on for
+# every pytest invocation this recipe runs (xdist phase AND both serial
+# reruns) -- see tests/conftest.py::_install_stackdump_handler. Off by
+# default for an ordinary `pytest`/`frob test` run; the coverage recipe is
+# exactly the wedge-prone path T-1433's incidents both hit.
+COVERAGE_STACKDUMP_ENV = FROB_COVERAGE_STACKDUMP=1
 
 # T-1235/T-1397: the ONE place that generates COVERAGE_PROCESS_START's rc
 # file, with ABSOLUTE `source`/`data_file` paths -- both `coverage:` and
@@ -286,22 +301,27 @@ coverage: $(STAMP)
 	$(MAKE) core
 	uv run frob doctor
 	$(MAKE) .frob/coverage-subprocess.rc
-	COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-report= -q -n $(COVERAGE_WORKERS) --junitxml=.frob/last-coverage-run.xml > .frob/last-coverage-run.log 2>&1; \
+	timeout -k 30 $(COVERAGE_XDIST_DEADLINE) env $(COVERAGE_STACKDUMP_ENV) COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-report= -q -n $(COVERAGE_WORKERS) --junitxml=.frob/last-coverage-run.xml > .frob/last-coverage-run.log 2>&1; \
 	status=$$?; \
 	cat .frob/last-coverage-run.log; \
-	if grep -q "node down" .frob/last-coverage-run.log; then \
+	if [ $$status -eq 124 ]; then \
+		echo "coverage: ERROR: xdist (parallel) phase exceeded its COVERAGE_XDIST_DEADLINE=$(COVERAGE_XDIST_DEADLINE)s bound (T-1433) -- killed, not left to hang; this is a wedge, not a slow pass, inspect .frob/stackdumps/*.txt (FROB_COVERAGE_STACKDUMP=1 is on for this phase) for the thread each worker was blocked in before raising the deadline"; \
+	fi; \
+	if [ $$status -eq 124 ]; then \
+		: ; \
+	elif grep -q "node down" .frob/last-coverage-run.log; then \
 		echo "coverage: WARNING: an xdist worker crashed mid-run (node down) -- that worker's coverage data for EVERY test it executed, not only the ones reported failed, is silently gone (a crash bypasses coverage's own SIGTERM-triggered save); re-running the FULL suite serially (not just --last-failed) to recover complete data rather than accept a deflated stamp"; \
-		timeout -k 30 $(COVERAGE_RERUN_DEADLINE) env COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --timeout-method=signal --junitxml=.frob/last-coverage-rerun.xml; \
+		timeout -k 30 $(COVERAGE_RERUN_DEADLINE) env $(COVERAGE_STACKDUMP_ENV) COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --timeout-method=signal --junitxml=.frob/last-coverage-rerun.xml; \
 		status=$$?; \
 		if [ $$status -eq 124 ]; then \
-			echo "coverage: ERROR: serial rerun (node-down recovery) exceeded its COVERAGE_RERUN_DEADLINE=$(COVERAGE_RERUN_DEADLINE)s bound (T-1433) -- killed, not left to hang; this is a wedge, not a slow pass, re-run with a raised deadline only if you have positively ruled out a stuck lock"; \
+			echo "coverage: ERROR: serial rerun (node-down recovery) exceeded its COVERAGE_RERUN_DEADLINE=$(COVERAGE_RERUN_DEADLINE)s bound (T-1433) -- killed, not left to hang; this is a wedge, not a slow pass, inspect .frob/stackdumps/*.txt (FROB_COVERAGE_STACKDUMP=1 is on for this phase) before raising the deadline"; \
 		fi; \
 	elif [ $$status -ne 0 ]; then \
 		echo "coverage: parallel run had failures -- rerunning failed tests once, serially, without coverage-halting"; \
-		timeout -k 30 $(COVERAGE_RERUN_DEADLINE) env COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --timeout-method=signal --last-failed --junitxml=.frob/last-coverage-rerun.xml; \
+		timeout -k 30 $(COVERAGE_RERUN_DEADLINE) env $(COVERAGE_STACKDUMP_ENV) COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --timeout-method=signal --last-failed --junitxml=.frob/last-coverage-rerun.xml; \
 		status=$$?; \
 		if [ $$status -eq 124 ]; then \
-			echo "coverage: ERROR: serial rerun (failure recovery) exceeded its COVERAGE_RERUN_DEADLINE=$(COVERAGE_RERUN_DEADLINE)s bound (T-1433) -- killed, not left to hang; this is a wedge, not a slow pass, re-run with a raised deadline only if you have positively ruled out a stuck lock"; \
+			echo "coverage: ERROR: serial rerun (failure recovery) exceeded its COVERAGE_RERUN_DEADLINE=$(COVERAGE_RERUN_DEADLINE)s bound (T-1433) -- killed, not left to hang; this is a wedge, not a slow pass, inspect .frob/stackdumps/*.txt (FROB_COVERAGE_STACKDUMP=1 is on for this phase) before raising the deadline"; \
 		fi; \
 	fi; \
 	uv run coverage combine --append; \

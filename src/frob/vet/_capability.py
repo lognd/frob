@@ -147,6 +147,7 @@ from frob.logging import get_logger
 from ._capability_core import (
     _EXT_LANGUAGE,
     _PATTERNS,
+    _SPECIAL_CHECKS,
     ByteSpan,
     _compiled_capability_patterns,
     _embedded_capabilities,
@@ -5493,6 +5494,7 @@ def _needle_construct_findings(
 __all__ = [
     "SCANNED_LANGUAGES",
     "_OpaqueFinding",
+    "_SPECIAL_CHECKS",
     "_decode_to_exec_signal",
     "is_self_pattern_path",
     "language_for",

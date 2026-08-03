@@ -706,6 +706,66 @@ class TestSerialRerunHasABoundedDeadline:
         )
 
 
+# frob:ticket T-1433
+class TestXdistPhaseHasABoundedDeadlineAndStackdump:
+    """T-1433 follow-up instrumentation: the xdist (parallel) phase had NO
+    bound at all before this -- only the `-n 0` serial rerun did. Neither
+    incident's own diagnostics pinned down which phase the dead-holder
+    futex sat in, so leaving the xdist phase unbounded left half the
+    recipe still able to hang indefinitely. This also locks in that
+    `FROB_COVERAGE_STACKDUMP=1` (tests/conftest.py's SIGUSR1 handler) is
+    set for every phase's pytest invocation -- the next wedge, in
+    whichever phase, self-diagnoses via `.frob/stackdumps/*.txt` instead
+    of leaving only a bare `wchan=futex_wait_queue` with no indication of
+    which lock, in which function, on which process."""
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestXdistPhaseHasABoundedDeadlineAndStackdump.test_xdist_phase_is_wrapped_in_a_bounded_timeout  # noqa: E501
+    def test_xdist_phase_is_wrapped_in_a_bounded_timeout(self) -> None:
+        """`COVERAGE_XDIST_DEADLINE` must be a real Makefile variable with
+        a default, and the xdist-phase pytest invocation (`-n
+        $(COVERAGE_WORKERS)`, distinct from the `-n 0` serial reruns) must
+        be wrapped in `timeout -k 30 $(COVERAGE_XDIST_DEADLINE)` -- a
+        regression here silently reopens the xdist half of T-1433's
+        unbounded-hang mechanism."""
+        assert "COVERAGE_XDIST_DEADLINE ?= " in _MAKEFILE, _MAKEFILE
+        xdist_lines = [
+            line
+            for line in _MAKEFILE.splitlines()
+            if "-n $(COVERAGE_WORKERS)" in line and "pytest" in line
+        ]
+        assert len(xdist_lines) == 1, xdist_lines
+        assert "timeout -k 30 $(COVERAGE_XDIST_DEADLINE)" in xdist_lines[0], (
+            xdist_lines[0]
+        )
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestXdistPhaseHasABoundedDeadlineAndStackdump.test_every_coverage_pytest_invocation_enables_the_stackdump_handler  # noqa: E501
+    def test_every_coverage_pytest_invocation_enables_the_stackdump_handler(
+        self,
+    ) -> None:
+        """Every `pytest` invocation in the `coverage:` recipe (the xdist
+        phase and both `-n 0` serial reruns) must set
+        `FROB_COVERAGE_STACKDUMP=1` so `tests/conftest.py`'s `SIGUSR1`
+        handler is installed in every controller/worker process this
+        recipe spawns -- a wedge in any one of them is now diagnosable."""
+        assert "COVERAGE_STACKDUMP_ENV = FROB_COVERAGE_STACKDUMP=1" in _MAKEFILE, (
+            _MAKEFILE
+        )
+        match = re.search(
+            r"^coverage: \$\(STAMP\)\n(?:\t.*\n)*", _MAKEFILE, re.MULTILINE
+        )
+        assert match is not None, "coverage: recipe not found in Makefile"
+        recipe = match.group(0)
+        pytest_lines = [
+            line
+            for line in recipe.splitlines()
+            if "uv run pytest" in line
+            and "$(CURDIR)/.frob/coverage-subprocess.rc" in line
+        ]
+        assert len(pytest_lines) == 3, pytest_lines
+        for line in pytest_lines:
+            assert "$(COVERAGE_STACKDUMP_ENV)" in line, line
+
+
 # frob:ticket T-1397
 class TestCoverageFastUsesAbsoluteSubprocessRc:
     """T-1397: `coverage-fast`'s incremental branch used to point

@@ -30,6 +30,8 @@ import pytest
 from typani import Ok
 
 from frob.app.config import AppConfig
+
+# frob:waive DEPR005 reason="resolver name-collision, not real adoption: frob.app.ticket_runner.run (imported below as ticket_run, T-1457's new double-dispatch-refusal coverage) shares its bare name with the deprecated src/frob/app/xref_runner.py::run / outline_runner.py::run / map_runner.py::run CLI-dispatch functions -- this file never calls any of those three, the resolver just cannot distinguish same-named run() symbols across modules by name alone (the same resolver-precision class PERF008 discloses elsewhere in this repo; precedent: tests/system/test_cli_sys_audit.py's identical waiver)"  # noqa: E501
 from frob.app.ticket_runner import run as ticket_run
 from frob.tickets import (
     TicketState,
@@ -456,6 +458,7 @@ class TestSweepWorktrees:
         assert wt.exists()
 
 
+# frob:ticket T-1433
 class TestWorktreeSweepCli:
     """`frob worktree sweep`'s CLI entry point (`frob.app.worktree_runner.
     run`) prints one verdict line per worktree plus a summary count."""
@@ -473,9 +476,7 @@ class TestWorktreeSweepCli:
         assert "removed" in out
         assert "swept 1 worktree(s)" in out
 
-    def test_sweep_cli_exits_1_on_sweep_error(
-        self, sweep_repo: Path, capsys
-    ) -> None:
+    def test_sweep_cli_exits_1_on_sweep_error(self, sweep_repo: Path, capsys) -> None:
         # frob:tests tests/test_ticket_leases.py::TestWorktreeSweepCli.test_sweep_cli_exits_1_on_sweep_error  # noqa: E501
         # T-1400: `_run_sweep`'s `result.is_err` branch (worktree_runner.py
         # 69-70) -- `sweep_worktrees` failing (not a repo) must exit 1 with

@@ -2457,6 +2457,7 @@ node deploy : trusted {
 // in favor of the real declaration below.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 // frob:waive AFFECT001 reason="T-1113: mechanical interface= attr population (measured public-surface metadata for the new mandatory SYS104 check), not a behavioral/architectural change -- the cited affects()-closure doc does not describe this node's public surface and has nothing to update here."
+// frob:ticket T-1433
 node vet : trusted {
     clearance Internal;
     code "src/frob/vet/**";
@@ -2554,6 +2555,7 @@ node vet : trusted {
     attr interface=_scan_file_operations;
     attr interface=_scan_lifecycle_scripts;
     attr interface=_scan_text_obfuscation;
+    attr interface=_SPECIAL_CHECKS;
     attr interface=_split_top_level_args;
     attr interface=_store_verdict;
     attr interface=_structural_opaque_findings;
@@ -2918,6 +2920,7 @@ cache graph_cache of graphlang {
 // frob:ticket T-1363
 // frob:ticket T-1384
 // frob:ticket T-1410
+// frob:ticket T-1433
 node testsuite : trusted {
     clearance Internal;
     code "tests/**";
@@ -3987,6 +3990,7 @@ node testsuite : trusted {
     attr interface=TestObservabilityHappyPath;
     attr interface=TestObservedCallNames;
     attr interface=TestOpaqueIndirectionGate;
+    attr interface=TestOperationEntryMatchesFallthrough;
     attr interface=TestOperationFailClosed;
     attr interface=TestOperationHappyPath;
     attr interface=TestOpportunisticUnlink;
@@ -4393,6 +4397,7 @@ node testsuite : trusted {
     attr interface=TestStabilityGate;
     attr interface=TestStackSampler;
     attr interface=TestStackSamplerAllThreads;
+    attr interface=TestStackdumpHandler;
     attr interface=TestStaleBaseDeletion;
     attr interface=TestStaleDesign;
     attr interface=TestStaleDetail;
@@ -4681,6 +4686,7 @@ node testsuite : trusted {
     attr interface=TestWriteReleaseBump;
     attr interface=TestWriterStarvation;
     attr interface=TestWriterTableTreeCountDeltas;
+    attr interface=TestXdistPhaseHasABoundedDeadlineAndStackdump;
     attr interface=TestXrefRunner;
     attr interface=TestXxeFingerprint;
     attr interface=TestYamlLoader;
