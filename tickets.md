@@ -1810,6 +1810,7 @@ evidence:
 - tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_declares_multiprocessing_and_sigterm
 - tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_remaps_paths_back_to_source
 - tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_pyproject_declares_concurrency_and_sigterm
+- tests/unit/test_makefile_coverage.py::TestPreviouslyZeroModulesNowAttributeInTheCommittedLock::test_named_module_groups_are_nonzero_in_the_committed_lock
 acceptance:
 - text: GIVEN make coverage runs THEN a generated .frob/coverage-subprocess.rc (absolute
     source and data_file, branch/parallel/relative_files/sigterm true, concurrency
@@ -1827,7 +1828,8 @@ acceptance:
 - text: GIVEN the corrected full run THEN previously-exercised-but-zero symbols (excludes.py,
     doctor.py, serve/, __main__.py) report real coverage and the TEST005 count reflects
     it
-  evidence: []
+  evidence:
+  - tests/unit/test_makefile_coverage.py::TestPreviouslyZeroModulesNowAttributeInTheCommittedLock::test_named_module_groups_are_nonzero_in_the_committed_lock
 threat: null
 component: null
 ```
