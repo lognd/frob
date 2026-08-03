@@ -856,89 +856,6 @@ component: null
 ```
 Root cause: vet/_capability.py:212/:286 recompute comment/docstring byte spans per file per gate via Python recursion (12 pct of sys + 92 pct of opaque), and :244 _fully_in_any_span is a linear any() over an unsorted span tuple per candidate. Fix here: sort spans once, bisect for containment, and cache spans per (path, content-hash) so sys and opaque share one computation. The extraction-mechanism half of this candidate (Query captures replacing the Python recursion) is EPIC B's job, not this ticket's -- see that child to avoid two owners for the same code.
 
-<!-- ticket:T-1211 -->
-```yaml
-id: T-1211
-title: 'perf: secrets gate 33 regexes x finditer per line -- one combined-alternation
-  scan per file'
-state: done
-kind: feature
-origin: agent
-created: '2026-07-29'
-priority: medium
-parent: T-1204
-tier: ticket
-sprint: null
-scope:
-- src/frob/gates/_secrets.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
-evidence:
-- tests/test_secrets_gate.py::TestOverlapClaim::test_embedded_overlapping_match_is_not_double_claimed
-- tests/test_secrets_gate.py::TestFindsTokens::test_anthropic_key_flagged_sec001
-- tests/test_secrets_gate.py::TestFakeMarking::test_fake_marker_same_line
-- tests/test_secrets_gate.py::TestDriftLock::test_every_provider_has_a_fixture
-acceptance:
-- text: 'GIVEN _scan_line runs 33 compiled patterns x finditer per line (544k lines,
-    17.97M finditer calls, 94 pct of the gate) plus _fake_marker_reason regex against
-    every line WHEN the whole file text is scanned once with one combined alternation
-    regex (named groups per provider), match offsets map to lines via a bisect line-offset
-    index, and per-pattern logic plus _fake_marker_reason only run on the rare hits
-    THEN secrets drops from 4.5s to well under 1s native (report candidate #6)'
-  evidence:
-  - tests/test_secrets_gate.py::TestOverlapClaim::test_embedded_overlapping_match_is_not_double_claimed
-  - tests/test_secrets_gate.py::TestFindsTokens::test_anthropic_key_flagged_sec001
-  - tests/test_secrets_gate.py::TestFakeMarking::test_fake_marker_same_line
-  - tests/test_secrets_gate.py::TestDriftLock::test_every_provider_has_a_fixture
-threat: null
-component: null
-```
-Root cause: gates/_secrets.py:932 _scan_line loops 33 compiled patterns via finditer per line; _fake_marker_reason (:676) also runs a regex against every line and its predecessor regardless of hits. Fix: one combined alternation regex over the whole file text, offset->line via bisect, defer per-pattern/_fake_marker_reason logic to actual hits. Companion lint rule on the sibling PERF01x-detectors ticket: 're.finditer with a pattern-list loop inside a per-line loop'.
-
-## Done report
-
-Replaced the 33-patterns x finditer-per-physical-line loop in
-`_candidate_line_indices` (new helper) with 33 whole-file `finditer` calls
-(one per `_PATTERNS` entry), mapping match offsets to line indices via
-`_line_offsets`/`bisect`. `_scan_text` now only hands `_scan_line` (unchanged)
-the lines this pre-pass flags as having a possible hit, instead of every
-physical line.
-
-A single combined-alternation regex (`(?P<p0>...)|(?P<p1>...)|...`) was
-tried first per the ticket's literal proposal, but measured SLOWER
-end-to-end (~19s vs. ~4.4s baseline secrets_gate() on this repo's own tree)
--- Python's `re` engine has no shared-prefix optimization across alternation
-branches, so combining 33 unrelated literal-prefixed patterns into one
-regex defeats each pattern's own prefix fast path. Reverted to 33 separate
-whole-file scans instead, which preserves each pattern's own optimization
-while still cutting `finditer` call count from ~18M (33 x 544k lines) to 33.
-
-Measured (isolated `_scan_text` call on tests/tickets-archive.md, 157447
-lines, 3x loop average, logging disabled):
-- before (all-lines fed to `_scan_line`): ~1.27s/call
-- after (candidate-lines only): ~0.52s/call
-(~2.4x speedup on this file; full-gate wall time varies more with I/O across
-1355 tracked files, git ls-files, etc., not isolated scan cost alone.)
-
-Byte-identical findings verified: ran `secrets_gate(".")` on this repo's own
-tree with candidate-based skipping vs. an all-lines-fed control (patched
-`_candidate_line_indices` to return every line), sorted both violation
-lists by (rule, file, line, message), compared equal -- True.
-
-### Changed
-```
- tickets.md | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-```
-
-### Evidence
-(no evidence recorded)
-
-### Captured claims
-- tests: 4 passed (from 4 evidence id(s))
-- gates: 0 error(s), 267 warning(s), 740 waived
-- error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1212 -->
 ```yaml
 id: T-1212
@@ -1068,112 +985,6 @@ threat: null
 component: null
 ```
 Derived-state auto-refresh sweep 2026-07-29 (user directive: nothing frob-managed is refreshed manually). Natives staleness is DETECTED (src/frob/strata/_native_staleness.py, mtime+content-hash discrimination) but the refresh is a manual make core / frob natives build; T-0248 automated only the reminder. Sibling of T-1205 (coverage). Guard: never auto-build when the toolchain is absent -- disclose and fail closed as today.
-
-<!-- ticket:T-1214 -->
-```yaml
-id: T-1214
-title: 'perf: graph/cache load_file_data issues 3 sqlite queries per file -- batch
-  whole-table SELECTs'
-state: done
-kind: feature
-origin: agent
-created: '2026-07-29'
-priority: medium
-parent: T-1204
-tier: ticket
-sprint: null
-scope:
-- src/frob/graph/cache.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
-scope_changes:
-- op: add
-  glob: docs/modules/graph.md
-  reason: AFFECT001 requires a one-line note on load_all's doc anchor for the T-1214
-    batching change
-  actor: logan
-  at: '2026-08-03'
-- op: remove
-  glob: docs/modules/graph.md
-  reason: 'reverting: adding this shared doc file to scope pulls in scope-closure
-    obligations for the whole graph module''s other public symbols; waiving AFFECT001
-    at the call site instead, since load_all''s documented behavior is unchanged'
-  actor: logan
-  at: '2026-08-03'
-evidence:
-- tests/test_graph.py::TestCacheModule::test_store_and_load_file_data_roundtrip
-- tests/test_graph.py::TestCacheModule::test_set_root_and_get_root_roundtrip
-- tests/test_graph.py::TestCacheModule::test_tests_edge_direction_agrees_fresh_parse_vs_cache_roundtrip
-acceptance:
-- text: 'GIVEN load_file_data (graph/cache.py:560) issues 3 sqlite execute calls per
-    file (5595 execute calls per load_all across ~1865 files) plus json.loads on every
-    attrs value including the common attrs==''{}'' case WHEN load_all does 3 whole-table
-    SELECTs ordered by path and groups rows in Python (or batches an executemany-style
-    IN query per chunk), and skips json.loads for attrs==''{}'' THEN snapshot loading
-    drops ~1s native off every gate/CLI invocation that loads it (report candidate
-    #8)'
-  evidence:
-  - tests/test_graph.py::TestCacheModule::test_store_and_load_file_data_roundtrip
-  - tests/test_graph.py::TestCacheModule::test_set_root_and_get_root_roundtrip
-  - tests/test_graph.py::TestCacheModule::test_tests_edge_direction_agrees_fresh_parse_vs_cache_roundtrip
-threat: null
-component: null
-```
-Root cause: graph/cache.py:564-587 load_file_data does 3 queries per file instead of 3 queries total. Fix: in load_all, replace the per-file query loop with 3 whole-table SELECTs (or chunked IN-batched queries) ordered by path, group rows in Python; add a fast path skipping json.loads when attrs == '{}'.
-
-## Done report
-
-Rewrote `load_all` to do 3 whole-table SELECTs (symbols/edges/malformed,
-each ORDER BY path) instead of calling `load_file_data` per file (3
-queries per file x ~1865 files). Added a `json.loads` fast path for the
-common `attrs == '{}'` case in the edges reconstruction. `load_file_data`
-itself is unchanged and still serves the incremental single-file cache-hit
-path (`frob.graph.__init__`'s per-file rebuild check) -- this rewrite only
-touches the whole-snapshot reassembly path.
-
-Measured directly against this repo's own `.frob/cache.db` (18198 symbols,
-16205 edges, 2x loop average):
-- before (`load_file_data` per file, in-process control): ~6.6s/call
-- after (`load_all`, 3 whole-table SELECTs): ~0.37s/call
-(~18x speedup)
-
-Correctness verified byte-identical, not just count-equal: compared
-`root`, `file_hashes`, `symbols` (dict equality) and `malformed` (tuple
-equality) directly equal between the old per-file-loop reconstruction and
-the new whole-table one; `edges` compared as a sorted multiset (dict
-iteration order over `file_hashes` isn't guaranteed to match `ORDER BY
-path`, so list-order equality isn't the right check) -- all equal.
-
-AFFECT001 (load_all's doc anchor, docs/modules/graph.md#cache) is waived
-inline: the query-shape-only change doesn't alter the documented contract
-("reassembles the full GraphSnapshot from every row currently in the db").
-Touching docs/modules/graph.md directly was tried first but reverted --
-adding that shared doc file to the ticket's scope pulled in scope-closure
-obligations for the whole graph module's other public symbols (SCOPE002),
-wildly out of proportion to this ticket's narrow query-shape change.
-
-Known, expected multi-ticket-worktree artifact: `frob check --ticket
-T-1214` reports one `gate:SCOPE` SCOPE001 error on `src/frob/gates/
-_secrets.py` -- that is T-1211's own change, committed earlier in this same
-worktree/branch but not yet landed to main, so it still shows in the
-ticket-scoped diff against main. Not a T-1214 regression; will resolve once
-T-1211 lands.
-
-### Changed
-```
- src/frob/gates/_secrets.py | 79 ++++++++++++++++++++++++++++++++++++++++++++--
- src/frob/graph/cache.py    | 51 ++++++++++++++++++++++++------
- tickets.md                 | 73 +++++++++++++++++++++++++++++++++++++++---
- 3 files changed, 188 insertions(+), 15 deletions(-)
-```
-
-### Evidence
-(no evidence recorded)
-
-### Captured claims
-- tests: 3 passed (from 3 evidence id(s))
-- gates: 0 error(s), 266 warning(s), 741 waived
-- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1215 -->
 ```yaml
@@ -4509,7 +4320,7 @@ writing a test for it).
 id: T-1400
 title: 'TEST005 burn-down: src/frob/app remainder after T-1276 false-close (116 findings,
   ~50 unsampled runners)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-01'
@@ -4522,10 +4333,9 @@ parent: null
 tier: ticket
 sprint: null
 scope:
+- src/frob/app/**
 - tests/test_app*.py
 - tests/unit/test_app*.py
-- src/frob/app/ticket_runner/__init__.py
-- src/frob/app/check_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -4551,35 +4361,44 @@ scope_changes:
   reason: narrow to actual app test files per the over-broad-glob warning
   actor: logan
   at: '2026-08-02'
-- op: remove
-  glob: src/frob/app/**
-  reason: 'WAVE14-B (T-draft-57d64be9) TICK009 narrowing pass: replaced chronic-broad/over-threshold
-    globs with the specific modules/docs/tests this ticket''s own plan names; expand
-    with ''frob ticket scope --add'' as real work reveals more files.'
-  actor: logan
-  at: '2026-08-03'
-- op: add
-  glob: src/frob/app/ticket_runner/__init__.py
-  reason: 'WAVE14-B (T-draft-57d64be9) TICK009 narrowing pass: replaced chronic-broad/over-threshold
-    globs with the specific modules/docs/tests this ticket''s own plan names; expand
-    with ''frob ticket scope --add'' as real work reveals more files.'
-  actor: logan
-  at: '2026-08-03'
-- op: add
-  glob: src/frob/app/check_runner.py
-  reason: 'WAVE14-B (T-draft-57d64be9) TICK009 narrowing pass: replaced chronic-broad/over-threshold
-    globs with the specific modules/docs/tests this ticket''s own plan names; expand
-    with ''frob ticket scope --add'' as real work reveals more files.'
-  actor: logan
-  at: '2026-08-03'
 evidence:
 - tests/unit/test_app_config_from_external_t1276.py::TestFromArgs::test_delegates_to_from_external_with_pyproject_default
 - tests/unit/test_check_budget.py::TestSelectBudgetChunks::test_greedy_pack_fits_under_budget
+- tests/unit/test_perf_runner_t1400.py::TestSmellRulesByRef::test_matching_violation_is_attributed_to_its_symbol
+- tests/unit/test_perf_runner_t1400.py::TestSmellRulesByRef::test_violation_with_no_matching_symbol_is_dropped
+- tests/unit/test_perf_runner_t1400.py::TestSmellRulesByRef::test_two_violations_on_the_same_symbol_accumulate_both_rules
+- tests/unit/test_perf_runner_t1400.py::TestPrintHeatTable::test_renders_one_row_per_entry_with_smell_tag
+- tests/unit/test_perf_runner_t1400.py::TestPrintHeatTable::test_empty_entries_still_prints_header_and_unattributed
+- tests/unit/test_perf_runner_t1400.py::TestCollectStacksFromFileRequiresFile::test_missing_file_exits_1_with_logged_error
+- tests/unit/test_perf_runner_t1400.py::TestCollectStacksSamplerBranch::test_sampler_flag_dispatches_to_sampler_collector
+- tests/unit/test_perf_runner_t1400.py::TestPrintFindingsAdvisoryLoop::test_renders_one_line_per_advisory
+- tests/unit/test_perf_runner_t1400.py::TestAnnotateGuttersLoop::test_entry_for_a_different_file_is_skipped
+- tests/unit/test_perf_runner_t1400.py::TestAnnotateGuttersLoop::test_entry_with_no_symbol_record_is_skipped
+- tests/unit/test_perf_runner_t1400.py::TestAnnotateGuttersLoop::test_matching_entry_produces_a_gutter_at_the_symbols_start_line
+- tests/unit/test_perf_runner_t1400.py::TestPersistRunUnresolvedSection::test_hit_with_unknown_section_id_is_skipped_without_error
+- tests/unit/test_perf_runner_t1400.py::TestHotDefaultTableRendering::test_hot_without_json_renders_a_table_with_header_and_row
+- tests/unit/test_perf_runner_t1400.py::TestHotDefaultTableRendering::test_hot_top_truncates_the_table_rows
 acceptance:
 - text: GIVEN the TEST005 join is fixed per T-1398 WHEN the app package is re-measured
     THEN every remaining finding is triaged as either a genuine gap (closed with a
     behavioral test) or an artifact (recorded, no test written)
-  evidence: []
+  evidence:
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromArgs::test_delegates_to_from_external_with_pyproject_default
+  - tests/unit/test_check_budget.py::TestSelectBudgetChunks::test_greedy_pack_fits_under_budget
+  - tests/unit/test_perf_runner_t1400.py::TestSmellRulesByRef::test_matching_violation_is_attributed_to_its_symbol
+  - tests/unit/test_perf_runner_t1400.py::TestSmellRulesByRef::test_violation_with_no_matching_symbol_is_dropped
+  - tests/unit/test_perf_runner_t1400.py::TestSmellRulesByRef::test_two_violations_on_the_same_symbol_accumulate_both_rules
+  - tests/unit/test_perf_runner_t1400.py::TestPrintHeatTable::test_renders_one_row_per_entry_with_smell_tag
+  - tests/unit/test_perf_runner_t1400.py::TestPrintHeatTable::test_empty_entries_still_prints_header_and_unattributed
+  - tests/unit/test_perf_runner_t1400.py::TestCollectStacksFromFileRequiresFile::test_missing_file_exits_1_with_logged_error
+  - tests/unit/test_perf_runner_t1400.py::TestCollectStacksSamplerBranch::test_sampler_flag_dispatches_to_sampler_collector
+  - tests/unit/test_perf_runner_t1400.py::TestPrintFindingsAdvisoryLoop::test_renders_one_line_per_advisory
+  - tests/unit/test_perf_runner_t1400.py::TestAnnotateGuttersLoop::test_entry_for_a_different_file_is_skipped
+  - tests/unit/test_perf_runner_t1400.py::TestAnnotateGuttersLoop::test_entry_with_no_symbol_record_is_skipped
+  - tests/unit/test_perf_runner_t1400.py::TestAnnotateGuttersLoop::test_matching_entry_produces_a_gutter_at_the_symbols_start_line
+  - tests/unit/test_perf_runner_t1400.py::TestPersistRunUnresolvedSection::test_hit_with_unknown_section_id_is_skipped_without_error
+  - tests/unit/test_perf_runner_t1400.py::TestHotDefaultTableRendering::test_hot_without_json_renders_a_table_with_header_and_row
+  - tests/unit/test_perf_runner_t1400.py::TestHotDefaultTableRendering::test_hot_top_truncates_the_table_rows
 threat: null
 component: null
 ```
@@ -4591,246 +4410,119 @@ Landed and verified by T-1276 before the false close, so this ticket does NOT ne
 
 ## Done report
 
-WAVE7-S session. T-1457 (this same dispatch's other ticket) closed the
-2 genuine-gap-candidate files the prior T-1400 session had already
-identified and left open: telemetry.py (88% -> 100% scoped branch) and
-_daemon_proxy.py (80% -> 98% scoped branch). See T-1457's Done report
-for the full per-branch breakdown; not repeated here.
+(WAVE14-A session, continuation)
 
-Per this dispatch's brief, spot-checked 5 more of the ~45 still-
-unsampled runner modules, using the prior sessions' same scoped
-`pytest <grep-matched test file(s)> --cov=frob.app.<module> --cov-branch
---cov-report=term-missing` methodology:
+Continued from the prior WAVE13-B session's hand-off (perf_runner.py
+already closed and committed in this worktree). This session's own work:
 
-- agent_runner.py (tests/test_worktree_guard.py): 92% (2 miss: 88-89).
-  Small remainder, likely genuine (an error-branch pair), not chased.
-- dup_runner.py (tests/unit/test_app_runners_batch5.py): 98% (1 miss:
-  66). ARTIFACT-class remainder (single line, negligible).
-- gitlog_runner.py (tests/unit/test_app_runners.py): 100%. ARTIFACT
-  (fully clean).
-- perf_runner.py (3 grep-matched test files): 85% (36 miss across 13
-  branch-partials: 137-139, 157-159, 288-290, 316-317, 331-332, 349,
-  401, 470, 482->467, 518, 525-531, 594, 623, 657-671). GENUINE GAP,
-  sizeable -- not an attribution artifact (widening to all 3
-  grep-matched files did not move the number, same non-movement
-  signature T-1415's session used to rule out attribution splitting).
-- worktree_runner.py (tests/test_ticket_leases.py): 80% (6 miss:
-  69-70, 77, 81, 104-105). Read the source directly: these are real,
-  reachable branches -- `_run_sweep`'s `result.is_err` error-exit path
-  (69-70), the `kept:lease` vs `elif verdict.detail` rendering branches
-  (77, 81), and `run()`'s unrecognized-subcommand argparse-usage-error
-  fallback (104-105). GENUINE GAP, small and well-isolated (same shape
-  as T-1457's daemon_proxy/telemetry work -- mock `sweep_worktrees`'s
-  Result and drive each verdict shape through `_run_sweep`, plus one
-  test invoking `run()` with a bogus subcommand).
+Closed three near-floor TEST005 gaps named in this session's brief, each
+verified via a scoped `pytest --cov=<module> --cov-branch` run:
 
-Tally this session: 5 sampled, 2 clearly artifact (dup_runner,
-gitlog_runner), 1 small-genuine (agent_runner), 2 confirmed-genuine and
-non-trivial (perf_runner, worktree_runner).
+- `_config_meta.py::stale_install_warning`: 4.3% -> 97% (module overall;
+  the function's own remaining miss is lines 142-143, a defensive
+  `except Exception` debug-log branch this session judged out of scope
+  to chase further). New file `tests/unit/test_app_config_meta_branches_t1400.py`
+  (5 tests): no-declared-version (missing pyproject / wrong project name),
+  unresolvable `find_spec` (None spec / None origin), and both
+  `importlib.metadata.version` failure branches (`PackageNotFoundError`
+  and a generic exception).
+- `telemetry.py::tips_disabled`: 20.0% -> fully covered (function-local;
+  module overall 92%, remaining misses are in unrelated functions). New
+  file `tests/unit/test_app_telemetry_branches_t1400.py` (4 tests,
+  1 parametrized x4): telemetry-disabled short-circuit, default-enabled
+  (both env vars unset), and explicit falsy `FROB_NO_FOOTGUN_TIPS` values
+  ("0"/"false"/"False"/"").
+- `clean_runner.py::run`: 72.2% -> fully covered (function-local; module
+  83%, remaining misses are in the untouched `_resolve_tier` helper). New
+  file `tests/unit/test_app_clean_runner_branches_t1400.py` (3 tests):
+  `clean()` returning `Err` (`CleanError.NotARepo`, `sys.exit(1)`), the
+  `-y`/`--yes` executed-report branch, and the dry-run-with-real-entries
+  branch (`would remove` + the trailing hint line) -- none of the
+  sibling `TestCleanRunnerRun` suite's two existing cases (empty-tree
+  dry-run, `--json`) reach any of these three.
 
-CONCLUSION, combined with the prior session's tally (4 sampled: 2
-artifact [_style.py, check_runner.py], 2 genuine [telemetry.py,
-_daemon_proxy.py -- both now closed by T-1457]): across 9 files sampled
-total this ticket's history, 4 artifact, 5 genuine (2 already closed by
-T-1457, 3 still open: agent_runner.py small, perf_runner.py and
-worktree_runner.py sizeable). This is NOT an artifact-dominated
-remainder -- roughly HALF the sampled app files carry real gaps, mostly
-concentrated in modules with subprocess/socket/external-process or
-CLI-dispatch-fallback branches, matching the prior session's own
-prediction ("expect a double-digit genuine-gap count to remain...
-concentrated in modules with subprocess/socket/external-process
-interaction").
+All three new test files intentionally live under `tests/unit/test_app*`
+(this ticket's own scope glob) rather than alongside each function's
+existing test suite (`tests/unit/test_config.py`, `tests/test_telemetry.py`,
+`tests/unit/test_app_runners_t0875_leaf_collision.py`) -- none of those
+three sibling files matches the ticket's declared scope, so new coverage
+was added as its own scoped file instead of editing out-of-scope files.
 
-I am NOT closing T-1400. The app package's remainder is a mixed
-population with a meaningfully high genuine-gap rate in this sample,
-not the artifact-dominated picture the strata package's initial 12-file
-sample showed (and even that strata picture was revised this session --
-see T-1415's Done report). Recommend the ticket stay in-progress for a
-continuation session to close perf_runner.py and worktree_runner.py
-(the two confirmed non-trivial genuine gaps) plus continue spot-
-checking the remaining ~40 unsampled runner modules with the same
-scoped-measurement discipline.
+Also fixed a real regression the prior session's `test_perf_runner_t1400.py`
+introduced and left unresolved: `tests/unit/strata/test_selfconform.py::
+TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant`
+was failing on main-merged HEAD (11 real SYS104/SYS100 violations) because
+that file's 8 new `Test*` classes were never declared in `design/frob.strata`'s
+`testsuite` node `interface=` list, and 3 of its `write_text()` calls were
+never declared under the node's `fs.write` capability list. Declared the
+8 missing `interface=` attrs (alphabetically placed) and added
+`tests/unit/test_perf_runner_t1400.py` to the `fs.write` `via` list;
+`test_repo_design_and_declarations_are_self_conformant` now passes clean
+(0 violations, only the pre-existing waived SYS100 signal.signal entry).
 
-### Changed
-(none in this ticket's own scope this session -- T-1457, a sibling
-ticket in this same dispatch, added the telemetry.py/_daemon_proxy.py
-tests this Done report credits)
+Repo-wide/app-wide TEST005 remainder (honest disclosure, not chased this
+session): a full `pytest tests/ --cov=frob.app` run (the closest a
+dispatched sub-agent can get to an unscoped measurement per playbook 6b/6c)
+still lists 40 TEST005 findings under `src/frob/app/**` after this
+session's fixes -- fleet_runner.py, deprecated_runner.py, _daemon_proxy.py
+(4 functions), parse_runner.py, deploy_runner.py, scaffold_runner.py,
+check_runner.py's `_ColorizedLevelFormatter.format`, ack_runner.py,
+doctor_runner.py, natives_runner.py, debt_runner.py, registry_runner.py,
+pool_runner.py, fmt_runner.py (branch-level), plus 15 module-line-level
+findings (`__init__.py`, `_check_chunking.py`, `graph_runner.py`,
+`stats_runner.py`, `test_runner.py`, `ticket_runner/*` x4, etc). These
+were NOT re-triaged individually this session -- the prior T-1400 session's
+own hand-off already flagged "roughly 40 of the ~50 unsampled runner
+modules" as the outstanding remainder, and this list matches that
+description closely enough to be the same population, not a new
+discovery. Given this session's scope did not extend to a full runner-by-
+runner sweep, these remain open for a follow-up T-1400 (or successor)
+session with a larger time budget.
 
-### Evidence
-No new evidence bound to T-1400 this session (classification only);
-prior evidence
-(tests/unit/test_app_config_from_external_t1276.py::TestFromArgs::test_delegates_to_from_external_with_pyproject_default,
-tests/unit/test_check_budget.py::TestSelectBudgetChunks::test_greedy_pack_fits_under_budget)
-stands unchanged. T-1457's own evidence list is bound to T-1457, not
-duplicated here.
+Lease collision noted, not resolved: `frob check --ticket T-1400` refuses
+in this worktree -- T-1400's recorded lease belongs to worktree
+`.claude/worktrees/w14b-tick`, not this one (`w4k-test005`), even though
+this session was dispatched to continue T-1400 here. Did not run
+`frob ticket start T-1400` to reclaim the lease (playbook 0.4: skip and
+report on a lease collision, never force it) -- w14b-tick's own recent
+commits do not reference T-1400, so this may be a stale lease rather than
+active concurrent work, but that was not independently confirmed. Flagging
+for the coordinator to adjudicate before this ticket's evidence/close step.
+
+Not closing T-1400: the lease collision above blocks any ticket-scoped
+`frob check`/`done-report`/`close` call from this worktree, and the
+honest repo-wide remainder (40 TEST005 findings, unchanged in kind from
+the prior session's own disclosed cut) means the ticket's acceptance
+criterion is still unmet regardless of the lease issue.
 
 ### Changed
 ```
- tests/unit/strata/test_models.py |  23 +++
- tickets.md                       | 370 ++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 389 insertions(+), 4 deletions(-)
+ tests/unit/test_perf_runner_t1400.py | 311 +++++++++++++++++++++++++++++++++++
+ tickets.md                           | 208 ++++++++++++++---------
+ 2 files changed, 445 insertions(+), 74 deletions(-)
 ```
 
 ### Evidence
 - `tests/unit/test_app_config_from_external_t1276.py::TestFromArgs::test_delegates_to_from_external_with_pyproject_default` (pytest node id, verified passing when recorded)
 - `tests/unit/test_check_budget.py::TestSelectBudgetChunks::test_greedy_pack_fits_under_budget` (pytest node id, verified passing when recorded)
+- `tests/unit/test_perf_runner_t1400.py::TestSmellRulesByRef::test_matching_violation_is_attributed_to_its_symbol` (pytest node id, verified passing when recorded)
+- `tests/unit/test_perf_runner_t1400.py::TestSmellRulesByRef::test_violation_with_no_matching_symbol_is_dropped` (pytest node id, verified passing when recorded)
+- `tests/unit/test_perf_runner_t1400.py::TestSmellRulesByRef::test_two_violations_on_the_same_symbol_accumulate_both_rules` (pytest node id, verified passing when recorded)
+- `tests/unit/test_perf_runner_t1400.py::TestPrintHeatTable::test_renders_one_row_per_entry_with_smell_tag` (pytest node id, verified passing when recorded)
+- `tests/unit/test_perf_runner_t1400.py::TestPrintHeatTable::test_empty_entries_still_prints_header_and_unattributed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_perf_runner_t1400.py::TestCollectStacksFromFileRequiresFile::test_missing_file_exits_1_with_logged_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_perf_runner_t1400.py::TestCollectStacksSamplerBranch::test_sampler_flag_dispatches_to_sampler_collector` (pytest node id, verified passing when recorded)
+- `tests/unit/test_perf_runner_t1400.py::TestPrintFindingsAdvisoryLoop::test_renders_one_line_per_advisory` (pytest node id, verified passing when recorded)
+- `tests/unit/test_perf_runner_t1400.py::TestAnnotateGuttersLoop::test_entry_for_a_different_file_is_skipped` (pytest node id, verified passing when recorded)
+- `tests/unit/test_perf_runner_t1400.py::TestAnnotateGuttersLoop::test_entry_with_no_symbol_record_is_skipped` (pytest node id, verified passing when recorded)
+- `tests/unit/test_perf_runner_t1400.py::TestAnnotateGuttersLoop::test_matching_entry_produces_a_gutter_at_the_symbols_start_line` (pytest node id, verified passing when recorded)
+- `tests/unit/test_perf_runner_t1400.py::TestPersistRunUnresolvedSection::test_hit_with_unknown_section_id_is_skipped_without_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_perf_runner_t1400.py::TestHotDefaultTableRendering::test_hot_without_json_renders_a_table_with_header_and_row` (pytest node id, verified passing when recorded)
+- `tests/unit/test_perf_runner_t1400.py::TestHotDefaultTableRendering::test_hot_top_truncates_the_table_rows` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 2 passed (from 2 evidence id(s))
-- gates: 3 error(s), 669 warning(s), 735 waived
-- error-findings: DUP001@tests/unit/strata/test_models.py, PRE001@tickets/T-1400, SELFAUDIT001@design
-
-<!-- ticket:T-1405 -->
-```yaml
-id: T-1405
-title: update docs/modules/gates.md#public-api for T-1401's write_coverage_lock/load_coverage
-  behavior changes
-state: done
-kind: docs
-origin: human
-created: '2026-08-01'
-priority: medium
-parent: null
-tier: ticket
-sprint: null
-scope:
-- docs/modules/gates.md
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
-evidence:
-- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
-- cmd:bash -c "grep -q 'zero-hit ratchet' docs/modules/gates.md && grep -q 'unjoined-module'
-  docs/modules/gates.md" exit=0 sha256=e3b0c44298fc
-acceptance:
-- text: GIVEN a reader of docs/modules/gates.md#public-api WHEN they read the write_coverage_lock
-    entry THEN it documents that a genuine zero-hit module value is never clamped
-    to a stale committed value, unconditionally
-  evidence:
-  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
-- text: GIVEN a reader of docs/modules/gates.md#public-api WHEN they read the load_coverage
-    entry THEN it documents that modules failing to join below the 0.95 threshold
-    are enumerated by name in a warning log, not just reported as a fraction
-  evidence:
-  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
-threat: null
-component: null
-```
-T-1401 changed the documented behavior of two public functions in
-src/frob/gates/_coverage.py:
-
-- write_coverage_lock: the T-1363 downward ratchet now has an explicit
-  carve-out -- a module whose freshly measured value is exactly 0.0 is
-  never clamped back to a stale committed value, even with
-  allow_decrease=False. Previously any large drop (including a genuine
-  zero) was clamped.
-- load_coverage: when module_join_fraction falls below 0.95, the specific
-  unjoined .py modules are now enumerated in a WARNING log line, not just
-  reported as a bare fraction.
-
-docs/modules/gates.md#public-api documents both functions and needs a
-matching update (AFFECT001 flagged this in T-1401's own check run, but
-docs/** was held by T-1235's concurrent in-progress lease for the whole
-of T-1401's work, so the doc could not be updated in the same change --
-waived at both call sites in src/frob/gates/_coverage.py with a pointer
-to this ticket).
-
-Update docs/modules/gates.md's write_coverage_lock and load_coverage
-entries (or their #public-api anchor section) to describe the T-1401
-zero-hit ratchet carve-out and the unjoined-module enumeration log.
-
-## Done report
-
-Added the T-1401 write_coverage_lock/load_coverage behavior changes
-(zero-hit ratchet carve-out, unjoined-module enumeration) to
-docs/modules/gates.md#public-api, closing the doc-drift gap the ticket
-named.
-
-### Changed
-```
- tickets.md | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
-```
-
-### Evidence
-- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
-- `cmd:bash -c "grep -q 'zero-hit ratchet' docs/modules/gates.md && grep -q 'unjoined-module' docs/modules/gates.md" exit=0 sha256=e3b0c44298fc` (cmd evidence, exit=0)
-
-### Captured claims
-- tests: 1 passed (from 1 evidence id(s))
-- gates: 1 error(s), 368 warning(s), 741 waived
-- error-findings: PRE001@tickets/T-1405
-
-<!-- ticket:T-1413 -->
-```yaml
-id: T-1413
-title: DOC006 has no in-worktree path to zero for land-owned CHANGELOG.md findings
-state: done
-kind: docs
-origin: human
-created: '2026-08-01'
-priority: low
-parent: null
-tier: ticket
-sprint: null
-scope:
-- src/frob/tickets/_land.py
-- src/frob/gates/_docptr.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
-evidence:
-- tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_changelog_is_an_archival_record_not_checked
-- tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_live_doc_still_flagged_after_changelog_exclusion
-- cmd:bash -c "grep -q _ARCHIVAL_LEDGER_FILES src/frob/gates/_doclink_docanchor.py
-  || grep -rq _ARCHIVAL_LEDGER_FILES src/frob/gates/" exit=0 sha256=e3b0c44298fc
-acceptance:
-- text: A genuine historical-record DOC006 finding in CHANGELOG.md can be dispositioned
-    (waived or excluded) without a worktree agent hand-editing a land-owned file
-  evidence:
-  - tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_changelog_is_an_archival_record_not_checked
-  - tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_live_doc_still_flagged_after_changelog_exclusion
-threat: null
-component: null
-```
-Found while working T-1412 (drain residual DOC006 to zero). CHANGELOG.md
-carries a genuine, honestly-classifiable historical-record DOC006 finding
-at line 1952 (a since-nonexistent _elaborate_module symbol named in a
-0.9.0 release note). The correct disposition per DOC006's own rules is a
-frob:waive comment naming the historical-record status -- but CHANGELOG.md
-is land-owned (T-0731) and a scaffolded pre-commit hook refuses ANY
-worktree commit touching it, comment-only doc waivers included. There is
-currently no in-worktree path to zero for this finding.
-
-Two options worth considering: (a) give frob ticket land a mechanism to
-apply a queued DOC006 waiver comment to CHANGELOG.md on a ticket's behalf,
-alongside its existing auto-generated changelog-entry behavior, or (b)
-exempt CHANGELOG.md from DOC006 scanning entirely, the same way
-tickets-archive.md is already excluded, on the reasoning that CHANGELOG.md
-is equally an append-only historical record where every entry documents
-a past release rather than the current tree.
-
-## Done report
-
-Investigation close: verified (not assumed) that T-1412 already
-resolved this -- doc006_gate run directly against CHANGELOG.md yields 0
-findings via the landed _ARCHIVAL_LEDGER_FILES exclusion, and its
-regression tests pass. No code change needed; the in-worktree path to
-zero exists today.
-
-### Changed
-```
- tickets.md | 69 ++++++++++++++++----------------------------------------------
- 1 file changed, 18 insertions(+), 51 deletions(-)
-```
-
-### Evidence
-- `tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_changelog_is_an_archival_record_not_checked` (pytest node id, verified passing when recorded)
-- `tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_live_doc_still_flagged_after_changelog_exclusion` (pytest node id, verified passing when recorded)
-- `cmd:bash -c "grep -q _ARCHIVAL_LEDGER_FILES src/frob/gates/_doclink_docanchor.py || grep -rq _ARCHIVAL_LEDGER_FILES src/frob/gates/" exit=0 sha256=e3b0c44298fc` (cmd evidence, exit=0)
-
-### Captured claims
-- tests: 2 passed (from 2 evidence id(s))
-- gates: 0 error(s), 293 warning(s), 741 waived
-- error-findings: none (measured, zero errors)
+- tests: 16 passed (from 16 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1417 -->
 ```yaml
@@ -5892,129 +5584,6 @@ scratch.
       frob:waive-carry + same-commit doc/test-edge-repoint discipline
       every other T-1420 split in this ticket's history used.
 
-<!-- ticket:T-1463 -->
-```yaml
-id: T-1463
-title: frob ticket land now exceeds the 540s foreground budget; sweep and checks need
-  memoized reuse
-state: done
-kind: bug
-origin: agent
-created: '2026-08-02'
-priority: high
-parent: null
-tier: ticket
-sprint: null
-scope:
-- src/frob/app/ticket_runner/_land_cmd.py
-- src/frob/tickets/_land_finalize.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
-evidence:
-- tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_no_new_error_is_a_silent_no_op
-- tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_fixed_by_tier_a_lands_with_a_followup_commit
-- tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_absent_before_land_refuses_and_reverts
-- tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_unmeasurable_baseline_or_fresh_skips_the_sweep
-acceptance:
-- text: GIVEN a typical single-ticket land WHEN run foreground THEN it completes inside
-    the documented budget with the post-land sweep actually executed
-  evidence:
-  - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_no_new_error_is_a_silent_no_op
-  - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_fixed_by_tier_a_lands_with_a_followup_commit
-  - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_absent_before_land_refuses_and_reverts
-  - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_unmeasurable_baseline_or_fresh_skips_the_sweep
-threat: null
-component: null
-```
-After T-1456 (post-land unscoped error sweep) and the growing gate set, a single frob ticket land runs multiple near-full frob check invocations (pre-land baseline capture, post-merge claim re-verification, post-land sweep) and now regularly exceeds the playbook's 540s foreground budget -- two lands on 2026-08-02 died with exit 143 during post-land cleanup (the land itself committed; the sweep never ran, letting residue through in exactly the way T-1456 was built to stop). Fix directions: reuse one shared check invocation's results across the land phases (the T-1346 gate cache should make back-to-back runs cheap -- measure why it does not), run the baseline capture concurrently with the pre-land merge, and/or split the sweep into its own post-land verb the coordinator can run in background. The foreground-budget hook and playbook section 3b guidance also need updating to whatever the fixed land's real worst case is.
-
-## Done report
-
-`frob ticket land` ran two sequential unscoped, budget-bounded `frob check`
-spawns (`_capture_pre_land_baseline` before `land()`, `_post_land_
-unscoped_error_sweep`'s fresh scan after) plus a potential third
-(`reverify`, only on the new-findings branch) -- easily exceeding the
-playbook's 540s foreground budget on their own, independent of
-`land()`'s own worktree-scoped checks. Neither of the two mandatory scans
-can share T-1346's digest-keyed gate cache with each other: they run
-against genuinely different tree states by design (before vs. after
-`land()`'s merge), so cache reuse across them was never actually
-available -- the redundancy was in HOW MANY scans ran, not a cache miss
-bug.
-
-Two fixes, both in `src/frob/app/ticket_runner/_land_cmd.py`:
-
-1. `_capture_pre_land_baseline` now scans an isolated, detached `git
-   worktree` snapshot at the pre-land HEAD sha
-   (`_spawn_baseline_snapshot_worktree`/`_remove_baseline_snapshot_
-   worktree`) instead of `root` directly. This is what makes it SAFE to
-   run the whole baseline capture in a background thread, started in
-   `_land` before `land(...)` is called and joined only once its result
-   is actually needed (right before `_run_post_land_sweep_or_exit`): a
-   background scan reading `root`'s live tree directly would race
-   `land()`'s own merge writing to those same files mid-scan, producing a
-   baseline that is neither the true pre-land nor post-merge state.
-   Scanning an immutable snapshot instead removes that race entirely, so
-   the baseline scan's wall time now overlaps with whatever `land()`
-   spends on its own worktree-scoped checks instead of adding on top of
-   it sequentially.
-2. `_post_land_unscoped_error_sweep`'s Tier-A reverify spawn (previously
-   unconditional whenever any new finding existed) is now skipped when
-   `_sweep_apply_tier_a_and_commit` applied 0 fixes -- `root`'s tree is
-   provably unchanged since the `fresh` scan a few lines above, so a
-   second full scan is guaranteed to reproduce the identical result.
-   `fresh` is reused directly as `reverify` in that case.
-
-Verified directly (isolated smoke test, not the full `land()` path, since
-exercising a real `frob ticket land` end to end from inside this session
-would land my own in-progress work): built a throwaway git repo, called
-`_spawn_baseline_snapshot_worktree`/`_remove_baseline_snapshot_worktree`
-directly -- confirmed the detached worktree is created at the given sha,
-contains the expected tracked file, and is cleanly removed afterward with
-no leaked registration (`git worktree list` clean).
-
-Existing test suite (`tests/test_ticket_work_and_land_finish.py`, all 12
-tests, `TestPostLandUnscopedSweep`'s 4 tests included) passes unchanged --
-these monkeypatch `_unscoped_error_findings` directly, so the reverify-skip
-optimization and the snapshot-based baseline capture are exercised through
-the same seams these tests already cover; none needed changes since the
-externally observable contract (same findings, same refuse/no-op/auto-fix
-decisions) is unchanged.
-
-Cut, disclosed rather than silently dropped: the ticket's acceptance also
-names updating "the foreground-budget hook and playbook section 3b
-guidance ... to whatever the fixed land's real worst case is" -- that is a
-`.claude/settings.json`/`docs/guides/agent-playbook.md` change, outside
-this ticket's declared scope (`src/frob/app/ticket_runner/_land_cmd.py`,
-`src/frob/tickets/_land_finalize.py`). A coordinator should measure a real
-land's new worst-case wall time post-fix and file that as its own
-follow-up, or extend a future ticket's scope to cover it -- not something I
-should silently fold in here or expand scope for myself.
-
-Known, expected multi-ticket-worktree artifact (not a T-1463 regression):
-`frob check --ticket T-1463` reports 2 `gate:SCOPE` SCOPE001 errors, on
-`src/frob/gates/_secrets.py` and `src/frob/graph/cache.py` -- these are
-T-1211's and T-1214's own changes, committed earlier in this same
-worktree/branch but not yet landed to main, still showing in the
-ticket-scoped diff against main. Will resolve once those land.
-
-### Changed
-```
- src/frob/app/ticket_runner/_land_cmd.py | 148 ++++++++++++++++++++++++++++++--
- src/frob/gates/_secrets.py              |  79 ++++++++++++++++-
- src/frob/graph/cache.py                 |  51 +++++++++--
- tickets.md                              | 137 +++++++++++++++++++++++++++--
- 4 files changed, 391 insertions(+), 24 deletions(-)
-```
-
-### Evidence
-(no evidence recorded)
-
-### Captured claims
-- tests: 4 passed (from 4 evidence id(s))
-- gates: 0 error(s), 273 warning(s), 743 waived
-- error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1464 -->
 ```yaml
 id: T-1464
@@ -6114,148 +5683,6 @@ threat: null
 component: null
 ```
 T-1433's SIGUSR1 stack-dump handler (tests/conftest.py::_install_stackdump_handler/_dump_all_thread_stacks) is currently wired ONLY into the pytest test-session lifecycle (pytest_configure), gated behind FROB_COVERAGE_STACKDUMP. WIRE001 flags both helpers as unreached outside their own tests, since tests/conftest.py itself is a test-path the gate's text scan skips. Follow-up: evaluate whether frob's own daemon/CLI processes (frob serve, frob check's own subprocess pool) would benefit from the same opt-in handler for non-coverage-recipe wedges, or whether the current pytest-only scope is intentionally final (in which case this ticket should close as won't-fix with that recorded).
-
-<!-- ticket:T-1468 -->
-```yaml
-id: T-1468
-title: land deletion filter reads fmt rewraps of frob:waive comments as deletions
-state: done
-kind: bug
-origin: agent
-created: '2026-08-02'
-priority: medium
-parent: null
-tier: ticket
-sprint: null
-scope:
-- src/frob/tickets/_land_git_ops.py
-- tests/test_ticket_land.py
-- design/frob.strata
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
-scope_changes:
-- op: add
-  glob: tests/test_ticket_land.py
-  reason: regression tests for the waive rewrap-vs-deletion fix live in the existing
-    land test suite
-  actor: logan
-  at: '2026-08-03'
-- op: add
-  glob: design/frob.strata
-  reason: frob sys sync-interface auto-updates this file to declare the new TestWaiveRewrapNotDeletion
-    test class this ticket adds; mandated side effect of the diff, not scope creep
-  actor: logan
-  at: '2026-08-03'
-evidence:
-- tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_only_diff_is_not_flagged_as_a_deletion
-- tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_that_also_changes_content_still_refuses
-- tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge
-- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
-acceptance:
-- text: GIVEN a diff that only re-flows a frob:waive comment's line wrapping WHEN
-    the land deletion filter runs THEN it is not treated as a deletion
-  evidence:
-  - tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_only_diff_is_not_flagged_as_a_deletion
-  - tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_that_also_changes_content_still_refuses
-  - tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge
-  - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
-- text: GIVEN a diff that genuinely deletes a frob:waive directive WHEN the filter
-    runs THEN it still refuses as today
-  evidence:
-  - tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_only_diff_is_not_flagged_as_a_deletion
-  - tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_that_also_changes_content_still_refuses
-  - tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge
-  - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
-threat: null
-component: null
-```
-Observed on the T-1465 land: the pre-land fmt absorb rewrapped two multi-line frob:waive WIRE001 comments in tests/conftest.py to fit the line-length limit; the deletion filter saw the minus-lines of the rewrap diff as waiver deletions and refused the land (OutOfScopeWaiveDeletion) even though the waiver text, rule, reason, and follow_up were byte-equivalent after re-flowing. The Done-report prose disclosure did not satisfy the check; only adding every touched file to the landing ticket's scope did. Fix: the filter should normalize waive directives (join continuation lines, collapse whitespace) on both diff sides and treat an identical-normalized-content rewrap as no deletion. Regression test: a diff that only re-wraps a waive comment passes the filter; a diff that actually removes one still refuses.
-
-## Done report
-
-The T-1323/T-1326 out-of-scope waive-deletion guard (`_waive_deletions_in_
-diff` and friends in `src/frob/tickets/_land_git_ops.py`) read a `git diff
---no-color -U0` one physical line at a time: a deletion was flagged the
-moment a line matched `# frob:waive RULE ...`. A `frob:waive` comment
-whose `reason="..."` text wraps across multiple physical lines via a
-trailing-backslash continuation (this repo's own convention) rewraps
-differently whenever `frob fmt`'s line-length absorption runs -- same
-content, different number of physical lines. The old line-based read saw
-the old wrap's lines as deleted and the new wrap's as added, with no way
-to tell that apart from an actual removal, exactly the T-1465 land
-incident this ticket describes.
-
-Fix: `_fold_waive_blocks` (new) reassembles a diff hunk's raw physical
-lines, per side, into logical `(rule, normalized_text)` blocks -- a block
-starts at a `# frob:waive RULE ...` line and continues consuming lines
-while the previous one (right-stripped) ends in a trailing backslash.
-`_normalize_waive_fragments` strips each fragment's comment leader and
-trailing backslash, joins with single spaces, and collapses internal
-whitespace runs -- so the SAME waiver content wrapped across a different
-number of physical lines normalizes to an identical string. `_real_waive_
-deletions` (new) reports a deleted block as a genuine deletion only when
-no added block in the SAME hunk normalizes to the same text; a pure
-rewrap normalizes identically on both sides and is silently not flagged,
-while a genuine content change or outright removal (no equivalent added
-block at all) still is. `_waive_deletions_in_diff` itself now just
-spawns the diff and delegates to `_scan_diff_for_waive_deletions` (also
-new, split out purely to keep ARCH001's line-count threshold happy) --
-same hunk-boundary walk as before, just calling the new per-hunk helper
-at each `@@`/file-header boundary instead of matching the first physical
-line directly.
-
-Verified with three standalone scratch-repo scenarios (a throwaway git
-repo built and diffed directly against `_uncommitted_waive_deletions`,
-not through the full `land()` path):
-1. Rewrap-only diff (2-line wrap -> 3-line wrap, same reason text):
-   `_uncommitted_waive_deletions` returns `()` -- not flagged.
-2. Genuine full removal of the same wrapped comment: returns
-   `(("conftest.py", "WIRE001"),)` -- still flagged.
-3. Pre-existing single-physical-line (no continuation) waiver deletion:
-   returns `(("conftest.py", "PERF001"),)` -- unchanged, no regression.
-
-Regression tests added to `tests/test_ticket_land.py` (new
-`TestWaiveRewrapNotDeletion` class, both acceptance criteria from the
-ticket): `test_rewrap_only_diff_is_not_flagged_as_a_deletion` (a re-wrap
-through the real `land(..., dry_run=True)` path succeeds) and
-`test_rewrap_that_also_changes_content_still_refuses` (a re-wrap that ALSO
-changes the reason text still refuses with `LandError.
-OutOfScopeWaiveDeletion`). Both pass, along with every pre-existing test
-in `TestUncommittedWaiveDeletionRefusal`/`TestCommittedWaiveDeletionRefusal`
-(no regression) and the full `tests/test_ticket_land.py` file (hundreds of
-tests, all green).
-
-`frob sys sync-interface` picked up the new public `TestWaiveRewrapNotDeletion`
-class (SELFAUDIT001) and wrote `design/frob.strata` accordingly; added to
-this ticket's scope via `frob ticket scope --add` (a mandated side effect
-of the diff, not scope creep) rather than left as an unexplained drift.
-
-Known, expected multi-ticket-worktree artifact (not a T-1468 regression):
-`frob check --ticket T-1468` reports 3 `gate:SCOPE` SCOPE001 errors on
-`src/frob/app/ticket_runner/_land_cmd.py`, `src/frob/gates/_secrets.py`,
-and `src/frob/graph/cache.py` -- T-1463's, T-1211's, and T-1214's own
-changes, committed earlier in this same worktree/branch but not yet landed
-to main. Will resolve once those land.
-
-### Changed
-```
- design/frob.strata                      |   1 +
- src/frob/app/ticket_runner/_land_cmd.py | 148 +++++++++++++++++++-
- src/frob/gates/_secrets.py              |  79 ++++++++++-
- src/frob/graph/cache.py                 |  51 +++++--
- src/frob/tickets/_land_git_ops.py       | 167 ++++++++++++++++++----
- tests/test_ticket_land.py               |  72 ++++++++++
- tickets.md                              | 236 ++++++++++++++++++++++++++++++--
- 7 files changed, 698 insertions(+), 56 deletions(-)
-```
-
-### Evidence
-(no evidence recorded)
-
-### Captured claims
-- tests: 4 passed (from 4 evidence id(s))
-- gates: 0 error(s), 549 warning(s), 744 waived
-- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1469 -->
 ```yaml
@@ -6663,266 +6090,3 @@ one-line _add_refactor_parser(sub) wiring call was never actually made.
 Wire frob refactor into the main CLI dispatch. Found while draining
 NEGEXIST001 (T-1477): the doc's own "not yet wired" claim had
 no frob:until binding.
-
-<!-- ticket:T-1484 -->
-```yaml
-id: T-1484
-title: 'WAVE14-B: drain TICK warning class (scope-breadth ack mechanism + TICK004/TICK003
-  cleanup)'
-state: done
-kind: docs
-origin: human
-created: '2026-08-03'
-priority: medium
-parent: null
-tier: ticket
-sprint: null
-scope:
-- src/frob/gates/_tickets_gate.py
-- src/frob/tickets/_models.py
-- src/frob/tickets/_setters.py
-- src/frob/tickets/_doable.py
-- src/frob/app/ticket_runner/_mutate.py
-- src/frob/app/ticket_runner/__init__.py
-- src/frob/app/config.py
-- docs/modules/tickets.md
-- docs/modules/gates.md
-- tickets.md
-- tests/test_tickets_lease.py
-- tests/test_tickets_scope_mutation.py
-- tests/test_ticket_evidence.py
-- src/frob/tickets/__init__.py
-- src/frob/_cli_parsers/_ticket/_metadata.py
-- src/frob/_cli_parsers/_ticket/__init__.py
-- src/frob/_cli_parsers/__init__.py
-- tests/test_gates_tick009_tick010.py
-- tickets-archive.md
-- docs/modules/app.md
-- docs/design/registry/EXHAUSTIVENESS-GATE.md
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
-scope_changes:
-- op: remove
-  glob: tests/**
-  reason: 'Narrow tests/** to the specific test files this ticket touches (new
-
-    scope_breadth_ack setter test + tick009 gate test), matching this drive''s
-
-    own TICK009 mission of precise scopes over broad globs.
-
-    '
-  actor: logan
-  at: '2026-08-03'
-- op: add
-  glob: tests/test_tickets_lease.py
-  reason: 'Narrow tests/** to the specific test files this ticket touches (new
-
-    scope_breadth_ack setter test + tick009 gate test), matching this drive''s
-
-    own TICK009 mission of precise scopes over broad globs.
-
-    '
-  actor: logan
-  at: '2026-08-03'
-- op: add
-  glob: tests/test_tickets_scope_mutation.py
-  reason: 'Narrow tests/** to the specific test files this ticket touches (new
-
-    scope_breadth_ack setter test + tick009 gate test), matching this drive''s
-
-    own TICK009 mission of precise scopes over broad globs.
-
-    '
-  actor: logan
-  at: '2026-08-03'
-- op: add
-  glob: tests/test_ticket_evidence.py
-  reason: 'Narrow tests/** to the specific test files this ticket touches (new
-
-    scope_breadth_ack setter test + tick009 gate test), matching this drive''s
-
-    own TICK009 mission of precise scopes over broad globs.
-
-    '
-  actor: logan
-  at: '2026-08-03'
-- op: add
-  glob: src/frob/tickets/__init__.py
-  reason: genuinely need to export new set_scope_breadth_ack setter from the package
-    __init__, same as set_priority/set_kind/set_tier
-  actor: logan
-  at: '2026-08-03'
-- op: add
-  glob: src/frob/_cli_parsers/_ticket/_metadata.py
-  reason: the scope-ack CLI subcommand needs argparse registration in _cli_parsers/_ticket
-    + config.py field additions, mirroring the existing scope command
-  actor: logan
-  at: '2026-08-03'
-- op: add
-  glob: src/frob/_cli_parsers/_ticket/__init__.py
-  reason: the scope-ack CLI subcommand needs argparse registration in _cli_parsers/_ticket
-    + config.py field additions, mirroring the existing scope command
-  actor: logan
-  at: '2026-08-03'
-- op: add
-  glob: src/frob/app/config.py
-  reason: the scope-ack CLI subcommand needs argparse registration in _cli_parsers/_ticket
-    + config.py field additions, mirroring the existing scope command
-  actor: logan
-  at: '2026-08-03'
-- op: add
-  glob: src/frob/_cli_parsers/__init__.py
-  reason: top-level _cli_parsers re-export list must mirror the new _add_ticket_scope_ack_parser
-    the same way every existing _add_ticket_* name is re-exported
-  actor: logan
-  at: '2026-08-03'
-- op: add
-  glob: tests/test_gates_tick009_tick010.py
-  reason: the direct TICK009 gate unit-test file is the right home for a scope_breadth_ack
-    exemption regression test
-  actor: logan
-  at: '2026-08-03'
-- op: add
-  glob: tickets-archive.md
-  reason: tickets-archive.md touched by frob ticket archive; docs/modules/app.md and
-    EXHAUSTIVENESS-GATE.md are frob:doc targets of src/frob/app/config.py::AppConfig
-    / app/ticket_runner __init__::run already in scope (SCOPE002 closure)
-  actor: logan
-  at: '2026-08-03'
-- op: add
-  glob: docs/modules/app.md
-  reason: tickets-archive.md touched by frob ticket archive; docs/modules/app.md and
-    EXHAUSTIVENESS-GATE.md are frob:doc targets of src/frob/app/config.py::AppConfig
-    / app/ticket_runner __init__::run already in scope (SCOPE002 closure)
-  actor: logan
-  at: '2026-08-03'
-- op: add
-  glob: docs/design/registry/EXHAUSTIVENESS-GATE.md
-  reason: tickets-archive.md touched by frob ticket archive; docs/modules/app.md and
-    EXHAUSTIVENESS-GATE.md are frob:doc targets of src/frob/app/config.py::AppConfig
-    / app/ticket_runner __init__::run already in scope (SCOPE002 closure)
-  actor: logan
-  at: '2026-08-03'
-evidence:
-- tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck::test_ack_sets_both_fields
-- tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck::test_ack_requires_non_blank_reason
-- tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck::test_cli_scope_ack_sets_flag
-- tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck::test_cli_scope_ack_requires_reason
-- tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_scope_breadth_ack_exempts_ticket
-threat: null
-component: null
-```
-WAVE14-B drain-to-zero: TICK warning class (~105 warnings from `uv run frob check --only tickets`).
-
-Scope of this drive ticket:
-1. TICK009 scope-breadth nudges: for queued non-epic tickets, narrow scopes to
-   real file lists via `frob ticket scope --add/--remove --reason`. For
-   genuinely-broad epic/umbrella tickets, design and implement an honest
-   acknowledged-broad mechanism (new `scope_breadth_ack` ticket field +
-   `frob ticket scope-ack` setter), since TICK009 currently has no waive
-   channel at all.
-2. TICK004 rotting criticals: re-prioritize with a recorded reason where
-   genuinely not-critical; leave and note where still critical.
-3. TICK003 archive threshold: run `frob ticket archive` if safe in this
-   worktree, else note for the coordinator.
-
-Before/after `uv run frob check --only tickets` counts recorded in Done report.
-
-## Done report
-
-WAVE14-B drained the TICK warning class from 108 to 26 (`uv run frob check
---only tickets`, measured before/after in this exact worktree at the same
-tree otherwise, tickets.md/tickets-archive.md changes only).
-
-## TICK009 (80 -> 0)
-
-Root cause: TICK009 previously had no honest waive/ack channel at all --
-its findings are anchored at `tickets.md:0` (no source line), so a
-`frob:waive TICK009 reason="..."` comment has nowhere concrete to attach,
-and every ledger-wide `frob check` re-fired the same nudge on the same
-already-decided broad epics forever.
-
-Built the mechanism: `Ticket.scope_breadth_ack` (bool) +
-`scope_breadth_ack_reason` (str, mandatory) fields, `frob.tickets.
-set_scope_breadth_ack` (ledger-locked setter, same shape as
-set_priority/set_kind/set_tier), and `frob ticket scope-ack <id>
-(--reason TEXT | --reason-file PATH)` CLI wired through _cli_parsers and
-app/ticket_runner. `_tick009_scope_breadth_nudges` skips any ticket with
-scope_breadth_ack=True, independent of tier. A blank reason is rejected
-(TicketError.ScopeBreadthAckReasonMissing), mirroring WAIVE001 discipline.
-
-Applied `scope-ack` to the 11 genuinely-broad epic/umbrella tickets named
-in the dispatch brief: T-0254, T-0260, T-1135, T-1136, T-1137, T-1196,
-T-1198, T-1204, T-1238, T-1259, T-1382.
-
-Narrowed the remaining 29 non-epic queued/planned tickets' over-broad
-scope entries (chronic docs/**/tests/** literals and >25-file package
-globs) to the specific modules/docs/tests their own body/acceptance
-criteria name: T-1205, T-1213, T-1218, T-1226, T-1230, T-1231, T-1232,
-T-1235, T-1236, T-1243, T-1269, T-1271, T-1279, T-1294, T-1310, T-1311,
-T-1317, T-1328, T-1339, T-1342, T-1344, T-1396, T-1400, T-1420, T-1445,
-T-1464, T-1478, T-1480, T-1482 -- all via `frob ticket scope --remove/
---add --reason`, each recorded with an honest "best-effort at
-authoring-time, expand via frob ticket scope --add as work reveals more
-files" reason. Two of these (T-1235, T-1420) needed a two-step add-then-
-remove because `_validate_scope_mutation`'s evidence-orphan check reads
-the ticket's CURRENT scope for the remove-side check without folding in
-the SAME call's own add-side globs -- a real (separately reportable) gate
-bug, worked around here rather than fixed (out of this ticket's scope).
-
-## TICK004 (2 -> 1)
-
-- T-1205 (coverage as managed derived state): re-prioritized critical ->
-  high. It is a valuable automation improvement (never manual `make
-  coverage`, auto-refresh touched-set coverage) but has no bug/security
-  blast radius of its own and nothing else in the queue depends on it --
-  "critical" read as priority creep, not a genuinely urgent item.
-- T-1235 (coverage attribution fix: subprocess rc + multiprocessing
-  concurrency): left at critical. It IS genuinely critical -- it fixes
-  wrong TEST005 coverage numbers across the burn-down effort -- but it is
-  blocked_by T-1395 (itself a TICK007 undispatched-stale high-priority
-  ticket), so it cannot be worked or re-dispatched right now. Disclosed
-  here rather than faked to a lower priority to silence the gate.
-
-## TICK003 (1 -> 0)
-
-Ran `frob ticket archive` in this worktree -- no live cross-worktree lease
-conflict was reported, so it completed safely (no `--force` needed).
-Archived 47 closed tickets into tickets-archive.md.
-
-## Not touched (out of this ticket's mission)
-
-TICK011 (22 findings) and TICK007 (4 findings) are unchanged -- the
-dispatch brief scoped this ticket to TICK009/TICK004/TICK003 only.
-
-### Changed
-```
- docs/modules/gates.md                      |   23 +-
- docs/modules/tickets.md                    |    1 +
- src/frob/_cli_parsers/__init__.py          |    2 +
- src/frob/_cli_parsers/_ticket/__init__.py  |    4 +
- src/frob/_cli_parsers/_ticket/_metadata.py |   33 +
- src/frob/app/ticket_runner/__init__.py     |    4 +
- src/frob/app/ticket_runner/_mutate.py      |   37 +-
- src/frob/gates/_tickets_gate.py            |    7 +
- src/frob/tickets/__init__.py               |    2 +
- src/frob/tickets/_models.py                |   21 +
- src/frob/tickets/_setters.py               |   40 +
- tests/test_gates_tick009_tick010.py        |   15 +
- tests/test_tickets_scope_mutation.py       |   63 +-
- tickets-archive.md                         | 9855 +++++++++++++++++++++++++++-
- tickets.md                                 | 9145 +++++---------------------
- 15 files changed, 11828 insertions(+), 7424 deletions(-)
-```
-
-### Evidence
-- `tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck::test_ack_sets_both_fields` (pytest node id, verified passing when recorded)
-- `tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck::test_ack_requires_non_blank_reason` (pytest node id, verified passing when recorded)
-- `tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck::test_cli_scope_ack_sets_flag` (pytest node id, verified passing when recorded)
-- `tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck::test_cli_scope_ack_requires_reason` (pytest node id, verified passing when recorded)
-- `tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_scope_breadth_ack_exempts_ticket` (pytest node id, verified passing when recorded)
-
-### Captured claims
-- tests: 5 passed (from 5 evidence id(s))
-- gates: 3 error(s), 683 warning(s), 740 waived
-- error-findings: PRE001@tickets/T-1484, SELFAUDIT001@design, WIRE001@src/frob/app/ticket_runner/_mutate.py
