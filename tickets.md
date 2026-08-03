@@ -709,7 +709,7 @@ Umbrella epic for the 2026-07-29 in-process cProfile hot-graph report (scratchpa
 id: T-1205
 title: 'coverage as managed derived state: auto-refresh touched-set, never stale,
   never manual'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -821,7 +821,6 @@ ESCALATED TO CRITICAL 2026-07-31. This ticket's absence caused the largest singl
 T-1335 (landed 2026-07-31) fixed the pipeline's SILENT FAILURE (exit 0 on a failed stamp write), so a bad refresh is now loud. T-1353 tracks the xdist symbol-level data drop that appears to be the underlying corruption. Neither makes the refresh automatic or incremental -- that is this ticket, and it is what stops the failure class rather than the instance.
 
 User directive 2026-07-29: we should never run make coverage manually; frob must never consume stale data or retread work that should be cached. Today coverage.xml is a hand-refreshed artifact: TEST011 warns it predates tracked changes and TEST005 findings are computed from it anyway (the attribution-inflation problem T-0969 is untangling). Design: treat coverage like the graph cache -- a derived artifact frob owns, refreshed incrementally from the touched-set (the affects closure already exists in frob.graph.affects), merged per-file keyed by content hash, with the freshness contract enforced by the gate rather than a Makefile comment. Interacts with T-0969 (attribution fix defines what honest data is) and the CI gitignored-trust child under T-1193 (CI needs the same no-stale contract). Related: the profiler found process-pool workers re-derive per-file artifacts every run -- same no-retread principle, separate ticket in the perf tree.
-
 <!-- ticket:T-1210 -->
 ```yaml
 id: T-1210
