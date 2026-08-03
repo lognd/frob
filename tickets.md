@@ -11337,7 +11337,7 @@ outside T-1433's scope) stays open here.
 ```yaml
 id: T-1473
 title: bind/reword the 4 pre-existing unbound NEGEXIST001 claims T-1229 surfaced
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-08-02'
@@ -11420,7 +11420,6 @@ the T-0167 precedent.
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
-
 <!-- ticket:T-1474 -->
 ```yaml
 id: T-1474
