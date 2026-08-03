@@ -192,27 +192,59 @@ def _unknown_occurrence(reason: str) -> frozenset[EffectOccurrence]:
     return frozenset({(UNKNOWN_KIND, Unknown(reason))})
 
 
+def _call_receiver_class(
+    call: Node, source: str | bytes, cache: dict[str, str | None]
+) -> str | None:
+    """`_cached_receiver_class` for `call`'s own dotted receiver (T-1212),
+    or `None` if `call`'s callee is not a dotted `receiver.method(...)`
+    shape at all -- split out of `_entry_occurrences` to keep it under the
+    arch length ceiling."""
+    dotted = _callee_dotted(call)
+    if not dotted:
+        return None
+    return _cached_receiver_class(source, dotted[0], cache)
+
+
+def _cached_receiver_class(
+    source: str | bytes, receiver: str, cache: dict[str, str | None]
+) -> str | None:
+    """T-1212: `_infer_receiver_class(source, receiver)`, memoized in
+    `cache` (one file's worth, keyed by receiver name -- see
+    `_entry_occurrences`'s `receiver_class_cache` param docstring for why).
+    `_infer_receiver_class` itself does a whole-file decode + regex scan;
+    this is the single chokepoint every call site in the file funnels
+    through so a repeated receiver name pays that cost once, not once per
+    occurrence."""
+    if receiver in cache:
+        return cache[receiver]
+    result = _infer_receiver_class(source, receiver)
+    cache[receiver] = result
+    return result
+
+
 def _entry_occurrences(
-    call: Node, graph: _EffectGraph, from_path: str, source: str | bytes
+    call: Node,
+    graph: _EffectGraph,
+    from_path: str,
+    source: str | bytes,
+    receiver_class_cache: dict[str, str | None],
 ) -> frozenset[EffectOccurrence]:
     """T-0919/T-0922: the occurrence set attributed to one call site
-    `call` -- itself directly, if `call` is a spawn/fs-walk call, else
-    every occurrence transitively reachable from its callee name, resolved
-    via `EffectGraph.resolve_scoped` (same-file-preferred, NOT an
-    unfiltered by-name union -- see that method's own docstring for why: a
-    common short name like `run` resolving to dozens of unrelated
-    project-wide symbols and unioning ALL of their summaries would
-    cross-contaminate completely unrelated call paths, a real over-firing
-    bug this scoping fixes rather than a hypothetical one).
-
-    T-0922: a call this function cannot bind at all -- its own argument
-    list is unrecoverable, its callee is not a simple bare/dotted name, or
-    `resolve_scoped` returns no candidate -- now yields an explicit
-    `(UNKNOWN_KIND, Unknown(reason))` singleton instead of `frozenset()`
-    (silently empty). See this module's own Unknown-policy note: an
-    `Unknown` can never itself pair up with another occurrence under
-    `_def_violations`'s equality-keyed grouping, so this can only ever
-    ADD visibility, never a false duplicate."""
+    `call` -- itself directly if it is a spawn/fs-walk call, else every
+    occurrence transitively reachable from its callee name via
+    `EffectGraph.resolve_scoped`/`summary` (same-file-preferred
+    resolution -- see `resolve_scoped`'s own docstring for why: an
+    unfiltered by-name union across a common short name would cross-
+    contaminate unrelated call paths). An unbindable call (unresolvable
+    argument text, no simple callee name, or an ambiguous/unresolvable
+    callee) yields an explicit `(UNKNOWN_KIND, Unknown(reason))` (T-0922)
+    instead of an empty set -- `Unknown` never groups with anything under
+    `_def_violations`'s equality-keyed grouping (see that type's own
+    docstring), so this can only ADD visibility, never manufacture a
+    false duplicate. `receiver_class_cache` (T-1212) is `_file_violations`'s
+    per-file memo (`_cached_receiver_class`) so a repeated receiver name
+    pays `_infer_receiver_class`'s whole-file regex scan once, not once
+    per call site (44,124 calls measured pre-fix, report candidate #7)."""
     effect = _direct_effect(call)
     if effect is not None:
         args = _child_by_field(call, "arguments")
@@ -233,9 +265,8 @@ def _entry_occurrences(
             f"call at {from_path}:{call.start_point[0] + 1} has no "
             f"simple bare/dotted callee name to resolve"
         )
-    dotted = _callee_dotted(call)
-    receiver_class = _infer_receiver_class(source, dotted[0]) if dotted else None
-    candidates = graph.resolve_scoped(short, from_path, receiver_class)
+    receiver = _call_receiver_class(call, source, receiver_class_cache)
+    candidates = graph.resolve_scoped(short, from_path, receiver)
     if not candidates:
         return _unknown_occurrence(
             f"unresolvable/ambiguous callee {short!r} at "
@@ -300,7 +331,11 @@ def _split_clean_runs(
 
 
 def _def_violations(
-    path: str, func_def: Node, graph: _EffectGraph, source: str | bytes
+    path: str,
+    func_def: Node,
+    graph: _EffectGraph,
+    source: str | bytes,
+    receiver_class_cache: dict[str, str | None],
 ) -> list[Violation]:
     """PERF012 hits for one `def` node: every direct call site's own
     occurrence set (`_entry_occurrences`), grouped by `(kind, arg)`; any
@@ -309,7 +344,8 @@ def _def_violations(
     `_split_clean_runs`), is a duplicate. `Unknown` members (T-0922) never
     group with anything (see `Unknown`'s own docstring -- identity-only
     equality), so they can never by themselves manufacture a duplicate
-    finding here."""
+    finding here. `receiver_class_cache` (T-1212) is `_file_violations`'s
+    per-file receiver-class memo, threaded through unchanged."""
     body = _child_by_field(func_def, "body")
     if body is None:
         return []
@@ -321,7 +357,7 @@ def _def_violations(
     # silently extend it.
     occurrences_by_line: dict[int, set[EffectOccurrence]] = {}
     for call in _iter_top_level_calls(body):
-        occs = _entry_occurrences(call, graph, path, source)
+        occs = _entry_occurrences(call, graph, path, source, receiver_class_cache)
         line = call.start_point[0] + 1
         if occs:
             occurrences_by_line.setdefault(line, set()).update(occs)
@@ -364,7 +400,16 @@ def _def_violations(
 
 def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
     """Every PERF012 hit in one python source file: every top-level `def`
-    (function/method) is its own independent scan (`_def_violations`)."""
+    (function/method) is its own independent scan (`_def_violations`).
+
+    T-1212: `receiver_class_cache` is built ONCE here, per file, and
+    threaded through every `_def_violations` call for this file's whole
+    tree -- `_entry_occurrences` used to call `_infer_receiver_class`
+    (a whole-file decode + regex scan) fresh for every dotted call site
+    across every def in the file (44,124 calls measured, report candidate
+    #7); a single dict shared for the file's entire scan means each
+    distinct receiver name is scanned at most once, regardless of how many
+    call sites or defs reference it."""
     result = _raw_tree(Path(path))
     if result.is_err:
         return []
@@ -372,11 +417,14 @@ def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
     if language != "python":
         return []
     violations: list[Violation] = []
+    receiver_class_cache: dict[str, str | None] = {}
     stack = [tree.root_node]
     while stack:
         node = stack.pop()
         if node.type == "function_definition":
-            violations.extend(_def_violations(path, node, graph, source))
+            violations.extend(
+                _def_violations(path, node, graph, source, receiver_class_cache)
+            )
         stack.extend(node.children)
     return violations
 
@@ -391,6 +439,7 @@ def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
 # frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn.test_unresolvable_dynamic_dispatch_callee_never_manufactures_a_duplicate  # noqa: E501
 # frob:ticket T-0919
 # frob:ticket T-0922
+# frob:ticket T-1212
 def duplicate_spawn_violations(
     files: Sequence[ParsedFile], graph: _EffectGraph | None = None
 ) -> tuple[Violation, ...]:

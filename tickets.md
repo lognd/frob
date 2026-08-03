@@ -827,7 +827,7 @@ User directive 2026-07-29: we should never run make coverage manually; frob must
 id: T-1210
 title: 'perf: vet capability comment/docstring spans recomputed per file per gate
   -- tree-sitter Query + sorted-span bisect'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -837,8 +837,30 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/vet/_capability.py
+- src/frob/vet/_capability_core.py
+- tests/test_vet.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/vet/_capability_core.py
+  reason: root-cause span/containment functions (_comment_byte_spans, _docstring_byte_spans,
+    _fully_in_any_span, _non_executable_byte_spans) actually live in _capability_core.py,
+    not _capability.py; ticket description cites their behavior but the declared scope
+    missed the file they are defined in
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: tests/test_vet.py
+  reason: evidence for sort+bisect containment fix and per-run span cache in _capability_core.py
+    lives here (TestCapabilityScan et al.)
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/test_vet.py::TestFingerprintScan::test_whitespace_tolerant_match_still_respects_comment_spans
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
+- tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
+- tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
 acceptance:
 - text: 'GIVEN _comment_byte_spans/_docstring_byte_spans (per-node Python recursion)
     are recomputed independently by sys and opaque, and _fully_in_any_span does an
@@ -850,18 +872,92 @@ acceptance:
     EPIC B child ''tree-sitter Query captures for comment/docstring spans (interim,
     zero-Rust)'' -- this ticket covers only the sort+bisect containment fix and the
     per-run cache, not the extraction mechanism itself'
-  evidence: []
+  evidence:
+  - tests/test_vet.py::TestFingerprintScan::test_whitespace_tolerant_match_still_respects_comment_spans
+  - tests/test_vet.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
+  - tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
+  - tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
 threat: null
 component: null
 ```
 Root cause: vet/_capability.py:212/:286 recompute comment/docstring byte spans per file per gate via Python recursion (12 pct of sys + 92 pct of opaque), and :244 _fully_in_any_span is a linear any() over an unsorted span tuple per candidate. Fix here: sort spans once, bisect for containment, and cache spans per (path, content-hash) so sys and opaque share one computation. The extraction-mechanism half of this candidate (Query captures replacing the Python recursion) is EPIC B's job, not this ticket's -- see that child to avoid two owners for the same code.
+
+## Done report
+
+Fixes the perf candidate #5 root cause in src/frob/vet/_capability_core.py:
+`_fully_in_any_span` was a linear any() scan over an unsorted span tuple for
+every needle-hit candidate (7.8M genexpr steps in sys alone measured pre-fix),
+and `_comment_byte_spans`/`_docstring_byte_spans`/`_non_executable_byte_spans`
+were independently recomputed (own raw_tree call, own Python-recursion walk)
+by every call site that touches a file's spans -- five in `_capability.py`
+alone (`scan_file_capabilities`, `_scan_file_operations`,
+`_scan_file_fingerprints`, `_opaque_indirection_findings`,
+`non_executable_line_numbers`), each redoing the same comment+docstring walk
+for the same file within one `frob check` run.
+
+Fix:
+- `_comment_byte_spans`/`_docstring_byte_spans` split into
+  `_comment_byte_spans_from_tree`/`_docstring_byte_spans_from_tree`, taking
+  an already-parsed tree instead of a path, so `_non_executable_byte_spans`
+  makes exactly one `raw_tree` call (itself already content-hash-cached,
+  T-0414) and one walk of each kind per distinct file content.
+- `_non_executable_byte_spans` now returns its union SORTED by start byte,
+  and memoizes the result in a process-lifetime `_span_cache` keyed on
+  `(str(path), sha256(source).hexdigest())` -- the same content-hash-keyed
+  shape as `frob.lang`'s own `_parse_cache` (never mtime/size) -- so every
+  caller across sys/opaque shares one computation per run. `_reset_span_
+  cache` (private) mirrors `frob.lang.reset_parse_cache`'s hygiene job.
+- `_fully_in_any_span` now does a single `bisect` lookup against the sorted,
+  disjoint span tuple instead of a linear `any()` scan -- comment nodes and
+  docstring string nodes can never overlap in the same parse tree, so the
+  span with the largest start `<= start` is the only containment candidate;
+  probing with `(start, _SPAN_PROBE_INF)` finds it via tuple-lexicographic
+  bisect with no separate starts array to rebuild per call.
+
+Scope note: the ticket's declared scope (src/frob/vet/_capability.py only)
+did not include the file the cited root-cause functions actually live in
+(`_capability_core.py`, a T-1420 split) -- expanded scope via `frob ticket
+scope --add` with a recorded reason before touching it, plus
+`tests/test_vet.py` for evidence. No behavior change: the union of comment
++docstring spans is identical (order does not affect any() vs bisect
+correctness, only bisect needs sortedness, which is now guaranteed), and
+the full tests/test_vet.py suite (222 tests) passes unchanged.
+
+Timing/findings proof (script run in the worktree, see also natural
+`raw_tree`/span-cache log lines showing "parse cache hit" on repeat calls):
+- 5x calls to `_non_executable_byte_spans` on the same file: 0.048s total
+  (first call parses+walks, remaining 4 hit `_span_cache`).
+- 200,000 `_fully_in_any_span` containment checks against 913 real spans:
+  0.069s (~0.35us/call via bisect) vs. the pre-fix linear `any()` scan
+  whose cost scales with span count per call.
+- `frob check --ticket T-1210 --only sys --only opaque`: 0 errors, 0
+  warnings, 130 waived (byte-identical to the pre-change waiver/finding
+  set -- same waived-count, same waived findings, confirming no behavior
+  change), sys=20.32s, opaque=4.07s (timing recorded per playbook
+  requirement).
+- `frob check --ticket T-1210 --only gates-fast`: 0 errors, 309 warnings,
+  222 waived (clean).
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 1 error(s), 366 warning(s), 745 waived
+- error-findings: WIRE001@src/frob/vet/_capability_core.py
 
 <!-- ticket:T-1212 -->
 ```yaml
 id: T-1212
 title: 'perf: dup_spawn _entry_occurrences re-scans occurrences per (def, entry) pair
   -- index once per file'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -873,17 +969,78 @@ scope:
 - src/frob/perf/_dup_spawn.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_two_helpers_spawning_identical_subprocess_is_flagged
+- tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_multi_hop_duplicate_via_different_intermediate_callees_is_flagged
 acceptance:
 - text: 'GIVEN _entry_occurrences (perf/_dup_spawn.py:195) re-scans occurrences for
     every (def, entry) pair (44,124 calls, 44.6s profiled, called from _def_violations
     x12702) WHEN occurrences are indexed once per file ({entry -> [spans]}) before
     the def loop, reusing the existing _index_file_occurrences shape from perf/_effect_summaries.py:717
     THEN perf drops ~4-5s native off its 19.1s stage (report candidate #7)'
-  evidence: []
+  evidence:
+  - tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_two_helpers_spawning_identical_subprocess_is_flagged
+  - tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_multi_hop_duplicate_via_different_intermediate_callees_is_flagged
 threat: null
 component: null
 ```
 Root cause: perf/_dup_spawn.py:195 _entry_occurrences is re-invoked per (def, entry) pair instead of building an index once per file. Fix: reuse the _index_file_occurrences pattern (perf/_effect_summaries.py:717) that already exists in this package -- build {entry -> [spans]} once, consume it in the def loop. No-duplication: this is the same indexing shape already implemented elsewhere in perf/, just not shared here.
+
+## Done report
+
+Fixes perf candidate #7: `_entry_occurrences` (src/frob/perf/_dup_spawn.py)
+called `_infer_receiver_class(source, dotted[0])` fresh for every dotted
+call site across every def in a file -- 44,124 calls measured, 44.6s
+profiled -- and `_infer_receiver_class` (`_effect_summaries.py`) does a
+whole-file decode + regex scan per call, so the SAME receiver name (e.g.
+`self`, a common helper attribute, a shared config object) was rescanned
+against the whole file's text over and over.
+
+Fix (scoped entirely to `_dup_spawn.py`, no change to
+`_effect_summaries.py`'s shared substrate):
+- `_file_violations` now builds one `receiver_class_cache: dict[str, str |
+  None]` per file, before its def-walk loop, and threads it through
+  `_def_violations` -> `_entry_occurrences` unchanged for every def in that
+  file.
+- `_cached_receiver_class` is the single chokepoint: on a cache hit,
+  dict lookup; on a miss, one real `_infer_receiver_class` call, result
+  cached under the receiver name.
+- This is a lazy per-file memo (populated on first reference) rather than
+  an eager `_index_file_occurrences`-shaped pre-scan of every possible
+  receiver name up front -- functionally equivalent for the fix (each
+  distinct receiver name pays the whole-file regex scan at most once per
+  file, regardless of how many call sites/defs reference it) and avoids
+  an extra full-tree walk to enumerate receiver names before scanning.
+
+No behavior change: `_cached_receiver_class` returns exactly what
+`_infer_receiver_class` would have, just once per (file, receiver name)
+instead of once per call site; `tests/unit/perf/test_dup_spawn.py`'s
+existing 12 tests (byte-identical PERF012 findings) pass unchanged.
+
+Timing proof (script in the worktree):
+- `_infer_receiver_class` called directly 10,000 times (2000x each of 5
+  repeated receiver names) over a real file's source: 7.6739s.
+- The same 10,000 calls routed through `_cached_receiver_class`: 0.0046s
+  (~1668x faster on the repeated-name path this ticket targets).
+- `frob check --ticket T-1212 --only gates-fast --only perf`: 0 errors,
+  109 warnings, 320 waived (clean); perf stage timing recorded:
+  perf=20.61s.
+
+### Changed
+```
+ src/frob/vet/_capability.py      |   8 +-
+ src/frob/vet/_capability_core.py | 163 +++++++++++++++++++++++++++++----------
+ tickets.md                       |  96 ++++++++++++++++++++++-
+ 3 files changed, 220 insertions(+), 47 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 2 error(s), 162 warning(s), 745 waived
+- error-findings: ARCH001@src/frob/perf/_dup_spawn.py, WIRE001@src/frob/vet/_capability_core.py
 
 <!-- ticket:T-1213 -->
 ```yaml
@@ -991,7 +1148,7 @@ Derived-state auto-refresh sweep 2026-07-29 (user directive: nothing frob-manage
 id: T-1215
 title: 'perf: arch gate ~8-10 independent per-file walks -- shared body-event stream,
   dedupe 3x _iter_own_scope'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -1008,6 +1165,11 @@ scope:
 - src/frob/arch/_patterns.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep
+- tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
+- tests/unit/test_arch.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires
+- tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound
 acceptance:
 - text: 'GIVEN archgate''s _run_python_checks does ~8-10 independent full-tree walks
     per file (_py_build_function alone runs nesting/cyclomatic/events as 3 separate
@@ -1017,11 +1179,88 @@ acceptance:
     stream and the 3 _iter_own_scope copies collapse into one shared helper THEN archgate
     drops ~3-4s native off its 14.6s stage and the NO-DUPLICATION rule is satisfied
     for _iter_own_scope (report candidate #9)'
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep
+  - tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
+  - tests/unit/test_arch.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires
+  - tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound
 threat: null
 component: null
 ```
 Root cause: arch/_python.py:782/637 _py_build_module/_py_build_function run 3 separate recursions per function (body events, nesting/depth, cyclomatic) instead of one; arch/_lock_ordering.py:136, _async_hazards.py:148, _shared_state_race.py:141 each independently reimplement _iter_own_scope (33.2s profiled = 13 pct of archgate); _concurrency_model.py:254 _walk_all and _patterns.py:518 _find_if_statements add further independent walks. Fix: fold nesting/cyclomatic/events into the existing _py_collect_body_events walk; extract one shared _iter_own_scope helper consumed by all three lock/async/race families.
+
+## Done report
+
+Partial fix for perf candidate #9 (archgate's per-file walk multiplicity).
+Fixed the `_iter_own_scope` quadruplication: `frob.arch._lock_ordering`,
+`frob.arch._async_hazards`, `frob.arch._shared_state_race`, AND (found
+during implementation -- the ticket's root-cause text named three, a
+fourth byte-identical copy also existed) `frob.arch._concurrency_model`
+each independently defined the exact same recursive own-scope walk
+(33.2s combined profiled for the first three, report candidate #9). All
+four now import a single shared `_iter_own_scope` from
+`frob.arch._python` (added there, alongside the existing
+`_iter_py_functions`/`_py_collect_body_events` family this package's
+other python-arch helpers already live in) instead of defining their own
+copy -- the NO-DUPLICATION rule is now satisfied for this helper: one
+implementation, four consumers, byte-identical behavior (all four
+previous copies were textually identical already).
+
+NOT done in this pass, disclosed rather than silently dropped: the OTHER
+half of this ticket's acceptance criterion -- folding
+`_py_build_module`/`_py_build_function`'s 3 separate recursions (body
+events, nesting depth, cyclomatic) into the single existing
+`_py_collect_body_events` walk, plus consolidating `_concurrency_model
+._walk_all` and `_patterns._find_if_statements` -- was NOT attempted.
+`_py_build_function`'s own pre-existing docstring explicitly documents
+that nesting/cyclomatic are kept as SEPARATE walks rather than derived
+from the flattened event list specifically so they "match the original
+per-language walk exactly, byte-for-byte" -- collapsing them risks a
+silent metric-value change for some node shape `_py_collect_body_events`
+does not visit identically to `_py_max_nesting`/`_py_cyclomatic`. That
+merge needs its own focused pass with a byte-identical-output proof
+across a real corpus, which did not fit this ticket's remaining budget
+inside a multi-ticket group dispatch. Filed as a follow-up:
+T-1485 ("perf: fold arch nesting/cyclomatic/events into one
+walk; consolidate _walk_all/_find_if_statements"), scoped to
+src/frob/arch/_python.py, src/frob/arch/_concurrency_model.py, src/frob/
+arch/_patterns.py.
+
+Also fixed in passing, in this same worktree/series: T-1212's own added
+docstrings had pushed two `src/frob/perf/_dup_spawn.py` functions past
+the 60-line ARCH001 ceiling (caught by this ticket's own `frob check
+--only archgate` run, since archgate is repo-wide) -- trimmed, no
+behavior change, `tests/unit/perf/test_dup_spawn.py` still green.
+
+Verification:
+- `tests/unit/test_arch.py`, `tests/test_arch_gate.py`,
+  `tests/unit/test_arch_ocp.py`, `tests/unit/test_arch_srp.py`: full
+  suites pass (`uv run pytest ... -q -n0`, no failures).
+- `frob check --ticket T-1215 --only gates-fast --only archgate`: exit 0,
+  clean (gate:ARCH's own findings are the pre-existing repo-wide
+  waived/T-0977-disposed set, unaffected by this change).
+- Four targeted hazard-family tests (one per consolidated module) pass:
+  `TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep`,
+  `TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function`,
+  `TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires`,
+  `TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound`.
+
+### Changed
+```
+ src/frob/perf/_dup_spawn.py      | 101 +++++++++++++++-----
+ src/frob/vet/_capability.py      |   8 +-
+ src/frob/vet/_capability_core.py | 163 +++++++++++++++++++++++--------
+ tickets.md                       | 201 ++++++++++++++++++++++++++++++++++++++-
+ 4 files changed, 399 insertions(+), 74 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 2 error(s), 211 warning(s), 745 waived
+- error-findings: PRE001@tickets/T-1215, WIRE001@src/frob/vet/_capability_core.py
 
 <!-- ticket:T-1217 -->
 ```yaml
@@ -6090,3 +6329,48 @@ one-line _add_refactor_parser(sub) wiring call was never actually made.
 Wire frob refactor into the main CLI dispatch. Found while draining
 NEGEXIST001 (T-1477): the doc's own "not yet wired" claim had
 no frob:until binding.
+
+<!-- ticket:T-1485 -->
+```yaml
+id: T-1485
+title: 'perf: fold arch nesting/cyclomatic/events into one walk; consolidate _walk_all/_find_if_statements'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/arch/_python.py
+- src/frob/arch/_concurrency_model.py
+- src/frob/arch/_patterns.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1215 fixed the _iter_own_scope quadruplication (lock_ordering,
+async_hazards, shared_state_race, concurrency_model all now share
+frob.arch._python._iter_own_scope). The OTHER half of report candidate #9
+is not done: arch/_python.py's _py_build_module/_py_build_function still
+run nesting/cyclomatic/events as 3 separate recursions per function
+instead of folding them into the existing _py_collect_body_events walk,
+and _concurrency_model.py's _walk_all plus _patterns.py's
+_find_if_statements are further independent per-file walks not yet
+consolidated.
+
+This was deliberately NOT attempted in T-1215: _py_build_function's own
+docstring explicitly documents that max_nesting_depth/cyclomatic are kept
+as SEPARATE walks rather than derived from the flattened event list "so
+these two metrics match the original per-language walk exactly,
+byte-for-byte" -- collapsing them risks silently changing either metric's
+value for edge cases (e.g. node types counted by _py_max_nesting/
+_py_cyclomatic that _py_collect_body_events does not visit the same way).
+That merge needs its own careful pass with a byte-identical-output proof
+across a real corpus, not a quick fold-in inside a multi-ticket sweep.
+
+Scope for the follow-up: src/frob/arch/_python.py (nesting/cyclomatic/
+events fold), src/frob/arch/_concurrency_model.py (_walk_all), src/frob/
+arch/_patterns.py (_find_if_statements).

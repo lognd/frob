@@ -205,6 +205,29 @@ def _iter_py_functions(
                 yield from _iter_py_functions(body, class_prefix)
 
 
+# frob:ticket T-1215
+def _iter_own_scope(node: Node) -> Iterator[Node]:
+    """Every node in `node`'s subtree belonging to the OWNING function's own
+    scope -- stops descending at a nested `function_definition`/
+    `class_definition` boundary (that nested scope gets its own separate
+    pass via `_iter_py_functions`), so a caller's own-scope walk never
+    double-counts a nested closure's internals as the outer function's.
+
+    T-1215: this was independently reimplemented, byte-for-byte identical,
+    in `frob.arch._lock_ordering`, `frob.arch._async_hazards`,
+    `frob.arch._shared_state_race`, and `frob.arch._concurrency_model`
+    (33.2s combined profiled across a real run for the first three alone,
+    report candidate #9) -- four separate per-file recursions doing
+    exactly the same walk. This is now the single shared implementation;
+    every consumer imports it from here instead of defining their own
+    copy, satisfying the NO-DUPLICATION rule for this helper."""
+    if node.type in ("function_definition", "class_definition"):
+        return
+    yield node
+    for c in node.children:
+        yield from _iter_own_scope(c)
+
+
 def _py_function_line_count(func_node: Node) -> int:
     """Line span of `func_node`'s body block (0 when it has no body)."""
     body = _child(func_node, "body")

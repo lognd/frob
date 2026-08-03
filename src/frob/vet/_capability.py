@@ -94,8 +94,12 @@ raw-text observation is sound and does not weaken the fail-closed posture
 for executable code (the string-literal carve-out in the T-0209 paragraph
 above is about ordinary in-code string literals that CAN be an exec vector,
 e.g. an `eval`-shaped payload; a docstring never executes, so it is not
-that case). `_docstring_byte_spans` computes the same kind of span
-`_comment_byte_spans` does, for python only (the only language this module
+that case). `_docstring_byte_spans_from_tree` computes the same kind of
+span `_comment_byte_spans_from_tree` does (T-1210 renamed both to take an
+already-parsed tree rather than a path, so `_non_executable_byte_spans` can
+share one `raw_tree` parse and cache the unioned, sorted result per
+(path, content-hash) -- see that function's docstring in
+`_capability_core.py`), for python only (the only language this module
 extracts a docstring concept for at all), and `_non_executable_byte_spans`
 unions the two -- every call site that used to pass `_comment_byte_spans`
 now passes this union instead, so a needle inside a docstring is treated

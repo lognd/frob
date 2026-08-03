@@ -89,7 +89,7 @@ from tree_sitter import Node, Tree
 from frob.arch._async_hazards import _BLOCKING_CALL_TABLE, _OPEN_BUILTIN_RE
 from frob.arch._concurrency import _first_arg_names
 from frob.arch._models import ArchSuggestion
-from frob.arch._python import _iter_py_functions, _py_call_callee_text
+from frob.arch._python import _iter_own_scope, _iter_py_functions, _py_call_callee_text
 from frob.lang import child_by_field as _child
 from frob.lang import node_text as _node_text
 from frob.logging import get_logger
@@ -112,19 +112,6 @@ _SUBMIT_LIKE_RE = re.compile(r"\.(?:submit|map)$")
 #: A dispatched function whose own-scope body is this many lines or fewer
 #: counts as "trivially small" for the IPC-overhead advisory (T-0698).
 _TRIVIAL_BODY_LINE_CEILING = 3
-
-
-def _iter_own_scope(node: Node) -> Iterator[Node]:
-    """Every node in `node`'s subtree belonging to the OWNING function's
-    own scope -- stops descending at a nested `function_definition`/
-    `class_definition` boundary, same convention as this package's other
-    concurrency-hazard modules (`_lock_ordering`, `_async_hazards`,
-    `_shared_state_race`)."""
-    if node.type in ("function_definition", "class_definition"):
-        return
-    yield node
-    for c in node.children:
-        yield from _iter_own_scope(c)
 
 
 def _iter_calls(node: Node) -> Iterator[Node]:

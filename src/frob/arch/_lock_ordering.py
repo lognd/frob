@@ -102,13 +102,12 @@ sibling categories this one joins.
 from __future__ import annotations
 
 import re
-from collections.abc import Iterator
 from typing import cast
 
 from tree_sitter import Node, Tree
 
 from frob.arch._models import ArchSuggestion
-from frob.arch._python import _iter_py_functions, _py_call_callee_text
+from frob.arch._python import _iter_own_scope, _iter_py_functions, _py_call_callee_text
 from frob.lang import child_by_field as _child
 from frob.lang import node_text as _node_text
 from frob.logging import get_logger
@@ -131,19 +130,6 @@ _LOCK_CTOR_RE = re.compile(r"(?:^|\.)(?:Lock|RLock|Semaphore|BoundedSemaphore)$"
 _LOCK_NAME_HINT_RE = re.compile(r"lock|mutex|semaphore", re.IGNORECASE)
 
 _ACQUIRE_CALL_RE = re.compile(r"\.acquire$")
-
-
-def _iter_own_scope(node: Node) -> Iterator[Node]:
-    """Every node in `node`'s subtree belonging to the OWNING function's own
-    scope -- stops descending at a nested `function_definition`/
-    `class_definition` boundary, same convention as
-    `frob.arch._async_hazards._iter_own_scope` (that nested scope gets its
-    own separate pass via `_iter_py_functions`)."""
-    if node.type in ("function_definition", "class_definition"):
-        return
-    yield node
-    for c in node.children:
-        yield from _iter_own_scope(c)
 
 
 def _assignment_ctor_callee(assign_node: Node) -> Node | None:

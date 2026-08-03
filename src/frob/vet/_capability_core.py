@@ -15,9 +15,13 @@ verbatim, no behavior change.
 
 # frob:waive INV006 preset="split-carried-prose"
 # frob:ticket T-1420
+# frob:ticket T-1210
 from __future__ import annotations
 
+import bisect
+import hashlib
 import re
+import threading
 from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
@@ -82,24 +86,15 @@ _PATTERNS: dict[str, dict[str, tuple[str, ...]]] = _compile_patterns()
 ByteSpan = tuple[int, int]
 
 
-def _comment_byte_spans(path: Path) -> tuple[ByteSpan, ...]:
-    """Byte-range spans of every tree-sitter COMMENT node in `path` (T-0209).
-
-    Backs the comment-exclusion filter every needle match below is checked
-    against: a needle occurrence fully inside one of these spans is prose
-    describing an operation, not the operation itself. Returns an empty
-    tuple (never filters anything -- degrades to the pre-T-0209 unfiltered
-    scan for that file) when `frob.lang` has no grammar for `path`'s
-    extension at all, or when the file fails to parse; comment-span
-    filtering is a precision layer on top of the substring scan, never a
-    prerequisite for it."""
-    parsed = raw_tree(path)
-    if parsed.is_err:
-        return ()
-    tree, _source, language_label = parsed.danger_ok
+def _comment_byte_spans_from_tree(tree, language_label: str) -> list[ByteSpan]:  # noqa: ANN001
+    """Byte-range spans of every tree-sitter COMMENT node in an already-
+    parsed `tree` (T-1210 split out of `_non_executable_byte_spans` so a
+    single per-file parse can feed both the comment and docstring walks
+    without re-invoking `raw_tree`). Returns `[]` when `frob.lang` has no
+    comment vocabulary registered for `language_label` at all."""
     comment_types = COMMENT_TYPES.get(language_label)
     if not comment_types:
-        return ()
+        return []
 
     spans: list[ByteSpan] = []
 
@@ -111,16 +106,42 @@ def _comment_byte_spans(path: Path) -> tuple[ByteSpan, ...]:
             walk(child)
 
     walk(tree.root_node)
-    return tuple(spans)
+    return spans
+
+
+#: Sentinel second element for the `bisect` probe key in `_fully_in_any_span`
+#: below -- larger than any real byte offset this module ever sees, so
+#: `(start, _SPAN_PROBE_INF)` sorts after every real `(start, real_end)`
+#: pair sharing the same start byte (T-1210).
+_SPAN_PROBE_INF = 1 << 62
 
 
 def _fully_in_any_span(start: int, end: int, spans: tuple[ByteSpan, ...]) -> bool:
     """True if the byte range `[start, end)` is fully covered by one span in
     `spans` (T-0209: the comment-containment test every needle hit passes
-    through before it counts as an observation)."""
-    return any(
-        span_start <= start and end <= span_end for span_start, span_end in spans
-    )
+    through before it counts as an observation).
+
+    T-1210: `spans` is now always produced by `_non_executable_byte_spans`,
+    sorted by start byte and internally disjoint (a comment node and a
+    docstring `string` node can never overlap in the same parse tree), so
+    containment reduces to one `bisect` lookup rather than a linear `any()`
+    scan over every span for every candidate (report candidate #5: 7.8M
+    genexpr steps in `sys` alone measured pre-fix). Probing with `(start,
+    _SPAN_PROBE_INF)` finds the insertion point one PAST every span whose
+    own start is `<= start` in a single lookup, without materializing a
+    parallel starts array per call -- `bisect` compares `ByteSpan` 2-tuples
+    lexicographically, so this needs no custom key function. A caller that
+    (unusually) passes an unsorted/overlapping `spans` tuple of its own
+    would get a wrong answer here; every call site in this module goes
+    through `_non_executable_byte_spans`, which guarantees the
+    precondition."""
+    if not spans:
+        return False
+    idx = bisect.bisect_right(spans, (start, _SPAN_PROBE_INF)) - 1
+    if idx < 0:
+        return False
+    span_start, span_end = spans[idx]
+    return span_start <= start and end <= span_end
 
 
 #: python container node types whose body can open with a docstring
@@ -156,23 +177,19 @@ def _py_leading_docstring_node(container):  # noqa: ANN001, ANN201 -- tree_sitte
     return None
 
 
-def _docstring_byte_spans(path: Path) -> tuple[ByteSpan, ...]:
+def _docstring_byte_spans_from_tree(tree, language_label: str) -> list[ByteSpan]:  # noqa: ANN001
     """Byte-range spans of every module/class/function-head docstring
-    STRING node in `path` (T-0769) -- python only, the only language this
-    module extracts a docstring concept for. A docstring is a non-
-    executable string constant; needle prose written there (fork/subprocess
-    hazard documentation, e.g.) must not count as an observed capability
-    any more than the same prose in a `#` comment would (see module
-    docstring T-0769 entry for the false-positive this closes). Returns an
-    empty tuple for a non-python file, an unparseable file, or one
-    `frob.lang` has no grammar for -- same degrade-gracefully posture as
-    `_comment_byte_spans`."""
-    parsed = raw_tree(path)
-    if parsed.is_err:
-        return ()
-    tree, _source, language_label = parsed.danger_ok
+    STRING node in an already-parsed `tree` (T-0769; T-1210 split out of
+    `_non_executable_byte_spans` for the shared-parse fix -- see
+    `_comment_byte_spans_from_tree`'s docstring) -- python only, the only
+    language this module extracts a docstring concept for. A docstring is a
+    non-executable string constant; needle prose written there (fork/
+    subprocess hazard documentation, e.g.) must not count as an observed
+    capability any more than the same prose in a `#` comment would (see
+    module docstring T-0769 entry for the false-positive this closes).
+    Returns `[]` for any non-python `language_label`."""
     if language_label != "python":
-        return ()
+        return []
 
     spans: list[ByteSpan] = []
 
@@ -185,17 +202,79 @@ def _docstring_byte_spans(path: Path) -> tuple[ByteSpan, ...]:
             walk(child, False)
 
     walk(tree.root_node, True)
-    return tuple(spans)
+    return spans
+
+
+#: Process-lifetime memo for `_non_executable_byte_spans`, keyed on
+#: `(str(path), sha256(source).hexdigest())` -- the same content-hash-keyed
+#: shape as `frob.lang`'s own `_parse_cache` (T-0414), never mtime/size, so
+#: a content change always misses and a byte-identical revisit always hits
+#: regardless of which caller (gate, path) asks first (T-1210). Before this,
+#: `sys`+`opaque` each independently re-walked the SAME file's comment and
+#: docstring node trees once per public entry point that touches it
+#: (`scan_file_capabilities`, `_scan_file_operations`, `_scan_file_
+#: fingerprints`, `_opaque_indirection_findings`, `non_executable_line_
+#: numbers` -- five call sites in `_capability.py` alone, each independently
+#: recomputing the same spans for the same file within one `frob check`
+#: run). Guarded by a lock for the same reason `_parse_cache` is: gate
+#: stages run concurrently in a `ThreadPoolExecutor`.
+_span_cache_lock = threading.Lock()
+_span_cache: dict[tuple[str, str], tuple[ByteSpan, ...]] = {}
+
+
+def _reset_span_cache() -> None:
+    """Clear the process-lifetime `_non_executable_byte_spans` memo
+    (T-1210) -- mirrors `frob.lang.reset_parse_cache`'s per-invocation
+    hygiene job so a long-lived process (a test session, the MCP server)
+    does not accumulate stale entries across runs. Never required for
+    correctness: the cache is content-hash-keyed, so a changed file is
+    never served a stale entry; this only frees memory and resets the
+    memo for instrumentation/testing purposes. Kept private (no `frob
+    check`-facing public API surface added) -- nothing outside this
+    module's own tests needs to call it."""
+    with _span_cache_lock:
+        _span_cache.clear()
 
 
 def _non_executable_byte_spans(path: Path) -> tuple[ByteSpan, ...]:
     """Every byte span in `path` that is prose, not executable code (T-0769):
     tree-sitter comment spans (T-0209) unioned with python docstring spans
-    (T-0769 above). Every raw-text needle-scan call site in this module
-    that used to exclude comment spans alone now excludes this union
-    instead -- a needle hit fully inside either kind of span is
-    documentation describing an operation, never the operation itself."""
-    return _comment_byte_spans(path) + _docstring_byte_spans(path)
+    (T-0769 above), SORTED by start byte (T-1210 -- `_fully_in_any_span`'s
+    bisect containment check requires this). Every raw-text needle-scan
+    call site in this module that used to exclude comment spans alone now
+    excludes this union instead -- a needle hit fully inside either kind of
+    span is documentation describing an operation, never the operation
+    itself.
+
+    T-1210: memoized per `(path, content-hash)` in `_span_cache` -- a single
+    `raw_tree` parse (itself already `frob.lang`-cached, T-0414) now backs
+    ONE comment walk and ONE docstring walk per distinct file content for
+    the whole process lifetime, shared across every caller (`sys`'s three
+    entry points, `opaque`'s one, `non_executable_line_numbers`) instead of
+    each independently re-walking the same tree. Returns `()` (never
+    filters anything, same degrade-gracefully posture as before) when
+    `path` fails to parse or `frob.lang` has no grammar for its
+    extension."""
+    parsed = raw_tree(path)
+    if parsed.is_err:
+        return ()
+    tree, source, language_label = parsed.danger_ok
+
+    key = (str(path), hashlib.sha256(source).hexdigest())
+    with _span_cache_lock:
+        cached = _span_cache.get(key)
+    if cached is not None:
+        return cached
+
+    spans = tuple(
+        sorted(
+            _comment_byte_spans_from_tree(tree, language_label)
+            + _docstring_byte_spans_from_tree(tree, language_label)
+        )
+    )
+    with _span_cache_lock:
+        _span_cache[key] = spans
+    return spans
 
 
 #: operator bytes a needle-to-regex conversion treats as "whitespace may
