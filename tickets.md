@@ -4633,3 +4633,23 @@ threat: null
 component: null
 ```
 Correctness criterion for ALL persistent caches is one theorem: for any repo state S and cache state C, check(S, C) == check(S, empty) -- observational equivalence, stronger than INV-003's rebuildability (deleting is safe) because it asserts a STALE-BUT-PRESENT cache never changes results. Today this is tested pointwise only: tests/test_gate_cache.py has the right shape (cold/warm violation-fingerprint equality incl. a randomized multi-round mutate-and-compare walk, plus the T-1454 ack-invalidation regression); tests/unit/test_lang_artifact_cache.py covers hit/miss only, no equivalence sweep; coverage lock/stamp, tickets-archive-cache.json, pytest-collect.json, hotgraph_sketches.db, check-budget-timing.json have no equivalence coverage at all. Deliverables: (1) new invariants/INV-0xx.md stating the transparency theorem with the full cache inventory enumerated; (2) a shared hypothesis-style property harness (arbitrary edit sequences: touch/rename/delete/revert/content-change, assert cold==warm fingerprints after each step) parameterized over each cache, generalizing test_gate_cache.py's rounds; (3) every cache either covered by the harness or carrying a frob:waive naming a ticket.
+
+<!-- ticket:T-1520 -->
+```yaml
+id: T-1520
+title: 'CACHE001 static gate: a cached computation''s observed read-set must be covered
+  by its cache-key inputs'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-04'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+The recurring cache-bug class is key incompleteness: the computation reads an input the key does not cover, so a change to that input serves a stale result (real incident: T-1454 -- frob ack rewrote frob.lock, no tracked source digest changed, cached DRIFT001 went stale). This is statically checkable with machinery frob already has: the vet/effect scan observes what files/inputs a function reads; a new CACHE001 detector requires every memoize_per_run/persistent-cache-backed computation to declare its key inputs (content hashes, config fields, lock files) and errors when the observed read-set is not covered by the declared keys -- prove-or-justify, with frob:waive+ticket for genuinely dynamic reads. This makes cache correctness a GATE, not a hope, per the static-quality vision (cannot write bad code silently) and the perf-findings-become-lint-rules rule. Pairs with the observational-transparency invariant ticket filed alongside this one.
