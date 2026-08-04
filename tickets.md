@@ -1481,7 +1481,7 @@ Verification:
 id: T-1217
 title: 'perf: process-pool gate workers re-derive per-file artifacts -- persist derived
   artifacts keyed by content hash'
-state: queued
+state: dropped
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -1510,6 +1510,8 @@ component: null
 ```
 Root cause: gates/__init__.py:6050 _run_process_gate ships gates to a ProcessPoolExecutor with no run_memo_scope and no shared parse-artifact cache, unlike check/__init__.py:612 which wraps thread stages with memoization. Each pool worker re-parses and re-extracts the whole repo independently. Fix (Python-side, precedes any Rust migration): persist derived per-file artifacts (body tokens, leaf identifiers, comment/docstring spans, import specs) in a sqlite table keyed by the content hash already in cache.db; parse_file/extract read this table instead of re-walking trees. This is the single largest summed cost in the profile and should land before or alongside EPIC B's Rust migration, not instead of it -- Rust makes the per-artifact compute cheaper, this ticket stops it from being redone N times.
 
+## Drop reason
+- 2026-08-04: Superseded by T-1464: T-1217's declared scope cannot structurally reach the real fix; T-1464 carries the implementation and evidence
 <!-- ticket:T-1218 -->
 ```yaml
 id: T-1218
