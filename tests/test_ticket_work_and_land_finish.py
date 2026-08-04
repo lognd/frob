@@ -425,6 +425,7 @@ class TestPostLandUnscopedSweep:
 
 
 # frob:ticket T-1514
+# frob:ticket T-1524
 class TestPreCommitUnscopedSweepFn:
     """T-1514's `_pre_commit_unscoped_error_sweep`: same identity-set
     comparison/Tier-A-retry logic as `TestPostLandUnscopedSweep` above,
@@ -516,6 +517,53 @@ class TestPreCommitUnscopedSweepFn:
             "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
             lambda root, ticket_id, **kw: frozenset(
                 {("X001", "a.txt"), ("Z003", "c.txt")}
+            ),
+        )
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._sweep_apply_tier_a_pre_commit",
+            lambda root, ticket_id: frozenset(),
+        )
+        result = _pre_commit_unscoped_error_sweep(tmp_path, "T-0001", "T-0001", baseline)
+        assert result is False
+
+    # frob:ticket T-1524
+    # frob:tests \
+    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_land\
+    # _owned_only_findings_are_exempt_and_pass
+    def test_land_owned_only_findings_are_exempt_and_pass(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-1524: PRE001/SCOPE001 against the land's own staged REL001
+        bump files must not refuse the land -- they are land-machinery
+        artifacts, exempt (loudly logged) from the refusal decision."""
+        baseline = frozenset({("X001", "a.txt")})
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda root, ticket_id, **kw: frozenset(
+                {
+                    ("X001", "a.txt"),
+                    ("PRE001", ".frob-release.json"),
+                    ("SCOPE001", str(tmp_path / "pyproject.toml")),
+                }
+            ),
+        )
+        result = _pre_commit_unscoped_error_sweep(tmp_path, "T-0001", "T-0001", baseline)
+        assert result is True
+
+    # frob:ticket T-1524
+    # frob:tests \
+    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_nest\
+    # ed_land_owned_name_is_not_exempt
+    def test_nested_land_owned_name_is_not_exempt(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-1524 boundary: a NESTED pyproject.toml (fixture tree, not the
+        repo root's) is a real finding and still refuses."""
+        baseline: frozenset[tuple[str, str]] = frozenset()
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda root, ticket_id, **kw: frozenset(
+                {("SCOPE001", "tests/fixtures/proj/pyproject.toml")}
             ),
         )
         monkeypatch.setattr(

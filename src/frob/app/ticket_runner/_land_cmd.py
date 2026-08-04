@@ -619,8 +619,38 @@ def _sweep_apply_tier_a_pre_commit(root: Path, ticket_id: str) -> frozenset[str]
     return frozenset(touched_paths)
 
 
+# frob:ticket T-1524
+#: Land-owned artifacts the land machinery itself rewrites in the staged
+#: squash (REL001 bump trio + uv resync). Findings against these at the
+#: pre-commit checkpoint are land-machinery artifacts, not the ticket's --
+#: only `frob ticket land` ever writes them (T-0731), and land's own
+#: REL001/ledger finalization governs their hygiene after the commit.
+_LAND_OWNED_SWEEP_EXEMPT = frozenset(
+    {".frob-release.json", "CHANGELOG.md", "pyproject.toml", "uv.lock"}
+)
+
+
+# frob:ticket T-1524
+def _is_land_owned_finding(root: Path, file_field: str) -> bool:
+    """True when a sweep finding's file field names a repo-ROOT land-owned
+    artifact (`_LAND_OWNED_SWEEP_EXEMPT`), whether reported repo-relative
+    (`.frob-release.json`) or absolute (`<root>/pyproject.toml`).
+    Deliberately matches only root-level paths -- a nested
+    `pyproject.toml` inside a fixture tree is a real finding, not
+    land's."""
+    normalized = file_field.replace("\\", "/").rstrip("/")
+    if normalized in _LAND_OWNED_SWEEP_EXEMPT:
+        return True
+    root_prefix = str(root).replace("\\", "/").rstrip("/") + "/"
+    return (
+        normalized.startswith(root_prefix)
+        and normalized[len(root_prefix) :] in _LAND_OWNED_SWEEP_EXEMPT
+    )
+
+
 # frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1514
+# frob:ticket T-1524
 def _pre_commit_unscoped_error_sweep(
     root: Path,
     ticket_id: str,
@@ -664,6 +694,23 @@ def _pre_commit_unscoped_error_sweep(
         return None
 
     new_findings = fresh - baseline_findings
+    exempt = frozenset(
+        f for f in new_findings if _is_land_owned_finding(root, f[1])
+    )
+    if exempt:
+        # T-1524: findings against land-owned artifacts at this checkpoint
+        # are the land's OWN staged REL001 bump / uv resync, not the
+        # ticket's -- logged loudly (never silently dropped), then excluded
+        # from the refusal decision.
+        _log.warning(
+            "ticket land: %s pre-commit unscoped sweep excluding %d "
+            "finding(s) on land-owned file(s) staged by the land itself "
+            "(T-1524): %s",
+            final_id,
+            len(exempt),
+            sorted(exempt),
+        )
+        new_findings = new_findings - exempt
     if not new_findings:
         _log.info(
             "ticket land: %s pre-commit unscoped sweep clean (0 new "
@@ -683,6 +730,9 @@ def _pre_commit_unscoped_error_sweep(
     fixed_paths = _sweep_apply_tier_a_pre_commit(root, ticket_id)
     reverify = _unscoped_error_findings(root, ticket_id) if fixed_paths else fresh
     still_new = (reverify - baseline_findings) if reverify is not None else new_findings
+    still_new = frozenset(
+        f for f in still_new if not _is_land_owned_finding(root, f[1])
+    )
     if not still_new:
         _log.info(
             "ticket land: %s pre-commit Tier-A auto-fix resolved every new "
