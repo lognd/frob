@@ -217,6 +217,10 @@ _KNOWN_GATE_RULES = frozenset(
         # T-0755: a ticket's bound evidence killed zero mutants of a
         # diff-touched file it claims to cover -- confirmatory-only.
         "TEST016",
+        # T-1489: coverage.xml joins far fewer known modules than the
+        # snapshot has -- deflation, split out of TEST011 as its own
+        # blocking rule (see `frob.gates._test017_deflation`).
+        "TEST017",
         # T-1421/T-1427: a bug/security ticket's designated evidence test
         # must have genuinely FAILED at its parent commit (the mechanical
         # "the defect no longer reproduces" check); see

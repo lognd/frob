@@ -721,7 +721,7 @@ def _artifact_fingerprint() -> str:
 # DEAD001/call-graph purposes (_WRAPPER_MARKER_NAMES, T-0583) -- the exact same shape \
 # _parse_file_uncached itself used before this ticket, which never tripped WIRE001 \
 # only because this ticket's own new helpers also call it directly with parens" \
-# follow_up="T-1489"
+# follow_up="T-1502"
 def _parse_file_with_artifact_cache(path: Path) -> Result[ParsedFile, LangError]:
     """`_parse_file_uncached`, wrapped with a persistent, content-hash-keyed
     artifact lookup (T-1464) -- the actual body `parse_file` wraps in

@@ -7225,8 +7225,8 @@ class TestTestGate:
         assert test011[0].severity == Severity.WARN
         assert "predates" in test011[0].message
 
-    def test_test011_fires_on_low_join_fraction(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/__init__.py::_test011_freshness
+    def test_test017_fires_on_low_join_fraction(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_test017_deflation
         from typani.option import Some
 
         from frob.gates import CoverageData
@@ -7242,9 +7242,11 @@ class TestTestGate:
         tests = CollectedTests(node_ids=frozenset())
         violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
         test011 = [v for v in violations if v.rule == "TEST011"]
-        assert len(test011) == 1
-        assert test011[0].severity == Severity.WARN
-        assert "deflated" in test011[0].message
+        assert len(test011) == 0
+        test017 = [v for v in violations if v.rule == "TEST017"]
+        assert len(test017) == 1
+        assert test017[0].severity == Severity.ERROR
+        assert "deflated" in test017[0].message
 
     def test_test011_silent_when_fresh_and_fully_joined(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::_test011_freshness
@@ -7263,6 +7265,7 @@ class TestTestGate:
         tests = CollectedTests(node_ids=frozenset())
         violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
         assert not any(v.rule == "TEST011" for v in violations)
+        assert not any(v.rule == "TEST017" for v in violations)
 
     # frob:ticket T-0545
     def test_test012_missing_lock_warns(self, tmp_path: Path) -> None:

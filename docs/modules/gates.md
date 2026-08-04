@@ -56,6 +56,8 @@ declaration).
 | TEST005 | test | measured coverage below threshold (per-symbol branch, per-module line, or per-system line) |
 | TEST006 | test | coverage evidence missing, or stale against current file hashes |
 | TEST007 | test | a cross-package `frob:uses-contract` dependency has no pairwise integration test covering that boundary (opt-in via `[testing].pair_integration`) |
+| TEST011 | test | (warn) coverage.xml predates a tracked source change (`stale_by_mtime`) -- see "TEST011/TEST017 (T-0464/T-1489)" below |
+| TEST017 | test | coverage.xml joins far fewer known modules than the snapshot has -- deflation, e.g. dropped subprocess coverage (`module_join_fraction`) -- see "TEST011/TEST017 (T-0464/T-1489)" below |
 | DOC001 | doclink | a doc file matching `[gates.docs] include` globs (default `docs/**/*.md` -- new files auto-obligated) has no frob:describes anchor, no frob:doc edge into it, and is unreachable via markdown links from the roots (docs/index.md, README.md) |
 | DOC002 | docanchor | a `frob:doc <file>#<slug>` edge whose target doesn't resolve: missing `#anchor`, missing file, or `<slug>` matches neither a heading slug (`frob.graph.dsl.slugify`) nor an explicit `<a id="...">` in `<file>` |
 | DOC008 | doclink | (T-1231) an obligated doc's own inline markdown link `[text](target#frag)` doesn't resolve: relative `target` isn't a real file, or `#frag` matches neither a heading slug nor an explicit `<a id="...">` in the target |
@@ -1302,6 +1304,47 @@ worktree deliberately carrying a not-yet-landed schema-extending field
 across a short review window) can be dispositioned with a reasoned
 `frob:waive TICK008 reason="..."` instead of blocking on it.
 
+### TEST011/TEST017 (T-0464/T-1489)
+
+<!-- frob:describes src/frob/gates/__init__.py::_test011_freshness -->
+<!-- frob:describes src/frob/gates/__init__.py::_test017_deflation -->
+
+T-0464 originally folded two independent freshness signals for
+`coverage.xml` into one WARN-only rule, TEST011: `stale_by_mtime`
+(coverage.xml is older than the newest known source file) and
+`module_join_fraction` (coverage.xml's `<class>` entries joined to far
+fewer known modules than the snapshot actually has -- the fingerprint of
+a run that only measured the main pytest process and never merged
+subprocess coverage).
+
+T-1205 acceptance[1]'s second half asked for this to become a genuinely
+blocking freshness contract instead of an advisory a reader can ignore
+(the exact failure mode of the 2026-07-31 incident: an agent trusted a
+23-hour-stale stamp and closed a ticket having fixed 1 of 64 real
+findings). T-1489 investigated the rollout risk of simply flipping
+TEST011 to ERROR and found the two signals it combines have very
+different steady-state behavior:
+
+- `stale_by_mtime` is TRUE for most of any active working tree's life --
+  any source edit made after the last `make coverage` run makes
+  coverage.xml stale by definition, which is the ordinary, constant state
+  of normal dev flow, not a sign anything is wrong. Escalating this to
+  ERROR would gate the entire repo on routine editing.
+- `module_join_fraction` has no such noise floor -- a healthy `make
+  coverage` run joins close to 100% of known modules every single time.
+  A fraction below `_TEST011_JOIN_FLOOR` (0.5) is a specific, rare
+  corruption signature (T-0464's original incident: subprocess coverage
+  silently dropped), not something that fires under ordinary conditions.
+
+T-1489's decision: split the deflation signal out of TEST011 into its own
+rule, **TEST017**, and promote only TEST017 to ERROR severity. TEST011
+keeps `stale_by_mtime` at WARN, unchanged -- flipping it would trade one
+failure mode (a stale finding read as current fact) for a worse one (a
+gate that fails on every checkout with an uncommitted edit). TEST017 is
+registered in `_UNWAIVABLE`-adjacent form like every other TEST0xx rule
+(waivable via `frob:waive TEST017 reason="..."`, same as TEST011) --
+promotion to ERROR is a default-severity change, not an unwaivable one.
+
 ### TICK009/TICK010 (T-0714)
 
 <!-- frob:describes src/frob/gates/_tickets_gate.py::_tick009_scope_breadth_nudges -->
@@ -2102,10 +2145,12 @@ next leverage point, tracked as a follow-up rather than attempted here.
   `snapshot`, refuses to write `.frob/coverage-stamp`/`frob-coverage.
   lock.json` at all (`Err(GateError.CoverageDeflated)`) whenever the
   filtered `CoverageData.module_join_fraction` falls below the same 0.5
-  floor TEST011 only warns about (`_DEFLATION_FLOOR`, `frob.gates.
-  _coverage`) -- promoting that WARN-advisory heuristic into a hard
-  pre-stamp gate, since a run that silently dropped subprocess coverage
-  used to stamp clean and only get flagged after the fact.
+  floor TEST017 (T-1489; formerly the deflation half of TEST011, see
+  "TEST011/TEST017 (T-0464/T-1489)" below) blocks on at check time
+  (`_DEFLATION_FLOOR`, `frob.gates._coverage`) -- a stamp-time refusal on
+  top of the check-time gate, since a run that silently dropped
+  subprocess coverage used to stamp clean and only get flagged after the
+  fact.
 - `stamp_coverage`'s T-1236 canary-module guard -- `module_join_fraction`
   alone cannot catch every deflation shape: a module that never got
   traced still JOINS against `coverage.xml`, just at 0% line-rate, so the
