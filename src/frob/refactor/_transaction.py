@@ -16,7 +16,6 @@ from typani import Err, Ok
 from typani.result import Result
 
 from frob.logging import get_logger
-from frob.process._guard import guarded_subprocess_run
 from frob.refactor._alias_policy import resolve_rename_dest_collision
 from frob.refactor._apply import apply_plan, build_move_ops
 from frob.refactor._directives import (
@@ -24,6 +23,7 @@ from frob.refactor._directives import (
     extend_span_for_attached_directives,
     scan_directive_carriers,
 )
+from frob.refactor._gitops import current_sha, git, working_tree_clean
 from frob.refactor._models import (
     AliasRecord,
     RefactorError,
@@ -55,40 +55,6 @@ from frob.refactor._verify import (
 _log = get_logger(__name__)
 
 __all__ = ["build_plan", "run_refactor"]
-
-
-def _git(repo_root: Path, *args: str, timeout: int = 30):
-    """One `git` invocation inside `repo_root`, routed through the same
-    exec kill-switch every other subprocess call in this package uses."""
-    return guarded_subprocess_run(
-        ["git", *args],
-        cwd=str(repo_root),
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-    )
-
-
-def _working_tree_clean(repo_root: Path) -> Result[bool, RefactorError]:
-    """`True` iff `git status --porcelain` is empty -- the precondition
-    the design doc's Transaction model assumes (the caller's own worktree
-    commit discipline, not this engine's job to enforce by committing
-    unrelated WIP for them)."""
-    result = _git(repo_root, "status", "--porcelain")
-    if result.is_err:
-        return Err(RefactorError.GitError)
-    proc = result.danger_ok
-    if proc.returncode != 0:
-        return Err(RefactorError.NotAGitRepo)
-    return Ok(proc.stdout.strip() == "")
-
-
-def _current_sha(repo_root: Path) -> Result[str, RefactorError]:
-    """The `HEAD` sha this transaction will roll back to on failure."""
-    result = _git(repo_root, "rev-parse", "HEAD")
-    if result.is_err or result.danger_ok.returncode != 0:
-        return Err(RefactorError.GitError)
-    return Ok(result.danger_ok.stdout.strip())
 
 
 def _colliding_destination_symbol(repo_root: Path, resolved, destination: SymbolRef):
@@ -285,16 +251,16 @@ def _commit_plan(
     failing. Split out of `run_refactor` to keep it under the ARCH001
     line budget.
     """
-    commit_result = _git(repo_root, "add", "-A")
+    commit_result = git(repo_root, "add", "-A")
     if commit_result.is_err or commit_result.danger_ok.returncode != 0:
-        _git(repo_root, "reset", "--hard", pre_sha)
+        git(repo_root, "reset", "--hard", pre_sha)
         return Err(RefactorError.GitError)
     commit_msg = f"wip(refactor): {kind.value} {source.dotted} -> {destination.dotted}"
-    commit_result = _git(repo_root, "commit", "-m", commit_msg)
+    commit_result = git(repo_root, "commit", "-m", commit_msg)
     if commit_result.is_err or commit_result.danger_ok.returncode != 0:
-        _git(repo_root, "reset", "--hard", pre_sha)
+        git(repo_root, "reset", "--hard", pre_sha)
         return Err(RefactorError.GitError)
-    commit_sha_result = _current_sha(repo_root)
+    commit_sha_result = current_sha(repo_root)
     return Ok(commit_sha_result.danger_ok if commit_sha_result.is_ok else "")
 
 
@@ -332,13 +298,13 @@ def _resolve_and_plan(
     """`run_refactor`'s precondition-then-plan preamble: confirm a clean
     tree, capture the pre-transaction sha, then `build_plan`. Split out
     of `run_refactor` to keep it under the ARCH001 line budget."""
-    clean_result = _working_tree_clean(repo_root)
+    clean_result = working_tree_clean(repo_root)
     if clean_result.is_err:
         return Err(clean_result.danger_err)
     if not clean_result.danger_ok:
         return Err(RefactorError.DirtyWorkingTree)
 
-    sha_result = _current_sha(repo_root)
+    sha_result = current_sha(repo_root)
     if sha_result.is_err:
         return Err(sha_result.danger_err)
     pre_sha = sha_result.danger_ok
@@ -384,8 +350,8 @@ def run_refactor(
         # Nothing was committed yet; a partial write here would still be
         # uncommitted, so a plain reset (not reset --hard, no commit
         # exists yet to reset past) is enough to restore a clean tree.
-        _git(repo_root, "checkout", "--", ".")
-        _git(repo_root, "clean", "-fd", "--", *(str(p) for p in plan.touched_files))
+        git(repo_root, "checkout", "--", ".")
+        git(repo_root, "clean", "-fd", "--", *(str(p) for p in plan.touched_files))
         # Propagate apply_plan's own error value (e.g. OverlappingRewrites
         # detected before any write, vs. an OSError mid-write surfacing as
         # ApplyFailed) rather than collapsing every apply-phase failure
@@ -412,7 +378,7 @@ def run_refactor(
     rolled_back = False
     if not success:
         _log.warning("refactor.transaction: verify failed, rolling back to %s", pre_sha)
-        reset_result = _git(repo_root, "reset", "--hard", pre_sha)
+        reset_result = git(repo_root, "reset", "--hard", pre_sha)
         rolled_back = reset_result.is_ok and reset_result.danger_ok.returncode == 0
 
     report = RefactorReport(

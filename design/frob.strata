@@ -2185,26 +2185,33 @@ node mutate : trusted {
 // frob:ticket T-1267
 node refactor : trusted {
     attr interface=AliasRecord;
+    attr interface=ChunkReport;
     attr interface=RefactorError;
     attr interface=RefactorKind;
     attr interface=RefactorPlan;
     attr interface=RefactorReport;
     attr interface=ResolvedSymbol;
     attr interface=RewriteOp;
+    attr interface=SplitReport;
     attr interface=SymbolRef;
     attr interface=VerifyOutcome;
     attr interface=add_refactor_parser;
     attr interface=apply_plan;
     attr interface=build_move_ops;
     attr interface=build_plan;
+    attr interface=build_reexport_shim_op;
     attr interface=carry_lock_acks;
+    attr interface=chunk_symbols;
+    attr interface=current_sha;
     attr interface=extend_span_for_attached_directives;
     attr interface=find_python_files;
+    attr interface=git;
     attr interface=module_to_path;
     attr interface=resolve_rename_dest_collision;
     attr interface=resolve_symbol;
     attr interface=run_refactor;
     attr interface=run_refactor_command;
+    attr interface=run_split;
     attr interface=scan_directive_carriers;
     attr interface=scan_doc_anchor_carriers;
     attr interface=scan_docs_prose_mentions;
@@ -2216,6 +2223,7 @@ node refactor : trusted {
     attr interface=verify_check_delta;
     attr interface=verify_import_resolution;
     attr interface=verify_pytest_collect;
+    attr interface=working_tree_clean;
     clearance Internal;
     code "src/frob/refactor/**";
     may "fs.read";
@@ -3082,7 +3090,6 @@ node testsuite : trusted {
     attr interface=TY_NOTE;
     attr interface=TY_OUTPUT;
     attr interface=TY_SIMPLE;
-    attr interface=TestExtractTreePythonParity;
     attr interface=TestAbsorbPreLandFixes;
     attr interface=TestAbstractionOpportunityDiscriminators;
     attr interface=TestAcceptCliAmendRemove;
@@ -3306,10 +3313,6 @@ node testsuite : trusted {
     attr interface=TestCliSysExport;
     attr interface=TestClientVersion;
     attr interface=TestClipboardAttachOnNew;
-    attr interface=TestClusterBrief;
-    attr interface=TestClusterDescendants;
-    attr interface=TestClusterScopeConflict;
-    attr interface=TestClusterUnionScope;
     attr interface=TestCloseEvidenceDoneReportRequeueAutoCommit;
     attr interface=TestCloseFailAfterMerge;
     attr interface=TestCloseFailureHintMutationEvidence;
@@ -3330,6 +3333,10 @@ node testsuite : trusted {
     attr interface=TestClosedTicketIds;
     attr interface=TestClosedWorldAccounting;
     attr interface=TestClosure;
+    attr interface=TestClusterBrief;
+    attr interface=TestClusterDescendants;
+    attr interface=TestClusterScopeConflict;
+    attr interface=TestClusterUnionScope;
     attr interface=TestCmdEvidence;
     attr interface=TestCmdEvidenceAcceptsBinding;
     attr interface=TestCmplRegistry;
@@ -3656,6 +3663,7 @@ node testsuite : trusted {
     attr interface=TestExtraKey;
     attr interface=TestExtract;
     attr interface=TestExtractEffects;
+    attr interface=TestExtractTreePythonParity;
     attr interface=TestFailCliRequeues;
     attr interface=TestFailedRunNeverPromotesPartialData;
     attr interface=TestFailureLog;
@@ -3740,6 +3748,7 @@ node testsuite : trusted {
     attr interface=TestGitCommonDir;
     attr interface=TestGitFailureMessageCarriesStderr;
     attr interface=TestGitHubPushProtectionUnflaggable;
+    attr interface=TestGitOps;
     attr interface=TestGitSubprocessFailures;
     attr interface=TestGitlessTargetGateSeverity;
     attr interface=TestGitlogAllFlag;
@@ -4358,6 +4367,7 @@ node testsuite : trusted {
     attr interface=TestRunRefactor;
     attr interface=TestRunSmellChecks;
     attr interface=TestRunSocketDaemon;
+    attr interface=TestRunSplit;
     attr interface=TestRunSrpChecks;
     attr interface=TestRunTouchedTests;
     attr interface=TestRunTypeDesignChecks;
@@ -4468,7 +4478,9 @@ node testsuite : trusted {
     attr interface=TestSpliceLedgerRicherStatePreference;
     attr interface=TestSpliceOnlyTicket;
     attr interface=TestSpliceOnlyTicketIdTitleMismatchRefusal;
+    attr interface=TestSplitChunking;
     attr interface=TestSplitReconciliation;
+    attr interface=TestSplitReexport;
     attr interface=TestSplitWaiverRule;
     attr interface=TestSpof;
     attr interface=TestSprintAssign;

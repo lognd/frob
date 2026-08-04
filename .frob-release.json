@@ -1017,6 +1017,9 @@
     "src/frob/refactor/_directives.py::carry_lock_acks": "6bdaaab6ef9391161807a529bea29373c561d12336476dc8bd7f937277c91aaf",
     "src/frob/refactor/_directives.py::extend_span_for_attached_directives": "6a7a3222132c30121feb1e25f3b1f267c7bf8925216e2761d17ffb6ed11f3438",
     "src/frob/refactor/_directives.py::scan_directive_carriers": "a5a674b5a6fd354e073b7d94a11bec46eb4fa38bebcf84868d35b4a46a1ac195",
+    "src/frob/refactor/_gitops.py::current_sha": "295965e2fab10f5081ee8e2b621bfcd9ee61a39b62eba6179cce44cd8ef084d8",
+    "src/frob/refactor/_gitops.py::git": "e7a5fc2342c3c9547634b177c93c1104217775d3105aeb4393cadec54fac6ca9",
+    "src/frob/refactor/_gitops.py::working_tree_clean": "11b8007ebda25090ec5e1bf612938df9c805ce2b77a6b119a12abc5f143c1555",
     "src/frob/refactor/_models.py::AliasRecord": "726c95ebe602d8fa9c5e34fde7dc3203f98ca458633d3bfd96956dcf0e565205",
     "src/frob/refactor/_models.py::RefactorError": "738bd3fd1300c6b6e911af0991030d18ffec6d9887523f640d2d513ba10d9f53",
     "src/frob/refactor/_models.py::RefactorKind": "1d8023798277225d7845109a133b696bbe81a28f5bec7d42740a8bb0f10760fb",
@@ -1040,6 +1043,14 @@
     "src/frob/refactor/_resolve.py::resolve_symbol": "6f63b6425f6c3a2b3d7222230f89dbd54b283ac4efe35bf5b3584602741df16f",
     "src/frob/refactor/_scan.py::find_python_files": "1ebaab7e2a65af80125aa0800cb19d476f4240254ab3d2a4b5230fc66dc4d915",
     "src/frob/refactor/_scan.py::scan_references": "1098e36fa2fc8159e6a9aefadb924295dd4c07bb9468aa3d945e5803d021b212",
+    "src/frob/refactor/_split.py::ChunkReport": "bcf3225ec7ced77b8f427311d176646676bb11a664a42f92b71e406b525151fd",
+    "src/frob/refactor/_split.py::DEFAULT_CHUNK_SIZE": "8633df40189c5761003c8bcd9b26472a4cf85ceea35e7b23acc328750c66346e",
+    "src/frob/refactor/_split.py::SplitReport": "716e570ec38cf8c89e3de3e7f88cd4a7d1f294cd8e80fb8066b978737423cd5e",
+    "src/frob/refactor/_split.py::SplitReport.moved_symbols": "986d2c703af15c10789ba60ee12c83973f0081090936450a5a9e4b844a9e60f1",
+    "src/frob/refactor/_split.py::SplitReport.success": "66ded4610da977dfd49382acfa17282ff94069884a03985bc9877da76182c3aa",
+    "src/frob/refactor/_split.py::build_reexport_shim_op": "b8a23ed3f42ac983965d13d28b3252b45570be5552657b7ae789a00fb5455b45",
+    "src/frob/refactor/_split.py::chunk_symbols": "37d9fdb2ee413c99f8a7f06b7a5113280fb9a4aee4388e9937bd538d06b36117",
+    "src/frob/refactor/_split.py::run_split": "0db8b9a68c02c076ea2bf7d733b8564aee0773aff6e544592dc52034b5789dcc",
     "src/frob/refactor/_transaction.py::build_plan": "94cdbd831975d58e6bda4ca3bccca530e410bf7766358fe51246183447bd5b43",
     "src/frob/refactor/_transaction.py::run_refactor": "4dc69da24ffd263c53321c14d2034105d435b7b948876a1141232cf9ac2286ad",
     "src/frob/refactor/_verify.py::verify_check_delta": "d6305c63abe8aa2bb24cc2dae9b9c8ca6cf2dc2d1eef071ed9bbf3a8416fde82",
@@ -2003,5 +2014,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.327.0"
+  "version": "0.328.0"
 }
