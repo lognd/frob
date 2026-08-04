@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.327.0] - unreleased
+
+- T-1223: rust(interim): tree-sitter Query captures for comment/docstring spans shared by sys+opaque+vet
+
 ## [0.326.0] - unreleased
 
 - T-1218: doctor: stale-global-frob self-check -- invoked version vs repo floor

@@ -173,6 +173,29 @@ already-parsed tree.
 - `iter_identifiers(tree, language)` -- `(name, 1-based line)` for every
   identifier-like leaf, empty for an unsupported language.
 
+<!-- frob:describes frob-core/src/extract.rs::extract_tree_python -->
+
+T-1220 (EPIC B candidate #1's first landed portion): `frob_core.
+extract_tree_python(source: bytes) -> (comment_spans, docstring_spans,
+identifiers, tokens)` is a PYTHON-ONLY native kernel computing this same
+surface's four building blocks (comment spans, docstring spans, an
+identifier `(name, line)` stream, and the whole-file leaf-token stream)
+directly in Rust via `tree-sitter`/`tree-sitter-python`, rather than the
+per-node Python recursion `_extract.py`/`_walk_python.py`/`frob.vet.
+_capability_core` each still perform today. Golden-tested byte/line-
+identical against the existing Python extraction path across this repo's
+own `src/**/*.py` + `tests/**/*.py` corpus (917 files, 0 mismatches) --
+see `frob-core/src/extract.rs`'s module docstring for the one documented,
+justified delta (the three unwrapped/bare-string docstring-query patterns
+are structurally impossible against the `tree-sitter-python` 0.25.0 Rust
+crate's newer grammar generation, vs. `frob.lang`'s own
+`tree_sitter_language_pack`-bundled older grammar where they can occur;
+dropping them changes no observed span since the newer grammar has
+already wrapped every such string). No consumer is rewired to this kernel
+yet -- `perf`/`clones`/`deprecated`/`dead_symbols`/`opaque`/`sys` and the
+per-language (cpp/rust/typescript) walkers remain future work under this
+same ticket/its children.
+
 ## Primitives
 
 <!-- frob:describes src/frob/lang/_common.py::_collapse_ws -->

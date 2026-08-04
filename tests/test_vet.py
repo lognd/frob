@@ -731,6 +731,48 @@ class TestCapabilityScan:
         )
         assert "net-connect" in scan_file_capabilities(pkg)
 
+    def test_docstring_query_does_not_treat_enum_value_as_docstring(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability_core.py::_docstring_byte_spans_from_tree kind="unit"  # noqa: E501
+        # T-1223: `_docstring_byte_spans_from_tree`'s tree-sitter Query
+        # source matches the `expression_statement` SUPERTYPE, which also
+        # conforms `assignment` nodes -- an ErrorSet-style class whose first
+        # body statement is `NAME = "a string value"` must NOT be treated as
+        # a class docstring (`_PY_DOC_CAPTURE_FILTER`'s parent-type check is
+        # the fix; this reproduces the exact false-positive shape observed
+        # against this repo's own `src/frob/exports/__init__.py`). A needle
+        # written only inside that enum value must still fire as real code,
+        # not be silently swallowed as if it were prose.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "errs.py"
+        pkg.write_text(
+            "from typani import ErrorSet\n\n\n"
+            "class MyError(ErrorSet):\n"
+            '    Bad = "subprocess.Popen(cmd)"\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_docstring_query_still_finds_real_docstrings(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_core.py::_docstring_byte_spans_from_tree kind="unit"  # noqa: E501
+        # T-1223 sibling of the enum-value regression test above: a genuine
+        # module/class/function docstring containing the same needle must
+        # still be excluded, exercising all three Query anchor patterns
+        # (module, class body, function body) in one file.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "docs.py"
+        pkg.write_text(
+            '"""module doc: subprocess.Popen(cmd) is forbidden here."""\n\n\n'
+            "class C:\n"
+            '    """class doc: subprocess.Popen(cmd) too."""\n\n'
+            "    def m(self):\n"
+            '        """method doc: subprocess.Popen(cmd) as well."""\n'
+            "        pass\n"
+        )
+        assert "exec" not in scan_file_capabilities(pkg)
+
     def test_string_literal_needle_still_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         # T-0209: only COMMENT spans are filtered -- a needle inside a string

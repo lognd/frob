@@ -368,6 +368,13 @@ Rust extractor treats the export attribute as public for this reason). The
 thin `frob.dup._core` Python shim wraps each of these; see the Python-side
 descriptions above.
 
+T-1220 added a sixteenth export, `extract_tree_python` -- a python-only
+tree-extraction kernel, unrelated to clone detection or the call graph;
+see docs/modules/lang.md#extraction-api for its own description. Noted
+here only because `frob_core`'s `#[pymodule]` registration function
+(`m.add_function(wrap_pyfunction!(extract_tree_python, m)?)?;`) is this
+crate's single shared entry point every export threads through.
+
 T-0930 added five more kernels to this SAME crate/pymodule for
 `frob.graph.callgraph` (not `frob.dup`) -- `resolve_call_edges`,
 `called_names`, `ordered_called_names`, `referenced_names`, and
