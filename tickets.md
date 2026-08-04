@@ -3104,6 +3104,13 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+acceptance:
+- text: 'GIVEN a merge-queue drain of N tickets WHEN it runs THEN exactly one pre-drain
+    baseline capture and one post-drain full sweep execute, each queued ticket is
+    validated by a per-ticket delta check against the running merge state (attribution
+    preserved: a failing ticket is named and dequeued alone, the rest of the batch
+    proceeds), and total verification wall-clock for the batch is sublinear in N'
+  evidence: []
 threat: null
 component: null
 ```
@@ -3155,7 +3162,6 @@ docs/guides/agent-playbook.md):
 The underlying library code (frob.tickets._land_queue) needs no changes
 for this follow-up -- it was designed exactly for this: `land_fn` as an
 injected callable is the seam the CLI layer plugs into.
-
 <!-- ticket:T-1445 -->
 ```yaml
 id: T-1445
@@ -3201,6 +3207,13 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+acceptance:
+- text: GIVEN a frob check invocation after M of K analyzed files changed since the
+    cached run WHEN root-scanning process-pool gates execute THEN per-file gate findings
+    for the K-M unchanged files are served from the content-hash-keyed cache without
+    re-analysis, and a whole-repo warm check with a small touched set completes in
+    seconds not minutes (measured and recorded in the ticket's evidence)
+  evidence: []
 threat: null
 component: null
 ```
@@ -3246,7 +3259,6 @@ correctness-over-speed posture T-0602/T-1346 both insisted on (never
 serve a stale result silently). This is the natural continuation of the
 T-1344 gate-speed leaf and should be scoped as its own ticket rather than
 squeezed into T-1346's remainder.
-
 <!-- ticket:T-1449 -->
 ```yaml
 id: T-1449
@@ -4471,11 +4483,16 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+acceptance:
+- text: GIVEN a land whose merge preview fails the unscoped sweep WHEN the refusal
+    fires THEN main's history is byte-identical to before the land attempt (no commit,
+    no reset, no foreign-commit exposure) and the refusal message names the new findings
+    against the preview
+  evidence: []
 threat: null
 component: null
 ```
 The T-1456 post-land unscoped sweep currently verifies AFTER the land commit exists on main, so a refusal requires reset --hard -- which is exactly what destroyed foreign interleaved commits on 2026-08-04 (see T-1495). Land already builds the merge result before committing; run the sweep against that merge preview in a scratch worktree (same mechanism as _spawn_baseline_snapshot_worktree) BEFORE any commit lands on main. A refusal then costs nothing and reverts nothing; the post-land sweep can remain as a cheap assertion.
-
 <!-- ticket:T-1515 -->
 ```yaml
 id: T-1515
@@ -4596,3 +4613,23 @@ threat: null
 component: null
 ```
 From the 2026-08-04 dev-cycle review: TEST016 (mutation evidence) is the most expensive, least incremental land stage, and its marginal per-ticket value is test-strength validation, not main-correctness. Proposal: run TEST016 per merge-queue batch drain (T-1444) or nightly over the day's landed diffs; keep it synchronous+blocking only for kind=security tickets. A batch finding files a ticket against the offending land instead of refusing it retroactively. Interacts with: T-1444 (batch boundary is the natural cadence point), the existing --skip-mutation-evidence override (today used 2x for genuine false positives T-1235/T-1439 -- a lower-frequency, higher-context batch run should also reduce false-positive pressure).
+
+<!-- ticket:T-1519 -->
+```yaml
+id: T-1519
+title: 'cache observational-transparency invariant + property harness: cold==warm
+  for every persistent cache'
+state: queued
+kind: invariant
+origin: human
+created: '2026-08-04'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Correctness criterion for ALL persistent caches is one theorem: for any repo state S and cache state C, check(S, C) == check(S, empty) -- observational equivalence, stronger than INV-003's rebuildability (deleting is safe) because it asserts a STALE-BUT-PRESENT cache never changes results. Today this is tested pointwise only: tests/test_gate_cache.py has the right shape (cold/warm violation-fingerprint equality incl. a randomized multi-round mutate-and-compare walk, plus the T-1454 ack-invalidation regression); tests/unit/test_lang_artifact_cache.py covers hit/miss only, no equivalence sweep; coverage lock/stamp, tickets-archive-cache.json, pytest-collect.json, hotgraph_sketches.db, check-budget-timing.json have no equivalence coverage at all. Deliverables: (1) new invariants/INV-0xx.md stating the transparency theorem with the full cache inventory enumerated; (2) a shared hypothesis-style property harness (arbitrary edit sequences: touch/rename/delete/revert/content-change, assert cold==warm fingerprints after each step) parameterized over each cache, generalizing test_gate_cache.py's rounds; (3) every cache either covered by the harness or carrying a frob:waive naming a ticket.
