@@ -43,6 +43,28 @@ gates-quality.md's T-0977 section): the resolve-dispatch-or-usage-error
 shape IS the dispatcher's one documented job above, not a separable
 concern.
 
+T-1218: `_dispatch` (the argv-to-`App` step inside `main`) prints TWO
+independent stale-binary warnings to stderr before building `AppConfig`,
+both string-or-`None` probes from `frob.app._config_meta`:
+
+- `stale_install_warning` (T-0358): exact-version mismatch between the
+  RUNNING `frob` package and THIS repo's own declared `pyproject.toml`
+  version -- only fires inside frob's own source checkout (a repo whose
+  `pyproject.toml` names the `frob` project itself), and only when the
+  running package resolves outside that checkout's `src/frob/` (a stale
+  globally `uv tool install`ed binary).
+- `stale_binary_warning` (T-1218): ordering check against ANY repo's own
+  `frob.toml` `min_frob_version` floor -- applies to any repo that USES
+  frob (not just frob's own checkout) and warns whenever the invoked
+  version is strictly below the declared floor. This is the fix for the
+  2026-08-02 incident: a `git` merge-driver invoked a stale globally
+  installed `frob` (0.9.0) against a repo whose in-tree code had advanced
+  to 0.277.0, silently mis-splicing `tickets.md` with no warning at all.
+  `frob doctor` (`DoctorReport.stale_binary`,
+  `docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319`)
+  reports the same check as a finding that makes `healthy` False, same
+  class as `venv_shims`/`stale_ticket_leases`.
+
 T-1216: `App.__call__` resolves and imports ONLY the one `*_runner`
 module the invoked subcommand needs (`_resolve_runner`), and
 `frob.app`'s package `__init__.py` resolves its `<name>_runner_run`

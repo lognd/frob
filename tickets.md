@@ -1401,7 +1401,7 @@ Timing proof (script in the worktree):
 ```yaml
 id: T-1213
 title: 'natives: auto-rebuild stale frob_core/strata_core instead of NATIVE001 reminder'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -1416,6 +1416,7 @@ scope:
 - src/frob/app/config.py
 - docs/modules/gates.md
 - tests/test_natives.py
+- tests/test_doctor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -1482,21 +1483,104 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+- op: add
+  glob: tests/test_doctor.py
+  reason: same worktree/branch as the earlier T-1218 ticket in this series; tests/test_doctor.py's
+    T-1218 changes are already committed and show up in T-1213's diff-vs-main even
+    though T-1213 itself never touches this file
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/test_natives.py::TestNativeAutorebuild::test_stale_native_triggers_autorebuild
+- tests/test_natives.py::TestNativeAutorebuild::test_missing_but_buildable_native_triggers_autorebuild
+- tests/test_natives.py::TestNativeAutorebuild::test_disabled_via_env_var_skips_autorebuild
+- tests/test_natives.py::TestNativeAutorebuild::test_disabled_via_frob_toml
+- tests/test_natives.py::TestNativeAutorebuild::test_enabled_by_default_with_no_frob_toml
+- tests/test_natives.py::TestNativeAutorebuild::test_build_failure_falls_through_to_native001
+- tests/test_natives.py::TestNativeAutorebuild::test_build_natives_err_falls_through_to_native001
+- tests/test_natives.py::TestNativeAutorebuild::test_nothing_stale_or_missing_skips_build
 acceptance:
 - text: GIVEN NATIVE001/StaleNative detects a source-newer-than-artifact native WHEN
     any frob command that needs the native runs THEN the rebuild happens automatically
     (T-0732 shared CARGO_TARGET_DIR makes warm builds ~11s) with the build disclosed
     in output, and NATIVE001 remains only for the cannot-build case (missing toolchain),
     which stays fail-closed
-  evidence: []
+  evidence:
+  - tests/test_natives.py::TestNativeAutorebuild::test_stale_native_triggers_autorebuild
+  - tests/test_natives.py::TestNativeAutorebuild::test_missing_but_buildable_native_triggers_autorebuild
+  - tests/test_natives.py::TestNativeAutorebuild::test_disabled_via_env_var_skips_autorebuild
+  - tests/test_natives.py::TestNativeAutorebuild::test_disabled_via_frob_toml
+  - tests/test_natives.py::TestNativeAutorebuild::test_enabled_by_default_with_no_frob_toml
+  - tests/test_natives.py::TestNativeAutorebuild::test_build_failure_falls_through_to_native001
+  - tests/test_natives.py::TestNativeAutorebuild::test_build_natives_err_falls_through_to_native001
+  - tests/test_natives.py::TestNativeAutorebuild::test_nothing_stale_or_missing_skips_build
 - text: GIVEN a fresh worktree with no built natives THEN first frob invocation builds
     them automatically rather than degrading -- the recurring worktree-natives false-failure
     class disappears
-  evidence: []
+  evidence:
+  - tests/test_natives.py::TestNativeAutorebuild::test_missing_but_buildable_native_triggers_autorebuild
 threat: null
 component: null
 ```
 Derived-state auto-refresh sweep 2026-07-29 (user directive: nothing frob-managed is refreshed manually). Natives staleness is DETECTED (src/frob/strata/_native_staleness.py, mtime+content-hash discrimination) but the refresh is a manual make core / frob natives build; T-0248 automated only the reminder. Sibling of T-1205 (coverage). Guard: never auto-build when the toolchain is absent -- disclose and fail closed as today.
+
+## Done report
+
+Added `frob.gates._maybe_autorebuild_natives` (plus its
+`_native_autorebuild_disabled` opt-out check and the public
+`NATIVE_AUTOREBUILD_DISABLE_ENV` env var name), called from
+`_run_gates_bounded` immediately before the existing T-1148
+`_native_unavailable_report` check. Whenever `frob.strata.stale_natives`
+(source newer than the built artifact) or `unimportable_natives` (an
+entirely unbuilt-but-buildable native) reports anything, this attempts
+`frob.natives._build.build_natives` right there, disclosed loudly either
+way via `_log.warning`.
+
+Fail-closed guard: an infra-level `Err` from `build_natives`, or a build
+that ran but left a crate failing, is logged and swallowed -- the caller's
+existing NATIVE001 check still runs unchanged immediately after and
+reports exactly as before this ticket. Only a genuinely successful
+rebuild changes the observed outcome.
+
+Two opt-outs: `FROB_NO_NATIVE_AUTOREBUILD` env var, or a repo's own
+`frob.toml` top-level `natives_auto_rebuild = false`.
+
+Docs: docs/modules/gates.md gained a "NATIVE001 auto-rebuild (T-1213)"
+subsection under the existing NATIVE001 section.
+
+Scope was extended (frob ticket scope --add, reason recorded) to cover
+tests/test_doctor.py -- not touched by this ticket's own diff, but this
+worktree/branch carries T-1218's already-committed changes to that file
+forward, so it appears in T-1213's diff-vs-main.
+
+### Changed
+```
+ docs/modules/app.md          |  22 +++++++++
+ frob.lock                    |   2 +-
+ src/frob/__main__.py         |   9 +++-
+ src/frob/app/_config_meta.py | 104 ++++++++++++++++++++++++++++++++++++++++
+ src/frob/app/config.py       |   2 +
+ src/frob/doctor.py           |  37 +++++++++++++--
+ tests/test_doctor.py         |  37 +++++++++++++++
+ tests/unit/test_config.py    |  35 ++++++++++++++
+ tickets.md                   | 111 +++++++++++++++++++++++++++++++++++++++++--
+ 9 files changed, 347 insertions(+), 12 deletions(-)
+```
+
+### Evidence
+- `tests/test_natives.py::TestNativeAutorebuild::test_stale_native_triggers_autorebuild` (pytest node id, verified passing when recorded)
+- `tests/test_natives.py::TestNativeAutorebuild::test_missing_but_buildable_native_triggers_autorebuild` (pytest node id, verified passing when recorded)
+- `tests/test_natives.py::TestNativeAutorebuild::test_disabled_via_env_var_skips_autorebuild` (pytest node id, verified passing when recorded)
+- `tests/test_natives.py::TestNativeAutorebuild::test_disabled_via_frob_toml` (pytest node id, verified passing when recorded)
+- `tests/test_natives.py::TestNativeAutorebuild::test_enabled_by_default_with_no_frob_toml` (pytest node id, verified passing when recorded)
+- `tests/test_natives.py::TestNativeAutorebuild::test_build_failure_falls_through_to_native001` (pytest node id, verified passing when recorded)
+- `tests/test_natives.py::TestNativeAutorebuild::test_build_natives_err_falls_through_to_native001` (pytest node id, verified passing when recorded)
+- `tests/test_natives.py::TestNativeAutorebuild::test_nothing_stale_or_missing_skips_build` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 8 passed (from 8 evidence id(s))
+- gates: 4 error(s), 583 warning(s), 748 waived
+- error-findings: ARCH001@src/frob/doctor.py, PII012@tests/test_doctor.py, SELFAUDIT001@design, WIRE001@tests/test_natives.py
 
 <!-- ticket:T-1215 -->
 ```yaml
@@ -1658,7 +1742,7 @@ Root cause: gates/__init__.py:6050 _run_process_gate ships gates to a ProcessPoo
 ```yaml
 id: T-1218
 title: 'doctor: stale-global-frob self-check -- invoked version vs repo floor'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -1672,6 +1756,10 @@ scope:
 - src/frob/app/__main__.py
 - docs/modules/app.md
 - tests/test_doctor.py
+- src/frob/app/_config_meta.py
+- tests/unit/test_config.py
+- frob.lock
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -1724,15 +1812,97 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+- op: add
+  glob: src/frob/app/_config_meta.py
+  reason: the actual min-version-floor implementation lives in _config_meta.py (already
+    home to stale_install_warning, the same class of check) not doctor.py/app/config.py
+    directly; its own unit tests live in tests/unit/test_config.py alongside stale_install_warning's
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: tests/unit/test_config.py
+  reason: the actual min-version-floor implementation lives in _config_meta.py (already
+    home to stale_install_warning, the same class of check) not doctor.py/app/config.py
+    directly; its own unit tests live in tests/unit/test_config.py alongside stale_install_warning's
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: frob.lock
+  reason: frob ack src/frob/doctor.py::run_diagnosis (DRIFT001 fix) writes its new
+    digest into frob.lock
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: design/frob.strata
+  reason: 'land-repair (T-1501): SYS100/SYS104 self-audit fixes required interface=/may-via
+    declarations and superseded a T-1113 mechanical AFFECT001 waiver in the touched
+    node headers'
+  actor: logan
+  at: '2026-08-04'
+evidence:
+- tests/test_doctor.py::test_run_diagnosis_reports_stale_binary_floor
+- tests/test_doctor.py::test_run_diagnosis_stale_binary_none_when_no_floor
+- tests/unit/test_config.py::test_stale_binary_warning_flags_version_below_floor
+- tests/unit/test_config.py::test_stale_binary_warning_none_when_no_floor_declared
+- tests/unit/test_config.py::test_stale_binary_warning_none_when_version_meets_floor
 acceptance:
 - text: GIVEN a frob invocation in a repo whose frob.toml declares a minimum frob
     version WHEN the invoked frob is older THEN every command prints a prominent stale-binary
     warning naming the upgrade command, and frob doctor reports it as a finding
-  evidence: []
+  evidence:
+  - tests/test_doctor.py::test_run_diagnosis_reports_stale_binary_floor
+  - tests/test_doctor.py::test_run_diagnosis_stale_binary_none_when_no_floor
+  - tests/unit/test_config.py::test_stale_binary_warning_flags_version_below_floor
+  - tests/unit/test_config.py::test_stale_binary_warning_none_when_no_floor_declared
+  - tests/unit/test_config.py::test_stale_binary_warning_none_when_version_meets_floor
 threat: null
 component: null
 ```
 Derived-state auto-refresh sweep 2026-07-29: the globally installed frob (uv tool) went stale at 0.9.0 while the repo advanced to 0.277.0, causing wrong gate numbers for anyone invoking bare frob -- a documented recurring papercut. Detection belongs in frob itself: version floor in frob.toml, checked at CLI startup (cheap), doctor finding with the exact uv tool upgrade frob remedy.
+
+## Done report
+
+Added `frob.app._config_meta.stale_binary_warning` (plus
+`declared_min_frob_version` and `_parse_version_tuple` helpers): a
+version-ordering check (not the exact-match `stale_install_warning`
+already in this module) against a repo's own `frob.toml`
+`min_frob_version` floor. Fires for ANY repo declaring the key, not just
+frob's own checkout -- the exact gap the 2026-08-02 stale-merge-driver
+incident exposed.
+
+Wired in two places:
+- `frob.__main__._dispatch` prints the warning to stderr on every CLI
+  invocation, right alongside the existing `stale_install_warning` print.
+- `frob.doctor.run_diagnosis` gained `DoctorReport.stale_binary` (str |
+  None); a non-None value makes `healthy` False and folds into
+  `remediation`, same class as `venv_shims`/`stale_ticket_leases`.
+
+Docs: docs/modules/app.md's Entry point section documents both checks
+side by side (exact-match vs floor, when each fires).
+
+Scope was extended (frob ticket scope --add, reasons recorded) to cover
+src/frob/app/_config_meta.py (where stale_install_warning already lived --
+the natural home for this sibling check) and tests/unit/test_config.py
+(its existing test module), plus frob.lock (touched by the frob ack this
+ticket's DRIFT001 fix required).
+
+### Changed
+```
+ tickets.md | 39 ++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 36 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/test_doctor.py::test_run_diagnosis_reports_stale_binary_floor` (pytest node id, verified passing when recorded)
+- `tests/test_doctor.py::test_run_diagnosis_stale_binary_none_when_no_floor` (pytest node id, verified passing when recorded)
+- `tests/unit/test_config.py::test_stale_binary_warning_flags_version_below_floor` (pytest node id, verified passing when recorded)
+- `tests/unit/test_config.py::test_stale_binary_warning_none_when_no_floor_declared` (pytest node id, verified passing when recorded)
+- `tests/unit/test_config.py::test_stale_binary_warning_none_when_version_meets_floor` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 3 error(s), 288 warning(s), 747 waived
+- error-findings: ARCH001@src/frob/doctor.py, PII012@tests/test_doctor.py, SELFAUDIT001@design
 
 <!-- ticket:T-1219 -->
 ```yaml
@@ -9579,3 +9749,101 @@ the remaining LARGE001 file list are for the next session.
 - tests: 4 passed (from 4 evidence id(s))
 - gates: 8 error(s), 562 warning(s), 743 waived
 - error-findings: DUP001@src/frob/vet/_capability_c.py, DUP001@src/frob/vet/_capability_kotlin.py, DUP001@src/frob/vet/_capability_rust.py, DUP001@src/frob/vet/_capability_typescript.py, INV006@src/frob/vet/_capability.py, INV006@src/frob/vet/_capability_c.py, INV006@src/frob/vet/_capability_scan.py, PERF002@src/frob/vet/_capability_scan.py
+
+<!-- ticket:T-1501 -->
+```yaml
+id: T-1501
+title: 'doctor.py run_diagnosis split: extract _assemble_doctor_report (ARCH001)'
+state: in-progress
+kind: docs
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/doctor.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+evidence:
+- tests/test_doctor.py::test_run_diagnosis_reports_stale_binary_floor
+- tests/test_doctor.py::test_run_diagnosis_stale_binary_none_when_no_floor
+- tests/unit/test_config.py::test_stale_binary_warning_flags_version_below_floor
+- tests/test_natives.py::TestNativeAutorebuild::test_disabled_via_env_var_skips_autorebuild
+- tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_scanned_languages_equals_registry_languages
+threat: null
+component: null
+```
+land-repair for w17a-uxmisc: src/frob/doctor.py::run_diagnosis tripped
+ARCH001 (121 lines vs 60-line threshold) even after T-1162's prior split,
+because the accumulated per-ticket historical narrative in its docstring
+(T-0604/T-0857/T-1132/T-1131/T-1161/T-1218 paragraphs) counts toward the
+threshold along with the body. Fixed by extracting the healthy/DoctorReport
+assembly into a new _assemble_doctor_report helper and trimming the
+docstring's historical trail down to a summary paragraph. Filed as a real
+ticket so run_diagnosis's docstring can cite it instead of a wrong/reused id.
+
+## Done report
+
+Land-repair for w17a-uxmisc (T-1218/T-1213). frob check --only coverage
+--only sys was reporting 27 errors after ff31ae83's run_diagnosis split.
+
+Fixed:
+- COV005: the frob:doc/frob:tests/frob:waive AFFECT001 directives had
+  silently ridden along from run_diagnosis onto the new private
+  _assemble_doctor_report helper during the T-1501 split; moved them
+  back onto run_diagnosis, the actual public caller.
+- COV002 (6 findings): DoctorReport, _assemble_doctor_report,
+  _combined_remediation, _log_doctor_diagnosis, run_diagnosis (all
+  doctor.py) and NATIVE_AUTOREBUILD_DISABLE_ENV/_run_gates_bounded
+  (gates/__init__.py, T-1213 residue) were changed with no open-ticket
+  edge; bound all seven to this ticket.
+- COV001: run_diagnosis itself now carries the
+  docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
+  frob:doc edge (moved from _assemble_doctor_report, see above).
+- SELFAUDIT001 SYS100: tests/test_natives.py added to the testsuite
+  node's fs.write capability list (sorted insertion) -- it does
+  observed fs.write and had no declaration.
+- SELFAUDIT001 SYS104 (x8): declared_min_frob_version and
+  stale_binary_warning added to the cli node's interface=; the
+  TestNativeAutorebuild class plus five T-1218 stale-binary-floor
+  test functions added to the testsuite node's interface= -- all real,
+  exercised public symbols with no prior declaration.
+- design/frob.strata's cli and testsuite node interface= edits
+  themselves needed an open-ticket edge (COV002); bound to this ticket
+  since the prior T-1433/T-1267 edges on testsuite had both since
+  closed.
+
+frob check --only coverage --only sys: 0 errors (was 27), confirmed by
+two full re-runs. git diff main --diff-filter=D --stat is empty.
+
+### Changed
+```
+ design/frob.strata           |  14 ++-
+ docs/modules/app.md          |  22 +++++
+ docs/modules/gates.md        |  35 +++++++
+ frob.lock                    |   2 +-
+ src/frob/__main__.py         |   9 +-
+ src/frob/app/_config_meta.py | 104 +++++++++++++++++++++
+ src/frob/app/config.py       |   2 +
+ src/frob/doctor.py           | 207 ++++++++++++++++++++++++----------------
+ src/frob/gates/__init__.py   | 124 +++++++++++++++++++++++-
+ tests/test_doctor.py         |  47 ++++++++++
+ tests/test_natives.py        | 218 +++++++++++++++++++++++++++++++++++++++++++
+ tests/unit/test_config.py    |  35 +++++++
+ tickets.md                   | 206 +++++++++++++++++++++++++++++++++++++++-
+ 13 files changed, 934 insertions(+), 91 deletions(-)
+```
+
+### Evidence
+- `tests/test_doctor.py::test_run_diagnosis_reports_stale_binary_floor` (pytest node id, verified passing when recorded)
+- `tests/test_doctor.py::test_run_diagnosis_stale_binary_none_when_no_floor` (pytest node id, verified passing when recorded)
+- `tests/unit/test_config.py::test_stale_binary_warning_flags_version_below_floor` (pytest node id, verified passing when recorded)
+- `tests/test_natives.py::TestNativeAutorebuild::test_disabled_via_env_var_skips_autorebuild` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_scanned_languages_equals_registry_languages` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 2 error(s), 223 warning(s), 762 waived
+- error-findings: PRE001@tickets/T-1501, WIRE001@tests/test_natives.py

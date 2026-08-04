@@ -6692,6 +6692,113 @@ def _native_unavailable_report(root: Path) -> GateReport | None:
     )
 
 
+#: T-1213: env-var opt-out for the auto-rebuild below -- set to skip
+#: straight to the old reminder-only NATIVE001 behavior (e.g. a CI runner
+#: that intentionally wants a stale/missing native to fail loudly rather
+#: than pay a rebuild inline, or a sandbox with no toolchain at all where
+#: even attempting the build wastes time before falling through anyway).
+# frob:doc docs/modules/gates.md#native001-t-1148
+# frob:ticket T-1501
+NATIVE_AUTOREBUILD_DISABLE_ENV = "FROB_NO_NATIVE_AUTOREBUILD"
+
+
+# frob:ticket T-1213
+def _native_autorebuild_disabled(root: Path) -> bool:
+    """True when T-1213's auto-rebuild should be SKIPPED: the
+    `FROB_NO_NATIVE_AUTOREBUILD` env var is set (any non-empty value), or
+    `root`'s own `frob.toml` declares top-level `natives_auto_rebuild =
+    false`. Absence of either -- the common case -- means auto-rebuild
+    stays ON, matching this ticket's default-on acceptance criteria."""
+    if os.environ.get(NATIVE_AUTOREBUILD_DISABLE_ENV):
+        return True
+    toml_path = root / "frob.toml"
+    if not toml_path.exists():
+        return False
+    try:
+        with toml_path.open("rb") as fh:
+            data = tomllib.load(fh)
+    except Exception as exc:  # noqa: BLE001 -- best-effort probe, never fatal
+        _log.debug("_native_autorebuild_disabled: unreadable frob.toml: %s", exc)
+        return False
+    return data.get("natives_auto_rebuild") is False
+
+
+# frob:ticket T-1213
+# frob:tests tests/test_natives.py::TestNativeAutorebuild.test_stale_native_triggers_autorebuild  # noqa: E501
+# frob:tests tests/test_natives.py::TestNativeAutorebuild.test_missing_but_buildable_native_triggers_autorebuild  # noqa: E501
+# frob:tests tests/test_natives.py::TestNativeAutorebuild.test_disabled_via_env_var_skips_autorebuild  # noqa: E501
+# frob:tests tests/test_natives.py::TestNativeAutorebuild.test_build_failure_falls_through_to_native001  # noqa: E501
+def _maybe_autorebuild_natives(root: Path) -> None:
+    """T-1213: the fix for the recurring worktree-natives false-failure
+    class this ticket's Description names -- a source-newer-than-artifact
+    native (`frob.strata.stale_natives`) or an entirely unbuilt-but-
+    buildable one (`frob.strata.unimportable_natives`, when a matching
+    crate directory exists) used to only ever produce a NATIVE001
+    reminder (T-0248/T-1148), leaving the actual rebuild to a human
+    running `make core` by hand. This function attempts that rebuild
+    itself, BEFORE `_native_unavailable_report` runs its own (still
+    reminder-only) check -- disclosed loudly via `_log.warning` either
+    way, per this ticket's acceptance criteria.
+
+    Deliberately pure I/O with no return value: `_run_gates_bounded`
+    calls this for its side effect (a freshly built native on disk) and
+    then runs its EXISTING `_native_unavailable_report`/staleness checks
+    unchanged -- if the rebuild succeeded, those checks now see a fresh
+    artifact and report nothing; if it failed (T-0732's own documented
+    no-toolchain case, `build_natives` returning a non-ok per-crate
+    result, or an infra-level `Err`), they fall through to the ORIGINAL
+    NATIVE001 fail-closed path exactly as before this ticket -- the
+    guard this ticket's Description requires: never auto-build when the
+    toolchain is absent, disclose and fail closed as today.
+
+    A no-op (skips straight through) when `_native_autorebuild_disabled`
+    says so, or when neither `stale_natives` nor `unimportable_natives`
+    reports anything for `root` (the common, already-healthy case) --
+    importing `frob.strata`/`frob.natives` here (not at module level)
+    mirrors `_native_unavailable_report`'s own existing discipline for
+    avoiding a `frob.gates` <-> `frob.strata` import cycle."""
+    if _native_autorebuild_disabled(root):
+        return
+    from frob.strata import stale_natives, unimportable_natives
+
+    stale = stale_natives(root)
+    missing = unimportable_natives(root)
+    if not stale and not missing:
+        return
+
+    stale_names = sorted({s.spec.name for s in stale})
+    missing_names = sorted({s.name for s in missing})
+    _log.warning(
+        "run_gates: T-1213 auto-rebuild triggered (stale=%s, missing=%s)",
+        stale_names,
+        missing_names,
+    )
+
+    from frob.natives._build import build_natives
+
+    built = build_natives(root)
+    if built.is_err:
+        _log.warning(
+            "run_gates: T-1213 auto-rebuild could not run (%s) -- falling "
+            "through to NATIVE001's own fail-closed reminder",
+            built.danger_err,
+        )
+        return
+    report = built.danger_ok
+    if not report.ok:
+        failed = sorted(r.name for r in report.results if not r.ok)
+        _log.warning(
+            "run_gates: T-1213 auto-rebuild ran but %s failed to build -- "
+            "falling through to NATIVE001's own fail-closed reminder",
+            failed,
+        )
+        return
+    _log.warning(
+        "run_gates: T-1213 auto-rebuild succeeded for %s",
+        sorted(r.name for r in report.results),
+    )
+
+
 # frob:doc docs/modules/gates.md#public-api
 # frob:doc docs/modules/gates.md#native001-t-1148
 # frob:doc docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602  # noqa: E501
@@ -6708,6 +6815,7 @@ def run_gates(
     return _run_gates_bounded(cfg, use_cache=use_cache)
 
 
+# frob:ticket T-1501
 def _run_gates_bounded(
     cfg: GateConfig, *, use_cache: bool = False, max_process_workers: int | None = None
 ) -> Result[GateReport, GateError]:
@@ -6733,7 +6841,17 @@ def _run_gates_bounded(
     T-1148: before anything else, check that every declared native
     extension actually imports (`_native_unavailable_report`) -- a broken
     native fails ONCE, honestly, here, instead of cascading into dozens of
-    gates misattributing the same root cause to design/doc drift."""
+    gates misattributing the same root cause to design/doc drift.
+
+    T-1213: immediately before that check, `_maybe_autorebuild_natives`
+    attempts to rebuild any native `_native_unavailable_report`/staleness
+    would otherwise merely warn about -- a stale-source-vs-artifact or
+    entirely-unbuilt-but-buildable native is rebuilt in place (disclosed
+    loudly) so the very next line's check sees a fresh artifact instead
+    of reporting NATIVE001, closing the worktree-natives false-failure
+    class this ticket's Description names. NATIVE001 itself still fires,
+    fail-closed, whenever the rebuild could not happen (no toolchain) or
+    failed outright."""
     start_all = time.monotonic()
     selected = cfg.gates or _ALL_GATES
     _log.info(
@@ -6744,7 +6862,9 @@ def _run_gates_bounded(
         use_cache,
     )
 
-    native_report = _native_unavailable_report(_repo_root_for(Path(cfg.root)))
+    _repo_root_for_natives = _repo_root_for(Path(cfg.root))
+    _maybe_autorebuild_natives(_repo_root_for_natives)
+    native_report = _native_unavailable_report(_repo_root_for_natives)
     if native_report is not None:
         return Ok(native_report)
 

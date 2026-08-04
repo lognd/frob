@@ -95,7 +95,9 @@
     "src/frob/app/_config_meta.py::ARCH_DEFAULT_MAX_LOCAL_IMPORTS": "f6977619909b4734b612b1d1a47f4cbeb32f997d59bff0eb133dcc2b76df50c0",
     "src/frob/app/_config_meta.py::ARCH_DEFAULT_MAX_NESTING_DEPTH": "60735e8ec6b15327a08e10f71f67f46d874da64870f9cb6fcc7d45b355a04a76",
     "src/frob/app/_config_meta.py::ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS": "023fa0e67c65f7bb4e244a2eb5f121355218c6947f0ccbc520463d8e7dae5bd5",
+    "src/frob/app/_config_meta.py::declared_min_frob_version": "dfc7d6a0c9cab76cba2006c6d4e877fe7b4e735849a122b3a553cf20abc17732",
     "src/frob/app/_config_meta.py::load_arch_config": "7ddeaf02d1413da34a1e4f0aeb8d7c01bb0610102f707caaa939a081a7bf46eb",
+    "src/frob/app/_config_meta.py::stale_binary_warning": "0f0eb82f9effb59874fff48d126525018c3886d376c41d98e2e14fdb7c2bc492",
     "src/frob/app/_config_meta.py::stale_install_warning": "311b01c5972636f462f70e6727c05e90b3a48c4b259adb0f74c95160fc2e8ad4",
     "src/frob/app/_daemon_proxy.py::DaemonLiveness": "cf03beed5b8d9c8b2df9c9a22482745ee5bc25786a0c1aaad21da1f80ab141b5",
     "src/frob/app/_daemon_proxy.py::ProxyReason": "086cf4f3d1b1990991d064130300e802372b63556e3a4bc4b78461736ee3ab95",
@@ -493,6 +495,7 @@
     "src/frob/fuzz/_stamp.py::load_fuzz_stamp": "59f77948964df233af7ee6df5560c50f1b4e08f77523fd8b2364fda6547e72df",
     "src/frob/fuzz/_stamp.py::stamp_fuzz": "9c505b642805f515ce8da6ad4b5c6a55cc0c6a81a1478075d0f26bfc124c296a",
     "src/frob/gates/__init__.py::GateOrderDriftError": "7951e2f8d9da31891f06b5cbfa014f85bcc20246e47d0673d4fb430d6b40e1f9",
+    "src/frob/gates/__init__.py::NATIVE_AUTOREBUILD_DISABLE_ENV": "d9e052bbf28b7bb9307624b66ab18e06b169920a7aa0d0c7c08c0e68bc6ad5e5",
     "src/frob/gates/__init__.py::affect_drift_gate": "3be02584d6478757d23a1dcf709cfa881cb28e13627c7c9a4ffb91bff32c3ab1",
     "src/frob/gates/__init__.py::coverage_gate": "fbb174c7bb93a7836cf6d6e3b3881f8cabe9ee2cb07604bd57bc204683474300",
     "src/frob/gates/__init__.py::drift_gate": "5c212d52c12a13920ee34ad607ff4d2367a47d7d7f940927aae71563b733a8e4",
@@ -1999,5 +2002,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.325.0"
+  "version": "0.326.0"
 }

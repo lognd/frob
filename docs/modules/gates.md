@@ -3054,6 +3054,41 @@ none are declared at all) is entirely unaffected: `_native_unavailable_
 report` returns `None` and `run_gates` proceeds through its normal
 pipeline exactly as before this ticket.
 
+### NATIVE001 auto-rebuild (T-1213)
+
+<!-- frob:describes src/frob/gates/__init__.py::NATIVE_AUTOREBUILD_DISABLE_ENV -->
+
+T-1148 above made a broken native fail fast and honestly, but the FIX was
+still always manual: a human ran `make core`/`frob natives build` after
+reading the NATIVE001 reminder. This is the recurring worktree-natives
+false-failure class (`docs/guides/agent-playbook.md`'s "worktree natives
+artifact" note) automated away: `_run_gates_bounded` calls
+`_maybe_autorebuild_natives(root)` immediately BEFORE
+`_native_unavailable_report` runs. Whenever `frob.strata.stale_natives`
+(a source-newer-than-artifact native, T-0248) or `unimportable_natives`
+(an entirely unbuilt-but-buildable one, T-1148) reports anything, it
+attempts `frob.natives._build.build_natives(root)` right there -- T-0732's
+shared `CARGO_TARGET_DIR` makes a warm rebuild ~11s, not a multi-minute
+cold build -- and logs the attempt and its outcome loudly via
+`_log.warning` either way.
+
+This is deliberately fail-closed, never fail-open: a rebuild that could
+not run at all (an infra-level `Err`, e.g. the exec kill switch or a
+missing toolchain surfacing through `build_natives`'s own documented
+`FileNotFoundError` skip) or that ran but left a crate failing
+(`CrateBuildResult.ok is False`) simply logs and returns -- the very NEXT
+line (`_native_unavailable_report`) still runs its UNCHANGED fail-closed
+NATIVE001 check and reports exactly as it did before this ticket. Only a
+genuinely SUCCESSFUL rebuild changes the outcome: the next check now sees
+a fresh artifact and reports nothing.
+
+Two opt-outs, both read by `_native_autorebuild_disabled`: the
+`FROB_NO_NATIVE_AUTOREBUILD` env var (any non-empty value), or a repo's
+own `frob.toml` top-level `natives_auto_rebuild = false`. Either skips
+straight through to the old reminder-only NATIVE001 behavior -- useful
+for a CI runner or sandbox that intentionally wants a stale/missing
+native to fail loudly rather than pay a rebuild inline.
+
 ## Invariants
 
 <!-- frob:describes src/frob/gates/invariants.py::_Criticality -->

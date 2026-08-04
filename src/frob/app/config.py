@@ -21,6 +21,7 @@ from frob.app._config_meta import (
     ARCH_DEFAULT_MAX_NESTING_DEPTH,
     ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS,
     load_arch_config,
+    stale_binary_warning,
     stale_install_warning,
 )
 from frob.gitlog import GranularityLevel
@@ -47,6 +48,7 @@ __all__ = [
     "AppConfig",
     "Subcommand",
     "load_arch_config",
+    "stale_binary_warning",
     "stale_install_warning",
 ]
 

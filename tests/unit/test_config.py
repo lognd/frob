@@ -30,6 +30,7 @@ from frob.app.config import (
     ARCH_DEFAULT_MAX_NESTING_DEPTH,
     ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS,
     load_arch_config,
+    stale_binary_warning,
     stale_install_warning,
 )
 
@@ -183,3 +184,37 @@ def test_stale_install_warning_none_when_versions_match(
     monkeypatch.setattr(importlib.metadata, "version", lambda name: "0.27.0")
 
     assert stale_install_warning(tmp_path) is None
+
+
+# frob:ticket T-1218
+def test_stale_binary_warning_flags_version_below_floor(tmp_path: Path) -> None:
+    """T-1218: the invoked frob's own version reading below a repo's
+    declared frob.toml min_frob_version floor gets a loud warning naming
+    both versions -- the bare-frob-0.9.0-vs-0.277.0 incident."""
+    (tmp_path / "frob.toml").write_text('min_frob_version = "0.277.0"\n')
+
+    warning = stale_binary_warning(tmp_path, running_version="0.9.0")
+
+    assert warning is not None
+    assert "0.9.0" in warning
+    assert "0.277.0" in warning
+
+
+# frob:ticket T-1218
+def test_stale_binary_warning_none_when_no_floor_declared(tmp_path: Path) -> None:
+    """No warning when frob.toml declares no min_frob_version at all (the
+    overwhelming majority of repos today) -- absence of a floor is not a
+    finding."""
+    (tmp_path / "frob.toml").write_text('check_base = "main"\n')
+
+    assert stale_binary_warning(tmp_path, running_version="0.1.0") is None
+
+
+# frob:ticket T-1218
+def test_stale_binary_warning_none_when_version_meets_floor(tmp_path: Path) -> None:
+    """No warning when the invoked version meets or exceeds the declared
+    floor -- ordering, not equality, and the floor itself passes."""
+    (tmp_path / "frob.toml").write_text('min_frob_version = "0.200.0"\n')
+
+    assert stale_binary_warning(tmp_path, running_version="0.200.0") is None
+    assert stale_binary_warning(tmp_path, running_version="0.277.0") is None
