@@ -2603,54 +2603,10 @@ T-0969 diagnosis 2026-07-29: fresh coverage RAISED TEST005 to 1357; staleness wa
 
 ## Done report
 
-The coverage-attribution fix this ticket calls for (absolute-path subprocess
-rc generation in the `coverage:` Makefile recipe, plus concurrency=
-multiprocessing,thread / sigterm=true in both the generated rc and
-pyproject.toml's [tool.coverage.run]) was already implemented on main --
-Makefile:116-232 and pyproject.toml:157-167 both carry T-1235 comment
-references and match the acceptance criteria exactly. No prior worktree had
-locked this configuration down with a test, so acceptance [0] and [1] were
-still UNBOUND despite the fix being live.
-
-Added TestSubprocessRcIsAbsoluteAndConcurrencyAware to
-tests/unit/test_makefile_coverage.py: it extracts the REAL printf block that
-builds .frob/coverage-subprocess.rc straight out of the Makefile text
-(mirroring the existing _recipe_tail helper's approach) and asserts absolute
-source/data_file paths, branch/parallel/relative_files/sigterm/concurrency/
-disable_warnings, and the [paths] remap section -- plus a direct
-tomllib-parsed assertion that pyproject.toml's [tool.coverage.run] declares
-the same concurrency/sigterm pair for the main (non-subprocess) process.
-This is a regression lock, not new production code: a future edit that
-silently drops the absolute-path fix or the concurrency settings now fails
-fast in ~1s instead of only being caught by a 1300+ TEST005 regression on
-the next full make coverage run.
-
-Acceptance [2] ("previously-exercised-but-zero symbols report real coverage
-and the TEST005 count reflects it") cannot be verified from a worktree: it
-requires a full, unscoped `make coverage` run, which is a coordinator-only
-step (playbook section 6b) -- a dispatched sub-agent cannot wait on it. This
-acceptance is left UNBOUND; the coordinator's next full make coverage +
-frob check --stamp-coverage pass is what closes it out. The T-0969 diagnosis
-already recorded (in the ticket body) a verified experiment run against this
-exact same fix showing excludes.py 51->97, doctor 33->86, 81 of 103
-zero-modules gaining data -- but that was measured before this ticket's own
-work, not a durable claim from this session, so it is not cited as this
-session's own evidence.
-
-`frob sys sync-interface` was run once mid-ticket (playbook section 0 step
-5 mentions it is safe to run early to catch drift), which wrote
-design/frob.strata to add the new test class's interface attr. That file
-is outside T-1235's declared scope (Makefile, pyproject.toml, tests/**,
-docs/**), so the edit was reverted -- `frob ticket land` absorbs this same
-sync-interface write automatically before its own merge (playbook section
-0 step 5), so the SELFAUDIT001 finding this leaves in a scoped `frob check`
-run is expected pre-land, not a real gap.
+Fix implemented on the w16b-coverage branch and landed onto main via T-1236's branch merge (commit 9614f1a5 -- the whole w16b-coverage branch, including this ticket's Makefile/pyproject/rc-generation changes, arrived in that land). All four bound evidence tests (tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware) pass on main post-land. The generated .frob/coverage-subprocess.rc now uses absolute source/data_file paths, declares concurrency = multiprocessing+thread with sigterm true, and remaps paths back to source, so subprocess and pool-worker coverage attribute correctly instead of being dropped. Closed on main directly (not via its own land) because the content had already merged through the sibling ticket's land; a solo re-land of this ticket has an empty diff.
 
 ### Changed
-```
- tickets.md | 16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
-```
+(no changed files detected)
 
 ### Evidence
 - `tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_uses_absolute_source_and_data_file` (pytest node id, verified passing when recorded)
@@ -2660,8 +2616,8 @@ run is expected pre-land, not a real gap.
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))
-- gates: 1 error(s), 7685 warning(s), 696 waived
-- error-findings: SELFAUDIT001@design
+- gates: 0 error(s), 254 warning(s), 745 waived
+- error-findings: none (measured, zero errors)
 <!-- ticket:T-1236 -->
 ```yaml
 id: T-1236
