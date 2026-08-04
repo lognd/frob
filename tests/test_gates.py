@@ -8286,6 +8286,75 @@ class TestCoverageLoad:
 
         assert load_lock_audit_log(tmp_path) == ()
 
+    # frob:ticket T-1279
+    def test_load_lock_audit_log_skips_malformed_line(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_lock_audit_log
+        # A malformed line (not valid JSON) is skipped, not raised -- the
+        # rest of a genuinely-append-only file must still parse.
+        from frob.gates._coverage import load_lock_audit_log
+
+        audit_path = tmp_path / ".frob" / "coverage-lock-audit.log"
+        audit_path.parent.mkdir(parents=True)
+        audit_path.write_text(
+            '{"source_sha": "good-1", "module_count": 1}\n'
+            "not-json-at-all\n"
+            '{"source_sha": "good-2", "module_count": 2}\n'
+        )
+        entries = load_lock_audit_log(tmp_path)
+        assert [e["source_sha"] for e in entries] == ["good-1", "good-2"]
+
+    def test_write_coverage_lock_refuses_under_lease_violation(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::write_coverage_lock
+        # A worktree-lease mismatch refuses the write outright (via
+        # enforce_worktree_lease), never a partial/silent write.
+        from frob.gates import CoverageData, GateError, write_coverage_lock
+
+        _git_init(tmp_path)
+        monkeypatch.setenv("FROB_WORKTREE", str(tmp_path / "somewhere-else"))
+        data = CoverageData(
+            source_sha="sha",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 10.0},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        result = write_coverage_lock(tmp_path, data)
+        assert result.is_err
+        assert result.danger_err == GateError.WorktreeLeaseViolation
+        assert not (tmp_path / "frob-coverage.lock.json").exists()
+
+    def test_load_coverage_lock_malformed_json_returns_none(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_coverage_lock
+        from frob.gates._coverage import load_coverage_lock
+
+        (tmp_path / "frob-coverage.lock.json").write_text("not valid json {")
+        assert load_coverage_lock(tmp_path) is None
+
+    def test_load_coverage_lock_missing_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_coverage_lock
+        from frob.gates._coverage import load_coverage_lock
+
+        assert load_coverage_lock(tmp_path) is None
+
+    def test_load_stamp_missing_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_stamp
+        from frob.gates._coverage import load_stamp
+
+        assert load_stamp(tmp_path) is None
+
+    def test_load_stamp_malformed_json_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_stamp
+        from frob.gates._coverage import load_stamp
+
+        stamp_path = tmp_path / ".frob" / "coverage-stamp"
+        stamp_path.parent.mkdir(parents=True)
+        stamp_path.write_text("not valid json {")
+        assert load_stamp(tmp_path) is None
+
     # frob:ticket T-1180
     def test_stamp_coverage_refuses_below_deflation_floor(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::stamp_coverage

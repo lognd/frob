@@ -90,6 +90,25 @@ class TestMatrixExhaustiveness:
     def test_every_claim_names_a_registered_rung_and_claimed_type(self) -> None:
         assert validate_claim_rungs() == ()
 
+    def test_validate_claim_rungs_flags_unregistered_rung(self) -> None:
+        # frob:tests src/frob/dup/_exhaustiveness.py::validate_claim_rungs kind="unit"
+        bogus = DUP_CLAIMS[0].model_copy(update={"rung": "not-a-real-rung"})
+        offenders = validate_claim_rungs((bogus,))
+        assert len(offenders) == 1
+        assert "not-a-real-rung" in offenders[0]
+        assert "not a registered rung" in offenders[0]
+
+    def test_validate_claim_rungs_flags_clone_type_mismatch(self) -> None:
+        # frob:tests src/frob/dup/_exhaustiveness.py::validate_claim_rungs kind="unit"
+        real_rung = DUP_CLAIMS[0].rung
+        spec = next(s for s in RUNG_SPECS if s.rung == real_rung)
+        wrong_type = next(ct for ct in CLONE_TYPES if ct not in spec.claimed_clone_types)
+        mismatched = DUP_CLAIMS[0].model_copy(update={"clone_type": wrong_type})
+        offenders = validate_claim_rungs((mismatched,))
+        assert len(offenders) == 1
+        assert real_rung in offenders[0]
+        assert "not in" in offenders[0]
+
     def test_every_excuse_names_a_registered_rung_and_claimed_type(self) -> None:
         registered = {
             (spec.rung, ct) for spec in RUNG_SPECS for ct in spec.claimed_clone_types

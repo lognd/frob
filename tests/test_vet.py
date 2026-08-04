@@ -4262,6 +4262,67 @@ class TestFingerprintScan:
         unrelated.write_text("# not frob's file\n")
         assert not is_self_pattern_path(unrelated, unrelated_root)
 
+    def test_self_pattern_exclusion_default_root_is_false(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
+        # `root=None` (the default) short-circuits to False before any
+        # path resolution at all -- the caller passed no scan-root
+        # identity, so nothing can be confirmed as frob's own repo.
+        from frob.vet._capability import is_self_pattern_path
+
+        assert not is_self_pattern_path(tmp_path / "anything.py")
+
+    def test_self_pattern_exclusion_resolve_oserror_is_false(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
+        # A `path.resolve()` failure (e.g. a filesystem-level symlink
+        # loop) degrades to "cannot confirm", never a crash.
+        from pathlib import Path as _Path
+
+        from frob.vet._capability import is_self_pattern_path
+
+        fake_repo = _make_fake_frob_repo_root(tmp_path / "repo")
+        target = fake_repo / "src" / "frob" / "vet" / "_capability.py"
+        real_resolve = _Path.resolve
+
+        def _raising_resolve(self, *args, **kwargs):
+            if self == target:
+                raise OSError("simulated: resolve failure")
+            return real_resolve(self, *args, **kwargs)
+
+        monkeypatch.setattr(_Path, "resolve", _raising_resolve)
+        assert not is_self_pattern_path(target, fake_repo)
+
+    def test_self_pattern_exclusion_surprising_parts_shape_is_false(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
+        # A resolved path whose `.parts` is some non-standard shape the
+        # suffix-slice comparison cannot safely index into (simulated via
+        # a resolve() stub returning a plain object with no real `.parts`)
+        # degrades to "cannot confirm", not a crash -- covers both the
+        # (KeyError, TypeError) branch and the bare-Exception fallback.
+        from pathlib import Path as _Path
+
+        from frob.vet._capability import is_self_pattern_path
+
+        fake_repo = _make_fake_frob_repo_root(tmp_path / "repo")
+        target = fake_repo / "src" / "frob" / "vet" / "_capability.py"
+        real_resolve = _Path.resolve
+
+        class _BrokenParts:
+            @property
+            def parts(self):
+                raise TypeError("simulated: surprising parts shape")
+
+        def _raising_resolve(self, *args, **kwargs):
+            if self == target:
+                return _BrokenParts()
+            return real_resolve(self, *args, **kwargs)
+
+        monkeypatch.setattr(_Path, "resolve", _raising_resolve)
+        assert not is_self_pattern_path(target, fake_repo)
+
     # frob:ticket T-0910
     def test_self_pattern_exclusion_covers_logging_checks_needle_tuples(
         self,

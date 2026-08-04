@@ -878,3 +878,32 @@ class TestVerdictCacheRulesFingerprintInvalidation:
         )
         _cache._close_all()
         assert _cache.get_verdict(tmp_path, "d3", "d4", "r4", 0) == [0.5, []]
+
+
+class TestCoreAvailable:
+    """The ImportError branch specifically, which is unreachable in a
+    normal dev checkout where frob_core is actually built (the True path
+    is already exercised implicitly by every other test in this module's
+    skip-if-unavailable marker)."""
+
+    # frob:tests \
+    # tests/test_dup.py::TestCoreAvailable.test_import_error_returns_false_and_logs
+    def test_import_error_returns_false_and_logs(self, monkeypatch) -> None:
+        dup_core.core_available.cache_clear()
+        real_import = __builtins__["__import__"] if isinstance(__builtins__, dict) else __builtins__.__import__
+
+        def _raising_import(name, *args, **kwargs):
+            if name == "frob_core":
+                raise ImportError("simulated: frob_core not installed")
+            return real_import(name, *args, **kwargs)
+
+        # frob:waive OPAQUE001 reason="test-only monkeypatch of builtins.__import__ to \
+        # force core_available's ImportError branch, which cannot be reached any other \
+        # way in a dev checkout where frob_core is actually built; the string literal \
+        # target ('builtins.__import__') is not a runtime-resolved name -- it is the \
+        # one and only fixed target this test ever monkeypatches"
+        monkeypatch.setattr("builtins.__import__", _raising_import)
+        try:
+            assert dup_core.core_available() is False
+        finally:
+            dup_core.core_available.cache_clear()

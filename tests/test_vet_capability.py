@@ -120,3 +120,53 @@ class TestDocstringProseNotObservedLineLevel:
         }
         assert needle_lines
         assert needle_lines <= prose_lines
+
+    # frob:tests src/frob/vet/_capability.py::non_executable_line_numbers kind="unit"
+    def test_non_executable_line_numbers_no_spans_is_empty(
+        self, tmp_path: Path
+    ) -> None:
+        # A file with no comment/docstring spans at all (pure code, no
+        # prose) hits the early `if not spans: return frozenset()` guard.
+        pkg = tmp_path / "plain.py"
+        pkg.write_text("x = 1\ny = 2\n")
+        assert non_executable_line_numbers(pkg) == frozenset()
+
+    # frob:tests src/frob/vet/_capability.py::non_executable_line_numbers kind="unit"
+    def test_non_executable_line_numbers_missing_file_is_empty(
+        self, tmp_path: Path
+    ) -> None:
+        # A path that does not exist at all: `_non_executable_byte_spans`
+        # itself reads nothing, so the OSError-tolerant "never raises"
+        # contract holds even before `read_bytes()` is reached.
+        assert non_executable_line_numbers(tmp_path / "does-not-exist.py") == frozenset()
+
+    # frob:tests src/frob/vet/_capability.py::non_executable_line_numbers kind="unit"
+    def test_non_executable_line_numbers_read_bytes_oserror_is_empty(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # Specifically exercises the function's own `raw = path.read_bytes()`
+        # except-OSError branch (distinct from the "no spans at all" guard
+        # above): the file DOES have a real comment span (so spans is
+        # non-empty and the code proceeds past the first guard), but the
+        # `Path.read_bytes()` call inside `non_executable_line_numbers`
+        # itself fails.
+        pkg = tmp_path / "commented.py"
+        pkg.write_text("# a comment\nx = 1\n")
+        # Warm the module-level span cache with a real, successful parse
+        # first -- `_non_executable_byte_spans` memoizes per (path,
+        # content-hash), so the SECOND call below reaches this function's
+        # own `raw = path.read_bytes()` line without needing tree-sitter
+        # to parse again.
+        assert non_executable_line_numbers(pkg) == {1}
+
+        from pathlib import Path as _Path
+
+        real_read_bytes = _Path.read_bytes
+
+        def _raising_read_bytes(self):
+            if self == pkg:
+                raise OSError("simulated: read failure")
+            return real_read_bytes(self)
+
+        monkeypatch.setattr(_Path, "read_bytes", _raising_read_bytes)
+        assert non_executable_line_numbers(pkg) == frozenset()

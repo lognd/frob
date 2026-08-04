@@ -299,6 +299,52 @@ def test_resolve_local_import_maps_to_repo_relative(tmp_path: Path):
     assert resolve_local_import("os", "python", file_dir=root, root=root) is None
 
 
+def test_resolve_local_import_python_package_init_branch(tmp_path: Path):
+    # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="unit"
+    # Exercises the second `suffix` candidate (`/__init__.py`) -- the
+    # specifier names a package directory, not a bare module file.
+    root = tmp_path
+    pkg = root / "pkg"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text("x = 1\n")
+    resolved = resolve_local_import("pkg", "python", file_dir=root, root=root)
+    assert resolved == "pkg/__init__.py"
+
+
+def test_resolve_local_import_cpp_resolves_relative_to_file_dir(tmp_path: Path):
+    # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="unit"
+    # Exercises the c/cpp branch's happy path: a real, in-root header
+    # resolved relative to the including file's own directory.
+    root = tmp_path
+    sub = root / "src"
+    sub.mkdir()
+    (sub / "helper.h").write_text("// header\n")
+    resolved = resolve_local_import("helper.h", "cpp", file_dir=sub, root=root)
+    assert resolved == "src/helper.h"
+
+
+def test_resolve_local_import_cpp_outside_root_is_none(tmp_path: Path):
+    # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="unit"
+    # Exercises the c/cpp branch's ValueError path: a specifier that
+    # escapes `root` (relative_to raises) resolves to None, not a raise.
+    root = tmp_path / "root"
+    root.mkdir()
+    outside_dir = tmp_path / "outside"
+    outside_dir.mkdir()
+    resolved = resolve_local_import("../missing.h", "c", file_dir=outside_dir, root=root)
+    assert resolved is None
+
+
+def test_resolve_local_import_unknown_language_is_none(tmp_path: Path):
+    # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="unit"
+    # Exercises the trailing `return None` for a language the function
+    # does not special-case at all.
+    assert (
+        resolve_local_import("anything", "rust", file_dir=tmp_path, root=tmp_path)
+        is None
+    )
+
+
 class TestCanonicalTokensCrossGrammarVocabulary:
     """T-0334: `_canonical_tokens` is the primitive `RawSymbol.body_norm`
     delegates to (see each `_walk_*.py`'s `body_norm=_canonical_tokens(...)`
