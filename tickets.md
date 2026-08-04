@@ -4576,3 +4576,23 @@ command follow-up; both ids were later reused by unrelated tickets
 during a ledger renumber, so the follow-up work they described was
 never actually tracked. This ticket re-files the caching half.
 </content>
+
+<!-- ticket:T-1518 -->
+```yaml
+id: T-1518
+title: 'move TEST016 mutation evidence off the per-land critical path: batch/nightly
+  cadence, land-blocking only for security-kind'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+From the 2026-08-04 dev-cycle review: TEST016 (mutation evidence) is the most expensive, least incremental land stage, and its marginal per-ticket value is test-strength validation, not main-correctness. Proposal: run TEST016 per merge-queue batch drain (T-1444) or nightly over the day's landed diffs; keep it synchronous+blocking only for kind=security tickets. A batch finding files a ticket against the offending land instead of refusing it retroactively. Interacts with: T-1444 (batch boundary is the natural cadence point), the existing --skip-mutation-evidence override (today used 2x for genuine false positives T-1235/T-1439 -- a lower-frequency, higher-context batch run should also reduce false-positive pressure).
