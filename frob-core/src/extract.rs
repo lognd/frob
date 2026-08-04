@@ -214,3 +214,125 @@ pub fn extract_tree_python(
         result.tokens,
     )
 }
+
+/// One parsed extraction result for a rust source buffer -- three
+/// collections (rust has no python-style string-literal docstring facet,
+/// so `extract_tree_rust` returns a 3-tuple, not the python kernel's
+/// 4-tuple; rust's doc comments (`///`, `/** */`) are `line_comment`/
+/// `block_comment` leaves already, so they show up in `comment_spans`,
+/// matching how `frob.lang._walk_rust._leading_doc_comment` reads them
+/// from the same leaf kinds rather than from a separate string-literal
+/// node).
+struct RustExtraction {
+    comment_spans: Vec<(usize, usize)>,
+    identifiers: Vec<(String, usize)>,
+    tokens: Vec<String>,
+}
+
+/// Rust leaf kinds counted as comments -- matches
+/// `frob.lang._extract._COMMENT_TYPES["rust"]` /
+/// `frob.lang._walk_rust._COMMENT_TYPES`.
+const RUST_COMMENT_KINDS: [&str; 2] = ["line_comment", "block_comment"];
+
+/// Rust leaf kinds counted as identifier-like occurrences -- matches
+/// `frob.lang._extract._IDENTIFIER_TYPES["rust"]` (T-1220 addition: rust's
+/// grammar splits identifier-shaped leaves across `identifier` (plain
+/// names), `type_identifier` (type-position names), and `field_identifier`
+/// (struct/method field access), all three are identifier occurrences
+/// `frob.xref` needs).
+const RUST_IDENTIFIER_KINDS: [&str; 3] = ["identifier", "type_identifier", "field_identifier"];
+
+/// Depth-first collect `RUST_COMMENT_KINDS`-typed nodes under `node`,
+/// stopping descent the moment a match is found -- mirrors
+/// `frob.lang._extract._collect_comment_nodes`'s TYPE-match walk exactly,
+/// deliberately NOT `walk_leaves`'s leaf-only walk: this grammar generation
+/// gives `line_comment`/`block_comment` their own child (a `//`/`/*`
+/// delimiter token), so they are never leaves (`child_count() == 0`)
+/// themselves, unlike python's `comment` node. A leaf-only search would
+/// silently find zero rust comments (verified: it does, in the corpus
+/// golden-parity check this kernel was built against).
+fn collect_comment_nodes<'a>(node: Node<'a>, out: &mut Vec<Node<'a>>) {
+    if RUST_COMMENT_KINDS.contains(&node.kind()) {
+        out.push(node);
+        return;
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        collect_comment_nodes(child, out);
+    }
+}
+
+/// Pure compute: parse `source` as rust and collect comment spans,
+/// identifier `(name, line)` pairs, and the whole-file leaf-token stream
+/// (comments excluded) -- empty result (never a panic) if `source` fails
+/// to parse at all.
+fn extract_rust_source(source: &[u8]) -> RustExtraction {
+    let empty = RustExtraction {
+        comment_spans: Vec::new(),
+        identifiers: Vec::new(),
+        tokens: Vec::new(),
+    };
+    let mut parser = Parser::new();
+    let language = tree_sitter_rust::LANGUAGE.into();
+    if parser.set_language(&language).is_err() {
+        return empty;
+    }
+    let Some(tree) = parser.parse(source, None) else {
+        return empty;
+    };
+    let root = tree.root_node();
+
+    let mut comment_nodes: Vec<Node> = Vec::new();
+    collect_comment_nodes(root, &mut comment_nodes);
+    let comment_spans: Vec<(usize, usize)> = comment_nodes.iter().map(|n| span_of(*n)).collect();
+
+    let mut leaves: Vec<Node> = Vec::new();
+    walk_leaves(root, &mut leaves);
+
+    let mut identifiers: Vec<(String, usize)> = Vec::new();
+    let mut tokens: Vec<String> = Vec::new();
+    for leaf in &leaves {
+        // Matches `_leaf_tokens`'s own exclusion check exactly: a comment
+        // is skipped from the token stream only when it is ITSELF a leaf
+        // (`n.child_count == 0`) -- which, per `collect_comment_nodes`'s
+        // doc comment above, `line_comment`/`block_comment` never are in
+        // this grammar, so this branch is unreachable for rust today but
+        // kept for parity with the python-side contract's literal wording.
+        if RUST_COMMENT_KINDS.contains(&leaf.kind()) {
+            continue;
+        }
+        let text = match leaf.utf8_text(source) {
+            Ok(t) => t,
+            Err(_) => continue,
+        };
+        if RUST_IDENTIFIER_KINDS.contains(&leaf.kind()) {
+            identifiers.push((text.to_string(), leaf.start_position().row + 1));
+        }
+        tokens.push(text.to_string());
+    }
+
+    RustExtraction {
+        comment_spans,
+        identifiers,
+        tokens,
+    }
+}
+
+/// FFI entry point (T-1220): rust-only tree-extraction kernel companion to
+/// `extract_tree_python`. `source` is the raw file bytes; returns
+/// `(comment_spans, identifiers, tokens)` -- a 3-tuple, not the python
+/// kernel's 4-tuple, since rust has no python-style string-literal
+/// docstring facet (see `RustExtraction`'s doc comment). Spans/identifiers/
+/// tokens follow the same 1-based-inclusive-span, `(name, line)`, and
+/// comment-excluded-token-stream conventions as `extract_tree_python`.
+///
+/// Never raises (see module docstring): a buffer tree-sitter cannot parse
+/// yields three empty lists rather than a `PyErr`.
+// frob:doc docs/modules/lang.md#extraction-api
+#[pyfunction]
+pub fn extract_tree_rust(
+    source: Vec<u8>,
+) -> (Vec<(usize, usize)>, Vec<(String, usize)>, Vec<String>) {
+    let result = extract_rust_source(&source);
+    (result.comment_spans, result.identifiers, result.tokens)
+}

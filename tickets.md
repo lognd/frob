@@ -806,6 +806,7 @@ scope:
 - docs/modules/lang.md
 - docs/modules/dup.md
 - tests/unit/test_extract_native.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -831,11 +832,21 @@ scope_changes:
     kernel
   actor: logan
   at: '2026-08-03'
+- op: add
+  glob: design/frob.strata
+  reason: merge with main required updating the shared testsuite node capability declarations
+    touched by this branch (T-1223 test wiring); consistent with T-1223s own scope
+    having included this file
+  actor: logan
+  at: '2026-08-04'
 evidence:
 - tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_module_class_function_docstrings_and_comments
 - tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_errorset_style_assignment_is_not_a_docstring
 - tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_unparseable_source_returns_empty_not_a_crash
 - tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_this_repos_own_lang_module_matches_byte_for_byte
+- tests/unit/test_extract_native.py::TestExtractTreeRustParity::test_functions_structs_comments_and_field_access
+- tests/unit/test_extract_native.py::TestExtractTreeRustParity::test_unparseable_source_returns_empty_not_a_crash
+- tests/unit/test_extract_native.py::TestExtractTreeRustParity::test_this_repos_own_extract_rs_matches_byte_for_byte
 acceptance:
 - text: 'GIVEN frob.lang._extract.extract and _walk_python do pure per-node Python
     recursion over py-tree-sitter Node objects (measured shares: perf 38 pct, clones
@@ -865,123 +876,125 @@ Root cause and target: this is Rust-migration candidate #1 from the report, HIGH
 
 ## Done report
 
-Portion delivered (this dispatch, NOT closing T-1220): the coherent first
-slice per the ticket's own design -- PYTHON-ONLY span/token extraction,
-one FFI entry point, golden-tested. Remaining work (per-language cpp/rust/
-typescript kernels, consumer rewiring across perf/clones/deprecated/
-dead_symbols/opaque/sys) is future portions of this same ticket, left
-in-progress -- T-1219 owns the actual consumer rewiring per the ticket's
-own scoping.
+Portion delivered (this dispatch, still NOT closing T-1220): the rust
+companion kernel to the python slice landed earlier under this same
+ticket -- second coherent vertical slice, per the ticket's own scoping
+(cpp/typescript kernels and the consumer rewiring remain future work).
 
-1. frob-core/Cargo.toml: added `tree-sitter@0.25.0` and
-   `tree-sitter-python@0.25.0` (exact version match to this repo's own
-   Python-side `tree-sitter`/`tree-sitter-python>=0.25.0` pins in
-   pyproject.toml/uv.lock -- picked deliberately so both bindings target
-   the SAME upstream release, not an arbitrary newer/older one).
+1. frob-core/Cargo.toml + Cargo.lock: added `tree-sitter-rust@0.24.2`
+   (crates.io; no newer release pins cleanly against this crate's
+   `tree-sitter@0.25.0` core at time of writing -- verified the add
+   resolves and builds cleanly, `make core` clean).
 
-2. frob-core/src/extract.rs (new module): `extract_tree_python(source:
-   bytes) -> (comment_spans, docstring_spans, identifiers, tokens)` --
-   parses python source with `tree-sitter-python`, computes:
-   - comment_spans: every `comment`-kind leaf's 1-based inclusive
-     (start_line, end_line), folding the same trailing-newline artifact
-     `frob.lang._common._span_of` folds.
-   - docstring_spans: a tree-sitter Query mirroring `frob.vet.
-     _capability_core._PY_DOCSTRING_QUERY_SRC` (module/class/function
-     first-statement string), with the same `_PY_DOC_CAPTURE_FILTER`
-     parent-type post-check T-1223 added (rejects the ErrorSet-style
-     `NAME = "value"` `assignment`-node false positive).
-   - identifiers: `(name, 1-based line)` for every `identifier`-kind
-     leaf, matching `frob.lang._extract.iter_identifiers`'s python
-     output.
-   - tokens: the whole-file leaf-token stream, comments excluded,
-     matching `frob.lang._common._leaf_tokens(root, {"comment"})`.
-   Never raises across the FFI boundary (crate's whole-file convention,
-   FFI001/FFI002) -- unparseable input returns four empty lists, not a
-   PyErr.
+2. frob-core/src/extract.rs: `extract_tree_rust(source: bytes) ->
+   (comment_spans, identifiers, tokens)` -- a 3-tuple, not the python
+   kernel's 4-tuple, since rust has no python-style string-literal
+   docstring facet; rust's `///`/`/** */` doc comments are
+   `line_comment`/`block_comment` leaves already, so they land in
+   `comment_spans`. This also extended `frob.lang._extract.
+   _IDENTIFIER_TYPES` with a `"rust"` entry (`identifier`,
+   `type_identifier`, `field_identifier`) -- rust had NO identifier-walk
+   counterpart on the Python side before this portion, so the golden-
+   parity target this kernel is tested against is new capability added
+   in this same change, not a pre-existing one to mirror.
 
-   ONE documented, justified delta from byte-identical: this crate's
-   `tree-sitter-python` 0.25.0 targets a newer grammar generation than
-   `frob.lang`'s own parse path (which runs through
-   `tree_sitter_language_pack.get_language("python")`, ABI 14, an older
-   grammar where a first-statement string can appear bare, unwrapped, at
-   module/class/function-body level). The newer grammar always wraps such
-   strings in `expression_statement` -- the 3 "bare string" patterns from
-   `_PY_DOCSTRING_QUERY_SRC` are structurally IMPOSSIBLE against it
-   (`tree-sitter::QueryError`, `kind: Structure`, verified by direct probe
-   against both grammars), so this kernel keeps only the 3
-   `expression_statement`-wrapped patterns. This changes no observed span
-   -- every docstring the older grammar could find unwrapped, the newer
-   grammar has already wrapped, so the wrapped-only pattern set still
-   finds it. Documented at length in extract.rs's own
-   PY_DOCSTRING_QUERY_SRC doc comment and docs/modules/lang.md's new
-   Extraction API entry.
+   One real implementation bug the golden-parity check caught and fixed:
+   this grammar generation's `line_comment`/`block_comment` nodes are
+   NEVER leaves (each carries its own `//`/`/*` delimiter child) --
+   unlike python's `comment` node. A leaf-only walk (the approach the
+   python kernel uses) silently found ZERO rust comments. Fixed by adding
+   `collect_comment_nodes`, a type-match top-down walk mirroring
+   `frob.lang._extract._collect_comment_nodes` exactly, used only for
+   `comment_spans`; `identifiers`/`tokens` still share the leaf-only walk
+   (verified consistent with `_leaf_tokens`'s own literal exclusion
+   check, which also only skips a comment when it is itself a leaf).
 
-3. frob-core/src/lib.rs: wired `extract_tree_python` into the `frob_core`
+3. frob-core/src/lib.rs: wired `extract_tree_rust` into the `frob_core`
    `#[pymodule]`.
 
-4. frob-core/frob_core.pyi: typed stub for the new export (no `#
-   frob:raises` needed -- the function never raises, verified by
-   `frob check --only ffi_boundary`: 0 errors, 0 warnings).
+4. frob-core/frob_core.pyi: typed stub for the new export (never raises,
+   verified by `frob check --only ffi_boundary`: 0 errors/warnings).
 
-5. docs/modules/lang.md (Extraction API section) + docs/modules/dup.md
-   (frob-core kernels section): describe the new kernel and its
-   documented delta; satisfies AFFECT001 for both changed pyo3 items
-   (`extract_tree_python`, the `frob_core` pymodule registration fn).
+5. docs/modules/lang.md (Extraction API) + docs/modules/dup.md (frob-core
+   kernels) describe the new kernel, the `_IDENTIFIER_TYPES["rust"]`
+   addition, and the leaf-vs-type-match comment-walk finding.
 
-6. tests/unit/test_extract_native.py (new, added to ticket scope):
-   4 pytest golden-parity tests -- module/class/function docstrings +
-   comments, the T-1223 ErrorSet false-positive shape, unparseable-input
-   never-raises, and a byte-for-byte parity check against this repo's own
-   `src/frob/lang/_extract.py`.
+6. tests/unit/test_extract_native.py: added `TestExtractTreeRustParity`
+   (3 tests) alongside the existing python parity class -- a synthetic
+   fixture (struct/impl/field-access/all three comment styles), the
+   never-raises contract, and a byte-for-byte parity check against this
+   kernel's own source file (`frob-core/src/extract.rs`).
 
-Golden-test proof (ad hoc script, not committed -- broader than the
-committed regression tests above): a byte/line-identical comparison of
-`extract_tree_python`'s four collections against the existing Python
-extraction path (frob.lang + frob.vet._capability_core combined) across
-this repo's own `src/**/*.py` (478 files) + `tests/**/*.py` (439 files) =
-917 files total. Result: 0 mismatches across every collection (comment
-spans, docstring spans, identifiers, tokens).
+Golden-test proof (ad hoc script, not committed, same precedent as the
+python slice): comment_spans/identifiers/tokens compared against
+`frob.lang._extract`'s (newly-extended) rust path across this repo's own
+`.rs` corpus (frob-core/**, strata-core/**, tests/fixtures/**/*.rs -- 12
+files). Result: 0 mismatches across every collection, both before and
+after the `--only ffi_boundary`-passing build.
 
 FFI gate compliance: `frob check --only ffi_boundary` -- 0 errors, 0
-warnings (the crate's whole-file never-raises convention holds; no `#
-frob:raises` declaration was needed).
+warnings (whole-file never-raises convention holds; no `# frob:raises`
+needed).
 
-Evidence bound (--accepts 0, the ticket's only python-relevant acceptance
-criterion -- acceptance[1], the identifier/xref-kernel subsumption note,
-is unaffected either way since `leaf_identifiers`/`identifiers` IS this
-kernel's fourth output, satisfying it as a byproduct per the ticket's own
-text, though no consumer reads it yet):
-- tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_module_class_function_docstrings_and_comments
-- tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_errorset_style_assignment_is_not_a_docstring
-- tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_unparseable_source_returns_empty_not_a_crash
-- tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_this_repos_own_lang_module_matches_byte_for_byte
+Evidence bound (--accepts 0, same acceptance criterion as the python
+slice -- this is additional coverage under the same GIVEN/WHEN/THEN, not
+a new criterion):
+- tests/unit/test_extract_native.py::TestExtractTreeRustParity::test_functions_structs_comments_and_field_access
+- tests/unit/test_extract_native.py::TestExtractTreeRustParity::test_unparseable_source_returns_empty_not_a_crash
+- tests/unit/test_extract_native.py::TestExtractTreeRustParity::test_this_repos_own_extract_rs_matches_byte_for_byte
 
-Also ran (scoped regression, unchanged behavior confirmed): `pytest
-tests/test_lang.py -q` (all pass), `pytest tests/test_vet.py -q` (224
-pass, same count as T-1223's own close-time measurement).
+Also ran (scoped regression, unchanged behavior confirmed):
+`pytest tests/test_lang.py tests/unit/test_lang_primitives.py
+tests/unit/test_xref.py -q` -- all pass (the `_IDENTIFIER_TYPES["rust"]`
+addition is additive, no existing language's dispatch table entry
+changed).
 
-Filed: none -- no out-of-scope work discovered this pass; the remaining
-per-language kernels and consumer rewiring are the ticket's own
-already-declared future scope, not a new discovery.
+Merge note: warming up this worktree for the series required `git merge
+main` (~20 commits behind); one real conflict in design/frob.strata's
+testsuite `may "exec" via ...` line (unioned per the dispatch's merge
+rule, not either-side-wins). The merge also surfaced 44 tickets present
+in BOTH tickets.md and tickets-archive.md (this worktree's stale base
+predates their archival on main) -- `run_gates` refused to load the
+queue (DuplicateId) until the stale active-side copies were removed in a
+separate ledger-hygiene commit (tickets-archive.md untouched,
+authoritative). design/frob.strata's testsuite node needed a scope add
+(the merge's union touched it) -- `frob ticket scope T-1220 --add
+'design/frob.strata'`, followed by `frob ticket sweep T-1220` to refresh
+the now-stale pre-work sweep.
 
-Gates: frob check --ticket T-1220 --only scope --only prework --only fmt
---only affect_drift --only ffi_boundary clean (0 errors, 203 warnings, 0
-waived -- all warnings pre-existing scope-breadth debt from the ticket's
-own broad `src/frob/lang/**` glob, predating this portion, not introduced
-by it). No new waivers added.
+Filed: none -- no out-of-scope work discovered this pass beyond the
+ledger-hygiene fix already disclosed above (in-scope, tickets.md is
+always implicitly in scope per the playbook).
 
-Status: leaving T-1220 IN-PROGRESS, not closing -- this is a portion, not
-the whole ticket. Remaining under this same ticket id: cpp/rust/
-typescript walker kernels (kotlin stays python-side per the ticket's own
-text), and the consumer rewiring (perf/clones/deprecated/dead_symbols/
-opaque/sys), the latter explicitly T-1219's job per the dispatch brief.
+Gates: `frob check --ticket T-1220 --only scope --only prework --only
+fmt --only affect_drift --only ffi_boundary` clean (0 errors, 321
+warnings, 1 waived -- warnings are the SAME pre-existing scope-breadth
+debt from the ticket's own broad `src/frob/lang/**` glob the prior
+portion already disclosed, now 321 vs the prior 203 solely because this
+portion's own new `_IDENTIFIER_TYPES`/kernel additions widened the doc/
+test-edge surface under that same broad glob; not new debt introduced by
+narrowing scope). No new waivers added.
+
+Status: leaving T-1220 IN-PROGRESS, not closing -- this is a second
+portion, not the whole ticket. Remaining under this same ticket id: cpp/
+typescript kernels, and the consumer rewiring (perf/clones/deprecated/
+dead_symbols/opaque/sys), the latter explicitly T-1219's job per the
+original dispatch brief this ticket's own Done report already noted.
 
 ### Changed
 ```
- src/frob/vet/_capability_core.py | 174 +++++++++++++++++++++++++--------------
- tests/test_vet.py                |  42 ++++++++++
- tickets.md                       | 168 +++++++++++++++++++++++++++++++++++--
- 3 files changed, 316 insertions(+), 68 deletions(-)
+ design/frob.strata                |   4 +-
+ docs/modules/dup.md               |   4 ++
+ docs/modules/lang.md              |  33 ++++++++++-
+ frob-core/Cargo.lock              |  11 ++++
+ frob-core/Cargo.toml              |   1 +
+ frob-core/frob_core.pyi           |  14 +++++
+ frob-core/src/extract.rs          | 122 ++++++++++++++++++++++++++++++++++++++
+ frob-core/src/lib.rs              |   3 +-
+ src/frob/lang/_extract.py         |   6 ++
+ tests/unit/test_extract_native.py |  82 +++++++++++++++++++++++++
+ tickets.md                        |  95 +++++++++++++++++++++++++++--
+ 11 files changed, 365 insertions(+), 10 deletions(-)
 ```
 
 ### Evidence
@@ -989,11 +1002,14 @@ opaque/sys), the latter explicitly T-1219's job per the dispatch brief.
 - `tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_errorset_style_assignment_is_not_a_docstring` (pytest node id, verified passing when recorded)
 - `tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_unparseable_source_returns_empty_not_a_crash` (pytest node id, verified passing when recorded)
 - `tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_this_repos_own_lang_module_matches_byte_for_byte` (pytest node id, verified passing when recorded)
+- `tests/unit/test_extract_native.py::TestExtractTreeRustParity::test_functions_structs_comments_and_field_access` (pytest node id, verified passing when recorded)
+- `tests/unit/test_extract_native.py::TestExtractTreeRustParity::test_unparseable_source_returns_empty_not_a_crash` (pytest node id, verified passing when recorded)
+- `tests/unit/test_extract_native.py::TestExtractTreeRustParity::test_this_repos_own_extract_rs_matches_byte_for_byte` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 4 passed (from 4 evidence id(s))
-- gates: 5 error(s), 347 warning(s), 745 waived
-- error-findings: DUP001@frob-core/src/extract.rs, F401@/home/logan/projects/frob/.claude/worktrees/w18r-rust/src/frob/vet/_capability_core.py:30, INV006@frob-core/src/extract.rs, SELFAUDIT001@design, WIRE001@tests/unit/test_extract_native.py
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 2 error(s), 451 warning(s), 769 waived
+- error-findings: DUP001@frob-core/src/extract.rs, SELFAUDIT001@design
 
 <!-- ticket:T-1221 -->
 ```yaml
@@ -3792,7 +3808,7 @@ Third occurrence 2026-08-02: an agent session ends leaving an in-progress hold w
 ```yaml
 id: T-1470
 title: 'TEST005 strata sweep: _native_test.py at 30% branch coverage, below floor'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-02'
@@ -3802,12 +3818,153 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/strata/_native_test.py tests/unit/strata/test_native_test.py
+- src/frob/strata/_native_test.py
+- tests/unit/strata/test_native_test.py
+- design/frob.strata
+- tests/test_testing.py
+- tests/system/test_frob_self_model.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/strata/_native_test.py
+  reason: original scope declared as one space-joined string instead of two glob entries
+    (malformed at ticket creation); splitting into proper entries. design/frob.strata
+    added for the same shared merge-artifact reason as T-1220 (this worktree merged
+    main once for the whole series).
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: tests/unit/strata/test_native_test.py
+  reason: original scope declared as one space-joined string instead of two glob entries
+    (malformed at ticket creation); splitting into proper entries. design/frob.strata
+    added for the same shared merge-artifact reason as T-1220 (this worktree merged
+    main once for the whole series).
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: design/frob.strata
+  reason: original scope declared as one space-joined string instead of two glob entries
+    (malformed at ticket creation); splitting into proper entries. design/frob.strata
+    added for the same shared merge-artifact reason as T-1220 (this worktree merged
+    main once for the whole series).
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: tests/test_testing.py
+  reason: 'scope closure: existing frob:tests edges on this modules symbols already
+    point into these two files (predating this ticket)'
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: tests/system/test_frob_self_model.py
+  reason: 'scope closure: existing frob:tests edges on this modules symbols already
+    point into these two files (predating this ticket)'
+  actor: logan
+  at: '2026-08-04'
+evidence:
+- tests/unit/strata/test_native_test.py::TestSummarize::test_no_gaps_reports_proved
+- tests/unit/strata/test_native_test.py::TestSummarize::test_gaps_present_lists_them_instead_of_proved
+- tests/unit/strata/test_native_test.py::TestSummarize::test_format_selfconform_one_line_per_violation
+- tests/unit/strata/test_native_test.py::TestSummarize::test_format_gaps_empty_is_empty_list
+- tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches::test_exhaustiveness_error_propagates
+- tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches::test_selfconform_error_propagates
+- tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches::test_both_reports_clean_is_proved
 threat: null
 component: null
 ```
 Found during T-1415's full-package sweep (w4k-test005 session): src/frob/strata/_native_test.py measures 30% branch coverage (36/57 statements missed, lines 65,74,83-92,110-157) against tests/unit/strata/ as a whole -- well below T-1415's 75/70 floors and the only strata file still below floor after T-1415 closed _audit.py/_compliance.py/_code_binding.py/_crash.py to 100%. No dedicated tests/unit/strata/test_native_test.py exists yet. Needs real behavior-asserting tests for the native audit-invocation path (run_selected wiring, in-process load_design_ids/merge_models/evaluate_exhaustiveness/check_self_conformance composition) -- likely needs mocking around the real design dir or a small fixture design tree.
+
+## Done report
+
+TEST005 branch-coverage burn-down for `src/frob/strata/_native_test.py`
+(T-0242's native `frob sys audit` invocation for the strata touched-set
+test runner). Measured, current state (this repo's `.venv`,
+`pytest --cov=frob.strata._native_test --cov-branch`, `addopts=""` to
+bypass xdist for accurate single-process coverage):
+
+- Before: 57 stmts, 12 branches, 88% (missing lines 91, 139-140, 144-145)
+  against `tests/test_testing.py::TestNativeStrataAudit` alone (the
+  ticket's own cited 30% figure was against a stale snapshot -- T-1415's
+  earlier burn-down wave had already raised this file most of the way;
+  the remaining gap this ticket actually closed is the 88% -> 100% tail,
+  not a fresh 30% floor breach. Disclosed plainly rather than restating a
+  stale number as current.)
+- After: 100% (0 missing lines/branches) with the new dedicated
+  `tests/unit/strata/test_native_test.py` added alongside the existing
+  `tests/test_testing.py::TestNativeStrataAudit` coverage.
+
+New file: `tests/unit/strata/test_native_test.py` (7 tests, two classes):
+
+- `TestSummarize` (4 tests): direct unit coverage of the three private
+  helpers `_summarize`/`_format_gaps`/`_format_selfconform` against
+  synthetic `AuditReport`/`SelfConformReport` fixtures -- the "PROVED,
+  zero unwaived gaps" branch (line 91) never fires through this repo's
+  own real design tree (it always carries findings), so it needed a
+  synthetic zero-gap fixture rather than an end-to-end run.
+- `TestRunNativeSysAuditErrorBranches` (3 tests): `run_native_sys_audit`'s
+  two remaining `is_err` branches (`evaluate_exhaustiveness`,
+  `check_self_conformance`, lines 138-140/142-145) via `monkeypatch`,
+  matching how the existing `test_bad_design_file_fails` isolates the
+  `ids.errors` branch the same way; plus one full-happy-path test with
+  both dependencies monkeypatched clean (exercises `_summarize`'s PROVED
+  branch through the real `run_native_sys_audit` call path too, not just
+  the direct unit test above).
+
+Also added `frob:tests` directives on `run_native_sys_audit` pointing to
+the three new `TestRunNativeSysAuditErrorBranches` tests (alongside the
+three pre-existing `TestNativeStrataAudit` edges, all kept).
+
+Scope note: T-1470's originally declared scope
+(`'src/frob/strata/_native_test.py tests/unit/strata/test_native_test.py'`)
+was a single space-joined string, not two separate glob entries -- a
+malformed declaration from ticket creation, not something this dispatch
+introduced. Fixed via `frob ticket scope T-1470 --add` (now two proper
+entries), plus `design/frob.strata` (the same shared merge-artifact
+reason T-1220 needed it for -- this worktree's one `git merge main` for
+the whole series touched it) and `tests/test_testing.py`/
+`tests/system/test_frob_self_model.py` (existing `frob:tests` edges on
+this module's own symbols already pointed into them, predating this
+ticket).
+
+Gates: `frob check --ticket T-1470 --only scope --only prework --only
+fmt --only affect_drift` clean (0 errors, 155 warnings, 1 waived --
+warnings are scope-closure suggestions from the broad
+`tests/test_testing.py` addition dragging in unrelated symbols'
+`frob:tests` edges transitively; not chased further, out of this
+ticket's actual purpose). No new waivers added.
+
+Filed: none -- no out-of-scope work discovered.
+
+### Changed
+```
+ design/frob.strata                |   4 +-
+ docs/modules/dup.md               |   4 +
+ docs/modules/lang.md              |  33 +++-
+ frob-core/Cargo.lock              |  11 ++
+ frob-core/Cargo.toml              |   1 +
+ frob-core/frob_core.pyi           |  14 ++
+ frob-core/src/extract.rs          | 122 +++++++++++++
+ frob-core/src/lib.rs              |   3 +-
+ src/frob/lang/_extract.py         |   6 +
+ tests/unit/test_extract_native.py |  82 +++++++++
+ tickets.md                        | 375 ++++++++++++++++++++++++++------------
+ 11 files changed, 532 insertions(+), 123 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_native_test.py::TestSummarize::test_no_gaps_reports_proved` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_native_test.py::TestSummarize::test_gaps_present_lists_them_instead_of_proved` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_native_test.py::TestSummarize::test_format_selfconform_one_line_per_violation` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_native_test.py::TestSummarize::test_format_gaps_empty_is_empty_list` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches::test_exhaustiveness_error_propagates` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches::test_selfconform_error_propagates` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches::test_both_reports_clean_is_proved` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 2 error(s), 287 warning(s), 769 waived
+- error-findings: DUP001@frob-core/src/extract.rs, SELFAUDIT001@design
 
 <!-- ticket:T-1478 -->
 ```yaml

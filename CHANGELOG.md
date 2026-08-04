@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.331.0] - unreleased
+
+- T-1470: TEST005 strata sweep: _native_test.py at 30% branch coverage, below floor
+
 ## [0.330.0] - unreleased
 
 - T-1198: strata: eliminate attr interface= boilerplate (4236 of 5588 frob.strata lines) via generated fragment or compact grammar

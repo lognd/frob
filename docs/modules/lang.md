@@ -193,8 +193,37 @@ crate's newer grammar generation, vs. `frob.lang`'s own
 dropping them changes no observed span since the newer grammar has
 already wrapped every such string). No consumer is rewired to this kernel
 yet -- `perf`/`clones`/`deprecated`/`dead_symbols`/`opaque`/`sys` and the
-per-language (cpp/rust/typescript) walkers remain future work under this
-same ticket/its children.
+remaining per-language (cpp/typescript) walkers remain future work under
+this same ticket/its children.
+
+<!-- frob:describes frob-core/src/extract.rs::extract_tree_rust -->
+
+T-1220 (second landed portion): `frob_core.extract_tree_rust(source:
+bytes) -> (comment_spans, identifiers, tokens)` is the rust-language
+companion kernel, via `tree-sitter`/`tree-sitter-rust` (crates.io
+0.24.2). A 3-tuple, not the python kernel's 4-tuple -- rust has no
+python-style string-literal docstring facet, so there is no fourth
+collection to compute; rust's `///`/`/** */` doc comments are
+`line_comment`/`block_comment` leaves already, so they show up in
+`comment_spans`, the same leaf kinds `frob.lang._walk_rust.
+_leading_doc_comment` reads. This portion also extended `frob.lang.
+_extract._IDENTIFIER_TYPES` with a `"rust"` entry (`identifier`,
+`type_identifier`, `field_identifier`) -- rust had no identifier-walk
+counterpart before this ticket, so the golden-parity comparison this
+kernel is tested against is a new capability on the Python side too, not
+a pre-existing one. One implementation note the golden-parity check
+surfaced and fixed: unlike python's `comment` node, this grammar
+generation's `line_comment`/`block_comment` nodes are never leaves
+(`child_count() == 0`) -- each carries its own `//`/`/*` delimiter child
+-- so the kernel's comment-span collector performs a type-match top-down
+walk (mirroring `frob.lang._extract._collect_comment_nodes`) rather than
+reusing the leaf-only walk `identifiers`/`tokens` share. Golden-tested
+against this repo's own rust source tree (`frob-core/**/*.rs`,
+`strata-core/**/*.rs`, plus fixture `.rs` files, 12 files, 0 mismatches
+ad hoc; `tests/unit/test_extract_native.py::TestExtractTreeRustParity`
+carries the committed regression lock). No consumer is rewired to this
+kernel yet, same as the python kernel above -- cpp/typescript walkers and
+the consumer rewiring remain future work.
 
 ## Primitives
 

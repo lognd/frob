@@ -134,3 +134,85 @@ class TestExtractTreePythonParity:
         # fixture.
         source = Path("src/frob/lang/_extract.py").read_bytes()
         assert _rust_side(source) == _python_side(source)
+
+
+_RUST_LANG = get_language("rust")
+
+
+# frob:waive WIRE001 reason="a private golden-test helper used only by \
+# TestExtractTreeRustParity's own methods below, in this same file -- there is no \
+# production caller to wire it to by design, mirroring _python_side above and the \
+# tests/unit/test_conftest_stackdump.py ::_load_conftest precedent (T-1466)" \
+# follow_up="T-1503"
+def _rust_lang_python_side(
+    source: bytes,
+) -> tuple[list[tuple[int, int]], list[tuple[str, int]], list[str]]:
+    """The existing Python-side computation for rust's three collections
+    (no docstring facet -- rust has none, see `extract_tree_rust`'s doc
+    comment in `frob-core/src/extract.rs`)."""
+    parser = Parser(_RUST_LANG)
+    tree = parser.parse(source)
+    root = tree.root_node
+
+    raw_nodes = _extract._collect_comment_nodes(root, _extract.COMMENT_TYPES["rust"])
+    comment_spans = sorted(_common._span_of(n) for n in raw_nodes)
+    identifiers = sorted(_extract.iter_identifiers(tree, "rust"))
+    tokens = list(_common._leaf_tokens(root, _extract.COMMENT_TYPES["rust"]))
+    return comment_spans, identifiers, tokens
+
+
+# frob:waive WIRE001 reason="a private golden-test helper used only by \
+# TestExtractTreeRustParity's own methods below, in this same file -- there is no \
+# production caller to wire it to by design, mirroring _rust_side above and the \
+# tests/unit/test_conftest_stackdump.py ::_load_conftest precedent (T-1466)" \
+# follow_up="T-1503"
+def _rust_kernel_side(
+    source: bytes,
+) -> tuple[list[tuple[int, int]], list[tuple[str, int]], list[str]]:
+    """`frob_core.extract_tree_rust`'s output, normalized the same way
+    `_rust_lang_python_side` normalizes its own three collections."""
+    comment_spans, identifiers, tokens = frob_core.extract_tree_rust(source)
+    return sorted(comment_spans), sorted(identifiers), tokens
+
+
+class TestExtractTreeRustParity:
+    """`frob_core.extract_tree_rust` (T-1220's rust kernel slice) vs the
+    existing Python extraction path (`frob.lang._extract`), across a
+    representative fixture plus this repo's own rust source."""
+
+    def test_functions_structs_comments_and_field_access(self) -> None:
+        # frob:tests frob-core/src/extract.rs::extract_tree_rust kind="unit"
+        source = (
+            b"// a leading comment\n"
+            b"/// a doc comment\n"
+            b"pub struct Foo {\n"
+            b"    pub bar: i32,\n"
+            b"}\n\n"
+            b"impl Foo {\n"
+            b"    /* block comment */\n"
+            b"    pub fn get_bar(&self) -> i32 {\n"
+            b"        self.bar\n"
+            b"    }\n"
+            b"}\n"
+        )
+        assert _rust_kernel_side(source) == _rust_lang_python_side(source)
+
+    def test_unparseable_source_returns_empty_not_a_crash(self) -> None:
+        # frob:tests frob-core/src/extract.rs::extract_tree_rust kind="unit"
+        # Never raises across the FFI boundary (module docstring) -- even
+        # nonsense input just parses as best-effort tree-sitter error
+        # recovery, never a PyErr.
+        comment_spans, identifiers, tokens = frob_core.extract_tree_rust(
+            b"\x00\x01\xff not rust at all (((("
+        )
+        assert isinstance(comment_spans, list)
+        assert isinstance(identifiers, list)
+        assert isinstance(tokens, list)
+
+    def test_this_repos_own_extract_rs_matches_byte_for_byte(self) -> None:
+        # frob:tests frob-core/src/extract.rs::extract_tree_rust kind="unit"
+        # This kernel's own source file: real, large, comment-and-doc-
+        # comment-heavy rust, a committed regression lock rather than only
+        # a synthetic fixture.
+        source = Path("frob-core/src/extract.rs").read_bytes()
+        assert _rust_kernel_side(source) == _rust_lang_python_side(source)

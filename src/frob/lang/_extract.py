@@ -298,6 +298,12 @@ _IDENTIFIER_TYPES: dict[str, frozenset[str]] = {
     "python": frozenset({"identifier"}),
     "c": frozenset({"identifier", "type_identifier"}),
     "cpp": frozenset({"identifier", "type_identifier"}),
+    # T-1220 rust kernel slice: rust's grammar splits identifier-shaped
+    # leaves across three leaf kinds (plain `identifier`, `type_identifier`
+    # for type-position names, `field_identifier` for struct/method field
+    # access) -- all three are identifier-like occurrences frob.xref needs,
+    # mirroring the c/cpp pair's own type_identifier inclusion above.
+    "rust": frozenset({"identifier", "type_identifier", "field_identifier"}),
 }
 
 

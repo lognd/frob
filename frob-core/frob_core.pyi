@@ -67,3 +67,17 @@ def extract_tree_python(
     list[tuple[str, int]],
     list[str],
 ]: ...
+
+# T-1220: rust-only tree-extraction kernel companion to
+# extract_tree_python -- see docs/modules/lang.md#extraction-api. Returns
+# (comment_spans, identifiers, tokens); a 3-tuple, not the python kernel's
+# 4-tuple, since rust has no python-style string-literal docstring facet.
+# Never raises (source that fails to parse yields three empty lists rather
+# than a PyErr).
+def extract_tree_rust(
+    source: bytes,
+) -> tuple[
+    list[tuple[int, int]],
+    list[tuple[str, int]],
+    list[str],
+]: ...
