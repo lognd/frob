@@ -4503,7 +4503,7 @@ found while working T-1259: migrate_v1_to_v2 (src/frob/tickets/_store.py) is imp
 id: T-1495
 title: land crash-recovery/unwind can reset main past completed land commits (T-1464/T-1262
   eaten 2026-08-04)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-04'
