@@ -5156,7 +5156,7 @@ the new/changed test symbols (COV002).
 id: T-1515
 title: 'orphan-writer guard: land refuses/warns when another land process from a different
   session is live'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-04'
