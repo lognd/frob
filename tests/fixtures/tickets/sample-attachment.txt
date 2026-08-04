@@ -1,0 +1,3 @@
+T-1259 migration golden-fixture attachment payload -- not real ticket
+content, just fixed bytes so the migrator's attachments/ move can be
+asserted byte-for-byte.

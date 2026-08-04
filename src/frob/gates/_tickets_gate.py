@@ -39,7 +39,10 @@ from frob.logging import get_logger
 from frob.tickets import Ticket, TicketQueue, TicketState, closed_ticket_ids
 from frob.tickets._models import Priority, TicketError
 from frob.tickets._provisional import is_draft_id
+from frob.tickets._store import _dir_glob as _tickets_dir_glob
 from frob.tickets._store import _parse_ledger as _tickets_parse_ledger
+from frob.tickets._store import _store_mode as _tickets_store_mode
+from frob.tickets._store import ledger_path as _tickets_ledger_path
 from frob.tickets._store import load_all as _tickets_load_all
 from frob.tickets._store import load_archive as _tickets_load_archive
 
@@ -1039,6 +1042,77 @@ def _tick010_stale_lease_report(root: Path) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+# frob:ticket T-1259
+# T-1259: the sunset date this repo has recorded for ledger v1 (monofile
+# tickets.md/tickets-archive.md) in docs/modules/tickets.md's ledger-v2
+# migration section -- LEDGERV1001 stays a WARNING before this date and
+# escalates to a hard ERROR after it, mirroring DEPR004's own
+# escalation-after-expiry shape (`_deprecated_is_expired`) one level up
+# at the whole-ledger-backend granularity instead of a single symbol.
+# Moving this date is a docs+code pair: update the recorded note in
+# docs/modules/tickets.md in the SAME change as this constant so the two
+# never silently disagree.
+_LEDGERV1_SUNSET = "2027-02-02"
+
+
+# frob:doc docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7  # noqa: E501
+# frob:doc docs/modules/tickets.md#storage-internals
+# frob:waive COV007 reason="docs/modules/tickets.md's Storage internals section \
+# individually frob:describes this private helper by name (T-0529) -- a deliberate \
+# architecture doc, not accidental drift onto a private helper, same precedent as \
+# _store_mode/_split_done_report/_migrate_one_v2 above"
+# frob:tests tests/test_tickets_migration.py::TestLedgerV1DeprecationGate.test_monofile_mode_warns_before_sunset  # noqa: E501
+# frob:tests tests/test_tickets_migration.py::TestLedgerV1DeprecationGate.test_monofile_mode_errors_past_sunset  # noqa: E501
+# frob:tests tests/test_tickets_migration.py::TestLedgerV1DeprecationGate.test_v2_mode_repo_is_silent  # noqa: E501
+# frob:enforces CHK-GATE-LEDGERV1001
+def _ledgerv1001_violations(root: Path) -> tuple[Violation, ...]:
+    """LEDGERV1001 (ledger v2 design section 7, deliverable 3): a repo
+    that actually HAS legacy content (a real `tickets.md` or dir-mode
+    `tickets/*.md` files on disk -- not merely `_store_mode`'s fresh-repo
+    DEFAULT, which a from-scratch `tmp_path` test fixture with zero
+    tickets would otherwise also match) gets one finding naming `frob
+    ticket migrate --to v2` as the recorded path off the deprecated
+    backend -- a WARNING while today's date has not yet passed
+    `_LEDGERV1_SUNSET`, escalating to a hard ERROR once it has, mirroring
+    the DEPR00x family's own "warn in-window, error past expiry" shape
+    (`_deprecated_is_expired`/`_depr004_violations`) so an unmigrated repo
+    does not silently carry the deprecated backend forever. Silent for a
+    v2-mode repo, and silent for a repo with no ledger content of EITHER
+    shape at all (nothing yet to migrate) -- there is nothing left (or
+    nothing yet) to warn about in either case."""
+    mode = _tickets_store_mode(root)
+    if mode == "v2":
+        return ()
+    has_legacy_content = _tickets_ledger_path(root).exists() or bool(
+        _tickets_dir_glob(root)
+    )
+    if not has_legacy_content:
+        return ()
+    from datetime import date
+
+    expired = date.today().isoformat() > _LEDGERV1_SUNSET
+    severity = Severity.ERROR if expired else Severity.WARN
+    verb = "past its recorded sunset" if expired else "still within its recorded window"
+    _log.debug(
+        "LEDGERV1001: monofile-mode repo, %s (sunset=%s)", verb, _LEDGERV1_SUNSET
+    )
+    return (
+        Violation(
+            rule="LEDGERV1001",
+            severity=severity,
+            file="tickets.md",
+            line=0,
+            message=(
+                f"LEDGERV1001: this repo is still ledger v1 (monofile "
+                f"tickets.md/tickets-archive.md), {verb} "
+                f"(sunset={_LEDGERV1_SUNSET}); run `frob ticket migrate "
+                f"--to v2` to move to the file-per-ticket backend "
+                f"(docs/design/ledger-v2.md)"
+            ),
+        ),
+    )
+
+
 # frob:doc docs/modules/tickets.md#decision-record-t-0162
 def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK001/TICK002/TICK003/TICK004/TICK005/TICK006/TICK007/TICK008/
@@ -1081,4 +1155,5 @@ def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
         + _tick008_unknown_ledger_fields(queue)
         + _tick009_scope_breadth_nudges(root, queue)
         + stale_leases
+        + _ledgerv1001_violations(root)
     )

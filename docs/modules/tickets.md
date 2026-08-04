@@ -2865,6 +2865,63 @@ AttachError = TicketError | ClipboardError
 backend switch described under Storage above; `frob/tickets/__init__.py`
 (the Public API) is the only caller.
 
+### Migration to v2 (T-1259, docs/design/ledger-v2.md section 7)
+
+<!-- frob:describes src/frob/tickets/_store.py::migrate_v1_to_v2 -->
+<!-- frob:describes src/frob/tickets/_store.py::_migrate_one_v2 -->
+<!-- frob:describes src/frob/tickets/_store.py::_split_done_report -->
+
+`migrate_v1_to_v2(root)` is the one-shot, reversible v1 -> v2 migrator
+(design section 7, deliverable 1): it reads today's `tickets.md`/
+`tickets-archive.md` via `_parse_ledger`, writes each ticket into a
+v2-mode `tickets/T-####/ticket.md` (active) or `tickets/archive/T-####/
+ticket.md` (already-archived), splits any embedded `## Done report`
+section out into its own `done-report.md` (`_split_done_report`, the
+mechanical inverse of `_models.replace_done_report_section`'s splice),
+and `git mv`s any legacy `tickets/attachments/<id>/` directory to the
+ticket's own `attachments/`. It does NOT delete `tickets.md`/`tickets-
+archive.md` in the same call -- rollback is `rm -rf tickets/T-*/
+tickets/archive/` while both monofiles are untouched. A no-op (`Ok(0)`)
+once the repo is already v2-mode, so it is safe to invoke more than
+once. Golden round-trip coverage (a fixture ledger covering a done
+ticket with a Done report, a queued ticket with `blocked_by`, a ticket
+with attachments, an archived ticket, and a draft-id ticket, migrated
+then re-loaded and compared field-for-field) lives in
+`tests/test_tickets_migration.py`.
+
+```python
+# frob/tickets/_store.py
+def migrate_v1_to_v2(root: Path) -> Result[int, TicketError]
+    # Reads tickets.md/tickets-archive.md, writes each ticket into its v2
+    # directory (ticket.md + done-report.md + moved attachments/),
+    # WITHOUT deleting the monofiles. Ok(0) no-op if already v2-mode.
+def _split_done_report(body: str) -> tuple[str, str | None]
+    # The mechanical inverse of replace_done_report_section: splits a
+    # v1-mode body into (body_without_done_report, done_report_text).
+```
+
+**Deprecation window (LEDGERV1001, `frob.gates._tickets_gate`)**: once
+this migration path shipped, `frob check` on any repo that still has a
+real `tickets.md` or legacy `tickets/*.md` on disk (not merely
+`_store_mode`'s fresh-repo default) reports one LEDGERV1001 finding
+naming `frob ticket migrate --to v2` as the remedy -- a WARNING while
+today's date is on or before the recorded sunset below, escalating to a
+hard ERROR once it has passed (mirrors the DEPR00x family's own
+warn-in-window/error-past-expiry shape, `_deprecated_is_expired`/
+`_depr004_violations`, one level up at the whole-ledger-backend
+granularity instead of a single symbol). Silent for a repo that is
+already v2-mode, and silent for a repo with no ledger content of either
+shape at all.
+
+Recorded compatibility window: **opened 2026-08-03 (T-1259 landing this
+migrator), sunset 2027-02-02** (`_LEDGERV1_SUNSET` in
+`frob.gates._tickets_gate`). Moving the sunset date is a docs+code pair
+-- update this note and the constant in the same change so they can
+never silently disagree. This repo's own ledger is deliberately NOT cut
+over to v2 by this landing (an active multi-agent drive is in
+progress); the coordinator flips it in a quiet window per this ticket's
+Done report.
+
 ### v2 backend (T-1254, docs/design/ledger-v2.md section 1)
 
 A THIRD backend alongside `single`/`dir`: one directory per ticket,

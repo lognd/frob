@@ -1884,6 +1884,7 @@
     "src/frob/tickets/_store.py::load_all": "60b754e1e41609e0c068de26256662b99652685944cdddd7622ff486c9e64810",
     "src/frob/tickets/_store.py::load_archive": "f11b53da3e5d54e4983b1cdd48ce7b90c0fa4e36aa62852c6ae8998c680c6a2c",
     "src/frob/tickets/_store.py::migrate_to_ledger": "517558cbb061b836e32623e2897ba5b107ea817acaa36b3ac7f39cc9c3b3a2ce",
+    "src/frob/tickets/_store.py::migrate_v1_to_v2": "9fa800f2c3bb60046b8280fc21890e280301ddde7b553e3666310ed15caef2ac",
     "src/frob/tickets/_store.py::read_done_report": "fe2775a3a72a420e02096871c2b5a5f3a75cab8503897bb1bdfedfc743ed9bd6",
     "src/frob/tickets/_store.py::slugify": "00c0694ef1fb4e73827da849c2a289e59efc8e045a3a33e940757ffa46ba1b0e",
     "src/frob/tickets/_store.py::ticket_lock": "9155105a37b2a4a5ca1e48ccdf32dbacb17a544b311f36890e8d3f42ea6a2cf0",
@@ -1995,5 +1996,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.322.0"
+  "version": "0.323.0"
 }

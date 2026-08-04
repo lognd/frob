@@ -391,6 +391,13 @@ _KNOWN_GATE_RULES = frozenset(
         # resolving nearby and no explicit no-ticket-needed reason. WARN,
         # first turn-on.
         "TICK011",
+        # T-1259: LEDGERV1001 (frob.gates._tickets_gate's
+        # _ledgerv1001_violations) -- a repo still on ledger v1 (monofile
+        # tickets.md/tickets-archive.md) after ledger v2's migration path
+        # shipped, mirroring the DEPR00x family's warn-in-window/error-
+        # past-expiry shape at the whole-backend granularity. `frob
+        # ticket migrate --to v2` is the recorded remedy.
+        "LEDGERV1001",
         # T-0788: COMPLIANCE005 (frob.gates.compliance_gate, dispatching
         # frob.strata._compliance.check_cmpl_registry built by T-0607) --
         # a checkable-control CMPL-* compliance-registry unit left
