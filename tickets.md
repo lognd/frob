@@ -1512,6 +1512,7 @@ Root cause: gates/__init__.py:6050 _run_process_gate ships gates to a ProcessPoo
 
 ## Drop reason
 - 2026-08-04: Superseded by T-1464: T-1217's declared scope cannot structurally reach the real fix; T-1464 carries the implementation and evidence
+
 <!-- ticket:T-1218 -->
 ```yaml
 id: T-1218
@@ -7329,9 +7330,9 @@ land:
 
 Ref: gate-gap class 6 in docs/audits/docs-staleness-2026-07-29.md.
 
-<!-- ticket:T-1487 -->
+<!-- ticket:T-1495 -->
 ```yaml
-id: T-1487
+id: T-1495
 title: land crash-recovery/unwind can reset main past completed land commits (T-1464/T-1262
   eaten 2026-08-04)
 state: queued
