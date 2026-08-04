@@ -83,6 +83,17 @@ WHY and the recovery recipes.
 
 ## 1. Worktree warm-up (do this FIRST, every time)
 
+0. BEFORE any `git merge main` (warm-up or mid-ticket): check that no
+   coordinator land is in flight -- `ps aux | grep "ticket land" | grep
+   -v grep` must be empty. A land commits onto main and then may REVERT
+   that commit minutes later (post-land sweep refusal, T-1456); a merge
+   taken inside that window permanently carries the reverted content
+   into your branch, and your later land re-introduces it as brand-new
+   errors (2026-08-04 incident: a worktree merged main mid-T-1198-land
+   and inherited its reverted `_multifile.py` plus that file's INV006/
+   TEST001 findings). If a land is running, wait for it to exit and for
+   `git -C <root> log --oneline -1` to be stable across ~30s, then merge.
+
 1. `git merge main` in the worktree, then verify the tip:
    `git log --oneline -1` must show a commit that is `main`'s current tip
    or an ancestor merge of it -- not the worktree's stale creation base.
