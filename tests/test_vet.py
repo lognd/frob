@@ -612,8 +612,9 @@ class TestCapabilityScan:
         assert "net-connect" in scan_file_capabilities(c_file)
 
     def test_decode_to_exec_same_function(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_decode_to_exec_signal kind="unit"
-        from frob.vet._capability import _decode_to_exec_signal
+        # frob:tests src/frob/vet/_capability_scan.py::_decode_to_exec_signal \
+        # kind="unit"
+        from frob.vet._capability_scan import _decode_to_exec_signal
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text(
@@ -625,7 +626,7 @@ class TestCapabilityScan:
         assert _decode_to_exec_signal(pkg) is True
 
     def test_decode_to_exec_absent_when_separate(self, tmp_path: Path) -> None:
-        from frob.vet._capability import _decode_to_exec_signal
+        from frob.vet._capability_scan import _decode_to_exec_signal
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text(
@@ -654,9 +655,9 @@ class TestCapabilityScan:
     def test_scan_directory_capabilities_aggregates_across_files(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_scan_directory_capabilities \
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_directory_capabilities \
         # kind="unit"
-        from frob.vet._capability import _scan_directory_capabilities
+        from frob.vet._capability_scan import _scan_directory_capabilities
 
         (tmp_path / "a.py").write_text("import subprocess\nsubprocess.run(['ls'])\n")
         (tmp_path / "b.py").write_text("import requests\nrequests.get('x')\n")
@@ -787,7 +788,7 @@ class TestCapabilityScan:
     def test_scan_directory_capabilities_excludes_own_module(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_scan_directory_capabilities \
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_directory_capabilities \
         # kind="unit"
         # T-0151: directory aggregation over vet's REAL package path must not
         # self-inflate "eval"/"exec" from _capability.py's own pattern-table
@@ -813,7 +814,7 @@ class TestCapabilityScan:
         # false; this test is specifically about vet/'s own self-match
         # exclusion, so it keeps the scan scoped the same way the pre-
         # T-0253 version did).
-        from frob.vet._capability import _scan_directory_capabilities
+        from frob.vet._capability_scan import _scan_directory_capabilities
 
         repo_root = Path(__file__).resolve().parents[1]
         fake_repo = tmp_path / "self-scan"
@@ -2326,7 +2327,8 @@ class TestCapabilityScanTsAliasTablePredicates:
     def test_member_rebind_lookup_used_only_for_identifier_object(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_resolve_ts_member kind="unit"
+        # frob:tests src/frob/vet/_capability_typescript.py::_resolve_ts_member \
+        # kind="unit"
         # Kills the `_capability.py:2217` compare-Eq-swap mutant
         # (`obj.type == "identifier"` -> `!=`): with a real `identifier`
         # object and a matching alias-table rebind entry, `_resolve_ts_
@@ -2334,7 +2336,7 @@ class TestCapabilityScanTsAliasTablePredicates:
         # the swapped comparison would skip the fallback for this exact
         # case and return `None` instead.
         from frob.lang import raw_tree
-        from frob.vet._capability import _TS_SCOPE_TYPES, _resolve_ts_member
+        from frob.vet._capability_typescript import _TS_SCOPE_TYPES, _resolve_ts_member
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("obj.run(url);\n")
@@ -2350,7 +2352,8 @@ class TestCapabilityScanTsAliasTablePredicates:
     def test_member_rebind_lookup_skipped_without_alias_table(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_resolve_ts_member kind="unit"
+        # frob:tests src/frob/vet/_capability_typescript.py::_resolve_ts_member \
+        # kind="unit"
         # Kills the `_capability.py:2217` boolop-And-swap mutant (`and` ->
         # `or`): with `alias_table=None`, the real `and` short-circuits
         # before ever touching `_ts_attr_rebind_lookup`, returning `None`
@@ -2359,7 +2362,7 @@ class TestCapabilityScanTsAliasTablePredicates:
         # is enough to satisfy `or`), raising `AttributeError` the instant
         # it tries `None.get(...)`.
         from frob.lang import raw_tree
-        from frob.vet._capability import _resolve_ts_member
+        from frob.vet._capability_typescript import _resolve_ts_member
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("obj.run(url);\n")
@@ -2372,7 +2375,8 @@ class TestCapabilityScanTsAliasTablePredicates:
     def test_attr_rebind_lookup_climbs_past_non_matching_scope(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_ts_attr_rebind_lookup kind="unit"
+        # frob:tests src/frob/vet/_capability_typescript.py::_ts_attr_rebind_lookup \
+        # kind="unit"
         # Kills the `_capability.py:2246` compare-Eq-swap mutant (`cur.type
         # == "program"` -> `!=`): the rebind entry lives TWO scope levels
         # above the call site (the outer function, not the immediately
@@ -2382,7 +2386,7 @@ class TestCapabilityScanTsAliasTablePredicates:
         # non-"program" scope it checks (i.e. immediately), so it would
         # never reach the outer scope's entry at all.
         from frob.lang import raw_tree
-        from frob.vet._capability import _ts_attr_rebind_lookup
+        from frob.vet._capability_typescript import _ts_attr_rebind_lookup
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text(
@@ -2407,7 +2411,8 @@ class TestCapabilityScanTsAliasTablePredicates:
     def test_resolve_expr_peels_through_chained_assignment(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_resolve_ts_expr kind="unit"
+        # frob:tests src/frob/vet/_capability_typescript.py::_resolve_ts_expr \
+        # kind="unit"
         # Kills the `_capability.py:2292` compare-Eq-swap mutant
         # (`node.type == "assignment_expression"` -> `!=`): resolving the
         # OUTER assignment_expression node of `a = b = ax.get` directly
@@ -2415,7 +2420,7 @@ class TestCapabilityScanTsAliasTablePredicates:
         # comparison would skip the peel-through branch entirely and fall
         # through to `_resolve_ts_expr`'s final `return None`.
         from frob.lang import raw_tree
-        from frob.vet._capability import _resolve_ts_expr
+        from frob.vet._capability_typescript import _resolve_ts_expr
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("a = b = ax.get;\n")
@@ -2428,7 +2433,8 @@ class TestCapabilityScanTsAliasTablePredicates:
     def test_default_param_alias_recorded_for_identifier_pattern(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_record_ts_default_param_aliases \
+        # frob:tests \
+        # src/frob/vet/_capability_typescript.py::_record_ts_default_param_aliases \
         # kind="unit"
         # Kills the `_capability.py:2472` compare-NotEq-swap mutant
         # (`pattern.type != "identifier"` -> `==`): a real identifier
@@ -2436,7 +2442,7 @@ class TestCapabilityScanTsAliasTablePredicates:
         # get an alias entry; the swapped comparison would treat the
         # ordinary identifier case as the one to SKIP.
         from frob.lang import raw_tree
-        from frob.vet._capability import _record_ts_default_param_aliases
+        from frob.vet._capability_typescript import _record_ts_default_param_aliases
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("function h(cb = ax.get) { cb(url); }\n")
@@ -2450,7 +2456,8 @@ class TestCapabilityScanTsAliasTablePredicates:
     def test_default_param_alias_skips_missing_default_value(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_record_ts_default_param_aliases \
+        # frob:tests \
+        # src/frob/vet/_capability_typescript.py::_record_ts_default_param_aliases \
         # kind="unit"
         # Kills the `_capability.py:2472` boolop-Or-swap mutant (`or` ->
         # `and`): a plain parameter with NO default (`value is None`, the
@@ -2458,7 +2465,7 @@ class TestCapabilityScanTsAliasTablePredicates:
         # swapped `and` would let it through and call `_resolve_ts_expr`
         # on a `None` value node, raising `AttributeError`.
         from frob.lang import raw_tree
-        from frob.vet._capability import _record_ts_default_param_aliases
+        from frob.vet._capability_typescript import _record_ts_default_param_aliases
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("function h(cb) { cb(url); }\n")
@@ -2470,7 +2477,8 @@ class TestCapabilityScanTsAliasTablePredicates:
         assert alias_table.get(func.id, {}) == {}
 
     def test_destructure_alias_tolerates_length_mismatch(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_record_ts_destructure_alias \
+        # frob:tests \
+        # src/frob/vet/_capability_typescript.py::_record_ts_destructure_alias \
         # kind="unit"
         # Kills the `_capability.py:2499` bool-False-negated mutant
         # (`strict=False` -> `strict=True`): the array pattern binds FEWER
@@ -2479,7 +2487,7 @@ class TestCapabilityScanTsAliasTablePredicates:
         # silently truncate to the shorter side; `strict=True` would raise
         # `ValueError` instead.
         from frob.lang import raw_tree
-        from frob.vet._capability import _record_ts_destructure_alias
+        from frob.vet._capability_typescript import _record_ts_destructure_alias
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("const [f] = [ax.get, 0];\n")
@@ -2497,7 +2505,8 @@ class TestCapabilityScanTsAliasTablePredicates:
     def test_destructure_alias_binds_only_identifier_elements(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_record_ts_destructure_alias \
+        # frob:tests \
+        # src/frob/vet/_capability_typescript.py::_record_ts_destructure_alias \
         # kind="unit"
         # Kills the `_capability.py:2500` compare-NotEq-swap mutant
         # (`left_el.type != "identifier"` -> `==`): a real identifier
@@ -2505,7 +2514,7 @@ class TestCapabilityScanTsAliasTablePredicates:
         # get an alias entry; the swapped comparison would SKIP the
         # ordinary identifier case instead of an unsupported one.
         from frob.lang import raw_tree
-        from frob.vet._capability import _record_ts_destructure_alias
+        from frob.vet._capability_typescript import _record_ts_destructure_alias
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("const [f] = [ax.get];\n")
@@ -2774,20 +2783,20 @@ class TestCapabilityScanCAliasTablePredicates:
     `TestCapabilityScanTsAliasTablePredicates` white-box pattern."""
 
     def test_declared_name_returns_none_for_none_node(self) -> None:
-        # frob:tests src/frob/vet/_capability.py::_c_declared_name kind="unit"
+        # frob:tests src/frob/vet/_capability_c.py::_c_declared_name kind="unit"
         # Kills the `while node is not None:` loop-condition mutant: a
         # `None` input must never crash and must return `None`.
-        from frob.vet._capability import _c_declared_name
+        from frob.vet._capability_c import _c_declared_name
 
         assert _c_declared_name(None) is None
 
     def test_declared_name_direct_identifier(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_c_declared_name kind="unit"
+        # frob:tests src/frob/vet/_capability_c.py::_c_declared_name kind="unit"
         # Kills `node.type == "identifier"`'s Eq mutant: a bare identifier
         # node must resolve to its own text, not fall through to the
         # `declarator`-field walk.
         from frob.lang import raw_tree
-        from frob.vet._capability import _c_declared_name
+        from frob.vet._capability_c import _c_declared_name
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text("int x;\n")
@@ -2799,13 +2808,13 @@ class TestCapabilityScanCAliasTablePredicates:
     def test_declared_name_walks_declarator_field_to_identifier(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_c_declared_name kind="unit"
+        # frob:tests src/frob/vet/_capability_c.py::_c_declared_name kind="unit"
         # Kills `next_node = node.child_by_field_name("declarator")` being
         # skipped/misrouted: a `pointer_declarator` (which HAS a labeled
         # `declarator` field, no `parenthesized_declarator` fallback
         # needed) must still resolve through to its inner identifier.
         from frob.lang import raw_tree
-        from frob.vet._capability import _c_declared_name
+        from frob.vet._capability_c import _c_declared_name
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text("int *p;\n")
@@ -2817,14 +2826,14 @@ class TestCapabilityScanCAliasTablePredicates:
     def test_declared_name_parenthesized_declarator_fallback(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_c_declared_name kind="unit"
+        # frob:tests src/frob/vet/_capability_c.py::_c_declared_name kind="unit"
         # Kills `node.type == "parenthesized_declarator"`'s Eq mutant AND
         # the `next_node is None and ...` And-swapped-to-Or mutant
         # directly: a `parenthesized_declarator` (the `(*f)` wrapper) has
         # no `declarator` FIELD at all, so `next_node` is `None` from the
         # field lookup -- ONLY the fallback branch can resolve it.
         from frob.lang import raw_tree
-        from frob.vet._capability import _c_declared_name
+        from frob.vet._capability_c import _c_declared_name
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text("void (*f)(const char*);\n")
@@ -2836,14 +2845,14 @@ class TestCapabilityScanCAliasTablePredicates:
     def test_declared_name_returns_none_for_abstract_declarator(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_c_declared_name kind="unit"
+        # frob:tests src/frob/vet/_capability_c.py::_c_declared_name kind="unit"
         # An `abstract_pointer_declarator` (a type-only declarator with no
         # name at all, e.g. a bare `const char*` parameter) has NO
         # `declarator` field AND is not itself a `parenthesized_
         # declarator` -- the fallback's own `if named else None` must
         # still terminate the loop with `None`, not loop forever or crash.
         from frob.lang import raw_tree
-        from frob.vet._capability import _c_declared_name
+        from frob.vet._capability_c import _c_declared_name
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text("void f(const char*);\n")
@@ -2853,11 +2862,11 @@ class TestCapabilityScanCAliasTablePredicates:
         assert _c_declared_name(abstract) is None
 
     def test_collect_declaration_names_bare_identifier(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_c_collect_declaration_names kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_c.py::_c_collect_declaration_names kind="unit"  # noqa: E501
         # Kills `child.type in _C_DECLARATOR_CHILD_TYPES`'s membership
         # mutant for the bare `identifier` shape (`int x, y;`).
         from frob.lang import raw_tree
-        from frob.vet._capability import _c_collect_declaration_names
+        from frob.vet._capability_c import _c_collect_declaration_names
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text("int x, y;\n")
@@ -2869,10 +2878,10 @@ class TestCapabilityScanCAliasTablePredicates:
         assert bound == {"x": 0, "y": 0}
 
     def test_collect_declaration_names_init_declarator(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_c_collect_declaration_names kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_c.py::_c_collect_declaration_names kind="unit"  # noqa: E501
         # Kills `child.type == "init_declarator"`'s Eq mutant.
         from frob.lang import raw_tree
-        from frob.vet._capability import _c_collect_declaration_names
+        from frob.vet._capability_c import _c_collect_declaration_names
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text("int x = 5;\n")
@@ -2886,13 +2895,13 @@ class TestCapabilityScanCAliasTablePredicates:
     def test_collect_declaration_names_uninitialized_fn_ptr(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_c_collect_declaration_names kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_c.py::_c_collect_declaration_names kind="unit"  # noqa: E501
         # T-0662's own new shape: an uninitialized function-pointer
         # declaration (`void (*f)(const char*);`) has no `init_declarator`
         # wrapper -- only the extended `_C_DECLARATOR_CHILD_TYPES`
         # membership check (`function_declarator` in the tuple) reaches it.
         from frob.lang import raw_tree
-        from frob.vet._capability import _c_collect_declaration_names
+        from frob.vet._capability_c import _c_collect_declaration_names
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text("void (*f)(const char*);\n")
@@ -2905,9 +2914,9 @@ class TestCapabilityScanCAliasTablePredicates:
 
     # frob:waive PII012 reason="'address_of' names the C `&` address-of operator, not a mailing/contact address"  # noqa: E501
     def test_resolve_alias_source_unwraps_address_of(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_resolve_c_alias_source kind="unit"
+        # frob:tests src/frob/vet/_capability_c.py::_resolve_c_alias_source kind="unit"
         from frob.lang import raw_tree
-        from frob.vet._capability import _resolve_c_alias_source
+        from frob.vet._capability_c import _resolve_c_alias_source
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text("void g() { f = &system; }\n")
@@ -2921,9 +2930,9 @@ class TestCapabilityScanCAliasTablePredicates:
     def test_resolve_alias_source_rejects_non_identifier_address_of(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_resolve_c_alias_source kind="unit"
+        # frob:tests src/frob/vet/_capability_c.py::_resolve_c_alias_source kind="unit"
         from frob.lang import raw_tree
-        from frob.vet._capability import _resolve_c_alias_source
+        from frob.vet._capability_c import _resolve_c_alias_source
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text("void g() { int x; f = &x[0]; }\n")
@@ -2935,9 +2944,9 @@ class TestCapabilityScanCAliasTablePredicates:
     def test_resolve_alias_source_rejects_non_identifier_non_pointer(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_resolve_c_alias_source kind="unit"
+        # frob:tests src/frob/vet/_capability_c.py::_resolve_c_alias_source kind="unit"
         from frob.lang import raw_tree
-        from frob.vet._capability import _resolve_c_alias_source
+        from frob.vet._capability_c import _resolve_c_alias_source
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text("void g() { int x = 1 + 2; }\n")
@@ -2947,9 +2956,9 @@ class TestCapabilityScanCAliasTablePredicates:
         assert _resolve_c_alias_source(binary_expr, {}, {}, {}) is None
 
     def test_resolve_alias_source_via_macro_table(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_resolve_c_alias_source kind="unit"
+        # frob:tests src/frob/vet/_capability_c.py::_resolve_c_alias_source kind="unit"
         from frob.lang import raw_tree
-        from frob.vet._capability import _resolve_c_alias_source
+        from frob.vet._capability_c import _resolve_c_alias_source
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text("void g() { f = SYS; }\n")
@@ -2963,11 +2972,11 @@ class TestCapabilityScanCAliasTablePredicates:
     def test_record_field_alias_skips_non_field_designator(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_record_c_field_alias kind="unit"
+        # frob:tests src/frob/vet/_capability_c.py::_record_c_field_alias kind="unit"
         # An array-designated initializer (`[0] = system`) is not a
         # `field_designator` -- must be skipped, not mis-recorded.
         from frob.lang import raw_tree
-        from frob.vet._capability import _record_c_field_alias
+        from frob.vet._capability_c import _record_c_field_alias
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text("void (*tbl[1])(const char*) = { [0] = system };\n")
@@ -2981,12 +2990,12 @@ class TestCapabilityScanCAliasTablePredicates:
     def test_c_call_target_resolved_rejects_non_constant_field_type(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_c_call_target_resolved kind="unit"
+        # frob:tests src/frob/vet/_capability_c.py::_c_call_target_resolved kind="unit"
         # A call target that is none of identifier/field_expression/
         # subscript_expression (a parenthesized function-pointer
         # dereference `(*f)(x)`) must resolve to `None`, not crash.
         from frob.lang import raw_tree
-        from frob.vet._capability import _c_call_target_resolved
+        from frob.vet._capability_c import _c_call_target_resolved
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text('void g() { void (*f)(const char*); (*f)("sh"); }\n')
@@ -3000,9 +3009,9 @@ class TestCapabilityScanCAliasTablePredicates:
     def test_c_call_target_resolved_subscript_non_number_index(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_c_call_target_resolved kind="unit"
+        # frob:tests src/frob/vet/_capability_c.py::_c_call_target_resolved kind="unit"
         from frob.lang import raw_tree
-        from frob.vet._capability import _c_call_target_resolved
+        from frob.vet._capability_c import _c_call_target_resolved
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text(
@@ -3254,9 +3263,9 @@ class TestCapabilityScanCppAliasTablePredicates:
     def test_structured_binding_alias_skips_non_initializer_list_rhs(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_record_c_structured_binding_alias kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_c.py::_record_c_structured_binding_alias kind="unit"  # noqa: E501
         from frob.lang import raw_tree
-        from frob.vet._capability import _record_c_structured_binding_alias
+        from frob.vet._capability_c import _record_c_structured_binding_alias
 
         pkg = tmp_path / "pkg.cpp"
         pkg.write_text("auto [a, b] = some_pair_var;\n")
@@ -3273,13 +3282,13 @@ class TestCapabilityScanCppAliasTablePredicates:
     def test_default_param_alias_skips_node_with_no_default_value_field(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_record_c_default_param_alias kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_c.py::_record_c_default_param_alias kind="unit"  # noqa: E501
         # A plain (non-default-valued) `parameter_declaration` has no
         # `default_value` field at all -- passing one through directly
         # must be a clean no-op (`.child_by_field_name("default_value")`
         # returns `None`), not a crash.
         from frob.lang import raw_tree
-        from frob.vet._capability import _record_c_default_param_alias
+        from frob.vet._capability_c import _record_c_default_param_alias
 
         pkg = tmp_path / "pkg.cpp"
         pkg.write_text("void call(void(*cb)(const char*)) {}\n")
@@ -3293,9 +3302,9 @@ class TestCapabilityScanCppAliasTablePredicates:
     def test_default_param_alias_records_resolvable_default(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_record_c_default_param_alias kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_c.py::_record_c_default_param_alias kind="unit"  # noqa: E501
         from frob.lang import raw_tree
-        from frob.vet._capability import _record_c_default_param_alias
+        from frob.vet._capability_c import _record_c_default_param_alias
 
         pkg = tmp_path / "pkg.cpp"
         pkg.write_text("void call(void(*cb)(const char*) = system) {}\n")
@@ -3312,14 +3321,14 @@ class TestCapabilityScanCppAliasTablePredicates:
     def test_scope_bind_step_binds_optional_parameter_declaration(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_c_scope_bind_step kind="unit"
+        # frob:tests src/frob/vet/_capability_c.py::_c_scope_bind_step kind="unit"
         # Kills the `node_type in ("parameter_declaration", "optional_
         # parameter_declaration")` membership mutant directly: without the
         # T-0663 extension, an `optional_parameter_declaration`'s name is
         # never bound, so `_c_scope_bound_names` would not know `cb` is a
         # parameter at all.
         from frob.lang import raw_tree
-        from frob.vet._capability import _c_scope_bound_names
+        from frob.vet._capability_c import _c_scope_bound_names
 
         pkg = tmp_path / "pkg.cpp"
         pkg.write_text("void call(void(*cb)(const char*) = system) { cb(0); }\n")
@@ -3332,7 +3341,7 @@ class TestCapabilityScanCppAliasTablePredicates:
     def test_declaration_alias_dispatches_structured_binding_declarator(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_record_c_declaration_alias kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_c.py::_record_c_declaration_alias kind="unit"  # noqa: E501
         # Kills `declarator.type == "structured_binding_declarator"`'s Eq
         # mutant at the DISPATCH site in `_record_c_declaration_alias`
         # itself (as opposed to `_record_c_structured_binding_alias`'s own
@@ -3341,7 +3350,7 @@ class TestCapabilityScanCppAliasTablePredicates:
         # to the single-name `_c_declared_name` path and record nothing
         # useful (or crash on a multi-name declarator).
         from frob.lang import raw_tree
-        from frob.vet._capability import _record_c_declaration_alias
+        from frob.vet._capability_c import _record_c_declaration_alias
 
         pkg = tmp_path / "pkg.cpp"
         pkg.write_text("auto [a, b] = std::pair{system, 0};\n")
@@ -3591,13 +3600,13 @@ class TestCapabilityScanKotlinAliasTablePredicates:
     Predicates`/`TestCapabilityScanCppAliasTablePredicates`'s pattern."""
 
     def test_import_table_plain_import_binds_last_segment(self) -> None:
-        # frob:tests src/frob/vet/_capability.py::_kt_import_table kind="unit"
+        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_import_table kind="unit"
         # Kills the plain-import branch's `.rsplit(".", 1)[-1]` mutant and
         # the `elif alias_node is not None:`/`is_wildcard` dispatch: a
         # plain `import a.b.C` (no `as`, no `*`) must bind `"C"` (the last
         # dotted segment), not the full path or nothing at all.
         from frob.lang._walk_kotlin import parse_kotlin
-        from frob.vet._capability import _kt_import_table
+        from frob.vet._capability_kotlin import _kt_import_table
 
         tree = parse_kotlin(b"import java.lang.ProcessBuilder\n")
         table, wildcard = _kt_import_table(tree.root_node)
@@ -3605,11 +3614,11 @@ class TestCapabilityScanKotlinAliasTablePredicates:
         assert wildcard == frozenset()
 
     def test_import_table_as_alias_binds_alias_name(self) -> None:
-        # frob:tests src/frob/vet/_capability.py::_kt_import_table kind="unit"
+        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_import_table kind="unit"
         # Kills `elif alias_node is not None:`'s Is-swap mutant: an `as`
         # import must bind the ALIAS name, not the last dotted segment.
         from frob.lang._walk_kotlin import parse_kotlin
-        from frob.vet._capability import _kt_import_table
+        from frob.vet._capability_kotlin import _kt_import_table
 
         tree = parse_kotlin(b"import java.lang.Runtime as Rt\n")
         table, wildcard = _kt_import_table(tree.root_node)
@@ -3618,12 +3627,12 @@ class TestCapabilityScanKotlinAliasTablePredicates:
         assert wildcard == frozenset()
 
     def test_import_table_curated_wildcard_recorded(self) -> None:
-        # frob:tests src/frob/vet/_capability.py::_kt_import_table kind="unit"
+        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_import_table kind="unit"
         # Kills `dotted in _KT_WILDCARD_DANGEROUS_MODULES`'s membership
         # mutant: a wildcard import of a CURATED package must land in the
         # wildcard set, not the plain import table.
         from frob.lang._walk_kotlin import parse_kotlin
-        from frob.vet._capability import _kt_import_table
+        from frob.vet._capability_kotlin import _kt_import_table
 
         tree = parse_kotlin(b"import java.lang.*\n")
         table, wildcard = _kt_import_table(tree.root_node)
@@ -3631,9 +3640,9 @@ class TestCapabilityScanKotlinAliasTablePredicates:
         assert wildcard == frozenset({"java.lang"})
 
     def test_import_table_uncurated_wildcard_not_recorded(self) -> None:
-        # frob:tests src/frob/vet/_capability.py::_kt_import_table kind="unit"
+        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_import_table kind="unit"
         from frob.lang._walk_kotlin import parse_kotlin
-        from frob.vet._capability import _kt_import_table
+        from frob.vet._capability_kotlin import _kt_import_table
 
         tree = parse_kotlin(b"import com.example.untracked.*\n")
         table, wildcard = _kt_import_table(tree.root_node)
@@ -3643,14 +3652,14 @@ class TestCapabilityScanKotlinAliasTablePredicates:
     def test_property_name_and_value_returns_none_none_without_variable_declaration(
         self,
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_kt_property_name_and_value kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_property_name_and_value kind="unit"  # noqa: E501
         # Kills `if name_node is None: return None, None`'s guard: a
         # `property_declaration` node itself passed with no `variable_
         # declaration` child at all (constructed here via a destructuring
         # declaration, which has no plain `variable_declaration` child)
         # must return `(None, None)`, not crash on a `None` var_decl.
         from frob.lang._walk_kotlin import parse_kotlin
-        from frob.vet._capability import _kt_property_name_and_value
+        from frob.vet._capability_kotlin import _kt_property_name_and_value
 
         tree = parse_kotlin(b"val (a, b) = Pair(1, 2)\n")
         prop = _ts_find(tree.root_node, "property_declaration")
@@ -3660,12 +3669,12 @@ class TestCapabilityScanKotlinAliasTablePredicates:
         assert value is None
 
     def test_property_name_and_value_extracts_name_and_value(self) -> None:
-        # frob:tests src/frob/vet/_capability.py::_kt_property_name_and_value kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_property_name_and_value kind="unit"  # noqa: E501
         # Kills the `seen_eq`/`if c.type == "=":`'s Eq mutant: the VALUE
         # returned must be the child strictly AFTER the `=` token, not the
         # `=` token itself or an earlier child.
         from frob.lang._walk_kotlin import parse_kotlin
-        from frob.vet._capability import _kt_property_name_and_value
+        from frob.vet._capability_kotlin import _kt_property_name_and_value
 
         tree = parse_kotlin(b"val f = runCmd\n")
         prop = _ts_find(tree.root_node, "property_declaration")
@@ -3678,9 +3687,9 @@ class TestCapabilityScanKotlinAliasTablePredicates:
     def test_resolve_callable_reference_rejects_non_identifier_member(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_kt_resolve_callable_reference kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_resolve_callable_reference kind="unit"  # noqa: E501
         from frob.lang._walk_kotlin import parse_kotlin
-        from frob.vet._capability import _kt_resolve_callable_reference
+        from frob.vet._capability_kotlin import _kt_resolve_callable_reference
 
         tree = parse_kotlin(b"val f = ::runCmd\n")
         ref = _ts_find(tree.root_node, "callable_reference")
@@ -3690,14 +3699,14 @@ class TestCapabilityScanKotlinAliasTablePredicates:
     def test_resolve_callable_reference_typed_falls_back_to_literal_receiver(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_kt_resolve_callable_reference kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_resolve_callable_reference kind="unit"  # noqa: E501
         # `tree-sitter-kotlin` only parses `X::Y` as `callable_reference`
         # (as opposed to a bare `navigation_expression`) once `X` is a
         # KNOWN type in the file -- a preceding `class` declaration for
         # the receiver, matching real kotlin usage (referencing a member
         # of an unresolvable/undeclared type is not valid kotlin either).
         from frob.lang._walk_kotlin import parse_kotlin
-        from frob.vet._capability import _kt_resolve_callable_reference
+        from frob.vet._capability_kotlin import _kt_resolve_callable_reference
 
         tree = parse_kotlin(
             b'class Runtime\nval f = Runtime::exec\nfun g() { f("x") }\n'
@@ -3713,9 +3722,10 @@ class TestCapabilityScanKotlinAliasTablePredicates:
     def test_resolve_expr_text_returns_none_for_unbound_identifier(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_kt_resolve_expr_text kind="unit"
+        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_resolve_expr_text \
+        # kind="unit"
         from frob.lang._walk_kotlin import parse_kotlin
-        from frob.vet._capability import _kt_resolve_expr_text
+        from frob.vet._capability_kotlin import _kt_resolve_expr_text
 
         tree = parse_kotlin(b"fun f() { g(x) }\n")
         call = _ts_find(tree.root_node, "call_expression")
@@ -3726,12 +3736,13 @@ class TestCapabilityScanKotlinAliasTablePredicates:
     def test_resolve_expr_text_call_expression_wraps_with_parens(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_kt_resolve_expr_text kind="unit"
+        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_resolve_expr_text \
+        # kind="unit"
         # The intermediate-call "()" marker this resolver's own docstring
         # explains is required for the real taxonomy needle to match at
         # all -- locked in directly against the private predicate.
         from frob.lang._walk_kotlin import parse_kotlin
-        from frob.vet._capability import _kt_resolve_expr_text
+        from frob.vet._capability_kotlin import _kt_resolve_expr_text
 
         tree = parse_kotlin(b"fun f() { Rt.getRuntime() }\n")
         call = _ts_find(tree.root_node, "call_expression")
@@ -3740,9 +3751,9 @@ class TestCapabilityScanKotlinAliasTablePredicates:
         assert resolved == "java.lang.Runtime.getRuntime()"
 
     def test_kt_call_callee_picks_last_non_call_suffix_child(self) -> None:
-        # frob:tests src/frob/vet/_capability.py::_kt_call_callee kind="unit"
+        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_call_callee kind="unit"
         from frob.lang._walk_kotlin import parse_kotlin
-        from frob.vet._capability import _kt_call_callee
+        from frob.vet._capability_kotlin import _kt_call_callee
 
         tree = parse_kotlin(b"fun f() { g() }\n")
         call = _ts_find(tree.root_node, "call_expression")
@@ -3846,8 +3857,9 @@ class TestFingerprintScan:
     `_scan_file_operations`, joined to `frob.strata.CVE_FINGERPRINTS`."""
 
     def test_matches_a_known_fingerprint(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("data = yaml.load(raw_bytes)\n")
@@ -3857,13 +3869,13 @@ class TestFingerprintScan:
     def test_yaml_load_with_explicit_loader_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_yaml_load_call_lacks_explicit_loader kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_yaml_load_call_lacks_explicit_loader kind="unit"  # noqa: E501
         # frob:ticket T-1329
         # An explicit Loader= is FP-DESERIALIZE-YAML-001's own prescribed
         # remediation (CVE-2017-18342 is the loader-LESS default) -- the
         # substring needle alone fired on frob's own remediated
         # tickets/_store.py calls after T-1206.
-        from frob.vet._capability import _scan_file_fingerprints
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text(
@@ -3879,9 +3891,9 @@ class TestFingerprintScan:
     def test_one_bare_yaml_load_among_remediated_calls_still_flags(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_yaml_load_call_lacks_explicit_loader kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_yaml_load_call_lacks_explicit_loader kind="unit"  # noqa: E501
         # frob:ticket T-1329
-        from frob.vet._capability import _scan_file_fingerprints
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text(
@@ -3892,8 +3904,9 @@ class TestFingerprintScan:
         assert any(m.id == "FP-DESERIALIZE-YAML-001" for m in matches)
 
     def test_no_match_on_clean_source(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("def add(a, b):\n    return a + b\n")
@@ -3903,8 +3916,9 @@ class TestFingerprintScan:
         # T-0400 audit finding #3: `shell=True` reformatted with spaces
         # around the `=` used to evade FP-EXEC-SHELL-001 (raw substring
         # search only); the fingerprint scan is now whitespace-tolerant.
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("subprocess.run(cmd, shell = True)\n")
@@ -3916,8 +3930,9 @@ class TestFingerprintScan:
     ) -> None:
         # The whitespace-tolerant matcher must still exclude comment-only
         # occurrences (T-0209), same as the exact-match path.
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("# example: subprocess.run(cmd, shell = True)\n")
@@ -3927,8 +3942,9 @@ class TestFingerprintScan:
     def test_matches_the_xxe_fingerprint_positive(self, tmp_path: Path) -> None:
         # T-0189 litmus positive: an lxml parser explicitly left resolving
         # external entities matches FP-XXE-PARSE-001.
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text(
@@ -3941,8 +3957,9 @@ class TestFingerprintScan:
     def test_does_not_match_the_xxe_fingerprint_negative(self, tmp_path: Path) -> None:
         # T-0189 litmus negative: the hardened lxml configuration (entity
         # resolution explicitly disabled) must not fire.
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text(
@@ -3954,14 +3971,16 @@ class TestFingerprintScan:
         assert not any(m.id == "FP-XXE-PARSE-001" for m in matches)
 
     def test_no_language_returns_empty(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         assert _scan_file_fingerprints(tmp_path / "foo.unknownext") == ()
 
     def test_unreadable_file_returns_empty(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         missing = tmp_path / "gone.py"
         assert _scan_file_fingerprints(missing) == ()
@@ -3970,8 +3989,9 @@ class TestFingerprintScan:
         # a typescript-only fingerprint's needle appearing in a .py file
         # must never match -- the language gate is enforced independently
         # of the needle text.
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("x = 'new Function(\"return 1\")'\n")
@@ -3980,8 +4000,9 @@ class TestFingerprintScan:
 
     def test_matches_tls_verify_false_python(self, tmp_path: Path) -> None:
         # T-0188: FP-TLS-VERIFY-001 -- requests/httpx/aiohttp verify=False.
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("resp = requests.get(url, verify=False)\n")
@@ -3990,8 +4011,9 @@ class TestFingerprintScan:
 
     def test_no_match_on_verified_tls_python(self, tmp_path: Path) -> None:
         # negative sibling: verify=True never fires FP-TLS-VERIFY-001.
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("resp = requests.get(url, verify=True)\n")
@@ -4000,8 +4022,9 @@ class TestFingerprintScan:
 
     def test_matches_tls_reject_unauthorized_false_node(self, tmp_path: Path) -> None:
         # T-0188: FP-TLS-VERIFY-002 -- Node https/tls rejectUnauthorized: false.
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("const opts = { host, rejectUnauthorized: false };\n")
@@ -4011,8 +4034,9 @@ class TestFingerprintScan:
     def test_no_match_on_reject_unauthorized_true_node(self, tmp_path: Path) -> None:
         # negative sibling: rejectUnauthorized: true never fires
         # FP-TLS-VERIFY-002.
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("const opts = { host, rejectUnauthorized: true };\n")
@@ -4021,8 +4045,9 @@ class TestFingerprintScan:
 
     def test_matches_tls_danger_accept_invalid_certs_rust(self, tmp_path: Path) -> None:
         # T-0188: FP-TLS-VERIFY-003 -- Rust reqwest danger_accept_invalid_certs.
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.rs"
         pkg.write_text(
@@ -4035,8 +4060,9 @@ class TestFingerprintScan:
     def test_no_match_on_default_reqwest_builder_rust(self, tmp_path: Path) -> None:
         # negative sibling: a builder with no danger_accept_invalid_certs
         # call never fires FP-TLS-VERIFY-003.
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.rs"
         pkg.write_text("let client = Client::builder().build()?;\n")
@@ -4049,8 +4075,8 @@ class TestFingerprintScan:
         # every needle as literal data, so it must be excluded from
         # _scan_directory_capabilities the same way _capability_registry.py
         # already is.
-        # frob:tests src/frob/vet/_capability.py::_is_self_path kind="unit"
-        from frob.vet._capability import _FINGERPRINT_CATALOG_PATH, _is_self_path
+        # frob:tests src/frob/vet/_capability_scan.py::_is_self_path kind="unit"
+        from frob.vet._capability_scan import _FINGERPRINT_CATALOG_PATH, _is_self_path
 
         repo_root = Path(__file__).resolve().parents[1]
         assert _is_self_path(_FINGERPRINT_CATALOG_PATH, repo_root)
@@ -4069,10 +4095,10 @@ class TestFingerprintScan:
         # exclusion set, not silently produce fresh SYS100/vet noise like
         # T-0201 did for _cve_fingerprint.py) rather than let a new
         # pattern-table file slip past both join paths unexcluded again.
-        # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
         import re
 
-        from frob.vet._capability import is_self_pattern_path
+        from frob.vet._capability_scan import is_self_pattern_path
 
         repo_root = Path(__file__).resolve().parents[1]
         src_root = repo_root / "src" / "frob"
@@ -4102,7 +4128,12 @@ class TestFingerprintScan:
         # `_cve_fingerprint.py`, and the `_capability_registry/` package's
         # table submodules are still present and still matched.
         assert len(matched) >= 3, matched
-        assert repo_root / "src/frob/vet/_capability.py" in matched
+        # T-1420 (tail split): the `needles=(...)`/`needles: tuple[...]`
+        # prose that used to live in `_capability.py`'s own
+        # `_SELF_PATTERN_SUFFIXES` comment block moved verbatim to
+        # `_capability_scan.py` along with that constant -- it is the file
+        # that matches the marker now, not `_capability.py` itself.
+        assert repo_root / "src/frob/vet/_capability_scan.py" in matched
         assert repo_root / "src/frob/strata/_cve_fingerprint.py" in matched
         assert any(p.parent.name == "_capability_registry" for p in matched), matched
 
@@ -4128,8 +4159,8 @@ class TestFingerprintScan:
         # round-2 discriminator (`root` correctly identifies as frob's own
         # repo because it carries the pyproject-name + crate-dir markers,
         # not because of file identity or suffix alone).
-        # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
-        from frob.vet._capability import _aggregate_capabilities, is_self_pattern_path
+        # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
+        from frob.vet._capability_scan import _aggregate_capabilities, is_self_pattern_path
 
         fake_repo = _make_fake_frob_repo_root(tmp_path / "foreign-install")
         foreign_frob_src = fake_repo / "src" / "frob"
@@ -4180,8 +4211,8 @@ class TestFingerprintScan:
         # (`frob/vet/_capability.py`), not just the final filename. `root`
         # here is not a frob repo either, so both the discriminator AND the
         # suffix check independently refuse this path.
-        # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
-        from frob.vet._capability import is_self_pattern_path
+        # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
+        from frob.vet._capability_scan import is_self_pattern_path
 
         unrelated_root = tmp_path / "some_other_pkg"
         unrelated = unrelated_root / "utils" / "_capability.py"
@@ -4203,8 +4234,8 @@ class TestFingerprintScan:
         # needles as live net/exec/fetch_url capability USE on the
         # `graphlang` design node (SELFAUDIT001/SYS100). Regression for
         # exactly that false-positive class recurring here.
-        # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
-        from frob.vet._capability import is_self_pattern_path
+        # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
+        from frob.vet._capability_scan import is_self_pattern_path
 
         repo_root = Path(__file__).resolve().parents[1]
         logging_checks_path = repo_root / "src" / "frob" / "arch" / "_logging_checks.py"
@@ -4239,8 +4270,8 @@ class TestFingerprintScan:
         # SYS100 scanner misreports them as net/exec capability USE on the
         # `graphlang` node (SELFAUDIT001). Regression for the third
         # recurrence of this false-positive class.
-        # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
-        from frob.vet._capability import is_self_pattern_path
+        # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
+        from frob.vet._capability_scan import is_self_pattern_path
 
         repo_root = Path(__file__).resolve().parents[1]
         async_hazards_path = repo_root / "src" / "frob" / "arch" / "_async_hazards.py"
@@ -4274,11 +4305,11 @@ class TestFingerprintScan:
         # strata-core dirs), so `_is_frob_repo_root` must refuse and the
         # suffix match must never be reached, regardless of how closely the
         # nested path mimics frob's own layout.
-        # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
-        from frob.vet._capability import (
+        # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
+        from frob.vet._capability import scan_file_capabilities
+        from frob.vet._capability_scan import (
             _aggregate_capabilities,
             is_self_pattern_path,
-            scan_file_capabilities,
         )
 
         evil_root = tmp_path / "evil-pkg"
@@ -4302,9 +4333,9 @@ class TestFingerprintScan:
     def test_scan_directory_fingerprints_aggregates_across_files(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_scan_directory_fingerprints \
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_directory_fingerprints \
         # kind="unit"
-        from frob.vet._capability import _scan_directory_fingerprints
+        from frob.vet._capability_scan import _scan_directory_fingerprints
 
         (tmp_path / "a.py").write_text("data = yaml.load(raw_bytes)\n")
         (tmp_path / "b.py").write_text("def add(a, b):\n    return a + b\n")
@@ -4321,9 +4352,9 @@ class TestFingerprintScan:
         # identifies as frob's own repo (see the sibling capability-scan
         # test above for why); scan from a fake repo root instead of the
         # bare `src/frob/strata` subdirectory.
-        # frob:tests src/frob/vet/_capability.py::_scan_directory_fingerprints \
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_directory_fingerprints \
         # kind="unit"
-        from frob.vet._capability import _scan_directory_fingerprints
+        from frob.vet._capability_scan import _scan_directory_fingerprints
 
         fake_repo = _make_fake_frob_repo_root(tmp_path / "self-scan")
         matched = _scan_directory_fingerprints(fake_repo, max_files=2000)
@@ -4341,8 +4372,9 @@ class TestFingerprintBindingResolution:
         # `import pickle as p; p.loads(...)` never contains the literal
         # text "pickle.loads(" the lexical scan needs -- a real fingerprint
         # (FP-DESERIALIZE-PICKLE-001) resolved through the alias table.
-        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
-        from frob.vet._capability import _scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability_scan.py::_scan_file_fingerprints \
+        # kind="unit"
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("import pickle as p\ndata = p.loads(raw_bytes)\n")
@@ -4354,7 +4386,7 @@ class TestFingerprintBindingResolution:
     ) -> None:
         # Control: the un-aliased form still matches via the pre-existing
         # lexical path (this ticket adds recall, never removes it).
-        from frob.vet._capability import _scan_file_fingerprints
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("import pickle\ndata = pickle.loads(raw_bytes)\n")
@@ -4367,9 +4399,9 @@ class TestFingerprintBindingResolution:
         # axios-shaped fingerprint proves _binding_fingerprints' TS path
         # independent of whether the real CVE_FINGERPRINTS catalog happens
         # to carry a module.member-shaped typescript needle today.
-        # frob:tests src/frob/vet/_capability.py::_binding_fingerprints kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::_binding_fingerprints kind="unit"
         from frob.strata._cve_fingerprint import CveFingerprint
-        from frob.vet._capability import _scan_file_fingerprints
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         fp = CveFingerprint(
             id="FP-TEST-AXIOS-001",
@@ -4388,7 +4420,7 @@ class TestFingerprintBindingResolution:
 
     def test_typescript_clean_source_does_not_match(self, tmp_path: Path) -> None:
         from frob.strata._cve_fingerprint import CveFingerprint
-        from frob.vet._capability import _scan_file_fingerprints
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         fp = CveFingerprint(
             id="FP-TEST-AXIOS-001",
@@ -4409,9 +4441,9 @@ class TestFingerprintBindingResolution:
         # `use std::process::Command as C; C::new("sh")` never contains the
         # literal text "Command::new(" -- resolved via the rust `use`
         # binding table (T-0378) to "std::process::Command::new".
-        # frob:tests src/frob/vet/_capability.py::_binding_fingerprints kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::_binding_fingerprints kind="unit"
         from frob.strata._cve_fingerprint import CveFingerprint
-        from frob.vet._capability import _scan_file_fingerprints
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         fp = CveFingerprint(
             id="FP-TEST-COMMAND-001",
@@ -4430,7 +4462,7 @@ class TestFingerprintBindingResolution:
 
     def test_rust_clean_source_does_not_match(self, tmp_path: Path) -> None:
         from frob.strata._cve_fingerprint import CveFingerprint
-        from frob.vet._capability import _scan_file_fingerprints
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         fp = CveFingerprint(
             id="FP-TEST-COMMAND-001",
@@ -4450,9 +4482,9 @@ class TestFingerprintBindingResolution:
     def test_c_aliased_macro_still_matches(self, tmp_path: Path) -> None:
         # `#define SYS system; SYS(cmd)` never contains the literal text
         # "system(" -- resolved via the C macro-alias table (T-0379).
-        # frob:tests src/frob/vet/_capability.py::_binding_fingerprints kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::_binding_fingerprints kind="unit"
         from frob.strata._cve_fingerprint import CveFingerprint
-        from frob.vet._capability import _scan_file_fingerprints
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         fp = CveFingerprint(
             id="FP-TEST-SYSTEM-001",
@@ -4471,7 +4503,7 @@ class TestFingerprintBindingResolution:
 
     def test_c_clean_source_does_not_match(self, tmp_path: Path) -> None:
         from frob.strata._cve_fingerprint import CveFingerprint
-        from frob.vet._capability import _scan_file_fingerprints
+        from frob.vet._capability_scan import _scan_file_fingerprints
 
         fp = CveFingerprint(
             id="FP-TEST-SYSTEM-001",
@@ -5749,8 +5781,8 @@ class TestOpaqueIndirectionGate:
     coordinator-signed category-1 boundary."""
 
     def test_python_getattr_non_literal_name_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
-        from frob.vet._capability import _opaque_indirection_findings
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("getattr(subprocess, name)(x)\n")
@@ -5758,10 +5790,10 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "getattr" for f in findings)
 
     def test_python_getattr_literal_name_does_not_fire(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # Coordinator sign-off: "literal-key lookups that resolve
         # statically belong to the ordinary resolver path, not this gate."
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text('getattr(subprocess, "run")(x)\n')
@@ -5771,10 +5803,10 @@ class TestOpaqueIndirectionGate:
     def test_python_eval_always_fires_regardless_of_argument(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # eval/exec have literal_arg_index=None -- always opaque, no
         # literal split is possible for arbitrary evaluated source text.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text('eval("1 + 1")\n')
@@ -5782,8 +5814,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "eval" for f in findings)
 
     def test_python_import_module_non_literal_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
-        from frob.vet._capability import _opaque_indirection_findings
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("importlib.import_module(mod_name).run(x)\n")
@@ -5793,8 +5825,8 @@ class TestOpaqueIndirectionGate:
     def test_typescript_dynamic_import_non_literal_specifier_fires(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
-        from frob.vet._capability import _opaque_indirection_findings
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("import(modName).then(m => m.exec(x));\n")
@@ -5804,8 +5836,8 @@ class TestOpaqueIndirectionGate:
     def test_typescript_dynamic_import_literal_specifier_does_not_fire(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
-        from frob.vet._capability import _opaque_indirection_findings
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text('import("./known-module").then(m => m.run());\n')
@@ -5813,8 +5845,8 @@ class TestOpaqueIndirectionGate:
         assert not any(f.construct_name == "dynamic import()" for f in findings)
 
     def test_c_dlsym_non_literal_symbol_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
-        from frob.vet._capability import _opaque_indirection_findings
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text(
@@ -5824,8 +5856,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "dlsym" for f in findings)
 
     def test_c_dlsym_literal_symbol_does_not_fire(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
-        from frob.vet._capability import _opaque_indirection_findings
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text(
@@ -5835,8 +5867,8 @@ class TestOpaqueIndirectionGate:
         assert not any(f.construct_name == "dlsym" for f in findings)
 
     def test_kotlin_class_forname_always_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
-        from frob.vet._capability import _opaque_indirection_findings
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.kt"
         pkg.write_text(
@@ -5848,11 +5880,11 @@ class TestOpaqueIndirectionGate:
     def test_rust_libloading_get_fires_only_when_file_uses_libloading(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # The bare `.get(` needle is deliberately broad -- gated to files
         # that actually import libloading, so an ordinary HashMap::get in
         # an unrelated rust file never trips this.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         with_lib = tmp_path / "with_lib.rs"
         with_lib.write_text(
@@ -5874,8 +5906,8 @@ class TestOpaqueIndirectionGate:
         )
 
     def test_finding_inside_comment_span_does_not_fire(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
-        from frob.vet._capability import _opaque_indirection_findings
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("# eval(x) is just an example in a comment\n")
@@ -5883,11 +5915,11 @@ class TestOpaqueIndirectionGate:
         assert findings == ()
 
     def test_finding_inside_string_literal_does_not_fire(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_byte_offset_inside_string_literal kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_byte_offset_inside_string_literal kind="unit"  # noqa: E501
         # The single-largest false-positive class the T-0665 first-turn-on
         # measurement found: this module's OWN registry constants (e.g.
         # `needle="getattr("`) tripping their own obligation.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text('NEEDLE = "getattr("\n')
@@ -5895,19 +5927,19 @@ class TestOpaqueIndirectionGate:
         assert findings == ()
 
     def test_arg_looks_literal_rejects_fstring_interpolation(self) -> None:
-        # frob:tests src/frob/vet/_capability.py::_arg_looks_literal kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::_arg_looks_literal kind="unit"
         # Kills the f-string-interpolation carve-out: an f-string WITH a
         # `{...}` interpolation is NOT a plain literal even though it
         # starts with a quote character.
-        from frob.vet._capability import _arg_looks_literal
+        from frob.vet._capability_scan import _arg_looks_literal
 
         assert _arg_looks_literal(b'"run"') is True
         assert _arg_looks_literal(b'f"{name}"') is False
         assert _arg_looks_literal(b"name") is False
 
     def test_split_top_level_args_balances_nested_parens(self) -> None:
-        # frob:tests src/frob/vet/_capability.py::_split_top_level_args kind="unit"  # noqa: E501
-        from frob.vet._capability import _split_top_level_args
+        # frob:tests src/frob/vet/_capability_scan.py::_split_top_level_args kind="unit"  # noqa: E501
+        from frob.vet._capability_scan import _split_top_level_args
 
         raw = b"getattr(foo(1, 2), name)) trailing"
         # start right after "getattr("
@@ -5915,12 +5947,12 @@ class TestOpaqueIndirectionGate:
         assert args == [b"foo(1, 2)", b" name"]
 
     def test_split_top_level_args_returns_none_when_unterminated(self) -> None:
-        # frob:tests src/frob/vet/_capability.py::_split_top_level_args kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_split_top_level_args kind="unit"  # noqa: E501
         # Fail-closed: an unterminated call (truncated file / match found
         # inside an unhandled construct) returns None, which the caller
         # treats as "argument unknown" and fires rather than silently
         # passing.
-        from frob.vet._capability import _split_top_level_args
+        from frob.vet._capability_scan import _split_top_level_args
 
         assert _split_top_level_args(b"getattr(foo, name", len(b"getattr(")) is None
 
@@ -6001,11 +6033,11 @@ class TestOpaqueIndirectionGate:
     def test_python_exec_always_fires_regardless_of_argument(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "exec" row -- distinct construct_name from "eval" above;
         # RUNTIME_OPAQUE_CONSTRUCTS registers it separately (literal_arg_
         # index=None), so it should always fire, same shape as eval.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text('exec("import subprocess")\n')
@@ -6013,9 +6045,9 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "exec" for f in findings)
 
     def test_python_dunder_import_computed_name_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`__import__` with computed module name" row.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("__import__(mod_name).run(x)\n")
@@ -6023,9 +6055,9 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "__import__" for f in findings)
 
     def test_python_setattr_monkeypatch_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "monkeypatch / module attribute mutation" row.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("setattr(subprocess, name, real_run)\n")
@@ -6033,7 +6065,7 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "setattr" for f in findings)
 
     def test_python_container_dynamic_key_not_addressed(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "callable in a container, dynamic key" row (also covers
         # the sibling "computed member access, non-constant key" row --
         # identical `container[expr](...)` shape): `handlers[key](x)`.
@@ -6042,7 +6074,7 @@ class TestOpaqueIndirectionGate:
         # findings`) -- T-1047 left this unaddressed since the fixed-
         # needle+literal-arg architecture cannot express a non-constant
         # SUBSCRIPT shape, only a fixed call-name substring.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text('handlers = {"a": subprocess.run}\nhandlers[key](x)\n')
@@ -6052,12 +6084,12 @@ class TestOpaqueIndirectionGate:
     def test_python_container_literal_key_call_not_addressed_by_structural_gate(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_subscript_key_looks_literal kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_subscript_key_looks_literal kind="unit"  # noqa: E501
         # No-regression guard for the new structural detector: a LITERAL-
         # keyed subscript call (`handlers["a"](x)`) is the ORDINARY
         # resolver's job per T-0665's literal/non-literal split, not this
         # fail-closed obligation -- must not double-fire.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text('handlers = {"a": subprocess.run}\nhandlers["a"](x)\n')
@@ -6087,11 +6119,11 @@ class TestOpaqueIndirectionGate:
     def test_python_functools_partial_dynamic_target_fires(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`functools.partial`/decorator indirection with dynamic
         # target" row -- closed by T-1047 (RUNTIME_OPAQUE_CONSTRUCTS now
         # registers a `functools.partial(` needle).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("functools.partial(resolve_target())(x)\n")
@@ -6101,10 +6133,10 @@ class TestOpaqueIndirectionGate:
     def test_python_dunder_getattr_class_interception_fires(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "class `__getattr__`/`__getattribute__` interception"
         # row -- closed by T-1047 (a `def __getattr__(` needle).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text(
@@ -6116,11 +6148,11 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "__getattr__ interception" for f in findings)
 
     def test_python_sys_modules_replacement_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "direct `sys.modules` replacement" row (added in the
         # taxonomy doc's Phase 2 pass) -- closed by T-1047 (a
         # `sys.modules[` needle).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text(
@@ -6133,12 +6165,12 @@ class TestOpaqueIndirectionGate:
     def test_typescript_computed_member_non_constant_key_not_addressed(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "computed member access, non-constant key" row -- closed
         # by T-1051's generalized `subscript_call` structural detector
         # (`_structural_opaque_findings`), the same shape T-1047 could not
         # express with a fixed needle.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("cp[key](x);\n")
@@ -6146,10 +6178,10 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "container dynamic-key call" for f in findings)
 
     def test_typescript_global_this_bracket_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`globalThis[name]`" row -- closed by T-1047 (a
         # `globalThis[` needle).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("globalThis[name](x);\n")
@@ -6159,10 +6191,10 @@ class TestOpaqueIndirectionGate:
     def test_typescript_reflect_apply_dynamic_target_fires(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`Reflect.get`/`Reflect.apply` with dynamic target" row
         # -- closed by T-1047 (`Reflect.get(`/`Reflect.apply(` needles).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("Reflect.apply(Reflect.get(cp, key), null, [x]);\n")
@@ -6172,10 +6204,10 @@ class TestOpaqueIndirectionGate:
         assert "Reflect.apply" in names
 
     def test_typescript_proxy_interception_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`Proxy` interception (`get`/`apply` traps)" row --
         # closed by T-1047 (a `new Proxy(` needle).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("new Proxy(cp, { get(){ return cp.exec; } }).run(x);\n")
@@ -6185,10 +6217,10 @@ class TestOpaqueIndirectionGate:
     def test_typescript_container_dynamic_key_not_addressed(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "callable in container, dynamic key" row -- closed by
         # T-1051's generalized `subscript_call` structural detector.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("handlers[key](x);\n")
@@ -6198,10 +6230,10 @@ class TestOpaqueIndirectionGate:
     def test_typescript_monkeypatch_module_namespace_fires(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "monkeypatch / property mutation on module namespace
         # object" row -- closed by T-1047 (a `require.cache[` needle).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("require.cache[id].exports.exec = realExec;\n")
@@ -6209,7 +6241,7 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "monkeypatch module namespace" for f in findings)
 
     def test_c_array_nonconstant_index_not_addressed(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "function pointer read via array/struct with non-
         # constant index/selector" row. The ORDINARY resolver still proves
         # this stays UNDETECTED as a resolution
@@ -6218,7 +6250,7 @@ class TestOpaqueIndirectionGate:
         # points-to); this fixture proves the fail-closed OBLIGATION gate
         # now catches it via T-1051's generalized `subscript_call`
         # structural detector, closing THIS row.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text(
@@ -6234,11 +6266,11 @@ class TestOpaqueIndirectionGate:
     def test_c_integer_cast_to_function_pointer_not_addressed(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "function pointer cast from an integer/opaque value" row
         # -- closed by T-1051's `explicit_fnptr_cast_call` structural
         # detector (`((RET(*)(ARGS))expr)(...)`).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text('void g(long addr) { ((void(*)(const char*))addr)("sh"); }\n')
@@ -6248,11 +6280,11 @@ class TestOpaqueIndirectionGate:
         )
 
     def test_c_void_star_backcast_not_addressed(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "function pointer through `void*` indirection and
         # back-cast" row -- closed by T-1051's `named_type_cast_call`
         # structural detector (`((TypeName)expr)(...)`).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.c"
         pkg.write_text(
@@ -6265,12 +6297,12 @@ class TestOpaqueIndirectionGate:
         )
 
     def test_cpp_array_runtime_index_not_addressed(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "function pointer through array/vector with runtime
         # index" row -- closed by T-1051's `subscript_call` structural
         # detector (same shape as the sibling C row above, `.cpp`
         # extension exercises the identical `language="c-cpp"` bucket).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.cpp"
         pkg.write_text(
@@ -6288,10 +6320,10 @@ class TestOpaqueIndirectionGate:
     def test_cpp_reinterpret_cast_to_function_pointer_fires(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`reinterpret_cast` from an integer/opaque handle" row
         # -- closed by T-1047 (a `reinterpret_cast<` needle).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.cpp"
         pkg.write_text(
@@ -6304,10 +6336,10 @@ class TestOpaqueIndirectionGate:
         )
 
     def test_cpp_rtti_driven_dispatch_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "RTTI-driven dispatch (`typeid`/`dynamic_cast`)" row --
         # closed by T-1047 (a `typeid(` needle).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.cpp"
         pkg.write_text(
@@ -6321,7 +6353,7 @@ class TestOpaqueIndirectionGate:
     def test_rust_trait_object_dynamic_dispatch_not_addressed(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "trait-object dynamic dispatch" row. Bounded-polymorphism
         # dispatch through a statically-enumerable impl set is explicitly
         # OUT of this gate's scope by design (`_opaque.py`'s own module
@@ -6331,7 +6363,7 @@ class TestOpaqueIndirectionGate:
         # gate's docstring claims is handled; this fixture records the
         # current as-built behavior (silent) rather than asserting the
         # nuanced claim is fully implemented -- see T-1047.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.rs"
         pkg.write_text(
@@ -6352,7 +6384,7 @@ class TestOpaqueIndirectionGate:
         # now exists (distinct from the vtable-patch entry). No finding
         # fires (source-invisible, category-3 per T-0665 doctrine) but the
         # accountability record is asserted, not silent non-detection.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
         from frob.vet._capability_registry import OPAQUE_SOURCE_INVISIBLE
 
         pkg = tmp_path / "pkg.rs"
@@ -6366,10 +6398,10 @@ class TestOpaqueIndirectionGate:
         assert any("extern" in e.reason for e in rust_excuses)
 
     def test_rust_function_pointer_in_container_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "function pointer stored in and read from a container"
         # row -- closed by T-1047 (a `Vec<fn(` needle).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.rs"
         pkg.write_text(
@@ -6382,10 +6414,10 @@ class TestOpaqueIndirectionGate:
         )
 
     def test_rust_boxed_dyn_fn_runtime_selected_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`Box<dyn Fn>` built from a runtime-selected source" row
         # -- closed by T-1047 (a `Box<dyn Fn` needle).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.rs"
         pkg.write_text(
@@ -6409,7 +6441,7 @@ class TestOpaqueIndirectionGate:
         # obligation-gate sibling: closed by T-1047 with a dedicated rust
         # proc-macro excuse entry (category-3, source-invisible -- the
         # expansion never appears in this file's text at all).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
         from frob.vet._capability_registry import OPAQUE_SOURCE_INVISIBLE
 
         pkg = tmp_path / "pkg.rs"
@@ -6420,10 +6452,10 @@ class TestOpaqueIndirectionGate:
         assert any("proc" in e.reason or "macro" in e.reason for e in rust_excuses)
 
     def test_kotlin_function_value_in_container_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "function value stored in and read from a container" row
         # -- closed by T-1047 (a `]!!(` needle).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.kt"
         pkg.write_text(
@@ -6434,10 +6466,10 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "function value in container" for f in findings)
 
     def test_kotlin_delegated_property_by_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "delegated property / `by` indirection resolving at
         # runtime" row -- closed by T-1047 (a `by lazy {` needle).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.kt"
         pkg.write_text(
@@ -6448,10 +6480,10 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "delegated property by" for f in findings)
 
     def test_kotlin_dynamic_classloading_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "dynamic classloading (`URLClassLoader` etc.)" row --
         # closed by T-1047 (a `URLClassLoader(` needle).
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.kt"
         pkg.write_text(
@@ -6463,12 +6495,12 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "dynamic classloading" for f in findings)
 
     def test_kotlin_kcallable_call_always_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`KFunction`/`KCallable.call` obtained dynamically" row
         # -- RUNTIME_OPAQUE_CONSTRUCTS registers a separate "KCallable.call"
         # entry (deliberately broad `.call(` needle, literal_arg_index=
         # None) from the "Class.forName" entry above.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.kt"
         pkg.write_text(
@@ -6483,13 +6515,13 @@ class TestOpaqueIndirectionGate:
     def test_typescript_eval_always_fires_regardless_of_argument(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`eval`" row (TS/JS's own copy of the construct Python's
         # `eval` row above already locks a sibling fixture for) --
         # RUNTIME_OPAQUE_CONSTRUCTS registers a separate `language=
         # "typescript"` "eval" entry (literal_arg_index=None), so this row
         # needs its own litmus rather than reusing Python's.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("eval(\"require('child_process').exec(x)\");\n")
@@ -6497,9 +6529,9 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "eval" for f in findings)
 
     def test_typescript_function_constructor_always_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "`new Function(...)`" row.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text(
@@ -6546,7 +6578,7 @@ class TestOpaqueIndirectionGate:
     def test_cpp_virtual_dispatch_bounded_polymorphism_no_finding(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
         # taxonomy "virtual dispatch through a base pointer" row.
         # `_opaque.py`'s own module docstring carves BOUNDED POLYMORPHISM
         # (ordinary virtual dispatch whose implementation set is statically
@@ -6555,7 +6587,7 @@ class TestOpaqueIndirectionGate:
         # the statically-visible override set. This litmus locks that
         # design intent: an ordinary virtual call produces no
         # opaque-indirection finding.
-        from frob.vet._capability import _opaque_indirection_findings
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.cpp"
         pkg.write_text(

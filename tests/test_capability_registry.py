@@ -563,7 +563,7 @@ class TestIsSelfPatternPath:
     the suffix match only fires when `root` is frob's OWN repo checkout,
     never based on `path` alone."""
 
-    # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
     def test_root_none_always_returns_false(self, tmp_path: Path) -> None:
         # Fail-closed default: omitting `root` means "never exclude,
         # always scan", even for a path that would otherwise match a
@@ -574,7 +574,7 @@ class TestIsSelfPatternPath:
         path.write_text("")
         assert is_self_pattern_path(path) is False
 
-    # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
     def test_root_not_frob_repo_returns_false(self, tmp_path: Path) -> None:
         # `root` lacks pyproject.toml / crate dirs -- a foreign dependency
         # root that happens to mimic frob's package layout must still be
@@ -585,7 +585,7 @@ class TestIsSelfPatternPath:
         path.write_text("")
         assert is_self_pattern_path(path, foreign_root) is False
 
-    # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
     def test_frob_repo_root_with_matching_suffix_returns_true(
         self, tmp_path: Path
     ) -> None:
@@ -595,7 +595,7 @@ class TestIsSelfPatternPath:
         path.write_text("")
         assert is_self_pattern_path(path, tmp_path) is True
 
-    # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
     def test_frob_repo_root_with_non_matching_path_returns_false(
         self, tmp_path: Path
     ) -> None:
@@ -607,7 +607,7 @@ class TestIsSelfPatternPath:
         path.write_text("")
         assert is_self_pattern_path(path, tmp_path) is False
 
-    # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
     def test_short_path_shorter_than_suffix_returns_false(self, tmp_path: Path) -> None:
         # `len(parts) >= len(suffix)` guard: a resolved path with fewer
         # path components than the longest self-pattern suffix must not
@@ -617,7 +617,7 @@ class TestIsSelfPatternPath:
         path.write_text("")
         assert is_self_pattern_path(path, tmp_path) is False
 
-    # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
     def test_path_resolve_oserror_returns_false(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

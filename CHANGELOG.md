@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.325.0] - unreleased
+
+- T-1500: arch: LARGE001 split of vet _capability TS/rust/C/kotlin families + tail (T-1420 delivered portion 7)
+
 ## [0.324.0] - unreleased
 
 - T-1464: perf: persist parse-artifact cache across process-pool gate workers (correctly scoped)

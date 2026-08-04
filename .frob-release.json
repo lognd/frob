@@ -1913,7 +1913,6 @@
     "src/frob/vet/_cache.py::ttl_cache_get": "81cbfdc52ed86746d4d10e0028f991a06d8513acd5ef767267cda68cf6c28711",
     "src/frob/vet/_cache.py::ttl_cache_set": "4876beb99abaa10752fc1f6dfe003281000950e12649f120153a299916c02f87",
     "src/frob/vet/_capability.py::SCANNED_LANGUAGES": "5aebd3fdc82504e34242f2ce9cb677f17c218c78396779690308a52ede0a6e08",
-    "src/frob/vet/_capability.py::is_self_pattern_path": "1ea057d4683edc766482d7b467562480082d3ba80cea05970467ce44528102e1",
     "src/frob/vet/_capability.py::language_for": "b4e50c3603e4861cf8713c841dd270a813378269def2c43008711f53bf0bdf81",
     "src/frob/vet/_capability.py::non_executable_line_numbers": "c53dd1eaa7888e4dbe187c043b912978c40860b96577a8a2b28c16f5f888cb6f",
     "src/frob/vet/_capability.py::scan_file_capabilities": "4a695059d8ce6f919b7a8295c6516529f0ffcc371ed1d5c3aea4c0276657c520",
@@ -1936,6 +1935,7 @@
     "src/frob/vet/_capability_registry/_opaque.py::OPAQUE_SOURCE_INVISIBLE": "b5c9de88cd944bdad86cd8eb66704e904e01618f5cd2314385b14d4a4efc2d03",
     "src/frob/vet/_capability_registry/_opaque.py::RUNTIME_OPAQUE_CONSTRUCTS": "f46dc6224389971c0bab25ffb666d2bd8369b06f3ce676477508c10f99e4b3fa",
     "src/frob/vet/_capability_registry/_opaque.py::RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS": "736b9414270d1630f43761a0bb76ec160fa9df03044708f173e20cb05b00c6ad",
+    "src/frob/vet/_capability_scan.py::is_self_pattern_path": "1ea057d4683edc766482d7b467562480082d3ba80cea05970467ce44528102e1",
     "src/frob/vet/_closedworld.py::closed_world_accounting": "4f4e292275fad229c973d8a6ae8ccd3192896959af8b414d491c5f697386e1db",
     "src/frob/vet/_closedworld.py::resolve_import": "60061bcc7bd2e64abf598bcb72f58eb97ebde4891918ce7f0a99ed67647800a3",
     "src/frob/vet/_closedworld.py::walk_python_imports": "54c32ce008754146af0202f4e88d49eb9b0b3520e66974fee9d2de59a5c02725",
@@ -1999,5 +1999,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.324.0"
+  "version": "0.325.0"
 }
