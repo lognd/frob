@@ -32,6 +32,7 @@ import json
 import os
 import posixpath
 import xml.etree.ElementTree as ET
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -725,6 +726,45 @@ _DEFLATION_MIN_KNOWN_MODULES = 20
 # between full runs and must not trip this on every ordinary use.
 _PROVENANCE_MIN_MODULE_RATIO = 0.5
 
+# frob:ticket T-1236
+# T-0969/T-1180 diagnosed a structural blind spot in `_DEFLATION_FLOOR`
+# alone: `module_join_fraction` reads close to 1.0 on a run that lost real
+# subprocess/pool-worker data, because the modules that never got traced
+# still JOIN against coverage.xml -- they just join at line-rate 0.0,
+# which a bare join-fraction ratio cannot distinguish from "joined and
+# genuinely covered". Three consecutive `make coverage` runs stamped clean
+# this way before T-0969's own diagnosis caught it by hand. A canary is a
+# module known to be exercised by every healthy full run (the CLI entry
+# point itself, invoked by every single system test) -- if IT reads 0.0%,
+# the run cannot be trusted regardless of what the aggregate fraction
+# says. Named here, not inferred, because the whole point is a known-good
+# floor independent of any run's own self-reported statistics.
+_CANARY_MODULES: tuple[str, ...] = ("src/frob/__main__.py",)
+
+
+# frob:ticket T-1236
+# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refuses_zero_canary_module  # noqa: E501
+# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_canary_check_skipped_when_module_unknown  # noqa: E501
+def _canary_deflation(module_line: Mapping[str, float]) -> str | None:
+    """Name of the first known canary module reading exactly 0.0% coverage.
+
+    Returns `None` when every canary either is not present in this run's
+    `module_line` (e.g. a fixture/tiny-repo snapshot that never declared
+    it -- not this check's concern, `_DEFLATION_MIN_KNOWN_MODULES`/sample-
+    size handles that case) or reads nonzero. A present-but-zero canary is
+    the fingerprint T-1236 exists to catch: `module_join_fraction` alone
+    can sit near 1.0 while a subprocess/daemon/CLI-entry process's data was
+    silently dropped, because a zero-coverage module still JOINS against
+    coverage.xml -- it just joins at 0%. Checking a module known to always
+    execute (the CLI entry point, exercised by every system test) catches
+    that shape even when the aggregate ratio looks clean.
+    """
+    for canary in _CANARY_MODULES:
+        pct = module_line.get(canary)
+        if pct == 0.0:
+            return canary
+    return None
+
 
 # frob:ticket T-1435
 def _provenance_drop(root: Path, current_module_count: int) -> tuple[int, float] | None:
@@ -837,6 +877,23 @@ def _filtered_coverage_or_deflated(
             "re-run: make coverage",
             filtered.module_join_fraction * 100,
             _DEFLATION_FLOOR * 100,
+        )
+        return Err(GateError.CoverageDeflated)
+    # frob:ticket T-1236
+    # Checked even when module_join_fraction is high -- that is exactly
+    # the blind spot this canary exists to catch (see _CANARY_MODULES'
+    # docstring): a run that dropped subprocess/daemon/CLI-entry data can
+    # still join nearly every known module, just at 0% each.
+    zero_canary = _canary_deflation(filtered.module_line)
+    if zero_canary is not None:
+        _log.error(
+            "stamp_coverage: refusing to stamp -- canary module %s reads "
+            "exactly 0.0%% coverage; this module is exercised by every "
+            "healthy full run (system tests invoke the CLI entry point), "
+            "so a zero reading means real coverage data was silently "
+            "dropped even though the aggregate join fraction looks "
+            "clean (T-1236); re-run: make coverage",
+            zero_canary,
         )
         return Err(GateError.CoverageDeflated)
     return Ok(filtered)

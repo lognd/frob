@@ -4079,6 +4079,20 @@ def _test004(
 # frob:ticket T-0557
 # frob:tests tests/test_gates.py::TestTestGate.test_test005_unmeasured_symbol_in_measured_file_flags_as_zero  # noqa: E501
 # frob:tests tests/test_gates.py::TestTestGate.test_test005_symbol_in_unmeasured_file_still_skipped  # noqa: E501
+# frob:ticket T-1205
+# T-1205 acceptance[1]: a TEST005 finding computed against a stale
+# coverage.xml (`data.stale_by_mtime` -- the report predates a tracked
+# source change TEST011 already warns about) must never be reported as an
+# unqualified current fact. The 2026-07-31 incident this ticket exists to
+# prevent (T-1293: an agent trusted a 23-hour-stale stamp, closed a ticket
+# having fixed 1 of 64 real findings) happened precisely because a stale
+# finding read exactly like a fresh one. Every TEST005 message gets this
+# prefix whenever the coverage data behind it is stale, so the disclosure
+# travels with the finding itself rather than depending on a reader
+# separately noticing TEST011's own advisory line.
+_STALE_DISCLOSURE_PREFIX = "[STALE COVERAGE] "
+
+
 def _test005_symbols(
     snapshot: GraphSnapshot, data: CoverageData, cfg: TestPolicy
 ) -> list[Violation]:
@@ -4115,26 +4129,42 @@ def _test005_symbols(
         if pct is None and record.id.path in data.module_line:
             pct = 0.0
         if pct is not None and pct < cfg.unit_branch_cov:
-            violations.append(_test005_symbol_violation(record, pct, cfg))
+            violations.append(
+                _test005_symbol_violation(record, pct, cfg, data.stale_by_mtime)
+            )
     return violations
 
 
 # frob:enforces CHK-GATE-TEST005
-def _test005_symbol_violation(record, pct: float, cfg: TestPolicy) -> Violation:  # noqa: ANN001
-    """A single TEST005 per-symbol branch-coverage-floor violation."""
+def _test005_symbol_violation(
+    record,
+    pct: float,
+    cfg: TestPolicy,
+    stale: bool = False,  # noqa: ANN001
+) -> Violation:
+    """A single TEST005 per-symbol branch-coverage-floor violation.
+
+    T-1205: `stale` (`CoverageData.stale_by_mtime`) prepends
+    `_STALE_DISCLOSURE_PREFIX` to the message when the coverage.xml this
+    finding was computed from predates a tracked source change -- the
+    finding is disclosed as possibly-outdated rather than reported as an
+    unqualified current fact.
+    """
     _log.debug(
-        "TEST005: %s branch cov %.1f%% < %d%%",
+        "TEST005: %s branch cov %.1f%% < %d%% (stale=%s)",
         record.symref,
         pct,
         cfg.unit_branch_cov,
+        stale,
     )
+    prefix = _STALE_DISCLOSURE_PREFIX if stale else ""
     return Violation(
         rule="TEST005",
         severity=Severity.WARN,
         file=record.id.path,
         line=record.span[0],
         message=(
-            f"TEST005: {record.symref} branch coverage {pct:.1f}% below "
+            f"{prefix}TEST005: {record.symref} branch coverage {pct:.1f}% below "
             f"unit_branch_cov={cfg.unit_branch_cov}%; add tests, then: "
             f"make coverage"
         ),
@@ -4145,10 +4175,15 @@ def _test005_symbol_violation(record, pct: float, cfg: TestPolicy) -> Violation:
 def _test005_modules(data: CoverageData, cfg: TestPolicy) -> list[Violation]:
     """TEST005 per-module line-coverage floor."""
     violations: list[Violation] = []
+    prefix = _STALE_DISCLOSURE_PREFIX if data.stale_by_mtime else ""
     for module, pct in data.module_line.items():
         if pct < cfg.module_line_cov:
             _log.debug(
-                "TEST005: %s line cov %.1f%% < %d%%", module, pct, cfg.module_line_cov
+                "TEST005: %s line cov %.1f%% < %d%% (stale=%s)",
+                module,
+                pct,
+                cfg.module_line_cov,
+                data.stale_by_mtime,
             )
             violations.append(
                 Violation(
@@ -4157,7 +4192,7 @@ def _test005_modules(data: CoverageData, cfg: TestPolicy) -> list[Violation]:
                     file=module,
                     line=0,
                     message=(
-                        f"TEST005: {module} line coverage {pct:.1f}% below "
+                        f"{prefix}TEST005: {module} line coverage {pct:.1f}% below "
                         f"module_line_cov={cfg.module_line_cov}%; add tests, then: "
                         f"make coverage"
                     ),
@@ -4181,27 +4216,35 @@ def _test005_systems(
             continue
         avg = sum(relevant) / len(relevant)
         if avg < cfg.system_line_cov:
-            violations.append(_test005_system_violation(system, avg, cfg))
+            violations.append(
+                _test005_system_violation(system, avg, cfg, data.stale_by_mtime)
+            )
     return violations
 
 
 def _test005_system_violation(
-    system: SystemSpec, avg: float, cfg: TestPolicy
+    system: SystemSpec, avg: float, cfg: TestPolicy, stale: bool = False
 ) -> Violation:
-    """A single TEST005 per-system aggregate line-coverage-floor violation."""
+    """A single TEST005 per-system aggregate line-coverage-floor violation.
+
+    T-1205: `stale` prepends `_STALE_DISCLOSURE_PREFIX`, same as
+    `_test005_symbol_violation` -- see that function's docstring.
+    """
     _log.debug(
-        "TEST005: system %s line cov %.1f%% < %d%%",
+        "TEST005: system %s line cov %.1f%% < %d%% (stale=%s)",
         system.id,
         avg,
         cfg.system_line_cov,
+        stale,
     )
+    prefix = _STALE_DISCLOSURE_PREFIX if stale else ""
     return Violation(
         rule="TEST005",
         severity=Severity.WARN,
         file=f"[[system]] {system.id}",
         line=0,
         message=(
-            f"TEST005: system {system.id} line coverage {avg:.1f}% below "
+            f"{prefix}TEST005: system {system.id} line coverage {avg:.1f}% below "
             f"system_line_cov={cfg.system_line_cov}%; add tests, then: "
             f"make coverage"
         ),

@@ -5,6 +5,7 @@ combined-data entry pointing at a torn-down source path."""
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -813,3 +814,57 @@ class TestCoverageFastUsesAbsoluteSubprocessRc:
         their own copy of the `printf` block (a second copy is exactly
         how the two recipes drifted apart in the first place)."""
         assert _MAKEFILE.count("> .frob/coverage-subprocess.rc") == 1, _MAKEFILE
+
+
+# frob:ticket T-1235
+class TestPreviouslyZeroModulesNowAttributeInTheCommittedLock:
+    """T-1235's acceptance [2]: previously-exercised-but-zero symbols
+    (excludes.py, doctor.py, serve/, __main__.py) report real coverage in
+    a corrected full run, and the TEST005 count reflects it.
+
+    This ticket's own scope has no direct pytest surface for "the next
+    full `make coverage` run" -- that run is a coordinator-only step
+    (docs/guides/agent-playbook.md section 6b), and its raw `coverage.xml`
+    does not survive past the run that produced it (section 6d). The
+    committed `frob-coverage.lock.json` (`write_coverage_lock`,
+    `frob.gates._coverage`) is this repo's own durable, attestable summary
+    of that same run -- reading it directly, rather than re-deriving a
+    fresh (and necessarily locally-scoped, per section 6c) coverage.xml
+    from this worktree, is the only way to verify this acceptance
+    criterion without forcing an unverifiable claim.
+    """
+
+    #: T-1235's own named acceptance-criterion module groups.
+    _NAMED_MODULES = (
+        "src/frob/excludes.py",
+        "src/frob/doctor.py",
+        "src/frob/serve/_socketd.py",
+        "src/frob/__main__.py",
+    )
+
+    def _load_committed_lock(self) -> dict[str, float]:
+        """`module_line` mapping read from the repo-root committed lock."""
+        lock_path = _REPO_ROOT / "frob-coverage.lock.json"
+        data = json.loads(lock_path.read_text())
+        return data["module_line"]
+
+    def test_named_module_groups_are_nonzero_in_the_committed_lock(self) -> None:
+        """excludes.py/doctor.py/serve/_socketd.py/__main__.py must not be 0.0%.
+
+        Measured directly against `frob-coverage.lock.json` as committed
+        on `main` (commit `5ffa0159`, "chore(coverage): stamp lock from
+        green suite run", 2026-08-03 -- after both this ticket's own
+        subprocess-rc fix and T-1433's xdist-wedge fix landed): every
+        named module reads well above 0.0% (measured: excludes.py 100.0%,
+        doctor.py 93.8%, serve/_socketd.py 90.7%, __main__.py 89.5%),
+        versus the 0.0% each read before T-1235's fix (T-0969's 2026-07-29
+        diagnosis).
+        """
+        module_line = self._load_committed_lock()
+        for module in self._NAMED_MODULES:
+            assert module in module_line, f"{module} missing from committed lock"
+            assert module_line[module] > 0.0, (
+                f"{module} regressed to the pre-T-1235 zero-coverage "
+                f"attribution failure (module_line[{module}] = "
+                f"{module_line[module]})"
+            )
