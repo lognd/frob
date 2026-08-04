@@ -6413,12 +6413,63 @@ def _stamp_worker_lock_keys_env() -> None:
         os.environ[_LOCK_KEYS_ENV] = _LOCK_KEYS_SEP.join(held_keys)
 
 
+# frob:ticket T-1464
+def _stamp_worker_parse_artifact_cache_env(root: Path) -> None:
+    """Stamp `frob.lang.PARSE_ARTIFACT_CACHE_ENV` with `root`'s resolved
+    `.frob/parse-artifacts.db` path (`_parse_artifact_cache_path`), BEFORE
+    `_open_process_pool` constructs its pool
+    (same env-inheritance timing `_stamp_worker_stdout_log_level_env`/
+    `_stamp_worker_lock_keys_env` depend on, T-0806/T-0982): every worker
+    `_run_process_gate` spawns then sees the SAME path and can open a
+    shared connection to it (`frob.lang._artifact_cache_connection`), so
+    per-file parse artifacts derived by one worker (perf/clones/
+    dead_symbols/arch/sys/pii, T-1217's root-cause finding) become visible
+    to every sibling worker instead of each independently re-parsing +
+    re-extracting the whole repo (T-1464).
+
+    Also creates/migrates the db file HERE, once, in the parent, via
+    `frob.graph.cache.connect()` -- NOT lazily inside each worker's first
+    `_artifact_cache_connection()` call. `N` workers all racing
+    `_apply_schema_with_recovery`'s own lock-poll-retry dance on a brand
+    new, same-named db file at once (every worker's first parse call
+    landing in the same few-hundred-ms window right after pool startup)
+    measurably perturbed this PROCESS's overall timing enough to newly
+    expose an unrelated, pre-existing latent race in `build_graph`'s own
+    concurrent-first-open path against `.frob/cache.db` (a T-1464 incident:
+    `store_file_data(...)  still locked after 30s`, on a code path this
+    ticket's scope does not touch and does not itself explain) -- doing
+    the one-time ensure-schema work exactly once, before any worker
+    exists, removes that self-inflicted contention burst entirely; workers
+    then only ever open an ALREADY-VALID db file, no schema/fingerprint
+    work of their own."""
+    from frob.lang import PARSE_ARTIFACT_CACHE_ENV
+
+    cache_path = _parse_artifact_cache_path(root)
+    from frob.graph import cache as _graph_cache
+
+    try:
+        _graph_cache.connect(cache_path).close()
+    except Exception:
+        _log.warning(
+            "parse-artifact cache at %s could not be prepared, workers will "
+            "fall back to uncached parsing",
+            cache_path,
+            exc_info=True,
+        )
+        return
+    # frob:waive SEC110 reason="cache-db filesystem path marker, not a secret"
+    os.environ[PARSE_ARTIFACT_CACHE_ENV] = str(cache_path)
+
+
 # frob:ticket T-0767
 # frob:ticket T-0806
 # frob:ticket T-0947
 # frob:ticket T-0990
 def _open_process_pool(
-    process_jobs: dict[str, _ProcessJob], *, max_workers: int | None = None
+    process_jobs: dict[str, _ProcessJob],
+    *,
+    root: Path | None = None,
+    max_workers: int | None = None,
 ) -> ProcessPoolExecutor:
     """Construct the `ProcessPoolExecutor` for `process_jobs` (which must be
     non-empty). Hoisted out of `_run_combined_jobs` (T-0767) so no single
@@ -6473,9 +6524,20 @@ def _open_process_pool(
     else on the same box (the warm daemon's own `frob_check_delta`, see
     `frob.serve._tools._DAEMON_GATE_MAX_WORKERS`) passes a smaller number
     here to size its pool down; every other caller passes `None` (the
-    default) and gets the unchanged pre-T-1436 behavior."""
+    default) and gets the unchanged pre-T-1436 behavior.
+
+    T-1464: also stamps `frob.lang.PARSE_ARTIFACT_CACHE_ENV` with `root`'s
+    resolved `.frob/parse-artifacts.db` path, same env-inheritance timing
+    as the other two stamps -- see `_stamp_worker_parse_artifact_cache_env`.
+    `root=None` (a caller that predates T-1464, or a test exercising this
+    helper directly) skips the stamp entirely -- workers just see no
+    persistent artifact cache configured, the same passthrough behavior
+    `frob.lang._artifact_cache_connection` already has for an unset env
+    var."""
     _stamp_worker_stdout_log_level_env()
     _stamp_worker_lock_keys_env()
+    if root is not None:
+        _stamp_worker_parse_artifact_cache_env(root)
     # Bounded worker count (constraint 4): never more workers than
     # jobs, never more than the machine's CPU count.
     proc_workers = max(1, min(len(process_jobs), os.cpu_count() or 4))
@@ -6516,6 +6578,7 @@ def _run_combined_jobs(
     thread_jobs: dict[str, Callable[[], tuple[Violation, ...]]],
     process_jobs: dict[str, _ProcessJob],
     *,
+    root: Path | None = None,
     max_process_workers: int | None = None,
 ) -> tuple[list[Violation], dict[str, int], dict[str, float]]:
     """Run `thread_jobs` on a `ThreadPoolExecutor` and `process_jobs`
@@ -6558,6 +6621,9 @@ def _run_combined_jobs(
 
     T-1436: `max_process_workers` passes straight through to
     `_open_process_pool`'s own `max_workers` cap; see that docstring.
+
+    T-1464: `root` passes straight through to `_open_process_pool`'s own
+    `root` (the parse-artifact-cache env stamp); see that docstring.
     """
     counts: dict[str, int] = {}
     timing: dict[str, float] = {}
@@ -6568,7 +6634,9 @@ def _run_combined_jobs(
     ppool: ProcessPoolExecutor | None = None
     process_futures: dict[str, Future[tuple[tuple[Violation, ...], float]]] = {}
     if process_jobs:
-        ppool = _open_process_pool(process_jobs, max_workers=max_process_workers)
+        ppool = _open_process_pool(
+            process_jobs, root=root, max_workers=max_process_workers
+        )
         process_futures = _submit_process_pool(ppool, process_jobs)
 
     try:
@@ -6698,6 +6766,28 @@ def _run_gates_bounded(
     return Ok(report)
 
 
+#: T-1464: a SEPARATE db file from `_CACHE_REL` (`.frob/cache.db`), even
+#: though `store_parsed_artifact`/`load_parsed_artifact` live in the same
+#: `frob.graph.cache` module and share its schema/fingerprint machinery.
+#: Every `ProcessPoolExecutor` gate worker (perf/clones/dead_symbols/arch/
+#: sys) opens its OWN connection to whichever file this points at; pointed
+#: at `.frob/cache.db` itself, that piled N extra concurrent connections
+#: onto the SAME file `frob.graph.build_graph`'s own `store_file_data` was
+#: already writing under its own T-1423 contention budget, and measurably
+#: exhausted it (`database is locked` on `store_file_data`, unrelated to
+#: this cache's own writes -- a T-1464 incident, not a T-1423 regression).
+#: A dedicated file isolates the new write load from the pre-existing one.
+_PARSE_ARTIFACT_CACHE_REL = Path(".frob") / "parse-artifacts.db"
+
+
+def _parse_artifact_cache_path(root: Path) -> Path:
+    """`root`'s resolved `.frob/parse-artifacts.db` path (T-1464) --
+    deliberately NOT `.frob/cache.db` (see `_PARSE_ARTIFACT_CACHE_REL`'s
+    comment); `frob.lang.PARSE_ARTIFACT_CACHE_ENV` stamps this path so
+    every worker opens the same persistent parse-artifact store."""
+    return (root / _PARSE_ARTIFACT_CACHE_REL).resolve()
+
+
 def _assemble_gate_report(
     cfg: GateConfig,
     st: _GateInputs,
@@ -6732,7 +6822,10 @@ def _assemble_gate_report(
         *_dsl001_violations(st.snapshot),
     ]
     job_violations, counts, timing = _run_combined_jobs(
-        thread_jobs, process_jobs, max_process_workers=max_process_workers
+        thread_jobs,
+        process_jobs,
+        root=st.repo_root,
+        max_process_workers=max_process_workers,
     )
     counts["waive"] = len(all_violations)
     all_violations.extend(job_violations)

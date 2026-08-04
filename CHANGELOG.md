@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.324.0] - unreleased
+
+- T-1464: perf: persist parse-artifact cache across process-pool gate workers (correctly scoped)
+
 ## [0.323.0] - unreleased
 
 - T-1259: ledger v2: migration (frob ticket migrate --to v2, golden round-trip, deprecation gate, final cutover)

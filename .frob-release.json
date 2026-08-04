@@ -751,8 +751,10 @@
     "src/frob/graph/cache.py::get_root": "f50bca909d71dc78679c65aab98081058a499ecb778eefcc7a8a1a82daa9023b",
     "src/frob/graph/cache.py::load_all": "68a3da4827644e3d6a57571040566e2b3035aec2fdd19450a60ffb1530dec367",
     "src/frob/graph/cache.py::load_file_data": "21be2cde10432e413454352b813ba053a4e63391fd2691feea6967bfdc1e6df0",
+    "src/frob/graph/cache.py::load_parsed_artifact": "3cf3a1d0e1e45466e5ce67c5cd5510d12551797ac0d7b7f518e47e294665ce6f",
     "src/frob/graph/cache.py::set_root": "9bfd45d1c7ec98a0b84a39813b571597245a098551020cc3d697cce469f858aa",
     "src/frob/graph/cache.py::store_file_data": "70f59a3ac071c07913eda79d99db94b19392cfa0945fc05ca55b94c2b4e750e9",
+    "src/frob/graph/cache.py::store_parsed_artifact": "944c39cc3a428b7b25f4572de0df29457e865a523d99920baf0491ba862652ba",
     "src/frob/graph/cache.py::touch_file_stat": "6c753f05ac5e99619b573b1c8ddd59c6fc1e973e294ffbe26473d5d0c725dc85",
     "src/frob/graph/callgraph.py::CallGraph": "e2747c7571378e936de947725fcafb217ca9f9782c5930fa8a2652485dba6a1d",
     "src/frob/graph/callgraph.py::OrderedCallGraph": "f50dcbc99928dc2e721a63c47f0dc1817d1bc9928227134452c9494811fd5367",
@@ -781,6 +783,7 @@
     "src/frob/graph/summary.py::compute_protocol_summaries": "7fc0990476fbed473150809319d75281a3d2be610a842012ff3c1101549faa8d",
     "src/frob/lang/__init__.py::GRAMMAR_FINGERPRINT_PACKAGES": "0fb7c91d3df53b4aec4312a2c97e716487a17e6b8f10f6b2a3dcadb121d14623",
     "src/frob/lang/__init__.py::LangError": "072a7cff3ec199ba5ba83d23c6473cc17b5862ff6b4aa480769541a7ce60761c",
+    "src/frob/lang/__init__.py::PARSE_ARTIFACT_CACHE_ENV": "47008d86b51428a66121658d132d322635b5795633d256b7826fd21cc0b0fe8f",
     "src/frob/lang/__init__.py::extract_imports": "0e91c882e7c7bec98c9d74869e23a294eff906767fe3f73bad31003bcab1e331",
     "src/frob/lang/__init__.py::iter_identifiers": "cd18bf30f813e0239e772e6aee212e96f53f011c75f9571e3a2a591312e3cb7f",
     "src/frob/lang/__init__.py::language_for_extension": "b803a41c5a744042938cd11a5646fdf84ffe02a7b0dfa68dc1cdcd6089b56b3e",
@@ -1996,5 +1999,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.323.0"
+  "version": "0.324.0"
 }

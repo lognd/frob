@@ -58,7 +58,23 @@ _log = get_logger(__name__)
 # "nothing changed" case -- the per-file stat storm this ticket exists to
 # cut. A cache.db written under schema 2 has no such columns, so this must
 # invalidate it same as any other shape change.
-_SCHEMA_VERSION = 3
+# frob:ticket T-1464
+# Bumped 3 -> 4: new `parsed_artifacts` table (T-1464) persists whole
+# per-file `ParsedFile` payloads (symbols/comments/content_hash), keyed by
+# `(content_hash, fingerprint)`, so `ProcessPoolExecutor` gate workers
+# (perf/dup/dead_symbols/arch, see `frob.gates._run_process_gate`) can read
+# an already-derived artifact instead of independently re-parsing +
+# re-extracting the same file in every worker process. Lives in this same
+# `connect()`/schema machinery but under its OWN db file
+# (`.frob/parse-artifacts.db`, `frob.gates._PARSE_ARTIFACT_CACHE_REL`) --
+# NOT `.frob/cache.db` -- so this table's write volume never contends
+# with `store_file_data`'s own T-1423 lock budget on the graph-snapshot
+# cache; this schema bump still applies to BOTH files (any db this
+# module's `connect()` ever opens gets the new table). A db written
+# before this table existed has no such rows -- same "shape changed, must
+# invalidate" rule as every prior bump, even though this bump is additive
+# (no existing table's columns changed) rather than corrective.
+_SCHEMA_VERSION = 4
 
 # frob:ticket T-0243
 # Packages whose behavior changes the shape of the parsed graph: the frob
@@ -141,6 +157,12 @@ CREATE TABLE IF NOT EXISTS malformed (
     file TEXT NOT NULL,
     line INTEGER NOT NULL,
     reason TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS parsed_artifacts (
+    content_hash TEXT NOT NULL,
+    fingerprint TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    PRIMARY KEY (content_hash, fingerprint)
 );
 """
 
@@ -302,7 +324,7 @@ def _apply_schema(conn: sqlite3.Connection, existing: int | None, path: Path) ->
         _SCHEMA_VERSION,
         path,
     )
-    for table in ("meta", "files", "symbols", "edges", "malformed"):
+    for table in ("meta", "files", "symbols", "edges", "malformed", "parsed_artifacts"):
         conn.execute(f"DROP TABLE IF EXISTS {table}")
     conn.executescript(_SCHEMA)
     conn.execute(
@@ -338,7 +360,7 @@ def _check_fingerprint(conn: sqlite3.Connection, path: Path) -> None:
         current,
         path,
     )
-    for table in ("files", "symbols", "edges", "malformed"):
+    for table in ("files", "symbols", "edges", "malformed", "parsed_artifacts"):
         conn.execute(f"DELETE FROM {table}")
     # Also drop 'root', mirroring the schema-version mismatch path: this
     # makes `load_graph` see "never been built" (CacheCorrupt) rather than
@@ -751,6 +773,61 @@ def load_file_data(
         )
     )
     return symbols, edges, malformed
+
+
+# frob:doc docs/modules/graph.md#cache
+# frob:ticket T-1464
+# frob:tests tests/unit/test_graph_cache.py::TestParsedArtifacts.test_store_then_load_round_trips  # noqa: E501
+def store_parsed_artifact(
+    conn: sqlite3.Connection, *, content_hash: str, fingerprint: str, payload: str
+) -> None:
+    """Persist one `frob.lang.ParsedFile`'s serialized `payload` (its own
+    `model_dump_json()`), keyed by `(content_hash, fingerprint)` (T-1464).
+
+    Content-addressed like `frob.dup._cache`'s `fingerprints` table: the
+    same `(content_hash, fingerprint)` pair always derives to the same
+    `ParsedFile` (parsing is a pure function of source bytes + frob/grammar
+    version), so there is no staleness flag to get wrong, only a key to
+    look up. `fingerprint` is `_compute_fingerprint()`'s own string (frob +
+    tree-sitter grammar package versions) folded into the primary key
+    rather than relying solely on `_check_fingerprint`'s wholesale-delete
+    sweep -- a row written under an old fingerprint simply never matches a
+    new lookup, so a race between a worker's read and a concurrent
+    fingerprint-bump delete can never serve a wrong-version payload.
+    Retries through a contended lock (T-1423) exactly like
+    `store_file_data`: the insert is idempotent under retry.
+    """
+
+    def _op() -> None:
+        conn.execute(
+            "INSERT INTO parsed_artifacts (content_hash, fingerprint, payload) "
+            "VALUES (?, ?, ?) "
+            "ON CONFLICT(content_hash, fingerprint) DO UPDATE SET "
+            "payload = excluded.payload",
+            (content_hash, fingerprint, payload),
+        )
+        conn.commit()
+
+    _with_lock_retry(_op, what=f"store_parsed_artifact({content_hash[:12]})")
+
+
+# frob:doc docs/modules/graph.md#cache
+# frob:ticket T-1464
+# frob:tests tests/unit/test_graph_cache.py::TestParsedArtifacts.test_load_miss_returns_none  # noqa: E501
+def load_parsed_artifact(
+    conn: sqlite3.Connection, *, content_hash: str, fingerprint: str
+) -> str | None:
+    """The serialized `ParsedFile` payload for `(content_hash, fingerprint)`,
+    or `None` on a cache miss (T-1464) -- the read side of
+    `store_parsed_artifact`, letting `frob.lang` skip a full tree-sitter
+    parse + `extract()` walk when a `ProcessPoolExecutor` sibling worker
+    (or an earlier run) already derived the same file's artifacts."""
+    row = conn.execute(
+        "SELECT payload FROM parsed_artifacts "
+        "WHERE content_hash = ? AND fingerprint = ?",
+        (content_hash, fingerprint),
+    ).fetchone()
+    return row[0] if row is not None else None
 
 
 # frob:doc docs/modules/graph.md#cache
