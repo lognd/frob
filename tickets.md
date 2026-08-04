@@ -4388,3 +4388,23 @@ threat: null
 component: null
 ```
 Tracks the _python.py module-line coverage-floor findings surfaced during T-1309's run_check TEST005 sweep; split out so T-1309 could close on its own scope. Refiled: the original tracking draft T-1512 died in a removed worktree before landing.
+
+<!-- ticket:T-1513 -->
+```yaml
+id: T-1513
+title: 'post-land Tier-A cleanup commit fails: git add -A stages land-owned uv.lock
+  and pre-commit hook refuses'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-04'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+In _sweep_apply_tier_a_and_commit (src/frob/app/ticket_runner/_land_cmd.py), the T-1456 autofix-retry phase runs git add -A + plain git commit. add -A stages the perpetually-dirty uv.lock (and any other land-owned file), the T-0731 pre-commit hook refuses, the fix stays uncommitted ('N left uncommitted'), the re-scan still sees the errors, and the land reverts -- observed on every refused land 2026-08-03/04. Fix: stage only the files the Tier-A engine actually touched, and run the commit with FROB_LAND_INTERNAL=1 like land's other internal commits. Also consider logging the git stderr on commit failure (it was silent).
