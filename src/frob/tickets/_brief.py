@@ -340,7 +340,8 @@ def _cluster_open_blockers(queue: TicketQueue, t: Ticket) -> tuple[str, ...]:
         blocker_id
         for blocker_id in t.blocked_by
         if queue.tickets.get(blocker_id) is None
-        or queue.tickets[blocker_id].state not in (TicketState.DONE, TicketState.DROPPED)
+        or queue.tickets[blocker_id].state
+        not in (TicketState.DONE, TicketState.DROPPED)
     )
 
 

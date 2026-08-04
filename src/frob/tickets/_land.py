@@ -642,7 +642,9 @@ def land_plan(
         return Err(dirty.danger_err)
 
     with _land_lock(root):
-        return _land_plan_locked(root, worktree, dry_run=dry_run, check_ticks=check_ticks)
+        return _land_plan_locked(
+            root, worktree, dry_run=dry_run, check_ticks=check_ticks
+        )
 
 
 # frob:ticket T-1269
@@ -696,7 +698,9 @@ def _land_plan_merge_worktree(root: Path, worktree: Path) -> Result[str, LandErr
 
 
 # frob:ticket T-1269
-def _land_plan_finalize_drafts(root: Path) -> Result[tuple[tuple[str, str], ...], LandError]:
+def _land_plan_finalize_drafts(
+    root: Path,
+) -> Result[tuple[tuple[str, str], ...], LandError]:
     """Finalize EVERY draft id now present in `root`'s merged ledger
     (T-1269), one `finalize_draft` call each (T-0162's existing allocator
     -- never a hand-assigned id), in a stable (sorted) order so a retry
