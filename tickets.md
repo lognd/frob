@@ -5283,7 +5283,7 @@ Same disposition as T-1514 in this same worktree/session.
 ```yaml
 id: T-1516
 title: 'coverage: frob-native auto-refresh command replacing Makefile orchestration'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-04'
@@ -5296,8 +5296,69 @@ scope:
 - src/frob/check/__init__.py
 - Makefile
 - docs/modules/gates.md
+- src/frob/gates/_coverage.py
+- tests/test_coverage.py
+- docs/modules/testing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_coverage.py
+  reason: 'T-1517 (closed) touched these same three files; T-1516''s own diff
+
+    still carries follow-on interface-sync/coverage-cache wiring in
+
+    design/frob.strata, src/frob/gates/_coverage.py, and
+
+    tests/test_coverage.py from the same worktree session (T-1517''s
+
+    own scope is done and cannot be reopened) -- widening T-1516''s
+
+    scope to cover the file-level touches this worktree''s later commits
+
+    made, since T-1516 is the open ticket landing them.
+
+    '
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: tests/test_coverage.py
+  reason: 'T-1517 (closed) touched these same three files; T-1516''s own diff
+
+    still carries follow-on interface-sync/coverage-cache wiring in
+
+    design/frob.strata, src/frob/gates/_coverage.py, and
+
+    tests/test_coverage.py from the same worktree session (T-1517''s
+
+    own scope is done and cannot be reopened) -- widening T-1516''s
+
+    scope to cover the file-level touches this worktree''s later commits
+
+    made, since T-1516 is the open ticket landing them.
+
+    '
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: docs/modules/testing.md
+  reason: 'AFFECT001 requires the affects()-closure doc for the new coverage-cache/
+
+    coverage-refresh public API (docs/modules/testing.md#public-api) to be
+
+    updated in the same diff as the code -- widening T-1516''s scope to cover
+
+    that doc file.
+
+    '
+  actor: logan
+  at: '2026-08-04'
+evidence:
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_incremental_run_uses_touched_set_targets
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_nothing_touched_only_restamps
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_pytest_failure_is_err
+- tests/test_coverage.py::TestRunCoverageWaitNativeDefault::test_default_command_none_calls_native_refresh
 threat: null
 component: null
 ```
@@ -5320,11 +5381,177 @@ command. Re-filed after the original T-1205 session's draft ids
 (T-1487/T-1488) were lost to an unrelated ledger renumber.
 </content>
 
+## Done report
+
+Added `src/frob/testing/_coverage_refresh.py` (T-1516): `native_coverage_refresh`,
+a frob-native, pure-Python replacement for the COMMON path `make coverage`/
+`make coverage-fast`'s shell recipe covers -- decides cold-start-full vs.
+touched-set-incremental vs. nothing-to-do (reusing T-0484's
+`python_coverage_targets`), spawns `pytest`/`coverage` via `subprocess`
+directly (no `Makefile`/shell dependency, identical on Linux/macOS/
+Windows -- T-1205 acceptance[3]), and always finishes by calling
+`frob.gates._coverage.stamp_coverage` (deferred import, same cycle
+avoidance as T-1517's wiring).
+
+Wired `frob.testing._coverage_wait.run_coverage_wait`'s `command`
+parameter to default to `None` (was `("make", "coverage-fast")`) --
+`None` now routes through `native_coverage_refresh` in-process instead of
+spawning `make`. This is real auto-wiring, not just a new function nobody
+calls: `run_coverage_wait()`'s one production call site
+(`src/frob/app/test_runner.py:301`, out of this ticket's scope, untouched)
+gets the native path automatically because the DEFAULT changed, no
+call-site edit required -- T-1205 acceptance[4]'s "no user-invoked
+refresh verb" for that call path. Existing/explicit `command=(...)`
+callers (every pre-existing test, plus any future caller that wants the
+Makefile recipe's own resilience) are unaffected -- verified by re-running
+`tests/test_app.py::TestRunCoverageWait` and
+`tests/test_coverage_wait_shared.py` unchanged and green.
+
+Deliberately deferred, disclosed rather than silently dropped (both in
+`native_coverage_refresh`'s own module docstring and in
+`docs/modules/gates.md`'s new "Coverage as managed derived state"
+section):
+
+- The Makefile recipe's xdist-crash serial-rerun recovery and
+  configurable rerun-deadline knobs are NOT re-derived in Python here --
+  real, already-hardened resilience against a specific parallel-run flake
+  class that deserves its own dedicated ticket rather than a rushed port
+  in this diff. `make coverage`/`make coverage-fast` themselves are
+  UNCHANGED and still the right choice when that resilience is needed.
+- T-1205 acceptance[3]'s "`make coverage` becomes a thin optional
+  wrapper" is NOT done -- the Makefile itself was not touched to delegate
+  into `native_coverage_refresh`; only `run_coverage_wait`'s own default
+  was rewired. Filed as residue below.
+- T-1205 acceptance[0]/[4]'s "auto-wired into any command whose gates
+  need coverage" is intentionally NOT extended into `frob check` itself.
+  Every dispatched worktree agent runs with `FROB_AGENT=1`
+  (`docs/guides/agent-playbook.md` section 3b), and that section's whole
+  contract depends on `frob check` staying bounded under a foreground
+  timeout -- auto-spawning a coverage refresh (even touched-set-scoped)
+  from inside every `frob check` call would reintroduce the exact
+  auto-background stall class section 3b exists to prevent. Documented
+  explicitly in `docs/modules/gates.md` so this is read as a deliberate
+  safety boundary, not an oversight.
+
+design/frob.strata: `frob:ticket T-1516` on both `core` and `testsuite`
+nodes; `interface=` attrs for `CoverageRefreshError`, `native_coverage_
+refresh`, `TestNativeCoverageRefresh`, `TestRunCoverageWaitNativeDefault`;
+`src/frob/testing/_coverage_refresh.py` added to the `core` node's `exec`
+`may ... via` list (the effects scanner flagged its `subprocess.
+CompletedProcess` type reference). `frob check --only sys --ticket
+T-1516` went from 5 errors to 0. `frob check --only coverage --only test
+--only sys --only archgate --ticket T-1516` is 0 errors, 91 warnings, 211
+waived (all pre-existing, unrelated to this ticket's diff).
+
+docs/modules/gates.md: new "Coverage as managed derived state
+(T-1205/T-1516/T-1517)" section documenting both tickets together (they
+compose: T-1517's cache is what lets T-1516's incremental path read as
+non-deflated) and explicitly naming what is and is not done.
+
+Residue filed as follow-up drafts (real ids after the ledger renumber
+that happens at land -- see `tickets.md` for the current draft blocks):
+- T-draft-2187db71: port the Makefile recipe's xdist-crash-recovery/
+  rerun-deadline resilience into `native_coverage_refresh` or an
+  equivalent native path.
+- T-draft-b655badc: rewrite `make coverage`/`make coverage-fast` to call
+  into `native_coverage_refresh` for their own common-path work (T-1205
+  acceptance[3]'s "thin wrapper" half).
+
+### Changed
+```
+## Done report
+
+Added `src/frob/testing/_coverage_cache.py` (T-1517): a persisted, per-file
+content-hash keyed coverage cache at `.frob/coverage-file-cache.json`,
+mirroring `frob.graph.cache`'s content-hash cache-invalidation pattern
+(T-1464's `parsed_artifacts` table is the closest sibling, but this is a
+single small JSON document, not a sqlite table -- coverage percentages are
+a handful of small floats per file, not whole parsed-file payloads).
+
+Three public functions: `load_file_cache` (read, `{}` on cold start),
+`fill_from_cache` (backfill a freshly loaded `CoverageData.module_line`
+for every file this run did NOT itself measure but whose current content
+hash still matches the cache -- never overwrites data the run actually
+measured), `update_file_cache` (persist every measured file's
+`(content_hash, line_pct)`, merged with the existing cache so an
+untouched file's entry survives a narrower run).
+
+Wired into `frob.gates._coverage.stamp_coverage` (via
+`_filtered_coverage_or_deflated`): the cache fill runs on every stamp,
+BEFORE the T-1180/T-1435/T-1236 deflation/provenance/canary checks, so a
+touched-set `--cov-append` run's narrower `coverage.xml` -- which
+structurally cannot re-measure files it did not execute -- reads as "not
+deflated" for files whose content genuinely has not changed, instead of
+those files silently vanishing from `module_line` or forcing a full-suite
+run just to keep the join fraction up. `update_file_cache` runs after a
+successful `write_coverage_lock` so the cache always reflects the
+freshest per-file numbers for the next stamp, incremental or full. Both
+calls are deferred (function-local) imports from `frob.gates._coverage`
+into `frob.testing._coverage_cache` -- `frob.testing`'s package `__init__`
+already imports `_coverage_wait`, which imports `frob.gates._coverage`
+(`load_stamp`) at module level, so a module-level import the other
+direction would close a real import cycle during `frob.gates` package
+init; verified by re-running the fresh-collection pytest suite after
+adding the deferred-import fix (no ImportError).
+
+This directly implements T-1205 acceptance[2] ("GIVEN an unchanged file
+THEN its coverage is never recomputed: per-file coverage keyed by content
+hash, full-suite runs reserved for cold start or explicit --full") for the
+CACHING half; T-1516 (sequenced after this ticket) is the native
+orchestration command that decides WHEN to run full vs. touched-set and
+is what "full-suite runs reserved for cold start" ultimately depends on
+end-to-end -- this ticket supplies the persistence layer that makes an
+incremental run's coverage.xml honest once that orchestration exists.
+
+design/frob.strata: added `frob:ticket T-1517` to both the `core` and
+`testsuite` nodes (COV002), three new `interface=` attrs on `core`
+(`fill_from_cache`, `load_file_cache`, `update_file_cache`), one on
+`testsuite` (`TestCoverageFileCache`), and
+`src/frob/testing/_coverage_cache.py` to both the `fs.read`/`fs.write`
+`may ... via` lists (SELFAUDIT SYS100/SYS104) -- `frob check --only sys`
+went from 6 errors to 0 after these.
+
+No code outside `src/frob/testing/**`, `src/frob/gates/_coverage.py`,
+`tests/test_coverage.py`, and `design/frob.strata` (the implicit
+sweep-obligation surface every ticket touching public symbols/capability
+effects must update) was touched.
+
+### Changed
+
+### Changed
+
+### Changed
+```
+ design/frob.strata                    | 859 +++++++++++++++++-----------------
+ docs/modules/gates.md                 |  66 +++
+ docs/modules/testing.md               |  69 +++
+ src/frob/gates/_coverage.py           |  29 ++
+ src/frob/testing/__init__.py          |  14 +
+ src/frob/testing/_coverage_cache.py   | 191 ++++++++
+ src/frob/testing/_coverage_refresh.py | 292 ++++++++++++
+ src/frob/testing/_coverage_wait.py    | 163 ++++---
+ tests/test_coverage.py                | 248 +++++++++-
+ tickets.md                            | 402 +++++++++++++++-
+ 10 files changed, 1839 insertions(+), 494 deletions(-)
+```
+
+### Evidence
+- `tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestNativeCoverageRefresh::test_incremental_run_uses_touched_set_targets` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestNativeCoverageRefresh::test_nothing_touched_only_restamps` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestNativeCoverageRefresh::test_pytest_failure_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestRunCoverageWaitNativeDefault::test_default_command_none_calls_native_refresh` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 1 error(s), 693 warning(s), 781 waived
+- error-findings: PRE001@tickets/T-1516
+
 <!-- ticket:T-1517 -->
 ```yaml
 id: T-1517
 title: 'coverage: per-file content-hash incremental caching layer'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-04'
@@ -5338,6 +5565,13 @@ scope:
 - tests/test_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_coverage.py::TestCoverageFileCache::test_load_missing_returns_empty
+- tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_backfills_unchanged_file
+- tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_ignores_stale_hash
+- tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_never_overwrites_fresh_data
+- tests/test_coverage.py::TestCoverageFileCache::test_update_file_cache_persists_measured_files
+- tests/test_coverage.py::TestCoverageFileCache::test_update_file_cache_roundtrips_through_fill_from_cache
 threat: null
 component: null
 ```
@@ -5359,6 +5593,92 @@ command follow-up; both ids were later reused by unrelated tickets
 during a ledger renumber, so the follow-up work they described was
 never actually tracked. This ticket re-files the caching half.
 </content>
+
+## Done report
+
+Added `src/frob/testing/_coverage_cache.py` (T-1517): a persisted, per-file
+content-hash keyed coverage cache at `.frob/coverage-file-cache.json`,
+mirroring `frob.graph.cache`'s content-hash cache-invalidation pattern
+(T-1464's `parsed_artifacts` table is the closest sibling, but this is a
+single small JSON document, not a sqlite table -- coverage percentages are
+a handful of small floats per file, not whole parsed-file payloads).
+
+Three public functions: `load_file_cache` (read, `{}` on cold start),
+`fill_from_cache` (backfill a freshly loaded `CoverageData.module_line`
+for every file this run did NOT itself measure but whose current content
+hash still matches the cache -- never overwrites data the run actually
+measured), `update_file_cache` (persist every measured file's
+`(content_hash, line_pct)`, merged with the existing cache so an
+untouched file's entry survives a narrower run).
+
+Wired into `frob.gates._coverage.stamp_coverage` (via
+`_filtered_coverage_or_deflated`): the cache fill runs on every stamp,
+BEFORE the T-1180/T-1435/T-1236 deflation/provenance/canary checks, so a
+touched-set `--cov-append` run's narrower `coverage.xml` -- which
+structurally cannot re-measure files it did not execute -- reads as "not
+deflated" for files whose content genuinely has not changed, instead of
+those files silently vanishing from `module_line` or forcing a full-suite
+run just to keep the join fraction up. `update_file_cache` runs after a
+successful `write_coverage_lock` so the cache always reflects the
+freshest per-file numbers for the next stamp, incremental or full. Both
+calls are deferred (function-local) imports from `frob.gates._coverage`
+into `frob.testing._coverage_cache` -- `frob.testing`'s package `__init__`
+already imports `_coverage_wait`, which imports `frob.gates._coverage`
+(`load_stamp`) at module level, so a module-level import the other
+direction would close a real import cycle during `frob.gates` package
+init; verified by re-running the fresh-collection pytest suite after
+adding the deferred-import fix (no ImportError).
+
+This directly implements T-1205 acceptance[2] ("GIVEN an unchanged file
+THEN its coverage is never recomputed: per-file coverage keyed by content
+hash, full-suite runs reserved for cold start or explicit --full") for the
+CACHING half; T-1516 (sequenced after this ticket) is the native
+orchestration command that decides WHEN to run full vs. touched-set and
+is what "full-suite runs reserved for cold start" ultimately depends on
+end-to-end -- this ticket supplies the persistence layer that makes an
+incremental run's coverage.xml honest once that orchestration exists.
+
+design/frob.strata: added `frob:ticket T-1517` to both the `core` and
+`testsuite` nodes (COV002), three new `interface=` attrs on `core`
+(`fill_from_cache`, `load_file_cache`, `update_file_cache`), one on
+`testsuite` (`TestCoverageFileCache`), and
+`src/frob/testing/_coverage_cache.py` to both the `fs.read`/`fs.write`
+`may ... via` lists (SELFAUDIT SYS100/SYS104) -- `frob check --only sys`
+went from 6 errors to 0 after these.
+
+No code outside `src/frob/testing/**`, `src/frob/gates/_coverage.py`,
+`tests/test_coverage.py`, and `design/frob.strata` (the implicit
+sweep-obligation surface every ticket touching public symbols/capability
+effects must update) was touched.
+
+### Changed
+
+### Changed
+```
+ design/frob.strata                    | 859 +++++++++++++++++-----------------
+ docs/modules/gates.md                 |  66 +++
+ docs/modules/testing.md               |  69 +++
+ src/frob/gates/_coverage.py           |  29 ++
+ src/frob/testing/__init__.py          |  14 +
+ src/frob/testing/_coverage_cache.py   | 191 ++++++++
+ src/frob/testing/_coverage_refresh.py | 292 ++++++++++++
+ src/frob/testing/_coverage_wait.py    | 163 ++++---
+ tests/test_coverage.py                | 248 +++++++++-
+ tickets.md                            | 403 +++++++++++++++-
+ 10 files changed, 1840 insertions(+), 494 deletions(-)
+```
+
+### Evidence
+- `tests/test_coverage.py::TestCoverageFileCache::test_load_missing_returns_empty` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_backfills_unchanged_file` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_ignores_stale_hash` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_never_overwrites_fresh_data` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestCoverageFileCache::test_update_file_cache_persists_measured_files` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestCoverageFileCache::test_update_file_cache_roundtrips_through_fill_from_cache` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1518 -->
 ```yaml
@@ -5613,3 +5933,82 @@ The T-1514 pre-commit unscoped sweep compared staged-tree findings against the p
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
+
+<!-- ticket:T-1525 -->
+```yaml
+id: T-1525
+title: 'coverage: user-facing frob coverage CLI verb + decide frob check auto-trigger
+  for non-agent callers'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/__main__.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1516/T-1205 acceptance[3]'s other half: native_coverage_refresh exists as a library function but has no CLI entrypoint (frob coverage / frob test --coverage). Also open: T-1205 acceptance[4] literally asks for auto-refresh inside any frob command whose gates need coverage data; frob check deliberately does not do this for a dispatched worktree agent (FROB_AGENT=1, docs/guides/agent-playbook.md section 3b's foreground-timeout contract), but no decision has been made about whether a non-agent (human/CI) frob check invocation -- where that constraint does not apply -- should auto-trigger. Wire the CLI verb and make and document that decision.
+
+<!-- ticket:T-1526 -->
+```yaml
+id: T-1526
+title: 'coverage: make make coverage/coverage-fast a thin wrapper over native_coverage_refresh'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- Makefile
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1205 acceptance[3] asks for make coverage to become a thin optional wrapper around the frob-native orchestration. T-1516 added native_coverage_refresh and rewired run_coverage_wait's default onto it, but the Makefile coverage/coverage-fast targets themselves were left untouched (they still run the full ~300-line shell recipe independently). Rewrite them to delegate their common-path work to native_coverage_refresh, keeping only the xdist-crash-recovery/rerun-deadline shell logic (or whatever that becomes once T-1524 lands) as the part that stays Makefile-side, or is itself ported.
+
+<!-- ticket:T-1527 -->
+```yaml
+id: T-1527
+title: WIRE001 text-scan misses ErrorSet member-access wiring (no-paren false positive)
+state: queued
+kind: bug
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_wire.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+WIRE001's _is_reached_outside_diff_tests text scan looks for a
+`ShortName(` call-shaped occurrence to prove a diff-added symbol is
+reached outside its own tests (src/frob/gates/_wire.py). A typani
+ErrorSet subclass is never referenced this way -- callers spell it
+`ClassName.Member` (bare attribute access, no parens) and the class
+itself is only ever named in a `Result[..., ClassName]` type
+annotation, also paren-free. A genuinely wired ErrorSet whose only
+callable (the function that returns Result[_, ClassName]) has a real
+external caller still trips WIRE001 on the ErrorSet class itself.
+Found while working T-1516 (CoverageRefreshError in
+src/frob/testing/_coverage_refresh.py): native_coverage_refresh is
+called from _coverage_wait.py's _run_native_refresh, but
+CoverageRefreshError itself has no call-shaped occurrence anywhere.
+Teach the text scan an ErrorSet-member-access shape (ClassName\.[A-Za-z_]
+or a `-> Result[..., ClassName]`/`Err(ClassName.` occurrence) the same
+way T-1502 teaches it the wrapper-bare-name shape.

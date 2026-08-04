@@ -360,43 +360,47 @@ def _is_stamp_fresh(root: Path, snapshot: GraphSnapshot) -> bool:
     return True
 
 
+# frob:ticket T-1516
 # frob:doc docs/modules/testing.md#public-api
 # frob:tests tests/test_app.py::TestRunCoverageWait.test_no_stamp_runs_command_and_reports_ran  # noqa: E501
 # frob:tests tests/test_app.py::TestRunCoverageWait.test_fresh_stamp_skips_the_run  # noqa: E501
 # frob:tests tests/test_app.py::TestRunCoverageWait.test_failed_command_is_err  # noqa: E501
+# frob:tests tests/test_coverage.py::TestRunCoverageWaitNativeDefault.test_default_command_none_calls_native_refresh  # noqa: E501
+#
+# T-1516: `command=None` (the default) auto-wires the refresh through the
+# in-process native path -- see the T-1516 note above `_run_and_settle_
+# shared` for what that means and why.
+#
+# T-1095: before falling through to the per-worktree lock/run below, this
+# checks the CROSS-worktree layer first -- `tree_digest` computed from the
+# same snapshot, a shared cache keyed by that digest under
+# `shared_state_dir`. A cache hit (another worktree with byte-for-byte
+# identical tracked source already settled this digest) adopts that
+# result (`_adopt_shared_result`) and returns immediately, with ZERO
+# subprocess spawned in THIS worktree -- acceptance [0]. A cache miss
+# acquires the shared per-digest lock (serializing every worktree sharing
+# this digest onto one real run, re-checking the cache once more after
+# acquiring it in case a racing worktree just finished), runs the refresh
+# exactly as before, and records the settled result for every other
+# worktree sharing this digest to find. Two worktrees whose tracked source
+# DIFFERS resolve to different digests -- different lock paths, different
+# cache entries -- so they never contend or share a result with each
+# other at all (acceptance [1]).
+#
+# T-1126: the OUTER lock is `_worktree_lock` (daemon lease when reachable,
+# else `_coverage_lock`).
 def run_coverage_wait(
-    root: Path, *, command: tuple[str, ...] = ("make", "coverage-fast")
+    root: Path, *, command: tuple[str, ...] | None = None
 ) -> Result[CoverageWaitOutcome, CoverageWaitError]:
     """Block until `root` has a coverage stamp fresh against its current
-    source tree, running `command` (default `make coverage-fast`) under a
-    single-flight lock if it does not already.
-
-    This is the foreground, definitive-result counterpart to backgrounding
-    `make coverage` (T-0322): a caller either gets `Ok(ran=False, ...)`
-    immediately (another caller already made the stamp fresh, or this
-    caller's own prior run did), or blocks in this call until `command`
-    finishes and returns `Ok(ran=True, ...)` / `Err(RunFailed)` -- never a
-    detached job an agent has to poll or "wait" on outside its own turn.
-
-    T-1095: before falling through to the per-worktree lock/run below,
-    this now checks the CROSS-worktree layer first -- `tree_digest`
-    computed from the same snapshot, a shared cache keyed by that digest
-    under `shared_state_dir`. A cache hit (another worktree with
-    byte-for-byte identical tracked source already settled this digest)
-    adopts that result (`_adopt_shared_result`) and returns immediately,
-    with ZERO subprocess spawned in THIS worktree -- acceptance [0]. A
-    cache miss acquires the shared per-digest lock (serializing every
-    worktree sharing this digest onto one real run, re-checking the cache
-    once more after acquiring it in case a racing worktree just finished),
-    runs `command` exactly as before, and records the settled result for
-    every other worktree sharing this digest to find. Two worktrees whose
-    tracked source DIFFERS resolve to different digests -- different lock
-    paths, different cache entries -- so they never contend or share a
-    result with each other at all (acceptance [1]).
-
-    T-1126: the OUTER lock is now `_worktree_lock` (daemon lease when
-    reachable, else `_coverage_lock`); everything below is unchanged.
-    """
+    source tree, refreshing it under a single-flight lock if it does not
+    already -- the foreground, definitive-result counterpart to
+    backgrounding `make coverage` (T-0322): a caller either gets `Ok(
+    ran=False, ...)` immediately (another caller already made the stamp
+    fresh), or blocks until the refresh finishes and returns `Ok(ran=True,
+    ...)` / `Err(RunFailed)` -- never a detached job to poll or "wait" on
+    outside its own turn. See the comment block directly above this
+    function for the T-1095/T-1516/T-1126 mechanics in detail."""
     with _worktree_lock(root):
         cache = root / _CACHE_REL
         loaded = load_graph(cache)
@@ -454,49 +458,44 @@ def _adopt_if_cached(
     return Err(CoverageWaitError.RunFailed)
 
 
+# frob:ticket T-1516
+# T-1516: `command=None` (`run_coverage_wait`'s new default) drives the
+# refresh through `frob.testing._coverage_refresh.native_coverage_refresh`
+# -- pure Python, no `Makefile`/shell dependency (T-1205 acceptance[3]) --
+# IN PROCESS rather than as a spawned `command`, so this is the "auto-
+# wiring" acceptance[4] describes: a caller (e.g. `frob.app.test_runner`)
+# that already calls `run_coverage_wait()` with no arguments now gets the
+# native refresh automatically, no call-site change required. An explicit
+# `command=(...)` (existing tests, or a caller that genuinely wants the
+# old `make coverage-fast` shell recipe -- e.g. for its xdist-crash-
+# recovery resilience `native_coverage_refresh`'s own docstring discloses
+# as deliberately not re-derived there) still spawns exactly that
+# `command` as before, unaffected.
 def _run_and_settle_shared(
     root: Path,
-    command: tuple[str, ...],
+    command: tuple[str, ...] | None,
     digest: str,
     snapshot: GraphSnapshot,
 ) -> Result[CoverageWaitOutcome, CoverageWaitError]:
-    """The actual coverage-command spawn (T-1095's winner-of-the-lock
-    path): run `command`, record the settled `SharedCoverageResult` for
+    """The actual coverage refresh (T-1095's winner-of-the-lock path):
+    refresh via `command` (a spawned subprocess) if given, or -- `command
+    is None`, the default (T-1516) -- via `native_coverage_refresh` called
+    directly in-process; record the settled `SharedCoverageResult` for
     `digest` either way (success or failure -- acceptance [0] promises
     later callers the shared fresh-OR-FAILED result, not success only),
     and return the matching `run_coverage_wait` outcome. Called with the
     shared per-digest lock already held."""
-    _log.info("coverage_wait: stamp stale/missing, running: %s", " ".join(command))
     start = time.monotonic()
-    # T-0803: routed through `guarded_subprocess_run` (T-0778's guard) so
-    # `FROB_DISABLE_EXEC=1` refuses this coverage-suite spawn too;
-    # surfaced as the same `RunFailed` error this function already
-    # returns for a nonzero exit, since a refused spawn is just another
-    # "the coverage run did not happen" outcome from the caller's point
-    # of view.
-    guarded = guarded_subprocess_run(list(command), cwd=str(root), check=False)
-    duration = time.monotonic() - start
-    if guarded.is_err:
-        _log.error(
-            "coverage_wait: %s refused (exec disabled) after %.1fs",
-            " ".join(command),
-            duration,
-        )
-        ok = False
+    if command is None:
+        ok, label = _run_native_refresh(root, snapshot)
+        duration = time.monotonic() - start
+        if ok:
+            _log.info("coverage_wait: %s finished in %.1fs", label, duration)
     else:
-        result = guarded.danger_ok
-        ok = result.returncode == 0
-        if not ok:
-            _log.error(
-                "coverage_wait: %s exited %d after %.1fs",
-                " ".join(command),
-                result.returncode,
-                duration,
-            )
-        else:
-            _log.info(
-                "coverage_wait: %s finished in %.1fs", " ".join(command), duration
-            )
+        ok, label = _run_command(root, command)
+        duration = time.monotonic() - start
+        if ok:
+            _log.info("coverage_wait: %s finished in %.1fs", label, duration)
     _write_shared_result(
         root,
         digest,
@@ -510,6 +509,46 @@ def _run_and_settle_shared(
     if not ok:
         return Err(CoverageWaitError.RunFailed)
     return Ok(CoverageWaitOutcome(ran=True, duration_s=duration))
+
+
+# frob:ticket T-1516
+def _run_native_refresh(root: Path, snapshot: GraphSnapshot) -> tuple[bool, str]:
+    """`(ok, label)` for the T-1516 in-process native refresh path --
+    deferred import, same cycle-avoidance reason as `frob.gates._coverage`'s
+    own T-1517 wiring (this module is inside `frob.testing`'s own package
+    `__init__` import chain, and `native_coverage_refresh` itself
+    eventually imports `frob.gates._coverage`)."""
+    from frob.testing._coverage_refresh import native_coverage_refresh
+
+    label = "native_coverage_refresh"
+    _log.info("coverage_wait: stamp stale/missing, running: %s", label)
+    result = native_coverage_refresh(root, snapshot)
+    if result.is_err:
+        _log.error("coverage_wait: %s failed: %s", label, result.danger_err)
+        return False, label
+    return True, label
+
+
+# frob:ticket T-1516
+def _run_command(root: Path, command: tuple[str, ...]) -> tuple[bool, str]:
+    """`(ok, label)` for the pre-T-1516 spawned-`command` path (an
+    explicit caller override, e.g. `command=("make", "coverage-fast")` or
+    a test's own stub). T-0803: routed through `guarded_subprocess_run`
+    (T-0778's guard) so `FROB_DISABLE_EXEC=1` refuses this spawn too;
+    surfaced as `ok=False` exactly like a real nonzero exit, since a
+    refused spawn is just another "the coverage run did not happen"
+    outcome from the caller's point of view."""
+    label = " ".join(command)
+    _log.info("coverage_wait: stamp stale/missing, running: %s", label)
+    guarded = guarded_subprocess_run(list(command), cwd=str(root), check=False)
+    if guarded.is_err:
+        _log.error("coverage_wait: %s refused (exec disabled)", label)
+        return False, label
+    result = guarded.danger_ok
+    if result.returncode != 0:
+        _log.error("coverage_wait: %s exited %d", label, result.returncode)
+        return False, label
+    return True, label
 
 
 __all__ = [

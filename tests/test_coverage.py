@@ -8,8 +8,20 @@ import subprocess
 import textwrap
 from pathlib import Path
 
+import pytest
+from typani import Err, Ok
+from typani.unit import Unit
+
+from frob.gates._models import CoverageData
 from frob.graph import build_graph
-from frob.testing import python_coverage_targets
+from frob.testing import _coverage_refresh as _refresh_mod
+from frob.testing import (
+    fill_from_cache,
+    load_file_cache,
+    native_coverage_refresh,
+    python_coverage_targets,
+    update_file_cache,
+)
 
 #: T-0538: repo root, resolved the same way every other Makefile-adjacent
 #: test in this repo would -- two levels up from this test file
@@ -262,3 +274,237 @@ class TestCoverageTargetFlakeTolerance:
         exit codes."""
         output = self._dry_run()
         assert "exit $status" in output
+
+
+# frob:ticket T-1517
+class TestCoverageFileCache:
+    """T-1517: `.frob/coverage-file-cache.json` keeps an unchanged file's
+    coverage percentage available across separate, narrower touched-set
+    runs without any test re-execution -- these tests exercise the
+    load/fill/update trio directly against `CoverageData`, no real
+    `coverage.xml` or pytest run involved."""
+
+    # frob:ticket T-1517
+    def test_load_missing_returns_empty(self, tmp_path: Path) -> None:
+        """No cache file on disk is a cold start, not an error."""
+        assert load_file_cache(tmp_path) == {}
+
+    # frob:ticket T-1517
+    def test_fill_from_cache_backfills_unchanged_file(self, tmp_path: Path) -> None:
+        """A file absent from this run's `module_line` but present in the
+        cache with a MATCHING content hash is backfilled at its last
+        measured percentage -- the "unchanged file's coverage is never
+        recomputed" contract."""
+        data = CoverageData(source_sha="abc", module_line={})
+        cache = {"src/foo.py": {"content_hash": "hash-a", "line_pct": 87.5}}
+        merged = fill_from_cache(
+            data, file_hashes={"src/foo.py": "hash-a"}, cache=cache
+        )
+        assert merged.module_line["src/foo.py"] == 87.5
+
+    # frob:ticket T-1517
+    def test_fill_from_cache_ignores_stale_hash(self, tmp_path: Path) -> None:
+        """A file whose current content hash no longer matches the cached
+        one is left unbackfilled -- a real miss, not something a stale
+        cache entry should paper over."""
+        data = CoverageData(source_sha="abc", module_line={})
+        cache = {"src/foo.py": {"content_hash": "hash-old", "line_pct": 87.5}}
+        merged = fill_from_cache(
+            data, file_hashes={"src/foo.py": "hash-new"}, cache=cache
+        )
+        assert "src/foo.py" not in merged.module_line
+
+    # frob:ticket T-1517
+    def test_fill_from_cache_never_overwrites_fresh_data(self, tmp_path: Path) -> None:
+        """A file this run DID measure keeps its fresh value even when the
+        cache disagrees -- fresh data always wins."""
+        data = CoverageData(source_sha="abc", module_line={"src/foo.py": 50.0})
+        cache = {"src/foo.py": {"content_hash": "hash-a", "line_pct": 87.5}}
+        merged = fill_from_cache(
+            data, file_hashes={"src/foo.py": "hash-a"}, cache=cache
+        )
+        assert merged.module_line["src/foo.py"] == 50.0
+
+    # frob:ticket T-1517
+    def test_update_file_cache_persists_measured_files(self, tmp_path: Path) -> None:
+        """`update_file_cache` writes every measured file's `(content_hash,
+        line_pct)` and `load_file_cache` reads it back."""
+        data = CoverageData(source_sha="abc", module_line={"src/foo.py": 42.0})
+        update_file_cache(tmp_path, data, file_hashes={"src/foo.py": "hash-a"})
+        cache = load_file_cache(tmp_path)
+        assert cache["src/foo.py"]["content_hash"] == "hash-a"
+        assert cache["src/foo.py"]["line_pct"] == 42.0
+
+    # frob:ticket T-1517
+    def test_update_file_cache_roundtrips_through_fill_from_cache(
+        self, tmp_path: Path
+    ) -> None:
+        """A file measured on run 1 and untouched (same content hash) on run
+        2's narrower coverage.xml is backfilled by `fill_from_cache` using
+        exactly what `update_file_cache` persisted on run 1 -- the whole
+        incremental round trip, no real pytest/coverage involved."""
+        run1 = CoverageData(source_sha="abc", module_line={"src/foo.py": 66.0})
+        update_file_cache(tmp_path, run1, file_hashes={"src/foo.py": "hash-a"})
+
+        # run 2: coverage.xml only measured a DIFFERENT file this time.
+        run2 = CoverageData(source_sha="def", module_line={"src/bar.py": 10.0})
+        cache = load_file_cache(tmp_path)
+        merged = fill_from_cache(
+            run2,
+            file_hashes={"src/foo.py": "hash-a", "src/bar.py": "hash-b"},
+            cache=cache,
+        )
+        assert merged.module_line["src/foo.py"] == 66.0
+        assert merged.module_line["src/bar.py"] == 10.0
+
+
+# frob:ticket T-1516
+class TestNativeCoverageRefresh:
+    """T-1516: `native_coverage_refresh`'s branching logic (full/cold-start
+    vs. incremental vs. nothing-to-do), exercised with `_run` and
+    `frob.gates._coverage.load_stamp`/`stamp_coverage` monkeypatched --
+    never spawns a real `pytest`/`coverage` subprocess."""
+
+    # frob:ticket T-1516
+    def _patch_stamp(
+        self, monkeypatch: pytest.MonkeyPatch, *, stamp: dict | None, ok: bool = True
+    ) -> list[object]:
+        """Monkeypatch the deferred `frob.gates._coverage` import target
+        (imported fresh inside `native_coverage_refresh` on every call, so
+        patching the real module attribute is enough) and return the list
+        `stamp_coverage` calls get appended to."""
+        import frob.gates._coverage as coverage_mod
+
+        calls: list[object] = []
+        monkeypatch.setattr(coverage_mod, "load_stamp", lambda _root: stamp)
+
+        def _fake_stamp(root, snapshot):  # noqa: ANN001, ARG001
+            calls.append((root, snapshot))
+            return Ok(Unit()) if ok else Err("boom")
+
+        monkeypatch.setattr(coverage_mod, "stamp_coverage", _fake_stamp)
+        return calls
+
+    # frob:ticket T-1516
+    def test_full_run_when_no_stamp_exists(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """No stamp -> cold start -> a full (untargeted, non-append) pytest
+        run, then `coverage xml -i`, then `stamp_coverage`."""
+        calls: list[list[str]] = []
+
+        def _fake_run(argv, *, cwd):  # noqa: ANN001, ARG001
+            calls.append(list(argv))
+            return Ok(None)
+
+        monkeypatch.setattr(_refresh_mod, "_run", _fake_run)
+        stamp_calls = self._patch_stamp(monkeypatch, stamp=None)
+
+        result = native_coverage_refresh(tmp_path, object())
+        assert result.is_ok
+        assert calls[0][0] == "pytest"
+        assert "--cov-append" not in calls[0]
+        assert calls[1] == ["coverage", "xml", "-i"]
+        assert len(stamp_calls) == 1
+
+    # frob:ticket T-1516
+    def test_incremental_run_uses_touched_set_targets(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A stamp exists (not cold start) and the touched-set selects a
+        target -- the pytest run is `--cov-append`-restricted to it."""
+        calls: list[list[str]] = []
+
+        def _fake_run(argv, *, cwd):  # noqa: ANN001, ARG001
+            calls.append(list(argv))
+            return Ok(None)
+
+        monkeypatch.setattr(_refresh_mod, "_run", _fake_run)
+        monkeypatch.setattr(
+            _refresh_mod,
+            "python_coverage_targets",
+            lambda *a, **k: ("tests/test_foo.py::test_widget",),  # noqa: ARG005
+        )
+        self._patch_stamp(monkeypatch, stamp={"source_sha": "x", "file_hashes": {}})
+
+        result = native_coverage_refresh(tmp_path, object())
+        assert result.is_ok
+        assert calls[0][0] == "pytest"
+        assert "--cov-append" in calls[0]
+        assert "tests/test_foo.py::test_widget" in calls[0]
+
+    # frob:ticket T-1516
+    def test_nothing_touched_only_restamps(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A stamp exists, nothing touched selects a python test, AND
+        `coverage.xml` already exists on disk -- no pytest/coverage
+        subprocess is spawned at all, only `stamp_coverage` runs."""
+        (tmp_path / "coverage.xml").write_text("<coverage/>", encoding="utf-8")
+        calls: list[list[str]] = []
+
+        def _fake_run(argv, *, cwd):  # noqa: ANN001, ARG001
+            calls.append(list(argv))
+            return Ok(None)
+
+        monkeypatch.setattr(_refresh_mod, "_run", _fake_run)
+        monkeypatch.setattr(
+            _refresh_mod,
+            "python_coverage_targets",
+            lambda *a, **k: (),  # noqa: ARG005
+        )
+        stamp_calls = self._patch_stamp(
+            monkeypatch, stamp={"source_sha": "x", "file_hashes": {}}
+        )
+
+        result = native_coverage_refresh(tmp_path, object())
+        assert result.is_ok
+        assert calls == []
+        assert len(stamp_calls) == 1
+
+    # frob:ticket T-1516
+    def test_pytest_failure_is_err(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A failing `pytest` run short-circuits to `Err(PytestFailed)`
+        without ever reaching `stamp_coverage`."""
+        monkeypatch.setattr(_refresh_mod, "_run", lambda *a, **k: Err(Unit()))  # noqa: ARG005
+        stamp_calls = self._patch_stamp(monkeypatch, stamp=None)
+
+        result = native_coverage_refresh(tmp_path, object())
+        assert result.is_err
+        assert result.danger_err == _refresh_mod.CoverageRefreshError.PytestFailed
+        assert stamp_calls == []
+
+
+# frob:ticket T-1516
+class TestRunCoverageWaitNativeDefault:
+    """T-1516: `run_coverage_wait(root)` with NO `command=` argument (the
+    real production call shape, `frob.app.test_runner`'s own call site)
+    now drives the refresh through `native_coverage_refresh` in-process
+    instead of spawning `make coverage-fast` -- the auto-wiring T-1205
+    acceptance[4] describes, with zero call-site changes required."""
+
+    # frob:ticket T-1516
+    def test_default_command_none_calls_native_refresh(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.testing._coverage_wait import run_coverage_wait
+
+        root = tmp_path / "repo"
+        pkg = root / "src" / "pkg"
+        pkg.mkdir(parents=True)
+        (pkg / "__init__.py").write_text("", encoding="utf-8")
+        (pkg / "mod.py").write_text("def fn():\n    return 1\n", encoding="utf-8")
+
+        calls: list[Path] = []
+
+        def _fake_native(refresh_root, snapshot):  # noqa: ANN001, ARG001
+            calls.append(refresh_root)
+            return Ok(Unit())
+
+        monkeypatch.setattr(_refresh_mod, "native_coverage_refresh", _fake_native)
+
+        result = run_coverage_wait(root)
+        assert result.is_ok
+        assert calls == [root]

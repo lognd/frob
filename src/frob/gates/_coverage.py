@@ -794,6 +794,7 @@ def _provenance_drop(root: Path, current_module_count: int) -> tuple[int, float]
 
 
 # frob:ticket T-1435
+# frob:ticket T-1517
 # frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refuses_below_deflation_floor  # noqa: E501
 # frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_deflation_floor_skipped_below_min_known_modules  # noqa: E501
 # frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refuses_locally_scoped_run_via_provenance_drop  # noqa: E501
@@ -832,6 +833,26 @@ def _filtered_coverage_or_deflated(
     # path (e.g. `src/frob/scaffold/data/**`'s .j2 templates,
     # 22 of them observed) as drift no re-stamp can ever clear.
     filtered = exclude_filtered_coverage(loaded.danger_ok, snapshot)
+    # T-1517: backfill every file this run's coverage.xml did not itself
+    # measure (a touched-set `--cov-append` run only re-executes the
+    # touched selection) from the persisted per-file content-hash cache,
+    # BEFORE any deflation/provenance/canary check below -- this is what
+    # lets an incremental touched-set stamp read as "not deflated" for
+    # files whose content genuinely has not changed, rather than forcing
+    # every stamp back to a full-suite run to keep the join fraction up.
+    # A file whose content hash no longer matches the cache is left
+    # unbackfilled (a real miss, not something a stale cache should paper
+    # over). Imported here, not at module level: `frob.testing`'s package
+    # `__init__` pulls in `_coverage_wait`, which itself imports this
+    # module (`load_stamp`) -- a module-level import here would close that
+    # cycle during `frob.gates` package init.
+    from frob.testing._coverage_cache import fill_from_cache, load_file_cache
+
+    filtered = fill_from_cache(
+        filtered,
+        file_hashes=_collect_file_hashes(root),
+        cache=load_file_cache(root),
+    )
     # T-1435: checked BEFORE the sample-size skip below -- this check has
     # its own independent gate (the committed lock's own module count,
     # `_DEFLATION_MIN_KNOWN_MODULES`-checked inside `_provenance_drop`
@@ -899,6 +920,7 @@ def _filtered_coverage_or_deflated(
     return Ok(filtered)
 
 
+# frob:ticket T-1517
 # frob:doc docs/modules/gates.md#public-api
 # frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refuses_below_deflation_floor  # noqa: E501
 def stamp_coverage(
@@ -956,6 +978,13 @@ def stamp_coverage(
     )
     if filtered is not None:
         write_coverage_lock(root, filtered)
+        # T-1517: persist this run's (backfilled-and-fresh) module_line into
+        # the per-file content-hash cache so the NEXT stamp -- touched-set
+        # or full -- can backfill from it in turn, keyed against this same
+        # `file_hashes` snapshot. Deferred import, same reason as above.
+        from frob.testing._coverage_cache import update_file_cache
+
+        update_file_cache(root, filtered, file_hashes=file_hashes)
     return Ok(Unit())
 
 

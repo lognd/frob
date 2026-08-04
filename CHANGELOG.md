@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.333.0] - unreleased
+
+- T-1517: coverage: per-file content-hash incremental caching layer
+
 ## [0.332.0] - unreleased
 
 - T-1514: run the unscoped error sweep pre-land on a merge-preview worktree instead of post-land on mutated main

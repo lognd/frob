@@ -1345,6 +1345,72 @@ registered in `_UNWAIVABLE`-adjacent form like every other TEST0xx rule
 (waivable via `frob:waive TEST017 reason="..."`, same as TEST011) --
 promotion to ERROR is a default-severity change, not an unwaivable one.
 
+### Coverage as managed derived state (T-1205/T-1516/T-1517)
+
+<!-- frob:describes src/frob/testing/_coverage_cache.py::fill_from_cache -->
+<!-- frob:describes src/frob/testing/_coverage_refresh.py::native_coverage_refresh -->
+
+T-1205's own acceptance criteria ask for coverage to stop being a
+hand-refreshed artifact TEST005/006/011/017 merely read and complain
+about. Two tickets close most of that gap:
+
+- **T-1517** (`src/frob/testing/_coverage_cache.py`): a per-file
+  content-hash keyed cache at `.frob/coverage-file-cache.json`, wired
+  into `frob.gates._coverage.stamp_coverage`. Before TEST011/TEST017's
+  deflation/provenance/canary checks run, `fill_from_cache` backfills
+  `CoverageData.module_line` for every file the CURRENT `coverage.xml`
+  did not itself measure (a touched-set `--cov-append` run only
+  re-executes the touched selection) but whose live content hash still
+  matches what was last cached -- so an incremental stamp's join fraction
+  reflects every unchanged file's real, previously measured percentage
+  instead of reading as deflated just because this run's own
+  `coverage.xml` is narrower. `update_file_cache` persists every
+  measured file's `(content_hash, line_pct)` after a successful stamp so
+  the next run, incremental or full, can backfill from it in turn.
+- **T-1516** (`src/frob/testing/_coverage_refresh.py`): a frob-native,
+  pure-Python replacement for the COMMON path of `make coverage`/`make
+  coverage-fast`'s shell recipe -- `native_coverage_refresh` decides
+  cold-start-full vs. touched-set-incremental vs. nothing-to-do (reusing
+  T-0484's `python_coverage_targets`), spawns `pytest`/`coverage` via
+  `subprocess` directly (no `Makefile`/shell dependency, works
+  identically on Linux/macOS/Windows), and always finishes with
+  `stamp_coverage`. `frob.testing._coverage_wait.run_coverage_wait`'s
+  `command` parameter now defaults to `None`, which routes through
+  `native_coverage_refresh` in-process instead of spawning `make
+  coverage-fast` -- every existing caller of `run_coverage_wait()` with
+  no arguments (e.g. `frob.app.test_runner`) is auto-wired onto the
+  native path with no call-site change; an explicit `command=(...)`
+  still spawns exactly that command (tests, or a caller that genuinely
+  wants the Makefile recipe's own resilience -- see below).
+
+**What T-1516 deliberately does NOT re-derive**: the Makefile recipe's
+xdist-crash serial-rerun recovery (`docs/guides/testing.md`,
+`tests/unit/test_makefile_coverage.py`'s `TestCombineRecoversDisjointSessions`)
+and its configurable rerun-deadline knobs
+(`COVERAGE_RERUN_DEADLINE`/`COVERAGE_XDIST_DEADLINE`) are real,
+already-hardened resilience against a specific parallel-run flake class;
+porting that faithfully to Python is a dedicated follow-up, not folded
+into this ticket's diff. `native_coverage_refresh` surfaces a pytest/
+coverage subprocess failure as a plain `Err` instead. `make coverage`/
+`make coverage-fast` themselves are UNCHANGED and still the right choice
+for a run that needs that resilience; they were not rewritten to call
+into `native_coverage_refresh` in this same change (T-1205 acceptance[3]'s
+"make coverage becomes a thin optional wrapper" is left as residue, not
+claimed done here -- see T-1205's own Done report).
+
+T-1205 acceptance[0] and [4]'s "no manual refresh verb, runs
+automatically inside a gated command" is intentionally NOT wired into
+`frob check` itself: every dispatched worktree agent runs with
+`FROB_AGENT=1` set (`docs/guides/agent-playbook.md` section 3b), which
+depends on `frob check`/`frob check --ticket` staying bounded under a
+foreground timeout -- auto-spawning a coverage refresh (full-suite or
+even touched-set) from inside every `frob check` call would reintroduce
+exactly the auto-background stall class that section exists to prevent.
+`run_coverage_wait`'s own auto-wiring above is the safe form of this: a
+caller that explicitly wants to block until fresh (opting into the wait)
+gets the native path for free, but a plain `frob check` never
+unconditionally triggers a coverage run on a dispatched agent's behalf.
+
 ### TICK009/TICK010 (T-0714)
 
 <!-- frob:describes src/frob/gates/_tickets_gate.py::_tick009_scope_breadth_nudges -->

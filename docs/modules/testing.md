@@ -265,6 +265,11 @@ cause).
 <!-- frob:describes src/frob/testing/_coverage_wait.py::tree_digest -->
 <!-- frob:describes src/frob/testing/_coverage_wait.py::shared_state_dir -->
 <!-- frob:describes src/frob/testing/_coverage_wait.py::SharedCoverageResult -->
+<!-- frob:describes src/frob/testing/_coverage_cache.py::load_file_cache -->
+<!-- frob:describes src/frob/testing/_coverage_cache.py::fill_from_cache -->
+<!-- frob:describes src/frob/testing/_coverage_cache.py::update_file_cache -->
+<!-- frob:describes src/frob/testing/_coverage_refresh.py::native_coverage_refresh -->
+<!-- frob:describes src/frob/testing/_coverage_refresh.py::CoverageRefreshError -->
 
 ```python
 # frob/gitio.py -- the ONE git subprocess seam (shared with frob.gates)
@@ -397,7 +402,71 @@ class SharedCoverageResult(BaseModel):    # T-1095
     file_hashes: dict[str, str] # the settling worktree's tracked file hashes,
                                 # so a later cache-hit caller can adopt them
                                 # into its OWN local .frob/coverage-stamp.
+
+# frob/testing/_coverage_cache.py (T-1517)
+def load_file_cache(root: Path) -> dict[str, dict[str, object]]
+    # The persisted path -> {content_hash, line_pct} cache at
+    # .frob/coverage-file-cache.json, or {} if missing/unreadable -- a
+    # missing cache is a cold start, not an error.
+def fill_from_cache(data: CoverageData, *, file_hashes: Mapping[str, str],
+                    cache: Mapping[str, dict[str, object]]) -> CoverageData
+    # Backfills data.module_line for every file data itself did not
+    # measure this run, from cache, but ONLY when the file's current
+    # content hash still matches the cached entry's content_hash --
+    # fresh data always wins, a changed file is never backfilled from a
+    # stale cache entry.
+def update_file_cache(root: Path, data: CoverageData, *,
+                      file_hashes: Mapping[str, str]) -> dict[str, dict[str, object]]
+    # Persists data's measured (path, content_hash) -> line_pct pairs
+    # into the cache, merged with (not replacing) whatever was already
+    # there -- a touched-set run's narrower coverage.xml never evicts an
+    # unrelated file's still-valid cached percentage.
+
+# frob/testing/_coverage_refresh.py (T-1516)
+def native_coverage_refresh(root: Path, snapshot: GraphSnapshot, *,
+                            base: str = "HEAD", full: bool = False,
+                            cov_target: str = "src/frob"
+                            ) -> Result[Unit, CoverageRefreshError]
+    # The frob-native, cross-platform (Linux/macOS/Windows) replacement
+    # for `make coverage`/`make coverage-fast`'s shell recipe: decides
+    # cold-start-full vs. touched-set-incremental vs. nothing-to-do
+    # (reusing python_coverage_targets), spawns pytest/coverage via
+    # subprocess directly, and always ends with
+    # frob.gates._coverage.stamp_coverage -- one Python entry point, no
+    # Makefile/shell dependency. Deliberately does NOT port the Makefile
+    # recipe's xdist-crash serial-rerun recovery or its configurable
+    # rerun-deadline knobs (disclosed, not silently dropped) -- a caller
+    # that needs that resilience still has it via `make coverage`/
+    # `make coverage-fast` directly.
+
+class CoverageRefreshError(ErrorSet):
+    PytestFailed = "the pytest subprocess exited non-zero"
+    CoverageXmlFailed = "`coverage xml` could not produce coverage.xml"
+    StampFailed = "the post-run stamp_coverage call failed"
 ```
+
+### Coverage as managed derived state (T-1516/T-1517)
+
+Coverage data (`coverage.xml`, `.frob/coverage-stamp`,
+`frob-coverage.lock.json`) is treated as managed derived state, the same
+posture `frob.graph`'s own cache already applies to parsed-artifact data:
+never hand-maintained, always reproducible from tracked source plus a
+content-hash-keyed cache, and refreshed through ONE Python entry point
+(`native_coverage_refresh`) rather than a shell recipe a caller has to
+know to invoke. `frob.testing._coverage_cache`'s per-file cache
+(`.frob/coverage-file-cache.json`) is the persistence layer underneath it:
+a file whose content hash has not changed since its last real measurement
+is never re-instrumented even indirectly, closing the gap `python_
+coverage_targets`'s test-selection narrowing alone left open (a touched-
+set run's own `coverage.xml` only ever contains data for files it
+actually re-executed; the cache is what lets `stamp_coverage` still
+report every OTHER unchanged file's real percentage instead of silently
+dropping it). `native_coverage_refresh` is the orchestration layer on
+top: given a `GraphSnapshot`, it decides whether a refresh is needed at
+all and, if so, drives the actual `pytest`/`coverage` subprocess calls
+before handing off to `stamp_coverage` -- callers (`run_coverage_wait`'s
+`command=None` default path, T-1516) no longer need a Makefile target to
+get a fresh, correctly-scoped stamp.
 
 ### T-1126: daemon-owned coverage lease (`frob_lease_acquire`/`frob_lease_release`)
 

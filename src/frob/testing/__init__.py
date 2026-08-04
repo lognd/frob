@@ -18,6 +18,15 @@ from frob.testing._collect import (
     drop_collection_cache,
     python_collection_failure_detail,
 )
+from frob.testing._coverage_cache import (
+    fill_from_cache,
+    load_file_cache,
+    update_file_cache,
+)
+from frob.testing._coverage_refresh import (
+    CoverageRefreshError,
+    native_coverage_refresh,
+)
 from frob.testing._coverage_wait import (
     CoverageWaitError,
     CoverageWaitOutcome,
@@ -65,6 +74,7 @@ from frob.testing._stability import (
 
 __all__ = [
     "CollectedTests",
+    "CoverageRefreshError",
     "CoverageWaitError",
     "CoverageWaitOutcome",
     "DEFAULT_REGRESSION_TAIL_K",
@@ -87,14 +97,17 @@ __all__ = [
     "drop_collection_cache",
     "evaluate_gate",
     "extension_language",
+    "fill_from_cache",
     "flaky_node_ids",
     "hard_regression_alarms",
     "is_flaky",
     "is_hard_regression",
     "lift_quarantine",
+    "load_file_cache",
     "load_natives",
     "load_runners",
     "load_stability",
+    "native_coverage_refresh",
     "python_collection_failure_detail",
     "python_coverage_targets",
     "quarantine",
@@ -107,4 +120,5 @@ __all__ = [
     "shared_state_dir",
     "track_python_stability",
     "tree_digest",
+    "update_file_cache",
 ]
