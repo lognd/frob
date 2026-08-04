@@ -658,6 +658,37 @@ def _is_land_owned_finding(root: Path, file_field: str) -> bool:
     )
 
 
+# frob:ticket T-1524
+def _drop_checkpoint_exempt_findings(
+    root: Path,
+    final_id: str,
+    findings: frozenset[tuple[str, str]],
+    *,
+    log_exclusions: bool,
+) -> frozenset[tuple[str, str]]:
+    """Remove findings that are artifacts of the T-1514 staged-uncommitted
+    checkpoint itself: rules in `_PRE_COMMIT_SWEEP_EXEMPT_RULES` (the
+    landing ticket is already finalized done, so its own staged diff
+    reads as unlicensed) and any finding on a root-level land-owned file
+    (`_is_land_owned_finding` -- the land's own staged REL001 bump / uv
+    resync). Exclusions are logged loudly (never silently dropped)."""
+    exempt = frozenset(
+        f
+        for f in findings
+        if _is_land_owned_finding(root, f[1])
+        or f[0] in _PRE_COMMIT_SWEEP_EXEMPT_RULES
+    )
+    if exempt and log_exclusions:
+        _log.warning(
+            "ticket land: %s pre-commit unscoped sweep excluding %d "
+            "checkpoint-artifact finding(s) (T-1524): %s",
+            final_id,
+            len(exempt),
+            sorted(exempt),
+        )
+    return findings - exempt
+
+
 # frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1514
 # frob:ticket T-1524
@@ -703,27 +734,9 @@ def _pre_commit_unscoped_error_sweep(
         )
         return None
 
-    new_findings = fresh - baseline_findings
-    exempt = frozenset(
-        f
-        for f in new_findings
-        if _is_land_owned_finding(root, f[1])
-        or f[0] in _PRE_COMMIT_SWEEP_EXEMPT_RULES
+    new_findings = _drop_checkpoint_exempt_findings(
+        root, final_id, fresh - baseline_findings, log_exclusions=True
     )
-    if exempt:
-        # T-1524: findings against land-owned artifacts at this checkpoint
-        # are the land's OWN staged REL001 bump / uv resync, not the
-        # ticket's -- logged loudly (never silently dropped), then excluded
-        # from the refusal decision.
-        _log.warning(
-            "ticket land: %s pre-commit unscoped sweep excluding %d "
-            "finding(s) on land-owned file(s) staged by the land itself "
-            "(T-1524): %s",
-            final_id,
-            len(exempt),
-            sorted(exempt),
-        )
-        new_findings = new_findings - exempt
     if not new_findings:
         _log.info(
             "ticket land: %s pre-commit unscoped sweep clean (0 new "
@@ -743,11 +756,8 @@ def _pre_commit_unscoped_error_sweep(
     fixed_paths = _sweep_apply_tier_a_pre_commit(root, ticket_id)
     reverify = _unscoped_error_findings(root, ticket_id) if fixed_paths else fresh
     still_new = (reverify - baseline_findings) if reverify is not None else new_findings
-    still_new = frozenset(
-        f
-        for f in still_new
-        if not _is_land_owned_finding(root, f[1])
-        and f[0] not in _PRE_COMMIT_SWEEP_EXEMPT_RULES
+    still_new = _drop_checkpoint_exempt_findings(
+        root, final_id, still_new, log_exclusions=False
     )
     if not still_new:
         _log.info(
