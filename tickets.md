@@ -5544,3 +5544,23 @@ Either option needs its own design doc/ticket-plan before implementation
 -- this is exactly the kind of decision the T-1495 body's "find the
 actual reset path... make it refuse or reconcile" ask flags as needing
 judgment beyond a mechanical fix.
+
+<!-- ticket:T-1524 -->
+```yaml
+id: T-1524
+title: T-1514 pre-commit sweep false-positives on land-owned files the land itself
+  stages (PRE001/SCOPE001 on .frob-release.json)
+state: queued
+kind: bug
+origin: human
+created: '2026-08-04'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+The pre-commit unscoped sweep (_pre_commit_unscoped_error_sweep) compares fresh findings on the STAGED squash tree against the pre-land baseline with no exclusion for land-owned artifacts the land machinery itself writes at this checkpoint (.frob-release.json REL001 bump, CHANGELOG.md entry, pyproject.toml version, uv.lock resync). A land that needs a version bump stages a modified .frob-release.json, PRE001/SCOPE001 fire against it as new-vs-baseline, and the land is refused -- observed blocking T-1517 twice on 2026-08-04 while non-bumping lands (T-1515/T-1495) passed. Fix: exclude findings whose file is in the land-owned set from the pre-commit comparison, logging the exclusions (no silent caps); the post-land sweep and land's own REL001/ledger finalization already govern those files.
