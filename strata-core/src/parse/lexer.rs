@@ -23,7 +23,7 @@ enum TokKind {
     Ident(String),
     Number(f64),
     Str(String),
-    Symbol(char), // one of : { } ; -> ( ) . .. handled specially below
+    Symbol(char), // one of : { } ; -> ( ) . .. [ ] , handled specially below
     Arrow,        // ->
     DotDot,       // ..
     Eof,
@@ -185,7 +185,7 @@ fn lex(text: &str) -> Result<Vec<Token>, ParseError> {
         }
         if matches!(
             c,
-            ':' | '{' | '}' | ';' | '(' | ')' | '%' | '/' | '=' | '<' | '>' | '.' | ','
+            ':' | '{' | '}' | ';' | '(' | ')' | '%' | '/' | '=' | '<' | '>' | '.' | ',' | '[' | ']'
         ) {
             advance!();
             toks.push(Token {

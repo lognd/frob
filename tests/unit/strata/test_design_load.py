@@ -49,6 +49,50 @@ class TestLoadIds:
         assert isinstance(ids.errors[0], DesignLoadError)
         assert ids.errors[0].path == "design/bad.strata"
 
+    # frob:ticket T-1196
+    # frob:tests src/frob/strata/_design_load.py::load_design_ids kind="unit"
+    def test_cross_file_flow_reference_resolves(self, tmp_path: Path) -> None:
+        """T-1196 acceptance 0: a `flow` in one file may reference a `node`
+        declared in a DIFFERENT loaded file and still elaborate cleanly --
+        the pre-T-1196 per-file elaboration could never resolve this."""
+        _write(
+            tmp_path,
+            "design/nodes.strata",
+            "module nodes\n"
+            'node client : foreign { clearance Public; }\n'
+            'node api : authenticated { clearance Internal; }\n',
+        )
+        _write(
+            tmp_path,
+            "design/flows.strata",
+            "module flows\n"
+            "flow f_login : client -> api\n",
+        )
+        ids = load_design_ids(tmp_path)
+        assert ids.errors == ()
+        assert ids.channels == frozenset({"f_login"})
+        assert len(ids.models) == 1
+
+    # frob:ticket T-1196
+    # frob:tests src/frob/strata/_design_load.py::load_design_ids kind="unit"
+    def test_cross_file_reference_to_missing_id_fails_closed(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1196 acceptance 1: a reference to a node declared in NO loaded
+        file fails closed with a `DesignLoadError` naming the file, not a
+        silent partial model."""
+        _write(
+            tmp_path,
+            "design/flows.strata",
+            "module flows\nflow f_ghost : nobody -> nowhere\n",
+        )
+        ids = load_design_ids(tmp_path)
+        assert len(ids.errors) == 2
+        assert all(e.path == "design/flows.strata" for e in ids.errors)
+        assert all(e.error is StrataError.UnknownReference for e in ids.errors)
+        assert ids.channels == frozenset()
+        assert ids.models == ()
+
     def test_one_bad_file_does_not_hide_a_good_one(self, tmp_path: Path) -> None:
         _write(tmp_path, "design/bad.strata", "this is not valid strata {{{")
         _write(tmp_path, "design/good.strata", _MODEL)

@@ -590,6 +590,154 @@ is deliberately shaped so a future Tier-A handler can call
 `sync_interface_report`/`apply_sync_interface` directly with no rework
 once that surface exists.
 
+<a id="compact-interface-attrs-t-1198"></a>
+### Compact `interface=[...]` attrs (T-1198)
+
+<!-- frob:ticket T-1198 -->
+<!-- frob:describes src/frob/strata/_sync_interface.py::NAMES_PER_LINE -->
+
+**Architecture decision (coordinated with T-1196 above):** eliminate the
+`attr interface=<symbol>;`-one-line-per-symbol boilerplate SYS104's
+mechanical upkeep (previous section) produced -- 4236 of `design/
+frob.strata`'s pre-T-1198 5588 lines -- via a GRAMMAR SHORTHAND
+(`strata-core`'s `parse_attrval`, `attr interface=[Foo, Bar, Baz];`)
+rather than a generated sidecar fragment. Both options were on the
+table (the sibling ticket's own body); the grammar shorthand won because
+it needed no NEW file for `_multifile`'s merge to fold in (T-1196's own
+merge mechanism would have handled a sidecar fragment identically well,
+had that path been chosen) and, more importantly, because it is PURE
+PARSER SUGAR: the bracket-list form expands, at parse time, into the
+exact same `"interface=Foo"`/`"interface=Bar"`/`"interface=Baz"` attr
+strings the one-line-per-symbol form always produced, so `_elaborate.py`,
+`_selfconform.py`'s SYS104 measurement, and every gate reading
+`Node.attrs` needed ZERO changes -- the elaborated model is byte-for-byte
+identical either way. A generated-sidecar-fragment design would have
+needed the SAME zero downstream changes for the READ side, but would
+still have needed a real design decision about whether the main file's
+node bodies keep a placeholder for the generated attrs or split node
+declarations across two files entirely (a materially bigger AST/grammar
+change than adding one bracket production) -- the grammar shorthand sidesteps
+that question entirely by staying inside one node's own `{ ... }` body.
+
+Mechanism:
+
+- `strata-core/src/parse/lexer.rs` gained `[`/`]` as lexed symbols (they
+  were not tokenized at all before this ticket).
+- `strata-core/src/parse/grammar_core.rs::parse_attrval` accepts `KEY=
+  [V1, V2, ...]` (trailing comma before `]` optional) alongside the
+  existing `KEY=V` single-value form, expanding a bracket list into N
+  `"KEY=V"` strings at parse time -- the four callers (`grammar_node.rs`,
+  `grammar_flow.rs`, `grammar_infra.rs` x2) all already `extend`ed a
+  `Vec<String>` from a single-attr push, so widening `parse_attrval`'s
+  return type from one `String` to `Vec<String>` was the only call-site
+  change needed anywhere in the Rust grammar.
+- `frob.strata._sync_interface`'s writer (`_render_interface_block`) now
+  emits the compact form -- `NAMES_PER_LINE` (6) symbol names per wrapped
+  line purely for readability, since the grammar does not care about
+  newlines inside `[...]` -- instead of one `attr interface=X;` line per
+  symbol. The reader (`_find_interface_span`) recognizes BOTH the compact
+  block it now writes and the legacy one-line-per-symbol form (backward
+  compatibility for a file not yet migrated), and always WRITES the
+  compact form -- including a one-time reformat of an already-correct
+  legacy declaration whose symbol SET already matches real, so a single
+  `frob sys sync-interface` run migrates an entire repo off the old form
+  without needing a separate one-shot migration script.
+
+Measured: migrating this repo's own `design/frob.strata` via `frob sys
+sync-interface` took it from 5588 lines (pre-T-1198, including 8 lines
+T-1196 itself added) to 2207 lines -- a ~60% reduction -- confirmed
+idempotent immediately after (`frob sys sync-interface --check` reports
+zero drift).
+
+Disclosed cut: this ticket's `frob check --only sys` acceptance criterion
+is satisfied (0 SYS-family errors before and after the migration, verified
+directly) but no dedicated Rust unit test was added for `parse_attrval`'s
+bracket-list branch -- `cargo test` in this worktree hit an unrelated
+environment defect (`pyo3-build-config` refusing to build against the
+worktree's Python 3.10 while the crate targets `abi3-py311`, and a
+separately broken `LD_LIBRARY_PATH` for `libpython3.11.so`), pre-existing
+and orthogonal to this change. Coverage instead comes from the Python
+side, which exercises the new grammar production through the real FFI
+boundary end-to-end (`tests/unit/strata/test_sync_interface.py`'s
+migration test parses+elaborates+round-trips a `attr interface=[...]`
+fixture) -- a real gap for anyone extending `parse_attrval` further
+without an in-worktree working `cargo test`, but not a gap in THIS
+change's own behavior coverage.
+
+## Multi-file design load: cross-file references (T-1196)
+
+<!-- frob:ticket T-1196 -->
+<!-- frob:describes src/frob/strata/_multifile.py::elaborate_merged -->
+<!-- frob:describes src/frob/strata/_multifile.py::merge_modules -->
+<!-- frob:describes src/frob/strata/_multifile.py::check_cross_file_references -->
+<!-- frob:describes src/frob/strata/_multifile.py::CrossFileError -->
+
+`_design_load.py` (T-0080) has always rglobbed and parsed every `.strata`
+file under `design/`, but before T-1196 each file was elaborated (parsed
+-> `KernelModel`) on its own -- `elaborate()` validates references
+(duplicate ids, a boundary naming an unknown flow, a bound claim naming
+an unknown target) against ONE file's own declarations only. Only the
+already-elaborated `KernelModel`s' FACTS were merged afterward
+(`frob.strata._sysdoc.merge_models`, plain concatenation of `nodes`/
+`flows`/etc tuples). That ordering meant a `flow` in file B naming a
+`node` declared only in file A could never resolve: `elaborate(B)` sees
+no such node and fails closed, even though the id exists in the design
+as a whole -- the exact problem a design split along component seams
+(T-1198's sibling concern) would hit immediately.
+
+**Architecture decision:** merge the PARSED `Module`s together and
+elaborate the combined result ONCE, rather than adding an explicit
+import/include construct to the surface grammar. Chosen because a
+`Module` is already just a flat bag of declaration tuples
+(`_ast.py::Module`) with no cross-references baked into its own shape --
+concatenating N of them is a total, order-independent operation that
+needs zero grammar/parser changes and reuses `elaborate()`'s existing
+duplicate-id/unknown-reference validators completely unmodified. It also
+generalizes directly to T-1198's generated-fragment design (a generated
+`.strata` file the interface boilerplate lives in is just one more
+`Module` this same merge folds in, not a special case).
+
+`frob.strata._multifile` is the mechanism:
+
+- `check_cross_file_references` runs BEFORE the merge, checking every
+  `flow`'s `src`/`dst` and every `boundary`'s `flow_id` against the union
+  of every loaded file's node-shaped ids (`_elaborate._known_node_ids`,
+  reused so this join can never drift from what `elaborate()` itself
+  already treats as a valid flow endpoint) -- this is what lets a
+  cross-file fault be reported against the SPECIFIC file whose
+  declaration named the missing id (T-1196 acceptance 1), a distinction
+  the merge below immediately erases.
+- `merge_modules` concatenates every file's declaration tuples into one
+  `Module`.
+- `elaborate_merged` composes the two: pre-check, then merge-and-
+  elaborate-once, returning the merged `KernelModel` or a tuple of
+  `CrossFileError`s (never a silent partial model). A single-file load
+  attributes a post-merge elaboration fault to that one real file
+  (preserving the pre-T-1196 per-file error path for the common
+  one-file-under-`design/` case); a genuine multi-file fault that
+  `elaborate()` itself raises post-merge is named against the merged
+  unit (`<merged:design>`) since it may span more than one file.
+
+`load_design_ids` now parses every file first (a read/parse failure
+still collects per-file and does not hide any other file's valid
+constructs -- unchanged from before T-1196), then calls
+`elaborate_merged` once across every successfully parsed file.
+`DesignIds.models` accordingly holds ONE merged `KernelModel` rather than
+one per file; every existing caller (`frob.gates._sys`,
+`frob.gates._sys_selfaudit`) already ran its own model-level checks
+through `frob.strata._sysdoc.merge_models` first, so this is not a
+behavior change for them -- merging pre- vs post-elaboration only
+changes what CAN resolve, not what a caller does with the result.
+
+Left for a follow-up (filed T-1521, renumbers at land):
+`check_cross_file_references` only
+covers the two reference shapes `elaborate()` itself does NOT validate
+at all today (a flow's `src`/`dst` are never checked against known node
+ids by `elaborate()`, single-file or merged -- confirmed empirically
+while implementing this ticket); `elaborate()`'s OWN validators
+(duplicate ids, boundary-flow, bound-claim-target) already run
+correctly against the merged `Module` and need no parallel pre-check.
+
 ## Directives: frob:channel / frob:boundary / frob:secret (T-0080)
 
 <!-- frob:ticket T-0080 -->
@@ -633,9 +781,10 @@ time (docs/strata/host.md#cli-dispatch--waiver-channel-t-1061).
 `frob.gates.sys_gate` (opt-in: runs only when a `design/`, or
 `[strata].design_dir`, directory of `.strata` files exists, same posture
 as `decisions_gate`) loads every non-excluded file under that directory
-via `frob.strata.load_design_ids` -- parse (`parse_module`) + elaborate
-(`elaborate`) each file, then merge every `Flow.id`, `Boundary.id`, and
-Secret-clearance `Node.id` into one id surface -- and checks four rules.
+via `frob.strata.load_design_ids` -- parse (`parse_module`) each file,
+then elaborate the MERGED result once (`_multifile.elaborate_merged`,
+T-1196, see the section below) into one `Flow.id`/`Boundary.id`/
+Secret-clearance-`Node.id` surface -- and checks four rules.
 `load_design_ids` walks through `frob.excludes.load_exclude_globs`/
 `is_excluded` exactly as `frob.graph._walk_repo_files` does (T-0080
 REJECT round 1: an earlier version rglobbed `design_dir` directly, so a

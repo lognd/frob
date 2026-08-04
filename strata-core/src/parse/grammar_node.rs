@@ -80,7 +80,7 @@ impl Parser {
                     clearance = self.expect_ident("clearance level")?;
                 } else if self.at_keyword("attr") {
                     self.advance();
-                    attrs.push(self.parse_attrval()?);
+                    attrs.extend(self.parse_attrval()?);
                 } else if self.at_keyword("realm") {
                     // T-0262: `realm "REALM.NAME"` -- names the Kerberos
                     // realm/AD domain this node participates in or, paired

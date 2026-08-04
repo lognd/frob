@@ -31,10 +31,10 @@ from frob.excludes import is_excluded, iter_files, load_exclude_globs
 from frob.graph import EdgeKind, GraphSnapshot
 from frob.logging import get_logger
 
-from ._ast import ResourceDecl
-from ._elaborate import elaborate
+from ._ast import Module, ResourceDecl
 from ._errors import StrataError
 from ._models import KernelModel
+from ._multifile import FileModule, elaborate_merged
 from ._parse import parse_module
 
 _log = get_logger(__name__)
@@ -144,76 +144,75 @@ def _load_all_design_files(
     list[DesignLoadError],
     list[KernelModel],
 ]:
-    """Load+merge every `.strata` file in `paths`; per-file failures collect
-    into the returned errors list rather than aborting the whole load."""
-    channels: set[str] = set()
-    boundaries: set[str] = set()
-    secrets: set[str] = set()
+    """Load+merge every `.strata` file in `paths`. Parsing is per-file
+    (a read/parse failure in one file is collected and every OTHER file
+    still loads); elaboration is CROSS-FILE (T-1196): every successfully
+    parsed `Module` is combined and elaborated ONCE via
+    `_multifile.elaborate_merged`, so a `flow`/`boundary` in one file may
+    reference a `node`/`flow` declared in another loaded file. A
+    cross-file reference or elaboration fault fails the WHOLE load closed
+    (reported as one `DesignLoadError` per file named by
+    `elaborate_merged`) rather than producing a silent partial model --
+    the only per-file-recoverable failure is a parse error."""
+    parsed_files: list[FileModule] = []
     store_ids: set[str] = set()
     resources: list[ResourceDecl] = []
     errors: list[DesignLoadError] = []
-    models: list[KernelModel] = []
     for path in paths:
-        model, file_store_ids, file_resources, error = _load_one_design_file(root, path)
+        rel, module, error = _parse_one_design_file(root, path)
         if error is not None:
             errors.append(error)
             continue
-        assert model is not None
-        models.append(model)
-        channels.update(flow.id for flow in model.flows)
-        boundaries.update(boundary.id for boundary in model.boundaries)
-        secrets.update(node.id for node in model.nodes if node.clearance == "Secret")
-        store_ids.update(file_store_ids)
-        resources.extend(file_resources)
+        assert module is not None
+        parsed_files.append((rel, module))
+        store_ids.update(store.id for store in module.stores)
+        resources.extend(module.resources)
+
+    channels: set[str] = set()
+    boundaries: set[str] = set()
+    secrets: set[str] = set()
+    models: list[KernelModel] = []
+    if parsed_files:
+        elaborated = elaborate_merged(tuple(parsed_files))
+        if elaborated.is_err:
+            for cross_error in elaborated.danger_err:
+                _log.warning(
+                    "load_design_ids: %s failed to elaborate: %s",
+                    cross_error.path,
+                    cross_error.message,
+                )
+                errors.append(
+                    DesignLoadError(path=cross_error.path, error=cross_error.error)
+                )
+        else:
+            model = elaborated.danger_ok
+            models.append(model)
+            channels.update(flow.id for flow in model.flows)
+            boundaries.update(boundary.id for boundary in model.boundaries)
+            secrets.update(
+                node.id for node in model.nodes if node.clearance == "Secret"
+            )
     return channels, boundaries, secrets, store_ids, resources, errors, models
 
 
-def _load_one_design_file(
+def _parse_one_design_file(
     root: Path, path: Path
-) -> (
-    tuple[KernelModel, frozenset[str], tuple[ResourceDecl, ...], None]
-    | tuple[None, frozenset[str], tuple[ResourceDecl, ...], DesignLoadError]
-):
-    """Read+parse+elaborate one `.strata` file; returns `(model, store_ids,
-    resources, None)` on success or `(None, frozenset(), (), error)` on any
-    failure, never raising. `store_ids` (T-0724) and `resources` (T-1061)
-    are both read off the PARSED `Module` before `elaborate` folds each
-    store into a plain `Node` (and drops `Module.resources` entirely,
-    since a resource has no accessor of its own to desugar into a node/
-    attr, `_access.py` module docstring) -- the only point at which either
-    fact is still reconstructible (`_contention.py`/`_access.py` module
-    docstrings)."""
+) -> tuple[str, Module, None] | tuple[str, None, DesignLoadError]:
+    """Read+parse (no elaboration) one `.strata` file; returns `(rel_path,
+    module, None)` on success or `(rel_path, None, error)` on any failure,
+    never raising. Elaboration is deferred to `elaborate_merged` (T-1196)
+    since it now runs once across every parsed file, not per file."""
     rel = path.relative_to(root).as_posix()
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
         _log.warning("load_design_ids: could not read %s: %s", rel, exc)
-        return (
-            None,
-            frozenset(),
-            (),
-            DesignLoadError(path=rel, error=StrataError.ParseFailed),
-        )
+        return rel, None, DesignLoadError(path=rel, error=StrataError.ParseFailed)
     parsed = parse_module(text)
     if parsed.is_err:
         _log.warning("load_design_ids: %s failed to parse: %s", rel, parsed.danger_err)
-        return None, frozenset(), (), DesignLoadError(path=rel, error=parsed.danger_err)
-    store_ids = frozenset(store.id for store in parsed.danger_ok.stores)
-    resources = parsed.danger_ok.resources
-    elaborated = elaborate(parsed.danger_ok)
-    if elaborated.is_err:
-        _log.warning(
-            "load_design_ids: %s failed to elaborate: %s",
-            rel,
-            elaborated.danger_err,
-        )
-        return (
-            None,
-            store_ids,
-            resources,
-            DesignLoadError(path=rel, error=elaborated.danger_err),
-        )
-    return elaborated.danger_ok, store_ids, resources, None
+        return rel, None, DesignLoadError(path=rel, error=parsed.danger_err)
+    return rel, parsed.danger_ok, None
 
 
 # frob:doc docs/strata/surface.md#directives-t-0080

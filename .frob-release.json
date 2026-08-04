@@ -1499,6 +1499,10 @@
     "src/frob/strata/_models.py::TRUST": "e8e283319edc69bd37ca6cba36cf7d176db52c0ccbf83f13441a0c14ecf06277",
     "src/frob/strata/_models.py::Verdict": "29849300e036eff7028404b916179a46687e086978117a8ab2103314810be91e",
     "src/frob/strata/_models.py::Waiver": "1a334b8f20170fde73359dc0cc26065fd38ba72af344ad74284a0f7f086f5588",
+    "src/frob/strata/_multifile.py::CrossFileError": "e607de6a1df3e53b4f7eb0c5e0373b2ad65370dbec7a1854f79c69821660fb3e",
+    "src/frob/strata/_multifile.py::check_cross_file_references": "5c5779b33cb8b9d61637d96b76ee23ca9b3f056b55c1a2355e433c124812f426",
+    "src/frob/strata/_multifile.py::elaborate_merged": "ad26215c976d6fe36c7e0095557592e64b455bf1f567f21f7026c350c3544667",
+    "src/frob/strata/_multifile.py::merge_modules": "6feb21b2fee0e16960ce8661ecbdbac3d2af78f346d075020f5b16fd89ecc68c",
     "src/frob/strata/_mutation_audit.py::DETECTABLE_KINDS": "078ceee1496219360165382fcb66f55c4e3bb479fa8a28839b7462af2044ea44",
     "src/frob/strata/_mutation_audit.py::EXPORT_DETECTABLE_KINDS": "34e2187ba8d8a32bea87ad40b93f394816e6fb31f2a0732d2c3415ee82702b68",
     "src/frob/strata/_mutation_audit.py::MutationAuditReport": "b1e820c060444e19801a7f97cfcb5bf8e5abd005b7656e0635318bba80e0372e",
@@ -1642,6 +1646,7 @@
     "src/frob/strata/_sync_depth.py::check_sync_chain_depth": "c8b641f353c8270f053f07c16f58d2a715bdfef674d802f4043afc93c6498f4c",
     "src/frob/strata/_sync_interface.py::FileSyncResult": "13193a0559b94a52ece82716040eac00edd4426497bfec62f6c610619427de8d",
     "src/frob/strata/_sync_interface.py::FileSyncResult.changed": "4714a9cf379a715c303bf72c0245a61a301338b3549596f20494197d5e6d8f9c",
+    "src/frob/strata/_sync_interface.py::NAMES_PER_LINE": "132bace44194d7bc5ca7d6a0e0b615d6d8aab1080f8ff5d6ca46adad773cb23a",
     "src/frob/strata/_sync_interface.py::NodeInterfaceDiff": "959c5b3b473add326cfff9fbe94a6f6410edb9777377227df9fd91b17aaaf3b9",
     "src/frob/strata/_sync_interface.py::SyncInterfaceReport": "a992b078ffb9ad70993f1f9fc34a51b4d086046af353a454544da1bd7a9b6561",
     "src/frob/strata/_sync_interface.py::SyncInterfaceReport.has_drift": "a551f9ac238650f520485586f45b6af678dd0e9c858738a38bad0eaa43af9d0c",
@@ -2014,5 +2019,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.329.0"
+  "version": "0.330.0"
 }

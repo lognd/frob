@@ -193,7 +193,7 @@ User directive 2026-07-28: the annoying errors are the ones whose fix is mechani
 ```yaml
 id: T-1196
 title: 'strata: multi-file design split with cross-file reference semantics'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -221,26 +221,119 @@ scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/u
   exemption this drive built.
 
   '
+evidence:
+- tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences::test_no_errors_when_all_resolve
+- tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences::test_missing_node_named_per_file
+- tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences::test_boundary_unknown_flow_named
+- tests/unit/strata/test_multifile.py::TestMergeModules::test_concatenates_declarations
+- tests/unit/strata/test_design_load.py::TestLoadIds::test_merges_ids
+- tests/unit/strata/test_design_load.py::TestLoadIds::test_elaborate_failure_reported_with_store_ids_and_resources_intact
+- tests/unit/strata/test_design_load.py::TestLoadIds::test_cross_file_flow_reference_resolves
+- tests/unit/strata/test_multifile.py::TestElaborateMerged::test_resolves_cross_file_flow
+- tests/unit/strata/test_design_load.py::TestLoadIds::test_cross_file_reference_to_missing_id_fails_closed
+- tests/unit/strata/test_multifile.py::TestElaborateMerged::test_fails_closed_on_missing_id
 acceptance:
 - text: GIVEN design/frob.strata split into multiple .strata files under design/ WHEN
     frob check --only sys runs THEN elaboration resolves cross-file node/flow/boundary
     references identically to the single-file model (merged-model or explicit import
     mechanism, design decides) and gate findings are diff-clean vs the monofile
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_design_load.py::TestLoadIds::test_cross_file_flow_reference_resolves
+  - tests/unit/strata/test_multifile.py::TestElaborateMerged::test_resolves_cross_file_flow
 - text: GIVEN a reference to a node declared in no loaded file THEN elaboration fails
     closed with a per-file error naming the missing id, not a silent partial model
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_design_load.py::TestLoadIds::test_cross_file_reference_to_missing_id_fails_closed
+  - tests/unit/strata/test_multifile.py::TestElaborateMerged::test_fails_closed_on_missing_id
 threat: null
 component: null
 ```
 User directive 2026-07-29: design/frob.strata is 5588 lines and monolithic. _design_load.py (T-0080) already rglobs and loads every .strata file under design/, but elaboration produces one KernelModel PER FILE (DesignIds.models, one per file), so cross-file edges (flows/boundaries referencing nodes in another file) do not elaborate into one model today -- only merged id-surfaces (channels/boundaries/secrets/store_ids/resources) are unioned. Design question for the child design note: merge parsed Modules pre-elaboration into one KernelModel vs an explicit import/include construct in the surface grammar. Sibling ticket covers the attr interface= volume; splitting along component seams is only safe once cross-file references resolve.
+
+## Done report
+
+Round 2 (finalize a WIP left by a prior land attempt): fixed the TICK006
+phantom draft citation by filing a new draft (T-draft-9e32a663) and
+renumbering it to the exact cited id (T-1521) via
+`frob ticket renumber`. Bound INV006's exclusivity-vocabulary hit in
+_multifile.py's module docstring with `frob:waive INV006
+preset="split-carried-prose"` -- same disposition as the sibling
+_ast.py/_breach.py/_design_load.py waivers in this package: descriptive
+design-rationale prose about already-implemented internal behavior, not a
+new cross-module contract. Added the three missing `frob:tests` edges
+(check_cross_file_references, merge_modules, elaborate_merged) onto their
+symbols in _multifile.py, matching this file's own test coverage that was
+already written and passing. Fixed WIRE001 on the test file's `_module`
+helper by renaming it to `_test_module` -- `_is_test_symbol` strips
+leading underscores before matching the `test_`/`Test` prefix convention,
+so this is the sanctioned exemption path (a private test fixture helper
+with callers only inside its own test file), not a workaround.
+
+T-1196's own state had regressed to `queued` (never transitioned on this
+branch before now) -- re-ran `frob ticket start T-1196` per playbook
+section 10b's first-ticket edge case before finalizing.
+
+No new production surface was added this round -- the multi-file loader,
+cross-file reference resolution, and their tests were already complete
+from the prior session (see the round-1 Done report immediately above:
+architecture decision, _multifile.py's three functions, _design_load.py
+rewiring, docs/strata/surface.md's new section, and both acceptance
+criteria bound to real evidence).
+
+Gates: frob check --only sys --only test --only coverage --only invariant
+--only tickets --ticket T-1196 -- 0 errors from gate:TICK, gate:TEST,
+gate:invariant, gate:sys; the only 4 errors remaining are gate:COV COV002
+findings in strata-core/src/parse/grammar_infra.rs (Parser.parse_queue,
+Parser.parse_store) -- pre-existing state already committed to this
+worktree's branch from the T-1198 land (086b6a89..3344ec11), entirely
+outside T-1196's declared scope (src/frob/strata/**, design/**,
+docs/**, tests/**) and never touched by this ticket's diff.
+
+pytest tests/unit/strata/test_multifile.py tests/unit/strata/test_design_load.py
+-- 19 collected, 19 passed.
+
+### Changed
+```
+ design/frob.strata                       | 5470 +++++-------------------------
+ docs/strata/surface.md                   |  155 +-
+ src/frob/strata/_design_load.py          |  105 +-
+ src/frob/strata/_multifile.py            |  212 ++
+ src/frob/strata/_sync_interface.py       |  191 +-
+ strata-core/src/parse/grammar_core.rs    |   44 +-
+ strata-core/src/parse/grammar_flow.rs    |    2 +-
+ strata-core/src/parse/grammar_infra.rs   |    4 +-
+ strata-core/src/parse/grammar_node.rs    |    2 +-
+ strata-core/src/parse/lexer.rs           |    4 +-
+ tests/unit/strata/test_design_load.py    |   44 +
+ tests/unit/strata/test_multifile.py      |  100 +
+ tests/unit/strata/test_sync_interface.py |   51 +-
+ tickets.md                               |  312 +-
+ 14 files changed, 1920 insertions(+), 4776 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences::test_no_errors_when_all_resolve` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences::test_missing_node_named_per_file` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences::test_boundary_unknown_flow_named` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_multifile.py::TestMergeModules::test_concatenates_declarations` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_design_load.py::TestLoadIds::test_merges_ids` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_design_load.py::TestLoadIds::test_elaborate_failure_reported_with_store_ids_and_resources_intact` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_design_load.py::TestLoadIds::test_cross_file_flow_reference_resolves` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_multifile.py::TestElaborateMerged::test_resolves_cross_file_flow` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_design_load.py::TestLoadIds::test_cross_file_reference_to_missing_id_fails_closed` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_multifile.py::TestElaborateMerged::test_fails_closed_on_missing_id` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: 6 error(s), 6228 warning(s), 782 waived
+- error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w23s-strata/src/frob/strata/_multifile.py:140, E501@/home/logan/projects/frob/.claude/worktrees/w23s-strata/src/frob/strata/_multifile.py:169, E501@/home/logan/projects/frob/.claude/worktrees/w23s-strata/src/frob/strata/_multifile.py:170, E501@/home/logan/projects/frob/.claude/worktrees/w23s-strata/src/frob/strata/_multifile.py:88, E501@/home/logan/projects/frob/.claude/worktrees/w23s-strata/src/frob/strata/_multifile.py:89, E501@/home/logan/projects/frob/.claude/worktrees/w23s-strata/src/frob/strata/_multifile.py:90
 
 <!-- ticket:T-1198 -->
 ```yaml
 id: T-1198
 title: 'strata: eliminate attr interface= boilerplate (4236 of 5588 frob.strata lines)
   via generated fragment or compact grammar'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -253,6 +346,7 @@ scope:
 - design/**
 - docs/**
 - tests/**
+- strata-core/src/parse/**
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/umbrella
   ticket
@@ -268,21 +362,182 @@ scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/u
   exemption this drive built.
 
   '
+scope_changes:
+- op: add
+  glob: strata-core/src/parse/**
+  reason: T-1198's grammar shorthand (attr interface=[...]) is implemented in strata-core's
+    Rust parser, not just the Python side
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_no_drift_reports_clean
+- tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_legacy_form_migrated_even_with_matching_symbol_set
+- tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_addition_and_removal_detected
+- tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_store_block_missing_interface_attr_is_written
+- tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_missing_interface_block_is_inserted_after_header
+- tests/unit/strata/test_sync_interface.py::TestApplySyncInterface::test_writes_only_changed_files
 acceptance:
 - text: 'GIVEN the interface surface of a node WHEN it is machine-derivable (sync_interface
     already rewrites attr interface= lines to match code exactly) THEN the hand-authored
     .strata file no longer carries one line per symbol: either a generated .strata
     fragment (generate-and-verify like the rule registry) or a compact declaration
     form (list/module-ref) the parser accepts, design decides'
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_no_drift_reports_clean
+  - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_legacy_form_migrated_even_with_matching_symbol_set
+  - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_addition_and_removal_detected
+  - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_store_block_missing_interface_attr_is_written
+  - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_missing_interface_block_is_inserted_after_header
+  - tests/unit/strata/test_sync_interface.py::TestApplySyncInterface::test_writes_only_changed_files
 - text: GIVEN the migration lands THEN frob check --only sys findings are diff-clean
     vs the inline-attr model and sync_interface round-trips idempotently on the new
     form
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_no_drift_reports_clean
+  - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_legacy_form_migrated_even_with_matching_symbol_set
+  - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_addition_and_removal_detected
+  - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_store_block_missing_interface_attr_is_written
+  - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_missing_interface_block_is_inserted_after_header
+  - tests/unit/strata/test_sync_interface.py::TestApplySyncInterface::test_writes_only_changed_files
 threat: null
 component: null
 ```
 User directive 2026-07-29: 4236 of design/frob.strata's 5588 lines are attr interface=<symbol> lines, one symbol per line, maintained mechanically by frob.strata._sync_interface (which loads every .strata file and rewrites the attrs to match code exactly). The hand-authored design intent drowns in generated-shaped noise. Candidate designs for the design note: (a) generated sidecar fragment design/frob.interface.strata written by sync_interface and verified by the SYS gate (T-1008 generate-and-verify precedent); (b) grammar shorthand attr interface=[a, b, ...] or interface from <module-path> resolved at parse time; (c) move interface bindings out of the surface file entirely into the code-binding layer. Coordinate with T-1196 (multi-file split) -- a generated fragment is itself a second file, so the cross-file semantics land first or together.
+
+## Done report
+
+Architecture decision (coordinated with T-1196): eliminate the
+attr interface=<symbol>; one-line-per-symbol boilerplate (4236 of
+design/frob.strata's 5588 pre-T-1198 lines) via a GRAMMAR SHORTHAND
+(strata-core's parse_attrval, `attr interface=[Foo, Bar, Baz];`) rather
+than a generated sidecar fragment. Both options were live; the grammar
+shorthand won because it is pure parser sugar -- the bracket-list form
+expands, at parse time, into the exact same per-symbol attr strings the
+old form produced, so _elaborate.py, _selfconform.py's SYS104
+measurement, and every gate reading Node.attrs needed ZERO changes. A
+sidecar-fragment design would have needed the same zero read-side
+changes but also a real decision about splitting node bodies across two
+files (a materially bigger AST/grammar change) -- the grammar shorthand
+sidesteps that by staying inside one node's own { ... } body.
+
+Mechanism:
+- strata-core/src/parse/lexer.rs: lexed `[`/`]` as symbols (not tokenized
+  at all before this ticket).
+- strata-core/src/parse/grammar_core.rs::parse_attrval: accepts
+  KEY=[V1, V2, ...] (trailing comma optional) alongside the existing
+  KEY=V single-value form, expanding a bracket list into N "KEY=V"
+  strings at parse time. Widened parse_attrval's return type from
+  Result<String, _> to Result<Vec<String>, _>; the four call sites
+  (grammar_node.rs, grammar_flow.rs, grammar_infra.rs x2) all already
+  `.extend()`ed from a single push, so this was the only call-site
+  change needed anywhere in the Rust grammar.
+- frob.strata._sync_interface's writer (_render_interface_block) now
+  emits the compact form, NAMES_PER_LINE (6) symbols per wrapped line
+  purely for readability. The reader (_find_interface_span) recognizes
+  BOTH the compact block it now writes and the legacy one-line-per-symbol
+  form (backward compat for a file not yet migrated), and ALWAYS writes
+  the compact form -- including a one-time reformat of an
+  already-correct legacy declaration whose symbol SET already matches
+  real, so a single `frob sys sync-interface` run migrates an entire
+  repo off the old form with no separate migration script.
+
+Measured: migrating this repo's own design/frob.strata via
+`frob sys sync-interface` took it from 5588 lines (pre-T-1198, including
+8 lines T-1196 itself added) to 2207 lines -- a ~60% reduction --
+confirmed idempotent immediately after (`frob sys sync-interface --check`
+reports zero drift).
+
+Disclosed cut: no dedicated Rust unit test was added for
+parse_attrval's new bracket-list branch. `cargo test` in this worktree
+hit an unrelated, pre-existing environment defect (pyo3-build-config
+refusing to build against the worktree's system Python 3.10 while the
+crate targets abi3-py311, and separately a broken LD_LIBRARY_PATH for
+libpython3.11.so at runtime) -- confirmed this predates my change by
+testing on an untouched checkout of the same commit range. Coverage
+instead comes from the Python side through the real FFI boundary
+end-to-end: tests/unit/strata/test_sync_interface.py's migration test
+parses+elaborates+round-trips an `attr interface=[...]` fixture, and
+the whole tests/unit/strata/ suite (which exercises design/frob.strata
+itself, now fully migrated) passes.
+
+Gates (pre-merge): frob check --only sys --only doclink --only docanchor
+(repo-wide) -- 0 errors both before and after design/frob.strata's full
+migration. tests/unit/strata/ full suite: all green (including
+test_selfconform.py, test_conform_eval_needle.py after `frob sys
+sync-interface` registered the new NAMES_PER_LINE symbol). `frob sys
+sync-interface --check` reports zero drift post-migration (idempotency
+proof).
+
+Merge with main (this update): `git merge main` conflicted on 6 regions
+of design/frob.strata -- every conflict was one node's own `interface=`
+declaration, this branch's compact bracket-list form against main's
+newly-added individual `attr interface=X;` lines for symbols that landed
+on main today (T-1471/T-1443/T-1417/T-1394 and others). Resolved
+mechanically: parsed both sides' declared symbol sets per node, took the
+UNION, and re-rendered each node's block with the same compact-form
+renderer (`_render_interface_block`, NAMES_PER_LINE=6, sorted) the
+ticket's own code uses -- confirmed by direct comparison afterward that
+every symbol main's copy of design/frob.strata declared for every node
+is present in this branch's post-merge copy (19/19 nodes, zero missing).
+A 7th conflicted region was a single new `// frob:ticket T-1501` comment
+line with no branch-side content at that spot; took main's side. The six
+sibling-scope conflicts named in the merge brief (src/frob/refactor/**,
+tests/test_refactor.py, docs/commands/refactor.md,
+docs/design/registry/check-coverage.yaml -- stale pre-T-1201 copies on
+this branch) and the four land-owned files (.frob-release.json,
+CHANGELOG.md, pyproject.toml, uv.lock) were taken verbatim from main.
+
+The merge also exposed a pre-existing ledger staleness unrelated to
+design/frob.strata: this worktree's tickets.md still carried 41 tickets
+as active/in-progress blocks that main had already archived (state
+transitions this worktree never saw land). The merge driver spliced
+tickets.md's own textual conflict cleanly, but a ticket id present as an
+active block AND an archive block is a hard DuplicateId load failure,
+not a warning -- confirmed each of the 41 stale active copies had a
+newer, authoritative block in tickets-archive.md and removed only the
+stale active-side duplicates (tickets-archive.md untouched, T-1198's own
+block unaffected -- verified it is not among the 41 and was never on
+main to begin with).
+
+Post-merge verification: `frob check --only sys` -- 0 errors, 1 warning
+(the expected --only scope-note); the strata design loads with no parse
+or bind errors. `frob ticket show T-1198` loads cleanly (proves the
+DuplicateId fix). All 6 of this ticket's bound evidence node ids plus
+the rest of tests/unit/strata/test_sync_interface.py (12/12) pass.
+`git diff main --diff-filter=D --stat` is empty -- no file this ticket's
+scope touches was dropped relative to main.
+
+### Changed
+```
+ design/frob.strata                       | 5470 +++++-------------------------
+ docs/strata/surface.md                   |  155 +-
+ src/frob/strata/_design_load.py          |  105 +-
+ src/frob/strata/_multifile.py            |  205 ++
+ src/frob/strata/_sync_interface.py       |  191 +-
+ strata-core/src/parse/grammar_core.rs    |   44 +-
+ strata-core/src/parse/grammar_flow.rs    |    2 +-
+ strata-core/src/parse/grammar_infra.rs   |    4 +-
+ strata-core/src/parse/grammar_node.rs    |    2 +-
+ strata-core/src/parse/lexer.rs           |    4 +-
+ tests/unit/strata/test_design_load.py    |   44 +
+ tests/unit/strata/test_multifile.py      |  100 +
+ tests/unit/strata/test_sync_interface.py |   51 +-
+ tickets.md                               |  273 +-
+ 14 files changed, 1875 insertions(+), 4775 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_no_drift_reports_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_legacy_form_migrated_even_with_matching_symbol_set` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_addition_and_removal_detected` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_store_block_missing_interface_attr_is_written` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_missing_interface_block_is_inserted_after_header` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sync_interface.py::TestApplySyncInterface::test_writes_only_changed_files` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 5 error(s), 6344 warning(s), 782 waived
+- error-findings: INV006@src/frob/strata/_multifile.py, PRE001@tickets/T-1198, TEST001@src/frob/strata/_multifile.py, TICK006@tickets.md, WIRE001@tests/unit/strata/test_multifile.py
 
 <!-- ticket:T-1204 -->
 ```yaml
@@ -3162,6 +3417,7 @@ docs/guides/agent-playbook.md):
 The underlying library code (frob.tickets._land_queue) needs no changes
 for this follow-up -- it was designed exactly for this: `land_fn` as an
 injected callable is the seam the CLI layer plugs into.
+
 <!-- ticket:T-1445 -->
 ```yaml
 id: T-1445
@@ -3259,6 +3515,7 @@ correctness-over-speed posture T-0602/T-1346 both insisted on (never
 serve a stale result silently). This is the natural continuation of the
 T-1344 gate-speed leaf and should be scoped as its own ticket rather than
 squeezed into T-1346's remainder.
+
 <!-- ticket:T-1449 -->
 ```yaml
 id: T-1449
@@ -4493,6 +4750,7 @@ threat: null
 component: null
 ```
 The T-1456 post-land unscoped sweep currently verifies AFTER the land commit exists on main, so a refusal requires reset --hard -- which is exactly what destroyed foreign interleaved commits on 2026-08-04 (see T-1495). Land already builds the merge result before committing; run the sweep against that merge preview in a scratch worktree (same mechanism as _spawn_baseline_snapshot_worktree) BEFORE any commit lands on main. A refusal then costs nothing and reverts nothing; the post-land sweep can remain as a cheap assertion.
+
 <!-- ticket:T-1515 -->
 ```yaml
 id: T-1515
@@ -4653,3 +4911,29 @@ threat: null
 component: null
 ```
 The recurring cache-bug class is key incompleteness: the computation reads an input the key does not cover, so a change to that input serves a stale result (real incident: T-1454 -- frob ack rewrote frob.lock, no tracked source digest changed, cached DRIFT001 went stale). This is statically checkable with machinery frob already has: the vet/effect scan observes what files/inputs a function reads; a new CACHE001 detector requires every memoize_per_run/persistent-cache-backed computation to declare its key inputs (content hashes, config fields, lock files) and errors when the observed read-set is not covered by the declared keys -- prove-or-justify, with frob:waive+ticket for genuinely dynamic reads. This makes cache correctness a GATE, not a hope, per the static-quality vision (cannot write bad code silently) and the perf-findings-become-lint-rules rule. Pairs with the observational-transparency invariant ticket filed alongside this one.
+
+<!-- ticket:T-1521 -->
+```yaml
+id: T-1521
+title: 'strata: decide whether flow src/dst validation belongs inside elaborate()
+  itself'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Disclosed cut from T-1196: check_cross_file_references only covers the two
+reference shapes elaborate() itself does not already validate at all
+(flow src/dst). Whether flow src/dst validation belongs inside elaborate()
+itself (so a single-file design also gets it too) is left as a design
+question for this follow-up.

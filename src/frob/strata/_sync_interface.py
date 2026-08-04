@@ -28,21 +28,52 @@ text edit rather than a hand patch:
 
 Text-editing strategy (never a full re-serialize -- MUST preserve every
 comment and every other attr/waive/access line untouched, module docstring
-promise): each node's `attr interface=<symbol>;` lines form one CONTIGUOUS
-block with no interleaved comments anywhere in this repo's own
+promise): each node's `interface=` declaration forms one CONTIGUOUS block
+with no interleaved comments anywhere in this repo's own
 `design/frob.strata` today (verified by direct inspection at T-1150 write
-time) -- SYS104's own convention is one bare `attr interface=X;` line per
-symbol, nothing else mixed in. `_replace_node_interface_block` finds that
-contiguous span (if any) inside one node's `{ ... }` body (brace-depth
-matched, since `on crash { ... }`/`on breach { ... }`/`on deploy { ... }`
-sub-blocks nest their own braces inside a node body and a naive first-`}`
-search would truncate early) and replaces it in place with the sorted,
-measured set -- everything before/after that span, including every
-comment, is copied through byte-for-byte. A node with real symbols but no
-existing `interface=` line yet (a brand-new node, never hand-populated)
-gets its block inserted directly after the node's opening `{` line, the
-same "no established position, insert right after the header" convention
-`sync_interface_report`'s own tests pin down.
+time). `_find_interface_span` finds that contiguous span (if any) inside
+one node's `{ ... }` body (brace-depth matched, since `on crash { ... }`/
+`on breach { ... }`/`on deploy { ... }` sub-blocks nest their own braces
+inside a node body and a naive first-`}` search would truncate early),
+recognizing EITHER form the grammar accepts (module docstring's T-1198
+paragraph below), and `_rewrite_node_interface_block` replaces it in
+place with the sorted, measured set -- everything before/after that
+span, including every comment, is copied through byte-for-byte. A node
+with real symbols but no existing `interface=` declaration yet (a
+brand-new node, never hand-populated) gets its block inserted directly
+after the node's opening `{` line, the same "no established position,
+insert right after the header" convention `sync_interface_report`'s own
+tests pin down.
+
+T-1198 (`interface=` boilerplate elimination): before this ticket, SYS104's
+mechanical upkeep convention was ONE bare `attr interface=X;` LINE per
+symbol -- the exact mechanism this module exists to automate, but a
+generator that faithfully reproduces N lines per node for a node with
+hundreds of real symbols (this repo's own `tickets_gate`/`core` nodes) is
+itself the boilerplate the ticket names: 4236 of `design/frob.strata`'s
+5588 pre-T-1198 lines were `attr interface=X;` lines. `strata-core`'s
+grammar (`parse_attrval`, `strata-core/src/parse/grammar_core.rs`) gained
+a bracket-list form as pure parser sugar -- `attr interface=[Foo, Bar,
+Baz];` expands, AT PARSE TIME, into the exact same `"interface=Foo"`,
+`"interface=Bar"`, `"interface=Baz"` attr strings the one-line-per-symbol
+form always produced, so no downstream consumer (`_elaborate.py`,
+`_selfconform.py`'s SYS104 measurement, every gate that reads `Node.attrs`)
+needed to change at all -- the elaborated model is byte-for-byte
+identical either way. This module is the WRITER half: `_render_
+interface_block` now emits that compact form, `NAMES_PER_LINE` symbol
+names per wrapped line purely for readability (the grammar does not care
+about the newlines inside `[...]`), instead of one line per symbol.
+`_find_interface_span` reads BOTH forms (the compact block it now
+writes, and the legacy one-line-per-symbol form for backward
+compatibility on a file not yet migrated) and always WRITES the compact
+form -- including a one-time reformat of an already-correct legacy
+declaration whose symbol SET already matches real (`is_compact` in
+`_find_interface_span`'s return, forcing the rewrite even when nothing
+about the SYMBOLS changed), so running `frob sys sync-interface` once
+migrates an entire repo off the old form. Migrating this repo's own
+`design/frob.strata` measured 5588 -> 2207 lines (~60% reduction),
+confirmed idempotent (`frob sys sync-interface --check` reports zero
+drift immediately after).
 
 T-1137/T-1138 Tier-A auto-fix registration (this ticket's acceptance
 criterion 1): DISCLOSED DEFERRAL, not built here. T-1138 (the first
@@ -93,12 +124,33 @@ _NODE_HEADER_RE = re.compile(
     r"^(?P<indent>[ \t]*)(?:node|store)\s+(?P<id>\S+)\b[^{]*\{\s*$"
 )
 
-#: One `attr interface=<symbol>;` line, in the exact form
-#: `_interface_conformance_violations`/existing `design/frob.strata` usage
-#: always emits it.
+#: One legacy `attr interface=<symbol>;` line -- the pre-T-1198 one-line-
+#: per-symbol form `_interface_conformance_violations` still accepts (the
+#: grammar never stopped supporting it) and this module still READS for
+#: backward compatibility, but no longer WRITES (see
+#: `_INTERFACE_BLOCK_OPEN_RE`/`_INTERFACE_BLOCK_CLOSE_RE` below).
 _INTERFACE_LINE_RE = re.compile(
     r"^(?P<indent>[ \t]*)attr interface=(?P<name>\S+?);\s*$"
 )
+
+#: T-1198: the compact `attr interface=[...]` block this module now WRITES
+#: -- one bracket-list attr (strata-core's `parse_attrval` grammar change,
+#: docs/strata/surface.md#compact-interface-attrs-t-1198) wrapped across
+#: several lines purely for human readability (the parser does not care
+#: about the newlines; `NAMES_PER_LINE` symbols per line, comma-separated,
+#: trailing comma on every line including the last for a clean per-line
+#: diff when the SET changes). Open/close are matched as separate regexes
+#: since the symbol lines between them are plain comma-separated idents,
+#: not individually regex-matched.
+_INTERFACE_BLOCK_OPEN_RE = re.compile(r"^(?P<indent>[ \t]*)attr interface=\[\s*$")
+_INTERFACE_BLOCK_CLOSE_RE = re.compile(r"^[ \t]*\];\s*$")
+
+#: How many symbol names `_rewrite_node_interface_block` packs onto one
+#: wrapped line inside a compact `interface=[...]` block -- purely a
+#: readability knob, not a grammar constraint (the parser accepts any
+#: whitespace/newline layout inside `[...]`).
+# frob:doc docs/strata/surface.md#compact-interface-attrs-t-1198
+NAMES_PER_LINE = 6
 
 
 # frob:doc docs/strata/surface.md#interface-conformance-mechanical-upkeep-sys104-t-1150  # noqa: E501
@@ -165,19 +217,36 @@ def _node_body_span(lines: list[str], header_idx: int) -> int:
     return len(lines) - 1  # malformed input: no matching close, best effort
 
 
-def _rewrite_node_interface_block(
-    lines: list[str], header_idx: int, real: frozenset[str]
-) -> tuple[list[str], NodeInterfaceDiff | None]:
-    """Replace one node's contiguous `attr interface=X;` block (if any) with
-    the sorted `real` surface; returns the (possibly unchanged) full `lines`
-    list plus the diff record, or `None` if nothing changed. Module
-    docstring's "Text-editing strategy" section explains the contiguous-span
-    assumption this relies on."""
-    close_idx = _node_body_span(lines, header_idx)
+def _find_interface_span(
+    lines: list[str], header_idx: int, close_idx: int
+) -> tuple[int, int, str, list[str], bool] | None:
+    """Locate one node's existing `interface=` declaration, whichever form
+    it is written in (T-1198: the compact `[...]` block this module now
+    writes, or the legacy one-line-per-symbol form it still reads for
+    backward compatibility on a file not yet rewritten). Returns
+    `(first_line, last_line, indent, names, is_compact)` or `None` if the
+    node declares no `interface=` at all yet -- `is_compact` lets
+    `_rewrite_node_interface_block` force a ONE-TIME format migration on a
+    legacy-form block even when its symbol SET already matches (otherwise
+    a repo migrating from the old form would never get rewritten, since
+    `declared_set == real` looks clean by symbols alone)."""
+    for idx in range(header_idx + 1, close_idx):
+        open_m = _INTERFACE_BLOCK_OPEN_RE.match(lines[idx])
+        if open_m is not None:
+            names: list[str] = []
+            close_idx_inner = idx
+            for j in range(idx + 1, close_idx):
+                if _INTERFACE_BLOCK_CLOSE_RE.match(lines[j]):
+                    close_idx_inner = j
+                    break
+                names.extend(
+                    part.strip() for part in lines[j].split(",") if part.strip()
+                )
+            return idx, close_idx_inner, open_m.group("indent"), names, True
     first_iface = None
     last_iface = None
-    declared: list[str] = []
     indent = None
+    names_legacy: list[str] = []
     for idx in range(header_idx + 1, close_idx):
         m = _INTERFACE_LINE_RE.match(lines[idx])
         if m is None:
@@ -186,10 +255,55 @@ def _rewrite_node_interface_block(
             first_iface = idx
             indent = m.group("indent")
         last_iface = idx
-        declared.append(m.group("name"))
+        names_legacy.append(m.group("name"))
+    if first_iface is None:
+        return None
+    assert indent is not None and last_iface is not None
+    return first_iface, last_iface, indent, names_legacy, False
+
+
+def _render_interface_block(indent: str, names: frozenset[str]) -> list[str]:
+    """T-1198: render `names` as one compact `attr interface=[...]` block,
+    `NAMES_PER_LINE` names per wrapped line -- the writer half of the
+    boilerplate-elimination this module exists for (module docstring):
+    a node with hundreds of real symbols used to cost one `attr
+    interface=X;` LINE per symbol; it now costs one line per
+    `NAMES_PER_LINE` symbols plus two structural lines, regardless of how
+    many symbols there are."""
+    sorted_names = sorted(names)
+    if not sorted_names:
+        return [f"{indent}attr interface=[];"]
+    body_indent = indent + "    "
+    lines = [f"{indent}attr interface=["]
+    for start in range(0, len(sorted_names), NAMES_PER_LINE):
+        chunk = sorted_names[start : start + NAMES_PER_LINE]
+        lines.append(body_indent + ", ".join(chunk) + ",")
+    lines.append(f"{indent}];")
+    return lines
+
+
+def _rewrite_node_interface_block(
+    lines: list[str], header_idx: int, real: frozenset[str]
+) -> tuple[list[str], NodeInterfaceDiff | None]:
+    """Replace one node's `interface=` declaration (whichever form it is
+    currently written in, `_find_interface_span`) with a compact
+    `interface=[...]` block covering the sorted `real` surface (T-1198,
+    `_render_interface_block`); returns the (possibly unchanged) full
+    `lines` list plus the diff record, or `None` if nothing changed.
+    Module docstring's "Text-editing strategy" section explains the
+    contiguous-span assumption this relies on."""
+    close_idx = _node_body_span(lines, header_idx)
+    span = _find_interface_span(lines, header_idx, close_idx)
+    if span is None:
+        first_iface = last_iface = None
+        indent = None
+        declared: list[str] = []
+        is_compact = True  # nothing to migrate
+    else:
+        first_iface, last_iface, indent, declared, is_compact = span
 
     declared_set = frozenset(declared)
-    if declared_set == real:
+    if declared_set == real and is_compact:
         return lines, None
 
     added = tuple(sorted(real - declared_set))
@@ -200,12 +314,12 @@ def _rewrite_node_interface_block(
     diff = NodeInterfaceDiff(node=node_id, added=added, removed=removed)
 
     if indent is None:
-        # No existing interface= line to anchor on/copy indentation from --
+        # No existing interface= block to anchor on/copy indentation from --
         # fall back to the node body's own indent + one level (4 spaces),
         # matching this repo's existing convention throughout.
         indent = header_match.group("indent") + "    "
 
-    new_block = [f"{indent}attr interface={name};" for name in sorted(real)]
+    new_block = _render_interface_block(indent, real)
 
     if first_iface is not None and last_iface is not None:
         new_lines = lines[:first_iface] + new_block + lines[last_iface + 1 :]
@@ -253,16 +367,13 @@ def _sync_one_file(
 
 def _node_attr_values_at(lines: list[str], header_idx: int) -> list[str]:
     """The declared `interface=` symbol names inside the node body opened at
-    `lines[header_idx]`, read straight off the raw text (used only for the
-    early-continue "nothing declared, nothing real" skip -- the authoritative
-    diff computation still happens inside `_rewrite_node_interface_block`)."""
+    `lines[header_idx]`, whichever form they are written in
+    (`_find_interface_span`) -- used only for the early-continue "nothing
+    declared, nothing real" skip; the authoritative diff computation still
+    happens inside `_rewrite_node_interface_block`."""
     close_idx = _node_body_span(lines, header_idx)
-    names: list[str] = []
-    for idx in range(header_idx + 1, close_idx):
-        m = _INTERFACE_LINE_RE.match(lines[idx])
-        if m is not None:
-            names.append(m.group("name"))
-    return names
+    span = _find_interface_span(lines, header_idx, close_idx)
+    return [] if span is None else span[3]
 
 
 # frob:doc docs/strata/surface.md#interface-conformance-mechanical-upkeep-sys104-t-1150  # noqa: E501

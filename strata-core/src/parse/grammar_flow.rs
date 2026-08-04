@@ -47,7 +47,7 @@ impl Parser {
                     size = Some(self.parse_quantity("size")?);
                 } else if self.at_keyword("attr") {
                     self.advance();
-                    attrs.push(self.parse_attrval()?);
+                    attrs.extend(self.parse_attrval()?);
                 } else if self.at_keyword("transport") {
                     self.advance();
                     transport.push(self.expect_ident("transport atom")?);

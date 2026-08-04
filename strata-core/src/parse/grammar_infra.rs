@@ -91,7 +91,7 @@ impl Parser {
                     clearance = self.expect_ident("clearance level")?;
                 } else if self.at_keyword("attr") {
                     self.advance();
-                    attrs.push(self.parse_attrval()?);
+                    attrs.extend(self.parse_attrval()?);
                 } else if self.at_keyword("runs_as") {
                     // T-0255: same shape as `node`'s `runs_as` -- a store
                     // is a node too (docs/strata/surface.md
@@ -560,7 +560,7 @@ impl Parser {
                     ordering = Some(self.expect_ident("ordering mode")?);
                 } else if self.at_keyword("attr") {
                     self.advance();
-                    attrs.push(self.parse_attrval()?);
+                    attrs.extend(self.parse_attrval()?);
                 } else if self.at_keyword("clearance") {
                     self.advance();
                     clearance = Some(self.expect_ident("clearance level")?);

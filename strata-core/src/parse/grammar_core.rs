@@ -248,15 +248,45 @@ impl Parser {
         Ok(json!({"value": value, "unit": unit}))
     }
 
-    /// ATTRVAL := IDENT ['=' IDENT], joined as "a=b" when '=' is present.
-    fn parse_attrval(&mut self) -> Result<String, ParseError> {
+    /// ATTRVAL := IDENT ['=' (IDENT | '[' IDENT (',' IDENT)* ','? ']')].
+    ///
+    /// T-1198: the bracket-list form (`attr interface=[Foo, Bar, Baz];`) is
+    /// pure surface-syntax sugar for N individual `key=value` attrs written
+    /// on one line instead of N lines -- it expands HERE, at parse time,
+    /// into the exact same `"key=value"` strings the single-value form
+    /// produces (a trailing comma before `]` is accepted so a generator
+    /// never has to special-case the last entry). No downstream consumer
+    /// (`_elaborate.py`, `_sync_interface.py`, every gate that reads
+    /// `Node.attrs`) needs to know this form exists -- the elaborated
+    /// model is byte-for-byte identical either way, which is exactly the
+    /// property that let this ship as a pure parser change (design/T-1198
+    /// note, docs/strata/surface.md#compact-interface-attrs-t-1198).
+    fn parse_attrval(&mut self) -> Result<Vec<String>, ParseError> {
         let key = self.expect_ident("attribute name")?;
-        if self.at_symbol('=') {
-            self.advance();
-            let val = self.expect_ident("attribute value after =")?;
-            Ok(format!("{}={}", key, val))
+        if !self.at_symbol('=') {
+            return Ok(vec![key]);
+        }
+        self.advance(); // '='
+        if self.at_symbol('[') {
+            self.advance(); // '['
+            let mut values: Vec<String> = Vec::new();
+            loop {
+                if self.at_symbol(']') {
+                    break;
+                }
+                let val = self.expect_ident("attribute value inside [..]")?;
+                values.push(format!("{}={}", key, val));
+                if self.at_symbol(',') {
+                    self.advance();
+                    continue;
+                }
+                break;
+            }
+            self.expect_symbol(']')?;
+            Ok(values)
         } else {
-            Ok(key)
+            let val = self.expect_ident("attribute value after =")?;
+            Ok(vec![format!("{}={}", key, val)])
         }
     }
 

@@ -31,7 +31,38 @@ class TestSyncInterfaceReport:
 
     def test_no_drift_reports_clean(self, tmp_path: Path):
         """A node whose declared `interface=` set already equals its real
-        public surface reports zero drift and an unchanged file."""
+        public surface, written in the compact T-1198 form, reports zero
+        drift and an unchanged file."""
+        _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+        _write_design(
+            tmp_path,
+            "design",
+            "widget.strata",
+            "module widget\n"
+            "node widget : trusted {\n"
+            '    code "src/frob/widget/**";\n'
+            "    attr interface=[\n"
+            "        public_fn,\n"
+            "    ];\n"
+            "}\n",
+        )
+        result = sync_interface_report(tmp_path)
+        assert result.is_ok
+        report = result.danger_ok
+        assert not report.has_drift
+        for file_result in report.files:
+            assert not file_result.changed
+            assert file_result.diffs == ()
+
+    # frob:ticket T-1198
+    def test_legacy_form_migrated_even_with_matching_symbol_set(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1198 one-time migration: a node already declared in the OLD
+        one-line-per-symbol form, whose symbol SET already matches real,
+        still gets rewritten into the compact `[...]` block -- format
+        migration is not gated on symbol drift, or a repo would never
+        get migrated off the legacy form."""
         _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
         _write_design(
             tmp_path,
@@ -46,10 +77,11 @@ class TestSyncInterfaceReport:
         result = sync_interface_report(tmp_path)
         assert result.is_ok
         report = result.danger_ok
-        assert not report.has_drift
-        for file_result in report.files:
-            assert not file_result.changed
-            assert file_result.diffs == ()
+        assert report.has_drift
+        file_result = report.files[0]
+        assert file_result.changed
+        assert "attr interface=[" in file_result.new_text
+        assert "attr interface=public_fn;" not in file_result.new_text
 
     def test_addition_and_removal_detected(self, tmp_path: Path):
         """A node with an undeclared real symbol AND a declared-but-absent
@@ -86,9 +118,10 @@ class TestSyncInterfaceReport:
         # The rewritten text declares exactly the real surface, sorted,
         # with every comment/other line untouched.
         new_text = file_result.new_text
-        assert "attr interface=new_fn;" in new_text
-        assert "attr interface=phantom_fn;" not in new_text
-        assert "attr interface=public_fn;" in new_text
+        assert "new_fn," in new_text
+        assert "phantom_fn" not in new_text
+        assert "public_fn," in new_text
+        assert "attr interface=[" in new_text
         assert 'code "src/frob/widget/**";' in new_text
         # Original file on disk is untouched (report never writes).
         assert design_path.read_text(encoding="utf-8") != new_text
@@ -127,7 +160,8 @@ class TestSyncInterfaceReport:
         assert diffs["widget_store"].removed == ()
 
         new_text = file_result.new_text
-        assert "attr interface=public_fn;" in new_text
+        assert "attr interface=[" in new_text
+        assert "public_fn," in new_text
 
         apply_sync_interface(tmp_path, report)
         assert design_path.read_text(encoding="utf-8") == new_text
@@ -155,7 +189,8 @@ class TestSyncInterfaceReport:
         header_idx = next(
             i for i, line in enumerate(lines) if line.strip().startswith("node widget")
         )
-        assert "attr interface=public_fn;" in lines[header_idx + 1]
+        assert lines[header_idx + 1].strip() == "attr interface=["
+        assert "public_fn," in lines[header_idx + 2]
 
     # frob:tests \
     # tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport.test_no_design_\
@@ -269,7 +304,7 @@ class TestApplySyncInterface:
         written = apply_sync_interface(tmp_path, report)
         assert written == ("design/widget.strata",)
         on_disk = design_path.read_text(encoding="utf-8")
-        assert "attr interface=new_fn;" in on_disk
+        assert "new_fn," in on_disk
 
         # Re-running now reports clean and writes nothing.
         result2 = sync_interface_report(tmp_path)
