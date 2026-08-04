@@ -4488,3 +4488,44 @@ command follow-up; both ids were later reused by unrelated tickets
 during a ledger renumber, so the follow-up work they described was
 never actually tracked. This ticket re-files the caching half.
 </content>
+
+<!-- ticket:T-draft-882a8930 -->
+```yaml
+id: T-draft-882a8930
+title: 'coverage: frob-native auto-refresh command replacing Makefile orchestration'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/testing/**
+- src/frob/check/__init__.py
+- Makefile
+- docs/modules/gates.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1205 acceptance[0], [3], [4]: a frob-native command (frob coverage or
+frob test --coverage) that performs the whole orchestration -- subprocess
+rc generation, pytest invocation restricted to the touched set, combine,
+xml, stamp -- in Python with no Makefile/shell dependency, cross-platform
+(Linux/macOS/Windows); and wiring so that any frob command whose gates
+need coverage data runs this refresh automatically when the freshness
+contract (TEST011/TEST017) says stale, with no user-invoked refresh verb
+and nothing cached re-run. Today this logic lives in Makefile's
+coverage/coverage-fast targets (shell, T-1397) and nothing in
+src/frob/check or src/frob/gates triggers a refresh automatically --
+frob check reads whatever coverage.xml/frob-coverage.lock.json happen
+to be on disk and reports staleness (TEST011/TEST017) rather than fixing
+it. Sequenced AFTER the per-file content-hash caching ticket (this
+ticket's sibling, filed same session) since the native orchestrator
+needs that caching layer to avoid re-running everything on every gated
+command. Re-filed after the original T-1205 session's draft ids
+(T-1487/T-1488) were lost to an unrelated ledger renumber.
+</content>
