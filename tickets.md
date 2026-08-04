@@ -193,7 +193,7 @@ User directive 2026-07-28: the annoying errors are the ones whose fix is mechani
 ```yaml
 id: T-1196
 title: 'strata: multi-file design split with cross-file reference semantics'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
