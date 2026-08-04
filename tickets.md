@@ -4408,3 +4408,23 @@ threat: null
 component: null
 ```
 In _sweep_apply_tier_a_and_commit (src/frob/app/ticket_runner/_land_cmd.py), the T-1456 autofix-retry phase runs git add -A + plain git commit. add -A stages the perpetually-dirty uv.lock (and any other land-owned file), the T-0731 pre-commit hook refuses, the fix stays uncommitted ('N left uncommitted'), the re-scan still sees the errors, and the land reverts -- observed on every refused land 2026-08-03/04. Fix: stage only the files the Tier-A engine actually touched, and run the commit with FROB_LAND_INTERNAL=1 like land's other internal commits. Also consider logging the git stderr on commit failure (it was silent).
+
+<!-- ticket:T-1514 -->
+```yaml
+id: T-1514
+title: run the unscoped error sweep pre-land on a merge-preview worktree instead of
+  post-land on mutated main
+state: queued
+kind: feature
+origin: human
+created: '2026-08-04'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+The T-1456 post-land unscoped sweep currently verifies AFTER the land commit exists on main, so a refusal requires reset --hard -- which is exactly what destroyed foreign interleaved commits on 2026-08-04 (see T-1495). Land already builds the merge result before committing; run the sweep against that merge preview in a scratch worktree (same mechanism as _spawn_baseline_snapshot_worktree) BEFORE any commit lands on main. A refusal then costs nothing and reverts nothing; the post-land sweep can remain as a cheap assertion.
