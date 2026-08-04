@@ -481,8 +481,8 @@ a later ledger renumber (T-1487 is now a frob-core rust extraction
 ticket; T-1488 is now a test-helper promotion note), so the caching-
 layer and native-coverage-command follow-ups this ticket's own Done
 report already decided to defer were never actually tracked anywhere.
-Re-filed both for real this session: T-draft-a04e60c0 (per-file
-content-hash incremental caching, acceptance[2]) and T-draft-882a8930
+Re-filed both for real this session: T-1517 (per-file
+content-hash incremental caching, acceptance[2]) and T-1516
 (frob-native auto-refresh command + auto-wiring into gated commands,
 acceptance[0]/[3]/[4], explicitly sequenced after the caching ticket).
 
@@ -4496,9 +4496,9 @@ component: null
 ```
 2026-08-04 incident (see T-1495): an orphaned background script from a dead conversation was serially landing the roster while a new coordinator session also wrote to main; the two writers' unwinds destroyed each other's commits. The advisory fcntl land.lock serializes lock-holders but cannot tell the second session that a foreign driver is mid-roster. Add: (1) land records pid+session-id+start-time in the lock file; (2) a fresh land invocation logs WHO holds it and refuses after timeout instead of queueing silently; (3) frob doctor reports live land processes for the repo so a session-start check is one command.
 
-<!-- ticket:T-draft-882a8930 -->
+<!-- ticket:T-1516 -->
 ```yaml
-id: T-draft-882a8930
+id: T-1516
 title: 'coverage: frob-native auto-refresh command replacing Makefile orchestration'
 state: queued
 kind: feature
@@ -4537,9 +4537,9 @@ command. Re-filed after the original T-1205 session's draft ids
 (T-1487/T-1488) were lost to an unrelated ledger renumber.
 </content>
 
-<!-- ticket:T-draft-a04e60c0 -->
+<!-- ticket:T-1517 -->
 ```yaml
-id: T-draft-a04e60c0
+id: T-1517
 title: 'coverage: per-file content-hash incremental caching layer'
 state: queued
 kind: feature
