@@ -712,3 +712,111 @@ class TestDoctorVenvShims:
         from frob.doctor import scan_venv_shims
 
         assert scan_venv_shims(tmp_path) == ()
+
+
+# frob:ticket T-1515
+class TestDoctorLiveLandProcess:
+    """T-1515 (the 2026-08-04 incident): `frob doctor` reports whoever
+    currently holds `.frob/land.lock` (pid/session/start-time, written by
+    `frob.tickets._land._land_lock` on acquisition) so a session-start
+    check is one command instead of a human having to inspect the lock
+    file by hand before starting a new coordinator session."""
+
+    # frob:tests src/frob/doctor.py::scan_live_land_processes
+    # frob:ticket T-1515
+    def test_no_lock_file_reports_nothing(self, tmp_path: Path) -> None:
+        from frob.doctor import scan_live_land_processes
+
+        assert scan_live_land_processes(tmp_path) is None
+
+    # frob:tests src/frob/doctor.py::scan_live_land_processes
+    # frob:ticket T-1515
+    def test_live_holder_pid_is_reported_alive_and_healthy(
+        self, tmp_path: Path
+    ) -> None:
+        """This test process's OWN pid, written as the lock holder, is a
+        genuinely live process -- reported `alive=True` and does NOT make
+        `run_diagnosis` unhealthy (an in-flight land is normal)."""
+        import json
+        import os
+
+        from frob.doctor import run_diagnosis, scan_live_land_processes
+
+        lock_dir = tmp_path / ".frob"
+        lock_dir.mkdir(parents=True)
+        (lock_dir / "land.lock").write_text(
+            json.dumps(
+                {
+                    "pid": os.getpid(),
+                    "session_id": "test-session",
+                    "started_at": "2026-08-04T00:00:00+00:00",
+                }
+            )
+            + "\n"
+        )
+
+        proc = scan_live_land_processes(tmp_path)
+        assert proc is not None
+        assert proc.pid == os.getpid()
+        assert proc.alive is True
+
+        report = run_diagnosis(tmp_path)
+        assert report.live_land_process is not None
+        assert report.live_land_process.alive is True
+        assert report.healthy is True
+
+    # frob:tests src/frob/doctor.py::scan_live_land_processes
+    # frob:ticket T-1515
+    def test_dead_holder_pid_is_reported_dead_and_unhealthy(
+        self, tmp_path: Path
+    ) -> None:
+        """A pid that does not correspond to any running process (an
+        orphaned lock from a crashed land, the T-1495 incident shape) is
+        reported `alive=False` and DOES make `run_diagnosis` unhealthy,
+        with a remediation naming the exact stale-lock-file repair."""
+        import json
+        import os
+
+        from frob.doctor import run_diagnosis, scan_live_land_processes
+
+        # A pid vanishingly unlikely to be alive: os.getpid() at 2x this
+        # process's own value, capped under the 32-bit pid_max ceiling.
+        dead_pid = min(os.getpid() * 7 + 999983, 2**22)
+        lock_dir = tmp_path / ".frob"
+        lock_dir.mkdir(parents=True)
+        (lock_dir / "land.lock").write_text(
+            json.dumps(
+                {
+                    "pid": dead_pid,
+                    "session_id": "orphaned-session",
+                    "started_at": "2026-08-04T00:00:00+00:00",
+                }
+            )
+            + "\n"
+        )
+
+        proc = scan_live_land_processes(tmp_path)
+        assert proc is not None
+        assert proc.alive is False
+
+        report = run_diagnosis(tmp_path)
+        assert report.healthy is False
+        assert report.remediation is not None
+        assert "orphaned lock" in report.remediation
+        assert str(dead_pid) in report.remediation
+
+    # frob:tests src/frob/doctor.py::scan_live_land_processes
+    # frob:ticket T-1515
+    def test_malformed_lock_content_reports_nothing(self, tmp_path: Path) -> None:
+        """Unparsable/incomplete lock content (e.g. a write mid-flight, or
+        a pre-T-1515 empty lock file) is treated as unmeasurable, never an
+        error -- a diagnostic read must never itself crash `frob doctor`."""
+        from frob.doctor import scan_live_land_processes
+
+        lock_dir = tmp_path / ".frob"
+        lock_dir.mkdir(parents=True)
+        (lock_dir / "land.lock").write_text("not json\n")
+        assert scan_live_land_processes(tmp_path) is None
+
+        (lock_dir / "land.lock").write_text("")
+        assert scan_live_land_processes(tmp_path) is None

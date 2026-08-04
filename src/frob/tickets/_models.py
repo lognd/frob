@@ -1792,6 +1792,22 @@ class LandError(ErrorSet):
         "a non-clean result -- the merge and any draft finalization were "
         "fully unwound"
     )
+    # frob:ticket T-1515
+    LandLockTimeout = (
+        "root's land.lock is still held by another process/session after "
+        "the T-1515 wait timeout -- a foreign or orphaned land driver may "
+        "be mid-run; inspect `frob doctor`'s live-land-process report "
+        "before retrying"
+    )
+    # frob:ticket T-1514
+    PreLandUnscopedSweepFailed = (
+        "the unscoped error sweep against the staged, pre-commit merge "
+        "preview found new error(s) no Tier-A auto-fix could resolve -- "
+        "the staged squash was unwound before any commit landed on main "
+        "(T-1514: refusing here, before the commit exists, is what makes "
+        "this refusal free -- see the post-land sweep, T-1456, for the "
+        "cheap post-commit assertion this complements)"
+    )
 
 
 # frob:ticket T-0176

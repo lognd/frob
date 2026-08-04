@@ -111,14 +111,120 @@ def _land_lock_path(root: Path) -> Path:
     return root / _LAND_LOCK_REL
 
 
+# frob:ticket T-1515
+# T-1495/T-1515: the 2026-08-04 incident this closes -- an orphaned
+# background land driver from a dead conversation was serially landing a
+# roster while a NEW coordinator session also wrote to `root`; the
+# advisory `flock` above correctly serialized the two writers against
+# each other, but neither session could ever tell the other one was a
+# FOREIGN, possibly-defunct driver rather than its own prior invocation
+# -- a blocking `flock` just queues silently forever. This module-level
+# default bounds how long a fresh `land()` call will wait on a lock
+# already held by someone else before refusing loudly instead of queuing
+# -- generous enough that two legitimate, back-to-back `land()` calls in
+# the SAME session (the overwhelmingly common case) never trip it, short
+# enough that an orphaned holder is surfaced well within a human's
+# attention span rather than discovered by symptom (destroyed commits)
+# hours later.
+_LAND_LOCK_TIMEOUT_S = 600.0
+# frob:ticket T-1495
+_LAND_LOCK_POLL_S = 1.0
+
+
+# frob:doc docs/guides/install.md#live-land-process-report-t-1515
+# frob:ticket T-1495
+class LandLockTimeout(Exception):
+    """T-1515: raised by `_land_lock` when a foreign holder does not
+    release `root`'s land.lock within `_LAND_LOCK_TIMEOUT_S` -- `land()`
+    catches this and returns `Err(LandError.LandLockTimeout)` instead of
+    the pre-T-1515 behavior (block forever, indistinguishable from a
+    session's own prior in-flight call). Carries `holder` (the parsed
+    metadata of whoever currently holds the lock, or `None` if the lock
+    file could not be read/parsed) for the caller's own log line."""
+
+    # frob:ticket T-1495
+    def __init__(self, root: Path, holder: dict | None) -> None:
+        """Record `root` and the best-effort `holder` metadata dict (pid/
+        session_id/started_at, or `None`) this timeout observed."""
+        self.root = root
+        self.holder = holder
+        super().__init__(f"land lock at {root} still held after timeout: {holder}")
+
+
+# frob:ticket T-1515
+def _land_lock_holder_metadata() -> dict:
+    """This process's own identity for the land.lock content (T-1515): pid,
+    a per-process session id (env `FROB_LAND_SESSION_ID` if a caller/test
+    supplies one -- e.g. to give two `land()` calls in the SAME dispatched
+    session a shared, human-legible label -- else `pid-<pid>`), and an
+    ISO-8601 UTC start timestamp. Read back by a BLOCKED second `land()`
+    call to name who it is waiting on, and by `frob doctor` (T-1515) to
+    report live land processes. Deliberately no hostname lookup (`socket.
+    gethostname()`/similar) -- a bare pid is sufficient to disambiguate
+    processes on ONE host, which is this lock file's only real scope (it
+    lives under a single checkout's `.frob/`), and skipping it keeps this
+    node's SYS100 capability surface at plain `env` (the `FROB_LAND_
+    SESSION_ID` read), not `net`."""
+    from datetime import datetime, timezone
+
+    pid = os.getpid()
+    session_id = (
+        # frob:waive SEC110 reason="session identity marker for lock-holder \
+        # attribution, not a secret"
+        os.environ.get("FROB_LAND_SESSION_ID")
+        or f"pid-{pid}"
+    )
+    return {
+        "pid": pid,
+        "session_id": session_id,
+        "started_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+# frob:ticket T-1515
+def _read_land_lock_holder(path: Path) -> dict | None:
+    """Best-effort read of `path`'s current holder metadata (T-1515) --
+    `None` on any read/parse failure (the file may not exist yet, or a
+    write may be mid-flight), never raised. Used both by a blocked
+    `_land_lock` caller (to log WHO it is waiting on) and by `frob
+    doctor`'s live-land-process scan."""
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    if not raw.strip():
+        return None
+    try:
+        parsed = json.loads(raw)
+    except (json.JSONDecodeError, ValueError):
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
 @contextmanager
-def _land_lock(root: Path) -> Iterator[None]:
-    """Exclusive, blocking, cross-process lock serializing every `land()`
-    call against `root` (T-0577) -- see `land`'s docstring for why this
-    closes the REL001 version-bump-collision incident class. Degrades to a
+# frob:ticket T-1495
+def _land_lock(
+    root: Path, *, timeout: float = _LAND_LOCK_TIMEOUT_S
+) -> Iterator[None]:
+    """Exclusive, cross-process lock serializing every `land()` call
+    against `root` (T-0577) -- see `land`'s docstring for why this closes
+    the REL001 version-bump-collision incident class. Degrades to a
     documented no-op (logged at WARNING) on a platform without `fcntl`,
     matching `frob.tickets._store.ledger_lock`'s same documented
-    degradation."""
+    degradation.
+
+    T-1515: no longer an unbounded blocking `flock` -- polls a NON-
+    blocking `flock` attempt every `_LAND_LOCK_POLL_S`, logging (once,
+    at WARNING) who currently holds the lock the first time this call has
+    to wait at all, and raises `LandLockTimeout` (caught by `land()`,
+    surfaced as `Err(LandError.LandLockTimeout)`) if `timeout` elapses
+    with the lock still held by someone else -- a foreign/orphaned driver
+    from a dead session can no longer queue a fresh `land()` call silently
+    forever (the exact 2026-08-04 incident, T-1495). On successful
+    acquisition, this process's own pid/session/start-time
+    (`_land_lock_holder_metadata`) is written into the lock file's
+    content, both for a future blocked caller's log line and for `frob
+    doctor`'s live-land-process report."""
     if fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
         _log.warning(
             "land: _land_lock: fcntl unavailable on this platform, lock is "
@@ -128,11 +234,45 @@ def _land_lock(root: Path) -> Iterator[None]:
         )
         yield
         return
+    import time as _time
+
     path = _land_lock_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
-    fcntl.flock(fd, fcntl.LOCK_EX)
-    _log.debug("land: _land_lock acquired (%s)", path)
+    deadline = _time.monotonic() + timeout
+    logged_holder = False
+    while True:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            break
+        except OSError:
+            if not logged_holder:
+                holder = _read_land_lock_holder(path)
+                _log.warning(
+                    "land: %s land.lock is held by %s -- waiting up to %.0fs "
+                    "before refusing (T-1515: was an unbounded blocking wait)",
+                    root,
+                    holder if holder is not None else "an unknown process "
+                    "(lock file unreadable/unwritten)",
+                    timeout,
+                )
+                logged_holder = True
+            if _time.monotonic() >= deadline:
+                os.close(fd)
+                raise LandLockTimeout(root, _read_land_lock_holder(path)) from None
+            _time.sleep(_LAND_LOCK_POLL_S)
+    holder_metadata = _land_lock_holder_metadata()
+    try:
+        os.ftruncate(fd, 0)
+        os.write(fd, (json.dumps(holder_metadata) + "\n").encode("utf-8"))
+    except OSError as exc:
+        _log.warning(
+            "land: %s could not write land.lock holder metadata (%s) -- "
+            "T-1515 diagnostics degraded, lock itself still held",
+            root,
+            exc,
+        )
+    _log.debug("land: _land_lock acquired (%s) by %s", path, holder_metadata)
     try:
         yield
     finally:
@@ -364,6 +504,7 @@ def _reconcile_one_land_repair_marker(
 # (merge, splice, deletion-check) then unwinds it via
 # `merge --abort`/`reset --hard`, so a clean dry run is a real guarantee,
 # not a guess (T-0176).
+# frob:ticket T-1495
 def land(
     root: Path,
     ticket_id: str,
@@ -383,8 +524,20 @@ def land(
     check_gate_claims: Callable[[Ticket], bool | None] | None = None,
     skip_mutation_evidence: bool = False,
     allow_cross_ticket: bool = False,
+    pre_commit_sweep: Callable[[Path, str], bool | None] | None = None,
 ) -> Result[LandReport, LandError]:
-    """T-1355: `allow_cross_ticket` (default `False`) is the escape hatch
+    """T-1514: `pre_commit_sweep(root, final_id)` (opt-in), if supplied, is
+    invoked at the last checkpoint before the final squash-apply commit --
+    `root`'s working tree already holds the fully staged, uncommitted
+    merge-preview changeset at that point, so a refusal there unwinds via
+    the same `_verified_reset_root` path every other pre-commit failure
+    uses, never a `git reset --hard` of a real, already-landed commit. See
+    `_land_squash_apply`'s own docstring for the full rationale. Defaults
+    to `None` (skip), matching every other opt-in land callable's posture;
+    the `frob ticket land` CLI supplies it by default (`ticket_runner.py`'s
+    `_land`).
+
+    T-1355: `allow_cross_ticket` (default `False`) is the escape hatch
     for `_check_cross_ticket_leakage`'s new preflight refusal -- see that
     function's own docstring for what it catches (a multi-ticket series
     worktree landing one ticket while silently carrying a sibling's still-
@@ -568,24 +721,34 @@ def land(
             )
             root = resolved_root
 
-    with _land_lock(root):
-        return _land_locked(
-            root,
+    try:
+        with _land_lock(root):
+            return _land_locked(
+                root,
+                ticket_id,
+                worktree,
+                dry_run=dry_run,
+                collected=collected,
+                passed=passed,
+                covers_scope=covers_scope,
+                bump_version=bump_version,
+                rebuild_natives=rebuild_natives,
+                sync_gate_rules=sync_gate_rules,
+                check_gates=check_gates,
+                check_gate_findings=check_gate_findings,
+                check_gate_claims=check_gate_claims,
+                skip_mutation_evidence=skip_mutation_evidence,
+                allow_cross_ticket=allow_cross_ticket,
+                pre_commit_sweep=pre_commit_sweep,
+            )
+    except LandLockTimeout as exc:
+        _log.error(
+            "land: %s refused -- %s (T-1515: the pre-T-1515 behavior was "
+            "an unbounded blocking wait)",
             ticket_id,
-            worktree,
-            dry_run=dry_run,
-            collected=collected,
-            passed=passed,
-            covers_scope=covers_scope,
-            bump_version=bump_version,
-            rebuild_natives=rebuild_natives,
-            sync_gate_rules=sync_gate_rules,
-            check_gates=check_gates,
-            check_gate_findings=check_gate_findings,
-            check_gate_claims=check_gate_claims,
-            skip_mutation_evidence=skip_mutation_evidence,
-            allow_cross_ticket=allow_cross_ticket,
+            exc,
         )
+        return Err(LandError.LandLockTimeout)
 
 
 # frob:ticket T-1269
@@ -594,6 +757,7 @@ def land(
 # frob:tests tests/test_ticket_land.py::TestLandPlan.test_dry_run_unwinds_the_merge  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestLandPlan.test_merge_conflict_aborts_and_refuses  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestLandPlan.test_tick_gate_dirty_unwinds_everything  # noqa: E501
+# frob:ticket T-1495
 def land_plan(
     root: Path,
     worktree: Path,
@@ -641,10 +805,18 @@ def land_plan(
     if dirty.is_err:
         return Err(dirty.danger_err)
 
-    with _land_lock(root):
-        return _land_plan_locked(
-            root, worktree, dry_run=dry_run, check_ticks=check_ticks
+    try:
+        with _land_lock(root):
+            return _land_plan_locked(
+                root, worktree, dry_run=dry_run, check_ticks=check_ticks
+            )
+    except LandLockTimeout as exc:
+        _log.error(
+            "land --plan: refused -- %s (T-1515: the pre-T-1515 behavior "
+            "was an unbounded blocking wait)",
+            exc,
         )
+        return Err(LandError.LandLockTimeout)
 
 
 # frob:ticket T-1269
@@ -754,12 +926,84 @@ def _land_plan_commit_finalize(
     return Ok(None)
 
 
+# frob:ticket T-1495
+def _assert_reset_only_discards_own_commits(
+    root: Path, base_sha: str, own_commits: Sequence[str]
+) -> Result[None, LandError]:
+    """T-1495 (the 2026-08-04 incident): before ANY `reset --hard` unwind,
+    verify `root`'s CURRENT tip is exactly the last commit THIS run's own
+    steps produced (`own_commits[-1]`, or `base_sha` itself if
+    `own_commits` is empty -- nothing committed yet) -- refuse loudly
+    (`Err(GitFailed)`, no reset performed) otherwise.
+
+    Tip equality (not a commit-set diff) is deliberate: a `--no-ff` merge
+    commit's SECOND parent chain (the worktree branch's own prior
+    commits, e.g. a ticket-creation commit made before the merge ever
+    ran) is legitimately part of THIS run's own merge, not a foreign
+    interloper, even though those commits were authored in the worktree
+    and are correctly reachable from `root`'s new tip once merged -- a
+    naive `git rev-list base..HEAD` set-membership check flags them as
+    "not one of ours" and refuses a perfectly safe unwind. Once this
+    run's own last commit IS `root`'s current tip, nothing else could
+    have committed anything further without moving that tip past it
+    (git commits are immutable and refs only ever advance under a
+    concurrent writer, never silently rewind) -- exactly
+    `_verified_reset_root`'s (T-0907) existing tip-equality contract,
+    generalized here to the EXPECTED FINAL tip a multi-commit run built
+    up, not just its starting one. `land --plan`'s own unwind path
+    (`_land_plan_reset_hard`) had NO check of any kind before T-1495 -- a
+    foreign commit interleaved onto `root` AFTER this run's own last
+    commit (another process's queue-drain land, a manual `frob ticket
+    drop`) got silently discarded along with this run's own half-
+    finished work on the very next failure-path unwind."""
+    current = _rev_parse(root, "HEAD")
+    if current.is_err:
+        return Err(current.danger_err)
+    expected_tip = own_commits[-1] if own_commits else base_sha
+    if current.danger_ok == expected_tip:
+        return Ok(None)
+    _log.error(
+        "land: refused to reset %s to %s -- current tip is %s but this "
+        "run's own last commit was %s; something else moved %s's tip "
+        "since (another process's land, a manual ledger commit) and "
+        "resetting would silently destroy it (T-1495, the 2026-08-04 "
+        "incident); NOT resetting -- inspect `git -C %s log --oneline "
+        "%s..HEAD` by hand before retrying",
+        root,
+        base_sha,
+        current.danger_ok,
+        expected_tip,
+        root,
+        root,
+        expected_tip,
+    )
+    return Err(LandError.GitFailed)
+
+
 # frob:ticket T-1269
-def _land_plan_reset_hard(root: Path, sha: str) -> None:
+# frob:ticket T-1495
+def _land_plan_reset_hard(
+    root: Path, sha: str, *, own_commits: Sequence[str] = ()
+) -> Result[None, LandError]:
     """`git reset --hard sha` in `root` (T-1269) -- the unwind primitive
     every `land_plan` failure path after a successful merge uses, so a
     finalize error or a dirty `check_ticks()` result never leaves a half-
-    merged ledger or a partially-renumbered draft committed."""
+    merged ledger or a partially-renumbered draft committed.
+
+    T-1495: `own_commits` (the ordered shas THIS invocation's own steps
+    committed since `sha`) is verified via
+    `_assert_reset_only_discards_own_commits` BEFORE the reset runs --
+    see that function's docstring for the incident this closes. Every
+    caller now supplies its own accumulated commit list; an empty
+    default preserves old behavior only for a caller with nothing of its
+    own committed yet (the `_land_plan_pre_merge_sha`-adjacent early
+    paths, where `sha` still equals `root`'s tip and there is nothing to
+    verify). Returns the assertion's own `Result` so a refusal is visible
+    to the caller instead of silently discarding nothing -- callers that
+    treat this as a `LandError`-widening unwind must check `is_err`."""
+    guarded = _assert_reset_only_discards_own_commits(root, sha, own_commits)
+    if guarded.is_err:
+        return guarded
     reset = run_argv(["git", "-C", str(root), "reset", "--hard", sha])
     if reset.is_err or reset.danger_ok.returncode != 0:
         _log.error(
@@ -769,9 +1013,53 @@ def _land_plan_reset_hard(root: Path, sha: str) -> None:
             root,
             root,
         )
+        return Err(LandError.GitFailed)
+    return Ok(None)
 
 
-# frob:ticket T-1269
+# frob:ticket T-1495
+def _land_plan_merge_and_finalize(
+    root: Path, worktree: Path
+) -> tuple[Result[tuple[str, tuple[tuple[str, str], ...]], LandError], list[str]]:
+    """`_land_plan_locked`'s merge-then-finalize-drafts half (T-1495, split
+    out to keep that function under the ARCH001 60-line threshold): merge
+    `worktree` onto `root`, finalize every incoming draft, and return
+    `(result, own_commits)` -- `result` is `Ok((merge_commit, finalized))`
+    on success or the first `Err` hit; `own_commits` is THIS run's own
+    commit shas accumulated SO FAR, in order (the merge commit once it
+    exists, plus the finalize commit if one was made), returned
+    ALONGSIDE `result` regardless of success or failure -- unlike a bare
+    `Result`, a failure here does not lose track of a commit this run
+    already made (e.g. the merge succeeded but finalize failed
+    afterward), so the caller's `_land_plan_reset_hard` unwind still gets
+    the right T-1495 unwind-boundary check even on this partial-failure
+    path."""
+    own_commits: list[str] = []
+    merged = _land_plan_merge_worktree(root, worktree)
+    if merged.is_err:
+        return Err(merged.danger_err), own_commits
+    merge_commit = merged.danger_ok
+    own_commits.append(merge_commit)
+
+    finalized = _land_plan_finalize_drafts(root)
+    if finalized.is_err:
+        return Err(finalized.danger_err), own_commits
+
+    committed = _land_plan_commit_finalize(root, finalized.danger_ok)
+    if committed.is_err:
+        return Err(committed.danger_err), own_commits
+    if finalized.danger_ok:
+        # `_land_plan_commit_finalize` is a no-op unless `finalized` is
+        # non-empty (its own docstring) -- HEAD now names this run's own
+        # finalize commit.
+        finalize_sha = _rev_parse(root, "HEAD")
+        if finalize_sha.is_ok:
+            own_commits.append(finalize_sha.danger_ok)
+
+    return Ok((merge_commit, finalized.danger_ok)), own_commits
+
+
+# frob:ticket T-1495
 def _land_plan_locked(
     root: Path,
     worktree: Path,
@@ -783,26 +1071,22 @@ def _land_plan_locked(
     `root`'s `_land_lock`: merge, finalize every draft, optionally re-check
     TICK-gate cleanliness, and -- for a real (non-dry-run) call -- leave
     the merge commit as `root`'s new tip; a `dry_run` or any failure resets
-    `root` back to its pre-merge tip instead."""
+    `root` back to its pre-merge tip instead. T-1495: every unwind path
+    threads `own_commits` (`_land_plan_merge_and_finalize`'s own return)
+    into `_land_plan_reset_hard`, refusing instead of discarding a foreign
+    commit interleaved onto `root` mid-run -- see
+    `_assert_reset_only_discards_own_commits`'s doc for the 2026-08-04
+    incident this closes."""
     pre_merge = _land_plan_pre_merge_sha(root)
     if pre_merge.is_err:
         return Err(pre_merge.danger_err)
     pre_merge_sha = pre_merge.danger_ok
 
-    merged = _land_plan_merge_worktree(root, worktree)
-    if merged.is_err:
-        return Err(merged.danger_err)
-    merge_commit = merged.danger_ok
-
-    finalized = _land_plan_finalize_drafts(root)
-    if finalized.is_err:
-        _land_plan_reset_hard(root, pre_merge_sha)
-        return Err(finalized.danger_err)
-
-    committed = _land_plan_commit_finalize(root, finalized.danger_ok)
-    if committed.is_err:
-        _land_plan_reset_hard(root, pre_merge_sha)
-        return Err(committed.danger_err)
+    merged_finalized, own_commits = _land_plan_merge_and_finalize(root, worktree)
+    if merged_finalized.is_err:
+        _land_plan_reset_hard(root, pre_merge_sha, own_commits=own_commits)
+        return Err(merged_finalized.danger_err)
+    merge_commit, finalized_ids = merged_finalized.danger_ok
 
     if check_ticks is not None:
         clean = check_ticks()
@@ -812,17 +1096,23 @@ def _land_plan_locked(
                 "non-clean -- unwinding to %s",
                 pre_merge_sha,
             )
-            _land_plan_reset_hard(root, pre_merge_sha)
-            return Err(LandError.PlanTickGateDirty)
+            unwound = _land_plan_reset_hard(
+                root, pre_merge_sha, own_commits=own_commits
+            )
+            return Err(
+                unwound.danger_err if unwound.is_err else LandError.PlanTickGateDirty
+            )
 
     if dry_run:
         report = LandPlanReport(
             dry_run=True,
             merge_commit=merge_commit,
-            finalized=finalized.danger_ok,
+            finalized=finalized_ids,
             commit_sha=None,
         )
-        _land_plan_reset_hard(root, pre_merge_sha)
+        unwound = _land_plan_reset_hard(root, pre_merge_sha, own_commits=own_commits)
+        if unwound.is_err:
+            return Err(unwound.danger_err)
         return Ok(report)
 
     final_sha = _rev_parse(root, "HEAD")
@@ -830,7 +1120,7 @@ def _land_plan_locked(
         LandPlanReport(
             dry_run=False,
             merge_commit=merge_commit,
-            finalized=finalized.danger_ok,
+            finalized=finalized_ids,
             commit_sha=final_sha.danger_ok if final_sha.is_ok else merge_commit,
         )
     )
@@ -841,6 +1131,7 @@ def _land_plan_locked(
 # frob:ticket T-0907
 # frob:ticket T-1355
 # frob:ticket T-1410
+# frob:ticket T-1495
 def _land_locked(
     root: Path,
     ticket_id: str,
@@ -859,6 +1150,7 @@ def _land_locked(
     check_gate_claims: Callable[[Ticket], bool | None] | None = None,
     skip_mutation_evidence: bool = False,
     allow_cross_ticket: bool = False,
+    pre_commit_sweep: Callable[[Path, str], bool | None] | None = None,
 ) -> Result[LandReport, LandError]:
     """`land`'s actual body (T-0577), run by the caller already holding
     `root`'s `ledger_lock` -- split out only so `land`'s docstring can state
@@ -1023,6 +1315,7 @@ def _land_locked(
                 bump_version=bump_version,
                 rebuild_natives=rebuild_natives,
                 sync_gate_rules=sync_gate_rules,
+                pre_commit_sweep=pre_commit_sweep,
             )
         finally:
             _clear_land_repair_marker(root, ticket_id)

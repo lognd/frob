@@ -73,6 +73,7 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
+import os
 from importlib.metadata import version
 from pathlib import Path
 
@@ -290,6 +291,81 @@ def scan_stale_ticket_leases(root: Path) -> tuple[str, ...]:
         )
         return ()
     return result.danger_ok.requeued_tickets
+
+
+# frob:doc docs/guides/install.md#live-land-process-report-t-1515
+# frob:ticket T-1515
+class LiveLandProcess(BaseModel):
+    """One holder observed in `root`'s `.frob/land.lock` content (T-1515):
+    who is (or, if `alive` is `False`, WAS -- an orphaned/crashed holder
+    that never released the file) currently running `frob ticket land`
+    against this repo. `alive` is a best-effort liveness probe (`os.kill
+    (pid, 0)`, POSIX-only) -- `None` when it could not be determined (a
+    non-POSIX platform, or a `PermissionError` probing a pid this process
+    does not own)."""
+
+    model_config = {}
+
+    pid: int
+    session_id: str
+    started_at: str
+    alive: bool | None
+
+
+# frob:doc docs/guides/install.md#live-land-process-report-t-1515
+# frob:ticket T-1515
+def scan_live_land_processes(root: Path) -> LiveLandProcess | None:
+    """T-1515: read `root`'s `.frob/land.lock` content (written by
+    `frob.tickets._land._land_lock` on acquisition) and report who holds
+    it, if anyone -- `None` if the file does not exist, is empty, or does
+    not parse as the expected metadata shape (never raised: this is a
+    diagnostic read, not a gate). This is what makes 'is a land process
+    live against this repo right now' a single `frob doctor` command
+    instead of a human having to `ps`/`lsof` the lock file by hand before
+    starting a new session (the exact orphaned-driver blind spot T-1495's
+    2026-08-04 incident hit)."""
+    from frob.tickets._land import _LAND_LOCK_REL, _read_land_lock_holder
+
+    path = root / _LAND_LOCK_REL
+    holder = _read_land_lock_holder(path)
+    if holder is None:
+        return None
+    pid = holder.get("pid")
+    session_id = holder.get("session_id")
+    started_at = holder.get("started_at")
+    if not isinstance(pid, int) or not isinstance(session_id, str) or not isinstance(
+        started_at, str
+    ):
+        return None
+    alive: bool | None
+    try:
+        os.kill(pid, 0)
+        alive = True
+    except ProcessLookupError:
+        alive = False
+    except (PermissionError, OSError):
+        alive = None
+    return LiveLandProcess(
+        pid=pid, session_id=session_id, started_at=started_at, alive=alive
+    )
+
+
+# frob:ticket T-1515
+def _live_land_process_remediation(proc: LiveLandProcess) -> str:
+    """Remediation hint naming the observed land.lock holder (T-1515)."""
+    if proc.alive is False:
+        return (
+            f"land.lock is held by pid {proc.pid} (session {proc.session_id}, "
+            f"started {proc.started_at}) which is NOT running -- an orphaned "
+            "lock file from a crashed/killed land; remove `.frob/land.lock` "
+            "by hand after confirming no other process is actually mid-land"
+        )
+    return (
+        f"land.lock is held by pid {proc.pid} (session {proc.session_id}, "
+        f"started {proc.started_at}), "
+        f"{'alive' if proc.alive else 'liveness unknown'} -- a `frob ticket "
+        "land` is (or may be) mid-run against this repo right now"
+    )
 
 
 def _stale_ticket_leases_remediation(stale_ids: tuple[str, ...]) -> str:
@@ -629,6 +705,7 @@ def _mutate_journal_remediation(stale: tuple[StaleJournal, ...]) -> str:
 
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 # frob:ticket T-1501
+# frob:ticket T-1515
 class DoctorReport(BaseModel):
     """Full `frob doctor` diagnosis: per-extension status, derived-artifact
     integrity manifest (T-0570), cross-run content drift (T-0604),
@@ -668,6 +745,7 @@ class DoctorReport(BaseModel):
     stale_ticket_leases: list[str] = []
     venv_shims: list[VenvShimDrift] = []
     stale_binary: str | None = None
+    live_land_process: LiveLandProcess | None = None
     healthy: bool
     remediation: str | None = None
 
@@ -700,6 +778,7 @@ def _frob_version() -> str:
 
 
 # frob:ticket T-1501
+# frob:ticket T-1515
 def _combined_remediation(
     natives_healthy: bool,
     corrupt: tuple[DerivedArtifactStatus, ...],
@@ -709,13 +788,18 @@ def _combined_remediation(
     stale_ticket_leases: tuple[str, ...] = (),
     venv_shims: tuple[VenvShimDrift, ...] = (),
     stale_binary: str | None = None,
+    live_land_process: LiveLandProcess | None = None,
 ) -> str | None:
     """The full remediation text for a `DoctorReport`: natives hint,
     derived-state hint, scaffold-conformance hint (T-0736), stale mutate-
     journal hint (T-0857), malformed-ticket-edge hint (T-1132), stale-
     ticket-lease hint (T-1131), venv-shim hint (T-1161), stale-binary-
-    floor hint (T-1218), or all joined -- `None` only when every part is
-    clean."""
+    floor hint (T-1218), live-land-process hint (T-1515), or all joined --
+    `None` only when every part is clean. T-1515: an ALIVE land process is
+    informational, not unhealthy (a real, in-flight `land()` is normal) --
+    only a DEAD (orphaned) holder contributes here; see
+    `_assemble_doctor_report`'s `healthy` computation for the matching
+    split."""
     parts = []
     if not natives_healthy:
         parts.append(REMEDIATION_HINT)
@@ -733,6 +817,8 @@ def _combined_remediation(
         parts.append(_venv_shim_remediation(venv_shims))
     if stale_binary:
         parts.append(stale_binary)
+    if live_land_process is not None and live_land_process.alive is False:
+        parts.append(_live_land_process_remediation(live_land_process))
     return " | ".join(parts) if parts else None
 
 
@@ -756,6 +842,7 @@ def _diagnose_derived_state(resolved_root: Path):
 
 
 # frob:ticket T-1162
+# frob:ticket T-1515
 def _collect_doctor_scans(resolved_root: Path):
     """T-1162: pure I/O -- run the five unlocked doctor scans (scaffold
     conformance, stale mutate-backup journals (T-0857), malformed ticket
@@ -769,6 +856,7 @@ def _collect_doctor_scans(resolved_root: Path):
     malformed_ticket_edges = tuple(scan_malformed_ticket_edges(resolved_root))
     stale_ticket_leases = scan_stale_ticket_leases(resolved_root)
     venv_shims = scan_venv_shims(resolved_root)
+    live_land_process = scan_live_land_processes(resolved_root)
     return (
         scaffold_blocks,
         scaffold_needs_apply,
@@ -776,6 +864,7 @@ def _collect_doctor_scans(resolved_root: Path):
         malformed_ticket_edges,
         stale_ticket_leases,
         venv_shims,
+        live_land_process,
     )
 
 
@@ -785,6 +874,7 @@ def _collect_doctor_scans(resolved_root: Path):
 # doctor's own DoctorReport summary log), not a medical/health record about a person \
 # -- a name-signature false positive, same class as run_diagnosis's own existing PII \
 # surface"
+# frob:ticket T-1515
 def _log_doctor_diagnosis(
     healthy,
     extensions,
@@ -796,17 +886,19 @@ def _log_doctor_diagnosis(
     stale_ticket_leases,
     venv_shims=(),
     stale_binary=None,
+    live_land_process=None,
 ) -> None:
     """T-1162: pure I/O -- emit `run_diagnosis`'s single summary log line.
     Extracted verbatim so the report-building logic above it stays
     decision/formatting only. `venv_shims` (T-1161) defaults to `()` so
     existing positional callers are unaffected. `stale_binary` (T-1218)
-    defaults to `None` for the same reason."""
+    and `live_land_process` (T-1515) default to `None` for the same
+    reason."""
     _log.info(
         "doctor: healthy=%s extensions=%s derived_state_corrupt=%s drift=%s "
         "scaffold_needs_apply=%s stale_mutate_journals=%s "
         "malformed_ticket_edges=%s stale_ticket_leases=%s venv_shims=%s "
-        "stale_binary=%s",
+        "stale_binary=%s live_land_process=%s",
         healthy,
         extensions,
         [d.name for d in corrupt],
@@ -817,10 +909,12 @@ def _log_doctor_diagnosis(
         stale_ticket_leases,
         [d.script for d in venv_shims],
         bool(stale_binary),
+        live_land_process.model_dump() if live_land_process is not None else None,
     )
 
 
 # frob:ticket T-1501
+# frob:ticket T-1515
 def _assemble_doctor_report(
     resolved_root: Path,
     extensions: list,
@@ -835,6 +929,7 @@ def _assemble_doctor_report(
     stale_ticket_leases,
     venv_shims,
     stale_binary,
+    live_land_process=None,
 ) -> DoctorReport:
     """`run_diagnosis`'s own `healthy`/`DoctorReport` decision and build,
     extracted (T-1501) to keep `run_diagnosis` itself under the ARCH001
@@ -843,7 +938,10 @@ def _assemble_doctor_report(
     derived-state manifest is corrupt, or any of the scaffold/mutate-
     journal/ticket-edge/ticket-lease/venv-shim/stale-binary scans found
     something -- see `DoctorReport`'s own docstring for the per-field
-    contract each of those checks documents."""
+    contract each of those checks documents. `live_land_process` (T-1515)
+    only affects `healthy` when its holder is DEAD (`alive is False`, an
+    orphaned lock) -- a genuinely live `land()` in flight is normal, not
+    unhealthy."""
     healthy = (
         natives_healthy
         and not corrupt
@@ -853,6 +951,7 @@ def _assemble_doctor_report(
         and not stale_ticket_leases
         and not venv_shims
         and not stale_binary
+        and not (live_land_process is not None and live_land_process.alive is False)
     )
     return DoctorReport(
         frob_version=_frob_version(),
@@ -865,6 +964,7 @@ def _assemble_doctor_report(
         stale_ticket_leases=list(stale_ticket_leases),
         venv_shims=list(venv_shims),
         stale_binary=stale_binary,
+        live_land_process=live_land_process,
         healthy=healthy,
         remediation=_combined_remediation(
             natives_healthy,
@@ -875,6 +975,7 @@ def _assemble_doctor_report(
             stale_ticket_leases,
             venv_shims,
             stale_binary,
+            live_land_process,
         ),
     )
 
@@ -886,6 +987,7 @@ def _assemble_doctor_report(
 # (I/O/scan/log/assembly helpers pulled out to cut the function under the 60-line ARCH \
 # threshold); behavior, inputs, outputs, and the documented contract are all \
 # unchanged, so docs/guides/install.md's own content needs no edit"
+# frob:ticket T-1515
 def run_diagnosis(root: Path | None = None) -> DoctorReport:
     """Check every entry in `NATIVE_EXTENSIONS` for importability and
     fingerprint every entry in `DERIVED_ARTIFACTS` under `root`, building
@@ -934,6 +1036,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         malformed_ticket_edges,
         stale_ticket_leases,
         venv_shims,
+        live_land_process,
     ) = _collect_doctor_scans(resolved_root)
     stale_binary = stale_binary_warning(resolved_root)
 
@@ -951,6 +1054,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         stale_ticket_leases,
         venv_shims,
         stale_binary,
+        live_land_process,
     )
     _log_doctor_diagnosis(
         report.healthy,
@@ -963,5 +1067,6 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         stale_ticket_leases,
         venv_shims,
         stale_binary,
+        live_land_process,
     )
     return report

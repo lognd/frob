@@ -29,6 +29,7 @@ from frob.app.ticket_runner._land_cmd import (
     _absorb_pre_land_fixes,
     _finish_worktree,
     _post_land_unscoped_error_sweep,
+    _pre_commit_unscoped_error_sweep,
     _print_land_proof,
 )
 from frob.app.ticket_runner._lifecycle import _default_work_worktree
@@ -245,6 +246,7 @@ class TestAbsorbPreLandFixes:
 
 
 # frob:ticket T-1456
+# frob:ticket T-1513
 class TestPostLandUnscopedSweep:
     """T-1456's `_post_land_unscoped_error_sweep`: `_unscoped_error_findings`/
     `_apply_root_tier_a_fixes` (the two functions that would otherwise spawn
@@ -291,6 +293,7 @@ class TestPostLandUnscopedSweep:
         assert head != pre_sha
 
     # frob:ticket T-1456
+    # frob:ticket T-1513
     # frob:tests \
     # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_err\
     # or_fixed_by_tier_a_lands_with_a_followup_commit
@@ -309,7 +312,7 @@ class TestPostLandUnscopedSweep:
 
         def fake_fix(root, ticket_id):  # noqa: ANN001, ANN202
             (root / "b.txt").write_text("fixed\n")
-            return 1
+            return ["b.txt"]
 
         monkeypatch.setattr(
             "frob.app.ticket_runner._land_cmd._unscoped_error_findings", fake_fresh
@@ -325,6 +328,7 @@ class TestPostLandUnscopedSweep:
         assert "post-land Tier-A cleanup" in log
 
     # frob:ticket T-1456
+    # frob:ticket T-1513
     # frob:tests \
     # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_err\
     # or_absent_before_land_refuses_and_reverts
@@ -341,7 +345,7 @@ class TestPostLandUnscopedSweep:
         )
         monkeypatch.setattr(
             "frob.app.ticket_runner._land_cmd._apply_root_tier_a_fixes",
-            lambda root, ticket_id: 0,
+            lambda root, ticket_id: [],
         )
         ok = _post_land_unscoped_error_sweep(
             root, "T-0001", "T-0001", pre_sha, baseline
@@ -349,6 +353,55 @@ class TestPostLandUnscopedSweep:
         assert ok is False
         head = _run(["git", "rev-parse", "HEAD"], root).stdout.strip()
         assert head == pre_sha
+
+    # frob:ticket T-1513
+    # frob:tests \
+    # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_fix_com\
+    # mit_stages_only_touched_paths_not_git_add_dash_a
+    def test_fix_commit_stages_only_touched_paths_not_git_add_dash_a(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-1513: a Tier-A fix commit must stage ONLY the paths Tier-A
+        actually touched -- never `git add -A`, which used to also sweep
+        up an unrelated dirty file (standing in for the perpetually-dirty
+        land-owned `uv.lock`) and get the whole commit refused by a
+        pre-commit hook that inspects staged paths."""
+        root, pre_sha = self._landed_repo(tmp_path)
+        baseline = frozenset({("X001", "a.txt")})
+        calls = {"n": 0}
+
+        def fake_fresh(root, ticket_id, **kw):  # noqa: ANN001, ANN202
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return frozenset({("X001", "a.txt"), ("Y002", "b.txt")})
+            return frozenset({("X001", "a.txt")})
+
+        def fake_fix(root, ticket_id):  # noqa: ANN001, ANN202
+            (root / "b.txt").write_text("fixed\n")
+            # An unrelated dirty file Tier-A never touched -- must NOT be
+            # staged or committed by the follow-up cleanup commit.
+            (root / "unrelated-dirty.txt").write_text("do not stage me\n")
+            return ["b.txt"]
+
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings", fake_fresh
+        )
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._apply_root_tier_a_fixes", fake_fix
+        )
+        ok = _post_land_unscoped_error_sweep(
+            root, "T-0001", "T-0001", pre_sha, baseline
+        )
+        assert ok is True
+        log = _run(["git", "log", "--oneline", "-1"], root).stdout
+        assert "post-land Tier-A cleanup" in log
+        committed_files = _run(
+            ["git", "show", "--name-only", "--pretty=format:", "HEAD"], root
+        ).stdout.split()
+        assert "b.txt" in committed_files
+        assert "unrelated-dirty.txt" not in committed_files
+        status = _run(["git", "status", "--porcelain"], root).stdout
+        assert "unrelated-dirty.txt" in status
 
     # frob:ticket T-1456
     # frob:tests \
@@ -369,6 +422,108 @@ class TestPostLandUnscopedSweep:
             root, "T-0001", "T-0001", pre_sha, frozenset()
         )
         assert ok2 is True
+
+
+# frob:ticket T-1514
+class TestPreCommitUnscopedSweepFn:
+    """T-1514's `_pre_commit_unscoped_error_sweep`: same identity-set
+    comparison/Tier-A-retry logic as `TestPostLandUnscopedSweep` above,
+    but the function itself never mutates git state (no commit, no
+    reset) -- unwinding on a `False` verdict is `land()`'s own job via
+    `_verified_reset_root`, tested at the `land()` level in
+    tests/test_ticket_land.py::TestPreCommitUnscopedSweep instead."""
+
+    # frob:ticket T-1514
+    # frob:tests \
+    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_none\
+    # _baseline_or_fresh_is_a_skip_not_a_pass
+    def test_none_baseline_or_fresh_is_a_skip_not_a_pass(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        assert _pre_commit_unscoped_error_sweep(tmp_path, "T-0001", "T-0001", None) is (
+            None
+        )
+
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda root, ticket_id, **kw: None,
+        )
+        assert (
+            _pre_commit_unscoped_error_sweep(tmp_path, "T-0001", "T-0001", frozenset())
+            is None
+        )
+
+    # frob:ticket T-1514
+    # frob:tests \
+    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_no_n\
+    # ew_finding_is_true
+    def test_no_new_finding_is_true(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        baseline = frozenset({("X001", "a.txt")})
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda root, ticket_id, **kw: baseline,
+        )
+        assert (
+            _pre_commit_unscoped_error_sweep(tmp_path, "T-0001", "T-0001", baseline)
+            is True
+        )
+
+    # frob:ticket T-1514
+    # frob:tests \
+    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_new_\
+    # finding_fixed_by_tier_a_stages_and_returns_true
+    def test_new_finding_fixed_by_tier_a_stages_and_returns_true(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        baseline = frozenset({("X001", "a.txt")})
+        calls = {"n": 0}
+
+        def fake_fresh(root, ticket_id, **kw):  # noqa: ANN001, ANN202
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return frozenset({("X001", "a.txt"), ("Y002", "b.txt")})
+            return frozenset({("X001", "a.txt")})
+
+        staged: list[frozenset[str]] = []
+
+        def fake_stage(root, ticket_id):  # noqa: ANN001, ANN202
+            paths = frozenset({"b.txt"})
+            staged.append(paths)
+            return paths
+
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings", fake_fresh
+        )
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._sweep_apply_tier_a_pre_commit",
+            fake_stage,
+        )
+        result = _pre_commit_unscoped_error_sweep(tmp_path, "T-0001", "T-0001", baseline)
+        assert result is True
+        assert staged == [frozenset({"b.txt"})]
+
+    # frob:ticket T-1514
+    # frob:tests \
+    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_new_\
+    # finding_unresolved_by_tier_a_returns_false
+    def test_new_finding_unresolved_by_tier_a_returns_false(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        baseline = frozenset({("X001", "a.txt")})
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda root, ticket_id, **kw: frozenset(
+                {("X001", "a.txt"), ("Z003", "c.txt")}
+            ),
+        )
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._sweep_apply_tier_a_pre_commit",
+            lambda root, ticket_id: frozenset(),
+        )
+        result = _pre_commit_unscoped_error_sweep(tmp_path, "T-0001", "T-0001", baseline)
+        assert result is False
 
 
 # frob:ticket T-1175

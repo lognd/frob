@@ -3567,6 +3567,86 @@ class TestReleaseBump:
         assert (repo / "pyproject.toml").read_text().count('version = "0.183.0"') == 1
 
 
+# frob:ticket T-1514
+class TestPreCommitUnscopedSweep:
+    """T-1514: `land`'s optional `pre_commit_sweep` callback, invoked at
+    the last checkpoint before the final squash-apply commit -- `root`'s
+    working tree holds only the staged, uncommitted merge-preview
+    changeset at that point, so a `False` verdict unwinds via the same
+    `_verified_reset_root` path every other pre-commit failure already
+    uses and never touches a real commit."""
+
+    # frob:ticket T-1514
+    def _land_one(
+        self, repo: Path, branch: str, filename: str
+    ) -> tuple[str, Path]:
+        wt = repo.parent / branch
+        _run(["git", "worktree", "add", "-b", branch, str(wt)], repo)
+        created = new_ticket(wt, _spec(f"{branch} ticket", scope=(f"src/{filename}",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / filename).write_text(f"# {filename}\n")
+        _commit_all(wt, f"add {filename}")
+        return tid, wt
+
+    # frob:ticket T-1514
+    def test_true_verdict_lands_normally(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestPreCommitUnscopedSweep.test_true_verdict_lands\
+        # _normally
+        tid, wt = self._land_one(repo, "feature-sweep-ok", "sweepok.py")
+        calls: list[tuple[Path, str]] = []
+
+        def sweep(root: Path, final_id: str) -> bool:
+            calls.append((root, final_id))
+            return True
+
+        result = land(repo, tid, wt, dry_run=False, pre_commit_sweep=sweep)
+        assert result.is_ok, result.err
+        assert len(calls) == 1
+        assert calls[0][0] == repo
+
+    # frob:ticket T-1514
+    def test_none_verdict_is_a_skip_lands_normally(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestPreCommitUnscopedSweep.test_none_verdict_is_a_\
+        # skip_lands_normally
+        tid, wt = self._land_one(repo, "feature-sweep-skip", "sweepskip.py")
+
+        result = land(
+            repo, tid, wt, dry_run=False, pre_commit_sweep=lambda root, fid: None
+        )
+        assert result.is_ok, result.err
+
+    # frob:ticket T-1514
+    def test_false_verdict_unwinds_and_commits_nothing(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestPreCommitUnscopedSweep.test_false_verdict_unwi\
+        # nds_and_commits_nothing
+        tid, wt = self._land_one(repo, "feature-sweep-refuse", "sweeprefuse.py")
+        before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        result = land(
+            repo, tid, wt, dry_run=False, pre_commit_sweep=lambda root, fid: False
+        )
+        assert result.is_err
+        assert result.danger_err == LandError.PreLandUnscopedSweepFailed
+        assert (
+            _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == before_main_sha
+        )
+        assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
+
+    # frob:ticket T-1514
+    def test_no_callback_is_noop(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestPreCommitUnscopedSweep.test_no_callback_is_noop
+        tid, wt = self._land_one(repo, "feature-sweep-none", "sweepnone.py")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+
+
 # frob:ticket T-1078
 class TestReleaseBumpQuartetAtomicity:
     """T-1078: land's REL001 bump used to update pyproject.toml/
@@ -7388,3 +7468,163 @@ class TestLandPlan:
             _land(repo, cfg)
         assert any("landed onto" in rec.message for rec in caplog.records)
         assert (repo / "docs" / "new.md").exists()
+
+
+# frob:ticket T-1495
+class TestLandPlanUnwindNeverDiscardsForeignCommits:
+    """T-1495 (the 2026-08-04 incident): `land_plan`'s own unwind path
+    (`_land_plan_reset_hard`) used to `reset --hard` unconditionally --
+    if ANOTHER process committed to `root` after this run's own last
+    commit but before the reset ran (a concurrent queue-drain land, a
+    manual `frob ticket drop`), that foreign commit was silently
+    destroyed along with this run's own half-finished work. The fix
+    (`_assert_reset_only_discards_own_commits`) refuses instead."""
+
+    # frob:ticket T-1495
+    # frob:tests tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits.test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding  # noqa: E501
+    def test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding(
+        self, repo: Path, tmp_path: Path
+    ) -> None:
+        from frob.tickets._land import land_plan
+
+        worktree = _make_design_worktree(repo, tmp_path)
+        (worktree / "docs").mkdir()
+        (worktree / "docs" / "new.md").write_text("# New doc\n")
+        _commit_all(worktree, "docs: add new.md")
+
+        # check_ticks() simulates a FOREIGN process committing to root
+        # (another land's queue-drain, a manual `frob ticket drop`)
+        # DURING this invocation's own window, then reports dirty --
+        # exactly the interleaving shape the 2026-08-04 incident hit.
+        def foreign_commit_then_dirty() -> bool:
+            (repo / "foreign.txt").write_text("someone else's work\n")
+            _commit_all(repo, "chore: an unrelated interleaved commit")
+            return False
+
+        pre_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        result = land_plan(repo, worktree, check_ticks=foreign_commit_then_dirty)
+        assert result.is_err
+        assert result.danger_err is LandError.GitFailed
+        # The foreign commit MUST survive -- root's tip must NOT have been
+        # reset back past it, unlike the pre-T-1495 behavior.
+        post_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert post_sha != pre_sha
+        assert (repo / "foreign.txt").exists()
+        log = _run(["git", "log", "--oneline"], repo).stdout
+        assert "an unrelated interleaved commit" in log
+
+    # frob:ticket T-1495
+    # frob:tests tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits.test_no_foreign_commit_unwinds_cleanly_as_before  # noqa: E501
+    def test_no_foreign_commit_unwinds_cleanly_as_before(
+        self, repo: Path, tmp_path: Path
+    ) -> None:
+        """The ordinary, non-interleaved case is unaffected: no foreign
+        commit landed, so the unwind still runs and root returns to its
+        exact pre-merge tip (same assertion `test_tick_gate_dirty_
+        unwinds_everything` above already covers for the plain path)."""
+        from frob.tickets._land import land_plan
+
+        worktree = _make_design_worktree(repo, tmp_path)
+        (worktree / "docs").mkdir()
+        (worktree / "docs" / "new.md").write_text("# New doc\n")
+        _commit_all(worktree, "docs: add new.md")
+
+        pre_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        result = land_plan(repo, worktree, check_ticks=lambda: False)
+        assert result.is_err
+        assert result.danger_err is LandError.PlanTickGateDirty
+        post_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert post_sha == pre_sha
+        assert not (repo / "docs" / "new.md").exists()
+
+
+# frob:ticket T-1515
+class TestLandLockHolderMetadataAndTimeout:
+    """T-1515: `_land_lock` now writes pid/session/start-time into
+    land.lock's own content on acquisition, and refuses (raising
+    `LandLockTimeout`) rather than blocking forever when a foreign holder
+    does not release within its timeout -- the fix for the 2026-08-04
+    incident (an orphaned background land driver queued silently against a
+    new coordinator session's own `land()` call)."""
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_holder_metad\
+    # ata_written_on_acquire
+    # frob:ticket T-1515
+    def test_holder_metadata_written_on_acquire(self, tmp_path: Path) -> None:
+        import json
+        import os
+
+        from frob.tickets._land import _LAND_LOCK_REL, _land_lock
+
+        with _land_lock(tmp_path):
+            content = (tmp_path / _LAND_LOCK_REL).read_text()
+        parsed = json.loads(content)
+        assert parsed["pid"] == os.getpid()
+        assert "session_id" in parsed
+        assert "started_at" in parsed
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_lock_release\
+    # d_after_context_exits
+    # frob:ticket T-1515
+    def test_lock_released_after_context_exits(self, tmp_path: Path) -> None:
+        import fcntl
+
+        from frob.tickets._land import _LAND_LOCK_REL, _land_lock
+
+        with _land_lock(tmp_path):
+            pass
+
+        # A fresh acquisition from a DIFFERENT fd must succeed non-
+        # blocking now that the context above has released it.
+        path = tmp_path / _LAND_LOCK_REL
+        fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(fd, fcntl.LOCK_UN)
+        finally:
+            os.close(fd)
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_timeout_rais\
+    # es_when_a_foreign_holder_never_releases
+    # frob:ticket T-1515
+    def test_timeout_raises_when_a_foreign_holder_never_releases(
+        self, tmp_path: Path
+    ) -> None:
+        import fcntl
+        import json
+
+        from frob.tickets._land import (
+            _LAND_LOCK_REL,
+            LandLockTimeout,
+            _land_lock,
+        )
+
+        path = tmp_path / _LAND_LOCK_REL
+        path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX)
+        os.write(
+            holder_fd,
+            (
+                json.dumps(
+                    {
+                        "pid": 999999,
+                        "session_id": "foreign-orphan",
+                        "started_at": "2026-08-04T00:00:00+00:00",
+                    }
+                )
+                + "\n"
+            ).encode("utf-8"),
+        )
+        try:
+            with pytest.raises(LandLockTimeout) as excinfo:
+                with _land_lock(tmp_path, timeout=0.2):
+                    pass  # pragma: no cover -- must never be reached
+            assert excinfo.value.holder is not None
+            assert excinfo.value.holder["session_id"] == "foreign-orphan"
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            os.close(holder_fd)

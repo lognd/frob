@@ -4503,7 +4503,7 @@ found while working T-1259: migrate_v1_to_v2 (src/frob/tickets/_store.py) is imp
 id: T-1495
 title: land crash-recovery/unwind can reset main past completed land commits (T-1464/T-1262
   eaten 2026-08-04)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-04'
@@ -4513,6 +4513,9 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding
+- tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_no_foreign_commit_unwinds_cleanly_as_before
 threat: null
 component: null
 ```
@@ -4525,6 +4528,115 @@ Root-cause surface to fix (any/all):
 4. Land duration routinely exceeds the 540s foreground guard; either checkpoint so a kill is safe at any instant, or split post-land verification into a resumable separate step.
 
 Acceptance sketch: GIVEN a land invocation killed by SIGTERM after N land commits are on main WHEN any subsequent `frob ticket land` runs THEN no previously-committed land commit is removed from main's history, and any genuinely partial staging is either rolled forward or refused loudly with both shas named.
+
+## Done report
+
+The 2026-08-04 incident: `frob ticket land T-1464` was SIGTERM-killed at
+the 540s foreground timeout after its land commits were already on main
+but before post-land verification finished; a LATER `frob ticket land`
+invocation's unwind path performed a `reset --hard` that silently
+discarded those already-completed commits, and earlier in the same
+session ate two more (T-1199/T-1200 queue-drain commits) plus an
+interleaved manual `frob ticket drop` commit.
+
+Investigated every `git reset --hard` site in src/frob/tickets/_land*.py.
+Two of the four (`_verified_reset_root` in _land_git_ops.py,
+`_reconcile_one_land_repair_marker`'s crash-repair reset in _land.py)
+already carry a tip-equality drift check (T-0907) that refuses instead
+of resetting on any drift -- these were already safe against this
+incident class. The THIRD, `_land_plan_reset_hard` (land_plan's own
+unwind primitive, used by every land_plan failure path after a
+successful merge -- merge/finalize failure, a dirty check_ticks()
+result, or a dry-run), had NO check at all: it reset unconditionally to
+whatever sha the caller passed, regardless of what root's tip had
+become since. This is the concrete instance of T-1495's point 1/3 the
+ticket asked to be found.
+
+Implemented, exactly the acceptance sketch's "unwind boundary
+assertion": before any reset, verify every commit about to be discarded
+was authored by THIS land run, refuse loudly otherwise.
+
+- _assert_reset_only_discards_own_commits(root, base_sha, own_commits)
+  verifies root's CURRENT tip equals own_commits[-1] (the last commit
+  THIS run's own steps produced), or base_sha if own_commits is empty.
+  Tip equality, not a rev-list commit-set diff, is deliberate: a
+  --no-ff merge's second-parent history (the worktree branch's own
+  prior commits, e.g. a ticket-creation commit made before the merge
+  ever ran) is legitimately part of this run's own merge, not a
+  foreign interloper, even though a naive set-membership check flags
+  it as "not ours" -- a first implementation attempt hit exactly this
+  false positive (caught by the existing TestLandPlan suite) before
+  landing on tip equality, which is also the SAME contract
+  _verified_reset_root/T-0907 already established, generalized here
+  to the expected FINAL tip a multi-commit run built up rather than
+  just its starting one.
+- _land_plan_reset_hard now takes own_commits and runs the assertion
+  before resetting, returning Result[None, LandError] (was bare None)
+  so a refusal is visible to the caller instead of silently discarding
+  nothing.
+- _land_plan_merge_and_finalize is a new split (ARCH001: kept
+  _land_plan_locked under the 60-line threshold) of the merge-then-
+  finalize-drafts half of _land_plan_locked's body: returns
+  (result, own_commits) as a PAIR always, not just on success, so a
+  partial failure (merge succeeded, finalize failed) still carries the
+  merge commit's own sha forward into the caller's unwind -- losing
+  track of it there would have reintroduced exactly the false-refusal/
+  false-safety gap this ticket closes.
+- Every _land_plan_reset_hard call site in _land_plan_locked now
+  threads own_commits through and propagates a refusal.
+
+Verified directly: a new test
+(TestLandPlanUnwindNeverDiscardsForeignCommits.
+test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding)
+has check_ticks() itself commit a foreign file to root mid-run (exactly
+the interleaving shape of the incident) before returning False --
+before this fix, land_plan's own unwind would have reset root back
+past that foreign commit; after the fix, land_plan REFUSES
+(Err(LandError.GitFailed)) and the foreign commit survives on root's
+tip. The companion test confirms the ordinary non-interleaved unwind
+path is unaffected.
+
+Scope disclosure: this closes point 1/3 (the concretely-identified
+unguarded land_plan unwind) of T-1495's four-point root-cause surface.
+Points 2 (queue-drain commit durability across a same-invocation later
+failure) and 4 (checkpointing or splitting post-land verification so a
+>540s kill is always safe) each need a real design decision beyond a
+mechanical unwind-boundary assertion -- both filed as drafts rather
+than forced into this diff: T-1522 (queue-drain durability)
+and T-1523 (checkpoint/split verification).
+
+Also did NOT touch _land_locked's own unwind paths (the primary
+per-ticket land path, distinct from land_plan): every one of those
+already routes through _verified_reset_root, which already carries the
+T-0907 tip-equality check -- confirmed by direct code reading, not
+guessed. The gap this ticket closes was specific to land_plan's
+previously-unchecked path.
+
+### Changed
+```
+ design/frob.strata                        |  13 +-
+ docs/guides/install.md                    |  49 ++++
+ frob.lock                                 |   2 +-
+ src/frob/app/ticket_runner/_land_cmd.py   | 249 +++++++++++++++++---
+ src/frob/doctor.py                        | 113 ++++++++-
+ src/frob/tickets/_land.py                 | 378 ++++++++++++++++++++++++++----
+ src/frob/tickets/_land_squash.py          |  57 ++++-
+ src/frob/tickets/_models.py               |  16 ++
+ tests/system/test_cli_doctor.py           | 108 +++++++++
+ tests/test_ticket_land.py                 | 241 +++++++++++++++++++
+ tests/test_ticket_work_and_land_finish.py | 159 ++++++++++++-
+ tickets.md                                | 353 +++++++++++++++++++++++++++-
+ 12 files changed, 1641 insertions(+), 97 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_no_foreign_commit_unwinds_cleanly_as_before` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 6 error(s), 139 warning(s), 781 waived
+- error-findings: AFFECT001@src/frob/tickets/_land.py, AFFECT001@src/frob/tickets/_models.py, DOC002@src/frob/app/ticket_runner/_land_cmd.py, E501@/home/logan/projects/frob/.claude/worktrees/t-1513/src/frob/doctor.py:348, E501@/home/logan/projects/frob/.claude/worktrees/t-1513/src/frob/tickets/_land.py:1090, SEC110@src/frob/tickets/_land.py
 
 <!-- ticket:T-1502 -->
 ```yaml
@@ -4867,7 +4979,7 @@ Tracks the _python.py module-line coverage-floor findings surfaced during T-1309
 id: T-1513
 title: 'post-land Tier-A cleanup commit fails: git add -A stages land-owned uv.lock
   and pre-commit hook refuses'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-04'
@@ -4877,17 +4989,69 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_fix_commit_stages_only_touched_paths_not_git_add_dash_a
+- tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_fixed_by_tier_a_lands_with_a_followup_commit
 threat: null
 component: null
 ```
 In _sweep_apply_tier_a_and_commit (src/frob/app/ticket_runner/_land_cmd.py), the T-1456 autofix-retry phase runs git add -A + plain git commit. add -A stages the perpetually-dirty uv.lock (and any other land-owned file), the T-0731 pre-commit hook refuses, the fix stays uncommitted ('N left uncommitted'), the re-scan still sees the errors, and the land reverts -- observed on every refused land 2026-08-03/04. Fix: stage only the files the Tier-A engine actually touched, and run the commit with FROB_LAND_INTERNAL=1 like land's other internal commits. Also consider logging the git stderr on commit failure (it was silent).
+
+## Done report
+
+The post-land Tier-A cleanup commit in _sweep_apply_tier_a_and_commit used
+git add -A + a plain git commit. Because uv.lock (and other land-owned
+files) is perpetually dirty in a worktree, git add -A staged it alongside
+the real Tier-A fix; the T-0731 pre-commit hook then refused the commit,
+leaving the fix uncommitted and the re-scan seeing the same errors, so
+land reverted every time this path was exercised.
+
+Fixed by:
+- _apply_root_tier_a_fixes now returns the sorted, de-duplicated list of
+  repo-relative paths Tier-A actually rewrote (was a bare int count),
+  giving the caller the exact path set to stage.
+- _sweep_apply_tier_a_and_commit now runs `git add -- <exact paths>`
+  instead of `git add -A`, so a land-owned file dirty for unrelated
+  reasons can never be swept into this commit.
+- The commit itself now runs under the existing FROB_LAND_INTERNAL=1
+  context manager (_land_internal_git_env, T-0828's escape hatch) since
+  this is land's own internal commit -- same disposition as land's other
+  internal commits -- so a Tier-A fix that happens to touch a land-owned
+  file is not itself refused.
+- Both the add and commit failure paths now log git's stderr via
+  _describe_git_failure instead of staying silent.
+
+Unit tests added/updated in
+tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep:
+the existing fixed-by-tier-a test was updated for the new list-returning
+signature, and a new test
+(test_fix_commit_stages_only_touched_paths_not_git_add_dash_a) asserts an
+unrelated dirty file present alongside the Tier-A fix is NOT staged or
+committed by the follow-up cleanup commit, and remains dirty afterward.
+
+### Changed
+```
+ src/frob/app/ticket_runner/_land_cmd.py   | 92 ++++++++++++++++++++-----------
+ tests/test_ticket_work_and_land_finish.py | 56 ++++++++++++++++++-
+ tickets.md                                |  6 +-
+ 3 files changed, 119 insertions(+), 35 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_fix_commit_stages_only_touched_paths_not_git_add_dash_a` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_fixed_by_tier_a_lands_with_a_followup_commit` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 130 warning(s), 770 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1514 -->
 ```yaml
 id: T-1514
 title: run the unscoped error sweep pre-land on a merge-preview worktree instead of
   post-land on mutated main
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-04'
@@ -4897,23 +5061,102 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-acceptance:
-- text: GIVEN a land whose merge preview fails the unscoped sweep WHEN the refusal
-    fires THEN main's history is byte-identical to before the land attempt (no commit,
-    no reset, no foreign-commit exposure) and the refusal message names the new findings
-    against the preview
-  evidence: []
+evidence:
+- tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally
+- tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_none_verdict_is_a_skip_lands_normally
+- tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_false_verdict_unwinds_and_commits_nothing
+- tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_no_callback_is_noop
+- tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn::test_new_finding_fixed_by_tier_a_stages_and_returns_true
+- tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn::test_new_finding_unresolved_by_tier_a_returns_false
 threat: null
 component: null
 ```
 The T-1456 post-land unscoped sweep currently verifies AFTER the land commit exists on main, so a refusal requires reset --hard -- which is exactly what destroyed foreign interleaved commits on 2026-08-04 (see T-1495). Land already builds the merge result before committing; run the sweep against that merge preview in a scratch worktree (same mechanism as _spawn_baseline_snapshot_worktree) BEFORE any commit lands on main. A refusal then costs nothing and reverts nothing; the post-land sweep can remain as a cheap assertion.
+
+## Done report
+
+The T-1456 post-land sweep verified AFTER land's squash-apply commit
+already existed on main; a refusal required a git reset --hard, which
+(as T-1495 documents) can destroy foreign commits interleaved after the
+land if the reset window overlaps a concurrent land. This ticket moves
+the sweep earlier, to the last checkpoint before that commit is made.
+
+Implemented:
+- land() (frob.tickets._land) gains an optional `pre_commit_sweep(root,
+  final_id) -> bool | None` callback, threaded through _land_locked ->
+  _land_squash_apply -> _land_squash_apply_finish, invoked via the new
+  _apply_pre_commit_sweep_or_unwind helper (split out to keep
+  _land_squash_apply_finish under the ARCH001 line threshold) right
+  before _commit_squash_apply. At that point root's working tree holds
+  only the staged, uncommitted merge-preview changeset -- a `False`
+  verdict unwinds via the SAME _verified_reset_root path every other
+  pre-commit failure (bump_version, sync_gate_rules, completeness) already
+  uses, so the refusal costs nothing and touches no real commit. A new
+  LandError.PreLandUnscopedSweepFailed names this refusal.
+- The CLI (_land_cmd.py) wires this in: _pre_commit_unscoped_error_sweep
+  is the pre-commit twin of _post_land_unscoped_error_sweep (same
+  identity-set diff + Tier-A-retry logic), and
+  _sweep_apply_tier_a_pre_commit is its Tier-A-fix-then-STAGE helper
+  (never commits -- the fix belongs in the same final commit, not a
+  separate follow-up one, unlike the post-land twin which must commit
+  separately since main already has a real commit by the time it runs).
+  _land_pre_commit_sweep_fn is the closure `_land()` passes as
+  `pre_commit_sweep`; it reuses the SAME T-1463 background baseline
+  thread/result the post-land sweep also consumes (joins it, which is
+  almost always already finished by this late in land()'s own
+  sequential work) -- no second baseline scan.
+- The T-1456 post-land sweep (_run_post_land_sweep_or_exit) is
+  unchanged, left wired in as a cheap final assertion for whatever the
+  pre-commit pass could not see (e.g. a ledger-splice-only artifact).
+
+Tests added:
+- tests/test_ticket_land.py::TestPreCommitUnscopedSweep -- land()-level,
+  real git: true/None/no-callback verdicts land normally, a False
+  verdict unwinds to the pre-land sha with an empty git status and
+  commits nothing.
+- tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn
+  -- unit-level (monkeypatched _unscoped_error_findings/
+  _sweep_apply_tier_a_pre_commit): None baseline/fresh is a skip (not a
+  pass), no new finding is True, a new finding Tier-A resolves and
+  stages (never commits) is True, an unresolved new finding is False.
+
+Also added the `attr interface=TestPreCommitUnscopedSweep;` /
+`TestPreCommitUnscopedSweepFn;` declarations to design/frob.strata's
+`testsuite` node (SELFAUDIT001/SYS104) and `frob:ticket T-1514` edges on
+the new/changed test symbols (COV002).
+
+### Changed
+```
+ design/frob.strata                        |   3 +
+ src/frob/app/ticket_runner/_land_cmd.py   | 249 ++++++++++++++++++++++++++----
+ src/frob/tickets/_land.py                 |  17 +-
+ src/frob/tickets/_land_squash.py          |  57 ++++++-
+ src/frob/tickets/_models.py               |   9 ++
+ tests/test_ticket_land.py                 |  81 ++++++++++
+ tests/test_ticket_work_and_land_finish.py | 159 ++++++++++++++++++-
+ tickets.md                                |  63 +++++++-
+ 8 files changed, 599 insertions(+), 39 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_none_verdict_is_a_skip_lands_normally` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_false_verdict_unwinds_and_commits_nothing` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_no_callback_is_noop` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn::test_new_finding_fixed_by_tier_a_stages_and_returns_true` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn::test_new_finding_unresolved_by_tier_a_returns_false` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 3 error(s), 134 warning(s), 779 waived
+- error-findings: AFFECT001@src/frob/tickets/_land.py, AFFECT001@src/frob/tickets/_models.py, DOC002@src/frob/app/ticket_runner/_land_cmd.py
 
 <!-- ticket:T-1515 -->
 ```yaml
 id: T-1515
 title: 'orphan-writer guard: land refuses/warns when another land process from a different
   session is live'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-04'
@@ -4923,10 +5166,118 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_holder_metadata_written_on_acquire
+- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_lock_released_after_context_exits
+- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_timeout_raises_when_a_foreign_holder_never_releases
+- tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_no_lock_file_reports_nothing
+- tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_live_holder_pid_is_reported_alive_and_healthy
+- tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_dead_holder_pid_is_reported_dead_and_unhealthy
+- tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_malformed_lock_content_reports_nothing
 threat: null
 component: null
 ```
 2026-08-04 incident (see T-1495): an orphaned background script from a dead conversation was serially landing the roster while a new coordinator session also wrote to main; the two writers' unwinds destroyed each other's commits. The advisory fcntl land.lock serializes lock-holders but cannot tell the second session that a foreign driver is mid-roster. Add: (1) land records pid+session-id+start-time in the lock file; (2) a fresh land invocation logs WHO holds it and refuses after timeout instead of queueing silently; (3) frob doctor reports live land processes for the repo so a session-start check is one command.
+
+## Done report
+
+The 2026-08-04 incident (T-1495): an orphaned background land driver
+from a dead conversation was serially landing a roster while a NEW
+coordinator session also wrote to main; the advisory flock-based
+land.lock correctly serialized the two writers against each other but
+gave neither session any way to tell the other holder was a foreign,
+possibly-defunct driver rather than its own prior in-flight call -- a
+blocking flock just queues silently forever.
+
+Implemented, all three requested pieces:
+1. land.lock records pid+session+start-time: _land_lock_holder_metadata
+   builds {pid, session_id, started_at} (session_id defaults to
+   pid-<pid>, or FROB_LAND_SESSION_ID if a caller/test sets it) and
+   _land_lock writes it (JSON) into land.lock's own content on every
+   successful acquisition.
+2. A fresh land invocation logs who holds it and refuses after timeout:
+   _land_lock no longer does an unconditional blocking flock -- it polls
+   a non-blocking attempt every 1s, logs (once, at WARNING) the current
+   holder's metadata the first time it has to wait at all, and raises
+   LandLockTimeout after _LAND_LOCK_TIMEOUT_S (600s default, overridable
+   via the timeout= kwarg) if the lock is still held. land()/land_plan()
+   both catch LandLockTimeout and return
+   Err(LandError.LandLockTimeout) (a new LandError variant) instead of
+   blocking forever.
+3. frob doctor reports live land processes: scan_live_land_processes
+   reads root's .frob/land.lock content and reports a LiveLandProcess
+   (pid, session_id, started_at, alive) with a POSIX liveness probe
+   (os.kill(pid, 0)) against the recorded pid. Wired into
+   DoctorReport.live_land_process, _collect_doctor_scans,
+   _log_doctor_diagnosis, _assemble_doctor_report, and
+   _combined_remediation. A LIVE holder is informational only (does not
+   affect healthy/remediation -- an in-flight land() is normal); a DEAD
+   (orphaned) holder DOES make healthy False, with a remediation naming
+   the exact stale-lock repair.
+
+Deliberately no hostname lookup in the holder metadata (a bare pid is
+sufficient to disambiguate processes on the one host this lock file's
+checkout lives on) -- this also keeps the tickets_ledger node's SYS100
+capability surface at plain env (the FROB_LAND_SESSION_ID read), not net.
+
+New docs section: docs/guides/install.md#live-land-process-report-t-1515,
+frob:doc-anchored from LiveLandProcess, scan_live_land_processes, and
+LandLockTimeout.
+
+Tests added:
+- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout --
+  holder metadata is written and parses on acquire; the lock is released
+  (fresh non-blocking acquisition succeeds) after the context exits; a
+  foreign holder that never releases causes LandLockTimeout with the
+  holder metadata attached, within a short test timeout (0.2s).
+- tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess -- no lock
+  file reports nothing; this test process's own (genuinely live) pid is
+  reported alive and does not affect healthy; a synthetic dead pid is
+  reported alive=False and makes run_diagnosis unhealthy with a
+  remediation naming the pid; malformed/empty lock content reports
+  nothing (never raises).
+
+Not closed via the standalone `frob ticket close` CLI in this worktree:
+this ticket's diff adds new public API (LiveLandProcess,
+scan_live_land_processes, LandLockTimeout, DoctorReport.
+live_land_process) which trips close's own REL001 pre-close obligation
+check (_own_obligations_rel_bump_dirty) -- that check requires a version
+bump, which per T-0731 is land-owned and never performed in a worktree.
+land()'s own internal close path (_land_finalize_and_close) does not run
+this CLI-only pre-close obligation check, so `frob ticket land` closes
+this cleanly; only the standalone `frob ticket close` CLI is blocked.
+Same disposition as T-1514 in this same worktree/session.
+
+### Changed
+```
+ design/frob.strata                        |  12 +-
+ docs/guides/install.md                    |  49 ++++++
+ frob.lock                                 |   2 +-
+ src/frob/app/ticket_runner/_land_cmd.py   | 249 ++++++++++++++++++++++++++----
+ src/frob/doctor.py                        | 113 +++++++++++++-
+ src/frob/tickets/_land.py                 | 217 ++++++++++++++++++++++----
+ src/frob/tickets/_land_squash.py          |  57 ++++++-
+ src/frob/tickets/_models.py               |  16 ++
+ tests/system/test_cli_doctor.py           | 108 +++++++++++++
+ tests/test_ticket_land.py                 | 173 +++++++++++++++++++++
+ tests/test_ticket_work_and_land_finish.py | 159 ++++++++++++++++++-
+ tickets.md                                | 150 +++++++++++++++++-
+ 12 files changed, 1232 insertions(+), 73 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_holder_metadata_written_on_acquire` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_lock_released_after_context_exits` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_timeout_raises_when_a_foreign_holder_never_releases` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_no_lock_file_reports_nothing` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_live_holder_pid_is_reported_alive_and_healthy` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_dead_holder_pid_is_reported_dead_and_unhealthy` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_malformed_lock_content_reports_nothing` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 5 error(s), 135 warning(s), 781 waived
+- error-findings: AFFECT001@src/frob/tickets/_land.py, AFFECT001@src/frob/tickets/_models.py, DOC002@src/frob/app/ticket_runner/_land_cmd.py, E501@/home/logan/projects/frob/.claude/worktrees/t-1513/src/frob/doctor.py:348, SEC110@src/frob/tickets/_land.py
 
 <!-- ticket:T-1516 -->
 ```yaml
@@ -5094,3 +5445,102 @@ reference shapes elaborate() itself does not already validate at all
 (flow src/dst). Whether flow src/dst validation belongs inside elaborate()
 itself (so a single-file design also gets it too) is left as a design
 question for this follow-up.
+
+<!-- ticket:T-1522 -->
+```yaml
+id: T-1522
+title: 'land: queue-drain commits must be durable across a same-invocation later unwind'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/tickets/_land_squash.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1495 point 2 (filed as a follow-up, not implemented in T-1495 itself):
+queue-drain commits (other tickets' lands absorbed into the same land
+invocation as a primary ticket) must become durable the moment each one
+is committed -- a later failure in the SAME invocation (e.g.
+CrossTicketLeakage on the primary ticket) currently unwinds the whole
+run, including unrelated already-drained lands (the T-1199/T-1200
+queue-drain commits eaten by attempt-1/2 unwinds in the 2026-08-04
+incident, tickets.md/T-1495's own Done report has the reflog detail).
+
+This needs a real design decision beyond an unwind-boundary assertion:
+either (a) each queue-drain commit needs to be pushed/durable
+independently before the primary ticket's own steps run (so a later
+primary-ticket failure only ever unwinds the primary ticket's own
+commits, never the queue-drain ones already durable), or (b) the
+queue-drain absorption mechanism itself needs to stop being a single
+undo-able unit and instead commit-then-forget per drained ticket. T-1495
+itself only fixes the concretely-identified unguarded reset path
+(land_plan's own _land_plan_reset_hard) with a same-run unwind-boundary
+assertion (_assert_reset_only_discards_own_commits) -- that assertion
+protects against a FOREIGN process's interleaved commit being eaten, but
+does not change the fact that within ONE run, queue-drained commits and
+the primary ticket's own commits are currently treated as a single
+all-or-nothing unwind unit.
+
+Investigate the queue-drain absorption call path (search
+`_absorbed_land_report`/stacked-sibling absorption, T-1001 churn item 2)
+to find exactly where drained commits and the primary ticket's commits
+share an unwind boundary, and design the split.
+
+<!-- ticket:T-1523 -->
+```yaml
+id: T-1523
+title: 'land: checkpoint or split post-land verification so a >540s kill is always
+  safe'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/app/ticket_runner/_land_cmd.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1495 point 4 (filed as a follow-up, not implemented in T-1495 itself):
+land duration routinely exceeds the 540s foreground guard (the 2026-08-04
+incident's own trigger: `frob ticket land T-1464` was SIGTERM-killed at
+that timeout AFTER its land commits were already on main but before
+post-land verification finished). Either checkpoint land so a kill is
+safe at any instant, or split post-land verification into a resumable
+separate step.
+
+This needs a real design decision beyond an unwind-boundary assertion:
+- Option A: make every intermediate state durable/self-describing enough
+  that a kill at any instant is recoverable by the NEXT invocation
+  (T-0907's land-repair marker already does this for the pre-commit
+  staging window; the gap is POST-commit, between the final commit
+  landing and the post-land unscoped-error sweep / push / worktree
+  finish steps -- T-1514 (same cluster, already landed) narrows this
+  specific gap by moving T-1456's sweep to run PRE-commit instead of
+  post-commit, but push/finish and any other post-commit step are still
+  in the killable window).
+- Option B: split `frob ticket land` into two separately-invocable
+  steps -- "land" (merge/finalize/commit, must complete or cleanly
+  unwind) and a separate "land --verify-only <sha>" resumable step that
+  re-runs whatever post-land checks remain, safe to kill and retry
+  independently of the commit itself ever having happened.
+
+Either option needs its own design doc/ticket-plan before implementation
+-- this is exactly the kind of decision the T-1495 body's "find the
+actual reset path... make it refuse or reconcile" ask flags as needing
+judgment beyond a mechanical fix.

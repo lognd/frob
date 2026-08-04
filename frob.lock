@@ -46,7 +46,7 @@
       "ref": "src/frob/arch/_smells.py::check_module_dependency_cycles"
     },
     {
-      "digest": "e3847fd73d6b47cbc0771c37b5ac7fd0aade10c96b8d60dcfba785dfeadd48a1",
+      "digest": "f2086f7c79f47feef8b60f71ef4178e2e86ec17e7ae071f9f3f2cf336886198f",
       "facet": "body",
       "ref": "src/frob/doctor.py::run_diagnosis"
     },

@@ -779,6 +779,7 @@ def _land_squash_apply(
     rebuild_natives: Callable[[Path], bool] | None = None,
     sync_gate_rules: Callable[[Path, str], Result[tuple[str, ...] | None, LandError]]
     | None = None,
+    pre_commit_sweep: Callable[[Path, str], bool | None] | None = None,
 ) -> Result[LandReport, LandError]:
     """Squash-apply the worktree's finalized branch onto `root`, splice
     tickets.md, apply an optional REL001 version bump (T-0338), assert
@@ -797,7 +798,19 @@ def _land_squash_apply(
     `_land_squash_apply_finish` (everything once the squash itself has
     succeeded) to clear ARCH001 -- the seam is the one point every failure
     path on both sides already unwinds through `_verified_reset_root`, so
-    no control-flow or unwind semantics change."""
+    no control-flow or unwind semantics change.
+
+    T-1514: `pre_commit_sweep(root, final_id)` (opt-in), if supplied, is
+    invoked by `_land_squash_apply_finish` at the LAST point before the
+    final commit -- `root`'s working tree already holds the full squashed
+    merge-preview changeset, staged but not yet committed, so a refusal
+    here is unwound via the same `_verified_reset_root` every other
+    pre-commit failure path already uses, costing nothing and touching no
+    foreign commit (unlike the T-1456 post-land sweep, which must
+    `git reset --hard` a REAL commit that may already have foreign work
+    stacked on top of it). Returns `True` (sweep passed, possibly after a
+    Tier-A auto-fix), `False` (refuse and unwind), or `None` (skip,
+    matching every other opt-in land callable's default posture)."""
     branch = current_branch(worktree)
     if branch.is_err:
         return Err(LandError.GitFailed)
@@ -834,7 +847,42 @@ def _land_squash_apply(
         bump_version=bump_version,
         rebuild_natives=rebuild_natives,
         sync_gate_rules=sync_gate_rules,
+        pre_commit_sweep=pre_commit_sweep,
     )
+
+
+# frob:ticket T-1514
+def _apply_pre_commit_sweep_or_unwind(
+    root: Path,
+    ticket_id: str,
+    final_id: str,
+    pre_land_tip: str,
+    pre_commit_sweep: Callable[[Path, str], bool | None] | None,
+) -> Result[None, LandError]:
+    """`_land_squash_apply_finish`'s LAST pre-commit checkpoint (T-1514,
+    split out to keep that function under ARCH001's line threshold):
+    `root`'s working tree already holds the complete, staged merge-preview
+    changeset with nothing committed yet, so a `pre_commit_sweep` refusal
+    here is unwound cheaply via `_verified_reset_root` and touches no
+    foreign commit, unlike the T-1456 post-land sweep's `git reset --hard`
+    of an already-real commit. A `None` `pre_commit_sweep` (not supplied)
+    or a `None`/`True` verdict is a no-op `Ok(None)`."""
+    if pre_commit_sweep is None:
+        return Ok(None)
+    swept = pre_commit_sweep(root, final_id)
+    if swept is not False:
+        return Ok(None)
+    unwound = _verified_reset_root(root, pre_land_tip, ticket_id)
+    if unwound.is_err:
+        return Err(unwound.danger_err)
+    _log.error(
+        "land: %s refused -- the T-1514 pre-commit unscoped error sweep "
+        "found new error(s) no Tier-A auto-fix could resolve; the staged "
+        "squash was unwound, %s is unchanged, nothing was committed",
+        ticket_id,
+        root,
+    )
+    return Err(LandError.PreLandUnscopedSweepFailed)
 
 
 # frob:ticket T-0907
@@ -854,6 +902,7 @@ def _land_squash_apply_finish(
     rebuild_natives: Callable[[Path], bool] | None,
     sync_gate_rules: Callable[[Path, str], Result[tuple[str, ...] | None, LandError]]
     | None,
+    pre_commit_sweep: Callable[[Path, str], bool | None] | None = None,
 ) -> Result[LandReport, LandError]:
     """`_land_squash_apply`'s post-squash half (T-1334, split to clear that
     function's ARCH001 finding): the release bump, gate-rule sync,
@@ -894,6 +943,12 @@ def _land_squash_apply_finish(
     )
     if absorbed is not None:
         return Ok(absorbed)
+
+    swept = _apply_pre_commit_sweep_or_unwind(
+        root, ticket_id, final_id, pre_land_tip, pre_commit_sweep
+    )
+    if swept.is_err:
+        return Err(swept.danger_err)
 
     committed = _commit_squash_apply(root, ticket, final_id)
     if committed.is_err:

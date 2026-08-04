@@ -25,6 +25,7 @@ from frob.app.config import AppConfig
 from frob.gitio import run_argv, working_diff
 from frob.logging import get_logger
 from frob.process._guard import ProcessGuardError
+from frob.tickets._land_git_ops import _describe_git_failure, _land_internal_git_env
 
 from ._verify import (
     _check_gate_findings_fn,
@@ -344,14 +345,19 @@ def _unscoped_error_findings(
 
 # frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1456
-def _apply_root_tier_a_fixes(root: Path, ticket_id: str) -> int:
+# frob:ticket T-1513
+def _apply_root_tier_a_fixes(root: Path, ticket_id: str) -> list[str]:
     """Run the T-1138 Tier-A deterministic auto-fix handlers against
     `root`'s WHOLE tree (unscoped -- no `touched_paths`, mirroring
     `_tier_a_pre_land_step`'s own body but without the FMT001-exclusion
-    logic that step's touched-set scoping needs) and return how many fixes
-    were applied. Best-effort: a graph/queue load failure is logged and
-    treated as zero fixes applied, never raised -- the caller's refusal
-    path already covers "nothing fixed the residue."""
+    logic that step's touched-set scoping needs) and return the sorted,
+    de-duplicated list of repo-relative file paths the handlers actually
+    rewrote (T-1513: was a bare count -- `_sweep_apply_tier_a_and_commit`
+    needs the exact path set to stage narrowly, never `git add -A`, so
+    land-owned files like `uv.lock` can never be swept in by accident).
+    Best-effort: a graph/queue load failure is logged and treated as no
+    fixes applied, never raised -- the caller's refusal path already
+    covers "nothing fixed the residue."""
     from frob.gates._fix_engine import apply_tier_a_fixes
     from frob.graph import build_graph
     from frob.tickets import load_active
@@ -364,25 +370,36 @@ def _apply_root_tier_a_fixes(root: Path, ticket_id: str) -> int:
             "queue load failed)",
             ticket_id,
         )
-        return 0
+        return []
     applied = apply_tier_a_fixes(
         root, snapshot_result.danger_ok, queue_result.danger_ok
     )
-    return len(applied)
+    return sorted({entry.file for entry in applied})
 
 
 # frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1456
+# frob:ticket T-1513
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_fixed_by_tier_a_lands_with_a_followup_commit  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_fix_commit_stages_only_touched_paths_not_git_add_dash_a  # noqa: E501
 def _sweep_apply_tier_a_and_commit(
     root: Path, ticket_id: str, final_id: str, new_findings: frozenset[tuple[str, str]]
 ) -> int:
     """T-1456 autofix-retry phase of `_post_land_unscoped_error_sweep`: run
     the unscoped Tier-A auto-fix handlers against `root` and, if any fix
-    applied, `git add -A` + commit the result as a follow-up cleanup commit
-    (logged, never raised, on a failed add/commit). Returns the number of
+    applied, stage ONLY the exact paths Tier-A touched (T-1513: never
+    `git add -A` -- that used to also stage the perpetually-dirty
+    land-owned `uv.lock`, which the T-0731 pre-commit hook then refused,
+    leaving the fix uncommitted and the land reverting) and commit the
+    result as a follow-up cleanup commit under `FROB_LAND_INTERNAL=1`
+    (T-0828's escape hatch -- this commit is land's own internal
+    machinery, same disposition as land's other internal commits, and
+    without it a Tier-A fix that happens to touch a land-owned file would
+    still be refused). Logs `git`'s stderr on any add/commit failure
+    (T-1513: previously silent) rather than raising -- the caller re-scans
+    regardless of whether this commit succeeded. Returns the number of
     fixes Tier-A applied, independent of whether the commit itself
-    succeeded -- the caller re-scans regardless."""
+    succeeded."""
     _log.warning(
         "ticket land: %s post-land unscoped sweep found %d new error(s) "
         "absent before this land: %s -- attempting Tier-A auto-fix",
@@ -390,29 +407,42 @@ def _sweep_apply_tier_a_and_commit(
         len(new_findings),
         sorted(new_findings),
     )
-    fixed_count = _apply_root_tier_a_fixes(root, ticket_id)
-    if fixed_count:
-        add_argv = ["git", "-C", str(root), "add", "-A"]
+    touched_paths = _apply_root_tier_a_fixes(root, ticket_id)
+    fixed_count = len(touched_paths)
+    if touched_paths:
+        add_argv = ["git", "-C", str(root), "add", "--", *touched_paths]
         added = run_argv(add_argv)
-        if added.is_ok and added.danger_ok.returncode == 0:
-            commit_argv = [
-                "git",
-                "-C",
-                str(root),
-                "commit",
-                "-m",
-                f"fix(land): {final_id} post-land Tier-A cleanup "
-                f"({fixed_count} fix(es))",
-            ]
+        if added.is_err or added.danger_ok.returncode != 0:
+            _log.error(
+                "ticket land: %s post-land Tier-A fix `git add` failed for "
+                "%s -- %s left uncommitted in %s: %s",
+                final_id,
+                touched_paths,
+                fixed_count,
+                root,
+                _describe_git_failure(add_argv, added),
+            )
+            return fixed_count
+        commit_argv = [
+            "git",
+            "-C",
+            str(root),
+            "commit",
+            "-m",
+            f"fix(land): {final_id} post-land Tier-A cleanup "
+            f"({fixed_count} fix(es))",
+        ]
+        with _land_internal_git_env():
             committed = run_argv(commit_argv)
-            if committed.is_err or committed.danger_ok.returncode != 0:
-                _log.error(
-                    "ticket land: %s post-land Tier-A fix commit failed -- "
-                    "%s left uncommitted in %s",
-                    final_id,
-                    fixed_count,
-                    root,
-                )
+        if committed.is_err or committed.danger_ok.returncode != 0:
+            _log.error(
+                "ticket land: %s post-land Tier-A fix commit failed -- %s "
+                "left uncommitted in %s: %s",
+                final_id,
+                fixed_count,
+                root,
+                _describe_git_failure(commit_argv, committed),
+            )
     return fixed_count
 
 
@@ -556,6 +586,121 @@ def _post_land_unscoped_error_sweep(
         return True
 
     _sweep_revert_land(root, final_id, pre_land_sha, still_new)
+    return False
+
+
+# frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
+# frob:ticket T-1514
+def _sweep_apply_tier_a_pre_commit(root: Path, ticket_id: str) -> frozenset[str]:
+    """T-1514's pre-commit twin of `_sweep_apply_tier_a_and_commit`: run the
+    unscoped Tier-A auto-fix handlers against `root` and, for every path
+    touched, `git add --` it into the index -- but never commit, since at
+    this checkpoint `root`'s working tree IS the still-uncommitted, staged
+    squash-apply changeset (`_land_squash_apply_finish` calls this right
+    before `_commit_squash_apply`) and the fix belongs in that SAME final
+    commit, not a separate follow-up one. Returns the set of paths staged
+    this way (empty if Tier-A applied nothing or the add itself failed --
+    logged, never raised)."""
+    touched_paths = _apply_root_tier_a_fixes(root, ticket_id)
+    if not touched_paths:
+        return frozenset()
+    add_argv = ["git", "-C", str(root), "add", "--", *touched_paths]
+    added = run_argv(add_argv)
+    if added.is_err or added.danger_ok.returncode != 0:
+        _log.error(
+            "ticket land: %s pre-commit Tier-A fix `git add` failed for "
+            "%s -- fix(es) left unstaged in %s: %s",
+            ticket_id,
+            touched_paths,
+            root,
+            _describe_git_failure(add_argv, added),
+        )
+        return frozenset()
+    return frozenset(touched_paths)
+
+
+# frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
+# frob:ticket T-1514
+def _pre_commit_unscoped_error_sweep(
+    root: Path,
+    ticket_id: str,
+    final_id: str,
+    baseline_findings: frozenset[tuple[str, str]] | None,
+) -> bool | None:
+    """T-1514: the pre-commit twin of `_post_land_unscoped_error_sweep` --
+    same identity-set comparison and Tier-A-auto-fix-then-refuse logic,
+    but run at `_land_squash_apply_finish`'s LAST checkpoint before the
+    final commit, while `root`'s working tree still holds only the staged,
+    uncommitted squash-apply changeset. A refusal here (`False`) is
+    unwound by `_land_squash_apply_finish` via `_verified_reset_root` --
+    cheap, and touches no foreign commit, unlike the T-1456 post-land
+    sweep's `git reset --hard` of an already-real commit that may have
+    foreign work stacked on top of it by the time a refusal is detected.
+    The post-land sweep (T-1456) stays wired in as-is, unchanged, as a
+    cheap final assertion for whatever this pre-commit pass could not
+    catch (e.g. a `_post_land_unscoped_error_sweep`-only-observable ledger
+    splice artifact).
+
+    Returns `None` (skip -- unmeasurable, never treated as "clean") when
+    `baseline_findings` or the fresh scan could not be captured, `True`
+    when clean or Tier-A auto-fix resolved every new finding (fix(es)
+    already staged, ready for the same commit), `False` when a real new
+    finding survives Tier-A and the caller must refuse+unwind."""
+    if baseline_findings is None:
+        _log.warning(
+            "ticket land: %s pre-commit unscoped sweep skipped -- pre-land "
+            "baseline was unmeasurable",
+            final_id,
+        )
+        return None
+
+    fresh = _unscoped_error_findings(root, ticket_id)
+    if fresh is None:
+        _log.warning(
+            "ticket land: %s pre-commit unscoped sweep skipped -- staged "
+            "pre-commit scan was unmeasurable",
+            final_id,
+        )
+        return None
+
+    new_findings = fresh - baseline_findings
+    if not new_findings:
+        _log.info(
+            "ticket land: %s pre-commit unscoped sweep clean (0 new "
+            "error(s) vs the pre-land baseline of %d)",
+            final_id,
+            len(baseline_findings),
+        )
+        return True
+
+    _log.warning(
+        "ticket land: %s pre-commit unscoped sweep found %d new error(s) "
+        "absent before this land: %s -- attempting Tier-A auto-fix",
+        final_id,
+        len(new_findings),
+        sorted(new_findings),
+    )
+    fixed_paths = _sweep_apply_tier_a_pre_commit(root, ticket_id)
+    reverify = _unscoped_error_findings(root, ticket_id) if fixed_paths else fresh
+    still_new = (reverify - baseline_findings) if reverify is not None else new_findings
+    if not still_new:
+        _log.info(
+            "ticket land: %s pre-commit Tier-A auto-fix resolved every new "
+            "error finding (staged: %s)",
+            final_id,
+            sorted(fixed_paths),
+        )
+        return True
+
+    _log.error(
+        "ticket land: %s pre-commit unscoped sweep still shows %d new "
+        "error(s) after Tier-A auto-fix: %s -- refusing before any commit "
+        "lands on %s",
+        final_id,
+        len(still_new),
+        sorted(still_new),
+        root,
+    )
     return False
 
 
@@ -1239,6 +1384,34 @@ def _capture_pre_land_baseline(
     return pre_land_sha, pre_land_findings
 
 
+# frob:ticket T-1514
+def _land_pre_commit_sweep_fn(
+    baseline_thread,  # noqa: ANN001
+    baseline_holder: list[tuple[str | None, frozenset[tuple[str, str]] | None]],
+    cfg: AppConfig,
+):  # noqa: ANN201
+    """CLI closure: `land()` calls this (via `pre_commit_sweep`) at the last
+    checkpoint before its final commit. Joins the T-1463 background
+    baseline-capture thread first (a no-op if it already finished, which
+    it almost always has by this point in `land()`'s own sequential work)
+    so this reuses the SAME pre-land finding set the post-land sweep
+    (`_run_post_land_sweep_or_exit`) also consumes -- no second baseline
+    scan. `None` (skip) if the baseline thread produced nothing (e.g. a
+    dry run, where `_capture_pre_land_baseline` returns `(None, None)`)."""
+    assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
+
+    def sweep(root: Path, final_id: str) -> bool | None:
+        baseline_thread.join()
+        _pre_land_sha, pre_land_findings = (
+            baseline_holder[0] if baseline_holder else (None, None)
+        )
+        return _pre_commit_unscoped_error_sweep(
+            root, cfg.ticket_id, final_id, pre_land_findings
+        )
+
+    return sweep
+
+
 # frob:ticket T-1456
 def _run_post_land_sweep_or_exit(
     root: Path,
@@ -1359,6 +1532,7 @@ def _land_plan_cmd(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1463
+# frob:ticket T-1495
 # frob:waive ARCH103 reason="T-0977 precedent: this IS the `frob ticket land` CLI \
 # orchestration entrypoint -- resolve root, run the pre-land fix absorption, kick off \
 # the T-1463 background baseline scan, invoke land(), join the baseline thread, run \
@@ -1408,7 +1582,16 @@ def _land(root: Path, cfg: AppConfig) -> None:
     overlaps the baseline scan's own budget-bounded wall time with
     whatever `land()` spends on its own worktree-scoped checks instead of
     paying for both sequentially, which was the single largest reason a
-    land exceeded the playbook's foreground budget."""
+    land exceeded the playbook's foreground budget.
+
+    T-1514: `pre_commit_sweep` (`_land_pre_commit_sweep_fn`) reuses that
+    SAME baseline thread/result to run the unscoped error sweep AGAIN,
+    inside `land()`, at the last checkpoint before its final commit --
+    while `root`'s working tree still holds only the staged, uncommitted
+    squash-apply changeset. A refusal there costs nothing and reverts no
+    real commit (`_verified_reset_root` on a staged-but-uncommitted tree),
+    unlike `_run_post_land_sweep_or_exit`'s post-commit `git reset --hard`
+    below, which stays wired in unchanged as a cheap final assertion."""
     import threading
 
     from frob.tickets import land
@@ -1467,6 +1650,9 @@ def _land(root: Path, cfg: AppConfig) -> None:
         check_gate_claims=_land_gate_claims_fn(worktree),
         skip_mutation_evidence=cfg.ticket_skip_mutation_evidence,
         allow_cross_ticket=cfg.ticket_allow_cross_ticket,
+        pre_commit_sweep=_land_pre_commit_sweep_fn(
+            _baseline_thread, _baseline_holder, cfg
+        ),
     )
     if result.is_err:
         _log.error("ticket land failed: %s", result.danger_err)

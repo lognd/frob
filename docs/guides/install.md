@@ -577,6 +577,55 @@ shim (`script`, `shebang_path`, `expected_venv_bin`). A tree with no
 `.venv/bin/` at all (not yet set up) contributes zero findings, not an
 error -- an ordinary not-yet-set-up state, not drift.
 
+## Live land-process report (T-1515)
+
+<!-- frob:describes src/frob/doctor.py::scan_live_land_processes -->
+<!-- frob:describes src/frob/doctor.py::LiveLandProcess -->
+<!-- frob:describes src/frob/tickets/_land.py::LandLockTimeout -->
+
+The 2026-08-04 incident (T-1495): an orphaned background `frob ticket
+land` driver from a dead conversation was still serially landing a
+roster while a NEW coordinator session also wrote to the same `root` --
+the advisory `flock`-based `land.lock` correctly serialized the two
+writers against each other, but neither session's `land()` call could
+tell that the OTHER holder was a foreign, possibly-defunct driver rather
+than its own prior invocation still finishing up, so a fresh call just
+queued silently forever behind it.
+
+Two changes close this: `land.lock`'s content now records the holding
+process's pid, a session id, and an ISO-8601 UTC start timestamp
+(written on every successful acquisition); and acquisition itself is no
+longer an unbounded blocking `flock` -- a fresh `land()` call polls a
+non-blocking attempt, logs (once) who it is waiting on the first time it
+has to wait at all, and refuses (`Err(LandError.LandLockTimeout)`)
+rather than queuing forever if the lock is still held after a bounded
+timeout (10 minutes by default).
+
+`frob doctor` reports the SAME lock-file content as a first-class
+`DoctorReport.live_land_process` field (a `LiveLandProcess`, or `None`
+if no lock file exists), with a POSIX liveness probe (`os.kill(pid, 0)`)
+against the recorded pid:
+
+<!-- frob:describes src/frob/doctor.py::scan_live_land_processes -->
+```bash
+frob doctor
+# ... land.lock is held by pid 12345 (session pid-12345, started
+# 2026-08-04T12:00:00+00:00) -- a `frob ticket land` is (or may be)
+# mid-run against this repo right now
+```
+
+A LIVE holder is informational only -- a genuinely in-flight `land()`
+call is normal, not unhealthy, so it does not affect `DoctorReport.
+healthy`/`remediation`. A DEAD holder (the probed pid is not running --
+an orphaned lock left behind by a crashed/killed land) DOES make
+`healthy` `False`, with a remediation naming the exact pid/session and
+pointing at removing the stale `.frob/land.lock` by hand once a human
+has confirmed nothing is actually mid-land. This is exactly the "one
+command instead of a human having to `ps`/`lsof` the lock file" T-1515
+asked for -- run `frob doctor` at the start of a session before
+dispatching a land-touching wave, the same way natives/derived-state
+health is already checked first.
+
 ## Honest pytest-collection failure in the coverage gate (T-1161)
 
 <!-- frob:describes src/frob/testing/_collect.py::python_collection_failure_detail -->
