@@ -4448,3 +4448,43 @@ threat: null
 component: null
 ```
 2026-08-04 incident (see T-1495): an orphaned background script from a dead conversation was serially landing the roster while a new coordinator session also wrote to main; the two writers' unwinds destroyed each other's commits. The advisory fcntl land.lock serializes lock-holders but cannot tell the second session that a foreign driver is mid-roster. Add: (1) land records pid+session-id+start-time in the lock file; (2) a fresh land invocation logs WHO holds it and refuses after timeout instead of queueing silently; (3) frob doctor reports live land processes for the repo so a session-start check is one command.
+
+<!-- ticket:T-draft-a04e60c0 -->
+```yaml
+id: T-draft-a04e60c0
+title: 'coverage: per-file content-hash incremental caching layer'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/testing/**
+- src/frob/gates/_coverage.py
+- tests/test_coverage.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1205 acceptance[2] (per-file content-hash keyed incremental caching, so
+an unchanged file's coverage is never recomputed even across separate
+touched-set runs). T-0484's python_coverage_targets already selects
+WHICH tests the touched set obligates; coverage-fast (Makefile, T-1397)
+already restricts the pytest run to that selection with --cov-append.
+Neither keys per-file coverage data by content hash or persists a
+cache the way frob.graph's own cache does -- this ticket is that
+missing layer: a per-file (or per-module) coverage cache keyed by
+source content hash, so a file whose hash has not changed since its
+last real measurement is never re-instrumented even indirectly, and a
+combine/merge step reconciles cached entries with freshly measured
+ones into the single coverage.xml / frob-coverage.lock.json TEST005/
+TEST006 read. Filed as a real ticket after the original T-1205 session's
+Done report cited draft ids T-1487/T-1488 for this and the native-
+command follow-up; both ids were later reused by unrelated tickets
+during a ledger renumber, so the follow-up work they described was
+never actually tracked. This ticket re-files the caching half.
+</content>
