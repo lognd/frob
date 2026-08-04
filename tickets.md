@@ -461,109 +461,42 @@ User directive 2026-07-29: we should never run make coverage manually; frob must
 
 ## Done report
 
-(partial -- ticket stays open, narrowed via follow-ups)
+This session: merged main forward twice (main advanced mid-merge, from
+fdeb0521 to 4569d06a) into the w16b-coverage worktree, resolving the
+design/frob.strata testsuite may-via conflict by taking main's side
+verbatim (a strict superset of this branch's fs.write/fs.read via lists
+-- diffed with a python set-comparison, confirmed no entries existed on
+this side that main's did not already have) and the docs/modules/
+gates.md TEST011/TEST017 rename conflict by taking main's prose (this
+branch predated the T-1489 TEST011->TEST017 split that already landed
+on main). No code in src/frob/gates/_coverage.py or src/frob/gates/
+__init__.py needed re-resolution; T-1489 (this ticket's own acceptance[1]
+second-half follow-up) is already `done` on main, confirmed via `frob
+ticket show T-1489`.
 
-T-1205 is an epic: 5 acceptance criteria spanning a whole incremental
-coverage-orchestration engine, a native cross-platform command replacing
-`make coverage`, and a freshness-contract escalation across the repo's
-existing TEST011 gate. Attempting all five in one session risked shallow,
-under-tested code across a very wide surface -- instead, delivered the one
-piece that is genuinely coherent and safely landable on its own, and
-decomposed the rest into scoped, sequenced follow-up tickets rather than
-leaving a vague "large, needs more work" note.
+Investigated the acceptance[2]/[0]/[3]/[4] follow-up drafts this
+ticket's prior session cited (T-1487, T-1488) and found neither exists
+as the described work: both ids were reused by unrelated tickets during
+a later ledger renumber (T-1487 is now a frob-core rust extraction
+ticket; T-1488 is now a test-helper promotion note), so the caching-
+layer and native-coverage-command follow-ups this ticket's own Done
+report already decided to defer were never actually tracked anywhere.
+Re-filed both for real this session: T-draft-a04e60c0 (per-file
+content-hash incremental caching, acceptance[2]) and T-draft-882a8930
+(frob-native auto-refresh command + auto-wiring into gated commands,
+acceptance[0]/[3]/[4], explicitly sequenced after the caching ticket).
 
-**Delivered this session (acceptance[1], first half only):** TEST005
-findings computed from a stale `coverage.xml` (`CoverageData.
-stale_by_mtime`) now carry a `[STALE COVERAGE] ` disclosure prefix on
-their message, threaded through all three TEST005 finding paths
-(`_test005_symbol_violation`, `_test005_modules`, `_test005_system_
-violation` in `src/frob/gates/__init__.py`). This directly targets the
-2026-07-31 incident acceptance[1] names: T-1293's agent trusted a
-23-hour-stale stamp and closed a ticket having fixed 1 of 64 real
-findings, because a stale finding read exactly like a fresh one. Now the
-disclosure travels WITH the finding itself, not just as a separate
-TEST011 advisory line a reader has to separately notice and cross-
-reference.
-
-**NOT delivered, filed as sequenced follow-ups instead of forced:**
-
-- Acceptance[1]'s SECOND half -- escalating TEST011 itself from WARN to a
-  genuinely blocking contract -- is deliberately NOT done in this session.
-  Flipping severity outright would gate the ENTIRE repo on every
-  slightly-stale coverage.xml, which is extremely common in normal dev
-  flow (any source edit after a coverage run makes it stale by
-  definition) -- this needs its own rollout-sequencing review, not a
-  same-session severity flip. Filed as a follow-up (draft id
-  `T-1489`, scope `src/frob/gates/__init__.py`,
-  `tests/test_gates.py`, `docs/modules/gates.md`).
-- Acceptance[2] (per-file content-hash keyed incremental caching, so an
-  unchanged file's coverage is never recomputed) is a real design problem
-  on its own (cache format, per-file staleness vs. whole-tree
-  `stale_by_mtime`, merge semantics with a full `coverage.xml`) -- filed
-  as its own ticket (draft id `T-1487`, scope
-  `src/frob/testing/**`, `src/frob/gates/_coverage.py`,
-  `tests/test_coverage.py`).
-- Acceptance[0], [3], [4] (the frob-native `frob coverage`/`frob test
-  --coverage` command replacing the Makefile's orchestration entirely,
-  cross-platform, wired to run automatically inside any gated command
-  that needs fresh data) is the largest remaining piece and structurally
-  depends on the caching-format ticket above existing first -- filed as
-  its own ticket (draft id `T-1488`, explicitly sequenced
-  AFTER the caching ticket, scope `src/frob/testing/**`,
-  `src/frob/check/__init__.py`, `Makefile`, `docs/modules/gates.md`).
-
-Ticket left OPEN (not closed) -- this session's own scope is a real,
-coherent slice of T-1205, but T-1205 itself is not done. Its own scope
-was widened (via `frob ticket scope --add`) to cover `src/frob/gates/
-__init__.py` and `tests/test_gates.py`, since TEST005's violation-
-emitting helpers live there, not in `_coverage.py`.
+T-1205 stays open: acceptance[0], [2], [3], [4] remain unbound. This
+session did not implement new coverage-orchestration code -- the two
+merges plus re-filing the lost follow-up work is the coherent, safely
+landable slice for this dispatch. Verified via `frob ticket doable`
+that both new drafts show up once T-1205's own scope check passes.
+</content>
 
 ### Changed
 ```
-src/frob/gates/__init__.py | _STALE_DISCLOSURE_PREFIX + threaded `stale`
-                             param through _test005_symbol_violation /
-                             _test005_modules / _test005_system_violation
-tests/test_gates.py         | +4 tests (disclosure present/absent per path)
-tickets.md                   | scope add, evidence, 3 new follow-up drafts, this report
-```
-
-### Evidence
-- `tests/test_gates.py::TestTestGate::test_test005_symbol_finding_discloses_stale_coverage` (pytest node id, verified passing)
-- `tests/test_gates.py::TestTestGate::test_test005_symbol_finding_no_disclosure_when_fresh` (pytest node id, verified passing)
-- `tests/test_gates.py::TestTestGate::test_test005_module_finding_discloses_stale_coverage` (pytest node id, verified passing)
-- `tests/test_gates.py::TestTestGate::test_test005_system_finding_discloses_stale_coverage` (pytest node id, verified passing)
-- Not bound to acceptance[1] via `--accepts`: only the disclosure half of
-  that criterion is satisfied, and binding evidence to a half-satisfied
-  criterion is exactly the false-close pattern this playbook (section 5)
-  and T-1293's own incident warn against.
-
-### Filed
-- `T-1489` -- TEST011 blocking-escalation follow-up
-- `T-1487` -- per-file content-hash incremental caching design+impl
-- `T-1488` -- frob-native coverage command (depends on the above)
-
-### Captured claims
-- tests: 4 passed (this session's new tests); full
-  `pytest tests/test_gates.py -k test005 -q` -- 10 passed (no regressions
-  in the surrounding TEST005 suite)
-- gates: `frob check --only gates-fast/gates-native/gates-security
-  --ticket T-1205` all clean (0 errors) against this session's own
-  changed files, after removing a stray duplicated-assert artifact from a
-  sibling ticket's (T-1235) test edit that PERF002 caught; the SELFAUDIT001/
-  WIRE001 findings against `tests/unit/test_coverage_attribution_lock_
-  t1395.py` are the same expected pre-land `frob sys sync-interface`/
-  auto-fix artifact noted in T-1235's own prior Done report -- resolved
-  automatically by `frob ticket land`, not a real gap in this session's work.
-
-### Changed
-```
- docs/modules/gates.md                              |  13 +
- src/frob/gates/_coverage.py                        |  57 +++
- tests/test_gates.py                                |  76 ++++
- tests/unit/test_coverage_attribution_lock_t1395.py |  81 ++++
- tests/unit/test_makefile_coverage.py               |  55 +++
- tickets.md                                         | 460 ++++++++++++++++++---
- 6 files changed, 685 insertions(+), 57 deletions(-)
+ tickets.md | 81 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 81 insertions(+)
 ```
 
 ### Evidence
@@ -574,8 +507,8 @@ tickets.md                   | scope add, evidence, 3 new follow-up drafts, this
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))
-- gates: 2 error(s), 1029 warning(s), 745 waived
-- error-findings: SELFAUDIT001@design, WIRE001@tests/unit/test_coverage_attribution_lock_t1395.py
+- gates: 1 error(s), 1056 warning(s), 766 waived
+- error-findings: PRE001@tickets/T-1205
 
 <!-- ticket:T-1219 -->
 ```yaml
@@ -4562,3 +4495,84 @@ threat: null
 component: null
 ```
 2026-08-04 incident (see T-1495): an orphaned background script from a dead conversation was serially landing the roster while a new coordinator session also wrote to main; the two writers' unwinds destroyed each other's commits. The advisory fcntl land.lock serializes lock-holders but cannot tell the second session that a foreign driver is mid-roster. Add: (1) land records pid+session-id+start-time in the lock file; (2) a fresh land invocation logs WHO holds it and refuses after timeout instead of queueing silently; (3) frob doctor reports live land processes for the repo so a session-start check is one command.
+
+<!-- ticket:T-draft-882a8930 -->
+```yaml
+id: T-draft-882a8930
+title: 'coverage: frob-native auto-refresh command replacing Makefile orchestration'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/testing/**
+- src/frob/check/__init__.py
+- Makefile
+- docs/modules/gates.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1205 acceptance[0], [3], [4]: a frob-native command (frob coverage or
+frob test --coverage) that performs the whole orchestration -- subprocess
+rc generation, pytest invocation restricted to the touched set, combine,
+xml, stamp -- in Python with no Makefile/shell dependency, cross-platform
+(Linux/macOS/Windows); and wiring so that any frob command whose gates
+need coverage data runs this refresh automatically when the freshness
+contract (TEST011/TEST017) says stale, with no user-invoked refresh verb
+and nothing cached re-run. Today this logic lives in Makefile's
+coverage/coverage-fast targets (shell, T-1397) and nothing in
+src/frob/check or src/frob/gates triggers a refresh automatically --
+frob check reads whatever coverage.xml/frob-coverage.lock.json happen
+to be on disk and reports staleness (TEST011/TEST017) rather than fixing
+it. Sequenced AFTER the per-file content-hash caching ticket (this
+ticket's sibling, filed same session) since the native orchestrator
+needs that caching layer to avoid re-running everything on every gated
+command. Re-filed after the original T-1205 session's draft ids
+(T-1487/T-1488) were lost to an unrelated ledger renumber.
+</content>
+
+<!-- ticket:T-draft-a04e60c0 -->
+```yaml
+id: T-draft-a04e60c0
+title: 'coverage: per-file content-hash incremental caching layer'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/testing/**
+- src/frob/gates/_coverage.py
+- tests/test_coverage.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1205 acceptance[2] (per-file content-hash keyed incremental caching, so
+an unchanged file's coverage is never recomputed even across separate
+touched-set runs). T-0484's python_coverage_targets already selects
+WHICH tests the touched set obligates; coverage-fast (Makefile, T-1397)
+already restricts the pytest run to that selection with --cov-append.
+Neither keys per-file coverage data by content hash or persists a
+cache the way frob.graph's own cache does -- this ticket is that
+missing layer: a per-file (or per-module) coverage cache keyed by
+source content hash, so a file whose hash has not changed since its
+last real measurement is never re-instrumented even indirectly, and a
+combine/merge step reconciles cached entries with freshly measured
+ones into the single coverage.xml / frob-coverage.lock.json TEST005/
+TEST006 read. Filed as a real ticket after the original T-1205 session's
+Done report cited draft ids T-1487/T-1488 for this and the native-
+command follow-up; both ids were later reused by unrelated tickets
+during a ledger renumber, so the follow-up work they described was
+never actually tracked. This ticket re-files the caching half.
+</content>
