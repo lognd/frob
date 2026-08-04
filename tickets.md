@@ -9754,7 +9754,7 @@ the remaining LARGE001 file list are for the next session.
 ```yaml
 id: T-1501
 title: 'doctor.py run_diagnosis split: extract _assemble_doctor_report (ARCH001)'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-03'
